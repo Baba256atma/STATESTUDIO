@@ -1,0 +1,1084 @@
+{
+  "items": [
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_01",
+      "name": "Archetype 01",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_02",
+      "name": "Archetype 02",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_03",
+      "name": "Archetype 03",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_04",
+      "name": "Archetype 04",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_05",
+      "name": "Archetype 05",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_06",
+      "name": "Archetype 06",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_07",
+      "name": "Archetype 07",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_08",
+      "name": "Archetype 08",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_09",
+      "name": "Archetype 09",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_10",
+      "name": "Archetype 10",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_11",
+      "name": "Archetype 11",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_12",
+      "name": "Archetype 12",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_13",
+      "name": "Archetype 13",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_14",
+      "name": "Archetype 14",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_15",
+      "name": "Archetype 15",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_16",
+      "name": "Archetype 16",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_17",
+      "name": "Archetype 17",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_18",
+      "name": "Archetype 18",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_19",
+      "name": "Archetype 19",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_20",
+      "name": "Archetype 20",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_21",
+      "name": "Archetype 21",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_22",
+      "name": "Archetype 22",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_23",
+      "name": "Archetype 23",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_24",
+      "name": "Archetype 24",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_25",
+      "name": "Archetype 25",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_26",
+      "name": "Archetype 26",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_27",
+      "name": "Archetype 27",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_28",
+      "name": "Archetype 28",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_29",
+      "name": "Archetype 29",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_30",
+      "name": "Archetype 30",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_31",
+      "name": "Archetype 31",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_32",
+      "name": "Archetype 32",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_33",
+      "name": "Archetype 33",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_34",
+      "name": "Archetype 34",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_35",
+      "name": "Archetype 35",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_36",
+      "name": "Archetype 36",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_37",
+      "name": "Archetype 37",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_38",
+      "name": "Archetype 38",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_39",
+      "name": "Archetype 39",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_40",
+      "name": "Archetype 40",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_41",
+      "name": "Archetype 41",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_42",
+      "name": "Archetype 42",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_43",
+      "name": "Archetype 43",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_44",
+      "name": "Archetype 44",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_45",
+      "name": "Archetype 45",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_46",
+      "name": "Archetype 46",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_47",
+      "name": "Archetype 47",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_48",
+      "name": "Archetype 48",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Placeholder definition. Update this archetype via the catalog API.",
+      "editable": true,
+      "id": "ha_49",
+      "name": "Archetype 49",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [],
+        "phrases": [],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "placeholder"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    }
+  ],
+  "updated_at": "2025-12-17T20:23:48.485677+00:00",
+  "version": "seed"
+}
