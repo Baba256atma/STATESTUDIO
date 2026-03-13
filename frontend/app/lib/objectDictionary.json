@@ -1,0 +1,42 @@
+{
+  "obj_inventory": {
+    "label": "Inventory",
+    "archetype": "limits_to_growth",
+    "one_liner": "Tracks stock levels and replenishment pressure across the system.",
+    "verbs": ["stabilize", "replenish", "protect"],
+    "domains": ["operations", "supply_chain", "logistics"],
+    "tone": "calm"
+  },
+  "obj_delivery": {
+    "label": "Delivery",
+    "archetype": "fixes_that_fail",
+    "one_liner": "Represents delivery cadence, queues, and cycle-time risk.",
+    "verbs": ["accelerate", "unblock", "smooth"],
+    "domains": ["operations", "customer", "product"],
+    "tone": "steady"
+  },
+  "obj_quality": {
+    "label": "Quality",
+    "archetype": "escalation",
+    "one_liner": "Signals defect load, rework loops, and resilience of outcomes.",
+    "verbs": ["improve", "fortify", "reduce defects"],
+    "domains": ["engineering", "operations", "risk"],
+    "tone": "assured"
+  },
+  "obj_capacity": {
+    "label": "Capacity",
+    "archetype": "limits_to_growth",
+    "one_liner": "Reflects available capability and throughput headroom.",
+    "verbs": ["expand", "prioritize", "balance"],
+    "domains": ["operations", "team", "planning"],
+    "tone": "grounded"
+  },
+  "obj_risk": {
+    "label": "Risk",
+    "archetype": "escalation",
+    "one_liner": "Highlights volatility, exposure, and areas needing safeguards.",
+    "verbs": ["mitigate", "monitor", "contain"],
+    "domains": ["governance", "security", "operations"],
+    "tone": "steady"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "company_id": "acme",
+  "kpis": [
+    {
+      "id": "kpi_ontime",
+      "label": "On-time Delivery",
+      "direction": "up",
+      "target": 0.95,
+      "compute": {
+        "kind": "heuristic",
+        "inputs": ["obj_delivery", "loop_delivery_customer"],
+        "formula": "1 - clamp(delivery_delay*0.6 + loop_intensity*0.4)"
+      }
+    },
+    {
+      "id": "kpi_inventory_health",
+      "label": "Inventory Health",
+      "direction": "up",
+      "target": 0.85,
+      "compute": {
+        "kind": "heuristic",
+        "inputs": ["obj_inventory"],
+        "formula": "1 - clamp(stock_pressure)"
+      }
+    }
+  ]
+}

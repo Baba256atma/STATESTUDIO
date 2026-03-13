@@ -1,0 +1,80 @@
+{
+  "rules": [
+    {
+      "human_archetype_id": "ha_01",
+      "system_signals": {
+        "decision_volatility": 0.8,
+        "latency": 0.4,
+        "rework": 0.6
+      }
+    },
+    {
+      "human_archetype_id": "ha_02",
+      "system_signals": {
+        "latency": 0.5,
+        "resource_overload": 0.6,
+        "scope_creep": 0.7
+      }
+    },
+    {
+      "human_archetype_id": "ha_03",
+      "system_signals": {
+        "decision_volatility": 0.6,
+        "escalation": 0.9
+      }
+    },
+    {
+      "human_archetype_id": "ha_04",
+      "system_signals": {
+        "long_term_risk": 0.7,
+        "short_term_relief": 0.8
+      }
+    },
+    {
+      "human_archetype_id": "ha_05",
+      "system_signals": {
+        "dependency_growth": 0.8,
+        "quality_drop": 0.5
+      }
+    },
+    {
+      "human_archetype_id": "ha_06",
+      "system_signals": {
+        "latency": 0.6,
+        "quality_drop": 0.4,
+        "resource_overload": 0.9
+      }
+    },
+    {
+      "human_archetype_id": "ha_07",
+      "system_signals": {
+        "decision_volatility": 0.5,
+        "scope_creep": 0.6
+      }
+    },
+    {
+      "human_archetype_id": "ha_08",
+      "system_signals": {
+        "quality_drop": 0.6,
+        "rework": 0.7
+      }
+    },
+    {
+      "human_archetype_id": "ha_09",
+      "system_signals": {
+        "escalation": 0.6,
+        "resource_overload": 0.5
+      }
+    },
+    {
+      "human_archetype_id": "ha_10",
+      "system_signals": {
+        "dependency_growth": 0.6,
+        "long_term_risk": 0.5,
+        "short_term_relief": 0.6
+      }
+    }
+  ],
+  "updated_at": "2025-12-18T04:59:54.309444+00:00",
+  "version": "2025-12-18T045954+0000"
+}

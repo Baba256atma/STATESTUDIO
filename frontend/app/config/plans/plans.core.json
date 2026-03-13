@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "plans": {
+    "free": {
+      "label": "Free",
+      "features": {
+        "kpi_core": true,
+        "loops_core": true,
+        "kpi_custom": false,
+        "loops_custom": false,
+        "kpi_explain": false,
+        "kpi_triggers": false,
+        "decision_compare": false
+      }
+    },
+    "pro": {
+      "label": "Pro",
+      "features": {
+        "kpi_core": true,
+        "loops_core": true,
+        "kpi_custom": true,
+        "loops_custom": true,
+        "kpi_explain": true,
+        "kpi_triggers": true,
+        "decision_compare": true
+      }
+    }
+  }
+}

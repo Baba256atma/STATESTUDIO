@@ -1,0 +1,33 @@
+{
+  "company_id": "acme",
+  "display": { "name": "ACME Logistics" },
+  "object_overrides": {
+    "obj_inventory": { "label": "Warehouse Load", "shortLabel": "Warehouse", "overrides": { "color": "#2e86de" } },
+    "obj_risk_zone": { "label": "Exposure", "shortLabel": "Risk", "overrides": { "color": "#f1c40f" } }
+  },
+  "type_overrides": {
+    "type_delivery": { "label": "Fulfillment", "one_liner": "Speed and reliability of fulfillment." }
+  },
+  "visibility": {
+    "objects_enabled": ["obj_inventory", "obj_delivery", "obj_risk_zone", "obj_quality", "obj_cost", "obj_customer"],
+    "objects_disabled": ["obj_cashflow", "obj_process", "obj_throughput"]
+  },
+  "theme": {
+    "hud": {
+      "bg": "rgba(10, 14, 22, 0.72)",
+      "border": "rgba(120, 170, 255, 0.35)",
+      "text": "rgba(245, 250, 255, 0.92)",
+      "mutedText": "rgba(245, 250, 255, 0.65)",
+      "accent": "#7aa7ff",
+      "panelBg": "rgba(20, 26, 38, 0.78)"
+    }
+  },
+  "scene_preset": {
+    "backgroundMode": "stars",
+    "starCount": 900,
+    "cameraMode": "orbit",
+    "showAxes": true,
+    "showGrid": false,
+    "showCameraHelper": false
+  }
+}

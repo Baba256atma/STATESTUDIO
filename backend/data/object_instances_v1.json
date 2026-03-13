@@ -1,0 +1,7 @@
+{
+  "instances": [
+    { "id": "obj_inventory_1", "type": "type_inventory", "label": "Inventory A" },
+    { "id": "obj_inventory_2", "type": "type_inventory", "label": "Inventory B" },
+    { "id": "obj_delivery_1", "type": "type_delivery", "label": "Delivery North" }
+  ]
+}

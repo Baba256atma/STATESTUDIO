@@ -1,0 +1,7 @@
+{
+  "company_id": "demo",
+  "version": 1,
+  "loop_templates": [
+    { "type": "stability_balance", "label": "Stability Balance (Demo tuned)", "category": "risk", "default_intensity": 0.4, "impact": { "risk_exposure": -0.3 } }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "company_id": "core",
+  "version": 1,
+  "loop_templates": [
+    { "type": "delivery_customer", "label": "Delivery → Customer", "category": "delivery", "default_intensity": 0.4, "impact": { "delivery_on_time": 0.25, "growth_conversion": 0.12, "risk_exposure": -0.05 } },
+    { "type": "cost_compression", "label": "Cost Compression", "category": "cost", "default_intensity": 0.35, "impact": { "cost_efficiency": 0.25, "quality_defects": 0.05 } },
+    { "type": "quality_protection", "label": "Quality Protection", "category": "quality", "default_intensity": 0.35, "impact": { "quality_defects": -0.25, "delivery_on_time": 0.05 } },
+    { "type": "risk_ignorance", "label": "Risk Ignorance", "category": "risk", "default_intensity": 0.2, "impact": { "risk_exposure": 0.25 } },
+    { "type": "stability_balance", "label": "Stability Balance", "category": "risk", "default_intensity": 0.3, "impact": { "risk_exposure": -0.2 } }
+  ]
+}

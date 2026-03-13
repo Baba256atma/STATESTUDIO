@@ -1,0 +1,11 @@
+{
+  "company_id": "core",
+  "version": 1,
+  "kpis": [
+    { "id": "delivery_on_time", "label": "Delivery On-time", "unit": "%", "target": 0.9, "direction": "up", "description": "Percent of deliveries completed on time.", "thresholds": { "warnBelow": 0.6 }, "drivers": ["delivery_customer"], "driver_weights": { "delivery_customer": 0.35 } },
+    { "id": "cost_efficiency", "label": "Cost Efficiency", "unit": "%", "target": 0.75, "direction": "up", "description": "How efficiently costs are managed relative to output.", "thresholds": { "warnBelow": 0.55 }, "drivers": ["cost_compression"], "driver_weights": { "cost_compression": 0.3 } },
+    { "id": "quality_defects", "label": "Quality Defects", "unit": "%", "target": 0.05, "direction": "down", "description": "Defect rate; lower is better.", "thresholds": { "warnAbove": 0.12 }, "drivers": ["quality_protection"], "driver_weights": { "quality_protection": -0.25 } },
+    { "id": "risk_exposure", "label": "Risk Exposure", "unit": "%", "target": 0.2, "direction": "down", "description": "Overall risk level; lower is better.", "thresholds": { "warnAbove": 0.35 }, "drivers": ["risk_ignorance", "stability_balance"], "driver_weights": { "risk_ignorance": 0.35, "stability_balance": -0.25 } },
+    { "id": "growth_conversion", "label": "Growth Conversion", "unit": "%", "target": 0.12, "direction": "up", "description": "Conversion or growth proxy; higher is better.", "thresholds": { "warnBelow": 0.07 }, "drivers": ["delivery_customer", "quality_protection"], "driver_weights": { "delivery_customer": 0.15, "quality_protection": 0.1 } }
+  ]
+}

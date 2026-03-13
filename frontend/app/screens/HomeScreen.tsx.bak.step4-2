@@ -1,0 +1,2040 @@
+"use client";
+
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
+// Removed unused R3F/Three imports
+import { chatToBackend, fetchObjectProfile } from "../lib/api";
+import type { KPIState } from "../lib/api";
+import { analyzeFull } from "../lib/api/analyzeApi";
+// Removed unused SceneRenderer import
+import { HUDShell } from "../components/HUDShell";
+import { SceneCanvas } from "../components/SceneCanvas";
+import type { HUDTabKey } from "../components/HUDShell";
+import { diffSnapshots } from "../lib/decision/decisionDiff";
+import type { DecisionSnapshot } from "../lib/decision/decisionTypes";
+import { useSetViewMode } from "../components/SceneContext";
+import { clamp, parseSizeCommand, parseSelectedSizeCommand } from "../lib/sizeCommands";
+import {
+  useOverrides,
+  useSetOverride,
+  useClearAllOverrides,
+  usePruneOverridesTo,
+  useSelectedId,
+} from "../components/SceneContext";
+import { getRecentEvents } from "../lib/api/events";
+import { delay } from "../lib/delay";
+import type { SceneJson, SceneLoop, LoopType } from "../lib/sceneTypes";
+import {
+  appendSnapshot,
+  clearSnapshots,
+  loadSnapshots,
+} from "../lib/decision/decisionStore";
+import { normalizeLoops } from "../lib/loops/loopContract";
+import { resolveLoopPlaceholders } from "../lib/loops/loopResolver";
+import { makeLoopFromTemplate } from "../lib/loops/loopTemplates";
+import { useHUDPanels } from "../components/HUDPanels";
+import { setCompanyId } from "../lib/apiBase";
+import { useCompanyConfig } from "../hooks/useCompanyConfig";
+import { useLayoutMode } from "../hooks/useLayoutMode";
+import { PageLayout } from "../components/layout/PageLayout";
+import { useActiveLoopId, useFocusMode, usePinnedId } from "../lib/focus/focusStore";
+import { applyDecisionActions } from "../lib/decision/applyDecisionActions";
+import { routeChatInput } from "../lib/decision/decisionRouter";
+const BACKEND_BASE =
+  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_BACKEND_URL) || "http://127.0.0.1:8000";
+
+type Msg = { id?: string; role: "user" | "assistant"; text: string };
+type ScenePrefs = {
+  theme: "day" | "night" | "stars";
+  starDensity: number;
+  showGrid: boolean;
+  showAxes: boolean;
+  orbitMode: "auto" | "manual";
+  globalScale: number;
+  shadowsEnabled?: boolean;
+  overridePolicy?: "keep" | "match" | "clear";
+};
+type PersistedProject = {
+  version: "1";
+  savedAt: string;
+  sessionId: string | null;
+  activeMode: string;
+  sceneJson: SceneJson | null;
+  messages: Msg[];
+};
+
+type BackendChatResponse = {
+  ok?: boolean;
+  reply?: string;
+  active_mode?: string;
+  source?: string | null;
+  scene_json?: unknown;
+  actions?: unknown;
+  analysis_summary?: string | null;
+  error?: { message?: string } | null;
+  [key: string]: any;
+};
+
+let msgIdSeq = 0;
+const makeMsg = (role: "user" | "assistant", text: string): Msg => ({
+  id: `m-${Date.now()}-${msgIdSeq++}`,
+  role,
+  text,
+});
+
+const normalizeMessages = (input?: Msg[] | null): Msg[] => {
+  if (!Array.isArray(input)) return [];
+  return input.map((m) => {
+    if (!m) return m;
+    return m.id ? m : { ...m, id: `m-${Date.now()}-${msgIdSeq++}` };
+  });
+};
+
+const isSameMessage = (a?: Msg | null, b?: Msg | null) => {
+  if (!a || !b) return false;
+  if (a.id && b.id) return a.id === b.id;
+  return a.role === b.role && a.text === b.text;
+};
+
+const appendMessages = (base: Msg[], next: Msg[]) => {
+  const out = [...base];
+  for (const msg of next) {
+    if (!msg) continue;
+    const last = out[out.length - 1];
+    if (isSameMessage(last, msg)) continue;
+    if (last && last.role === "assistant" && msg.role === "assistant") {
+      if (msg.text && last.text && msg.text.startsWith(last.text)) {
+        out[out.length - 1] = { ...last, text: msg.text };
+        continue;
+      }
+      if (msg.text && last.text && last.text.startsWith(msg.text)) {
+        continue;
+      }
+    }
+    out.push(msg);
+  }
+  return out;
+};
+
+const normalizeSceneJson = (input: any): SceneJson => {
+  const meta = (input && input.meta) || { version: "dev", generated_at: new Date().toISOString() };
+  const domain_model = (input && input.domain_model) || { mode: "business" };
+  const state_vector = (input && input.state_vector) || {};
+  const scene = (input && input.scene) || {};
+  const objects = Array.isArray(scene.objects) ? scene.objects : [];
+  // Keep intensity single-sourced from state_vector
+  const intensity = typeof state_vector.intensity === "number" ? state_vector.intensity : undefined;
+  const syncedScene =
+    intensity !== undefined
+      ? {
+          ...scene,
+          scene: { ...(scene.scene || {}), intensity },
+        }
+      : scene;
+  return {
+    meta,
+    domain_model,
+    state_vector,
+    scene: { ...syncedScene, objects },
+  };
+};
+
+const PROJECT_KEY = "statestudio.project.v1";
+const HISTORY_KEY = "statestudio.history.v1";
+const SESSION_KEY = "statestudio.sessionId";
+const PREFS_KEY = "statestudio.prefs.v1";
+const defaultPrefs: ScenePrefs = {
+  theme: "night",
+  starDensity: 0.6,
+  showGrid: true,
+  showAxes: true,
+  orbitMode: "auto",
+  globalScale: 1,
+  shadowsEnabled: true,
+  overridePolicy: "match",
+};
+
+function saveProject(p: PersistedProject) {
+  try {
+    window.localStorage.setItem(PROJECT_KEY, JSON.stringify(p));
+  } catch {
+    // ignore
+  }
+}
+
+function loadProject(): PersistedProject | null {
+  try {
+    const raw = window.localStorage.getItem(PROJECT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.version === "1") return parsed as PersistedProject;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function loadHistory(): PersistedProject[] {
+  try {
+    const raw = window.localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.filter((p) => p?.version === "1");
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+function pushHistory(snapshot: PersistedProject) {
+  try {
+    const history = loadHistory();
+    history.push(snapshot);
+    const trimmed = history.slice(-10);
+    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
+  } catch {
+    // ignore
+  }
+}
+
+export default function HomeScreen() {
+  const [activeCompanyId, setActiveCompanyIdState] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return (
+        window.localStorage.getItem("nexora.company_id") ||
+        process.env.NEXT_PUBLIC_COMPANY_ID ||
+        "default"
+      );
+    }
+    return process.env.NEXT_PUBLIC_COMPANY_ID || "default";
+  });
+  const { config, loading: configLoading, error: configError, refresh } = useCompanyConfig(activeCompanyId);
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const messagesRef = useRef<Msg[]>([]);
+  const isSendingRef = useRef(false);
+  const [sceneJson, setSceneJson] = useState<SceneJson | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [activeMode, setActiveMode] = useState<string>("business");
+  const [activeTemplateId, setActiveTemplateId] = useState<string>("quality_protection");
+  const [sourceLabel, setSourceLabel] = useState<string | null>(null);
+  const [lastActions, setLastActions] = useState<any[]>([]);
+  const [replaying, setReplaying] = useState(false);
+  const [replayError, setReplayError] = useState<string | null>(null);
+  const [healthInfo, setHealthInfo] = useState<string | null>(null);
+  const [lastAnalysisSummary, setLastAnalysisSummary] = useState<string | null>(null);
+  const [sceneWarn, setSceneWarn] = useState<string | null>(null);
+  const [noSceneUpdate, setNoSceneUpdate] = useState(false);
+  const [focusPinned, setFocusPinned] = useState(false);
+  const [focusMode, setFocusMode] = useState<"all" | "selected">("all");
+  const focusModeStore = useFocusMode();
+  const pinnedId = usePinnedId();
+  const activeLoopIdStore = useActiveLoopId();
+  const [showAxes, setShowAxes] = useState(true);
+  const [showGrid, setShowGrid] = useState(false);
+  const [showCameraHelper, setShowCameraHelper] = useState(false);
+  const [objectProfiles, setObjectProfiles] = useState<
+    Record<
+      string,
+      {
+        id: string;
+        label: string;
+        summary: string;
+        tags: string[];
+        one_liner?: string;
+        synonyms?: string[];
+        domain_hints?: Record<string, string[]>;
+        ux?: { shape?: string; base_color?: string };
+      }
+    >
+  >({});
+  const [objectUxById, setObjectUxById] = useState<Record<string, { opacity?: number; scale?: number }>>({});
+  const [selectedObjectInfo, setSelectedObjectInfo] = useState<{
+    id: string;
+    label: string;
+    type?: string;
+    tags?: string[];
+    color?: any;
+    scale?: any;
+    override?: any;
+    base_color?: string;
+    shape?: string;
+    opacity?: number;
+    summary?: string;
+    one_liner?: string;
+  } | null>(null);
+  const [selectionLocked, setSelectionLocked] = useState(false);
+  const [selectedObjectIdState, setSelectedObjectIdState] = useState<string | null>(null);
+  const [isDraggingHUD, setIsDraggingHUD] = useState(false);
+  const [prefs, setPrefs] = useState<ScenePrefs>(defaultPrefs);
+  const [isOrbiting, setIsOrbiting] = useState(false);
+  const [cameraLockedByUser, setCameraLockedByUser] = useState(false);
+  const [episodeId, setEpisodeId] = useState<string | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [simRunning, setSimRunning] = useState(false);
+  const [simSpeed, setSimSpeed] = useState(1);
+  const [simLastError, setSimLastError] = useState<string | null>(null);
+  const [kpi, setKpi] = useState<KPIState | null>(null);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+  const [hudThemeState, setHudThemeState] = useState<any>(null);
+  const projectId = "default";
+  // =====================
+  // LOOPS ENGINE (7.1)
+  // Source of truth: loops + activeLoopId + selectedLoopId
+  // Derived: effectiveActiveLoopId, visibleLoops
+  // =====================
+  const [loops, setLoops] = useState<SceneLoop[]>([]);
+  const [showLoops, setShowLoops] = useState(true);
+  const [showLoopLabels, setShowLoopLabels] = useState(false);
+  const [activeLoopId, setActiveLoopId] = useState<string | null>(null);
+  const [selectedLoopId, setSelectedLoopId] = useState<string | null>(null);
+  const [loopSuggestions, setLoopSuggestions] = useState<string[]>([]);
+  const isDev = process.env.NODE_ENV !== "production";
+  const [snapshots, setSnapshots] = useState<DecisionSnapshot[]>([]);
+  const [compareAId, setCompareAId] = useState<string | null>(null);
+  const [compareBId, setCompareBId] = useState<string | null>(null);
+  const [diffState, setDiffState] = useState<ReturnType<typeof diffSnapshots> | null>(null);
+  const [hudTab, setHudTab] = useState<HUDTabKey>("chat");
+  // --- panelContent block is moved below ---
+  const handleApplySnapshot = useCallback(
+    (snapshotKey: string) => {
+      const key = String(snapshotKey || "").trim();
+      if (!key) return;
+
+      const parseKey = (k: string) => {
+        const parts = k.split(":");
+        if (parts.length === 2) {
+          const id = parts[0];
+          const ts = Number(parts[1]);
+          return { id, ts: Number.isFinite(ts) ? ts : null };
+        }
+        return { id: k, ts: null as number | null };
+      };
+
+      const { id, ts } = parseKey(key);
+
+      const pickFromList = (list: DecisionSnapshot[]) => {
+        const candidates = list.filter((s) => {
+          if (!s) return false;
+          if (ts !== null) return s.id === id && s.timestamp === ts;
+          return s.id === id;
+        });
+        if (candidates.length === 0) return null;
+        // If multiple snapshots share an id, pick the newest
+        return candidates.reduce((best, cur) => (cur.timestamp > best.timestamp ? cur : best));
+      };
+
+      // 1) Try in-memory first (fast)
+      let snap: DecisionSnapshot | null = pickFromList(Array.isArray(snapshots) ? snapshots : []);
+
+      // 2) If not found, try persisted snapshots
+      if (!snap) {
+        const persisted = loadSnapshots(projectId);
+        snap = pickFromList(persisted);
+        // Keep in-memory state in sync if we found one
+        if (snap) {
+          setSnapshots(persisted);
+        }
+      }
+
+      if (!snap) {
+        if (process.env.NODE_ENV !== "production") {
+          // eslint-disable-next-line no-console
+          console.warn("[decision] snapshot not found", { snapshotKey: key, id, ts });
+        }
+        return;
+      }
+
+      // Restore decision state
+      setLoops(Array.isArray(snap.loops) ? snap.loops : []);
+      setActiveLoopId(snap.activeLoopId ?? null);
+      setSelectedLoopId(snap.activeLoopId ?? null);
+
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.debug("[decision] applied snapshot", snap.id, snap.timestamp);
+      }
+    },
+    [snapshots, projectId]
+  );
+
+  useEffect(() => {
+    if (snapshots.length === 0) return;
+    if (!compareAId) {
+      const aDefault = snapshots[Math.max(0, snapshots.length - 2)] ?? snapshots[0];
+      setCompareAId(aDefault ? `${aDefault.id}:${aDefault.timestamp}` : null);
+    }
+    if (!compareBId && snapshots.length > 1) {
+      const bDefault = snapshots[snapshots.length - 1];
+      setCompareBId(bDefault ? `${bDefault.id}:${bDefault.timestamp}` : null);
+    }
+  }, [snapshots, compareAId, compareBId]);
+
+  useEffect(() => {
+    const parseKey = (k: string) => {
+      const parts = k.split(":");
+      if (parts.length === 2) {
+        const id = parts[0];
+        const ts = Number(parts[1]);
+        return { id, ts: Number.isFinite(ts) ? ts : null };
+      }
+      return { id: k, ts: null as number | null };
+    };
+
+    const snapA = compareAId
+      ? (() => {
+          const { id, ts } = parseKey(compareAId);
+          return snapshots.find((s) => (ts !== null ? s.id === id && s.timestamp === ts : s.id === id)) ?? null;
+        })()
+      : null;
+
+    const snapB = compareBId
+      ? (() => {
+          const { id, ts } = parseKey(compareBId);
+          return snapshots.find((s) => (ts !== null ? s.id === id && s.timestamp === ts : s.id === id)) ?? null;
+        })()
+      : null;
+
+    if (snapA && snapB) {
+      setDiffState(diffSnapshots(snapA, snapB));
+    } else {
+      setDiffState(null);
+    }
+  }, [snapshots, compareAId, compareBId]);
+  const lastSnapshotRef = useRef<string | null>(null);
+  const effectiveActiveLoopId = selectedLoopId ?? activeLoopId;
+  const selectLoop = useCallback((id: string | null) => {
+    setSelectedLoopId(id);
+    if (id) setActiveLoopId(id);
+  }, []);
+  const lastAutoAssistantId = useRef<string | null>(null);
+  const selectedObjectInfoRef = useRef<typeof selectedObjectInfo>(null);
+  const inflightProfileRef = useRef<Record<string, Promise<any> | null>>({});
+  const selectedSetterRef = useRef<(id: string | null) => void>(() => {});
+  const selectedIdRef = useRef<string | null>(null);
+  const overridesRef = useRef<Record<string, any>>({});
+  const setOverrideRef = useRef<(id: string, patch: any) => void>(() => {});
+  const tempHighlightRef = useRef<Record<string, { prevScale?: number }>>({});
+  const selectFlashTimersRef = useRef<Record<string, number>>({});
+  const clearAllOverridesRef = useRef<() => void>(() => {});
+  const pruneOverridesRef = useRef<(ids: string[]) => void>(() => {});
+  const setViewMode = useSetViewMode();
+  const instanceLabelMap = useMemo(() => {
+    const list = Array.isArray(config?.instances) ? config?.instances : [];
+    const map: Record<string, string> = {};
+    list.forEach((inst: any) => {
+      if (inst && typeof inst.id === "string" && typeof inst.label === "string") {
+        map[inst.id] = inst.label;
+      }
+    });
+    return map;
+  }, [config]);
+  const typeLabelMap = useMemo(() => {
+    const types = config?.types && typeof config.types === "object" ? config.types : {};
+    const map: Record<string, string> = {};
+    Object.entries(types).forEach(([key, entry]) => {
+      if (entry && typeof (entry as any).label === "string") {
+        map[key] = (entry as any).label;
+      }
+    });
+    return map;
+  }, [config]);
+  const resolveObjectLabel = useCallback(
+    (id: string) => instanceLabelMap[id] ?? id,
+    [instanceLabelMap]
+  );
+  const resolveTypeLabel = useCallback(
+    (id: string) => typeLabelMap[id] ?? id,
+    [typeLabelMap]
+  );
+  const handleCompanyChange = useCallback((next: string) => {
+    setCompanyId(next);
+    setActiveCompanyIdState(next);
+  }, []);
+  const toggleSelectionLock = useCallback(() => {
+    setSelectionLocked((v) => !v);
+  }, []);
+  const handleObjectHoverStart = useCallback((id: string) => {
+    if (!id) return;
+    if (tempHighlightRef.current[id]) return;
+    const prevScale = overridesRef.current[id]?.scale;
+    tempHighlightRef.current[id] = { prevScale };
+    const baseScale = typeof prevScale === "number" ? prevScale : 1;
+    const nextScale = Math.min(2, baseScale * 1.08);
+    setOverrideRef.current?.(id, { scale: nextScale });
+  }, []);
+  const handleObjectHoverEnd = useCallback((id: string) => {
+    if (!id) return;
+    const prev = tempHighlightRef.current[id];
+    if (!prev) return;
+    const restoreScale = typeof prev.prevScale === "number" ? prev.prevScale : 1;
+    setOverrideRef.current?.(id, { scale: restoreScale });
+    delete tempHighlightRef.current[id];
+  }, []);
+  const hudTheme = config?.theme?.hud ?? null;
+  const preset = config?.scene_preset ?? null;
+  useEffect(() => {
+    setHudThemeState(hudTheme);
+  }, [
+    hudTheme?.bg,
+    hudTheme?.border,
+    hudTheme?.text,
+    hudTheme?.accent,
+    hudTheme?.panelBg,
+    hudTheme?.mutedText,
+  ]);
+  const applyActions = useCallback(
+    (actions: any[] | undefined | null) => {
+      const list = Array.isArray(actions) ? actions : [];
+      setLastActions(list);
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.debug("[actions]", list.length);
+      }
+      if (!list.length) return;
+
+      const applyObjectPatch = (id: string, patch: Record<string, any>) => {
+        if (!id || typeof id !== "string") return;
+        const safePatch: Record<string, any> = {};
+        if (patch.color && typeof patch.color === "string") safePatch.color = patch.color;
+        if (typeof patch.visible === "boolean") safePatch.visible = patch.visible;
+        if (Array.isArray(patch.position) && patch.position.length === 3) {
+          const nums = patch.position.map((n: any) => Number(n));
+          if (nums.every((n) => Number.isFinite(n))) safePatch.position = [nums[0], nums[1], nums[2]];
+        }
+        if (Number.isFinite(patch.scale)) safePatch.scale = clamp(Number(patch.scale), 0.2, 2.0);
+        if (Number.isFinite(patch.intensity)) {
+          const intensity = clamp(Number(patch.intensity), 0, 1);
+          safePatch.scale = 0.5 + intensity;
+        }
+        if (Object.keys(safePatch).length > 0) {
+          setOverrideRef.current?.(id, safePatch);
+        }
+      };
+
+      list.forEach((action) => {
+        try {
+          if (!action || typeof action !== "object") return;
+          // Replay wrapper (backend stores: { object: "obj_123", type:"applyObject", value: {...} })
+          if (action.type === "applyObject") {
+            const objUpdate = action.value ?? action.object ?? null;
+            const id = action.object ?? objUpdate?.id ?? objUpdate?.target_id ?? objUpdate?.targetId;
+            if (id) applyObjectPatch(String(id), objUpdate ?? {});
+            return;
+          }
+          // Backend scene_actions object updates
+          if (
+            action.id &&
+            (action.color || action.position || action.visible !== undefined || action.scale !== undefined || action.intensity !== undefined)
+          ) {
+            applyObjectPatch(String(action.id), action);
+            return;
+          }
+          // Legacy
+          const target = action?.object ?? action?.target_id ?? action?.targetId;
+          if (!target) return;
+          const type = (action?.type || action?.verb || "").toLowerCase();
+          if (type === "setcolor" && action.color) {
+            applyObjectPatch(String(target), { color: action.color });
+          } else if (type === "hide") {
+            applyObjectPatch(String(target), { visible: false });
+          } else if (type === "reveal") {
+            applyObjectPatch(String(target), { visible: true });
+          } else if (type === "setposition" && Array.isArray(action.position) && action.position.length === 3) {
+            applyObjectPatch(String(target), { position: action.position });
+          } else if (type === "setintensity") {
+            applyObjectPatch(String(target), { intensity: action.intensity });
+          } else if (type === "pulse") {
+            const intensity = clamp(Number(action.intensity ?? 0.4), 0, 1);
+            applyObjectPatch(String(target), { scale: 1 + intensity * 0.4 });
+          } else if (type === "highlight") {
+            const color = typeof action.color === "string" ? action.color : "#ffd166";
+            applyObjectPatch(String(target), { color, scale: 1.1 });
+          }
+        } catch {
+          // skip malformed action
+        }
+      });
+    },
+    []
+  );
+  const camPos =
+    sceneJson?.scene?.camera?.pos ?? ([0, 3, 8] as [number, number, number]);
+
+  // =====================
+  // Nexora MVP Graph (backend mapping → DecisionGraph3D)
+  // Source: scene_json.scene.nexora_mvp (added by backend/main.py)
+  // We keep this strictly additive and non-breaking.
+  // =====================
+  const nexoraMvp = (sceneJson as any)?.scene?.nexora_mvp ?? null;
+
+  // Map Nexora MVP objects to the existing SceneCanvas object ids.
+  // Goal: make reactions happen on your real cubes/objects (professional), not a separate overlay.
+  const mapNexoraIdToSceneId = useCallback((id: string) => {
+    const key = String(id || "").trim();
+    if (!key) return null;
+    // Backend mapping emits: obj_time, obj_inventory, obj_quality
+    // Your existing business baseline objects typically include: obj_inventory, obj_delivery, obj_risk_zone
+    if (key === "obj_inventory") return "obj_inventory";
+    if (key === "obj_time") return "obj_delivery"; // time pressure visualized on delivery object
+    if (key === "obj_quality") return "obj_risk_zone"; // quality risk visualized on risk zone (MVP)
+    return key;
+  }, []);
+
+  const nexoraGraphObjects = useMemo(() => {
+    const list: any[] = Array.isArray(nexoraMvp?.objects) ? nexoraMvp.objects : [];
+    return list
+      .map((o: any) => {
+        const id = String(o?.id ?? "").trim();
+        if (!id) return null;
+        const label = typeof o?.label === "string" && o.label.trim().length ? o.label : id;
+        // Backend mapping uses `pos`; accept `position` too for safety.
+        const p = Array.isArray(o?.pos) ? o.pos : Array.isArray(o?.position) ? o.position : [0, 0, 0];
+        const pos: [number, number, number] = [Number(p[0] ?? 0), Number(p[1] ?? 0), Number(p[2] ?? 0)];
+        const intensity = clamp(Number(o?.intensity ?? 0), 0, 1);
+        const state = (o?.state === "stable" || o?.state === "warning" || o?.state === "critical") ? o.state : "stable";
+        const opacity = Number.isFinite(o?.opacity) ? clamp(Number(o.opacity), 0, 1) : undefined;
+        const visible = typeof o?.visible === "boolean" ? o.visible : true;
+        return { id, label, pos, intensity, state, opacity, visible };
+      })
+      .filter(Boolean) as any[];
+  }, [nexoraMvp]);
+
+  const nexoraGraphLoops = useMemo(() => {
+    const list: any[] = Array.isArray(nexoraMvp?.loops) ? nexoraMvp.loops : [];
+    return list
+      .map((l: any) => {
+        const id = String(l?.id ?? "").trim();
+        if (!id) return null;
+        const label = typeof l?.label === "string" ? l.label : undefined;
+        const path = Array.isArray(l?.path) ? l.path.map((x: any) => String(x)) : [];
+        if (path.length < 2) return null;
+        const intensity = clamp(Number(l?.intensity ?? 0), 0, 1);
+        const pulseSpeed = Number.isFinite(l?.pulseSpeed) ? Number(l.pulseSpeed) : undefined;
+        const active = typeof l?.active === "boolean" ? l.active : true;
+        return { id, label, path, intensity, pulseSpeed, active };
+      })
+      .filter(Boolean) as any[];
+  }, [nexoraMvp]);
+  // Apply Nexora MVP reactions onto the existing SceneCanvas objects (professional MVP behavior).
+  useEffect(() => {
+    if (!sceneJson) return;
+    if (!setOverrideRef.current) return;
+
+    const list: any[] = Array.isArray((nexoraMvp as any)?.objects) ? (nexoraMvp as any).objects : [];
+    if (!list.length) return;
+
+    for (const o of list) {
+      const rawId = String(o?.id ?? "").trim();
+      const sceneId = mapNexoraIdToSceneId(rawId);
+      if (!sceneId) continue;
+
+      const intensity = clamp(Number(o?.intensity ?? 0), 0, 1);
+      const state = (o?.state === "stable" || o?.state === "warning" || o?.state === "critical") ? o.state : "stable";
+
+      // Professional: use your existing object style, only adjust scale/opacity (no forced color).
+      // Scale mapping: 1.0 .. 1.45
+      const scale = 1.0 + intensity * 0.45;
+
+      // Opacity hint (only if your materials support it)
+      const opacity = state === "critical" ? 1.0 : state === "warning" ? 0.92 : 0.85;
+
+      setOverrideRef.current(sceneId, { scale, opacity });
+    }
+  }, [sceneJson, nexoraMvp, mapNexoraIdToSceneId]);
+
+  const starCount = Math.round(800 + (6000 - 800) * Math.max(0, Math.min(1, prefs.starDensity)));
+  const backgroundMode = prefs.theme;
+  const cameraMode = prefs.orbitMode === "manual" ? "fixed" : "orbit";
+  const starCountControl = Math.round(Math.max(0, Math.min(2000, prefs.starDensity * 2000)));
+  const setBackgroundMode = useCallback((mode: "day" | "night" | "stars") => {
+    setPrefs((prev) => ({ ...prev, theme: mode }));
+  }, [setPrefs]);
+  const setCameraMode = useCallback((mode: "orbit" | "fixed") => {
+    const next = mode === "fixed" ? "manual" : "auto";
+    setPrefs((prev) => ({ ...prev, orbitMode: next }));
+  }, [setPrefs]);
+  const setStarCount = useCallback((value: number) => {
+    const next = clamp(Number(value) / 2000, 0, 1);
+    setPrefs((prev) => ({ ...prev, starDensity: next }));
+  }, [setPrefs]);
+  const lastCompanyRef = useRef<string | null>(null);
+  useEffect(() => {
+    const cid = config?.company_id || null;
+    if (!cid) return;
+    if (lastCompanyRef.current === cid) return;
+    lastCompanyRef.current = cid;
+    if (!preset) return;
+    if (preset.backgroundMode) setBackgroundMode(preset.backgroundMode);
+    if (typeof preset.starCount === "number") setStarCount(preset.starCount);
+    if (preset.cameraMode) setCameraMode(preset.cameraMode);
+    if (typeof preset.showAxes === "boolean") setShowAxes(preset.showAxes);
+    if (typeof preset.showGrid === "boolean") setShowGrid(preset.showGrid);
+    if (typeof preset.showCameraHelper === "boolean") setShowCameraHelper(preset.showCameraHelper);
+  }, [
+    config?.company_id,
+    preset?.backgroundMode,
+    preset?.starCount,
+    preset?.cameraMode,
+    preset?.showAxes,
+    preset?.showGrid,
+    preset?.showCameraHelper,
+  ]);
+  const getUxForObject = useCallback(
+    (id: string) => {
+      const profileUx = objectProfiles[id]?.ux;
+      const localUx = objectUxById[id];
+      if (!profileUx && !localUx) return null;
+      return { ...(profileUx ?? {}), ...(localUx ?? {}) };
+    },
+    [objectProfiles, objectUxById]
+  );
+
+  const updateObjectUx = useCallback(
+    (id: string, patch: { opacity?: number; scale?: number }) => {
+      if (!id) return;
+      setObjectUxById((prev) => ({
+        ...prev,
+        [id]: { ...(prev[id] ?? {}), ...patch },
+      }));
+      setSelectedObjectInfo((prev) => {
+        if (!prev || prev.id !== id) return prev;
+        return { ...prev, ...patch };
+      });
+    },
+    []
+  );
+
+  const simulateStep = useCallback(async () => {
+    if (loading) return;
+    // Focus requirement
+    if (focusMode === "selected") {
+      const focusCandidate = focusedId;
+      if (!focusCandidate) {
+        setMessages((m) => appendMessages(m, [makeMsg("assistant", "No focused object. Click an object first.")]));
+        setLastActions([]);
+        setLoading(false);
+        return;
+      }
+    }
+
+    setLoading(true);
+    setSimLastError(null);
+    try {
+      let userId: string | null = null;
+      try {
+        userId = window.localStorage.getItem(SESSION_KEY);
+      } catch {
+        userId = null;
+      }
+      if (!userId && process.env.NODE_ENV !== "production") {
+        userId = `dev-${Math.random().toString(36).slice(2, 10)}`;
+        try {
+          window.localStorage.setItem(SESSION_KEY, userId);
+        } catch {
+          // ignore
+        }
+      }
+      let allowed_objects: string[] | undefined = undefined;
+      if (focusMode === "selected" && focusedId) {
+        allowed_objects = [focusedId];
+      }
+      const payload: any = { text: "__tick__", user_id: userId, mode: activeMode };
+      if (allowed_objects) payload.allowed_objects = allowed_objects;
+      const raw = await chatToBackend(payload);
+      const data = raw as BackendChatResponse;
+      if (!data || (data as any).ok === false || (data as any).error) {
+        setSimLastError(((data as any)?.error?.message as string | undefined) ?? "Simulation tick failed");
+        setLoading(false);
+        return;
+      }
+
+      const nextScene = data.scene_json ? normalizeSceneJson(data.scene_json) : sceneJson;
+      const nextKpi = (data as any)?.scene_json?.scene?.kpi ?? null;
+      const baseLoops = normalizeLoops((data as any)?.scene_json?.scene?.loops);
+      const objs = Array.isArray(nextScene?.scene?.objects) ? nextScene.scene.objects : [];
+      const nextLoops = resolveLoopPlaceholders(baseLoops, objs);
+      const nextActiveLoop = (data as any)?.scene_json?.scene?.active_loop ?? null;
+      const nextLoopSuggestions = Array.isArray((data as any)?.scene_json?.scene?.loops_suggestions)
+        ? ((data as any)?.scene_json?.scene?.loops_suggestions as string[])
+        : [];
+      setKpi(nextKpi);
+      setLoops(nextLoops);
+      setActiveLoopId(nextActiveLoop ?? null);
+      setLoopSuggestions(nextLoopSuggestions);
+      if (data.actions) {
+        const list = Array.isArray(data.actions) ? data.actions : [];
+        applyActions(list as any[]);
+        setLastActions(list as any[]);
+      } else {
+        setLastActions([]);
+      }
+      if (nextScene) {
+        setSceneJson(nextScene);
+        setNoSceneUpdate(false);
+      } else {
+        setNoSceneUpdate(true);
+      }
+      if (typeof data.reply === "string" && data.reply.trim().length > 0) {
+        setMessages((m) => appendMessages(m, [makeMsg("assistant", data.reply ?? "")]));
+      }
+      setSourceLabel((data as any)?.source ?? null);
+      setLastAnalysisSummary((data as any)?.analysis_summary ?? null);
+    } catch (err: any) {
+      setSimLastError(err?.message ?? "Simulation tick failed");
+    } finally {
+      setLoading(false);
+    }
+  }, [activeMode, applyActions, focusMode, focusedId, loading, sceneJson]);
+
+  useEffect(() => {
+    if (!simRunning) return;
+    const intervalMs = Math.max(200, 1200 / Math.max(0.1, simSpeed));
+    const id = window.setInterval(() => {
+      simulateStep();
+    }, intervalMs);
+    return () => window.clearInterval(id);
+  }, [simRunning, simSpeed, simulateStep]);
+
+  const handleAddInventoryInstance = useCallback(() => {
+    const createdId = `obj_inventory_${Date.now()}`;
+    setSceneJson((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, scene: { ...prev.scene } };
+      const objs = Array.isArray(next.scene.objects) ? [...next.scene.objects] : [];
+      const idx = objs.filter((o: any) => (o.type === "type_inventory" || o.id?.startsWith("obj_inventory"))).length + 1;
+      const ux = getUxForObject(createdId) ?? { shape: "cube", base_color: "#3498db" };
+      objs.push({
+        id: createdId,
+        type: "box",
+        color: ux.base_color,
+        scale: 1,
+        emphasis: 0,
+        position: [objs.length * 1.6, 0, 0],
+      });
+      next.scene.objects = objs;
+      return next;
+    });
+    selectedSetterRef.current(createdId);
+    setFocusedId((prev) => prev ?? createdId);
+    setFocusMode("selected");
+  }, [getUxForObject, setFocusedId, setFocusMode]);
+
+  const handleAddLoopFromTemplate = useCallback(
+    (type: LoopType) => {
+      const loop = makeLoopFromTemplate(type);
+      setLoops((prev) => {
+        const next = Array.isArray(prev) ? [...prev] : [];
+        next.push(loop);
+        return next;
+      });
+      selectLoop(loop.id);
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.debug("[templates] added loop", loop.type, loop.id);
+      }
+    },
+    [selectLoop]
+  );
+  const updateSelectedObjectInfo = useCallback(
+    (id: string | null) => {
+      if (!id) {
+        setSelectedObjectInfo(null);
+        return;
+      }
+      const objs: any[] = Array.isArray(sceneJson?.scene?.objects) ? (sceneJson as any).scene.objects : [];
+      const found = objs.find((o: any) => {
+        const oid = o?.id ?? o?.name;
+        return oid === id;
+      });
+      const label =
+        (found?.name as string) ??
+        (found?.label as string) ??
+        resolveObjectLabel(id) ??
+        id;
+      const tags = Array.isArray(found?.tags)
+        ? (found.tags as any[]).filter((t) => typeof t === "string")
+        : undefined;
+      const ux = getUxForObject(id) ?? undefined;
+      setSelectedObjectInfo({
+        id,
+        label,
+        type: found?.type,
+        tags,
+        color: found?.color,
+        scale: typeof ux?.scale === "number" ? ux?.scale : found?.scale,
+        override: overridesRef.current[id],
+        base_color: ux?.base_color,
+        shape: ux?.shape,
+        opacity: ux?.opacity,
+      });
+    },
+    [getUxForObject, sceneJson]
+  );
+  const toggleFocusMode = useCallback(() => {
+    setFocusMode((m) => {
+      const next = m === "all" ? "selected" : "all";
+      if (next === "all" && !focusPinned) {
+        setFocusedId(null);
+      }
+      return next;
+    });
+  }, [focusPinned, setFocusedId]);
+
+  const pickSceneLabel = useCallback(
+    (id: string) => {
+      const objs: any[] = Array.isArray(sceneJson?.scene?.objects) ? (sceneJson as any).scene.objects : [];
+      const found = objs.find((o) => (o?.id ?? o?.name) === id);
+      return (found?.label as string) ?? (found?.name as string) ?? id;
+    },
+    [sceneJson?.scene?.objects]
+  );
+
+  const postAssistantHint = useCallback(
+    (id: string, info?: { label?: string; summary?: string; one_liner?: string }) => {
+      if (lastAutoAssistantId.current === id) return;
+      lastAutoAssistantId.current = id;
+      const label = info?.label ?? pickSceneLabel(id);
+      const summary = info?.summary ?? "";
+      const oneLiner = info?.one_liner ?? "";
+      const line =
+        summary && summary.trim().length > 0
+          ? `${label} — ${summary}`
+          : oneLiner && oneLiner.trim().length > 0
+          ? `${label} — ${oneLiner}`
+          : `Selected: ${label}.`;
+      setMessages((m) => appendMessages(m, [makeMsg("assistant", `${line} What would you like to adjust?`)]));
+    },
+    [pickSceneLabel]
+  );
+
+  const flashSelectHighlight = useCallback((id: string) => {
+    if (!id || !setOverrideRef.current) return;
+    const prev = overridesRef.current[id] ?? {};
+    const prevScale = typeof prev.scale === "number" ? prev.scale : undefined;
+    const prevColor = typeof prev.color === "string" ? prev.color : undefined;
+    const nextScale = Math.min(2, (prevScale ?? 1) * 1.12);
+    const patch: { scale: number; color?: string } = { scale: nextScale };
+    if (prevColor) patch.color = "#ffd166";
+
+    const existingTimer = selectFlashTimersRef.current[id];
+    if (existingTimer) window.clearTimeout(existingTimer);
+
+    setOverrideRef.current(id, patch);
+    selectFlashTimersRef.current[id] = window.setTimeout(() => {
+      const restore: { scale: number; color?: string } = {
+        scale: typeof prevScale === "number" ? prevScale : 1,
+      };
+      if (prevColor) restore.color = prevColor;
+      setOverrideRef.current?.(id, restore);
+      delete selectFlashTimersRef.current[id];
+    }, 200);
+  }, []);
+
+  const handleSelectedChange = useCallback(
+    (id: string | null) => {
+      // Prevent infinite loops: ignore repeated updates for the same selection.
+      // IMPORTANT: compare against state, not the mutable ref (some callers update the ref before calling us).
+      if (id && selectedObjectIdState === id) {
+        return;
+      }
+      if (selectionLocked && selectedObjectIdState) {
+        if (!id || selectedObjectIdState !== id) return;
+      }
+      if (!id) {
+        setSelectedObjectIdState(null);
+        setSelectedObjectInfo(null);
+        return;
+      }
+
+      // UX: clicking an object enters focus mode automatically.
+      setSelectedObjectIdState(id);
+      flashSelectHighlight(id);
+      setFocusMode((m) => (m === "all" ? "selected" : m));
+      setViewMode("input");
+
+      // Pin = lock focus. When pinned, clicking other objects does NOT change focusedId.
+      setFocusedId((prev) => {
+        if (focusPinned && prev) return prev;
+        return id;
+      });
+      updateSelectedObjectInfo(id);
+
+      const existingProfile = objectProfiles[id];
+      const sceneLabel = pickSceneLabel(id);
+      const prevInfo = selectedObjectInfoRef.current;
+      const label = existingProfile?.label ?? sceneLabel ?? id;
+      const ux = getUxForObject(id) ?? undefined;
+      const baseInfo = {
+        id,
+        label: resolveObjectLabel(id) ?? label,
+        tags: existingProfile?.tags ?? prevInfo?.tags ?? [],
+        summary: existingProfile?.summary ?? prevInfo?.summary ?? "",
+        one_liner: existingProfile?.one_liner ?? prevInfo?.one_liner,
+        type: prevInfo?.type,
+        color: prevInfo?.color,
+        scale: typeof ux?.scale === "number" ? ux?.scale : prevInfo?.scale,
+        override: prevInfo?.override,
+        base_color: ux?.base_color,
+        shape: ux?.shape,
+        opacity: ux?.opacity,
+      };
+
+      if (existingProfile) {
+        setSelectedObjectInfo(baseInfo);
+        postAssistantHint(id, baseInfo);
+        return;
+      }
+
+      if (!inflightProfileRef.current[id]) {
+        inflightProfileRef.current[id] = fetchObjectProfile(id).finally(() => {
+          inflightProfileRef.current[id] = null;
+        });
+      }
+
+      inflightProfileRef.current[id]
+        ?.then((profile: any) => {
+          if (!profile) return;
+          const merged = {
+            ...baseInfo,
+            label: profile.label ?? baseInfo.label,
+            summary: profile.summary ?? baseInfo.summary,
+            tags: Array.isArray(profile.tags) ? profile.tags : baseInfo.tags,
+            one_liner: profile.one_liner ?? baseInfo.one_liner,
+            ux: profile.ux,
+          };
+          setObjectProfiles((prev) => ({
+            ...prev,
+            [id]: {
+              id,
+              label: merged.label ?? id,
+              summary: merged.summary ?? "",
+              tags: Array.isArray(merged.tags) ? (merged.tags as string[]) : [],
+              one_liner: merged.one_liner,
+              ux: merged.ux,
+            },
+          }));
+          setSelectedObjectInfo({
+            ...merged,
+            base_color: merged.ux?.base_color ?? baseInfo.base_color,
+            shape: merged.ux?.shape ?? baseInfo.shape,
+            opacity: baseInfo.opacity,
+            scale: baseInfo.scale,
+          });
+          postAssistantHint(id, merged);
+        })
+        .catch(() => {
+          setSelectedObjectInfo(baseInfo);
+          postAssistantHint(id, baseInfo);
+        });
+    },
+    [
+      focusPinned,
+      flashSelectHighlight,
+      getUxForObject,
+      objectProfiles,
+      pickSceneLabel,
+      postAssistantHint,
+      resolveObjectLabel,
+      selectionLocked,
+      updateSelectedObjectInfo,
+      setFocusMode,
+      setFocusedId,
+      setViewMode,
+      selectedObjectIdState,
+    ]
+  );
+
+  useEffect(() => {
+    const loaded = loadProject();
+    if (loaded) {
+      setMessages(normalizeMessages(loaded.messages));
+      setSceneJson(loaded.sceneJson ? normalizeSceneJson(loaded.sceneJson) : null);
+      setActiveMode(loaded.activeMode ?? "business");
+      if (loaded.sessionId) {
+        try {
+          window.localStorage.setItem(SESSION_KEY, loaded.sessionId);
+        } catch {
+          // ignore
+        }
+      }
+    }
+    try {
+      const raw = window.localStorage.getItem(PREFS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (
+          parsed &&
+          (parsed.theme === "day" || parsed.theme === "night" || parsed.theme === "stars") &&
+          typeof parsed.starDensity === "number" &&
+          typeof parsed.showGrid === "boolean" &&
+          typeof parsed.showAxes === "boolean" &&
+          (parsed.orbitMode === "auto" || parsed.orbitMode === "manual")
+        ) {
+          const globalScale =
+            typeof parsed.globalScale === "number" && Number.isFinite(parsed.globalScale)
+              ? clamp(parsed.globalScale, 0.2, 2)
+              : 1;
+          const overridePolicy =
+            parsed.overridePolicy === "keep" || parsed.overridePolicy === "clear" ? parsed.overridePolicy : "match";
+          const shadowsEnabled = typeof parsed.shadowsEnabled === "boolean" ? parsed.shadowsEnabled : false;
+          setPrefs({ ...(parsed as ScenePrefs), globalScale, overridePolicy, shadowsEnabled });
+        }
+      }
+    } catch {
+      // ignore
+    }
+    // Health check is handled via the HUD ping button; avoid extra imports here.
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    } catch {
+      // ignore
+    }
+  }, [prefs]);
+
+  useEffect(() => {
+    if (prefs.orbitMode === "auto") setCameraLockedByUser(false);
+  }, [prefs.orbitMode]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${BACKEND_BASE}/objects`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        const list: any[] = Array.isArray(data?.objects)
+          ? data.objects
+          : Array.isArray(data)
+          ? data
+          : [];
+        const map: Record<
+          string,
+          {
+            id: string;
+            label: string;
+            summary: string;
+            tags: string[];
+            one_liner?: string;
+            synonyms?: string[];
+            domain_hints?: Record<string, string[]>;
+            ux?: { shape?: string; base_color?: string };
+          }
+        > = {};
+        list.forEach((entry) => {
+          if (!entry || typeof entry !== "object") return;
+          const id = entry.id;
+          if (!id || typeof id !== "string") return;
+          map[id] = {
+            id,
+            label: entry.label ?? id,
+            summary: entry.summary ?? "",
+            tags: Array.isArray(entry.tags) ? entry.tags : [],
+            one_liner: typeof entry.one_liner === "string" ? entry.one_liner : undefined,
+            synonyms: Array.isArray(entry.synonyms) ? entry.synonyms : undefined,
+            domain_hints:
+              typeof entry.domain_hints === "object" && entry.domain_hints
+                ? (entry.domain_hints as Record<string, string[]>)
+                : undefined,
+            ux: typeof entry.ux === "object" && entry.ux ? entry.ux : undefined,
+          };
+        });
+        setObjectProfiles(map);
+      })
+      .catch(() => {
+        // ignore fetch errors; profile fetching per-object will still work
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const id = selectedIdRef.current;
+    if (id) {
+      updateSelectedObjectInfo(id);
+    }
+  }, [sceneJson, updateSelectedObjectInfo]);
+
+  useEffect(() => {
+    const baseLoops = normalizeLoops(sceneJson?.scene?.loops ?? []);
+    const objs = Array.isArray(sceneJson?.scene?.objects) ? sceneJson.scene.objects : [];
+    const resolvedLoops = resolveLoopPlaceholders(baseLoops, objs);
+    if (process.env.NODE_ENV !== "production") {
+      // Dev visibility: how many loops survive placeholder resolution
+      console.debug("[loops] resolved", { before: baseLoops.length, after: resolvedLoops.length });
+    }
+    setLoops(resolvedLoops);
+
+    const nextActive = sceneJson?.scene?.active_loop ?? null;
+    setActiveLoopId(nextActive ?? null);
+
+    const nextSuggestions = sceneJson?.scene?.loops_suggestions;
+    if (Array.isArray(nextSuggestions)) setLoopSuggestions(nextSuggestions);
+  }, [sceneJson]);
+
+  useEffect(() => {
+    if (!Array.isArray(loops) || loops.length === 0) return;
+
+    let signature = "";
+    try {
+      signature = JSON.stringify({ loops, activeLoopId: activeLoopId ?? null });
+    } catch {
+      signature = "";
+    }
+
+    if (signature && signature === lastSnapshotRef.current) return;
+
+    const timer = window.setTimeout(() => {
+      try {
+        const snapshot: DecisionSnapshot = {
+          id: `ds_${Date.now()}`,
+          timestamp: Date.now(),
+          projectId,
+          loops,
+          activeLoopId: activeLoopId ?? null,
+        };
+        const next = appendSnapshot(projectId, snapshot);
+        setSnapshots(next);
+        lastSnapshotRef.current = signature;
+        if (process.env.NODE_ENV !== "production") {
+          console.debug("[decision] saved snapshot", snapshot.id);
+        }
+      } catch {
+        // ignore persistence errors
+      }
+    }, 800);
+
+    return () => window.clearTimeout(timer);
+  }, [loops, activeLoopId, projectId]);
+
+  useEffect(() => {
+    selectedObjectInfoRef.current = selectedObjectInfo;
+  }, [selectedObjectInfo]);
+
+  useEffect(() => {
+    const loaded = loadSnapshots(projectId);
+    setSnapshots(loaded);
+    if (loaded.length) {
+      const last = loaded[loaded.length - 1];
+      try {
+        lastSnapshotRef.current = JSON.stringify({
+          loops: last.loops,
+          activeLoopId: last.activeLoopId ?? null,
+        });
+      } catch {
+        lastSnapshotRef.current = null;
+      }
+    } else {
+      lastSnapshotRef.current = null;
+    }
+  }, [projectId]);
+
+  const sendText = useCallback(async (textRaw: string) => {
+    const text = textRaw.trim();
+    if (!text || loading || isSendingRef.current) return;
+    isSendingRef.current = true;
+
+    // Handle selected-object size commands first (no backend call)
+    try {
+      const hasSelectedKeyword = /\bselected\b/i.test(text);
+      const selectedId = selectedIdRef.current;
+      if (hasSelectedKeyword) {
+        if (!selectedId) {
+          const userMsg = makeMsg("user", text);
+          const assistantMsg = makeMsg("assistant", "⚠️ No object selected. Click an object first.");
+          const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
+          setMessages(nextMessages);
+          setNoSceneUpdate(false);
+          setSourceLabel(null);
+          const sessionId = (() => {
+            try {
+              return window.localStorage.getItem(SESSION_KEY);
+            } catch {
+              return null;
+            }
+          })();
+          const snapshot: PersistedProject = {
+            version: "1",
+            savedAt: new Date().toISOString(),
+            sessionId,
+            activeMode,
+            sceneJson,
+            messages: nextMessages,
+          };
+          saveProject(snapshot);
+          pushHistory(snapshot);
+          setInput("");
+          isSendingRef.current = false;
+          return;
+        }
+
+        const cur = overridesRef.current[selectedId]?.scale ?? 1;
+        const sel = parseSelectedSizeCommand(text, cur);
+        if (sel.handled) {
+          const userMsg = makeMsg("user", text);
+          const assistantMsg = makeMsg("assistant", sel.reply);
+          const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
+          setMessages(nextMessages);
+          // apply override
+          setOverrideRef.current(selectedId, { scale: sel.nextScale });
+          setNoSceneUpdate(false);
+          setSourceLabel(null);
+          const sessionId = (() => {
+            try {
+              return window.localStorage.getItem(SESSION_KEY);
+            } catch {
+              return null;
+            }
+          })();
+          const snapshot: PersistedProject = {
+            version: "1",
+            savedAt: new Date().toISOString(),
+            sessionId,
+            activeMode,
+            sceneJson,
+            messages: nextMessages,
+          };
+          saveProject(snapshot);
+          pushHistory(snapshot);
+          setInput("");
+          isSendingRef.current = false;
+          return;
+        }
+      }
+    } catch (err) {
+      // fall through to normal flow on any error
+    }
+
+    // Global size commands handled next
+    const sizeResult = parseSizeCommand(text, prefs.globalScale);
+    if (sizeResult.handled) {
+      const userMsg = makeMsg("user", text);
+      const assistantMsg = makeMsg("assistant", sizeResult.reply);
+      const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
+      setMessages(nextMessages);
+      setPrefs((prev) => ({ ...prev, globalScale: sizeResult.nextScale }));
+      setNoSceneUpdate(false);
+      setSourceLabel(null);
+      const sessionId = (() => {
+        try {
+          return window.localStorage.getItem(SESSION_KEY);
+        } catch {
+          return null;
+        }
+      })();
+      const snapshot: PersistedProject = {
+        version: "1",
+        savedAt: new Date().toISOString(),
+        sessionId,
+        activeMode,
+        sceneJson,
+        messages: nextMessages,
+      };
+      saveProject(snapshot);
+      pushHistory(snapshot);
+      setInput("");
+      isSendingRef.current = false;
+      return;
+    }
+
+    // Decision router (deterministic, local)
+    const focusedObjectId =
+      focusModeStore === "pinned" ? pinnedId : focusedId ?? null;
+    const routerResult = routeChatInput(text, {
+      focusedObjectId,
+      activeLoopId: activeLoopIdStore ?? null,
+      focusMode: focusModeStore,
+      pinnedLabel: selectedObjectInfo?.label ?? null,
+    });
+    const userMsg = makeMsg("user", text);
+    const assistantMsg = makeMsg("assistant", routerResult.assistantReply);
+    const routedMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
+    setMessages(routedMessages);
+    applyDecisionActions(routerResult.actions, {
+      setOverride: setOverrideRef.current,
+      updateObjectUx,
+    });
+    setInput("");
+    isSendingRef.current = false;
+    return;
+
+    // Default: send to backend
+    const userMsg = makeMsg("user", text);
+    const baseMessages = appendMessages(messagesRef.current, [userMsg]);
+    setMessages(baseMessages);
+    setLoading(true);
+    setNoSceneUpdate(false);
+    setSourceLabel(null);
+    setCameraLockedByUser(false);
+
+    try {
+      // ensure user_id exists (reuse session or create dev-only)
+      let userId: string | null = null;
+      try {
+        userId = window.localStorage.getItem(SESSION_KEY);
+      } catch {
+        userId = null;
+      }
+      if (!userId && process.env.NODE_ENV !== "production") {
+        userId = `dev-${Math.random().toString(36).slice(2, 10)}`;
+        try {
+          window.localStorage.setItem(SESSION_KEY, userId);
+        } catch {
+          // ignore
+        }
+      }
+      // Focus mode behavior: only allow the currently focused object. Never fallback to "all".
+      let allowed_objects: string[] | undefined = undefined;
+      if (focusMode === "selected") {
+        const focusCandidate = focusedId ?? null;
+        if (!focusCandidate) {
+          setMessages((m) => appendMessages(m, [makeMsg("assistant", "No focused object. Click an object first.")]));
+          setLastActions([]);
+          setLoading(false);
+          isSendingRef.current = false;
+          return;
+        }
+        allowed_objects = [focusCandidate];
+      }
+
+      const payload: any = {
+        text,
+        user_id: userId,
+        mode: activeMode,
+      };
+      if (allowed_objects) {
+        payload.allowed_objects = allowed_objects;
+      }
+
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.debug("chat payload", payload);
+      }
+
+      const raw = await chatToBackend(payload);
+
+const data = raw as BackendChatResponse;
+      if (!data || (data as any).ok === false || (data as any).error) {
+        const msg =
+          ((data as any)?.error?.message as string | undefined) ??
+          "Request failed; no changes applied.";
+        setMessages((m) => appendMessages(m, [makeMsg("assistant", msg)]));
+        setLastActions([]);
+        setLoading(false);
+        isSendingRef.current = false;
+        return;
+      }
+      const nextActiveMode = (data as any)?.active_mode ?? activeMode;
+      setActiveMode(nextActiveMode);
+      const nextSceneJson: SceneJson | null = data.scene_json
+        ? normalizeSceneJson(data.scene_json as any)
+        : sceneJson;
+      const nextKpi = (data as any)?.scene_json?.scene?.kpi ?? null;
+      const baseLoops = normalizeLoops((data as any)?.scene_json?.scene?.loops);
+      const objs = Array.isArray(nextSceneJson?.scene?.objects) ? nextSceneJson.scene.objects : [];
+      const nextLoops = resolveLoopPlaceholders(baseLoops, objs);
+      const nextActiveLoop = (data as any)?.scene_json?.scene?.active_loop ?? null;
+      const nextLoopSuggestions = Array.isArray((data as any)?.scene_json?.scene?.loops_suggestions)
+        ? ((data as any)?.scene_json?.scene?.loops_suggestions as string[])
+        : [];
+      setKpi(nextKpi);
+      setLoops(nextLoops);
+      setActiveLoopId(nextActiveLoop ?? null);
+      setLoopSuggestions(nextLoopSuggestions);
+      if (nextSceneJson) {
+        setSceneJson(nextSceneJson);
+
+        // apply override policy
+        try {
+          const policy = prefs.overridePolicy ?? "match";
+          if (policy === "clear") {
+            clearAllOverridesRef.current?.();
+          } else if (policy === "match") {
+            const objs: any[] = nextSceneJson.scene?.objects ?? [];
+            const validIds = objs.map((o: any, idx: number) => o.id ?? o.name ?? `${o.type ?? "obj"}:${idx}`);
+            pruneOverridesRef.current?.(validIds);
+          }
+        } catch (e) {
+          // ignore policy errors
+        }
+      } else setNoSceneUpdate(true);
+      const assistantMsg = makeMsg("assistant", data.reply || "I’m here to help.");
+      const finalMessages = appendMessages(baseMessages, [assistantMsg]);
+      setMessages(finalMessages);
+      setLastAnalysisSummary((data as any).analysis_summary ?? null);
+      setSourceLabel((data as any)?.source ?? null);
+      try {
+        applyActions((data as any)?.actions);
+        setSceneWarn(null);
+      } catch {
+        setSceneWarn("⚠️ Could not apply scene actions (dev).");
+      }
+
+      const ctxInfo = (data as any)?.context?.object_info;
+      if (ctxInfo && typeof ctxInfo === "object" && ctxInfo.id) {
+        setSelectedObjectInfo((prev) => {
+          return {
+            ...(prev ?? {}),
+            id: ctxInfo.id,
+            label: ctxInfo.label ?? ctxInfo.id,
+            summary: ctxInfo.summary ?? (prev?.summary ?? null),
+            tags: Array.isArray(ctxInfo.tags) ? ctxInfo.tags : prev?.tags ?? [],
+          };
+        });
+        if (!focusPinned) {
+          setFocusedId(ctxInfo.id);
+          setFocusMode("selected");
+        }
+      }
+
+      const ctxAllowed = (data as any)?.context?.allowed_objects;
+      if (!focusPinned && focusMode === "all" && Array.isArray(ctxAllowed) && ctxAllowed.length > 0) {
+        const first = ctxAllowed[0] as string;
+        setFocusedId(first);
+        setFocusMode("selected");
+        updateSelectedObjectInfo(first);
+        if (process.env.NODE_ENV !== "production") {
+          setSceneWarn("Auto focus by text");
+        }
+      }
+
+      const sessionId = (() => {
+        try {
+          return window.localStorage.getItem(SESSION_KEY);
+        } catch {
+          return null;
+        }
+      })();
+
+      const snapshot: PersistedProject = {
+        version: "1",
+        savedAt: new Date().toISOString(),
+        sessionId,
+        activeMode: nextActiveMode,
+        sceneJson: nextSceneJson,
+        messages: finalMessages,
+      };
+      saveProject(snapshot);
+      pushHistory(snapshot);
+
+      try {
+        const replay = await analyzeFull({ episodeId, text });
+        if (replay?.episode_id) setEpisodeId(replay.episode_id);
+      } catch {
+        // ignore replay errors to keep chat responsive
+      }
+    } catch (e: any) {
+      const msg =
+        e?.name === "AbortError"
+          ? "Request timed out. Please try again."
+          : e?.message ?? "Sorry, I couldn't reach the server.";
+      setMessages((m) => appendMessages(m, [makeMsg("assistant", msg)]));
+    } finally {
+      setLoading(false);
+      setInput("");
+      isSendingRef.current = false;
+    }
+  }, [
+    activeMode,
+    episodeId,
+    focusMode,
+    focusModeStore,
+    focusedId,
+    focusPinned,
+    pinnedId,
+    activeLoopIdStore,
+    loading,
+    prefs.globalScale,
+    prefs.overridePolicy,
+    selectedObjectInfo?.label,
+    sceneJson,
+    updateSelectedObjectInfo,
+    updateObjectUx,
+  ]);
+
+  const send = useCallback(() => {
+    void sendText(input);
+  }, [input, sendText]);
+
+  const handleUndo = useCallback(() => {
+    const history = loadHistory();
+    if (history.length < 2) return;
+    history.pop(); // remove current
+    const prev = history[history.length - 1];
+    if (!prev) return;
+
+    setActiveMode(prev.activeMode ?? "business");
+    setSceneJson(prev.sceneJson ? normalizeSceneJson(prev.sceneJson) : null);
+    setMessages(normalizeMessages(prev.messages));
+    try {
+      window.localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      if (prev.sessionId) window.localStorage.setItem(SESSION_KEY, prev.sessionId);
+    } catch {
+      // ignore
+    }
+    saveProject({
+      ...prev,
+      savedAt: new Date().toISOString(),
+    });
+  }, []);
+
+  const handleExport = useCallback(() => {
+    const sessionId = (() => {
+      try {
+        return window.localStorage.getItem(SESSION_KEY);
+      } catch {
+        return null;
+      }
+    })();
+    const project: PersistedProject = {
+      version: "1",
+      savedAt: new Date().toISOString(),
+      sessionId,
+      activeMode,
+      sceneJson,
+      messages,
+    };
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "statestudio-project.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [activeMode, messages, sceneJson]);
+
+  const handleImport = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result as string);
+        if (parsed?.version !== "1") throw new Error("Invalid version");
+        if (!parsed.activeMode || !parsed.messages) throw new Error("Invalid project");
+
+        setActiveMode(parsed.activeMode ?? "business");
+        setSceneJson(parsed.sceneJson ? normalizeSceneJson(parsed.sceneJson) : null);
+        setMessages(normalizeMessages(parsed.messages));
+        if (parsed.sessionId) {
+          try {
+            window.localStorage.setItem(SESSION_KEY, parsed.sessionId);
+          } catch {
+            // ignore
+          }
+        }
+        const project: PersistedProject = {
+          version: "1",
+          savedAt: new Date().toISOString(),
+          sessionId: parsed.sessionId ?? null,
+          activeMode: parsed.activeMode ?? "business",
+          sceneJson: parsed.sceneJson ? normalizeSceneJson(parsed.sceneJson) : null,
+          messages: normalizeMessages(parsed.messages),
+        };
+        saveProject(project);
+        pushHistory(project);
+      } catch (err: any) {
+        setMessages((m) => appendMessages(m, [makeMsg("assistant", err?.message ?? "Import failed")]));
+      }
+    };
+    reader.readAsText(file);
+  }, []);
+
+  const handleDragStart = useCallback(() => setIsDraggingHUD(true), []);
+  const handleDragEnd = useCallback(() => setIsDraggingHUD(false), []);
+
+  const handlePrefsChange = useCallback((next: ScenePrefs) => {
+    setPrefs(next);
+  }, []);
+
+  const clearFocus = useCallback(() => {
+    setFocusedId(null);
+    selectedSetterRef.current(null);
+  }, [setFocusedId]);
+  const handleAskAboutSelected = useCallback(() => {
+    const id = selectedIdRef.current;
+    if (!id) return;
+    setFocusedId(id);
+    updateSelectedObjectInfo(id);
+    setFocusMode("selected");
+    sendText("tell me about the selected object");
+  }, [sendText, updateSelectedObjectInfo]);
+
+  const askAboutSelectedAndSend = useCallback(() => {
+    const id = selectedIdRef.current;
+    if (!id) return;
+    setFocusedId(id);
+    updateSelectedObjectInfo(id);
+    setFocusMode("selected");
+    const q = "Tell me about the selected object.";
+    setInput(q);
+    setTimeout(() => {
+      send();
+    }, 0);
+  }, [send, updateSelectedObjectInfo]);
+
+  const handleFocusFromLoop = useCallback(
+    (id: string) => {
+      if (!id) return;
+      selectedSetterRef.current(id);
+      setFocusedId(id);
+      setFocusMode("selected");
+      setViewMode("input");
+    },
+    [setFocusMode, setViewMode]
+  );
+
+  const visibleLoops = useMemo(() => {
+    if (!showLoops) return [];
+    if (!Array.isArray(loops)) return [];
+    const effectiveFocusId =
+      focusMode === "selected" && focusedId ? focusedId : null;
+    if (!effectiveFocusId) return loops;
+    return loops.filter(
+      (loop) =>
+        loop &&
+        Array.isArray(loop.edges) &&
+        loop.edges.some((edge: any) => edge && (edge.from === effectiveFocusId || edge.to === effectiveFocusId))
+    );
+  }, [loops, focusMode, focusedId, showLoops]);
+
+  const handleReplayEvents = useCallback(async () => {
+    if (process.env.NODE_ENV === "production") return;
+    setReplayError(null);
+    setReplaying(true);
+    let userId: string | null = null;
+    try {
+      userId = window.localStorage.getItem(SESSION_KEY);
+    } catch {
+      userId = null;
+    }
+    if (!userId) {
+      try {
+        userId = window.localStorage.getItem("dev_replay_user_id");
+        if (!userId) {
+          userId = `dev-${Math.random().toString(36).slice(2, 10)}`;
+          window.localStorage.setItem("dev_replay_user_id", userId);
+        }
+      } catch {
+        userId = "dev-anon";
+      }
+    }
+    try {
+      const events = await getRecentEvents(userId, 10);
+      for (const evt of events) {
+        applyActions(evt.actions);
+        setMessages((m) => appendMessages(m, [makeMsg("assistant", `(Replayed) ${evt.reply}`)]));
+        await delay(250);
+      }
+    } catch (e: any) {
+      setReplayError("Replay failed");
+    } finally {
+      setReplaying(false);
+    }
+  }, [applyActions, setMessages]);
+
+
+  const FullRegistrar = ({
+    selectedIdRefLocal,
+    overridesRefLocal,
+    setOverrideRefLocal,
+    onSelectedChange,
+  }: {
+    selectedIdRefLocal: React.MutableRefObject<string | null>;
+    overridesRefLocal: React.MutableRefObject<Record<string, any>>;
+    setOverrideRefLocal: React.MutableRefObject<(id: string, patch: any) => void>;
+    onSelectedChange: (id: string | null) => void;
+  }) => {
+    const selectedId = useSelectedId();
+    const overrides = useOverrides();
+    const setOverride = useSetOverride();
+    const clearAll = useClearAllOverrides();
+    const pruneTo = usePruneOverridesTo();
+    const lastRegisteredSelectedIdRef = useRef<string | null>(null);
+
+    useEffect(() => {
+      if (lastRegisteredSelectedIdRef.current === selectedId) {
+        selectedIdRefLocal.current = selectedId;
+        return;
+      }
+      lastRegisteredSelectedIdRef.current = selectedId;
+      // Call handler first so it can compare against the previous ref value
+      onSelectedChange(selectedId);
+      // Then update the local ref to the new selectedId
+      selectedIdRefLocal.current = selectedId;
+    }, [selectedId, selectedIdRefLocal, onSelectedChange]);
+
+    useEffect(() => {
+      overridesRefLocal.current = overrides;
+    }, [overrides, overridesRefLocal]);
+
+    useEffect(() => {
+      setOverrideRefLocal.current = setOverride;
+    }, [setOverride, setOverrideRefLocal]);
+
+    useEffect(() => {
+      clearAllOverridesRef.current = clearAll;
+    }, [clearAll]);
+
+    useEffect(() => {
+      pruneOverridesRef.current = pruneTo;
+    }, [pruneTo]);
+
+    return null;
+  };
+
+  const { layoutMode, setLayoutMode } = useLayoutMode("floating");
+  const draggableHud = layoutMode === "floating";
+  const hudPanels = useHUDPanels({
+    messages,
+    input,
+    setInput,
+    send,
+    handleAddLoopFromTemplate,
+
+    kpi,
+    visibleLoops,
+    showLoops,
+    setShowLoops,
+    showLoopLabels,
+    setShowLoopLabels,
+    effectiveActiveLoopId,
+    selectLoop,
+    loopSuggestions,
+    handleFocusFromLoop,
+
+    activeMode,
+    activeTemplateId,
+    setActiveTemplateId,
+    prefs,
+    handlePrefsChange,
+    backgroundMode,
+    setBackgroundMode,
+    starCount: starCountControl,
+    setStarCount,
+    cameraMode,
+    setCameraMode,
+    showAxes,
+    setShowAxes,
+    showGrid,
+    setShowGrid,
+    showCameraHelper,
+    setShowCameraHelper,
+
+    sceneJson,
+    selectedObjectInfo,
+    selectedObjectId: selectedObjectIdState,
+    getUxForObject,
+    resolveObjectLabel,
+    resolveTypeLabel,
+    companyConfig: config,
+    handleAskAboutSelected,
+    onObjectHoverStart: handleObjectHoverStart,
+    onObjectHoverEnd: handleObjectHoverEnd,
+    selectionLocked,
+    onToggleSelectionLock: toggleSelectionLock,
+    layoutMode,
+
+    handleUndo,
+    handleExport,
+    handleImport,
+
+    loading,
+    sourceLabel,
+    noSceneUpdate,
+    onDragStart: handleDragStart,
+    onDragEnd: handleDragEnd,
+
+    healthInfo,
+    setHealthInfo,
+    lastAnalysisSummary,
+    sceneWarn,
+
+    focusPinned,
+    setFocusPinned,
+    clearFocus,
+    focusMode,
+    toggleFocusMode,
+    focusedId,
+
+    lastActionsCount: lastActions.length,
+    recentActions: lastActions,
+    handleReplayEvents,
+    replaying,
+    replayError,
+
+    handleAddInventoryInstance,
+    simRunning,
+    simSpeed,
+    setSimRunning,
+    simulateStep,
+    setSimSpeed,
+    simLastError,
+
+    snapshots,
+    compareAId,
+    compareBId,
+    setCompareAId,
+    setCompareBId,
+    diffState,
+    handleApplySnapshot,
+    updateObjectUx,
+  });
+
+  const panelContent = hudPanels[hudTab] ?? null;
+  const modeLabel = activeTemplateId
+    ? activeTemplateId
+        .split("_")
+        .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+        .join(" ")
+    : null;
+
+  const hudShell = (
+    <HUDShell
+      activeTab={hudTab}
+      onChangeTab={setHudTab}
+      right={panelContent}
+      companyId={activeCompanyId}
+      companyName={config?.display?.name || config?.company_id}
+      availableCompanies={[
+        { id: "acme", name: "ACME Logistics" },
+        { id: "default", name: "Default" },
+      ]}
+      onCompanyChange={handleCompanyChange}
+      configLoading={configLoading}
+      configError={configError}
+      onRefreshConfig={refresh}
+      theme={hudThemeState}
+      status={{
+        loopsCount: visibleLoops.length,
+        selectedObjectId: selectedObjectIdState,
+        selectedObjectLabel: selectedObjectIdState ? resolveObjectLabel(selectedObjectIdState) : null,
+        modeName: activeTemplateId ?? null,
+        modeLabel,
+      }}
+      draggable={draggableHud}
+      layoutMode={layoutMode}
+      onChangeLayoutMode={setLayoutMode}
+    />
+  );
+
+  const hudNode =
+    layoutMode === "floating" ? (
+      <div style={{ position: "absolute", inset: 0, zIndex: 50, pointerEvents: "none" }}>
+        <div style={{ pointerEvents: "auto" }}>{hudShell}</div>
+      </div>
+    ) : (
+      <div
+        style={{
+          position: "relative",
+          zIndex: 50,
+          height: "100%",
+          width: "100%",
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          pointerEvents: "auto",
+        }}
+      >
+        {hudShell}
+      </div>
+    );
+
+  const sceneNode = (
+    <div style={{ position: "relative", width: "100%", height: "100%", background: "transparent", zIndex: 0 }}>
+      <FullRegistrar
+        selectedIdRefLocal={selectedIdRef}
+        overridesRefLocal={overridesRef}
+        setOverrideRefLocal={setOverrideRef}
+        onSelectedChange={handleSelectedChange}
+      />
+      {/* Three.js (Canvas always mounted for stable hooks) */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+        <SceneCanvas
+          prefs={prefs}
+          camPos={camPos}
+          starCount={starCount}
+          isDraggingHUD={isDraggingHUD}
+          showAxes={showAxes}
+          showGrid={showGrid}
+          showCameraHelper={showCameraHelper}
+          focusPinned={focusPinned}
+          focusMode={focusMode}
+          focusedId={focusedId}
+          effectiveActiveLoopId={effectiveActiveLoopId}
+          cameraLockedByUser={cameraLockedByUser}
+          isOrbiting={isOrbiting}
+          sceneJson={sceneJson}
+          getUxForObject={getUxForObject}
+          objectUxById={objectUxById}
+          loops={visibleLoops}
+          showLoops={showLoops}
+          showLoopLabels={showLoopLabels}
+          selectedSetterRef={selectedSetterRef}
+          selectedIdRef={selectedIdRef}
+          overridesRef={overridesRef}
+          setOverrideRef={setOverrideRef}
+          clearAllOverridesRef={clearAllOverridesRef}
+          pruneOverridesRef={pruneOverridesRef}
+          onPointerMissed={() => {
+            if (!focusPinned) {
+              selectedSetterRef.current(null);
+              setFocusedId(null);
+            }
+            setViewMode("hidden");
+          }}
+          onOrbitStart={() => {
+            setIsOrbiting(true);
+            if (prefs.orbitMode === "manual") setCameraLockedByUser(true);
+          }}
+          onOrbitEnd={() => setIsOrbiting(false)}
+          onSelectedChange={handleSelectedChange}
+        />
+      </div>
+
+      {!sceneJson && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#cbd5e1",
+            fontSize: 14,
+            pointerEvents: "none",
+            background: "rgba(0,0,0,0.2)",
+          }}
+        >
+          Loading scene…
+        </div>
+      )}
+
+      {/* Small loading badge */}
+      {loading && (
+        <div
+          style={{
+            position: "absolute",
+            right: 16,
+            bottom: 16,
+            padding: "6px 10px",
+            borderRadius: 10,
+            background: "rgba(0,0,0,0.55)",
+            color: "white",
+            fontSize: 12,
+            border: "1px solid rgba(255,255,255,0.12)",
+            zIndex: 100,
+          }}
+        >
+          Sending…
+        </div>
+      )}
+    </div>
+  );
+
+  return <PageLayout layoutMode={layoutMode} scene={sceneNode} hud={hudNode} />;
+}

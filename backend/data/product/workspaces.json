@@ -1,0 +1,8 @@
+[
+  {
+    "id": "ws_default",
+    "label": "Default Workspace",
+    "owner": "local_user",
+    "role": "admin"
+  }
+]

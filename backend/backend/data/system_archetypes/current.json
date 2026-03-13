@@ -1,0 +1,162 @@
+{
+  "items": [
+    {
+      "description": "Reinforcing growth meets balancing constraints, leading to slowed expansion.",
+      "id": "obj_limits_to_growth",
+      "loops_template": [
+        {
+          "id": "ltg_r_growth",
+          "notes": "Growth reinforces growth.",
+          "type": "R",
+          "variables": [
+            "growth",
+            "adoption"
+          ]
+        },
+        {
+          "id": "ltg_b_constraint",
+          "notes": "Constraints dampen growth after delay.",
+          "type": "B",
+          "variables": [
+            "constraint",
+            "latency",
+            "quality"
+          ]
+        }
+      ],
+      "name": "Limits to Growth",
+      "required_signals": [
+        "latency",
+        "resource_overload",
+        "quality_drop"
+      ],
+      "thresholds": {
+        "activation": {
+          "latency": 0.3,
+          "quality_drop": 0.3,
+          "resource_overload": 0.4
+        },
+        "min_confidence": 0.4
+      },
+      "weights": {
+        "latency": 0.5,
+        "quality_drop": 0.6,
+        "resource_overload": 0.8
+      }
+    },
+    {
+      "description": "Short-term relief creates long-term risk, increasing the core issue.",
+      "id": "obj_fixes_that_fail",
+      "loops_template": [
+        {
+          "id": "ftf_b_relief",
+          "notes": "Short-term relief reduces symptoms.",
+          "type": "B",
+          "variables": [
+            "symptom",
+            "short_term_relief"
+          ]
+        },
+        {
+          "id": "ftf_r_side_effects",
+          "notes": "Side effects amplify the root issue.",
+          "type": "R",
+          "variables": [
+            "side_effects",
+            "long_term_risk"
+          ]
+        }
+      ],
+      "name": "Fixes That Fail",
+      "required_signals": [
+        "short_term_relief",
+        "long_term_risk"
+      ],
+      "thresholds": {
+        "activation": {},
+        "min_confidence": 0.4
+      },
+      "weights": {
+        "long_term_risk": 0.9,
+        "short_term_relief": 0.7
+      }
+    },
+    {
+      "description": "Mutual reactions reinforce each other, increasing instability.",
+      "id": "obj_escalation",
+      "loops_template": [
+        {
+          "id": "esc_r_side_a",
+          "notes": "Side A reacts to Side B.",
+          "type": "R",
+          "variables": [
+            "action_a",
+            "reaction_b"
+          ]
+        },
+        {
+          "id": "esc_r_side_b",
+          "notes": "Side B reacts to Side A.",
+          "type": "R",
+          "variables": [
+            "action_b",
+            "reaction_a"
+          ]
+        }
+      ],
+      "name": "Escalation",
+      "required_signals": [
+        "escalation",
+        "decision_volatility"
+      ],
+      "thresholds": {
+        "activation": {},
+        "min_confidence": 0.4
+      },
+      "weights": {
+        "decision_volatility": 0.5,
+        "escalation": 0.9
+      }
+    },
+    {
+      "description": "Symptomatic relief grows dependency while fundamental capability weakens.",
+      "id": "obj_shifting_the_burden",
+      "loops_template": [
+        {
+          "id": "stb_b_symptomatic",
+          "notes": "Symptomatic fixes reduce pressure temporarily.",
+          "type": "B",
+          "variables": [
+            "symptom",
+            "short_term_relief"
+          ]
+        },
+        {
+          "id": "stb_r_dependency",
+          "notes": "Reliance grows and erodes core capability.",
+          "type": "R",
+          "variables": [
+            "dependency_growth",
+            "capability_erosion"
+          ]
+        }
+      ],
+      "name": "Shifting the Burden",
+      "required_signals": [
+        "dependency_growth",
+        "short_term_relief",
+        "long_term_risk"
+      ],
+      "thresholds": {
+        "activation": {},
+        "min_confidence": 0.4
+      },
+      "weights": {
+        "dependency_growth": 0.8,
+        "long_term_risk": 0.6
+      }
+    }
+  ],
+  "updated_at": "2025-12-18T04:59:54.310253+00:00",
+  "version": "2025-12-18T045954+0000"
+}

@@ -1,0 +1,30 @@
+{
+  "obj_delivery": {
+    "energy": 0.11925886404201508,
+    "hits": 66,
+    "last_intensity": 0.34073961154861454,
+    "last_ts": 1767327778,
+    "trend": "stable"
+  },
+  "obj_inventory": {
+    "energy": 0.3113423893181613,
+    "hits": 71,
+    "last_intensity": 0.45025535431095426,
+    "last_ts": 1767469564,
+    "trend": "rising"
+  },
+  "obj_quality": {
+    "energy": 0.453899976591589,
+    "hits": 5,
+    "last_intensity": 0.7388193382634536,
+    "last_ts": 1766131444,
+    "trend": "rising"
+  },
+  "obj_risk_zone": {
+    "energy": 0.16390743483412304,
+    "hits": 71,
+    "last_intensity": 0.46830494680274154,
+    "last_ts": 1767418394,
+    "trend": "falling"
+  }
+}

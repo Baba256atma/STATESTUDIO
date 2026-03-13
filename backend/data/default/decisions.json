@@ -1,0 +1,29 @@
+[
+  {
+    "id": "dec_ycawb35v_owlq3a",
+    "timestamp": 1771397522459,
+    "activeLoopId": null,
+    "loops": [],
+    "stateVector": {
+      "intensity": 0.34073961154861454,
+      "volatility": 0,
+      "inventory_pressure": 0.5,
+      "time_pressure": 0.5,
+      "quality_risk": 0.5
+    },
+    "kpis": [
+      {
+        "id": "kpi_intensity",
+        "label": "Intensity",
+        "value": 0.34073961154861454,
+        "direction": "up"
+      },
+      {
+        "id": "kpi_volatility",
+        "label": "Volatility",
+        "value": 0,
+        "direction": "down"
+      }
+    ]
+  }
+]

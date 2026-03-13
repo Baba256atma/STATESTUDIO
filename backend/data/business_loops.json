@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "loops": [
+    {
+      "id": "loop_inventory_delay_risk",
+      "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+      "polarity": "negative",
+      "edges": [
+        {
+          "from": "obj_inventory",
+          "to": "obj_delivery",
+          "kind": "negative",
+          "metric": "inventory",
+          "direction": "low",
+          "weight": 0.6,
+          "label": "Inventory \u2192 Delivery pressure"
+        },
+        {
+          "from": "obj_delivery",
+          "to": "obj_risk_zone",
+          "kind": "negative",
+          "metric": "delivery",
+          "direction": "low",
+          "weight": 0.7,
+          "label": "Delay \u2192 Risk"
+        },
+        {
+          "from": "obj_risk_zone",
+          "to": "obj_inventory",
+          "kind": "negative",
+          "metric": "risk",
+          "direction": "high",
+          "weight": 0.5,
+          "label": "Risk \u2192 Inventory instability"
+        }
+      ],
+      "activation": {
+        "any": [
+          { "metric": "inventory", "op": "<=", "value": 0.4 },
+          { "metric": "delivery", "op": "<=", "value": 0.45 },
+          { "metric": "risk", "op": ">=", "value": 0.6 }
+        ]
+      },
+      "weighting": {
+        "inventory_low": { "metric": "inventory", "map": "low" },
+        "delivery_low": { "metric": "delivery", "map": "low" },
+        "risk_high": { "metric": "risk", "map": "high" }
+      }
+    },
+    {
+      "id": "loop_delivery_rework_risk",
+      "label": "Delay \u2192 Rework \u2192 Risk",
+      "polarity": "negative",
+      "edges": [
+        {
+          "from": "obj_delivery",
+          "to": "obj_risk_zone",
+          "kind": "negative",
+          "metric": "delivery",
+          "direction": "low",
+          "weight": 0.6,
+          "label": "Delay increases risk"
+        },
+        {
+          "from": "obj_risk_zone",
+          "to": "obj_delivery",
+          "kind": "negative",
+          "metric": "risk",
+          "direction": "high",
+          "weight": 0.5,
+          "label": "Risk reduces delivery stability"
+        }
+      ],
+      "activation": {
+        "all": [
+          { "metric": "delivery", "op": "<=", "value": 0.5 },
+          { "metric": "risk", "op": ">=", "value": 0.55 }
+        ]
+      },
+      "weighting": {
+        "delivery_low": { "metric": "delivery", "map": "low" },
+        "risk_high": { "metric": "risk", "map": "high" }
+      }
+    },
+    {
+      "id": "loop_quality_delay_risk",
+      "label": "Quality \u2192 Delay \u2192 Risk",
+      "polarity": "negative",
+      "edges": [
+        {
+          "from": "obj_inventory",
+          "to": "obj_delivery",
+          "kind": "negative",
+          "metric": "inventory",
+          "direction": "low",
+          "weight": 0.5,
+          "label": "Quality/rework slows delivery"
+        },
+        {
+          "from": "obj_delivery",
+          "to": "obj_risk_zone",
+          "kind": "negative",
+          "metric": "delivery",
+          "direction": "low",
+          "weight": 0.5,
+          "label": "Delay raises risk"
+        }
+      ],
+      "activation": {
+        "any": [
+          { "metric": "inventory", "op": "<=", "value": 0.5 },
+          { "metric": "delivery", "op": "<=", "value": 0.5 }
+        ]
+      },
+      "weighting": {
+        "inventory_low": { "metric": "inventory", "map": "low" },
+        "delivery_low": { "metric": "delivery", "map": "low" }
+      }
+    }
+  ],
+  "mappings": {
+    "map": {
+      "low": "clamp01(1 - x)",
+      "high": "clamp01(x)"
+    }
+  }
+}

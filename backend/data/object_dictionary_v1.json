@@ -1,0 +1,177 @@
+{
+  "types": {
+    "type_inventory": {
+      "id": "type_inventory",
+      "label": "Inventory",
+      "one_liner": "Stock health and replenishment pressure.",
+      "summary": "Tracks availability, reorder cadence, and stockout risk. Use it when shortages, long lead times, or poor visibility put delivery at risk.",
+      "tags": ["inventory", "stock", "availability", "replenishment"],
+      "synonyms": ["stock", "on-hand", "warehouse", "backorder"],
+      "domain_hints": { "business": ["inventory", "reorder", "stock", "warehouse", "backorder"] },
+      "ux": { "shape": "cube", "base_color": "#3498db" }
+    },
+    "type_delivery": {
+      "id": "type_delivery",
+      "label": "Delivery",
+      "one_liner": "Fulfillment speed and delivery reliability.",
+      "summary": "Represents shipping/fulfillment delays, carrier performance, and on-time delivery risk. Watch it when ETAs slip or logistics bottlenecks grow.",
+      "tags": ["delivery", "delay", "lead time", "logistics"],
+      "synonyms": ["shipping", "fulfillment", "eta", "carrier", "late"],
+      "domain_hints": { "business": ["delay", "late", "shipping", "fulfillment", "carrier"] },
+      "ux": { "shape": "sphere", "base_color": "#e74c3c" }
+    },
+    "type_risk": {
+      "id": "type_risk",
+      "label": "Risk Zone",
+      "one_liner": "Operational risk and uncertainty zone.",
+      "summary": "Aggregates instability signals: supplier fragility, demand swings, quality drift, and schedule slips. Use it to prioritize mitigations.",
+      "tags": ["risk", "uncertainty", "mitigation", "exposure"],
+      "synonyms": ["risk", "uncertainty", "issue", "problem", "fragility"],
+      "domain_hints": { "business": ["risk", "uncertain", "issue", "problem", "fragile"] },
+      "ux": { "shape": "ring", "base_color": "#f39c12" }
+    },
+    "type_quality": {
+      "id": "type_quality",
+      "label": "Quality",
+      "one_liner": "Signal for defects, rework, and customer friction.",
+      "summary": "Captures defect rates, escaped issues, and rework pressure. Raise it when defects trend up or customer complaints increase.",
+      "tags": ["quality", "defect", "rework", "stability"],
+      "synonyms": ["defects", "bugs", "rework", "customer complaints"],
+      "domain_hints": { "business": ["defect", "rework", "customer complaint", "quality drop"] },
+      "ux": { "shape": "cube", "base_color": "#8e44ad" }
+    },
+    "type_cost": {
+      "id": "type_cost",
+      "label": "Cost",
+      "one_liner": "Cost pressure and efficiency signal.",
+      "summary": "Tracks spend pressure, margin erosion, and waste. Use it when unit costs rise or efficiency drops.",
+      "tags": ["cost", "margin", "efficiency", "waste"],
+      "synonyms": ["spend", "budget", "expense", "margin"],
+      "domain_hints": { "business": ["cost", "budget", "expense", "margin", "overrun"] },
+      "ux": { "shape": "ring", "base_color": "#2ecc71" }
+    },
+    "type_throughput": {
+      "id": "type_throughput",
+      "label": "Throughput",
+      "one_liner": "Flow rate and output capacity.",
+      "summary": "Represents completed work per unit time and flow constraints. Raise it when queues shrink or flow improves; watch it when bottlenecks appear.",
+      "tags": ["throughput", "flow", "capacity", "bottleneck"],
+      "synonyms": ["output", "flow rate", "capacity"],
+      "domain_hints": { "business": ["throughput", "flow", "output", "capacity"] },
+      "ux": { "shape": "sphere", "base_color": "#1abc9c" }
+    },
+    "type_cashflow": {
+      "id": "type_cashflow",
+      "label": "Cashflow",
+      "one_liner": "Liquidity and runway pulse.",
+      "summary": "Tracks liquidity stability, receivables timing, and burn. Use it when runway tightens or collections slow down.",
+      "tags": ["cash", "liquidity", "runway", "burn"],
+      "synonyms": ["liquidity", "runway", "cash burn"],
+      "domain_hints": { "business": ["cash", "liquidity", "runway", "burn"] },
+      "ux": { "shape": "ring", "base_color": "#16a085" }
+    },
+    "type_customer": {
+      "id": "type_customer",
+      "label": "Customer",
+      "one_liner": "Engagement and satisfaction signal.",
+      "summary": "Represents customer satisfaction, churn risk, and engagement. Raise it when adoption climbs; watch it when churn or complaints rise.",
+      "tags": ["customer", "engagement", "churn", "satisfaction"],
+      "synonyms": ["client", "user base", "churn"],
+      "domain_hints": { "business": ["customer satisfaction", "churn", "engagement", "retention"] },
+      "ux": { "shape": "sphere", "base_color": "#9b59b6" }
+    },
+    "type_process": {
+      "id": "type_process",
+      "label": "Process",
+      "one_liner": "Process stability and governance signal.",
+      "summary": "Covers process adherence, governance, and clarity. Use it when handoffs break, ambiguity rises, or responsibilities blur.",
+      "tags": ["process", "governance", "stability", "handoff"],
+      "synonyms": ["process", "governance", "handoff", "clarity"],
+      "domain_hints": { "business": ["process", "handoff", "governance", "responsibility"] },
+      "ux": { "shape": "cube", "base_color": "#95a5a6" }
+    }
+  },
+  "instances": [
+    {
+      "id": "obj_inventory",
+      "type": "type_inventory",
+      "label": "Inventory",
+      "tags": ["inventory", "stock"],
+      "synonyms": ["inventory", "stock"],
+      "domain_hints": { "business": ["inventory", "stock"] },
+      "overrides": { "color": "#3498db" }
+    },
+    {
+      "id": "obj_delivery",
+      "type": "type_delivery",
+      "label": "Delivery",
+      "tags": ["delivery", "delay"],
+      "synonyms": ["delivery", "shipping"],
+      "domain_hints": { "business": ["delivery", "delay"] },
+      "overrides": { "color": "#e74c3c" }
+    },
+    {
+      "id": "obj_risk_zone",
+      "type": "type_risk",
+      "label": "Risk Zone",
+      "tags": ["risk", "uncertainty"],
+      "synonyms": ["risk", "uncertainty"],
+      "domain_hints": { "business": ["risk", "uncertain"] },
+      "overrides": { "color": "#f39c12" }
+    },
+    {
+      "id": "obj_quality",
+      "type": "type_quality",
+      "label": "Quality",
+      "tags": ["quality", "defect"],
+      "synonyms": ["defects", "bugs"],
+      "domain_hints": { "business": ["defect", "quality"] },
+      "overrides": { "color": "#8e44ad" }
+    },
+    {
+      "id": "obj_cost",
+      "type": "type_cost",
+      "label": "Cost",
+      "tags": ["cost", "margin"],
+      "synonyms": ["budget", "expense"],
+      "domain_hints": { "business": ["cost", "budget"] },
+      "overrides": { "color": "#2ecc71" }
+    },
+    {
+      "id": "obj_throughput",
+      "type": "type_throughput",
+      "label": "Throughput",
+      "tags": ["throughput", "flow"],
+      "synonyms": ["output", "capacity"],
+      "domain_hints": { "business": ["throughput", "capacity"] },
+      "overrides": { "color": "#1abc9c" }
+    },
+    {
+      "id": "obj_cashflow",
+      "type": "type_cashflow",
+      "label": "Cashflow",
+      "tags": ["cash", "runway"],
+      "synonyms": ["liquidity", "cash burn"],
+      "domain_hints": { "business": ["cash", "runway"] },
+      "overrides": { "color": "#16a085" }
+    },
+    {
+      "id": "obj_customer",
+      "type": "type_customer",
+      "label": "Customer",
+      "tags": ["customer", "engagement"],
+      "synonyms": ["client", "user"],
+      "domain_hints": { "business": ["customer", "churn", "engagement"] },
+      "overrides": { "color": "#9b59b6" }
+    },
+    {
+      "id": "obj_process",
+      "type": "type_process",
+      "label": "Process",
+      "tags": ["process", "governance"],
+      "synonyms": ["process", "handoff"],
+      "domain_hints": { "business": ["process", "handoff"] },
+      "overrides": { "color": "#95a5a6" }
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "items": [
+    {
+      "description": "Seeks equilibrium through steady pacing and careful adjustments.",
+      "editable": true,
+      "id": "ha_01",
+      "name": "Stabilizer",
+      "outputs": {
+        "default_intensity": 0.4
+      },
+      "signals": {
+        "keywords": [
+          "stabilize",
+          "steady",
+          "balance"
+        ],
+        "phrases": [
+          "keep it stable",
+          "avoid swings"
+        ],
+        "sentiment_hint": "neutral"
+      },
+      "tags": [
+        "balance",
+        "stability"
+      ],
+      "weights": {
+        "intensity_scale": 1.0,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    },
+    {
+      "description": "Prefers rapid momentum and decisive action.",
+      "editable": true,
+      "id": "ha_02",
+      "name": "Accelerator",
+      "outputs": {
+        "default_intensity": 0.6
+      },
+      "signals": {
+        "keywords": [
+          "fast",
+          "accelerate",
+          "push"
+        ],
+        "phrases": [
+          "move quickly",
+          "speed things up"
+        ],
+        "sentiment_hint": "pos"
+      },
+      "tags": [
+        "momentum",
+        "speed"
+      ],
+      "weights": {
+        "intensity_scale": 1.3,
+        "keyword_weight": 0.7,
+        "phrase_weight": 0.9
+      }
+    },
+    {
+      "description": "Focuses on minimizing risk and reducing exposure.",
+      "editable": true,
+      "id": "ha_03",
+      "name": "Reducer",
+      "outputs": {
+        "default_intensity": 0.5
+      },
+      "signals": {
+        "keywords": [
+          "reduce",
+          "minimize",
+          "protect"
+        ],
+        "phrases": [
+          "lower the risk",
+          "reduce exposure"
+        ],
+        "sentiment_hint": "mixed"
+      },
+      "tags": [
+        "risk",
+        "caution"
+      ],
+      "weights": {
+        "intensity_scale": 0.9,
+        "keyword_weight": 0.6,
+        "phrase_weight": 0.8
+      }
+    }
+  ],
+  "updated_at": "2025-12-18T04:59:54.308332+00:00",
+  "version": "2025-12-18T045954+0000"
+}

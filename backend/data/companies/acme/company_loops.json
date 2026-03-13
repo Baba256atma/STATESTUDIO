@@ -1,0 +1,18 @@
+{
+  "company_id": "acme",
+  "loop_templates": [
+    {
+      "id": "loop_delivery_customer",
+      "type": "delivery_customer",
+      "label": "Delivery ↔ Customer",
+      "description": "Late deliveries increase complaints; complaints create expedite pressure that may increase cost/risk.",
+      "nodes": ["obj_delivery", "obj_customer", "obj_cost", "obj_risk_zone"],
+      "edges": [
+        ["obj_delivery", "obj_customer"],
+        ["obj_customer", "obj_cost"],
+        ["obj_cost", "obj_risk_zone"]
+      ],
+      "defaults": { "intensity": 0.55, "isActive": false }
+    }
+  ]
+}

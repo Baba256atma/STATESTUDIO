@@ -1,0 +1,7 @@
+{
+  "company_id": "demo",
+  "version": 1,
+  "kpis": [
+    { "id": "risk_exposure", "label": "Risk Exposure (Demo tuned)", "unit": "%", "target": 0.18, "direction": "down", "description": "Demo customer wants stricter risk threshold.", "thresholds": { "warnAbove": 0.25 }, "drivers": ["stability_balance"], "driver_weights": { "stability_balance": -0.35 } }
+  ]
+}
