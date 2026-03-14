@@ -40,13 +40,27 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Python cache
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# common ignores
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
 .env
-.DS_Store
+.env.*
+
+# Node
 node_modules/
+
+# Next.js
 .next/
-dist/
+out/
+
+# Mac
+.DS_Store
