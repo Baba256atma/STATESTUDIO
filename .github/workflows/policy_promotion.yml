@@ -1,0 +1,73 @@
+name: Policy Promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_environment:
+        description: Source environment
+        required: true
+        type: choice
+        options:
+          - local
+          - dev
+          - staging
+      target_environment:
+        description: Target environment
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+      approved_by:
+        description: Approval actor for staging or production
+        required: false
+        type: string
+      promotion_reason:
+        description: Reason for promotion
+        required: false
+        type: string
+
+jobs:
+  promote-policy:
+    name: Promote AI Policy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f backend/requirements.txt ]; then
+            pip install -r backend/requirements.txt
+          fi
+
+      - name: Validate backend Python syntax
+        run: python -m compileall backend
+
+      - name: Show promotion payload
+        run: |
+          echo "Source: ${{ inputs.source_environment }}"
+          echo "Target: ${{ inputs.target_environment }}"
+          echo "Approved by: ${{ inputs.approved_by }}"
+          echo "Reason: ${{ inputs.promotion_reason }}"
+
+      - name: Promotion request example
+        run: |
+          cat <<'EOF'
+          POST /ai/local/control-plane/policy/promote
+          {
+            "source_environment": "${{ inputs.source_environment }}",
+            "target_environment": "${{ inputs.target_environment }}",
+            "requested_by": "github-actions",
+            "approved_by": "${{ inputs.approved_by }}",
+            "promotion_reason": "${{ inputs.promotion_reason }}"
+          }
+          EOF

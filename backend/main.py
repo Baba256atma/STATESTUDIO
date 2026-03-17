@@ -2,11 +2,11 @@
 import os
 import json
 import time
+import logging
 from datetime import datetime, timezone
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, model_validator
-import logging
 from pathlib import Path
 
 from ai.enrichment import generate_ai_reply
@@ -23,6 +23,7 @@ from app.routers.human_catalog_router import router as human_catalog_router
 from app.routers.analysis_router import router as analysis_router
 from app.routers.replay_router import router as replay_router
 from app.routers.ai_chat_router import router as ai_chat_router
+from app.routers.ai_local import router as ai_local_router
 from app.routers.events_router import router as events_router
 from app.routers.debug_router import router as debug_router
 from app.routers.config_router import router as config_router
@@ -34,6 +35,7 @@ from app.routers.timeline_router import router as timeline_router
 from app.routers.replay_view_router import router as replay_view_router
 from app.routers.collaboration_router import router as collaboration_router
 from app.routers.product_router import router as product_router
+from app.routers.fragility_scanner_router import router as fragility_scanner_router
 from app.routes.decision_routes import router as decision_routes_router
 from app.services.event_store_mem import EventStoreMem
 from app.services.chat_ai import llm_chat_actions
@@ -56,6 +58,11 @@ from app.services.chat_contract_alignment import (
     package_chat_response,
 )
 from app.services.product_store_v0 import ensure_default_workspace_v0
+from app.services.ai_safety_guard import check_ai_input_safety
+from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.request_audit import RequestAuditMiddleware
+from app.core.config import get_local_ai_settings
+from app.services.ai.orchestrator import LocalAIOrchestrator
 from app.models.system_archetypes import SystemArchetypeState
 from app.semantics.nexora_semantics import infer_allowed_objects_from_text
 from app.engines.fragility_v1 import compute_fragility_v1
@@ -745,10 +752,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Request audit logging for MVP operational visibility.
+app.add_middleware(RequestAuditMiddleware)
+# Simple in-memory per-IP rate limiting for MVP safety.
+app.add_middleware(RateLimitMiddleware, max_requests=60, window_seconds=60)
 app.include_router(human_catalog_router)
 app.include_router(analysis_router)
 app.include_router(replay_router)
 app.include_router(ai_chat_router)
+app.include_router(ai_local_router)
 app.include_router(events_router)
 app.include_router(debug_router)
 app.include_router(decision_routes_router)
@@ -761,6 +773,7 @@ app.include_router(timeline_router)
 app.include_router(replay_view_router)
 app.include_router(collaboration_router)
 app.include_router(product_router)
+app.include_router(fragility_scanner_router)
 
 @app.get("/objects")
 def list_objects():
@@ -782,13 +795,26 @@ def get_object(obj_id: str):
         "object": profile,
     }
 
+logger = logging.getLogger(__name__)
+
+
 @app.on_event("startup")
-def init_chaos_engine():
+async def init_chaos_engine():
     app.state.chaos_engine = ChaosEngine()
     app.state.memory_engine = ObjectMemoryEngine(JsonMemoryStore())
     app.state.archetype_engine = ArchetypeEngine()
     app.state.event_store = EventStoreMem()
     app.state.backend_engine_roles = build_backend_engine_roles()
+    # Local AI startup state is initialized here without blocking existing startup behavior.
+    app.state.local_ai_settings = get_local_ai_settings()
+    app.state.local_ai_available = False
+    try:
+        local_ai_health = await LocalAIOrchestrator(settings=app.state.local_ai_settings).get_health()
+        app.state.local_ai_available = bool(local_ai_health.available)
+        if not local_ai_health.available:
+            logger.warning("local_ai_unavailable_on_startup provider=%s", local_ai_health.provider)
+    except Exception:
+        logger.warning("local_ai_startup_check_failed", exc_info=False)
     global _OBJECT_DICT, _OBJECT_TYPES, _OBJECT_INSTANCES, _LEGACY_OBJECTS
     loaded = _load_object_dict()
     _OBJECT_DICT = loaded.get("legacy", {})
@@ -865,17 +891,6 @@ def health():
 @app.post("/chat")
 def chat(payload: ChatIn, request: Request):
     text = (payload.text or payload.message or "").strip()
-    # --- Nexora MVP: infer canonical focus from user wording ---
-    inferred_allowed: list[str] = []
-    try:
-        inferred_allowed = infer_allowed_objects_from_text(text)
-    except Exception:
-        inferred_allowed = []
-
-    # Apply only if frontend did NOT force focus
-    if not payload.allowed_objects and inferred_allowed:
-        payload.allowed_objects = inferred_allowed
-
     if not text:
         return (
             JSONResponse(
@@ -892,6 +907,31 @@ def chat(payload: ChatIn, request: Request):
                 },
             )
         )
+
+    # AI safety check: block suspicious prompt abuse before reasoning runs.
+    safety_result = check_ai_input_safety(text)
+    if not safety_result.get("ok", True):
+        return {
+            "ok": False,
+            "reply": "",
+            "actions": [],
+            "scene_json": None,
+            "error": {
+                "type": "INPUT_BLOCKED",
+                "message": "This input was blocked by the AI safety guard.",
+            },
+        }
+
+    # --- Nexora MVP: infer canonical focus from user wording ---
+    inferred_allowed: list[str] = []
+    try:
+        inferred_allowed = infer_allowed_objects_from_text(text)
+    except Exception:
+        inferred_allowed = []
+
+    # Apply only if frontend did NOT force focus
+    if not payload.allowed_objects and inferred_allowed:
+        payload.allowed_objects = inferred_allowed
 
     mode = payload.mode if payload.mode in {"business", "spirit"} else "business"
     engine: ChaosEngine = request.app.state.chaos_engine

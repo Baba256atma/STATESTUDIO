@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { FragilityScannerPanel } from "./scanner/FragilityScannerPanel";
 import { nx } from "./ui/nexoraTheme";
+import type { FragilityDriver, FragilityScanResponse } from "../types/fragilityScanner";
 
 type NexoraShellProps = {
   children: React.ReactNode;
@@ -329,6 +331,9 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   }, [activeNavGroup, navItems, visibleNavGroupSet, visibleSectionSet]);
   const activeSubTabs = useMemo(() => activeGroupConfig?.tabs ?? [], [activeGroupConfig]);
   const sceneJson = inspectorContext?.sceneJson ?? inspectorContext?.responseData?.scene_json ?? null;
+  const fragilityScanResult = (inspectorContext?.responseData?.fragility_scan ??
+    inspectorContext?.fragilityScanResult ??
+    null) as FragilityScanResponse | null;
 
   const renderedChatMessages = useMemo(() => {
     if (!domainExperience) return chatMessages;
@@ -343,10 +348,12 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   }, [sceneJson]);
   const fragility = inspectorContext?.sceneJson?.scene?.fragility ?? inspectorContext?.responseData?.fragility ?? null;
   const sceneMeta = inspectorContext?.sceneJson?.scene?.scene ?? inspectorContext?.responseData?.scene_json?.scene?.scene ?? null;
-  const fragilityScore = Number(fragility?.score ?? 0);
-  const fragilityLevel = String(fragility?.level ?? "-");
+  const fragilityScore = Number(fragilityScanResult?.fragility_score ?? fragility?.score ?? 0);
+  const fragilityLevel = String(fragilityScanResult?.fragility_level ?? fragility?.level ?? "-");
   const volatility = Number(sceneMeta?.volatility ?? 0);
-  const driverEntries = Object.entries((fragility?.drivers ?? {}) as Record<string, unknown>);
+  const driverEntries = fragilityScanResult?.drivers?.length
+    ? fragilityScanResult.drivers.map((driver: FragilityDriver) => [driver.label, driver.score] as const)
+    : Object.entries((fragility?.drivers ?? {}) as Record<string, unknown>);
   const dominantDriver = useMemo(() => {
     if (!driverEntries.length) return null;
     return [...driverEntries]
@@ -374,6 +381,13 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     if (!focusedObjectId) return [];
     return list.filter((a: any) => Array.isArray(a?.targets) && a.targets.includes(focusedObjectId));
   }, [strategicAdvice, focusedObjectId]);
+  const handleFragilityScanComplete = useCallback((result: FragilityScanResponse) => {
+    window.dispatchEvent(
+      new CustomEvent("nexora:apply-fragility-scan", {
+        detail: { result },
+      })
+    );
+  }, []);
   const setInspectorSection = React.useCallback((section: ActiveSectionKey, eventTab?: InspectorEventTab) => {
     setActiveSection(section);
     setIsInspectorOpen(true);
@@ -1322,6 +1336,37 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                       </div>
                     </>
                   )}
+                </div>
+              ) : mode === "dashboard" && resolvedActiveSection === "risk" ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div
+                    style={{
+                      padding: 12,
+                      borderRadius: 12,
+                      border: `1px solid ${nx.border}`,
+                      background: "rgba(15,23,42,0.78)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
+                  >
+                    <div style={{ color: "#94a3b8", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700 }}>
+                      Fragility Scanner
+                    </div>
+                    <div style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.5 }}>
+                      Scan report-like text, get an executive fragility readout, and push the returned focus objects back into the live scene.
+                    </div>
+                    {fragilityScanResult ? (
+                      <div style={{ color: "#94a3b8", fontSize: 11 }}>
+                        Last scan: {fragilityLevel.toUpperCase()} · {fragilityScore.toFixed(2)}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <FragilityScannerPanel
+                    initialResult={fragilityScanResult}
+                    onScanComplete={handleFragilityScanComplete}
+                  />
                 </div>
               ) : mode === "dashboard" && resolvedActiveSection === "timeline" ? (
                 <div id="nexora-inspector-timeline-host" style={{ width: "100%", height: "100%" }} />

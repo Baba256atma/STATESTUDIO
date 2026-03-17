@@ -148,11 +148,13 @@ import {
   stableStringify,
 } from "./homeScreenUtils";
 import { buildBackup as buildBackupController, buildRestorePreviewLines } from "./backupController";
+import { applyFragilityScenePayload } from "../lib/scanner/applyFragilityScenePayload";
 import {
   resolveDomainExperience,
   type NexoraResolvedDomainExperience,
 } from "../lib/domain/domainExperienceRegistry";
 import { resolveDomainDemo } from "../lib/demo/domainDemoRegistry";
+import type { FragilityScanResponse } from "../types/fragilityScanner";
 import { isLaunchDomain } from "../lib/product/mvpShippingPlan";
 
 type FullRegistrarProps = {
@@ -2918,7 +2920,46 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     };
     window.addEventListener("nexora:set-focus-object", onSetFocusObject as EventListener);
     return () => window.removeEventListener("nexora:set-focus-object", onSetFocusObject as EventListener);
-  }, [setViewMode, updateSelectedObjectInfo]);
+  }, [setFocusMode, setViewMode, updateSelectedObjectInfo]);
+  useEffect(() => {
+    const onApplyFragilityScan = (event: Event) => {
+      const detail = (event as CustomEvent<{ result?: FragilityScanResponse | null }>).detail;
+      const result = detail?.result;
+      if (!result?.ok) return;
+
+      setResponseData((prev: Record<string, unknown> | null) => ({
+        ...(prev ?? {}),
+        fragility_scan: result,
+        fragility: {
+          score: result.fragility_score,
+          level: result.fragility_level,
+          summary: result.summary,
+          drivers: Object.fromEntries(
+            (result.drivers ?? []).map((driver) => [driver.id, driver.score])
+          ),
+        },
+      }));
+
+      setSceneJson((prev) => normalizeSceneJson(applyFragilityScenePayload(result.scene_payload, prev)));
+
+      const nextFocusId =
+        result.scene_payload?.suggested_focus?.[0] ??
+        result.suggested_objects?.[0] ??
+        null;
+
+      if (!nextFocusId) return;
+      selectedSetterRef.current(nextFocusId);
+      setSelectedObjectIdState(nextFocusId);
+      setFocusedId(nextFocusId);
+      setFocusMode("selected");
+      updateSelectedObjectInfo(nextFocusId);
+      setViewMode("input");
+    };
+
+    window.addEventListener("nexora:apply-fragility-scan", onApplyFragilityScan as EventListener);
+    return () =>
+      window.removeEventListener("nexora:apply-fragility-scan", onApplyFragilityScan as EventListener);
+  }, [setFocusMode, setViewMode, updateSelectedObjectInfo]);
   const isRestoringRef = useRef(false);
   const [overridesVersion, setOverridesVersion] = useState(0);
   const autoBackupTimerRef = useRef<number | null>(null);

@@ -1,0 +1,335 @@
+{
+  "dataset_id": "fragility_scanner_demo_scenarios_v1",
+  "product": "Nexora Fragility Scanner",
+  "created_at": "2026-03-16",
+  "description": "Demo and testing scenario library for operational fragility scanning.",
+  "scenarios": [
+    {
+      "scenario_id": "supplier_concentration_risk_01",
+      "title": "Supplier Concentration Risk",
+      "category": "supplier_concentration_risk",
+      "industry": "manufacturing",
+      "complexity": "simple",
+      "demo_priority": true,
+      "business_context": "Manufacturing network dependent on one upstream supplier for a critical component.",
+      "sample_input_text": "Our main upstream supplier now covers most of the critical component volume for the network. Their recent delays are pushing more orders off schedule, and the team has very limited backup capacity if the issue continues through the next production cycle.",
+      "expected_fragility_level": "high",
+      "expected_primary_drivers": [
+        "supplier_dependency",
+        "single_point_of_failure"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_supplier",
+        "obj_risk_zone",
+        "obj_buffer"
+      ],
+      "expected_management_takeaway": "The operating system is exposed because too much critical load depends on one unstable supplier path."
+    },
+    {
+      "scenario_id": "inventory_buffer_erosion_01",
+      "title": "Inventory Buffer Erosion",
+      "category": "inventory_erosion",
+      "industry": "consumer_goods",
+      "complexity": "simple",
+      "demo_priority": true,
+      "business_context": "Consumer goods network running with thin stock coverage ahead of a busy period.",
+      "sample_input_text": "Inventory coverage has fallen below our normal safety threshold in several nodes. Teams are still meeting shipments today, but there is very little buffer left if inbound supply slips again this week.",
+      "expected_fragility_level": "medium",
+      "expected_primary_drivers": [
+        "inventory_shortage",
+        "recovery_weakness"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_inventory",
+        "obj_buffer",
+        "obj_risk_zone"
+      ],
+      "expected_management_takeaway": "The network still looks operational, but resilience is thinning because low buffers leave little room for the next disruption."
+    },
+    {
+      "scenario_id": "cascading_delivery_delays_01",
+      "title": "Cascading Delivery Delays",
+      "category": "delivery_delays",
+      "industry": "retail_supply_chain",
+      "complexity": "moderate",
+      "demo_priority": true,
+      "business_context": "Retail distribution network seeing repeated late deliveries and store-level pressure.",
+      "sample_input_text": "Delivery reliability has dropped for the third straight week across two regional lanes. Expedite requests are rising, stores are escalating more often, and planners are now spending more time on exceptions than on normal replenishment flow.",
+      "expected_fragility_level": "high",
+      "expected_primary_drivers": [
+        "delay_risk",
+        "bottleneck",
+        "volatility"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_delivery",
+        "obj_bottleneck",
+        "obj_risk_zone"
+      ],
+      "expected_management_takeaway": "Delivery pressure is no longer isolated. It is turning into a broader operating bottleneck that will keep amplifying unless the main lane constraint is addressed."
+    },
+    {
+      "scenario_id": "quality_drift_under_load_01",
+      "title": "Quality Drift Under Load",
+      "category": "quality_instability",
+      "industry": "technology_hardware",
+      "complexity": "moderate",
+      "demo_priority": false,
+      "business_context": "Technology hardware assembly line facing rising defects under volume pressure.",
+      "sample_input_text": "Quality performance has become inconsistent on the highest-volume line over the last ten days. Rework is increasing, defect-related escalations are rising, and throughput is getting harder to maintain because teams are correcting output instead of protecting flow.",
+      "expected_fragility_level": "high",
+      "expected_primary_drivers": [
+        "quality_instability",
+        "bottleneck"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_bottleneck",
+        "obj_risk_zone",
+        "obj_delivery"
+      ],
+      "expected_management_takeaway": "Quality weakness is now affecting operating flow, so the issue should be treated as a system fragility problem rather than a narrow quality event."
+    },
+    {
+      "scenario_id": "recovery_capacity_weakening_01",
+      "title": "Recovery Capacity Weakening",
+      "category": "recovery_weakness_after_disruption",
+      "industry": "logistics",
+      "complexity": "moderate",
+      "demo_priority": false,
+      "business_context": "Logistics network that contained a disruption but recovered too slowly to restore resilience.",
+      "sample_input_text": "The last disruption was contained, but recovery took much longer than planned and the network is still catching up. Managers are worried that another shock in the next two weeks would hit a system that has not rebuilt enough spare capacity.",
+      "expected_fragility_level": "medium",
+      "expected_primary_drivers": [
+        "recovery_weakness",
+        "volatility"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_buffer",
+        "obj_delivery",
+        "obj_risk_zone"
+      ],
+      "expected_management_takeaway": "The main risk is reduced recovery capacity. The system may absorb one event, but it is not ready for another one soon after."
+    },
+    {
+      "scenario_id": "operational_bottleneck_formation_01",
+      "title": "Operational Bottleneck Formation",
+      "category": "operational_bottlenecks",
+      "industry": "e_commerce",
+      "complexity": "simple",
+      "demo_priority": false,
+      "business_context": "E-commerce fulfillment operation with one constrained node slowing the rest of the network.",
+      "sample_input_text": "One fulfillment node is now handling more exception work than normal, and throughput is starting to slow across the shift. Teams are rerouting around the problem, but that is increasing congestion elsewhere and creating a visible bottleneck in outbound flow.",
+      "expected_fragility_level": "medium",
+      "expected_primary_drivers": [
+        "bottleneck",
+        "delay_risk"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_bottleneck",
+        "obj_delivery",
+        "obj_risk_zone"
+      ],
+      "expected_management_takeaway": "The system is becoming fragile because one constrained node is starting to shape the pace of the wider operating flow."
+    },
+    {
+      "scenario_id": "demand_volatility_pressure_01",
+      "title": "Demand Volatility Pressure",
+      "category": "demand_volatility_pressure",
+      "industry": "retail_supply_chain",
+      "complexity": "moderate",
+      "demo_priority": false,
+      "business_context": "Retail network struggling to absorb fast swings in demand across the same supply base.",
+      "sample_input_text": "Demand has become less predictable over the last three cycles, with sharper peaks followed by sudden drop-offs. The planning team is reacting faster than before, but inventory placement and supplier commitments are now moving out of sync with actual demand.",
+      "expected_fragility_level": "medium",
+      "expected_primary_drivers": [
+        "volatility",
+        "inventory_shortage",
+        "supplier_dependency"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_inventory",
+        "obj_supplier",
+        "obj_risk_zone"
+      ],
+      "expected_management_takeaway": "Demand swings are putting stress on both inventory and supply commitments, which raises the risk of overreaction and service instability."
+    },
+    {
+      "scenario_id": "multi_node_dependency_risk_01",
+      "title": "Multi-Node Dependency Risk",
+      "category": "multi_node_dependency_risk",
+      "industry": "technology_hardware",
+      "complexity": "complex",
+      "demo_priority": false,
+      "business_context": "Hardware network dependent on several tightly linked nodes with limited fallback paths.",
+      "sample_input_text": "Three linked production nodes are now operating with tighter handoff windows and less tolerance for delay. A minor issue at one node is quickly forcing rescheduling across the other two, and the teams do not have enough slack to isolate the problem without affecting the wider build plan.",
+      "expected_fragility_level": "high",
+      "expected_primary_drivers": [
+        "supplier_dependency",
+        "bottleneck",
+        "recovery_weakness"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_supplier",
+        "obj_bottleneck",
+        "obj_risk_zone"
+      ],
+      "expected_management_takeaway": "The network has become tightly coupled, so a small local disruption is now able to destabilize a much larger operating path."
+    },
+    {
+      "scenario_id": "single_point_failure_path_01",
+      "title": "Single Point Of Failure Path",
+      "category": "single_point_of_failure",
+      "industry": "manufacturing",
+      "complexity": "simple",
+      "demo_priority": false,
+      "business_context": "Critical production path relying on one asset and one supplier combination.",
+      "sample_input_text": "We have identified one production path that still depends on a single qualified supplier and one constrained internal line. If either one slips, there is no meaningful fallback in the current operating plan.",
+      "expected_fragility_level": "high",
+      "expected_primary_drivers": [
+        "single_point_of_failure",
+        "supplier_dependency"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_supplier",
+        "obj_bottleneck",
+        "obj_risk_zone"
+      ],
+      "expected_management_takeaway": "This path should be treated as an immediate resilience concern because one failure can stop a critical portion of the system."
+    },
+    {
+      "scenario_id": "logistics_network_congestion_01",
+      "title": "Logistics Network Congestion",
+      "category": "logistics_congestion",
+      "industry": "logistics",
+      "complexity": "moderate",
+      "demo_priority": true,
+      "business_context": "Regional logistics network dealing with congestion, slower turns, and delivery risk.",
+      "sample_input_text": "Inbound volume has started to stack up at two major transfer points, and trailer turns are running behind plan. Teams are still moving freight, but congestion is spreading and late departures are becoming more common across the network.",
+      "expected_fragility_level": "high",
+      "expected_primary_drivers": [
+        "delay_risk",
+        "bottleneck",
+        "volatility"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_delivery",
+        "obj_bottleneck",
+        "obj_risk_zone"
+      ],
+      "expected_management_takeaway": "The network is becoming fragile because congestion is spreading faster than recovery actions can contain it."
+    },
+    {
+      "scenario_id": "inventory_replenishment_mismatch_01",
+      "title": "Inventory Replenishment Mismatch",
+      "category": "inventory_erosion",
+      "industry": "consumer_goods",
+      "complexity": "moderate",
+      "demo_priority": false,
+      "business_context": "Consumer goods network with replenishment timing drifting away from actual usage.",
+      "sample_input_text": "Replenishment timing has slipped behind actual consumption in several fast-moving categories. The network is not out of stock yet, but buffer health is deteriorating and planners are starting to escalate because recovery options are narrowing.",
+      "expected_fragility_level": "medium",
+      "expected_primary_drivers": [
+        "inventory_shortage",
+        "recovery_weakness"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_inventory",
+        "obj_buffer",
+        "obj_risk_zone"
+      ],
+      "expected_management_takeaway": "The system is still running, but inventory resilience is weakening and the margin for error is shrinking."
+    },
+    {
+      "scenario_id": "compound_operational_stress_01",
+      "title": "Compound Operational Stress",
+      "category": "compound_operational_stress",
+      "industry": "e_commerce",
+      "complexity": "complex",
+      "demo_priority": true,
+      "business_context": "E-commerce operating network under simultaneous supply, delivery, and buffer pressure.",
+      "sample_input_text": "Deliveries are slipping because one supplier is overloaded, inventory buffers are low, and recovery time has increased across the network. Teams are placing rush orders to protect customer commitments, but exception work is now rising faster than the system can absorb.",
+      "expected_fragility_level": "critical",
+      "expected_primary_drivers": [
+        "supplier_dependency",
+        "delay_risk",
+        "inventory_shortage",
+        "recovery_weakness"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_supplier",
+        "obj_delivery",
+        "obj_inventory",
+        "obj_buffer",
+        "obj_bottleneck",
+        "obj_risk_zone"
+      ],
+      "expected_management_takeaway": "This is a system-level stress pattern, not a single issue. Multiple weak points are now reinforcing each other and increasing operational fragility."
+    },
+    {
+      "scenario_id": "supply_chain_report_excerpt_01",
+      "title": "Supply Chain Risk Briefing",
+      "category": "supply_chain_fragility",
+      "industry": "manufacturing",
+      "complexity": "complex",
+      "demo_priority": false,
+      "business_context": "Management briefing summarizing deteriorating supply conditions across a production network.",
+      "sample_input_text": "Over the last two weeks, supplier reliability has weakened on the most critical inbound path, inventory buffers have been drawn down faster than planned, and recovery time from schedule slips is increasing. The network remains operational, but the team is relying more heavily on manual intervention and expedited moves to protect customer delivery dates.",
+      "expected_fragility_level": "high",
+      "expected_primary_drivers": [
+        "supplier_dependency",
+        "inventory_shortage",
+        "delay_risk",
+        "recovery_weakness"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_supplier",
+        "obj_inventory",
+        "obj_delivery",
+        "obj_risk_zone"
+      ],
+      "expected_management_takeaway": "The system is increasingly fragile because supply weakness is now affecting buffers, recovery speed, and the cost of keeping delivery commitments intact."
+    }
+  ],
+  "ui_example_inputs": [
+    {
+      "scenario_id": "example_short_supply_issue",
+      "title": "Supplier Delay",
+      "sample_input_text": "Our main supplier is running late again, and backup capacity is limited if the delay continues.",
+      "expected_fragility_level": "high",
+      "expected_primary_drivers": [
+        "supplier_dependency"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_supplier",
+        "obj_risk_zone"
+      ]
+    },
+    {
+      "scenario_id": "example_delivery_delay",
+      "title": "Delivery Pressure",
+      "sample_input_text": "Delivery reliability has slipped for the third straight week and exception handling is now rising across the network.",
+      "expected_fragility_level": "high",
+      "expected_primary_drivers": [
+        "delay_risk",
+        "bottleneck"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_delivery",
+        "obj_bottleneck"
+      ]
+    },
+    {
+      "scenario_id": "example_inventory_pressure",
+      "title": "Low Buffer",
+      "sample_input_text": "Inventory coverage is now too thin to absorb another supply disruption this week.",
+      "expected_fragility_level": "medium",
+      "expected_primary_drivers": [
+        "inventory_shortage"
+      ],
+      "expected_objects_to_highlight": [
+        "obj_inventory",
+        "obj_buffer"
+      ]
+    }
+  ]
+}

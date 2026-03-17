@@ -1,0 +1,40 @@
+name: AI Routing Regression
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ai-routing-regression:
+    name: AI Routing Regression
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install regression dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest fastapi pydantic pydantic-settings httpx
+
+      - name: Validate backend syntax
+        run: python -m compileall backend
+
+      - name: Run fast routing regression subset
+        run: pytest backend/tests/ai_regression -m "privacy or routing or provider" -q
+
+      - name: Run full AI routing regression suite
+        run: ./scripts/run_ai_regression.sh
+
+      - name: Upload evaluation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-routing-regression-artifacts
+          path: |
+            backend/tools/e2e_ai_eval/regression_summary.json
