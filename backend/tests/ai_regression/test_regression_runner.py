@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from backend.tests.ai_regression.regression_cases import get_regression_cases
-from backend.tests.ai_regression.regression_runner import run_regression_suite_sync
+from tests.ai_regression.regression_cases import get_regression_cases
+from tests.ai_regression.regression_runner import run_regression_suite_sync
 
 
 @pytest.mark.regression

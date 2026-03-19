@@ -4,9 +4,9 @@ import asyncio
 
 import pytest
 
-from backend.tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases
-from backend.tools.e2e_ai_eval.eval_runner import run_evaluation
-from backend.tests.ai_regression.utils import get_case, run_case_result
+from tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases
+from tools.e2e_ai_eval.eval_runner import run_evaluation
+from tests.ai_regression.utils import get_case, run_case_result
 
 
 @pytest.mark.regression

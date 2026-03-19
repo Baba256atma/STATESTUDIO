@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections import Counter, deque
-from collections.abc import Deque
 from datetime import datetime, timezone
 from threading import Lock
+from typing import Deque
 
 from app.schemas.ai import SelectionHistoryEntry, SelectionStatsResponse
 

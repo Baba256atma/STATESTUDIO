@@ -1,0 +1,110 @@
+{
+  "enabled": true,
+  "version_info": {
+    "policy_version": "nexora-default-v1",
+    "loaded_at": "2026-03-19T19:24:44.171258+00:00",
+    "updated_at": null,
+    "source": "settings_defaults"
+  },
+  "routing": {
+    "enabled": true,
+    "default_mode": "local_first",
+    "local_first": true,
+    "cloud_fallback_enabled": false,
+    "cloud_for_reasoning_enabled": false,
+    "privacy_strict_local": true,
+    "cloud_allowed_tasks": [
+      "analyze_scenario",
+      "explain",
+      "summarize_context"
+    ],
+    "local_allowed_tasks": [
+      "analyze_scenario",
+      "classify_intent",
+      "explain",
+      "extract_objects",
+      "summarize_context"
+    ]
+  },
+  "privacy": {
+    "enabled": true,
+    "default_privacy_mode": "default",
+    "strict_mode": true,
+    "assume_uploaded_content_confidential": true,
+    "cloud_blocked_sensitivity_levels": [
+      "confidential",
+      "restricted"
+    ],
+    "local_required_sensitivity_levels": [
+      "restricted"
+    ]
+  },
+  "provider": {
+    "default_provider": "ollama",
+    "fallback_provider": null,
+    "local_provider_enabled": true,
+    "cloud_provider_enabled": false,
+    "providers": {
+      "ollama": {
+        "enabled": true,
+        "kind": "local",
+        "default_model": "llama3.2:3b"
+      },
+      "openai": {
+        "enabled": false,
+        "kind": "cloud",
+        "default_model": "gpt-4o-mini"
+      },
+      "anthropic": {
+        "enabled": false,
+        "kind": "cloud",
+        "default_model": "claude-3-5-sonnet-latest"
+      }
+    }
+  },
+  "model": {
+    "selection_enabled": true,
+    "selection_strategy": "task_policy",
+    "default_model": "llama3.2:3b",
+    "fast_model": "llama3.2:3b",
+    "reasoning_model": "llama3.2:3b",
+    "extraction_model": "llama3.2:3b"
+  },
+  "benchmark": {
+    "enabled": false,
+    "results_path": "tools/ai_benchmark/benchmark_results.json",
+    "min_success_rate": 0.65,
+    "weights": {
+      "latency": 0.35,
+      "success": 0.35,
+      "json_validity": 0.2,
+      "extraction": 0.1,
+      "reasoning": 0.25
+    }
+  },
+  "audit": {
+    "enabled": true,
+    "log_to_file": false,
+    "file_path": "logs/ai_audit.jsonl",
+    "keep_in_memory": true,
+    "max_events": 500,
+    "include_policy_tags": true,
+    "redact_sensitive_fields": true,
+    "include_provider_metadata": false
+  },
+  "telemetry": {
+    "enabled": true,
+    "log_to_file": false,
+    "file_path": "logs/ai_telemetry.jsonl",
+    "keep_in_memory": true,
+    "max_events": 1000,
+    "redact_sensitive_fields": true,
+    "include_provider_metadata": false
+  },
+  "evaluation": {
+    "use_mock_providers": true,
+    "include_audit_checks": true,
+    "regression_enabled": true,
+    "optimization_auto_apply_enabled": false
+  }
+}

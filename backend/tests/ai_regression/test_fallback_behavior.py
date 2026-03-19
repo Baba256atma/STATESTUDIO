@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from backend.tests.ai_regression.utils import clone_case, get_case, run_case_observed, run_case_result, valid_payload
+from tests.ai_regression.utils import clone_case, get_case, run_case_observed, run_case_result, valid_payload
 
 
 @pytest.mark.regression

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from backend.engines.decision_engine.decision_schema import RecommendedAction, StrategyEvaluation
+from engines.decision_engine.decision_schema import RecommendedAction, StrategyEvaluation
 
 
 class DecisionRanker:

@@ -4,11 +4,11 @@ import asyncio
 import json
 from pathlib import Path
 
-from backend.tools.e2e_ai_eval.eval_assertions import evaluate_case_result
-from backend.tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases
-from backend.tools.e2e_ai_eval.eval_report import build_summary, print_console_report, write_json_report
-from backend.tools.e2e_ai_eval.eval_results import EvaluationRunResult, EvaluationScoreSummary
-from backend.tools.e2e_ai_eval.eval_runner import run_evaluation
+from tools.e2e_ai_eval.eval_assertions import evaluate_case_result
+from tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases
+from tools.e2e_ai_eval.eval_report import build_summary, print_console_report, write_json_report
+from tools.e2e_ai_eval.eval_results import EvaluationRunResult, EvaluationScoreSummary
+from tools.e2e_ai_eval.eval_runner import run_evaluation
 
 
 def test_evaluation_runner_executes_cases_successfully(tmp_path: Path):

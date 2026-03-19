@@ -4,18 +4,18 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from backend.engines.scenario_simulation.fragility_monitor import FragilityMonitor
-from backend.engines.scenario_simulation.loop_executor import LoopExecutor
-from backend.engines.scenario_simulation.shock_applier import ScenarioShockApplier
-from backend.engines.scenario_simulation.signal_state import SignalStateManager
-from backend.engines.scenario_simulation.simulation_core import SimulationCore
-from backend.engines.scenario_simulation.simulation_schema import ScenarioInput
-from backend.engines.war_room.actor_model import ActorModel
-from backend.engines.war_room.conflict_detector import WarRoomConflictDetector
-from backend.engines.war_room.outcome_evaluator import WarRoomOutcomeEvaluator
-from backend.engines.war_room.strategy_interaction import StrategyInteractionEngine
-from backend.engines.war_room.strategy_model import StrategyModel
-from backend.engines.war_room.war_room_schema import (
+from engines.scenario_simulation.fragility_monitor import FragilityMonitor
+from engines.scenario_simulation.loop_executor import LoopExecutor
+from engines.scenario_simulation.shock_applier import ScenarioShockApplier
+from engines.scenario_simulation.signal_state import SignalStateManager
+from engines.scenario_simulation.simulation_core import SimulationCore
+from engines.scenario_simulation.simulation_schema import ScenarioInput
+from engines.war_room.actor_model import ActorModel
+from engines.war_room.conflict_detector import WarRoomConflictDetector
+from engines.war_room.outcome_evaluator import WarRoomOutcomeEvaluator
+from engines.war_room.strategy_interaction import StrategyInteractionEngine
+from engines.war_room.strategy_model import StrategyModel
+from engines.war_room.war_room_schema import (
     WarRoomActor,
     WarRoomResult,
     WarRoomSimulation,

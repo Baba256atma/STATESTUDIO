@@ -2,20 +2,20 @@
 
 from __future__ import annotations
 
-from backend.engines.decision_engine.decision_ranker import DecisionRanker
-from backend.engines.decision_engine.decision_schema import (
+from engines.decision_engine.decision_ranker import DecisionRanker
+from engines.decision_engine.decision_schema import (
     CandidateAction,
     DecisionAnalysis,
     DecisionAnalysisRequest,
     DecisionWeights,
     RiskAnalysis,
 )
-from backend.engines.decision_engine.strategy_evaluator import StrategyEvaluator
-from backend.engines.decision_engine.strategy_generator import StrategyGenerator
-from backend.engines.decision_engine.strategy_simulator import StrategySimulator
-from backend.engines.scenario_simulation.scenario_engine import ScenarioSimulationEngine
-from backend.engines.scenario_simulation.simulation_schema import ScenarioInput, SimulationResult
-from backend.engines.system_modeling.model_schema import SystemModel
+from engines.decision_engine.strategy_evaluator import StrategyEvaluator
+from engines.decision_engine.strategy_generator import StrategyGenerator
+from engines.decision_engine.strategy_simulator import StrategySimulator
+from engines.scenario_simulation.scenario_engine import ScenarioSimulationEngine
+from engines.scenario_simulation.simulation_schema import ScenarioInput, SimulationResult
+from engines.system_modeling.model_schema import SystemModel
 
 
 class StrategicDecisionEngine:

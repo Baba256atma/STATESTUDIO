@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import asyncio
 
-from backend.tools.e2e_ai_eval.eval_assertions import evaluate_case_result
-from backend.tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases
-from backend.tools.e2e_ai_eval.eval_runner import run_case_observation, run_evaluation
-from backend.tools.e2e_ai_eval.eval_types import EvaluationCase, ProviderScenario
+from tools.e2e_ai_eval.eval_assertions import evaluate_case_result
+from tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases
+from tools.e2e_ai_eval.eval_runner import run_case_observation, run_evaluation
+from tools.e2e_ai_eval.eval_types import EvaluationCase, ProviderScenario
 
 
 def get_case(case_id: str) -> EvaluationCase:

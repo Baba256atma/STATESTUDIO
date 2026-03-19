@@ -6,12 +6,12 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from backend.engines.scenario_simulation.simulation_schema import (
+from engines.scenario_simulation.simulation_schema import (
     ScenarioComparisonResult,
     ScenarioInput,
     SimulationResult,
 )
-from backend.engines.system_modeling.model_schema import SystemModel
+from engines.system_modeling.model_schema import SystemModel
 
 
 class CandidateAction(BaseModel):

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from backend.tools.e2e_ai_eval.eval_types import EvaluationCase, ProviderScenario
+from tools.e2e_ai_eval.eval_types import EvaluationCase, ProviderScenario
 
 
 DEFAULT_AUDIT_STAGES = [

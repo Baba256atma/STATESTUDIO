@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from backend.engines.scenario_simulation.fragility_monitor import FragilityMonitor
-from backend.engines.scenario_simulation.loop_executor import LoopExecutor
-from backend.engines.scenario_simulation.signal_state import SignalStateManager
-from backend.engines.scenario_simulation.simulation_schema import ScenarioInput, SimulationResult, SimulationStep
-from backend.engines.system_modeling.model_schema import SystemModel, SystemObject, SystemRelationship
+from engines.scenario_simulation.fragility_monitor import FragilityMonitor
+from engines.scenario_simulation.loop_executor import LoopExecutor
+from engines.scenario_simulation.signal_state import SignalStateManager
+from engines.scenario_simulation.simulation_schema import ScenarioInput, SimulationResult, SimulationStep
+from engines.system_modeling.model_schema import SystemModel, SystemObject, SystemRelationship
 
 
 _OBJECT_SIGNAL_AFFINITIES: dict[str, tuple[str, ...]] = {

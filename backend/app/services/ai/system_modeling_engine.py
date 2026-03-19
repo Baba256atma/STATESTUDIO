@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from backend.engines.system_modeling.system_model_builder import UniversalSystemModelBuilder
+from engines.system_modeling.system_model_builder import UniversalSystemModelBuilder
 from app.schemas.ai import (
     SystemConflict,
     SystemFeedbackLoop,

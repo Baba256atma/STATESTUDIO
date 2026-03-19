@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from app.schemas.audit import AuditEvent
-from backend.tools.e2e_ai_eval.eval_results import EvaluationCaseResult, StageAssertionResult
-from backend.tools.e2e_ai_eval.eval_types import EvaluationCase, ObservedEvaluationState
+from tools.e2e_ai_eval.eval_results import EvaluationCaseResult, StageAssertionResult
+from tools.e2e_ai_eval.eval_types import EvaluationCase, ObservedEvaluationState
 
 
 REDACTION_FORBIDDEN_KEYS = {"text", "prompt", "messages", "raw_output"}

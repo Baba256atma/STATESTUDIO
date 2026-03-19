@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from backend.tools.e2e_ai_eval.eval_results import (
+from tools.e2e_ai_eval.eval_results import (
     EvaluationCaseResult,
     EvaluationRunResult,
     EvaluationScoreSummary,

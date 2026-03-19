@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from backend.engines.system_modeling.system_model_builder import UniversalSystemModelBuilder
+from engines.system_modeling.system_model_builder import UniversalSystemModelBuilder
 
 
 def test_builder_generates_supply_chain_model():

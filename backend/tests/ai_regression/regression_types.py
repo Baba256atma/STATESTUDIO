@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from backend.tools.e2e_ai_eval.eval_types import EvaluationCase
+from tools.e2e_ai_eval.eval_types import EvaluationCase
 
 
 RegressionCategory = Literal[

@@ -28,7 +28,7 @@ BACKEND_URL="http://127.0.0.1:8000"
 BACKEND_DOCS_URL="http://127.0.0.1:8000/docs"
 FRONTEND_URL="http://127.0.0.1:3000"
 
-BACKEND_COMMAND="cd $BACKEND_DIR && ./run_backend.sh dev"
+BACKEND_COMMAND="cd $BACKEND_DIR && bash ./run_backend.sh dev"
 FRONTEND_COMMAND="cd $FRONTEND_DIR && npm run dev"
 
 require_path() {

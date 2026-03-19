@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import re
 
-from backend.engines.system_modeling.conflict_detector import SystemConflictDetector
-from backend.engines.system_modeling.fragility_detector import SystemFragilityDetector
-from backend.engines.system_modeling.loop_detector import SystemLoopDetector
-from backend.engines.system_modeling.model_schema import SystemModel, SystemObject, SystemRelationship, SystemSignal
-from backend.engines.system_modeling.object_extractor import SystemObjectExtractor
-from backend.engines.system_modeling.signal_extractor import SystemSignalExtractor
+from engines.system_modeling.conflict_detector import SystemConflictDetector
+from engines.system_modeling.fragility_detector import SystemFragilityDetector
+from engines.system_modeling.loop_detector import SystemLoopDetector
+from engines.system_modeling.model_schema import SystemModel, SystemObject, SystemRelationship, SystemSignal
+from engines.system_modeling.object_extractor import SystemObjectExtractor
+from engines.system_modeling.signal_extractor import SystemSignalExtractor
 
 
 _RELATION_VERBS: tuple[tuple[tuple[str, ...], str], ...] = (

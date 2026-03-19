@@ -1,7 +1,7 @@
 """Scenario simulation engine for Nexora."""
 
-from backend.engines.scenario_simulation.scenario_engine import ScenarioSimulationEngine
-from backend.engines.scenario_simulation.simulation_schema import (
+from engines.scenario_simulation.scenario_engine import ScenarioSimulationEngine
+from engines.scenario_simulation.simulation_schema import (
     ScenarioComparisonEntry,
     ScenarioComparisonResult,
     ScenarioInput,

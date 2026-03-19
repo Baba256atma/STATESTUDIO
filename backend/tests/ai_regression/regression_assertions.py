@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from backend.tests.ai_regression.regression_types import (
+from tests.ai_regression.regression_types import (
     RegressionCase,
     RegressionCaseResult,
     RegressionStageResult,
 )
-from backend.tools.e2e_ai_eval.eval_results import EvaluationCaseResult
+from tools.e2e_ai_eval.eval_results import EvaluationCaseResult
 
 
 CRITICAL_STAGE_MAP = {

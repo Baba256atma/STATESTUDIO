@@ -38,11 +38,11 @@ from app.services.ai.providers.types import (
     ProviderModelList,
 )
 from app.services.ai.validators import validate_structured_output
-from backend.tools.e2e_ai_eval.eval_assertions import evaluate_case_result
-from backend.tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases
-from backend.tools.e2e_ai_eval.eval_report import build_summary, print_console_report, write_json_report
-from backend.tools.e2e_ai_eval.eval_results import EvaluationRunResult
-from backend.tools.e2e_ai_eval.eval_types import EvaluationCase, ObservedEvaluationState, ProviderScenario
+from tools.e2e_ai_eval.eval_assertions import evaluate_case_result
+from tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases
+from tools.e2e_ai_eval.eval_report import build_summary, print_console_report, write_json_report
+from tools.e2e_ai_eval.eval_results import EvaluationRunResult
+from tools.e2e_ai_eval.eval_types import EvaluationCase, ObservedEvaluationState, ProviderScenario
 
 
 DEFAULT_OUTPUT_PATH = BACKEND_DIR / "tools" / "e2e_ai_eval" / "e2e_eval_results.json"

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from backend.engines.system_modeling.model_schema import SystemFragilityPoint, SystemSignal
+from engines.system_modeling.model_schema import SystemFragilityPoint, SystemSignal
 
 
 class SystemFragilityDetector:

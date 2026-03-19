@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from backend.engines.decision_engine.decision_engine import StrategicDecisionEngine
-from backend.engines.decision_engine.decision_schema import CandidateAction
-from backend.engines.scenario_simulation.signal_state import SignalStateManager
-from backend.engines.scenario_simulation.simulation_schema import ScenarioInput, ScenarioShock, SimulationResult
-from backend.engines.system_modeling.model_schema import SystemModel
-from backend.engines.war_room.war_room_schema import WarRoomActor, WarRoomStrategy
+from engines.decision_engine.decision_engine import StrategicDecisionEngine
+from engines.decision_engine.decision_schema import CandidateAction
+from engines.scenario_simulation.signal_state import SignalStateManager
+from engines.scenario_simulation.simulation_schema import ScenarioInput, ScenarioShock, SimulationResult
+from engines.system_modeling.model_schema import SystemModel
+from engines.war_room.war_room_schema import WarRoomActor, WarRoomStrategy
 
 
 class StrategyInteractionEngine:

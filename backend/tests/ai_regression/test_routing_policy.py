@@ -7,7 +7,7 @@ from app.services.ai.privacy_classifier import PrivacyClassifier
 from app.services.ai.privacy_types import PrivacyClassificationRequest
 from app.services.ai.routing_policy import HybridRoutingPolicy
 from app.services.ai.routing_types import RoutingDecisionRequest, RoutingProviderState
-from backend.tests.ai_regression.utils import get_case, run_case_result
+from tests.ai_regression.utils import get_case, run_case_result
 
 
 def _local_state(available: bool = True) -> RoutingProviderState:

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from backend.engines.scenario_simulation.signal_state import SignalStateManager
-from backend.engines.system_modeling.model_schema import SystemLoop
+from engines.scenario_simulation.signal_state import SignalStateManager
+from engines.system_modeling.model_schema import SystemLoop
 
 
 class LoopExecutor:

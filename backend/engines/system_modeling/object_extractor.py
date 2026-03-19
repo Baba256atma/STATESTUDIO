@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from backend.engines.system_modeling.model_schema import SystemObject
+from engines.system_modeling.model_schema import SystemObject
 
 
 @dataclass(frozen=True)

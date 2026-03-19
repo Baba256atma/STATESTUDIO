@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from backend.tests.ai_regression.regression_types import (
+from tests.ai_regression.regression_types import (
     RegressionCaseResult,
     RegressionRunResult,
     RegressionSummary,

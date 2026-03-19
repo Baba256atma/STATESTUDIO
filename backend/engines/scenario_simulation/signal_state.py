@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from backend.engines.system_modeling.model_schema import SystemModel
+from engines.system_modeling.model_schema import SystemModel
 
 
 _DEFAULT_SIGNAL_VALUES: dict[str, float] = {

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from backend.engines.decision_engine.decision_engine import StrategicDecisionEngine
-from backend.engines.decision_engine.decision_schema import CandidateAction
-from backend.engines.scenario_simulation.scenario_engine import ScenarioSimulationEngine
-from backend.engines.scenario_simulation.simulation_schema import ScenarioInput, ScenarioShock
-from backend.engines.system_modeling.system_model_builder import UniversalSystemModelBuilder
+from engines.decision_engine.decision_engine import StrategicDecisionEngine
+from engines.decision_engine.decision_schema import CandidateAction
+from engines.scenario_simulation.scenario_engine import ScenarioSimulationEngine
+from engines.scenario_simulation.simulation_schema import ScenarioInput, ScenarioShock
+from engines.system_modeling.system_model_builder import UniversalSystemModelBuilder
 
 
 def test_decision_engine_generates_recommendation_for_supply_chain():

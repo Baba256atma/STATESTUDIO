@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict, deque
-from collections.abc import Deque
+from typing import Deque
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware

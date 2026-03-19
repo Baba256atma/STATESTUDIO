@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from backend.engines.decision_engine.decision_schema import CandidateAction
-from backend.engines.system_modeling.model_schema import SystemModel
+from engines.decision_engine.decision_schema import CandidateAction
+from engines.system_modeling.model_schema import SystemModel
 
 
 class StrategyGenerator:

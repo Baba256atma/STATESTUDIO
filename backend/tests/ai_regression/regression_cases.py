@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from backend.tests.ai_regression.regression_types import RegressionCase
-from backend.tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases
+from tests.ai_regression.regression_types import RegressionCase
+from tools.e2e_ai_eval.eval_cases import get_default_evaluation_cases
 
 
 def get_regression_cases() -> list[RegressionCase]:

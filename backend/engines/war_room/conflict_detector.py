@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from backend.engines.war_room.war_room_schema import WarRoomConflictEvent, WarRoomStrategy
+from engines.war_room.war_room_schema import WarRoomConflictEvent, WarRoomStrategy
 
 
 class WarRoomConflictDetector:

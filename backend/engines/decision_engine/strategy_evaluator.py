@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from backend.engines.decision_engine.decision_schema import CandidateAction, DecisionWeights, StrategyEvaluation
-from backend.engines.scenario_simulation.simulation_schema import SimulationResult
+from engines.decision_engine.decision_schema import CandidateAction, DecisionWeights, StrategyEvaluation
+from engines.scenario_simulation.simulation_schema import SimulationResult
 
 
 class StrategyEvaluator:

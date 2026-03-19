@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from backend.engines.scenario_simulation.scenario_engine import ScenarioSimulationEngine
-from backend.engines.scenario_simulation.simulation_schema import ScenarioInput, ScenarioShock
-from backend.engines.system_modeling.system_model_builder import UniversalSystemModelBuilder
+from engines.scenario_simulation.scenario_engine import ScenarioSimulationEngine
+from engines.scenario_simulation.simulation_schema import ScenarioInput, ScenarioShock
+from engines.system_modeling.system_model_builder import UniversalSystemModelBuilder
 
 
 def test_simulation_engine_runs_supply_shock_scenario():

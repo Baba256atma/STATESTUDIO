@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from backend.engines.war_room.war_room_schema import WarRoomActor
+from engines.war_room.war_room_schema import WarRoomActor
 
 
 _DEFAULTS: dict[str, dict[str, object]] = {

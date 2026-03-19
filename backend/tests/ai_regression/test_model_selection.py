@@ -5,7 +5,7 @@ import pytest
 from app.core.config import LocalAISettings
 from app.schemas.ai import ModelSelectionRequest
 from app.services.ai.model_selection_engine import LocalAIModelSelectionEngine
-from backend.tests.ai_regression.utils import get_case, run_case_result
+from tests.ai_regression.utils import get_case, run_case_result
 
 
 def _build_settings() -> LocalAISettings:

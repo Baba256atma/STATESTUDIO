@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from backend.engines.war_room.war_room_schema import WarRoomStrategy
+from engines.war_room.war_room_schema import WarRoomStrategy
 
 
 class StrategyModel:

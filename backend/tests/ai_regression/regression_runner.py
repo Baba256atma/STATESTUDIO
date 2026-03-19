@@ -7,15 +7,15 @@ import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
 
-from backend.tests.ai_regression.regression_assertions import assert_regression_case
-from backend.tests.ai_regression.regression_cases import get_regression_cases
-from backend.tests.ai_regression.regression_report import (
+from tests.ai_regression.regression_assertions import assert_regression_case
+from tests.ai_regression.regression_cases import get_regression_cases
+from tests.ai_regression.regression_report import (
     build_regression_summary,
     render_regression_console_report,
     write_regression_report,
 )
-from backend.tests.ai_regression.regression_types import RegressionCase, RegressionRunResult
-from backend.tools.e2e_ai_eval.eval_runner import run_evaluation
+from tests.ai_regression.regression_types import RegressionCase, RegressionRunResult
+from tools.e2e_ai_eval.eval_runner import run_evaluation
 
 
 DEFAULT_OUTPUT_PATH = Path("backend/tools/e2e_ai_eval/regression_summary.json")

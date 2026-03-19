@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from backend.engines.system_modeling.model_schema import SystemConflict, SystemObject
+from engines.system_modeling.model_schema import SystemConflict, SystemObject
 
 
 class SystemConflictDetector:

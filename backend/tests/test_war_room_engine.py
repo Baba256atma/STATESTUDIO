@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from backend.engines.system_modeling.system_model_builder import UniversalSystemModelBuilder
-from backend.engines.war_room.war_room_engine import StrategyWarRoomEngine
-from backend.engines.war_room.war_room_schema import WarRoomActor, WarRoomSimulation
+from engines.system_modeling.system_model_builder import UniversalSystemModelBuilder
+from engines.war_room.war_room_engine import StrategyWarRoomEngine
+from engines.war_room.war_room_schema import WarRoomActor, WarRoomSimulation
 
 
 def test_war_room_engine_runs_market_competition_scenario():

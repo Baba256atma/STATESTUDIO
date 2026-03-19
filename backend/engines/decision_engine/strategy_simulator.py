@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from backend.engines.decision_engine.decision_schema import CandidateAction
-from backend.engines.scenario_simulation.scenario_engine import ScenarioSimulationEngine
-from backend.engines.scenario_simulation.simulation_schema import ScenarioInput, ScenarioShock, SimulationResult
-from backend.engines.system_modeling.model_schema import SystemModel
+from engines.decision_engine.decision_schema import CandidateAction
+from engines.scenario_simulation.scenario_engine import ScenarioSimulationEngine
+from engines.scenario_simulation.simulation_schema import ScenarioInput, ScenarioShock, SimulationResult
+from engines.system_modeling.model_schema import SystemModel
 
 
 class StrategySimulator:

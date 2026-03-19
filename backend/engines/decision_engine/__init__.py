@@ -1,7 +1,7 @@
 """Strategic decision engine for Nexora."""
 
-from backend.engines.decision_engine.decision_engine import StrategicDecisionEngine
-from backend.engines.decision_engine.decision_schema import (
+from engines.decision_engine.decision_engine import StrategicDecisionEngine
+from engines.decision_engine.decision_schema import (
     CandidateAction,
     DecisionAnalysis,
     DecisionAnalysisRequest,

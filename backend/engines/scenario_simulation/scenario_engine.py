@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-from backend.engines.scenario_simulation.fragility_monitor import FragilityMonitor
-from backend.engines.scenario_simulation.loop_executor import LoopExecutor
-from backend.engines.scenario_simulation.shock_applier import ScenarioShockApplier
-from backend.engines.scenario_simulation.signal_state import SignalStateManager
-from backend.engines.scenario_simulation.simulation_core import SimulationCore
-from backend.engines.scenario_simulation.simulation_schema import (
+from engines.scenario_simulation.fragility_monitor import FragilityMonitor
+from engines.scenario_simulation.loop_executor import LoopExecutor
+from engines.scenario_simulation.shock_applier import ScenarioShockApplier
+from engines.scenario_simulation.signal_state import SignalStateManager
+from engines.scenario_simulation.simulation_core import SimulationCore
+from engines.scenario_simulation.simulation_schema import (
     ScenarioComparisonEntry,
     ScenarioComparisonResult,
     ScenarioInput,
     SimulationResult,
 )
-from backend.engines.system_modeling.model_schema import SystemModel
+from engines.system_modeling.model_schema import SystemModel
 
 
 class ScenarioSimulationEngine:

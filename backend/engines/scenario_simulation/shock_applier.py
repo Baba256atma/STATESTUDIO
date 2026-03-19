@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from backend.engines.scenario_simulation.signal_state import SignalStateManager
-from backend.engines.scenario_simulation.simulation_schema import ScenarioShock
+from engines.scenario_simulation.signal_state import SignalStateManager
+from engines.scenario_simulation.simulation_schema import ScenarioShock
 
 
 _SHOCK_ALIASES: dict[str, tuple[str, ...]] = {

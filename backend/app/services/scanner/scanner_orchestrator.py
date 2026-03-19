@@ -18,18 +18,18 @@ try:
     from app.services.scanner.scene_payload_builder import build_fragility_scene_payload
     from app.services.scanner.signal_extractor import extract_fragility_signals
 except ModuleNotFoundError:
-    from backend.app.engines.fragility_scoring import compute_fragility_score
-    from backend.app.models.scanner_input import FragilityScanRequest
-    from backend.app.models.scanner_output import FragilityDriver, FragilityFinding, FragilityScanResponse
-    from backend.app.services.scanner.findings_builder import (
+    from app.engines.fragility_scoring import compute_fragility_score
+    from app.models.scanner_input import FragilityScanRequest
+    from app.models.scanner_output import FragilityDriver, FragilityFinding, FragilityScanResponse
+    from app.services.scanner.findings_builder import (
         build_fragility_findings,
         build_fragility_summary,
         build_recommended_actions,
     )
-    from backend.app.services.scanner.input_normalizer import normalize_scanner_input
-    from backend.app.services.scanner.object_suggester import suggest_objects_from_fragility
-    from backend.app.services.scanner.scene_payload_builder import build_fragility_scene_payload
-    from backend.app.services.scanner.signal_extractor import extract_fragility_signals
+    from app.services.scanner.input_normalizer import normalize_scanner_input
+    from app.services.scanner.object_suggester import suggest_objects_from_fragility
+    from app.services.scanner.scene_payload_builder import build_fragility_scene_payload
+    from app.services.scanner.signal_extractor import extract_fragility_signals
 
 
 class FragilityScannerOrchestrator:

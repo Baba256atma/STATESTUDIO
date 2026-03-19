@@ -13,7 +13,7 @@ try:
     from core import ChaosEngine
 except Exception:
     # When executed directly from project root: use package import.
-    from backend.chaos_engine.core import ChaosEngine
+    from chaos_engine.core import ChaosEngine
 
 
 EXAMPLES = [
