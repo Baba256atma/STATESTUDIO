@@ -7,13 +7,12 @@ export function FragilityFindingsList({
   findings,
 }: {
   findings: FragilityFinding[];
-}): React.ReactElement | null {
-  if (!findings.length) return null;
+}): React.ReactElement {
 
   return (
     <section style={{ display: "grid", gap: 8 }}>
       <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>Findings</h3>
-      {findings.map((finding) => (
+      {findings.length ? findings.map((finding) => (
         <article
           key={finding.id}
           style={{
@@ -32,7 +31,11 @@ export function FragilityFindingsList({
           <div style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.5 }}>{finding.explanation}</div>
           <div style={{ color: "#93c5fd", fontSize: 12, lineHeight: 1.45 }}>{finding.recommendation}</div>
         </article>
-      ))}
+      )) : (
+        <div style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+          No findings were returned for this scan.
+        </div>
+      )}
     </section>
   );
 }

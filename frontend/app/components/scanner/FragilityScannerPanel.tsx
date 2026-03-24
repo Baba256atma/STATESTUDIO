@@ -14,6 +14,15 @@ const PANEL_STYLE: React.CSSProperties = {
   gap: 12,
 };
 
+const CARD_STYLE: React.CSSProperties = {
+  padding: 12,
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(15,23,42,0.78)",
+  display: "grid",
+  gap: 8,
+};
+
 const INPUT_STYLE: React.CSSProperties = {
   width: "100%",
   minHeight: 132,
@@ -28,13 +37,18 @@ const INPUT_STYLE: React.CSSProperties = {
   boxSizing: "border-box",
 };
 
+const EXAMPLE_TEXT =
+  "Deliveries are slipping because one supplier is overloaded, inventory buffers are low, and recovery time has increased across the network.";
+
+type FragilityScannerPanelProps = {
+  initialResult?: FragilityScanResponse | null;
+  onScanComplete?: (result: FragilityScanResponse) => void;
+};
+
 export function FragilityScannerPanel({
   initialResult = null,
   onScanComplete,
-}: {
-  initialResult?: FragilityScanResponse | null;
-  onScanComplete?: (result: FragilityScanResponse) => void;
-}): React.ReactElement {
+}: FragilityScannerPanelProps): React.ReactElement {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,20 +61,21 @@ export function FragilityScannerPanel({
   }, [initialResult]);
 
   const canRun = useMemo(() => text.trim().length > 0 && !loading, [loading, text]);
+  const hasResult = !!result;
+  const interpretationHint = useMemo(() => {
+    if (!result) return null;
+    if (result.fragility_score >= 0.75) return "Interpretation: system fragility is elevated and likely needs immediate containment.";
+    if (result.fragility_score >= 0.5) return "Interpretation: fragility is meaningful and should be managed before pressure spreads.";
+    return "Interpretation: current fragility looks contained, but the scanner still surfaced pressure points to watch.";
+  }, [result]);
 
   const handleRun = async () => {
-    const trimmed = text.trim();
-    if (!trimmed) {
-      setError("Please enter business text before running the scan.");
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
       const nextResult = await runFragilityScan({
-        text: trimmed,
+        text,
         mode: "business",
       });
       setResult(nextResult);
@@ -81,17 +96,8 @@ export function FragilityScannerPanel({
   };
 
   return (
-    <section style={PANEL_STYLE} aria-label="Fragility scanner">
-      <div
-        style={{
-          padding: 12,
-          borderRadius: 12,
-          border: "1px solid rgba(255,255,255,0.12)",
-          background: "rgba(15,23,42,0.78)",
-          display: "grid",
-          gap: 8,
-        }}
-      >
+    <section style={PANEL_STYLE} aria-label="Fragility scanner" aria-busy={loading}>
+      <div style={CARD_STYLE}>
         <div>
           <div style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 800 }}>Fragility Scanner</div>
           <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.45, marginTop: 4 }}>
@@ -107,9 +113,32 @@ export function FragilityScannerPanel({
           onChange={(event) => setText(event.target.value)}
           placeholder="Example: Deliveries are slipping because one supplier is overloaded, inventory buffers are low, and recovery time has increased across the network."
           style={INPUT_STYLE}
+          disabled={loading}
         />
-        <div style={{ color: "#64748b", fontSize: 11 }}>
-          The MVP uses deterministic business rules and highlights the most explainable fragility signals first.
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={() => {
+              setText(EXAMPLE_TEXT);
+              setError(null);
+            }}
+            disabled={loading}
+            style={{
+              padding: "7px 10px",
+              borderRadius: 999,
+              border: "1px solid rgba(148,163,184,0.2)",
+              background: "rgba(2,6,23,0.45)",
+              color: "#cbd5e1",
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
+            Use example input
+          </button>
+          <div style={{ color: "#64748b", fontSize: 11, alignSelf: "center" }}>
+            The scanner favors explainable drivers and executive-ready output.
+          </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
@@ -132,7 +161,7 @@ export function FragilityScannerPanel({
           <button
             type="button"
             onClick={handleClear}
-            disabled={loading && !text && !result}
+            disabled={loading}
             style={{
               padding: "9px 14px",
               borderRadius: 12,
@@ -140,7 +169,7 @@ export function FragilityScannerPanel({
               background: "rgba(15,23,42,0.58)",
               color: "#cbd5e1",
               fontSize: 12,
-              cursor: "pointer",
+              cursor: loading ? "not-allowed" : "pointer",
             }}
           >
             Clear
@@ -160,25 +189,61 @@ export function FragilityScannerPanel({
           >
             {error}
           </div>
+        ) : !hasResult ? (
+          <div
+            style={{
+              padding: "8px 10px",
+              borderRadius: 10,
+              border: "1px solid rgba(148,163,184,0.14)",
+              background: "rgba(2,6,23,0.36)",
+              color: "#94a3b8",
+              fontSize: 12,
+              lineHeight: 1.5,
+            }}
+          >
+            Paste a short operational update to reveal fragility drivers and system weak points.
+          </div>
         ) : null}
       </div>
 
       {result ? (
         <>
+          {(() => {
+            const findings = Array.isArray(result.findings) ? result.findings : [];
+            const suggestedActions = Array.isArray(result.suggested_actions) ? result.suggested_actions : [];
+            const suggestedObjects = Array.isArray(result.suggested_objects) ? result.suggested_objects : [];
+
+            return (
+              <>
           <FragilityScannerOverlay result={result} />
           <FragilityScoreCard
             score={result.fragility_score}
             level={result.fragility_level}
             summary={result.summary}
           />
+          {interpretationHint ? (
+            <div
+              style={{
+                padding: "9px 10px",
+                borderRadius: 12,
+                border: "1px solid rgba(148,163,184,0.16)",
+                background: "rgba(2,6,23,0.42)",
+                color: "#cbd5e1",
+                fontSize: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              {interpretationHint}
+            </div>
+          ) : null}
           <FragilityDriversList drivers={result.drivers} />
-          <FragilityFindingsList findings={result.findings} />
-          <FragilitySuggestedActions actions={result.suggested_actions} />
-          {result.suggested_objects.length ? (
+          <FragilityFindingsList findings={findings as any} />
+          <FragilitySuggestedActions actions={suggestedActions} />
+          {suggestedObjects.length ? (
             <section style={{ display: "grid", gap: 8 }}>
               <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>Suggested Object Focus</h3>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {result.suggested_objects.map((objectId) => (
+                {suggestedObjects.map((objectId) => (
                   <div
                     key={objectId}
                     style={{
@@ -197,6 +262,9 @@ export function FragilityScannerPanel({
               </div>
             </section>
           ) : null}
+              </>
+            );
+          })()}
         </>
       ) : null}
     </section>

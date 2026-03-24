@@ -51,6 +51,12 @@ export type SceneObject = {
   risk_kind?: string;
   business_meaning?: string;
   related_terms?: string[];
+  scanner_reason?: string;
+  scanner_highlighted?: boolean;
+  scanner_severity?: string;
+  scanner_emphasis?: number;
+  scanner_focus?: boolean;
+  scanner_overlay_summary?: string;
   semantic?: SemanticObjectMeta;
   domain_hints?: Record<string, string[]>;
   ux?: { shape?: string; base_color?: string };

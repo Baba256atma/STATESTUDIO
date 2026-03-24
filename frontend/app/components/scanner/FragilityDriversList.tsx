@@ -15,13 +15,12 @@ export function FragilityDriversList({
   drivers,
 }: {
   drivers: FragilityDriver[];
-}): React.ReactElement | null {
-  if (!drivers.length) return null;
+}): React.ReactElement {
 
   return (
     <section style={{ display: "grid", gap: 8 }}>
       <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>Top Drivers</h3>
-      {drivers.map((driver) => {
+      {drivers.length ? drivers.map((driver) => {
         const color = severityColor(driver.severity);
         return (
           <article
@@ -65,7 +64,11 @@ export function FragilityDriversList({
             ) : null}
           </article>
         );
-      })}
+      }) : (
+        <div style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+          No driver breakdown was returned for this scan.
+        </div>
+      )}
     </section>
   );
 }

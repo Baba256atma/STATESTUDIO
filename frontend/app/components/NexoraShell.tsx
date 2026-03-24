@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { FragilityScannerPanel } from "./scanner/FragilityScannerPanel";
+import { FragilityScannerMini } from "./scanner/FragilityScannerMini";
 import { nx } from "./ui/nexoraTheme";
 import type { FragilityDriver, FragilityScanResponse } from "../types/fragilityScanner";
 
@@ -25,6 +25,10 @@ type InspectorEventTab =
   | "executive_dashboard"
   | "collaboration"
   | "workspace";
+type InspectorSectionChangedDetail = {
+  section: ActiveSectionKey;
+  eventTab: InspectorEventTab | null;
+};
 type ActiveSectionKey =
   | "scene"
   | "objects"
@@ -391,6 +395,11 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const setInspectorSection = React.useCallback((section: ActiveSectionKey, eventTab?: InspectorEventTab) => {
     setActiveSection(section);
     setIsInspectorOpen(true);
+    window.dispatchEvent(
+      new CustomEvent<InspectorSectionChangedDetail>("nexora:inspector-section-changed", {
+        detail: { section, eventTab: eventTab ?? null },
+      })
+    );
     if (eventTab) {
       window.dispatchEvent(
         new CustomEvent("nexora:open-right-panel", {
@@ -1354,7 +1363,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                       Fragility Scanner
                     </div>
                     <div style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.5 }}>
-                      Scan report-like text, get an executive fragility readout, and push the returned focus objects back into the live scene.
+                      Scan a short business update to reveal fragility level, weak points, and the drivers worth inspecting first.
                     </div>
                     {fragilityScanResult ? (
                       <div style={{ color: "#94a3b8", fontSize: 11 }}>
@@ -1363,7 +1372,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                     ) : null}
                   </div>
 
-                  <FragilityScannerPanel
+                  <FragilityScannerMini
                     initialResult={fragilityScanResult}
                     onScanComplete={handleFragilityScanComplete}
                   />

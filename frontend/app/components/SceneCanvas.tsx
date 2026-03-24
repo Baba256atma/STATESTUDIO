@@ -7,6 +7,7 @@ import { OrbitControls, Stars } from "@react-three/drei";
 
 import { SceneRenderer } from "./SceneRenderer";
 import { smoothValue } from "../lib/smooth";
+import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
 import {
   useClearAllOverrides,
   useOverrides,
@@ -32,6 +33,10 @@ type SceneCanvasProps = {
   hudDockSide?: "left" | "right";
 
   sceneJson: any | null;
+  objectSelection?: {
+    highlighted_objects?: string[];
+    dim_unrelated_objects?: boolean;
+  } | null;
   getUxForObject: (id: string) => { shape?: string; base_color?: string; opacity?: number; scale?: number } | null;
   objectUxById?: Record<string, { opacity?: number; scale?: number }>;
 
@@ -260,6 +265,7 @@ function CameraIntelligence({
   controlsRef,
   localIsOrbitingRef,
   preserveCameraOnClearRef,
+  orbitControlsEnabled,
 }: {
   focusPinned: boolean;
   focusMode: "all" | "selected";
@@ -273,6 +279,7 @@ function CameraIntelligence({
   controlsRef?: React.MutableRefObject<any | null>;
   localIsOrbitingRef?: React.MutableRefObject<boolean>;
   preserveCameraOnClearRef?: React.MutableRefObject<boolean>;
+  orbitControlsEnabled: boolean;
 }) {
   const { camera } = useThree();
   const focusTargetRef = useRef<THREE.Vector3>(new THREE.Vector3());
@@ -291,6 +298,9 @@ function CameraIntelligence({
   const lastAutoFrameSigRef = useRef<string>("");
   const lastSceneJsonRef = useRef<any>(null);
   const hasSeededCameraRef = useRef<boolean>(false);
+  const suspendAutoCameraUntilRef = useRef<number>(0);
+  const lastCameraPosRef = useRef<THREE.Vector3>(new THREE.Vector3(camPos[0], camPos[1], camPos[2]));
+  const lastControlTargetRef = useRef<THREE.Vector3>(new THREE.Vector3());
 
   useLayoutEffect(() => {
     defaultCamPosRef.current.set(camPos[0], camPos[1], camPos[2]);
@@ -300,6 +310,11 @@ function CameraIntelligence({
       camera.position.set(camPos[0], camPos[1], camPos[2]);
     }
   }, [camPos, camera]);
+
+  useEffect(() => {
+    if (orbitControlsEnabled) return;
+    suspendAutoCameraUntilRef.current = performance.now() + 250;
+  }, [orbitControlsEnabled]);
 
   useEffect(() => {
     const lookAt = sceneJson?.scene?.camera?.lookAt;
@@ -347,13 +362,18 @@ function CameraIntelligence({
     currentLookAtRef.current.set(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
 
     // Apply the fresh frame immediately so first visible frame is stable.
-    if (!cameraLockedByUser && !(localIsOrbitingRef?.current || isOrbiting)) {
+    const now = performance.now();
+    const autoCameraSuspended = now < suspendAutoCameraUntilRef.current;
+    if (!cameraLockedByUser && !(localIsOrbitingRef?.current || isOrbiting) && !autoCameraSuspended) {
       camera.position.set(frame.position[0], frame.position[1], frame.position[2]);
+      lastCameraPosRef.current.set(frame.position[0], frame.position[1], frame.position[2]);
       const controls = controlsRef?.current;
       if (controls?.target) {
         controls.target.set(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
+        lastControlTargetRef.current.set(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
         controls.update();
       } else {
+        currentLookAtRef.current.set(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
         camera.lookAt(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
       }
     }
@@ -375,23 +395,44 @@ function CameraIntelligence({
         if (controls?.target) {
           desiredLookAtRef.current.copy(controls.target);
           currentLookAtRef.current.copy(controls.target);
+          lastControlTargetRef.current.copy(controls.target);
         } else {
           desiredLookAtRef.current.copy(currentLookAtRef.current);
+          lastControlTargetRef.current.copy(currentLookAtRef.current);
         }
 
         lastFocusIdRef.current = null;
         return;
       }
-      desiredCamPosRef.current.copy(defaultCamPosRef.current);
-      desiredLookAtRef.current.copy(defaultLookAtRef.current);
+      if (cameraLockedByUser || !orbitControlsEnabled) {
+        desiredCamPosRef.current.copy(camera.position);
+        const controls = controlsRef?.current;
+        if (controls?.target) {
+          desiredLookAtRef.current.copy(controls.target);
+          currentLookAtRef.current.copy(controls.target);
+          lastControlTargetRef.current.copy(controls.target);
+        } else {
+          desiredLookAtRef.current.copy(currentLookAtRef.current);
+          lastControlTargetRef.current.copy(currentLookAtRef.current);
+        }
+      } else {
+        desiredCamPosRef.current.copy(defaultCamPosRef.current);
+        desiredLookAtRef.current.copy(defaultLookAtRef.current);
+      }
       lastFocusIdRef.current = null;
       return;
     }
 
     // Selection/focus is visual/UI state only; do not move/reframe camera on object click.
     // Keep desired camera target stable unless an explicit framing system changes it.
+    lastCameraPosRef.current.copy(camera.position);
+    const controls = controlsRef?.current;
+    if (controls?.target) {
+      lastControlTargetRef.current.copy(controls.target);
+    }
+    // Keep desired camera target stable unless an explicit framing system changes it.
     lastFocusIdRef.current = focusedId;
-  }, [focusPinned, focusMode, focusedId, sceneJson, overridesRef, preserveCameraOnClearRef]);
+  }, [focusPinned, focusMode, focusedId, sceneJson, overridesRef, preserveCameraOnClearRef, cameraLockedByUser, orbitControlsEnabled, controlsRef]);
 
   const applyHudShift = (lookAt: THREE.Vector3, camPosV: THREE.Vector3) => {
     const dock =
@@ -408,8 +449,34 @@ function CameraIntelligence({
   };
 
   useFrame(() => {
+    const now = performance.now();
     const userOrbiting = !!localIsOrbitingRef?.current || isOrbiting;
-    if (cameraLockedByUser || userOrbiting) return;
+    const controls = controlsRef?.current;
+
+    if (userOrbiting) {
+      suspendAutoCameraUntilRef.current = now + 900;
+      lastCameraPosRef.current.copy(camera.position);
+      if (controls?.target) {
+        lastControlTargetRef.current.copy(controls.target);
+      }
+      return;
+    }
+
+    if (cameraLockedByUser || !orbitControlsEnabled) {
+      lastCameraPosRef.current.copy(camera.position);
+      if (controls?.target) {
+        lastControlTargetRef.current.copy(controls.target);
+      }
+      return;
+    }
+
+    if (now < suspendAutoCameraUntilRef.current) {
+      lastCameraPosRef.current.copy(camera.position);
+      if (controls?.target) {
+        lastControlTargetRef.current.copy(controls.target);
+      }
+      return;
+    }
 
     // Copy desired targets into reusable temps (no allocations)
     const lookAt = tmpLookAtRef.current.copy(desiredLookAtRef.current);
@@ -420,18 +487,18 @@ function CameraIntelligence({
 
     // Smooth camera position
     camera.position.lerp(camPosV, 0.08);
+    lastCameraPosRef.current.copy(camera.position);
 
     // Drive look direction through OrbitControls when present
-    const controls = controlsRef?.current;
     if (controls?.target) {
-      // Smooth target so it feels like the scene "slides"
       controls.target.lerp(lookAt, 0.08);
+      lastControlTargetRef.current.copy(controls.target);
       controls.update();
       return;
     }
 
-    // Fallback if OrbitControls ref isn't available
     currentLookAtRef.current.lerp(lookAt, 0.08);
+    lastControlTargetRef.current.copy(currentLookAtRef.current);
     camera.lookAt(currentLookAtRef.current);
   });
 
@@ -441,6 +508,7 @@ function CameraIntelligence({
 export function SceneCanvas(props: SceneCanvasProps) {
   const theme = props.prefs?.theme ?? "night";
   const orbitMode = props.prefs?.orbitMode ?? "auto";
+  const selectedIdCtx = useSelectedId();
 
   const controlsRef = useRef<any>(null);
   const localIsOrbitingRef = useRef<boolean>(false);
@@ -463,6 +531,57 @@ export function SceneCanvas(props: SceneCanvasProps) {
   const shadowsEnabled = !!props.prefs?.shadowsEnabled;
 
   const bg = theme === "day" ? "#e9edf5" : theme === "stars" ? "#050b2a" : "#05060a";
+  const sceneObjectIds = React.useMemo(
+    () =>
+      Array.isArray(props.sceneJson?.scene?.objects)
+        ? (props.sceneJson.scene.objects as any[])
+            .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
+            .filter(Boolean)
+        : [],
+    [props.sceneJson]
+  );
+  const highlightedObjectIds = React.useMemo(
+    () =>
+      Array.isArray(props.objectSelection?.highlighted_objects)
+        ? props.objectSelection.highlighted_objects.map(String)
+        : [],
+    [props.objectSelection]
+  );
+
+  useEffect(() => {
+    const highlightedSet = new Set(highlightedObjectIds);
+    const protectedIds = Array.from(
+      new Set([
+        ...highlightedObjectIds,
+        ...(props.focusedId ? [String(props.focusedId)] : []),
+        ...(selectedIdCtx ? [String(selectedIdCtx)] : []),
+      ])
+    );
+    const dimmedIds =
+      props.objectSelection?.dim_unrelated_objects === true
+        ? sceneObjectIds.filter((id) => !highlightedSet.has(id) && id !== props.focusedId && id !== selectedIdCtx).slice(0, 6)
+        : [];
+
+    traceHighlightFlow("scene_canvas", {
+      highlightedObjectIds,
+      dimUnrelatedObjects: props.objectSelection?.dim_unrelated_objects === true,
+      focusedId: props.focusedId ?? null,
+      selectedObjectId: selectedIdCtx ?? null,
+      pinnedId: props.focusPinned ? props.focusedId ?? null : null,
+      focusMode: props.focusMode,
+      sceneObjectIds: sceneObjectIds.slice(0, 12),
+      protectedIds,
+      dimmedIds,
+    });
+  }, [
+    highlightedObjectIds,
+    props.focusMode,
+    props.focusPinned,
+    props.focusedId,
+    props.objectSelection,
+    sceneObjectIds,
+    selectedIdCtx,
+  ]);
 
   useEffect(() => {
     isHudInteractingRef.current = isHudInteracting;
@@ -613,6 +732,7 @@ export function SceneCanvas(props: SceneCanvasProps) {
           controlsRef={controlsRef}
           localIsOrbitingRef={localIsOrbitingRef}
           preserveCameraOnClearRef={preserveCameraOnClearRef}
+          orbitControlsEnabled={orbitControlsEnabled}
         />
 
         {theme === "stars" && (
@@ -625,16 +745,22 @@ export function SceneCanvas(props: SceneCanvasProps) {
         <OrbitControls
           ref={controlsRef}
           enabled={orbitControlsEnabled}
+          enableZoom
+          enableRotate
           enablePan={false}
+          minDistance={1.5}
+          maxDistance={80}
           mouseButtons={ORBIT_MOUSE_BUTTONS}
           onStart={() => {
             if (isFixedCamera) return;
             localIsOrbitingRef.current = true;
+            preserveCameraOnClearRef.current = true;
             props.onOrbitStart();
           }}
           onEnd={() => {
             if (isFixedCamera) return;
             localIsOrbitingRef.current = false;
+            preserveCameraOnClearRef.current = true;
             props.onOrbitEnd();
           }}
         />
@@ -665,9 +791,10 @@ export function SceneCanvas(props: SceneCanvasProps) {
                       : props.isOrbiting,
                   },
                 }}
+                objectSelection={props.objectSelection ?? null}
                 shadowsEnabled={shadowsEnabled}
                 focusMode={props.focusMode}
-                focusedId={props.focusMode === "selected" ? props.focusedId : null}
+                focusedId={props.focusedId}
                 activeLoopId={props.effectiveActiveLoopId}
                 theme={theme}
                 getUxForObject={props.getUxForObject}

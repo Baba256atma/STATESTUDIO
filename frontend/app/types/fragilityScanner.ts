@@ -1,11 +1,11 @@
 export type FragilityScanRequest = {
-  text?: string | null;
+  text: string;
+  mode?: string;
   source_type?: string | null;
   source_name?: string | null;
   source_url?: string | null;
   workspace_id?: string | null;
   user_id?: string | null;
-  mode?: string;
   allowed_objects?: string[] | null;
   metadata?: Record<string, unknown>;
 };
@@ -42,13 +42,13 @@ export type FragilitySceneHighlight = {
 export type FragilityScenePayload = {
   objects: FragilitySceneObject[];
   highlights: FragilitySceneHighlight[];
-  state_vector: {
+  state_vector?: {
     fragility_score?: number;
     fragility_level?: string;
     scanner_mode?: string;
   };
   suggested_focus: string[];
-  scanner_overlay: {
+  scanner_overlay?: {
     summary?: string;
     top_driver_ids?: string[];
   };
@@ -60,10 +60,10 @@ export type FragilityScanResponse = {
   fragility_score: number;
   fragility_level: string;
   drivers: FragilityDriver[];
-  findings: FragilityFinding[];
-  suggested_objects: string[];
-  suggested_actions: string[];
-  scene_payload: FragilityScenePayload;
+  findings?: unknown[];
+  suggested_objects?: string[];
+  suggested_actions?: string[];
+  scene_payload?: FragilityScenePayload;
   debug?: Record<string, unknown> | null;
 };
 

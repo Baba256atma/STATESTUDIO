@@ -39,9 +39,30 @@ export async function fetchJson(url: string, options: FetchJsonOptions = {}): Pr
       };
     }
     if (!res.ok) {
+      let details: unknown = undefined;
+      let message = "Request failed";
+      try {
+        details = await res.json();
+        const detailMessage =
+          typeof (details as any)?.detail?.error?.message === "string"
+            ? (details as any).detail.error.message
+            : typeof (details as any)?.detail?.message === "string"
+              ? (details as any).detail.message
+              : typeof (details as any)?.detail === "string"
+                ? (details as any).detail
+                : typeof (details as any)?.error?.message === "string"
+                  ? (details as any).error.message
+                  : null;
+        if (detailMessage && detailMessage.trim()) {
+          message = detailMessage;
+        }
+      } catch {
+        details = undefined;
+      }
       throw <FetchJsonError>{
-        message: `Request failed`,
+        message,
         status: res.status,
+        details,
       };
     }
     try {

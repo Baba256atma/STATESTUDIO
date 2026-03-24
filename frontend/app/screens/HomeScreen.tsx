@@ -148,14 +148,19 @@ import {
   stableStringify,
 } from "./homeScreenUtils";
 import { buildBackup as buildBackupController, buildRestorePreviewLines } from "./backupController";
-import { applyFragilityScenePayload } from "../lib/scanner/applyFragilityScenePayload";
+import { applyFragilityScenePayload } from "../lib/scene/applyFragilityScenePayload";
 import {
   resolveDomainExperience,
   type NexoraResolvedDomainExperience,
 } from "../lib/domain/domainExperienceRegistry";
 import { resolveDomainDemo } from "../lib/demo/domainDemoRegistry";
+import { executeNexoraAction } from "../lib/execution/actionExecutionLayer";
 import type { FragilityScanResponse } from "../types/fragilityScanner";
 import { isLaunchDomain } from "../lib/product/mvpShippingPlan";
+import { resolveNexoraIntentRoute } from "../lib/router/intentRouter";
+import { applyNexoraUiState } from "../lib/uiState/uiStateApplicationLayer";
+import { resolveRetailHighlightedObjectIds } from "../lib/domains/retail/resolveRetailPrimaryObject";
+import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
 
 type FullRegistrarProps = {
   selectedIdRefLocal: React.MutableRefObject<string | null>;
@@ -166,6 +171,85 @@ type FullRegistrarProps = {
   clearAllOverridesRef: React.MutableRefObject<() => void>;
   pruneOverridesRef: React.MutableRefObject<(ids: string[]) => void>;
 };
+
+type RightPanelTab =
+  | "chat"
+  | "object"
+  | "loops"
+  | "kpi"
+  | "decisions"
+  | "scene"
+  | "montecarlo"
+  | "timeline"
+  | "conflict"
+  | "object_focus"
+  | "memory_insights"
+  | "risk_flow"
+  | "replay"
+  | "strategic_advice"
+  | "opponent_moves"
+  | "strategic_patterns"
+  | "executive_dashboard"
+  | "collaboration"
+  | "workspace";
+
+type InspectorReportTab = Extract<
+  RightPanelTab,
+  | "timeline"
+  | "conflict"
+  | "object_focus"
+  | "memory_insights"
+  | "risk_flow"
+  | "replay"
+  | "strategic_advice"
+  | "opponent_moves"
+  | "strategic_patterns"
+  | "executive_dashboard"
+  | "collaboration"
+  | "workspace"
+>;
+
+type InspectorSectionChangedDetail = {
+  section?: string;
+  eventTab?: RightPanelTab | null;
+};
+
+type UnifiedSceneReaction = {
+  source: "chat" | "button" | "scanner" | "system";
+  reason?: string | null;
+  fallbackHighlightText?: string | null;
+
+  highlightedObjectIds: string[];
+  dimUnrelatedObjects: boolean;
+
+  riskSources: string[];
+  riskTargets: string[];
+
+  activeLoopId?: string | null;
+  loopSuggestions?: any[];
+
+  actions?: any[];
+  allowFocusMutation?: boolean;
+
+  sceneJson?: SceneJson | null;
+};
+
+function isInspectorReportTab(tab: RightPanelTab | null | undefined): tab is InspectorReportTab {
+  return (
+    tab === "timeline" ||
+    tab === "conflict" ||
+    tab === "object_focus" ||
+    tab === "memory_insights" ||
+    tab === "risk_flow" ||
+    tab === "replay" ||
+    tab === "strategic_advice" ||
+    tab === "opponent_moves" ||
+    tab === "strategic_patterns" ||
+    tab === "executive_dashboard" ||
+    tab === "collaboration" ||
+    tab === "workspace"
+  );
+}
 
 function FullRegistrar({
   selectedIdRefLocal,
@@ -382,7 +466,17 @@ const RETAIL_TRIGGER_CONFIGS: RetailTriggerConfig[] = [
   },
   {
     id: "delivery_disruption",
-    tests: [/\bdelivery\b.*\bdisruption\b/i, /\bdisruption\b.*\bdelivery\b/i, /\bdelivery\b.*\bbreakdown\b/i],
+    tests: [
+      /\bdelivery\b.*\bdisruption\b/i,
+      /\bdisruption\b.*\bdelivery\b/i,
+      /\bdelivery\b.*\bbreakdown\b/i,
+      /\bdelivery\b.*\blate\b/i,
+      /\blate\b.*\bdelivery\b/i,
+      /\bdelivery\b.*\btoo late\b/i,
+      /\btoo late\b.*\bdelivery\b/i,
+      /\bdelivery delay\b/i,
+      /\bdelayed delivery\b/i,
+    ],
     targets: ["obj_delivery_1", "obj_delay_1", "obj_inventory_1", "obj_order_flow_1"],
     riskEdges: [
       { from: "obj_delivery_1", to: "obj_inventory_1", base: 0.64, delta: 0.16 },
@@ -479,22 +573,21 @@ function detectRetailTriggerConfig(text: string): RetailTriggerConfig | null {
   return null;
 }
 
-function isRetailScenePayload(payload: any, fallbackScene: SceneJson | null): boolean {
-  const metaDemoId =
-    String(payload?.scene_json?.meta?.demo_id ?? payload?.meta?.demo_id ?? fallbackScene?.meta?.demo_id ?? "")
-      .toLowerCase()
-      .trim();
-  if (metaDemoId === RETAIL_DEMO_ID) return true;
-  const objs =
-    (Array.isArray(payload?.scene_json?.scene?.objects) ? payload.scene_json.scene.objects : null) ??
-    (Array.isArray(fallbackScene?.scene?.objects) ? fallbackScene?.scene?.objects : null) ??
-    [];
-  const ids = new Set(
-    (objs as any[])
-      .map((o) => String(o?.id ?? ""))
-      .filter(Boolean)
-  );
-  return ids.has("obj_supplier_1") && ids.has("obj_inventory_1") && ids.has("obj_delivery_1");
+function isRetailScenePayload(
+  payload: BackendChatResponse | null | undefined,
+  fallbackScene?: SceneJson | null
+): boolean {
+  const payloadScene = payload?.scene_json ? normalizeSceneJson(payload.scene_json as SceneJson) : null;
+  const scene = payloadScene ?? fallbackScene ?? null;
+  if (!scene) return false;
+
+  const sceneObjectIds = extractSceneObjectIds(scene);
+  if (!sceneObjectIds.length) return false;
+
+  const requiredRetailKeys = ["obj_supplier_1", "obj_inventory_1", "obj_delivery_1"];
+  const resolvedRequiredRetailIds = resolveRetailHighlightedObjectIds(requiredRetailKeys, sceneObjectIds);
+
+  return resolvedRequiredRetailIds.length >= 3;
 }
 
 function upsertRiskEdge(
@@ -736,6 +829,246 @@ function buildExecutiveSummarySurface(args: {
     why_it_matters: whyItMatters,
     what_to_do: whatToDo,
     summary,
+  };
+}
+
+function hasMeaningfulSceneMutation(payload: any, currentScene: SceneJson | null): boolean {
+  if (!payload || typeof payload !== "object") return false;
+  if (!payload.scene_json) return false;
+
+  // Allow first scene load
+  if (!currentScene) return true;
+
+  // Explicit force flags from backend
+  const explicitForce =
+    payload?.force_scene_update === true ||
+    payload?.scene_update === true ||
+    payload?.scene_json?.meta?.force_scene_update === true ||
+    payload?.scene_json?.meta?.scene_update === true;
+
+  if (explicitForce) return true;
+
+  const hasActions = Array.isArray(payload?.actions) && payload.actions.length > 0;
+
+  const highlightedCount = Array.isArray(payload?.object_selection?.highlighted_objects)
+    ? payload.object_selection.highlighted_objects.length
+    : 0;
+
+  const riskSourcesCount = Array.isArray(payload?.risk_propagation?.sources)
+    ? payload.risk_propagation.sources.length
+    : 0;
+
+  const scannerTargetsCount = Array.isArray(payload?.scanner?.focus_object_ids)
+    ? payload.scanner.focus_object_ids.length
+    : 0;
+
+  const externalTargetsCount = Array.isArray(payload?.external_integration?.focus_object_ids)
+    ? payload.external_integration.focus_object_ids.length
+    : 0;
+
+  const hasScenePatch =
+    Array.isArray(payload?.scene_patch?.objects) ||
+    Array.isArray(payload?.scene_patch?.relations) ||
+    Array.isArray(payload?.scene_patch?.loops);
+
+  return (
+    hasActions ||
+    highlightedCount > 0 ||
+    riskSourcesCount > 0 ||
+    scannerTargetsCount > 0 ||
+    externalTargetsCount > 0 ||
+    hasScenePatch
+  );
+}
+
+function extractSceneObjectIds(scene: SceneJson | null | undefined): string[] {
+  const objects = Array.isArray(scene?.scene?.objects) ? scene!.scene.objects : [];
+  return objects
+    .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `obj_${idx}`))
+    .filter(Boolean);
+}
+
+function buildSceneObjectIdSet(scene: SceneJson | null | undefined): Set<string> {
+  return new Set(extractSceneObjectIds(scene));
+}
+
+function getSceneCompatibilityScore(
+  currentScene: SceneJson | null | undefined,
+  incomingScene: SceneJson | null | undefined
+): number {
+  const currentIds = extractSceneObjectIds(currentScene);
+  const incomingIds = extractSceneObjectIds(incomingScene);
+
+  if (!currentIds.length || !incomingIds.length) return 0;
+
+  const currentSet = buildSceneObjectIdSet(currentScene);
+  let overlap = 0;
+
+  for (const id of incomingIds) {
+    if (currentSet.has(id)) overlap += 1;
+  }
+
+  return overlap / Math.max(incomingIds.length, currentIds.length);
+}
+
+function isSceneCompatibleForReplacement(
+  currentScene: SceneJson | null | undefined,
+  incomingScene: SceneJson | null | undefined,
+  payload?: any
+): boolean {
+  if (!incomingScene) return false;
+  if (!currentScene) return true;
+
+  const explicitForce =
+    payload?.force_scene_update === true ||
+    payload?.scene_update === true ||
+    payload?.scene_json?.meta?.force_scene_update === true ||
+    payload?.scene_json?.meta?.scene_update === true ||
+    incomingScene?.meta?.force_scene_update === true ||
+    incomingScene?.meta?.scene_update === true;
+
+  if (explicitForce) return true;
+
+  const currentIds = extractSceneObjectIds(currentScene);
+  const incomingIds = extractSceneObjectIds(incomingScene);
+
+  if (!currentIds.length || !incomingIds.length) return false;
+
+  const compatibility = getSceneCompatibilityScore(currentScene, incomingScene);
+
+  // Strict enough to block fallback/minimal scenes,
+  // but tolerant enough for partial scene patches / focused subsets.
+  return compatibility >= 0.45;
+}
+
+function shouldAcceptIncomingSceneReplacement(
+  payload: any,
+  currentScene: SceneJson | null,
+  incomingScene: SceneJson | null | undefined
+): boolean {
+  if (!incomingScene) return false;
+
+  const meaningful = hasMeaningfulSceneMutation(payload, currentScene);
+  if (!meaningful) return false;
+
+  return isSceneCompatibleForReplacement(currentScene, incomingScene, payload);
+}
+
+function buildUnifiedReactionFromChatResponse(
+  payload: any,
+  options?: {
+    acceptedSceneForChatReplacement?: SceneJson | null;
+    allowSceneEffects?: boolean;
+  }
+): UnifiedSceneReaction {
+  const highlightedObjectIds = Array.isArray(payload?.object_selection?.highlighted_objects)
+    ? payload.object_selection.highlighted_objects.map(String)
+    : [];
+
+  const riskSources = Array.isArray(payload?.risk_propagation?.sources)
+    ? payload.risk_propagation.sources.map((x: any) => String(x))
+    : [];
+
+  const riskTargets = Array.isArray(payload?.risk_propagation?.targets)
+    ? payload.risk_propagation.targets.map((x: any) => String(x))
+    : [];
+
+  const hasRisk = riskSources.length > 0 || riskTargets.length > 0;
+  const hasHighlights = highlightedObjectIds.length > 0;
+
+  return {
+    source: "chat",
+    reason: typeof payload?.analysis_summary === "string" ? payload.analysis_summary : null,
+    fallbackHighlightText:
+      typeof payload?.reply === "string" && payload.reply.trim().length > 0
+        ? payload.reply
+        : typeof payload?.analysis_summary === "string"
+        ? payload.analysis_summary
+        : null,
+    highlightedObjectIds,
+    dimUnrelatedObjects: hasRisk || hasHighlights,
+    riskSources,
+    riskTargets,
+    activeLoopId: payload?.loop_analysis?.active_loop_id ?? payload?.active_loop_id ?? null,
+    loopSuggestions: Array.isArray(payload?.loop_analysis?.suggestions)
+      ? payload.loop_analysis.suggestions
+      : Array.isArray(payload?.loop_suggestions)
+      ? payload.loop_suggestions
+      : [],
+    actions: options?.allowSceneEffects ? (Array.isArray(payload?.actions) ? payload.actions : []) : [],
+    allowFocusMutation: options?.allowSceneEffects === true,
+    sceneJson: options?.acceptedSceneForChatReplacement ?? null,
+  };
+}
+
+function buildUnifiedReactionFromRetailTriggerConfig(
+  cfg: RetailTriggerConfig,
+  scene: SceneJson | null | undefined
+): UnifiedSceneReaction {
+  const sceneObjectIds = extractSceneObjectIds(scene);
+  const resolvedHighlightedObjectIds = resolveRetailHighlightedObjectIds(cfg.targets, sceneObjectIds);
+  const resolvedRiskSources = resolveRetailHighlightedObjectIds(
+    cfg.riskEdges.map((edge) => edge.from),
+    sceneObjectIds
+  );
+  const resolvedRiskTargets = resolveRetailHighlightedObjectIds(
+    cfg.riskEdges.map((edge) => edge.to),
+    sceneObjectIds
+  );
+  const shouldDimUnrelated = resolvedHighlightedObjectIds.length > 0;
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[Nexora][RetailHighlightResolution]", {
+      rawRetailTargets: cfg.targets,
+      resolvedRetailTargets: resolvedHighlightedObjectIds,
+      dimUnrelatedObjects: shouldDimUnrelated,
+      sceneObjectIds: shouldDimUnrelated ? undefined : sceneObjectIds,
+    });
+  }
+
+  return {
+    source: "chat",
+    reason: cfg.riskSummary,
+    fallbackHighlightText: [cfg.riskSummary, ...cfg.timelineSteps, cfg.adviceAction].join(" "),
+    highlightedObjectIds: resolvedHighlightedObjectIds,
+    dimUnrelatedObjects: shouldDimUnrelated,
+    riskSources: resolvedRiskSources,
+    riskTargets: resolvedRiskTargets,
+    activeLoopId: null,
+    loopSuggestions: [],
+    actions: [],
+    allowFocusMutation: true,
+    sceneJson: null,
+  };
+}
+
+function buildUnifiedReactionFromFragilityRun(payload: any): UnifiedSceneReaction {
+  const highlightedObjectIds = Array.isArray(payload?.highlightedObjectIds)
+    ? payload.highlightedObjectIds.map(String)
+    : Array.isArray(payload?.objectIds)
+    ? payload.objectIds.map(String)
+    : [];
+
+  const riskSources = Array.isArray(payload?.riskSources)
+    ? payload.riskSources.map(String)
+    : [];
+
+  const riskTargets = Array.isArray(payload?.riskTargets)
+    ? payload.riskTargets.map(String)
+    : highlightedObjectIds;
+
+  return {
+    source: "button",
+    reason: typeof payload?.reason === "string" ? payload.reason : "Fragility scene run",
+    highlightedObjectIds,
+    dimUnrelatedObjects: highlightedObjectIds.length > 0 || riskSources.length > 0 || riskTargets.length > 0,
+    riskSources,
+    riskTargets,
+    activeLoopId: payload?.activeLoopId ?? null,
+    loopSuggestions: Array.isArray(payload?.loopSuggestions) ? payload.loopSuggestions : [],
+    actions: Array.isArray(payload?.actions) ? payload.actions : [],
+    allowFocusMutation: false,
+    sceneJson: null,
   };
 }
 
@@ -1423,14 +1756,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const toggleInspector = useCallback(() => {
     setInspectorOpen((prev) => !prev);
   }, []);
-  const [rightPanelTab, setRightPanelTab] = useState<
-    "chat" | "object" | "loops" | "kpi" | "decisions" | "scene" | "montecarlo" | "timeline" | "conflict" | "object_focus" | "memory_insights" | "risk_flow" | "replay" | "strategic_advice" | "opponent_moves" | "strategic_patterns" | "executive_dashboard" | "collaboration" | "workspace"
-  >(activeDomainExperience.experience.preferredRightPanelTab);
+  const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>(
+    activeDomainExperience.experience.preferredRightPanelTab
+  );
+  const [activeInspectorReportTab, setActiveInspectorReportTab] = useState<InspectorReportTab | null>(
+    isInspectorReportTab(activeDomainExperience.experience.preferredRightPanelTab)
+      ? activeDomainExperience.experience.preferredRightPanelTab
+      : null
+  );
   const [isClientMounted, setIsClientMounted] = useState(false);
   const [inspectorPortalHost, setInspectorPortalHost] = useState<HTMLElement | null>(null);
   const openRightPanel = useCallback(
-    (tab: "chat" | "object" | "loops" | "kpi" | "decisions" | "scene" | "montecarlo" | "timeline" | "conflict" | "object_focus" | "memory_insights" | "risk_flow" | "replay" | "strategic_advice" | "opponent_moves" | "strategic_patterns" | "executive_dashboard" | "collaboration" | "workspace") => {
+    (tab: RightPanelTab) => {
       setRightPanelTab(tab);
+      setActiveInspectorReportTab(isInspectorReportTab(tab) ? tab : null);
       setInspectorOpen(true);
     },
     []
@@ -1449,6 +1788,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       window.removeEventListener("nexora:open-right-panel", onOpenRightPanel as EventListener);
     };
   }, [openRightPanel]);
+
+  useEffect(() => {
+    const onInspectorSectionChanged = (event: Event) => {
+      const detail = (event as CustomEvent<InspectorSectionChangedDetail>).detail;
+      setActiveInspectorReportTab(isInspectorReportTab(detail?.eventTab) ? detail.eventTab : null);
+    };
+
+    window.addEventListener("nexora:inspector-section-changed", onInspectorSectionChanged as EventListener);
+    return () => {
+      window.removeEventListener("nexora:inspector-section-changed", onInspectorSectionChanged as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     window.dispatchEvent(
@@ -1494,6 +1845,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   useEffect(() => {
     setActiveMode(activeDomainExperience.experience.preferredProductMode);
     setRightPanelTab(activeDomainExperience.experience.preferredRightPanelTab);
+    setActiveInspectorReportTab(
+      isInspectorReportTab(activeDomainExperience.experience.preferredRightPanelTab)
+        ? activeDomainExperience.experience.preferredRightPanelTab
+        : null
+    );
     setProductModeId(activeDomainExperience.experience.preferredWorkspaceModeId);
   }, [activeDomainExperience]);
   const [strategyKpi, setStrategyKpi] = useState<any | null>(null);
@@ -1585,6 +1941,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     opacity?: number;
     summary?: string;
     one_liner?: string;
+    scanner_reason?: string;
+    scanner_severity?: string;
+    scanner_focus?: boolean;
   } | null>(null);
   const [selectionLocked, setSelectionLocked] = useState(false);
   const [selectedObjectIdState, setSelectedObjectIdState] = useState<string | null>(null);
@@ -1934,13 +2293,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     (
       payload: BackendChatResponse,
       viewModel: ReturnType<typeof deriveProductFlowViewModel>,
-      options?: { applyActionsToScene?: boolean; syncSceneState?: boolean }
+      options?: {
+        applyActionsToScene?: boolean;
+        syncSceneState?: boolean;
+        applyVisualState?: boolean;
+      }
     ) => {
+      const shouldApplyVisualState = options?.applyVisualState !== false;
       setKpi(viewModel.nextKpi);
       setConflicts(viewModel.nextConflicts);
-      setObjectSelection(viewModel.nextObjectSelection);
+      if (shouldApplyVisualState) {
+        setObjectSelection(viewModel.nextObjectSelection);
+        setRiskPropagation(viewModel.nextRiskPropagation);
+      }
       setMemoryInsights(viewModel.nextMemoryInsights);
-      setRiskPropagation(viewModel.nextRiskPropagation);
       setStrategicAdvice(viewModel.nextStrategicAdvice);
       setStrategyKpi(viewModel.nextStrategyKpi);
       setDecisionCockpit(viewModel.nextDecisionCockpit);
@@ -1953,9 +2319,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setAutonomousExploration(viewModel.nextAutonomousExploration);
       setOpponentModel(viewModel.nextOpponentModel);
       setStrategicPatterns(viewModel.nextStrategicPatterns);
-      setLoops(viewModel.nextLoops);
-      setActiveLoopId(viewModel.nextActiveLoop ?? null);
-      setLoopSuggestions(viewModel.nextLoopSuggestions);
+      if (shouldApplyVisualState) {
+        setLoops(viewModel.nextLoops);
+        setActiveLoopId(viewModel.nextActiveLoop ?? null);
+        setLoopSuggestions(viewModel.nextLoopSuggestions);
+      }
       if (options?.syncSceneState !== false && viewModel.nextSceneJson) {
         setSceneJson(viewModel.nextSceneJson);
         setNoSceneUpdate(false);
@@ -1971,6 +2339,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         } catch {
           setSceneWarn("⚠️ Could not apply scene actions (dev).");
         }
+      } else {
+        setSceneWarn(null);
       }
     },
     [applyActions]
@@ -2013,9 +2383,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [riskPropagation]);
   const getUxForObject = useCallback(
     (id: string) => {
+      const sceneObjects = Array.isArray((sceneJson as any)?.scene?.objects) ? ((sceneJson as any).scene.objects as any[]) : [];
+      const sceneObject = sceneObjects.find((entry: any) => String(entry?.id ?? entry?.name ?? "") === id) ?? null;
       const profileUx = objectProfiles[id]?.ux;
       const localUx = objectUxById[id];
-      if (!profileUx && !localUx) return null;
+      if (!profileUx && !localUx && !sceneObject?.scanner_highlighted && !sceneObject?.scanner_focus) return null;
       const merged: any = { ...(profileUx ?? {}), ...(localUx ?? {}) };
       if (highlightedObjectIdSet.has(id)) {
         const baseScale = typeof merged.scale === "number" ? merged.scale : 1;
@@ -2025,9 +2397,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         const baseScale = typeof merged.scale === "number" ? merged.scale : 1;
         merged.scale = clamp(baseScale + 0.15, 0.2, 2.0);
       }
+      if (sceneObject?.scanner_highlighted) {
+        const scannerEmphasis = Number(sceneObject?.scanner_emphasis ?? sceneObject?.emphasis ?? 0.75);
+        const baseScale = typeof merged.scale === "number" ? merged.scale : 1;
+        merged.scale = clamp(baseScale + 0.18 + Math.min(0.18, scannerEmphasis * 0.18), 0.2, 2.0);
+        merged.opacity = Math.max(0.92, typeof merged.opacity === "number" ? merged.opacity : 0.9);
+      }
+      if (sceneObject?.scanner_focus) {
+        const baseScale = typeof merged.scale === "number" ? merged.scale : 1;
+        merged.scale = clamp(baseScale + 0.14, 0.2, 2.0);
+        merged.opacity = 1;
+      }
       return merged;
     },
-    [highlightedObjectIdSet, objectProfiles, objectUxById, riskSourceObjectIdSet]
+    [highlightedObjectIdSet, objectProfiles, objectUxById, riskSourceObjectIdSet, sceneJson]
   );
   const updateSelectedObjectInfo = useCallback(
     (id: string | null) => {
@@ -2049,6 +2432,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         ? (found.tags as any[]).filter((t) => typeof t === "string")
         : undefined;
       const ux = getUxForObject(id) ?? undefined;
+      const scannerReason =
+        typeof found?.scanner_reason === "string" && found.scanner_reason.trim().length > 0
+          ? found.scanner_reason.trim()
+          : undefined;
+      const businessMeaning =
+        typeof found?.semantic?.business_meaning === "string" && found.semantic.business_meaning.trim().length > 0
+          ? found.semantic.business_meaning.trim()
+          : typeof found?.business_meaning === "string" && found.business_meaning.trim().length > 0
+          ? found.business_meaning.trim()
+          : undefined;
+      const scannerOverlaySummary =
+        typeof found?.scanner_overlay_summary === "string" && found.scanner_overlay_summary.trim().length > 0
+          ? found.scanner_overlay_summary.trim()
+          : undefined;
       setSelectedObjectInfo({
         id,
         label,
@@ -2060,12 +2457,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         base_color: ux?.base_color,
         shape: ux?.shape,
         opacity: ux?.opacity,
+        summary: scannerReason ? `Fragility scanner: ${scannerReason}` : scannerOverlaySummary ?? businessMeaning,
+        one_liner: scannerReason ? businessMeaning ?? scannerOverlaySummary : undefined,
+        scanner_reason: scannerReason,
+        scanner_severity:
+          typeof found?.scanner_severity === "string" ? found.scanner_severity : undefined,
+        scanner_focus: found?.scanner_focus === true,
       });
     },
     [getUxForObject, sceneJson, resolveObjectLabel]
   );
   const syncFocusedObjectFromResponse = useCallback(
-    (payload: BackendChatResponse) => {
+    (payload: BackendChatResponse, options?: { allowFocusMutation?: boolean }) => {
+      const allowFocusMutation = options?.allowFocusMutation === true;
       const ctxInfo = (payload as any)?.context?.object_info;
       if (ctxInfo && typeof ctxInfo === "object" && ctxInfo.id) {
         setSelectedObjectInfo((prev) => {
@@ -2077,14 +2481,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             tags: Array.isArray(ctxInfo.tags) ? ctxInfo.tags : prev?.tags ?? [],
           };
         });
-        if (!focusPinned) {
+        if (allowFocusMutation && !focusPinned) {
           setFocusedId(ctxInfo.id);
           setFocusMode("selected");
         }
       }
 
       const ctxAllowed = (payload as any)?.context?.allowed_objects;
-      if (!focusPinned && focusMode === "all" && Array.isArray(ctxAllowed) && ctxAllowed.length > 0) {
+      if (
+        allowFocusMutation &&
+        !focusPinned &&
+        focusMode === "all" &&
+        Array.isArray(ctxAllowed) &&
+        ctxAllowed.length > 0
+      ) {
         const first = ctxAllowed[0] as string;
         setFocusedId(first);
         setFocusMode("selected");
@@ -2095,6 +2505,269 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
     },
     [focusMode, focusPinned, setFocusMode, setFocusedId, updateSelectedObjectInfo]
+  );
+  const applyUnifiedSceneReaction = useCallback(
+    (
+      reaction: UnifiedSceneReaction,
+      options?: {
+        sceneReplacement?: SceneJson | null;
+        allowSceneReplacement?: boolean;
+      }
+    ) => {
+      const nextHighlighted = Array.isArray(reaction.highlightedObjectIds)
+        ? reaction.highlightedObjectIds.map((x) => String(x))
+        : [];
+
+      const nextRiskSources = Array.isArray(reaction.riskSources)
+        ? reaction.riskSources.map((x) => String(x))
+        : [];
+
+      const nextRiskTargets = Array.isArray(reaction.riskTargets)
+        ? reaction.riskTargets.map((x) => String(x))
+        : [];
+
+      const sceneForOverrides = (options?.sceneReplacement ?? sceneJson) as SceneJson | null;
+      const sceneObjects = Array.isArray(sceneForOverrides?.scene?.objects)
+        ? (sceneForOverrides?.scene?.objects as any[])
+        : [];
+
+      const allSceneObjectIds = sceneObjects
+        .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `obj_${idx}`))
+        .filter(Boolean);
+
+      const allSceneObjectIdSet = new Set(allSceneObjectIds);
+
+      const resolveSceneObjectId = (rawId: string): string | null => {
+        const candidate = String(rawId || "").trim();
+        if (!candidate) return null;
+
+        if (allSceneObjectIdSet.has(candidate)) return candidate;
+        return null;
+      };
+      // IMPORTANT:
+      // Frontend will ONLY highlight objects provided in
+      // reaction.highlightedObjectIds.
+      // If backend sends empty or invalid ids,
+      // no highlight will occur.
+      const effectiveHighlighted = Array.isArray(reaction.highlightedObjectIds)
+        ? reaction.highlightedObjectIds
+            .map((id) => resolveSceneObjectId(id))
+            .filter((id): id is string => !!id)
+        : [];
+
+      const primaryHighlightedId = effectiveHighlighted[0] ?? null;
+      const shouldDimUnrelated =
+        reaction.dimUnrelatedObjects === true && effectiveHighlighted.length > 0;
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[UNIFIED PIPELINE]", {
+          incoming: reaction.highlightedObjectIds,
+          resolved: effectiveHighlighted,
+        });
+      }
+      if (
+        process.env.NODE_ENV !== "production" &&
+        shouldDimUnrelated &&
+        (!primaryHighlightedId || effectiveHighlighted.length === 0)
+      ) {
+        console.warn(
+          "[Nexora][UnifiedReaction] Dimming is active but no valid highlighted object was resolved."
+        );
+      }
+
+      setObjectSelection({
+        highlighted_objects: effectiveHighlighted,
+        dim_unrelated_objects: shouldDimUnrelated,
+      } as any);
+
+      setRiskPropagation({
+        sources: nextRiskSources,
+        targets: nextRiskTargets,
+      } as any);
+
+      if (allSceneObjectIds.length > 0) {
+        pruneOverridesRef.current?.(allSceneObjectIds);
+        if (effectiveHighlighted.length === 0) {
+          for (const objectId of allSceneObjectIds) {
+            setOverrideRef.current?.(objectId, {
+              opacity: 1,
+              scale: 1,
+            });
+          }
+        } else {
+          for (const objectId of allSceneObjectIds) {
+            if (effectiveHighlighted.includes(objectId)) {
+              setOverrideRef.current?.(objectId, {
+                opacity: 1,
+                scale: 1.12,
+              });
+            } else if (shouldDimUnrelated) {
+              setOverrideRef.current?.(objectId, {
+                opacity: 0.35,
+                scale: 0.96,
+              });
+            } else {
+              setOverrideRef.current?.(objectId, {
+                opacity: 1,
+                scale: 1,
+              });
+            }
+          }
+        }
+      }
+
+      if (Array.isArray(reaction.loopSuggestions)) {
+        setLoopSuggestions(reaction.loopSuggestions as any);
+      }
+
+      if (reaction.activeLoopId !== undefined) {
+        setActiveLoopId(reaction.activeLoopId ?? null);
+      }
+
+      if (options?.allowSceneReplacement && options?.sceneReplacement) {
+        setSceneJson(options.sceneReplacement);
+        setNoSceneUpdate(false);
+      }
+
+      if (Array.isArray(reaction.actions) && reaction.actions.length > 0) {
+        try {
+          applyActions(reaction.actions);
+          setSceneWarn(null);
+        } catch {
+          setSceneWarn("⚠️ Could not apply unified scene actions (dev).");
+        }
+      }
+
+      if (effectiveHighlighted.length > 0) {
+        updateSelectedObjectInfo(effectiveHighlighted[0]);
+        setSelectedObjectIdState(effectiveHighlighted[0]);
+      }
+
+      if (reaction.allowFocusMutation) {
+        syncFocusedObjectFromResponse(
+          {
+            context: {
+              object_info:
+                effectiveHighlighted.length > 0
+                  ? { id: effectiveHighlighted[0], label: effectiveHighlighted[0] }
+                  : null,
+              allowed_objects: effectiveHighlighted,
+            },
+          } as any,
+          { allowFocusMutation: true }
+        );
+      }
+    },
+    [
+      applyActions,
+      sceneJson,
+      setSelectedObjectIdState,
+      syncFocusedObjectFromResponse,
+      updateSelectedObjectInfo,
+    ]
+  );
+  const applyExecutionResultToUi = useCallback(
+    (executionResult: Awaited<ReturnType<typeof executeNexoraAction>>) => {
+      const applyResult = applyNexoraUiState({
+        result: executionResult,
+        currentState: {
+          rightPanelTab,
+          activeInspectorReportTab,
+          inspectorOpen,
+          sceneJson,
+          selectedObjectId: selectedObjectIdState,
+          focusedId,
+          focusMode,
+          focusPinned,
+          messages,
+          memory,
+          responseData,
+        },
+        adapters: {
+          openRightPanel: (tab) => openRightPanel(tab as RightPanelTab),
+          setRightPanelTab,
+          setActiveInspectorReportTab,
+          setInspectorOpen,
+          setSceneJson,
+          setSceneWarn,
+          setNoSceneUpdate,
+          setLastActions,
+          setFocusedId,
+          setSelectedObjectIdState,
+          setFocusMode,
+          setFocusPinned,
+          applyFocusModeToStore,
+          applyPinToStore,
+          setMessages,
+          setResponseData,
+          setLastAnalysisSummary,
+          setSourceLabel,
+          setObjectSelection,
+          setMemoryInsights,
+          setRiskPropagation,
+          setStrategicAdvice,
+          setStrategyKpi,
+          setDecisionCockpit,
+          setProductModeContext,
+          setAiReasoning,
+          setPlatformAssembly,
+          setAutonomousExploration,
+          setOpponentModel,
+          setStrategicPatterns,
+          setConflicts: (value) => setConflicts(Array.isArray(value) ? value : []),
+          setSelectedObjectInfo,
+          updateSelectedObjectInfo,
+          setObjectProfiles,
+          setObjectUxById,
+          setAlert,
+          setReplayError,
+          setHealthInfo,
+          setKpi,
+          setLoops,
+          setActiveLoopId,
+          setLoopSuggestions,
+          setProductModeId,
+          applyUnifiedReaction: applyUnifiedSceneReaction,
+          applyProductFlowViewModel,
+        },
+      });
+
+      traceHighlightFlow("homescreen_after_apply", {
+        highlightedObjectIds: executionResult.highlightedObjectIds,
+        focusedObjectId: executionResult.focusedObjectId ?? null,
+        allowSceneMutation: executionResult.allowSceneMutation,
+        appliedSceneMutation: executionResult.appliedSceneMutation,
+        rightPanelTab,
+        activeInspectorReportTab,
+        selectedObjectId: selectedObjectIdState,
+        focusedId,
+        focusMode,
+        focusPinned,
+        applySummary: applyResult.summary,
+        appliedSections: applyResult.appliedSections,
+        skippedSections: applyResult.skippedSections,
+      });
+
+      return applyResult;
+    },
+    [
+      activeInspectorReportTab,
+      applyFocusModeToStore,
+      applyPinToStore,
+      applyProductFlowViewModel,
+      applyUnifiedSceneReaction,
+      focusMode,
+      focusPinned,
+      focusedId,
+      inspectorOpen,
+      memory,
+      messages,
+      openRightPanel,
+      responseData,
+      rightPanelTab,
+      sceneJson,
+      selectedObjectIdState,
+    ]
   );
   const applyRetailTriggerEnhancement = useCallback(
     (rawPayload: any, userText: string, fallbackScene: SceneJson | null) => {
@@ -2808,7 +3481,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       // Selection should not force camera focus mode; keep object anchored under pointer.
       setSelectedObjectIdState(id);
       flashSelectHighlight(id);
-      setViewMode("input");
+      if (id) {
+        setViewMode("input");
+      }
 
       // Pin = lock focus. When pinned, clicking other objects does NOT change focusedId.
       if (focusPinned) {
@@ -2926,6 +3601,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const detail = (event as CustomEvent<{ result?: FragilityScanResponse | null }>).detail;
       const result = detail?.result;
       if (!result?.ok) return;
+      const sceneBridge = applyFragilityScenePayload(sceneJson, result.scene_payload);
+      const highlightIds = Array.from(
+        new Set([
+          ...sceneBridge.matchedObjectIds,
+          ...sceneBridge.highlights.map((highlight) => String(highlight.target)),
+          ...sceneBridge.suggestedFocusIds,
+          ...((Array.isArray(result.suggested_objects) ? result.suggested_objects : [])
+            .map((value) => String(value))
+            .filter(Boolean)),
+        ])
+      );
 
       setResponseData((prev: Record<string, unknown> | null) => ({
         ...(prev ?? {}),
@@ -2937,29 +3623,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           drivers: Object.fromEntries(
             (result.drivers ?? []).map((driver) => [driver.id, driver.score])
           ),
+          overlay_summary: sceneBridge.overlaySummary,
         },
       }));
 
-      setSceneJson((prev) => normalizeSceneJson(applyFragilityScenePayload(result.scene_payload, prev)));
+      const unifiedFragilityReaction = buildUnifiedReactionFromFragilityRun({
+        highlightedObjectIds: highlightIds,
+        riskSources: sceneBridge.matchedObjectIds,
+        riskTargets: highlightIds,
+        reason: result.summary,
+        activeLoopId: null,
+        loopSuggestions: [],
+        actions: [],
+      });
 
-      const nextFocusId =
-        result.scene_payload?.suggested_focus?.[0] ??
-        result.suggested_objects?.[0] ??
-        null;
-
-      if (!nextFocusId) return;
-      selectedSetterRef.current(nextFocusId);
-      setSelectedObjectIdState(nextFocusId);
-      setFocusedId(nextFocusId);
-      setFocusMode("selected");
-      updateSelectedObjectInfo(nextFocusId);
-      setViewMode("input");
+      applyUnifiedSceneReaction(unifiedFragilityReaction, {
+        sceneReplacement: sceneBridge.sceneJson ? normalizeSceneJson(sceneBridge.sceneJson) : null,
+        allowSceneReplacement: !!sceneBridge.sceneJson,
+      });
     };
 
     window.addEventListener("nexora:apply-fragility-scan", onApplyFragilityScan as EventListener);
     return () =>
       window.removeEventListener("nexora:apply-fragility-scan", onApplyFragilityScan as EventListener);
-  }, [setFocusMode, setViewMode, updateSelectedObjectInfo]);
+  }, [
+    applyUnifiedSceneReaction,
+    sceneJson,
+  ]);
   const isRestoringRef = useRef(false);
   const [overridesVersion, setOverridesVersion] = useState(0);
   const autoBackupTimerRef = useRef<number | null>(null);
@@ -3932,13 +4622,79 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const focusedObjectId: string | undefined =
       focusModeStore === "pinned" ? (pinnedId ?? undefined) : (focusedId ?? undefined);
 
-    const routerResult = routeChatInput(text, {
-      focusedObjectId,
-      activeLoopId: activeLoopIdStore ?? undefined,
-      focusMode: focusModeStore,
-      pinnedLabel: selectedObjectInfo?.label ?? undefined,
+    const availableSceneObjectIds = Array.isArray(sceneJson?.scene?.objects)
+      ? (sceneJson.scene.objects as any[])
+          .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
+          .filter(Boolean)
+      : [];
+
+    const intentRoute = resolveNexoraIntentRoute({
+      text,
+      activeMode,
+      activeDomain: activeDomainExperience.experience.domainId,
+      currentRightPanelTab: rightPanelTab,
+      selectedObjectId: selectedObjectIdState,
+      availableSceneObjectIds,
+      sceneJson,
+      objectProfiles: objectProfiles as Record<string, unknown>,
+      productModeContext: productModeContext as Record<string, unknown> | null,
     });
 
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Nexora][IntentRouter]", intentRoute);
+    }
+
+    if (intentRoute.shouldCallBackend) {
+      setLoading(true);
+      setNoSceneUpdate(false);
+      setSourceLabel(null);
+      setCameraLockedByUser(false);
+    }
+
+    try {
+      const executionResult = await executeNexoraAction({
+      userText: text,
+      route: intentRoute,
+      activeMode,
+      activeDomain: activeDomainExperience.experience.domainId,
+      currentScene: sceneJson,
+      currentRightPanelTab: rightPanelTab,
+      selectedObjectId: selectedObjectIdState,
+      objectProfiles,
+      productModeContext,
+      memoryState: memory,
+      environmentConfig,
+      handlers: {
+        runBackendChat: async (nextText: string) => {
+          const payload = buildChatRequestPayload(nextText);
+
+          if (process.env.NODE_ENV !== "production") {
+            console.debug("chat payload", payload);
+          }
+
+          const raw = await chatToBackend(payload);
+          if (process.env.NODE_ENV !== "production") {
+            console.debug("chat response", raw);
+          }
+          return raw;
+        },
+        runLocalDecisionRouter: (nextText: string) =>
+          routeChatInput(nextText, {
+            focusedObjectId,
+            activeLoopId: activeLoopIdStore ?? undefined,
+            focusMode: focusModeStore,
+            pinnedLabel: selectedObjectInfo?.label ?? undefined,
+          }),
+      },
+    });
+
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Nexora][ActionExecution]", executionResult);
+    }
+
+    applyExecutionResultToUi(executionResult);
+
+    const routerResult = executionResult.localDecisionPayload;
     const hasLocalActions = Array.isArray(routerResult?.actions) && routerResult.actions.length > 0;
 
     if (hasLocalActions) {
@@ -3972,8 +4728,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
 
         const targets = routerResult.actions
-          .map((a) => (a && typeof (a as any).target === "string" ? (a as any).target : null))
-          .filter((t): t is string => !!t);
+          .map((a: any) => (a && typeof (a as any).target === "string" ? (a as any).target : null))
+          .filter((t: string | null): t is string => !!t);
 
         // Defer visual patches; applying overrides touches SceneStateProvider.
         pendingVisualPatchesRef.current = { memory: next, targets };
@@ -4001,33 +4757,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       return;
     }
 
+    if (!executionResult.backendPayload) {
+      const userMsg = makeMsg("user", text);
+      const fallbackReply =
+        executionResult.chatReply ??
+        executionResult.errors[0] ??
+        executionResult.warnings[0] ??
+        intentRoute.explanation;
+      const assistantMsg = makeMsg("assistant", fallbackReply);
+      const routedMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
+      setMessages(routedMessages);
+      emitChatResult(fallbackReply, executionResult.ok, requestId);
+      setLastActions([]);
+      setInput("");
+      isSendingRef.current = false;
+      return;
+    }
+
     // No deterministic actions to apply locally → use backend for assistant reply.
-
-    // Default: send to backend
-    const userBackendMsg = makeMsg("user", text);
-    const baseMessages = appendMessages(messagesRef.current, [userBackendMsg]);
-    setMessages(baseMessages);
-    setLoading(true);
-    setNoSceneUpdate(false);
-    setSourceLabel(null);
-    setCameraLockedByUser(false);
-
-    try {
-      const payload = buildChatRequestPayload(text);
-
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.debug("chat payload", payload);
-      }
-
-      const raw = await chatToBackend(payload);
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.debug("chat response", raw);
-      }
-
+      const raw = executionResult.backendPayload;
       const data = applyRetailTriggerEnhancement(raw, text, sceneJson) as BackendChatResponse;
-      setResponseData(data);
       if (typeof data?.episode_id === "string" && data.episode_id.trim()) {
         setEpisodeId(data.episode_id);
       }
@@ -4042,23 +4791,52 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         isSendingRef.current = false;
         return;
       }
+      const userBackendMsg = makeMsg("user", text);
+      const baseMessages = appendMessages(messagesRef.current, [userBackendMsg]);
+      setMessages(baseMessages);
       const nextActiveMode: string =
         typeof (data as any)?.active_mode === "string" && (data as any).active_mode.trim().length
           ? (data as any).active_mode
           : activeMode;
       setActiveMode(nextActiveMode);
       const viewModel = deriveProductFlowViewModel(data, sceneJson);
-      if (viewModel.nextSceneJson) {
-        setSceneJson(viewModel.nextSceneJson);
+      const shouldApplySceneMutation = hasMeaningfulSceneMutation(data, sceneJson);
+      const incomingSceneJson = data.scene_json
+        ? normalizeSceneJson(data.scene_json as SceneJson)
+        : null;
+      const viewModelSceneJson = viewModel?.nextSceneJson
+        ? normalizeSceneJson(viewModel.nextSceneJson as SceneJson)
+        : null;
+      const shouldReplaceIncomingSceneFromChat = shouldAcceptIncomingSceneReplacement(
+        data,
+        sceneJson,
+        incomingSceneJson
+      );
+      const shouldReplaceViewModelSceneFromChat = shouldAcceptIncomingSceneReplacement(
+        data,
+        sceneJson,
+        viewModelSceneJson
+      );
 
-        // apply override policy
+      const acceptedSceneForChatReplacement =
+        (executionResult.allowSceneMutation &&
+          viewModelSceneJson &&
+          shouldReplaceViewModelSceneFromChat &&
+          viewModelSceneJson) ||
+        (executionResult.allowSceneMutation &&
+          incomingSceneJson &&
+          shouldReplaceIncomingSceneFromChat &&
+          incomingSceneJson) ||
+        null;
+
+      if (acceptedSceneForChatReplacement) {
         try {
           const policy = prefs.overridePolicy ?? "match";
           if (policy === "clear") {
             clearAllOverridesRef.current?.();
           } else if (policy === "match") {
-            const objsForPolicy: any[] = Array.isArray(viewModel.nextSceneJson?.scene?.objects)
-              ? (viewModel.nextSceneJson as any).scene.objects
+            const objsForPolicy: any[] = Array.isArray(acceptedSceneForChatReplacement?.scene?.objects)
+              ? (acceptedSceneForChatReplacement as any).scene.objects
               : [];
             const validIds = objsForPolicy.map((o: any, idx: number) => o.id ?? o.name ?? `${o.type ?? "obj"}:${idx}`);
             pruneOverridesRef.current?.(validIds);
@@ -4066,6 +4844,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         } catch (e) {
           // ignore policy errors
         }
+      } else if (incomingSceneJson || viewModelSceneJson) {
+        setNoSceneUpdate(true);
       }
       const assistantMsg = makeMsg("assistant", data.reply || "I’m here to help.");
       const finalMessages = appendMessages(baseMessages, [assistantMsg]);
@@ -4073,8 +4853,88 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       emitChatResult(assistantMsg.text, true, requestId);
       const nextActions = Array.isArray((data as any)?.actions) ? ((data as any).actions as any[]) : [];
       setLastActions(nextActions);
-      applyProductFlowViewModel(data, viewModel, { applyActionsToScene: true });
-      syncFocusedObjectFromResponse(data);
+      const shouldApplySceneEffectsFromChat =
+        executionResult.allowSceneMutation && executionResult.appliedSceneMutation !== "none";
+      const retailChatTrigger = detectRetailTriggerConfig(text);
+      const unifiedChatReaction =
+        retailChatTrigger && isRetailScenePayload(data, acceptedSceneForChatReplacement ?? sceneJson)
+          ? buildUnifiedReactionFromRetailTriggerConfig(
+              retailChatTrigger,
+              acceptedSceneForChatReplacement ?? sceneJson
+            )
+          : buildUnifiedReactionFromChatResponse(data, {
+              acceptedSceneForChatReplacement,
+              allowSceneEffects: shouldApplySceneEffectsFromChat,
+            });
+      const nextObjectSelectionFromReaction =
+        unifiedChatReaction &&
+        ((Array.isArray(unifiedChatReaction.highlightedObjectIds) && unifiedChatReaction.highlightedObjectIds.length > 0) ||
+          unifiedChatReaction.dimUnrelatedObjects ||
+          (Array.isArray(unifiedChatReaction.riskSources) && unifiedChatReaction.riskSources.length > 0) ||
+          (Array.isArray(unifiedChatReaction.riskTargets) && unifiedChatReaction.riskTargets.length > 0))
+          ? {
+              ...(viewModel.nextObjectSelection && typeof viewModel.nextObjectSelection === "object"
+                ? viewModel.nextObjectSelection
+                : {}),
+              highlighted_objects: Array.isArray(unifiedChatReaction.highlightedObjectIds)
+                ? unifiedChatReaction.highlightedObjectIds
+                : [],
+              dim_unrelated_objects: unifiedChatReaction.dimUnrelatedObjects === true,
+              risk_sources: Array.isArray(unifiedChatReaction.riskSources)
+                ? unifiedChatReaction.riskSources
+                : [],
+              risk_targets: Array.isArray(unifiedChatReaction.riskTargets)
+                ? unifiedChatReaction.riskTargets
+                : [],
+            }
+          : viewModel.nextObjectSelection;
+      const enrichedExecutionResult = {
+        ...executionResult,
+        chatReply: assistantMsg.text,
+        backendPayload: data,
+        highlightedObjectIds:
+          Array.isArray(unifiedChatReaction?.highlightedObjectIds) && unifiedChatReaction.highlightedObjectIds.length > 0
+            ? unifiedChatReaction.highlightedObjectIds
+            : executionResult.highlightedObjectIds,
+        focusedObjectId:
+          (Array.isArray(unifiedChatReaction?.highlightedObjectIds) ? unifiedChatReaction.highlightedObjectIds[0] : null) ??
+          executionResult.focusedObjectId ??
+          null,
+        unifiedReaction: executionResult.allowSceneMutation ? unifiedChatReaction : null,
+        sceneReplacement: acceptedSceneForChatReplacement,
+        panelUpdates: {
+          preferredPanel: executionResult.preferredPanel,
+          preferredInspectorTab: executionResult.preferredInspectorTab,
+          viewModel,
+          objectSelection: nextObjectSelectionFromReaction,
+          memoryInsights: viewModel.nextMemoryInsights,
+          riskPropagation: viewModel.nextRiskPropagation,
+          strategicAdvice: viewModel.nextStrategicAdvice,
+          strategyKpi: viewModel.nextStrategyKpi,
+          decisionCockpit: viewModel.nextDecisionCockpit,
+          productModeContext: viewModel.nextProductModeContext,
+          productModeId: viewModel.nextProductModeContext?.mode_id ?? null,
+          aiReasoning: viewModel.nextAiReasoning,
+          platformAssembly: viewModel.nextPlatformAssembly,
+          autonomousExploration: viewModel.nextAutonomousExploration,
+          opponentModel: viewModel.nextOpponentModel,
+          strategicPatterns: viewModel.nextStrategicPatterns,
+          conflicts: viewModel.nextConflicts,
+          kpi: viewModel.nextKpi,
+          loops: viewModel.nextLoops,
+          activeLoopId: viewModel.nextActiveLoop ?? null,
+          loopSuggestions: viewModel.nextLoopSuggestions,
+        },
+      };
+      applyExecutionResultToUi(enrichedExecutionResult);
+      if (
+        (incomingSceneJson || viewModelSceneJson) &&
+        shouldApplySceneMutation &&
+        !acceptedSceneForChatReplacement &&
+        process.env.NODE_ENV !== "production"
+      ) {
+        setSceneWarn("⚠️ Rejected incompatible fallback scene replacement.");
+      }
 
       const sessionId = (() => {
         try {
@@ -4089,7 +4949,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         savedAt: new Date().toISOString(),
         sessionId,
         activeMode: nextActiveMode,
-        sceneJson: viewModel.nextSceneJson,
+        sceneJson: acceptedSceneForChatReplacement ?? sceneJson,
         messages: finalMessages,
       };
       saveProject(snapshot);
@@ -4115,6 +4975,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     }
   }, [
     activeMode,
+    activeDomainExperience,
     episodeId,
     focusMode,
     focusModeStore,
@@ -4123,8 +4984,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     pinnedId,
     activeLoopIdStore,
     loading,
+    objectProfiles,
     prefs.globalScale,
     prefs.overridePolicy,
+    productModeContext,
+    rightPanelTab,
+    selectedObjectIdState,
+    applyExecutionResultToUi,
     applyProductFlowViewModel,
     applyUICommands,
     buildChatRequestPayload,
@@ -4132,8 +4998,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     sceneJson,
     emitChatResult,
     applyRetailTriggerEnhancement,
+    applyUnifiedSceneReaction,
     pulseObjectByText,
-    syncFocusedObjectFromResponse,
     updateSelectedObjectInfo,
     updateObjectUx,
   ]);
@@ -4725,37 +5591,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   ]);
 
   const panelContent =
-    rightPanelTab === "timeline" ? (
+    activeInspectorReportTab === "timeline" ? (
       <TimelinePanel
         backendBase={BACKEND_BASE}
         episodeId={episodeId}
         onSceneUpdate={handleSceneUpdateFromTimeline}
       />
-    ) : rightPanelTab === "conflict" ? (
+    ) : activeInspectorReportTab === "conflict" ? (
       <ConflictMapPanel conflicts={conflicts} />
-    ) : rightPanelTab === "object_focus" ? (
+    ) : activeInspectorReportTab === "object_focus" ? (
       <ObjectSelectionPanel selection={objectSelection ?? (sceneJson as any)?.object_selection ?? null} />
-    ) : rightPanelTab === "memory_insights" ? (
+    ) : activeInspectorReportTab === "memory_insights" ? (
       <MemoryInsightsPanel memory={memoryInsights ?? (sceneJson as any)?.memory_v2 ?? null} />
-    ) : rightPanelTab === "risk_flow" ? (
+    ) : activeInspectorReportTab === "risk_flow" ? (
       <RiskPropagationPanel risk={riskPropagation ?? (sceneJson as any)?.risk_propagation ?? (sceneJson as any)?.scene?.risk_propagation ?? null} />
-    ) : rightPanelTab === "replay" ? (
+    ) : activeInspectorReportTab === "replay" ? (
       <DecisionReplayPanel
         backendBase={BACKEND_BASE}
         episodeId={episodeId}
         onSceneUpdate={handleSceneUpdateFromTimeline}
       />
-    ) : rightPanelTab === "strategic_advice" ? (
+    ) : activeInspectorReportTab === "strategic_advice" ? (
       <StrategicAdvicePanel advice={strategicAdvice ?? (sceneJson as any)?.strategic_advice ?? null} />
-    ) : rightPanelTab === "opponent_moves" ? (
+    ) : activeInspectorReportTab === "opponent_moves" ? (
       <OpponentMovesPanel model={opponentModel ?? (sceneJson as any)?.opponent_model ?? null} />
-    ) : rightPanelTab === "strategic_patterns" ? (
+    ) : activeInspectorReportTab === "strategic_patterns" ? (
       <StrategicPatternsPanel patterns={strategicPatterns ?? (sceneJson as any)?.strategic_patterns ?? null} />
-    ) : rightPanelTab === "executive_dashboard" ? (
+    ) : activeInspectorReportTab === "executive_dashboard" ? (
       <ExecutiveDashboardPanel sceneJson={sceneJson ?? undefined} responseData={responseData ?? undefined} />
-    ) : rightPanelTab === "collaboration" ? (
+    ) : activeInspectorReportTab === "collaboration" ? (
       <CollaborationPanel backendBase={BACKEND_BASE} episodeId={episodeId} />
-    ) : rightPanelTab === "workspace" ? (
+    ) : activeInspectorReportTab === "workspace" ? (
       <ProductWorkspacePanel
         backendBase={BACKEND_BASE}
         episodeId={episodeId}
@@ -4763,7 +5629,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         currentScenarioInputs={[]}
       />
     ) : null;
-  const getInspectorHostId = useCallback((tab: typeof rightPanelTab) => {
+  const getInspectorHostId = useCallback((tab: InspectorReportTab) => {
     return tab === "conflict"
       ? "nexora-inspector-conflict-host"
       : tab === "object_focus"
@@ -4795,29 +5661,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       return;
     }
 
-    const isInspectorTab =
-      rightPanelTab === "timeline" ||
-      rightPanelTab === "conflict" ||
-      rightPanelTab === "object_focus" ||
-      rightPanelTab === "memory_insights" ||
-      rightPanelTab === "risk_flow" ||
-      rightPanelTab === "replay" ||
-      rightPanelTab === "strategic_advice" ||
-      rightPanelTab === "opponent_moves" ||
-      rightPanelTab === "strategic_patterns" ||
-      rightPanelTab === "executive_dashboard" ||
-      rightPanelTab === "collaboration" ||
-      rightPanelTab === "workspace";
-
-    if (!isInspectorTab) {
+    if (!activeInspectorReportTab) {
       setInspectorPortalHost(null);
       return;
     }
 
-    const hostId = getInspectorHostId(rightPanelTab);
+    const hostId = getInspectorHostId(activeInspectorReportTab);
     const host = document.getElementById(hostId);
     setInspectorPortalHost(host instanceof HTMLElement ? host : null);
-  }, [getInspectorHostId, isClientMounted, rightPanelTab]);
+  }, [activeInspectorReportTab, getInspectorHostId, isClientMounted]);
 
   const timelineInspectorNode =
     isClientMounted && inspectorPortalHost && panelContent
@@ -4841,6 +5693,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const showDomainPromptGuide = !!sceneJson && isDomainDemoActive && !hasUserPrompt;
   const domainPromptSuggestions = activeDomainExperience.experience.promptExamples;
   const launchDomainActive = isLaunchDomain(activeDomainExperience.experience.domainId);
+  const traceSceneObjectIds = useMemo(
+    () =>
+      Array.isArray(sceneJson?.scene?.objects)
+        ? (sceneJson.scene.objects as any[])
+            .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
+            .slice(0, 12)
+        : [],
+    [sceneJson]
+  );
+  useEffect(() => {
+    traceHighlightFlow("homescreen_before_scene", {
+      highlightedObjectIds: Array.isArray(objectSelection?.highlighted_objects)
+        ? objectSelection.highlighted_objects.map(String)
+        : [],
+      dimUnrelatedObjects: objectSelection?.dim_unrelated_objects === true,
+      focusedId: focusedId ?? null,
+      selectedObjectId: selectedObjectIdState ?? null,
+      focusMode,
+      focusPinned,
+      rightPanelTab,
+      hasSceneJson: !!sceneJson,
+      sceneObjectIds: traceSceneObjectIds,
+    });
+  }, [
+    focusMode,
+    focusPinned,
+    focusedId,
+    objectSelection,
+    rightPanelTab,
+    sceneJson,
+    selectedObjectIdState,
+    traceSceneObjectIds,
+  ]);
   const domainPanelEmphasisLabels = useMemo(
     () =>
       activeDomainExperience.experience.preferredPanels
@@ -4873,6 +5758,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           cameraLockedByUser={cameraLockedByUser}
           isOrbiting={isOrbiting}
           sceneJson={sceneJson}
+          objectSelection={objectSelection ?? null}
           getUxForObject={getUxForObject}
           objectUxById={objectUxById}
           loops={visibleLoops}

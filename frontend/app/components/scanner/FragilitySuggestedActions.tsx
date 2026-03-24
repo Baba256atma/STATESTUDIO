@@ -6,14 +6,13 @@ export function FragilitySuggestedActions({
   actions,
 }: {
   actions: string[];
-}): React.ReactElement | null {
-  if (!actions.length) return null;
+}): React.ReactElement {
 
   return (
     <section style={{ display: "grid", gap: 8 }}>
       <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>Recommended Actions</h3>
       <div style={{ display: "grid", gap: 6 }}>
-        {actions.map((action) => (
+        {actions.length ? actions.map((action) => (
           <div
             key={action}
             style={{
@@ -28,7 +27,11 @@ export function FragilitySuggestedActions({
           >
             {action}
           </div>
-        ))}
+        )) : (
+          <div style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+            No recommended actions were returned for this scan.
+          </div>
+        )}
       </div>
     </section>
   );

@@ -179,6 +179,60 @@ export function scannerResultToProjectFile(input: ScannerResult): NexoraProjectF
   const pid = slugifyId(n.normalizedProjectId);
   const relations = Array.isArray(n.relations) ? n.relations : [];
   const loops = Array.isArray(n.loops) ? n.loops : [];
+  const sceneJson =
+    n.sceneJson && typeof n.sceneJson === "object"
+      ? ({
+          ...n.sceneJson,
+          scene: {
+            ...n.sceneJson.scene,
+            objects: Array.isArray(n.sceneJson.scene?.objects) ? [...n.sceneJson.scene.objects] : n.sceneJson.scene?.objects,
+          },
+        } as SceneJson)
+      : null;
+
+  const payloadObjects = Array.isArray((n as any).scenePayload?.objects)
+    ? (((n as any).scenePayload.objects as Array<Record<string, unknown>>).filter(
+        (object): object is Record<string, unknown> & { id: string } => typeof object?.id === "string"
+      ))
+    : [];
+
+  if (sceneJson && payloadObjects.length > 0) {
+    const payloadMap = new Map<
+      string,
+      { emphasis?: number; reason?: string | null }
+    >(
+      payloadObjects.map((object) => [
+        object.id,
+        {
+          emphasis: typeof object.emphasis === "number" ? object.emphasis : 0,
+          reason: typeof object.reason === "string" ? object.reason : null,
+        },
+      ])
+    );
+
+    const scene = sceneJson.scene;
+    if (scene && Array.isArray(scene.objects)) {
+      scene.objects = scene.objects.map((obj: any) => {
+        const hit = payloadMap.get(obj.id);
+
+        if (hit) {
+          return {
+            ...obj,
+            scanner_highlighted: true,
+            scanner_emphasis: hit.emphasis ?? 0,
+            scanner_reason: hit.reason ?? null,
+          };
+        }
+
+        return {
+          ...obj,
+          scanner_highlighted: false,
+          scanner_emphasis: 0,
+          scanner_reason: null,
+        };
+      });
+    }
+  }
 
   return {
     format: "nexora_project_file",
@@ -198,7 +252,7 @@ export function scannerResultToProjectFile(input: ScannerResult): NexoraProjectF
       },
     },
     scene: {
-      sceneJson: n.sceneJson ?? null,
+      sceneJson,
       loops: { list: loops },
     },
     semantics: n.semanticObjectMeta,
