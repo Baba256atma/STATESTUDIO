@@ -44,9 +44,22 @@ export type AuditEventType =
   | "simulation_run"
   | "scenario_compared"
   | "recommendation_generated"
+  | "action_applied"
   | "scanner_enrichment_applied"
   | "external_integration_applied"
   | "memory_updated"
+  | "strategic_command_state_generated"
+  | "decision_policy_evaluated"
+  | "collaboration_input_added"
+  | "collaboration_alignment_updated"
+  | "collaboration_decision_delta_detected"
+  | "autonomous_council_review_generated"
+  | "council_consensus_updated"
+  | "approval_required"
+  | "approval_submitted"
+  | "approval_approved"
+  | "approval_rejected"
+  | "approval_escalated"
   | "mode_switched"
   | "project_restored";
 
@@ -65,6 +78,9 @@ export type AuditEvent = {
     | "scanner_integration"
     | "recommendation_explainability"
     | "memory_learning"
+    | "collaboration_review"
+    | "governance_policy"
+    | "approval_workflow"
     | "workspace_mode_context";
   affected_entity?: string;
   before_hint?: string;
@@ -210,4 +226,3 @@ export function buildProjectGovernanceContext(params: {
     governance,
   };
 }
-

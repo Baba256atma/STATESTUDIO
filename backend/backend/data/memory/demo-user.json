@@ -1,0 +1,23 @@
+{
+  "obj_delivery": {
+    "energy": 0.11925886404201508,
+    "hits": 1,
+    "last_intensity": 0.34073961154861454,
+    "last_ts": 1774897402,
+    "trend": "rising"
+  },
+  "obj_inventory": {
+    "energy": 0.3403858821961896,
+    "hits": 2,
+    "last_intensity": 0.34073961154861454,
+    "last_ts": 1774897402,
+    "trend": "rising"
+  },
+  "obj_risk_zone": {
+    "energy": 0.11925886404201508,
+    "hits": 1,
+    "last_intensity": 0.34073961154861454,
+    "last_ts": 1774897402,
+    "trend": "rising"
+  }
+}

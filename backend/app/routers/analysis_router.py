@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import traceback
 
 from app.models.signals import HumanArchetypeState
@@ -38,6 +39,18 @@ class AnalyzeFullIn(BaseModel):
     text: str
     metrics: dict[str, float] | None = None
     episode_id: str | None = None
+
+
+class AnalyzeFullResponse(BaseModel):
+    episode_id: str | None = None
+    signals: Any = None
+    human_state: Any = None
+    system_signals: dict[str, float] = Field(default_factory=dict)
+    system_state: Any = None
+    visual: Any = None
+    warnings: list[str] = Field(default_factory=list)
+    ok: bool | None = None
+    error: dict[str, Any] | None = None
 
 
 @router.post("/analyze/human")
@@ -90,7 +103,7 @@ def analyze_system(payload: AnalyzeSystemIn) -> dict:
         raise HTTPException(status_code=500, detail="analysis failed") from exc
 
 
-@router.post("/analyze/full")
+@router.post("/analyze/full", response_model=AnalyzeFullResponse)
 def analyze_full(payload: AnalyzeFullIn) -> dict:
     if not payload.text or not payload.text.strip():
         raise HTTPException(status_code=422, detail=responses.error("INVALID_INPUT", "text is required"))

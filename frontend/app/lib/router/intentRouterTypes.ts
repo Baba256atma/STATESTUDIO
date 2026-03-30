@@ -57,12 +57,14 @@ export type NexoraRoutePanelTab =
   | "opponent_moves"
   | "strategic_patterns"
   | "executive_dashboard"
+  | "war_room"
   | "collaboration"
   | "workspace";
 
 export type NexoraIntentRoute = {
   intent: IntentKind;
   confidence: number;
+  primaryObjectId: string | null;
   target: RouteTarget;
   uiMutation: UIMutationPolicy;
   sceneMutation: SceneMutationPolicy;
@@ -76,6 +78,9 @@ export type NexoraIntentRoute = {
   shouldAffectPanels: boolean;
   matchedObjectIds: string[];
   matchedKeywords: string[];
+  method: string;
+  reason: string;
+  fallbackUsed: boolean;
   domainMode: string;
   explanation: string;
 };

@@ -12,6 +12,24 @@ from app.services.montecarlo_report_adapter import build_manager_report
 from app.services.montecarlo_service import run_simulation
 from app.services.replay_store import ReplayStore
 from app.utils import responses
+from engines.compare_mode.compare_models import CompareInput
+from engines.compare_mode.compare_service import run_compare
+from engines.evolution.evolution_service import (
+    get_current_evolution_state,
+    get_recent_memory,
+    run_evolution_pass,
+    save_memory,
+    update_outcome,
+)
+from engines.evolution.memory_models import MemorySaveRequest, OutcomeUpdateRequest
+from engines.scenario_simulation.propagation_models import PropagationRequest
+from engines.scenario_simulation.propagation_service import run_propagation_simulation
+from engines.scenario_simulation.scenario_action_models import ScenarioActionRequest
+from engines.scenario_simulation.scenario_action_service import run_scenario_action
+from engines.strategy_generation.strategy_models import StrategyGenerationInput
+from engines.strategy_generation.strategy_service import run_strategy_generation
+from engines.system_intelligence.intelligence_models import SystemIntelligenceInput
+from engines.system_intelligence.intelligence_service import run_system_intelligence
 
 
 router = APIRouter()
@@ -159,3 +177,76 @@ def simulator_run(payload: SimulatorRunIn):
             "manager_report": manager_report,
         }
     )
+
+
+@router.post("/simulation/propagation")
+def simulation_propagation(payload: PropagationRequest):
+    result = run_propagation_simulation(payload)
+    return responses.ok(
+        {
+            "simulation": {
+                "propagation": result.model_dump(mode="python"),
+            }
+        }
+    )
+
+
+@router.post("/simulation/scenario-action")
+def simulation_scenario_action(payload: ScenarioActionRequest):
+    result = run_scenario_action(payload)
+    return responses.ok(
+        {
+            "simulation": {
+                "scenario_action": result.scenario_action.model_dump(mode="python"),
+                "propagation": result.propagation.model_dump(mode="python") if result.propagation is not None else None,
+                "decision_path": result.decision_path.model_dump(mode="python") if result.decision_path is not None else None,
+            },
+            "analysis": result.analysis.model_dump(mode="python") if result.analysis is not None else None,
+        }
+    )
+
+
+@router.post("/system/intelligence/run")
+def system_intelligence_run(payload: SystemIntelligenceInput):
+    result = run_system_intelligence(payload)
+    return responses.ok({"intelligence": result.model_dump(mode="python")})
+
+
+@router.post("/system/compare/run")
+def system_compare_run(payload: CompareInput):
+    result = run_compare(payload)
+    return responses.ok({"comparison": result.model_dump(mode="python")})
+
+
+@router.post("/system/strategy/generate")
+def system_strategy_generate(payload: StrategyGenerationInput):
+    result = run_strategy_generation(payload)
+    return responses.ok({"strategy_generation": result.model_dump(mode="python")})
+
+
+@router.post("/system/memory/save")
+def system_memory_save(payload: MemorySaveRequest):
+    saved = save_memory(payload)
+    return responses.ok({"memory": saved})
+
+
+@router.post("/system/outcome/update")
+def system_outcome_update(payload: OutcomeUpdateRequest):
+    updated = update_outcome(payload)
+    return responses.ok({"outcome": updated.model_dump(mode="python") if updated is not None else None})
+
+
+@router.post("/system/evolution/run")
+def system_evolution_run(_: dict[str, Any] | None = None):
+    result = run_evolution_pass()
+    return responses.ok({"evolution": result.model_dump(mode="python")})
+
+
+@router.get("/system/memory/recent")
+def system_memory_recent(limit: int = 12):
+    return responses.ok({"memory": get_recent_memory(limit=limit)})
+
+
+@router.get("/system/evolution/state")
+def system_evolution_state():
+    return responses.ok({"evolution": get_current_evolution_state().model_dump(mode="python")})

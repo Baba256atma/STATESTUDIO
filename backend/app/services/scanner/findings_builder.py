@@ -43,7 +43,7 @@ def build_fragility_summary(signals: list[dict], scoring: dict) -> str:
             f"The system shows elevated fragility risk with pressure centered on {', '.join(driver_labels) if driver_labels else 'several core drivers'}. "
             "Management intervention is recommended."
         )
-    if level == "medium":
+    if level == "moderate":
         return (
             f"The system shows moderate fragility exposure with emerging pressure in {', '.join(driver_labels) if driver_labels else 'key operating areas'}. "
             "Targeted mitigation should be planned."
@@ -67,6 +67,110 @@ def build_recommended_actions(signals: list[dict], scoring: dict) -> list[str]:
     if not actions and float(scoring.get("fragility_score", 0.0) or 0.0) >= 0.35:
         actions.append("Review operating dependencies and add practical resilience buffers.")
     return actions
+
+
+def build_panel_advice_slice(summary_text: str, actions: list[str], drivers: list[dict]) -> dict[str, Any]:
+    """Return a compact advice slice driven by scanner output."""
+    top_driver_label = str(drivers[0].get("label", "Fragility pressure")) if drivers else "Fragility pressure"
+    primary_recommendation = actions[0] if actions else None
+    return {
+        "title": "Immediate Action",
+        "summary": f"{top_driver_label} is the most urgent scanner pressure. {summary_text}",
+        "why": drivers[0].get("reason") if drivers else summary_text,
+        "recommendation": primary_recommendation,
+        "risk_summary": summary_text,
+        "recommendations": actions[:3],
+        "supporting_driver_labels": [
+            str(driver.get("label", "Fragility pressure"))
+            for driver in drivers[:3]
+            if isinstance(driver, dict)
+        ],
+        "recommended_actions": [
+            {
+                "action": action,
+                "impact_summary": summary_text,
+                "tradeoff": None,
+            }
+            for action in actions[:3]
+        ],
+        "primary_recommendation": {"action": primary_recommendation} if primary_recommendation else None,
+    }
+
+
+def build_panel_timeline_slice(drivers: list[dict], object_ids: list[str], confidence: float) -> dict[str, Any]:
+    """Return a concise operational timeline slice from scanner evidence."""
+    events: list[dict[str, Any]] = []
+    if drivers:
+        events.append(
+            {
+                "id": "timeline_detected_pressure",
+                "label": f"{drivers[0].get('label', 'Pressure')} detected",
+                "type": "signal",
+                "order": 1,
+                "confidence": confidence,
+                "related_object_ids": object_ids[:4],
+            }
+        )
+    if object_ids:
+        events.append(
+            {
+                "id": "timeline_object_exposure",
+                "label": f"Primary exposure forming around {', '.join(object_ids[:2])}",
+                "type": "impact",
+                "order": 2,
+                "confidence": max(0.2, confidence - 0.05),
+                "related_object_ids": object_ids[:4],
+            }
+        )
+    if drivers:
+        events.append(
+            {
+                "id": "timeline_downstream_risk",
+                "label": "If pressure continues, downstream service and execution risk may rise",
+                "type": "outlook",
+                "order": 3,
+                "confidence": max(0.2, confidence - 0.1),
+                "related_object_ids": object_ids[:4],
+            }
+        )
+    return {
+        "headline": "Timeline",
+        "events": events,
+        "related_object_ids": object_ids[:5],
+        "summary": f"Tracking {len(events)} risk progression events." if events else "No risk progression timeline available yet.",
+    }
+
+
+def build_panel_war_room_slice(level: str, drivers: list[dict], actions: list[str], object_ids: list[str], summary_text: str) -> dict[str, Any]:
+    """Return an executive scanner synthesis for War Room."""
+    headline = (
+        "Critical fragility pressure requires immediate stabilization"
+        if level == "critical"
+        else "Fragility pressure is elevated across core operating nodes"
+        if level == "high"
+        else "Fragility pressure is building but remains containable"
+        if level == "moderate"
+        else "Fragility pressure is limited and manageable"
+    )
+    posture = (
+        "stabilize now"
+        if level in {"critical", "high"}
+        else "targeted mitigation"
+        if level == "moderate"
+        else "monitor"
+    )
+    recommendation = actions[0] if actions else None
+    return {
+        "headline": headline,
+        "posture": posture,
+        "priorities": actions[:3],
+        "risks": [str(driver.get("label", "Fragility risk")) for driver in drivers[:3]],
+        "related_object_ids": object_ids[:5],
+        "summary": summary_text,
+        "executive_summary": summary_text,
+        "recommendation": recommendation,
+        "advice_summary": recommendation,
+    }
 
 
 def _sorted_signals(signals: list[dict]) -> list[dict]:

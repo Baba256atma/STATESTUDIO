@@ -6,8 +6,20 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 
 import { SceneRenderer } from "./SceneRenderer";
+import { DecisionPathOverlayLayer } from "./overlays/DecisionPathOverlayLayer";
 import { smoothValue } from "../lib/smooth";
 import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
+import { usePropagationBridge } from "../lib/simulation/usePropagationBridge";
+import { useSimulationOverlay } from "../lib/simulation/useSimulationOverlay";
+import type { ScenarioActionPropagationIntent } from "../lib/simulation/propagationTriggerTypes";
+import { mapDecisionPathResultToOverlay } from "../lib/simulation/decisionPathMapper";
+import type { WarRoomOverlayDetail, WarRoomOverlaySummary } from "../lib/warroom/warRoomTypes";
+import { useDecisionImpact } from "../lib/impact/useDecisionImpact";
+import {
+  isProjectedPointWithinSafeRegion,
+  measureFrameDrift,
+  resolveLayoutAwareFrameSpec,
+} from "../lib/scene/layoutAwareFraming";
 import {
   useClearAllOverrides,
   useOverrides,
@@ -33,8 +45,19 @@ type SceneCanvasProps = {
   hudDockSide?: "left" | "right";
 
   sceneJson: any | null;
+  storyAccent?: {
+    label?: string;
+    tint?: string;
+    glow?: string;
+  } | null;
+  propagationPayload?: unknown;
+  scenarioTrigger?: ScenarioActionPropagationIntent | null;
+  manualPropagationSourceId?: string | null;
+  onScenarioOverlayChange?: (summary: WarRoomOverlaySummary | null, detail?: WarRoomOverlayDetail | null) => void;
   objectSelection?: {
     highlighted_objects?: string[];
+    risk_sources?: string[];
+    risk_targets?: string[];
     dim_unrelated_objects?: boolean;
   } | null;
   getUxForObject: (id: string) => { shape?: string; base_color?: string; opacity?: number; scale?: number } | null;
@@ -218,17 +241,18 @@ function computeSceneBounds(objects: any[]): Bounds3 | null {
 
 function computeCameraFrameFromBounds(
   bounds: Bounds3,
-  opts?: { rightPanelBias?: number; pullback?: number }
+  opts?: { horizontalBias?: number; verticalBias?: number; pullback?: number }
 ): { position: [number, number, number]; lookAt: [number, number, number] } {
   const [cx, cy, cz] = bounds.center;
   const [sx, sy, sz] = bounds.size;
   const radius = Math.max(2.8, Math.max(sx, sy, sz) * 0.9);
-  const rightPanelBias = Number.isFinite(opts?.rightPanelBias) ? Number(opts?.rightPanelBias) : 0.1;
+  const horizontalBias = Number.isFinite(opts?.horizontalBias) ? Number(opts?.horizontalBias) : 0.02;
+  const verticalBias = Number.isFinite(opts?.verticalBias) ? Number(opts?.verticalBias) : 0;
   const pullback = Number.isFinite(opts?.pullback) ? Number(opts?.pullback) : 1;
 
   const lookAt: [number, number, number] = [
-    cx - radius * rightPanelBias,
-    cy,
+    cx - radius * horizontalBias,
+    cy + radius * verticalBias,
     cz - radius * 0.06,
   ];
   const position: [number, number, number] = [
@@ -281,7 +305,7 @@ function CameraIntelligence({
   preserveCameraOnClearRef?: React.MutableRefObject<boolean>;
   orbitControlsEnabled: boolean;
 }) {
-  const { camera } = useThree();
+  const { camera, size } = useThree();
   const focusTargetRef = useRef<THREE.Vector3>(new THREE.Vector3());
   const desiredCamPosRef = useRef<THREE.Vector3>(
     new THREE.Vector3(camPos[0], camPos[1], camPos[2])
@@ -301,6 +325,26 @@ function CameraIntelligence({
   const suspendAutoCameraUntilRef = useRef<number>(0);
   const lastCameraPosRef = useRef<THREE.Vector3>(new THREE.Vector3(camPos[0], camPos[1], camPos[2]));
   const lastControlTargetRef = useRef<THREE.Vector3>(new THREE.Vector3());
+  const lastCameraAssistKeyRef = useRef<string>("");
+  const baselineCamPosRef = useRef<THREE.Vector3>(new THREE.Vector3(camPos[0], camPos[1], camPos[2]));
+  const baselineLookAtRef = useRef<THREE.Vector3>(new THREE.Vector3());
+  const lastBaselineSignatureRef = useRef<string>("");
+  const lastDriftRecoveryAtRef = useRef<number>(0);
+
+  const captureBaselineFrame = (
+    position: [number, number, number],
+    lookAt: [number, number, number],
+    signature: string
+  ) => {
+    baselineCamPosRef.current.set(position[0], position[1], position[2]);
+    baselineLookAtRef.current.set(lookAt[0], lookAt[1], lookAt[2]);
+    defaultCamPosRef.current.set(position[0], position[1], position[2]);
+    defaultLookAtRef.current.set(lookAt[0], lookAt[1], lookAt[2]);
+    lastBaselineSignatureRef.current = signature;
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Nexora][Framing] baseline captured", { signature, position, lookAt });
+    }
+  };
 
   useLayoutEffect(() => {
     defaultCamPosRef.current.set(camPos[0], camPos[1], camPos[2]);
@@ -353,10 +397,17 @@ function CameraIntelligence({
     const bounds = computeSceneBounds(objects);
     if (!bounds) return;
 
-    const dockBias = hudDockSide === "right" ? 0.14 : hudDockSide === "left" ? 0.04 : 0.1;
-    const frame = computeCameraFrameFromBounds(bounds, { rightPanelBias: dockBias, pullback: 1.05 });
-    defaultCamPosRef.current.set(frame.position[0], frame.position[1], frame.position[2]);
-    defaultLookAtRef.current.set(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
+    const frameSpec = resolveLayoutAwareFrameSpec({
+      viewportWidth: size.width,
+      viewportHeight: size.height,
+      hudDockSide,
+    });
+    const frame = computeCameraFrameFromBounds(bounds, {
+      horizontalBias: frameSpec.horizontalBias,
+      verticalBias: frameSpec.verticalBias,
+      pullback: frameSpec.pullback,
+    });
+    captureBaselineFrame(frame.position, frame.lookAt, `${signature}:${hudDockSide ?? "none"}:${size.width}x${size.height}`);
     desiredCamPosRef.current.set(frame.position[0], frame.position[1], frame.position[2]);
     desiredLookAtRef.current.set(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
     currentLookAtRef.current.set(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
@@ -365,6 +416,9 @@ function CameraIntelligence({
     const now = performance.now();
     const autoCameraSuspended = now < suspendAutoCameraUntilRef.current;
     if (!cameraLockedByUser && !(localIsOrbitingRef?.current || isOrbiting) && !autoCameraSuspended) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][SceneInteraction] layout-aware frame region updated", frameSpec);
+      }
       camera.position.set(frame.position[0], frame.position[1], frame.position[2]);
       lastCameraPosRef.current.set(frame.position[0], frame.position[1], frame.position[2]);
       const controls = controlsRef?.current;
@@ -379,7 +433,7 @@ function CameraIntelligence({
     }
 
     lastAutoFrameSigRef.current = signature;
-  }, [sceneJson, hudDockSide, camera, cameraLockedByUser, controlsRef, isOrbiting, localIsOrbitingRef]);
+  }, [sceneJson, hudDockSide, camera, cameraLockedByUser, controlsRef, isOrbiting, localIsOrbitingRef, size.height, size.width]);
 
   useEffect(() => {
     const isFocusActive = focusPinned || focusMode === "selected";
@@ -432,20 +486,59 @@ function CameraIntelligence({
     }
     // Keep desired camera target stable unless an explicit framing system changes it.
     lastFocusIdRef.current = focusedId;
-  }, [focusPinned, focusMode, focusedId, sceneJson, overridesRef, preserveCameraOnClearRef, cameraLockedByUser, orbitControlsEnabled, controlsRef]);
+    const targetObject = Array.isArray(sceneJson?.scene?.objects)
+      ? (sceneJson.scene.objects as any[]).find((item) => {
+          const stableId = String(item?.id ?? item?.name ?? "");
+          return stableId === focusedId;
+        })
+      : null;
+    const targetPos = targetObject ? readObjectPos(targetObject) : null;
+    if (!targetPos) return;
+    const frameSpec = resolveLayoutAwareFrameSpec({
+      viewportWidth: size.width,
+      viewportHeight: size.height,
+      hudDockSide,
+    });
+    const baselineCamPos = baselineCamPosRef.current;
+    const baselineLookAt = baselineLookAtRef.current;
+    desiredCamPosRef.current.copy(baselineCamPos);
+    desiredLookAtRef.current.copy(baselineLookAt);
+    const projected = new THREE.Vector3(targetPos[0], targetPos[1], targetPos[2]).project(camera);
+    const assistKey = `${focusedId}:${projected.x.toFixed(2)}:${projected.y.toFixed(2)}`;
+    if (lastCameraAssistKeyRef.current === assistKey) return;
+    const isVisible = isProjectedPointWithinSafeRegion(projected, frameSpec.safeRegion);
+    if (isVisible) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][Framing] assist skipped (already safe)", { focusedId, projected, safeRegion: frameSpec.safeRegion });
+      }
+      lastCameraAssistKeyRef.current = assistKey;
+      return;
+    }
+    const focusVector = new THREE.Vector3(targetPos[0], targetPos[1], targetPos[2]);
+    const nextLookAt = baselineLookAt.clone().lerp(focusVector, 0.14);
+    const delta = nextLookAt.clone().sub(baselineLookAt);
+    desiredLookAtRef.current.copy(nextLookAt);
+    desiredCamPosRef.current.copy(baselineCamPos);
+    desiredCamPosRef.current.x += delta.x * 0.4;
+    desiredCamPosRef.current.y += delta.y * 0.16;
+    suspendAutoCameraUntilRef.current = performance.now() + 240;
+    lastCameraAssistKeyRef.current = assistKey;
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Nexora][Framing] assist applied", { focusedId, projected, safeRegion: frameSpec.safeRegion });
+    }
+  }, [focusPinned, focusMode, focusedId, sceneJson, overridesRef, preserveCameraOnClearRef, cameraLockedByUser, orbitControlsEnabled, controlsRef, camera, hudDockSide, size.height, size.width]);
 
   const applyHudShift = (lookAt: THREE.Vector3, camPosV: THREE.Vector3) => {
-    const dock =
-      hudDockSide === "left" ? "left" : hudDockSide === "right" ? "right" : null;
-    if (!dock) return;
-
-    const shiftSign = dock === "left" ? 1 : -1;
-
-    // world-units; keep noticeable but safe
-    const SHIFT = 2.2;
-
-    lookAt.x += shiftSign * SHIFT;
-    camPosV.x += shiftSign * (SHIFT * 0.7);
+    const frameSpec = resolveLayoutAwareFrameSpec({
+      viewportWidth: size.width,
+      viewportHeight: size.height,
+      hudDockSide,
+    });
+    if (!hudDockSide) return;
+    const shiftSign = hudDockSide === "left" ? 1 : -1;
+    const shift = frameSpec.worldShift;
+    lookAt.x += shiftSign * shift;
+    camPosV.x += shiftSign * (shift * 0.42);
   };
 
   useFrame(() => {
@@ -478,6 +571,39 @@ function CameraIntelligence({
       return;
     }
 
+    const hasExplicitFocus = (focusPinned || focusMode === "selected") && !!focusedId;
+    if (!hasExplicitFocus) {
+      const currentLookAt = controls?.target ?? currentLookAtRef.current;
+      const drift = measureFrameDrift({
+        currentPosition: camera.position,
+        currentLookAt,
+        baselinePosition: [
+          baselineCamPosRef.current.x,
+          baselineCamPosRef.current.y,
+          baselineCamPosRef.current.z,
+        ],
+        baselineLookAt: [
+          baselineLookAtRef.current.x,
+          baselineLookAtRef.current.y,
+          baselineLookAtRef.current.z,
+        ],
+      });
+      const driftExceeded = drift.positionDistance > 0.7 || drift.lookAtDistance > 0.45;
+      if (driftExceeded) {
+        desiredCamPosRef.current.copy(baselineCamPosRef.current);
+        desiredLookAtRef.current.copy(baselineLookAtRef.current);
+        if (now - lastDriftRecoveryAtRef.current > 1200) {
+          lastDriftRecoveryAtRef.current = now;
+          if (process.env.NODE_ENV !== "production") {
+            console.log("[Nexora][Framing] drift threshold exceeded", drift);
+            console.log("[Nexora][Framing] baseline recovery applied", {
+              signature: lastBaselineSignatureRef.current,
+            });
+          }
+        }
+      }
+    }
+
     // Copy desired targets into reusable temps (no allocations)
     const lookAt = tmpLookAtRef.current.copy(desiredLookAtRef.current);
     const camPosV = tmpCamPosRef.current.copy(desiredCamPosRef.current);
@@ -486,18 +612,18 @@ function CameraIntelligence({
     applyHudShift(lookAt, camPosV);
 
     // Smooth camera position
-    camera.position.lerp(camPosV, 0.08);
+    camera.position.lerp(camPosV, 0.06);
     lastCameraPosRef.current.copy(camera.position);
 
     // Drive look direction through OrbitControls when present
     if (controls?.target) {
-      controls.target.lerp(lookAt, 0.08);
+      controls.target.lerp(lookAt, 0.06);
       lastControlTargetRef.current.copy(controls.target);
       controls.update();
       return;
     }
 
-    currentLookAtRef.current.lerp(lookAt, 0.08);
+    currentLookAtRef.current.lerp(lookAt, 0.06);
     lastControlTargetRef.current.copy(currentLookAtRef.current);
     camera.lookAt(currentLookAtRef.current);
   });
@@ -509,6 +635,187 @@ export function SceneCanvas(props: SceneCanvasProps) {
   const theme = props.prefs?.theme ?? "night";
   const orbitMode = props.prefs?.orbitMode ?? "auto";
   const selectedIdCtx = useSelectedId();
+  const {
+    propagationOverlay,
+    scenarioOverlayPackage,
+    propagationLoading,
+    propagationError,
+    propagationMode,
+  } = usePropagationBridge({
+    sceneJson: props.sceneJson,
+    loops: props.loops,
+    selectedObjectId: selectedIdCtx,
+    scenarioTrigger: props.scenarioTrigger,
+    manualActionObjectId: props.manualPropagationSourceId,
+    propagationPayload: props.propagationPayload,
+    previewEnabled: true,
+  });
+  const simulationOverlay = useSimulationOverlay(props.propagationPayload);
+  const mergedPropagationOverlay = React.useMemo(() => {
+    if (simulationOverlay.highlightedIds.length === 0 && simulationOverlay.links.length === 0) {
+      return propagationOverlay;
+    }
+
+    const baseNodes = propagationOverlay?.impacted_nodes ?? [];
+    const baseEdges = propagationOverlay?.impacted_edges ?? [];
+    const nodeMap = new Map(
+      baseNodes.map((node) => [node.object_id, node] as const)
+    );
+    simulationOverlay.highlightedIds.forEach((id, index) => {
+      const strength = Math.max(simulationOverlay.intensityMap[id] ?? 0.72, nodeMap.get(id)?.strength ?? 0);
+      nodeMap.set(id, {
+        object_id: id,
+        depth: nodeMap.get(id)?.depth ?? (index === 0 ? 0 : 1),
+        strength,
+        role: nodeMap.get(id)?.role ?? (index === 0 ? "source" : "impacted"),
+      });
+    });
+
+    const edgeMap = new Map(
+      baseEdges.map((edge) => [`${edge.from}:${edge.to}`, edge] as const)
+    );
+    simulationOverlay.links.forEach((link) => {
+      edgeMap.set(`${link.source}:${link.target}`, {
+        from: link.source,
+        to: link.target,
+        depth: 1,
+        strength: Math.max(0.15, Math.min(1, link.weight)),
+      });
+    });
+
+    return {
+      active: true,
+      source_object_id:
+        propagationOverlay?.source_object_id ??
+        simulationOverlay.links[0]?.source ??
+        simulationOverlay.highlightedIds[0] ??
+        null,
+      mode: propagationOverlay?.mode ?? "backend",
+      impacted_nodes: Array.from(nodeMap.values()),
+      impacted_edges: Array.from(edgeMap.values()),
+      meta: {
+        label: propagationOverlay?.meta?.label ?? "Simulation propagation",
+        timestamp: propagationOverlay?.meta?.timestamp ?? 0,
+        source_kind: propagationOverlay?.meta?.source_kind ?? "backend_payload",
+      },
+    };
+  }, [propagationOverlay, simulationOverlay.highlightedIds, simulationOverlay.intensityMap, simulationOverlay.links]);
+  const decisionPathOverlay = React.useMemo(
+    () => mapDecisionPathResultToOverlay(scenarioOverlayPackage.decisionPath ?? null),
+    [scenarioOverlayPackage.decisionPath]
+  );
+  const { selection: decisionImpactSelection } = useDecisionImpact({
+    propagation: mergedPropagationOverlay,
+    decisionPath: scenarioOverlayPackage.decisionPath ?? null,
+    strategicAdvice:
+      (props.propagationPayload as any)?.strategic_advice ??
+      props.sceneJson?.strategic_advice ??
+      props.sceneJson?.scene?.strategic_advice ??
+      null,
+    strategicCouncil:
+      (props.propagationPayload as any)?.strategic_council ??
+      props.sceneJson?.strategic_council ??
+      props.sceneJson?.scene?.strategic_council ??
+      null,
+    scenarioAction: scenarioOverlayPackage.sourceAction ?? props.scenarioTrigger ?? null,
+    sceneJson: props.sceneJson,
+    source: "scene_canvas",
+  });
+  const combinedObjectSelection = React.useMemo(() => {
+    const base = props.objectSelection ?? null;
+    if (!decisionImpactSelection) {
+      if (simulationOverlay.highlightedIds.length === 0) return base;
+      return {
+        ...base,
+        highlighted_objects: Array.from(
+          new Set([...(base?.highlighted_objects ?? []).map(String), ...simulationOverlay.highlightedIds.map(String)])
+        ),
+      };
+    }
+    return {
+      highlighted_objects: Array.from(
+        new Set([
+          ...(base?.highlighted_objects ?? []).map(String),
+          ...decisionImpactSelection.highlighted_objects.map(String),
+          ...simulationOverlay.highlightedIds.map(String),
+        ])
+      ),
+      risk_sources: Array.from(
+        new Set([...(base?.risk_sources ?? []).map(String), ...decisionImpactSelection.risk_sources.map(String)])
+      ),
+      risk_targets: Array.from(
+        new Set([...(base?.risk_targets ?? []).map(String), ...decisionImpactSelection.risk_targets.map(String)])
+      ),
+      dim_unrelated_objects:
+        decisionImpactSelection.dim_unrelated_objects || base?.dim_unrelated_objects === true,
+    };
+  }, [decisionImpactSelection, props.objectSelection, simulationOverlay.highlightedIds]);
+
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (simulationOverlay.highlightedIds.length === 0 && simulationOverlay.links.length === 0) return;
+    console.log("[Nexora][SimulationFlow]", {
+      triggered: true,
+      impacted: simulationOverlay.highlightedIds.length,
+      links: simulationOverlay.links.length,
+    });
+  }, [simulationOverlay.highlightedIds.length, simulationOverlay.links.length]);
+
+  useEffect(() => {
+    if (!props.onScenarioOverlayChange) return;
+    const sourceAction = scenarioOverlayPackage.sourceAction ?? props.scenarioTrigger ?? null;
+    if (sourceAction?.metadata?.origin !== "war_room") {
+      props.onScenarioOverlayChange(null, null);
+      return;
+    }
+    const sourceId = sourceAction.intent.source_object_id ?? null;
+    const sceneContainsSource =
+      !sourceId ||
+      (Array.isArray(props.sceneJson?.scene?.objects) &&
+        props.sceneJson.scene.objects.some((object: any, index: number) => {
+          const objectId = String(object?.id ?? object?.name ?? `${object?.type ?? "obj"}:${index}`).trim();
+          return objectId === sourceId;
+        }));
+    if (!sceneContainsSource) {
+      props.onScenarioOverlayChange(null, null);
+      return;
+    }
+    const summary: WarRoomOverlaySummary = {
+      active:
+        mergedPropagationOverlay?.active === true ||
+        decisionPathOverlay?.active === true ||
+        propagationLoading,
+      actionId: sourceAction.intent.action_id ?? null,
+      sourceObjectId: sourceId,
+      overlayMode: scenarioOverlayPackage.mode,
+      resultMode:
+        scenarioOverlayPackage.decisionPath?.active || decisionPathOverlay?.active
+          ? "backend"
+          : propagationMode,
+      loading: propagationLoading,
+      error: propagationError,
+      propagationNodeCount: mergedPropagationOverlay?.impacted_nodes.length ?? 0,
+      propagationEdgeCount: mergedPropagationOverlay?.impacted_edges.length ?? 0,
+      decisionNodeCount: decisionPathOverlay?.nodes.length ?? 0,
+      decisionEdgeCount: decisionPathOverlay?.edges.length ?? 0,
+    };
+    const detail: WarRoomOverlayDetail = {
+      propagation: mergedPropagationOverlay ?? null,
+      decisionPath: scenarioOverlayPackage.decisionPath ?? null,
+      scenarioAction: sourceAction,
+      overlayPackage: scenarioOverlayPackage,
+    };
+    props.onScenarioOverlayChange(summary, detail);
+  }, [
+    decisionPathOverlay,
+    props.onScenarioOverlayChange,
+    props.scenarioTrigger,
+    propagationError,
+    propagationLoading,
+    propagationMode,
+    mergedPropagationOverlay,
+    scenarioOverlayPackage,
+  ]);
 
   const controlsRef = useRef<any>(null);
   const localIsOrbitingRef = useRef<boolean>(false);
@@ -542,10 +849,10 @@ export function SceneCanvas(props: SceneCanvasProps) {
   );
   const highlightedObjectIds = React.useMemo(
     () =>
-      Array.isArray(props.objectSelection?.highlighted_objects)
-        ? props.objectSelection.highlighted_objects.map(String)
+      Array.isArray(combinedObjectSelection?.highlighted_objects)
+        ? combinedObjectSelection.highlighted_objects.map(String)
         : [],
-    [props.objectSelection]
+    [combinedObjectSelection]
   );
 
   useEffect(() => {
@@ -558,13 +865,13 @@ export function SceneCanvas(props: SceneCanvasProps) {
       ])
     );
     const dimmedIds =
-      props.objectSelection?.dim_unrelated_objects === true
+      combinedObjectSelection?.dim_unrelated_objects === true
         ? sceneObjectIds.filter((id) => !highlightedSet.has(id) && id !== props.focusedId && id !== selectedIdCtx).slice(0, 6)
         : [];
 
     traceHighlightFlow("scene_canvas", {
       highlightedObjectIds,
-      dimUnrelatedObjects: props.objectSelection?.dim_unrelated_objects === true,
+      dimUnrelatedObjects: combinedObjectSelection?.dim_unrelated_objects === true,
       focusedId: props.focusedId ?? null,
       selectedObjectId: selectedIdCtx ?? null,
       pinnedId: props.focusPinned ? props.focusedId ?? null : null,
@@ -578,7 +885,7 @@ export function SceneCanvas(props: SceneCanvasProps) {
     props.focusMode,
     props.focusPinned,
     props.focusedId,
-    props.objectSelection,
+    combinedObjectSelection,
     sceneObjectIds,
     selectedIdCtx,
   ]);
@@ -683,6 +990,44 @@ export function SceneCanvas(props: SceneCanvasProps) {
         zIndex: 0,
       }}
     >
+      {props.storyAccent ? (
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1,
+            pointerEvents: "none",
+            border: `1px solid ${props.storyAccent.tint ?? "rgba(148,163,184,0.14)"}`,
+            boxShadow: `inset 0 0 0 1px ${props.storyAccent.tint ?? "rgba(148,163,184,0.12)"}, inset 0 0 52px ${
+              props.storyAccent.glow ?? "rgba(56,189,248,0.12)"
+            }`,
+            background: `radial-gradient(circle at 18% 16%, ${props.storyAccent.glow ?? "rgba(56,189,248,0.08)"} 0%, rgba(2,6,23,0) 42%)`,
+            transition: "box-shadow 260ms ease, border-color 260ms ease, background 260ms ease",
+          }}
+        >
+          {props.storyAccent.label ? (
+            <div
+              style={{
+                position: "absolute",
+                right: 16,
+                top: 16,
+                padding: "5px 10px",
+                borderRadius: 999,
+                border: `1px solid ${props.storyAccent.tint ?? "rgba(148,163,184,0.18)"}`,
+                background: "rgba(15,23,42,0.64)",
+                color: "#e2e8f0",
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
+              {props.storyAccent.label}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <Canvas
         shadows={shadowsEnabled}
         camera={{ position: props.camPos ?? [0, 0, 5], fov: 50, near: 0.1, far: 250 }}
@@ -708,11 +1053,23 @@ export function SceneCanvas(props: SceneCanvasProps) {
         }}
         onPointerMissed={(e) => {
           if ((e as any)?.button !== 0) return;
-          if (localIsOrbitingRef.current || isHudInteractingRef.current) return;
-          // Clicking empty space should reliably deselect
+          if (localIsOrbitingRef.current || isHudInteractingRef.current) {
+            if (process.env.NODE_ENV !== "production") {
+              console.log("[Nexora][SceneInteraction] empty click ignored", {
+                orbiting: localIsOrbitingRef.current,
+                hudInteracting: isHudInteractingRef.current,
+              });
+            }
+            return;
+          }
+          if (process.env.NODE_ENV !== "production") {
+            console.log("[Nexora][SceneInteraction] empty click ignored", {
+              action: "soft_deselect_without_reframe",
+            });
+          }
+          // Clicking empty space should softly deselect without camera reframe/reset.
           preserveCameraOnClearRef.current = true;
           props.selectedSetterRef?.current?.(null);
-          props.onSelectedChange?.(null);
           props.onSelectedScreenX?.(null);
           props.onPointerMissed();
         }}
@@ -779,30 +1136,36 @@ export function SceneCanvas(props: SceneCanvasProps) {
 
           {props.sceneJson && (
             <>
-              <SceneRenderer
-                sceneJson={{
-                  ...props.sceneJson,
-                  meta: {
-                    ...(props.sceneJson?.meta || {}),
-                    cameraLockedByUser: isFixedCamera
-                      ? true
-                      : orbitMode === "manual"
-                      ? props.cameraLockedByUser
-                      : props.isOrbiting,
-                  },
-                }}
-                objectSelection={props.objectSelection ?? null}
-                shadowsEnabled={shadowsEnabled}
-                focusMode={props.focusMode}
-                focusedId={props.focusedId}
-                activeLoopId={props.effectiveActiveLoopId}
-                theme={theme}
-                getUxForObject={props.getUxForObject}
-                objectUxById={props.objectUxById}
-                loops={props.loops}
-                showLoops={props.showLoops}
-                showLoopLabels={props.showLoopLabels}
-              />
+              <DecisionPathOverlayLayer overlay={decisionPathOverlay}>
+                {(decisionPathRenderState) => (
+                  <SceneRenderer
+                    sceneJson={{
+                      ...props.sceneJson,
+                      meta: {
+                        ...(props.sceneJson?.meta || {}),
+                        cameraLockedByUser: isFixedCamera
+                          ? true
+                          : orbitMode === "manual"
+                          ? props.cameraLockedByUser
+                          : props.isOrbiting,
+                      },
+                    }}
+                    objectSelection={combinedObjectSelection ?? null}
+                    shadowsEnabled={shadowsEnabled}
+                    focusMode={props.focusMode}
+                    focusedId={props.focusedId}
+                    activeLoopId={props.effectiveActiveLoopId}
+                    theme={theme}
+                    getUxForObject={props.getUxForObject}
+                    objectUxById={props.objectUxById}
+                    loops={props.loops}
+                    showLoops={props.showLoops}
+                    showLoopLabels={props.showLoopLabels}
+                    propagationOverlay={mergedPropagationOverlay}
+                    decisionPathOverlay={decisionPathRenderState}
+                  />
+                )}
+              </DecisionPathOverlayLayer>
 
               <SetterRegistrar refSetter={props.selectedSetterRef} />
               <FullRegistrar

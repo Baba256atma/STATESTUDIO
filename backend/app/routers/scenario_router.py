@@ -6,14 +6,18 @@ from typing import Any, Dict, Optional, List
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.models.scenario_input import ScenarioSimulationRequest
+from app.models.scenario_output import ScenarioSimulationResult
 from app.services.replay_store import ReplayStore
 from app.models.replay import ReplayFrame, ReplayMeta
 from app.engines.fragility_v1 import compute_fragility_v1
 from app.services.loop_engine import evaluate_loops
+from app.services.scenario.scenario_orchestrator import ScenarioSimulationOrchestrator
 
 
 router = APIRouter()
 store = ReplayStore()
+simulation_orchestrator = ScenarioSimulationOrchestrator()
 
 
 class ScenarioOverrideIn(BaseModel):
@@ -43,6 +47,27 @@ class _ChaosShim:
     def __init__(self, intensity: float, volatility: float):
         self.intensity = intensity
         self.volatility = volatility
+
+
+@router.post("/scenario/simulate", response_model=ScenarioSimulationResult)
+def simulate_scenario(payload: ScenarioSimulationRequest):
+    """Run deterministic Scenario Simulation Lite and return overlay-safe propagation."""
+    try:
+        result = simulation_orchestrator.run_simulation(payload.model_dump())
+        return ScenarioSimulationResult.model_validate(result)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail={"ok": False, "error": {"message": str(exc)}}) from exc
+    except Exception as exc:  # pragma: no cover - defensive API guard
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "ok": False,
+                "error": {
+                    "message": "Scenario simulation is currently unavailable.",
+                    "detail": str(exc),
+                },
+            },
+        ) from exc
 
 
 @router.post("/scenario/override")

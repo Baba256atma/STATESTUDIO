@@ -1,29 +1,7 @@
-export type Action = {
-  type: string;
-  object?: string;
-  value?: Record<string, unknown>;
-  target_id?: string;
-  targetId?: string;
-  color?: string;
-  intensity?: number;
-  position?: number[];
-  visible?: boolean;
-  scale?: number;
-  [key: string]: unknown;
-};
+import type { ChatActionOut, ChatResponseOut } from "./generated";
 
-export type ChatResponse = {
-  ok: boolean;
-  user_id?: string | null;
-  reply: string;
-  actions: Action[];
-  scene_json: Record<string, unknown> | null;
-  source: string | null;
-  error: { type: string; message: string } | null;
-  debug?: Record<string, unknown> | null;
-  active_mode?: string;
-  session_id?: string;
-};
+export type Action = ChatActionOut;
+export type ChatResponse = ChatResponseOut;
 
 export type ChatEvent = {
   id: string;

@@ -1,0 +1,142 @@
+{
+  "events": [
+    {
+      "actions_summary": [
+        "applyObject:obj_inventory",
+        "applyObject:obj_inventory",
+        "applyObject:obj_delivery",
+        "applyObject:obj_risk_zone",
+        "applyObject:obj_inventory"
+      ],
+      "allowed_objects": [
+        "obj_delivery",
+        "obj_inventory",
+        "type_inventory",
+        "type_delivery",
+        "obj_risk_zone",
+        "obj_quality",
+        "obj_cost",
+        "obj_throughput",
+        "obj_cashflow",
+        "obj_customer",
+        "obj_process",
+        "type_risk",
+        "type_quality",
+        "type_cost",
+        "type_throughput"
+      ],
+      "episode_id": "b8955e4d-5ded-4cda-9b36-9e078017aa0e",
+      "focused_object_id": "obj_inventory",
+      "fragility": {
+        "drivers": {
+          "inventory_pressure": 0.5,
+          "loop_risk": 0.3,
+          "quality_risk": 0.5,
+          "time_pressure": 0.5700000000000001,
+          "volatility": 0.32039612134328566
+        },
+        "level": "high",
+        "reasons": [
+          {
+            "code": "time_pressure",
+            "message": "Delivery schedule is under pressure (delay risk).",
+            "weight": 0.5700000000000001
+          },
+          {
+            "code": "inventory_pressure",
+            "message": "Inventory looks stressed (low buffer).",
+            "weight": 0.5
+          },
+          {
+            "code": "quality_risk",
+            "message": "Risk exposure is elevated (quality/incident risk).",
+            "weight": 0.5
+          },
+          {
+            "code": "feedback_loops",
+            "message": "Feedback loops amplify changes (fragility increases).",
+            "weight": 0.3
+          }
+        ],
+        "score": 0.7908633794149258
+      },
+      "kpi": {
+        "delivery": 0.43,
+        "inventory": 0.5,
+        "risk": 0.5
+      },
+      "mode": "business",
+      "text": "inventory shortage is delaying delivery",
+      "ts": "2026-03-30T19:03:22.938517+00:00"
+    },
+    {
+      "actions_summary": [
+        "applyObject:obj_inventory",
+        "applyObject:obj_inventory",
+        "applyObject:obj_inventory"
+      ],
+      "allowed_objects": [
+        "obj_inventory",
+        "obj_risk_zone",
+        "obj_delivery",
+        "obj_quality",
+        "obj_cost",
+        "obj_throughput",
+        "obj_cashflow",
+        "obj_customer",
+        "obj_process",
+        "type_inventory",
+        "type_delivery",
+        "type_risk",
+        "type_quality",
+        "type_cost",
+        "type_throughput"
+      ],
+      "episode_id": "b8955e4d-5ded-4cda-9b36-9e078017aa0e",
+      "focused_object_id": "obj_inventory",
+      "fragility": {
+        "drivers": {
+          "inventory_pressure": 0.5,
+          "loop_risk": 0.3,
+          "quality_risk": 0.5,
+          "time_pressure": 0.5700000000000001,
+          "volatility": 0.0
+        },
+        "level": "high",
+        "reasons": [
+          {
+            "code": "time_pressure",
+            "message": "Delivery schedule is under pressure (delay risk).",
+            "weight": 0.5700000000000001
+          },
+          {
+            "code": "inventory_pressure",
+            "message": "Inventory looks stressed (low buffer).",
+            "weight": 0.5
+          },
+          {
+            "code": "quality_risk",
+            "message": "Risk exposure is elevated (quality/incident risk).",
+            "weight": 0.5
+          },
+          {
+            "code": "feedback_loops",
+            "message": "Feedback loops amplify changes (fragility increases).",
+            "weight": 0.3
+          }
+        ],
+        "score": 0.7396
+      },
+      "kpi": {
+        "delivery": 0.43,
+        "inventory": 0.5,
+        "risk": 0.5
+      },
+      "mode": "business",
+      "text": "increase intensity",
+      "ts": "2026-03-30T19:03:22.948005+00:00"
+    }
+  ],
+  "updated_at": "2026-03-30T19:03:22.948058+00:00",
+  "user_id": "demo-user"
+}

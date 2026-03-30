@@ -27,7 +27,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     // eslint-disable-next-line no-console
     const message = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? error.stack : undefined;
-    console.error("ErrorBoundary caught an error", { message, stack, info });
+    console.error("ErrorBoundary caught an error", {
+      error,
+      message,
+      stack,
+      info,
+    });
   }
 
   handleReload() {

@@ -3,12 +3,7 @@
 import React from "react";
 import { cardStyle, nx, softCardStyle } from "../ui/nexoraTheme";
 import { EmptyStateCard } from "../ui/panelStates";
-
-type RiskPropagation = {
-  edges?: Array<{ from?: string; to?: string; weight?: number }>;
-  sources?: string[];
-  summary?: string;
-};
+import type { RiskPanelData } from "../../lib/panels/panelDataContract";
 
 function prettyObjectName(id: string) {
   return String(id || "")
@@ -18,7 +13,7 @@ function prettyObjectName(id: string) {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-export default function RiskPropagationPanel({ risk }: { risk: RiskPropagation | null | undefined }) {
+export default function RiskPropagationPanel({ risk }: { risk: RiskPanelData | null | undefined }) {
   const edges = Array.isArray(risk?.edges) ? risk.edges : [];
   if (!edges.length) {
     return <EmptyStateCard text="Risk changes will appear after a disruption is simulated." />;

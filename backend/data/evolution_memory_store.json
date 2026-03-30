@@ -1,0 +1,2041 @@
+{
+  "comparison_records": [
+    {
+      "confidence": 0.50631815892736,
+      "recommendation": "investigate_more",
+      "record_id": "comparison:scenario:chat:stress:obj_inventory_1:propagation:scenario:chat:stress:obj_supplier_1:propagation:risk",
+      "scenario_a_id": "scenario:chat:stress:obj_inventory_1:propagation",
+      "scenario_b_id": "scenario:chat:stress:obj_supplier_1:propagation",
+      "timestamp": 1774566258.088,
+      "user_choice": "unknown",
+      "winner": "tie"
+    }
+  ],
+  "evolution_state": {
+    "active": true,
+    "learning_signals": [
+      {
+        "confidence": 0.42,
+        "rationale": "obj_supplier_1 repeatedly appears in negative outcomes and should receive stronger salience during analysis.",
+        "signal_id": "signal:object:obj_supplier_1",
+        "signal_type": "focus_pattern",
+        "target_key": "obj_supplier_1",
+        "target_scope": "object",
+        "timestamp": 1774741415.62766,
+        "value": 0.08
+      }
+    ],
+    "policy_adjustments": [
+      {
+        "adjustment_id": "adjust:intelligence:obj_supplier_1",
+        "confidence": 0.42,
+        "delta": 0.03,
+        "key": "object:obj_supplier_1",
+        "policy_name": "intelligence",
+        "reason": "obj_supplier_1 repeatedly appears in negative outcomes and should receive stronger salience during analysis."
+      }
+    ],
+    "summary": {
+      "explanation": "1 learning signals and 1 bounded policy adjustments were derived from stored decision history.",
+      "headline": "Nexora is tracking decision memory and bounded policy learning."
+    }
+  },
+  "scenario_records": [
+    {
+      "comparison_snapshot": null,
+      "decision_path_snapshot": null,
+      "generated_strategies": null,
+      "intelligence_snapshot": {
+        "active": true,
+        "advice": [
+          {
+            "advice_id": "advice:0:obj_delivery_1",
+            "body": "Delivery 1 is the active source of this scenario.",
+            "confidence": 0.6072000000000002,
+            "kind": "simulate_next",
+            "target_object_id": "obj_delivery_1",
+            "title": "Simulate Delivery 1 next"
+          },
+          {
+            "advice_id": "advice:1:obj_supplier_1",
+            "body": "Supplier 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.2928912,
+            "kind": "simulate_next",
+            "target_object_id": "obj_supplier_1",
+            "title": "Simulate Supplier 1 next"
+          },
+          {
+            "advice_id": "advice:2:obj_delay_1",
+            "body": "Delay 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.29001344,
+            "kind": "simulate_next",
+            "target_object_id": "obj_delay_1",
+            "title": "Simulate Delay 1 next"
+          }
+        ],
+        "meta": {
+          "engine_version": "system_intelligence_v1",
+          "interpretation_mode": "simulation",
+          "source": "heuristic_system_intelligence",
+          "timestamp": 1774828546.115615
+        },
+        "object_insights": [
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delivery_1",
+            "pressure_score": 1,
+            "rationale": "Delivery 1 is the active source of this scenario.",
+            "role": "source",
+            "strategic_priority": 0.6600000000000001
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_supplier_1",
+            "pressure_score": 0.518,
+            "rationale": "Supplier 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.31836000000000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delay_1",
+            "pressure_score": 0.5476,
+            "rationale": "Delay 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.315232
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_inventory_1",
+            "pressure_score": 0.5327999999999999,
+            "rationale": "Inventory 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.310496
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_warehouse_1",
+            "pressure_score": 0.26021952,
+            "rationale": "Warehouse 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.2232702464
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_customer_satisfaction_1",
+            "pressure_score": 0.22867775999999995,
+            "rationale": "Customer Satisfaction 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.2131768832
+          }
+        ],
+        "path_insights": [],
+        "summary": {
+          "headline": "Delivery 1 is the main strategic pressure point.",
+          "key_signal": "Delivery 1 is the active source of this scenario.",
+          "suggested_focus_object_id": "obj_delivery_1",
+          "suggested_mode": "simulation",
+          "summary": "System intelligence is waiting for stronger propagation or decision-path context."
+        }
+      },
+      "mode": "simulation",
+      "observed_outcome": null,
+      "predicted_summary": {
+        "expected_impact": null,
+        "expected_risk": null,
+        "headline": "Delivery 1 is the main strategic pressure point."
+      },
+      "propagation_snapshot": {
+        "active": true,
+        "impacted_edges": [
+          {
+            "depth": 1,
+            "from": "obj_delivery_1",
+            "strength": 0.5476,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 1,
+            "from": "obj_delivery_1",
+            "strength": 0.5327999999999999,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 1,
+            "from": "obj_delivery_1",
+            "strength": 0.518,
+            "to": "obj_supplier_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delay_1",
+            "strength": 0.29986576,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.28387583999999993,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delay_1",
+            "strength": 0.27150008,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_supplier_1",
+            "strength": 0.26832399999999995,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.26416224,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.26021952,
+            "to": "obj_warehouse_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.22867775999999995,
+            "to": "obj_customer_satisfaction_1"
+          }
+        ],
+        "impacted_nodes": [
+          {
+            "depth": 0,
+            "object_id": "obj_delivery_1",
+            "role": "source",
+            "strength": 1
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_delay_1",
+            "role": "impacted",
+            "strength": 0.5476
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_inventory_1",
+            "role": "impacted",
+            "strength": 0.5327999999999999
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_supplier_1",
+            "role": "impacted",
+            "strength": 0.518
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_warehouse_1",
+            "role": "impacted",
+            "strength": 0.26021952
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_customer_satisfaction_1",
+            "role": "impacted",
+            "strength": 0.22867775999999995
+          }
+        ],
+        "meta": {
+          "label": "What-if propagation",
+          "source_kind": "backend_payload",
+          "timestamp": 1774828545356
+        },
+        "mode": "backend",
+        "source_object_id": "obj_delivery_1"
+      },
+      "record_id": "scenario:scenario:chat:stress:obj_delivery_1:propagation",
+      "scenario_id": "scenario:chat:stress:obj_delivery_1:propagation",
+      "scenario_title": "Stress obj_delivery_1",
+      "selected_decision": null,
+      "selected_strategy_id": null,
+      "source_action_ids": [
+        "scenario:chat:stress:obj_delivery_1:propagation"
+      ],
+      "source_object_ids": [
+        "obj_delivery_1"
+      ],
+      "tags": [
+        "propagation"
+      ],
+      "timestamp": 1774828546.156
+    },
+    {
+      "comparison_snapshot": null,
+      "decision_path_snapshot": null,
+      "generated_strategies": null,
+      "intelligence_snapshot": {
+        "active": true,
+        "advice": [
+          {
+            "advice_id": "advice:0:obj_delay_1",
+            "body": "Delay 1 is the active source of this scenario.",
+            "confidence": 0.5520000000000002,
+            "kind": "simulate_next",
+            "target_object_id": "obj_delay_1",
+            "title": "Simulate Delay 1 next"
+          },
+          {
+            "advice_id": "advice:1:obj_delivery_1",
+            "body": "Delivery 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.29001344,
+            "kind": "simulate_next",
+            "target_object_id": "obj_delivery_1",
+            "title": "Simulate Delivery 1 next"
+          },
+          {
+            "advice_id": "advice:2:obj_inventory_1",
+            "body": "Inventory 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.27476352000000004,
+            "kind": "simulate_next",
+            "target_object_id": "obj_inventory_1",
+            "title": "Simulate Inventory 1 next"
+          }
+        ],
+        "meta": {
+          "engine_version": "system_intelligence_v1",
+          "interpretation_mode": "simulation",
+          "source": "heuristic_system_intelligence",
+          "timestamp": 1774722910.956872
+        },
+        "object_insights": [
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delay_1",
+            "pressure_score": 1,
+            "rationale": "Delay 1 is the active source of this scenario.",
+            "role": "source",
+            "strategic_priority": 0.6000000000000001
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delivery_1",
+            "pressure_score": 0.5476,
+            "rationale": "Delivery 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.315232
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_inventory_1",
+            "pressure_score": 0.4958,
+            "rationale": "Inventory 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.29865600000000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_supplier_1",
+            "pressure_score": 0.2836568,
+            "rationale": "Supplier 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.230770176
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_warehouse_1",
+            "pressure_score": 0.24214872,
+            "rationale": "Warehouse 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.2174875904
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_customer_satisfaction_1",
+            "pressure_score": 0.21279736,
+            "rationale": "Customer Satisfaction 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.2080951552
+          }
+        ],
+        "path_insights": [],
+        "summary": {
+          "headline": "Delay 1 is the main strategic pressure point.",
+          "key_signal": "Delay 1 is the active source of this scenario.",
+          "suggested_focus_object_id": "obj_delay_1",
+          "suggested_mode": "simulation",
+          "summary": "System intelligence is waiting for stronger propagation or decision-path context."
+        }
+      },
+      "mode": "simulation",
+      "observed_outcome": null,
+      "predicted_summary": {
+        "expected_impact": null,
+        "expected_risk": null,
+        "headline": "Delay 1 is the main strategic pressure point."
+      },
+      "propagation_snapshot": {
+        "active": true,
+        "impacted_edges": [
+          {
+            "depth": 1,
+            "from": "obj_delay_1",
+            "strength": 0.5476,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 1,
+            "from": "obj_delay_1",
+            "strength": 0.4958,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.29986576,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.29176127999999996,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.2836568,
+            "to": "obj_supplier_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.26416224,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.24581764,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.24214872,
+            "to": "obj_warehouse_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.21279736,
+            "to": "obj_customer_satisfaction_1"
+          }
+        ],
+        "impacted_nodes": [
+          {
+            "depth": 0,
+            "object_id": "obj_delay_1",
+            "role": "source",
+            "strength": 1
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_delivery_1",
+            "role": "impacted",
+            "strength": 0.5476
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_inventory_1",
+            "role": "impacted",
+            "strength": 0.4958
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_supplier_1",
+            "role": "impacted",
+            "strength": 0.2836568
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_warehouse_1",
+            "role": "impacted",
+            "strength": 0.24214872
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_customer_satisfaction_1",
+            "role": "impacted",
+            "strength": 0.21279736
+          }
+        ],
+        "meta": {
+          "label": "What-if propagation",
+          "source_kind": "backend_payload",
+          "timestamp": 1774722856801
+        },
+        "mode": "backend",
+        "source_object_id": "obj_delay_1"
+      },
+      "record_id": "scenario:scenario:chat:stress:obj_cash_pressure_1:propagation",
+      "scenario_id": "scenario:chat:stress:obj_cash_pressure_1:propagation",
+      "scenario_title": "Stress obj_cash_pressure_1",
+      "selected_decision": null,
+      "selected_strategy_id": null,
+      "source_action_ids": [
+        "scenario:chat:stress:obj_cash_pressure_1:propagation"
+      ],
+      "source_object_ids": [
+        "obj_cash_pressure_1"
+      ],
+      "tags": [
+        "propagation"
+      ],
+      "timestamp": 1774722913.081
+    },
+    {
+      "comparison_snapshot": null,
+      "decision_path_snapshot": null,
+      "generated_strategies": null,
+      "intelligence_snapshot": {
+        "active": true,
+        "advice": [
+          {
+            "advice_id": "advice:0:obj_customer_satisfaction_1",
+            "body": "Customer Satisfaction 1 is the active source of this scenario.",
+            "confidence": 0.5520000000000002,
+            "kind": "simulate_next",
+            "target_object_id": "obj_customer_satisfaction_1",
+            "title": "Simulate Customer Satisfaction 1 next"
+          },
+          {
+            "advice_id": "advice:1:obj_inventory_1",
+            "body": "Inventory 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.25515648,
+            "kind": "simulate_next",
+            "target_object_id": "obj_inventory_1",
+            "title": "Simulate Inventory 1 next"
+          },
+          {
+            "advice_id": "advice:2:obj_demand_1",
+            "body": "Demand 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.24208512000000004,
+            "kind": "simulate_next",
+            "target_object_id": "obj_demand_1",
+            "title": "Simulate Demand 1 next"
+          }
+        ],
+        "meta": {
+          "engine_version": "system_intelligence_v1",
+          "interpretation_mode": "simulation",
+          "source": "heuristic_system_intelligence",
+          "timestamp": 1774722861.456278
+        },
+        "object_insights": [
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_customer_satisfaction_1",
+            "pressure_score": 1,
+            "rationale": "Customer Satisfaction 1 is the active source of this scenario.",
+            "role": "source",
+            "strategic_priority": 0.6000000000000001
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_inventory_1",
+            "pressure_score": 0.42919999999999997,
+            "rationale": "Inventory 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.27734400000000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_demand_1",
+            "pressure_score": 0.38480000000000003,
+            "rationale": "Demand 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.26313600000000004
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delivery_1",
+            "pressure_score": 0.22867775999999998,
+            "rationale": "Delivery 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.2131768832
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delay_1",
+            "pressure_score": 0.21279736000000002,
+            "rationale": "Delay 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.20809515520000002
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_warehouse_1",
+            "pressure_score": 0.20962128000000002,
+            "rationale": "Warehouse 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.20707880960000002
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_order_flow_1",
+            "pressure_score": 0.19363136000000003,
+            "rationale": "Order Flow 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.20196203520000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_price_1",
+            "pressure_score": 0.17369872,
+            "rationale": "Price 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.1955835904
+          }
+        ],
+        "path_insights": [],
+        "summary": {
+          "headline": "Customer Satisfaction 1 is the main strategic pressure point.",
+          "key_signal": "Customer Satisfaction 1 is the active source of this scenario.",
+          "suggested_focus_object_id": "obj_customer_satisfaction_1",
+          "suggested_mode": "simulation",
+          "summary": "System intelligence is waiting for stronger propagation or decision-path context."
+        }
+      },
+      "mode": "simulation",
+      "observed_outcome": null,
+      "predicted_summary": {
+        "expected_impact": null,
+        "expected_risk": null,
+        "headline": "Customer Satisfaction 1 is the main strategic pressure point."
+      },
+      "propagation_snapshot": {
+        "active": true,
+        "impacted_edges": [
+          {
+            "depth": 1,
+            "from": "obj_customer_satisfaction_1",
+            "strength": 0.42919999999999997,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 1,
+            "from": "obj_customer_satisfaction_1",
+            "strength": 0.38480000000000003,
+            "to": "obj_demand_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.22867775999999998,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.21279736000000002,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.20962128000000002,
+            "to": "obj_warehouse_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_demand_1",
+            "strength": 0.19363136000000003,
+            "to": "obj_order_flow_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.18421263999999998,
+            "to": "obj_customer_satisfaction_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_demand_1",
+            "strength": 0.17369872,
+            "to": "obj_price_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_demand_1",
+            "strength": 0.14807104000000001,
+            "to": "obj_customer_satisfaction_1"
+          }
+        ],
+        "impacted_nodes": [
+          {
+            "depth": 0,
+            "object_id": "obj_customer_satisfaction_1",
+            "role": "source",
+            "strength": 1
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_inventory_1",
+            "role": "impacted",
+            "strength": 0.42919999999999997
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_demand_1",
+            "role": "impacted",
+            "strength": 0.38480000000000003
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_delivery_1",
+            "role": "impacted",
+            "strength": 0.22867775999999998
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_delay_1",
+            "role": "impacted",
+            "strength": 0.21279736000000002
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_warehouse_1",
+            "role": "impacted",
+            "strength": 0.20962128000000002
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_order_flow_1",
+            "role": "impacted",
+            "strength": 0.19363136000000003
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_price_1",
+            "role": "impacted",
+            "strength": 0.17369872
+          }
+        ],
+        "meta": {
+          "label": "What-if propagation",
+          "source_kind": "backend_payload",
+          "timestamp": 1774722860727
+        },
+        "mode": "backend",
+        "source_object_id": "obj_customer_satisfaction_1"
+      },
+      "record_id": "scenario:scenario:chat:stress:obj_demand_1:propagation",
+      "scenario_id": "scenario:chat:stress:obj_demand_1:propagation",
+      "scenario_title": "Stress obj_demand_1",
+      "selected_decision": null,
+      "selected_strategy_id": null,
+      "source_action_ids": [
+        "scenario:chat:stress:obj_demand_1:propagation"
+      ],
+      "source_object_ids": [
+        "obj_demand_1"
+      ],
+      "tags": [
+        "propagation"
+      ],
+      "timestamp": 1774722862.492
+    },
+    {
+      "comparison_snapshot": null,
+      "decision_path_snapshot": null,
+      "generated_strategies": null,
+      "intelligence_snapshot": {
+        "active": true,
+        "advice": [
+          {
+            "advice_id": "advice:0:obj_customer_satisfaction_1",
+            "body": "Customer Satisfaction 1 is the active source of this scenario.",
+            "confidence": 0.5520000000000002,
+            "kind": "simulate_next",
+            "target_object_id": "obj_customer_satisfaction_1",
+            "title": "Simulate Customer Satisfaction 1 next"
+          },
+          {
+            "advice_id": "advice:1:obj_inventory_1",
+            "body": "Inventory 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.25515648,
+            "kind": "simulate_next",
+            "target_object_id": "obj_inventory_1",
+            "title": "Simulate Inventory 1 next"
+          },
+          {
+            "advice_id": "advice:2:obj_demand_1",
+            "body": "Demand 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.24208512000000004,
+            "kind": "simulate_next",
+            "target_object_id": "obj_demand_1",
+            "title": "Simulate Demand 1 next"
+          }
+        ],
+        "meta": {
+          "engine_version": "system_intelligence_v1",
+          "interpretation_mode": "simulation",
+          "source": "heuristic_system_intelligence",
+          "timestamp": 1774722861.456278
+        },
+        "object_insights": [
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_customer_satisfaction_1",
+            "pressure_score": 1,
+            "rationale": "Customer Satisfaction 1 is the active source of this scenario.",
+            "role": "source",
+            "strategic_priority": 0.6000000000000001
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_inventory_1",
+            "pressure_score": 0.42919999999999997,
+            "rationale": "Inventory 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.27734400000000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_demand_1",
+            "pressure_score": 0.38480000000000003,
+            "rationale": "Demand 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.26313600000000004
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delivery_1",
+            "pressure_score": 0.22867775999999998,
+            "rationale": "Delivery 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.2131768832
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delay_1",
+            "pressure_score": 0.21279736000000002,
+            "rationale": "Delay 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.20809515520000002
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_warehouse_1",
+            "pressure_score": 0.20962128000000002,
+            "rationale": "Warehouse 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.20707880960000002
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_order_flow_1",
+            "pressure_score": 0.19363136000000003,
+            "rationale": "Order Flow 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.20196203520000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_price_1",
+            "pressure_score": 0.17369872,
+            "rationale": "Price 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.1955835904
+          }
+        ],
+        "path_insights": [],
+        "summary": {
+          "headline": "Customer Satisfaction 1 is the main strategic pressure point.",
+          "key_signal": "Customer Satisfaction 1 is the active source of this scenario.",
+          "suggested_focus_object_id": "obj_customer_satisfaction_1",
+          "suggested_mode": "simulation",
+          "summary": "System intelligence is waiting for stronger propagation or decision-path context."
+        }
+      },
+      "mode": "simulation",
+      "observed_outcome": null,
+      "predicted_summary": {
+        "expected_impact": null,
+        "expected_risk": null,
+        "headline": "Customer Satisfaction 1 is the main strategic pressure point."
+      },
+      "propagation_snapshot": {
+        "active": true,
+        "impacted_edges": [
+          {
+            "depth": 1,
+            "from": "obj_customer_satisfaction_1",
+            "strength": 0.42919999999999997,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 1,
+            "from": "obj_customer_satisfaction_1",
+            "strength": 0.38480000000000003,
+            "to": "obj_demand_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.22867775999999998,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.21279736000000002,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.20962128000000002,
+            "to": "obj_warehouse_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_demand_1",
+            "strength": 0.19363136000000003,
+            "to": "obj_order_flow_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.18421263999999998,
+            "to": "obj_customer_satisfaction_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_demand_1",
+            "strength": 0.17369872,
+            "to": "obj_price_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_demand_1",
+            "strength": 0.14807104000000001,
+            "to": "obj_customer_satisfaction_1"
+          }
+        ],
+        "impacted_nodes": [
+          {
+            "depth": 0,
+            "object_id": "obj_customer_satisfaction_1",
+            "role": "source",
+            "strength": 1
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_inventory_1",
+            "role": "impacted",
+            "strength": 0.42919999999999997
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_demand_1",
+            "role": "impacted",
+            "strength": 0.38480000000000003
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_delivery_1",
+            "role": "impacted",
+            "strength": 0.22867775999999998
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_delay_1",
+            "role": "impacted",
+            "strength": 0.21279736000000002
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_warehouse_1",
+            "role": "impacted",
+            "strength": 0.20962128000000002
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_order_flow_1",
+            "role": "impacted",
+            "strength": 0.19363136000000003
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_price_1",
+            "role": "impacted",
+            "strength": 0.17369872
+          }
+        ],
+        "meta": {
+          "label": "What-if propagation",
+          "source_kind": "backend_payload",
+          "timestamp": 1774722860727
+        },
+        "mode": "backend",
+        "source_object_id": "obj_customer_satisfaction_1"
+      },
+      "record_id": "scenario:scenario:chat:stress:obj_customer_satisfaction_1:propagation",
+      "scenario_id": "scenario:chat:stress:obj_customer_satisfaction_1:propagation",
+      "scenario_title": "Stress obj_customer_satisfaction_1",
+      "selected_decision": null,
+      "selected_strategy_id": null,
+      "source_action_ids": [
+        "scenario:chat:stress:obj_customer_satisfaction_1:propagation"
+      ],
+      "source_object_ids": [
+        "obj_customer_satisfaction_1"
+      ],
+      "tags": [
+        "propagation"
+      ],
+      "timestamp": 1774722861.513
+    },
+    {
+      "comparison_snapshot": null,
+      "decision_path_snapshot": null,
+      "generated_strategies": null,
+      "intelligence_snapshot": {
+        "active": true,
+        "advice": [
+          {
+            "advice_id": "advice:0:obj_delay_1",
+            "body": "Delay 1 is the active source of this scenario.",
+            "confidence": 0.5520000000000002,
+            "kind": "simulate_next",
+            "target_object_id": "obj_delay_1",
+            "title": "Simulate Delay 1 next"
+          },
+          {
+            "advice_id": "advice:1:obj_delivery_1",
+            "body": "Delivery 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.29001344,
+            "kind": "simulate_next",
+            "target_object_id": "obj_delivery_1",
+            "title": "Simulate Delivery 1 next"
+          },
+          {
+            "advice_id": "advice:2:obj_inventory_1",
+            "body": "Inventory 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.27476352000000004,
+            "kind": "simulate_next",
+            "target_object_id": "obj_inventory_1",
+            "title": "Simulate Inventory 1 next"
+          }
+        ],
+        "meta": {
+          "engine_version": "system_intelligence_v1",
+          "interpretation_mode": "simulation",
+          "source": "heuristic_system_intelligence",
+          "timestamp": 1774722857.6254048
+        },
+        "object_insights": [
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delay_1",
+            "pressure_score": 1,
+            "rationale": "Delay 1 is the active source of this scenario.",
+            "role": "source",
+            "strategic_priority": 0.6000000000000001
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delivery_1",
+            "pressure_score": 0.5476,
+            "rationale": "Delivery 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.315232
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_inventory_1",
+            "pressure_score": 0.4958,
+            "rationale": "Inventory 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.29865600000000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_supplier_1",
+            "pressure_score": 0.2836568,
+            "rationale": "Supplier 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.230770176
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_warehouse_1",
+            "pressure_score": 0.24214872,
+            "rationale": "Warehouse 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.2174875904
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_customer_satisfaction_1",
+            "pressure_score": 0.21279736,
+            "rationale": "Customer Satisfaction 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.2080951552
+          }
+        ],
+        "path_insights": [],
+        "summary": {
+          "headline": "Delay 1 is the main strategic pressure point.",
+          "key_signal": "Delay 1 is the active source of this scenario.",
+          "suggested_focus_object_id": "obj_delay_1",
+          "suggested_mode": "simulation",
+          "summary": "System intelligence is waiting for stronger propagation or decision-path context."
+        }
+      },
+      "mode": "simulation",
+      "observed_outcome": null,
+      "predicted_summary": {
+        "expected_impact": null,
+        "expected_risk": null,
+        "headline": "Delay 1 is the main strategic pressure point."
+      },
+      "propagation_snapshot": {
+        "active": true,
+        "impacted_edges": [
+          {
+            "depth": 1,
+            "from": "obj_delay_1",
+            "strength": 0.5476,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 1,
+            "from": "obj_delay_1",
+            "strength": 0.4958,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.29986576,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.29176127999999996,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.2836568,
+            "to": "obj_supplier_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.26416224,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.24581764,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.24214872,
+            "to": "obj_warehouse_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.21279736,
+            "to": "obj_customer_satisfaction_1"
+          }
+        ],
+        "impacted_nodes": [
+          {
+            "depth": 0,
+            "object_id": "obj_delay_1",
+            "role": "source",
+            "strength": 1
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_delivery_1",
+            "role": "impacted",
+            "strength": 0.5476
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_inventory_1",
+            "role": "impacted",
+            "strength": 0.4958
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_supplier_1",
+            "role": "impacted",
+            "strength": 0.2836568
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_warehouse_1",
+            "role": "impacted",
+            "strength": 0.24214872
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_customer_satisfaction_1",
+            "role": "impacted",
+            "strength": 0.21279736
+          }
+        ],
+        "meta": {
+          "label": "What-if propagation",
+          "source_kind": "backend_payload",
+          "timestamp": 1774722856801
+        },
+        "mode": "backend",
+        "source_object_id": "obj_delay_1"
+      },
+      "record_id": "scenario:scenario:chat:stress:obj_price_1:propagation",
+      "scenario_id": "scenario:chat:stress:obj_price_1:propagation",
+      "scenario_title": "Stress obj_price_1",
+      "selected_decision": null,
+      "selected_strategy_id": null,
+      "source_action_ids": [
+        "scenario:chat:stress:obj_price_1:propagation"
+      ],
+      "source_object_ids": [
+        "obj_price_1"
+      ],
+      "tags": [
+        "propagation"
+      ],
+      "timestamp": 1774722859.163
+    },
+    {
+      "comparison_snapshot": null,
+      "decision_path_snapshot": null,
+      "generated_strategies": null,
+      "intelligence_snapshot": {
+        "active": true,
+        "advice": [
+          {
+            "advice_id": "advice:0:obj_delay_1",
+            "body": "Delay 1 is the active source of this scenario.",
+            "confidence": 0.5520000000000002,
+            "kind": "simulate_next",
+            "target_object_id": "obj_delay_1",
+            "title": "Simulate Delay 1 next"
+          },
+          {
+            "advice_id": "advice:1:obj_delivery_1",
+            "body": "Delivery 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.29001344,
+            "kind": "simulate_next",
+            "target_object_id": "obj_delivery_1",
+            "title": "Simulate Delivery 1 next"
+          },
+          {
+            "advice_id": "advice:2:obj_inventory_1",
+            "body": "Inventory 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.27476352000000004,
+            "kind": "simulate_next",
+            "target_object_id": "obj_inventory_1",
+            "title": "Simulate Inventory 1 next"
+          }
+        ],
+        "meta": {
+          "engine_version": "system_intelligence_v1",
+          "interpretation_mode": "simulation",
+          "source": "heuristic_system_intelligence",
+          "timestamp": 1774722857.6254048
+        },
+        "object_insights": [
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delay_1",
+            "pressure_score": 1,
+            "rationale": "Delay 1 is the active source of this scenario.",
+            "role": "source",
+            "strategic_priority": 0.6000000000000001
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delivery_1",
+            "pressure_score": 0.5476,
+            "rationale": "Delivery 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.315232
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_inventory_1",
+            "pressure_score": 0.4958,
+            "rationale": "Inventory 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.29865600000000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_supplier_1",
+            "pressure_score": 0.2836568,
+            "rationale": "Supplier 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.230770176
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_warehouse_1",
+            "pressure_score": 0.24214872,
+            "rationale": "Warehouse 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.2174875904
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_customer_satisfaction_1",
+            "pressure_score": 0.21279736,
+            "rationale": "Customer Satisfaction 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.2080951552
+          }
+        ],
+        "path_insights": [],
+        "summary": {
+          "headline": "Delay 1 is the main strategic pressure point.",
+          "key_signal": "Delay 1 is the active source of this scenario.",
+          "suggested_focus_object_id": "obj_delay_1",
+          "suggested_mode": "simulation",
+          "summary": "System intelligence is waiting for stronger propagation or decision-path context."
+        }
+      },
+      "mode": "simulation",
+      "observed_outcome": null,
+      "predicted_summary": {
+        "expected_impact": null,
+        "expected_risk": null,
+        "headline": "Delay 1 is the main strategic pressure point."
+      },
+      "propagation_snapshot": {
+        "active": true,
+        "impacted_edges": [
+          {
+            "depth": 1,
+            "from": "obj_delay_1",
+            "strength": 0.5476,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 1,
+            "from": "obj_delay_1",
+            "strength": 0.4958,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.29986576,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.29176127999999996,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.2836568,
+            "to": "obj_supplier_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.26416224,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.24581764,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.24214872,
+            "to": "obj_warehouse_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.21279736,
+            "to": "obj_customer_satisfaction_1"
+          }
+        ],
+        "impacted_nodes": [
+          {
+            "depth": 0,
+            "object_id": "obj_delay_1",
+            "role": "source",
+            "strength": 1
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_delivery_1",
+            "role": "impacted",
+            "strength": 0.5476
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_inventory_1",
+            "role": "impacted",
+            "strength": 0.4958
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_supplier_1",
+            "role": "impacted",
+            "strength": 0.2836568
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_warehouse_1",
+            "role": "impacted",
+            "strength": 0.24214872
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_customer_satisfaction_1",
+            "role": "impacted",
+            "strength": 0.21279736
+          }
+        ],
+        "meta": {
+          "label": "What-if propagation",
+          "source_kind": "backend_payload",
+          "timestamp": 1774722856801
+        },
+        "mode": "backend",
+        "source_object_id": "obj_delay_1"
+      },
+      "record_id": "scenario:scenario:chat:stress:obj_delay_1:propagation",
+      "scenario_id": "scenario:chat:stress:obj_delay_1:propagation",
+      "scenario_title": "Stress obj_delay_1",
+      "selected_decision": null,
+      "selected_strategy_id": null,
+      "source_action_ids": [
+        "scenario:chat:stress:obj_delay_1:propagation"
+      ],
+      "source_object_ids": [
+        "obj_delay_1"
+      ],
+      "tags": [
+        "propagation"
+      ],
+      "timestamp": 1774722857.653
+    },
+    {
+      "comparison_snapshot": null,
+      "decision_path_snapshot": null,
+      "generated_strategies": null,
+      "intelligence_snapshot": {
+        "active": true,
+        "advice": [
+          {
+            "advice_id": "advice:0:obj_customer_satisfaction_1",
+            "body": "Customer Satisfaction 1 is the active source of this scenario.",
+            "confidence": 0.6072000000000002,
+            "kind": "simulate_next",
+            "target_object_id": "obj_customer_satisfaction_1",
+            "title": "Simulate Customer Satisfaction 1 next"
+          },
+          {
+            "advice_id": "advice:1:obj_inventory_1",
+            "body": "Inventory 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.25515648,
+            "kind": "simulate_next",
+            "target_object_id": "obj_inventory_1",
+            "title": "Simulate Inventory 1 next"
+          },
+          {
+            "advice_id": "advice:2:obj_demand_1",
+            "body": "Demand 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.24208512000000004,
+            "kind": "simulate_next",
+            "target_object_id": "obj_demand_1",
+            "title": "Simulate Demand 1 next"
+          }
+        ],
+        "meta": {
+          "engine_version": "system_intelligence_v1",
+          "interpretation_mode": "simulation",
+          "source": "heuristic_system_intelligence",
+          "timestamp": 1774643144.582046
+        },
+        "object_insights": [
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_customer_satisfaction_1",
+            "pressure_score": 1,
+            "rationale": "Customer Satisfaction 1 is the active source of this scenario.",
+            "role": "source",
+            "strategic_priority": 0.6600000000000001
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_inventory_1",
+            "pressure_score": 0.42919999999999997,
+            "rationale": "Inventory 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.27734400000000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_demand_1",
+            "pressure_score": 0.38480000000000003,
+            "rationale": "Demand 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.26313600000000004
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delivery_1",
+            "pressure_score": 0.22867775999999998,
+            "rationale": "Delivery 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.2131768832
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delay_1",
+            "pressure_score": 0.21279736000000002,
+            "rationale": "Delay 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.20809515520000002
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_warehouse_1",
+            "pressure_score": 0.20962128000000002,
+            "rationale": "Warehouse 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.20707880960000002
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_order_flow_1",
+            "pressure_score": 0.19363136000000003,
+            "rationale": "Order Flow 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.20196203520000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_price_1",
+            "pressure_score": 0.17369872,
+            "rationale": "Price 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.1955835904
+          }
+        ],
+        "path_insights": [],
+        "summary": {
+          "headline": "Customer Satisfaction 1 is the main strategic pressure point.",
+          "key_signal": "Customer Satisfaction 1 is the active source of this scenario.",
+          "suggested_focus_object_id": "obj_customer_satisfaction_1",
+          "suggested_mode": "simulation",
+          "summary": "System intelligence is waiting for stronger propagation or decision-path context."
+        }
+      },
+      "mode": "simulation",
+      "observed_outcome": {
+        "note": null,
+        "observed_impact": null,
+        "observed_risk": null,
+        "outcome_status": "negative"
+      },
+      "predicted_summary": {
+        "expected_impact": null,
+        "expected_risk": null,
+        "headline": "Customer Satisfaction 1 is the main strategic pressure point."
+      },
+      "propagation_snapshot": {
+        "active": true,
+        "impacted_edges": [
+          {
+            "depth": 1,
+            "from": "obj_customer_satisfaction_1",
+            "strength": 0.42919999999999997,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 1,
+            "from": "obj_customer_satisfaction_1",
+            "strength": 0.38480000000000003,
+            "to": "obj_demand_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.22867775999999998,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.21279736000000002,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.20962128000000002,
+            "to": "obj_warehouse_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_demand_1",
+            "strength": 0.19363136000000003,
+            "to": "obj_order_flow_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_inventory_1",
+            "strength": 0.18421263999999998,
+            "to": "obj_customer_satisfaction_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_demand_1",
+            "strength": 0.17369872,
+            "to": "obj_price_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_demand_1",
+            "strength": 0.14807104000000001,
+            "to": "obj_customer_satisfaction_1"
+          }
+        ],
+        "impacted_nodes": [
+          {
+            "depth": 0,
+            "object_id": "obj_customer_satisfaction_1",
+            "role": "source",
+            "strength": 1
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_inventory_1",
+            "role": "impacted",
+            "strength": 0.42919999999999997
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_demand_1",
+            "role": "impacted",
+            "strength": 0.38480000000000003
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_delivery_1",
+            "role": "impacted",
+            "strength": 0.22867775999999998
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_delay_1",
+            "role": "impacted",
+            "strength": 0.21279736000000002
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_warehouse_1",
+            "role": "impacted",
+            "strength": 0.20962128000000002
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_order_flow_1",
+            "role": "impacted",
+            "strength": 0.19363136000000003
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_price_1",
+            "role": "impacted",
+            "strength": 0.17369872
+          }
+        ],
+        "meta": {
+          "label": "What-if propagation",
+          "source_kind": "backend_payload",
+          "timestamp": 1774643044962
+        },
+        "mode": "backend",
+        "source_object_id": "obj_customer_satisfaction_1"
+      },
+      "record_id": "scenario:scenario:chat:stress:obj_supplier_1:propagation",
+      "scenario_id": "scenario:chat:stress:obj_supplier_1:propagation",
+      "scenario_title": "Stress obj_supplier_1",
+      "selected_decision": null,
+      "selected_strategy_id": null,
+      "source_action_ids": [
+        "scenario:chat:stress:obj_supplier_1:propagation"
+      ],
+      "source_object_ids": [
+        "obj_supplier_1"
+      ],
+      "tags": [
+        "propagation"
+      ],
+      "timestamp": 1774643146.143
+    },
+    {
+      "comparison_snapshot": null,
+      "decision_path_snapshot": null,
+      "generated_strategies": null,
+      "intelligence_snapshot": {
+        "active": true,
+        "advice": [
+          {
+            "advice_id": "advice:0:obj_inventory_1",
+            "body": "Inventory 1 is the active source of this scenario.",
+            "confidence": 0.6072000000000002,
+            "kind": "simulate_next",
+            "target_object_id": "obj_inventory_1",
+            "title": "Simulate Inventory 1 next"
+          },
+          {
+            "advice_id": "advice:1:obj_delivery_1",
+            "body": "Delivery 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.28565632,
+            "kind": "simulate_next",
+            "target_object_id": "obj_delivery_1",
+            "title": "Simulate Delivery 1 next"
+          },
+          {
+            "advice_id": "advice:2:obj_delay_1",
+            "body": "Delay 1 remains strategically relevant in the current overlay.",
+            "confidence": 0.27476352000000004,
+            "kind": "simulate_next",
+            "target_object_id": "obj_delay_1",
+            "title": "Simulate Delay 1 next"
+          }
+        ],
+        "meta": {
+          "engine_version": "system_intelligence_v1",
+          "interpretation_mode": "simulation",
+          "source": "heuristic_system_intelligence",
+          "timestamp": 1774643050.372092
+        },
+        "object_insights": [
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_inventory_1",
+            "pressure_score": 1,
+            "rationale": "Inventory 1 is the active source of this scenario.",
+            "role": "source",
+            "strategic_priority": 0.6600000000000001
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delivery_1",
+            "pressure_score": 0.5327999999999999,
+            "rationale": "Delivery 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.310496
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_delay_1",
+            "pressure_score": 0.4958,
+            "rationale": "Delay 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.29865600000000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_warehouse_1",
+            "pressure_score": 0.4884,
+            "rationale": "Warehouse 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.296288
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_customer_satisfaction_1",
+            "pressure_score": 0.42919999999999997,
+            "rationale": "Customer Satisfaction 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.27734400000000003
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_supplier_1",
+            "pressure_score": 0.27599039999999997,
+            "rationale": "Supplier 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.228316928
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_order_flow_1",
+            "pressure_score": 0.22407792,
+            "rationale": "Order Flow 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.21170493440000002
+          },
+          {
+            "fragility_score": null,
+            "leverage_score": 0,
+            "object_id": "obj_demand_1",
+            "pressure_score": 0.16515616,
+            "rationale": "Demand 1 remains strategically relevant in the current overlay.",
+            "role": "impacted",
+            "strategic_priority": 0.19284997120000003
+          }
+        ],
+        "path_insights": [],
+        "summary": {
+          "headline": "Inventory 1 is the main strategic pressure point.",
+          "key_signal": "Inventory 1 is the active source of this scenario.",
+          "suggested_focus_object_id": "obj_inventory_1",
+          "suggested_mode": "simulation",
+          "summary": "System intelligence is waiting for stronger propagation or decision-path context."
+        }
+      },
+      "mode": "simulation",
+      "observed_outcome": null,
+      "predicted_summary": {
+        "expected_impact": null,
+        "expected_risk": null,
+        "headline": "Inventory 1 is the main strategic pressure point."
+      },
+      "propagation_snapshot": {
+        "active": true,
+        "impacted_edges": [
+          {
+            "depth": 1,
+            "from": "obj_inventory_1",
+            "strength": 0.5327999999999999,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 1,
+            "from": "obj_inventory_1",
+            "strength": 0.4958,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 1,
+            "from": "obj_inventory_1",
+            "strength": 0.4884,
+            "to": "obj_warehouse_1"
+          },
+          {
+            "depth": 1,
+            "from": "obj_inventory_1",
+            "strength": 0.42919999999999997,
+            "to": "obj_customer_satisfaction_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.29176127999999996,
+            "to": "obj_delay_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.28387583999999993,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delivery_1",
+            "strength": 0.27599039999999997,
+            "to": "obj_supplier_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delay_1",
+            "strength": 0.27150008,
+            "to": "obj_delivery_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_delay_1",
+            "strength": 0.24581764,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_warehouse_1",
+            "strength": 0.23853456000000003,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_warehouse_1",
+            "strength": 0.22407792,
+            "to": "obj_order_flow_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_customer_satisfaction_1",
+            "strength": 0.18421263999999998,
+            "to": "obj_inventory_1"
+          },
+          {
+            "depth": 2,
+            "from": "obj_customer_satisfaction_1",
+            "strength": 0.16515616,
+            "to": "obj_demand_1"
+          }
+        ],
+        "impacted_nodes": [
+          {
+            "depth": 0,
+            "object_id": "obj_inventory_1",
+            "role": "source",
+            "strength": 1
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_delivery_1",
+            "role": "impacted",
+            "strength": 0.5327999999999999
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_delay_1",
+            "role": "impacted",
+            "strength": 0.4958
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_warehouse_1",
+            "role": "impacted",
+            "strength": 0.4884
+          },
+          {
+            "depth": 1,
+            "object_id": "obj_customer_satisfaction_1",
+            "role": "impacted",
+            "strength": 0.42919999999999997
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_supplier_1",
+            "role": "impacted",
+            "strength": 0.27599039999999997
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_order_flow_1",
+            "role": "impacted",
+            "strength": 0.22407792
+          },
+          {
+            "depth": 2,
+            "object_id": "obj_demand_1",
+            "role": "impacted",
+            "strength": 0.16515616
+          }
+        ],
+        "meta": {
+          "label": "What-if propagation",
+          "source_kind": "backend_payload",
+          "timestamp": 1774643049308
+        },
+        "mode": "backend",
+        "source_object_id": "obj_inventory_1"
+      },
+      "record_id": "scenario:scenario:chat:stress:obj_inventory_1:propagation",
+      "scenario_id": "scenario:chat:stress:obj_inventory_1:propagation",
+      "scenario_title": "Stress obj_inventory_1",
+      "selected_decision": null,
+      "selected_strategy_id": null,
+      "source_action_ids": [
+        "scenario:chat:stress:obj_inventory_1:propagation"
+      ],
+      "source_object_ids": [
+        "obj_inventory_1"
+      ],
+      "tags": [
+        "propagation"
+      ],
+      "timestamp": 1774643050.383
+    }
+  ],
+  "strategy_records": []
+}

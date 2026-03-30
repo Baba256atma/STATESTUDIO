@@ -1,6 +1,7 @@
 "use client";
 
 import { traceHighlightFlow } from "../debug/highlightDebugTrace";
+import type { ScannerCausalRole } from "./scannerCausalityPolicy";
 
 export type ScannerVisualRank =
   | "neutral"
@@ -10,6 +11,7 @@ export type ScannerVisualRank =
 
 export type ScannerVisualPolicyResult = {
   rank: ScannerVisualRank;
+  causalRole: ScannerCausalRole;
   isHighlighted: boolean;
   isProtectedFromDim: boolean;
   shouldDimAsUnrelated: boolean;
@@ -17,7 +19,8 @@ export type ScannerVisualPolicyResult = {
   shouldShowScannerLabel: boolean;
   opacityMode: "normal" | "soft_shadow" | "dominant";
   emissiveMode: "normal" | "quiet" | "strong";
-  colorMode: "base" | "scanner_primary" | "scanner_secondary" | "shadowed";
+  colorMode: "base" | "scanner_primary" | "scanner_affected" | "scanner_related" | "shadowed";
+  labelTitle: string | null;
   scaleMultiplier: number;
   opacityMultiplier: number;
   emissiveBoost: number;
@@ -27,9 +30,7 @@ export type ScannerVisualPolicyResult = {
 
 export type ResolveScannerVisualPriorityInput = {
   scannerSceneActive: boolean;
-  scannerPrimaryTargetId?: string | null;
-  scannerTargetIds?: string[];
-  currentObjectIds: string[];
+  causalRole: ScannerCausalRole;
   isFocused: boolean;
   isSelected: boolean;
   isPinned: boolean;
@@ -39,27 +40,13 @@ export type ResolveScannerVisualPriorityInput = {
   scannerFocused: boolean;
 };
 
-function matchesAnyId(candidate: string | null | undefined, ids: string[]): boolean {
-  if (typeof candidate !== "string" || candidate.length === 0) return false;
-  return ids.includes(candidate);
-}
-
 export function resolveScannerVisualPriority(
   input: ResolveScannerVisualPriorityInput
 ): ScannerVisualPolicyResult {
-  const targetIds = Array.isArray(input.scannerTargetIds) ? input.scannerTargetIds.map(String) : [];
-  const currentIds = input.currentObjectIds.filter(Boolean);
-  const isInTargetSet = currentIds.some((id) => targetIds.includes(id));
-  const hasExplicitPrimary = matchesAnyId(input.scannerPrimaryTargetId ?? null, targetIds);
-  const isExplicitPrimary = matchesAnyId(input.scannerPrimaryTargetId ?? null, currentIds);
-  const shouldPromoteSingleton = !hasExplicitPrimary && targetIds.length === 1 && isInTargetSet;
-  const shouldPromoteFocusedTarget = !hasExplicitPrimary && isInTargetSet && input.scannerFocused;
-  const isPrimaryTarget = isExplicitPrimary || shouldPromoteSingleton || shouldPromoteFocusedTarget;
-  const isSecondaryTarget = isInTargetSet && !isPrimaryTarget;
-
-  if (!input.scannerSceneActive || targetIds.length === 0) {
+  if (!input.scannerSceneActive || input.causalRole === "neutral") {
     return {
       rank: "neutral",
+      causalRole: "neutral",
       isHighlighted: input.scannerHighlighted,
       isProtectedFromDim: input.isFocused || input.isSelected || input.isPinned,
       shouldDimAsUnrelated: false,
@@ -69,6 +56,7 @@ export function resolveScannerVisualPriority(
       opacityMode: "normal",
       emissiveMode: "normal",
       colorMode: "base",
+      labelTitle: input.scannerFocused ? "Scanner Focus" : "Fragility Signal",
       scaleMultiplier: 1,
       opacityMultiplier: 1,
       emissiveBoost: 0,
@@ -77,9 +65,10 @@ export function resolveScannerVisualPriority(
     };
   }
 
-  if (isPrimaryTarget) {
+  if (input.causalRole === "primary_cause") {
     return {
       rank: "primary",
+      causalRole: input.causalRole,
       isHighlighted: true,
       isProtectedFromDim: true,
       shouldDimAsUnrelated: false,
@@ -88,17 +77,40 @@ export function resolveScannerVisualPriority(
       opacityMode: "dominant",
       emissiveMode: "strong",
       colorMode: "scanner_primary",
+      labelTitle: "Primary Risk Node",
       scaleMultiplier: 1.06,
       opacityMultiplier: 1,
-      emissiveBoost: 2.3,
+      emissiveBoost: 2.45,
       isPrimaryTarget: true,
       isSecondaryTarget: false,
     };
   }
 
-  if (isSecondaryTarget) {
+  if (input.causalRole === "affected") {
     return {
       rank: "secondary",
+      causalRole: input.causalRole,
+      isHighlighted: true,
+      isProtectedFromDim: true,
+      shouldDimAsUnrelated: false,
+      shouldUseScannerHalo: false,
+      shouldShowScannerLabel: true,
+      opacityMode: "normal",
+      emissiveMode: "normal",
+      colorMode: "scanner_affected",
+      labelTitle: "Affected Node",
+      scaleMultiplier: 1.03,
+      opacityMultiplier: 0.94,
+      emissiveBoost: 0.55,
+      isPrimaryTarget: false,
+      isSecondaryTarget: true,
+    };
+  }
+
+  if (input.causalRole === "related_context") {
+    return {
+      rank: "secondary",
+      causalRole: input.causalRole,
       isHighlighted: true,
       isProtectedFromDim: true,
       shouldDimAsUnrelated: false,
@@ -106,10 +118,11 @@ export function resolveScannerVisualPriority(
       shouldShowScannerLabel: input.scannerFocused,
       opacityMode: "normal",
       emissiveMode: "normal",
-      colorMode: "scanner_secondary",
-      scaleMultiplier: 1.02,
-      opacityMultiplier: 0.96,
-      emissiveBoost: 0.35,
+      colorMode: "scanner_related",
+      labelTitle: "Related Context",
+      scaleMultiplier: 1.01,
+      opacityMultiplier: 0.86,
+      emissiveBoost: 0.18,
       isPrimaryTarget: false,
       isSecondaryTarget: true,
     };
@@ -117,14 +130,16 @@ export function resolveScannerVisualPriority(
 
   return {
     rank: "background",
+    causalRole: input.causalRole,
     isHighlighted: false,
-    isProtectedFromDim: input.isSelected,
+    isProtectedFromDim: false,
     shouldDimAsUnrelated: input.dimUnrelatedObjects,
     shouldUseScannerHalo: false,
     shouldShowScannerLabel: false,
     opacityMode: "soft_shadow",
     emissiveMode: "quiet",
     colorMode: "shadowed",
+    labelTitle: null,
     scaleMultiplier: 1,
     opacityMultiplier: 0.58,
     emissiveBoost: 0,
@@ -142,7 +157,7 @@ export function traceScannerVisualPriorityPolicy(
   traceHighlightFlow("scene_object_state", {
     objectId,
     scannerSceneActive: input.scannerSceneActive,
-    scannerPrimaryTargetId: input.scannerPrimaryTargetId ?? null,
+    causalRole: result.causalRole,
     isFocused: input.isFocused,
     isSelected: input.isSelected,
     isPinned: input.isPinned,

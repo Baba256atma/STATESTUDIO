@@ -1,11 +1,51 @@
 import type { SceneJson } from "../sceneTypes";
 import type { NexoraIntentRoute } from "../router/intentRouterTypes";
 import { traceHighlightFlow } from "../debug/highlightDebugTrace";
+import { resolveUnifiedReactionPolicy } from "../reactions/reactionPolicy";
+import { hasForcedSceneUpdate, normalizeUnifiedSceneReaction } from "../scene/unifiedReaction";
 import type {
   NexoraExecutionInput,
   NexoraExecutionResult,
   NexoraExecutionStep,
 } from "./actionExecutionTypes";
+
+type HighlightSelectionPayload = {
+  object_selection?: {
+    highlighted_objects?: unknown[];
+  } | null;
+  scene_json?: {
+    object_selection?: {
+      highlighted_objects?: unknown[];
+    } | null;
+  } | null;
+  context?: {
+    object_selection?: {
+      highlighted_objects?: unknown[];
+    } | null;
+  } | null;
+  highlightedObjectIds?: unknown[];
+  suggested_objects?: unknown[];
+};
+
+type PrimaryExecutionPayload = {
+  reply?: string | null;
+  risk_propagation?: {
+    sources?: unknown[];
+    targets?: unknown[];
+  } | null;
+  loop_analysis?: {
+    active_loop_id?: string | null;
+    suggestions?: unknown[];
+  } | null;
+  active_loop_id?: string | null;
+  loop_suggestions?: unknown[];
+  actions?: unknown[];
+  scene_json?: SceneJson | null;
+};
+
+type MessageLikeError = {
+  message?: string;
+};
 
 function createBaseExecutionResult(input: NexoraExecutionInput): NexoraExecutionResult {
   return {
@@ -28,7 +68,7 @@ function createBaseExecutionResult(input: NexoraExecutionInput): NexoraExecution
     advicePayload: null,
     localDecisionPayload: null,
     highlightedObjectIds: [],
-    focusedObjectId: input.route.matchedObjectIds[0] ?? input.selectedObjectId ?? null,
+    focusedObjectId: input.route.primaryObjectId ?? input.route.matchedObjectIds[0] ?? input.selectedObjectId ?? null,
     allowSceneMutation: input.route.sceneMutation !== "none",
     appliedSceneMutation: "none",
     scenePatch: null,
@@ -50,7 +90,7 @@ function markStep(result: NexoraExecutionResult, step: NexoraExecutionStep, exec
   }
 }
 
-function extractHighlightedObjectIds(payload: any): string[] {
+function extractHighlightedObjectIds(payload: HighlightSelectionPayload | null | undefined): string[] {
   const ids = Array.isArray(payload?.object_selection?.highlighted_objects)
     ? payload.object_selection.highlighted_objects
     : Array.isArray(payload?.scene_json?.object_selection?.highlighted_objects)
@@ -65,19 +105,36 @@ function extractHighlightedObjectIds(payload: any): string[] {
   return ids.map(String).filter(Boolean);
 }
 
-function pickPrimaryPayload(result: NexoraExecutionResult): any | null {
-  return result.backendPayload ?? result.scannerPayload ?? result.simulationPayload ?? result.advicePayload ?? null;
+function pickPrimaryPayload(result: NexoraExecutionResult): PrimaryExecutionPayload | null {
+  return (result.backendPayload ??
+    result.scannerPayload ??
+    result.simulationPayload ??
+    result.advicePayload ??
+    null) as PrimaryExecutionPayload | null;
 }
 
-function deriveUnifiedReactionPayload(payload: any, route: NexoraIntentRoute, highlightedObjectIds: string[]) {
+function deriveUnifiedReactionPayload(
+  payload: PrimaryExecutionPayload | null,
+  route: NexoraIntentRoute,
+  highlightedObjectIds: string[]
+) {
   if (!route.shouldAffectScene) return null;
-  return {
+  return normalizeUnifiedSceneReaction(resolveUnifiedReactionPolicy({
     source: route.target === "scanner" ? "scanner" : "chat",
     reason: route.explanation,
     highlightedObjectIds,
-    dimUnrelatedObjects: highlightedObjectIds.length > 0 && route.sceneMutation !== "none",
     riskSources: Array.isArray(payload?.risk_propagation?.sources) ? payload.risk_propagation.sources.map(String) : [],
     riskTargets: Array.isArray(payload?.risk_propagation?.targets) ? payload.risk_propagation.targets.map(String) : [],
+    reactionModeHint:
+      route.intent === "fragility_scan"
+        ? "risk"
+        : route.intent === "simulation_run"
+        ? "propagation"
+        : route.intent === "strategy_advice"
+        ? "decision"
+        : route.intent === "object_focus"
+        ? "focus"
+        : null,
     activeLoopId: payload?.loop_analysis?.active_loop_id ?? payload?.active_loop_id ?? null,
     loopSuggestions: Array.isArray(payload?.loop_analysis?.suggestions)
       ? payload.loop_analysis.suggestions
@@ -87,13 +144,13 @@ function deriveUnifiedReactionPayload(payload: any, route: NexoraIntentRoute, hi
     actions: route.sceneMutation === "full_update" && Array.isArray(payload?.actions) ? payload.actions : [],
     allowFocusMutation: route.sceneMutation !== "none",
     sceneJson: null,
-  };
+  }));
 }
 
 function enforceSceneMutationPolicy(
   result: NexoraExecutionResult,
   route: NexoraIntentRoute,
-  payload: any,
+  payload: PrimaryExecutionPayload | null,
   currentScene: SceneJson | null
 ): void {
   if (route.sceneMutation === "none") {
@@ -131,9 +188,14 @@ function enforceSceneMutationPolicy(
       payload?.scene_json && typeof payload.scene_json === "object"
         ? (payload.scene_json as SceneJson)
         : currentScene ?? null;
-    result.appliedSceneMutation = payload?.scene_json ? "full_update" : highlightedObjectIds.length > 0 ? "soft_reaction" : "none";
-    result.sceneReplacement = payload?.scene_json ? nextScene : null;
-    result.scenePatch = !payload?.scene_json && highlightedObjectIds.length > 0 ? { highlightedObjectIds } : null;
+    const allowForcedSceneReplacement = !!payload?.scene_json && hasForcedSceneUpdate(payload, nextScene);
+    result.appliedSceneMutation = allowForcedSceneReplacement
+      ? "full_update"
+      : highlightedObjectIds.length > 0
+      ? "soft_reaction"
+      : "none";
+    result.sceneReplacement = allowForcedSceneReplacement ? nextScene : null;
+    result.scenePatch = !allowForcedSceneReplacement && highlightedObjectIds.length > 0 ? { highlightedObjectIds } : null;
     markStep(result, "scene_effect", !!result.sceneReplacement || !!result.scenePatch);
   }
 }
@@ -164,8 +226,8 @@ export async function executeNexoraAction(input: NexoraExecutionInput): Promise<
       } else {
         markStep(result, "local_decision", false);
       }
-    } catch (error: any) {
-      result.warnings.push(error?.message ?? "Local decision router failed.");
+    } catch (error: unknown) {
+      result.warnings.push((error as MessageLikeError | null)?.message ?? "Local decision router failed.");
       markStep(result, "local_decision", false);
     }
   } else {
@@ -176,8 +238,8 @@ export async function executeNexoraAction(input: NexoraExecutionInput): Promise<
     try {
       result.scannerPayload = await input.handlers.runScanner(input.userText, input.currentScene);
       markStep(result, "scanner", true);
-    } catch (error: any) {
-      result.warnings.push(error?.message ?? "Scanner execution failed.");
+    } catch (error: unknown) {
+      result.warnings.push((error as MessageLikeError | null)?.message ?? "Scanner execution failed.");
       markStep(result, "scanner", false);
     }
   } else {
@@ -188,8 +250,8 @@ export async function executeNexoraAction(input: NexoraExecutionInput): Promise<
     try {
       result.simulationPayload = await input.handlers.runSimulation(input.userText, input.currentScene);
       markStep(result, "simulation", true);
-    } catch (error: any) {
-      result.warnings.push(error?.message ?? "Simulation execution failed.");
+    } catch (error: unknown) {
+      result.warnings.push((error as MessageLikeError | null)?.message ?? "Simulation execution failed.");
       markStep(result, "simulation", false);
     }
   } else {
@@ -204,8 +266,8 @@ export async function executeNexoraAction(input: NexoraExecutionInput): Promise<
         currentScene: input.currentScene,
       });
       markStep(result, "strategy", true);
-    } catch (error: any) {
-      result.warnings.push(error?.message ?? "Advice generation failed.");
+    } catch (error: unknown) {
+      result.warnings.push((error as MessageLikeError | null)?.message ?? "Advice generation failed.");
       markStep(result, "strategy", false);
     }
   } else {
@@ -216,8 +278,8 @@ export async function executeNexoraAction(input: NexoraExecutionInput): Promise<
     try {
       result.backendPayload = await input.handlers.runBackendChat(input.userText);
       markStep(result, "backend_chat", true);
-    } catch (error: any) {
-      result.errors.push(error?.message ?? "Backend chat execution failed.");
+    } catch (error: unknown) {
+      result.errors.push((error as MessageLikeError | null)?.message ?? "Backend chat execution failed.");
       result.ok = false;
       markStep(result, "backend_chat", false);
     }

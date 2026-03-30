@@ -1,0 +1,30 @@
+import type { MultiAgentResult } from "../../reasoning/multiAgentDecisionEngineContract";
+import type { ReasoningOutput } from "../../reasoning/aiReasoningContract";
+import type { SimulationResult } from "../simulationContract";
+import type { CanonicalRecommendation } from "../recommendation/recommendationTypes";
+import type { DecisionExecutionResult } from "../../executive/decisionExecutionTypes";
+import type { DecisionMemoryEntry } from "../memory/decisionMemoryTypes";
+import type { DecisionOutcomeFeedback, DecisionCalibrationResult } from "../outcome/decisionOutcomeTypes";
+import type { DecisionPatternIntelligence } from "../patterns/decisionPatternTypes";
+import type { MetaDecisionState } from "../meta/metaDecisionTypes";
+import type { DecisionTimelineEvent } from "../../governance/decisionTimelineModel";
+
+export type DecisionPipelineState = {
+  decision_id: string;
+  prompt?: string | null;
+  reasoning?: ReasoningOutput | null;
+  simulation?: SimulationResult | null;
+  recommendation?: CanonicalRecommendation | null;
+  multi_agent?: MultiAgentResult | null;
+  execution?: DecisionExecutionResult | null;
+  memory?: DecisionMemoryEntry | null;
+  observed_outcome?: any;
+  outcome_feedback?: DecisionOutcomeFeedback | null;
+  calibration?: DecisionCalibrationResult | null;
+  meta_decision?: MetaDecisionState | null;
+  pattern_context?: DecisionPatternIntelligence | null;
+  audit_trace?: DecisionTimelineEvent[];
+  memory_entry_id?: string;
+  created_at: number;
+  updated_at: number;
+};

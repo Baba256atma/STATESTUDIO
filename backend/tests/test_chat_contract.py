@@ -14,6 +14,11 @@ def test_chat_missing_text():
     assert body.get("ok") is False
     assert body.get("error", {}).get("type") == "INVALID_INPUT"
     assert body.get("actions") == []
+    assert body.get("advice_slice") is None
+    assert body.get("timeline_slice") is None
+    assert body.get("war_room_slice") is None
+    assert body.get("drivers") == []
+    assert body.get("signals") == []
 
 
 def test_chat_success_actions_array():
@@ -23,6 +28,13 @@ def test_chat_success_actions_array():
     assert body.get("ok") is True
     assert isinstance(body.get("actions"), list)
     assert body.get("user_id") == "u1"
+    assert "context" in body and isinstance(body.get("context"), dict)
+    assert "scene_json" in body
+    assert body.get("advice_slice") is None
+    assert body.get("timeline_slice") is None
+    assert body.get("war_room_slice") is None
+    assert body.get("drivers") == []
+    assert body.get("signals") == []
 
 
 def test_chat_user_id_consistency_header():

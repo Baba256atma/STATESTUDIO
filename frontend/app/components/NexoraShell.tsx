@@ -4,12 +4,18 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FragilityScannerMini } from "./scanner/FragilityScannerMini";
 import { nx } from "./ui/nexoraTheme";
 import type { FragilityDriver, FragilityScanResponse } from "../types/fragilityScanner";
+import { CommandHeader } from "./layout/CommandHeader";
+import { normalizeStrategicCouncilResult } from "../lib/council/strategicCouncilClient";
+import { useCustomerDemoMode } from "../lib/demo/useCustomerDemoMode";
+import { buildExecutiveNarrative } from "../lib/narrative/narrativeBuilder";
+import { CustomerDemoSelector } from "./demo/CustomerDemoSelector";
+import { StrategicAssistantDrawer } from "./assistant/StrategicAssistantDrawer";
 
 type NexoraShellProps = {
   children: React.ReactNode;
 };
 
-type LeftNavGroupKey = "scene_group" | "strategy_group" | "risk_group" | "replay_group" | "memory_group" | "workspace_group" | "executive_group";
+type LeftNavGroupKey = "scene_group" | "strategy_group" | "risk_group" | "workflow_group" | "executive_group";
 type InspectorEventTab =
   | "scene"
   | "object"
@@ -23,11 +29,26 @@ type InspectorEventTab =
   | "opponent_moves"
   | "strategic_patterns"
   | "executive_dashboard"
+  | "war_room"
   | "collaboration"
   | "workspace";
+type CanonicalPanelOpenView =
+  | "scene"
+  | "dashboard"
+  | "object"
+  | "timeline"
+  | "conflict"
+  | "advice"
+  | "risk"
+  | "replay"
+  | "war_room"
+  | "collaboration"
+  | "workspace"
+  | "memory";
 type InspectorSectionChangedDetail = {
   section: ActiveSectionKey;
   eventTab: InspectorEventTab | null;
+  source?: string | null;
 };
 type ActiveSectionKey =
   | "scene"
@@ -45,11 +66,25 @@ type ActiveSectionKey =
   | "opponent"
   | "patterns"
   | "executive"
+  | "war_room"
   | "collaboration"
   | "workspace"
   // MVP-FROZEN: reports/settings are retained for compatibility but not expanded for MVP.
   | "reports"
   | "settings";
+
+function mapInspectorEventTabToCanonicalView(
+  eventTab: InspectorEventTab | null | undefined
+): CanonicalPanelOpenView | null {
+  if (!eventTab) return null;
+  if (eventTab === "object_focus") return "object";
+  if (eventTab === "memory_insights") return "memory";
+  if (eventTab === "risk_flow") return "risk";
+  if (eventTab === "strategic_advice") return "advice";
+  if (eventTab === "executive_dashboard") return "dashboard";
+  if (eventTab === "opponent_moves" || eventTab === "strategic_patterns") return "workspace";
+  return eventTab;
+}
 
 const LEFT_NAV_ITEMS: Array<{
   key: LeftNavGroupKey;
@@ -57,22 +92,27 @@ const LEFT_NAV_ITEMS: Array<{
   short: string;
   title: string;
 }> = [
-  { key: "scene_group", label: "Scene", short: "SCN", title: "Scene" },
-  { key: "strategy_group", label: "Sim", short: "SIM", title: "Simulation" },
+  { key: "scene_group", label: "Scene", short: "SCN", title: "Scene Intelligence" },
+  { key: "strategy_group", label: "Simulation", short: "SIM", title: "Simulation And War Room" },
   { key: "risk_group", label: "Risk", short: "RSK", title: "Risk" },
-  { key: "replay_group", label: "Replay", short: "RPL", title: "Replay" },
-  { key: "memory_group", label: "Intel", short: "INT", title: "Intelligence" },
-  { key: "workspace_group", label: "Work", short: "WKS", title: "Workspace" },
-  { key: "executive_group", label: "Exec", short: "EXE", title: "Executive Dashboard" },
+  { key: "workflow_group", label: "Workflows", short: "WRK", title: "Workflows And Collaboration" },
+  { key: "executive_group", label: "Executive", short: "EXE", title: "Executive Dashboard" },
 ];
 
 function groupForSection(section: ActiveSectionKey): LeftNavGroupKey {
   if (section === "scene" || section === "objects" || section === "focus") return "scene_group";
-  if (section === "timeline" || section === "advice") return "strategy_group";
+  if (section === "timeline" || section === "advice" || section === "war_room") return "strategy_group";
   if (section === "risk" || section === "conflict" || section === "risk_flow") return "risk_group";
-  if (section === "replay") return "replay_group";
-  if (section === "memory" || section === "patterns" || section === "opponent") return "memory_group";
-  if (section === "workspace" || section === "collaboration") return "workspace_group";
+  if (
+    section === "replay" ||
+    section === "memory" ||
+    section === "patterns" ||
+    section === "opponent" ||
+    section === "workspace" ||
+    section === "collaboration"
+  ) {
+    return "workflow_group";
+  }
   if (section === "executive") return "executive_group";
   return "scene_group";
 }
@@ -95,6 +135,7 @@ const INSPECTOR_GROUPS: Record<
   strategy_group: {
     label: "Simulation",
     tabs: [
+      { key: "war_room", label: "War Room", eventTab: "war_room" },
       { key: "timeline", label: "Timeline", eventTab: "timeline" },
       { key: "advice", label: "Advice", eventTab: "strategic_advice" },
     ],
@@ -107,21 +148,13 @@ const INSPECTOR_GROUPS: Record<
       { key: "risk", label: "Fragility" },
     ],
   },
-  replay_group: {
-    label: "Replay",
-    tabs: [{ key: "replay", label: "Replay", eventTab: "replay" }],
-  },
-  memory_group: {
-    label: "Intelligence",
+  workflow_group: {
+    label: "Workflows",
     tabs: [
+      { key: "replay", label: "Replay", eventTab: "replay" },
       { key: "memory", label: "Memory", eventTab: "memory_insights" },
       { key: "patterns", label: "Patterns", eventTab: "strategic_patterns" },
       { key: "opponent", label: "Opponent", eventTab: "opponent_moves" },
-    ],
-  },
-  workspace_group: {
-    label: "Workspace",
-    tabs: [
       { key: "collaboration", label: "Collab", eventTab: "collaboration" },
       { key: "workspace", label: "Workspace", eventTab: "workspace" },
     ],
@@ -140,7 +173,16 @@ function prettyObjectName(id: string) {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function buildChatDockMessage(domainExperience: any): string {
+function buildChatDockMessage(domainExperience: any, activeProfile?: any): string {
+  if (activeProfile?.hero_summary) {
+    const prompts = Array.isArray(activeProfile?.recommended_prompts)
+      ? activeProfile.recommended_prompts.slice(0, 2).map((value: unknown) => String(value).trim()).filter(Boolean)
+      : [];
+    if (prompts.length > 0) {
+      return `${activeProfile.label} ready. ${activeProfile.hero_summary} Try ${prompts.join(" or ")}.`;
+    }
+    return `${activeProfile.label} ready. ${activeProfile.hero_summary}`;
+  }
   const label = String(domainExperience?.label ?? "Nexora").trim();
   const prompts = Array.isArray(domainExperience?.promptExamples)
     ? domainExperience.promptExamples.slice(0, 2).map((value: unknown) => String(value).trim()).filter(Boolean)
@@ -151,17 +193,27 @@ function buildChatDockMessage(domainExperience: any): string {
   return `${label} workspace ready. Enter a pressure prompt to analyze the current system.`;
 }
 
+function buildCommandPlaceholder(activeProfile: any, domainExperience: any): string {
+  if (Array.isArray(activeProfile?.recommended_prompts) && activeProfile.recommended_prompts[0]) {
+    return activeProfile.recommended_prompts[0];
+  }
+  if (Array.isArray(domainExperience?.promptExamples) && domainExperience.promptExamples[0]) {
+    return String(domainExperience.promptExamples[0]);
+  }
+  return "Ask about pressure, fragility, risk, or the next best move";
+}
+
 export default function NexoraShell({ children }: NexoraShellProps) {
   const [mode, setMode] = useState<"dashboard" | "studio">("dashboard");
   const [isInspectorOpen, setIsInspectorOpen] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isAssistantDrawerOpen, setIsAssistantDrawerOpen] = useState(true);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: "user" | "assistant"; text: string }>>([
     { id: "m1", role: "assistant", text: "Workspace ready. Enter a pressure prompt to analyze the current system." },
   ]);
 
-  const sendChat = useCallback(() => {
-    const text = chatInput.trim();
+  const sendChat = useCallback((overrideText?: string) => {
+    const text = String(overrideText ?? chatInput).trim();
     if (!text) return;
     const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const userId = `${requestId}-user`;
@@ -221,6 +273,14 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   
   const [activeSection, setActiveSection] = useState<ActiveSectionKey>(mode === "studio" ? "objects" : "executive");
   const domainExperience = inspectorContext?.domainExperience ?? inspectorContext?.domainSelection ?? null;
+  const {
+    activeProfile,
+    activeProfileId,
+    setActiveProfile,
+    recommendedPrompts,
+    heroSummary,
+    headerContextLabel,
+  } = useCustomerDemoMode(domainExperience?.domainId ?? null);
   const sharedCoreEngine = inspectorContext?.sharedCoreEngine ?? null;
   const visibleNavGroupSet = useMemo(() => {
     const raw = Array.isArray(domainExperience?.visibleNavGroups) ? domainExperience.visibleNavGroups : [];
@@ -238,6 +298,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     [visibleNavGroupSet]
   );
   const resolvedActiveSection = useMemo(() => {
+    if (activeSection === "war_room") return activeSection;
     if (visibleSectionSet.size === 0 || visibleSectionSet.has(activeSection)) return activeSection;
     return (
       navItems
@@ -264,6 +325,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       opponent: "Opponent Moves",
       patterns: "Strategic Patterns",
       executive: "Executive Dashboard",
+      war_room: "War Room",
       collaboration: "Collaboration",
       workspace: "Workspace",
       reports: "Reports",
@@ -275,45 +337,47 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const inspectorHint = useMemo(() => {
     switch (resolvedActiveSection) {
       case "scene":
-        return "Scene controls and quick actions will appear here.";
+        return "Review the current operating picture and scene-level business condition.";
       case "objects":
-        return "Object list and selection details will appear here.";
+        return "Inspect the entities carrying pressure, leverage, or strategic relevance.";
       case "kpi":
-        return "KPI summary, filters, and actions will appear here.";
+        return "Track the business indicators that define current system health.";
       case "risk":
-        return "Risk signals, thresholds, and alerts will appear here.";
+        return "See which fragility and pressure signals deserve executive attention.";
       case "loops":
-        return "Loops and dependencies controls will appear here.";
+        return "Review reinforcing and balancing loops shaping the current state.";
       case "timeline":
-        return "Timeline simulation controls will appear here.";
+        return "Step through the likely sequence of effects before acting.";
       case "conflict":
-        return "Conflict mapping and object tensions will appear here.";
+        return "Review the main strategic tensions currently active in the system.";
       case "focus":
-        return "Object relevance and focus rankings will appear here.";
+        return "Explain why the current focus matters and what to do next.";
       case "memory":
-        return "Memory-based strategic insights will appear here.";
+        return "Bring forward recurring patterns and previously seen pressure signatures.";
       case "risk_flow":
-        return "Risk propagation flow between system objects will appear here.";
+        return "Trace how pressure moves from source to downstream impact.";
       case "replay":
-        return "Decision replay timeline and playback controls will appear here.";
+        return "Review the recent decision trail and what changed over time.";
       case "advice":
-        return "Strategic recommendation and next-best action guidance will appear here.";
+        return "See the next business move Nexora is recommending right now.";
       case "opponent":
-        return "External actor moves and best response guidance will appear here.";
+        return "Review external pressure and the best response posture.";
       case "patterns":
-        return "Repeated strategic patterns from memory, conflict, and propagation signals will appear here.";
+        return "Surface repeated strategic patterns across memory, conflict, and propagation.";
       case "executive":
-        return "Manager summary of system health, risk, actions, pressure, and recurring patterns.";
+        return "Use the executive surface to understand condition, pressure, and next moves fast.";
+      case "war_room":
+        return "Compose strategic actions and request non-destructive decision overlays for the current scene.";
       case "collaboration":
-        return "Shared manager/analyst notes and viewpoints for the current episode.";
+        return "Capture aligned notes, viewpoints, and decision context for the current episode.";
       case "workspace":
         return "Product workspace, saved scenarios, and saved reports.";
       case "reports":
-        return "Reports, exports, and snapshots will appear here.";
+        return "Review saved reports, exports, and executive snapshots.";
       case "settings":
-        return "Workspace settings will appear here.";
+        return "Adjust workspace preferences and operating defaults.";
       default:
-        return "Select a section to see details.";
+        return "Choose a surface to inspect the current business state.";
     }
   }, [resolvedActiveSection]);
 
@@ -326,7 +390,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
         : fallbackGroupKey) as LeftNavGroupKey
     ];
     const filteredTabs = (base?.tabs ?? []).filter(
-      (tab) => visibleSectionSet.size === 0 || visibleSectionSet.has(tab.key)
+      (tab) => tab.key === "war_room" || visibleSectionSet.size === 0 || visibleSectionSet.has(tab.key)
     );
     return {
       ...(base ?? INSPECTOR_GROUPS.scene_group),
@@ -344,8 +408,18 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     if (chatMessages.length !== 1 || chatMessages[0]?.id !== "m1" || chatMessages[0]?.role !== "assistant") {
       return chatMessages;
     }
-    return [{ ...chatMessages[0], text: buildChatDockMessage(domainExperience) }];
-  }, [chatMessages, domainExperience]);
+    return [{ ...chatMessages[0], text: buildChatDockMessage(domainExperience, activeProfile) }];
+  }, [activeProfile, chatMessages, domainExperience]);
+  const scenarioLabel = useMemo(() => {
+    const sceneMeta = inspectorContext?.sceneJson?.meta ?? inspectorContext?.responseData?.scene_json?.meta ?? null;
+    return String(
+      sceneMeta?.label ??
+        sceneMeta?.title ??
+        sceneMeta?.demo_title ??
+        domainExperience?.label ??
+        "Strategic Scenario"
+    ).trim() || "Strategic Scenario";
+  }, [domainExperience?.label, inspectorContext?.responseData?.scene_json?.meta, inspectorContext?.sceneJson?.meta]);
   const sceneObjects = useMemo(() => {
     const items = sceneJson?.scene?.objects;
     return Array.isArray(items) ? items : [];
@@ -380,11 +454,85 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     return rankings.find((r: any) => String(r?.id ?? "") === focusedObjectId) ?? null;
   }, [objectSelection, focusedObjectId]);
   const strategicAdvice = inspectorContext?.strategicAdvice ?? null;
+  const decisionResult = inspectorContext?.decisionResult ?? null;
+  const strategicCouncil = useMemo(
+    () =>
+      normalizeStrategicCouncilResult(
+        inspectorContext?.responseData?.strategic_council ??
+          inspectorContext?.sceneJson?.strategic_council ??
+          null
+      ),
+    [inspectorContext?.responseData?.strategic_council, inspectorContext?.sceneJson?.strategic_council]
+  );
+  const riskPropagation =
+    inspectorContext?.riskPropagation ??
+    inspectorContext?.responseData?.risk_propagation ??
+    inspectorContext?.sceneJson?.risk_propagation ??
+    null;
+  const conflicts = Array.isArray(inspectorContext?.conflicts) ? inspectorContext.conflicts : [];
   const focusedAdvice = useMemo(() => {
     const list = Array.isArray(strategicAdvice?.recommended_actions) ? strategicAdvice.recommended_actions : [];
     if (!focusedObjectId) return [];
     return list.filter((a: any) => Array.isArray(a?.targets) && a.targets.includes(focusedObjectId));
   }, [strategicAdvice, focusedObjectId]);
+  const systemStatus = useMemo(() => {
+    const normalizedLevel = String(fragilityLevel || "").toLowerCase();
+    if (normalizedLevel.includes("high") || fragilityScore >= 0.7) {
+      return { label: "Critical" as const, tone: "critical" as const };
+    }
+    if (normalizedLevel.includes("medium") || normalizedLevel.includes("moderate") || fragilityScore >= 0.4) {
+      return { label: "Warning" as const, tone: "warning" as const };
+    }
+    return { label: "Stable" as const, tone: "stable" as const };
+  }, [fragilityLevel, fragilityScore]);
+  const activeModeLabel = useMemo(() => {
+    if (activeProfile?.default_mode) return activeProfile.default_mode;
+    if (resolvedActiveSection === "war_room") return "War Room";
+    if (
+      resolvedActiveSection === "executive" ||
+      resolvedActiveSection === "timeline" ||
+      resolvedActiveSection === "advice" ||
+      resolvedActiveSection === "risk_flow" ||
+      resolvedActiveSection === "conflict"
+    ) {
+      return "Strategy";
+    }
+    return "Business";
+  }, [activeProfile?.default_mode, resolvedActiveSection]);
+  const lastInsight = useMemo(() => {
+    if (!inspectorContext?.responseData?.analysis_summary && !inspectorContext?.responseData?.executive_summary_surface?.summary && heroSummary) {
+      return heroSummary;
+    }
+    const fromBackend = String(
+      inspectorContext?.responseData?.analysis_summary ??
+        inspectorContext?.responseData?.executive_summary_surface?.summary ??
+        ""
+    ).trim();
+    if (fromBackend) return fromBackend;
+    const assistantMessage = [...renderedChatMessages].reverse().find((message) => message.role === "assistant");
+    return assistantMessage?.text ?? "Ask about pressure, fragility, risk, or the next best move.";
+  }, [heroSummary, inspectorContext?.responseData?.analysis_summary, inspectorContext?.responseData?.executive_summary_surface?.summary, renderedChatMessages]);
+  const councilSummary = useMemo(() => {
+    if (!strategicCouncil) return null;
+    return `Council: ${strategicCouncil.disagreements[0]?.summary ?? strategicCouncil.synthesis.recommended_direction}`;
+  }, [strategicCouncil]);
+  const executiveNarrative = useMemo(
+    () =>
+      buildExecutiveNarrative({
+        fragilityScanResult,
+        scenarioResult: inspectorContext?.responseData?.decision_simulation ?? decisionResult?.simulation_result ?? null,
+        decisionResult,
+        strategicAdvice,
+        executiveSummarySurface: inspectorContext?.responseData?.executive_summary_surface ?? null,
+      }),
+    [
+      decisionResult,
+      fragilityScanResult,
+      inspectorContext?.responseData?.decision_simulation,
+      inspectorContext?.responseData?.executive_summary_surface,
+      strategicAdvice,
+    ]
+  );
   const handleFragilityScanComplete = useCallback((result: FragilityScanResponse) => {
     window.dispatchEvent(
       new CustomEvent("nexora:apply-fragility-scan", {
@@ -393,17 +541,21 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     );
   }, []);
   const setInspectorSection = React.useCallback((section: ActiveSectionKey, eventTab?: InspectorEventTab) => {
+    if (process.env.NODE_ENV !== "production" && eventTab === "executive_dashboard") {
+      console.log("[Nexora] Dashboard clicked");
+    }
     setActiveSection(section);
     setIsInspectorOpen(true);
     window.dispatchEvent(
       new CustomEvent<InspectorSectionChangedDetail>("nexora:inspector-section-changed", {
-        detail: { section, eventTab: eventTab ?? null },
+        detail: { section, eventTab: eventTab ?? null, source: "legacy-ui:user-nav" },
       })
     );
     if (eventTab) {
+      const canonicalView = mapInspectorEventTabToCanonicalView(eventTab);
       window.dispatchEvent(
         new CustomEvent("nexora:open-right-panel", {
-          detail: { tab: eventTab },
+          detail: { view: canonicalView, tab: eventTab, source: "canonical-ui:user-nav" },
         })
       );
     }
@@ -420,6 +572,53 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     },
     [setInspectorSection]
   );
+  const handleLoadDemo = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent("nexora:load-demo-scenario", {
+        detail: {
+          demo: activeProfile?.scenario_script_id ?? domainExperience?.defaultDemoId ?? "retail_supply_chain_fragility",
+          domainId: activeProfile?.domain ?? domainExperience?.domainId ?? "general",
+          profileId: activeProfile?.id ?? null,
+        },
+      })
+    );
+  }, [activeProfile?.domain, activeProfile?.id, activeProfile?.scenario_script_id, domainExperience?.defaultDemoId, domainExperience?.domainId]);
+  const commandPlaceholder = useMemo(() => buildCommandPlaceholder(activeProfile, domainExperience), [activeProfile, domainExperience]);
+  const displayPrompts = useMemo(
+    () =>
+      (recommendedPrompts.length ? recommendedPrompts : Array.isArray(domainExperience?.promptExamples) ? domainExperience.promptExamples : [])
+        .map((value: unknown) => String(value).trim())
+        .filter(Boolean)
+        .slice(0, 3),
+    [domainExperience?.promptExamples, recommendedPrompts]
+  );
+  const submitPresetPrompt = useCallback((text: string) => {
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Nexora] assistant prompt clicked", { prompt: text });
+    }
+    sendChat(text);
+  }, [sendChat]);
+  const toggleAssistantDrawer = useCallback(() => {
+    setIsAssistantDrawerOpen((prev) => {
+      const next = !prev;
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora] assistant drawer toggled", { isOpen: next });
+      }
+      return next;
+    });
+  }, []);
+  const handleAssistantSubmit = useCallback(() => {
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Nexora] assistant submit triggered from drawer");
+    }
+    sendChat();
+  }, [sendChat]);
+  const handleSaveSnapshot = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("nexora:save-decision-snapshot"));
+  }, []);
+  const handleOpenReplay = useCallback(() => {
+    setInspectorSection("replay", "replay");
+  }, [setInspectorSection]);
 
   React.useEffect(() => {
     const onOpenRightPanel = (event: Event) => {
@@ -438,6 +637,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       else if (tab === "opponent_moves") setActiveSection("opponent");
       else if (tab === "strategic_patterns") setActiveSection("patterns");
       else if (tab === "executive_dashboard") setActiveSection("executive");
+      else if (tab === "war_room") setActiveSection("war_room");
       else if (tab === "collaboration") setActiveSection("collaboration");
       else if (tab === "workspace") setActiveSection("workspace");
     };
@@ -462,6 +662,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       else if (tab === "opponent_moves") setActiveSection("opponent");
       else if (tab === "strategic_patterns") setActiveSection("patterns");
       else if (tab === "executive_dashboard") setActiveSection("executive");
+      else if (tab === "war_room") setActiveSection("war_room");
       else if (tab === "collaboration") setActiveSection("collaboration");
       else if (tab === "workspace") setActiveSection("workspace");
     };
@@ -485,160 +686,26 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           "radial-gradient(130% 120% at 0% 0%, #0b1220 0%, #071019 55%, #050a14 100%)",
       }}
     >
-      {/* TOP BAR */}
-      <div
-        id="nexora-topbar"
-        style={{
-          height: 52,
-          flex: "0 0 auto",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "0 12px",
-          borderBottom: `1px solid ${nx.border}`,
-          background: "rgba(15,23,42,0.72)",
-          backdropFilter: "blur(8px)",
-          minWidth: 0,
-        }}
-      >
-        <div id="nexora-topbar-left" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-          <div style={{ fontWeight: 800, color: nx.text, letterSpacing: 0.3, fontSize: 15 }}>
-            {domainExperience?.label ? `Nexora • ${domainExperience.label}` : "Nexora"}
-          </div>
-          <div style={{ color: nx.lowMuted, fontSize: 11, whiteSpace: "nowrap" }}>
-            {sharedCoreEngine?.label ? `${sharedCoreEngine.label} / domain overlay` : "Shared core / domain overlay"}
-          </div>
-          <div
-            id="nexora-mode-switch"
-            style={{
-              display: "flex",
-              gap: 6,
-              padding: 4,
-              borderRadius: 10,
-              border: `1px solid ${nx.border}`,
-              background: "rgba(2,6,23,0.36)",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setMode("dashboard");
-                setActiveSection((prev) => (prev === "reports" || prev === "settings" ? prev : "executive"));
-              }}
-              style={{
-                padding: "6px 10px",
-                borderRadius: 8,
-                border: "none",
-                background: mode === "dashboard" ? "rgba(96,165,250,0.2)" : "transparent",
-                color: mode === "dashboard" ? nx.text : nx.muted,
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 600,
-              }}
-              aria-label="Dashboard mode"
-            >
-              Dashboard
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode("studio");
-                setActiveSection((prev) => (prev === "reports" || prev === "settings" ? prev : "objects"));
-              }}
-              style={{
-                padding: "6px 10px",
-                borderRadius: 8,
-                border: "none",
-                background: mode === "studio" ? "rgba(96,165,250,0.2)" : "transparent",
-                color: mode === "studio" ? nx.text : nx.muted,
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 600,
-              }}
-              aria-label="Studio mode"
-            >
-              Studio
-            </button>
-          </div>
-        </div>
-
-        <div id="nexora-topbar-center" style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center" }}>
-          <input
-            id="nexora-command-input"
-            placeholder="Command / Search..."
-            style={{
-              width: "100%",
-              maxWidth: 520,
-              height: 34,
-              borderRadius: 12,
-              border: `1px solid ${nx.border}`,
-              outline: "none",
-              padding: "0 12px",
-              background: "rgba(2,6,23,0.55)",
-              color: nx.text,
-            }}
-          />
-        </div>
-
-        <div id="nexora-topbar-right" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button
-            type="button"
-            onClick={() =>
-              window.dispatchEvent(
-                    new CustomEvent("nexora:load-demo-scenario", {
-                  detail: {
-                    demo: domainExperience?.defaultDemoId ?? "retail_supply_chain_fragility",
-                    domainId: domainExperience?.domainId ?? "general",
-                  },
-                })
-              )
-            }
-            style={{
-              height: 34,
-              padding: "0 10px",
-              borderRadius: 12,
-              border: "1px solid rgba(96,165,250,0.35)",
-              background: "rgba(59,130,246,0.2)",
-              color: "#dbeafe",
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: 700,
-            }}
-          >
-            {domainExperience?.label ? `Load ${domainExperience.label} Demo` : "Load MVP Demo"}
-          </button>
-          <button
-            type="button"
-            style={{
-              height: 34,
-              padding: "0 10px",
-              borderRadius: 12,
-              border: `1px solid ${nx.border}`,
-              background: "rgba(2,6,23,0.4)",
-              color: nx.muted,
-              cursor: "pointer",
-              fontSize: 12,
-            }}
-          >
-            Snapshot
-          </button>
-          <button
-            type="button"
-            style={{
-              height: 34,
-              padding: "0 10px",
-              borderRadius: 12,
-              border: `1px solid ${nx.border}`,
-              background: "rgba(2,6,23,0.4)",
-              color: nx.muted,
-              cursor: "pointer",
-              fontSize: 12,
-            }}
-          >
-            Replay
-          </button>
-        </div>
-      </div>
+      <CommandHeader
+        scenarioLabel={scenarioLabel}
+        activeModeLabel={activeModeLabel}
+        contextLabel={headerContextLabel ?? domainExperience?.label ?? null}
+        statusLabel={systemStatus.label}
+        statusTone={systemStatus.tone}
+        councilSummary={councilSummary}
+        systemStateSummary={executiveNarrative.systemStateSummary}
+        keyRiskStatement={executiveNarrative.keyRiskStatement}
+        decisionHeadline={executiveNarrative.decisionHeadline}
+        topDriverLabel={executiveNarrative.topDriverLabel}
+        profileSelector={<CustomerDemoSelector activeProfileId={activeProfileId} onChange={setActiveProfile} />}
+        commandValue={chatInput}
+        commandPlaceholder={commandPlaceholder}
+        onCommandChange={setChatInput}
+        onCommandSubmit={sendChat}
+        onLoadDemo={handleLoadDemo}
+        onSnapshot={handleSaveSnapshot}
+        onReplay={handleOpenReplay}
+      />
 
       {/* BODY: LEFT NAV + STAGE + RIGHT RAIL */}
       <div
@@ -655,15 +722,15 @@ export default function NexoraShell({ children }: NexoraShellProps) {
         <aside
           id="nexora-leftnav"
           style={{
-            width: 88,
+            width: 108,
             flex: "0 0 auto",
             display: "flex",
             flexDirection: "column",
-            gap: 12,
-            padding: "12px 10px",
+            gap: 14,
+            padding: "16px 12px",
             borderRight: `1px solid ${nx.border}`,
-            background: "rgba(7, 16, 25, 0.92)",
-            backdropFilter: "blur(8px)",
+            background: "linear-gradient(180deg, rgba(7,16,25,0.96), rgba(8,16,28,0.9))",
+            backdropFilter: "blur(10px)",
             minHeight: 0,
             minWidth: 0,
             overflow: "hidden",
@@ -676,10 +743,10 @@ export default function NexoraShell({ children }: NexoraShellProps) {
               letterSpacing: 0.6,
               textTransform: "uppercase",
               fontWeight: 700,
-              textAlign: "center",
+              textAlign: "left",
             }}
           >
-            Navigate
+            System Nav
           </div>
           <div
             id="nexora-leftnav-primary"
@@ -705,29 +772,34 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                     setInspectorSection(defaultTab.key, defaultTab.eventTab);
                   }}
                   style={{
-                    height: 56,
-                    borderRadius: 12,
+                    height: 62,
+                    borderRadius: 16,
                     border: isActive
                       ? "1px solid rgba(96,165,250,0.45)"
                       : `1px solid ${nx.border}`,
                     background: isActive
-                      ? "rgba(96,165,250,0.16)"
+                      ? "linear-gradient(135deg, rgba(59,130,246,0.2), rgba(15,23,42,0.88))"
                       : "rgba(2,6,23,0.52)",
                     color: isActive ? nx.text : nx.muted,
                     cursor: "pointer",
                     fontSize: 11,
                     fontWeight: 700,
-                    boxShadow: isActive ? "inset 0 0 0 1px rgba(96,165,250,0.16)" : "none",
+                    boxShadow: isActive ? "inset 0 0 0 1px rgba(96,165,250,0.16), 0 12px 24px rgba(2,6,23,0.24)" : "none",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
-                    alignItems: "center",
-                    gap: 2,
+                    alignItems: "flex-start",
+                    gap: 3,
+                    padding: "0 12px",
+                    transition: "transform 180ms ease, border-color 180ms ease, background 180ms ease",
+                    transform: isActive ? "translateX(2px)" : "translateX(0px)",
                   }}
                   aria-pressed={isActive}
                 >
-                  <span style={{ fontSize: 11, letterSpacing: 0.4, lineHeight: 1 }}>{item.short}</span>
-                  <span style={{ fontSize: 10, lineHeight: 1 }}>{item.label}</span>
+                  <span style={{ fontSize: 10, letterSpacing: "0.12em", lineHeight: 1, textTransform: "uppercase", color: isActive ? "#bfdbfe" : nx.lowMuted }}>
+                    {item.short}
+                  </span>
+                  <span style={{ fontSize: 12, lineHeight: 1.2, textAlign: "left" }}>{item.label}</span>
                 </button>
               );
             })}
@@ -953,13 +1025,13 @@ export default function NexoraShell({ children }: NexoraShellProps) {
         <aside
           id="nexora-right-rail"
           style={{
-            width: isInspectorOpen ? 360 : 56,
+            width: isInspectorOpen ? (resolvedActiveSection === "executive" ? 420 : 388) : 56,
             flex: "0 0 auto",
             display: "flex",
             flexDirection: "column",
             minHeight: 0,
             borderLeft: `1px solid ${nx.border}`,
-            background: "rgba(15, 23, 42, 0.62)",
+            background: "linear-gradient(180deg, rgba(15,23,42,0.78), rgba(8,16,28,0.82))",
             backdropFilter: "blur(10px)",
             minWidth: 0,
           }}
@@ -985,7 +1057,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: isInspectorOpen ? 10 : 0 }}>
               <div style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {isInspectorOpen ? `Inspector · ${activeGroupConfig?.label ?? sectionTitle}` : "Inspector"}
+                {isInspectorOpen ? `Executive Rail · ${activeGroupConfig?.label ?? sectionTitle}` : "Rail"}
               </div>
               <button
                 type="button"
@@ -1025,12 +1097,13 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                           ? "1px solid rgba(96,165,250,0.35)"
                           : `1px solid ${nx.border}`,
                         background: isActive
-                          ? "rgba(59,130,246,0.14)"
+                          ? "linear-gradient(135deg, rgba(59,130,246,0.16), rgba(15,23,42,0.76))"
                           : "rgba(15,23,42,0.72)",
                         color: isActive ? nx.text : nx.muted,
                         fontSize: 11,
                         fontWeight: 700,
                         cursor: "pointer",
+                        transition: "all 180ms ease",
                       }}
                     >
                       {tab.label}
@@ -1125,7 +1198,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                       Dominant Signal
                     </div>
                     <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 700 }}>
-                      {dominantDriver ? `Dominant driver: ${dominantDriver.key}` : "No dominant system signal detected yet."}
+                      {dominantDriver ? `Primary pressure: ${dominantDriver.key}` : "No dominant system pressure is active right now."}
                     </div>
                   </div>
 
@@ -1224,7 +1297,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                         fontSize: 12,
                       }}
                     >
-                      No scene objects available yet.
+                      No scene objects are available in the current operating view.
                     </div>
                   )}
                 </div>
@@ -1261,7 +1334,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                         lineHeight: 1.5,
                       }}
                     >
-                      No focused object yet. Click an object in the scene or choose one from the Objects tab.
+                      No object is in executive focus yet. Select one in the scene or use the Objects surface to set focus.
                     </div>
                   ) : (
                     <>
@@ -1308,7 +1381,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                         <div style={{ color: "#cbd5e1", fontSize: 12 }}>
                           {focusReasoning
                             ? `Priority ${Number(focusReasoning?.score ?? 0).toFixed(2)} · ${String(focusReasoning?.why ?? "Focused by system relevance")}`
-                            : "No focused-object reasoning available yet."}
+                            : "Nexora has not built a strong focus explanation for this object yet."}
                         </div>
                         {Array.isArray(selectedObjectInfo?.tags) && selectedObjectInfo.tags.length ? (
                           <div style={{ color: "#93c5fd", fontSize: 11 }}>
@@ -1339,7 +1412,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                           ))
                         ) : (
                           <div style={{ color: "#64748b", fontSize: 12 }}>
-                            No direct strategic action targets this object yet.
+                            No direct executive action is targeting this object in the current scene.
                           </div>
                         )}
                       </div>
@@ -1395,6 +1468,8 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                 <div id="nexora-inspector-patterns-host" style={{ width: "100%", height: "100%" }} />
               ) : mode === "dashboard" && resolvedActiveSection === "executive" ? (
                 <div id="nexora-inspector-exec-host" style={{ width: "100%", height: "100%" }} />
+              ) : mode === "dashboard" && resolvedActiveSection === "war_room" ? (
+                <div id="nexora-inspector-warroom-host" style={{ width: "100%", height: "100%" }} />
               ) : mode === "dashboard" && resolvedActiveSection === "collaboration" ? (
                 <div id="nexora-inspector-collab-host" style={{ width: "100%", height: "100%" }} />
               ) : mode === "dashboard" && resolvedActiveSection === "workspace" ? (
@@ -1467,183 +1542,34 @@ export default function NexoraShell({ children }: NexoraShellProps) {
               }}
             />
           ) : null}
-          {/* Chat Dock below Inspector */}
-          {isInspectorOpen && isChatOpen ? (
-            <div
-              id="nexora-chat-dock"
-              style={{
-                flex: "0 0 auto",
-                minHeight: 0,
-                borderTop: `1px solid ${nx.border}`,
-                background: "rgba(15, 23, 42, 0.55)",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                id="nexora-chat-panel"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  height: 280,
-                  minHeight: 0,
-                }}
-              >
-                <div
-                  style={{
-                    padding: "10px 12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 10,
-                    borderBottom: `1px solid ${nx.border}`,
-                  }}
-                >
-                  <div style={{ color: nx.text, fontWeight: 700, fontSize: 13 }}>Chat</div>
-                  <button
-                    type="button"
-                    onClick={() => setIsChatOpen(false)}
-                    title="Hide chat"
-                    aria-label="Hide chat"
-                    style={{
-                      height: 28,
-                      padding: "0 10px",
-                      borderRadius: 8,
-                      border: `1px solid ${nx.border}`,
-                      background: "rgba(2,6,23,0.45)",
-                      color: nx.muted,
-                      cursor: "pointer",
-                      fontSize: 12,
-                    }}
-                  >
-                    Hide
-                  </button>
-                </div>
-
-                <div
-                  id="nexora-chat-scroll"
-                  style={{
-                    flex: 1,
-                    minHeight: 0,
-                    overflow: "auto",
-                    padding: 10,
-                    overscrollBehavior: "contain",
-                    WebkitOverflowScrolling: "touch",
-                  }}
-                  onWheelCapture={(e) => e.stopPropagation()}
-                  onTouchMoveCapture={(e) => e.stopPropagation()}
-                >
-                  {renderedChatMessages.map((m) => (
-                    <div
-                      key={m.id}
-                      style={{
-                        marginBottom: 8,
-                        display: "flex",
-                        justifyContent: m.role === "user" ? "flex-end" : "flex-start",
-                      }}
-                    >
-                      <div
-                        style={{
-                          maxWidth: "92%",
-                          padding: "8px 10px",
-                          borderRadius: 12,
-                          border: `1px solid ${nx.border}`,
-                          background:
-                            m.role === "user" ? "rgba(96,165,250,0.14)" : "rgba(2,6,23,0.45)",
-                          color: m.role === "user" ? nx.text : nx.muted,
-                          fontSize: 12,
-                          lineHeight: 1.4,
-                          whiteSpace: "pre-wrap",
-                        }}
-                      >
-                        {m.text}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div
-                  style={{
-                    padding: 10,
-                    borderTop: `1px solid ${nx.border}`,
-                    display: "flex",
-                    gap: 8,
-                    alignItems: "center",
-                  }}
-                >
-                  <input
-                    id="nexora-chat-input"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") sendChat();
-                    }}
-                    placeholder="Ask about system pressure or try a demo prompt..."
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      height: 34,
-                      borderRadius: 12,
-                      border: `1px solid ${nx.border}`,
-                      outline: "none",
-                      padding: "0 12px",
-                      background: "rgba(2,6,23,0.55)",
-                      color: nx.text,
-                      fontSize: 12,
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={sendChat}
-                    style={{
-                      height: 34,
-                      padding: "0 12px",
-                      borderRadius: 8,
-                      border: "1px solid rgba(96,165,250,0.35)",
-                      background: "rgba(59,130,246,0.2)",
-                      color: "#dbeafe",
-                      cursor: "pointer",
-                      fontSize: 12,
-                      flex: "0 0 auto",
-                    }}
-                  >
-                    Send
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : isInspectorOpen && !isChatOpen ? (
-            <div
-              id="nexora-chat-dock"
-              style={{
-                flex: "0 0 auto",
-                borderTop: `1px solid ${nx.border}`,
-                padding: 10,
-                display: "flex",
-                justifyContent: "center",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setIsChatOpen(true)}
-                title="Show chat"
-                aria-label="Show chat"
-                style={{
-                  height: 32,
-                  padding: "0 12px",
-                  borderRadius: 8,
-                  border: `1px solid ${nx.border}`,
-                  background: "rgba(2,6,23,0.45)",
-                  color: nx.muted,
-                  cursor: "pointer",
-                  fontSize: 12,
-                }}
-              >
-                Show Chat
-              </button>
-            </div>
-          ) : null}
           </div>
         </aside>
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          right: 16,
+          bottom: 58,
+          zIndex: 8,
+          pointerEvents: "auto",
+        }}
+      >
+        <StrategicAssistantDrawer
+          isOpen={isAssistantDrawerOpen}
+          onToggle={toggleAssistantDrawer}
+          title="Strategic Assistant"
+          subtitle={`Current read: ${lastInsight}`}
+          profileLabel={activeProfile?.label ?? null}
+          messages={renderedChatMessages}
+          promptChips={displayPrompts}
+          inputValue={chatInput}
+          inputPlaceholder={commandPlaceholder}
+          onInputChange={setChatInput}
+          onSubmit={handleAssistantSubmit}
+          onPromptSelect={submitPresetPrompt}
+          isBusy={renderedChatMessages[renderedChatMessages.length - 1]?.text === "Analyzing..."}
+        />
       </div>
 
       {/* BOTTOM BAR */}

@@ -1,24 +1,13 @@
-export async function chatToBackend(payload: any) {
-  const base =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+import type { ChatIn, ChatResponseOut } from "./generated";
+import { postChat } from "./client";
 
-  const res = await fetch(`${base}/chat`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+type ChatToBackendOptions = {
+  signal?: AbortSignal;
+};
 
-  const data = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    throw new Error(
-      data?.detail?.error?.message ||
-        data?.error?.message ||
-        `Chat request failed (${res.status})`
-    );
-  }
-
-  return data;
+export async function chatToBackend(
+  payload: ChatIn,
+  options?: ChatToBackendOptions
+): Promise<ChatResponseOut> {
+  return postChat(payload, { signal: options?.signal });
 }

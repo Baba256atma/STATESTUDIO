@@ -3,7 +3,16 @@ import { nx, softCardStyle } from "./nexoraTheme";
 
 export function EmptyStateCard({ text }: { text: string }): React.ReactElement {
   return (
-    <div style={{ ...softCardStyle, color: nx.muted, fontSize: 12 }}>
+    <div
+      style={{
+        ...softCardStyle,
+        color: nx.muted,
+        fontSize: 12,
+        lineHeight: 1.5,
+        border: `1px solid ${nx.border}`,
+        background: "linear-gradient(180deg, rgba(15,23,42,0.72), rgba(2,6,23,0.46))",
+      }}
+    >
       {text}
     </div>
   );
@@ -27,9 +36,8 @@ export function ErrorStateCard({ text }: { text: string }): React.ReactElement {
 
 export function LoadingStateCard({ text = "Loading…" }: { text?: string }): React.ReactElement {
   return (
-    <div style={{ ...softCardStyle, color: nx.muted, fontSize: 12 }}>
+    <div style={{ ...softCardStyle, color: nx.muted, fontSize: 12, lineHeight: 1.5 }}>
       {text}
     </div>
   );
 }
-

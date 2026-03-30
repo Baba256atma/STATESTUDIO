@@ -1102,6 +1102,14 @@ export function useHUDPanels(args: HUDPanelsArgs) {
             typeof (args.selectedObjectInfo as any)?.summary === "string" ? (args.selectedObjectInfo as any).summary : undefined,
           one_liner:
             typeof (args.selectedObjectInfo as any)?.one_liner === "string" ? (args.selectedObjectInfo as any).one_liner : undefined,
+          resolved:
+            typeof (args.selectedObjectInfo as any)?.resolved === "boolean"
+              ? (args.selectedObjectInfo as any).resolved
+              : selectedSceneObject != null,
+          currentStatusSummary:
+            typeof (args.selectedObjectInfo as any)?.currentStatusSummary === "string"
+              ? (args.selectedObjectInfo as any).currentStatusSummary
+              : undefined,
           shape: ux?.shape,
           base_color: ux?.base_color,
           opacity:

@@ -1,0 +1,80 @@
+{
+  "events": [
+    {
+      "actions_summary": [
+        "applyObject:obj_inventory",
+        "applyObject:obj_inventory",
+        "applyObject:obj_delivery",
+        "applyObject:obj_inventory",
+        "applyObject:obj_delivery"
+      ],
+      "allowed_objects": [
+        "obj_inventory",
+        "type_inventory",
+        "obj_delivery",
+        "type_delivery",
+        "obj_risk_zone",
+        "obj_quality",
+        "obj_cost",
+        "obj_throughput",
+        "obj_cashflow",
+        "obj_customer",
+        "obj_process",
+        "type_risk",
+        "type_quality",
+        "type_cost",
+        "type_throughput"
+      ],
+      "episode_id": "c582a29a-4e75-49f5-a582-3fc7dfbd77b6",
+      "focused_object_id": "obj_inventory",
+      "fragility": {
+        "drivers": {
+          "inventory_pressure": 0.5,
+          "loop_risk": 0.3,
+          "quality_risk": 0.5,
+          "time_pressure": 0.5700000000000001,
+          "volatility": 0.3961585610055954
+        },
+        "level": "high",
+        "reasons": [
+          {
+            "code": "time_pressure",
+            "message": "Delivery schedule is under pressure (delay risk).",
+            "weight": 0.5700000000000001
+          },
+          {
+            "code": "inventory_pressure",
+            "message": "Inventory looks stressed (low buffer).",
+            "weight": 0.5
+          },
+          {
+            "code": "quality_risk",
+            "message": "Risk exposure is elevated (quality/incident risk).",
+            "weight": 0.5
+          },
+          {
+            "code": "volatility",
+            "message": "System volatility is high (unstable conditions).",
+            "weight": 0.3961585610055954
+          },
+          {
+            "code": "feedback_loops",
+            "message": "Feedback loops amplify changes (fragility increases).",
+            "weight": 0.3
+          }
+        ],
+        "score": 0.8029853697608953
+      },
+      "kpi": {
+        "delivery": 0.43,
+        "inventory": 0.5,
+        "risk": 0.5
+      },
+      "mode": "business",
+      "text": "inventory delay",
+      "ts": "2026-03-30T19:07:13.733099+00:00"
+    }
+  ],
+  "updated_at": "2026-03-30T19:07:13.733124+00:00",
+  "user_id": "audit-user"
+}

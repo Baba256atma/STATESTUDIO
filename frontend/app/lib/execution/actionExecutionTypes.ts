@@ -6,7 +6,6 @@ export type NexoraExecutionHandlers = {
   runScanner?: (text: string, scene: SceneJson | null) => Promise<any>;
   runSimulation?: (text: string, scene: SceneJson | null) => Promise<any>;
   generateAdvice?: (input: any) => Promise<any>;
-  fetchObjectProfile?: (id: string) => Promise<any>;
   applySceneActions?: (actions: any[], scene: SceneJson | null) => Promise<any> | any;
   runLocalDecisionRouter?: (text: string) => Promise<any> | any;
 };

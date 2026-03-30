@@ -1,11 +1,11 @@
 import {
   clampConfidence,
   includesAnyKeyword,
-  matchSceneObjectIdsFromText,
   normalizeRouterText,
   scoreKeywordHits,
 } from "./intentRouterRules";
 import { traceHighlightFlow } from "../debug/highlightDebugTrace";
+import { resolveIntentResolutionV2 } from "./intentResolution";
 import type {
   IntentKind,
   NexoraIntentRoute,
@@ -177,9 +177,15 @@ export function resolveNexoraIntentRoute(input: NexoraIntentRouterInput): Nexora
   const domainMode = normalizeRouterText(
     `${input.activeMode ?? ""} ${input.activeDomain ?? ""} ${String(input.productModeContext?.mode_id ?? "")}`
   );
-  const matchedObjectIds = matchSceneObjectIdsFromText(text, input.availableSceneObjectIds ?? []).slice(0, 4);
+  const resolution = resolveIntentResolutionV2({
+    text,
+    sceneJson: input.sceneJson,
+    availableSceneObjectIds: input.availableSceneObjectIds ?? [],
+    selectedObjectId: input.selectedObjectId ?? null,
+  });
+  const matchedObjectIds = resolution.matched_object_ids.slice(0, 4);
   const explicitCommandBonus = isExplicitCommand(text) ? 0.1 : 0;
-  const objectBonus = matchedObjectIds.length > 0 ? 0.12 : 0;
+  const objectBonus = matchedObjectIds.length > 0 ? 0.08 + resolution.confidence * 0.16 : 0;
 
   const fragility = scoreKeywordHits(text, FRAGILITY_KEYWORDS);
   const simulation = scoreKeywordHits(text, SIMULATION_KEYWORDS);
@@ -191,7 +197,7 @@ export function resolveNexoraIntentRoute(input: NexoraIntentRouterInput): Nexora
   const workspace = scoreKeywordHits(text, WORKSPACE_KEYWORDS);
   const objectFocus = scoreKeywordHits(text, OBJECT_FOCUS_KEYWORDS);
   const sceneFocus = scoreKeywordHits(text, SCENE_FOCUS_KEYWORDS);
-  const greetings = includesAnyKeyword(text, GREETING_KEYWORDS);
+  const greetings = resolution.intent === "greeting" ? GREETING_KEYWORDS.filter(Boolean).slice(0, 1) : includesAnyKeyword(text, GREETING_KEYWORDS);
 
   const scored: ScoredIntent[] = [
     {
@@ -237,9 +243,10 @@ export function resolveNexoraIntentRoute(input: NexoraIntentRouterInput): Nexora
     {
       intent: "object_focus",
       score:
-        (matchedObjectIds.length > 0 ? 0.34 : 0) +
+        (resolution.primary_object_id ? 0.28 : matchedObjectIds.length > 0 ? 0.2 : 0) +
         objectBonus +
         objectFocus.score +
+        resolution.confidence * 0.18 +
         (normalizedText.startsWith("focus on") || normalizedText.startsWith("highlight") ? 0.14 : 0),
       matchedKeywords: [...objectFocus.matched, ...matchedObjectIds.map((id) => normalizeRouterText(id))],
     },
@@ -251,8 +258,14 @@ export function resolveNexoraIntentRoute(input: NexoraIntentRouterInput): Nexora
   ];
 
   let topIntent = pickHighestIntent(scored);
-  if (greetings.length > 0 && topIntent.score < 0.35) {
+  if (resolution.intent === "greeting" || (greetings.length > 0 && topIntent.score < 0.35)) {
     topIntent = { intent: "chat_general", score: 0.42, matchedKeywords: greetings };
+  } else if (resolution.primary_object_id && resolution.confidence >= 0.6 && topIntent.score < 0.34) {
+    topIntent = {
+      intent: "object_focus",
+      score: Math.max(0.48, resolution.confidence),
+      matchedKeywords: [...topIntent.matchedKeywords, resolution.primary_object_id],
+    };
   } else if (topIntent.score < 0.25) {
     topIntent = { intent: "unknown", score: 0.18, matchedKeywords: [] };
   }
@@ -295,6 +308,7 @@ export function resolveNexoraIntentRoute(input: NexoraIntentRouterInput): Nexora
   const routeResult: NexoraIntentRoute = {
     intent: topIntent.intent,
     confidence,
+    primaryObjectId: resolution.primary_object_id,
     target: inferTarget(topIntent.intent),
     uiMutation,
     sceneMutation,
@@ -308,8 +322,11 @@ export function resolveNexoraIntentRoute(input: NexoraIntentRouterInput): Nexora
     shouldAffectPanels,
     matchedObjectIds,
     matchedKeywords: topIntent.matchedKeywords,
+    method: resolution.method,
+    reason: resolution.reason,
+    fallbackUsed: resolution.fallback_used,
     domainMode: domainMode || "general",
-    explanation: `${explanationBase}${explanationKeywords}`.trim(),
+    explanation: `${explanationBase}${explanationKeywords}${resolution.reason ? ` ${resolution.reason}` : ""}`.trim(),
   };
 
   traceHighlightFlow("router", {
@@ -324,6 +341,9 @@ export function resolveNexoraIntentRoute(input: NexoraIntentRouterInput): Nexora
     shouldAffectScene: routeResult.shouldAffectScene,
     preferredPanel: routeResult.preferredPanel ?? null,
     matchedObjectIds: routeResult.matchedObjectIds,
+    primaryObjectId: routeResult.primaryObjectId,
+    method: routeResult.method,
+    fallbackUsed: routeResult.fallbackUsed,
     matchedKeywords: routeResult.matchedKeywords,
     availableSceneObjectIds: (input.availableSceneObjectIds ?? []).slice(0, 12),
   });

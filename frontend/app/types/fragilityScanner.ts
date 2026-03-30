@@ -40,6 +40,11 @@ export type FragilitySceneHighlight = {
 };
 
 export type FragilityScenePayload = {
+  highlighted_object_ids: string[];
+  primary_object_ids: string[];
+  affected_object_ids: string[];
+  dim_unrelated_objects: boolean;
+  reasons_by_object?: Record<string, string[]>;
   objects: FragilitySceneObject[];
   highlights: FragilitySceneHighlight[];
   state_vector?: {

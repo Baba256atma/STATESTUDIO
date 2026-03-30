@@ -13,6 +13,8 @@ export type ObjectPanelProps = {
     base_color?: string;
     opacity?: number;
     scale?: number;
+    resolved?: boolean;
+    currentStatusSummary?: string | null;
   } | null;
   recentActions?: any[];
   resolveObjectLabel?: (id: string) => string;
@@ -95,11 +97,6 @@ export default function ObjectPanel({
       : selected.type;
 
   const tags = Array.isArray(selected.tags) ? selected.tags : [];
-
-  const isDetailsLoading =
-    !hasText(selected.one_liner) &&
-    !hasText(selected.summary) &&
-    tags.length === 0;
 
   const activeId = selected.id;
 
@@ -231,9 +228,13 @@ export default function ObjectPanel({
         <div style={{ fontSize: 12, opacity: 0.85 }}>
           {selected.one_liner || selected.summary}
         </div>
-      ) : isDetailsLoading ? (
+      ) : selected.resolved === false ? (
         <div style={{ fontSize: 12, opacity: 0.6 }}>
-          Loading object details…
+          {selected.currentStatusSummary || "Object not available in current scene."}
+        </div>
+      ) : tags.length === 0 ? (
+        <div style={{ fontSize: 12, opacity: 0.6 }}>
+          No additional scene context available for this object.
         </div>
       ) : null}
 

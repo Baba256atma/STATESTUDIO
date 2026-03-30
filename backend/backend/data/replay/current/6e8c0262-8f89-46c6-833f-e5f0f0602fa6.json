@@ -1,0 +1,3619 @@
+{
+  "created_at": "2026-03-26T04:02:42.675511+00:00",
+  "duration": 1774501073.275033,
+  "episode_id": "6e8c0262-8f89-46c6-833f-e5f0f0602fa6",
+  "frames": [
+    {
+      "human_state": {},
+      "input_text": "delivery be too late .",
+      "meta": {
+        "note": null,
+        "tags": [
+          "chat"
+        ]
+      },
+      "system_signals": {
+        "delay": 0.0
+      },
+      "system_state": {
+        "allowed_objects": [
+          "obj_delivery"
+        ],
+        "chaos": {
+          "affected_objects": [
+            "obj_delivery"
+          ],
+          "dominant_signal": null,
+          "explanation": "delay(0.00) | intensity=0.34 | volatility=0.00 | domain=business",
+          "intensity": 0.34073961154861454,
+          "top_signals": [
+            [
+              "delay",
+              0.0
+            ]
+          ],
+          "volatility": 0.0
+        },
+        "focused_object_id": "obj_delivery",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.5700000000000001,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.5700000000000001
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.7396
+        },
+        "intent": "general",
+        "kpi": {
+          "delivery": 0.43,
+          "inventory": 0.5,
+          "risk": 0.5
+        },
+        "loops": [
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Quality/rework slows delivery",
+                "to": "obj_delivery",
+                "weight": 0.5
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay raises risk",
+                "to": "obj_risk_zone",
+                "weight": 0.5
+              }
+            ],
+            "id": "loop_quality_delay_risk",
+            "label": "Quality \u2192 Delay \u2192 Risk",
+            "polarity": "negative",
+            "strength": 0.535,
+            "triggered_by": [
+              {
+                "metric": "inventory",
+                "op": "<=",
+                "value": 0.5
+              },
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.5
+              }
+            ]
+          },
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Inventory \u2192 Delivery pressure",
+                "to": "obj_delivery",
+                "weight": 0.6
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay \u2192 Risk",
+                "to": "obj_risk_zone",
+                "weight": 0.7
+              }
+            ],
+            "id": "loop_inventory_delay_risk",
+            "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+            "polarity": "negative",
+            "strength": 0.5233333333333333,
+            "triggered_by": [
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.45
+              }
+            ]
+          }
+        ],
+        "mode": "business",
+        "risk_propagation": null,
+        "source": "fallback"
+      },
+      "t": 1774497762.676049,
+      "visual": {
+        "actions": [
+          {
+            "object": "obj_delivery",
+            "type": "applyObject",
+            "value": {
+              "color": "#3498db",
+              "emphasis": 0.0,
+              "id": "obj_delivery",
+              "scale": 0.8044437669291686
+            }
+          },
+          {
+            "object": "obj_delivery",
+            "type": "applyObject",
+            "value": {
+              "color": "#e74c3c",
+              "emphasis": 0.342,
+              "id": "obj_delivery"
+            }
+          }
+        ],
+        "analysis_summary": "intensity=0.34, volatility=0.00",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.5700000000000001,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.5700000000000001
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.7396
+        },
+        "scene_json": {
+          "domain_model": {
+            "business": {
+              "inventory": {
+                "status": "normal"
+              },
+              "quality": {
+                "defect_rate": 0.0
+              },
+              "time": {
+                "schedule_status": "on_track"
+              }
+            },
+            "mode": "business"
+          },
+          "meta": {
+            "generated_at": "2026-03-26T04:02:42.673518+00:00",
+            "version": "dev"
+          },
+          "scene": {
+            "active_loop": "loop_quality_delay_risk",
+            "fragility": {
+              "drivers": {
+                "inventory_pressure": 0.5,
+                "loop_risk": 0.3,
+                "quality_risk": 0.5,
+                "time_pressure": 0.5700000000000001,
+                "volatility": 0.0
+              },
+              "level": "high",
+              "reasons": [
+                {
+                  "code": "time_pressure",
+                  "message": "Delivery schedule is under pressure (delay risk).",
+                  "weight": 0.5700000000000001
+                },
+                {
+                  "code": "inventory_pressure",
+                  "message": "Inventory looks stressed (low buffer).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "quality_risk",
+                  "message": "Risk exposure is elevated (quality/incident risk).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "feedback_loops",
+                  "message": "Feedback loops amplify changes (fragility increases).",
+                  "weight": 0.3
+                }
+              ],
+              "score": 0.7396
+            },
+            "kpi": {
+              "delivery": 0.43,
+              "inventory": 0.5,
+              "risk": 0.5
+            },
+            "loops": [
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Quality/rework slows delivery",
+                    "to": "obj_delivery",
+                    "weight": 0.5
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay raises risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.5
+                  }
+                ],
+                "id": "loop_quality_delay_risk",
+                "label": "Quality \u2192 Delay \u2192 Risk",
+                "polarity": "negative",
+                "strength": 0.535,
+                "triggered_by": [
+                  {
+                    "metric": "inventory",
+                    "op": "<=",
+                    "value": 0.5
+                  },
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.5
+                  }
+                ]
+              },
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Inventory \u2192 Delivery pressure",
+                    "to": "obj_delivery",
+                    "weight": 0.6
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay \u2192 Risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.7
+                  }
+                ],
+                "id": "loop_inventory_delay_risk",
+                "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+                "polarity": "negative",
+                "strength": 0.5233333333333333,
+                "triggered_by": [
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.45
+                  }
+                ]
+              }
+            ],
+            "loops_suggestions": [
+              "Consider prioritizing bottlenecks and reducing cycle time variance.",
+              "Consider mitigating top risks and adding monitoring for early signals.",
+              "Consider reviewing reorder points and lead time assumptions."
+            ],
+            "nexora_mvp": {
+              "loops": [
+                {
+                  "active": true,
+                  "id": "loop_core_delivery",
+                  "intensity": 0.5233333333333333,
+                  "label": "Reinforcing Delivery Loop",
+                  "path": [
+                    "obj_time",
+                    "obj_quality",
+                    "obj_inventory",
+                    "obj_time"
+                  ],
+                  "pulseSpeed": 1.1233333333333333
+                }
+              ],
+              "objects": [
+                {
+                  "id": "obj_time",
+                  "intensity": 0.5700000000000001,
+                  "label": "Time Pressure",
+                  "pos": [
+                    0,
+                    0.8,
+                    0
+                  ],
+                  "state": "warning"
+                },
+                {
+                  "id": "obj_inventory",
+                  "intensity": 0.5,
+                  "label": "Inventory",
+                  "pos": [
+                    -1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                },
+                {
+                  "id": "obj_quality",
+                  "intensity": 0.5,
+                  "label": "Quality Risk",
+                  "pos": [
+                    1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                }
+              ]
+            },
+            "objects": [
+              {
+                "color": "#3498db",
+                "emphasis": 0.03577766043946863,
+                "id": "obj_delivery",
+                "position": [
+                  -3.9,
+                  0.0,
+                  0.0
+                ],
+                "scale": 0.8342584839620591,
+                "transform": {
+                  "pos": [
+                    -3.9,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_inventory",
+                "label": "Inventory",
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_risk_zone",
+                "label": "Risk",
+                "position": [
+                  0.9,
+                  0.0,
+                  -3.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.9,
+                    0.0,
+                    -3.0
+                  ]
+                }
+              }
+            ],
+            "scene": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            },
+            "state_vector": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            }
+          },
+          "state_vector": {
+            "intensity": 0.34073961154861454,
+            "inventory_pressure": 0.5,
+            "quality_risk": 0.5,
+            "time_pressure": 0.5700000000000001,
+            "volatility": 0.0
+          }
+        }
+      }
+    },
+    {
+      "human_state": {},
+      "input_text": "delivery be too late",
+      "meta": {
+        "note": null,
+        "tags": [
+          "chat"
+        ]
+      },
+      "system_signals": {
+        "delay": 0.0
+      },
+      "system_state": {
+        "allowed_objects": [
+          "obj_delivery"
+        ],
+        "chaos": {
+          "affected_objects": [
+            "obj_delivery"
+          ],
+          "dominant_signal": null,
+          "explanation": "delay(0.00) | intensity=0.34 | volatility=0.00 | domain=business",
+          "intensity": 0.34073961154861454,
+          "top_signals": [
+            [
+              "delay",
+              0.0
+            ]
+          ],
+          "volatility": 0.0
+        },
+        "focused_object_id": "obj_delivery",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.64,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.64
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.7592000000000001
+        },
+        "intent": "general",
+        "kpi": {
+          "delivery": 0.36,
+          "inventory": 0.5,
+          "risk": 0.5
+        },
+        "loops": [
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Quality/rework slows delivery",
+                "to": "obj_delivery",
+                "weight": 0.5
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay raises risk",
+                "to": "obj_risk_zone",
+                "weight": 0.5
+              }
+            ],
+            "id": "loop_quality_delay_risk",
+            "label": "Quality \u2192 Delay \u2192 Risk",
+            "polarity": "negative",
+            "strength": 0.5700000000000001,
+            "triggered_by": [
+              {
+                "metric": "inventory",
+                "op": "<=",
+                "value": 0.5
+              },
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.5
+              }
+            ]
+          },
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Inventory \u2192 Delivery pressure",
+                "to": "obj_delivery",
+                "weight": 0.6
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay \u2192 Risk",
+                "to": "obj_risk_zone",
+                "weight": 0.7
+              }
+            ],
+            "id": "loop_inventory_delay_risk",
+            "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+            "polarity": "negative",
+            "strength": 0.5466666666666667,
+            "triggered_by": [
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.45
+              }
+            ]
+          }
+        ],
+        "mode": "business",
+        "risk_propagation": null,
+        "source": "fallback"
+      },
+      "t": 1774497873.1558552,
+      "visual": {
+        "actions": [
+          {
+            "object": "obj_delivery",
+            "type": "applyObject",
+            "value": {
+              "color": "#3498db",
+              "emphasis": 0.0,
+              "id": "obj_delivery",
+              "scale": 0.8044437669291686
+            }
+          },
+          {
+            "object": "obj_delivery",
+            "type": "applyObject",
+            "value": {
+              "color": "#e74c3c",
+              "emphasis": 0.384,
+              "id": "obj_delivery"
+            }
+          }
+        ],
+        "analysis_summary": "intensity=0.34, volatility=0.00",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.64,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.64
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.7592000000000001
+        },
+        "scene_json": {
+          "domain_model": {
+            "business": {
+              "inventory": {
+                "status": "normal"
+              },
+              "quality": {
+                "defect_rate": 0.0
+              },
+              "time": {
+                "schedule_status": "on_track"
+              }
+            },
+            "mode": "business"
+          },
+          "meta": {
+            "generated_at": "2026-03-26T04:04:33.155028+00:00",
+            "version": "dev"
+          },
+          "scene": {
+            "active_loop": "loop_quality_delay_risk",
+            "fragility": {
+              "drivers": {
+                "inventory_pressure": 0.5,
+                "loop_risk": 0.3,
+                "quality_risk": 0.5,
+                "time_pressure": 0.64,
+                "volatility": 0.0
+              },
+              "level": "high",
+              "reasons": [
+                {
+                  "code": "time_pressure",
+                  "message": "Delivery schedule is under pressure (delay risk).",
+                  "weight": 0.64
+                },
+                {
+                  "code": "inventory_pressure",
+                  "message": "Inventory looks stressed (low buffer).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "quality_risk",
+                  "message": "Risk exposure is elevated (quality/incident risk).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "feedback_loops",
+                  "message": "Feedback loops amplify changes (fragility increases).",
+                  "weight": 0.3
+                }
+              ],
+              "score": 0.7592000000000001
+            },
+            "kpi": {
+              "delivery": 0.36,
+              "inventory": 0.5,
+              "risk": 0.5
+            },
+            "loops": [
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Quality/rework slows delivery",
+                    "to": "obj_delivery",
+                    "weight": 0.5
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay raises risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.5
+                  }
+                ],
+                "id": "loop_quality_delay_risk",
+                "label": "Quality \u2192 Delay \u2192 Risk",
+                "polarity": "negative",
+                "strength": 0.5700000000000001,
+                "triggered_by": [
+                  {
+                    "metric": "inventory",
+                    "op": "<=",
+                    "value": 0.5
+                  },
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.5
+                  }
+                ]
+              },
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Inventory \u2192 Delivery pressure",
+                    "to": "obj_delivery",
+                    "weight": 0.6
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay \u2192 Risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.7
+                  }
+                ],
+                "id": "loop_inventory_delay_risk",
+                "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+                "polarity": "negative",
+                "strength": 0.5466666666666667,
+                "triggered_by": [
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.45
+                  }
+                ]
+              }
+            ],
+            "loops_suggestions": [
+              "Consider prioritizing bottlenecks and reducing cycle time variance.",
+              "Consider mitigating top risks and adding monitoring for early signals.",
+              "Consider reviewing reorder points and lead time assumptions."
+            ],
+            "nexora_mvp": {
+              "loops": [
+                {
+                  "active": true,
+                  "id": "loop_core_delivery",
+                  "intensity": 0.5466666666666667,
+                  "label": "Reinforcing Delivery Loop",
+                  "path": [
+                    "obj_time",
+                    "obj_quality",
+                    "obj_inventory",
+                    "obj_time"
+                  ],
+                  "pulseSpeed": 1.1466666666666667
+                }
+              ],
+              "objects": [
+                {
+                  "id": "obj_time",
+                  "intensity": 0.64,
+                  "label": "Time Pressure",
+                  "pos": [
+                    0,
+                    0.8,
+                    0
+                  ],
+                  "state": "warning"
+                },
+                {
+                  "id": "obj_inventory",
+                  "intensity": 0.5,
+                  "label": "Inventory",
+                  "pos": [
+                    -1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                },
+                {
+                  "id": "obj_quality",
+                  "intensity": 0.5,
+                  "label": "Quality Risk",
+                  "pos": [
+                    1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                }
+              ]
+            },
+            "objects": [
+              {
+                "color": "#3498db",
+                "emphasis": 0.0686238419806137,
+                "id": "obj_delivery",
+                "position": [
+                  -3.9,
+                  0.0,
+                  0.0
+                ],
+                "scale": 0.8616303019130134,
+                "transform": {
+                  "pos": [
+                    -3.9,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_inventory",
+                "label": "Inventory",
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_risk_zone",
+                "label": "Risk",
+                "position": [
+                  0.9,
+                  0.0,
+                  -3.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.9,
+                    0.0,
+                    -3.0
+                  ]
+                }
+              }
+            ],
+            "scene": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            },
+            "state_vector": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            }
+          },
+          "state_vector": {
+            "intensity": 0.34073961154861454,
+            "inventory_pressure": 0.5,
+            "quality_risk": 0.5,
+            "time_pressure": 0.64,
+            "volatility": 0.0
+          }
+        }
+      }
+    },
+    {
+      "human_state": {},
+      "input_text": "delivery be too late",
+      "meta": {
+        "note": null,
+        "tags": [
+          "chat"
+        ]
+      },
+      "system_signals": {
+        "delay": 0.0
+      },
+      "system_state": {
+        "allowed_objects": [
+          "obj_warehouse_1"
+        ],
+        "chaos": {
+          "affected_objects": [
+            "obj_warehouse_1"
+          ],
+          "dominant_signal": null,
+          "explanation": "delay(0.00) | intensity=0.34 | volatility=0.00 | domain=business",
+          "intensity": 0.34073961154861454,
+          "top_signals": [
+            [
+              "delay",
+              0.0
+            ]
+          ],
+          "volatility": 0.0
+        },
+        "focused_object_id": "obj_warehouse_1",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.71,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.71
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.7787999999999999
+        },
+        "intent": "general",
+        "kpi": {
+          "delivery": 0.29,
+          "inventory": 0.5,
+          "risk": 0.5
+        },
+        "loops": [
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Quality/rework slows delivery",
+                "to": "obj_delivery",
+                "weight": 0.5
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay raises risk",
+                "to": "obj_risk_zone",
+                "weight": 0.5
+              }
+            ],
+            "id": "loop_quality_delay_risk",
+            "label": "Quality \u2192 Delay \u2192 Risk",
+            "polarity": "negative",
+            "strength": 0.605,
+            "triggered_by": [
+              {
+                "metric": "inventory",
+                "op": "<=",
+                "value": 0.5
+              },
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.5
+              }
+            ]
+          },
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Inventory \u2192 Delivery pressure",
+                "to": "obj_delivery",
+                "weight": 0.6
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay \u2192 Risk",
+                "to": "obj_risk_zone",
+                "weight": 0.7
+              },
+              {
+                "from": "obj_risk_zone",
+                "kind": "negative",
+                "label": "Risk \u2192 Inventory instability",
+                "to": "obj_inventory",
+                "weight": 0.5
+              }
+            ],
+            "id": "loop_inventory_delay_risk",
+            "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+            "polarity": "negative",
+            "strength": 0.57,
+            "triggered_by": [
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.45
+              }
+            ]
+          }
+        ],
+        "mode": "business",
+        "risk_propagation": null,
+        "source": "fallback"
+      },
+      "t": 1774498086.519564,
+      "visual": {
+        "actions": [],
+        "analysis_summary": "intensity=0.34, volatility=0.00",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.71,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.71
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.7787999999999999
+        },
+        "scene_json": {
+          "domain_model": {
+            "business": {
+              "inventory": {
+                "status": "normal"
+              },
+              "quality": {
+                "defect_rate": 0.0
+              },
+              "time": {
+                "schedule_status": "on_track"
+              }
+            },
+            "mode": "business"
+          },
+          "meta": {
+            "generated_at": "2026-03-26T04:08:06.519065+00:00",
+            "version": "dev"
+          },
+          "scene": {
+            "active_loop": "loop_quality_delay_risk",
+            "fragility": {
+              "drivers": {
+                "inventory_pressure": 0.5,
+                "loop_risk": 0.3,
+                "quality_risk": 0.5,
+                "time_pressure": 0.71,
+                "volatility": 0.0
+              },
+              "level": "high",
+              "reasons": [
+                {
+                  "code": "time_pressure",
+                  "message": "Delivery schedule is under pressure (delay risk).",
+                  "weight": 0.71
+                },
+                {
+                  "code": "inventory_pressure",
+                  "message": "Inventory looks stressed (low buffer).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "quality_risk",
+                  "message": "Risk exposure is elevated (quality/incident risk).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "feedback_loops",
+                  "message": "Feedback loops amplify changes (fragility increases).",
+                  "weight": 0.3
+                }
+              ],
+              "score": 0.7787999999999999
+            },
+            "kpi": {
+              "delivery": 0.29,
+              "inventory": 0.5,
+              "risk": 0.5
+            },
+            "loops": [
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Quality/rework slows delivery",
+                    "to": "obj_delivery",
+                    "weight": 0.5
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay raises risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.5
+                  }
+                ],
+                "id": "loop_quality_delay_risk",
+                "label": "Quality \u2192 Delay \u2192 Risk",
+                "polarity": "negative",
+                "strength": 0.605,
+                "triggered_by": [
+                  {
+                    "metric": "inventory",
+                    "op": "<=",
+                    "value": 0.5
+                  },
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.5
+                  }
+                ]
+              },
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Inventory \u2192 Delivery pressure",
+                    "to": "obj_delivery",
+                    "weight": 0.6
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay \u2192 Risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.7
+                  },
+                  {
+                    "from": "obj_risk_zone",
+                    "kind": "negative",
+                    "label": "Risk \u2192 Inventory instability",
+                    "to": "obj_inventory",
+                    "weight": 0.5
+                  }
+                ],
+                "id": "loop_inventory_delay_risk",
+                "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+                "polarity": "negative",
+                "strength": 0.57,
+                "triggered_by": [
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.45
+                  }
+                ]
+              }
+            ],
+            "loops_suggestions": [
+              "Consider prioritizing bottlenecks and reducing cycle time variance.",
+              "Consider mitigating top risks and adding monitoring for early signals.",
+              "Consider reviewing reorder points and lead time assumptions."
+            ],
+            "nexora_mvp": {
+              "loops": [
+                {
+                  "active": true,
+                  "id": "loop_core_delivery",
+                  "intensity": 0.57,
+                  "label": "Reinforcing Delivery Loop",
+                  "path": [
+                    "obj_time",
+                    "obj_quality",
+                    "obj_inventory",
+                    "obj_time"
+                  ],
+                  "pulseSpeed": 1.17
+                }
+              ],
+              "objects": [
+                {
+                  "id": "obj_time",
+                  "intensity": 0.71,
+                  "label": "Time Pressure",
+                  "pos": [
+                    0,
+                    0.8,
+                    0
+                  ],
+                  "state": "critical"
+                },
+                {
+                  "id": "obj_inventory",
+                  "intensity": 0.5,
+                  "label": "Inventory",
+                  "pos": [
+                    -1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                },
+                {
+                  "id": "obj_quality",
+                  "intensity": 0.5,
+                  "label": "Quality Risk",
+                  "pos": [
+                    1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                }
+              ]
+            },
+            "objects": [
+              {
+                "color": "#3498db",
+                "emphasis": 0.09401898642804107,
+                "id": "obj_delivery",
+                "position": [
+                  -3.9,
+                  0.0,
+                  0.0
+                ],
+                "scale": 0.8827929222858695,
+                "transform": {
+                  "pos": [
+                    -3.9,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_inventory",
+                "label": "Inventory",
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_risk_zone",
+                "label": "Risk",
+                "position": [
+                  0.9,
+                  0.0,
+                  -3.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.9,
+                    0.0,
+                    -3.0
+                  ]
+                }
+              }
+            ],
+            "scene": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            },
+            "state_vector": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            }
+          },
+          "state_vector": {
+            "intensity": 0.34073961154861454,
+            "inventory_pressure": 0.5,
+            "quality_risk": 0.5,
+            "time_pressure": 0.71,
+            "volatility": 0.0
+          }
+        }
+      }
+    },
+    {
+      "human_state": {},
+      "input_text": "delivery be too late",
+      "meta": {
+        "note": null,
+        "tags": [
+          "chat"
+        ]
+      },
+      "system_signals": {
+        "delay": 0.0
+      },
+      "system_state": {
+        "allowed_objects": [
+          "obj_order_flow_1"
+        ],
+        "chaos": {
+          "affected_objects": [
+            "obj_order_flow_1"
+          ],
+          "dominant_signal": null,
+          "explanation": "delay(0.00) | intensity=0.34 | volatility=0.00 | domain=business",
+          "intensity": 0.34073961154861454,
+          "top_signals": [
+            [
+              "delay",
+              0.0
+            ]
+          ],
+          "volatility": 0.0
+        },
+        "focused_object_id": "obj_order_flow_1",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.78,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.78
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.7984
+        },
+        "intent": "general",
+        "kpi": {
+          "delivery": 0.21999999999999997,
+          "inventory": 0.5,
+          "risk": 0.5
+        },
+        "loops": [
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Quality/rework slows delivery",
+                "to": "obj_delivery",
+                "weight": 0.5
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay raises risk",
+                "to": "obj_risk_zone",
+                "weight": 0.5
+              }
+            ],
+            "id": "loop_quality_delay_risk",
+            "label": "Quality \u2192 Delay \u2192 Risk",
+            "polarity": "negative",
+            "strength": 0.64,
+            "triggered_by": [
+              {
+                "metric": "inventory",
+                "op": "<=",
+                "value": 0.5
+              },
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.5
+              }
+            ]
+          },
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Inventory \u2192 Delivery pressure",
+                "to": "obj_delivery",
+                "weight": 0.6
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay \u2192 Risk",
+                "to": "obj_risk_zone",
+                "weight": 0.7
+              },
+              {
+                "from": "obj_risk_zone",
+                "kind": "negative",
+                "label": "Risk \u2192 Inventory instability",
+                "to": "obj_inventory",
+                "weight": 0.5
+              }
+            ],
+            "id": "loop_inventory_delay_risk",
+            "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+            "polarity": "negative",
+            "strength": 0.5933333333333334,
+            "triggered_by": [
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.45
+              }
+            ]
+          }
+        ],
+        "mode": "business",
+        "risk_propagation": null,
+        "source": "fallback"
+      },
+      "t": 1774499067.8664682,
+      "visual": {
+        "actions": [],
+        "analysis_summary": "intensity=0.34, volatility=0.00",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.78,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.78
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.7984
+        },
+        "scene_json": {
+          "domain_model": {
+            "business": {
+              "inventory": {
+                "status": "normal"
+              },
+              "quality": {
+                "defect_rate": 0.0
+              },
+              "time": {
+                "schedule_status": "on_track"
+              }
+            },
+            "mode": "business"
+          },
+          "meta": {
+            "generated_at": "2026-03-26T04:24:27.865998+00:00",
+            "version": "dev"
+          },
+          "scene": {
+            "active_loop": "loop_quality_delay_risk",
+            "fragility": {
+              "drivers": {
+                "inventory_pressure": 0.5,
+                "loop_risk": 0.3,
+                "quality_risk": 0.5,
+                "time_pressure": 0.78,
+                "volatility": 0.0
+              },
+              "level": "high",
+              "reasons": [
+                {
+                  "code": "time_pressure",
+                  "message": "Delivery schedule is under pressure (delay risk).",
+                  "weight": 0.78
+                },
+                {
+                  "code": "inventory_pressure",
+                  "message": "Inventory looks stressed (low buffer).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "quality_risk",
+                  "message": "Risk exposure is elevated (quality/incident risk).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "feedback_loops",
+                  "message": "Feedback loops amplify changes (fragility increases).",
+                  "weight": 0.3
+                }
+              ],
+              "score": 0.7984
+            },
+            "kpi": {
+              "delivery": 0.21999999999999997,
+              "inventory": 0.5,
+              "risk": 0.5
+            },
+            "loops": [
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Quality/rework slows delivery",
+                    "to": "obj_delivery",
+                    "weight": 0.5
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay raises risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.5
+                  }
+                ],
+                "id": "loop_quality_delay_risk",
+                "label": "Quality \u2192 Delay \u2192 Risk",
+                "polarity": "negative",
+                "strength": 0.64,
+                "triggered_by": [
+                  {
+                    "metric": "inventory",
+                    "op": "<=",
+                    "value": 0.5
+                  },
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.5
+                  }
+                ]
+              },
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Inventory \u2192 Delivery pressure",
+                    "to": "obj_delivery",
+                    "weight": 0.6
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay \u2192 Risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.7
+                  },
+                  {
+                    "from": "obj_risk_zone",
+                    "kind": "negative",
+                    "label": "Risk \u2192 Inventory instability",
+                    "to": "obj_inventory",
+                    "weight": 0.5
+                  }
+                ],
+                "id": "loop_inventory_delay_risk",
+                "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+                "polarity": "negative",
+                "strength": 0.5933333333333334,
+                "triggered_by": [
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.45
+                  }
+                ]
+              }
+            ],
+            "loops_suggestions": [
+              "Consider prioritizing bottlenecks and reducing cycle time variance.",
+              "Consider mitigating top risks and adding monitoring for early signals.",
+              "Consider reviewing reorder points and lead time assumptions."
+            ],
+            "nexora_mvp": {
+              "loops": [
+                {
+                  "active": true,
+                  "id": "loop_core_delivery",
+                  "intensity": 0.5933333333333334,
+                  "label": "Reinforcing Delivery Loop",
+                  "path": [
+                    "obj_time",
+                    "obj_quality",
+                    "obj_inventory",
+                    "obj_time"
+                  ],
+                  "pulseSpeed": 1.1933333333333334
+                }
+              ],
+              "objects": [
+                {
+                  "id": "obj_time",
+                  "intensity": 0.78,
+                  "label": "Time Pressure",
+                  "pos": [
+                    0,
+                    0.8,
+                    0
+                  ],
+                  "state": "critical"
+                },
+                {
+                  "id": "obj_inventory",
+                  "intensity": 0.5,
+                  "label": "Inventory",
+                  "pos": [
+                    -1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                },
+                {
+                  "id": "obj_quality",
+                  "intensity": 0.5,
+                  "label": "Quality Risk",
+                  "pos": [
+                    1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                }
+              ]
+            },
+            "objects": [
+              {
+                "color": "#3498db",
+                "emphasis": 0.07994414751619852,
+                "id": "obj_delivery",
+                "position": [
+                  -3.9,
+                  0.0,
+                  0.0
+                ],
+                "scale": 0.871063889859334,
+                "transform": {
+                  "pos": [
+                    -3.9,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_inventory",
+                "label": "Inventory",
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_risk_zone",
+                "label": "Risk",
+                "position": [
+                  0.9,
+                  0.0,
+                  -3.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.9,
+                    0.0,
+                    -3.0
+                  ]
+                }
+              }
+            ],
+            "scene": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            },
+            "state_vector": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            }
+          },
+          "state_vector": {
+            "intensity": 0.34073961154861454,
+            "inventory_pressure": 0.5,
+            "quality_risk": 0.5,
+            "time_pressure": 0.78,
+            "volatility": 0.0
+          }
+        }
+      }
+    },
+    {
+      "human_state": {},
+      "input_text": "delivery be too late",
+      "meta": {
+        "note": null,
+        "tags": [
+          "chat"
+        ]
+      },
+      "system_signals": {
+        "delay": 0.0
+      },
+      "system_state": {
+        "allowed_objects": [
+          "obj_delivery"
+        ],
+        "chaos": {
+          "affected_objects": [
+            "obj_delivery"
+          ],
+          "dominant_signal": null,
+          "explanation": "delay(0.00) | intensity=0.34 | volatility=0.00 | domain=business",
+          "intensity": 0.34073961154861454,
+          "top_signals": [
+            [
+              "delay",
+              0.0
+            ]
+          ],
+          "volatility": 0.0
+        },
+        "focused_object_id": "obj_delivery",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.8500000000000001,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.8500000000000001
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.8180000000000001
+        },
+        "intent": "general",
+        "kpi": {
+          "delivery": 0.14999999999999997,
+          "inventory": 0.5,
+          "risk": 0.5
+        },
+        "loops": [
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Quality/rework slows delivery",
+                "to": "obj_delivery",
+                "weight": 0.5
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay raises risk",
+                "to": "obj_risk_zone",
+                "weight": 0.5
+              }
+            ],
+            "id": "loop_quality_delay_risk",
+            "label": "Quality \u2192 Delay \u2192 Risk",
+            "polarity": "negative",
+            "strength": 0.675,
+            "triggered_by": [
+              {
+                "metric": "inventory",
+                "op": "<=",
+                "value": 0.5
+              },
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.5
+              }
+            ]
+          },
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Inventory \u2192 Delivery pressure",
+                "to": "obj_delivery",
+                "weight": 0.6
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay \u2192 Risk",
+                "to": "obj_risk_zone",
+                "weight": 0.7
+              }
+            ],
+            "id": "loop_inventory_delay_risk",
+            "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+            "polarity": "negative",
+            "strength": 0.6166666666666667,
+            "triggered_by": [
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.45
+              }
+            ]
+          }
+        ],
+        "mode": "business",
+        "risk_propagation": null,
+        "source": "fallback"
+      },
+      "t": 1774499118.3862,
+      "visual": {
+        "actions": [
+          {
+            "object": "obj_delivery",
+            "type": "applyObject",
+            "value": {
+              "color": "#3498db",
+              "emphasis": 0.0,
+              "id": "obj_delivery",
+              "scale": 0.8044437669291686
+            }
+          },
+          {
+            "object": "obj_delivery",
+            "type": "applyObject",
+            "value": {
+              "color": "#e74c3c",
+              "emphasis": 0.51,
+              "id": "obj_delivery"
+            }
+          }
+        ],
+        "analysis_summary": "intensity=0.34, volatility=0.00",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.8500000000000001,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.8500000000000001
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.8180000000000001
+        },
+        "scene_json": {
+          "domain_model": {
+            "business": {
+              "inventory": {
+                "status": "normal"
+              },
+              "quality": {
+                "defect_rate": 0.0
+              },
+              "time": {
+                "schedule_status": "on_track"
+              }
+            },
+            "mode": "business"
+          },
+          "meta": {
+            "generated_at": "2026-03-26T04:25:18.385699+00:00",
+            "version": "dev"
+          },
+          "scene": {
+            "active_loop": "loop_quality_delay_risk",
+            "fragility": {
+              "drivers": {
+                "inventory_pressure": 0.5,
+                "loop_risk": 0.3,
+                "quality_risk": 0.5,
+                "time_pressure": 0.8500000000000001,
+                "volatility": 0.0
+              },
+              "level": "high",
+              "reasons": [
+                {
+                  "code": "time_pressure",
+                  "message": "Delivery schedule is under pressure (delay risk).",
+                  "weight": 0.8500000000000001
+                },
+                {
+                  "code": "inventory_pressure",
+                  "message": "Inventory looks stressed (low buffer).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "quality_risk",
+                  "message": "Risk exposure is elevated (quality/incident risk).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "feedback_loops",
+                  "message": "Feedback loops amplify changes (fragility increases).",
+                  "weight": 0.3
+                }
+              ],
+              "score": 0.8180000000000001
+            },
+            "kpi": {
+              "delivery": 0.14999999999999997,
+              "inventory": 0.5,
+              "risk": 0.5
+            },
+            "loops": [
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Quality/rework slows delivery",
+                    "to": "obj_delivery",
+                    "weight": 0.5
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay raises risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.5
+                  }
+                ],
+                "id": "loop_quality_delay_risk",
+                "label": "Quality \u2192 Delay \u2192 Risk",
+                "polarity": "negative",
+                "strength": 0.675,
+                "triggered_by": [
+                  {
+                    "metric": "inventory",
+                    "op": "<=",
+                    "value": 0.5
+                  },
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.5
+                  }
+                ]
+              },
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Inventory \u2192 Delivery pressure",
+                    "to": "obj_delivery",
+                    "weight": 0.6
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay \u2192 Risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.7
+                  }
+                ],
+                "id": "loop_inventory_delay_risk",
+                "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+                "polarity": "negative",
+                "strength": 0.6166666666666667,
+                "triggered_by": [
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.45
+                  }
+                ]
+              }
+            ],
+            "loops_suggestions": [
+              "Consider prioritizing bottlenecks and reducing cycle time variance.",
+              "Consider mitigating top risks and adding monitoring for early signals.",
+              "Consider reviewing reorder points and lead time assumptions."
+            ],
+            "nexora_mvp": {
+              "loops": [
+                {
+                  "active": true,
+                  "id": "loop_core_delivery",
+                  "intensity": 0.6166666666666667,
+                  "label": "Reinforcing Delivery Loop",
+                  "path": [
+                    "obj_time",
+                    "obj_quality",
+                    "obj_inventory",
+                    "obj_time"
+                  ],
+                  "pulseSpeed": 1.2166666666666668
+                }
+              ],
+              "objects": [
+                {
+                  "id": "obj_time",
+                  "intensity": 0.8500000000000001,
+                  "label": "Time Pressure",
+                  "pos": [
+                    0,
+                    0.8,
+                    0
+                  ],
+                  "state": "critical"
+                },
+                {
+                  "id": "obj_inventory",
+                  "intensity": 0.5,
+                  "label": "Inventory",
+                  "pos": [
+                    -1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                },
+                {
+                  "id": "obj_quality",
+                  "intensity": 0.5,
+                  "label": "Quality Risk",
+                  "pos": [
+                    1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                }
+              ]
+            },
+            "objects": [
+              {
+                "color": "#3498db",
+                "emphasis": 0.11264260219460258,
+                "id": "obj_delivery",
+                "position": [
+                  -3.9,
+                  0.0,
+                  0.0
+                ],
+                "scale": 0.8983126020913375,
+                "transform": {
+                  "pos": [
+                    -3.9,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_inventory",
+                "label": "Inventory",
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_risk_zone",
+                "label": "Risk",
+                "position": [
+                  0.9,
+                  0.0,
+                  -3.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.9,
+                    0.0,
+                    -3.0
+                  ]
+                }
+              }
+            ],
+            "scene": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            },
+            "state_vector": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            }
+          },
+          "state_vector": {
+            "intensity": 0.34073961154861454,
+            "inventory_pressure": 0.5,
+            "quality_risk": 0.5,
+            "time_pressure": 0.8500000000000001,
+            "volatility": 0.0
+          }
+        }
+      }
+    },
+    {
+      "human_state": {},
+      "input_text": "delivery be too late",
+      "meta": {
+        "note": null,
+        "tags": [
+          "chat"
+        ]
+      },
+      "system_signals": {
+        "delay": 0.0
+      },
+      "system_state": {
+        "allowed_objects": [
+          "obj_delivery"
+        ],
+        "chaos": {
+          "affected_objects": [
+            "obj_delivery"
+          ],
+          "dominant_signal": null,
+          "explanation": "delay(0.00) | intensity=0.34 | volatility=0.00 | domain=business",
+          "intensity": 0.34073961154861454,
+          "top_signals": [
+            [
+              "delay",
+              0.0
+            ]
+          ],
+          "volatility": 0.0
+        },
+        "focused_object_id": "obj_delivery",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.92,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.92
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.8376000000000001
+        },
+        "intent": "general",
+        "kpi": {
+          "delivery": 0.07999999999999996,
+          "inventory": 0.5,
+          "risk": 0.5
+        },
+        "loops": [
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Quality/rework slows delivery",
+                "to": "obj_delivery",
+                "weight": 0.5
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay raises risk",
+                "to": "obj_risk_zone",
+                "weight": 0.5
+              }
+            ],
+            "id": "loop_quality_delay_risk",
+            "label": "Quality \u2192 Delay \u2192 Risk",
+            "polarity": "negative",
+            "strength": 0.71,
+            "triggered_by": [
+              {
+                "metric": "inventory",
+                "op": "<=",
+                "value": 0.5
+              },
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.5
+              }
+            ]
+          },
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Inventory \u2192 Delivery pressure",
+                "to": "obj_delivery",
+                "weight": 0.6
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay \u2192 Risk",
+                "to": "obj_risk_zone",
+                "weight": 0.7
+              }
+            ],
+            "id": "loop_inventory_delay_risk",
+            "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+            "polarity": "negative",
+            "strength": 0.64,
+            "triggered_by": [
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.45
+              }
+            ]
+          }
+        ],
+        "mode": "business",
+        "risk_propagation": null,
+        "source": "fallback"
+      },
+      "t": 1774500617.766168,
+      "visual": {
+        "actions": [
+          {
+            "object": "obj_delivery",
+            "type": "applyObject",
+            "value": {
+              "color": "#3498db",
+              "emphasis": 0.0,
+              "id": "obj_delivery",
+              "scale": 0.8044437669291686
+            }
+          },
+          {
+            "object": "obj_delivery",
+            "type": "applyObject",
+            "value": {
+              "color": "#e74c3c",
+              "emphasis": 0.552,
+              "id": "obj_delivery"
+            }
+          }
+        ],
+        "analysis_summary": "intensity=0.34, volatility=0.00",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.92,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.92
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.8376000000000001
+        },
+        "scene_json": {
+          "domain_model": {
+            "business": {
+              "inventory": {
+                "status": "normal"
+              },
+              "quality": {
+                "defect_rate": 0.0
+              },
+              "time": {
+                "schedule_status": "on_track"
+              }
+            },
+            "mode": "business"
+          },
+          "meta": {
+            "generated_at": "2026-03-26T04:50:17.765356+00:00",
+            "version": "dev"
+          },
+          "scene": {
+            "active_loop": "loop_quality_delay_risk",
+            "fragility": {
+              "drivers": {
+                "inventory_pressure": 0.5,
+                "loop_risk": 0.3,
+                "quality_risk": 0.5,
+                "time_pressure": 0.92,
+                "volatility": 0.0
+              },
+              "level": "high",
+              "reasons": [
+                {
+                  "code": "time_pressure",
+                  "message": "Delivery schedule is under pressure (delay risk).",
+                  "weight": 0.92
+                },
+                {
+                  "code": "inventory_pressure",
+                  "message": "Inventory looks stressed (low buffer).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "quality_risk",
+                  "message": "Risk exposure is elevated (quality/incident risk).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "feedback_loops",
+                  "message": "Feedback loops amplify changes (fragility increases).",
+                  "weight": 0.3
+                }
+              ],
+              "score": 0.8376000000000001
+            },
+            "kpi": {
+              "delivery": 0.07999999999999996,
+              "inventory": 0.5,
+              "risk": 0.5
+            },
+            "loops": [
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Quality/rework slows delivery",
+                    "to": "obj_delivery",
+                    "weight": 0.5
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay raises risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.5
+                  }
+                ],
+                "id": "loop_quality_delay_risk",
+                "label": "Quality \u2192 Delay \u2192 Risk",
+                "polarity": "negative",
+                "strength": 0.71,
+                "triggered_by": [
+                  {
+                    "metric": "inventory",
+                    "op": "<=",
+                    "value": 0.5
+                  },
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.5
+                  }
+                ]
+              },
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Inventory \u2192 Delivery pressure",
+                    "to": "obj_delivery",
+                    "weight": 0.6
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay \u2192 Risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.7
+                  }
+                ],
+                "id": "loop_inventory_delay_risk",
+                "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+                "polarity": "negative",
+                "strength": 0.64,
+                "triggered_by": [
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.45
+                  }
+                ]
+              }
+            ],
+            "loops_suggestions": [
+              "Consider prioritizing bottlenecks and reducing cycle time variance.",
+              "Consider mitigating top risks and adding monitoring for early signals.",
+              "Consider reviewing reorder points and lead time assumptions."
+            ],
+            "nexora_mvp": {
+              "loops": [
+                {
+                  "active": true,
+                  "id": "loop_core_delivery",
+                  "intensity": 0.64,
+                  "label": "Reinforcing Delivery Loop",
+                  "path": [
+                    "obj_time",
+                    "obj_quality",
+                    "obj_inventory",
+                    "obj_time"
+                  ],
+                  "pulseSpeed": 1.24
+                }
+              ],
+              "objects": [
+                {
+                  "id": "obj_time",
+                  "intensity": 0.92,
+                  "label": "Time Pressure",
+                  "pos": [
+                    0,
+                    0.8,
+                    0
+                  ],
+                  "state": "critical"
+                },
+                {
+                  "id": "obj_inventory",
+                  "intensity": 0.5,
+                  "label": "Inventory",
+                  "pos": [
+                    -1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                },
+                {
+                  "id": "obj_quality",
+                  "intensity": 0.5,
+                  "label": "Quality Risk",
+                  "pos": [
+                    1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                }
+              ]
+            },
+            "objects": [
+              {
+                "color": "#3498db",
+                "emphasis": 0.07128519169630607,
+                "id": "obj_delivery",
+                "position": [
+                  -3.9,
+                  0.0,
+                  0.0
+                ],
+                "scale": 0.863848093342757,
+                "transform": {
+                  "pos": [
+                    -3.9,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_inventory",
+                "label": "Inventory",
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_risk_zone",
+                "label": "Risk",
+                "position": [
+                  0.9,
+                  0.0,
+                  -3.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.9,
+                    0.0,
+                    -3.0
+                  ]
+                }
+              }
+            ],
+            "scene": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            },
+            "state_vector": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            }
+          },
+          "state_vector": {
+            "intensity": 0.34073961154861454,
+            "inventory_pressure": 0.5,
+            "quality_risk": 0.5,
+            "time_pressure": 0.92,
+            "volatility": 0.0
+          }
+        }
+      }
+    },
+    {
+      "human_state": {},
+      "input_text": "inventory be too late .",
+      "meta": {
+        "note": null,
+        "tags": [
+          "chat"
+        ]
+      },
+      "system_signals": {
+        "delay": 0.0,
+        "inventory": 0.41850998727091165
+      },
+      "system_state": {
+        "allowed_objects": [
+          "obj_inventory",
+          "obj_delivery"
+        ],
+        "chaos": {
+          "affected_objects": [
+            "obj_inventory",
+            "obj_delivery"
+          ],
+          "dominant_signal": "inventory",
+          "explanation": "inventory(0.42) | delay(0.00) | intensity=0.45 | volatility=0.00 | domain=business",
+          "intensity": 0.45025535431095426,
+          "top_signals": [
+            [
+              "inventory",
+              0.41850998727091165
+            ],
+            [
+              "delay",
+              0.0
+            ]
+          ],
+          "volatility": 0.0
+        },
+        "focused_object_id": "obj_inventory",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.99,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.99
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.8572
+        },
+        "intent": "general",
+        "kpi": {
+          "delivery": 0.009999999999999953,
+          "inventory": 0.5,
+          "risk": 0.5
+        },
+        "loops": [
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Quality/rework slows delivery",
+                "to": "obj_delivery",
+                "weight": 0.5
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay raises risk",
+                "to": "obj_risk_zone",
+                "weight": 0.5
+              }
+            ],
+            "id": "loop_quality_delay_risk",
+            "label": "Quality \u2192 Delay \u2192 Risk",
+            "polarity": "negative",
+            "strength": 0.745,
+            "triggered_by": [
+              {
+                "metric": "inventory",
+                "op": "<=",
+                "value": 0.5
+              },
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.5
+              }
+            ]
+          },
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Inventory \u2192 Delivery pressure",
+                "to": "obj_delivery",
+                "weight": 0.6
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay \u2192 Risk",
+                "to": "obj_risk_zone",
+                "weight": 0.7
+              },
+              {
+                "from": "obj_risk_zone",
+                "kind": "negative",
+                "label": "Risk \u2192 Inventory instability",
+                "to": "obj_inventory",
+                "weight": 0.5
+              }
+            ],
+            "id": "loop_inventory_delay_risk",
+            "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+            "polarity": "negative",
+            "strength": 0.6633333333333333,
+            "triggered_by": [
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.45
+              }
+            ]
+          }
+        ],
+        "mode": "business",
+        "risk_propagation": null,
+        "source": "fallback"
+      },
+      "t": 1774500919.21767,
+      "visual": {
+        "actions": [
+          {
+            "object": "obj_inventory",
+            "type": "applyObject",
+            "value": {
+              "color": "#3498db",
+              "emphasis": 0.0,
+              "id": "obj_inventory",
+              "scale": 0.8701532125865725
+            }
+          },
+          {
+            "object": "obj_inventory",
+            "type": "applyObject",
+            "value": {
+              "emphasis": 0.3,
+              "id": "obj_inventory"
+            }
+          },
+          {
+            "object": "obj_delivery",
+            "type": "applyObject",
+            "value": {
+              "color": "#e74c3c",
+              "emphasis": 0.594,
+              "id": "obj_delivery"
+            }
+          }
+        ],
+        "analysis_summary": "intensity=0.45, volatility=0.00",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 0.99,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 0.99
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.8572
+        },
+        "scene_json": {
+          "domain_model": {
+            "business": {
+              "inventory": {
+                "status": "normal"
+              },
+              "quality": {
+                "defect_rate": 0.0
+              },
+              "time": {
+                "schedule_status": "on_track"
+              }
+            },
+            "mode": "business"
+          },
+          "meta": {
+            "generated_at": "2026-03-26T04:55:19.217427+00:00",
+            "version": "dev"
+          },
+          "scene": {
+            "active_loop": "loop_quality_delay_risk",
+            "fragility": {
+              "drivers": {
+                "inventory_pressure": 0.5,
+                "loop_risk": 0.3,
+                "quality_risk": 0.5,
+                "time_pressure": 0.99,
+                "volatility": 0.0
+              },
+              "level": "high",
+              "reasons": [
+                {
+                  "code": "time_pressure",
+                  "message": "Delivery schedule is under pressure (delay risk).",
+                  "weight": 0.99
+                },
+                {
+                  "code": "inventory_pressure",
+                  "message": "Inventory looks stressed (low buffer).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "quality_risk",
+                  "message": "Risk exposure is elevated (quality/incident risk).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "feedback_loops",
+                  "message": "Feedback loops amplify changes (fragility increases).",
+                  "weight": 0.3
+                }
+              ],
+              "score": 0.8572
+            },
+            "kpi": {
+              "delivery": 0.009999999999999953,
+              "inventory": 0.5,
+              "risk": 0.5
+            },
+            "loops": [
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Quality/rework slows delivery",
+                    "to": "obj_delivery",
+                    "weight": 0.5
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay raises risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.5
+                  }
+                ],
+                "id": "loop_quality_delay_risk",
+                "label": "Quality \u2192 Delay \u2192 Risk",
+                "polarity": "negative",
+                "strength": 0.745,
+                "triggered_by": [
+                  {
+                    "metric": "inventory",
+                    "op": "<=",
+                    "value": 0.5
+                  },
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.5
+                  }
+                ]
+              },
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Inventory \u2192 Delivery pressure",
+                    "to": "obj_delivery",
+                    "weight": 0.6
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay \u2192 Risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.7
+                  },
+                  {
+                    "from": "obj_risk_zone",
+                    "kind": "negative",
+                    "label": "Risk \u2192 Inventory instability",
+                    "to": "obj_inventory",
+                    "weight": 0.5
+                  }
+                ],
+                "id": "loop_inventory_delay_risk",
+                "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+                "polarity": "negative",
+                "strength": 0.6633333333333333,
+                "triggered_by": [
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.45
+                  }
+                ]
+              }
+            ],
+            "loops_suggestions": [
+              "Consider prioritizing bottlenecks and reducing cycle time variance.",
+              "Consider mitigating top risks and adding monitoring for early signals.",
+              "Consider reviewing reorder points and lead time assumptions."
+            ],
+            "nexora_mvp": {
+              "loops": [
+                {
+                  "active": true,
+                  "id": "loop_core_delivery",
+                  "intensity": 0.6633333333333333,
+                  "label": "Reinforcing Delivery Loop",
+                  "path": [
+                    "obj_time",
+                    "obj_quality",
+                    "obj_inventory",
+                    "obj_time"
+                  ],
+                  "pulseSpeed": 1.2633333333333332
+                }
+              ],
+              "objects": [
+                {
+                  "id": "obj_time",
+                  "intensity": 0.99,
+                  "label": "Time Pressure",
+                  "pos": [
+                    0,
+                    0.8,
+                    0
+                  ],
+                  "state": "critical"
+                },
+                {
+                  "id": "obj_inventory",
+                  "intensity": 0.5,
+                  "label": "Inventory",
+                  "pos": [
+                    -1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                },
+                {
+                  "id": "obj_quality",
+                  "intensity": 0.5,
+                  "label": "Quality Risk",
+                  "pos": [
+                    1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                }
+              ]
+            },
+            "objects": [
+              {
+                "color": "#3498db",
+                "emphasis": 0.0472768122026502,
+                "id": "obj_inventory",
+                "position": [
+                  -0.9,
+                  0.0,
+                  0.0
+                ],
+                "scale": 0.909550556088781,
+                "transform": {
+                  "pos": [
+                    -0.9,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_delivery",
+                "label": "Delivery",
+                "position": [
+                  -3.0,
+                  0.0,
+                  0.0
+                ],
+                "transform": {
+                  "pos": [
+                    -3.0,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_risk_zone",
+                "label": "Risk",
+                "position": [
+                  0.9,
+                  0.0,
+                  -3.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.9,
+                    0.0,
+                    -3.0
+                  ]
+                }
+              }
+            ],
+            "scene": {
+              "intensity": 0.45025535431095426,
+              "volatility": 0.0
+            },
+            "state_vector": {
+              "intensity": 0.45025535431095426,
+              "volatility": 0.0
+            }
+          },
+          "state_vector": {
+            "intensity": 0.45025535431095426,
+            "inventory_pressure": 0.5,
+            "quality_risk": 0.5,
+            "time_pressure": 0.99,
+            "volatility": 0.0
+          }
+        }
+      }
+    },
+    {
+      "human_state": {},
+      "input_text": "delivery be too late",
+      "meta": {
+        "note": null,
+        "tags": [
+          "chat"
+        ]
+      },
+      "system_signals": {
+        "delay": 0.0
+      },
+      "system_state": {
+        "allowed_objects": [
+          "obj_delivery"
+        ],
+        "chaos": {
+          "affected_objects": [
+            "obj_delivery"
+          ],
+          "dominant_signal": null,
+          "explanation": "delay(0.00) | intensity=0.34 | volatility=0.00 | domain=business",
+          "intensity": 0.34073961154861454,
+          "top_signals": [
+            [
+              "delay",
+              0.0
+            ]
+          ],
+          "volatility": 0.0
+        },
+        "focused_object_id": "obj_delivery",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 1.0,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 1.0
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.8600000000000001
+        },
+        "intent": "general",
+        "kpi": {
+          "delivery": 0.0,
+          "inventory": 0.5,
+          "risk": 0.5
+        },
+        "loops": [
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Quality/rework slows delivery",
+                "to": "obj_delivery",
+                "weight": 0.5
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay raises risk",
+                "to": "obj_risk_zone",
+                "weight": 0.5
+              }
+            ],
+            "id": "loop_quality_delay_risk",
+            "label": "Quality \u2192 Delay \u2192 Risk",
+            "polarity": "negative",
+            "strength": 0.75,
+            "triggered_by": [
+              {
+                "metric": "inventory",
+                "op": "<=",
+                "value": 0.5
+              },
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.5
+              }
+            ]
+          },
+          {
+            "edges": [
+              {
+                "from": "obj_inventory",
+                "kind": "negative",
+                "label": "Inventory \u2192 Delivery pressure",
+                "to": "obj_delivery",
+                "weight": 0.6
+              },
+              {
+                "from": "obj_delivery",
+                "kind": "negative",
+                "label": "Delay \u2192 Risk",
+                "to": "obj_risk_zone",
+                "weight": 0.7
+              }
+            ],
+            "id": "loop_inventory_delay_risk",
+            "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+            "polarity": "negative",
+            "strength": 0.6666666666666666,
+            "triggered_by": [
+              {
+                "metric": "delivery",
+                "op": "<=",
+                "value": 0.45
+              }
+            ]
+          }
+        ],
+        "mode": "business",
+        "risk_propagation": null,
+        "source": "fallback"
+      },
+      "t": 1774501073.275033,
+      "visual": {
+        "actions": [
+          {
+            "object": "obj_delivery",
+            "type": "applyObject",
+            "value": {
+              "color": "#3498db",
+              "emphasis": 0.0,
+              "id": "obj_delivery",
+              "scale": 0.8044437669291686
+            }
+          },
+          {
+            "object": "obj_delivery",
+            "type": "applyObject",
+            "value": {
+              "color": "#e74c3c",
+              "emphasis": 0.6,
+              "id": "obj_delivery"
+            }
+          }
+        ],
+        "analysis_summary": "intensity=0.34, volatility=0.00",
+        "fragility": {
+          "drivers": {
+            "inventory_pressure": 0.5,
+            "loop_risk": 0.3,
+            "quality_risk": 0.5,
+            "time_pressure": 1.0,
+            "volatility": 0.0
+          },
+          "level": "high",
+          "reasons": [
+            {
+              "code": "time_pressure",
+              "message": "Delivery schedule is under pressure (delay risk).",
+              "weight": 1.0
+            },
+            {
+              "code": "inventory_pressure",
+              "message": "Inventory looks stressed (low buffer).",
+              "weight": 0.5
+            },
+            {
+              "code": "quality_risk",
+              "message": "Risk exposure is elevated (quality/incident risk).",
+              "weight": 0.5
+            },
+            {
+              "code": "feedback_loops",
+              "message": "Feedback loops amplify changes (fragility increases).",
+              "weight": 0.3
+            }
+          ],
+          "score": 0.8600000000000001
+        },
+        "scene_json": {
+          "domain_model": {
+            "business": {
+              "inventory": {
+                "status": "normal"
+              },
+              "quality": {
+                "defect_rate": 0.0
+              },
+              "time": {
+                "schedule_status": "on_track"
+              }
+            },
+            "mode": "business"
+          },
+          "meta": {
+            "generated_at": "2026-03-26T04:57:53.274736+00:00",
+            "version": "dev"
+          },
+          "scene": {
+            "active_loop": "loop_quality_delay_risk",
+            "fragility": {
+              "drivers": {
+                "inventory_pressure": 0.5,
+                "loop_risk": 0.3,
+                "quality_risk": 0.5,
+                "time_pressure": 1.0,
+                "volatility": 0.0
+              },
+              "level": "high",
+              "reasons": [
+                {
+                  "code": "time_pressure",
+                  "message": "Delivery schedule is under pressure (delay risk).",
+                  "weight": 1.0
+                },
+                {
+                  "code": "inventory_pressure",
+                  "message": "Inventory looks stressed (low buffer).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "quality_risk",
+                  "message": "Risk exposure is elevated (quality/incident risk).",
+                  "weight": 0.5
+                },
+                {
+                  "code": "feedback_loops",
+                  "message": "Feedback loops amplify changes (fragility increases).",
+                  "weight": 0.3
+                }
+              ],
+              "score": 0.8600000000000001
+            },
+            "kpi": {
+              "delivery": 0.0,
+              "inventory": 0.5,
+              "risk": 0.5
+            },
+            "loops": [
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Quality/rework slows delivery",
+                    "to": "obj_delivery",
+                    "weight": 0.5
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay raises risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.5
+                  }
+                ],
+                "id": "loop_quality_delay_risk",
+                "label": "Quality \u2192 Delay \u2192 Risk",
+                "polarity": "negative",
+                "strength": 0.75,
+                "triggered_by": [
+                  {
+                    "metric": "inventory",
+                    "op": "<=",
+                    "value": 0.5
+                  },
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.5
+                  }
+                ]
+              },
+              {
+                "edges": [
+                  {
+                    "from": "obj_inventory",
+                    "kind": "negative",
+                    "label": "Inventory \u2192 Delivery pressure",
+                    "to": "obj_delivery",
+                    "weight": 0.6
+                  },
+                  {
+                    "from": "obj_delivery",
+                    "kind": "negative",
+                    "label": "Delay \u2192 Risk",
+                    "to": "obj_risk_zone",
+                    "weight": 0.7
+                  }
+                ],
+                "id": "loop_inventory_delay_risk",
+                "label": "Inventory \u2194 Delivery Delay \u2194 Risk",
+                "polarity": "negative",
+                "strength": 0.6666666666666666,
+                "triggered_by": [
+                  {
+                    "metric": "delivery",
+                    "op": "<=",
+                    "value": 0.45
+                  }
+                ]
+              }
+            ],
+            "loops_suggestions": [
+              "Consider prioritizing bottlenecks and reducing cycle time variance.",
+              "Consider mitigating top risks and adding monitoring for early signals.",
+              "Consider reviewing reorder points and lead time assumptions."
+            ],
+            "nexora_mvp": {
+              "loops": [
+                {
+                  "active": true,
+                  "id": "loop_core_delivery",
+                  "intensity": 0.6666666666666666,
+                  "label": "Reinforcing Delivery Loop",
+                  "path": [
+                    "obj_time",
+                    "obj_quality",
+                    "obj_inventory",
+                    "obj_time"
+                  ],
+                  "pulseSpeed": 1.2666666666666666
+                }
+              ],
+              "objects": [
+                {
+                  "id": "obj_time",
+                  "intensity": 1.0,
+                  "label": "Time Pressure",
+                  "pos": [
+                    0,
+                    0.8,
+                    0
+                  ],
+                  "state": "critical"
+                },
+                {
+                  "id": "obj_inventory",
+                  "intensity": 0.5,
+                  "label": "Inventory",
+                  "pos": [
+                    -1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                },
+                {
+                  "id": "obj_quality",
+                  "intensity": 0.5,
+                  "label": "Quality Risk",
+                  "pos": [
+                    1.2,
+                    -0.6,
+                    0
+                  ],
+                  "state": "warning"
+                }
+              ]
+            },
+            "objects": [
+              {
+                "color": "#3498db",
+                "emphasis": 0.08595151270636606,
+                "id": "obj_delivery",
+                "position": [
+                  -3.9,
+                  0.0,
+                  0.0
+                ],
+                "scale": 0.876070027517807,
+                "transform": {
+                  "pos": [
+                    -3.9,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_inventory",
+                "label": "Inventory",
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              {
+                "id": "obj_risk_zone",
+                "label": "Risk",
+                "position": [
+                  0.9,
+                  0.0,
+                  -3.0
+                ],
+                "transform": {
+                  "pos": [
+                    0.9,
+                    0.0,
+                    -3.0
+                  ]
+                }
+              }
+            ],
+            "scene": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            },
+            "state_vector": {
+              "intensity": 0.34073961154861454,
+              "volatility": 0.0
+            }
+          },
+          "state_vector": {
+            "intensity": 0.34073961154861454,
+            "inventory_pressure": 0.5,
+            "quality_risk": 0.5,
+            "time_pressure": 1.0,
+            "volatility": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "title": "chat:dev-x6mfhhk4",
+  "updated_at": "2026-03-26T04:57:53.275978+00:00",
+  "version": "v1"
+}

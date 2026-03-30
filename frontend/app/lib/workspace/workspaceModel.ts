@@ -30,6 +30,7 @@ export type ProjectIntelligenceState = {
   autonomousExploration: any | null;
   opponentModel: any | null;
   strategicPatterns: any | null;
+  decisionResult: any | null;
   responseData: any | null;
   sourceLabel: string | null;
   lastAnalysisSummary: string | null;
@@ -122,6 +123,7 @@ export function createEmptyProjectState(projectId: string, name?: string): Works
       autonomousExploration: null,
       opponentModel: null,
       strategicPatterns: null,
+      decisionResult: null,
       responseData: null,
       sourceLabel: null,
       lastAnalysisSummary: null,

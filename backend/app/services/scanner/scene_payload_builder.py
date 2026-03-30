@@ -4,28 +4,35 @@ from __future__ import annotations
 
 from typing import Any
 
+from mapping.schemas import ObjectImpactSet
+
 
 _RISK_OBJECTS = {"obj_risk_zone", "obj_supplier", "obj_bottleneck", "obj_delivery"}
 
 
 def build_fragility_scene_payload(
-    suggested_objects: list[str],
+    object_impacts: ObjectImpactSet,
     fragility_score: float,
     drivers: list[dict],
     findings: list[dict],
+    reasons_by_object: dict[str, list[str]],
 ) -> dict[str, Any]:
     """Build an additive scene payload for scanner-driven frontend overlays."""
     bounded_score = _clamp01(fragility_score)
     level = _level_for_score(bounded_score)
-    focus_objects = _suggested_focus(suggested_objects, drivers)
+    primary_ids = [impact.object_id for impact in object_impacts.primary]
+    affected_ids = [impact.object_id for impact in object_impacts.affected]
+    context_ids = [impact.object_id for impact in object_impacts.context]
+    highlighted_object_ids = _unique_ids([*primary_ids, *affected_ids, *context_ids])[:5]
+    focus_objects = _suggested_focus(primary_ids, affected_ids, highlighted_object_ids, drivers)
 
     objects = [
         {
             "id": object_id,
             "emphasis": _object_emphasis(object_id, bounded_score),
-            "reason": _highlight_reason(object_id, drivers, findings),
+            "reason": _highlight_reason(object_id, drivers, findings, reasons_by_object),
         }
-        for object_id in suggested_objects
+        for object_id in highlighted_object_ids
     ]
 
     highlights = [
@@ -53,14 +60,19 @@ def build_fragility_scene_payload(
         },
         "suggested_focus": focus_objects,
         "scanner_overlay": scanner_overlay,
+        "highlighted_object_ids": highlighted_object_ids,
+        "primary_object_ids": primary_ids,
+        "affected_object_ids": affected_ids,
+        "dim_unrelated_objects": len(primary_ids) > 0,
+        "reasons_by_object": reasons_by_object,
     }
 
 
-def _suggested_focus(suggested_objects: list[str], drivers: list[dict]) -> list[str]:
+def _suggested_focus(primary_ids: list[str], affected_ids: list[str], suggested_objects: list[str], drivers: list[dict]) -> list[str]:
     """Return the most relevant objects to focus in the scene."""
     ordered: list[str] = []
-    risk_priority = [item for item in suggested_objects if item in _RISK_OBJECTS]
-    for object_id in [*risk_priority, *suggested_objects]:
+    risk_priority = [item for item in [*primary_ids, *affected_ids, *suggested_objects] if item in _RISK_OBJECTS]
+    for object_id in [*primary_ids, *risk_priority, *affected_ids, *suggested_objects]:
         if object_id not in ordered:
             ordered.append(object_id)
     if not ordered and drivers:
@@ -76,8 +88,17 @@ def _object_emphasis(object_id: str, fragility_score: float) -> float:
     return round(min(base, 1.0), 4)
 
 
-def _highlight_reason(object_id: str, drivers: list[dict], findings: list[dict]) -> str:
+def _highlight_reason(
+    object_id: str,
+    drivers: list[dict],
+    findings: list[dict],
+    reasons_by_object: dict[str, list[str]],
+) -> str:
     """Build a compact explanation for why an object is highlighted."""
+    object_reasons = reasons_by_object.get(object_id) or []
+    if object_reasons:
+        return object_reasons[0]
+
     for driver in drivers:
         if not isinstance(driver, dict):
             continue
@@ -104,6 +125,14 @@ def _highlight_reason(object_id: str, drivers: list[dict], findings: list[dict])
         if "delay" in title and object_id == "obj_delivery":
             return "Finding points to delivery fragility."
     return "Highlighted by scanner analysis."
+
+
+def _unique_ids(values: list[str]) -> list[str]:
+    ordered: list[str] = []
+    for value in values:
+        if value and value not in ordered:
+            ordered.append(value)
+    return ordered
 
 
 def _level_for_score(score: float) -> str:

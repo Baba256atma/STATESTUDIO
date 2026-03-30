@@ -1,0 +1,67 @@
+{
+  "events": [
+    {
+      "actions_summary": [
+        "applyObject:obj_risk_zone",
+        "applyObject:obj_risk_zone"
+      ],
+      "allowed_objects": [
+        "obj_risk_zone",
+        "obj_inventory",
+        "obj_delivery",
+        "obj_quality",
+        "obj_cost",
+        "obj_throughput",
+        "obj_cashflow",
+        "obj_customer",
+        "obj_process",
+        "type_inventory",
+        "type_delivery",
+        "type_risk",
+        "type_quality",
+        "type_cost",
+        "type_throughput"
+      ],
+      "episode_id": "b5c169b2-8a25-48d4-9149-ed44b41aa91a",
+      "focused_object_id": "obj_risk_zone",
+      "fragility": {
+        "drivers": {
+          "inventory_pressure": 0.5,
+          "loop_risk": 0.0,
+          "quality_risk": 0.5,
+          "time_pressure": 0.5,
+          "volatility": 0.0
+        },
+        "level": "medium",
+        "reasons": [
+          {
+            "code": "inventory_pressure",
+            "message": "Inventory looks stressed (low buffer).",
+            "weight": 0.5
+          },
+          {
+            "code": "time_pressure",
+            "message": "Delivery schedule is under pressure (delay risk).",
+            "weight": 0.5
+          },
+          {
+            "code": "quality_risk",
+            "message": "Risk exposure is elevated (quality/incident risk).",
+            "weight": 0.5
+          }
+        ],
+        "score": 0.42000000000000004
+      },
+      "kpi": {
+        "delivery": 0.5,
+        "inventory": 0.5,
+        "risk": 0.5
+      },
+      "mode": "business",
+      "text": "System is stable with no major disruption.",
+      "ts": "2026-03-30T19:10:34.961243+00:00"
+    }
+  ],
+  "updated_at": "2026-03-30T19:10:34.961265+00:00",
+  "user_id": "demo-hardening"
+}

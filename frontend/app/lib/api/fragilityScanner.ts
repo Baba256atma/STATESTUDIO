@@ -27,6 +27,18 @@ function readStringArray(value: unknown): string[] | undefined {
   return value.filter((item): item is string => typeof item === "string");
 }
 
+function normalizeReasonsByObject(value: unknown): Record<string, string[]> | undefined {
+  if (!isRecord(value)) return undefined;
+  const normalized = Object.fromEntries(
+    Object.entries(value).flatMap(([key, rawReasons]) => {
+      if (typeof key !== "string" || !key.trim()) return [];
+      const reasons = readStringArray(rawReasons) ?? [];
+      return [[key, reasons]] as const;
+    })
+  );
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
 function normalizeSceneObject(value: unknown): FragilitySceneObject | null {
   if (!isRecord(value)) return null;
   const id = readString(value.id);
@@ -53,6 +65,11 @@ function normalizeSceneHighlight(value: unknown): FragilitySceneHighlight | null
 function normalizeScenePayload(value: unknown): FragilityScenePayload | undefined {
   if (!isRecord(value)) return undefined;
   return {
+    highlighted_object_ids: readStringArray(value.highlighted_object_ids) ?? [],
+    primary_object_ids: readStringArray(value.primary_object_ids) ?? [],
+    affected_object_ids: readStringArray(value.affected_object_ids) ?? [],
+    dim_unrelated_objects: value.dim_unrelated_objects === true,
+    reasons_by_object: normalizeReasonsByObject(value.reasons_by_object),
     objects: Array.isArray(value.objects)
       ? value.objects.map(normalizeSceneObject).filter(Boolean) as FragilitySceneObject[]
       : [],

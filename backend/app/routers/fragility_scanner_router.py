@@ -44,11 +44,13 @@ async def run_fragility_scan(
         result = orchestrator.run_scan(payload.model_dump())
         response = FragilityScanResponse.model_validate(result)
         logger.info(
-            "fragility_scan_completed workspace_id=%s user_id=%s fragility_score=%.4f fragility_level=%s",
+            "fragility_scan_completed workspace_id=%s user_id=%s fragility_score=%.4f fragility_level=%s primary_objects=%s driver_ids=%s",
             payload.workspace_id,
             payload.user_id,
             response.fragility_score,
             response.fragility_level,
+            response.scene_payload.primary_object_ids,
+            [driver.id for driver in response.drivers],
         )
         return response
     except ValidationError as exc:

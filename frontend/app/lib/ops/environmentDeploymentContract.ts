@@ -18,6 +18,10 @@ export type FeatureCapabilityMap = {
   advanced_cockpit: boolean;
   memory_learning: boolean;
   experimental_reasoning_paths: boolean;
+  strict_validation: boolean;
+  enable_trace_logging: boolean;
+  safe_execution_only: boolean;
+  disable_multi_agent_if_unstable: boolean;
 };
 
 export type IntegrationPolicy = {
@@ -115,6 +119,13 @@ export function buildEnvironmentConfig(context: EnvironmentContext): Environment
     advanced_cockpit: boolFromEnv(process.env.NEXT_PUBLIC_ENABLE_ADVANCED_COCKPIT, !isDemo),
     memory_learning: boolFromEnv(process.env.NEXT_PUBLIC_ENABLE_MEMORY_LEARNING, true),
     experimental_reasoning_paths: boolFromEnv(process.env.NEXT_PUBLIC_ENABLE_EXPERIMENTAL_REASONING, !isProdLike),
+    strict_validation: boolFromEnv(process.env.NEXT_PUBLIC_STRICT_VALIDATION, isProdLike),
+    enable_trace_logging: boolFromEnv(process.env.NEXT_PUBLIC_ENABLE_TRACE_LOGGING, !isDemo),
+    safe_execution_only: boolFromEnv(process.env.NEXT_PUBLIC_SAFE_EXECUTION_ONLY, false),
+    disable_multi_agent_if_unstable: boolFromEnv(
+      process.env.NEXT_PUBLIC_DISABLE_MULTI_AGENT_IF_UNSTABLE,
+      isProdLike
+    ),
   };
 
   const integrationPolicy: IntegrationPolicy = {
@@ -169,4 +180,3 @@ export function isFeatureEnabled(config: EnvironmentConfig | null | undefined, f
   if (!config) return true;
   return !!config.features?.[feature];
 }
-
