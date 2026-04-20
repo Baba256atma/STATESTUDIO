@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { nx, panelSurfaceStyle, primaryButtonStyle } from "../ui/nexoraTheme";
 
 type RightPanelFallbackProps = {
   title: string;
@@ -9,41 +10,33 @@ type RightPanelFallbackProps = {
   onSuggestedAction?: (() => void) | null;
 };
 
-export function RightPanelFallback(props: RightPanelFallbackProps) {
+export const RightPanelFallback = React.memo(function RightPanelFallback(props: RightPanelFallbackProps) {
+  const title = props.title ?? "";
+  const message = props.message ?? "";
+  const hasCTA = Boolean(props.suggestedActionLabel && props.onSuggestedAction);
+  const onSuggestedAction = props.onSuggestedAction ?? undefined;
+
   return (
     <div
       style={{
+        ...panelSurfaceStyle,
         display: "flex",
         flexDirection: "column",
-        gap: 10,
-        padding: 14,
-        borderRadius: 14,
-        border: "1px solid rgba(148,163,184,0.14)",
-        background: "rgba(15,23,42,0.78)",
-        color: "#e2e8f0",
+        gap: 12,
+        padding: 16,
+        color: nx.text,
       }}
     >
-      <div style={{ fontSize: 15, fontWeight: 800 }}>{props.title}</div>
-      <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.5 }}>{props.message}</div>
-      {props.suggestedActionLabel && props.onSuggestedAction ? (
-        <button
-          type="button"
-          onClick={props.onSuggestedAction}
-          style={{
-            alignSelf: "flex-start",
-            borderRadius: 999,
-            border: "1px solid rgba(96,165,250,0.28)",
-            background: "rgba(59,130,246,0.14)",
-            color: "#dbeafe",
-            padding: "8px 12px",
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: nx.lowMuted }}>
+        Executive insight
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.25 }}>{title}</div>
+      <div style={{ color: nx.muted, fontSize: 13, lineHeight: 1.55 }}>{message}</div>
+      {hasCTA ? (
+        <button type="button" onClick={onSuggestedAction} style={{ ...primaryButtonStyle, alignSelf: "flex-start" }}>
           {props.suggestedActionLabel}
         </button>
       ) : null}
     </div>
   );
-}
+});

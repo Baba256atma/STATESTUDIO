@@ -2,19 +2,7 @@
 
 import React from "react";
 
-export function SettingsPanel({
-  isOpen,
-  backgroundMode,
-  orbitMode,
-  showAxes,
-  onBackgroundModeChange,
-  onOrbitModeChange,
-  onShowAxesChange,
-  onClose,
-  onStartDemo,
-  demoLoading,
-  demoError,
-}: {
+type SettingsPanelProps = {
   isOpen: boolean;
   backgroundMode: "day" | "night" | "stars";
   orbitMode: "auto" | "manual";
@@ -26,14 +14,37 @@ export function SettingsPanel({
   onStartDemo?: (demoId: "growth" | "fixes" | "escalation") => void;
   demoLoading?: boolean;
   demoError?: string | null;
-}) {
+};
+
+const DEMO_OPTIONS = [
+  { id: "growth", label: "Start Demo: Growth" },
+  { id: "fixes", label: "Start Demo: Fixes" },
+  { id: "escalation", label: "Start Demo: Escalation" },
+] as const;
+
+const BACKGROUND_MODES = ["day", "night", "stars"] as const;
+const ORBIT_MODES = ["auto", "manual"] as const;
+
+export const SettingsPanel = React.memo(function SettingsPanel(props: SettingsPanelProps) {
+  const {
+    isOpen,
+    backgroundMode,
+    orbitMode,
+    showAxes,
+    onBackgroundModeChange,
+    onOrbitModeChange,
+    onShowAxesChange,
+    onClose,
+    onStartDemo,
+    demoLoading,
+    demoError,
+  } = props;
+  const hasDemo = Boolean(onStartDemo);
+
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-30"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-30" onClick={onClose}>
       <div
         className="fixed right-4 top-14 w-64 rounded-lg border border-white/10 bg-slate-900/80 p-3 text-sm text-white backdrop-blur"
         onClick={(e) => e.stopPropagation()}
@@ -50,10 +61,10 @@ export function SettingsPanel({
         </div>
 
         <div className="mt-3 space-y-3">
-          <div>
-            <div className="text-xs text-white/60">Background</div>
+          <fieldset>
+            <legend className="text-xs text-white/60">Background</legend>
             <div className="mt-2 grid gap-2">
-              {(["day", "night", "stars"] as const).map((mode) => (
+              {BACKGROUND_MODES.map((mode) => (
                 <label
                   key={mode}
                   className="flex cursor-pointer items-center gap-2 text-xs text-white/80"
@@ -68,12 +79,12 @@ export function SettingsPanel({
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
-          <div>
-            <div className="text-xs text-white/60">Orbit mode</div>
+          <fieldset>
+            <legend className="text-xs text-white/60">Orbit mode</legend>
             <div className="mt-2 grid gap-2">
-              {(["auto", "manual"] as const).map((mode) => (
+              {ORBIT_MODES.map((mode) => (
                 <label
                   key={mode}
                   className="flex cursor-pointer items-center gap-2 text-xs text-white/80"
@@ -88,7 +99,7 @@ export function SettingsPanel({
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           <label className="flex items-center justify-between gap-2 text-xs text-white/70">
             <span>Show axes</span>
@@ -99,20 +110,14 @@ export function SettingsPanel({
             />
           </label>
 
-          {onStartDemo && (
+          {hasDemo && (
             <div>
               <div className="text-xs text-white/60">Demos</div>
               <div className="mt-2 grid gap-2">
-                {(
-                  [
-                    { id: "growth", label: "Start Demo: Growth" },
-                    { id: "fixes", label: "Start Demo: Fixes" },
-                    { id: "escalation", label: "Start Demo: Escalation" },
-                  ] as const
-                ).map((demo) => (
+                {DEMO_OPTIONS.map((demo) => (
                   <button
                     key={demo.id}
-                    onClick={() => onStartDemo(demo.id)}
+                    onClick={() => onStartDemo?.(demo.id)}
                     className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={demoLoading}
                   >
@@ -127,4 +132,4 @@ export function SettingsPanel({
       </div>
     </div>
   );
-}
+});

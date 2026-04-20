@@ -143,11 +143,11 @@ function inferTarget(intent: IntentKind): RouteTarget {
 function inferPreferredPanel(intent: IntentKind): NexoraRoutePanelTab | null {
   switch (intent) {
     case "fragility_scan":
-      return "risk_flow";
+      return "fragility";
     case "simulation_run":
-      return "montecarlo";
+      return "simulate";
     case "strategy_advice":
-      return "strategic_advice";
+      return "advice";
     case "timeline_view":
       return "timeline";
     case "conflict_view":
@@ -155,15 +155,15 @@ function inferPreferredPanel(intent: IntentKind): NexoraRoutePanelTab | null {
     case "replay_view":
       return "replay";
     case "executive_summary":
-      return "executive_dashboard";
+      return "dashboard";
     case "workspace_action":
       return "workspace";
     case "object_focus":
       return "object";
     case "scene_focus":
-      return "scene";
+      return "workspace";
     default:
-      return "chat";
+      return null;
   }
 }
 

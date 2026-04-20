@@ -1,5 +1,9 @@
+import type { SignalBundleOut } from "../lib/api/ingestionApi";
+
 export type FragilityScanRequest = {
-  text: string;
+  /** Required unless `signal_bundle` is set (backend runs mapping + fragility on the bundle). */
+  text?: string;
+  signal_bundle?: SignalBundleOut | null;
   mode?: string;
   source_type?: string | null;
   source_name?: string | null;

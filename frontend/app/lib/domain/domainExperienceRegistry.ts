@@ -55,6 +55,9 @@ export interface NexoraDomainExperience {
   executiveFramingStyle: NexoraExecutiveFramingStyle;
   tags: string[];
   sharedCoreEngineId: string;
+  demoScenarioTitle?: string;
+  demoBusinessContext?: string;
+  demoDecisionQuestion?: string;
 }
 
 export interface NexoraResolvedDomainExperience {
@@ -177,6 +180,40 @@ function buildHelperCopy(selection: NexoraResolvedDomainSelection): {
   }
 }
 
+function deriveDemoFramingFallback(domainId: string): {
+  demoScenarioTitle: string;
+  demoBusinessContext: string;
+  demoDecisionQuestion: string;
+} {
+  switch (domainId) {
+    case "finance":
+      return {
+        demoScenarioTitle: "Finance pressure",
+        demoBusinessContext: "Liquidity and exposure interact—small shocks can widen through funding and delivery channels.",
+        demoDecisionQuestion: "Which move reduces fragility with the lowest operational cost?",
+      };
+    case "devops":
+      return {
+        demoScenarioTitle: "Service resilience",
+        demoBusinessContext: "Dependencies and load interact—latency and failures compound across customer journeys.",
+        demoDecisionQuestion: "What should leadership harden first without slowing delivery?",
+      };
+    case "strategy":
+      return {
+        demoScenarioTitle: "Strategic posture",
+        demoBusinessContext: "Competitive and market signals converge—options narrow as pressure compounds.",
+        demoDecisionQuestion: "Where is the next decisive tradeoff for leadership?",
+      };
+    case "business":
+    default:
+      return {
+        demoScenarioTitle: "Operating pressure",
+        demoBusinessContext: "Flow, inventory, and customer commitments interact—strain shows up across the network.",
+        demoDecisionQuestion: "Where should leadership stabilize flow before the next demand step?",
+      };
+  }
+}
+
 function deriveAdviceFramingHints(selection: NexoraResolvedDomainSelection): string[] {
   const config = selection.pack.adviceConfig;
   return uniq([
@@ -189,6 +226,7 @@ function deriveAdviceFramingHints(selection: NexoraResolvedDomainSelection): str
 function buildDomainExperience(selection: NexoraResolvedDomainSelection): NexoraDomainExperience {
   const helperCopy = buildHelperCopy(selection);
   const packDefaults = selection.pack.experienceDefaults;
+  const framingFallback = deriveDemoFramingFallback(selection.descriptor.id);
   return {
     domainId: selection.descriptor.id,
     label: selection.descriptor.label,
@@ -215,6 +253,9 @@ function buildDomainExperience(selection: NexoraResolvedDomainSelection): Nexora
       packDefaults?.executiveFramingStyle ?? deriveExecutiveFramingStyle(selection.descriptor.id),
     tags: uniq([...selection.descriptor.tags, ...selection.pack.tags]),
     sharedCoreEngineId: NEXORA_SHARED_CORE_ENGINE.id,
+    demoScenarioTitle: packDefaults?.demoScenarioTitle ?? framingFallback.demoScenarioTitle,
+    demoBusinessContext: packDefaults?.demoBusinessContext ?? framingFallback.demoBusinessContext,
+    demoDecisionQuestion: packDefaults?.demoDecisionQuestion ?? framingFallback.demoDecisionQuestion,
   };
 }
 

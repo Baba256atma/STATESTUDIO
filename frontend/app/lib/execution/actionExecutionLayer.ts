@@ -13,11 +13,14 @@ type HighlightSelectionPayload = {
   object_selection?: {
     highlighted_objects?: unknown[];
   } | null;
-  scene_json?: {
-    object_selection?: {
-      highlighted_objects?: unknown[];
-    } | null;
-  } | null;
+  scene_json?:
+    | {
+        object_selection?: {
+          highlighted_objects?: unknown[];
+        } | null;
+      }
+    | SceneJson
+    | null;
   context?: {
     object_selection?: {
       highlighted_objects?: unknown[];
@@ -91,10 +94,14 @@ function markStep(result: NexoraExecutionResult, step: NexoraExecutionStep, exec
 }
 
 function extractHighlightedObjectIds(payload: HighlightSelectionPayload | null | undefined): string[] {
+  const sceneObjectSelection =
+    payload?.scene_json && typeof payload.scene_json === "object" && !Array.isArray(payload.scene_json)
+      ? (payload.scene_json as { object_selection?: { highlighted_objects?: unknown[] } | null }).object_selection
+      : null;
   const ids = Array.isArray(payload?.object_selection?.highlighted_objects)
     ? payload.object_selection.highlighted_objects
-    : Array.isArray(payload?.scene_json?.object_selection?.highlighted_objects)
-    ? payload.scene_json.object_selection.highlighted_objects
+    : Array.isArray(sceneObjectSelection?.highlighted_objects)
+    ? sceneObjectSelection.highlighted_objects
     : Array.isArray(payload?.context?.object_selection?.highlighted_objects)
     ? payload.context.object_selection.highlighted_objects
     : Array.isArray(payload?.highlightedObjectIds)

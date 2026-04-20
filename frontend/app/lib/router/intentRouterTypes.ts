@@ -1,4 +1,5 @@
 import type { SceneJson } from "../sceneTypes";
+import type { CanonicalRightPanelView } from "../ui/right-panel/rightPanelTypes";
 
 export type IntentKind =
   | "chat_general"
@@ -39,27 +40,8 @@ export type SceneMutationPolicy =
   | "soft_reaction"
   | "full_update";
 
-export type NexoraRoutePanelTab =
-  | "chat"
-  | "object"
-  | "loops"
-  | "kpi"
-  | "decisions"
-  | "scene"
-  | "montecarlo"
-  | "timeline"
-  | "conflict"
-  | "object_focus"
-  | "memory_insights"
-  | "risk_flow"
-  | "replay"
-  | "strategic_advice"
-  | "opponent_moves"
-  | "strategic_patterns"
-  | "executive_dashboard"
-  | "war_room"
-  | "collaboration"
-  | "workspace";
+// Intent router now uses canonical right-panel view names to avoid legacy tab drift.
+export type NexoraRoutePanelTab = CanonicalRightPanelView;
 
 export type NexoraIntentRoute = {
   intent: IntentKind;

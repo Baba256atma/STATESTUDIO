@@ -70,7 +70,7 @@ function levelTone(level: string): { color: string; background: string; border: 
   if (normalized === "high" || normalized === "critical") {
     return { color: "#fdba74", background: "rgba(251,146,60,0.14)", border: "rgba(251,146,60,0.28)" };
   }
-  if (normalized === "medium") {
+  if (normalized === "medium" || normalized === "moderate") {
     return { color: "#fde68a", background: "rgba(250,204,21,0.12)", border: "rgba(250,204,21,0.24)" };
   }
   return { color: "#86efac", background: "rgba(134,239,172,0.12)", border: "rgba(134,239,172,0.24)" };

@@ -38,6 +38,7 @@ export function mapDecisionExecutionResponseToPanelSharedData(
     simulation: normalizedSimulation
       ? {
           summary: normalizedSimulation.summary ?? null,
+          recommendation: null,
           impacted_nodes: normalizedSimulation.impacted_nodes,
           propagation: normalizedSimulation.propagation,
           risk_delta: normalizedSimulation.risk_delta ?? null,

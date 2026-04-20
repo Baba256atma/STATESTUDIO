@@ -4,23 +4,26 @@ import React from "react";
 import type { FragilityDriver } from "../../types/fragilityScanner";
 
 function severityColor(severity: string): string {
-  const value = severity.toLowerCase();
+  const value = String(severity ?? "").trim().toLowerCase();
   if (value === "critical") return "#f87171";
   if (value === "high") return "#fb923c";
   if (value === "medium") return "#fde68a";
   return "#93c5fd";
 }
 
+type FragilityDriversListProps = {
+  drivers: FragilityDriver[];
+};
+
 export function FragilityDriversList({
   drivers,
-}: {
-  drivers: FragilityDriver[];
-}): React.ReactElement {
+}: FragilityDriversListProps): React.ReactElement {
+  const hasDrivers = drivers.length > 0;
 
   return (
     <section style={{ display: "grid", gap: 8 }}>
       <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>Top Drivers</h3>
-      {drivers.length ? drivers.map((driver) => {
+      {hasDrivers ? drivers.map((driver) => {
         const color = severityColor(driver.severity);
         return (
           <article

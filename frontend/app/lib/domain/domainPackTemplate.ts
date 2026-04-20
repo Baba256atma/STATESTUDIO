@@ -78,6 +78,10 @@ export interface NexoraDomainExperienceDefaultsTemplate {
   promptGuideBody: string;
   executiveFramingStyle: NexoraTemplateExecutiveFramingStyle;
   demoLabel?: string;
+  /** Live-demo framing (optional; surfaced in shell, no new backend fields). */
+  demoScenarioTitle?: string;
+  demoBusinessContext?: string;
+  demoDecisionQuestion?: string;
 }
 
 export interface NexoraUniversalDomainPackTemplate {
@@ -232,6 +236,15 @@ export function createUniversalDomainPackTemplate(
       promptGuideBody: input.experienceDefaults.promptGuideBody,
       executiveFramingStyle: input.experienceDefaults.executiveFramingStyle,
       ...(input.experienceDefaults.demoLabel ? { demoLabel: input.experienceDefaults.demoLabel } : {}),
+      ...(input.experienceDefaults.demoScenarioTitle
+        ? { demoScenarioTitle: input.experienceDefaults.demoScenarioTitle }
+        : {}),
+      ...(input.experienceDefaults.demoBusinessContext
+        ? { demoBusinessContext: input.experienceDefaults.demoBusinessContext }
+        : {}),
+      ...(input.experienceDefaults.demoDecisionQuestion
+        ? { demoDecisionQuestion: input.experienceDefaults.demoDecisionQuestion }
+        : {}),
     },
     vocabulary,
     scannerHints,

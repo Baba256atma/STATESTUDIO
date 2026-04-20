@@ -6,6 +6,7 @@ import type { SceneJson, SceneLoop } from "../sceneTypes";
 import {
   buildPreviewPropagationOverlay,
   buildPropagationSceneSignature,
+  hasMeaningfulPropagationOverlay,
   hasPropagationRelations,
   isPropagationOverlayCompatible,
   resolveScannerPrimarySource,
@@ -165,6 +166,7 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
     }
     if (
       embeddedBackendOverlay &&
+      hasMeaningfulPropagationOverlay(embeddedBackendOverlay) &&
       isValidBackendOverlay({
         overlay: embeddedBackendOverlay,
         sceneJson,
@@ -182,6 +184,14 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
       setPropagationError(null);
       activeRequestKeyRef.current = requestKey;
       return;
+    }
+    if (embeddedBackendOverlay && !hasMeaningfulPropagationOverlay(embeddedBackendOverlay)) {
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[Nexora][PropagationSkippedEmpty]", {
+          sourceId: resolvedSourceId,
+          reason: "embedded_overlay_not_meaningful",
+        });
+      }
     }
     if (
       backendOverlay &&
@@ -279,6 +289,7 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
       }
       if (
         overlay &&
+        hasMeaningfulPropagationOverlay(overlay) &&
         isPropagationOverlayCompatible({
           overlay,
           sceneJson,
@@ -301,6 +312,11 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
             edgeCount: overlay.impacted_edges.length,
           });
         }
+      } else if (overlay && process.env.NODE_ENV !== "production") {
+        console.debug("[Nexora][PropagationSkippedEmpty]", {
+          sourceId: resolvedSourceId,
+          reason: "backend_overlay_not_meaningful",
+        });
       } else if (process.env.NODE_ENV !== "production") {
         console.debug("[Nexora][PropagationBridge] preview fallback used", {
           sourceId: resolvedSourceId,
@@ -339,7 +355,7 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
 
   const previewOverlay = useMemo(() => {
     if (!previewEnabled || !resolvedSourceId || !triggerResolution.should_fallback_preview) return null;
-    return buildPreviewPropagationOverlay({
+    const overlay = buildPreviewPropagationOverlay({
       sceneJson,
       loops,
       sourceObjectId: resolvedSourceId,
@@ -347,6 +363,13 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
       maxDepth: Math.min(2, maxDepth),
       decay: Math.min(decay, 0.74),
     });
+    if (!overlay && process.env.NODE_ENV !== "production") {
+      console.debug("[Nexora][PropagationSkippedEmpty]", {
+        sourceId: resolvedSourceId,
+        reason: "preview_overlay_not_meaningful",
+      });
+    }
+    return overlay;
   }, [decay, loops, maxDepth, previewEnabled, resolvedSourceId, sceneJson, triggerResolution.should_fallback_preview]);
 
   const propagationOverlay = useMemo(() => {

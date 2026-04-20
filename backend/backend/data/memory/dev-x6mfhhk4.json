@@ -1,30 +1,30 @@
 {
   "obj_core": {
-    "energy": 0.30453559923955165,
-    "hits": 14,
+    "energy": 0.15261961231372936,
+    "hits": 180,
     "last_intensity": 0.4360560351820839,
-    "last_ts": 1774899361,
-    "trend": "rising"
+    "last_ts": 1776111423,
+    "trend": "stable"
   },
   "obj_delivery": {
-    "energy": 0.23624347200204415,
-    "hits": 121,
+    "energy": 1.0,
+    "hits": 234,
     "last_intensity": 0.34073961154861454,
-    "last_ts": 1774757079,
-    "trend": "rising"
+    "last_ts": 1775535144,
+    "trend": "stable"
   },
   "obj_inventory": {
-    "energy": 0.11925886404201508,
-    "hits": 40,
+    "energy": 1.0,
+    "hits": 157,
     "last_intensity": 0.34073961154861454,
-    "last_ts": 1774757079,
-    "trend": "falling"
+    "last_ts": 1775535144,
+    "trend": "stable"
   },
   "obj_risk_zone": {
-    "energy": 0.39027538296179826,
-    "hits": 78,
-    "last_intensity": 0.34073961154861454,
-    "last_ts": 1774899360,
+    "energy": 0.271617850932366,
+    "hits": 542,
+    "last_intensity": 0.43531139109288164,
+    "last_ts": 1776141517,
     "trend": "rising"
   }
 }

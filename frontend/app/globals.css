@@ -1,5 +1,162 @@
 @import "tailwindcss";
 
+/* Nexora UI themes: `document.documentElement` sets data-theme="night" | "day" (resolved). */
+html[data-theme="night"] {
+  --nx-bg-app: #050a14;
+  --nx-header-bg: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(8, 16, 28, 0.86));
+  --nx-header-shadow: 0 8px 28px rgba(2, 6, 23, 0.22);
+  --nx-leftnav-bg: linear-gradient(180deg, rgba(7, 16, 25, 0.96), rgba(8, 16, 28, 0.9));
+  --nx-stage-bg: radial-gradient(130% 120% at 0% 0%, #0b1220 0%, #071019 55%, #050a14 100%);
+  --nx-stage-inset: inset 0 0 0 1px rgba(148, 163, 184, 0.06);
+  --nx-right-rail-bg: linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(8, 16, 28, 0.88));
+  --nx-studio-panel-bg: rgba(15, 23, 42, 0.58);
+  --nx-studio-panel-border: rgba(120, 170, 255, 0.18);
+  --nx-bg-panel: rgba(15, 23, 42, 0.78);
+  --nx-bg-panel-soft: rgba(2, 6, 23, 0.46);
+  --nx-bg-elevated: rgba(15, 23, 42, 0.78);
+  --nx-bg-hud: rgba(15, 23, 42, 0.68);
+  --nx-bg-deep: rgba(2, 6, 23, 0.52);
+  --nx-bg-control: rgba(2, 6, 23, 0.45);
+  --nx-border: rgba(148, 163, 184, 0.12);
+  --nx-border-soft: rgba(148, 163, 184, 0.08);
+  --nx-border-strong: rgba(96, 165, 250, 0.32);
+  --nx-divider: rgba(148, 163, 184, 0.14);
+  --nx-divider-strong: rgba(148, 163, 184, 0.16);
+  --nx-text: #e2e8f0;
+  --nx-text-strong: #f8fafc;
+  --nx-text-soft: #cbd5e1;
+  --nx-muted: #94a3b8;
+  --nx-low-muted: #64748b;
+  --nx-accent: #60a5fa;
+  --nx-accent-soft: rgba(96, 165, 250, 0.14);
+  --nx-accent-muted: #93c5fd;
+  --nx-accent-ink: #dbeafe;
+  --nx-logo-border: rgba(96, 165, 250, 0.28);
+  --nx-logo-bg: linear-gradient(135deg, rgba(37, 99, 235, 0.24), rgba(15, 23, 42, 0.84));
+  --nx-logo-text: #eff6ff;
+  --nx-console-bg: rgba(2, 6, 23, 0.78);
+  --nx-console-inset: inset 0 0 0 1px rgba(96, 165, 250, 0.06);
+  --nx-status-well-bg: rgba(2, 6, 23, 0.58);
+  --nx-chip-surface: rgba(2, 6, 23, 0.42);
+  --nx-chip-inset: inset 0 0 0 1px rgba(148, 163, 184, 0.05);
+  --nx-chip-value-text: #e5eefb;
+  --nx-primary-cta-border: rgba(96, 165, 250, 0.38);
+  --nx-primary-cta-bg: linear-gradient(135deg, rgba(37, 99, 235, 0.26), rgba(59, 130, 246, 0.2));
+  --nx-primary-cta-color: #eff6ff;
+  --nx-secondary-cta-bg: rgba(15, 23, 42, 0.48);
+  --nx-popover-bg: rgba(15, 23, 42, 0.96);
+  --nx-popover-shadow: 0 16px 40px rgba(2, 6, 23, 0.45);
+  --nx-overlay-backdrop: rgba(2, 6, 23, 0.48);
+  --nx-workspace-panel-bg: rgba(15, 23, 42, 0.78);
+  --nx-workspace-shadow: 0 -10px 28px rgba(2, 6, 23, 0.22);
+  --nx-workspace-close-bg: rgba(15, 23, 42, 0.52);
+  --nx-workspace-close-border: rgba(148, 163, 184, 0.2);
+  --nx-surface-panel: rgba(15, 23, 42, 0.72);
+  --nx-overlay-card-bg: rgba(15, 23, 42, 0.68);
+  --nx-overlay-card-shadow: 0 10px 36px rgba(2, 6, 23, 0.28);
+  --nx-scene-vignette: radial-gradient(72% 68% at 50% 48%, rgba(7, 16, 25, 0) 0%, rgba(7, 16, 25, 0) 58%, rgba(2, 6, 23, 0.45) 100%);
+  --nx-nav-tile-active-border: rgba(96, 165, 250, 0.45);
+  --nx-nav-tile-active-bg: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(15, 23, 42, 0.88));
+  --nx-nav-tile-inactive-bg: rgba(2, 6, 23, 0.52);
+  --nx-nav-tile-active-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.16), 0 12px 24px rgba(2, 6, 23, 0.24);
+  --nx-nav-short-active: #bfdbfe;
+  --nx-focus-ring: rgba(96, 165, 250, 0.42);
+  --nx-placeholder: rgba(148, 163, 184, 0.5);
+  --nx-success: #86efac;
+  --nx-warning: #fde68a;
+  --nx-risk: #fca5a5;
+  --nx-meta-pill-mode-bg: rgba(96, 165, 250, 0.12);
+  --nx-meta-pill-driver-bg: rgba(245, 158, 11, 0.12);
+  --nx-bg-shell: var(--nx-header-bg);
+  --nx-shadow-drawer: 0 22px 50px rgba(2, 6, 23, 0.34);
+  --nx-shadow-badge: 0 6px 22px rgba(2, 6, 23, 0.28);
+  --nx-text-primary: var(--nx-text);
+  --nx-btn-primary-bg: var(--nx-primary-cta-bg);
+  --nx-btn-primary-text: var(--nx-primary-cta-color);
+  --nx-btn-secondary-bg: var(--nx-secondary-cta-bg);
+  --nx-btn-secondary-text: var(--nx-muted);
+  --nx-chat-bubble-user-bg: var(--nx-accent-soft);
+  --nx-chat-bubble-assistant-bg: var(--nx-bg-control);
+}
+
+html[data-theme="day"] {
+  --nx-bg-app: #e8edf4;
+  --nx-bg-shell: #f8fafc;
+  --nx-header-bg: var(--nx-bg-shell);
+  --nx-header-shadow: 0 6px 22px rgba(15, 23, 42, 0.07);
+  --nx-leftnav-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 251, 0.94));
+  --nx-stage-bg: radial-gradient(130% 120% at 0% 0%, #ffffff 0%, #f1f5f9 50%, #e2e8f0 100%);
+  --nx-stage-inset: inset 0 0 0 1px rgba(30, 58, 95, 0.08);
+  --nx-right-rail-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 251, 0.92));
+  --nx-studio-panel-bg: rgba(255, 255, 255, 0.82);
+  --nx-studio-panel-border: rgba(37, 99, 235, 0.12);
+  --nx-bg-panel: rgba(255, 255, 255, 0.9);
+  --nx-bg-panel-soft: rgba(255, 255, 255, 0.72);
+  --nx-bg-elevated: rgba(255, 255, 255, 0.94);
+  --nx-bg-hud: rgba(255, 255, 255, 0.9);
+  --nx-bg-deep: rgba(241, 245, 249, 0.92);
+  --nx-bg-control: rgba(241, 245, 249, 0.95);
+  --nx-border: rgba(30, 58, 95, 0.14);
+  --nx-border-soft: rgba(30, 58, 95, 0.09);
+  --nx-border-strong: rgba(37, 99, 235, 0.28);
+  --nx-divider: rgba(30, 58, 95, 0.12);
+  --nx-divider-strong: rgba(30, 58, 95, 0.16);
+  --nx-text: #0f172a;
+  --nx-text-strong: #020617;
+  --nx-text-soft: #334155;
+  --nx-muted: #475569;
+  --nx-low-muted: #64748b;
+  --nx-accent: #2563eb;
+  --nx-accent-soft: rgba(37, 99, 235, 0.12);
+  --nx-accent-muted: #1d4ed8;
+  --nx-accent-ink: #1e40af;
+  --nx-logo-border: rgba(37, 99, 235, 0.22);
+  --nx-logo-bg: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(255, 255, 255, 0.95));
+  --nx-logo-text: #1e3a8a;
+  --nx-console-bg: rgba(255, 255, 255, 0.92);
+  --nx-console-inset: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+  --nx-status-well-bg: rgba(241, 245, 249, 0.95);
+  --nx-chip-surface: rgba(255, 255, 255, 0.88);
+  --nx-chip-inset: inset 0 0 0 1px rgba(30, 58, 95, 0.06);
+  --nx-chip-value-text: #1e293b;
+  --nx-primary-cta-border: rgba(29, 78, 216, 0.45);
+  --nx-primary-cta-bg: linear-gradient(135deg, #2563eb, #1d4ed8);
+  --nx-primary-cta-color: #f8fafc;
+  --nx-secondary-cta-bg: rgba(255, 255, 255, 0.88);
+  --nx-popover-bg: rgba(255, 255, 255, 0.98);
+  --nx-popover-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+  --nx-overlay-backdrop: rgba(15, 23, 42, 0.16);
+  --nx-workspace-panel-bg: rgba(255, 255, 255, 0.94);
+  --nx-workspace-shadow: 0 -10px 28px rgba(15, 23, 42, 0.08);
+  --nx-workspace-close-bg: rgba(241, 245, 249, 0.98);
+  --nx-workspace-close-border: rgba(30, 58, 95, 0.14);
+  --nx-surface-panel: rgba(255, 255, 255, 0.88);
+  --nx-overlay-card-bg: rgba(255, 255, 255, 0.92);
+  --nx-overlay-card-shadow: 0 10px 36px rgba(15, 23, 42, 0.1);
+  --nx-scene-vignette: radial-gradient(72% 68% at 50% 48%, rgba(241, 245, 249, 0) 0%, rgba(241, 245, 249, 0) 58%, rgba(148, 163, 184, 0.12) 100%);
+  --nx-nav-tile-active-border: rgba(37, 99, 235, 0.45);
+  --nx-nav-tile-active-bg: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(255, 255, 255, 0.95));
+  --nx-nav-tile-inactive-bg: rgba(255, 255, 255, 0.75);
+  --nx-nav-tile-active-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12), 0 8px 20px rgba(15, 23, 42, 0.06);
+  --nx-nav-short-active: #1d4ed8;
+  --nx-focus-ring: rgba(37, 99, 235, 0.45);
+  --nx-placeholder: rgba(71, 85, 105, 0.55);
+  --nx-success: #15803d;
+  --nx-warning: #b45309;
+  --nx-risk: #b91c1c;
+  --nx-meta-pill-mode-bg: rgba(37, 99, 235, 0.1);
+  --nx-meta-pill-driver-bg: rgba(245, 158, 11, 0.14);
+  --nx-shadow-drawer: 0 20px 44px rgba(15, 23, 42, 0.09);
+  --nx-shadow-badge: 0 6px 22px rgba(15, 23, 42, 0.08);
+  --nx-text-primary: var(--nx-text);
+  --nx-btn-primary-bg: var(--nx-primary-cta-bg);
+  --nx-btn-primary-text: var(--nx-primary-cta-color);
+  --nx-btn-secondary-bg: var(--nx-secondary-cta-bg);
+  --nx-btn-secondary-text: var(--nx-muted);
+  --nx-chat-bubble-user-bg: var(--nx-accent-soft);
+  --nx-chat-bubble-assistant-bg: var(--nx-bg-panel-soft);
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -23,4 +180,49 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* When Nexora has applied a theme, shell tokens drive body chrome. */
+html[data-theme] body {
+  background: var(--nx-bg-app);
+  color: var(--nx-text);
+}
+
+/* Nexora command console: focus ring + placeholder tone (keeps input logic unchanged). */
+.nexora-command-console {
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+.nexora-command-console:focus-within {
+  border-color: var(--nx-focus-ring) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--nx-accent) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--nx-accent) 8%, transparent);
+}
+.nexora-command-console input::placeholder {
+  color: var(--nx-placeholder);
+}
+
+.nexora-primary-cta {
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background 180ms ease;
+}
+.nexora-primary-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--nx-accent) 22%, transparent);
+}
+.nexora-primary-cta:active {
+  transform: translateY(0);
+}
+
+.nexora-secondary-cta {
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
+}
+html[data-theme="night"] .nexora-secondary-cta:hover {
+  border-color: color-mix(in srgb, var(--nx-muted) 45%, var(--nx-border));
+  background: color-mix(in srgb, var(--nx-bg-elevated) 88%, var(--nx-bg-app));
+  color: var(--nx-text-soft);
+}
+html[data-theme="day"] .nexora-secondary-cta:hover {
+  border-color: color-mix(in srgb, var(--nx-accent) 25%, var(--nx-border));
+  background: var(--nx-bg-deep);
+  color: var(--nx-text);
 }

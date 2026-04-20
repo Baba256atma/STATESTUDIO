@@ -1,4 +1,5 @@
 import type { CanonicalRecommendation } from "./recommendationTypes";
+import { extractDecisionRecommendationLine } from "../../panels/buildScenarioExplanationFromDecisionAnalysis";
 
 type BuildCanonicalRecommendationInput = {
   strategicAdvice?: any | null;
@@ -12,6 +13,7 @@ type BuildCanonicalRecommendationInput = {
   prompt_feedback?: any | null;
   decision_simulation?: any | null;
   ai_reasoning?: any | null;
+  decision_analysis?: any | null;
 };
 
 function clamp01(value: number) {
@@ -50,13 +52,21 @@ export function buildCanonicalRecommendation(
           prompt_feedback: payload.prompt_feedback ?? null,
           decision_simulation: payload.decision_simulation ?? null,
           ai_reasoning: payload.ai_reasoning ?? null,
+          decision_analysis:
+            payload.decision_analysis ??
+            (payload.scene && typeof payload.scene === "object" ? (payload.scene as { decision_analysis?: unknown }).decision_analysis : null) ??
+            null,
         }
       : {};
+  const decisionAnalysisLine = extractDecisionRecommendationLine(input.decision_analysis);
+  const daRec = input.decision_analysis?.recommended_action as Record<string, unknown> | null | undefined;
   const primaryAdvice =
     input.strategicAdvice?.primary_recommendation ??
     input.strategicAdvice?.recommended_actions?.[0] ??
     null;
   const action =
+    text(daRec?.action) ||
+    decisionAnalysisLine ||
     text(primaryAdvice?.action) ||
     text(input.cockpitExecutive?.what_to_do) ||
     text(input.promptFeedback?.advice_feedback?.recommendation) ||
@@ -64,14 +74,27 @@ export function buildCanonicalRecommendation(
 
   if (!action) return null;
 
-  const score = clamp01(
-    Number(
-      input.strategicAdvice?.confidence ??
-        input.ai_reasoning?.confidence?.score ??
-        input.decisionSimulation?.confidence ??
-        0.64
-    )
-  );
+  const bestStrategy = Array.isArray(input.decision_analysis?.strategies) ? input.decision_analysis.strategies[0] : null;
+  const daScore =
+    bestStrategy && typeof bestStrategy.decision_score === "number" && typeof bestStrategy.risk === "number"
+      ? clamp01((Math.tanh(Number(bestStrategy.decision_score)) + 1) / 2 * 0.55 + (1 - Number(bestStrategy.risk)) * 0.45)
+      : null;
+
+  let baseScore =
+    daScore != null && Number.isFinite(daScore)
+      ? daScore
+      : Number(
+          input.strategicAdvice?.confidence ??
+            input.ai_reasoning?.confidence?.score ??
+            input.decisionSimulation?.confidence ??
+            0.64
+        );
+  const daPriority = String(daRec?.priority ?? "").toLowerCase();
+  if (daScore != null && Number.isFinite(daScore)) {
+    if (daPriority === "high") baseScore = Math.min(1, baseScore + 0.05);
+    if (daPriority === "low") baseScore = Math.max(0, baseScore - 0.05);
+  }
+  const score = clamp01(baseScore);
 
   const recommendedActions = Array.isArray(input.strategicAdvice?.recommended_actions)
     ? input.strategicAdvice.recommended_actions
@@ -86,6 +109,9 @@ export function buildCanonicalRecommendation(
     }));
 
   const why =
+    text(daRec?.rationale) ||
+    text(daRec?.expected_outcome) ||
+    (typeof input.decision_analysis?.decision_summary === "string" && text(input.decision_analysis.decision_summary)) ||
     text(input.strategicAdvice?.why) ||
     text(input.cockpitExecutive?.why_it_matters) ||
     text(input.promptFeedback?.advice_feedback?.summary) ||
@@ -147,13 +173,15 @@ export function buildCanonicalRecommendation(
       : {}),
     source:
       input.sourceHint ??
-      (input.decisionSimulation
-        ? "simulation"
-        : input.strategicAdvice
+      (input.decision_analysis
         ? "ai_reasoning"
-        : input.promptFeedback
-        ? "generic"
-        : "generic"),
+        : input.decisionSimulation
+          ? "simulation"
+          : input.strategicAdvice
+            ? "ai_reasoning"
+            : input.promptFeedback
+              ? "generic"
+              : "generic"),
     created_at: Date.now(),
   };
 }

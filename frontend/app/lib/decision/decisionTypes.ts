@@ -11,6 +11,11 @@ export type DecisionSnapshot = {
     chaosScore?: number;
     riskScore?: number;
   };
+  /** Optional full scene + panel capture for shell snapshot / replay. */
+  sceneJson?: unknown | null;
+  selectedObjectId?: string | null;
+  rightPanelView?: string | null;
+  rightPanelOpen?: boolean;
 };
 
 export type DecisionStoreState = {

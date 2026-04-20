@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { getNexoraProductMode } from "../lib/product/nexoraProductMode.ts";
 
 type ErrorBoundaryProps = {
   children: React.ReactNode;
@@ -43,10 +44,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   render() {
     if (this.state.hasError) {
+      const pilot = getNexoraProductMode() === "pilot";
       return (
         <div className="flex h-screen w-screen flex-col items-center justify-center gap-3 bg-slate-950 text-white">
-          <div className="text-lg font-semibold">Something went wrong</div>
-          <div className="text-sm text-white/70">Please reload or return to live view.</div>
+          <div className="text-lg font-semibold">{pilot ? "System couldn't complete analysis" : "Something went wrong"}</div>
+          <div className="text-sm text-white/70">
+            {pilot ? "Please try again, or reload the page." : "Please reload or return to live view."}
+          </div>
           <div className="flex gap-2">
             <button
               onClick={this.handleReload}

@@ -125,7 +125,9 @@ export function buildDecisionConfidenceModel(
 
   const assumptions = uniqueStrings([
     ...(Array.isArray(recommendation?.reasoning?.key_drivers)
-      ? recommendation.reasoning.key_drivers.map((driver) => `${String(driver).replace(/_/g, " ")} remains directionally stable.`)
+      ? recommendation.reasoning.key_drivers.map(
+          (driver: unknown) => `${String(driver).replace(/_/g, " ")} remains directionally stable.`
+        )
       : []),
     responseData?.executive_summary_surface?.what_to_do
       ? "Current operating constraints remain materially similar through execution."

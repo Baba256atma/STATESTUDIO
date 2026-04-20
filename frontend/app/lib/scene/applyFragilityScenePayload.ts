@@ -3,6 +3,7 @@ import type {
   FragilitySceneObject,
   FragilityScenePayload,
 } from "../../types/fragilityScanner";
+import { expandPayloadAliasTokensForDomain } from "../visual/domainVocabulary";
 import type { SceneJson, SceneObject } from "../sceneTypes";
 
 export type ApplyFragilityScenePayloadResult = {
@@ -11,6 +12,11 @@ export type ApplyFragilityScenePayloadResult = {
   suggestedFocusIds: string[];
   highlights: FragilitySceneHighlight[];
   overlaySummary?: string;
+};
+
+export type ApplyFragilityScenePayloadOptions = {
+  /** B.6 — narrows semantic alias expansion to the active Nexora domain. */
+  domainId?: string | null;
 };
 
 function normalizeId(value: unknown): string {
@@ -109,21 +115,28 @@ function readSemanticTokens(object: SceneObject): string[] {
   );
 }
 
-function payloadAliasTokens(rawId: unknown): string[] {
+function payloadAliasTokens(rawId: unknown, domainId?: string | null): string[] {
   const key = canonicalId(rawId);
-  const aliases: Record<string, string[]> = {
-    bottleneck: ["bottleneck", "delay", "disruption", "constraint", "fulfillment", "flow", "operations"],
-    delivery: ["delivery", "flow", "fulfillment", "throughput", "logistics", "execution"],
-    supplier: ["supplier", "vendor", "dependency", "upstream", "source"],
-    inventory: ["inventory", "buffer", "capacity", "reserve", "coverage"],
-    risk_zone: ["risk", "volatility", "credit", "disruption", "exposure", "fragility"],
-    buffer: ["buffer", "inventory", "liquidity", "capacity", "reserve"],
-  };
-  return [key, ...(aliases[key] ?? [])];
+  const groups = expandPayloadAliasTokensForDomain(domainId);
+  const list = [key, ...(groups[key] ?? [])];
+  return Array.from(new Set(list.map((t) => String(t).trim()).filter(Boolean)));
 }
 
-function resolveSemanticObjectId(objects: SceneObject[], rawId: unknown): string | null {
-  const aliases = payloadAliasTokens(rawId);
+function aliasHitScore(objectBlob: string, alias: string): number {
+  const a = String(alias ?? "")
+    .toLowerCase()
+    .trim();
+  if (!a || !objectBlob) return 0;
+  if (objectBlob.includes(a)) return Math.min(6, 2 + Math.floor(a.length / 6));
+  const parts = a.split(/[^a-z0-9]+/).filter((p) => p.length > 2);
+  if (parts.length === 0) return 0;
+  const hits = parts.filter((p) => objectBlob.includes(p)).length;
+  if (hits === 0) return 0;
+  return hits >= 2 ? hits + 1 : hits * 0.65;
+}
+
+function resolveSemanticObjectId(objects: SceneObject[], rawId: unknown, domainId?: string | null): string | null {
+  const aliases = payloadAliasTokens(rawId, domainId);
   if (!aliases.length) return null;
 
   let bestMatch: { id: string; score: number } | null = null;
@@ -131,26 +144,49 @@ function resolveSemanticObjectId(objects: SceneObject[], rawId: unknown): string
     const objectId = normalizeId(object.id);
     if (!objectId) continue;
 
-    const tokens = new Set([
+    const tokenSet = new Set([
       canonicalId(object.id),
       canonicalId(object.label),
       canonicalId(object.name),
       ...readSemanticTokens(object),
     ]);
-    const score = aliases.reduce((sum, token) => (tokens.has(token) ? sum + 1 : sum), 0);
+    const objectBlob = [
+      objectId,
+      String(object.label ?? ""),
+      String(object.name ?? ""),
+      String((object as any).display_label ?? ""),
+      String((object as any).canonical_name ?? ""),
+      ...(Array.isArray(object.tags) ? object.tags : []).map(String),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    let score = 0;
+    for (const alias of aliases) {
+      const c = canonicalId(alias);
+      if (c && tokenSet.has(c)) score += 2;
+      score += aliasHitScore(objectBlob, alias);
+    }
     if (score <= 0) continue;
     if (!bestMatch || score > bestMatch.score) {
       bestMatch = { id: objectId, score };
     }
   }
 
-  return bestMatch?.score ? bestMatch.id : null;
+  return bestMatch && bestMatch.score >= 1.25 ? bestMatch.id : null;
 }
 
-function resolveSceneObjectId(index: Map<string, string>, objects: SceneObject[], rawId: unknown): string | null {
+function resolveSceneObjectId(
+  index: Map<string, string>,
+  objects: SceneObject[],
+  rawId: unknown,
+  domainId?: string | null
+): string | null {
   const id = normalizeId(rawId);
   if (!id) return null;
-  return index.get(id) ?? index.get(canonicalId(id)) ?? resolveSemanticObjectId(objects, rawId) ?? null;
+  return (
+    index.get(id) ?? index.get(canonicalId(id)) ?? resolveSemanticObjectId(objects, rawId, domainId) ?? null
+  );
 }
 
 function clearScannerState(current: SceneObject): SceneObject {
@@ -230,8 +266,10 @@ function uniqueIds(values: Array<string | null | undefined>): string[] {
 
 export function applyFragilityScenePayload(
   currentSceneState: SceneJson | null,
-  payload: FragilityScenePayload | null | undefined
+  payload: FragilityScenePayload | null | undefined,
+  options?: ApplyFragilityScenePayloadOptions | null
 ): ApplyFragilityScenePayloadResult {
+  const domainId = options?.domainId ?? null;
   if (!payload || !currentSceneState) {
     return {
       sceneJson: currentSceneState,
@@ -252,13 +290,13 @@ export function applyFragilityScenePayload(
   }
   const suggestedFocusIds = uniqueIds(
     (Array.isArray(payload.suggested_focus) ? payload.suggested_focus : []).map((id) =>
-      resolveSceneObjectId(objectIndex, existingObjects, id)
+      resolveSceneObjectId(objectIndex, existingObjects, id, domainId)
     )
   );
   const suggestedFocusSet = new Set(suggestedFocusIds);
   const resolvedHighlights = (Array.isArray(payload.highlights) ? payload.highlights : [])
     .map((highlight) => {
-      const resolvedTarget = resolveSceneObjectId(objectIndex, existingObjects, highlight?.target);
+      const resolvedTarget = resolveSceneObjectId(objectIndex, existingObjects, highlight?.target, domainId);
       if (!resolvedTarget) return null;
       const normalized: FragilitySceneHighlight = {
         type: normalizeId(highlight?.type),
@@ -277,7 +315,7 @@ export function applyFragilityScenePayload(
     const objectId = normalizeId(object.id);
     const nextBaseObject = clearScannerState(object);
     const incoming = (Array.isArray(payload.objects) ? payload.objects : []).find((item) => {
-      return resolveSceneObjectId(objectIndex, existingObjects, item?.id) === objectId;
+      return resolveSceneObjectId(objectIndex, existingObjects, item?.id, domainId) === objectId;
     });
     if (!incoming) return nextBaseObject;
     matchedObjectIds.push(objectId);
@@ -292,7 +330,7 @@ export function applyFragilityScenePayload(
     console.debug("[fragility] matched objects", matchedObjectIds);
     const unmatchedPayloadIds = payload.objects
       .map((object) => normalizeId(object.id))
-      .filter((id) => !matchedObjectIds.includes(resolveSceneObjectId(objectIndex, existingObjects, id) ?? ""));
+      .filter((id) => !matchedObjectIds.includes(resolveSceneObjectId(objectIndex, existingObjects, id, domainId) ?? ""));
     if (unmatchedPayloadIds.length) {
       console.warn("[fragility] unmatched payload objects", unmatchedPayloadIds);
     }

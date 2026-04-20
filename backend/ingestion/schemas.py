@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from ingestion.connectors.catalog import ConnectorSourceDefinition
 
 SourceDocumentType = Literal["text", "pdf", "csv", "web"]
 
@@ -30,8 +31,14 @@ class SourceDocument(BaseModel):
 
     id: str = Field(default_factory=lambda: f"src_{uuid4().hex}")
     type: SourceDocumentType
+    title: str | None = None
     raw_content: str
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def _trim_title(cls, value: str | None) -> str | None:
+        return _trim_string(value)
 
     @field_validator("id", "raw_content", mode="before")
     @classmethod
@@ -49,12 +56,14 @@ class Signal(BaseModel):
 
     id: str = Field(default_factory=lambda: f"sig_{uuid4().hex}")
     type: str
+    label: str
     description: str
     entities: list[str] = Field(default_factory=list)
     strength: float
     source_id: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
-    @field_validator("id", "type", "description", "source_id", mode="before")
+    @field_validator("id", "type", "label", "description", "source_id", mode="before")
     @classmethod
     def _trim_signal_strings(cls, value: str) -> str:
         trimmed = _trim_string(value)
@@ -93,6 +102,9 @@ class SignalBundle(BaseModel):
 
     source: SourceDocument
     signals: list[Signal] = Field(default_factory=list)
+    summary: str = ""
+    warnings: list[str] = Field(default_factory=list)
+    ingestion_meta: dict[str, Any] = Field(default_factory=dict)
     created_at: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
@@ -122,3 +134,62 @@ class IngestionRunRequest(BaseModel):
 
 class IngestionRunResponse(SignalBundle):
     """Alias response model for router clarity."""
+
+
+class TextIngestionRequest(BaseModel):
+    """Phase B.1 manual text ingestion (canonical text path)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str
+    title: str | None = None
+    source_label: str | None = None
+    domain: str | None = None
+
+    @field_validator("text", mode="before")
+    @classmethod
+    def _require_text(cls, value: str) -> str:
+        trimmed = _trim_string(value)
+        if trimmed is None:
+            raise ValueError("text is required")
+        return trimmed
+
+    @field_validator("title", "source_label", "domain", mode="before")
+    @classmethod
+    def _trim_optional(cls, value: str | None) -> str | None:
+        return _trim_string(value)
+
+
+class TextIngestionResponse(BaseModel):
+    """Typed wrapper for manual text ingestion (includes ok/errors for clients)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    ok: bool = True
+    bundle: SignalBundle
+    errors: list[str] = Field(default_factory=list)
+
+
+class ConnectorCatalogResponse(BaseModel):
+    """GET /ingestion/connectors — static scaffold list."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    connectors: list[ConnectorSourceDefinition]
+
+
+class ConnectorRunRequest(BaseModel):
+    """POST /ingestion/connector/run — execute a registered connector (B.10.a)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    connector_id: str
+    config: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("connector_id", mode="before")
+    @classmethod
+    def _trim_connector_id(cls, value: str) -> str:
+        trimmed = _trim_string(value)
+        if trimmed is None:
+            raise ValueError("connector_id is required")
+        return trimmed

@@ -24,6 +24,7 @@ type AutoFixResult = {
 };
 
 type LooseRecord = Record<string, unknown>;
+type PanelDataReadiness = "empty" | "partial" | "full";
 
 function isObject(value: unknown): value is LooseRecord {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
@@ -41,90 +42,231 @@ function hasText(value: unknown) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-function applyMinimalDataRecovery(
-  view: RightPanelView,
-  panelData: PanelSharedData | null | undefined
-): PanelSharedData | null {
-  const safeData = panelData ? { ...panelData } : {};
+function hasNonEmptyRecord(value: unknown) {
+  return isObject(value) && Object.keys(value).length > 0;
+}
+
+function getSafeAutoFixView(view: RightPanelView | null | undefined): RightPanelView {
+  const resolved = resolveSafeRightPanelView(view);
+  if (resolved && isCanonicalRightPanelView(resolved)) {
+    return resolved;
+  }
+  if (view && isCanonicalRightPanelView(view)) {
+    return view;
+  }
+  return "dashboard";
+}
+
+function getPanelSliceForView(view: RightPanelView, panelData: PanelSharedData | null | undefined): unknown {
+  if (!panelData) return null;
+
+  switch (view) {
+    case "advice":
+      return panelData.advice ?? panelData.strategicAdvice ?? null;
+    case "timeline":
+    case "decision_timeline":
+      return panelData.timeline ?? null;
+    case "dashboard":
+      return panelData.dashboard ?? panelData.decisionCockpit ?? panelData.executiveSummary ?? null;
+    case "simulate":
+      return panelData.simulation ?? null;
+    case "war_room":
+      return panelData.warRoom ?? null;
+    case "compare":
+      return panelData.compare ?? null;
+    case "conflict":
+      return panelData.conflict ?? null;
+    case "risk":
+      return panelData.risk ?? panelData.fragility ?? null;
+    case "fragility":
+      return panelData.fragility ?? panelData.risk ?? null;
+    case "memory":
+      return panelData.memory ?? null;
+    case "strategic_command":
+      return panelData.strategicCommand ?? panelData.dashboard ?? panelData.decisionCockpit ?? null;
+    case "decision_governance":
+      return panelData.governance ?? null;
+    case "decision_policy":
+      return panelData.policy ?? null;
+    case "executive_approval":
+      return panelData.approval ?? null;
+    case "decision_council":
+      return panelData.strategicCouncil ?? null;
+    default:
+      return null;
+  }
+}
+
+function getPanelDataReadiness(view: RightPanelView, panelData: PanelSharedData | null | undefined): PanelDataReadiness {
+  const slice = getPanelSliceForView(view, panelData);
+  if (hasItems(slice)) return "full";
+  const record = isObject(slice) ? slice : null;
+  if (!record) return hasText(slice) ? "partial" : "empty";
+
+  const hasArray = (...keys: string[]) => keys.some((key) => hasItems(record[key]));
+  const hasAnyText = (...keys: string[]) => keys.some((key) => hasText(record[key]));
 
   if (view === "advice") {
-    const advice = isObject(safeData.strategicAdvice) ? safeData.strategicAdvice : {};
-    return {
-      ...safeData,
-      strategicAdvice: {
-        summary: hasText(advice.summary) ? advice.summary : "No recommendation available yet",
-        recommended_actions: hasItems(advice.recommended_actions) ? advice.recommended_actions : [],
-        ...advice,
-      },
-    };
+    if (hasArray("recommended_actions", "recommendations") || isObject(record.primary_recommendation)) return "full";
+    return hasAnyText("summary", "why", "recommendation", "title", "risk_summary") || hasNonEmptyRecord(record)
+      ? "partial"
+      : "empty";
   }
 
-  if (view === "risk") {
-    const risk = isObject(safeData.risk) ? safeData.risk : {};
-    return {
-      ...safeData,
-      risk: {
-        summary: hasText(risk.summary) ? risk.summary : "No risk data available",
-        level: hasText(risk.level) ? risk.level : "low",
-        ...risk,
-      },
-    };
+  if (view === "timeline" || view === "decision_timeline") {
+    if (hasArray("events", "steps", "stages", "timeline", "markers", "phases")) return "full";
+    return hasAnyText("headline", "summary", "label", "type") || hasNonEmptyRecord(record) ? "partial" : "empty";
+  }
+
+  if (view === "compare") {
+    if (hasArray("options", "comparison")) return "full";
+    return hasAnyText("summary", "recommendation") || hasNonEmptyRecord(record) ? "partial" : "empty";
+  }
+
+  if (view === "conflict" || view === "risk" || view === "fragility") {
+    if (hasArray("drivers", "sources", "edges", "conflicts", "tradeoffs", "tensions", "conflict_points")) return "full";
+    return hasAnyText("summary", "headline", "posture", "level", "risk_level") || hasNonEmptyRecord(record)
+      ? "partial"
+      : "empty";
   }
 
   if (view === "memory") {
-    const memory = isObject(safeData.memory) ? safeData.memory : {};
-    return {
-      ...safeData,
-      memory: {
-        ...memory,
-        entries: hasItems(memory.entries) ? memory.entries : [],
-      },
-    };
+    if (hasArray("entries")) return "full";
+    return hasAnyText("summary") || hasNonEmptyRecord(record) ? "partial" : "empty";
   }
 
+  if (
+    view === "dashboard" ||
+    view === "simulate" ||
+    view === "war_room" ||
+    view === "strategic_command"
+  ) {
+    if (hasArray("options", "compare", "decision_blocks", "priorities", "risks", "recommended_actions", "impacted_nodes", "affected_objects")) {
+      return "full";
+    }
+    return hasAnyText(
+      "summary",
+      "recommendation",
+      "headline",
+      "posture",
+      "executive_summary",
+      "simulation_summary",
+      "compare_summary",
+      "advice_summary",
+      "happened",
+      "why_it_matters",
+      "what_to_do"
+    ) || hasNonEmptyRecord(record)
+      ? "partial"
+      : "empty";
+  }
+
+  if (view === "decision_governance" || view === "decision_policy" || view === "executive_approval" || view === "decision_council") {
+    if (hasArray("recommended_actions", "options", "decision_blocks")) return "full";
+    return hasAnyText("summary", "status", "recommendation", "happened", "why_it_matters", "what_to_do") ||
+      hasNonEmptyRecord(record)
+      ? "partial"
+      : "empty";
+  }
+
+  return hasNonEmptyRecord(record) ? "partial" : "empty";
+}
+
+function summarizeDataShape(value: unknown) {
+  if (value == null) return "null";
+  if (Array.isArray(value)) return `array(${value.length})`;
+  if (isObject(value)) return `object(${Object.keys(value).length})`;
+  return typeof value;
+}
+
+function applyMinimalDataRecovery(
+  _view: RightPanelView,
+  panelData: PanelSharedData | null | undefined
+): PanelSharedData | null {
   return panelData ?? null;
 }
 
-function needsDataRecovery(view: RightPanelView, panelData: PanelSharedData | null | undefined) {
-  if (view === "advice") {
-    const advice = isObject(panelData?.strategicAdvice) ? panelData?.strategicAdvice : null;
-    return !advice || !hasItems(advice.recommended_actions);
-  }
-  if (view === "risk") {
-    const risk = isObject(panelData?.risk) ? panelData?.risk : null;
-    return !risk || !hasText(risk.summary);
-  }
-  if (view === "memory") {
-    const memory = isObject(panelData?.memory) ? panelData?.memory : null;
-    return !memory || !hasItems(memory.entries);
-  }
+function needsDataRecovery(_view: RightPanelView, _panelData: PanelSharedData | null | undefined) {
   return false;
 }
 
-function traceAutoFix(
-  originalView: RightPanelView | null | undefined,
-  fixedView: RightPanelView,
-  fixType: AutoFixType,
-  resolverStatus?: PanelSafeStatus
+function tracePanelAutoFix(
+  label: "input" | "keep_current" | "repair_applied" | "demotion_blocked" | "fallback_reason",
+  detail: Record<string, unknown>
 ) {
-  if (process.env.NODE_ENV !== "production" && fixType !== "none") {
-    console.warn("[Nexora][AutoFix]", {
-      originalView: originalView ?? null,
-      fixedView,
-      fixType,
-      resolverStatus: resolverStatus ?? null,
+  if (process.env.NODE_ENV !== "production") {
+    const method = label === "fallback_reason" ? console.warn : console.log;
+    method("[Nexora][panelAutoFix]", {
+      label,
+      ...detail,
     });
   }
 }
 
 export function autoFixRightPanelState(args: AutoFixArgs): AutoFixResult {
-  const normalizedView = resolveSafeRightPanelView(args.view);
+  const normalizedView = getSafeAutoFixView(args.view);
   const safeData = args.panelData ?? null;
   const invalidView = !args.view || !isCanonicalRightPanelView(args.view);
-  const originalSafeView = invalidView ? normalizedView : args.view;
+  const originalSafeView = invalidView ? normalizedView : getSafeAutoFixView(args.view);
+  const readiness = getPanelDataReadiness(normalizedView, safeData);
+
+  tracePanelAutoFix("input", {
+    currentView: args.view ?? null,
+    normalizedView,
+    resolverStatus: args.resolverStatus ?? null,
+    readiness,
+    dataShape: summarizeDataShape(getPanelSliceForView(normalizedView, safeData)),
+  });
+
+  if (readiness !== "empty") {
+    if (invalidView) {
+      tracePanelAutoFix("repair_applied", {
+        currentView: args.view ?? null,
+        proposedView: normalizedView,
+        resolverStatus: args.resolverStatus ?? null,
+        readiness,
+        reason: "view_normalized_keep_renderable_panel",
+      });
+      return {
+        fixedView: normalizedView,
+        fixedContextId: args.contextId ?? null,
+        fixedPanelData: safeData,
+        fixType: "view_normalized",
+      };
+    }
+
+    if (args.resolverStatus === "empty_but_guided" || args.resolverStatus == null || args.resolverStatus === "fallback") {
+      tracePanelAutoFix("demotion_blocked", {
+        currentView: args.view ?? null,
+        proposedView: originalSafeView,
+        resolverStatus: args.resolverStatus ?? null,
+        readiness,
+        reason: "current_panel_still_renderable",
+      });
+    } else {
+      tracePanelAutoFix("keep_current", {
+        currentView: args.view ?? null,
+        proposedView: originalSafeView,
+        resolverStatus: args.resolverStatus ?? null,
+        readiness,
+      });
+    }
+    return {
+      fixedView: originalSafeView,
+      fixedContextId: args.contextId ?? null,
+      fixedPanelData: safeData,
+      fixType: "none",
+    };
+  }
 
   if (args.resolverStatus === "empty_but_guided") {
-    traceAutoFix(args.view, originalSafeView, "fallback_applied", args.resolverStatus);
+    tracePanelAutoFix("fallback_reason", {
+      currentView: args.view ?? null,
+      proposedView: originalSafeView,
+      resolverStatus: args.resolverStatus,
+      readiness,
+      reason: "resolver_empty_but_guided",
+    });
     return {
       fixedView: originalSafeView,
       fixedContextId: args.contextId ?? null,
@@ -138,9 +280,15 @@ export function autoFixRightPanelState(args: AutoFixArgs): AutoFixResult {
     safeData == null ||
     isEmptyObject(safeData)
   ) {
-    const fixedView = originalSafeView;
+    const fixedView: RightPanelView = originalSafeView;
     const fixType = invalidView ? "view_normalized" : "fallback_applied";
-    traceAutoFix(args.view, fixedView, fixType, args.resolverStatus);
+    tracePanelAutoFix(invalidView ? "repair_applied" : "fallback_reason", {
+      currentView: args.view ?? null,
+      proposedView: fixedView,
+      resolverStatus: args.resolverStatus ?? null,
+      readiness,
+      reason: invalidView ? "invalid_view_normalized" : "missing_or_empty_panel_data",
+    });
     return {
       fixedView,
       fixedContextId: args.contextId ?? null,
@@ -153,7 +301,13 @@ export function autoFixRightPanelState(args: AutoFixArgs): AutoFixResult {
     (args.resolverStatus === "partial" || args.resolverStatus === "fallback") &&
     needsDataRecovery(normalizedView, safeData)
   ) {
-    traceAutoFix(args.view, normalizedView, "data_recovered", args.resolverStatus);
+    tracePanelAutoFix("repair_applied", {
+      currentView: args.view ?? null,
+      proposedView: normalizedView,
+      resolverStatus: args.resolverStatus ?? null,
+      readiness,
+      reason: "minimal_data_recovery",
+    });
     return {
       fixedView: normalizedView,
       fixedContextId: args.contextId ?? null,
@@ -163,7 +317,13 @@ export function autoFixRightPanelState(args: AutoFixArgs): AutoFixResult {
   }
 
   if (invalidView) {
-    traceAutoFix(args.view, normalizedView, "view_normalized", args.resolverStatus);
+    tracePanelAutoFix("repair_applied", {
+      currentView: args.view ?? null,
+      proposedView: normalizedView,
+      resolverStatus: args.resolverStatus ?? null,
+      readiness,
+      reason: "invalid_view_normalized",
+    });
     return {
       fixedView: normalizedView,
       fixedContextId: args.contextId ?? null,

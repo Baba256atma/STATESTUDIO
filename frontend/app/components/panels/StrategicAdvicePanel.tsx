@@ -7,6 +7,12 @@ import { buildPanelResolvedData } from "../../lib/panels/buildPanelResolvedData"
 import type { PanelSharedData } from "../../lib/panels/panelDataResolverTypes";
 import type { AdviceAction, AdvicePanelData, SimulationPanelData } from "../../lib/panels/panelDataContract";
 import { RightPanelFallback } from "../right-panel/RightPanelFallback";
+import { dedupeNexoraDevLog, dedupePanelConsoleTrace } from "../../lib/debug/panelConsoleTraceDedupe";
+import {
+  buildAdviceWhyLines,
+  extractNexoraB8FromSharedData,
+  traceNexoraB9PanelMeaningEnriched,
+} from "../../lib/panels/nexoraPanelMeaning";
 
 type LooseRecord = Record<string, unknown>;
 
@@ -22,6 +28,15 @@ function getNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function pickCompatibilityAdvice(value: AdvicePanelData | Record<string, unknown> | null | undefined) {
+  const record = asRecord(value);
+  if (!record) return null;
+
+  // Compatibility only: some older callers still pass the advice slice nested once.
+  const nestedAdvice = asRecord(record.strategic_advice);
+  return nestedAdvice ?? record;
+}
+
 export default function StrategicAdvicePanel({
   advice,
   canonicalRecommendation,
@@ -31,27 +46,22 @@ export default function StrategicAdvicePanel({
   canonicalRecommendation?: CanonicalRecommendation | null;
   data?: PanelSharedData | null;
 }) {
+  const DEBUG_PANEL_TRACE = process.env.NODE_ENV !== "production";
   const resolved = buildPanelResolvedData("advice", panelData ?? null);
-  const rawAdvice = asRecord(advice) ?? {};
-  const sharedAdvice = asRecord(resolved.data as AdvicePanelData | null | undefined);
-  const strategicAdvice = asRecord(rawAdvice.strategic_advice);
-  const promptFeedback = asRecord(rawAdvice.prompt_feedback);
-  const adviceFeedback = asRecord(promptFeedback?.advice_feedback);
-  const normalizedAdvice = sharedAdvice ?? strategicAdvice ?? adviceFeedback ?? rawAdvice;
+  const resolvedAdvice = asRecord(resolved.data as AdvicePanelData | null | undefined);
+  const compatibilityAdvice = pickCompatibilityAdvice(advice);
+  const normalizedAdvice = resolvedAdvice ?? compatibilityAdvice ?? {};
   const recommendation =
     canonicalRecommendation ??
     buildCanonicalRecommendation({
       strategicAdvice: normalizedAdvice,
     });
   const normalizedPrimaryRecommendation = asRecord(normalizedAdvice.primary_recommendation);
-  const executiveSummarySurface = asRecord(rawAdvice.executive_summary_surface);
   const actions: AdviceAction[] = Array.isArray(normalizedAdvice.recommended_actions)
     ? normalizedAdvice.recommended_actions as AdviceAction[]
-    : Array.isArray(strategicAdvice?.recommended_actions)
-      ? strategicAdvice.recommended_actions as AdviceAction[]
-      : Array.isArray(recommendation?.alternatives)
-        ? recommendation.alternatives as AdviceAction[]
-        : [];
+    : Array.isArray(recommendation?.alternatives)
+      ? recommendation.alternatives as AdviceAction[]
+      : [];
   const primaryRecommendation =
     getString(normalizedPrimaryRecommendation?.action) ??
     getString(normalizedAdvice.recommendation) ??
@@ -59,7 +69,6 @@ export default function StrategicAdvicePanel({
     null;
   const summary =
     getString(normalizedAdvice.summary) ??
-    getString(executiveSummarySurface?.what_to_do) ??
     recommendation?.primary?.impact_summary ??
     "No strategic advice available yet.";
   const why =
@@ -81,31 +90,153 @@ export default function StrategicAdvicePanel({
   const riskDelta = getNumber(simulation?.risk_delta);
   const simulationSummary = getString(simulation?.summary);
 
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[Nexora][PanelResolver]", {
+  const b8Attached = (panelData as { nexoraB8PanelContext?: unknown } | null | undefined)?.nexoraB8PanelContext;
+  const nexoraB8 = React.useMemo(() => extractNexoraB8FromSharedData(panelData ?? null), [b8Attached]);
+  const adviceWhyLines = React.useMemo(() => (nexoraB8 ? buildAdviceWhyLines(nexoraB8) : []), [nexoraB8]);
+
+  React.useEffect(() => {
+    if (!nexoraB8) return;
+    traceNexoraB9PanelMeaningEnriched("advice", nexoraB8);
+  }, [nexoraB8]);
+
+  if (DEBUG_PANEL_TRACE) {
+    dedupePanelConsoleTrace("PanelComponent", "advice", "main", {
+      meaningfulData: Boolean(summary || primaryRecommendation || actions.length),
+      hasSummary: Boolean(summary),
+      hasRecommendation: Boolean(primaryRecommendation),
+      actionsCount: actions.length,
+      hasWhy: Boolean(why),
+      hasSimulationContext: Boolean(simulationSummary || impactedNodes.length || riskDelta !== null),
+    });
+    dedupeNexoraDevLog("[Nexora][PanelResolver]", "strategic_advice", {
       panel: "strategic_advice",
       status: resolved.status,
       missingFields: resolved.missingFields,
     });
   }
 
+  const hasThinRenderableAdvice = Boolean(summary || primaryRecommendation || actions.length || why || executiveSummary);
+
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    console.warn("[Nexora][PanelLifecycle] mounted", {
+      panel: "advice",
+      readiness:
+        resolved.status === "ready" ? "full" : resolved.status === "partial" ? "thin" : "empty",
+      status: resolved.status,
+      shape: {
+        hasSummary: Boolean(summary),
+        hasRecommendation: Boolean(primaryRecommendation),
+        actionsCount: actions.length,
+        hasWhy: Boolean(why),
+        hasExecutiveSummary: Boolean(executiveSummary),
+      },
+    });
+    return () => {
+      console.warn("[Nexora][PanelLifecycle] unmounted", {
+        panel: "advice",
+      });
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (!hasThinRenderableAdvice) return;
+    console.warn("[Nexora][PanelLifecycle] thin_data_received", {
+      panel: "advice",
+      readiness: resolved.status === "ready" ? "full" : "thin",
+      status: resolved.status,
+      shape: {
+        hasSummary: Boolean(summary),
+        hasRecommendation: Boolean(primaryRecommendation),
+        actionsCount: actions.length,
+        hasWhy: Boolean(why),
+        hasExecutiveSummary: Boolean(executiveSummary),
+      },
+    });
+  }, [actions.length, executiveSummary, hasThinRenderableAdvice, primaryRecommendation, resolved.status, summary, why]);
+
   if (resolved.status === "fallback" || resolved.status === "empty_but_guided") {
-    return (
-      <RightPanelFallback
-        title={resolved.title ?? "Strategic Advice"}
-        message={resolved.message ?? "No strategic advice is available yet."}
-        suggestedActionLabel={resolved.suggestedActionLabel ?? null}
-        onSuggestedAction={null}
-      />
-    );
+    if (hasThinRenderableAdvice) {
+      if (DEBUG_PANEL_TRACE) {
+        dedupeNexoraDevLog("[Nexora][PanelRenderMismatch]", "advice_fallback", {
+          panel: "advice",
+          resolverStatus: resolved.status,
+          reason: "component_kept_thin_render",
+        });
+        dedupePanelConsoleTrace("PanelThinRender", "advice", "fallback_thin", {
+          hasSummary: Boolean(summary),
+          hasRecommendation: Boolean(primaryRecommendation),
+          actionsCount: actions.length,
+        });
+      }
+    } else {
+      if (DEBUG_PANEL_TRACE) {
+        console.warn("[Nexora][PanelBlankGuard] triggered", {
+          panel: "advice",
+          reason: "resolver_fallback_and_no_thin_content",
+        });
+        console.warn("[Nexora][PanelLifecycle] blank_or_fallback_render", {
+          panel: "advice",
+          readiness: "empty",
+          status: resolved.status,
+          shape: {
+            hasSummary: Boolean(summary),
+            hasRecommendation: Boolean(primaryRecommendation),
+            actionsCount: actions.length,
+            hasWhy: Boolean(why),
+            hasExecutiveSummary: Boolean(executiveSummary),
+          },
+        });
+      }
+      return (
+        <RightPanelFallback
+          title={resolved.title ?? "Strategic Advice"}
+          message={resolved.message ?? "No strategic advice is available yet."}
+          suggestedActionLabel={resolved.suggestedActionLabel ?? null}
+          onSuggestedAction={null}
+        />
+      );
+    }
   }
 
-  if (process.env.NODE_ENV !== "production" && !Array.isArray(normalizedAdvice.recommended_actions)) {
-    console.warn("[Nexora] StrategicAdvicePanel received no recommended_actions", rawAdvice);
+  if (DEBUG_PANEL_TRACE && hasThinRenderableAdvice && resolved.status === "partial") {
+    dedupePanelConsoleTrace("PanelThinRender", "advice", "partial", {
+      hasSummary: Boolean(summary),
+      hasRecommendation: Boolean(primaryRecommendation),
+      actionsCount: actions.length,
+    });
+  }
+
+  if (DEBUG_PANEL_TRACE && !Array.isArray(normalizedAdvice.recommended_actions)) {
+    console.warn("[Nexora] StrategicAdvicePanel received no recommended_actions", {
+      source: resolvedAdvice ? "resolved" : compatibilityAdvice ? "compatibility" : "none",
+    });
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {adviceWhyLines.length > 0 ? (
+        <div
+          style={{
+            ...softCardStyle,
+            padding: 12,
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+            borderLeft: "3px solid rgba(96,165,250,0.45)",
+          }}
+        >
+          <div style={{ color: nx.lowMuted, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            Why this direction
+          </div>
+          {adviceWhyLines.map((line) => (
+            <div key={line} style={{ color: nx.text, fontSize: 11, lineHeight: 1.45 }}>
+              {line}
+            </div>
+          ))}
+        </div>
+      ) : null}
       {recommendation ? (
         <RecommendationCard rec={recommendation} />
       ) : (

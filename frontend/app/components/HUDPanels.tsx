@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ChatHUD } from "./ChatHUD";
 import { LoopOverlayHUD } from "./LoopOverlayHUD";
 import { DecisionCompareHUD } from "./DecisionCompareHUD";
@@ -10,6 +10,7 @@ import { fetchDecisions, saveDecision } from "../lib/persistence/persistenceClie
 import { InspectorHUD } from "./InspectorHUD";
 import { pingHealth } from "../lib/api/health";
 import ObjectPanel from "./ObjectPanel";
+import type { ObjectPanelProps } from "./ObjectPanel";
 import type { KPIState } from "../lib/api";
 import type { SceneJson, SceneLoop, LoopType } from "../lib/sceneTypes";
 import type { DecisionSnapshot } from "../lib/decision/decisionTypes";
@@ -21,6 +22,7 @@ import { appendSnapshot, loadSnapshots, clearSnapshots, replaceSnapshots } from 
 import { DECISION_TEMPLATES } from "../lib/decision/decisionTemplates";
 
 import { KPIBoard } from "./KPIBoard";
+import type { KPIBoardItem } from "./KPIBoard";
 import { computeKpis } from "../lib/kpi/kpiEngine";
 import { KPI_REGISTRY } from "../lib/kpi/kpiRegistry";
 import type { LayoutMode, HUDTabKey, StrategicState } from "../lib/contracts";
@@ -297,14 +299,38 @@ export type HUDPanelsArgs = {
   strategicState?: StrategicState;
 };
 
-export function useHUDPanels(args: HUDPanelsArgs) {
+type HUDObjectOption = {
+  id: string;
+  label: string;
+  type?: string;
+};
+
+type HUDDerivedData = {
+  projectId: string;
+  layoutMode: LayoutMode;
+  objects: HUDObjectOption[];
+  computedKpis: ReturnType<typeof computeKpis>;
+  template: (typeof DECISION_TEMPLATES)[number] | undefined;
+  kpiValues: KPIBoardItem[];
+  reportForUI: ReturnType<typeof buildDecisionReport>;
+  objectInfo: ObjectPanelProps["selected"];
+};
+
+type HUDActions = {
+  saveSnapshot: () => void;
+  clearHistory: () => void;
+  handlePingBackend: () => void;
+  handleApplyMode: () => void;
+  toggleDecisionCompare: (event?: React.SyntheticEvent) => void;
+  handleImportFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  clearFocusSelection: () => void;
+  toggleLoops: () => void;
+  toggleLoopLabels: () => void;
+  toggleSimRunning: () => void;
+};
+
+function useHUDDerivedData(args: HUDPanelsArgs, activeTemplateId: string): HUDDerivedData {
   const projectId = (args.sceneJson?.scene as any)?.project_id || "default";
-  const [storedSnapshots, setStoredSnapshots] = useState<DecisionSnapshot[]>(() => loadSnapshots(projectId));
-  const [showDecisionCompare, setShowDecisionCompare] = useState(false);
-  const [localTemplateId, setLocalTemplateId] = useState<string>("quality_protection");
-  const activeTemplateId = args.activeTemplateId ?? localTemplateId;
-  const setActiveTemplateId = args.setActiveTemplateId ?? setLocalTemplateId;
-  // ---- PERF: derive stable values once, avoid recomputing heavy work on every render ----
   const layoutMode = (args.layoutMode ?? ("floating" as LayoutMode)) as LayoutMode;
 
   const objects = useMemo(() => {
@@ -345,7 +371,7 @@ export function useHUDPanels(args: HUDPanelsArgs) {
 
     const rows = (computedKpis ?? []).map((k: any) => {
       const def = configKpiMap.get(k.id) ?? (KPI_REGISTRY as Record<string, any>)[k.id];
-      const weight = template?.kpiWeights?.[k.id] ?? template?.kpiWeights?.["default"] ?? 1;
+      const weight = template?.kpiWeights?.[k.id] ?? template?.kpiWeights?.default ?? 1;
       return {
         id: k.id,
         label: def?.label ?? k.label ?? k.id,
@@ -370,7 +396,6 @@ export function useHUDPanels(args: HUDPanelsArgs) {
 
   const reportForUI = useMemo(() => {
     const selectedObjectId = (args.selectedObjectInfo?.id as string) ?? null;
-
     const report = buildDecisionReport({
       sceneJson: args.sceneJson,
       loops: args.visibleLoops,
@@ -383,11 +408,208 @@ export function useHUDPanels(args: HUDPanelsArgs) {
       ? applyTemplateToReport(report, template.id, template.title, template.tagline)
       : report;
   }, [args.sceneJson, args.visibleLoops, args.selectedObjectInfo, computedKpis, template]);
+
+  const objectInfo = useMemo(() => {
+    const selectedId: string | null =
+      (typeof args.selectedObjectId === "string" && args.selectedObjectId.length > 0
+        ? args.selectedObjectId
+        : null) ??
+      (typeof (args.selectedObjectInfo as any)?.id === "string" ? (args.selectedObjectInfo as any).id : null);
+
+    const sceneObjects = Array.isArray((args.sceneJson as any)?.scene?.objects)
+      ? ((args.sceneJson as any).scene.objects as any[])
+      : [];
+
+    const selectedSceneObject = selectedId
+      ? sceneObjects.find((o: any) => (o?.id ?? o?.name) === selectedId)
+      : null;
+
+    const ux = selectedId && args.getUxForObject ? args.getUxForObject(selectedId) : null;
+
+    return selectedId
+      ? {
+          id: selectedId,
+          label: args.resolveObjectLabel ? args.resolveObjectLabel(selectedId) : selectedId,
+          type:
+            (typeof selectedSceneObject?.type === "string" ? selectedSceneObject.type : undefined) ??
+            (typeof (args.selectedObjectInfo as any)?.type === "string" ? (args.selectedObjectInfo as any).type : undefined),
+          tags: Array.isArray((args.selectedObjectInfo as any)?.tags) ? (args.selectedObjectInfo as any).tags : undefined,
+          summary:
+            typeof (args.selectedObjectInfo as any)?.summary === "string" ? (args.selectedObjectInfo as any).summary : undefined,
+          one_liner:
+            typeof (args.selectedObjectInfo as any)?.one_liner === "string" ? (args.selectedObjectInfo as any).one_liner : undefined,
+          resolved:
+            typeof (args.selectedObjectInfo as any)?.resolved === "boolean"
+              ? (args.selectedObjectInfo as any).resolved
+              : selectedSceneObject != null,
+          currentStatusSummary:
+            typeof (args.selectedObjectInfo as any)?.currentStatusSummary === "string"
+              ? (args.selectedObjectInfo as any).currentStatusSummary
+              : undefined,
+          shape: ux?.shape,
+          base_color: ux?.base_color,
+          opacity:
+            typeof ux?.opacity === "number"
+              ? ux.opacity
+              : typeof selectedSceneObject?.opacity === "number"
+                ? selectedSceneObject.opacity
+                : typeof selectedSceneObject?.alpha === "number"
+                  ? selectedSceneObject.alpha
+                  : undefined,
+          scale:
+            typeof ux?.scale === "number"
+              ? ux.scale
+              : typeof selectedSceneObject?.scale === "number"
+                ? selectedSceneObject.scale
+                : undefined,
+        }
+      : null;
+  }, [
+    args.getUxForObject,
+    args.resolveObjectLabel,
+    args.sceneJson,
+    args.selectedObjectId,
+    args.selectedObjectInfo,
+  ]);
+
+  return {
+    projectId,
+    layoutMode,
+    objects,
+    computedKpis,
+    template,
+    kpiValues,
+    reportForUI,
+    objectInfo,
+  };
+}
+
+function useHUDActions(args: HUDPanelsArgs, derived: HUDDerivedData, setStoredSnapshots: React.Dispatch<React.SetStateAction<DecisionSnapshot[]>>, showDecisionCompare: boolean, setShowDecisionCompare: React.Dispatch<React.SetStateAction<boolean>>): HUDActions {
+  const saveSnapshot = useCallback(() => {
+    const ts = Date.parse(derived.reportForUI.createdAt) || Date.now();
+    const currentKpis = derived.computedKpis;
+    const intensity = Math.max(0, Math.min(1, Number(args.sceneJson?.state_vector?.intensity ?? 0)));
+    const volatility = Math.max(0, Math.min(1, Number(args.sceneJson?.state_vector?.volatility ?? 0)));
+    const chaosScore = Math.round((volatility * 0.7 + intensity * 0.3) * 100);
+    const riskMatchers = /(risk|ignore|delay|rework)/i;
+    const safetyMatchers = /(quality|protect|stabil)/i;
+    let riskScore = 40;
+    for (const loop of args.visibleLoops ?? []) {
+      const label = `${(loop as any)?.id ?? ""} ${(loop as any)?.label ?? ""} ${(loop as any)?.type ?? ""}`;
+      if (riskMatchers.test(label)) riskScore += 10;
+      if (safetyMatchers.test(label)) riskScore -= 5;
+    }
+    riskScore = Math.max(0, Math.min(100, riskScore));
+    const localSnapshot = {
+      id: `${derived.reportForUI.id}_${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: ts,
+      loops: derived.reportForUI.context?.activeLoops || [],
+      activeLoopId: null,
+      kpis: currentKpis,
+      meta: {
+        chaosScore,
+        riskScore,
+      },
+    } as any;
+    appendSnapshot(derived.projectId, localSnapshot);
+    setStoredSnapshots(loadSnapshots(derived.projectId));
+    const payload = {
+      id: localSnapshot.id,
+      timestamp: localSnapshot.timestamp,
+      activeLoopId: localSnapshot.activeLoopId,
+      loops: localSnapshot.loops,
+      stateVector: args.sceneJson?.state_vector ?? {},
+      kpis: localSnapshot.kpis ?? [],
+    };
+    saveDecision(derived.projectId, payload).then((res) => {
+      if (!res.ok) {
+        console.warn("[decision] failed to persist snapshot", localSnapshot.id);
+      }
+    });
+  }, [args.sceneJson, args.visibleLoops, derived.computedKpis, derived.projectId, derived.reportForUI, setStoredSnapshots]);
+
+  const clearHistory = useCallback(() => {
+    clearSnapshots(derived.projectId);
+    setStoredSnapshots([]);
+  }, [derived.projectId, setStoredSnapshots]);
+
+  const handlePingBackend = useCallback(() => {
+    if (process.env.NODE_ENV === "production") return;
+    pingHealth().then((res) => {
+      if (res?.ok) args.setHealthInfo(`Backend OK (${res.version ?? "dev"})`);
+      else args.setHealthInfo("Backend unreachable");
+    });
+  }, [args]);
+
+  const handleApplyMode = useCallback(() => {
+    const template = DECISION_TEMPLATES.find((t) => t.id === (args.activeTemplateId ?? ""));
+    const selectedTemplate = template ?? derived.template;
+    if (!selectedTemplate) return;
+    selectedTemplate.suggestedLoops.forEach((loopType) => {
+      args.handleAddLoopFromTemplate(loopType);
+    });
+    if (selectedTemplate.ui?.showLoops) {
+      args.setShowLoops(() => true);
+    }
+  }, [args, derived.template]);
+
+  const toggleDecisionCompare = useCallback((event?: React.SyntheticEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    setShowDecisionCompare((v) => !v);
+  }, [setShowDecisionCompare]);
+
+  const handleImportFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) args.handleImport?.(file);
+    event.currentTarget.value = "";
+  }, [args.handleImport]);
+
+  const clearFocusSelection = useCallback(() => {
+    args.setFocusPinned(() => false);
+    args.clearFocus();
+  }, [args.clearFocus, args.setFocusPinned]);
+
+  const toggleLoops = useCallback(() => {
+    args.setShowLoops((v) => !v);
+  }, [args.setShowLoops]);
+
+  const toggleLoopLabels = useCallback(() => {
+    args.setShowLoopLabels((v) => !v);
+  }, [args.setShowLoopLabels]);
+
+  const toggleSimRunning = useCallback(() => {
+    args.setSimRunning((v) => !v);
+  }, [args.setSimRunning]);
+
+  return {
+    saveSnapshot,
+    clearHistory,
+    handlePingBackend,
+    handleApplyMode,
+    toggleDecisionCompare,
+    handleImportFileChange,
+    clearFocusSelection,
+    toggleLoops,
+    toggleLoopLabels,
+    toggleSimRunning,
+  };
+}
+
+export function useHUDPanels(args: HUDPanelsArgs) {
+  const initialProjectId = (args.sceneJson?.scene as any)?.project_id || "default";
+  const [storedSnapshots, setStoredSnapshots] = useState<DecisionSnapshot[]>(() => loadSnapshots(initialProjectId));
+  const [showDecisionCompare, setShowDecisionCompare] = useState(false);
+  const [localTemplateId, setLocalTemplateId] = useState<string>("quality_protection");
+  const activeTemplateId = args.activeTemplateId ?? localTemplateId;
+  const setActiveTemplateId = args.setActiveTemplateId ?? setLocalTemplateId;
+  const derived = useHUDDerivedData(args, activeTemplateId);
+  const actions = useHUDActions(args, derived, setStoredSnapshots, showDecisionCompare, setShowDecisionCompare);
   useEffect(() => {
-    setStoredSnapshots(loadSnapshots(projectId));
+    setStoredSnapshots(loadSnapshots(derived.projectId));
     let active = true;
     (async () => {
-      const result = await fetchDecisions(projectId, 50);
+      const result = await fetchDecisions(derived.projectId, 50);
       if (!active || !result.ok || !Array.isArray(result.data)) return;
       const normalized = result.data
         .map((raw: any) => {
@@ -400,24 +622,21 @@ export function useHUDPanels(args: HUDPanelsArgs) {
             timestamp,
             loops: Array.isArray(raw.loops) ? raw.loops : [],
             activeLoopId: typeof raw.activeLoopId === "string" ? raw.activeLoopId : null,
-            projectId,
+            projectId: derived.projectId,
             note: typeof raw.note === "string" ? raw.note : undefined,
             meta: raw.meta && typeof raw.meta === "object" ? raw.meta : undefined,
             kpis: raw.kpis,
           } as any;
         })
         .filter(Boolean) as DecisionSnapshot[];
-      setStoredSnapshots(replaceSnapshots(projectId, normalized));
+      setStoredSnapshots(replaceSnapshots(derived.projectId, normalized));
     })();
     return () => {
       active = false;
     };
-  }, [projectId]);
+  }, [derived.projectId]);
 
   return useMemo(() => {
-    // Some HUD placements may not pass layoutMode reliably.
-    // Default to a constrained wrapper so panels always fill the available height.
-
     const wrapPanel = (node: React.ReactNode, opts?: { scroll?: boolean }) => {
       const scroll = opts?.scroll !== false;
       return (
@@ -438,62 +657,14 @@ export function useHUDPanels(args: HUDPanelsArgs) {
     const wrapChatPanel = (node: React.ReactNode) => {
       return <div style={CHAT_WRAP_STYLE}>{node}</div>;
     };
-    const kpiPanel = <KPIBoard kpis={kpiValues} />;
-    const decisionReportPanel = <DecisionReportCard report={reportForUI} />;
-
-    const saveSnapshot = () => {
-      const ts = Date.parse(reportForUI.createdAt) || Date.now();
-      const currentKpis = computedKpis;
-      const intensity = Math.max(0, Math.min(1, Number(args.sceneJson?.state_vector?.intensity ?? 0)));
-      const volatility = Math.max(0, Math.min(1, Number(args.sceneJson?.state_vector?.volatility ?? 0)));
-      const chaosScore = Math.round((volatility * 0.7 + intensity * 0.3) * 100);
-      const riskMatchers = /(risk|ignore|delay|rework)/i;
-      const safetyMatchers = /(quality|protect|stabil)/i;
-      let riskScore = 40;
-      for (const loop of args.visibleLoops ?? []) {
-        const label = `${(loop as any)?.id ?? ""} ${(loop as any)?.label ?? ""} ${(loop as any)?.type ?? ""}`;
-        if (riskMatchers.test(label)) riskScore += 10;
-        if (safetyMatchers.test(label)) riskScore -= 5;
-      }
-      riskScore = Math.max(0, Math.min(100, riskScore));
-      const localSnapshot = {
-        id: `${reportForUI.id}_${Math.random().toString(36).slice(2, 8)}`,
-        timestamp: ts,
-        loops: reportForUI.context?.activeLoops || [],
-        activeLoopId: null,
-        kpis: currentKpis,
-        meta: {
-          chaosScore,
-          riskScore,
-        },
-      } as any;
-      appendSnapshot(projectId, localSnapshot);
-      setStoredSnapshots(loadSnapshots(projectId));
-      const payload = {
-        id: localSnapshot.id,
-        timestamp: localSnapshot.timestamp,
-        activeLoopId: localSnapshot.activeLoopId,
-        loops: localSnapshot.loops,
-        stateVector: args.sceneJson?.state_vector ?? {},
-        kpis: localSnapshot.kpis ?? [],
-      };
-      saveDecision(projectId, payload).then((res) => {
-        if (!res.ok) {
-          console.warn("[decision] failed to persist snapshot", localSnapshot.id);
-        }
-      });
-    };
-
-    const clearHistory = () => {
-      clearSnapshots(projectId);
-      setStoredSnapshots([]);
-    };
+    const kpiPanel = <KPIBoard kpis={derived.kpiValues} />;
+    const decisionReportPanel = <DecisionReportCard report={derived.reportForUI} />;
 
     const historyPanel = (
       <div style={{ display: "grid", gap: 8 }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
-            onClick={saveSnapshot}
+            onClick={actions.saveSnapshot}
             style={{
               padding: "8px 10px",
               borderRadius: 12,
@@ -508,7 +679,7 @@ export function useHUDPanels(args: HUDPanelsArgs) {
             Save decision
           </button>
           <button
-            onClick={clearHistory}
+            onClick={actions.clearHistory}
             style={{
               padding: "8px 10px",
               borderRadius: 12,
@@ -581,9 +752,9 @@ export function useHUDPanels(args: HUDPanelsArgs) {
         kpi={args.kpi}
         loopsCount={args.visibleLoops.length}
         showLoops={args.showLoops}
-        onToggleLoops={() => args.setShowLoops((v) => !v)}
+        onToggleLoops={actions.toggleLoops}
         showLoopLabels={args.showLoopLabels}
-        onToggleLoopLabels={() => args.setShowLoopLabels((v) => !v)}
+        onToggleLoopLabels={actions.toggleLoopLabels}
         loopState={args.visibleLoops}
         activeMode={args.activeMode}
         onUndo={args.handleUndo ?? (() => {})}
@@ -594,43 +765,34 @@ export function useHUDPanels(args: HUDPanelsArgs) {
         noSceneUpdate={args.noSceneUpdate}
         prefs={args.prefs}
         onPrefsChange={args.handlePrefsChange}
-        objects={objects}
+        objects={derived.objects}
         selectedObjectInfo={args.selectedObjectInfo}
         onAskAboutSelected={args.handleAskAboutSelected}
         lastActionsCount={args.lastActionsCount}
         onReplayEvents={args.handleReplayEvents}
         replaying={args.replaying}
         replayError={args.replayError}
-        onPingBackend={() => {
-          if (process.env.NODE_ENV === "production") return;
-          pingHealth().then((res) => {
-            if (res?.ok) args.setHealthInfo(`Backend OK (${res.version ?? "dev"})`);
-            else args.setHealthInfo("Backend unreachable");
-          });
-        }}
+        onPingBackend={actions.handlePingBackend}
         healthInfo={args.healthInfo}
         analysisSummary={args.lastAnalysisSummary}
         sceneWarn={args.sceneWarn}
         focusPinned={args.selectionLocked}
         onTogglePinFocus={args.onToggleSelectionLock}
-        onClearFocus={() => {
-          args.setFocusPinned(() => false);
-          args.clearFocus();
-        }}
+        onClearFocus={actions.clearFocusSelection}
         focusMode={args.focusMode}
         onToggleFocusMode={args.toggleFocusMode}
         focusedId={args.focusedId}
         onAddInventoryInstance={args.handleAddInventoryInstance}
         simRunning={args.simRunning}
         simSpeed={args.simSpeed}
-        onToggleSimRunning={() => args.setSimRunning((v) => !v)}
+        onToggleSimRunning={actions.toggleSimRunning}
         onSimStep={args.simulateStep}
         onSetSimSpeed={args.setSimSpeed}
         simLastError={args.simLastError}
       />
     );
 
-    const decisionsPanel = (
+    const buildDecisionsPanel = () => (
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <div
           style={{
@@ -677,16 +839,7 @@ export function useHUDPanels(args: HUDPanelsArgs) {
             </label>
             <button
               type="button"
-              onClick={() => {
-                const template = DECISION_TEMPLATES.find((t) => t.id === activeTemplateId);
-                if (!template) return;
-                template.suggestedLoops.forEach((loopType) => {
-                  args.handleAddLoopFromTemplate(loopType);
-                });
-                if (template.ui?.showLoops) {
-                  args.setShowLoops(() => true);
-                }
-              }}
+              onClick={actions.handleApplyMode}
               style={{
                 padding: "6px 10px",
                 borderRadius: 12,
@@ -705,11 +858,7 @@ export function useHUDPanels(args: HUDPanelsArgs) {
             </button>
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowDecisionCompare((v) => !v);
-              }}
+              onClick={actions.toggleDecisionCompare}
               style={{
                 padding: "6px 10px",
                 borderRadius: 12,
@@ -729,7 +878,7 @@ export function useHUDPanels(args: HUDPanelsArgs) {
           </div>
         </div>
 
-        {template ? (
+        {derived.template ? (
           <div
             style={{
               padding: "8px 10px",
@@ -744,8 +893,8 @@ export function useHUDPanels(args: HUDPanelsArgs) {
               alignItems: "center",
             }}
           >
-            <div style={{ fontWeight: 800 }}>MODE: {template.title}</div>
-            <div style={{ opacity: 0.8 }}>{template.tagline}</div>
+            <div style={{ fontWeight: 800 }}>MODE: {derived.template.title}</div>
+            <div style={{ opacity: 0.8 }}>{derived.template.tagline}</div>
           </div>
         ) : null}
 
@@ -871,11 +1020,7 @@ export function useHUDPanels(args: HUDPanelsArgs) {
                 type="file"
                 accept="application/json"
                 hidden
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) args.handleImport?.(f);
-                  e.currentTarget.value = "";
-                }}
+                onChange={actions.handleImportFileChange}
               />
             </label>
             <label
@@ -911,7 +1056,7 @@ export function useHUDPanels(args: HUDPanelsArgs) {
       </div>
     );
 
-    const scenePanel = (
+    const buildScenePanel = () => (
       <div style={{ display: "grid", gap: 10 }}>
         <h3
           style={{
@@ -1074,64 +1219,9 @@ export function useHUDPanels(args: HUDPanelsArgs) {
       </div>
     );
 
-    const selectedId: string | null =
-      (typeof args.selectedObjectId === "string" && args.selectedObjectId.length > 0
-        ? args.selectedObjectId
-        : null) ??
-      (typeof (args.selectedObjectInfo as any)?.id === "string" ? (args.selectedObjectInfo as any).id : null);
-
-    const sceneObjects = Array.isArray((args.sceneJson as any)?.scene?.objects)
-      ? ((args.sceneJson as any).scene.objects as any[])
-      : [];
-
-    const selectedSceneObject = selectedId
-      ? sceneObjects.find((o: any) => (o?.id ?? o?.name) === selectedId)
-      : null;
-
-    const ux = selectedId && args.getUxForObject ? args.getUxForObject(selectedId) : null;
-
-    const objectInfo = selectedId
-      ? {
-          id: selectedId,
-          label: args.resolveObjectLabel ? args.resolveObjectLabel(selectedId) : selectedId,
-          type:
-            (typeof selectedSceneObject?.type === "string" ? selectedSceneObject.type : undefined) ??
-            (typeof (args.selectedObjectInfo as any)?.type === "string" ? (args.selectedObjectInfo as any).type : undefined),
-          tags: Array.isArray((args.selectedObjectInfo as any)?.tags) ? (args.selectedObjectInfo as any).tags : undefined,
-          summary:
-            typeof (args.selectedObjectInfo as any)?.summary === "string" ? (args.selectedObjectInfo as any).summary : undefined,
-          one_liner:
-            typeof (args.selectedObjectInfo as any)?.one_liner === "string" ? (args.selectedObjectInfo as any).one_liner : undefined,
-          resolved:
-            typeof (args.selectedObjectInfo as any)?.resolved === "boolean"
-              ? (args.selectedObjectInfo as any).resolved
-              : selectedSceneObject != null,
-          currentStatusSummary:
-            typeof (args.selectedObjectInfo as any)?.currentStatusSummary === "string"
-              ? (args.selectedObjectInfo as any).currentStatusSummary
-              : undefined,
-          shape: ux?.shape,
-          base_color: ux?.base_color,
-          opacity:
-            typeof ux?.opacity === "number"
-              ? ux.opacity
-              : typeof selectedSceneObject?.opacity === "number"
-              ? selectedSceneObject.opacity
-              : typeof selectedSceneObject?.alpha === "number"
-              ? selectedSceneObject.alpha
-              : undefined,
-          scale:
-            typeof ux?.scale === "number"
-              ? ux.scale
-              : typeof selectedSceneObject?.scale === "number"
-              ? selectedSceneObject.scale
-              : undefined,
-        }
-      : null;
-
-    const objectPanel = (
+    const buildObjectPanel = () => (
       <ObjectPanel
-        selected={objectInfo}
+        selected={derived.objectInfo}
         recentActions={args.recentActions}
         resolveObjectLabel={args.resolveObjectLabel}
         resolveTypeLabel={args.resolveTypeLabel}
@@ -1142,39 +1232,36 @@ export function useHUDPanels(args: HUDPanelsArgs) {
       />
     );
 
-    const loopsPanel = (
+    const buildLoopsPanel = () => (
       <LoopOverlayHUD
         embedded
         loops={args.visibleLoops}
         activeLoopId={args.effectiveActiveLoopId}
         onSelectLoop={(id) => args.selectLoop(id)}
         showLoopLabels={args.showLoopLabels}
-        onToggleLoopLabels={() => args.setShowLoopLabels((v) => !v)}
+        onToggleLoopLabels={actions.toggleLoopLabels}
         loopSuggestions={args.loopSuggestions}
         onFocusObject={args.handleFocusFromLoop}
       />
     );
-    const strategicPanel = (
-      <StrategicDashboardHUD strategicState={args.strategicState} layoutMode={toShellLayoutMode(args.layoutMode)} />
-    );
+    const strategicPanel = <StrategicDashboardHUD strategicState={args.strategicState} layoutMode={toShellLayoutMode(args.layoutMode)} />;
 
     return {
       chat: wrapChatPanel(chatPanel),
       kpi: wrapPanel(kpiPanel),
-      decisions: wrapPanel(decisionsPanel),
-      scene: wrapPanel(scenePanel),
-      object: wrapPanel(objectPanel),
-      loops: wrapPanel(loopsPanel),
+      decisions: wrapPanel(buildDecisionsPanel()),
+      scene: wrapPanel(buildScenePanel()),
+      object: wrapPanel(buildObjectPanel()),
+      loops: wrapPanel(buildLoopsPanel()),
       strategic: wrapPanel(strategicPanel),
     } as const;
   }, [
-    layoutMode,
-    objects,
-    computedKpis,
-    kpiValues,
-    reportForUI,
-
-    projectId,
+    derived.layoutMode,
+    derived.objects,
+    derived.kpiValues,
+    derived.reportForUI,
+    derived.template,
+    derived.objectInfo,
     storedSnapshots,
     showDecisionCompare,
     activeTemplateId,
@@ -1216,7 +1303,6 @@ export function useHUDPanels(args: HUDPanelsArgs) {
     args.sceneWarn,
     args.selectionLocked,
     args.onToggleSelectionLock,
-    args.setFocusPinned,
     args.clearFocus,
     args.focusMode,
     args.toggleFocusMode,
@@ -1236,16 +1322,19 @@ export function useHUDPanels(args: HUDPanelsArgs) {
     args.handleApplySnapshot,
     args.strategicState,
     args.sceneJson,
-    args.getUxForObject,
-    args.selectedObjectId,
     args.resolveObjectLabel,
     args.resolveTypeLabel,
-    args.updateObjectUx,
     args.onObjectHoverStart,
     args.onObjectHoverEnd,
-    args.onDragStart,
-    args.onDragEnd,
-    args.focusPinned,
-    args.setFocusPinned,
+    actions.saveSnapshot,
+    actions.clearHistory,
+    actions.handlePingBackend,
+    actions.handleApplyMode,
+    actions.toggleDecisionCompare,
+    actions.handleImportFileChange,
+    actions.clearFocusSelection,
+    actions.toggleLoops,
+    actions.toggleLoopLabels,
+    actions.toggleSimRunning,
   ]);
 }

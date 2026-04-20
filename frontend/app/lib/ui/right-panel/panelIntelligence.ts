@@ -21,7 +21,7 @@ export type PanelIntelligenceInput = {
 };
 
 export type PanelIntelligenceOutput = {
-  adaptedView: CanonicalRightPanelView;
+  view: CanonicalRightPanelView;
   enhancements: {
     highlightSections?: string[];
     prioritizeBlocks?: string[];
@@ -137,14 +137,6 @@ function hasActionGap(input: PanelIntelligenceInput): boolean {
   return !Array.isArray(actions) || actions.length === 0;
 }
 
-function canAdaptFromView(view: CanonicalRightPanelView): boolean {
-  return (
-    view === "dashboard" ||
-    view === "strategic_command" ||
-    view === "simulate"
-  );
-}
-
 function buildEnhancements(view: CanonicalRightPanelView, highRisk: boolean): PanelIntelligenceOutput["enhancements"] {
   if (view === "advice") {
     return {
@@ -158,6 +150,14 @@ function buildEnhancements(view: CanonicalRightPanelView, highRisk: boolean): Pa
     return {
       highlightSections: ["risk_sources", "propagation_chain"],
       prioritizeBlocks: ["risk", "impact"],
+      collapseBlocks: ["secondary_context"],
+    };
+  }
+
+  if (view === "explanation") {
+    return {
+      highlightSections: ["recommendation", "evidence"],
+      prioritizeBlocks: ["recommendation", "summary"],
       collapseBlocks: ["secondary_context"],
     };
   }
@@ -181,35 +181,29 @@ export function getPanelIntelligence(input: PanelIntelligenceInput): PanelIntell
   const intent = inferIntent(input);
   const highRisk = hasHighRiskSignal(input);
   const strongRecommendation = hasStrongRecommendation(input);
-  const adaptable = canAdaptFromView(input.view);
+  const view = input.view;
 
-  let adaptedView: CanonicalRightPanelView = input.view;
-  let reasoning = "Kept the current panel because no higher-confidence adaptation signal was found.";
+  let reasoning = "No stronger emphasis signal was detected, so the current panel should keep its default presentation.";
 
-  if (adaptable) {
-    if (highRisk) {
-      adaptedView = input.panelData?.warRoom ? "war_room" : "risk";
-      reasoning = "Detected a strong risk signal, so Nexora is prioritizing the risk-oriented panel.";
-    } else if (intent === "risk" && input.panelData?.risk) {
-      adaptedView = "risk";
-      reasoning = "User intent and available data both point to risk exploration.";
-    } else if (intent === "decide" && (strongRecommendation || input.panelData?.strategicCouncil)) {
-      adaptedView = "decision_council";
-      reasoning = "Decision-focused intent with recommendation context makes the council view the safest upgrade.";
-    } else if (intent === "explore" && hasSimulation(input)) {
-      adaptedView = "simulate";
-      reasoning = "Exploration intent with simulation data available makes simulation the most useful panel.";
-    } else if (strongRecommendation && input.view !== "advice") {
-      adaptedView = "advice";
-      reasoning = "A strong recommendation is available, so advice is surfaced first.";
-    }
-  } else {
-    reasoning = "Kept the current panel because it appears to be an explicit, specialized view.";
+  if (highRisk) {
+    reasoning = "Detected strong risk signals; risk-related sections should be emphasized in the current panel.";
+  } else if (intent === "decide" && (strongRecommendation || input.panelData?.strategicCouncil)) {
+    reasoning = "Decision-focused intent suggests governance and recommendation content should be prioritized within the current panel.";
+  } else if (intent === "explore" && hasSimulation(input)) {
+    reasoning = "Simulation data is available and can be surfaced as an action or secondary section within the current panel.";
+  } else if (intent === "risk" && input.panelData?.risk) {
+    reasoning = "Risk-oriented intent was detected, so risk-related sections should be emphasized in the current panel.";
+  } else if (strongRecommendation) {
+    reasoning = "A strong recommendation is available, so recommendation-focused content should be prioritized in the current panel.";
+  } else if (intent === "analyze") {
+    reasoning = "Analysis-oriented intent suggests summary and evidence blocks should be emphasized in the current panel.";
+  } else if (intent === "optimize") {
+    reasoning = "Optimization intent suggests action-oriented and impact-related content should be emphasized in the current panel.";
   }
 
   const output: PanelIntelligenceOutput = {
-    adaptedView,
-    enhancements: buildEnhancements(adaptedView, highRisk),
+    view,
+    enhancements: buildEnhancements(input.view, highRisk),
     uiHints: {
       showCTA: hasActionGap(input),
       showSimulation: hasSimulation(input),
@@ -221,10 +215,10 @@ export function getPanelIntelligence(input: PanelIntelligenceInput): PanelIntell
 
   if (process.env.NODE_ENV !== "production") {
     console.log("[Nexora][PanelIntelligence]", {
-      originalView: input.view,
-      adaptedView: output.adaptedView,
+      view: input.view,
       intent,
       reasoning: output.reasoning,
+      uiHints: output.uiHints,
     });
   }
 

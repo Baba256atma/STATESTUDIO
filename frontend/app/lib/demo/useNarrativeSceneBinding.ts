@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { dedupeNexoraDevLog } from "../debug/panelConsoleTraceDedupe";
 
 import type { NarrativeSceneAction } from "./narrativeSceneTypes";
 import type { DemoScriptStep } from "./demoScript";
@@ -36,23 +37,37 @@ function resolveSceneObjectIdSet(sceneJson: any | null) {
 }
 
 function resolveIds(ids: string[] | undefined, availableIds: Set<string>) {
-  return Array.isArray(ids) ? ids.map(String).filter((id) => availableIds.has(id)) : [];
+  return Array.isArray(ids) ? Array.from(new Set(ids.map(String).filter((id) => availableIds.has(id)))) : [];
+}
+
+function getIdsSignature(ids: string[]) {
+  return ids.join("|");
 }
 
 export function useNarrativeSceneBinding(args: UseNarrativeSceneBindingArgs): NarrativeSceneBinding {
   const { step, sceneJson } = args;
+  const previousBindingSignatureRef = useRef<string>("");
+  const previousBindingRef = useRef<NarrativeSceneBinding | null>(null);
+  const lastObservedInputKeyRef = useRef<string>("");
+  const lastLoggedBindingSignatureRef = useRef<string>("");
 
-  return useMemo(() => {
-    const availableIds = resolveSceneObjectIdSet(sceneJson);
+  const sceneObjectIdSet = useMemo(() => resolveSceneObjectIdSet(sceneJson), [sceneJson]);
+  const sceneObjectIdSignature = useMemo(() => Array.from(sceneObjectIdSet).sort().join("|"), [sceneObjectIdSet]);
+  const actionSignature = useMemo(() => JSON.stringify(step?.scene_action ?? null), [step?.scene_action]);
+
+  const binding = useMemo(() => {
+    const availableIds = sceneObjectIdSet;
     const action = step?.scene_action ?? null;
     const highlightIds = resolveIds(action?.highlight_ids, availableIds);
     const dimIds = resolveIds(action?.dim_ids, availableIds).filter((id) => !highlightIds.includes(id));
-    const focusId =
-      action?.focus_id && availableIds.has(String(action.focus_id)) ? String(action.focus_id) : highlightIds[0] ?? null;
+    const requestedFocusId =
+      action?.focus_id != null && String(action.focus_id).trim().length > 0 ? String(action.focus_id).trim() : null;
+    const focusId = requestedFocusId && availableIds.has(requestedFocusId) ? requestedFocusId : null;
     const clear = action?.clear === true;
     const isActive = !!step && (!!action || clear);
+    const hasMeaningfulSelection = highlightIds.length > 0 || dimIds.length > 0 || !!focusId;
     const objectSelection =
-      isActive
+      isActive && hasMeaningfulSelection
         ? {
             highlighted_objects: highlightIds,
             risk_sources: focusId ? [focusId] : [],
@@ -61,7 +76,7 @@ export function useNarrativeSceneBinding(args: UseNarrativeSceneBindingArgs): Na
           }
         : null;
 
-    return {
+    const nextBinding = {
       stepId: step?.step_id ?? null,
       action,
       highlightIds,
@@ -71,11 +86,80 @@ export function useNarrativeSceneBinding(args: UseNarrativeSceneBindingArgs): Na
       isActive,
       objectSelection,
     };
-  }, [sceneJson, step]);
+    const bindingSignature = JSON.stringify({
+      stepId: nextBinding.stepId,
+      clear: nextBinding.clear,
+      isActive: nextBinding.isActive,
+      focusId: nextBinding.focusId,
+      highlightIds: getIdsSignature(nextBinding.highlightIds),
+      dimIds: getIdsSignature(nextBinding.dimIds),
+      hasObjectSelection: Boolean(nextBinding.objectSelection),
+    });
+
+    if (previousBindingSignatureRef.current === bindingSignature && previousBindingRef.current) {
+      return previousBindingRef.current;
+    }
+
+    previousBindingSignatureRef.current = bindingSignature;
+    previousBindingRef.current = nextBinding;
+    return nextBinding;
+  }, [sceneObjectIdSet, step]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+
+    const action = step?.scene_action ?? null;
+    const requestedFocusId =
+      action?.focus_id != null && String(action.focus_id).trim().length > 0 ? String(action.focus_id).trim() : null;
+    const invalidFocusTarget = requestedFocusId && !sceneObjectIdSet.has(requestedFocusId) ? requestedFocusId : null;
+    const bindingSignature = JSON.stringify({
+      stepId: binding.stepId,
+      clear: binding.clear,
+      isActive: binding.isActive,
+      focusId: binding.focusId,
+      highlightIds: getIdsSignature(binding.highlightIds),
+      dimIds: getIdsSignature(binding.dimIds),
+      hasObjectSelection: Boolean(binding.objectSelection),
+    });
+    const inputKey = `${binding.stepId ?? "none"}|${actionSignature}|${sceneObjectIdSignature}`;
+    const traceDetail = {
+      stepId: binding.stepId,
+      focusId: binding.focusId,
+      highlightCount: binding.highlightIds.length,
+      dimCount: binding.dimIds.length,
+      isActive: binding.isActive,
+    };
+
+    if (invalidFocusTarget) {
+      const invalidSig = JSON.stringify({
+        stepId: binding.stepId ?? null,
+        invalidFocusTarget,
+        sceneObjectIdSignature,
+      });
+      dedupeNexoraDevLog("[Nexora][NarrativeBinding] invalid_target_blocked", invalidSig, {
+        ...traceDetail,
+        nextTargetId: invalidFocusTarget,
+      });
+    }
+
+    if (lastObservedInputKeyRef.current === inputKey) {
+      return;
+    }
+
+    if (lastLoggedBindingSignatureRef.current !== bindingSignature) {
+      dedupeNexoraDevLog("[Nexora][NarrativeBinding] emitted", bindingSignature, traceDetail);
+      lastLoggedBindingSignatureRef.current = bindingSignature;
+    }
+
+    lastObservedInputKeyRef.current = inputKey;
+  }, [actionSignature, binding, sceneObjectIdSet, sceneObjectIdSignature]);
+
+  return binding;
 }
 
 export function useNarrativeSceneBindingDebug(binding: NarrativeSceneBinding) {
   useEffect(() => {
+    if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_NEXORA_PRODUCT_MODE === "pilot") return;
     if (!binding.stepId) return;
     console.log("[Nexora][Narrative→Scene]", {
       step: binding.stepId,

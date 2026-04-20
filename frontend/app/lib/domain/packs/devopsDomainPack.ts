@@ -7,13 +7,12 @@ import {
 import { createUniversalDomainPackTemplate } from "../domainPackTemplate";
 
 export const DEVOPS_DOMAIN_PROMPT_EXAMPLES = [
-  "service dependency failure",
-  "database latency",
-  "traffic spike",
-  "queue backlog",
-  "worker bottleneck",
-  "cache failure",
-  "api instability",
+  "Which dependency failure would hurt reliability first?",
+  "What reduces blast radius without slowing delivery?",
+  "Where is latency becoming customer-visible risk?",
+  "What should leadership harden first under load?",
+  "How does backlog convert into outage risk?",
+  "Which service edge fails under the next spike?",
 ];
 
 export const DEVOPS_DOMAIN_TEMPLATE = createUniversalDomainPackTemplate({
@@ -27,7 +26,7 @@ export const DEVOPS_DOMAIN_TEMPLATE = createUniversalDomainPackTemplate({
   promptExamples: DEVOPS_DOMAIN_PROMPT_EXAMPLES,
   tags: ["devops", "services", "latency", "resilience", "failure_propagation"],
   visibleNavGroups: ["scene_group", "strategy_group", "risk_group", "memory_group", "executive_group"],
-  visibleSections: ["scene", "objects", "focus", "timeline", "advice", "risk_flow", "risk", "memory", "patterns", "executive"],
+  visibleSections: ["scene", "objects", "focus", "timeline", "advice", "explanation", "risk_flow", "risk", "memory", "patterns", "executive"],
   scenarioKpiMapping: DEFAULT_DOMAIN_SCENARIO_KPI_MAPPINGS.devops,
   adviceConfig: DEFAULT_DOMAIN_ADVICE_CONFIGS.devops,
   experienceDefaults: {
@@ -36,10 +35,13 @@ export const DEVOPS_DOMAIN_TEMPLATE = createUniversalDomainPackTemplate({
     preferredRightPanelTab: "risk_flow",
     helperTitle: "See how service pressure moves through dependencies, latency, queues, and recovery paths",
     helperBody: "Focus on failure propagation, service fragility, reliability KPIs, and the next stabilizing action across the runtime system.",
-    promptGuideTitle: "Start with a service instability prompt.",
-    promptGuideBody: "Prompt -> dependency pressure -> propagated failure path -> reliability KPI impact -> resilience action. Use short prompts tied to latency, outages, queues, traffic, or recovery stress.",
+    promptGuideTitle: "Ask a resilience question",
+    promptGuideBody: "Name latency, dependency, or traffic stress—Nexora traces propagation, then open the brief for stabilization options.",
     executiveFramingStyle: "resilience",
     demoLabel: "DevOps Service Resilience Demo",
+    demoScenarioTitle: "Service resilience",
+    demoBusinessContext: "Dependencies and load interact—latency and failures compound across customer journeys.",
+    demoDecisionQuestion: "What should leadership harden first without slowing delivery?",
   },
   vocabulary: [
     { id: "api_gateway", label: "API Gateway", coreRole: "flow", synonyms: ["gateway", "ingress"], tags: ["edge"] },

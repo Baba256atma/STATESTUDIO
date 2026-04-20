@@ -53,6 +53,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         )
 
     async def dispatch(self, request: Request, call_next):
+        if request.url.path == "/health":
+            return await call_next(request)
+
         client_ip = self._get_client_ip(request)
 
         if not self.limiter.allow_request(client_ip):

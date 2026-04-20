@@ -35,6 +35,7 @@ def test_fragility_evaluator_basic_case_is_nonzero() -> None:
             Signal(
                 id="sig_1",
                 type="delay",
+                label="Schedule / delivery delay",
                 description="inventory shortage may delay delivery",
                 entities=["inventory", "delivery"],
                 strength=0.72,
@@ -74,6 +75,7 @@ def test_fragility_evaluator_multi_pressure_scores_higher_than_basic() -> None:
             Signal(
                 id="sig_1",
                 type="delay",
+                label="Schedule / delivery delay",
                 description="inventory shortage may delay delivery",
                 entities=["inventory", "delivery"],
                 strength=0.72,
@@ -87,6 +89,7 @@ def test_fragility_evaluator_multi_pressure_scores_higher_than_basic() -> None:
             Signal(
                 id="sig_1",
                 type="delay",
+                label="Schedule / delivery delay",
                 description="shipping delays are rising",
                 entities=["delivery"],
                 strength=0.76,
@@ -95,6 +98,7 @@ def test_fragility_evaluator_multi_pressure_scores_higher_than_basic() -> None:
             Signal(
                 id="sig_2",
                 type="cost",
+                label="Cost / margin pressure",
                 description="cost pressure is rising",
                 entities=["cost"],
                 strength=0.71,
@@ -103,6 +107,7 @@ def test_fragility_evaluator_multi_pressure_scores_higher_than_basic() -> None:
             Signal(
                 id="sig_3",
                 type="supply",
+                label="Supplier stress",
                 description="supplier instability is affecting inventory",
                 entities=["supplier", "inventory"],
                 strength=0.84,
@@ -140,6 +145,7 @@ def test_fragility_evaluator_low_risk_case_stays_low() -> None:
             Signal(
                 id="sig_1",
                 type="risk",
+                label="Operational risk",
                 description="system is stable with no major disruption detected",
                 entities=["system"],
                 strength=0.12,

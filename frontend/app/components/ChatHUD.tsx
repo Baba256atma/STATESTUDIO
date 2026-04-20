@@ -20,6 +20,7 @@ import {
   useSetViewMode,
   useSetChatOffset,
 } from "./SceneContext";
+import { nx } from "./ui/nexoraTheme";
 
 const STORAGE_KEY = "statestudio.chatHUD.v1";
 const SESSION_MESSAGES_KEY = "statestudio.chatHUD.sessionMessages.v1";
@@ -455,16 +456,17 @@ export function ChatHUD({
             ? 360
             : 280
           : 300,
-      background: "rgba(16, 16, 22, 0.90)",
+      background: nx.bgHud,
       borderRadius: 16,
       backdropFilter: "blur(12px)",
       WebkitBackdropFilter: "blur(12px)",
-      color: "white",
+      color: nx.text,
+      border: `1px solid ${nx.borderSoft}`,
       display: "flex",
       flexDirection: "column",
       overflow: "hidden",
       zIndex: 1000,
-      boxShadow: "0 18px 60px rgba(0,0,0,0.45)",
+      boxShadow: nx.shadowDrawer,
       userSelect: "none",
       pointerEvents: "auto",
       opacity: viewMode === "hidden" ? 0.98 : 1,
@@ -505,7 +507,16 @@ export function ChatHUD({
 
   useEffect(() => {
     const el = messagesScrollRef.current;
-    if (!el) return;
+    if (!el) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[Nexora][EventBinding] skipped_null_target", {
+          file: "frontend/app/components/ChatHUD.tsx",
+          function: "ChatHUD.useEffect(messagesScrollRef)",
+          targetName: "messagesScrollRef",
+        });
+      }
+      return;
+    }
 
     const onScroll = () => {
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
@@ -580,7 +591,7 @@ export function ChatHUD({
     rowGap: 8,
     flexWrap: "wrap",
     padding: "10px 12px 8px",
-    borderBottom: "1px solid rgba(255,255,255,0.10)",
+    borderBottom: `1px solid ${nx.border}`,
     overflow: "visible",
     flexShrink: 0,
     position: "relative",
@@ -610,9 +621,9 @@ export function ChatHUD({
     fontSize: 12,
     padding: "6px 10px",
     borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.06)",
-    color: "rgba(255,255,255,0.92)",
+    border: `1px solid ${nx.border}`,
+    background: nx.bgPanelSoft,
+    color: nx.text,
     cursor: "pointer",
     maxWidth: "min(420px, 72vw)",
     minWidth: 160,
@@ -629,9 +640,9 @@ export function ChatHUD({
     height: 30,
     padding: "0 10px",
     borderRadius: 10,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.06)",
-    color: "rgba(255,255,255,0.92)",
+    border: `1px solid ${nx.border}`,
+    background: nx.bgPanelSoft,
+    color: nx.textSoft,
     cursor: "pointer",
     fontSize: 12,
     flexShrink: 0,
@@ -639,7 +650,7 @@ export function ChatHUD({
 
   const primaryBtnStyle: React.CSSProperties = {
     ...iconBtnStyle,
-    background: "rgba(255,255,255,0.10)",
+    background: nx.bgDeep,
   };
 
   const menuStyle: React.CSSProperties = {
@@ -651,9 +662,9 @@ export function ChatHUD({
     maxHeight: "min(60vh, 360px)",
     overflow: "hidden",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(10,12,18,0.98)",
-    boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
+    border: `1px solid ${nx.border}`,
+    background: nx.popoverBg,
+    boxShadow: nx.popoverShadow,
     padding: 8,
     zIndex: 5000,
   };
@@ -665,7 +676,7 @@ export function ChatHUD({
     borderRadius: 10,
     border: "none",
     background: "transparent",
-    color: "rgba(255,255,255,0.92)",
+    color: nx.text,
     cursor: "pointer",
     fontSize: 13,
   };
@@ -812,8 +823,8 @@ export function ChatHUD({
                       fontSize: 12,
                       opacity: 0.85,
                       padding: "6px 10px",
-                      background: "rgba(10,12,18,0.98)",
-                      borderBottom: "1px solid rgba(255,255,255,0.08)",
+                      background: nx.popoverBg,
+                      borderBottom: `1px solid ${nx.borderSoft}`,
                     }}
                   >
                     {activeMode ? `Mode: ${activeMode}` : "Mode: —"}
@@ -822,7 +833,7 @@ export function ChatHUD({
                   </div>
 
                   <div style={{ maxHeight: "calc(min(60vh, 360px) - 44px)", overflowY: "auto", paddingTop: 6 }}>
-                    <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "6px 0" }} />
+                    <div style={{ height: 1, background: nx.divider, margin: "6px 0" }} />
 
                     <button
                       style={menuItemStyle}
@@ -858,17 +869,17 @@ export function ChatHUD({
             <div
               style={{
                 padding: 12,
-                borderBottom: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.03)",
+                borderBottom: `1px solid ${nx.border}`,
+                background: nx.bgPanelSoft,
               }}
               onPointerDown={(e) => e.stopPropagation()}
             >
               <div
                 style={{
                   padding: 10,
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  border: `1px solid ${nx.border}`,
                   borderRadius: 12,
-                  background: "rgba(0,0,0,0.18)",
+                  background: nx.bgControl,
                   display: "grid",
                   gap: 10,
                   maxHeight: 220,
@@ -900,7 +911,7 @@ export function ChatHUD({
                       onClick={() => updatePrefs({ theme: t as any })}
                       style={{
                         ...pillStyle,
-                        background: prefs.theme === t ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.06)",
+                        background: prefs.theme === t ? nx.accentSoft : nx.bgPanelSoft,
                       }}
                     >
                       {t === "day" ? "Day" : t === "night" ? "Night" : "Stars"}
@@ -946,9 +957,9 @@ export function ChatHUD({
                     style={{
                       padding: "6px 8px",
                       borderRadius: 8,
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      background: "rgba(0,0,0,0.18)",
-                      color: "white",
+                      border: `1px solid ${nx.border}`,
+                      background: nx.bgPanelSoft,
+                      color: nx.text,
                     }}
                   >
                     <option value="keep">Keep</option>
@@ -1021,7 +1032,7 @@ export function ChatHUD({
                       onClick={() => updatePrefs({ orbitMode: m as any })}
                       style={{
                         ...pillStyle,
-                        background: prefs.orbitMode === m ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.06)",
+                        background: prefs.orbitMode === m ? nx.accentSoft : nx.bgPanelSoft,
                       }}
                     >
                       {m === "auto" ? "Orbit Auto" : "Orbit Manual"}
@@ -1059,8 +1070,8 @@ export function ChatHUD({
                 marginBottom: 0,
                 padding: "10px 10px",
                 borderRadius: 12,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.10)",
+                background: nx.bgPanelSoft,
+                border: `1px solid ${nx.border}`,
                 display: "grid",
                 gap: 8,
               }}
@@ -1090,8 +1101,8 @@ export function ChatHUD({
                     style={{
                       padding: "8px 10px",
                       borderRadius: 10,
-                      background: m.role === "user" ? "rgba(80,140,255,0.18)" : "rgba(255,255,255,0.10)",
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      background: m.role === "user" ? nx.chatBubbleUserBg : nx.chatBubbleAssistantBg,
+                      border: `1px solid ${nx.borderSoft}`,
                       fontSize: 13,
                       lineHeight: 1.35,
                       whiteSpace: "pre-wrap",
@@ -1104,7 +1115,7 @@ export function ChatHUD({
                     m.role === "assistant" &&
                     typeof lastActionsCount === "number" &&
                     process.env.NODE_ENV !== "production" && (
-                      <div style={{ marginTop: 4, fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
+                      <div style={{ marginTop: 4, fontSize: 11, color: nx.muted }}>
                         Applied: {lastActionsCount} action{lastActionsCount === 1 ? "" : "s"}
                       </div>
                     )}
@@ -1113,7 +1124,7 @@ export function ChatHUD({
                     m.role === "assistant" &&
                     analysisSummary &&
                     process.env.NODE_ENV !== "production" && (
-                      <div style={{ marginTop: 4, fontSize: 11, color: "rgba(255,255,255,0.55)" }}>{analysisSummary}</div>
+                      <div style={{ marginTop: 4, fontSize: 11, color: nx.muted }}>{analysisSummary}</div>
                     )}
                 </div>
               ))
@@ -1133,15 +1144,15 @@ export function ChatHUD({
             alignItems: "center",
             flexShrink: 0,
             width: "100%",
-            borderTop: "1px solid rgba(255,255,255,0.10)",
+            borderTop: `1px solid ${nx.border}`,
             boxSizing: "border-box",
             padding: 10,
-            background: "rgba(16,16,22,0.95)",
+            background: nx.bgDeep,
             zIndex: 200,
-            boxShadow: "0 -10px 24px rgba(0,0,0,0.25)",
+            boxShadow: nx.workspaceShadow,
             position: "relative",
             pointerEvents: "auto",
-            outline: "1px solid rgba(34,211,238,0.35)",
+            outline: `1px solid color-mix(in srgb, var(--nx-accent) 32%, transparent)`,
           }}
         >
           <textarea
@@ -1159,9 +1170,9 @@ export function ChatHUD({
               flex: 1,
               padding: "10px 12px",
               borderRadius: 10,
-              border: "1px solid rgba(255,255,255,0.14)",
-              background: "rgba(0,0,0,0.25)",
-              color: "white",
+              border: `1px solid ${nx.border}`,
+              background: nx.bgPanelSoft,
+              color: nx.text,
               outline: "none",
               resize: "none",
               minHeight: viewMode === "input" ? 72 : viewMode === "hidden" ? 56 : 56,
@@ -1179,9 +1190,9 @@ export function ChatHUD({
                 height: 40,
                 padding: "0 12px",
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "rgba(255,255,255,0.06)",
-                color: "rgba(255,255,255,0.9)",
+                border: `1px solid ${nx.border}`,
+                background: nx.bgPanelSoft,
+                color: nx.textSoft,
                 cursor: "pointer",
               }}
               title="Clear input"
@@ -1197,9 +1208,9 @@ export function ChatHUD({
                 height: 40,
                 padding: "0 14px",
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "rgba(34, 211, 238, 0.18)",
-                color: "rgba(255,255,255,0.95)",
+                border: `1px solid ${nx.primaryCtaBorder}`,
+                background: nx.accentSoft,
+                color: nx.accentInk,
                 cursor: isSendDisabled ? "not-allowed" : "pointer",
                 opacity: isSendDisabled ? 0.55 : 1,
               }}
@@ -1213,8 +1224,8 @@ export function ChatHUD({
   );
 }
 const iconBtnHoverStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,0.10)",
-  borderColor: "rgba(255,255,255,0.22)",
+  background: "color-mix(in srgb, var(--nx-bg-elevated) 90%, var(--nx-accent) 10%)",
+  borderColor: "color-mix(in srgb, var(--nx-border) 60%, var(--nx-accent) 40%)",
   transform: "translateY(-1px)",
 };
 
@@ -1224,4 +1235,5 @@ const checkboxStyle: React.CSSProperties = {
   gap: 6,
   fontSize: 12,
   cursor: "pointer",
+  color: "var(--nx-text)",
 };

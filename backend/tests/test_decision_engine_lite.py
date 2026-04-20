@@ -16,10 +16,12 @@ for path in (BACKEND_DIR, ROOT_DIR):
         sys.path.insert(0, normalized)
 
 from app.routers.decision_router import router as decision_router
+from app.utils.responses import install_exception_handlers
 
 
 def _client() -> TestClient:
     app = FastAPI()
+    install_exception_handlers(app)
     app.include_router(decision_router)
     return TestClient(app)
 
@@ -210,3 +212,19 @@ def test_decision_engine_is_deterministic_for_same_input():
     assert second.status_code == 200
     assert first.json()["comparison_result"] == second.json()["comparison_result"]
     assert first.json()["recommendation"] == second.json()["recommendation"]
+
+
+def test_decision_engine_internal_failure_uses_error_envelope(monkeypatch):
+    def _explode(_: dict):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("app.routers.decision_router.decision_engine.compare", _explode)
+
+    with _client() as client:
+        response = client.post("/decision/compare", json={"context": [{"text": "compare delivery options"}]})
+
+    assert response.status_code == 500
+    payload = response.json()
+    assert payload["ok"] is False
+    assert payload["error"]["type"] == "DECISION_ERROR"
+    assert payload["error"]["message"] == "Decision comparison is currently unavailable."

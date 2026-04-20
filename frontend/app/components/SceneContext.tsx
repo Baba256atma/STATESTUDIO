@@ -200,6 +200,12 @@ export function SceneStateProvider({
       if (patch.visible !== undefined) {
         cur.visible = !!patch.visible;
       }
+      if (patch.caption !== undefined) {
+        cur.caption = typeof patch.caption === "string" ? patch.caption : cur.caption;
+      }
+      if (patch.showCaption !== undefined) {
+        cur.showCaption = !!patch.showCaption;
+      }
       next[id] = cur;
       return next;
     });

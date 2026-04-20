@@ -15,6 +15,20 @@ function clamp01(value: number): number {
   return value;
 }
 
+export function hasMeaningfulPropagationOverlay(
+  overlay: PropagationOverlayState | null | undefined
+): overlay is PropagationOverlayState {
+  if (!overlay?.active) return false;
+  const impactedEdges = Array.isArray(overlay.impacted_edges) ? overlay.impacted_edges.length : 0;
+  const impactedNodes = Array.isArray(overlay.impacted_nodes) ? overlay.impacted_nodes : [];
+  if (impactedEdges > 0) return true;
+  return impactedNodes.some((node) => {
+    const depth = Number(node?.depth ?? 0);
+    const role = typeof node?.role === "string" ? node.role : null;
+    return depth > 0 || role === "impacted" || role === "context";
+  });
+}
+
 function buildLoopEdges(loops: SceneLoop[] | undefined | null): Array<{ from: string; to: string; weight?: number }> {
   if (!Array.isArray(loops)) return [];
   return loops.flatMap((loop) =>
@@ -273,7 +287,7 @@ export function buildPreviewPropagationOverlay(params: {
     });
   }
 
-  return {
+  const overlay: PropagationOverlayState = {
     active: true,
     source_object_id: sourceObjectId,
     mode: "preview",
@@ -290,6 +304,7 @@ export function buildPreviewPropagationOverlay(params: {
       source_kind: sourceKind,
     },
   };
+  return hasMeaningfulPropagationOverlay(overlay) ? overlay : null;
 }
 
 export function resolvePropagationOverlay(params: {

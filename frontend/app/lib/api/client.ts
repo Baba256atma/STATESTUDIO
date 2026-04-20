@@ -16,6 +16,29 @@ type JsonRequestOptions = {
   headers?: Record<string, string>;
 };
 
+async function getJson<TResponse>(path: string, options?: JsonRequestOptions): Promise<TResponse> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "GET",
+    headers: {
+      ...(options?.headers ?? {}),
+    },
+    signal: options?.signal,
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const message =
+      (data as { detail?: { error?: { message?: string } }; error?: { message?: string } } | null)?.detail?.error
+        ?.message ??
+      (data as { error?: { message?: string } } | null)?.error?.message ??
+      `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+
+  return data as TResponse;
+}
+
 async function postJson<TRequest, TResponse>(
   path: string,
   payload: TRequest,
@@ -45,6 +68,8 @@ async function postJson<TRequest, TResponse>(
   return data as TResponse;
 }
 
+export { getJson, postJson };
+
 export async function postChat(
   payload: ChatIn,
   options?: JsonRequestOptions
@@ -65,4 +90,19 @@ export async function postDecisionExecution(
   options?: JsonRequestOptions
 ): Promise<DecisionExecutionResponse> {
   return postJson<DecisionExecutionRequest, DecisionExecutionResponse>(endpoint, payload, options);
+}
+
+export type StrategicAnalysisTextIn = { text: string };
+export type StrategicAnalysisTextOut = { ok: boolean; decision_analysis: Record<string, unknown> | null };
+
+/** Same engine path as chat ``decision_analysis`` attachment; used on domain demo / scenario load. */
+export async function postStrategicAnalysisText(
+  payload: StrategicAnalysisTextIn,
+  options?: JsonRequestOptions
+): Promise<StrategicAnalysisTextOut> {
+  return postJson<StrategicAnalysisTextIn, StrategicAnalysisTextOut>(
+    "/decision/strategic-analysis-text",
+    payload,
+    options
+  );
 }

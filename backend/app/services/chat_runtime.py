@@ -11,8 +11,10 @@ from fastapi.responses import JSONResponse
 
 from app.models.replay import ReplayFrame, ReplayMeta
 from app.services.chat_contract_alignment import build_replay_system_state
+from app.services.decision_analysis_chat_attachment import try_build_decision_analysis_payload
 from app.services.event_store_mem import EventStoreMem
 from app.services.replay_store import ReplayStore
+from app.utils.responses import build_error_envelope
 
 
 logger = logging.getLogger(__name__)
@@ -155,35 +157,66 @@ def _normalize_chat_response_shape(response_body: dict[str, Any]) -> dict[str, A
     return normalized
 
 
-def execute_chat_pipeline(payload: Any, request: Request, deps: ChatPipelineDependencies) -> dict[str, Any] | JSONResponse:
-    text = (payload.text or payload.message or "").strip()
-    if not text:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "ok": False,
-                "user_id": None,
-                "reply": "",
-                "actions": [],
-                "scene_json": None,
-                "source": None,
-                "error": {"type": "INVALID_INPUT", "message": "text is required"},
-                "debug": None,
-            },
-        )
-
-    safety_result = deps.check_ai_input_safety(text)
-    if not safety_result.get("ok", True):
-        return {
+def _build_chat_error_payload(
+    *,
+    error_type: str,
+    message: str,
+    user_id: str | None = None,
+    details: Any = None,
+) -> dict[str, Any]:
+    envelope = build_error_envelope(
+        error_type,
+        message,
+        code=error_type,
+        details=details,
+    )
+    return _normalize_chat_response_shape(
+        {
             "ok": False,
+            "user_id": user_id,
             "reply": "",
             "actions": [],
             "scene_json": None,
-            "error": {
-                "type": "INPUT_BLOCKED",
-                "message": "This input was blocked by the AI safety guard.",
-            },
+            "source": None,
+            "analysis_summary": None,
+            "context": {},
+            "error": envelope["error"],
+            "debug": None,
+            "advice_slice": None,
+            "timeline_slice": None,
+            "war_room_slice": None,
+            "scene_payload": None,
+            "scene_overlay": None,
+            "object_impacts": None,
+            "drivers": [],
+            "signals": [],
         }
+    )
+
+
+def execute_chat_pipeline(payload: Any, request: Request, deps: ChatPipelineDependencies) -> dict[str, Any] | JSONResponse:
+    text = (payload.text or payload.message or "").strip()
+    user_id = (
+        payload.user_id
+        or request.headers.get("x-user-id")
+        or request.headers.get("x-session-id")
+        or (request.client.host if request.client else "dev-anon")
+    )
+    if not text:
+        return JSONResponse(status_code=400, content=_build_chat_error_payload(error_type="INVALID_INPUT", message="text is required"))
+
+    safety_result = deps.check_ai_input_safety(text)
+    if not safety_result.get("ok", True):
+        logger.warning("chat_input_blocked user_id=%s", user_id)
+        return JSONResponse(
+            status_code=422,
+            content=_build_chat_error_payload(
+                error_type="INPUT_BLOCKED",
+                message="This input was blocked by the AI safety guard.",
+                user_id=user_id,
+                details=safety_result.get("reason"),
+            ),
+        )
 
     inferred_allowed: list[str] = []
     try:
@@ -198,12 +231,6 @@ def execute_chat_pipeline(payload: Any, request: Request, deps: ChatPipelineDepe
     engine = request.app.state.chaos_engine
     mem_engine = request.app.state.memory_engine
 
-    user_id = (
-        payload.user_id
-        or request.headers.get("x-user-id")
-        or request.headers.get("x-session-id")
-        or (request.client.host if request.client else "dev-anon")
-    )
     client_allowed = payload.allowed_objects if isinstance(payload.allowed_objects, list) else None
 
     allowed_objects: list[str] = []
@@ -796,16 +823,11 @@ def execute_chat_pipeline(payload: Any, request: Request, deps: ChatPipelineDepe
         logging.exception("chat_failed", exc_info=exc)
         return JSONResponse(
             status_code=500,
-            content={
-                "ok": False,
-                "user_id": user_id,
-                "reply": "",
-                "actions": [],
-                "scene_json": None,
-                "source": None,
-                "error": {"type": "INTERNAL_ERROR", "message": "Chat failed"},
-                "debug": None,
-            },
+            content=_build_chat_error_payload(
+                error_type="INTERNAL_ERROR",
+                message="Chat failed.",
+                user_id=user_id,
+            ),
         )
 
     try:
@@ -1151,6 +1173,19 @@ def execute_chat_pipeline(payload: Any, request: Request, deps: ChatPipelineDepe
             scene_json=scene_json,
             include_in_scene_section=True,
         )
+    except Exception:
+        pass
+
+    try:
+        decision_analysis = try_build_decision_analysis_payload(text)
+        if decision_analysis is not None:
+            _attach_response_extension(
+                response_body,
+                "decision_analysis",
+                decision_analysis,
+                scene_json=scene_json,
+                include_in_scene_section=True,
+            )
     except Exception:
         pass
 

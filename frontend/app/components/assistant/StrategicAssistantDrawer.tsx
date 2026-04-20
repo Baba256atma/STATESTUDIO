@@ -27,7 +27,12 @@ type StrategicAssistantDrawerProps = {
   onSubmit: () => void;
   onPromptSelect: (prompt: string) => void;
   isBusy?: boolean;
+  demoModeActive?: boolean;
+  demoValueHint?: string | null;
+  demoFlowActiveStep?: number | null;
 };
+
+const DEMO_FLOW_STEPS = ["Load scenario", "Ask the system", "Open Risk → Explanation"] as const;
 
 export function StrategicAssistantDrawer(props: StrategicAssistantDrawerProps) {
   if (!props.isOpen) {
@@ -35,17 +40,24 @@ export function StrategicAssistantDrawer(props: StrategicAssistantDrawerProps) {
   }
 
   const hasMessages = props.messages.length > 0;
-
+  const flowStep =
+    typeof props.demoFlowActiveStep === "number" && props.demoFlowActiveStep >= 0 && props.demoFlowActiveStep < DEMO_FLOW_STEPS.length
+      ? props.demoFlowActiveStep
+      : 0;
   return (
     <div
       style={{
-        width: 380,
-        maxWidth: "min(380px, calc(100vw - 28px))",
+        width: "100%",
+        maxWidth: 320,
+        height: "100%",
+        maxHeight: "100%",
+        minHeight: 0,
+        boxSizing: "border-box",
         borderRadius: 18,
         border: `1px solid ${nx.border}`,
-        background: "rgba(7,16,25,0.92)",
+        background: nx.bgPanel,
         backdropFilter: "blur(14px)",
-        boxShadow: "0 22px 50px rgba(2,6,23,0.34)",
+        boxShadow: nx.shadowDrawer,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -59,20 +71,93 @@ export function StrategicAssistantDrawer(props: StrategicAssistantDrawerProps) {
         isOpen={props.isOpen}
       />
 
+      {props.demoModeActive ? (
+        <div
+          style={{
+            flexShrink: 0,
+            padding: "8px 12px 0",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: nx.accentMuted,
+              padding: "3px 8px",
+              borderRadius: 8,
+              border: `1px solid ${nx.borderStrong}`,
+              background: nx.accentSoft,
+            }}
+          >
+            Demo mode
+          </span>
+          {props.demoValueHint ? (
+            <span style={{ fontSize: 10, fontWeight: 600, color: nx.muted }}>{props.demoValueHint}</span>
+          ) : null}
+        </div>
+      ) : null}
+
+      {props.demoModeActive ? (
+        <div style={{ flexShrink: 0, padding: "10px 12px 0", display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: nx.lowMuted }}>
+            Suggested flow
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "stretch" }}>
+            {DEMO_FLOW_STEPS.map((label, idx) => {
+              const active = idx === flowStep;
+              return (
+                <div
+                  key={label}
+                  style={{
+                    flexGrow: 1,
+                    flexShrink: 1,
+                    flexBasis: "108px",
+                    minWidth: 0,
+                    padding: "6px 8px",
+                    borderRadius: 10,
+                    border: active ? `1px solid ${nx.navTileActiveBorder}` : `1px solid ${nx.border}`,
+                    background: active ? nx.accentSoft : nx.bgPanelSoft,
+                    fontSize: 10,
+                    fontWeight: active ? 700 : 600,
+                    color: active ? nx.textPrimary : nx.muted,
+                    lineHeight: 1.35,
+                  }}
+                >
+                  <span style={{ color: active ? nx.accentMuted : nx.lowMuted, marginRight: 4 }}>{idx + 1}.</span>
+                  {label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       <div
         style={{
-          maxHeight: 360,
-          minHeight: 260,
+          flexGrow: 1,
+          flexShrink: 1,
+          flexBasis: 0,
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
           minWidth: 0,
+          overflow: "hidden",
         }}
       >
         <div
           style={{
-            flex: 1,
+            flexGrow: 1,
+            flexShrink: 1,
+            flexBasis: 0,
             minHeight: 0,
-            overflow: "auto",
+            overflowY: "auto",
+            overflowX: "hidden",
             padding: 12,
             overscrollBehavior: "contain",
             WebkitOverflowScrolling: "touch",
@@ -94,9 +179,8 @@ export function StrategicAssistantDrawer(props: StrategicAssistantDrawerProps) {
                     padding: "8px 10px",
                     borderRadius: 12,
                     border: `1px solid ${nx.border}`,
-                    background:
-                      message.role === "user" ? "rgba(96,165,250,0.14)" : "rgba(2,6,23,0.45)",
-                    color: message.role === "user" ? nx.text : nx.muted,
+                    background: message.role === "user" ? nx.chatBubbleUserBg : nx.chatBubbleAssistantBg,
+                    color: message.role === "user" ? nx.textPrimary : nx.muted,
                     fontSize: 12,
                     lineHeight: 1.4,
                     whiteSpace: "pre-wrap",
@@ -121,19 +205,20 @@ export function StrategicAssistantDrawer(props: StrategicAssistantDrawerProps) {
                 padding: "0 20px",
               }}
             >
-              Ask Nexora about tradeoffs, fragility, or execution options.
+              Choose a guided prompt or ask a strategic question about tradeoffs, resilience, and next moves.
             </div>
           )}
         </div>
 
         <div
           style={{
+            flexShrink: 0,
             padding: 12,
             borderTop: `1px solid ${nx.border}`,
             display: "flex",
             flexDirection: "column",
-            gap: 10,
-            background: "rgba(15,23,42,0.72)",
+            gap: 12,
+            background: nx.surfacePanel,
           }}
         >
           <AssistantPromptChips prompts={props.promptChips} onSelect={props.onPromptSelect} />
@@ -146,15 +231,17 @@ export function StrategicAssistantDrawer(props: StrategicAssistantDrawerProps) {
               }}
               placeholder={props.inputPlaceholder}
               style={{
-                flex: 1,
+                flexGrow: 1,
+                flexShrink: 1,
+                flexBasis: 0,
                 minWidth: 0,
                 height: 36,
                 borderRadius: 12,
                 border: `1px solid ${nx.border}`,
                 outline: "none",
                 padding: "0 12px",
-                background: "rgba(2,6,23,0.55)",
-                color: nx.text,
+                background: nx.consoleBg,
+                color: nx.textPrimary,
                 fontSize: 12,
               }}
             />
@@ -165,12 +252,14 @@ export function StrategicAssistantDrawer(props: StrategicAssistantDrawerProps) {
                 height: 36,
                 padding: "0 12px",
                 borderRadius: 10,
-                border: "1px solid rgba(96,165,250,0.35)",
-                background: "rgba(59,130,246,0.2)",
-                color: "#dbeafe",
+                border: `1px solid ${nx.primaryCtaBorder}`,
+                background: nx.btnPrimaryBg,
+                color: nx.btnPrimaryText,
                 cursor: "pointer",
                 fontSize: 12,
-                flex: "0 0 auto",
+                flexGrow: 0,
+                flexShrink: 0,
+                flexBasis: "auto",
               }}
             >
               {props.isBusy ? "Working..." : "Send"}

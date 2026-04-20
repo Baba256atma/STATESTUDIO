@@ -8,8 +8,10 @@ import json
 import re
 
 from ingestion.schemas import SignalBundle
+from mapping.domain.domain_signal_enricher import enrich_signal_bundle_for_mapping
 from mapping.domain.finance_mapping import FINANCE_OBJECT_VOCABULARY
 from mapping.domain.retail_mapping import RETAIL_OBJECT_VOCABULARY
+from mapping.domain.supply_chain_mapping import SUPPLY_CHAIN_OBJECT_VOCABULARY
 
 
 _OBJECT_DICTIONARY_PATH = Path(__file__).resolve().parents[1] / "data" / "object_dictionary_v1.json"
@@ -60,6 +62,7 @@ _BASE_OBJECT_VOCABULARY = _load_dictionary_vocabulary()
 _DOMAIN_VOCABULARY = {
     "retail": {**_BASE_OBJECT_VOCABULARY, **RETAIL_OBJECT_VOCABULARY},
     "finance": {**_BASE_OBJECT_VOCABULARY, **FINANCE_OBJECT_VOCABULARY},
+    "supply_chain": {**_BASE_OBJECT_VOCABULARY, **SUPPLY_CHAIN_OBJECT_VOCABULARY},
     "default": {**_BASE_OBJECT_VOCABULARY, **RETAIL_OBJECT_VOCABULARY},
 }
 
@@ -80,6 +83,8 @@ def _build_signal_match_text(signal_type: str, description: str, entities: list[
 
 def get_domain_vocabulary(domain: str | None) -> dict[str, dict[str, object]]:
     domain_key = _normalize_text(domain)
+    if domain_key in ("supply chain", "supply-chain"):
+        domain_key = "supply_chain"
     return _DOMAIN_VOCABULARY.get(domain_key, _DOMAIN_VOCABULARY["default"])
 
 
@@ -88,10 +93,14 @@ def map_signal_bundle(
     domain: str | None = None,
 ) -> dict[str, RawObjectMatch]:
     """Return raw deterministic object matches with scores and reasons."""
-    vocabulary = get_domain_vocabulary(domain or signal_bundle.source.metadata.get("domain"))
+    enriched, _b13 = enrich_signal_bundle_for_mapping(
+        signal_bundle,
+        domain or signal_bundle.source.metadata.get("domain"),
+    )
+    vocabulary = get_domain_vocabulary(domain or enriched.source.metadata.get("domain"))
     raw_matches: dict[str, RawObjectMatch] = {}
 
-    for signal in signal_bundle.signals:
+    for signal in enriched.signals:
         signal_text = _build_signal_match_text(signal.type, signal.description, signal.entities)
         if not signal_text:
             continue

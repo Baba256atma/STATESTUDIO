@@ -29,6 +29,7 @@ import { buildDecisionGovernanceState } from "../../lib/governance/buildDecision
 import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemoryTypes";
 import { buildApprovalWorkflowState } from "../../lib/approval/buildApprovalWorkflowState";
 import { loadApprovalWorkflowEnvelope } from "../../lib/approval/approvalWorkflowStore";
+import { dedupePanelConsoleTrace } from "../../lib/debug/panelConsoleTraceDedupe";
 
 type WarRoomPanelProps = {
   controller: WarRoomController;
@@ -161,6 +162,15 @@ export function WarRoomPanel(props: WarRoomPanelProps) {
     memoryEntries: props.memoryEntries ?? [],
     existingWorkflow: approvalEnvelope?.workflow ?? null,
     policyState: policy,
+  });
+  dedupePanelConsoleTrace("PanelComponent", "war_room", "main", {
+    meaningfulData: Boolean(intelligence),
+    hasIntelligence: Boolean(intelligence),
+    hasCanonicalRecommendation: Boolean(canonicalRecommendation),
+    prioritiesCount: Array.isArray(intelligence?.priorities) ? intelligence.priorities.length : 0,
+    risksCount: Array.isArray(intelligence?.risks) ? intelligence.risks.length : 0,
+    hasRecommendation: Boolean(intelligence?.recommendation ?? canonicalRecommendation?.primary?.action),
+    hasSummary: Boolean(intelligence?.summary),
   });
   const dispatchWarRoomAction = (actionId: WarRoomActionId) => {
     let resolvedView: string | null = null;

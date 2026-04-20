@@ -1,7 +1,15 @@
+import { toSafeLocaleDomainIdForRollout } from "../domain/nexoraDomainPackRollout.ts";
+import { getNexoraLocalePack } from "../domain/nexoraDomainPackRegistry.ts";
+import { getB13PayloadAliasExtension } from "../domain/domainVocabularyRegistry.ts";
+
 export type DomainVocabularyEntry = {
   match: string[];
   displayName?: string;
   aliases?: string[];
+  /** B.6 — lowercase tokens/phrases to score against scanner summary / driver text / user signals. */
+  signalHints?: string[];
+  /** B.6 — short object caption fragment (2–4 words), domain-specific. */
+  clarityPhrase?: string;
   templates?: DomainLabelTemplate;
   primaryTitle: string;
   primaryBody: string;
@@ -82,9 +90,25 @@ const RETAIL_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
   domainId: "retail",
   entries: [
     {
-      match: ["delivery", "shipment", "shipping", "logistics"],
+      match: ["delivery", "shipment", "shipping", "logistics", "fulfillment"],
       displayName: "Delivery",
-      aliases: ["shipment", "shipping", "logistics"],
+      aliases: ["shipment", "shipping", "logistics", "fulfillment", "carrier"],
+      signalHints: [
+        "delivery",
+        "late delivery",
+        "shipping delay",
+        "shipment delay",
+        "logistics",
+        "logistics issue",
+        "carrier",
+        "lead time",
+        "supplier delay",
+        "transit",
+        "backorder",
+        "delay",
+        "delays",
+      ],
+      clarityPhrase: "Delivery delay risk",
       templates: {
         primaryTitle: "{object} — Delay Pressure",
         primaryBody: "Main delivery pressure source",
@@ -113,9 +137,22 @@ const RETAIL_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
       contextBody: "Linked to delivery pressure",
     },
     {
-      match: ["inventory", "stock", "warehouse"],
+      match: ["inventory", "stock", "warehouse", "buffer"],
       displayName: "Inventory",
-      aliases: ["stock", "warehouse"],
+      aliases: ["stock", "warehouse", "buffer", "safety stock"],
+      signalHints: [
+        "inventory",
+        "low inventory",
+        "low stock",
+        "stock",
+        "stockout",
+        "out of stock",
+        "oos",
+        "warehouse",
+        "shortage",
+        "depleted",
+      ],
+      clarityPhrase: "Inventory shortage",
       templates: {
         primaryTitle: "{object} — Stock Pressure",
         primaryBody: "Inventory flow under pressure",
@@ -146,7 +183,18 @@ const RETAIL_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
     {
       match: ["supplier", "supply", "vendor", "procurement"],
       displayName: "Supplier",
-      aliases: ["supply", "vendor", "procurement"],
+      aliases: ["supply", "vendor", "procurement", "sourcing"],
+      signalHints: [
+        "supplier",
+        "suppliers",
+        "vendor",
+        "supply",
+        "supply chain",
+        "procurement",
+        "upstream",
+        "sourcing",
+      ],
+      clarityPhrase: "Supply pressure",
       templates: {
         primaryTitle: "{object} — Supply Risk",
         primaryBody: "Source-side pressure signal",
@@ -171,7 +219,9 @@ const RETAIL_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
     {
       match: ["cash", "finance", "financial", "liquidity"],
       displayName: "Cash",
-      aliases: ["finance", "financial", "liquidity"],
+      aliases: ["finance", "financial", "liquidity", "working capital"],
+      signalHints: ["liquidity", "cash flow", "working capital", "runway", "financing"],
+      clarityPhrase: "Liquidity pressure",
       templates: {
         primaryTitle: "{object} — Liquidity Pressure",
         primaryBody: "Financial strain signal",
@@ -196,9 +246,23 @@ const RETAIL_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
       contextBody: "Linked to financial pressure",
     },
     {
-      match: ["price", "pricing", "margin", "revenue"],
+      match: ["price", "pricing", "margin", "revenue", "cost", "profit"],
       displayName: "Pricing",
-      aliases: ["price", "margin", "revenue"],
+      aliases: ["price", "margin", "revenue", "cost", "profit", "cogs", "expense"],
+      signalHints: [
+        "margin",
+        "margins",
+        "pricing",
+        "revenue",
+        "cost",
+        "costs",
+        "cogs",
+        "profit",
+        "profitability",
+        "expense",
+        "expenses",
+      ],
+      clarityPhrase: "Margin pressure",
       templates: {
         primaryTitle: "{object} — Margin Pressure",
         primaryBody: "Commercial pressure signal",
@@ -217,9 +281,33 @@ const RETAIL_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
       contextBody: "Linked to pricing pressure",
     },
     {
+      match: ["demand", "orders", "sales", "volume"],
+      displayName: "Demand",
+      aliases: ["orders", "sales", "volume", "storefront"],
+      signalHints: [
+        "demand",
+        "demand drop",
+        "orders",
+        "order volume",
+        "sales",
+        "sales drop",
+        "slowing demand",
+        "customer demand",
+      ],
+      clarityPhrase: "Demand weakness",
+      primaryTitle: "Demand Pressure",
+      primaryBody: "Demand-side pressure signal",
+      affectedTitle: "Demand Impact",
+      affectedBody: "Volume and orders impact",
+      contextTitle: "Demand Context",
+      contextBody: "Linked to demand signals",
+    },
+    {
       match: ["customer", "sla", "service", "satisfaction"],
       displayName: "Service",
       aliases: ["customer", "sla", "satisfaction"],
+      signalHints: ["customer", "sla", "satisfaction", "cx", "support"],
+      clarityPhrase: "Service pressure",
       primaryTitle: "Service Pressure",
       primaryBody: "Customer-facing pressure signal",
       affectedTitle: "Service Impact",
@@ -237,6 +325,8 @@ const FINANCE_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
       match: ["cash", "liquidity", "working capital"],
       displayName: "Cash",
       aliases: ["liquidity", "working capital"],
+      signalHints: ["liquidity", "cash", "runway", "covenant", "refinance", "working capital"],
+      clarityPhrase: "Liquidity risk rising",
       templates: {
         primaryTitle: "{object} — Liquidity Pressure",
         primarySeverityTitles: {
@@ -254,9 +344,11 @@ const FINANCE_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
       contextBody: "Linked to liquidity pressure",
     },
     {
-      match: ["margin", "pricing", "revenue"],
+      match: ["margin", "pricing", "revenue", "cost", "expense"],
       displayName: "Pricing",
-      aliases: ["margin", "revenue"],
+      aliases: ["margin", "revenue", "cost", "expense", "spread"],
+      signalHints: ["margin", "margins", "cost", "costs", "expense", "pricing", "spread", "profitability", "cogs"],
+      clarityPhrase: "Cost & margin pressure",
       templates: {
         primaryTitle: "{object} — Margin Pressure",
         primarySeverityBodies: {
@@ -282,7 +374,9 @@ const DEVOPS_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
     {
       match: ["deploy", "release", "pipeline"],
       displayName: "Release",
-      aliases: ["deploy", "pipeline"],
+      aliases: ["deploy", "pipeline", "ci", "cd"],
+      signalHints: ["deploy", "deployment", "release", "pipeline", "rollback", "hotfix", "change freeze"],
+      clarityPhrase: "Release risk rising",
       templates: {
         primaryTitle: "{object} — Release Risk",
         primarySeverityTitles: {
@@ -300,9 +394,20 @@ const DEVOPS_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
       contextBody: "Linked to release pressure",
     },
     {
-      match: ["service", "latency", "incident"],
+      match: ["service", "latency", "incident", "availability"],
       displayName: "Service",
-      aliases: ["latency", "incident"],
+      aliases: ["latency", "incident", "availability", "sre"],
+      signalHints: [
+        "latency",
+        "incident",
+        "outage",
+        "degradation",
+        "error budget",
+        "availability",
+        "on-call",
+        "bottleneck",
+      ],
+      clarityPhrase: "Service bottleneck",
       templates: {
         primaryTitle: "{object} — Operational Pressure",
         primarySeverityTitles: {
@@ -328,7 +433,9 @@ const PMO_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
     {
       match: ["timeline", "milestone", "schedule"],
       displayName: "Timeline",
-      aliases: ["milestone", "schedule"],
+      aliases: ["milestone", "schedule", "deadline"],
+      signalHints: ["milestone", "schedule", "timeline", "slip", "critical path", "dependency"],
+      clarityPhrase: "Schedule pressure",
       templates: {
         primaryTitle: "{object} — Delivery Variance",
         primarySeverityTitles: {
@@ -348,7 +455,9 @@ const PMO_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
     {
       match: ["resource", "capacity", "program"],
       displayName: "Capacity",
-      aliases: ["resource", "program"],
+      aliases: ["resource", "program", "bandwidth"],
+      signalHints: ["capacity", "resource", "bandwidth", "burnout", "overcommit", "throughput"],
+      clarityPhrase: "Capacity bottleneck",
       templates: {
         primaryTitle: "{object} — Scope Pressure",
         primarySeverityBodies: {
@@ -374,7 +483,9 @@ const SECURITY_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
     {
       match: ["access", "identity", "credential"],
       displayName: "Access",
-      aliases: ["identity", "credential"],
+      aliases: ["identity", "credential", "iam"],
+      signalHints: ["access", "identity", "credential", "privilege", "mfa", "sso"],
+      clarityPhrase: "Access exposure",
       templates: {
         primaryTitle: "{object} — Exposure Signal",
         primarySeverityTitles: {
@@ -394,7 +505,9 @@ const SECURITY_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
     {
       match: ["threat", "vulnerability", "incident"],
       displayName: "Threat",
-      aliases: ["vulnerability", "incident"],
+      aliases: ["vulnerability", "incident", "malware"],
+      signalHints: ["threat", "vulnerability", "exploit", "malware", "breach", "patch"],
+      clarityPhrase: "Threat pressure",
       templates: {
         primaryTitle: "{object} — Endpoint Risk",
         primarySeverityTitles: {
@@ -414,6 +527,12 @@ const SECURITY_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
   ],
 };
 
+/** B.13 — supply chain uses retail narrative pack with distinct domain id for maturity hooks. */
+const SUPPLY_CHAIN_DOMAIN_VOCABULARY_PACK: DomainVocabularyPack = {
+  ...RETAIL_DOMAIN_VOCABULARY_PACK,
+  domainId: "supply_chain",
+};
+
 const DOMAIN_VOCABULARY_PACKS: Record<string, DomainVocabularyPack> = {
   default: DEFAULT_DOMAIN_VOCABULARY_PACK,
   retail: RETAIL_DOMAIN_VOCABULARY_PACK,
@@ -421,12 +540,114 @@ const DOMAIN_VOCABULARY_PACKS: Record<string, DomainVocabularyPack> = {
   devops: DEVOPS_DOMAIN_VOCABULARY_PACK,
   pmo: PMO_DOMAIN_VOCABULARY_PACK,
   security: SECURITY_DOMAIN_VOCABULARY_PACK,
+  supply_chain: SUPPLY_CHAIN_DOMAIN_VOCABULARY_PACK,
 };
+
+/** Canonical stems for `applyFragilityScenePayload` semantic matching (aligned with canonicalId). */
+const CORE_PAYLOAD_ALIAS_GROUPS: Record<string, string[]> = {
+  bottleneck: ["bottleneck", "delay", "disruption", "constraint", "fulfillment", "flow", "operations"],
+  delivery: ["delivery", "flow", "fulfillment", "throughput", "logistics", "execution", "shipment", "carrier"],
+  supplier: ["supplier", "vendor", "dependency", "upstream", "source", "procurement"],
+  inventory: ["inventory", "buffer", "capacity", "reserve", "coverage", "stock", "warehouse"],
+  risk_zone: ["risk", "volatility", "credit", "disruption", "exposure", "fragility"],
+  buffer: ["buffer", "liquidity", "reserve"],
+  demand: ["demand", "orders", "sales", "volume", "storefront"],
+  pricing: ["margin", "price", "pricing", "revenue", "cost", "profit", "cogs", "expense"],
+  cash: ["cash", "liquidity", "working", "capital", "runway"],
+  margin: ["margin", "spread", "profitability"],
+  timeline: ["timeline", "milestone", "schedule", "deadline", "variance"],
+  capacity: ["capacity", "resource", "program", "bandwidth", "scope"],
+  release: ["release", "deploy", "deployment", "pipeline", "rollback", "hotfix"],
+  service: ["service", "latency", "incident", "availability", "sre", "outage", "degradation"],
+};
+
+const DOMAIN_PAYLOAD_ALIAS_OVERRIDES: Partial<Record<string, Record<string, string[]>>> = {
+  retail: {
+    delivery: [
+      "late delivery",
+      "shipping delay",
+      "logistics issue",
+      "lead time",
+      "supplier delay",
+      "transit",
+      "backorder",
+    ],
+    inventory: ["low stock", "out of stock", "oos", "stockout", "safety stock", "shortage", "depleted"],
+    supplier: ["supply chain", "sourcing"],
+    demand: ["demand drop", "sales slump", "order volume", "slowing demand"],
+    pricing: ["shrinking margin", "margin squeeze", "rising costs", "cost pressure"],
+  },
+  finance: {
+    cash: ["liquidity crunch", "cash constraint", "covenant"],
+    pricing: ["margin compression", "rate exposure", "fx exposure"],
+    margin: ["margin erosion"],
+  },
+  devops: {
+    service: ["outage", "degradation", "error budget", "sre"],
+    release: ["rollback", "hotfix", "canary"],
+  },
+  pmo: {
+    timeline: ["slip", "dependency", "critical path"],
+    capacity: ["bandwidth", "burnout", "overcommit"],
+  },
+  security: {
+    access: ["privilege", "credential leak", "mfa"],
+    threat: ["exploit", "malware", "breach"],
+  },
+};
+
+function mergePayloadAliasGroups(
+  base: Record<string, string[]>,
+  overlay: Record<string, string[]> | undefined
+): Record<string, string[]> {
+  if (!overlay) return { ...base };
+  const next: Record<string, string[]> = { ...base };
+  for (const [k, v] of Object.entries(overlay)) {
+    next[k] = Array.from(new Set([...(next[k] ?? []), ...v]));
+  }
+  return next;
+}
+
+/** Merged alias groups for fragility payload → scene object resolution (B.6). */
+export function expandPayloadAliasTokensForDomain(domainId?: string | null): Record<string, string[]> {
+  const d = getEffectiveVocabularyDomain(domainId);
+  const withDomain = mergePayloadAliasGroups(CORE_PAYLOAD_ALIAS_GROUPS, DOMAIN_PAYLOAD_ALIAS_OVERRIDES[d]);
+  const withB13 = mergePayloadAliasGroups(withDomain, getB13PayloadAliasExtension(domainId));
+  return mergePayloadAliasGroups(withB13, getNexoraLocalePack(toSafeLocaleDomainIdForRollout(domainId)).vocabulary);
+}
+
+export function getDomainVocabularyPack(domainId?: string | null): DomainVocabularyPack {
+  const d = getEffectiveVocabularyDomain(domainId);
+  return DOMAIN_VOCABULARY_PACKS[d] ?? DOMAIN_VOCABULARY_PACKS.default;
+}
+
+/** Short headline used when shaping domain-aware pipeline insight lines. */
+export function domainDefaultInsightHeadline(domainId?: string | null): string {
+  const d = getEffectiveVocabularyDomain(domainId);
+  const map: Record<string, string> = {
+    retail: "Supply pressure",
+    supply_chain: "Flow / supplier pressure",
+    finance: "Liquidity pressure",
+    devops: "Reliability pressure",
+    pmo: "Delivery risk",
+    security: "Exposure rising",
+    default: "Operational pressure",
+  };
+  return map[d] ?? map.default;
+}
 
 export function getEffectiveVocabularyDomain(domainId?: string | null): string {
   const normalized = normalizeDomainKey(domainId);
   if (!normalized) return "retail";
   if (DOMAIN_VOCABULARY_PACKS[normalized]) return normalized;
+  if (
+    normalized.includes("supply_chain") ||
+    normalized.includes("supply-chain") ||
+    normalized === "scm" ||
+    normalized.includes("supplier_network")
+  ) {
+    return "supply_chain";
+  }
   if (normalized.includes("retail")) return "retail";
   if (normalized.includes("finance") || normalized.includes("finops")) return "finance";
   if (normalized.includes("devops") || normalized.includes("ops") || normalized.includes("platform")) return "devops";

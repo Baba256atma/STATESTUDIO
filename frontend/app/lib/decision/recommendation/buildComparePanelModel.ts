@@ -47,10 +47,6 @@ export function buildComparePanelModel(input: BuildComparePanelModelInput): Comp
     ? strategicAdvice.recommended_actions
     : [];
 
-  if (process.env.NODE_ENV !== "production" && rec && !Array.isArray(rec?.alternatives)) {
-    console.warn("[Nexora] buildComparePanelModel received recommendation without alternatives", rec);
-  }
-
   const recommendedOption: CompareOption | null = rec
     ? {
         id: rec.id,
@@ -119,6 +115,8 @@ export function buildComparePanelModel(input: BuildComparePanelModelInput): Comp
             isRecommended: false,
           }));
 
+  const hasAlternatives = alternatives.length > 0;
+
   const tradeoffs = [
     ...(safeAlternatives
       .map((alternative: CanonicalRecommendation["alternatives"][number]) => text(alternative.tradeoff))
@@ -148,6 +146,9 @@ export function buildComparePanelModel(input: BuildComparePanelModelInput): Comp
     compareSummary:
       (text(input.responseData?.analysis_summary) ||
       text(rec?.simulation?.summary) ||
+      (recommendedOption && !hasAlternatives
+        ? "No alternatives available yet."
+        : null) ||
       (recommendedOption
         ? `${recommendedOption.title} is currently the strongest visible move.`
         : null)),

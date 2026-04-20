@@ -1,5 +1,5 @@
 import type { PanelSharedData } from "../../panels/panelDataResolverTypes";
-import type { CanonicalRightPanelView, RightPanelView } from "./rightPanelTypes";
+import type { RightPanelView } from "./rightPanelTypes";
 
 export type CognitiveFlowStep =
   | "analyze"
@@ -33,7 +33,6 @@ export type CognitiveFlowInput = {
 };
 
 export type CognitiveFlowOutput = CognitiveFlowState & {
-  nextRecommendedView: CanonicalRightPanelView;
   showNextStepCTA: boolean;
   nextStepLabel: string;
 };
@@ -47,22 +46,13 @@ const FLOW_TRANSITIONS: Record<CognitiveFlowStep, CognitiveFlowStep> = {
   review: "review",
 };
 
-const STEP_VIEW_MAP: Record<CognitiveFlowStep, CanonicalRightPanelView> = {
-  analyze: "dashboard",
-  risk: "risk",
-  explore: "simulate",
-  decide: "decision_council",
-  act: "war_room",
-  review: "memory",
-};
-
 const STEP_LABEL_MAP: Record<CognitiveFlowStep, string> = {
-  analyze: "Start Analysis",
-  risk: "Go to Risk Analysis",
-  explore: "Explore Scenarios",
-  decide: "Open Decision Council",
-  act: "Prepare Action Plan",
-  review: "Review Outcomes",
+  analyze: "Consider starting analysis",
+  risk: "Consider reviewing risk analysis",
+  explore: "Consider exploring scenarios",
+  decide: "Consider reviewing decision options",
+  act: "Consider preparing an action plan",
+  review: "Consider reviewing outcomes",
 };
 
 declare global {
@@ -136,7 +126,6 @@ export function getPanelCognitiveFlow(input: CognitiveFlowInput): CognitiveFlowO
   const nextStep = FLOW_TRANSITIONS[currentStep];
   const confidence = estimateConfidence(currentStep, input);
   const history = readFlowHistory();
-  const nextRecommendedView = STEP_VIEW_MAP[nextStep];
   const suggestedNextStep = nextStep;
   const nextStepLabel = STEP_LABEL_MAP[nextStep];
 
@@ -154,7 +143,6 @@ export function getPanelCognitiveFlow(input: CognitiveFlowInput): CognitiveFlowO
     suggestedNextStep,
     confidence,
     history,
-    nextRecommendedView,
     showNextStepCTA: currentStep !== "review",
     nextStepLabel,
   };

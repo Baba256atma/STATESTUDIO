@@ -33,6 +33,7 @@ def test_mapping_simple_case_prefers_inventory_and_delivery() -> None:
         Signal(
             id="sig_1",
             type="delay",
+            label="Schedule / delivery delay",
             description="inventory shortage causing delivery delay",
             entities=["inventory", "delivery"],
             strength=0.8,
@@ -52,6 +53,7 @@ def test_mapping_multi_signal_stays_deterministic() -> None:
         Signal(
             id="sig_1",
             type="cost",
+            label="Cost / margin pressure",
             description="cost pressure is increasing across delivery",
             entities=["cost", "delivery"],
             strength=0.7,
@@ -60,6 +62,7 @@ def test_mapping_multi_signal_stays_deterministic() -> None:
         Signal(
             id="sig_2",
             type="demand",
+            label="Demand shift",
             description="customer demand slowdown is weakening orders",
             entities=["customer", "demand"],
             strength=0.65,
@@ -68,6 +71,7 @@ def test_mapping_multi_signal_stays_deterministic() -> None:
         Signal(
             id="sig_3",
             type="delay",
+            label="Schedule / delivery delay",
             description="supplier delay is stressing inventory and shipping",
             entities=["supplier", "inventory"],
             strength=0.82,
@@ -88,6 +92,7 @@ def test_mapping_no_match_returns_empty_set() -> None:
         Signal(
             id="sig_1",
             type="abstract",
+            label="Abstract",
             description="astronomy telescope orbital nebula alignment",
             entities=["nebula"],
             strength=0.2,

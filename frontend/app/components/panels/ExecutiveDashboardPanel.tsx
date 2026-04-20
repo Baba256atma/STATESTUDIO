@@ -5,6 +5,8 @@ import React from "react";
 import { CustomerDemoHero } from "../demo/CustomerDemoHero";
 import { nx, panelSurfaceStyle, primaryButtonStyle, secondaryButtonStyle, softCardStyle } from "../ui/nexoraTheme";
 import type { CustomerDemoProfile } from "../../lib/demo/customerDemoTypes";
+import type { NexoraB8PanelContext } from "../../lib/panels/panelDataContract";
+import { buildSimulateMeaningRows } from "../../lib/panels/nexoraPanelMeaning";
 import type { DecisionImpactState } from "../../lib/impact/decisionImpactTypes";
 import { mapDecisionBrief } from "../../lib/executive/decisionSummaryMapper";
 import { buildCanonicalRecommendation } from "../../lib/decision/recommendation/buildCanonicalRecommendation";
@@ -42,6 +44,8 @@ import { buildApprovalWorkflowState } from "../../lib/approval/buildApprovalWork
 import { loadApprovalWorkflowEnvelope } from "../../lib/approval/approvalWorkflowStore";
 import { guardHeavyComputation } from "../../lib/ops/performanceGuard";
 import { RightPanelFallback } from "../right-panel/RightPanelFallback";
+import { dedupePanelConsoleTrace } from "../../lib/debug/panelConsoleTraceDedupe";
+import type { NexoraB18SimulateResolved } from "../../lib/scenario/nexoraScenarioBuilder.ts";
 
 type ExecutiveDashboardPanelProps = {
   sceneJson?: any;
@@ -65,6 +69,10 @@ type ExecutiveDashboardPanelProps = {
   decisionStatus?: "idle" | "loading" | "ready" | "error";
   decisionError?: string | null;
   activeExecutiveView?: "simulate" | "compare" | "dashboard" | null;
+  /** B.9 — HUD decision context when simulate opened from pipeline CTAs. */
+  nexoraB8PanelContext?: NexoraB8PanelContext | null;
+  /** B.18 — deterministic scenario variants from resolver (audit + trust). */
+  nexoraB18Simulate?: NexoraB18SimulateResolved | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
   onSimulateDecision?: (() => void) | null;
   onCompareOptions?: (() => void) | null;
@@ -134,6 +142,14 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       reply: props.responseData?.reply ?? null,
     });
 
+  dedupePanelConsoleTrace("PanelComponent", "dashboard", "main", {
+    meaningfulData: hasDashboardData,
+    hasExecutiveSummary: Boolean(props.responseData?.executive_summary_surface ?? props.responseData?.executive_insight),
+    hasDecisionCockpit: Boolean(props.decisionCockpit ?? props.responseData?.decision_cockpit),
+    hasRecommendation: Boolean(canonicalRecommendation),
+    hasDecisionResult: Boolean(props.decisionResult),
+  });
+
   const decisionBrief = mapDecisionBrief({
     fragility,
     decisionImpact: props.decisionImpact ?? null,
@@ -155,6 +171,11 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       strategicAdvice,
       responseData: props.responseData ?? null,
     })
+  );
+
+  const nexoraB18SimulateBlock = React.useMemo(
+    () => props.nexoraB18Simulate ?? null,
+    [props.nexoraB18Simulate?.signature]
   );
 
   const scenarioTree = guardHeavyComputation("executive_dashboard_scenario_tree", () =>
@@ -448,6 +469,111 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
           ) : null}
         </div>
         <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45, maxWidth: 480 }}>{surfaceSummary}</div>
+        {props.activeExecutiveView === "simulate" && props.nexoraB8PanelContext ? (
+          <div
+            style={{
+              ...softCardStyle,
+              padding: 10,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              borderLeft: "3px solid rgba(96,165,250,0.55)",
+            }}
+          >
+            <div style={{ color: nx.lowMuted, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              Current decision context
+            </div>
+            {buildSimulateMeaningRows(props.nexoraB8PanelContext).map((row) => (
+              <div key={row.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{ color: nx.muted, fontSize: 10, fontWeight: 700 }}>{row.label}</span>
+                <span style={{ color: nx.text, fontSize: 11, lineHeight: 1.4 }}>{row.text}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {props.activeExecutiveView === "simulate" && nexoraB18SimulateBlock?.variants?.length ? (
+          <div style={{ ...softCardStyle, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ color: nx.lowMuted, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              Simulated paths (B.18)
+            </div>
+            <div style={{ color: nx.muted, fontSize: 11, lineHeight: 1.45 }}>
+              Deterministic branches from audit + trust. No new ingestion or scanner calls.
+            </div>
+            {nexoraB18SimulateBlock.memoryInsights ? (
+              <div style={{ color: "#bae6fd", fontSize: 11, fontWeight: 700, lineHeight: 1.45 }}>
+                Historical pattern:{" "}
+                {nexoraB18SimulateBlock.memoryInsights.historicalPatternLabel === "stable"
+                  ? "stable"
+                  : nexoraB18SimulateBlock.memoryInsights.historicalPatternLabel === "risky"
+                    ? "risky"
+                    : "mixed"}
+              </div>
+            ) : null}
+            {(nexoraB18SimulateBlock.decisionContext.posture ||
+              nexoraB18SimulateBlock.decisionContext.tradeoff ||
+              nexoraB18SimulateBlock.decisionContext.nextMove) && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div style={{ color: nx.lowMuted, fontSize: 9, fontWeight: 700 }}>Decision context</div>
+                {nexoraB18SimulateBlock.decisionContext.posture ? (
+                  <div style={{ color: nx.text, fontSize: 11 }}>
+                    <strong>Posture:</strong> {nexoraB18SimulateBlock.decisionContext.posture}
+                  </div>
+                ) : null}
+                {nexoraB18SimulateBlock.decisionContext.tradeoff ? (
+                  <div style={{ color: nx.muted, fontSize: 10 }}>
+                    <strong>Tradeoff:</strong> {nexoraB18SimulateBlock.decisionContext.tradeoff}
+                  </div>
+                ) : null}
+                {nexoraB18SimulateBlock.decisionContext.nextMove ? (
+                  <div style={{ color: nx.muted, fontSize: 10 }}>
+                    <strong>Next move:</strong> {nexoraB18SimulateBlock.decisionContext.nextMove}
+                  </div>
+                ) : null}
+              </div>
+            )}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
+              {nexoraB18SimulateBlock.variants.map((v) => (
+                <div
+                  key={v.id}
+                  style={{
+                    ...softCardStyle,
+                    padding: 10,
+                    gap: 4,
+                    border:
+                      v.id === nexoraB18SimulateBlock.recommendedOptionId
+                        ? "1px solid rgba(34,197,94,0.35)"
+                        : `1px solid ${nx.border}`,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: nx.text, fontSize: 12, fontWeight: 800 }}>{v.label}</span>
+                    {v.id === nexoraB18SimulateBlock.recommendedOptionId ? (
+                      <span
+                        style={{
+                          fontSize: 9,
+                          fontWeight: 800,
+                          color: "#bbf7d0",
+                          border: "1px solid rgba(34,197,94,0.35)",
+                          borderRadius: 999,
+                          padding: "2px 6px",
+                        }}
+                      >
+                        Recommended
+                      </span>
+                    ) : null}
+                  </div>
+                  <div style={{ color: nx.lowMuted, fontSize: 10 }}>
+                    {v.fragilityLevel} fragility · {v.confidenceTier ?? "—"} confidence
+                  </div>
+                  <div style={{ color: "#93c5fd", fontSize: 10, lineHeight: 1.35 }}>
+                    {v.drivers.slice(0, 3).join(" · ")}
+                  </div>
+                  <div style={{ color: nx.muted, fontSize: 10, lineHeight: 1.35 }}>{v.summary}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {props.activeExecutiveView === "simulate" ? (
           simulationSummary || simulationImpactedNodes.length || simulationRiskDelta !== null ? (
             <div style={{ ...softCardStyle, padding: 12, gap: 6 }}>

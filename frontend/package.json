@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test:b3-pipeline-status": "node --test app/screens/nexoraPipelineStatus.test.ts",
     "lint": "eslint",
     "gen:api": "../backend/.venv/bin/python ../backend/scripts/export_openapi.py ../backend/openapi.json && node ./scripts/generate-api-types.mjs ../backend/openapi.json ./app/lib/api/generated.ts"
   },

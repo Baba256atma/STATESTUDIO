@@ -75,22 +75,41 @@ class StrategyEvaluator:
         baseline: SimulationResult,
         result: SimulationResult,
     ) -> str:
-        improvements: list[str] = []
-        if result.stability_score > baseline.stability_score:
-            improvements.append("system stability improves")
-        if self._risk_score(result.final_state, len(result.events)) < self._risk_score(baseline.final_state, len(baseline.events)):
-            improvements.append("systemic risk declines")
-        if self._cost_score(result.final_state) < self._cost_score(baseline.final_state):
-            improvements.append("cost pressure eases")
+        parts: list[str] = []
+        b_stab, r_stab = baseline.stability_score, result.stability_score
+        if r_stab > b_stab + 0.01:
+            parts.append(f"stability score moves {b_stab:.2f} → {r_stab:.2f}")
+
+        b_risk = self._risk_score(baseline.final_state, len(baseline.events))
+        r_risk = self._risk_score(result.final_state, len(result.events))
+        if r_risk + 0.02 < b_risk:
+            parts.append(f"modeled risk eases ({b_risk:.2f} → {r_risk:.2f})")
+
+        delay_keys = [k for k in result.final_state if "delay" in k]
+        if delay_keys:
+            b_del = sum(baseline.final_state.get(k, 0.0) for k in delay_keys) / len(delay_keys)
+            r_del = sum(result.final_state.get(k, 0.0) for k in delay_keys) / len(delay_keys)
+            if r_del + 0.02 < b_del:
+                parts.append("reduces average delay pressure vs baseline")
+
+        if self._cost_score(result.final_state) + 0.03 < self._cost_score(baseline.final_state):
+            parts.append("cost pressure eases vs baseline")
+
         if any("inventory" in key and result.final_state[key] > baseline.final_state.get(key, 0.0) for key in result.final_state):
-            improvements.append("inventory resilience improves")
+            parts.append("inventory headroom improves")
+
         if any("reliability" in key and result.final_state[key] > baseline.final_state.get(key, 0.0) for key in result.final_state):
-            improvements.append("supply reliability improves")
+            parts.append("upstream reliability improves")
+
         if any("adoption" in key and result.final_state[key] > baseline.final_state.get(key, 0.0) for key in result.final_state):
-            improvements.append("adoption improves")
-        if improvements:
-            return "; ".join(dict.fromkeys(improvements))
-        return f"{action.description.rstrip('.')} with limited system improvement."
+            parts.append("adoption signal strengthens")
+
+        if len(result.events) < len(baseline.events):
+            parts.append("fewer fragility events than baseline path")
+
+        if parts:
+            return "; ".join(dict.fromkeys(parts))[:220]
+        return f"{action.description.rstrip('.')} yields limited measurable lift vs baseline."
 
     def _unintended_consequences(
         self,

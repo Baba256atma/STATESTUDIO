@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { runFragilityScan } from "../../lib/api/fragilityScanner";
-import type { FragilityScanResponse } from "../../types/fragilityScanner";
+import type { FragilityFinding, FragilityScanResponse } from "../../types/fragilityScanner";
 import { FragilityDriversList } from "./FragilityDriversList";
 import { FragilityFindingsList } from "./FragilityFindingsList";
 import { FragilityScannerOverlay } from "./FragilityScannerOverlay";
@@ -68,8 +68,21 @@ export function FragilityScannerPanel({
     if (result.fragility_score >= 0.5) return "Interpretation: fragility is meaningful and should be managed before pressure spreads.";
     return "Interpretation: current fragility looks contained, but the scanner still surfaced pressure points to watch.";
   }, [result]);
+  const findings: FragilityFinding[] = useMemo(
+    () => (Array.isArray(result?.findings) ? (result.findings as FragilityFinding[]) : []),
+    [result]
+  );
+  const suggestedActions = useMemo(
+    () => (Array.isArray(result?.suggested_actions) ? result.suggested_actions : []),
+    [result]
+  );
+  const suggestedObjects = useMemo(
+    () => (Array.isArray(result?.suggested_objects) ? result.suggested_objects : []),
+    [result]
+  );
+  const hasSuggestedObjects = suggestedObjects.length > 0;
 
-  const handleRun = async () => {
+  const handleRun = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -87,13 +100,13 @@ export function FragilityScannerPanel({
     } finally {
       setLoading(false);
     }
-  };
+  }, [onScanComplete, text]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setText("");
     setError(null);
     setResult(null);
-  };
+  }, []);
 
   return (
     <section style={PANEL_STYLE} aria-label="Fragility scanner" aria-busy={loading}>
@@ -208,12 +221,6 @@ export function FragilityScannerPanel({
 
       {result ? (
         <>
-          {(() => {
-            const findings = Array.isArray(result.findings) ? result.findings : [];
-            const suggestedActions = Array.isArray(result.suggested_actions) ? result.suggested_actions : [];
-            const suggestedObjects = Array.isArray(result.suggested_objects) ? result.suggested_objects : [];
-
-            return (
               <>
           <FragilityScannerOverlay result={result} />
           <FragilityScoreCard
@@ -237,9 +244,9 @@ export function FragilityScannerPanel({
             </div>
           ) : null}
           <FragilityDriversList drivers={result.drivers} />
-          <FragilityFindingsList findings={findings as any} />
+          <FragilityFindingsList findings={findings} />
           <FragilitySuggestedActions actions={suggestedActions} />
-          {suggestedObjects.length ? (
+          {hasSuggestedObjects ? (
             <section style={{ display: "grid", gap: 8 }}>
               <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>Suggested Object Focus</h3>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -263,8 +270,6 @@ export function FragilityScannerPanel({
             </section>
           ) : null}
               </>
-            );
-          })()}
         </>
       ) : null}
     </section>

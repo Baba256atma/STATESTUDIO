@@ -1,4 +1,4 @@
-import type { SceneJson, SceneLoop } from "../lib/sceneTypes";
+import type { SceneJson, SceneLoop, StateVector } from "../lib/sceneTypes";
 import type { HUDTabKey } from "../components/HUDShell";
 
 export type Msg = { id?: string; role: "user" | "assistant"; text: string };
@@ -12,6 +12,8 @@ export type ScenePrefs = {
   globalScale: number;
   shadowsEnabled?: boolean;
   overridePolicy?: "keep" | "match" | "clear";
+  /** Reduces hover drift / scale emphasis on the 3D scene. */
+  motionIntensity?: "low" | "normal";
 };
 
 export type PersistedProject = {
@@ -42,7 +44,7 @@ export type BackupV1 = {
   focusMode: "all" | "selected";
   focusPinned: boolean;
   selectedObjectId: string | null;
-  overrides: Record<string, any>;
+  overrides: Record<string, unknown>;
   objectUxById: Record<string, { opacity?: number; scale?: number }>;
 };
 
@@ -63,6 +65,7 @@ export const defaultPrefs: ScenePrefs = {
   globalScale: 1,
   shadowsEnabled: true,
   overridePolicy: "match",
+  motionIntensity: "normal",
 };
 
 let msgIdSeq = 0;
@@ -106,21 +109,45 @@ export const appendMessages = (base: Msg[], next: Msg[]) => {
   return out;
 };
 
-export const normalizeSceneJson = (input: any): SceneJson => {
-  const meta = (input && input.meta) || { version: "dev", generated_at: new Date().toISOString() };
-  const domain_model = (input && input.domain_model) || { mode: "business" };
-  const state_vector = (input && input.state_vector) || {};
-  const scene = (input && input.scene) || {};
-  const objects = Array.isArray(scene.objects) ? scene.objects : [];
-  // Keep intensity single-sourced from state_vector
-  const intensity = typeof state_vector.intensity === "number" ? state_vector.intensity : undefined;
-  const syncedScene =
+function readObjectRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function buildStateVectorFromUnknown(raw: unknown): StateVector {
+  const rec = readObjectRecord(raw);
+  if (!rec) return {};
+  const out: StateVector = {};
+  for (const [k, v] of Object.entries(rec)) {
+    if (typeof v === "number" && Number.isFinite(v)) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+/** Coerce arbitrary backend / persistence blobs into a canonical SceneJson (fills safe defaults). */
+export const normalizeSceneJson = (input: unknown): SceneJson => {
+  const root = readObjectRecord(input);
+  const metaDefault: Record<string, unknown> = { version: "dev", generated_at: new Date().toISOString() };
+  const meta = readObjectRecord(root?.["meta"]) ?? metaDefault;
+  const domain_model = readObjectRecord(root?.["domain_model"]) ?? { mode: "business" };
+  const state_vector = buildStateVectorFromUnknown(root?.["state_vector"]);
+  const sceneRaw = readObjectRecord(root?.["scene"]) ?? {};
+  const objects = Array.isArray(sceneRaw["objects"]) ? sceneRaw["objects"] : [];
+  const intensity =
+    typeof state_vector.intensity === "number" && Number.isFinite(state_vector.intensity)
+      ? state_vector.intensity
+      : undefined;
+  const innerScene = readObjectRecord(sceneRaw["scene"]) ?? {};
+  const syncedScene: Record<string, unknown> =
     intensity !== undefined
       ? {
-          ...scene,
-          scene: { ...(scene.scene || {}), intensity },
+          ...sceneRaw,
+          scene: { ...innerScene, intensity },
         }
-      : scene;
+      : sceneRaw;
   return {
     meta,
     domain_model,
@@ -128,6 +155,17 @@ export const normalizeSceneJson = (input: any): SceneJson => {
     scene: { ...syncedScene, objects },
   };
 };
+
+/**
+ * Returns normalized scene JSON only when the payload yields at least one scene object after coercion.
+ * Use for restores / replacements so empty or non-scene metadata blobs do not wipe the live scene.
+ */
+export function tryRenderableSceneJsonFromUnknown(input: unknown): SceneJson | null {
+  if (input == null || typeof input !== "object" || Array.isArray(input)) return null;
+  const normalized = normalizeSceneJson(input);
+  const objects = Array.isArray(normalized.scene?.objects) ? normalized.scene.objects : [];
+  return objects.length > 0 ? normalized : null;
+}
 
 export function saveProject(p: PersistedProject) {
   try {

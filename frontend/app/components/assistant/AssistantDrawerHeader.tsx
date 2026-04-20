@@ -16,6 +16,7 @@ export function AssistantDrawerHeader(props: AssistantDrawerHeaderProps) {
   return (
     <div
       style={{
+        flexShrink: 0,
         padding: "12px 14px",
         display: "flex",
         alignItems: "flex-start",
@@ -32,7 +33,7 @@ export function AssistantDrawerHeader(props: AssistantDrawerHeaderProps) {
           <div style={{ color: nx.lowMuted, fontSize: 10, marginTop: 2 }}>{props.subtitle}</div>
         ) : null}
         {props.profileLabel ? (
-          <div style={{ color: "#93c5fd", fontSize: 10, marginTop: 4, fontWeight: 700 }}>
+          <div style={{ color: nx.accentMuted, fontSize: 10, marginTop: 4, fontWeight: 700 }}>
             {props.profileLabel}
           </div>
         ) : null}
@@ -47,8 +48,8 @@ export function AssistantDrawerHeader(props: AssistantDrawerHeaderProps) {
           padding: "0 10px",
           borderRadius: 8,
           border: `1px solid ${nx.border}`,
-          background: "rgba(2,6,23,0.45)",
-          color: nx.muted,
+          background: nx.btnSecondaryBg,
+          color: nx.btnSecondaryText,
           cursor: "pointer",
           fontSize: 12,
           flex: "0 0 auto",

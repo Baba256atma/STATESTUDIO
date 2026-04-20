@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import time
+import logging
 from typing import Any, Dict, Optional, List
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, status
+from pydantic import BaseModel, Field, ValidationError
 
 from app.models.scenario_input import ScenarioSimulationRequest
 from app.models.scenario_output import ScenarioSimulationResult
@@ -13,11 +14,13 @@ from app.models.replay import ReplayFrame, ReplayMeta
 from app.engines.fragility_v1 import compute_fragility_v1
 from app.services.loop_engine import evaluate_loops
 from app.services.scenario.scenario_orchestrator import ScenarioSimulationOrchestrator
+from app.utils.responses import http_error
 
 
 router = APIRouter()
 store = ReplayStore()
 simulation_orchestrator = ScenarioSimulationOrchestrator()
+logger = logging.getLogger(__name__)
 
 
 class ScenarioOverrideIn(BaseModel):
@@ -54,19 +57,40 @@ def simulate_scenario(payload: ScenarioSimulationRequest):
     """Run deterministic Scenario Simulation Lite and return overlay-safe propagation."""
     try:
         result = simulation_orchestrator.run_simulation(payload.model_dump())
-        return ScenarioSimulationResult.model_validate(result)
+    except ValidationError as exc:
+        logger.warning("scenario_simulation_invalid error=%s", exc)
+        raise http_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "SCENARIO_INVALID_INPUT",
+            "Scenario simulation input is invalid.",
+            code="SCENARIO_INVALID_INPUT",
+            details=exc.errors(),
+        ) from exc
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail={"ok": False, "error": {"message": str(exc)}}) from exc
+        logger.warning("scenario_simulation_rejected error=%s", exc)
+        raise http_error(
+            status.HTTP_400_BAD_REQUEST,
+            "SCENARIO_INPUT_ERROR",
+            str(exc),
+            code="SCENARIO_INPUT_ERROR",
+        ) from exc
+    try:
+        return ScenarioSimulationResult.model_validate(result)
+    except ValidationError as exc:
+        logger.error("scenario_simulation_contract_invalid error=%s", exc)
+        raise http_error(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "SCENARIO_CONTRACT_ERROR",
+            "Scenario simulation returned an invalid response.",
+            code="SCENARIO_CONTRACT_ERROR",
+        ) from exc
     except Exception as exc:  # pragma: no cover - defensive API guard
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "ok": False,
-                "error": {
-                    "message": "Scenario simulation is currently unavailable.",
-                    "detail": str(exc),
-                },
-            },
+        logger.exception("scenario_simulation_failed")
+        raise http_error(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "SCENARIO_ERROR",
+            "Scenario simulation is currently unavailable.",
+            code="SCENARIO_ERROR",
         ) from exc
 
 
@@ -76,7 +100,13 @@ def scenario_override(payload: ScenarioOverrideIn):
     parent = store.get_episode(payload.episode_id)
     frames = parent.frames or []
     if not frames:
-        raise HTTPException(status_code=404, detail={"ok": False, "error": {"message": "Episode has no frames"}})
+        logger.warning("scenario_override_missing_frames episode_id=%s", payload.episode_id)
+        raise http_error(
+            status.HTTP_404_NOT_FOUND,
+            "SCENARIO_EPISODE_NOT_FOUND",
+            "Episode has no frames",
+            code="SCENARIO_EPISODE_NOT_FOUND",
+        )
 
     target_episode_id = payload.episode_id
 

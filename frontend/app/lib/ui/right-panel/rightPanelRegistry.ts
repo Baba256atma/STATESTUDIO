@@ -7,6 +7,8 @@ export type RightPanelRegistryEntry = {
   fallbackAllowed: boolean;
   fallbackTitle: string;
   fallbackMessage: string;
+  isProtectedView: boolean;
+  overridePolicy: "normal" | "protected";
 };
 
 export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelRegistryEntry> = {
@@ -17,6 +19,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Strategic Command",
     fallbackMessage: "Strategic command context is not ready yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   dashboard: {
     label: "Executive Dashboard",
@@ -25,7 +29,10 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Executive Overview",
     fallbackMessage: "Executive overview is waiting for decision context.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
+  // Protected views must keep their concrete panel identity and should not be overridden by dashboard/executive fallback logic downstream.
   simulate: {
     label: "Simulation",
     hostRenderKey: "dashboard",
@@ -33,6 +40,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Simulation",
     fallbackMessage: "No simulation is available yet. Run a scenario to generate results.",
+    isProtectedView: true,
+    overridePolicy: "protected",
   },
   compare: {
     label: "Compare Options",
@@ -41,6 +50,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Compare Options",
     fallbackMessage: "No comparison data is available yet. Run analysis or simulation to compare options.",
+    isProtectedView: true,
+    overridePolicy: "protected",
   },
   decision_lifecycle: {
     label: "Decision Lifecycle",
@@ -49,6 +60,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Decision Lifecycle",
     fallbackMessage: "Decision lifecycle is waiting for recommendation context.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   strategic_learning: {
     label: "Strategic Learning",
@@ -57,6 +70,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Strategic Learning",
     fallbackMessage: "Strategic learning data is not ready yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   meta_decision: {
     label: "Meta Decision",
@@ -65,6 +80,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Meta Decision",
     fallbackMessage: "Meta decision context is not ready yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   cognitive_style: {
     label: "Cognitive Style",
@@ -73,6 +90,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Cognitive Style",
     fallbackMessage: "Cognitive style guidance is not ready yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   team_decision: {
     label: "Team Decision",
@@ -81,6 +100,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Team Decision",
     fallbackMessage: "Team decision context is not ready yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   org_memory: {
     label: "Org Memory",
@@ -89,6 +110,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Organization Memory",
     fallbackMessage: "Organization memory is not available yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   decision_governance: {
     label: "Decision Governance",
@@ -97,6 +120,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Decision Governance",
     fallbackMessage: "Governance posture is not ready yet for this decision.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   decision_policy: {
     label: "Decision Policy",
@@ -105,6 +130,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Decision Policy",
     fallbackMessage: "Decision policy is not available yet for the current context.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   executive_approval: {
     label: "Executive Approval",
@@ -113,6 +140,18 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Executive Approval",
     fallbackMessage: "Approval workflow is not initialized yet for this decision.",
+    isProtectedView: false,
+    overridePolicy: "normal",
+  },
+  explanation: {
+    label: "Explanation",
+    hostRenderKey: "explanation",
+    componentExists: true,
+    fallbackAllowed: true,
+    fallbackTitle: "Explanation",
+    fallbackMessage: "Decision explanation will appear after analysis or chat returns decision context.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   risk: {
     label: "Risk",
@@ -121,6 +160,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Risk",
     fallbackMessage: "Risk view is waiting for fragility or propagation context.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   fragility: {
     label: "Fragility",
@@ -129,6 +170,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Fragility",
     fallbackMessage: "Fragility context is not ready yet for this scenario.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   object: {
     label: "Object Focus",
@@ -137,6 +180,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Object Focus",
     fallbackMessage: "No object is selected yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   timeline: {
     label: "Timeline",
@@ -145,6 +190,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Decision Timeline",
     fallbackMessage: "No timeline is available yet. Run a simulation or replay to build one.",
+    isProtectedView: true,
+    overridePolicy: "protected",
   },
   decision_timeline: {
     label: "Decision Timeline",
@@ -153,6 +200,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Decision Timeline",
     fallbackMessage: "Decision history is not available yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   confidence_calibration: {
     label: "Confidence Calibration",
@@ -161,6 +210,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Confidence Calibration",
     fallbackMessage: "Confidence calibration is not available yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   outcome_feedback: {
     label: "Outcome Feedback",
@@ -169,6 +220,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Outcome Feedback",
     fallbackMessage: "Outcome feedback is not available yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   pattern_intelligence: {
     label: "Pattern Intelligence",
@@ -177,6 +230,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Pattern Intelligence",
     fallbackMessage: "Pattern intelligence is not available yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   collaboration_intelligence: {
     label: "Collaboration Intelligence",
@@ -185,6 +240,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Collaboration Intelligence",
     fallbackMessage: "Collaboration intelligence is not available yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   decision_council: {
     label: "Decision Council",
@@ -193,6 +250,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Decision Council",
     fallbackMessage: "Council guidance is not available yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   scenario_tree: {
     label: "Scenario Tree",
@@ -201,6 +260,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Scenario Tree",
     fallbackMessage: "Scenario branching is not available yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   advice: {
     label: "Strategic Advice",
@@ -209,6 +270,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Strategic Advice",
     fallbackMessage: "Strategic advice is not available yet. Run analysis or simulation to generate recommendations.",
+    isProtectedView: true,
+    overridePolicy: "protected",
   },
   kpi: {
     label: "KPI",
@@ -217,6 +280,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "KPI",
     fallbackMessage: "KPI analysis is not available yet for the current context.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   war_room: {
     label: "War Room",
@@ -225,6 +290,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "War Room",
     fallbackMessage: "War Room is not ready yet for this scenario. Generate a recommendation or simulation first.",
+    isProtectedView: true,
+    overridePolicy: "protected",
   },
   conflict: {
     label: "Conflict",
@@ -233,6 +300,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Conflict Map",
     fallbackMessage: "Conflict analysis is not available yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   memory: {
     label: "Memory",
@@ -241,6 +310,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Decision Memory",
     fallbackMessage: "Decision memory is not ready yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   replay: {
     label: "Replay",
@@ -249,6 +320,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Decision Replay",
     fallbackMessage: "Replay is not ready yet for this decision.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   patterns: {
     label: "Patterns",
@@ -257,6 +330,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Strategic Patterns",
     fallbackMessage: "Strategic patterns are not available yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   opponent: {
     label: "Opponent",
@@ -265,6 +340,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Opponent Moves",
     fallbackMessage: "Opponent modeling is not available yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   collaboration: {
     label: "Collaboration",
@@ -273,6 +350,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Collaboration",
     fallbackMessage: "Collaboration context is not ready yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
   workspace: {
     label: "Workspace",
@@ -281,9 +360,23 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     fallbackAllowed: true,
     fallbackTitle: "Workspace",
     fallbackMessage: "Workspace context is not ready yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
   },
 };
 
 export function getRightPanelRegistryEntry(view: CanonicalRightPanelView): RightPanelRegistryEntry {
   return RIGHT_PANEL_REGISTRY[view];
+}
+
+export function isProtectedRightPanelRegistryView(
+  view: CanonicalRightPanelView
+): boolean {
+  return RIGHT_PANEL_REGISTRY[view].isProtectedView;
+}
+
+export function getRightPanelOverridePolicy(
+  view: CanonicalRightPanelView
+): "normal" | "protected" {
+  return RIGHT_PANEL_REGISTRY[view].overridePolicy;
 }

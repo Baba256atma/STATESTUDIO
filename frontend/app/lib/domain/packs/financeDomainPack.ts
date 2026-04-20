@@ -7,13 +7,12 @@ import {
 import { createUniversalDomainPackTemplate } from "../domainPackTemplate";
 
 export const FINANCE_DOMAIN_PROMPT_EXAMPLES = [
-  "liquidity stress",
-  "market volatility spike",
-  "leverage increase",
-  "asset price drop",
-  "portfolio exposure risk",
-  "credit pressure rising",
-  "systemic risk",
+  "What tradeoff is emerging between cash and delivery?",
+  "Which action lowers fragility at the lowest cost?",
+  "Where is financial pressure spreading next?",
+  "What should leadership intervene on first?",
+  "How does leverage interact with liquidity this quarter?",
+  "Which exposure creates the next downside surprise?",
 ];
 
 export const FINANCE_DOMAIN_TEMPLATE = createUniversalDomainPackTemplate({
@@ -27,7 +26,7 @@ export const FINANCE_DOMAIN_TEMPLATE = createUniversalDomainPackTemplate({
   promptExamples: FINANCE_DOMAIN_PROMPT_EXAMPLES,
   tags: ["finance", "markets", "liquidity", "portfolio", "fragility"],
   visibleNavGroups: ["scene_group", "strategy_group", "risk_group", "replay_group", "executive_group"],
-  visibleSections: ["scene", "objects", "timeline", "advice", "conflict", "risk_flow", "risk", "replay", "executive"],
+  visibleSections: ["scene", "objects", "timeline", "advice", "explanation", "conflict", "risk_flow", "risk", "replay", "executive"],
   scenarioKpiMapping: DEFAULT_DOMAIN_SCENARIO_KPI_MAPPINGS.finance,
   adviceConfig: DEFAULT_DOMAIN_ADVICE_CONFIGS.finance,
   experienceDefaults: {
@@ -36,10 +35,14 @@ export const FINANCE_DOMAIN_TEMPLATE = createUniversalDomainPackTemplate({
     preferredRightPanelTab: "executive_dashboard",
     helperTitle: "See how exposure, liquidity, leverage, and volatility interact across a financial system",
     helperBody: "Focus on market fragility, portfolio exposure, funding stress, and the next stabilizing action across the financial network.",
-    promptGuideTitle: "Start with a financial stress prompt.",
-    promptGuideBody: "Prompt -> financial pressure -> propagation path -> portfolio and liquidity KPI impact -> stabilizing action. Use short prompts tied to volatility, leverage, credit, liquidity, or selloff risk.",
+    promptGuideTitle: "Ask a sharp finance question",
+    promptGuideBody: "Use a short strategic prompt—Nexora highlights pressure paths, then open the executive brief for options and rationale.",
     executiveFramingStyle: "financial",
     demoLabel: "Finance Market Fragility Demo",
+    demoScenarioTitle: "Finance pressure",
+    demoBusinessContext:
+      "Margin and liquidity strain can propagate across delivery, inventory, and customer stability.",
+    demoDecisionQuestion: "Which move reduces fragility with the lowest operational cost?",
   },
   vocabulary: [
     { id: "market_demand", label: "Market Demand", coreRole: "support", synonyms: ["sentiment", "flow"], tags: ["market"] },

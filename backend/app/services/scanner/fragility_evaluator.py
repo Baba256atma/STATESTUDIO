@@ -10,9 +10,21 @@ from mapping.schemas import ObjectImpactSet
 
 _CATEGORY_CONFIG: dict[str, dict[str, Any]] = {
     "delay_pressure": {"types": {"delay"}, "weight": 1.0, "label": "Delay Pressure"},
-    "cost_pressure": {"types": {"cost"}, "weight": 0.88, "label": "Cost Pressure"},
-    "supply_fragility": {"types": {"supply", "risk"}, "weight": 0.95, "label": "Supply Fragility"},
-    "demand_instability": {"types": {"demand"}, "weight": 0.82, "label": "Demand Instability"},
+    # Legacy aliases ("cost") plus Phase B.1 canonical `cost_pressure`.
+    "cost_pressure": {"types": {"cost", "cost_pressure"}, "weight": 0.88, "label": "Cost Pressure"},
+    "supply_fragility": {
+        "types": {
+            "supply",
+            "risk",
+            "supplier_impact",
+            "shortage",
+            "operational_instability",
+            "customer_impact",
+        },
+        "weight": 0.95,
+        "label": "Supply Fragility",
+    },
+    "demand_instability": {"types": {"demand", "demand_shift"}, "weight": 0.82, "label": "Demand Instability"},
     "financial_pressure": {"types": {"finance"}, "weight": 0.8, "label": "Financial Pressure"},
     "regulatory_pressure": {"types": {"regulation"}, "weight": 0.78, "label": "Regulatory Pressure"},
 }

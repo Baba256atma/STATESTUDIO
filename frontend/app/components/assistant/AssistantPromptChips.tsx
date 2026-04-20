@@ -13,7 +13,7 @@ export function AssistantPromptChips(props: AssistantPromptChipsProps) {
   if (!props.prompts.length) return null;
 
   return (
-    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", rowGap: 8 }}>
       <div
         style={{
           color: nx.lowMuted,
@@ -21,9 +21,10 @@ export function AssistantPromptChips(props: AssistantPromptChipsProps) {
           fontWeight: 800,
           textTransform: "uppercase",
           letterSpacing: "0.12em",
+          width: "100%",
         }}
       >
-        Guided Prompts
+        Guided prompts
       </div>
       {props.prompts.map((prompt) => (
         <button
@@ -31,14 +32,17 @@ export function AssistantPromptChips(props: AssistantPromptChipsProps) {
           type="button"
           onClick={() => props.onSelect(prompt)}
           style={{
-            minHeight: 28,
-            padding: "4px 10px",
+            minHeight: 30,
+            padding: "6px 12px",
             borderRadius: 999,
             border: `1px solid ${nx.border}`,
-            background: "rgba(59,130,246,0.12)",
-            color: "#dbeafe",
+            background: nx.accentSoft,
+            color: nx.accentInk,
             fontSize: 11,
+            fontWeight: 600,
+            lineHeight: 1.35,
             cursor: "pointer",
+            textAlign: "left",
           }}
         >
           {prompt}

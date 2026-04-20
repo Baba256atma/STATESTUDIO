@@ -15,6 +15,10 @@ import { buildDecisionGovernanceState } from "../../lib/governance/buildDecision
 import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemoryTypes";
 import { buildApprovalWorkflowState } from "../../lib/approval/buildApprovalWorkflowState";
 import { loadApprovalWorkflowEnvelope } from "../../lib/approval/approvalWorkflowStore";
+import type { NexoraB8PanelContext } from "../../lib/panels/panelDataContract";
+import { buildCompareMeaningCue } from "../../lib/panels/nexoraPanelMeaning";
+import type { NexoraB18CompareResolved, NexoraScenarioVariant } from "../../lib/scenario/nexoraScenarioBuilder.ts";
+import { useNexoraRunbookGuidanceOptional } from "../../lib/pilot/nexoraRunbookGuidanceContext";
 
 type DecisionComparePanelProps = {
   responseData?: any;
@@ -36,9 +40,22 @@ type DecisionComparePanelProps = {
   onOpenDecisionPolicy?: (() => void) | null;
   onOpenExecutiveApproval?: (() => void) | null;
   resolveObjectLabel?: ((id: string | null | undefined) => string | null) | null;
+  nexoraB8PanelContext?: NexoraB8PanelContext | null;
+  /** B.18 — structured current vs scenario variants (from resolver; no extra pipeline). */
+  nexoraB18Compare?: NexoraB18CompareResolved | null;
 };
 
 export function DecisionComparePanel(props: DecisionComparePanelProps) {
+  const b18Compare = React.useMemo(
+    () => props.nexoraB18Compare ?? null,
+    [
+      props.nexoraB18Compare?.signature,
+      props.nexoraB18Compare?.qualityHint,
+      props.nexoraB18Compare?.biasGovernance?.summary,
+      props.nexoraB18Compare?.nexoraOperatorMode,
+    ]
+  );
+
   const model = buildComparePanelModel({
     canonicalRecommendation: props.canonicalRecommendation ?? null,
     decisionResult: props.decisionResult ?? null,
@@ -87,6 +104,8 @@ export function DecisionComparePanel(props: DecisionComparePanelProps) {
     policyState: policy,
   });
 
+  const runbookGuidance = useNexoraRunbookGuidanceOptional();
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ ...panelSurfaceStyle, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
@@ -94,17 +113,127 @@ export function DecisionComparePanel(props: DecisionComparePanelProps) {
         <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.5 }}>
           Evaluate the recommended move against viable alternatives.
         </div>
+        <div style={{ color: nx.lowMuted, fontSize: 11, lineHeight: 1.45 }}>
+          {b18Compare?.nexoraOperatorMode === "pure"
+            ? "Pure mode: no historical bias applied."
+            : "Adaptive mode: recommendations use past performance."}
+        </div>
       </div>
+
+      {runbookGuidance?.hints.comparePanel ? (
+        <div style={{ color: nx.lowMuted, fontSize: 10, lineHeight: 1.35, padding: "0 2px" }}>{runbookGuidance.hints.comparePanel}</div>
+      ) : null}
+
+      {props.nexoraB8PanelContext ? (
+        <div
+          style={{
+            ...softCardStyle,
+            padding: 12,
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            borderLeft: "3px solid rgba(96,165,250,0.45)",
+          }}
+        >
+          <div style={{ color: nx.lowMuted, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            Compare anchor
+          </div>
+          {buildCompareMeaningCue(props.nexoraB8PanelContext).map((line) => (
+            <div key={line} style={{ color: "#e2e8f0", fontSize: 11, lineHeight: 1.45 }}>
+              {line}
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {props.decisionLoading || props.decisionStatus === "loading" ? (
         <ComparePlaceholder message="Running option comparison and decision analysis..." />
       ) : null}
-      {props.decisionStatus === "error" && !model.recommendedOption ? (
+      {props.decisionStatus === "error" && !model.recommendedOption && !b18Compare ? (
         <ComparePlaceholder message={props.decisionError ?? "No comparison yet. Run a simulation or analysis to compare options."} />
       ) : null}
 
-      {!model.recommendedOption && props.decisionStatus !== "loading" ? (
+      {!model.recommendedOption && props.decisionStatus !== "loading" && !b18Compare ? (
         <ComparePlaceholder message="No recommendation yet. Run a simulation or analysis to compare options." />
+      ) : null}
+
+      {b18Compare ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ ...softCardStyle, padding: 12, gap: 8 }}>
+            <div style={{ color: nx.lowMuted, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              Structured compare (B.18)
+            </div>
+            <div style={{ color: nx.muted, fontSize: 11, lineHeight: 1.45 }}>
+              Side-by-side view from the latest audit, trust tier, and decision context. No new scans are run here.
+            </div>
+            {b18Compare.biasGovernance?.summary ? (
+              <div style={{ color: "#a5b4fc", fontSize: 10, lineHeight: 1.4, fontWeight: 600 }}>{b18Compare.biasGovernance.summary}</div>
+            ) : null}
+            {b18Compare.qualityHint ? (
+              <div style={{ color: nx.lowMuted, fontSize: 10, lineHeight: 1.4, fontStyle: "italic" }}>{b18Compare.qualityHint}</div>
+            ) : null}
+            {b18Compare.adaptiveBias && !b18Compare.biasGovernance?.summary ? (
+              <div style={{ color: nx.lowMuted, fontSize: 10, lineHeight: 1.4 }}>
+                Adaptive hint:{" "}
+                {b18Compare.adaptiveBias.confidence === "low"
+                  ? "Limited evidence; no strong bias."
+                  : b18Compare.adaptiveBias.summary ?? "Bias informed by historical outcomes."}
+              </div>
+            ) : null}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
+              <B18VariantCard
+                variant={{
+                  id: b18Compare.current.id,
+                  label: b18Compare.current.label,
+                  fragilityLevel: b18Compare.current.fragilityLevel,
+                  confidenceTier: b18Compare.current.confidenceTier ?? undefined,
+                  summary: b18Compare.current.summary,
+                  drivers: b18Compare.current.drivers,
+                }}
+                toneLine={b18Compare.current.recommendationTone}
+                isRecommended={false}
+              />
+              {b18Compare.variants.map((v) => {
+                const mi = b18Compare.memoryInsights;
+                const ab = b18Compare.adaptiveBias;
+                const seen = mi?.optionSeenCounts[v.id] ?? 0;
+                const dominantHistorical = Boolean(mi?.dominantRecommendedOption === v.id && seen > 0);
+                const patternHint =
+                  v.id === "conservative" && mi?.historicalPatternLabel === "stable" && (mi.similarRuns ?? 0) >= 3
+                    ? "Previously stable pattern"
+                    : v.id === "balanced" && mi?.repeatedDecision && (mi.similarRuns ?? 0) >= 2
+                      ? "Repeated risk pattern"
+                      : null;
+                const adaptivePreferred = Boolean(ab && ab.confidence !== "low" && ab.preferredOptionId === v.id);
+                const adaptiveDiscouraged = Boolean(ab && ab.confidence !== "low" && ab.discouragedOptionId === v.id);
+                return (
+                  <B18VariantCard
+                    key={v.id}
+                    variant={v}
+                    isRecommended={v.id === b18Compare.recommendedOptionId}
+                    toneLine={
+                      v.id === b18Compare.recommendedOptionId ? "Recommended for lowest acceptable fragility + confidence." : null
+                    }
+                    seenInRuns={seen}
+                    dominantHistorical={dominantHistorical}
+                    patternHint={patternHint}
+                    adaptivePreferred={adaptivePreferred}
+                    adaptiveDiscouraged={adaptiveDiscouraged}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {b18Compare && !model.recommendedOption ? (
+        <div style={{ ...softCardStyle, padding: 12 }}>
+          <div style={{ color: nx.muted, fontSize: 11, lineHeight: 1.45 }}>
+            Execution actions below stay tied to the canonical recommendation. The structured paths above are deterministic
+            previews from your saved audit and trust state.
+          </div>
+        </div>
       ) : null}
 
       {model.recommendedOption ? (
@@ -212,6 +341,74 @@ export function DecisionComparePanel(props: DecisionComparePanelProps) {
             </div>
           </div>
         </>
+      ) : null}
+    </div>
+  );
+}
+
+function B18VariantCard(props: {
+  variant: NexoraScenarioVariant;
+  toneLine?: string | null;
+  isRecommended: boolean;
+  seenInRuns?: number;
+  dominantHistorical?: boolean;
+  patternHint?: string | null;
+  adaptivePreferred?: boolean;
+  adaptiveDiscouraged?: boolean;
+}) {
+  const v = props.variant;
+  const discouragedStyle = props.adaptiveDiscouraged
+    ? { opacity: 0.92, border: "1px solid rgba(248,113,113,0.22)" as const }
+    : {};
+  return (
+    <div
+      style={{
+        ...softCardStyle,
+        padding: 12,
+        gap: 6,
+        border: props.isRecommended ? "1px solid rgba(34,197,94,0.35)" : `1px solid ${nx.border}`,
+        minHeight: 0,
+        ...(props.dominantHistorical ? { boxShadow: "0 0 0 1px rgba(250,204,21,0.25) inset" } : {}),
+        ...(props.adaptivePreferred && !props.isRecommended
+          ? { boxShadow: "0 0 0 1px rgba(34,197,94,0.2) inset" }
+          : {}),
+        ...discouragedStyle,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 6, alignItems: "flex-start" }}>
+        <div style={{ color: "#f8fafc", fontSize: 13, fontWeight: 800 }}>{v.label}</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "flex-end" }}>
+          {props.isRecommended ? <Badge label="Recommended" tone="positive" /> : null}
+          {props.adaptivePreferred ? <Badge label="Adaptive lean" tone="info" /> : null}
+          {props.adaptiveDiscouraged ? <Badge label="Historically weaker" tone="neutral" /> : null}
+        </div>
+      </div>
+      <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 700 }}>
+        Fragility: <span style={{ color: nx.text }}>{v.fragilityLevel}</span>
+        {v.confidenceTier ? (
+          <>
+            {" "}
+            · Confidence: <span style={{ color: nx.accentInk }}>{v.confidenceTier}</span>
+          </>
+        ) : null}
+      </div>
+      {typeof props.seenInRuns === "number" && props.seenInRuns > 0 ? (
+        <div style={{ color: nx.lowMuted, fontSize: 10, lineHeight: 1.35 }}>Seen in {props.seenInRuns} previous runs</div>
+      ) : null}
+      {props.dominantHistorical ? (
+        <div style={{ color: "#fde047", fontSize: 10, fontWeight: 800, letterSpacing: "0.04em" }}>Dominant historical pick</div>
+      ) : null}
+      {props.patternHint ? (
+        <div style={{ color: "#bae6fd", fontSize: 10, lineHeight: 1.35 }}>{props.patternHint}</div>
+      ) : null}
+      {v.drivers.length ? (
+        <div style={{ color: "#93c5fd", fontSize: 10, lineHeight: 1.35 }}>
+          Drivers: {v.drivers.slice(0, 4).join(" · ")}
+        </div>
+      ) : null}
+      <div style={{ color: nx.muted, fontSize: 11, lineHeight: 1.45 }}>{v.summary}</div>
+      {props.toneLine ? (
+        <div style={{ color: nx.lowMuted, fontSize: 10, lineHeight: 1.35 }}>{props.toneLine}</div>
       ) : null}
     </div>
   );

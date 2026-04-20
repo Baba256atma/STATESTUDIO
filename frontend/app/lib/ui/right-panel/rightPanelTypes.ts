@@ -12,6 +12,7 @@ export const CANONICAL_RIGHT_PANEL_VIEWS = [
   "decision_governance",
   "decision_policy",
   "executive_approval",
+  "explanation",
   "risk",
   "fragility",
   "object",
@@ -35,8 +36,23 @@ export const CANONICAL_RIGHT_PANEL_VIEWS = [
   "workspace",
 ] as const;
 
+export const PROTECTED_RIGHT_PANEL_VIEWS = [
+  "timeline",
+  "advice",
+  "war_room",
+  "simulate",
+  "compare",
+] as const;
+
 export type CanonicalRightPanelView = (typeof CANONICAL_RIGHT_PANEL_VIEWS)[number];
+export type ProtectedRightPanelView = (typeof PROTECTED_RIGHT_PANEL_VIEWS)[number];
 export type RightPanelView = CanonicalRightPanelView | null;
+
+export function isProtectedRightPanelView(
+  view: RightPanelView
+): view is ProtectedRightPanelView {
+  return !!view && (PROTECTED_RIGHT_PANEL_VIEWS as readonly string[]).includes(view);
+}
 
 export type RightPanelState = {
   isOpen: boolean;

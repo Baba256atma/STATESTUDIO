@@ -19,13 +19,13 @@ export function StrategicAssistantLauncher(props: StrategicAssistantLauncherProp
         padding: "0 14px",
         borderRadius: 999,
         border: `1px solid ${nx.borderStrong}`,
-        background: "rgba(15,23,42,0.88)",
-        color: "#dbeafe",
+        background: nx.bgElevated,
+        color: nx.textPrimary,
         fontSize: 12,
         fontWeight: 700,
         cursor: "pointer",
         backdropFilter: "blur(10px)",
-        boxShadow: "0 14px 28px rgba(2,6,23,0.28)",
+        boxShadow: nx.shadowDrawer,
       }}
     >
       {props.label ?? "Open Strategic Assistant"}

@@ -127,7 +127,16 @@ function compareRecommendations(a: NexoraExecutiveRecommendation, b: NexoraExecu
   return a.id.localeCompare(b.id);
 }
 
-function normalizeObjectImpacts(objectImpacts: any[]): Array<Record<string, any>> {
+function normalizeObjectImpacts(objectImpacts: any[]): Array<{
+  objectId: string;
+  beforeRisk: number;
+  afterRisk: number;
+  beforeActivity: number;
+  afterActivity: number;
+  beforeStability: number;
+  afterStability: number;
+  notes: string[];
+}> {
   return (Array.isArray(objectImpacts) ? objectImpacts : []).map((impact) => ({
     objectId: String(impact?.objectId ?? "").trim(),
     beforeRisk: safeNumber(impact?.beforeRisk, 0),
@@ -140,7 +149,15 @@ function normalizeObjectImpacts(objectImpacts: any[]): Array<Record<string, any>
   }));
 }
 
-function normalizeKpiImpacts(kpiImpacts: any[]): Array<Record<string, any>> {
+function normalizeKpiImpacts(kpiImpacts: any[]): Array<{
+  id: string;
+  label: string;
+  before: number;
+  after: number;
+  delta: number;
+  trend: unknown;
+  notes: string[];
+}> {
   return (Array.isArray(kpiImpacts) ? kpiImpacts : []).map((impact) => ({
     id: String(impact?.id ?? "").trim(),
     label: String(impact?.label ?? impact?.id ?? "").trim(),

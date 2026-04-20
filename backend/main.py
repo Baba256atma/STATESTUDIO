@@ -82,6 +82,7 @@ from app.models.scanner_output import (
     PanelWarRoomSlice,
 )
 from app.models.scenario_output import ScenarioSceneOverlay
+from app.utils.responses import install_exception_handlers
 from mapping.schemas import ObjectImpactSet
 from app.services.kpi_runtime import kpi_step as _run_kpi_step
 from app.services.object_registry import (
@@ -196,6 +197,42 @@ def _infer_allowed_objects_from_text(text: str, mode: str | None = None, allowed
     )
 
 app = FastAPI(title="StateStudio API")
+install_exception_handlers(app, logging.getLogger("nexora.api"))
+
+
+@app.get("/health")
+def nexora_health():
+    """B.26 — Fast liveness + subsystem flags; must not throw."""
+    try:
+        now = datetime.now(timezone.utc).isoformat()
+    except Exception:
+        now = ""
+    try:
+        version = os.environ.get(
+            "NEXORA_VERSION", os.environ.get("APP_VERSION", os.environ.get("GIT_SHA", "dev"))
+        )
+    except Exception:
+        version = "dev"
+    services: dict[str, bool] = {"ingestion": True, "scanner": True, "connectors": True}
+    try:
+        services["ingestion"] = bool(getattr(ingestion_router, "routes", ()))
+    except Exception:
+        services["ingestion"] = False
+    try:
+        services["scanner"] = bool(getattr(fragility_scanner_router, "routes", ()))
+    except Exception:
+        services["scanner"] = False
+    try:
+        services["connectors"] = services["ingestion"]
+    except Exception:
+        services["connectors"] = False
+    try:
+        ok = bool(services.get("ingestion")) and bool(services.get("scanner")) and bool(services.get("connectors"))
+    except Exception:
+        ok = False
+    return {"ok": ok, "version": str(version), "time": now, "services": services}
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -353,15 +390,6 @@ class ArchetypeAnalyzeIn(BaseModel):
     signals: list[str]
     metrics: dict[str, float]
     history: list[ArchetypeState] | None = None
-
-
-@app.get("/health")
-def health():
-    return {
-        "ok": True,
-        "version": os.getenv("APP_VERSION", "dev"),
-        "time": datetime.now(timezone.utc).isoformat(),
-    }
 
 
 def _build_chat_pipeline_dependencies() -> ChatPipelineDependencies:

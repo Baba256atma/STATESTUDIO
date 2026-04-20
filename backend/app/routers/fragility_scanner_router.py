@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from pydantic import ValidationError
 
 from app.models.scanner_input import FragilityScanRequest
 from app.models.scanner_output import FragilityScanResponse
 from app.services.scanner.scanner_orchestrator import FragilityScannerOrchestrator
+from app.utils.responses import http_error
 
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,34 @@ async def run_fragility_scan(
     )
     try:
         result = orchestrator.run_scan(payload.model_dump())
+    except ValidationError as exc:
+        logger.warning(
+            "fragility_scan_invalid workspace_id=%s user_id=%s error=%s",
+            payload.workspace_id,
+            payload.user_id,
+            exc,
+        )
+        raise http_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "FRAGILITY_SCANNER_INVALID_INPUT",
+            "Fragility scanner input is invalid.",
+            code="FRAGILITY_SCANNER_INVALID_INPUT",
+            details=exc.errors(),
+        ) from exc
+    except ValueError as exc:
+        logger.warning(
+            "fragility_scan_rejected workspace_id=%s user_id=%s error=%s",
+            payload.workspace_id,
+            payload.user_id,
+            exc,
+        )
+        raise http_error(
+            status.HTTP_400_BAD_REQUEST,
+            "FRAGILITY_SCANNER_INPUT_ERROR",
+            str(exc),
+            code="FRAGILITY_SCANNER_INPUT_ERROR",
+        ) from exc
+    try:
         response = FragilityScanResponse.model_validate(result)
         logger.info(
             "fragility_scan_completed workspace_id=%s user_id=%s fragility_score=%.4f fragility_level=%s primary_objects=%s driver_ids=%s",
@@ -54,52 +83,27 @@ async def run_fragility_scan(
         )
         return response
     except ValidationError as exc:
-        logger.warning(
-            "fragility_scan_invalid workspace_id=%s user_id=%s error=%s",
+        logger.error(
+            "fragility_scan_contract_invalid workspace_id=%s user_id=%s error=%s",
             payload.workspace_id,
             payload.user_id,
             exc,
         )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "ok": False,
-                "error": {
-                    "type": "FRAGILITY_SCANNER_INVALID_INPUT",
-                    "message": "Fragility scanner input is invalid.",
-                },
-            },
-        )
-    except ValueError as exc:
-        logger.warning(
-            "fragility_scan_rejected workspace_id=%s user_id=%s error=%s",
-            payload.workspace_id,
-            payload.user_id,
-            exc,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "ok": False,
-                "error": {
-                    "type": "FRAGILITY_SCANNER_INPUT_ERROR",
-                    "message": str(exc),
-                },
-            },
-        )
+        raise http_error(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "FRAGILITY_SCANNER_CONTRACT_ERROR",
+            "Fragility scanner returned an invalid response.",
+            code="FRAGILITY_SCANNER_CONTRACT_ERROR",
+        ) from exc
     except Exception:
         logger.exception(
             "fragility_scan_failed workspace_id=%s user_id=%s",
             payload.workspace_id,
             payload.user_id,
         )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "ok": False,
-                "error": {
-                    "type": "FRAGILITY_SCANNER_ERROR",
-                    "message": "Fragility scanner is currently unavailable.",
-                },
-            },
+        raise http_error(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "FRAGILITY_SCANNER_ERROR",
+            "Fragility scanner is currently unavailable.",
+            code="FRAGILITY_SCANNER_ERROR",
         )

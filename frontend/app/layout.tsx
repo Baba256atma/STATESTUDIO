@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -23,10 +24,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Script
+          id="nexora-theme-preinit"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var k='nx-theme-mode';var m=localStorage.getItem(k);if(m!=='night'&&m!=='day'&&m!=='auto'){var o=localStorage.getItem('nexora.ui_theme');m=o==='night'||o==='day'?o:null;}if(m!=='night'&&m!=='day'&&m!=='auto')m='auto';var r=m==='auto'?window.matchMedia('(prefers-color-scheme: dark)').matches?'night':'day':m;document.documentElement.setAttribute('data-theme',r);}catch(e){try{var d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',d?'night':'day');}catch(_){document.documentElement.setAttribute('data-theme','night');}}})();`,
+          }}
+        />
         {children}
       </body>
     </html>

@@ -72,14 +72,24 @@ class StrategicDecisionEngine:
             )
 
         ranked = self.decision_ranker.rank(evaluations)
-        recommended = self.decision_ranker.recommend(ranked)
+        risk_analysis = self._risk_analysis(system_model, simulation)
+        preflight_insights = self._preflight_insights(system_model, simulation)
+        decision_summary = self._decision_summary(system_model, simulation, ranked)
+        recommended = self.decision_ranker.recommend(
+            ranked,
+            baseline=simulation,
+            risk_analysis=risk_analysis,
+            system_model=system_model,
+            system_insights=preflight_insights,
+            decision_summary=decision_summary,
+        )
         return DecisionAnalysis(
-            decision_summary=self._decision_summary(system_model, simulation, ranked),
+            decision_summary=decision_summary,
             strategies=ranked,
             recommended_action=recommended,
             scenario_comparison=self.simulation_engine.compare(system_model, comparison_inputs) if comparison_inputs else None,
             system_insights=self._system_insights(system_model, simulation, ranked),
-            risk_analysis=self._risk_analysis(system_model, simulation),
+            risk_analysis=risk_analysis,
             metadata={
                 "strategy_count": len(ranked),
                 "weights": weights.model_dump(),
@@ -110,24 +120,28 @@ class StrategicDecisionEngine:
             f"The leading option is {best.id}, which best improves stability while controlling cost and risk."
         )
 
+    def _preflight_insights(self, system_model: SystemModel, simulation: SimulationResult) -> list[str]:
+        insights = [
+            f"Baseline stability is {simulation.stability_score:.2f} across {max(len(simulation.timeline) - 1, 0)} simulated steps.",
+            f"The model contains {len(system_model.fragility_points)} fragility points and {len(system_model.conflicts)} strategic conflicts.",
+        ]
+        high_risk = [event.signal for event in simulation.events]
+        if high_risk:
+            insights.append(f"Fragility warnings concentrate around: {', '.join(dict.fromkeys(high_risk))}.")
+        return insights
+
     def _system_insights(
         self,
         system_model: SystemModel,
         simulation: SimulationResult,
         strategies: list,
     ) -> list[str]:
-        insights = [
-            f"Baseline stability is {simulation.stability_score:.2f} across {max(len(simulation.timeline) - 1, 0)} simulated steps.",
-            f"The model contains {len(system_model.fragility_points)} fragility points and {len(system_model.conflicts)} strategic conflicts.",
-        ]
+        insights = self._preflight_insights(system_model, simulation)
         if strategies:
             best = strategies[0]
             insights.append(
                 f"{best.id} ranks first because it achieves decision score {best.decision_score:.2f} with risk {best.risk:.2f}."
             )
-        high_risk = [event.signal for event in simulation.events]
-        if high_risk:
-            insights.append(f"Fragility warnings concentrate around: {', '.join(dict.fromkeys(high_risk))}.")
         return insights
 
     def _risk_analysis(self, system_model: SystemModel, simulation: SimulationResult) -> RiskAnalysis:

@@ -17,10 +17,12 @@ for path in (BACKEND_DIR, ROOT_DIR):
 
 from app.routers.scenario_router import router as scenario_router
 from app.services.scenario.propagation_rules import classify_scenario_type
+from app.utils.responses import install_exception_handlers
 
 
 def _client() -> TestClient:
     app = FastAPI()
+    install_exception_handlers(app)
     app.include_router(scenario_router)
     return TestClient(app)
 
@@ -113,3 +115,19 @@ def test_scenario_simulation_is_deterministic():
 
 def test_classify_scenario_type_prefers_clear_supply_signal():
     assert classify_scenario_type("supplier instability worsens") == "supplier_disruption"
+
+
+def test_scenario_simulation_invalid_payload_uses_error_envelope():
+    with _client() as client:
+        response = client.post(
+            "/scenario/simulate",
+            json={
+                "scenario_text": "   ",
+            },
+        )
+
+    assert response.status_code == 422
+    payload = response.json()
+    assert payload["ok"] is False
+    assert payload["error"]["type"] == "VALIDATION_ERROR"
+    assert isinstance(payload["error"]["details"], list)

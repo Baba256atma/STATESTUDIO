@@ -16,10 +16,12 @@ for path in (BACKEND_DIR, ROOT_DIR):
         sys.path.insert(0, normalized)
 
 from app.routers.fragility_scanner_router import router as fragility_scanner_router
+from app.utils.responses import install_exception_handlers
 
 
 def _client() -> TestClient:
     app = FastAPI()
+    install_exception_handlers(app)
     app.include_router(fragility_scanner_router)
     return TestClient(app)
 
@@ -61,6 +63,10 @@ def test_fragility_scanner_missing_input_validation():
         )
 
     assert response.status_code == 422
+    payload = response.json()
+    assert payload["ok"] is False
+    assert payload["error"]["type"] == "VALIDATION_ERROR"
+    assert isinstance(payload["error"]["details"], list)
 
 
 def test_fragility_scanner_response_shape():

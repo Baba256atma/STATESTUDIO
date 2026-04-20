@@ -1,6 +1,8 @@
 import { apiBase } from "../apiBase";
 import { fetchJson } from "./fetchJson";
-import type { FetchJsonError } from "./fetchJson";
+import { NexoraError, toNexoraError } from "../system/nexoraErrors";
+import { withSingleNetworkRetry } from "../system/nexoraNetworkRetry";
+import { emitNexoraB26ApiError } from "../system/nexoraReliabilityLog";
 import type {
   FragilityDriver,
   FragilitySceneHighlight,
@@ -142,47 +144,64 @@ function normalizeFragilityScanResponse(value: unknown): FragilityScanResponse |
   };
 }
 
-function toReadableError(error: unknown): string {
-  if (isRecord(error)) {
-    const fetchError = error as FetchJsonError;
-    if (typeof fetchError.status === "number") {
-      return `Fragility scan failed (${fetchError.status}).`;
-    }
-    if (typeof fetchError.message === "string" && fetchError.message.trim()) {
-      return fetchError.message;
-    }
-  }
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
-  }
-  return "Unable to run fragility scan right now.";
-}
-
 export async function runFragilityScan(payload: FragilityScanRequest): Promise<FragilityScanResponse> {
-  const text = payload.text.trim();
-  if (!text) {
-    throw new Error("Please enter business text before running the scan.");
+  const hasBundle = Boolean(payload.signal_bundle && typeof payload.signal_bundle === "object");
+  const text = typeof payload.text === "string" ? payload.text.trim() : "";
+  if (!hasBundle && !text) {
+    throw new NexoraError({
+      code: "validation",
+      message: "Missing scan input",
+      safeMessage: "Add business text or signals before scanning.",
+    });
+  }
+
+  const body: Record<string, unknown> = {
+    mode: typeof payload.mode === "string" && payload.mode.trim() ? payload.mode : "business",
+    metadata: payload.metadata && typeof payload.metadata === "object" ? { ...payload.metadata } : {},
+  };
+  if (text) body.text = text;
+  if (hasBundle) body.signal_bundle = payload.signal_bundle;
+  if (payload.source_type) body.source_type = payload.source_type;
+  if (payload.source_name) body.source_name = payload.source_name;
+  if (payload.source_url) body.source_url = payload.source_url;
+  if (payload.workspace_id) body.workspace_id = payload.workspace_id;
+  if (payload.user_id) body.user_id = payload.user_id;
+  if (Array.isArray(payload.allowed_objects) && payload.allowed_objects.length > 0) {
+    body.allowed_objects = payload.allowed_objects;
   }
 
   try {
-    const response = await fetchJson(`${apiBase()}/scanner/fragility`, {
-      method: "POST",
-      body: {
-        ...payload,
-        text,
-        mode: typeof payload.mode === "string" && payload.mode.trim() ? payload.mode : "business",
-      },
-      retryNetworkErrors: false,
-    });
+    const response = await withSingleNetworkRetry("POST /scanner/fragility", () =>
+      fetchJson(`${apiBase()}/scanner/fragility`, {
+        method: "POST",
+        body,
+        retryNetworkErrors: false,
+      })
+    );
     const normalized = normalizeFragilityScanResponse(response);
     if (!normalized) {
-      throw new Error("Invalid fragility scan response.");
+      const ne = new NexoraError({
+        code: "scanner_invalid_response",
+        message: "Invalid fragility scan response.",
+        safeMessage: "System couldn't complete analysis. Please try again.",
+      });
+      emitNexoraB26ApiError("POST /scanner/fragility", ne.code);
+      throw ne;
     }
     if (!normalized.ok) {
-      throw new Error("Fragility scan did not complete successfully.");
+      const ne = new NexoraError({
+        code: "scanner_not_ok",
+        message: "Fragility scan did not complete successfully.",
+        safeMessage: "System couldn't complete analysis. Please try again.",
+      });
+      emitNexoraB26ApiError("POST /scanner/fragility", ne.code);
+      throw ne;
     }
     return normalized;
-  } catch (error) {
-    throw new Error(toReadableError(error));
+  } catch (error: unknown) {
+    if (error instanceof NexoraError) throw error;
+    const ne = toNexoraError(error);
+    emitNexoraB26ApiError("POST /scanner/fragility", ne.code);
+    throw ne;
   }
 }

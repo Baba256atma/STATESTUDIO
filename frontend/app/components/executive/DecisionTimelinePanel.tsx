@@ -12,6 +12,7 @@ import { DecisionTimeline } from "../warroom/DecisionTimeline";
 import type { DecisionTimelineStage } from "../warroom/TimelineNode";
 import type { DecisionTimelineTransitionData } from "../warroom/TimelineTransition";
 import { nx, panelSurfaceStyle, primaryButtonStyle, secondaryButtonStyle, softCardStyle } from "../ui/nexoraTheme";
+import { dedupePanelConsoleTrace } from "../../lib/debug/panelConsoleTraceDedupe";
 
 type DecisionTimelinePanelProps = {
   responseData?: any;
@@ -100,7 +101,7 @@ export function DecisionTimelinePanel(props: DecisionTimelinePanelProps) {
     [props.responseData, props.strategicAdvice, props.canonicalRecommendation, props.decisionResult]
   );
   const [activeStageId, setActiveStageId] = React.useState<ExecutiveDecisionTimelineStage["id"]>("after");
-  const playbackTimerRef = React.useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const playbackTimerRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     setActiveStageId("after");
@@ -122,6 +123,18 @@ export function DecisionTimelinePanel(props: DecisionTimelinePanelProps) {
 
   const stages = React.useMemo(() => model.stages.map(mapStage), [model.stages]);
   const transitions = React.useMemo(() => buildTransitions(model.stages), [model.stages]);
+  dedupePanelConsoleTrace("PanelComponent", "timeline", "main", {
+    meaningfulData: model.stages.length > 0,
+    eventsCount: model.stages.reduce(
+      (count, stage) => count + (Array.isArray(stage.details) ? stage.details.length : 0),
+      0
+    ),
+    stagesCount: model.stages.length,
+    timelineCount: transitions.length,
+    hasPlayback: model.hasPlayback,
+    activeStageId,
+    hasSummary: Boolean(activeStage?.summary),
+  });
 
   const handlePlayStory = React.useCallback(() => {
     if (!model.hasPlayback) return;

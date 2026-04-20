@@ -72,6 +72,40 @@ function buildStarterText(selection: NexoraResolvedDomainExperience): string {
   return `Loaded ${demoLabel}. Start with a prompt like ${promptLead} to see how Nexora traces pressure, fragility, KPI exposure, and action options.`;
 }
 
+/**
+ * Narrative context for StrategicDecisionEngine on domain demo load (same pipeline as chat attachment).
+ */
+export function buildDemoStrategicAnalysisPrompt(
+  demo: NexoraDomainDemoDefinition,
+  experience: NexoraResolvedDomainExperience
+): string {
+  const analysis = demo.analysis as Record<string, unknown>;
+  const pieces: string[] = [];
+  const bc = experience.experience.demoBusinessContext;
+  const dq = experience.experience.demoDecisionQuestion;
+  if (typeof bc === "string" && bc.trim()) pieces.push(bc.trim());
+  if (typeof dq === "string" && dq.trim()) pieces.push(dq.trim());
+  if (typeof analysis.reply === "string" && analysis.reply.trim()) pieces.push(analysis.reply.trim());
+  const sa = analysis.strategic_advice as Record<string, unknown> | undefined;
+  if (sa) {
+    if (typeof sa.summary === "string" && sa.summary.trim()) pieces.push(sa.summary.trim());
+    if (typeof sa.why === "string" && sa.why.trim()) pieces.push(sa.why.trim());
+  }
+  const rp = analysis.risk_propagation as Record<string, unknown> | undefined;
+  if (typeof rp?.summary === "string" && rp.summary.trim()) pieces.push(rp.summary.trim());
+  const om = analysis.opponent_model as Record<string, unknown> | undefined;
+  if (typeof om?.summary === "string" && om.summary.trim()) pieces.push(om.summary.trim());
+  const sp = analysis.strategic_patterns as Record<string, unknown> | undefined;
+  const top = sp?.top_pattern as Record<string, unknown> | undefined;
+  if (typeof top?.why === "string" && top.why.trim()) pieces.push(top.why.trim());
+  if (demo.label?.trim()) pieces.push(`Demo: ${demo.label.trim()}`);
+  let text = pieces.join("\n\n");
+  if (text.length < 8) {
+    text = `${text}\n\nStrategic operations scenario requiring decision analysis.`;
+  }
+  return text.slice(0, 32000);
+}
+
 function deriveStarterFocusObjectIds(
   scene: Record<string, unknown>,
   analysis: Record<string, unknown>

@@ -17,7 +17,7 @@ export function buildBackup(params: {
   focusMode: "all" | "selected";
   focusPinned: boolean;
   selectedObjectId: string | null;
-  overrides: Record<string, any>;
+  overrides: Record<string, unknown>;
   objectUxById: Record<string, { opacity?: number; scale?: number }>;
   sessionId: string | null;
 }): BackupV1 {
@@ -61,7 +61,7 @@ export function buildRestorePreviewLines(params: {
   overridesKeysCount: number;
   backup: BackupV1;
 }): string[] {
-  const toText = (v: any) => (v === null || v === undefined || v === "" ? "none" : String(v));
+  const toText = (v: unknown) => (v === null || v === undefined || v === "" ? "none" : String(v));
   const loopCount = Array.isArray(params.loops) ? params.loops.length : 0;
   const backupLoopCount = Array.isArray(params.backup.loops) ? params.backup.loops.length : 0;
   const backupOverridesCount = Object.keys(params.backup.overrides ?? {}).length;

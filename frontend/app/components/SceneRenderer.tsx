@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Html, Line, useCursor } from "@react-three/drei";
-import { smoothValue } from "../lib/smooth";
 
 import type { SceneJson, SceneObject, SceneLoop } from "../lib/sceneTypes";
 import { riskToColor, clamp01 } from "../lib/colorUtils";
@@ -28,6 +26,7 @@ import {
   resolveScannerVisualPriority,
   traceScannerVisualPriorityPolicy,
 } from "../lib/visual/scannerVisualPriorityPolicy";
+import { dedupeNexoraDevLog } from "../lib/debug/panelConsoleTraceDedupe";
 import {
   type DomainLabelSeverity,
   resolveDomainAwareLabelTemplate,
@@ -43,6 +42,10 @@ import type {
 } from "./overlays/DecisionPathOverlayLayer";
 import { getThemeTokens } from "../lib/design/designTokens";
 import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
+import { CALM_FRAMING } from "../lib/scene/calmCameraFraming";
+import { AnimatableObject } from "./scene/AnimatableObject";
+import { LoopLinesAnimated } from "./scene/LoopLinesAnimated";
+const EMPTY_STRING_ARRAY: string[] = [];
 
 // --------------------
 // Geometry registry
@@ -370,43 +373,6 @@ function resolveInteractionRole(params: {
   return "neutral";
 }
 
-function getInteractionProfile(role: InteractionRole) {
-  switch (role) {
-    case "primary":
-      return {
-        hoverScale: 1.06,
-        emissiveBoost: 0.35,
-        opacityBoost: 0.1,
-        neighborDim: 0.15,
-        edgeBoost: 1.25,
-      };
-    case "affected":
-      return {
-        hoverScale: 1.04,
-        emissiveBoost: 0.22,
-        opacityBoost: 0.06,
-        neighborDim: 0.1,
-        edgeBoost: 1.15,
-      };
-    case "context":
-      return {
-        hoverScale: 1.015,
-        emissiveBoost: 0.08,
-        opacityBoost: 0.02,
-        neighborDim: 0.05,
-        edgeBoost: 1.05,
-      };
-    default:
-      return {
-        hoverScale: 1.0,
-        emissiveBoost: 0,
-        opacityBoost: 0,
-        neighborDim: 0,
-        edgeBoost: 1.0,
-      };
-  }
-}
-
 function getAttentionMemoryLifetime(source: AttentionMemorySource): number {
   if (source === "selected") return 2400;
   if (source === "scanner_primary") return 2800;
@@ -465,32 +431,19 @@ function getAttentionMemoryStrength(entry: AttentionMemoryEntry | undefined, now
 }
 
 function getCameraMicroFocusProfile(role: InteractionRole) {
-  switch (role) {
-    case "primary":
-      return {
-        biasStrength: 0.18,
-        distanceBias: -0.02,
-        verticalBias: 0.04,
-      };
-    case "affected":
-      return {
-        biasStrength: 0.1,
-        distanceBias: -0.008,
-        verticalBias: 0.02,
-      };
-    case "context":
-      return {
-        biasStrength: 0.05,
-        distanceBias: 0,
-        verticalBias: 0.008,
-      };
-    default:
-      return {
-        biasStrength: 0.01,
-        distanceBias: 0,
-        verticalBias: 0,
-      };
-  }
+  const biasStrength =
+    role === "primary"
+      ? CALM_FRAMING.biasStrength.primary
+      : role === "affected"
+      ? CALM_FRAMING.biasStrength.affected
+      : role === "context"
+      ? CALM_FRAMING.biasStrength.context
+      : CALM_FRAMING.biasStrength.neutral;
+  return {
+    biasStrength,
+    distanceBias: role === "primary" ? -0.01 : role === "affected" ? -0.004 : 0,
+    verticalBias: role === "primary" ? 0.02 : role === "affected" ? 0.01 : role === "context" ? 0.004 : 0,
+  };
 }
 
 function resolveNarrativeFocusPath(params: {
@@ -618,9 +571,25 @@ function traceNarrativeFocus(payload: {
   affectedCount: number;
   contextCount: number;
   strength: number;
+  signature: string;
 }) {
   if (process.env.NODE_ENV === "production") return;
-  console.debug("[Nexora][NarrativeFocus]", payload);
+  const { signature, ...rest } = payload;
+  dedupeNexoraDevLog("[Nexora][NarrativeFocus]", signature, rest);
+}
+
+function buildNarrativeFocusSignature(input: {
+  focusedId: string | null;
+  highlightedIds: string[];
+  sceneVersion?: number | null;
+  strength: number;
+}) {
+  return JSON.stringify({
+    f: input.focusedId ?? null,
+    h: input.highlightedIds.slice(0, 5),
+    v: input.sceneVersion ?? null,
+    s: Number(input.strength.toFixed(3)),
+  });
 }
 
 function getSimulationNodeStyle(strength: number, isSource: boolean) {
@@ -758,10 +727,11 @@ function resolveIdsAgainstScene(candidateIds: string[], objects: SceneObject[]):
 
 
 function readStringArrayField(source: any, field: string): string[] {
-  if (!source || typeof source !== "object" || !Array.isArray(source[field])) return [];
-  return source[field]
+  if (!source || typeof source !== "object" || !Array.isArray(source[field])) return EMPTY_STRING_ARRAY;
+  const values = source[field]
     .map((value: unknown) => String(value ?? "").trim())
     .filter(Boolean);
+  return values.length > 0 ? values : EMPTY_STRING_ARRAY;
 }
 
 
@@ -1149,606 +1119,6 @@ function getRelationEmphasisStyle(params: {
 }
 
 // --------------------
-// Loop lines renderer
-// --------------------
-function LoopLinesAnimated({
-  objects,
-  loops,
-  activeLoopId,
-  showLoops,
-  showLoopLabels,
-  modeId,
-  theme = "night",
-  scannerSceneActive = false,
-  primaryId = null,
-  affectedIds = [],
-  contextIds = [],
-  scannerFragilityScore = 0,
-  scannerStoryReveal = { primary: 1, edge: 1, affected: 1, context: 1 },
-  hoveredId = null,
-  hoveredInteractionRole = "neutral",
-  attentionMemoryStrengthById = new Map<string, number>(),
-  narrativeFocusStrength = 0,
-  narrativePathEdges = [],
-  simulationSourceId = null,
-  simulationPathEdges = [],
-  decisionPathEdges = [],
-}: {
-  objects: any[];
-  loops: SceneLoop[];
-  activeLoopId: string | null;
-  showLoops: boolean | undefined;
-  showLoopLabels?: boolean;
-  modeId?: string;
-  theme?: "day" | "night" | "stars";
-  scannerSceneActive?: boolean;
-  primaryId?: string | null;
-  affectedIds?: string[];
-  contextIds?: string[];
-  scannerFragilityScore?: number;
-  scannerStoryReveal?: ScannerStoryReveal;
-  hoveredId?: string | null;
-  hoveredInteractionRole?: InteractionRole;
-  attentionMemoryStrengthById?: Map<string, number>;
-  narrativeFocusStrength?: number;
-  narrativePathEdges?: Array<{ from: string; to: string }>;
-  simulationSourceId?: string | null;
-  simulationPathEdges?: SimulatedPathEdge[];
-  decisionPathEdges?: DecisionPathRendererEdge[];
-}) {
-  type LoopEdge = {
-    from: string;
-    to: string;
-    weight: number;
-    polarity: string;
-    loopId: string;
-    label?: string;
-    kind?: string;
-  };
-  const tokens = useMemo(() => getThemeTokens(theme, modeId), [theme, modeId]);
-  const relationSeverity = normalizeScannerLabelSeverity(undefined, scannerFragilityScore);
-  const hoveredInteractionProfile = getInteractionProfile(hoveredInteractionRole);
-  const narrativePathEdgeSet = useMemo(
-    () =>
-      new Set(
-        narrativePathEdges.flatMap((edge) => [`${edge.from}::${edge.to}`, `${edge.to}::${edge.from}`])
-      ),
-    [narrativePathEdges]
-  );
-  const simulationEdgeStrengthByKey = useMemo(() => {
-    const map = new Map<string, { depth: number; strength: number }>();
-    simulationPathEdges.forEach((edge) => {
-      const keys = [`${edge.from}::${edge.to}`, `${edge.to}::${edge.from}`];
-      keys.forEach((key) => {
-        const existing = map.get(key);
-        if (!existing || edge.strength > existing.strength) {
-          map.set(key, { depth: edge.depth, strength: edge.strength });
-        }
-      });
-    });
-    return map;
-  }, [simulationPathEdges]);
-  const decisionPathEdgeByKey = useMemo(() => {
-    const map = new Map<string, DecisionPathRendererEdge>();
-    decisionPathEdges.forEach((edge) => {
-      const keys = [`${edge.from}::${edge.to}`, `${edge.to}::${edge.from}`];
-      keys.forEach((key) => {
-        const existing = map.get(key);
-        if (!existing || edge.strength > existing.strength) {
-          map.set(key, edge);
-        }
-      });
-    });
-    return map;
-  }, [decisionPathEdges]);
-  const getEdgeMemoryStrength = (edgeList: LoopEdge[]) =>
-    edgeList.reduce(
-      (maxStrength, edge) =>
-        Math.max(
-          maxStrength,
-          attentionMemoryStrengthById.get(edge.from) ?? 0,
-          attentionMemoryStrengthById.get(edge.to) ?? 0
-        ),
-      0
-    );
-  const getDecisionNarrativeRole = (edgeList: LoopEdge[]): NarrativeEdgeRole =>
-    edgeList.some((edge) => {
-      const decisionEdge = decisionPathEdgeByKey.get(`${edge.from}::${edge.to}`);
-      return decisionEdge?.narrativeRole === "path" || narrativePathEdgeSet.has(`${edge.from}::${edge.to}`);
-    })
-      ? "path"
-      : edgeList.some((edge) => decisionPathEdgeByKey.get(`${edge.from}::${edge.to}`)?.narrativeRole === "secondary")
-      ? "secondary"
-      : edgeList.some(
-          (edge) =>
-            primaryId === edge.from ||
-            primaryId === edge.to ||
-            affectedIds.includes(edge.from) ||
-            affectedIds.includes(edge.to) ||
-            contextIds.includes(edge.from) ||
-            contextIds.includes(edge.to)
-        )
-      ? "secondary"
-      : "outside";
-  const getCombinedSimulationEdge = (
-    edgeList: LoopEdge[]
-  ): { depth: number; strength: number } | null =>
-    edgeList.reduce<{ depth: number; strength: number } | null>((best, edge) => {
-      const current =
-        simulationEdgeStrengthByKey.get(`${edge.from}::${edge.to}`) ??
-        (() => {
-          const decisionEdge = decisionPathEdgeByKey.get(`${edge.from}::${edge.to}`);
-          return decisionEdge ? { depth: decisionEdge.depth, strength: decisionEdge.strength } : null;
-        })();
-      if (!current) return best;
-      if (!best || current.strength > best.strength) return current;
-      return best;
-    }, null);
-  const inactiveProfile = useMemo(
-    () => resolveRelationVisualProfile({ kind: "dependency", active: false, mode_id: modeId }),
-    [modeId]
-  );
-
-  const posMap = useMemo(() => {
-    const map = new Map<string, [number, number, number]>();
-    objects.forEach((o: any, idx: number) => {
-      const id = String(o?.id ?? `obj_${idx}`);
-      const v = getObjPos(id, objects);
-      map.set(id, [v.x, v.y, v.z]);
-    });
-    return map;
-  }, [objects]);
-
-  const edges = useMemo(() => {
-    const all: LoopEdge[] = [];
-    loops.forEach((l, li) => {
-      const loopId = l?.id ?? `loop_${li}`;
-      const strength = typeof (l as any)?.severity === "number"
-        ? clamp01((l as any).severity)
-        : typeof (l as any)?.strength === "number"
-        ? clamp01((l as any).strength)
-        : 0.5;
-
-      const polarity = ((l as any)?.polarity as string) ?? "neutral";
-      if (Array.isArray(l?.edges)) {
-        l.edges!.forEach((e, ei) => {
-          const from = String((e as any)?.from ?? "");
-          const to = String((e as any)?.to ?? "");
-          if (!from || !to) return;
-          const w = typeof (e as any)?.weight === "number" ? clamp01((e as any).weight) : strength;
-          const pol = ((e as any)?.polarity as string) ?? ((e as any)?.kind as string) ?? polarity;
-          all.push({
-            from,
-            to,
-            weight: w,
-            polarity: pol,
-            loopId,
-            label: (e as any)?.label ?? (l as any)?.label,
-            kind: (e as any)?.kind ?? (l as any)?.type ?? polarity,
-          });
-        });
-      }
-    });
-    return all;
-  }, [loops]);
-
-  const activeEdges = useMemo(() => edges.filter((e) => activeLoopId && e.loopId === activeLoopId), [edges, activeLoopId]);
-  const inactiveEdges = useMemo(
-    () => edges.filter((e) => !activeLoopId || e.loopId !== activeLoopId),
-    [edges, activeLoopId]
-  );
-
-  const safeInactiveEdges = Array.isArray(inactiveEdges) ? inactiveEdges : [];
-  const safeActiveEdges = Array.isArray(activeEdges) ? activeEdges : [];
-  const activeWeightMean = useMemo(() => {
-    if (!safeActiveEdges.length) return 0;
-    const total = safeActiveEdges.reduce((sum, e) => sum + clamp01(Number(e.weight ?? 0.5)), 0);
-    return clamp01(total / safeActiveEdges.length);
-  }, [safeActiveEdges]);
-  const groupedEdges = useMemo(() => {
-    const makeGroups = (edgeList: LoopEdge[]) => {
-      const groups = new Map<RelationRole, LoopEdge[]>();
-      edgeList.forEach((edge) => {
-        const relationRole = scannerSceneActive
-          ? classifyRelationRole({
-              fromId: edge.from,
-              toId: edge.to,
-              primaryId,
-              affectedIds,
-              contextIds,
-            })
-          : "neutral";
-        const existing = groups.get(relationRole) ?? [];
-        existing.push(edge);
-        groups.set(relationRole, existing);
-      });
-      return groups;
-    };
-    return {
-      inactive: makeGroups(safeInactiveEdges),
-      active: makeGroups(safeActiveEdges),
-    };
-  }, [affectedIds, contextIds, primaryId, safeActiveEdges, safeInactiveEdges, scannerSceneActive]);
-
-  const buildGeometry = (edgeList: LoopEdge[]) => {
-    const positions: number[] = [];
-    edgeList.forEach((e) => {
-      const from = posMap.get(e.from);
-      const to = posMap.get(e.to);
-      if (!from || !to) return;
-      positions.push(...from, ...to);
-    });
-    if (positions.length === 0) return null as unknown as THREE.BufferGeometry | null;
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    return geo;
-  };
-
-  const inactiveGeo = useMemo(() => buildGeometry(safeInactiveEdges), [safeInactiveEdges, posMap]);
-  const activeGeo = useMemo(() => buildGeometry(safeActiveEdges), [safeActiveEdges, posMap]);
-
-  React.useEffect(() => {
-    return () => {
-      try {
-        inactiveGeo?.dispose();
-      } catch {}
-    };
-  }, [inactiveGeo]);
-
-  React.useEffect(() => {
-    return () => {
-      try {
-        activeGeo?.dispose();
-      } catch {}
-    };
-  }, [activeGeo]);
-
-  const inactiveMat = useMemo(
-    () =>
-      new THREE.LineBasicMaterial({
-        color: inactiveProfile.color || tokens.design.colors.relationNeutral,
-        transparent: true,
-        opacity: safeActiveEdges.length > 0 ? inactiveProfile.opacity : Math.max(0.18, inactiveProfile.opacity),
-      }),
-    [inactiveProfile.color, inactiveProfile.opacity, safeActiveEdges.length, tokens.design.colors.relationNeutral]
-  );
-
-  const activeMaterials = useMemo(() => {
-    const leadProfile = resolveRelationVisualProfile({
-      kind: safeActiveEdges[0]?.kind,
-      polarity: safeActiveEdges[0]?.polarity,
-      active: true,
-      mode_id: modeId,
-    });
-    const col = leadProfile.color as THREE.ColorRepresentation;
-    const baseOpacity = Math.min(1, leadProfile.opacity + activeWeightMean * 0.18);
-    return [
-      new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: baseOpacity }),
-      new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: baseOpacity }),
-      new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: baseOpacity }),
-    ];
-  }, [safeActiveEdges, activeWeightMean, modeId]);
-  const scannerInactiveGroups = useMemo(() => {
-    if (!scannerSceneActive) return [] as Array<{
-      role: RelationRole;
-      isHovered: boolean;
-      geometry: THREE.BufferGeometry;
-      material: THREE.LineBasicMaterial;
-    }>;
-    const groups: Array<{
-      role: RelationRole;
-      isHovered: boolean;
-      geometry: THREE.BufferGeometry;
-      material: THREE.LineBasicMaterial;
-    }> = [];
-    groupedEdges.inactive.forEach((edgeList, role) => {
-      const geometry = buildGeometry(edgeList);
-      if (!geometry) return;
-      const isHovered = !!hoveredId && edgeList.some((edge) => edge.from === hoveredId || edge.to === hoveredId);
-      const leadProfile = resolveRelationVisualProfile({
-        kind: edgeList[0]?.kind,
-        polarity: edgeList[0]?.polarity,
-        active: false,
-        mode_id: modeId,
-      });
-      const style = getRelationEmphasisStyle({
-        relationRole: role,
-        severity: relationSeverity,
-        theme,
-        active: false,
-      });
-      const relationReveal =
-        role === "primary_to_affected"
-          ? scannerStoryReveal.edge
-          : role === "affected_to_affected"
-          ? (scannerStoryReveal.edge + scannerStoryReveal.affected) * 0.5
-          : role === "primary_to_context" || role === "affected_to_context" || role === "context_to_context"
-          ? scannerStoryReveal.context
-          : 1;
-      const revealOpacity = 0.42 + relationReveal * 0.58;
-      const memoryBoost = getEdgeMemoryStrength(edgeList);
-      const narrativeRole = getDecisionNarrativeRole(edgeList);
-      const narrativeStyle = getNarrativeEdgeStyle(narrativeRole, narrativeFocusStrength);
-      const simulationEdge = getCombinedSimulationEdge(edgeList);
-      const simulationStyle = simulationEdge
-        ? getSimulationEdgeStyle(simulationEdge.depth, simulationEdge.strength)
-        : getSimulationEdgeStyle(3, 0);
-      const interactionBoost = isHovered ? hoveredInteractionProfile.edgeBoost : 1;
-      const color = new THREE.Color(leadProfile.color || inactiveProfile.color || tokens.design.colors.relationNeutral);
-      color.multiplyScalar(
-        (0.88 + (style.colorMul - 0.88) * revealOpacity) *
-          interactionBoost *
-          (1 + memoryBoost * 0.08) *
-          narrativeStyle.colorMul *
-          simulationStyle.colorMul
-      );
-      groups.push({
-        role,
-        isHovered,
-        geometry,
-        material: new THREE.LineBasicMaterial({
-          color,
-          transparent: true,
-          opacity: Math.min(
-            1,
-            style.opacity *
-              revealOpacity *
-              interactionBoost *
-              (1 + memoryBoost * 0.12) *
-              narrativeStyle.opacityMul *
-              simulationStyle.opacityMul
-          ),
-        }),
-      });
-    });
-    return groups;
-  }, [getCombinedSimulationEdge, getDecisionNarrativeRole, groupedEdges.inactive, hoveredId, hoveredInteractionProfile.edgeBoost, inactiveProfile.color, modeId, narrativeFocusStrength, relationSeverity, scannerSceneActive, scannerStoryReveal.affected, scannerStoryReveal.context, scannerStoryReveal.edge, theme, tokens.design.colors.relationNeutral]);
-  const scannerActiveGroups = useMemo(() => {
-    if (!scannerSceneActive) return [] as Array<{
-      role: RelationRole;
-      isHovered: boolean;
-      geos: THREE.BufferGeometry[];
-      materials: THREE.LineBasicMaterial[];
-    }>;
-    const groups: Array<{
-      role: RelationRole;
-      isHovered: boolean;
-      geos: THREE.BufferGeometry[];
-      materials: THREE.LineBasicMaterial[];
-    }> = [];
-    groupedEdges.active.forEach((edgeList, role) => {
-      const baseGeometry = buildGeometry(edgeList);
-      if (!baseGeometry) return;
-      const isHovered = !!hoveredId && edgeList.some((edge) => edge.from === hoveredId || edge.to === hoveredId);
-      const leadProfile = resolveRelationVisualProfile({
-        kind: edgeList[0]?.kind,
-        polarity: edgeList[0]?.polarity,
-        active: true,
-        mode_id: modeId,
-      });
-      const style = getRelationEmphasisStyle({
-        relationRole: role,
-        severity: relationSeverity,
-        theme,
-        active: true,
-      });
-      const relationReveal =
-        role === "primary_to_affected"
-          ? scannerStoryReveal.edge
-          : role === "affected_to_affected"
-          ? (scannerStoryReveal.edge + scannerStoryReveal.affected) * 0.5
-          : role === "primary_to_context" || role === "affected_to_context" || role === "context_to_context"
-          ? scannerStoryReveal.context
-          : 1;
-      const revealOpacity = role === "primary_to_affected" ? 0.52 + relationReveal * 0.48 : 0.32 + relationReveal * 0.38;
-      const memoryBoost = getEdgeMemoryStrength(edgeList);
-      const narrativeRole = getDecisionNarrativeRole(edgeList);
-      const narrativeStyle = getNarrativeEdgeStyle(narrativeRole, narrativeFocusStrength);
-      const simulationEdge = getCombinedSimulationEdge(edgeList);
-      const simulationStyle = simulationEdge
-        ? getSimulationEdgeStyle(simulationEdge.depth, simulationEdge.strength)
-        : getSimulationEdgeStyle(3, 0);
-      const interactionBoost = isHovered ? hoveredInteractionProfile.edgeBoost : 1;
-      const color = new THREE.Color(leadProfile.color || tokens.design.colors.relationNeutral);
-      color.multiplyScalar(
-        (0.9 + (style.colorMul - 0.9) * revealOpacity) *
-          interactionBoost *
-          (1 + memoryBoost * 0.1) *
-          narrativeStyle.colorMul *
-          simulationStyle.colorMul
-      );
-      const baseOpacity = Math.min(
-        1,
-        style.opacity *
-          revealOpacity *
-          interactionBoost *
-          (1 + memoryBoost * 0.14) *
-          narrativeStyle.opacityMul *
-          simulationStyle.opacityMul
-      );
-      const materials = Array.from({ length: style.lineCopies }, (_, idx) =>
-        new THREE.LineBasicMaterial({
-          color,
-          transparent: true,
-          opacity: idx === 0 ? baseOpacity : Math.max(0.08, baseOpacity * 0.46),
-        })
-      );
-      const geos = materials.map((_, idx) => {
-        const offset = idx === 0 ? 0 : idx % 2 === 1 ? 0.006 * idx : -0.006 * idx;
-        const geo = baseGeometry.clone();
-        const posArr = geo.getAttribute("position") as THREE.BufferAttribute;
-        const arr = posArr.array as Float32Array;
-        for (let i = 0; i < arr.length; i += 3) {
-          arr[i + 1] += offset;
-        }
-        posArr.needsUpdate = true;
-        return geo;
-      });
-      groups.push({ role, isHovered, geos, materials });
-    });
-    return groups;
-  }, [getCombinedSimulationEdge, getDecisionNarrativeRole, groupedEdges.active, hoveredId, hoveredInteractionProfile.edgeBoost, modeId, narrativeFocusStrength, relationSeverity, scannerSceneActive, scannerStoryReveal.affected, scannerStoryReveal.context, scannerStoryReveal.edge, theme, tokens.design.colors.relationNeutral]);
-
-  // Dispose materials on unmount
-  React.useEffect(() => {
-    return () => {
-      try {
-        inactiveMat.dispose();
-      } catch {}
-    };
-  }, [inactiveMat]);
-
-  React.useEffect(() => {
-    return () => {
-      activeMaterials.forEach((m) => {
-        try {
-          m.dispose();
-        } catch {}
-      });
-    };
-  }, [activeMaterials]);
-
-  useFrame((state) => {
-    const t = state.clock.getElapsedTime();
-    const pulse = 0.72 + 0.28 * Math.sin(t * tokens.motion.relationPulseHz * 0.8);
-    const base = 0.26 + activeWeightMean * 0.16;
-    activeMaterials.forEach((m) => {
-      m.opacity = Math.min(1, base + pulse * 0.38);
-    });
-    scannerActiveGroups.forEach(({ role, isHovered, materials }) => {
-      const style = getRelationEmphasisStyle({
-        relationRole: role,
-        severity: relationSeverity,
-        theme,
-        active: true,
-      });
-      const relationReveal =
-        role === "primary_to_affected"
-          ? scannerStoryReveal.edge
-          : role === "affected_to_affected"
-          ? (scannerStoryReveal.edge + scannerStoryReveal.affected) * 0.5
-          : role === "primary_to_context" || role === "affected_to_context" || role === "context_to_context"
-          ? scannerStoryReveal.context
-          : 1;
-      const revealOpacity = role === "primary_to_affected" ? 0.52 + relationReveal * 0.48 : 0.32 + relationReveal * 0.38;
-      const roleEdges = groupedEdges.active.get(role) ?? [];
-      const memoryBoost = materials.length > 0 ? getEdgeMemoryStrength(roleEdges) : 0;
-      const narrativeRole = getDecisionNarrativeRole(roleEdges);
-      const narrativeStyle = getNarrativeEdgeStyle(narrativeRole, narrativeFocusStrength);
-      const simulationEdge = getCombinedSimulationEdge(roleEdges);
-      const simulationStyle = simulationEdge
-        ? getSimulationEdgeStyle(simulationEdge.depth, simulationEdge.strength)
-        : getSimulationEdgeStyle(3, 0);
-      const interactionBoost = isHovered ? hoveredInteractionProfile.edgeBoost : 1;
-      const rolePulse =
-        role === "primary_to_affected"
-          ? 0.08
-          : role === "primary_to_context"
-          ? 0.04
-          : role === "affected_to_affected"
-          ? 0.025
-          : 0.012;
-      materials.forEach((m, idx) => {
-        const baseOpacity =
-          style.opacity *
-          revealOpacity *
-          interactionBoost *
-          (1 + memoryBoost * 0.14) *
-          narrativeStyle.opacityMul *
-          simulationStyle.opacityMul;
-        const layeredOpacity = idx === 0 ? baseOpacity : Math.max(0.08, baseOpacity * 0.46);
-        m.opacity = Math.min(
-          1,
-          layeredOpacity +
-            pulse * (rolePulse + narrativeStyle.pulseBoost + simulationStyle.pulseBoost) * relationReveal
-        );
-      });
-    });
-  });
-
-  // Memoize active loop offset geometries and clean up
-  const activeGeos = React.useMemo(() => {
-    if (!activeGeo) return [] as THREE.BufferGeometry[];
-    return activeMaterials.map((_, idx) => {
-      const offset = idx === 0 ? 0 : idx === 1 ? 0.007 : -0.007;
-      const geo = activeGeo.clone();
-      const posArr = geo.getAttribute("position") as THREE.BufferAttribute;
-      const arr = posArr.array as Float32Array;
-      for (let i = 0; i < arr.length; i += 3) {
-        arr[i + 1] += offset;
-      }
-      posArr.needsUpdate = true;
-      return geo;
-    });
-  }, [activeGeo, activeMaterials]);
-
-  React.useEffect(() => {
-    return () => {
-      activeGeos.forEach((g) => {
-        try {
-          g.dispose();
-        } catch {}
-      });
-    };
-  }, [activeGeos]);
-  React.useEffect(() => {
-    return () => {
-      scannerInactiveGroups.forEach(({ geometry, material }) => {
-        try {
-          geometry.dispose();
-        } catch {}
-        try {
-          material.dispose();
-        } catch {}
-      });
-    };
-  }, [scannerInactiveGroups]);
-  React.useEffect(() => {
-    return () => {
-      scannerActiveGroups.forEach(({ geos, materials }) => {
-        geos.forEach((geometry) => {
-          try {
-            geometry.dispose();
-          } catch {}
-        });
-        materials.forEach((material) => {
-          try {
-            material.dispose();
-          } catch {}
-        });
-      });
-    };
-  }, [scannerActiveGroups]);
-
-  const hasAny = safeInactiveEdges.length > 0 || safeActiveEdges.length > 0;
-  if (!showLoops || !hasAny) return null;
-
-  return (
-    <group name="loop-lines" userData={{ showLoopLabels }}>
-      {scannerSceneActive
-        ? scannerInactiveGroups.map(({ role, geometry, material }) => (
-            <lineSegments key={`inactive-${role}`} geometry={geometry} material={material} />
-          ))
-        : inactiveGeo && <lineSegments geometry={inactiveGeo} material={inactiveMat} />}
-      {scannerSceneActive
-        ? scannerActiveGroups.flatMap(({ role, geos, materials }) =>
-            geos.map((geometry, idx) => {
-              const material = materials[idx];
-              return material ? (
-                <lineSegments key={`active-${role}-${idx}`} geometry={geometry} material={material} />
-              ) : null;
-            })
-          )
-        : activeGeos.length > 0 &&
-          activeGeos.map((geo, idx) => {
-            const mat = activeMaterials[idx];
-            return mat ? <lineSegments key={idx} geometry={geo} material={mat} /> : null;
-          })}
-    </group>
-  );
-}
-
-// --------------------
 // Lights
 // --------------------
 function JsonLights({ sceneJson, shadowsEnabled }: { sceneJson: SceneJson; shadowsEnabled: boolean }) {
@@ -1786,1225 +1156,23 @@ function JsonLights({ sceneJson, shadowsEnabled }: { sceneJson: SceneJson; shado
 }
 
 // --------------------
-// Scene object renderer
-// --------------------
-function AnimatableObject({
-  obj,
-  anim,
-  index,
-  shadowsEnabled = false,
-  focusMode,
-  focusedId,
-  hasValidFocusedTarget = false,
-  theme = "night",
-  getUxForObject,
-  objectUxById,
-  globalScale = 1,
-  modeId,
-  scannerSceneActive = false,
-  scannerFragilityScore = 0,
-  scannerPrimaryTargetId = null,
-  resolvedPrimaryRenderId = null,
-  labelOwnerId = null,
-  decisionCenter = [0, 0, 0],
-  scannerPrimaryRole = "neutral",
-  scannerPrimaryLabelTitle = null,
-  scannerPrimaryLabelBody = null,
-  scannerTargetIds = [],
-  affectedTargetIds = [],
-  contextTargetIds = [],
-  riskSourceIds = [],
-  riskTargetIds = [],
-  scannerStoryReveal = { primary: 1, edge: 1, affected: 1, context: 1 },
-  hoveredId = null,
-  hoveredInteractionRole = "neutral",
-  setHoveredId,
-  neighborIds = [],
-  attentionMemoryStrength = 0,
-  narrativeFocusStrength = 0,
-  narrativeFocusRole = "outside",
-  simulationStrength = 0,
-  isSimulationSource = false,
-  decisionPathStrength = 0,
-  decisionPathRole = "outside",
-  decisionPathVisualHints,
-  isDecisionPathSource = false,
-}: {
-  obj: SceneObject;
-  anim?: { type: "pulse" | "wobble" | "spin"; intensity: number };
-  index: number;
-  shadowsEnabled?: boolean;
-  focusMode?: "all" | "selected" | "pinned";
-  focusedId?: string | null;
-  hasValidFocusedTarget?: boolean;
-  theme?: "day" | "night" | "stars";
-  getUxForObject?: (id: string) => {
-    shape?: string;
-    base_color?: string;
-    opacity?: number;
-    scale?: number;
-  } | null;
-  objectUxById?: Record<string, { opacity?: number; scale?: number }>;
-  globalScale?: number;
-  modeId?: string;
-  scannerSceneActive?: boolean;
-  scannerFragilityScore?: number;
-  scannerPrimaryTargetId?: string | null;
-  resolvedPrimaryRenderId?: string | null;
-  labelOwnerId?: string | null;
-  decisionCenter?: [number, number, number];
-  scannerPrimaryRole?: "primary_cause" | "affected" | "related_context" | "neutral";
-  scannerPrimaryLabelTitle?: string | null;
-  scannerPrimaryLabelBody?: string | null;
-  scannerTargetIds?: string[];
-  affectedTargetIds?: string[];
-  contextTargetIds?: string[];
-  riskSourceIds?: string[];
-  riskTargetIds?: string[];
-  scannerStoryReveal?: ScannerStoryReveal;
-  hoveredId?: string | null;
-  hoveredInteractionRole?: InteractionRole;
-  setHoveredId?: React.Dispatch<React.SetStateAction<string | null>>;
-  neighborIds?: string[];
-  attentionMemoryStrength?: number;
-  narrativeFocusStrength?: number;
-  narrativeFocusRole?: NarrativeNodeRole;
-  simulationStrength?: number;
-  isSimulationSource?: boolean;
-  decisionPathStrength?: number;
-  decisionPathRole?: DecisionPathNarrativeNodeRole;
-  decisionPathVisualHints?: DecisionPathNodeVisualHints;
-  isDecisionPathSource?: boolean;
-}) {
-  const ref = useRef<THREE.Object3D>(null);
-  const sv = useStateVector();
-  const setSelectedId = useSetSelectedId();
-  const tags = obj.tags ?? [];
-  const stableId = obj.id ?? `${obj.type ?? "obj"}:${index}`;
-  const objectLabelName = buildProfessionalObjectLabelName(obj, index, modeId);
-  const stableIdWithName = (obj as any).id ?? (obj as any).name ?? `${obj.type ?? "obj"}:${index}`;
-  const overrides = useOverrides();
-  const [hovered, setHovered] = useState(false);
-  useCursor(hovered);
-  const visualContext = useMemo<VisualLanguageContext>(
-    () => ({
-      theme: theme ?? "night",
-      mode_id: modeId,
-    }),
-    [theme, modeId]
-  );
-  const tokens = useMemo(() => getThemeTokens(theme ?? "night", modeId), [theme, modeId]);
-  const visualRole = useMemo<ObjectVisualRole>(
-    () => deriveObjectVisualRole(obj, tags, visualContext),
-    [obj, tags, visualContext]
-  );
-  const visualProfile = useMemo(
-    () => buildObjectVisualProfile(obj, tags, visualContext),
-    [obj, tags, visualContext]
-  );
-  const vStyle = useMemo(
-    () => roleToHierarchyStyle(visualRole, visualContext),
-    [visualRole, visualContext]
-  );
-
-  type MaterialLike = {
-    color?: string;
-    opacity?: number;
-    emissive?: string;
-    emissiveIntensity?: number;
-    size?: number;
-  };
-
-  const material = useMemo<MaterialLike>(() => {
-    const m = (obj as any)?.material;
-    if (m && typeof m === "object") return m as MaterialLike;
-    return { color: "#cccccc", opacity: 0.9 };
-  }, [(obj as any)?.material]);
-  const isFocusActive =
-    hasValidFocusedTarget &&
-    focusMode !== "all" &&
-    typeof focusedId === "string" &&
-    focusedId.length > 0;
-  const isFocused = isFocusActive && (focusedId === stableIdWithName || focusedId === stableId);
-  const dimOthers = isFocusActive && !isFocused;
-  const isDimmed = dimOthers;
-  const defaultPos: [number, number, number] = [index * 1.8 - 1.8, 0, 0];
-  const transformPos = toPosTuple((obj.transform as any)?.pos ?? (obj as any).position, defaultPos);
-
-  // Scene JSON may provide `transform` as an untyped object; normalize defensively.
-  const rawTransform = (obj as any).transform ?? {};
-  const rawScale = rawTransform?.scale;
-  const rawPos = rawTransform?.pos;
-
-  const transform = {
-    pos: toPosTuple(rawPos, transformPos),
-    scale: (Array.isArray(rawScale) && rawScale.length >= 3 ? rawScale : [1, 1, 1]) as [number, number, number],
-    rot: rawTransform?.rot,
-  };
-
-  const baseScale = useMemo(() => transform.scale, [transform.scale]);
-  const safeType = obj.type ?? "box";
-  // compute uniform override scale (prefer id or name when available)
-  const overrideEntry = overrides[stableIdWithName] ?? overrides[stableId] ?? {};
-  const ux = getUxForObject?.(stableIdWithName) ?? getUxForObject?.(stableId) ?? null;
-  const uxOverrides = objectUxById?.[stableIdWithName] ?? objectUxById?.[stableId] ?? {};
-  const overrideScale = overrideEntry.scale;
-  const originalUniform =
-    Array.isArray(transform.scale) && transform.scale.length > 0 ? Number(transform.scale[0]) || 1 : 1;
-  const uxScale = typeof uxOverrides.scale === "number" ? clamp(uxOverrides.scale, 0.5, 2.0) : 1;
-  const finalUniform = clamp(originalUniform * (overrideScale ?? 1) * uxScale * (globalScale ?? 1), 0.15, 2.0);
-  const ambientPhase = useMemo(() => hashIdToUnit(String(stableIdWithName)) * Math.PI * 2, [stableIdWithName]);
-  const focusScaleMul = isFocused ? 1.03 : dimOthers ? 0.97 : 1.0;
-  const shape = resolveGeometryKindForObject({
-    obj,
-    explicitShape: (obj as any).shape ?? ux?.shape,
-    fallbackType: safeType,
-    profile: visualProfile,
-  });
-
-  // compute other override-able props
-  const finalPosition = overrideEntry.position ?? transformPos ?? [0, 0, 0];
-  const finalRotation = overrideEntry.rotation ?? (transform as any).rot ?? [0, 0, 0]; // radians
-  const finalColorOverride = overrideEntry.color;
-  const finalVisible = overrideEntry.visible ?? true;
-  const selectedIdCtx = useSelectedId();
-  const isSelected = selectedIdCtx === stableIdWithName || selectedIdCtx === stableId;
-  const scannerTargetIdSet = useMemo(
-    () => new Set((Array.isArray(scannerTargetIds) ? scannerTargetIds : []).map((id) => String(id))),
-    [scannerTargetIds]
-  );
-  const scannerDimRequested = scannerSceneActive && scannerTargetIdSet.size > 0;
-  const scannerReason = compactScannerReason(obj.scanner_reason);
-  const isLowFragilityScan = scannerSceneActive && scannerFragilityScore <= 0.1;
-  const isPinned = focusMode === "pinned" && isFocused;
-  const scannerCausality = useMemo(
-    () =>
-      resolveScannerCausalityRole({
-        scannerSceneActive,
-        scannerPrimaryTargetId,
-        scannerTargetIds: Array.from(scannerTargetIdSet),
-        affectedTargetIds,
-        contextTargetIds,
-        riskSourceIds,
-        riskTargetIds,
-        currentObjectIds: [stableIdWithName, stableId],
-      }),
-    [
-      riskSourceIds,
-      riskTargetIds,
-      affectedTargetIds,
-      contextTargetIds,
-      scannerPrimaryTargetId,
-      scannerSceneActive,
-      scannerTargetIdSet,
-      stableId,
-      stableIdWithName,
-    ]
-  );
-
-  const isScannerTarget =
-    scannerSceneActive &&
-    (scannerTargetIdSet.has(stableIdWithName) || scannerTargetIdSet.has(stableId));
-  const isScannerPrimaryTarget =
-    scannerSceneActive &&
-    !!resolvedPrimaryRenderId &&
-    (resolvedPrimaryRenderId === stableIdWithName ||
-      resolvedPrimaryRenderId === stableId);
-  const isScannerLabelOwner =
-    scannerSceneActive &&
-    !!labelOwnerId &&
-    (labelOwnerId === stableIdWithName || labelOwnerId === stableId);
-  const scannerPolicy = useMemo(
-    () =>
-      resolveScannerVisualPriority({
-        scannerSceneActive,
-        causalRole: scannerCausality.role,
-        isFocused,
-        isSelected,
-        isPinned,
-        dimUnrelatedObjects: scannerDimRequested,
-        scannerFragilityScore,
-        scannerHighlighted: isScannerTarget,
-        scannerFocused: isScannerPrimaryTarget,
-      }),
-    [
-      isFocused,
-      isPinned,
-      isSelected,
-      scannerCausality.role,
-      scannerDimRequested,
-      scannerFragilityScore,
-      scannerSceneActive,
-      isScannerPrimaryTarget,
-      isScannerTarget,
-    ]
-  );
-  const scannerHighlighted = scannerPolicy.isHighlighted || isScannerTarget;
-  const scannerFocused = scannerPolicy.rank === "primary" || isScannerPrimaryTarget;
-  const baseVisualState = buildSceneObjectVisualState({
-    isHighlighted: scannerHighlighted,
-    isFocused,
-    isSelected,
-    isPinned,
-    dimUnrelatedObjects: scannerDimRequested,
-    scannerSceneActive,
-    isLowFragilityScan,
-  });
-  const visualState = scannerSceneActive
-    ? {
-        ...baseVisualState,
-        isHighlighted: scannerPolicy.isHighlighted,
-        isProtectedFromDim: scannerPolicy.isProtectedFromDim,
-        shouldDimAsUnrelated: scannerPolicy.shouldDimAsUnrelated,
-      }
-    : baseVisualState;
-  const genericFocusDimmed = isDimmed && !visualState.isProtectedFromDim;
-  const scannerBackgroundDimmed = visualState.shouldDimAsUnrelated;
-  const showCalmScannerConfirmation =
-    isLowFragilityScan &&
-    isScannerPrimaryTarget;
-  const scannerEmphasis = clamp01(
-    typeof obj.scanner_emphasis === "number"
-      ? obj.scanner_emphasis
-      : 0
-  );
-  const scannerColor = severityToScannerColor(obj.scanner_severity, theme ?? "night");
-  const scannerLabelSeverity = normalizeScannerLabelSeverity(obj.scanner_severity, scannerFragilityScore);
-  const scannerHierarchyRole =
-    isScannerPrimaryTarget || isScannerLabelOwner
-      ? "primary"
-      : scannerCausality.role === "affected"
-      ? "affected"
-      : scannerCausality.role === "related_context"
-      ? "context"
-      : "neutral";
-  const scannerLabelTone = getScannerLabelVisualTone(
-    scannerLabelSeverity,
-    scannerHierarchyRole,
-    theme ?? "night",
-    scannerColor
-  );
-  const interactionRole = resolveInteractionRole({
-    isScannerPrimary: isScannerPrimaryTarget,
-    causalityRole: scannerCausality.role,
-  });
-  const interactionProfile = getInteractionProfile(interactionRole);
-  const hoveredInteractionProfile = getInteractionProfile(hoveredInteractionRole);
-  const isHovered = hoveredId === stableIdWithName || hoveredId === stableId;
-  const isNeighbor =
-    !!hoveredId &&
-    hoveredId !== stableId &&
-    hoveredId !== stableIdWithName &&
-    neighborIds.includes(hoveredId);
-  const shouldSoftDim = !!hoveredId && !isHovered && !isNeighbor && scannerSceneActive;
-  const neighborDimFactor = shouldSoftDim ? 1 - hoveredInteractionProfile.neighborDim : 1;
-  const passiveAttentionMemoryStrength = !isHovered && !isSelected ? attentionMemoryStrength : 0;
-  const decisionPathNarrativeRole =
-    decisionPathRole !== "outside" ? decisionPathRole : narrativeFocusRole;
-  const decisionNarrativeStrength = Math.max(
-    narrativeFocusStrength,
-    decisionPathStrength *
-      (decisionPathVisualHints?.isCriticalPath ? 1 : decisionPathVisualHints?.isLeveragePoint ? 0.94 : 0.82)
-  );
-  const decisionSimulationStrength = Math.max(
-    simulationStrength,
-    decisionPathStrength *
-      (decisionPathVisualHints?.isProtected
-        ? 0.36
-        : decisionPathVisualHints?.isBottleneck
-        ? 0.92
-        : decisionPathVisualHints?.isLeveragePoint
-        ? 0.88
-        : 0.74)
-  );
-  const narrativeNodeStyle = getNarrativeNodeStyle(decisionPathNarrativeRole, decisionNarrativeStrength);
-  const simulationNodeStyle = getSimulationNodeStyle(
-    decisionSimulationStrength,
-    isSimulationSource || isDecisionPathSource
-  );
-  const roleMotionProfile =
-    scannerHierarchyRole === "primary"
-      ? {
-          pulseBoost: 1.16,
-          driftMul: 0.74,
-          scaleAuthority: 1.05,
-          wobbleMul: 0.72,
-        }
-      : scannerHierarchyRole === "affected"
-      ? {
-          pulseBoost: 1.04,
-          driftMul: 0.92,
-          scaleAuthority: 1.02,
-          wobbleMul: 0.94,
-        }
-      : scannerHierarchyRole === "context"
-      ? {
-          pulseBoost: 0.92,
-          driftMul: 0.8,
-          scaleAuthority: 0.98,
-          wobbleMul: 0.78,
-        }
-      : {
-          pulseBoost: 0.86,
-          driftMul: 0.72,
-          scaleAuthority: 0.96,
-          wobbleMul: 0.68,
-        };
-  const roleLayoutProfile = getRoleDynamicLayoutProfile(scannerHierarchyRole);
-  const nodeStoryReveal =
-    scannerHierarchyRole === "primary"
-      ? scannerStoryReveal.primary
-      : scannerHierarchyRole === "affected"
-      ? scannerStoryReveal.affected
-      : scannerHierarchyRole === "context"
-      ? scannerStoryReveal.context
-      : 1;
-  const nodeStoryEmphasis = scannerSceneActive ? 0.72 + nodeStoryReveal * 0.28 : 1;
-  const roleSpatialOffset = useMemo<[number, number, number]>(() => {
-    const baseX = Number(finalPosition?.[0] ?? 0);
-    const baseY = Number(finalPosition?.[1] ?? 0);
-    const baseZ = Number(finalPosition?.[2] ?? 0);
-    const centerX = Number(decisionCenter?.[0] ?? 0);
-    const centerZ = Number(decisionCenter?.[2] ?? 0);
-    const toCenterX = centerX - baseX;
-    const toCenterZ = centerZ - baseZ;
-    const planarDistance = Math.hypot(toCenterX, toCenterZ);
-    const dirX = planarDistance > 1e-4 ? toCenterX / planarDistance : Math.cos(ambientPhase);
-    const dirZ = planarDistance > 1e-4 ? toCenterZ / planarDistance : Math.sin(ambientPhase);
-    const netPull = roleLayoutProfile.attraction - roleLayoutProfile.repulsion;
-    const orbitX = -dirZ * Math.cos(ambientPhase * 0.9) * roleLayoutProfile.orbitStrength;
-    const orbitZ = dirX * Math.sin(ambientPhase * 0.75) * roleLayoutProfile.orbitStrength;
-    return [
-      toCenterX * netPull + orbitX,
-      roleLayoutProfile.yLift,
-      toCenterZ * netPull + roleLayoutProfile.zBias + orbitZ,
-    ];
-  }, [ambientPhase, decisionCenter, finalPosition, roleLayoutProfile]);
-  const scannerHaloVisible =
-    ((scannerPolicy.shouldUseScannerHalo && scannerHierarchyRole === "primary") || showCalmScannerConfirmation) &&
-    obj.type !== "line_path" &&
-    obj.type !== "points_cloud";
-  const hasLabelContent =
-    !!(isScannerPrimaryTarget ? scannerPrimaryLabelTitle : null) ||
-    !!(isScannerPrimaryTarget ? scannerPrimaryLabelBody : null) ||
-    !!scannerReason ||
-    !!scannerPolicy.labelTitle ||
-    isScannerLabelOwner;
-  const shouldShowPrimaryLabel =
-    scannerSceneActive &&
-    isScannerLabelOwner &&
-    hasLabelContent;
-  const showScannerLabel = shouldShowPrimaryLabel;
-
-  // Geometry and material preparation
-  const color = useMemo(() => {
-    const materialColor = material.color ?? ux?.base_color ?? "#cccccc";
-    if (materialColor !== "auto") return materialColor;
-    return computeAutoColor(tags, sv);
-  }, [material.color, tags, sv, ux?.base_color]);
-
-  const appliedColor = useMemo(() => {
-    const base = finalColorOverride ?? color;
-    const c = new THREE.Color(base);
-    if (visualRole === "risk") {
-      c.lerp(new THREE.Color(tokens.design.colors.pressure), 0.16);
-    } else if (visualRole === "core") {
-      c.multiplyScalar(theme === "day" ? 1.05 : 1.08);
-    } else if (visualRole === "background") {
-      c.multiplyScalar(theme === "day" ? 0.82 : 0.72);
-    } else if (visualRole === "strategic") {
-      c.lerp(new THREE.Color(tokens.design.colors.strategic), 0.1);
-    }
-    if (
-      scannerPolicy.colorMode === "scanner_primary" ||
-      scannerPolicy.colorMode === "scanner_affected" ||
-      scannerPolicy.colorMode === "scanner_related"
-    ) {
-      const scannerColor = severityToScannerColor(obj.scanner_severity, theme ?? "night");
-      const blend =
-        scannerPolicy.colorMode === "scanner_primary"
-          ? 0.52
-          : scannerPolicy.colorMode === "scanner_affected"
-          ? 0.28
-          : scannerPolicy.colorMode === "scanner_related"
-          ? 0.18
-          : isLowFragilityScan
-          ? 0.08
-          : 0.26;
-      const brightMul =
-        scannerPolicy.colorMode === "scanner_primary"
-          ? 1.18
-          : scannerPolicy.colorMode === "scanner_affected"
-          ? 1.06
-          : scannerPolicy.colorMode === "scanner_related"
-          ? 1.03
-          : isLowFragilityScan
-          ? 1.02
-          : 1.05;
-      c.lerp(new THREE.Color(scannerColor), blend);
-      c.multiplyScalar(brightMul);
-    }
-    if (!genericFocusDimmed && !scannerBackgroundDimmed) return `#${c.getHexString()}`;
-    if (scannerPolicy.colorMode === "shadowed") {
-      c.lerp(new THREE.Color(theme === "day" ? "#6b7280" : "#64748b"), theme === "day" ? 0.58 : 0.52);
-    }
-    const mul = scannerBackgroundDimmed
-      ? theme === "day"
-        ? 0.8
-        : 0.66
-      : theme === "day"
-      ? 0.35
-      : 0.55;
-    c.multiplyScalar(mul);
-    return `#${c.getHexString()}`;
-  }, [color, finalColorOverride, genericFocusDimmed, isLowFragilityScan, obj.scanner_severity, scannerBackgroundDimmed, scannerPolicy.colorMode, theme, visualRole, tokens.design.colors.pressure, tokens.design.colors.strategic]);
-
-  const handleSelect = (e: any) => {
-    setHovered(false);
-    setHoveredId?.(null);
-    e.stopPropagation();
-    e.nativeEvent?.stopImmediatePropagation?.();
-    setSelectedId(stableIdWithName);
-  };
-
-  const stopPointerOnly = (e: any) => {
-    e.stopPropagation();
-    e.nativeEvent?.stopImmediatePropagation?.();
-  };
-
-  const materialProps = useMemo(
-    () => ({
-      color: appliedColor,
-      transparent: true,
-      opacity: (() => {
-        const uxOpacity = typeof uxOverrides.opacity === "number" ? clamp(uxOverrides.opacity, 0.1, 1) : 1;
-        const baseOpacity = material.opacity ?? 0.9;
-        const adjusted = baseOpacity * uxOpacity * vStyle.opacityMul;
-        if (scannerBackgroundDimmed) {
-          const softShadowFloor = theme === "day" ? 0.58 : 0.5;
-          return Math.max(Math.min(adjusted, softShadowFloor), theme === "day" ? 0.5 : 0.4);
-        }
-        if (!isFocusActive || !genericFocusDimmed) return adjusted;
-        return theme === "day" ? Math.min(adjusted, 0.28) : Math.min(adjusted, 0.18);
-      })(),
-      emissive: material.emissive,
-      emissiveIntensity: material.emissiveIntensity,
-    }),
-    [
-      appliedColor,
-      genericFocusDimmed,
-      isFocusActive,
-      material.emissive,
-      material.emissiveIntensity,
-      material.opacity,
-      scannerBackgroundDimmed,
-      theme,
-      uxOverrides.opacity,
-      vStyle.opacityMul,
-    ]
-  );
-
-  const baseOpacity = materialProps.opacity ?? 0.9;
-  const focusedOpacity = typeof uxOverrides.opacity === "number" ? clamp(uxOverrides.opacity, 0.1, 1) : 1.0;
-  const hoveredOpacity = isHovered && !isFocused && !isSelected
-    ? Math.min(1, baseOpacity + tokens.interaction.hoverOpacityBoost + interactionProfile.opacityBoost)
-    : baseOpacity;
-  const scannerOpacity = showCalmScannerConfirmation
-    ? Math.max(baseOpacity, 0.96)
-    : scannerPolicy.opacityMode === "dominant"
-    ? 1
-    : scannerBackgroundDimmed
-    ? Math.max(baseOpacity, theme === "day" ? 0.48 : 0.4)
-    : hoveredOpacity;
-  const finalOpacity = scannerPolicy.rank === "primary"
-    ? Math.max(scannerOpacity, 0.98)
-    : scannerPolicy.rank === "secondary"
-    ? Math.max(baseOpacity * Math.min(scannerPolicy.opacityMultiplier, 0.88), theme === "day" ? 0.56 : 0.5)
-    : visualState.isHighlighted
-    ? Math.max(scannerOpacity, 0.72)
-    : visualState.isFocused || visualState.isSelected || visualState.isPinned
-    ? Math.max(focusedOpacity, 0.92)
-    : scannerBackgroundDimmed
-    ? baseOpacity
-    : genericFocusDimmed
-    ? baseOpacity
-    : scannerOpacity;
-  const storyAdjustedOpacity =
-    scannerSceneActive && scannerHierarchyRole !== "neutral"
-      ? Math.min(1, finalOpacity * (0.9 + nodeStoryReveal * 0.1))
-      : finalOpacity;
-  const interactionAdjustedOpacity = clamp(storyAdjustedOpacity * neighborDimFactor, 0.08, 1);
-  const narrativeAdjustedOpacity = clamp(
-    interactionAdjustedOpacity * narrativeNodeStyle.opacityMul + narrativeNodeStyle.opacityBoost,
-    0.08,
-    1
-  );
-  const simulationAdjustedOpacity = clamp(
-    narrativeAdjustedOpacity + simulationNodeStyle.opacityBoost,
-    0.08,
-    1
-  );
-  const memoryAdjustedOpacity = clamp(
-    simulationAdjustedOpacity + passiveAttentionMemoryStrength * 0.05,
-    0.08,
-    1
-  );
-  const baseEmissiveIntensity = materialProps.emissiveIntensity ?? 0;
-  const focusEmissiveBoost = isFocused
-    ? Math.max(0.85, baseEmissiveIntensity + tokens.interaction.focusGlow)
-    : Math.max(0, baseEmissiveIntensity + vStyle.emissiveBoost);
-  const scannerGlowBoost = scannerPolicy.rank === "primary"
-    ? scannerPolicy.emissiveBoost + scannerEmphasis * 2
-    : scannerPolicy.rank === "secondary"
-    ? scannerPolicy.emissiveBoost + scannerEmphasis * 0.8
-    : scannerHighlighted
-    ? Math.max(0.12, scannerEmphasis * 0.18)
-    : 0;
-  const scannerRoleTitle =
-    (isScannerPrimaryTarget ? scannerPrimaryLabelTitle : null) ??
-    scannerPolicy.labelTitle ??
-    (isScannerLabelOwner
-      ? "Primary Risk Node"
-      : scannerCausality.role === "affected"
-      ? "Affected Node"
-      : scannerCausality.role === "related_context"
-      ? "Related Context"
-      : scannerFocused
-      ? "Scanner Focus"
-      : "Fragility Signal");
-  const scannerRoleBody =
-    (isScannerPrimaryTarget ? scannerPrimaryLabelBody : null) ??
-    (scannerCausality.role === "affected"
-      ? "Downstream impact"
-      : scannerCausality.role === "related_context"
-      ? "Related context"
-      : null) ??
-    scannerReason ??
-    (isScannerLabelOwner ? "Primary decision focus" : null);
-  const intelligentScannerLabel = buildIntelligentScannerLabel({
-    objectLabelName,
-    scannerRoleTitle,
-    scannerRoleBody,
-    scannerCausalityRole: scannerCausality.role,
-    scannerFragilityScore,
-    scannerSeverity: obj.scanner_severity,
-    isScannerPrimaryTarget: isScannerLabelOwner,
-    affectedCount: affectedTargetIds.length,
-    contextCount: contextTargetIds.length,
-    activeDomainId: modeId,
-  });
-  const scannerLabelTitle = intelligentScannerLabel.title;
-  const effectiveScannerReason = intelligentScannerLabel.body;
-  const finalEmissiveIntensity = scannerPolicy.emissiveMode === "quiet"
-    ? 0
-    : visualState.isProtectedFromDim
-    ? Math.max(focusEmissiveBoost, scannerGlowBoost)
-    : scannerBackgroundDimmed
-    ? 0
-    : genericFocusDimmed
-    ? 0
-    : Math.max(focusEmissiveBoost, scannerGlowBoost);
-  const selectedBoost = isSelected ? Math.max(tokens.interaction.selectionGlow, baseEmissiveIntensity) : baseEmissiveIntensity;
-  const hoveredBoost =
-    hovered && !isSelected && !isFocused
-      ? Math.max(baseEmissiveIntensity + tokens.interaction.hoverIntensity, baseEmissiveIntensity)
-      : baseEmissiveIntensity;
-  const effectiveEmissiveIntensity = visualState.isProtectedFromDim
-    ? scannerPolicy.rank === "primary"
-      ? Math.max(finalEmissiveIntensity, selectedBoost, hoveredBoost)
-      : Math.max(finalEmissiveIntensity, selectedBoost * 0.55, hoveredBoost * 0.55)
-    : scannerBackgroundDimmed
-    ? 0
-    : Math.max(finalEmissiveIntensity, selectedBoost, hoveredBoost);
-  const storyAdjustedEmissiveIntensity =
-    scannerSceneActive && scannerHierarchyRole !== "neutral"
-      ? effectiveEmissiveIntensity * (0.74 + nodeStoryReveal * 0.26)
-      : effectiveEmissiveIntensity;
-  const interactionAdjustedEmissiveIntensity = Math.max(
-    0,
-    (isHovered ? storyAdjustedEmissiveIntensity + interactionProfile.emissiveBoost : storyAdjustedEmissiveIntensity) *
-      neighborDimFactor
-  );
-  const narrativeAdjustedEmissiveIntensity =
-    interactionAdjustedEmissiveIntensity + narrativeNodeStyle.emissiveBoost;
-  const simulationAdjustedEmissiveIntensity =
-    narrativeAdjustedEmissiveIntensity + simulationNodeStyle.emissiveBoost;
-  const memoryAdjustedEmissiveIntensity = simulationAdjustedEmissiveIntensity + passiveAttentionMemoryStrength * 0.12;
-
-  useEffect(() => {
-    traceScannerCausalityRole(stableIdWithName, {
-      scannerSceneActive,
-      scannerPrimaryTargetId,
-      scannerTargetIds: Array.from(scannerTargetIdSet),
-      affectedTargetIds,
-      contextTargetIds,
-      riskSourceIds,
-      riskTargetIds,
-      currentObjectIds: [stableIdWithName, stableId],
-    }, scannerCausality);
-  }, [
-    riskSourceIds,
-    riskTargetIds,
-    affectedTargetIds,
-    contextTargetIds,
-    scannerCausality,
-    scannerPrimaryTargetId,
-    scannerSceneActive,
-    scannerTargetIdSet,
-    stableId,
-    stableIdWithName,
-  ]);
-
-  useEffect(() => {
-    traceScannerVisualPriorityPolicy(stableIdWithName, {
-      scannerSceneActive,
-      causalRole: scannerCausality.role,
-      isFocused,
-      isSelected,
-      isPinned,
-      dimUnrelatedObjects: scannerDimRequested,
-      scannerFragilityScore,
-      scannerHighlighted,
-      scannerFocused,
-    }, scannerPolicy);
-  }, [
-    isFocused,
-    isPinned,
-    isSelected,
-    scannerCausality.role,
-    scannerDimRequested,
-    scannerFocused,
-    scannerFragilityScore,
-    scannerPolicy,
-    scannerSceneActive,
-    stableIdWithName,
-  ]);
-
-  useEffect(() => {
-    if (
-      !visualState.isHighlighted &&
-      !visualState.isFocused &&
-      !visualState.isSelected &&
-      !visualState.isPinned &&
-      !scannerBackgroundDimmed
-    ) {
-      return;
-    }
-
-    traceHighlightFlow("scene_object_state", {
-      objectId: stableIdWithName,
-      isHighlighted: visualState.isHighlighted,
-      isFocused: visualState.isFocused,
-      isSelected: visualState.isSelected,
-      isPinned: visualState.isPinned,
-      causalRole: scannerCausality.role,
-      scannerRank: scannerPolicy.rank,
-      isProtectedFromDim: visualState.isProtectedFromDim,
-      dimUnrelatedObjects: scannerDimRequested,
-      scannerBackgroundDimmed,
-      finalOpacity,
-      finalEmissiveIntensity: effectiveEmissiveIntensity,
-    });
-  }, [
-    effectiveEmissiveIntensity,
-    finalOpacity,
-    scannerBackgroundDimmed,
-    scannerDimRequested,
-    scannerCausality.role,
-    stableIdWithName,
-    scannerPolicy.rank,
-    visualState,
-  ]);
-
-  const pointsData = ((obj as any).data?.points ?? null) as number[][] | null;
-  const pointsCount = Array.isArray(pointsData) ? pointsData.length : 0;
-  const pointsFirstLast = useMemo(() => {
-    if (!Array.isArray(pointsData) || pointsData.length === 0) return "";
-    const first = pointsData[0] ?? [];
-    const last = pointsData[pointsData.length - 1] ?? [];
-    return `${first[0] ?? 0},${first[1] ?? 0},${first[2] ?? 0}:${last[0] ?? 0},${last[1] ?? 0},${last[2] ?? 0}`;
-  }, [pointsCount, pointsData]);
-
-  const pathData = ((obj as any).data?.path ?? null) as number[][] | null;
-  const pathCount = Array.isArray(pathData) ? pathData.length : 0;
-  const pathFirstLast = useMemo(() => {
-    if (!Array.isArray(pathData) || pathData.length === 0) return "";
-    const first = pathData[0] ?? [];
-    const last = pathData[pathData.length - 1] ?? [];
-    return `${first[0] ?? 0},${first[1] ?? 0},${first[2] ?? 0}:${last[0] ?? 0},${last[1] ?? 0},${last[2] ?? 0}`;
-  }, [pathCount, pathData]);
-
-  const pointsGeometry = useMemo(() => {
-    if (obj.type !== "points_cloud") return null;
-    const pts = (pointsData ?? []) as number[][];
-    const flat: number[] = [];
-    for (const p of pts) {
-      flat.push(p?.[0] ?? 0, p?.[1] ?? 0, p?.[2] ?? 0);
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(flat, 3));
-    return g;
-  }, [obj.id, obj.type, pointsCount, pointsFirstLast]);
-
-  const lineGeometry = useMemo(() => {
-    if (obj.type !== "line_path") return null;
-    const pts = (pathData ?? []) as number[][];
-    const flat: number[] = [];
-    for (const p of pts) {
-      flat.push(p?.[0] ?? 0, p?.[1] ?? 0, p?.[2] ?? 0);
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(flat, 3));
-    return g;
-  }, [obj.id, obj.type, pathCount, pathFirstLast]);
-
-  // --- Tube geometry for line_path invisible collider
-  const tubeGeometry = useMemo(() => {
-    if (obj.type !== "line_path") return null;
-    const pts = (pathData ?? []) as number[][];
-    if (!Array.isArray(pts) || pts.length < 2) return null;
-    const curvePts = pts.map((p) => new THREE.Vector3(p?.[0] ?? 0, p?.[1] ?? 0, p?.[2] ?? 0));
-    const curve = new THREE.CatmullRomCurve3(curvePts);
-    // Slightly thicker than the visual line so it's easier to click
-    return new THREE.TubeGeometry(curve, Math.min(200, Math.max(20, curvePts.length * 4)), 0.12, 8, false);
-  }, [obj.id, obj.type, pathCount, pathFirstLast]);
-
-  useEffect(() => {
-    return () => {
-      pointsGeometry?.dispose();
-      lineGeometry?.dispose();
-      tubeGeometry?.dispose();
-    };
-  }, [pointsGeometry, lineGeometry, tubeGeometry]);
-
-  // Animation + smooth scaling logic
-  const smoothUniform = useRef<number>(finalUniform);
-    const speed = tokens.motion.objectEmphasisLerp;
-  const ambientAmp = useMemo(() => {
-    if (obj.type === "line_path" || obj.type === "points_cloud") return 0.05;
-    return 0.08 * vStyle.ambientMul * roleMotionProfile.driftMul;
-  }, [obj.type, roleMotionProfile.driftMul, vStyle.ambientMul]);
-  const scannerScaleMul =
-    scannerBackgroundDimmed
-      ? 0.92
-      : showCalmScannerConfirmation
-      ? 1 + 0.03 + scannerEmphasis * 0.04 * roleMotionProfile.scaleAuthority
-      : scannerPolicy.rank === "primary"
-      ? scannerPolicy.scaleMultiplier + 0.18 + scannerEmphasis * 0.18 * roleMotionProfile.scaleAuthority
-      : scannerPolicy.rank === "secondary"
-      ? scannerPolicy.scaleMultiplier + 0.02 + scannerEmphasis * 0.04 * roleMotionProfile.scaleAuthority
-      : visualState.isFocused || visualState.isSelected || visualState.isPinned
-      ? 1.04
-      : 1;
-  const storyScaleMul = scannerSceneActive ? 0.94 + nodeStoryReveal * 0.06 : 1;
-  const interactionScaleMul = isHovered ? interactionProfile.hoverScale : 1;
-  const narrativeScaleMul = narrativeNodeStyle.scaleMul;
-  const simulationScaleMul = simulationNodeStyle.scaleMul;
-  const memoryScaleMul = 1 + passiveAttentionMemoryStrength * (interactionRole === "primary" ? 0.02 : interactionRole === "affected" ? 0.014 : 0.008);
-  const selectionRoleMul =
-    isSelected && interactionRole === "primary"
-      ? 1.03
-      : isSelected && interactionRole === "affected"
-      ? 1.02
-      : isSelected && interactionRole === "context"
-      ? 1.008
-      : 1;
-  const selectionLiftY =
-    isSelected && interactionRole === "affected"
-      ? 0.04
-      : isSelected && interactionRole === "primary"
-      ? 0.02
-      : isSelected && interactionRole === "context"
-      ? 0.01
-      : 0;
-  const narrativeLiftY = narrativeNodeStyle.liftY;
-  const simulationLiftY =
-    decisionSimulationStrength > 0
-      ? decisionSimulationStrength * (isSimulationSource || isDecisionPathSource ? 0.032 : 0.014)
-      : 0;
-
-  useEffect(() => {
-    // initialize scale once
-    const m = ref.current;
-    if (m) {
-      const v = smoothUniform.current;
-      const s = v * focusScaleMul * scannerScaleMul;
-      m.scale.set((baseScale[0] ?? 1) * s, (baseScale[1] ?? 1) * s, (baseScale[2] ?? 1) * s);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useFrame((state, delta) => {
-    const m = ref.current;
-    if (!m) return;
-
-    // smooth toward latest finalUniform
-    smoothUniform.current = smoothValue(smoothUniform.current, finalUniform, speed, delta);
-
-    const t = state.clock.getElapsedTime();
-    const k = computeAutoIntensity(tags, anim?.intensity ?? 0.3, sv);
-
-    let pulseFactor = 1;
-    if (anim?.type === "pulse") {
-      pulseFactor = 1 + Math.sin(t * 2) * 0.08 * k * roleMotionProfile.pulseBoost * nodeStoryEmphasis;
-    }
-
-    // apply base rotation (from overrides or json)
-    try {
-      m.rotation.set(finalRotation[0] ?? 0, finalRotation[1] ?? 0, finalRotation[2] ?? 0);
-    } catch (e) {
-      // ignore if rotation values invalid
-    }
-
-    // spin: additive increment
-    if (anim?.type === "spin") {
-      m.rotation.y += 0.01 * k;
-    }
-
-    // wobble: additive offsets on top of base rotation
-    if (anim?.type === "wobble") {
-      m.rotation.x += Math.sin(t * 2) * 0.25 * k * roleMotionProfile.wobbleMul * nodeStoryEmphasis;
-      m.rotation.z += Math.cos(t * 2) * 0.25 * k * roleMotionProfile.wobbleMul * nodeStoryEmphasis;
-    }
-
-    // Subtle ambient drift keeps scene objects "alive" without pointer/click side-effects.
-    const baseX = Number(finalPosition?.[0] ?? 0);
-    const baseY = Number(finalPosition?.[1] ?? 0);
-    const baseZ = Number(finalPosition?.[2] ?? 0);
-    const spatialBaseX = baseX + roleSpatialOffset[0];
-    const spatialBaseY = baseY + roleSpatialOffset[1] + selectionLiftY + narrativeLiftY + simulationLiftY;
-    const spatialBaseZ = baseZ + roleSpatialOffset[2];
-    const driftSpeed = tokens.motion.sceneIdleSway;
-    const driftX = Math.cos(t * 0.31 * driftSpeed + ambientPhase) * ambientAmp * 0.55;
-    const driftY = Math.sin(t * 0.45 * driftSpeed + ambientPhase) * ambientAmp;
-    const driftZ = Math.sin(t * 0.27 * driftSpeed + ambientPhase * 0.7) * ambientAmp * 0.5;
-    const targetX = spatialBaseX + driftX;
-    const targetY = spatialBaseY + driftY;
-    const targetZ = spatialBaseZ + driftZ;
-    // Smooth settle toward base+idle offset so objects feel alive without jitter.
-    const nextX = smoothValue(m.position.x, targetX, 6, delta);
-    const nextY = smoothValue(m.position.y, targetY, 6, delta);
-    const nextZ = smoothValue(m.position.z, targetZ, 6, delta);
-    m.position.set(nextX, nextY, nextZ);
-
-    const hierarchyScaleMul = isFocused || isSelected ? 1 : vStyle.scaleMul;
-    const hoverScaleMul = hovered && !isFocused && !isSelected ? 1 + tokens.interaction.hoverIntensity * 0.05 : 1;
-    const modeEmphasisMul = tokens.interaction.sceneObjectEmphasis;
-  const scannerPulse =
-      scannerHighlighted
-        ? isLowFragilityScan
-          ? showCalmScannerConfirmation
-            ? 1 + Math.sin(t * 1.6 + ambientPhase) * (0.008 + scannerEmphasis * 0.01) * roleMotionProfile.pulseBoost * nodeStoryEmphasis
-            : 1
-          : scannerFocused
-          ? 1 + Math.sin(t * 2.8 + ambientPhase) * (0.014 + scannerEmphasis * 0.01) * roleMotionProfile.pulseBoost * nodeStoryEmphasis
-          : 1
-        : 1;
-    const simulationPulse =
-      decisionSimulationStrength > 0
-        ? 1 +
-          Math.sin(t * (isSimulationSource || isDecisionPathSource ? 1.9 : 1.5) + ambientPhase * 0.7) *
-            simulationNodeStyle.motionBoost *
-            0.035
-        : 1;
-    const applied =
-      smoothUniform.current *
-      pulseFactor *
-      scannerPulse *
-      simulationPulse *
-      focusScaleMul *
-      hierarchyScaleMul *
-      hoverScaleMul *
-      modeEmphasisMul *
-      scannerScaleMul *
-      storyScaleMul *
-      interactionScaleMul *
-      narrativeScaleMul *
-      simulationScaleMul *
-      memoryScaleMul *
-      selectionRoleMul;
-    m.scale.set((baseScale[0] ?? 1) * applied, (baseScale[1] ?? 1) * applied, (baseScale[2] ?? 1) * applied);
-  });
-
-  // Render selection
-  let node: React.ReactNode = null;
-  if (obj.type === "points_cloud" && pointsGeometry) {
-    node = (
-      <group>
-        <mesh
-          onPointerDown={stopPointerOnly}
-          onClick={handleSelect}
-          onPointerOver={(e) => {
-            e.stopPropagation();
-            setHovered(true);
-          }}
-          onPointerOut={() => {
-            setHovered(false);
-          }}
-        >
-          <sphereGeometry args={[1.25, 16, 16]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-        </mesh>
-
-        <points
-          geometry={pointsGeometry}
-          onPointerDown={stopPointerOnly}
-          onClick={handleSelect}
-          onPointerOver={(e) => {
-            e.stopPropagation();
-            setHovered(true);
-          }}
-          onPointerOut={() => {
-            setHovered(false);
-          }}
-        >
-          <pointsMaterial
-            color={appliedColor}
-            size={((obj as any).material?.size as number | undefined) ?? 0.03}
-            sizeAttenuation
-            transparent
-            opacity={materialProps.opacity ?? 0.85}
-          />
-        </points>
-      </group>
-    );
-  } else if (obj.type === "line_path" && lineGeometry) {
-    node = (
-      <group>
-        {tubeGeometry && (
-          <mesh
-            geometry={tubeGeometry}
-            onPointerDown={stopPointerOnly}
-            onClick={handleSelect}
-            onPointerOver={(e: any) => {
-              e.stopPropagation();
-              setHovered(true);
-            }}
-            onPointerOut={() => {
-              setHovered(false);
-            }}
-          >
-            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-          </mesh>
-        )}
-
-        <Line
-          points={(pathData ?? []) as any}
-          transparent
-          opacity={materialProps.opacity ?? 0.9}
-          color={appliedColor}
-          onPointerDown={stopPointerOnly}
-          onClick={handleSelect}
-          onPointerOver={(e: any) => {
-            e.stopPropagation();
-            setHovered(true);
-          }}
-          onPointerOut={() => {
-            setHovered(false);
-          }}
-        />
-      </group>
-    );
-  } else {
-    const geometryNode = geometryFor(shape as GeometryKind);
-    const meshScale = Array.isArray(baseScale)
-      ? (baseScale as any)
-      : [baseScale ?? 1, baseScale ?? 1, baseScale ?? 1];
-
-    const meshProps = {
-      castShadow: !!shadowsEnabled,
-      receiveShadow: !!shadowsEnabled,
-      onPointerDown: stopPointerOnly,
-      onClick: handleSelect,
-      onPointerOver: (e: any) => {
-        e.stopPropagation();
-        setHovered(true);
-        setHoveredId?.(stableIdWithName);
-      },
-      onPointerOut: () => {
-        setHovered(false);
-        setHoveredId?.(null);
-      },
-      scale: meshScale,
-    };
-
-    node = (
-      <>
-        {scannerHaloVisible ? (
-          <>
-            <mesh
-              rotation={[Math.PI / 2, 0, 0]}
-              scale={[
-                (meshScale?.[0] ?? 1) * (scannerFocused ? 1.72 : 1.58),
-                (meshScale?.[1] ?? 1) * (scannerFocused ? 1.72 : 1.58),
-                (meshScale?.[2] ?? 1) * (scannerFocused ? 1.72 : 1.58),
-              ]}
-            >
-              <torusGeometry args={[0.88, 0.05, 14, 40]} />
-              <meshStandardMaterial
-                color={scannerColor}
-                emissive={scannerColor}
-                emissiveIntensity={scannerFocused ? 1.05 : 0.72}
-                transparent
-                opacity={scannerFocused ? 0.34 : 0.22}
-              />
-            </mesh>
-          </>
-        ) : null}
-        {isFocused ? (
-          <mesh
-            {...(meshProps as any)}
-            scale={[
-              (meshScale?.[0] ?? 1) * 1.03,
-              (meshScale?.[1] ?? 1) * 1.03,
-              (meshScale?.[2] ?? 1) * 1.03,
-            ]}
-          >
-            {geometryNode}
-            <meshBasicMaterial
-              color={theme === "day" ? "#111827" : "#ffffff"}
-              transparent
-              opacity={theme === "day" ? 0.1 : 0.06}
-              wireframe
-            />
-          </mesh>
-        ) : null}
-
-        <mesh {...(meshProps as any)}>
-          {geometryNode}
-          <meshStandardMaterial
-            {...materialProps}
-            color={appliedColor}
-            emissive={isFocused ? "#ffffff" : isSelected ? "#ffffff" : scannerHighlighted ? scannerColor : materialProps.emissive}
-            emissiveIntensity={
-              isFocused
-                ? Math.max(
-                    0.85,
-                    (materialProps.emissiveIntensity ?? 0) + (theme === "day" ? 0.35 : 0.55)
-                  )
-                : isSelected
-                ? Math.max(0.6, materialProps.emissiveIntensity ?? 0)
-                : memoryAdjustedEmissiveIntensity
-            }
-            transparent
-            opacity={memoryAdjustedOpacity}
-          />
-        </mesh>
-        <mesh
-          {...(meshProps as any)}
-          // Slightly larger hit target for easier selection
-          scale={[
-            (meshScale?.[0] ?? 1) * 1.25,
-            (meshScale?.[1] ?? 1) * 1.25,
-            (meshScale?.[2] ?? 1) * 1.25,
-          ]}
-        >
-          {geometryFor(shape as GeometryKind)}
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-        </mesh>
-      </>
-    );
-  }
-
-  const captionText = ((overrideEntry.caption ?? "") as string).trim();
-  const showCaption = overrideEntry.showCaption === true;
-  const labelY = ((baseScale[1] ?? 1) * finalUniform) * scannerScaleMul * 0.6 + 0.24;
-  const scannerLabelYOffset = isScannerLabelOwner ? 0.56 : 0.45;
-
-  return (
-    <group ref={ref} position={finalPosition} visible={finalVisible}>
-      {node}
-      {showCaption && captionText.length > 0 && (
-        <Html position={[0, labelY, 0]} center style={{ pointerEvents: "none" }}>
-          <div
-            style={{
-              fontSize: tokens.design.typography.sm,
-              padding: `${tokens.design.spacing.xs}px ${tokens.design.spacing.sm}px`,
-              background: tokens.theme === "day" ? "rgba(15,23,42,0.68)" : "rgba(0,0,0,0.55)",
-              color: tokens.design.colors.textPrimary,
-              borderRadius: tokens.design.radius.sm,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {captionText}
-          </div>
-        </Html>
-      )}
-      {showScannerLabel ? (
-        <Html position={[0, labelY + scannerLabelYOffset, 0]} center style={{ pointerEvents: "none" }}>
-          <div
-            style={{
-              display: "grid",
-              gap: 5,
-              minWidth: 140,
-              maxWidth: 200,
-              padding: "9px 11px",
-              borderRadius: tokens.design.radius.md,
-              border: `1px solid ${scannerLabelTone.borderColor}`,
-              background: scannerLabelTone.background,
-              boxShadow: scannerLabelTone.boxShadow,
-              color: tokens.design.colors.textPrimary,
-            }}
-          >
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: 0.1,
-                textTransform: "none",
-                color: scannerLabelTone.titleColor,
-              }}
-            >
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: 999,
-                  background: scannerLabelTone.dotColor,
-                  boxShadow: scannerLabelTone.dotGlow,
-                }}
-              />
-              {scannerLabelTitle}
-            </div>
-            {effectiveScannerReason ? (
-              <div
-                style={{
-                  fontSize: 10.5,
-                  lineHeight: 1.35,
-                  color: scannerLabelTone.bodyColor,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {effectiveScannerReason}
-              </div>
-            ) : null}
-          </div>
-        </Html>
-      ) : null}
-    </group>
-  );
-}
-
-// --------------------
 // Camera helper
 // --------------------
 function CameraLerper({
   target,
   lookAtTarget = [0, 0, 0],
   enabled = true,
+  motionCalm = false,
 }: {
   target: [number, number, number];
   lookAtTarget?: [number, number, number];
   enabled?: boolean;
+  motionCalm?: boolean;
 }) {
   const { camera } = useThree();
   const targetRef = useRef(new THREE.Vector3(...target));
   const lookAtRef = useRef(new THREE.Vector3(...lookAtTarget));
+  const alpha = motionCalm ? CALM_FRAMING.lerperAlphaMotionCalm : CALM_FRAMING.lerperAlpha;
   useEffect(() => {
     targetRef.current.set(...target);
   }, [target]);
@@ -3013,7 +1181,7 @@ function CameraLerper({
   }, [lookAtTarget]);
   useFrame(() => {
     if (!enabled) return;
-    camera.position.lerp(targetRef.current, 0.08);
+    camera.position.lerp(targetRef.current, alpha);
     camera.lookAt(lookAtRef.current);
   });
   return null;
@@ -3040,6 +1208,8 @@ export type SceneRendererProps = {
   globalScale?: number;
   propagationOverlay?: PropagationOverlayState | null;
   decisionPathOverlay?: DecisionPathRendererState | null;
+  /** Softer hover emphasis + throttled pointer updates (Settings → Motion low). */
+  motionCalm?: boolean;
 };
 
 // --------------------
@@ -3061,12 +1231,31 @@ export function SceneRenderer({
   globalScale = 1,
   propagationOverlay = null,
   decisionPathOverlay = null,
+  motionCalm = false,
 }: SceneRendererProps) {
   if (!sceneJson) return null;
 
   const chatOffset = useChatOffset();
   const selectedIdCtx = useSelectedId();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const lastCommittedHoverRef = useRef<string | null>(null);
+  const lastHoverTickRef = useRef(0);
+  const setHoveredIdThrottled = useCallback((id: string | null) => {
+    if (id === null) {
+      if (lastCommittedHoverRef.current !== null) {
+        lastCommittedHoverRef.current = null;
+        lastHoverTickRef.current = typeof performance !== "undefined" ? performance.now() : Date.now();
+        setHoveredId(null);
+      }
+      return;
+    }
+    if (id === lastCommittedHoverRef.current) return;
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (now - lastHoverTickRef.current < 120) return;
+    lastCommittedHoverRef.current = id;
+    lastHoverTickRef.current = now;
+    setHoveredId(id);
+  }, []);
 
   const objects = sceneJson.scene?.objects ?? [];
   const payload = sceneJson as any;
@@ -3355,9 +1544,13 @@ export function SceneRenderer({
       }),
     [decisionCenter, hoveredId, objects, resolvedPrimaryRenderId, roleById, sceneCenter, selectedIdCtx]
   );
-  const cameraBiasTarget = scannerSceneActive || cameraIntelligence.kind !== "scene_center"
-    ? cameraIntelligence.target
-    : null;
+  const cameraBiasTarget =
+    scannerSceneActive ||
+    cameraIntelligence.kind === "selected" ||
+    cameraIntelligence.kind === "primary" ||
+    cameraIntelligence.kind === "decision_center"
+      ? cameraIntelligence.target
+      : null;
   const anims = ((sceneJson.scene?.animations ?? []) as any[]);
   const loopList: SceneLoop[] = Array.isArray(loops) ? loops : (sceneJson as any)?.scene?.loops ?? [];
   const activeLoopId: string | null =
@@ -3565,6 +1758,8 @@ export function SceneRenderer({
   const effectivePropagationPathEdges = normalizedPropagationOverlay?.pathEdges ?? [];
   const effectivePropagationNodeStrengthById = normalizedPropagationOverlay?.nodeStrengthById ?? {};
   const effectivePropagationMode = normalizedPropagationOverlay?.mode ?? null;
+  const lastNarrativeFocusTraceRef = useRef<string | null>(null);
+  const lastPropagationOverlayTraceRef = useRef<string | null>(null);
   const effectivePropagationSourceStrength = useMemo(() => {
     if (effectivePropagationSourceId && effectivePropagationNodeStrengthById[effectivePropagationSourceId] != null) {
       return effectivePropagationNodeStrengthById[effectivePropagationSourceId];
@@ -3590,15 +1785,42 @@ export function SceneRenderer({
     return [total[0] / positions.length, total[1] / positions.length, total[2] / positions.length];
   }, [effectivePropagationNodeStrengthById, narrativeCentroid, objects]);
   useEffect(() => {
+    const signature = buildNarrativeFocusSignature({
+      focusedId: narrativeFocusPath.primaryId ?? null,
+      highlightedIds: [...narrativeFocusPath.affectedIds, ...narrativeFocusPath.contextIds],
+      sceneVersion: typeof sceneJson?.version === "number" ? sceneJson.version : null,
+      strength: narrativeFocusStrength,
+    });
+    if (lastNarrativeFocusTraceRef.current === signature) {
+      return;
+    }
+    lastNarrativeFocusTraceRef.current = signature;
     traceNarrativeFocus({
       primaryId: narrativeFocusPath.primaryId,
       affectedCount: narrativeFocusPath.affectedIds.length,
       contextCount: narrativeFocusPath.contextIds.length,
       strength: narrativeFocusStrength,
+      signature,
     });
-  }, [narrativeFocusPath, narrativeFocusStrength]);
+  }, [
+    narrativeFocusPath.primaryId,
+    narrativeFocusPath.affectedIds,
+    narrativeFocusPath.contextIds,
+    narrativeFocusStrength,
+    sceneJson?.version,
+  ]);
   useEffect(() => {
     if (process.env.NODE_ENV === "production" || !effectivePropagationSourceId) return;
+    const signature = JSON.stringify({
+      sourceId: effectivePropagationSourceId,
+      impactedCount: Object.keys(effectivePropagationNodeStrengthById).length,
+      edgeCount: effectivePropagationPathEdges.length,
+      mode: effectivePropagationMode,
+    });
+    if (lastPropagationOverlayTraceRef.current === signature) {
+      return;
+    }
+    lastPropagationOverlayTraceRef.current = signature;
     console.debug("[Nexora][PropagationOverlay]", {
       sourceId: effectivePropagationSourceId,
       impactedCount: Object.keys(effectivePropagationNodeStrengthById).length,
@@ -3622,15 +1844,8 @@ export function SceneRenderer({
               : cameraIntelligence.kind === "hover" || cameraIntelligence.kind === "selected"
               ? Math.max(scannerStoryReveal.primary, scannerStoryReveal.affected * 0.85)
               : scannerStoryReveal.context;
-          const kindBoost =
-            cameraIntelligence.kind === "hover"
-              ? 0.03
-              : cameraIntelligence.kind === "selected"
-              ? 0.05
-              : cameraIntelligence.kind === "primary"
-              ? 0.02
-              : 0;
-          const biasStrength = clamp01(focusProfile.biasStrength * (0.8 + storyStrength * 0.2) + kindBoost);
+          const kindBoost = 0;
+          const biasStrength = clamp01(focusProfile.biasStrength * (0.88 + storyStrength * 0.12) + kindBoost);
           return [
             sceneCenter[0] + (cameraBiasTarget[0] - sceneCenter[0]) * biasStrength,
             sceneCenter[1] + (cameraBiasTarget[1] + focusProfile.verticalBias - sceneCenter[1]) * biasStrength,
@@ -3642,7 +1857,9 @@ export function SceneRenderer({
       resolveStableObjectPosition(objects, narrativeFocusPath.primaryId) ?? narrativeCentroid;
     const narrativeBias = clamp01(
       narrativeFocusStrength *
-        (narrativeFocusRoleById(narrativeFocusPath.primaryId) === "primary" ? 0.16 : 0.1)
+        (narrativeFocusRoleById(narrativeFocusPath.primaryId) === "primary"
+          ? CALM_FRAMING.narrativeBiasPrimary
+          : CALM_FRAMING.narrativeBiasOther)
     );
     const narrativeTargetLookAt: [number, number, number] = [
       baseTarget[0] + (narrativeTarget[0] - baseTarget[0]) * narrativeBias,
@@ -3651,7 +1868,7 @@ export function SceneRenderer({
     ];
     if (!effectivePropagationSourceId) return narrativeTargetLookAt;
     const simulationTarget = resolveStableObjectPosition(objects, effectivePropagationSourceId) ?? simulationCentroid;
-    const simulationBias = clamp01((effectivePropagationSourceStrength || 0) * 0.08);
+    const simulationBias = clamp01((effectivePropagationSourceStrength || 0) * CALM_FRAMING.simulationBiasScale);
     return [
       narrativeTargetLookAt[0] + (simulationTarget[0] - narrativeTargetLookAt[0]) * simulationBias,
       narrativeTargetLookAt[1] + (simulationCentroid[1] - narrativeTargetLookAt[1]) * simulationBias,
@@ -3684,9 +1901,21 @@ export function SceneRenderer({
   const cameraLocked = !!sceneJson.meta?.cameraLockedByUser;
   const shouldUseCameraBias = !cameraLocked && !!cameraBiasTarget;
   const parallaxGroup = useRef<THREE.Group>(null);
+  const lastSceneTargetResolutionSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
+      const signature = JSON.stringify({
+        payloadHighlighted: payload?.object_selection?.highlighted_objects ?? null,
+        sceneHighlighted: payload?.scene_json?.object_selection?.highlighted_objects ?? null,
+        contextHighlighted: payload?.context?.object_selection?.highlighted_objects ?? null,
+        highlightedIds,
+        scannerTargetIds,
+      });
+      if (lastSceneTargetResolutionSignatureRef.current === signature) {
+        return;
+      }
+      lastSceneTargetResolutionSignatureRef.current = signature;
       console.group("[Nexora][SceneTargetResolution]");
       console.log("payload.object_selection.highlighted_objects", payload?.object_selection?.highlighted_objects);
       console.log(
@@ -3782,13 +2011,19 @@ export function SceneRenderer({
     const cy = typeof chatOffset?.y === "number" ? chatOffset.y : 0;
     const targetX = -cx * 0.9;
     const targetY = cy * 0.6;
-    g.position.x += (targetX - g.position.x) * 0.12;
-    g.position.y += (targetY - g.position.y) * 0.12;
+    const k = motionCalm ? 0.055 : 0.09;
+    g.position.x += (targetX - g.position.x) * k;
+    g.position.y += (targetY - g.position.y) * k;
   });
 
   return (
     <>
-      <CameraLerper target={camPos} lookAtTarget={cameraLookAtTarget} enabled={shouldUseCameraBias} />
+      <CameraLerper
+        target={camPos}
+        lookAtTarget={cameraLookAtTarget}
+        enabled={shouldUseCameraBias}
+        motionCalm={motionCalm === true}
+      />
       <JsonLights sceneJson={sceneJson} shadowsEnabled={!!shadowsEnabled} />
       <group ref={parallaxGroup}>
         {objects.map((o, idx) => {
@@ -3825,7 +2060,8 @@ export function SceneRenderer({
               scannerStoryReveal={scannerStoryReveal}
               hoveredId={hoveredId}
               hoveredInteractionRole={hoveredInteractionRole}
-              setHoveredId={setHoveredId}
+              setHoveredId={setHoveredIdThrottled}
+              motionCalm={motionCalm}
               neighborIds={Array.from(
                 new Set([
                   ...Array.from(relatedObjectIdsById.get(stableId) ?? []),

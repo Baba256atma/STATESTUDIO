@@ -27,6 +27,17 @@ def test_decision_engine_generates_recommendation_for_supply_chain():
     analysis = StrategicDecisionEngine().analyze(system_model=model, simulation=baseline)
 
     assert analysis.recommended_action is not None
+    rec = analysis.recommended_action
+    assert rec.action and len(rec.action) > 10
+    assert rec.title
+    assert rec.rationale
+    assert rec.expected_outcome
+    assert rec.priority in {"high", "medium", "low"}
+    assert rec.time_horizon in {"immediate", "short", "medium"}
+    assert rec.why_this
+    assert isinstance(rec.evidence, list) and len(rec.evidence) >= 1
+    assert rec.tradeoffs
+    assert rec.confidence_reason
     assert analysis.strategies
     assert analysis.scenario_comparison is not None
     assert 0.0 <= analysis.risk_analysis.baseline_risk <= 1.0

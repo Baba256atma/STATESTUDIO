@@ -12,6 +12,7 @@ import {
 } from "../lib/chat/chatRequestLifecycle";
 import type { KPIState } from "../lib/api";
 import { analyzeFull } from "../lib/api/analyzeApi";
+import { postStrategicAnalysisText } from "../lib/api/client";
 // Removed unused SceneRenderer import
 import { SceneCanvas } from "../components/SceneCanvas";
 import type { HUDTabKey } from "../components/HUDShell";
@@ -28,7 +29,7 @@ import {
 } from "../components/SceneContext";
 import { getRecentEvents } from "../lib/api/events";
 import { delay } from "../lib/delay";
-import type { SceneJson, SceneLoop, LoopType } from "../lib/sceneTypes";
+import type { SceneJson, SceneLoop, SceneObject, LoopType } from "../lib/sceneTypes";
 import {
   appendSnapshot,
   clearSnapshots,
@@ -59,25 +60,13 @@ import {
   applyExternalIntegrationToWorkspace,
   type ExternalIntegrationResult,
 } from "../lib/integration/externalIntegrationContract";
-import {
-  exportProjectFile,
-  importProjectFileToWorkspace,
-  parseImportedProjectFile,
-} from "../lib/workspace/projectTransfer";
-import {
-  getObjectDependencies,
-  getObjectDisplayLabel,
-  getObjectSemanticMeta,
-  getObjectSemanticTags,
-  getSceneObjectsFromPayload,
-  matchObjectsFromPrompt,
-  tokenizeSemanticText,
-} from "../lib/objectSemantics";
 import { composeResolvedObjectDetails, type ResolvedObjectDetails } from "../lib/scene/composeResolvedObjectDetails";
 import { resolveSceneObjectById } from "../lib/scene/resolveSceneObjectById";
 import type { UICommand } from "../lib/ui/uiCommands";
 import { RestorePreviewModal } from "../components/RestorePreviewModal";
+import { useNexoraUiTheme } from "../lib/ui/nexoraUiTheme";
 import { StrategicAlertOverlay } from "../components/StrategicAlertOverlay";
+import { nx, sceneOverlayCardStyle, sceneVignetteLayerStyle, sceneWorkingBadgeStyle } from "../components/ui/nexoraTheme";
 import { useEmotionalFxEngine } from "../lib/fx/useEmotionalFxEngine";
 import { useStrategicRadar } from "../lib/strategy/useStrategicRadar";
 import { computeRiskLevel } from "../lib/risk/riskEscalationEngine";
@@ -94,6 +83,7 @@ import {
 } from "../lib/decision/scenarioComparisonReplayContract";
 import { buildExecutiveInsightFromSimulation } from "../lib/decision/executiveExplainabilityContract";
 import { buildCanonicalRecommendation } from "../lib/decision/recommendation/buildCanonicalRecommendation";
+import type { CanonicalRecommendation } from "../lib/decision/recommendation/recommendationTypes";
 import { buildDecisionMemoryEntry } from "../lib/decision/memory/buildDecisionMemoryEntry";
 import type { DecisionMemoryEntry } from "../lib/decision/memory/decisionMemoryTypes";
 import {
@@ -134,7 +124,6 @@ import type { RiskAlert, StrategicState, EmotionalFx, ScenePatch, SceneObjectPat
 import {
   Msg,
   ScenePrefs,
-  PersistedProject,
   BackupV1,
   HISTORY_KEY,
   SESSION_KEY,
@@ -154,13 +143,189 @@ import {
   loadBackup,
   stableStringify,
 } from "./homeScreenUtils";
-import { buildBackup as buildBackupController, buildRestorePreviewLines } from "./backupController";
+import {
+  canonDecisionMissingSceneBlob,
+  evaluateBackupRestoreScene,
+  evaluateDomainDemoScene,
+  evaluateHistoryUndoScene,
+  evaluateProductFlowForcedScene,
+  evaluateSnapshotRestoreScene,
+  evaluateTimelineForceScene,
+  evaluateUnifiedReactionSceneReplacement,
+  evaluateWorkspaceHydrateScene,
+  isSceneCanonReplaceDecision,
+  sceneJsonFromCanonDecision,
+} from "./homeScreenSceneApply";
+import { parseDecisionSnapshotKey, pickDecisionSnapshotFromList } from "./homeScreenSnapshots";
+import {
+  asRecord,
+  buildUnifiedReactionFromChatResponse,
+  buildUnifiedReactionFromFragilityRun,
+  buildSceneObjectIdSet,
+  extractSceneObjectIds,
+  getHighlightedObjectIdsFromSelection,
+  getSceneScopedObjectSelection,
+  hasMeaningfulObjectPanelContext,
+  hasMeaningfulSceneMutation,
+  hasMeaningfulSelectionForVisibleState,
+  hasRenderableResponseForVisibleState,
+  hasRenderableSceneForVisibleState,
+  normalizeKpiStateFromUnknown,
+  readCanonicalRecommendation,
+  readPanelFamilyContractDiagnostics,
+  readPanelFamilySliceDiagnostics,
+  readSceneJsonActiveLoop,
+  readSceneJsonMetaString,
+  sceneJsonFromUnknown,
+  shouldAcceptIncomingSceneReplacement,
+  shouldAcceptMeaningfulArrayReplacement,
+  shouldAcceptMeaningfulRecordReplacement,
+} from "./homeScreenResponseReaders";
+import {
+  RETAIL_DEMO_ID,
+  applyRetailDemoChatPayloadEnhancement,
+  buildUnifiedReactionFromRetailTriggerConfig,
+  detectRetailTriggerConfig,
+  isRetailDemoScene,
+  isRetailScenePayload,
+  mapDemoVisualModeToReactionMode,
+  resolveRetailDemoPulseObjectIdsForPrompt,
+} from "./homeScreenRetailDemo";
+import {
+  logPanelClose,
+  logPanelContinuityPreserved,
+  logPanelDecision,
+  logPanelGuidedPromptWarn,
+  logPanelOpen,
+  logPanelRejected,
+  panelFamilyDataFromExecutionPayloads,
+  resolvePreferredPanelFamilyFromIntent,
+} from "./homeScreenPanelHelpers";
+import {
+  mergeNextObjectSelectionFromUnifiedReaction,
+  pickAcceptedChatSceneReplacement,
+  reactionModeHintFromIntent,
+} from "./homeScreenChatApplyPrep";
+import {
+  getPanelActionFallbackMessage,
+  isAutomaticRightPanelSource,
+  isExecutiveActionTarget,
+  toPanelOpenSource,
+  type ExecutiveActionIntent,
+  type ExecutiveActionTarget,
+} from "./homeScreenShellGuards";
+import {
+  buildBackupRestorePreviewContents,
+  buildPersistedProjectSnapshot,
+  buildScreenBackupV1,
+  buildWorkspaceProjectStateFromLoadedProject,
+  buildWorkspaceStateForProjectImport,
+  composeImportWarningAssistantText,
+  messageImportUnknownError,
+  pickWorkspaceProjectForHydrate,
+  prepareProjectImportFromFileText,
+  prepareUndoHistoryPop,
+  prepareWorkspaceProjectExportJson,
+  readSessionIdForPersistence,
+  resolveHudTabAfterBackupRestore,
+  withPersistedProjectSavedAt,
+} from "./homeScreenPersistenceApply";
+import {
+  prefetchIngestionConnectorCatalogDev,
+  submitManualTextIngestion,
+  type HomeScreenLastIngestion,
+} from "./homeScreenIngestionDev";
+import {
+  dispatchMultiSourceAssessmentComplete,
+  normalizeDevMultiSourcePayload,
+  submitMultiSourceIngestionDev,
+  traceProductionMultiSourceEntry,
+  traceScheduledAssessmentTriggered,
+  type DevMultiSourceIngestionEventDetail,
+  type UnifiedMultiSourceRunOutcome,
+} from "./homeScreenMultiSourceIngestionDev";
+import type {
+  MultiSourceIngestionRequest,
+  MultiSourceIngestionResponse,
+} from "../lib/api/ingestionApi";
+import {
+  isScheduledAssessmentDue,
+  loadScheduledAssessments,
+  toMultiSourceRequest,
+  updateScheduledAssessment,
+  type ScheduledAssessmentDefinition,
+} from "../lib/scheduled/scheduledAssessmentStorage";
+import {
+  buildIngestionFragilityBridgeSignature,
+  buildMultiSourceBridgeSignature,
+  runIngestionThroughFragilitySceneBridge,
+  runMultiSourceThroughFragilitySceneBridge,
+} from "./homeScreenIngestionSceneBridge";
+import {
+  alignFragilityHighlightIdsForClarity,
+  buildB5ClaritySignature,
+  buildClarityCaptionsByObjectId,
+  buildPipelineInsightLine,
+} from "./nexoraClarityPolish";
+import {
+  adjustDecisionToneForTrust,
+  buildNexoraDecisionLayerSignature,
+  deriveNexoraDecisionLayer,
+} from "./nexoraDecisionLayer";
+import {
+  buildPipelineStatusSignature,
+  countMappedObjectsFromFragilityScan,
+  createInitialPipelineStatusUi,
+  normalizeFragilityLevelForUi,
+  shouldSkipPipelineStatusCommit,
+  type NexoraPipelineStatusUi,
+} from "./nexoraPipelineStatus";
+import type { NexoraAuditRecord } from "../lib/audit/nexoraAuditContract.ts";
+import { serializeAudit } from "../lib/audit/nexoraAuditContract.ts";
+import type { NexoraExportBundle } from "../lib/audit/nexoraExportContract.ts";
+import {
+  buildNexoraExportBundle,
+  exportBundleStableSignature,
+  serializeExportBundle,
+} from "../lib/audit/nexoraExportContract.ts";
+import { parseNexoraImportBundle } from "../lib/audit/nexoraImportContract.ts";
+import {
+  NEXORA_REPLAY_APPLY_EVENT,
+  buildReplayApplySignature,
+  dispatchNexoraReplayApply,
+  filterReplaySnapshotIdsForScene,
+  type NexoraReplayApplyEventDetail,
+} from "../lib/audit/nexoraReplayApply.ts";
+import { appendNexoraRunHistory, clearNexoraRunHistory, loadNexoraRunHistory } from "../lib/audit/nexoraRunHistory.ts";
+import { buildNexoraAuditRecord, buildNexoraAuditSignature } from "./nexoraAuditBuilder.ts";
+import type { NexoraReplaySnapshot } from "./nexoraReplaySnapshot.ts";
+import { buildNexoraReplaySnapshot } from "./nexoraReplaySnapshot.ts";
+import {
+  buildNexoraTrustValidationSignature,
+  evaluateNexoraTrustValidation,
+  type NexoraTrustValidationInput,
+} from "./nexoraTrustValidation";
+import { driversEnrichmentSignature, enrichFragilityDriversForDomain } from "../lib/domain/domainDriverEnrichment.ts";
+import { runDomainPackQAAndLogDev } from "../lib/domain/nexoraDomainPackQA.ts";
+import {
+  getB13TrustEvidenceBiasMerged,
+  runDomainPackRolloutAndLogDev,
+  toSafeLocaleDomainIdForRollout,
+} from "../lib/domain/nexoraDomainPackRollout.ts";
+import { buildCurrentDomainRuntimeState, getEffectiveDomainLabel } from "../lib/domain/nexoraDomainRolloutView.ts";
+import { emitDomainUsageLoggedDevOnce, logDomainUsage } from "../lib/domain/nexoraDomainUsage.ts";
+import { resolveNexoraLocaleDomainId } from "../lib/domain/nexoraDomainPackRegistry.ts";
+import {
+  buildHomescreenExecutionApplyTracePayload,
+  buildNexoraUiReadableStateForApply,
+  createNexoraUiAdaptersForExecutionApply,
+} from "./homeScreenExecutionApply";
 import { applyFragilityScenePayload } from "../lib/scene/applyFragilityScenePayload";
 import {
   resolveDomainExperience,
   type NexoraResolvedDomainExperience,
 } from "../lib/domain/domainExperienceRegistry";
-import { resolveDomainDemo } from "../lib/demo/domainDemoRegistry";
+import { buildDemoStrategicAnalysisPrompt, resolveDomainDemo } from "../lib/demo/domainDemoRegistry";
 import { executeNexoraAction } from "../lib/execution/actionExecutionLayer";
 import type { FragilityScanResponse } from "../types/fragilityScanner";
 import { isLaunchDomain } from "../lib/product/mvpShippingPlan";
@@ -177,6 +342,7 @@ import {
 import {
   buildPanelFocusReaction,
   normalizeReactionForScene,
+  tuneUnifiedReactionForFragilityLevel,
 } from "../lib/scene/reactionNormalizer";
 import { useWarRoomState } from "../lib/warroom/useWarRoomState";
 import type { WarRoomOverlayDetail, WarRoomOverlaySummary } from "../lib/warroom/warRoomTypes";
@@ -197,6 +363,47 @@ import type { FocusOwnershipState } from "../lib/focus/focusOwnershipTypes";
 import { resolveFocusOwnership } from "../lib/focus/resolveFocusOwnership";
 import { runDecisionExecution } from "../lib/executive/decisionExecutionClient";
 import type { DecisionExecutionPayload, DecisionExecutionResult } from "../lib/executive/decisionExecutionTypes";
+import { DecisionComparePanel } from "../components/executive/DecisionComparePanel";
+import type { NexoraB18CompareResolved } from "../lib/scenario/nexoraScenarioBuilder.ts";
+import {
+  appendScenarioMemory,
+  emitScenarioMemoryAppendedDev,
+  installNexoraExecutionOutcomeBridge,
+  loadScenarioMemory,
+  resolveNexoraB18WithMemory,
+} from "../lib/scenario/nexoraScenarioMemory.ts";
+import {
+  evaluateExecutionOutcome,
+  NEXORA_EXECUTION_OUTCOME_RECORDED,
+  normalizeOutcomeFragilityInput,
+  type NexoraExecutionOutcome,
+} from "../lib/execution/nexoraExecutionOutcome.ts";
+import {
+  emitExecutionOutcomeRecordedDev,
+  loadExecutionOutcomeForRun,
+  loadExecutionOutcomes,
+  saveExecutionOutcome,
+} from "../lib/execution/nexoraExecutionStore.ts";
+import { NEXORA_WORKFLOW_DEBUG_UPDATED } from "../lib/session/nexoraWorkflowClosure.ts";
+import { buildAdaptiveBiasDevLogKey, emitAdaptiveBiasReadyDev } from "../lib/quality/nexoraAdaptiveBias.ts";
+import {
+  BIAS_GOVERNANCE_CONFIG_CHANGED_EVENT,
+  buildBiasGovernanceLogKey,
+  buildNexoraBiasLayerContext,
+  emitBiasGovernanceReadyDev,
+  saveNexoraBiasGovernanceFull,
+  type NexoraBiasLayerContext,
+} from "../lib/quality/nexoraBiasGovernance.ts";
+import { DEFAULT_NEXORA_BIAS_GOVERNANCE } from "../lib/quality/nexoraBiasGovernanceContract.ts";
+import { useNexoraOperatorMode } from "../lib/product/nexoraOperatorModeContext";
+import { getNexoraProductMode } from "../lib/product/nexoraProductMode.ts";
+import {
+  buildDecisionQualityInputSignature,
+  emitDecisionQualityReadyDev,
+  evaluateDecisionQuality,
+  type NexoraDecisionQualityReport,
+} from "../lib/quality/nexoraDecisionQuality.ts";
+import { DecisionTimelinePanel } from "../components/executive/DecisionTimelinePanel";
 import { buildPreviewDecisionExecutionResult } from "../lib/execution/buildPreviewDecisionExecutionResult";
 import type { DecisionAutomationResult } from "../lib/execution/decisionAutomationTypes";
 import type { DecisionExecutionIntent } from "../lib/execution/decisionExecutionIntent";
@@ -214,23 +421,90 @@ import { guardHeavyComputation } from "../lib/ops/performanceGuard";
 import { RightPanelHost } from "../components/right-panel/RightPanelHost";
 import type { RightPanelState, RightPanelView } from "../lib/ui/right-panel/rightPanelTypes";
 import type { PanelSharedData } from "../lib/panels/panelDataResolverTypes";
+import type { NexoraB8PanelContext } from "../lib/panels/panelDataContract";
+import { buildPanelResolvedData } from "../lib/panels/buildPanelResolvedData.ts";
+import { nexoraB8PanelContextFromHudRef } from "../lib/panels/nexoraPanelMeaning";
 import { normalizeCanonicalAdvicePanelData } from "../lib/panels/adviceAdapter";
 import { buildCanonicalPanelData } from "../lib/panels/panelDataAdapter";
 import {
   normalizeCanonicalTimelinePanelData,
   normalizeCanonicalWarRoomPanelData,
 } from "../lib/panels/panelSliceNormalizer";
-import { validatePanelSharedData } from "../lib/panels/panelDataContract";
 import {
-  closeRightPanel as closeRightPanelState,
+  validatePanelSharedDataWithDiagnostics,
+  type PanelSharedDataValidationResult,
+} from "../lib/panels/panelDataContract";
+import {
   createClosedRightPanelState,
-  createOpenRightPanelState,
   mapLegacyTabToRightPanelView,
-  mapRightPanelViewToLegacyInspectorTab,
-  mapRightPanelViewToLegacyTab,
-  resolveSafeRightPanelView,
-  toggleRightPanel as toggleRightPanelState,
+  resolveRightPanelInspectorHostId,
+  resolveRightPanelLegacyTabForView,
 } from "../lib/ui/right-panel/rightPanelRouter";
+import { resolvePanelDecision } from "../lib/ui/right-panel/panelController";
+import type {
+  PanelOpenSource,
+  PanelRequestIntent,
+} from "../lib/ui/right-panel/panelControllerTypes";
+import { emitDebugEvent } from "../lib/debug/debugEmit";
+import { registerPanelSelfDebugLink } from "../lib/debug/debugCorrelationBridge";
+import { getRecentDebugEvents } from "../lib/debug/debugEventStore";
+import { emitGuardRailAlerts, runGuardChecks } from "../lib/debug/debugGuardRails";
+import { useInvestorDemo, INVESTOR_DEMO_MAX_STEP } from "../components/demo/InvestorDemoContext";
+import { registerNexoraActionDispatch } from "../lib/actions/actionDispatchRegistry";
+import type { ActionRouterContext, CanonicalNexoraAction } from "../lib/actions/actionTypes";
+import { resolveActionRoute } from "../lib/actions/actionRouter";
+import {
+  normalizeCompareOptions,
+  normalizeOpenCenterTimeline,
+  normalizeOpenPanelCta,
+  normalizeOpenRightPanelEventDetail,
+  normalizeRunSimulation,
+  normalizeFocusObject,
+} from "../lib/actions/actionNormalizer";
+import {
+  traceActionRouterContinuity,
+  traceActionRouterExecuted,
+  traceActionRouterNormalized,
+  traceActionRouterReceived,
+  traceActionRouterRejected,
+  traceActionRouterResolved,
+} from "../lib/actions/actionTrace";
+import { InvestorDemoOverlay } from "../components/demo/InvestorDemoOverlay";
+import { hasRenderableScenario, resolveInvestorDemoFocusObjectId } from "../lib/demo/investorDemoHelpers";
+import {
+  buildScenarioExplanationFromDecisionAnalysis,
+  pickDecisionAnalysisFromResponse,
+} from "../lib/panels/buildScenarioExplanationFromDecisionAnalysis";
+import { NexoraError } from "../lib/system/nexoraErrors";
+import {
+  buildRunbookSurfaceHints,
+  logRunbookStepChangedIfDev,
+  resolveRunbookStep,
+  type NexoraRunbookStepId,
+} from "../lib/pilot/nexoraRunbook";
+import { explainPipelineHudFailure } from "../lib/pilot/nexoraFailureGuide";
+import { NEXORA_PILOT_SCENARIOS } from "../lib/pilot/nexoraPilotScenarios";
+import { useNexoraRunbookGuidanceOptional } from "../lib/pilot/nexoraRunbookGuidanceContext";
+import { NexoraRunbookPanel } from "../components/pilot/NexoraRunbookPanel";
+import { logNexoraMetric } from "../lib/metrics/nexoraMetrics";
+import {
+  loadNexoraFeedback,
+  NEXORA_FEEDBACK_CHANGED_EVENT,
+  saveNexoraFeedback,
+  type NexoraFeedbackType,
+} from "../lib/feedback/nexoraFeedback.ts";
+import {
+  buildDomainAwareOperatorInsightHint,
+  buildDomainAwareOperatorInsightLine,
+  emitDomainOperatorInsightReadyDevOnce,
+  normalizeOperatorInsightDomain,
+} from "../lib/review/nexoraOperatorInsightDomain.ts";
+import {
+  buildNexoraPilotSynthesis,
+  buildNexoraPilotSynthesisInputSignature,
+  collectNexoraPilotSynthesisInputFromBrowser,
+  type NexoraPilotSynthesis,
+} from "../lib/review/nexoraPilotSynthesis.ts";
 
 type FullRegistrarProps = {
   selectedIdRefLocal: React.MutableRefObject<string | null>;
@@ -242,78 +516,195 @@ type FullRegistrarProps = {
   pruneOverridesRef: React.MutableRefObject<(ids: string[]) => void>;
 };
 
-type RightPanelTab =
-  | "chat"
-  | "object"
-  | "loops"
-  | "kpi"
-  | "decisions"
-  | "scene"
-  | "montecarlo"
-  | "timeline"
-  | "conflict"
-  | "object_focus"
-  | "memory_insights"
-  | "risk_flow"
-  | "replay"
-  | "strategic_advice"
-  | "opponent_moves"
-  | "strategic_patterns"
-  | "executive_dashboard"
-  | "war_room"
-  | "collaboration"
-  | "workspace";
+// Legacy shell/inspector tab ids are kept only for compatibility boundaries.
+const LEGACY_RIGHT_PANEL_TABS = [
+  "chat",
+  "object",
+  "loops",
+  "kpi",
+  "decisions",
+  "scene",
+  "montecarlo",
+  "timeline",
+  "conflict",
+  "explanation",
+  "object_focus",
+  "memory_insights",
+  "risk_flow",
+  "replay",
+  "strategic_advice",
+  "opponent_moves",
+  "strategic_patterns",
+  "executive_dashboard",
+  "simulate",
+  "compare",
+  "decision_policy",
+  "executive_approval",
+  "decision_council",
+  "decision_governance",
+  "decision_timeline",
+  "confidence_calibration",
+  "outcome_feedback",
+  "pattern_intelligence",
+  "collaboration_intelligence",
+  "scenario_tree",
+  "strategic_command",
+  "decision_lifecycle",
+  "strategic_learning",
+  "meta_decision",
+  "cognitive_style",
+  "team_decision",
+  "org_memory",
+  "war_room",
+  "collaboration",
+  "workspace",
+] as const;
 
-type InspectorReportTab = Extract<
-  RightPanelTab,
-  | "timeline"
-  | "conflict"
-  | "object_focus"
-  | "memory_insights"
-  | "risk_flow"
-  | "replay"
-  | "strategic_advice"
-  | "opponent_moves"
-  | "strategic_patterns"
-  | "executive_dashboard"
-  | "war_room"
-  | "collaboration"
-  | "workspace"
->;
+type LegacyRightPanelTab = (typeof LEGACY_RIGHT_PANEL_TABS)[number];
+type CenterComponentType = "compare" | "timeline" | "analysis" | null;
+
+const NEXORA_PIPELINE_USER_FAILURE = "System couldn't complete analysis. Please try again.";
+
+function nexoraPipelineUserFacingMessage(err: unknown): string {
+  if (getNexoraProductMode() === "pilot") return NEXORA_PIPELINE_USER_FAILURE;
+  if (err instanceof NexoraError) return err.safeMessage;
+  return NEXORA_PIPELINE_USER_FAILURE;
+}
+
+const INSPECTOR_REPORT_TABS = [
+  "timeline",
+  "conflict",
+  "object_focus",
+  "memory_insights",
+  "risk_flow",
+  "replay",
+  "strategic_advice",
+  "opponent_moves",
+  "strategic_patterns",
+  "executive_dashboard",
+  "war_room",
+  "collaboration",
+  "workspace",
+] as const;
+
+type InspectorReportTab = (typeof INSPECTOR_REPORT_TABS)[number];
 
 type InspectorSectionChangedDetail = {
   section?: string;
-  eventTab?: RightPanelTab | null;
+  eventTab?: LegacyRightPanelTab | null;
   source?: string | null;
 };
 
 type RightPanelOpenRequestDetail = {
   view?: RightPanelView | string | null;
   tab?: string | null;
+  leftNav?: string | null;
+  section?: string | null;
   source?: string | null;
   contextId?: string | null;
 };
 
+type GuidedPromptSource =
+  | "domain_prompt_guide"
+  | "assistant_prompt_chip"
+  | "guided_prompt";
+
 type SendTextOptions = {
   source?: "user" | "demo";
+  guidedPrompt?: {
+    prompt: string;
+    resolvedPanel: RightPanelView;
+    contextId?: string | null;
+  };
 };
 
-function isInspectorReportTab(tab: RightPanelTab | null | undefined): tab is InspectorReportTab {
-  return (
-    tab === "timeline" ||
-    tab === "conflict" ||
-    tab === "object_focus" ||
-    tab === "memory_insights" ||
-    tab === "risk_flow" ||
-    tab === "replay" ||
-    tab === "strategic_advice" ||
-    tab === "opponent_moves" ||
-    tab === "strategic_patterns" ||
-    tab === "executive_dashboard" ||
-    tab === "war_room" ||
-    tab === "collaboration" ||
-    tab === "workspace"
-  );
+type PanelFamilyAuditState = {
+  seq: number;
+  prompt: string;
+  expectedFamily: RightPanelView;
+  source: "chat" | "demo" | "user";
+  contractRenderable?: boolean;
+  contractSalvaged?: boolean;
+};
+
+type ExplicitPanelIntentState = {
+  view: RightPanelView;
+  source: string;
+  clickedTab?: string | null;
+  clickedNav?: string | null;
+  timestamp: number;
+};
+
+type ClickIntentLockState = {
+  view: RightPanelView;
+  contextId: string | null;
+  source: string;
+  clickedKey: string | null;
+  timestamp: number;
+};
+
+const CLICK_INTENT_LOCK_TTL_MS = 4000;
+
+function logCtaTraceResolution(
+  action: string,
+  originView: RightPanelView | null,
+  resolvedTarget: string,
+  fallbackMessage?: string | null
+): void {
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[NEXORA][CTA_TRACE_RESOLUTION]", {
+      action,
+      originView: originView ?? null,
+      resolvedTarget,
+      isExecutiveTarget: isExecutiveActionTarget(resolvedTarget),
+      fallbackMessage: fallbackMessage ?? null,
+    });
+  }
+}
+
+function logCtaTraceConsumer(
+  action: string,
+  originView: RightPanelView | null,
+  resolvedTarget: string,
+  consumer: "openDecisionExecutionPanel" | "openRightPanel"
+): void {
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[NEXORA][CTA_TRACE_CONSUMER]", {
+      action,
+      originView: originView ?? null,
+      resolvedTarget,
+      consumer,
+    });
+  }
+}
+
+function isInspectorReportTab(tab: LegacyRightPanelTab | null | undefined): tab is InspectorReportTab {
+  return typeof tab === "string" && INSPECTOR_REPORT_TABS.includes(tab as InspectorReportTab);
+}
+
+function isLegacyRightPanelTab(tab: string | null | undefined): tab is LegacyRightPanelTab {
+  return typeof tab === "string" && LEGACY_RIGHT_PANEL_TABS.includes(tab as LegacyRightPanelTab);
+}
+
+function shallowEqualRecord(
+  left: Record<string, unknown> | null | undefined,
+  right: Record<string, unknown> | null | undefined
+) {
+  if (left === right) return true;
+  if (!left || !right) return false;
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) return false;
+  return leftKeys.every((key) => Object.is(left[key], right[key]));
+}
+
+function useShallowStableObject<T extends Record<string, unknown> | null>(value: T): T {
+  const ref = React.useRef<T>(value);
+  if (value && ref.current && shallowEqualRecord(ref.current, value)) {
+    return ref.current;
+  }
+  ref.current = value;
+  return value;
 }
 
 function FullRegistrar({
@@ -384,6 +775,27 @@ type BackendChatResponse = {
   [key: string]: any;
 };
 
+// Module-scoped guards: survive StrictMode remounts and skip identical B2/B5/B7 traces before logging.
+let __lastB2SceneReactionSig: string | null = null;
+let __lastB5ClaritySig: string | null = null;
+let __lastB7DecisionSig: string | null = null;
+
+function shouldEmitStableNexoraTrace(kind: "b2" | "b5" | "b7", signature: string): boolean {
+  if (kind === "b2") {
+    if (__lastB2SceneReactionSig === signature) return false;
+    __lastB2SceneReactionSig = signature;
+    return true;
+  }
+  if (kind === "b5") {
+    if (__lastB5ClaritySig === signature) return false;
+    __lastB5ClaritySig = signature;
+    return true;
+  }
+  if (__lastB7DecisionSig === signature) return false;
+  __lastB7DecisionSig = signature;
+  return true;
+}
+
 function loadPrefsFromStorage(): ScenePrefs | null {
   if (typeof window === "undefined") return null;
   try {
@@ -410,1410 +822,47 @@ function loadPrefsFromStorage(): ScenePrefs | null {
       parsed.overridePolicy === "keep" || parsed.overridePolicy === "clear" ? parsed.overridePolicy : "match";
     const shadowsEnabled =
       typeof parsed.shadowsEnabled === "boolean" ? parsed.shadowsEnabled : defaultPrefs.shadowsEnabled;
-    return { ...(parsed as ScenePrefs), globalScale, overridePolicy, shadowsEnabled };
+    const motionIntensity =
+      parsed.motionIntensity === "low" || parsed.motionIntensity === "normal"
+        ? parsed.motionIntensity
+        : defaultPrefs.motionIntensity;
+    return { ...(parsed as ScenePrefs), globalScale, overridePolicy, shadowsEnabled, motionIntensity };
   } catch {
     return null;
   }
 }
 
 
-type RetailTriggerConfig = {
-  id:
-    | "supplier_delay"
-    | "inventory_drop"
-    | "demand_spike"
-    | "price_increase"
-    | "delivery_disruption"
-    | "cash_pressure"
-    | "customer_trust_drop"
-    | "operational_bottleneck";
-  tests: RegExp[];
-  targets: string[];
-  riskEdges: Array<{ from: string; to: string; base: number; delta: number }>;
-  driverDelta: Partial<Record<"inventory_pressure" | "time_pressure" | "quality_risk", number>>;
-  kpiRiskDelta: number;
-  riskSummary: string;
-  timelineSteps: [string, string, string];
-  adviceAction: string;
-  adviceImpact: string;
-  adviceWhy: string;
-};
 
-const RETAIL_DEMO_ID = "retail_supply_chain_fragility";
-
-const RETAIL_TRIGGER_CONFIGS: RetailTriggerConfig[] = [
-  {
-    id: "supplier_delay",
-    tests: [/\bsupplier\b.*\bdelay\b/i, /\bdelay\b.*\bsupplier\b/i],
-    targets: ["obj_supplier_1", "obj_delivery_1", "obj_delay_1", "obj_inventory_1"],
-    riskEdges: [
-      { from: "obj_supplier_1", to: "obj_delivery_1", base: 0.68, delta: 0.18 },
-      { from: "obj_delay_1", to: "obj_delivery_1", base: 0.64, delta: 0.14 },
-      { from: "obj_delivery_1", to: "obj_inventory_1", base: 0.58, delta: 0.12 },
-      { from: "obj_inventory_1", to: "obj_customer_satisfaction_1", base: 0.48, delta: 0.08 },
-    ],
-    driverDelta: { inventory_pressure: 0.1, time_pressure: 0.16, quality_risk: 0.06 },
-    kpiRiskDelta: 0.08,
-    riskSummary: "Supplier delay is increasing operational risk and is now propagating into capacity and customer impact.",
-    timelineSteps: [
-      "Immediate: operational flow weakens.",
-      "Near-term: capacity buffers tighten.",
-      "Follow-up: customer commitments become harder to protect.",
-    ],
-    adviceAction: "Protect critical capacity and activate backup supply options.",
-    adviceImpact: "Stabilizes core flow while reducing downstream customer and service risk.",
-    adviceWhy: "Supplier latency is now the dominant source of business-system fragility.",
-  },
-  {
-    id: "inventory_drop",
-    tests: [/\binventory\b.*\bdrop\b/i, /\bdrop\b.*\binventory\b/i, /\binventory\b.*\bdecrease\b/i],
-    targets: ["obj_inventory_1", "obj_warehouse_1", "obj_order_flow_1", "obj_customer_satisfaction_1"],
-    riskEdges: [
-      { from: "obj_inventory_1", to: "obj_order_flow_1", base: 0.6, delta: 0.14 },
-      { from: "obj_inventory_1", to: "obj_customer_satisfaction_1", base: 0.56, delta: 0.12 },
-      { from: "obj_order_flow_1", to: "obj_cash_pressure_1", base: 0.5, delta: 0.09 },
-      { from: "obj_warehouse_1", to: "obj_order_flow_1", base: 0.47, delta: 0.07 },
-    ],
-    driverDelta: { inventory_pressure: 0.17, time_pressure: 0.08, quality_risk: 0.07 },
-    kpiRiskDelta: 0.09,
-    riskSummary: "Capacity pressure increased and is now stressing fulfillment flow, cash exposure, and customer outcomes.",
-    timelineSteps: [
-      "Immediate: capacity coverage declines.",
-      "Near-term: fulfillment pressure increases.",
-      "Follow-up: customer trust may weaken.",
-    ],
-    adviceAction: "Rebalance capacity and prioritize critical commitments.",
-    adviceImpact: "Protects fulfillment reliability while containing customer-impact risk.",
-    adviceWhy: "Capacity depletion is the most immediate bottleneck in the current business state.",
-  },
-  {
-    id: "demand_spike",
-    tests: [/\bdemand\b.*\bspike\b/i, /\bspike\b.*\bdemand\b/i],
-    targets: ["obj_demand_1", "obj_order_flow_1", "obj_inventory_1", "obj_warehouse_1"],
-    riskEdges: [
-      { from: "obj_demand_1", to: "obj_order_flow_1", base: 0.63, delta: 0.16 },
-      { from: "obj_order_flow_1", to: "obj_inventory_1", base: 0.58, delta: 0.12 },
-      { from: "obj_inventory_1", to: "obj_warehouse_1", base: 0.54, delta: 0.09 },
-      { from: "obj_order_flow_1", to: "obj_cash_pressure_1", base: 0.49, delta: 0.08 },
-    ],
-    driverDelta: { inventory_pressure: 0.14, time_pressure: 0.12, quality_risk: 0.05 },
-    kpiRiskDelta: 0.07,
-    riskSummary: "Demand volatility increased and is accelerating pressure across flow, capacity, and operations.",
-    timelineSteps: [
-      "Immediate: incoming demand rises.",
-      "Near-term: capacity burns down faster.",
-      "Follow-up: operational strain spreads across the system.",
-    ],
-    adviceAction: "Increase short-term capacity and monitor buffer burn.",
-    adviceImpact: "Reduces service-level degradation during demand surges.",
-    adviceWhy: "Demand shock is propagating through every core business flow node.",
-  },
-  {
-    id: "price_increase",
-    tests: [/\bprice\b.*\bincrease\b/i, /\bincrease\b.*\bprice\b/i, /\bprice\b.*\brise\b/i, /\bprice\b.*\bpressure\b/i, /\bpressure\b.*\bprice\b/i],
-    targets: ["obj_price_1", "obj_demand_1", "obj_cash_pressure_1", "obj_customer_satisfaction_1"],
-    riskEdges: [
-      { from: "obj_price_1", to: "obj_demand_1", base: 0.62, delta: 0.13 },
-      { from: "obj_price_1", to: "obj_cash_pressure_1", base: 0.6, delta: 0.15 },
-      { from: "obj_demand_1", to: "obj_customer_satisfaction_1", base: 0.52, delta: 0.08 },
-      { from: "obj_cash_pressure_1", to: "obj_customer_satisfaction_1", base: 0.44, delta: 0.07 },
-    ],
-    driverDelta: { inventory_pressure: 0.06, time_pressure: 0.05, quality_risk: 0.09 },
-    kpiRiskDelta: 0.08,
-    riskSummary: "Pricing pressure increased and is raising demand sensitivity, cash pressure, and customer-retention risk.",
-    timelineSteps: [
-      "Immediate: pricing pressure rises.",
-      "Near-term: demand sensitivity changes.",
-      "Follow-up: margin and cash pressure become visible.",
-    ],
-    adviceAction: "Assess margin exposure and prepare pricing and communication scenarios.",
-    adviceImpact: "Protects revenue stability while reducing customer churn risk.",
-    adviceWhy: "Price shock is now a cross-functional risk driver for business performance.",
-  },
-  {
-    id: "delivery_disruption",
-    tests: [
-      /\bdelivery\b.*\bdisruption\b/i,
-      /\bdisruption\b.*\bdelivery\b/i,
-      /\bdelivery\b.*\bbreakdown\b/i,
-      /\bdelivery\b.*\blate\b/i,
-      /\blate\b.*\bdelivery\b/i,
-      /\bdelivery\b.*\btoo late\b/i,
-      /\btoo late\b.*\bdelivery\b/i,
-      /\bdelivery delay\b/i,
-      /\bdelayed delivery\b/i,
-    ],
-    targets: ["obj_delivery_1", "obj_delay_1", "obj_inventory_1", "obj_order_flow_1"],
-    riskEdges: [
-      { from: "obj_delivery_1", to: "obj_inventory_1", base: 0.64, delta: 0.16 },
-      { from: "obj_delay_1", to: "obj_delivery_1", base: 0.66, delta: 0.16 },
-      { from: "obj_inventory_1", to: "obj_order_flow_1", base: 0.58, delta: 0.11 },
-      { from: "obj_order_flow_1", to: "obj_customer_satisfaction_1", base: 0.5, delta: 0.1 },
-    ],
-    driverDelta: { inventory_pressure: 0.12, time_pressure: 0.18, quality_risk: 0.06 },
-    kpiRiskDelta: 0.09,
-    riskSummary: "Operational flow disruption increased execution risk and is now propagating into capacity and fulfillment reliability.",
-    timelineSteps: [
-      "Immediate: execution flow weakens.",
-      "Near-term: operations and capacity coordination suffer.",
-      "Follow-up: customer-facing delays become visible.",
-    ],
-    adviceAction: "Stabilize execution flow and reroute critical work.",
-    adviceImpact: "Contains disruption propagation and protects high-priority commitments.",
-    adviceWhy: "Operational flow is the most exposed control point in the current business system.",
-  },
-  {
-    id: "cash_pressure",
-    tests: [/\bcash\b.*\bpressure\b/i, /\bpressure\b.*\bcash\b/i],
-    targets: ["obj_cash_pressure_1", "obj_order_flow_1", "obj_price_1", "obj_customer_satisfaction_1"],
-    riskEdges: [
-      { from: "obj_cash_pressure_1", to: "obj_order_flow_1", base: 0.52, delta: 0.12 },
-      { from: "obj_price_1", to: "obj_cash_pressure_1", base: 0.58, delta: 0.11 },
-      { from: "obj_order_flow_1", to: "obj_customer_satisfaction_1", base: 0.46, delta: 0.08 },
-    ],
-    driverDelta: { inventory_pressure: 0.05, time_pressure: 0.08, quality_risk: 0.12 },
-    kpiRiskDelta: 0.08,
-    riskSummary: "Cash pressure is tightening decision room and is now threatening service continuity and customer confidence.",
-    timelineSteps: [
-      "Immediate: financial flexibility narrows.",
-      "Near-term: operational trade-offs become harder.",
-      "Follow-up: customer trust and growth options weaken.",
-    ],
-    adviceAction: "Protect liquidity, prioritize critical commitments, and reduce non-essential load.",
-    adviceImpact: "Preserves operating stability while containing avoidable downstream risk.",
-    adviceWhy: "Cash pressure is turning operational strain into a strategic constraint.",
-  },
-  {
-    id: "customer_trust_drop",
-    tests: [/\bcustomer\b.*\btrust\b.*\bdrop\b/i, /\btrust\b.*\bdrop\b/i, /\bcustomer\b.*\btrust\b/i],
-    targets: ["obj_customer_satisfaction_1", "obj_order_flow_1", "obj_delivery_1", "obj_cash_pressure_1"],
-    riskEdges: [
-      { from: "obj_order_flow_1", to: "obj_customer_satisfaction_1", base: 0.5, delta: 0.11 },
-      { from: "obj_delivery_1", to: "obj_customer_satisfaction_1", base: 0.52, delta: 0.1 },
-      { from: "obj_customer_satisfaction_1", to: "obj_cash_pressure_1", base: 0.42, delta: 0.08 },
-    ],
-    driverDelta: { inventory_pressure: 0.04, time_pressure: 0.07, quality_risk: 0.13 },
-    kpiRiskDelta: 0.08,
-    riskSummary: "Customer trust is weakening and is now feeding back into revenue pressure, execution risk, and strategic resilience.",
-    timelineSteps: [
-      "Immediate: customer confidence slips.",
-      "Near-term: service and retention pressure rise together.",
-      "Follow-up: commercial and strategic options narrow.",
-    ],
-    adviceAction: "Protect key customer commitments and address the root service failure quickly.",
-    adviceImpact: "Limits trust erosion while protecting revenue and operating credibility.",
-    adviceWhy: "Customer trust is a lagging outcome that quickly becomes a strategic risk multiplier.",
-  },
-  {
-    id: "operational_bottleneck",
-    tests: [/\boperational\b.*\bbottleneck\b/i, /\bbottleneck\b/i],
-    targets: ["obj_delivery_1", "obj_warehouse_1", "obj_order_flow_1", "obj_inventory_1"],
-    riskEdges: [
-      { from: "obj_delivery_1", to: "obj_order_flow_1", base: 0.54, delta: 0.12 },
-      { from: "obj_warehouse_1", to: "obj_order_flow_1", base: 0.51, delta: 0.11 },
-      { from: "obj_order_flow_1", to: "obj_inventory_1", base: 0.49, delta: 0.08 },
-    ],
-    driverDelta: { inventory_pressure: 0.09, time_pressure: 0.14, quality_risk: 0.07 },
-    kpiRiskDelta: 0.08,
-    riskSummary: "An operational bottleneck is constraining throughput and is now increasing pressure across flow, capacity, and customer outcomes.",
-    timelineSteps: [
-      "Immediate: throughput slows.",
-      "Near-term: backlogs build across dependent work.",
-      "Follow-up: customer and financial pressure become harder to contain.",
-    ],
-    adviceAction: "Relieve the bottleneck, re-sequence critical work, and protect downstream commitments.",
-    adviceImpact: "Restores flow control while preventing broader business disruption.",
-    adviceWhy: "A constrained operating node can quickly become the system's dominant risk source.",
-  },
-];
-
-function normalizeTextForRetail(text: string): string {
-  return String(text || "").toLowerCase().trim();
-}
-
-function detectRetailTriggerConfig(text: string): RetailTriggerConfig | null {
-  const t = normalizeTextForRetail(text);
-  for (const cfg of RETAIL_TRIGGER_CONFIGS) {
-    if (cfg.tests.some((rx) => rx.test(t))) return cfg;
-  }
-  return null;
-}
-
-function isRetailScenePayload(
-  payload: BackendChatResponse | null | undefined,
-  fallbackScene?: SceneJson | null
-): boolean {
-  const payloadScene = payload?.scene_json ? normalizeSceneJson(payload.scene_json as SceneJson) : null;
-  const scene = payloadScene ?? fallbackScene ?? null;
-  if (!scene) return false;
-
-  const sceneObjectIds = extractSceneObjectIds(scene);
-  if (!sceneObjectIds.length) return false;
-
-  const requiredRetailKeys = ["obj_supplier_1", "obj_inventory_1", "obj_delivery_1"];
-  const resolvedRequiredRetailIds = resolveRetailHighlightedObjectIds(requiredRetailKeys, sceneObjectIds);
-
-  return resolvedRequiredRetailIds.length >= 3;
-}
-
-function isRetailDemoScene(scene: SceneJson | null | undefined): boolean {
-  return String(scene?.meta?.demo_id ?? "").trim().toLowerCase() === "retail_supply_chain_fragility";
-}
-
-function upsertRiskEdge(
-  edges: any[],
-  from: string,
-  to: string,
-  base: number,
-  delta: number
-): any[] {
-  const next = Array.isArray(edges) ? edges.map((e) => ({ ...e })) : [];
-  const idx = next.findIndex((e) => String(e?.from ?? "") === from && String(e?.to ?? "") === to);
-  const prev = idx >= 0 ? Number(next[idx]?.weight ?? base) : base;
-  const weight = clamp(prev + delta, 0, 0.95);
-  if (idx >= 0) {
-    next[idx] = { ...next[idx], from, to, weight };
-  } else {
-    next.push({ from, to, weight });
-  }
-  return next;
-}
-
-function normalizePromptText(text: string): string {
-  return String(text || "").toLowerCase().trim();
-}
-
-function tokenizePrompt(text: string): string[] {
-  return tokenizeSemanticText(normalizePromptText(text)).filter((t) => t.length >= 3);
-}
-
-function summarizePropagationPath(labels: string[]): string {
-  if (!labels.length) return "the relevant dependency chain";
-  if (labels.length === 1) return labels[0];
-  return labels.slice(0, 3).join(" -> ");
-}
-
-function getSemanticRole(obj: any): string {
-  return String(getObjectSemanticMeta(obj)?.role ?? obj?.role ?? "").trim();
-}
-
-function roleStage(role: string): number {
-  if (role === "risk_source") return 0;
-  if (role === "core_system_node") return 1;
-  if (role === "flow_node" || role === "operational_node" || role === "support_node") return 2;
-  if (role === "buffer_node") return 3;
-  if (role === "strategic_node" || role === "kpi_sensitive_node") return 4;
-  if (role === "downstream_impact_node" || role === "customer_or_outcome_node") return 5;
-  return 6;
-}
-
-function orderObjectsForPropagation(objects: any[]): any[] {
-  return [...objects].sort((a, b) => {
-    const stageDelta = roleStage(getSemanticRole(a)) - roleStage(getSemanticRole(b));
-    if (stageDelta !== 0) return stageDelta;
-    return getObjectDisplayLabel(a).localeCompare(getObjectDisplayLabel(b));
-  });
-}
-
-function buildGenericRiskSummary(args: { primaryRole: string; matchedNames: string[]; matchedDependencies: string[] }): string {
-  const primary = args.matchedNames[0] ?? "the primary node";
-  const secondary = args.matchedNames[1] ?? args.matchedDependencies[0] ?? "connected operations";
-  if (args.primaryRole === "risk_source") {
-    return `${primary} is the leading source of system stress, and pressure is now moving into ${secondary}.`;
-  }
-  if (args.primaryRole === "buffer_node") {
-    return `${primary} is losing protective capacity, making ${secondary} more fragile.`;
-  }
-  if (args.primaryRole === "flow_node" || args.primaryRole === "operational_node") {
-    return `${primary} is becoming a flow constraint, and stress is spreading into ${secondary}.`;
-  }
-  if (args.primaryRole === "strategic_node" || args.primaryRole === "kpi_sensitive_node") {
-    return `${primary} is becoming a strategic pressure point, with likely spillover into ${secondary}.`;
-  }
-  if (args.primaryRole === "customer_or_outcome_node" || args.primaryRole === "downstream_impact_node") {
-    return `${primary} is already showing downstream impact, signalling broader fragility in ${secondary}.`;
-  }
-  return `${primary} is the main pressure point, and stress is beginning to spread into ${secondary}.`;
-}
-
-function buildGenericTimelineSteps(args: { primaryRole: string; matchedNames: string[]; matchedDependencies: string[] }): [string, string, string] {
-  const primary = args.matchedNames[0] ?? "the primary node";
-  const secondary = args.matchedNames[1] ?? args.matchedDependencies[0] ?? "connected operations";
-  const tertiary =
-    args.matchedNames[2] ?? args.matchedDependencies[1] ?? args.matchedNames[1] ?? "downstream outcomes";
-  if (args.primaryRole === "risk_source") {
-    return [
-      `Immediate: disruption starts at ${primary}.`,
-      `Near-term: operational stress spreads into ${secondary}.`,
-      `Follow-up: ${tertiary} becomes harder to protect.`,
-    ];
-  }
-  if (args.primaryRole === "buffer_node") {
-    return [
-      `Immediate: resilience weakens at ${primary}.`,
-      `Near-term: pressure reaches ${secondary}.`,
-      `Follow-up: ${tertiary} loses stability.`,
-    ];
-  }
-  if (args.primaryRole === "customer_or_outcome_node" || args.primaryRole === "downstream_impact_node") {
-    return [
-      `Immediate: ${primary} shows visible strain.`,
-      `Near-term: ${secondary} requires containment.`,
-      `Follow-up: ${tertiary} becomes a broader business concern.`,
-    ];
-  }
-  return [
-    `Immediate: pressure appears at ${primary}.`,
-    `Near-term: impact spreads into ${secondary}.`,
-    `Follow-up: ${tertiary} becomes harder to stabilize.`,
-  ];
-}
-
-function buildGenericAdvice(args: { primaryRole: string; matchedNames: string[]; matchedSemanticTags: string[] }) {
-  const primary = args.matchedNames[0] ?? "the exposed node";
-  const secondary = args.matchedNames[1] ?? "the connected flow";
-  const hasRiskTag = args.matchedSemanticTags.some((tag) => /risk|pressure|fragility/i.test(tag));
-  if (args.primaryRole === "risk_source") {
-    return {
-      action: `Contain ${primary} and protect ${secondary}.`,
-      impact: "Reduces the chance that upstream disruption spreads across the system.",
-      why: `${primary} is the clearest source of current fragility.`,
-    };
-  }
-  if (args.primaryRole === "buffer_node") {
-    return {
-      action: `Protect ${primary} and rebuild resilience around ${secondary}.`,
-      impact: "Restores shock absorption before downstream performance degrades further.",
-      why: `${primary} is the system's main protective buffer in this scenario.`,
-    };
-  }
-  if (args.primaryRole === "customer_or_outcome_node" || args.primaryRole === "downstream_impact_node") {
-    return {
-      action: `Protect ${primary} and address the upstream driver in ${secondary}.`,
-      impact: "Contains visible impact while reducing the source of recurring damage.",
-      why: `${primary} signals that the system is already leaking value to the customer side.`,
-    };
-  }
-  if (args.primaryRole === "strategic_node" || args.primaryRole === "kpi_sensitive_node") {
-    return {
-      action: `Stabilize ${primary} and reduce pressure on ${secondary}.`,
-      impact: "Prevents operational strain from turning into a larger business constraint.",
-      why: `${primary} is now a business-level pressure node, not just an operational signal.`,
-    };
-  }
-  return {
-    action: `Protect ${primary} and stabilize ${secondary}.`,
-    impact: hasRiskTag
-      ? "Contains current pressure before it spreads across the system."
-      : "Reduces propagation risk while preserving system continuity.",
-    why: `${primary} is currently the clearest leverage point for limiting downstream disruption.`,
-  };
-}
-
-function mapDemoVisualModeToReactionMode(mode: DemoVisualMode) {
-  if (mode === "shock" || mode === "fragility") return "risk" as const;
-  if (mode === "propagation") return "propagation" as const;
-  if (mode === "decision") return "decision" as const;
-  if (mode === "outcome") return "neutral_acknowledgement" as const;
-  return "focus" as const;
-}
-
-function buildReadableDemoReply(args: {
-  riskSummary: string;
-  timelineSteps: string[];
-  action: string;
-  matchedNames?: string[];
-}): string {
-  const matched = Array.isArray(args.matchedNames) ? args.matchedNames.filter(Boolean) : [];
-  const focusText =
-    matched.length >= 2
-      ? `Focus areas: ${matched.slice(0, 2).join(" and ")}. `
-      : matched.length === 1
-      ? `Focus area: ${matched[0]}. `
-      : "";
-  const [immediate, nearTerm, followUp] = Array.isArray(args.timelineSteps) ? args.timelineSteps : [];
-  return [
-    `${focusText}Risk: ${args.riskSummary}`,
-    `Timeline: ${immediate ?? ""} ${nearTerm ?? ""} ${followUp ?? ""}`.trim(),
-    `Recommended action: ${args.action}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
-function buildExecutiveSummarySurface(args: {
-  matchedNames?: string[];
-  primaryRole?: string;
-  riskSummary?: string;
-  timelineSteps?: string[];
-  adviceAction?: string;
-  adviceWhy?: string;
-  domainLabel?: string;
-  framingStyle?: "systemic" | "operational" | "financial" | "resilience" | "strategic";
-}): { happened: string; why_it_matters: string; what_to_do: string; summary: string } {
-  const matched = Array.isArray(args.matchedNames) ? args.matchedNames.filter(Boolean) : [];
-  const primary = matched[0] ?? "The primary node";
-  const secondary = matched[1] ?? "connected operations";
-  const followUp = Array.isArray(args.timelineSteps) ? String(args.timelineSteps[2] ?? "").trim() : "";
-  const adviceAction = String(args.adviceAction ?? "Protect the exposed node and stabilize the system.").trim();
-  const riskSummary = String(args.riskSummary ?? "").trim() || `${primary} is now under pressure.`;
-  const framingStyle = String(args.framingStyle ?? "systemic").trim();
-  const domainLabel = String(args.domainLabel ?? "system").trim() || "system";
-
-  let happened = riskSummary;
-  let whyItMatters =
-    followUp || `${primary} is connected to dependent operations, so the disruption is becoming systemic.`;
-
-  if (args.primaryRole === "risk_source") {
-    happened = `${primary} is now stressing ${secondary}.`;
-    whyItMatters = followUp || "The disruption is no longer isolated; it is spreading into core operations.";
-  } else if (args.primaryRole === "buffer_node") {
-    happened = `${primary} is weakening and can no longer absorb pressure cleanly.`;
-    whyItMatters = followUp || "If buffer capacity erodes further, downstream service and customer risk will rise.";
-  } else if (args.primaryRole === "strategic_node" || args.primaryRole === "kpi_sensitive_node") {
-    happened = `${primary} is becoming a broader business constraint.`;
-    whyItMatters = followUp || "This matters because financial and operating pressure are now reinforcing each other.";
-  } else if (args.primaryRole === "customer_or_outcome_node" || args.primaryRole === "downstream_impact_node") {
-    happened = `${primary} is already showing visible downstream impact.`;
-    whyItMatters = followUp || "This matters because customer-facing impact usually signals a wider system failure.";
-  }
-
-  if (framingStyle === "financial") {
-    happened = `${primary} is increasing financial exposure across the ${domainLabel.toLowerCase()} system.`;
-    whyItMatters = followUp || "This matters because liquidity, downside risk, and concentration can reinforce each other quickly.";
-  } else if (framingStyle === "resilience") {
-    happened = `${primary} is weakening service resilience across connected dependencies.`;
-    whyItMatters = followUp || "This matters because localized failures can propagate into broader reliability loss.";
-  } else if (framingStyle === "strategic") {
-    happened = `${primary} is shifting the strategic position and response space.`;
-    whyItMatters = followUp || "This matters because pressure is now shaping competitive choices, not just local execution.";
-  } else if (framingStyle === "operational") {
-    happened = `${primary} is pressuring core operations in the ${domainLabel.toLowerCase()} system.`;
-    whyItMatters = followUp || "This matters because operational pressure is moving from one node into wider business continuity risk.";
-  }
-
-  const actionLead =
-    framingStyle === "strategic"
-      ? "Recommended strategic response"
-      : framingStyle === "financial"
-      ? "Recommended financial action"
-      : framingStyle === "resilience"
-      ? "Recommended resilience action"
-      : "Recommended action";
-  const whatToDo = `${actionLead}: ${adviceAction}`;
-  const summary = `${happened} ${whyItMatters} ${whatToDo}`.trim();
-  return {
-    happened,
-    why_it_matters: whyItMatters,
-    what_to_do: whatToDo,
-    summary,
-  };
-}
-
-function hasMeaningfulSceneMutation(payload: any, currentScene: SceneJson | null): boolean {
-  if (!payload || typeof payload !== "object") return false;
-  if (!payload.scene_json) return false;
-
-  // Allow first scene load
-  if (!currentScene) return true;
-
-  // Explicit force flags from backend
-  const explicitForce =
-    payload?.force_scene_update === true ||
-    payload?.scene_update === true ||
-    payload?.scene_json?.meta?.force_scene_update === true ||
-    payload?.scene_json?.meta?.scene_update === true;
-
-  if (explicitForce) return true;
-
-  const hasActions = Array.isArray(payload?.actions) && payload.actions.length > 0;
-
-  const highlightedCount = Array.isArray(payload?.object_selection?.highlighted_objects)
-    ? payload.object_selection.highlighted_objects.length
-    : 0;
-
-  const riskSourcesCount = Array.isArray(payload?.risk_propagation?.sources)
-    ? payload.risk_propagation.sources.length
-    : 0;
-
-  const scannerTargetsCount = Array.isArray(payload?.scanner?.focus_object_ids)
-    ? payload.scanner.focus_object_ids.length
-    : 0;
-
-  const externalTargetsCount = Array.isArray(payload?.external_integration?.focus_object_ids)
-    ? payload.external_integration.focus_object_ids.length
-    : 0;
-
-  const hasScenePatch =
-    Array.isArray(payload?.scene_patch?.objects) ||
-    Array.isArray(payload?.scene_patch?.relations) ||
-    Array.isArray(payload?.scene_patch?.loops);
-
-  return (
-    hasActions ||
-    highlightedCount > 0 ||
-    riskSourcesCount > 0 ||
-    scannerTargetsCount > 0 ||
-    externalTargetsCount > 0 ||
-    hasScenePatch
-  );
-}
-
-function extractSceneObjectIds(scene: SceneJson | null | undefined): string[] {
-  const objects = Array.isArray(scene?.scene?.objects) ? scene!.scene.objects : [];
-  return objects
-    .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `obj_${idx}`))
-    .filter(Boolean);
-}
-
-function buildSceneObjectIdSet(scene: SceneJson | null | undefined): Set<string> {
-  return new Set(extractSceneObjectIds(scene));
-}
-
-function getSceneCompatibilityScore(
-  currentScene: SceneJson | null | undefined,
-  incomingScene: SceneJson | null | undefined
-): number {
-  const currentIds = extractSceneObjectIds(currentScene);
-  const incomingIds = extractSceneObjectIds(incomingScene);
-
-  if (!currentIds.length || !incomingIds.length) return 0;
-
-  const currentSet = buildSceneObjectIdSet(currentScene);
-  let overlap = 0;
-
-  for (const id of incomingIds) {
-    if (currentSet.has(id)) overlap += 1;
-  }
-
-  return overlap / Math.max(incomingIds.length, currentIds.length);
-}
-
-function isSceneCompatibleForReplacement(
-  currentScene: SceneJson | null | undefined,
-  incomingScene: SceneJson | null | undefined,
-  payload?: any
-): boolean {
-  if (!incomingScene) return false;
-  if (!currentScene) return true;
-
-  const explicitForce =
-    payload?.force_scene_update === true ||
-    payload?.scene_update === true ||
-    payload?.scene_json?.meta?.force_scene_update === true ||
-    payload?.scene_json?.meta?.scene_update === true ||
-    incomingScene?.meta?.force_scene_update === true ||
-    incomingScene?.meta?.scene_update === true;
-
-  if (explicitForce) return true;
-
-  const currentIds = extractSceneObjectIds(currentScene);
-  const incomingIds = extractSceneObjectIds(incomingScene);
-
-  if (!currentIds.length || !incomingIds.length) return false;
-
-  const compatibility = getSceneCompatibilityScore(currentScene, incomingScene);
-
-  // Strict enough to block fallback/minimal scenes,
-  // but tolerant enough for partial scene patches / focused subsets.
-  return compatibility >= 0.45;
-}
-
-function shouldAcceptIncomingSceneReplacement(
-  payload: any,
-  currentScene: SceneJson | null,
-  incomingScene: SceneJson | null | undefined
-): boolean {
-  if (!incomingScene) return false;
-  if (!hasMeaningfulSceneMutation(payload, currentScene)) return false;
-  return hasForcedSceneUpdate(payload, incomingScene);
-}
-
-function buildUnifiedReactionFromChatResponse(
-  payload: any,
-  options?: {
-    acceptedSceneForChatReplacement?: SceneJson | null;
-    allowSceneEffects?: boolean;
-    fallbackHighlightedObjectIds?: string[];
-    fallbackPrimaryObjectId?: string | null;
-    reactionModeHint?: "focus" | "risk" | "propagation" | "decision" | null;
-  }
-): UnifiedSceneReaction {
-  const highlightedObjectIds = Array.isArray(payload?.object_selection?.highlighted_objects)
-    ? payload.object_selection.highlighted_objects.map(String)
-    : Array.isArray(options?.fallbackHighlightedObjectIds)
-    ? options.fallbackHighlightedObjectIds.map(String)
-    : options?.fallbackPrimaryObjectId
-    ? [String(options.fallbackPrimaryObjectId)]
-    : [];
-
-  const riskSources = Array.isArray(payload?.risk_propagation?.sources)
-    ? payload.risk_propagation.sources.map((x: any) => String(x))
-    : [];
-
-  const riskTargets = Array.isArray(payload?.risk_propagation?.targets)
-    ? payload.risk_propagation.targets.map((x: any) => String(x))
-    : [];
-
-  return normalizeUnifiedSceneReaction(resolveUnifiedReactionPolicy({
-    source: "chat",
-    reason: typeof payload?.analysis_summary === "string" ? payload.analysis_summary : null,
-    fallbackHighlightText:
-      typeof payload?.reply === "string" && payload.reply.trim().length > 0
-        ? payload.reply
-        : typeof payload?.analysis_summary === "string"
-        ? payload.analysis_summary
-        : null,
-    highlightedObjectIds,
-    riskSources,
-    riskTargets,
-    reactionModeHint: options?.reactionModeHint ?? null,
-    activeLoopId: payload?.loop_analysis?.active_loop_id ?? payload?.active_loop_id ?? null,
-    loopSuggestions: Array.isArray(payload?.loop_analysis?.suggestions)
-      ? payload.loop_analysis.suggestions
-      : Array.isArray(payload?.loop_suggestions)
-      ? payload.loop_suggestions
-      : [],
-    actions: options?.allowSceneEffects ? (Array.isArray(payload?.actions) ? payload.actions : []) : [],
-    allowFocusMutation: options?.allowSceneEffects === true,
-    sceneJson: options?.acceptedSceneForChatReplacement ?? null,
-  }));
-}
-
-function buildUnifiedReactionFromRetailTriggerConfig(
-  cfg: RetailTriggerConfig,
-  scene: SceneJson | null | undefined
-): UnifiedSceneReaction {
-  const sceneObjectIds = extractSceneObjectIds(scene);
-  const resolvedHighlightedObjectIds = resolveRetailHighlightedObjectIds(cfg.targets, sceneObjectIds);
-  const resolvedRiskSources = resolveRetailHighlightedObjectIds(
-    cfg.riskEdges.map((edge) => edge.from),
-    sceneObjectIds
-  );
-  const resolvedRiskTargets = resolveRetailHighlightedObjectIds(
-    cfg.riskEdges.map((edge) => edge.to),
-    sceneObjectIds
-  );
-  const shouldDimUnrelated = resolvedHighlightedObjectIds.length > 0;
-
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[Nexora][RetailHighlightResolution]", {
-      rawRetailTargets: cfg.targets,
-      resolvedRetailTargets: resolvedHighlightedObjectIds,
-      dimUnrelatedObjects: shouldDimUnrelated,
-      sceneObjectIds: shouldDimUnrelated ? undefined : sceneObjectIds,
-    });
-  }
-
-  return normalizeUnifiedSceneReaction(resolveUnifiedReactionPolicy({
-    source: "chat",
-    reason: cfg.riskSummary,
-    fallbackHighlightText: [cfg.riskSummary, ...cfg.timelineSteps, cfg.adviceAction].join(" "),
-    highlightedObjectIds: resolvedHighlightedObjectIds,
-    riskSources: resolvedRiskSources,
-    riskTargets: resolvedRiskTargets,
-    reactionModeHint: resolvedRiskSources.length > 0 || resolvedRiskTargets.length > 0 ? "risk" : "focus",
-    activeLoopId: null,
-    loopSuggestions: [],
-    actions: [],
-    allowFocusMutation: true,
-    sceneJson: null,
-  }));
-}
-
-function buildUnifiedReactionFromFragilityRun(payload: any): UnifiedSceneReaction {
-  const highlightedObjectIds = Array.isArray(payload?.highlightedObjectIds)
-    ? payload.highlightedObjectIds.map(String)
-    : Array.isArray(payload?.objectIds)
-    ? payload.objectIds.map(String)
-    : [];
-
-  const riskSources = Array.isArray(payload?.riskSources)
-    ? payload.riskSources.map(String)
-    : [];
-
-  const riskTargets = Array.isArray(payload?.riskTargets)
-    ? payload.riskTargets.map(String)
-    : highlightedObjectIds;
-
-  return normalizeUnifiedSceneReaction(resolveUnifiedReactionPolicy({
-    source: "button",
-    reason: typeof payload?.reason === "string" ? payload.reason : "Fragility scene run",
-    highlightedObjectIds,
-    riskSources,
-    riskTargets,
-    reactionModeHint: riskSources.length > 0 || riskTargets.length > 0 ? "risk" : "focus",
-    activeLoopId: payload?.activeLoopId ?? null,
-    loopSuggestions: Array.isArray(payload?.loopSuggestions) ? payload.loopSuggestions : [],
-    actions: Array.isArray(payload?.actions) ? payload.actions : [],
-    allowFocusMutation: false,
-    sceneJson: null,
-  }));
-}
-
-function applyGenericPromptFeedbackEnhancement(
-  rawPayload: any,
-  userText: string,
-  fallbackScene: SceneJson | null,
-  modeContext?: ActiveModeContext | null,
-  reasoningHints?: {
-    workspaceId?: string;
-    selectedObjectId?: string | null;
-    memoryState?: any;
-    environmentConfig?: EnvironmentConfig | null;
-  }
-): any {
-  if (!rawPayload || typeof rawPayload !== "object") return rawPayload;
-
-  const objects = getSceneObjectsFromPayload(rawPayload, fallbackScene);
-  const matched = matchObjectsFromPrompt(userText, objects, 3);
-  const matchedIds = matched.map((m) => m.id);
-  if (!matchedIds.length) return rawPayload;
-
-  const next: any = { ...rawPayload };
-  const matchedObjects = matchedIds
-    .map((id) => objects.find((o: any) => String(o?.id ?? o?.name ?? "") === id))
-    .filter(Boolean);
-  const orderedMatchedObjects = orderObjectsForPropagation(matchedObjects);
-  const matchedNames = orderedMatchedObjects.map((o: any) => getObjectDisplayLabel(o));
-  const matchedTopics = tokenizePrompt(userText).slice(0, 5);
-  const matchedSemanticTags = Array.from(
-    new Set(
-      orderedMatchedObjects
-        .flatMap((o: any) => getObjectSemanticTags(o))
-        .map((x: any) => String(x || "").trim())
-        .filter(Boolean)
-    )
-  ).slice(0, 5);
-  const matchedDependencies = Array.from(
-    new Set(orderedMatchedObjects.flatMap((o: any) => getObjectDependencies(o)))
-  ).slice(0, 5);
-  const primaryRole = getSemanticRole(orderedMatchedObjects[0]);
-  const propagationPath = summarizePropagationPath([...matchedNames, ...matchedDependencies]);
-
-  const baseSelection =
-    (next?.object_selection && typeof next.object_selection === "object" ? next.object_selection : null) ??
-    (next?.scene_json?.object_selection && typeof next.scene_json.object_selection === "object"
-      ? next.scene_json.object_selection
-      : null) ??
-    {};
-  const priorHighlights = Array.isArray(baseSelection?.highlighted_objects) ? baseSelection.highlighted_objects : [];
-  const orderedMatchedIds = orderedMatchedObjects.map((o: any) => String(o?.id ?? o?.name ?? ""));
-  const highlighted = Array.from(new Set([...orderedMatchedIds, ...priorHighlights])).slice(0, 4);
-  next.object_selection = {
-    ...baseSelection,
-    highlighted_objects: highlighted,
-    ranked_objects: matched.map((item) => ({ id: item.id, score: Number((item.score / 10).toFixed(2)) })),
-  };
-
-  const baseRisk =
-    (next?.risk_propagation && typeof next.risk_propagation === "object" ? next.risk_propagation : null) ??
-    (next?.scene_json?.risk_propagation && typeof next.scene_json.risk_propagation === "object"
-      ? next.scene_json.risk_propagation
-      : null) ??
-    (next?.scene_json?.scene?.risk_propagation && typeof next.scene_json.scene.risk_propagation === "object"
-      ? next.scene_json.scene.risk_propagation
-      : null) ??
-    {};
-  const priorSources = Array.isArray(baseRisk?.sources) ? baseRisk.sources : [];
-  const riskSources = Array.from(new Set([...priorSources, ...orderedMatchedIds]));
-  const riskSummary = buildGenericRiskSummary({ primaryRole, matchedNames, matchedDependencies });
-  next.risk_propagation = {
-    ...baseRisk,
-    sources: riskSources.slice(0, 3),
-    path: propagationPath,
-    summary:
-      typeof baseRisk?.summary === "string" && baseRisk.summary.trim().length > 20
-        ? baseRisk.summary
-        : riskSummary,
-  };
-
-  const timelineSteps = buildGenericTimelineSteps({ primaryRole, matchedNames, matchedDependencies });
-  next.timeline_impact = {
-    trigger: "generic_prompt_feedback",
-    immediate: timelineSteps[0],
-    near_term: timelineSteps[1],
-    follow_up: timelineSteps[2],
-    steps: timelineSteps,
-    path: propagationPath,
-  };
-
-  const baseAdvice =
-    (next?.strategic_advice && typeof next.strategic_advice === "object" ? next.strategic_advice : null) ??
-    (next?.scene_json?.strategic_advice && typeof next.scene_json.strategic_advice === "object"
-      ? next.scene_json.strategic_advice
-      : null) ??
-    {};
-  const genericAdvice = buildGenericAdvice({ primaryRole, matchedNames, matchedSemanticTags });
-  const genericAction = {
-    id: `generic_${matchedIds[0] ?? "node"}`,
-    type: "generic_response",
-    action: genericAdvice.action,
-    targets: orderedMatchedIds,
-    impact: genericAdvice.impact,
-    priority: 1,
-  };
-  const existingActions = Array.isArray(baseAdvice?.recommended_actions) ? baseAdvice.recommended_actions : [];
-  next.strategic_advice = {
-    ...baseAdvice,
-    primary_recommendation: genericAction,
-    recommended_actions: [genericAction, ...existingActions.filter((action: any) => action?.action !== genericAction.action)].slice(0, 3),
-    why: genericAdvice.why,
-    summary: `Recommended action: ${genericAction.action}`,
-    confidence: Number.isFinite(Number(baseAdvice?.confidence)) ? Number(baseAdvice.confidence) : 0.72,
-  };
-
-  next.reply = buildReadableDemoReply({
-    riskSummary: next.risk_propagation?.summary ?? riskSummary,
-    timelineSteps,
-    action: next.strategic_advice?.primary_recommendation?.action ?? genericAction.action,
-    matchedNames,
-  });
-  const executiveSummarySurface = buildExecutiveSummarySurface({
-    matchedNames,
-    primaryRole,
-    riskSummary: next.risk_propagation?.summary ?? riskSummary,
-    timelineSteps,
-    adviceAction: next.strategic_advice?.primary_recommendation?.action ?? genericAction.action,
-    adviceWhy: next.strategic_advice?.why ?? genericAdvice.why,
-    domainLabel: modeContext?.project_domain ?? "system",
-    framingStyle: "systemic",
-  });
-  next.executive_summary_surface = executiveSummarySurface;
-  next.analysis_summary = executiveSummarySurface.summary;
-
-  const projectId = String(
-    next?.scene_json?.meta?.project_id ??
-      next?.scene_json?.meta?.demo_id ??
-      fallbackScene?.meta?.project_id ??
-      fallbackScene?.meta?.demo_id ??
-      "default"
-  );
-  const relationList = Array.isArray(next?.scene_json?.scene?.relations)
-    ? next.scene_json.scene.relations
-    : [];
-  const simInput = createSimulationInputFromPrompt({
-    text: userText,
-    matchedObjectIds: matchedIds,
-    topics: matchedTopics,
-    kind: "decision",
-    magnitude: 0.62,
-    metadata: { source: "prompt_feedback_generic" },
-  });
-  const decisionSimulation = buildSimulationResult({
-    projectId,
-    scenarioName: `Prompt Scenario: ${userText}`,
-    input: simInput,
-    objects: objects as any[],
-    relations: relationList as any[],
-    riskSummary: next.risk_propagation?.summary ?? riskSummary,
-    timelineSteps,
-    recommendation: next.strategic_advice?.primary_recommendation?.action ?? genericAction.action,
-    confidence: Number(next?.strategic_advice?.confidence ?? 0.72),
-    affectedDimensions: ["dependency_stability", "operational_pressure", ...matchedSemanticTags].slice(0, 4),
-  });
-  next.decision_simulation = decisionSimulation;
-  const scenarioSnapshot = createScenarioSnapshot({
-    projectId,
-    simulation: decisionSimulation,
-    sceneJson: (next?.scene_json as SceneJson | undefined) ?? fallbackScene ?? null,
-    semanticObjectMeta: orderedMatchedObjects.reduce((acc: Record<string, any>, o: any) => {
-      const oid = String(o?.id ?? o?.name ?? "").trim();
-      if (!oid) return acc;
-      acc[oid] = o?.semantic ?? {
-        category: o?.category,
-        role: o?.role,
-        domain: o?.domain,
-        tags: Array.isArray(o?.tags) ? o.tags : undefined,
-      };
-      return acc;
-    }, {}),
-    baselineRef: decisionSimulation?.comparisonReady?.baseline?.scenarioId
-      ? {
-          projectId,
-          scenarioId: String(decisionSimulation.comparisonReady.baseline.scenarioId),
-          timestamp: Date.now(),
-          name: "Baseline",
-        }
-      : null,
-  });
-  const replaySequence = buildReplaySequence(scenarioSnapshot);
-  const scenarioComparison = compareScenarioSnapshots({
-    baseline: null,
-    current: scenarioSnapshot,
-    mode: "baseline_vs_impacted",
-  });
-  const semanticMetaById = orderedMatchedObjects.reduce(
-    (acc: Record<string, { role?: string; category?: string; domain?: string }>, o: any) => {
-      const id = String(o?.id ?? o?.name ?? "").trim();
-      if (!id) return acc;
-      acc[id] = {
-        role: String(o?.semantic?.role ?? o?.role ?? "").trim() || undefined,
-        category: String(o?.semantic?.category ?? o?.category ?? "").trim() || undefined,
-        domain: String(o?.semantic?.domain ?? o?.domain ?? "").trim() || undefined,
-      };
-      return acc;
-    },
-    {}
-  );
-  const executiveInsight = buildExecutiveInsightFromSimulation({
-    simulation: decisionSimulation,
-    comparison: scenarioComparison,
-    semanticMetaById,
-  });
-  const strategyKpiContext = buildStrategyKpiContext({
-    simulation: decisionSimulation,
-    comparison: scenarioComparison,
-    objects: objects as any[],
-    semanticObjectMeta: orderedMatchedObjects.reduce((acc: Record<string, any>, o: any) => {
-      const oid = String(o?.id ?? o?.name ?? "").trim();
-      if (!oid) return acc;
-      acc[oid] = o?.semantic ?? {};
-      return acc;
-    }, {}),
-    domain: String((next?.scene_json as any)?.meta?.domain ?? (fallbackScene as any)?.meta?.domain ?? "").trim() || undefined,
-  });
-  const executiveInsightWithStrategy = {
-    ...executiveInsight,
-    summary: executiveSummarySurface.summary,
-    explanation_notes: Array.from(
-      new Set([
-        executiveSummarySurface.happened,
-        executiveSummarySurface.why_it_matters,
-        ...(Array.isArray(executiveInsight?.explanation_notes) ? executiveInsight.explanation_notes : []),
-        ...buildStrategyAwareExecutiveNotes({
-          strategy: strategyKpiContext.strategy,
-          summary: strategyKpiContext.summary,
-        }),
-      ])
-    ),
-    comparison_insights: Array.from(
-      new Set([
-        ...(Array.isArray(executiveInsight?.comparison_insights) ? executiveInsight.comparison_insights : []),
-        ...(strategyKpiContext.comparison?.notes ?? []),
-      ])
-    ),
-  };
-  next.decision_scenario_snapshot = scenarioSnapshot;
-  next.decision_replay = replaySequence;
-  next.decision_comparison = scenarioComparison;
-  next.executive_insight = executiveInsightWithStrategy;
-  next.strategy_kpi = {
-    ...strategyKpiContext,
-    generated_from: "generic_prompt_feedback",
-  };
-  const decisionCockpit = buildDecisionCockpitState({
-    workspaceId: "default_workspace",
-    projectId,
-    projectName: String((next?.scene_json as any)?.meta?.project_name ?? "").trim() || undefined,
-    projectDomain: String((next?.scene_json as any)?.meta?.domain ?? "").trim() || undefined,
-    sceneJson: ((next?.scene_json as SceneJson | undefined) ?? fallbackScene ?? null) as SceneJson | null,
-    payload: next,
-    selectedObjectId: null,
-    selectedObjectLabel: null,
-    focusMode: "all",
-    focusPinned: false,
-    activeLoopId: String((next?.scene_json as any)?.scene?.active_loop ?? "").trim() || null,
-    memoryState: null,
-    modeContext: modeContext ?? undefined,
-  });
-  next.decision_cockpit = decisionCockpit;
-  next.decision_cockpit = {
-    ...decisionCockpit,
-    executive: {
-      ...decisionCockpit.executive,
-      summary: executiveSummarySurface.summary,
-      happened: executiveSummarySurface.happened,
-      why_it_matters: executiveSummarySurface.why_it_matters,
-      what_to_do: executiveSummarySurface.what_to_do,
-    },
-  };
-  if (modeContext) {
-    next.product_mode = modeContext;
-  }
-  const memoryObjects = reasoningHints?.memoryState?.objects ?? {};
-  const volatileNodes = Object.entries(memoryObjects)
-    .filter(([, value]: any) => Number(value?.volatility ?? 0) >= 0.35)
-    .map(([id]) => id)
-    .slice(0, 5);
-  const recurringPatterns = Object.keys(reasoningHints?.memoryState?.loops ?? {}).slice(0, 5);
-  const reasoningInput = createReasoningInput({
-    prompt: userText,
-    context: {
-      workspace_id: reasoningHints?.workspaceId,
-      project_id: projectId,
-      project_domain:
-        String((next?.scene_json as any)?.meta?.domain ?? (fallbackScene as any)?.meta?.domain ?? "").trim() || undefined,
-      selected_object_id: reasoningHints?.selectedObjectId ?? null,
-      active_mode: modeContext ?? null,
-      memory_signals: {
-        volatile_nodes: volatileNodes,
-        recurring_patterns: recurringPatterns,
-      },
-      scanner_context:
-        next?.scanner && typeof next.scanner === "object"
-          ? {
-              source_type: String(next?.scanner?.lastSource?.type ?? "").trim() || undefined,
-              source_id: String(next?.scanner?.lastSource?.id ?? "").trim() || undefined,
-              confidence: Number.isFinite(Number(next?.scanner?.confidence))
-                ? Number(next?.scanner?.confidence)
-                : undefined,
-            }
-          : undefined,
-    },
-    semanticObjects: objects as any[],
-    simulationContext: {
-      baseline_available: !!scenarioComparison?.baselineReady?.baselineAvailable,
-      active_scenario_id: String(decisionSimulation?.scenario?.id ?? "").trim() || undefined,
-    },
-    strategyContext: {
-      at_risk_kpis: strategyKpiContext?.summary?.at_risk_kpis ?? [],
-      threatened_objectives: strategyKpiContext?.summary?.threatened_objectives ?? [],
-    },
-  });
-  const aiReasoning = buildReasoningOutput(reasoningInput);
-  next.ai_reasoning = aiReasoning;
-  const multiAgentEnabled =
-    isFeatureEnabled(reasoningHints?.environmentConfig, "multi_agent") &&
-    !(
-      isFeatureEnabled(reasoningHints?.environmentConfig, "disable_multi_agent_if_unstable") &&
-      (
-        Number(aiReasoning?.confidence?.score ?? aiReasoning?.confidence ?? 0.5) < 0.45 ||
-        (Array.isArray(aiReasoning?.ambiguity_notes) && aiReasoning.ambiguity_notes.length > 2)
-      )
-    );
-  const multiAgentDecision = multiAgentEnabled
-    ? orchestrateMultiAgentDecision({
-        context: {
-          workspace_id: reasoningHints?.workspaceId,
-          project_id: projectId,
-          project_domain:
-            String((next?.scene_json as any)?.meta?.domain ?? (fallbackScene as any)?.meta?.domain ?? "").trim() ||
-            undefined,
-          prompt: userText,
-          selected_object_id: reasoningHints?.selectedObjectId ?? null,
-          mode_context: modeContext ?? null,
-          matched_object_ids: matchedIds,
-          semantic_signals: {
-            tags: matchedSemanticTags,
-            dependencies: matchedDependencies,
-          },
-          reasoning: aiReasoning,
-          simulation: decisionSimulation,
-          comparison: scenarioComparison,
-          strategy: strategyKpiContext?.strategy ?? null,
-          memory: {
-            volatile_nodes: volatileNodes,
-            recurring_patterns: recurringPatterns,
-          },
-          scanner:
-            next?.scanner && typeof next.scanner === "object"
-              ? {
-                  source_type: String(next?.scanner?.lastSource?.type ?? "").trim() || undefined,
-                  confidence: Number.isFinite(Number(next?.scanner?.confidence))
-                    ? Number(next?.scanner?.confidence)
-                    : undefined,
-                  unresolved_items: Array.isArray(next?.scanner?.unresolvedItems) ? next.scanner.unresolvedItems : [],
-                }
-              : null,
-          exploration:
-            next?.autonomous_exploration && typeof next.autonomous_exploration === "object"
-              ? {
-                  fragile_object_ids: Array.isArray(next?.autonomous_exploration?.summary?.fragile_object_ids)
-                    ? next.autonomous_exploration.summary.fragile_object_ids
-                    : [],
-                  highest_severity: Number.isFinite(Number(next?.autonomous_exploration?.summary?.highest_severity))
-                    ? Number(next.autonomous_exploration.summary.highest_severity)
-                    : undefined,
-                  mitigation_ideas: Array.isArray(next?.autonomous_exploration?.summary?.top_mitigation_ideas)
-                    ? next.autonomous_exploration.summary.top_mitigation_ideas
-                    : [],
-                }
-              : null,
-        },
-      })
-    : {
-        plan: {
-          mode: "single_path",
-          selected_agents: [],
-          reason: "Multi-agent disabled by environment capability flags.",
-        },
-        contributions: [],
-        merged: {
-          findings: [],
-          matched_objects: matchedIds.slice(0, 6),
-          scenario_suggestions: [],
-          recommendations: [],
-          explanation_notes: [],
-        },
-        conflicts: [],
-        consensus: {
-          agreement_topics: [],
-          disagreement_topics: [],
-          unresolved_ambiguities: ["Multi-agent path disabled in current environment."],
-          merged_confidence: aiReasoning?.confidence?.score ?? 0.5,
-        },
-        trace: {
-          invoked_count: 0,
-          agent_order: [],
-        },
-      };
-  next.multi_agent_decision = multiAgentDecision;
-  const platformAssembly = buildPlatformAssemblyState({
-    workspaceId: reasoningHints?.workspaceId ?? "default_workspace",
-    projectId,
-    projectName: String((next?.scene_json as any)?.meta?.project_name ?? "").trim() || undefined,
-    projectDomain:
-      String((next?.scene_json as any)?.meta?.domain ?? (fallbackScene as any)?.meta?.domain ?? "").trim() || undefined,
-    selectedObjectId: reasoningHints?.selectedObjectId ?? null,
-    focusMode: (modeContext?.detail_profile?.object_detail === "minimal" ? "all" : "selected") as "all" | "selected",
-    modeContext: modeContext ?? null,
-    reasoning: aiReasoning,
-    simulation: decisionSimulation,
-    comparison: scenarioComparison,
-    replay: replaySequence,
-    executive: executiveInsightWithStrategy,
-    strategy: strategyKpiContext?.strategy ?? null,
-    cockpit: decisionCockpit,
-    memory: {
-      volatile_nodes: volatileNodes,
-      recurring_patterns: recurringPatterns,
-    },
-    theme: String((next?.scene_json as any)?.meta?.theme ?? "night"),
-    environmentConfig: reasoningHints?.environmentConfig ?? null,
-  });
-  next.platform_assembly = platformAssembly;
-  const governanceContext = buildProjectGovernanceContext({
-    workspace_id: reasoningHints?.workspaceId ?? "default_workspace",
-    project_id: projectId,
-    project_status: modeContext?.mode_id === "demo" ? "experimental" : "draft",
-    scenario_status: "draft",
-    recommendation_status: "review",
-    governance: {
-      trusted_source_classification:
-        next?.scanner || next?.external_integration ? "mixed" : "trusted",
-      role_intent_hints: [String(modeContext?.mode_id ?? "manager")],
-    },
-  });
-  const reasoningProv = createTrustProvenance({
-    kind: "prompt_interpretation",
-    source: {
-      source_id: "prompt_input",
-      source_label: "User Prompt",
-      source_type: "prompt",
-      subsystem: "ai_reasoning",
-      version: "a19",
-    },
-    transformation_path: ["prompt", "semantic_match", "reasoning_path_selection"],
-    confidence: aiReasoning?.confidence?.score,
-    uncertainty_notes: aiReasoning?.ambiguity_notes,
-  });
-  const simulationProv = createTrustProvenance({
-    kind: "simulation_output",
-    source: {
-      source_id: String(decisionSimulation?.scenario?.id ?? "simulation"),
-      source_label: String(decisionSimulation?.scenario?.name ?? "Scenario"),
-      source_type: "simulation",
-      subsystem: "simulation_engine",
-      version: "a10",
-    },
-    transformation_path: ["scenario_input", "propagation", "timeline", "impact_summary"],
-    confidence: decisionSimulation?.confidence,
-    uncertainty_notes: decisionSimulation?.impact?.uncertainty ? [decisionSimulation.impact.uncertainty] : undefined,
-  });
-  const recommendationProv = createTrustProvenance({
-    kind: "recommendation_output",
-    source: {
-      source_id: "strategic_advice",
-      source_label: "Strategic Advice",
-      source_type: "advice",
-      subsystem: "explainability_strategy",
-      version: "a12-a13",
-    },
-    transformation_path: ["risk_summary", "strategy_kpi", "advice_generation"],
-    confidence: Number(next?.strategic_advice?.confidence ?? aiReasoning?.confidence?.score ?? 0.72),
-  });
-  const multiAgentProv = createTrustProvenance({
-    kind: "multi_agent_output",
-    source: {
-      source_id: "multi_agent_decision",
-      source_label: "Multi-Agent",
-      source_type: "agent_orchestration",
-      subsystem: "multi_agent_engine",
-      version: "a23",
-    },
-    transformation_path: ["agent_selection", "agent_contributions", "consensus_merge"],
-    confidence: multiAgentDecision?.consensus?.merged_confidence,
-    uncertainty_notes: multiAgentDecision?.consensus?.unresolved_ambiguities,
-  });
-  next.governance_context = governanceContext;
-  next.trust_provenance = appendTrustProvenance(next?.trust_provenance, [
-    reasoningProv,
-    simulationProv,
-    recommendationProv,
-    multiAgentProv,
-  ]);
-  next.audit_events = appendAuditEvents(next?.audit_events, [
-    createAuditEvent({
-      event_type: "prompt_submitted",
-      category: "prompt_reasoning",
-      workspace_id: reasoningHints?.workspaceId ?? "default_workspace",
-      project_id: projectId,
-      origin_type: "user",
-      actor_hint: "prompt",
-      affected_entity: "prompt",
-      provenance_ref_id: reasoningProv.id,
-    }),
-    createAuditEvent({
-      event_type: "reasoning_generated",
-      category: "prompt_reasoning",
-      workspace_id: reasoningHints?.workspaceId ?? "default_workspace",
-      project_id: projectId,
-      origin_type: "agent",
-      actor_hint: "ai_reasoning",
-      affected_entity: aiReasoning.path,
-      provenance_ref_id: reasoningProv.id,
-      explanation_notes: aiReasoning?.ambiguity_notes,
-    }),
-    createAuditEvent({
-      event_type: "simulation_run",
-      category: "simulation_scenario",
-      workspace_id: reasoningHints?.workspaceId ?? "default_workspace",
-      project_id: projectId,
-      origin_type: "system",
-      actor_hint: "simulation_engine",
-      affected_entity: String(decisionSimulation?.scenario?.id ?? "scenario"),
-      provenance_ref_id: simulationProv.id,
-    }),
-    createAuditEvent({
-      event_type: "recommendation_generated",
-      category: "recommendation_explainability",
-      workspace_id: reasoningHints?.workspaceId ?? "default_workspace",
-      project_id: projectId,
-      origin_type: "agent",
-      actor_hint: "recommendation_agent",
-      affected_entity: "strategic_advice",
-      provenance_ref_id: recommendationProv.id,
-    }),
-  ]);
-
-  next.prompt_feedback = {
-    matched_objects: matchedIds,
-    matched_topics: matchedTopics,
-    scene_feedback: {
-      highlighted_objects: highlighted,
-      emphasis_updates: matchedIds.map((id, i) => ({ id, emphasis: Number((0.86 - i * 0.1).toFixed(2)) })),
-    },
-    risk_feedback: {
-      summary: next.risk_propagation?.summary ?? riskSummary,
-      affected_dimensions: ["dependency_stability", "operational_pressure", ...matchedSemanticTags].slice(0, 4),
-      changed_drivers: matchedTopics.slice(0, 3),
-    },
-    timeline_feedback: {
-      steps: timelineSteps,
-      dependency_hints: matchedDependencies,
-    },
-    advice_feedback: {
-      summary: next.strategic_advice?.summary,
-      recommendation: next.strategic_advice?.primary_recommendation?.action ?? genericAction.action,
-    },
-    strategy_kpi: {
-      summary: strategyKpiContext.summary,
-      kpi_impacts: strategyKpiContext.kpi_impacts,
-      objective_impacts: strategyKpiContext.objective_impacts,
-      comparison_notes: strategyKpiContext.comparison?.notes ?? [],
-    },
-    decision_cockpit: {
-      scene: decisionCockpit.scene,
-      risk: decisionCockpit.risk,
-      strategy: decisionCockpit.strategy,
-      comparison: decisionCockpit.comparison,
-      advice: decisionCockpit.advice,
-      executive: decisionCockpit.executive,
-    },
-    reasoning: {
-      intent: aiReasoning.intent,
-      path: aiReasoning.path,
-      confidence: aiReasoning.confidence,
-      matched_concepts: aiReasoning.matched_concepts,
-      trace: aiReasoning.trace,
-      ambiguity_notes: aiReasoning.ambiguity_notes,
-    },
-    multi_agent: {
-      plan: multiAgentDecision.plan,
-      consensus: multiAgentDecision.consensus,
-      conflicts: multiAgentDecision.conflicts,
-      merged: multiAgentDecision.merged,
-      trace: multiAgentDecision.trace,
-    },
-    governance: {
-      project_status: governanceContext.project_status,
-      scenario_status: governanceContext.scenario_status,
-      recommendation_status: governanceContext.recommendation_status,
-      trust_classification: governanceContext.governance.trusted_source_classification,
-      environment: reasoningHints?.environmentConfig?.deployment?.environment,
-    },
-    trust_provenance: {
-      latest_ids: [reasoningProv.id, simulationProv.id, recommendationProv.id, multiAgentProv.id],
-      latest_kinds: [
-        reasoningProv.kind,
-        simulationProv.kind,
-        recommendationProv.kind,
-        multiAgentProv.kind,
-      ],
-    },
-    audit: {
-      latest_event_types: ["prompt_submitted", "reasoning_generated", "simulation_run", "recommendation_generated"],
-      total_events: Array.isArray(next.audit_events) ? next.audit_events.length : 0,
-    },
-    deployment_ops: {
-      environment: reasoningHints?.environmentConfig?.deployment?.environment,
-      logging_mode: reasoningHints?.environmentConfig?.logging_mode,
-      safe_mode: reasoningHints?.environmentConfig?.runtime_safety?.safe_mode,
-      restricted_mode: reasoningHints?.environmentConfig?.runtime_safety?.restricted_mode,
-      enabled_features: reasoningHints?.environmentConfig
-        ? Object.entries(reasoningHints.environmentConfig.features)
-            .filter(([, enabled]) => !!enabled)
-            .map(([feature]) => feature)
-        : [],
-    },
-    platform_assembly: {
-      lifecycle: platformAssembly.lifecycle,
-      active_project: platformAssembly.activeProject,
-      active_mode: platformAssembly.activeMode
-        ? { mode_id: platformAssembly.activeMode.mode_id, mode_label: platformAssembly.activeMode.mode_label }
-        : null,
-      reasoning_context: platformAssembly.reasoningContext,
-      simulation_context: platformAssembly.simulationContext,
-      cockpit_context: platformAssembly.cockpitContext,
-      extension_points: platformAssembly.extension_points,
-      environment_context: platformAssembly.environment_context,
-    },
-    simulation: decisionSimulation,
-    scenario_snapshot: scenarioSnapshot,
-    replay: replaySequence,
-    comparison: scenarioComparison,
-    executive_insight: executiveInsightWithStrategy,
-  };
-
-  const baseReply = typeof next.reply === "string" && next.reply.trim().length ? `${next.reply.trim()} ` : "";
-  if (!baseReply.toLowerCase().includes("recommended action")) {
-    next.reply = `${baseReply}${next.risk_propagation.summary} Timeline: ${timelineSteps.join(" ")} Recommended action: ${genericAction.action}`;
-  }
-  if (typeof next.analysis_summary !== "string" || next.analysis_summary.trim().length < 12) {
-    next.analysis_summary = `${next.risk_propagation.summary} ${timelineSteps[1]}`;
-  }
-
-  next.canonical_recommendation = buildCanonicalRecommendation(next);
-
-  return enforceSafeDefaults(sanitizeDecisionPayload(next));
-}
-
+/**
+ * Nexora primary screen — orchestration shell.
+ *
+ * Delegates stable prep/read/apply shaping to screen-adjacent modules (`homeScreenResponseReaders`,
+ * `homeScreenRetailDemo`, `homeScreenSceneApply`, `homeScreenPanelHelpers`, `homeScreenPersistenceApply`,
+ * `homeScreenChatApplyPrep`, `homeScreenExecutionApply`, `homeScreenShellGuards`) and to lib contracts (`applyNexoraUiState`, panel controller,
+ * action router). This component owns React state/refs/effects, timing-sensitive setter order, and wiring.
+ *
+ * Intentionally remains large for: backup restore apply sequencing, payload slice extractors used only here,
+ * and inspector ↔ legacy tab ref coordination.
+ */
 type HomeScreenProps = {
   domainExperience?: NexoraResolvedDomainExperience;
 };
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
+  const isPilotProductMode = useMemo(() => getNexoraProductMode() === "pilot", []);
+  const { nexoraMode } = useNexoraOperatorMode();
+  const { resolvedTheme } = useNexoraUiTheme();
+  const console = React.useMemo(
+    () =>
+      ({
+        log: () => {},
+        warn: () => {},
+        error: () => {},
+        debug: () => {},
+      }) as Pick<Console, "log" | "warn" | "error" | "debug">,
+    []
+  );
   const activeDomainExperience = useMemo(
     () => domainExperience ?? resolveDomainExperience("general"),
     [domainExperience]
@@ -1823,6 +872,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     () => resolveDomainDemo(activeDomainExperience.experience.domainId),
     [activeDomainExperience]
   );
+  /** B.40 — pilot-safe one-line domain / generic fallback (no QA tables). */
+  const pilotRuntimeDomainLine = useMemo(() => {
+    if (!isPilotProductMode) return null;
+    const rt = buildCurrentDomainRuntimeState(activeDomainExperience.experience.domainId);
+    if (rt.fallbackActive && rt.effectiveDomainId === "generic") {
+      return "Using generic domain behavior.";
+    }
+    return `Domain: ${getEffectiveDomainLabel(rt.effectiveDomainId)}`;
+  }, [isPilotProductMode, activeDomainExperience.experience.domainId]);
+  const investorDemo = useInvestorDemo();
   const [activeCompanyId, setActiveCompanyIdState] = useState<string>(
     process.env.NEXT_PUBLIC_COMPANY_ID || "default"
   );
@@ -1834,6 +893,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const messagesRef = useRef<Msg[]>([]);
   const decisionMemorySignatureRef = useRef<string>("");
   const isSendingRef = useRef(false);
+  const previousRightPanelViewRef = useRef<RightPanelView | null>(null);
+  const lastRightPanelChangeSourceRef = useRef<string | null>(null);
   const [sceneJson, setSceneJson] = useState<SceneJson | null>(null);
   const [loading, setLoading] = useState(false);
   const [chatRequestStatus, setChatRequestStatus] = useState<ChatRequestLifecycleStatus>("idle");
@@ -1846,6 +907,94 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [alert, setAlert] = useState<{ level: any; score: number; reasons: string[] } | null>(null);
   const dismissAlert = useCallback(() => setAlert(null), []);
   const chatRequestSeqRef = useRef(0);
+  const activePanelFamilyAuditRef = useRef<PanelFamilyAuditState | null>(null);
+  const lastPanelFamilyAuditKeyRef = useRef<string | null>(null);
+  const lastAuditRefTraceSignatureRef = useRef<string | null>(null);
+  const pendingPanelFamilyAuditClearTimeoutRef = useRef<number | null>(null);
+  const lastClearedPanelFamilyAuditRef = useRef<
+    | (PanelFamilyAuditState & {
+        clearedAt: number;
+        clearReason: string;
+      })
+    | null
+  >(null);
+  const lastDirectPanelOpenSignatureRef = useRef<string | null>(null);
+  const lastLegacyTabLoopBlockedSignatureRef = useRef<string | null>(null);
+  // preferredRightPanelLegacyTabRef stores explicit user tab intent only, never derived legacy mappings.
+  const preferredRightPanelLegacyTabRef = useRef<string | null>(
+    activeDomainExperience.experience.preferredRightPanelTab ?? null
+  );
+  const lastExplicitPanelIntentRef = useRef<ExplicitPanelIntentState | null>(null);
+  const clickIntentLockRef = useRef<ClickIntentLockState | null>(null);
+  const lastLegacySyncBlockKeyRef = useRef<string | null>(null);
+  const lastUnifiedReactionSignatureRef = useRef<string | null>(null);
+  /** Dedup refs retained for in-session introspection; module guards block repeat emits before logger calls. */
+  const lastB2SceneReactionLogRef = useRef<string | null>(null);
+  const lastB5ClaritySigRef = useRef<string | null>(null);
+  const lastB7DecisionSigRef = useRef<string | null>(null);
+  const lastB12TrustSigRef = useRef<string | null>(null);
+  const lastB13FrontSigRef = useRef<string | null>(null);
+  /** B.12 — merge_meta + counts while multi-source → scanner bridge is in flight (for trust eval in listener). */
+  const pendingTrustMultiSourceContextRef = useRef<{
+    mergeMeta: Record<string, unknown>;
+    sourceCount: number;
+    successfulSourceCount: number;
+    mergedSignalCount: number;
+    bundleWarnings: string[];
+  } | null>(null);
+  /** Late-bound: `commitPipelineStatus` is declared later; fragility listener uses this ref to avoid TDZ. */
+  const commitPipelineStatusRef = useRef<((next: NexoraPipelineStatusUi) => void) | null>(null);
+  /** Late-bound: merge B.7 fields into pipeline HUD without resetting ingestion counts. */
+  const mergePipelineStatusRef = useRef<((partial: Partial<NexoraPipelineStatusUi>) => void) | null>(null);
+  /** B.8 — latest fragility + B.7 fields for HUD CTAs (simulate / compare payloads). */
+  const pipelineB7ActionContextRef = useRef<{
+    posture: string | null;
+    tradeoff: string | null;
+    nextMove: string | null;
+    objectIds: string[];
+    drivers: Array<{ id: string; label: string; score?: number }>;
+    fragilityLevel: string;
+    summary: string;
+  } | null>(null);
+  const lastB8DecisionActionAtRef = useRef<Record<string, number>>({});
+  /** B.9 — decision context attached to panel data when opening simulate/compare/advice from HUD. */
+  const [nexoraB8PanelContext, setNexoraB8PanelContext] = useState<NexoraB8PanelContext | null>(null);
+  /** B.14 / B.18 — declared early so panel resolver merge can read stable refs before pipeline state hooks. */
+  const lastAuditRecordRef = useRef<NexoraAuditRecord | null>(null);
+  const nexoraPanelB18TrustRef = useRef<{
+    confidenceTier: NexoraPipelineStatusUi["confidenceTier"];
+    trustSummaryLine: string | null;
+    fragilityLevel: NexoraPipelineStatusUi["fragilityLevel"];
+  } | null>(null);
+  const [panelResolverB18Epoch, setPanelResolverB18Epoch] = useState(0);
+  const [executionOutcomeHudEpoch, setExecutionOutcomeHudEpoch] = useState(0);
+  /** B.21 — quality layer; signature ref prevents recompute / HUD churn loops. */
+  const [decisionQualityReport, setDecisionQualityReport] = useState<NexoraDecisionQualityReport | null>(null);
+  /** B.23 — raw + governed bias; signature-gated with B.21. */
+  const [biasLayerContext, setBiasLayerContext] = useState<NexoraBiasLayerContext | null>(null);
+  const [biasGovernanceConfigEpoch, setBiasGovernanceConfigEpoch] = useState(0);
+  useEffect(() => {
+    if (!isPilotProductMode) return;
+    saveNexoraBiasGovernanceFull(DEFAULT_NEXORA_BIAS_GOVERNANCE);
+    setBiasGovernanceConfigEpoch((n) => n + 1);
+  }, [isPilotProductMode]);
+  useEffect(() => {
+    if (typeof window === "undefined" || !isPilotProductMode) return;
+    const w = window as unknown as Record<string, unknown>;
+    delete w.__NEXORA_DEBUG__;
+    delete w.__NEXORA_LAST_AUDIT__;
+    delete w.__NEXORA_LAST_INGESTION__;
+    delete w.__NEXORA_LAST_MULTI_SOURCE_INGESTION__;
+    delete w.__NEXORA_INGESTION_DEV__;
+  }, [isPilotProductMode]);
+  const lastBiasLayerApplyKeyRef = useRef<string | null>(null);
+  const lastDecisionQualitySigRef = useRef<string | null>(null);
+  const lastDecisionQualityReportRef = useRef<NexoraDecisionQualityReport | null>(null);
+  const lastExecutionOutcomeRef = useRef<NexoraExecutionOutcome | null>(null);
+  const lastNexoraTrustEvaluationInputRef = useRef<NexoraTrustValidationInput | null>(null);
+  /** B20-FIX-1 — dedupe per-run outcome lookup logs. */
+  const lastB20Fix1OutcomeLookupSigRef = useRef<string | null>(null);
+  const lastNarrativeOverrideSignatureRef = useRef<string | null>(null);
   const decisionFlowSeqRef = useRef(0);
   const demoFlowPauseRef = useRef<() => void>(() => {});
   const activeChatRequestRef = useRef<{
@@ -1854,19 +1003,175 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     timeoutId: number;
     timedOut: boolean;
   } | null>(null);
+  /** Dev self-debug: correlates panel/scene events with the active chat turn (cleared when the turn ends). */
+  const activeChatDebugCorrelationRef = useRef<string | null>(null);
   const [rightPanelState, setRightPanelState] = useState<RightPanelState>(() => ({
     ...createClosedRightPanelState(),
-    view: mapLegacyTabToRightPanelView(activeDomainExperience.experience.preferredRightPanelTab) ?? "dashboard",
+    view: mapLegacyTabToRightPanelView(activeDomainExperience.experience.preferredRightPanelTab) ?? null,
   }));
+  const [centerComponent, setCenterComponent] = useState<CenterComponentType>(null);
+  const [centerComponentVisible, setCenterComponentVisible] = useState(false);
+  const centerComponentCloseTimerRef = useRef<number | null>(null);
+  /** B.27 — after pilot demo ingestion, open compare once pipeline reaches ready. */
+  const openCompareAfterPipelineReadyRef = useRef(false);
+  /** B.28 — pilot metrics edge detection. */
+  const prevPipelineStatusForMetricRef = useRef<NexoraPipelineStatusUi["status"] | null>(null);
+  const prevCompareOpenForMetricRef = useRef(false);
+  const lastDecisionRunIdForMetricRef = useRef<string | null>(null);
+  const [objectSelection, setObjectSelection] = useState<any | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [selectedObjectIdState, setSelectedObjectIdState] = useState<string | null>(null);
   const inspectorOpen = rightPanelState.isOpen;
-  const rightPanelTab = useMemo(
-    () => (mapRightPanelViewToLegacyTab(rightPanelState.view) as RightPanelTab | null) ?? "executive_dashboard",
-    [rightPanelState.view]
+  const highlightedObjectIds = useMemo(() => {
+    const selectedHighlights = getHighlightedObjectIdsFromSelection(objectSelection);
+    if (selectedHighlights.length > 0) return selectedHighlights;
+    const sceneSelection = asRecord(sceneJson)?.object_selection;
+    const sceneHighlights = getHighlightedObjectIdsFromSelection(sceneSelection);
+    if (sceneHighlights.length > 0) return sceneHighlights;
+    return [] as string[];
+  }, [objectSelection, sceneJson]);
+  const traceLegacySyncBlocked = useCallback(
+    (source: string, attemptedView: RightPanelView | null, reason: string) => {
+      if (process.env.NODE_ENV === "production") return;
+      const key = JSON.stringify({
+        source,
+        current: rightPanelState.view ?? null,
+        attempted: attemptedView ?? null,
+        contextId: rightPanelState.contextId ?? null,
+        selectedObjectId: selectedObjectIdState ?? null,
+        highlightedCount: highlightedObjectIds.length,
+        reason,
+      });
+      if (lastLegacySyncBlockKeyRef.current === key) return;
+      lastLegacySyncBlockKeyRef.current = key;
+      console.warn("[LegacySyncBlocked]", {
+        source,
+        attempted: attemptedView ?? null,
+        current: rightPanelState.view ?? null,
+        reason,
+      });
+    },
+    [
+      highlightedObjectIds.length,
+      rightPanelState.contextId,
+      rightPanelState.view,
+      selectedObjectIdState,
+    ]
   );
-  const activeInspectorReportTab = useMemo(() => {
-    const tab = mapRightPanelViewToLegacyInspectorTab(rightPanelState.view);
-    return isInspectorReportTab(tab as RightPanelTab | null | undefined) ? (tab as InspectorReportTab) : null;
+  const lastStableRightPanelTabRef = useRef<LegacyRightPanelTab | null>(null);
+  const mappedRightPanelTab = useMemo(() => {
+    const mapped = resolveRightPanelLegacyTabForView(
+      rightPanelState.view,
+      preferredRightPanelLegacyTabRef.current
+    );
+    if (isLegacyRightPanelTab(mapped)) {
+      return mapped;
+    }
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[Home][LEGACY_TAB_SYNC_STOPPED]", {
+        currentView: rightPanelState.view ?? null,
+        mappedLegacyTab: mapped ?? null,
+        reason: "Panel view could not be converted into a valid legacy tab.",
+      });
+    }
+    return null;
   }, [rightPanelState.view]);
+  const traceViewSync = useCallback(
+    (
+      label:
+        | "[Nexora][ViewSync] homescreen_state"
+        | "[Nexora][ViewSync] desync_detected"
+        | "[Nexora][ViewSync] desync_fixed",
+      detail: {
+        activeTab: string | null;
+        currentRightPanelView: RightPanelView | null;
+        renderedView: RightPanelView | null;
+        legacyTab: string | null;
+        source: string;
+        reason: string;
+      }
+    ) => {
+      return;
+    },
+    []
+  );
+  useEffect(() => {
+    if (mappedRightPanelTab) {
+      lastStableRightPanelTabRef.current = mappedRightPanelTab;
+    }
+  }, [mappedRightPanelTab]);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const preferredLegacyTab = preferredRightPanelLegacyTabRef.current;
+    if (!mappedRightPanelTab || !preferredLegacyTab || mappedRightPanelTab === preferredLegacyTab) {
+      return;
+    }
+    const signature = [
+      rightPanelState.view ?? "null",
+      mappedRightPanelTab,
+      preferredLegacyTab,
+    ].join("|");
+    if (lastLegacyTabLoopBlockedSignatureRef.current === signature) {
+      return;
+    }
+    lastLegacyTabLoopBlockedSignatureRef.current = signature;
+    console.log("[Nexora][LegacyTabLoopBlocked]", {
+      currentView: rightPanelState.view ?? null,
+      mappedRightPanelTab: mappedRightPanelTab ?? null,
+      preferredLegacyTab: preferredLegacyTab ?? null,
+    });
+  }, [mappedRightPanelTab, rightPanelState.view]);
+  const rightPanelTab = mappedRightPanelTab ?? lastStableRightPanelTabRef.current;
+  const activeInspectorReportTab = useMemo(() => {
+    const tab = resolveRightPanelLegacyTabForView(
+      rightPanelState.view,
+      preferredRightPanelLegacyTabRef.current
+    );
+    if (isLegacyRightPanelTab(tab) && isInspectorReportTab(tab)) {
+      return tab;
+    }
+    if (tab && process.env.NODE_ENV !== "production") {
+      console.warn("[Home][INSPECTOR_TAB_SYNC_STOPPED]", {
+        currentView: rightPanelState.view ?? null,
+        mappedLegacyTab: tab,
+        reason: "Mapped inspector tab is not part of the inspector-report contract.",
+      });
+    }
+    return null;
+  }, [rightPanelState.view]);
+  useEffect(() => {
+    traceViewSync("[Nexora][ViewSync] homescreen_state", {
+      activeTab: rightPanelTab ?? null,
+      currentRightPanelView: rightPanelState.view ?? null,
+      renderedView: rightPanelState.view ?? null,
+      legacyTab: preferredRightPanelLegacyTabRef.current ?? null,
+      source: "HomeScreen.rightPanelState",
+      reason: "homescreen_canonical_state",
+    });
+    const expectedTab = resolveRightPanelLegacyTabForView(
+      rightPanelState.view,
+      preferredRightPanelLegacyTabRef.current
+    );
+    if (rightPanelState.view && expectedTab && expectedTab !== rightPanelTab) {
+      traceViewSync("[Nexora][ViewSync] desync_detected", {
+        activeTab: rightPanelTab ?? null,
+        currentRightPanelView: rightPanelState.view ?? null,
+        renderedView: rightPanelState.view ?? null,
+        legacyTab: preferredRightPanelLegacyTabRef.current ?? null,
+        source: "HomeScreen.rightPanelState",
+        reason: "legacy_tab_mismatch_for_current_view",
+      });
+      return;
+    }
+    traceViewSync("[Nexora][ViewSync] desync_fixed", {
+      activeTab: rightPanelTab ?? null,
+      currentRightPanelView: rightPanelState.view ?? null,
+      renderedView: rightPanelState.view ?? null,
+      legacyTab: preferredRightPanelLegacyTabRef.current ?? null,
+      source: "HomeScreen.rightPanelState",
+      reason: "legacy_tab_and_view_aligned",
+    });
+  }, [rightPanelState.view, rightPanelTab, traceViewSync]);
   const traceRightPanelStateMutation = useCallback(
     (
       source: string,
@@ -1874,199 +1179,921 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       nextView: RightPanelView,
       contextId: string | null = null
     ) => {
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][RightPanelStateMutation]", {
-          source,
-          previousView: previousView ?? null,
-          nextView: nextView ?? null,
-          contextId,
-        });
-      }
+      return;
     },
     []
   );
-  const traceLegacyPanelSyncAttempt = useCallback(
+  const traceRightPanelPathAudit = useCallback(
     (
       source: string,
-      currentView: RightPanelView | null,
-      attemptedView: RightPanelView | null,
-      legacyTab: string | null = null
+      nextView: RightPanelView | null,
+      classification:
+        | "explicit_user_action"
+        | "default_sync"
+        | "fallback"
+        | "adapter_reopen"
+        | "legacy_sync"
+        | "direct_state_write"
     ) => {
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][LegacyPanelSyncAttempt]", {
-          source,
-          currentView: currentView ?? null,
-          attemptedView: attemptedView ?? null,
-          legacyTab,
-        });
-      }
+      return;
     },
     []
   );
-  const traceLegacyPanelSyncBlocked = useCallback(
-    (
-      source: string,
-      currentView: RightPanelView | null,
-      attemptedView: RightPanelView | null,
-      legacyTab: string | null = null
-    ) => {
-      if (process.env.NODE_ENV !== "production") {
-        console.warn("[Nexora][LegacyPanelPathBlocked]", {
-          source,
-          attemptedView: attemptedView ?? null,
-        });
-        console.warn("[Nexora][LegacyPanelSyncBlocked]", {
-          source,
-          currentView: currentView ?? null,
-          attemptedView: attemptedView ?? null,
-          legacyTab,
-        });
-      }
-    },
-    []
-  );
-  const toggleInspector = useCallback(() => {
-    setRightPanelState((prev) => {
-      const nextState = toggleRightPanelState(prev, prev.view ?? "dashboard", prev.contextId ?? null);
-      traceRightPanelStateMutation(
-        "toggleInspector",
-        prev.view ?? null,
-        nextState.view ?? null,
-        nextState.contextId ?? null
-      );
-      return nextState;
-    });
-  }, [traceRightPanelStateMutation]);
   const [isClientMounted, setIsClientMounted] = useState(false);
   const [inspectorPortalHost, setInspectorPortalHost] = useState<HTMLElement | null>(null);
-  const openRightPanel = useCallback(
-    (view: RightPanelView, contextId: string | null = null) => {
-      const safeView = resolveSafeRightPanelView(view);
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][CanonicalPanelOpen]", {
-          source: "openRightPanel",
-          requestedView: safeView,
-          contextId,
-        });
-        console.log("[Nexora][OpenPanel]", {
-          requestedView: view ?? null,
-          normalizedView: safeView,
-          contextId,
-        });
+  const tracePanelFamilyAudit = useCallback(
+    (
+      label:
+        | "[Nexora][PanelFamilyAudit] expected_family"
+        | "[Nexora][PanelFamilyAudit] raw_payload_presence"
+        | "[Nexora][PanelFamilyAudit] canonical_presence"
+        | "[Nexora][PanelFamilyAudit] contract_result",
+      detail: Record<string, unknown>
+    ) => {
+      return;
+    },
+    []
+  );
+  const traceAuditRef = useCallback(
+    (
+      event:
+        | "set"
+        | "update"
+        | "read"
+        | "clear"
+        | "stale_overwrite_blocked"
+        | "early_clear_detected",
+      detail: {
+        source: string;
+        seq: number | null;
+        prompt: string | null;
+        expectedFamily: RightPanelView | null;
+        contractRenderable: boolean;
+        contractSalvaged: boolean;
+        reason: string;
       }
-      setRightPanelState((prev) => {
-        traceRightPanelStateMutation("openRightPanel", prev.view ?? null, safeView, contextId);
-        return createOpenRightPanelState(safeView, contextId, Date.now());
+    ) => {
+      return;
+    },
+    []
+  );
+  const tracePanelFlowRuntime = useCallback(
+    (
+      stage:
+        | "prompt_submitted"
+        | "expected_family"
+        | "contract_result"
+        | "requested_view"
+        | "actual_view_changed",
+      detail: {
+        requestedView?: RightPanelView | null;
+        actualView?: RightPanelView | null;
+        dashboardOverride?: boolean;
+      } = {}
+    ) => {
+      return;
+    },
+    []
+  );
+  const traceFocusFlashAudit = useCallback(
+    (
+      label:
+        | "[Nexora][FocusFlashAudit] focus_entered"
+        | "[Nexora][FocusFlashAudit] focus_skipped"
+        | "[Nexora][FocusFlashAudit] dashboard_followed_focus",
+      detail: {
+        nextView?: RightPanelView | null;
+      } = {}
+    ) => {
+      return;
+    },
+    []
+  );
+  const traceSemanticDominance = useCallback(
+    (
+      label:
+        | "[Nexora][SemanticDominance] forced_family_kept"
+        | "[Nexora][SemanticDominance] fallback_blocked",
+      detail: {
+        nextView?: RightPanelView | null;
+        source?: string | null;
+      } = {}
+    ) => {
+      return;
+    },
+    []
+  );
+  const tracePanelOverrideAudit = useCallback(
+    (
+      label:
+        | "[Nexora][PanelOverrideAudit] openRightPanel_called"
+        | "[Nexora][PanelOverrideAudit] dashboard_override_applied"
+        | "[Nexora][PanelOverrideAudit] dashboard_override_blocked"
+        | "[Nexora][PanelOverrideAudit] right_panel_state_changed",
+      detail: Record<string, unknown>
+    ) => {
+      return;
+    },
+    []
+  );
+  const traceSimHijackAudit = useCallback(
+    (
+      label:
+        | "[Nexora][SimHijackAudit] simulate_requested"
+        | "[Nexora][SimHijackAudit] simulate_applied"
+        | "[Nexora][SimHijackAudit] simulate_blocked"
+        | "[Nexora][SimHijackAudit] state_before_simulate",
+      detail: {
+        source: string;
+        previousView?: RightPanelView | null;
+        nextView?: RightPanelView | null;
+        clickedSource?: string | null;
+        clickedTab?: string | null;
+        clickedNav?: string | null;
+        explicitUserActionRequestedSimulate: boolean;
+        automaticFallback: boolean;
+      }
+    ) => {
+      return;
+    },
+    []
+  );
+  const traceClickState = useCallback(
+    (
+      label:
+        | "[Nexora][ClickState] intent_received"
+        | "[Nexora][ClickState] state_applied"
+        | "[Nexora][ClickState] no_op_blocked"
+        | "[Nexora][ClickState] late_override_blocked"
+        | "[Nexora][ClickState] invalid_target_blocked"
+        | "[Nexora][ClickState] lock_cleared",
+      detail: {
+        source: string;
+        clickedKey?: string | null;
+        requestedView?: RightPanelView | string | null;
+        previousView?: RightPanelView | null;
+        nextView?: RightPanelView | null;
+        previousContextId?: string | null;
+        nextContextId?: string | null;
+        reason?: string | null;
+        explicitUserIntent: boolean;
+      }
+    ) => {
+      return;
+    },
+    []
+  );
+  const traceDirectPanelOpen = useCallback(
+    (detail: {
+      source: string;
+      requestedView: RightPanelView | null;
+      appliedView: RightPanelView | null;
+    }) => {
+      if (process.env.NODE_ENV === "production") return;
+      const signature = [
+        detail.source,
+        detail.requestedView ?? "null",
+        detail.appliedView ?? "null",
+      ].join("|");
+      if (lastDirectPanelOpenSignatureRef.current === signature) {
+        return;
+      }
+      lastDirectPanelOpenSignatureRef.current = signature;
+      logPanelOpen({
+        requestedView: detail.requestedView ?? null,
+        appliedView: detail.appliedView ?? null,
+        source: detail.source,
+        via: "direct_trace",
       });
     },
-    [traceRightPanelStateMutation]
+    []
+  );
+  const traceRenderAudit = useCallback(
+    (
+      label:
+        | "[Nexora][RenderAudit] state_write"
+        | "[Nexora][RenderAudit] no_op_write",
+      detail: {
+        file: string;
+        function: string;
+        currentView: RightPanelView | null;
+        nextView: RightPanelView | null;
+        renderCount?: number;
+        reason: string;
+        panelKey?: string | null;
+        dataShape?: string | null;
+        dependencyHint?: string | null;
+      }
+    ) => {
+      return;
+    },
+    []
+  );
+  const debugPanelLockState = useCallback(
+    (_label: string, _extra?: Record<string, unknown>) => {
+      return;
+    },
+    []
+  );
+  const clearClickIntentLock = useCallback(
+    (
+      reason: string,
+      detail?: {
+        source?: string;
+        nextView?: RightPanelView | null;
+        nextContextId?: string | null;
+      }
+    ) => {
+      const lock = clickIntentLockRef.current;
+      if (!lock) {
+        return;
+      }
+      debugPanelLockState("click_lock_cleared", {
+        reason,
+        source: detail?.source ?? lock.source,
+        nextView: detail?.nextView ?? null,
+        nextContextId: detail?.nextContextId ?? null,
+      });
+      clickIntentLockRef.current = null;
+      traceClickState("[Nexora][ClickState] lock_cleared", {
+        source: detail?.source ?? lock.source,
+        clickedKey: lock.clickedKey,
+        requestedView: lock.view,
+        previousView: rightPanelState.view ?? null,
+        nextView: detail?.nextView ?? null,
+        previousContextId: rightPanelState.contextId ?? null,
+        nextContextId: detail?.nextContextId ?? null,
+        reason,
+        explicitUserIntent: true,
+      });
+    },
+    [debugPanelLockState, rightPanelState.contextId, rightPanelState.view, traceClickState]
+  );
+  const applyPanelControllerRequest = useCallback(
+    (request: PanelRequestIntent & { source: PanelOpenSource; rawSource?: string | null }) => {
+      const nextContextId = request.contextId ?? null;
+      const now = Date.now();
+      const correlationId = `panel-${now}-${Math.random().toString(36).slice(2, 7)}`;
+      if (request.source === "cta" && request.requestedView) {
+        emitDebugEvent({
+          type: "cta_clicked",
+          layer: "intent",
+          source: "HomeScreen",
+          status: "info",
+          message: `CTA requested ${request.requestedView}`,
+          metadata: {
+            view: request.requestedView,
+            rawSource: request.rawSource ?? null,
+          },
+          correlationId,
+        });
+      }
+      const chatDbgCorrelation = activeChatDebugCorrelationRef.current;
+      emitDebugEvent({
+        type: "panel_requested",
+        layer: "panel",
+        source: "HomeScreen",
+        status: "info",
+        message: request.close ? "Panel close request" : "Panel open request",
+        metadata: {
+          requestedView: request.requestedView ?? null,
+          source: request.source,
+          rawSource: request.rawSource ?? null,
+          close: Boolean(request.close),
+          panelCorrelationId: correlationId,
+          ...(chatDbgCorrelation ? { chatCorrelationId: chatDbgCorrelation } : {}),
+        },
+        correlationId,
+      });
+      const decision = resolvePanelDecision(request, {
+        currentPanelState: rightPanelState,
+        explicitPanelIntent: lastExplicitPanelIntentRef.current,
+        clickIntentLock: clickIntentLockRef.current,
+        hasMeaningfulObjectContext: hasMeaningfulObjectPanelContext({
+          contextId: rightPanelState.contextId ?? nextContextId,
+          selectedObjectId: selectedObjectIdState,
+          highlightedObjectIds,
+        }),
+        now,
+      });
+      const resolvedView = decision.resolvedView;
+      const rawSource = request.rawSource ?? request.source;
+      const isAutomatic = isAutomaticRightPanelSource(rawSource);
+
+      emitDebugEvent({
+        type: "panel_resolved",
+        layer: "router",
+        source: "HomeScreen",
+        status:
+          decision.kind === "block" ? "blocked" : decision.kind === "open" ? "ok" : "info",
+        message: `${decision.kind}: ${decision.reason}`,
+        metadata: {
+          decisionKind: decision.kind,
+          reason: decision.reason,
+          resolvedView: resolvedView ?? null,
+          nextView: decision.nextState?.view ?? null,
+          requestedView: request.requestedView ?? null,
+          panelCorrelationId: correlationId,
+          ...(chatDbgCorrelation ? { chatCorrelationId: chatDbgCorrelation } : {}),
+        },
+        correlationId,
+      });
+
+      registerPanelSelfDebugLink({
+        panelCorrelationId: correlationId,
+        chatCorrelationId: chatDbgCorrelation,
+        requestedView: request.requestedView ?? null,
+        rawSource: request.rawSource ?? request.source ?? null,
+        ts: now,
+      });
+
+      emitGuardRailAlerts(
+        runGuardChecks(
+          {
+            trigger: "panel_resolve",
+            correlationId: chatDbgCorrelation ?? null,
+            panel: {
+              decisionKind: decision.kind,
+              requestedView: request.requestedView ?? null,
+              resolvedView: resolvedView ?? null,
+            },
+          },
+          getRecentDebugEvents()
+        )
+      );
+
+      logPanelDecision({
+        requestedView: request.requestedView,
+        source: request.source,
+        rawSource,
+        contextId: request.contextId ?? null,
+        currentView: rightPanelState?.view ?? null,
+        decision: decision.kind,
+        reason: decision.reason,
+        nextView: decision.nextState?.view ?? null,
+      });
+
+      const logBlocked = (reason: string, extra?: Record<string, unknown>) => {
+        logPanelRejected({
+          view: request.requestedView,
+          resolvedView: resolvedView ?? null,
+          source: rawSource,
+          contextId: nextContextId,
+          reason,
+          ...extra,
+        });
+      };
+
+      const lock = clickIntentLockRef.current;
+      if (lock && now - lock.timestamp > CLICK_INTENT_LOCK_TTL_MS) {
+        clearClickIntentLock("stale_timeout", {
+          source: rawSource,
+          nextView: resolvedView,
+          nextContextId,
+        });
+      }
+
+      if (decision.kind === "block" && decision.reason === "resolve_safe_view_failed") {
+        traceClickState("[Nexora][ClickState] invalid_target_blocked", {
+          source: rawSource,
+          requestedView: request.requestedView,
+          previousView: rightPanelState.view ?? null,
+          nextView: null,
+          previousContextId: rightPanelState.contextId ?? null,
+          nextContextId,
+          reason: decision.reason,
+          explicitUserIntent: !isAutomatic,
+        });
+        logBlocked(decision.reason);
+        return;
+      }
+
+      if (decision.kind === "block" && decision.reason === "meaningful_object_panel_preserved") {
+        traceLegacySyncBlocked(rawSource, resolvedView, decision.reason);
+        logBlocked(decision.reason);
+        logPanelContinuityPreserved({
+          reason: decision.reason,
+          currentView: rightPanelState.view ?? null,
+          requestedView: request.requestedView ?? null,
+          rawSource,
+        });
+        return decision;
+      }
+
+      if (decision.kind === "block" && decision.reason === "click_intent_lock_preserved") {
+        traceClickState("[Nexora][ClickState] late_override_blocked", {
+          source: rawSource,
+          clickedKey: lock?.clickedKey,
+          requestedView: lock?.view ?? request.requestedView,
+          previousView: rightPanelState.view ?? null,
+          nextView: resolvedView,
+          previousContextId: rightPanelState.contextId ?? null,
+          nextContextId,
+          reason: decision.reason,
+          explicitUserIntent: false,
+        });
+        debugPanelLockState("late_override_blocked", {
+          source: rawSource,
+          requestedView: lock?.view ?? request.requestedView,
+          nextView: resolvedView,
+          nextContextId,
+          reason: decision.reason,
+        });
+        logBlocked(decision.reason);
+        return decision;
+      }
+
+      if (decision.kind === "preserve" && decision.reason === "same_view_same_context") {
+        traceClickState("[Nexora][ClickState] no_op_blocked", {
+          source: rawSource,
+          requestedView: request.requestedView,
+          previousView: rightPanelState.view ?? null,
+          nextView: resolvedView,
+          previousContextId: rightPanelState.contextId ?? null,
+          nextContextId,
+          reason: decision.reason,
+          explicitUserIntent: !isAutomatic,
+        });
+        logBlocked(decision.reason);
+        return decision;
+      }
+
+      if (decision.kind === "close") {
+        return decision;
+      }
+
+      if (!isAutomatic) {
+        clickIntentLockRef.current = {
+          view: resolvedView,
+          contextId: nextContextId,
+          source: rawSource,
+          clickedKey: nextContextId ?? resolvedView,
+          timestamp: now,
+        };
+        lastExplicitPanelIntentRef.current = {
+          view: resolvedView,
+          source: rawSource,
+          clickedTab: request.clickedTab ?? null,
+          clickedNav: request.clickedNav ?? null,
+          timestamp: now,
+        };
+        traceClickState("[Nexora][ClickState] intent_received", {
+          source: rawSource,
+          clickedKey: nextContextId ?? resolvedView,
+          requestedView: request.requestedView,
+          previousView: rightPanelState.view ?? null,
+          nextView: resolvedView,
+          previousContextId: rightPanelState.contextId ?? null,
+          nextContextId,
+          reason: decision.reason,
+          explicitUserIntent: true,
+        });
+      }
+
+      if (decision.kind !== "open") {
+        logBlocked(decision.reason, { decision: decision.kind });
+        return decision;
+      }
+
+      if (!decision.nextState?.view) {
+        logPanelRejected({
+          reason: "open_decision_missing_next_state_view",
+          resolvedView: resolvedView ?? null,
+          rawSource,
+          decisionKind: decision.kind,
+        });
+        logBlocked("open_missing_next_state_view");
+        return decision;
+      }
+      if (resolvedView) {
+        logPanelOpen({
+          view: resolvedView,
+          source: rawSource,
+          contextId: nextContextId,
+        });
+      }
+      traceDirectPanelOpen({
+        source: rawSource,
+        requestedView: request.requestedView,
+        appliedView: resolvedView,
+      });
+      traceRightPanelPathAudit(
+        rawSource,
+        resolvedView,
+        isAutomatic ? "adapter_reopen" : "explicit_user_action"
+      );
+      lastRightPanelChangeSourceRef.current = rawSource;
+      traceRightPanelStateMutation(
+        rawSource,
+        rightPanelState.view ?? null,
+        resolvedView,
+        nextContextId
+      );
+      traceClickState("[Nexora][ClickState] state_applied", {
+        source: rawSource,
+        clickedKey: nextContextId ?? resolvedView,
+        requestedView: request.requestedView,
+        previousView: rightPanelState.view ?? null,
+        nextView: resolvedView,
+        previousContextId: rightPanelState.contextId ?? null,
+        nextContextId,
+        reason: decision.reason,
+        explicitUserIntent: !isAutomatic,
+      });
+      setRightPanelState((prev) => {
+        const next = decision.nextState;
+        if (
+          prev.view === next.view &&
+          prev.contextId === next.contextId &&
+          prev.isOpen === next.isOpen
+        ) {
+          return prev; // prevent unnecessary re-render loop
+        }
+        return next;
+      });
+      return decision;
+    },
+    [
+      clearClickIntentLock,
+      debugPanelLockState,
+      highlightedObjectIds,
+      rightPanelState.contextId,
+      rightPanelState.view,
+      selectedObjectIdState,
+      traceClickState,
+      traceDirectPanelOpen,
+      traceLegacySyncBlocked,
+      traceRightPanelPathAudit,
+      traceRightPanelStateMutation,
+    ]
+  );
+  const requestRightPanelOpen = useCallback(
+    (detail: {
+      view: RightPanelView;
+      source: string;
+      rawSource?: string | null;
+      contextId?: string | null;
+      clickedTab?: string | null;
+      clickedNav?: string | null;
+      legacyTab?: string | null;
+      leftNav?: string | null;
+      section?: string | null;
+      preserveIfSameContext?: boolean;
+      allowAutoOverride?: boolean;
+    }) => {
+      applyPanelControllerRequest({
+        requestedView: detail.view,
+        source: toPanelOpenSource(detail.source),
+        rawSource: detail.rawSource ?? detail.source,
+        contextId: detail.contextId ?? null,
+        clickedTab: detail.clickedTab ?? null,
+        clickedNav: detail.clickedNav ?? null,
+        legacyTab: detail.legacyTab ?? null,
+        leftNav: detail.leftNav ?? null,
+        section: detail.section ?? null,
+        preserveIfSameContext: detail.preserveIfSameContext,
+        allowAutoOverride: detail.allowAutoOverride,
+      });
+    },
+    [applyPanelControllerRequest]
   );
   const closeRightPanel = useCallback(() => {
-    setRightPanelState((prev) => {
-      traceRightPanelStateMutation("closeRightPanel", prev.view ?? null, null, prev.contextId ?? null);
-      return closeRightPanelState(prev);
+    emitDebugEvent({
+      type: "panel_reset_detected",
+      layer: "panel",
+      source: "HomeScreen",
+      status: "info",
+      message: "Right panel close invoked",
+      metadata: { previousView: rightPanelState.view ?? null, rawSource: "closeRightPanel" },
     });
-  }, [traceRightPanelStateMutation]);
-  const toggleRightPanel = useCallback((view: RightPanelView, contextId: string | null = null) => {
-    const safeView = resolveSafeRightPanelView(view);
-    setRightPanelState((prev) => {
-      const nextState = toggleRightPanelState(prev, safeView, contextId);
-      traceRightPanelStateMutation(
-        "toggleRightPanel",
-        prev.view ?? null,
-        nextState.view ?? null,
-        nextState.contextId ?? null
-      );
-      return nextState;
+    const decision = applyPanelControllerRequest(
+      {
+        requestedView: null,
+        source: "unknown",
+        rawSource: "closeRightPanel",
+        close: true,
+      }
+    );
+    clearClickIntentLock("panel_closed", {
+      source: "closeRightPanel",
+      nextView: null,
+      nextContextId: null,
     });
-  }, [traceRightPanelStateMutation]);
+    logPanelClose({
+      previousView: rightPanelState.view ?? null,
+    });
+    traceRightPanelPathAudit("closeRightPanel", null, "direct_state_write");
+    lastRightPanelChangeSourceRef.current = "closeRightPanel";
+    traceRightPanelStateMutation(
+      "closeRightPanel",
+      rightPanelState.view ?? null,
+      null,
+      rightPanelState.contextId ?? null
+    );
+    if (decision) {
+      setRightPanelState((prev) => {
+        const next = decision.nextState;
+        if (
+          prev.view === next.view &&
+          prev.contextId === next.contextId &&
+          prev.isOpen === next.isOpen
+        ) {
+          return prev;
+        }
+        return next;
+      });
+    }
+  }, [applyPanelControllerRequest, clearClickIntentLock, rightPanelState, traceRightPanelPathAudit, traceRightPanelStateMutation]);
+  const openCenterComponent = useCallback((component: Exclude<CenterComponentType, null>) => {
+    if (centerComponentCloseTimerRef.current != null) {
+      window.clearTimeout(centerComponentCloseTimerRef.current);
+      centerComponentCloseTimerRef.current = null;
+    }
+    setCenterComponent(component);
+  }, []);
+
+  const dispatchCanonicalAction = useCallback(
+    (action: CanonicalNexoraAction) => {
+      traceActionRouterReceived(action);
+      traceActionRouterNormalized(action);
+      const ctx: ActionRouterContext = {
+        currentView: rightPanelState.view,
+        currentContextId: rightPanelState.contextId ?? null,
+      };
+      const result = resolveActionRoute(action, ctx);
+      if (result.status === "rejected") {
+        traceActionRouterRejected(action, result);
+        return;
+      }
+      traceActionRouterResolved(action, result);
+      if (result.continuityHint === "preserved_strong_panel" || result.continuityHint === "same_view_subnav") {
+        traceActionRouterContinuity(action, result.continuityHint, {
+          panelView: result.panelRequest?.view ?? null,
+          contextId: result.panelRequest?.contextId ?? null,
+        });
+      }
+      if (result.execution === "start_investor_demo") {
+        investorDemo.startDemo();
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "demo_started" });
+        return;
+      }
+      if (result.execution === "open_center_compare") {
+        openCenterComponent("compare");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_compare_opened" });
+        return;
+      }
+      if (result.execution === "open_center_timeline") {
+        openCenterComponent("timeline");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_timeline_opened" });
+        return;
+      }
+      if (result.execution === "open_right_panel" && result.panelRequest) {
+        if (!result.panelRequest.view) {
+          logPanelRejected({
+            reason: "action_router_panel_request_missing_view",
+            actionId: action.actionId,
+            intentKind: action.intent.kind,
+          });
+          return;
+        }
+        requestRightPanelOpen(result.panelRequest);
+        traceActionRouterExecuted(action, {
+          execution: result.execution,
+          outcome: "right_panel_opened",
+          extra: {
+            view: result.panelRequest.view ?? null,
+            contextId: result.panelRequest.contextId ?? null,
+            source: result.panelRequest.source,
+          },
+        });
+      }
+    },
+    [
+      investorDemo.startDemo,
+      openCenterComponent,
+      requestRightPanelOpen,
+      rightPanelState.contextId,
+      rightPanelState.view,
+    ]
+  );
 
   useEffect(() => {
-    const onOpenRightPanel = (event: Event) => {
+    registerNexoraActionDispatch(dispatchCanonicalAction);
+    return () => registerNexoraActionDispatch(null);
+  }, [dispatchCanonicalAction]);
+
+  const runPilotDemoScenario = useCallback(() => {
+    const scenario = NEXORA_PILOT_SCENARIOS.find((s) => s.id === "finance_margin_pressure");
+    if (!scenario || scenario.input.type !== "text") return;
+    if (typeof window === "undefined") return;
+    openCompareAfterPipelineReadyRef.current = true;
+    window.dispatchEvent(
+      new CustomEvent("nexora:run-business-text-ingestion", {
+        detail: { text: scenario.input.payload, source: "pilot_demo_b25", openCompareAfter: true },
+      })
+    );
+  }, []);
+
+  const traceB8DecisionAction = useCallback((kind: string) => {
+    if (process.env.NODE_ENV === "production") return;
+    const now = Date.now();
+    if (now - (lastB8DecisionActionAtRef.current[kind] ?? 0) < 450) return;
+    lastB8DecisionActionAtRef.current[kind] = now;
+    globalThis.console?.log?.("[Nexora][B8] decision_action_triggered", { kind });
+  }, []);
+
+  const dispatchPipelineHudB7Simulate = useCallback(() => {
+    const ctx = pipelineB7ActionContextRef.current;
+    setNexoraB8PanelContext(ctx ? nexoraB8PanelContextFromHudRef(ctx) : null);
+    traceB8DecisionAction("simulate");
+    dispatchCanonicalAction(
+      normalizeRunSimulation({
+        rawSource: "pipeline_hud:b8:simulate",
+        source: "scanner",
+        surface: "panel_cta",
+        payload: ctx
+          ? {
+              nexora_b7: {
+                posture: ctx.posture,
+                tradeoff: ctx.tradeoff,
+                nextMove: ctx.nextMove,
+                objectIds: ctx.objectIds,
+                drivers: ctx.drivers,
+                fragilityLevel: ctx.fragilityLevel,
+                summary: ctx.summary.slice(0, 280),
+              },
+            }
+          : null,
+      })
+    );
+  }, [dispatchCanonicalAction, traceB8DecisionAction]);
+
+  const dispatchPipelineHudB7Compare = useCallback(() => {
+    const ctx = pipelineB7ActionContextRef.current;
+    setNexoraB8PanelContext(ctx ? nexoraB8PanelContextFromHudRef(ctx) : null);
+    traceB8DecisionAction("compare");
+    dispatchCanonicalAction(
+      normalizeCompareOptions({
+        rawSource: "pipeline_hud:b8:compare",
+        source: "scanner",
+        surface: "center_overlay",
+        payload: ctx
+          ? {
+              nexora_b7: {
+                posture: ctx.posture,
+                objectIds: ctx.objectIds,
+                drivers: ctx.drivers,
+                fragilityLevel: ctx.fragilityLevel,
+                summary: ctx.summary.slice(0, 280),
+              },
+            }
+          : null,
+      })
+    );
+  }, [dispatchCanonicalAction, traceB8DecisionAction]);
+
+  const dispatchPipelineHudB7WhyThis = useCallback(() => {
+    const ctx = pipelineB7ActionContextRef.current;
+    setNexoraB8PanelContext(ctx ? nexoraB8PanelContextFromHudRef(ctx) : null);
+    traceB8DecisionAction("why_this");
+    dispatchCanonicalAction(
+      normalizeOpenPanelCta({
+        view: "advice",
+        rawSource: "pipeline_hud:b8:why_this",
+        source: "scanner",
+        surface: "panel_cta",
+      })
+    );
+  }, [dispatchCanonicalAction, traceB8DecisionAction]);
+
+  const closeCenterComponent = useCallback(() => {
+    setCenterComponentVisible(false);
+    if (centerComponentCloseTimerRef.current != null) {
+      window.clearTimeout(centerComponentCloseTimerRef.current);
+    }
+    centerComponentCloseTimerRef.current = window.setTimeout(() => {
+      setCenterComponent(null);
+      centerComponentCloseTimerRef.current = null;
+    }, 170);
+  }, []);
+  const toggleRightPanel = useCallback(
+    (view: RightPanelView, contextId: string | null = null) => {
+      if (!view) {
+        return;
+      }
+      dispatchCanonicalAction(
+        normalizeOpenPanelCta({
+          view,
+          contextId,
+          rawSource: "toggleRightPanel",
+          source: "system",
+          surface: "legacy_shell",
+        })
+      );
+    },
+    [dispatchCanonicalAction]
+  );
+  const toggleInspector = useCallback(() => {
+    traceRightPanelPathAudit("toggleInspector", rightPanelState.view ?? null, "direct_state_write");
+    if (rightPanelState.isOpen) {
+      closeRightPanel();
+      return;
+    }
+    const v = rightPanelState.view;
+    if (!v) {
+      return;
+    }
+    dispatchCanonicalAction(
+      normalizeOpenPanelCta({
+        view: v,
+        contextId: rightPanelState.contextId ?? null,
+        rawSource: "toggleInspector",
+        source: "system",
+        surface: "legacy_shell",
+      })
+    );
+  }, [closeRightPanel, dispatchCanonicalAction, rightPanelState.contextId, rightPanelState.isOpen, rightPanelState.view, traceRightPanelPathAudit]);
+
+  useEffect(() => {
+    if (!centerComponent) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeCenterComponent();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [centerComponent, closeCenterComponent]);
+  useEffect(() => {
+    if (!centerComponent) {
+      setCenterComponentVisible(false);
+      return;
+    }
+    const raf = window.requestAnimationFrame(() => {
+      setCenterComponentVisible(true);
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [centerComponent]);
+  useEffect(() => {
+    return () => {
+      if (centerComponentCloseTimerRef.current != null) {
+        window.clearTimeout(centerComponentCloseTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const onOpenRightPanel = (
+      event: Event
+    ) => {
       const detail = (event as CustomEvent<RightPanelOpenRequestDetail>).detail;
       const requestedView =
-        typeof detail?.view === "string" && detail.view.trim()
-          ? detail.view.trim()
-          : typeof detail?.tab === "string" && detail.tab.trim()
-          ? detail.tab.trim()
-          : "";
-      const source = detail?.source ?? "event:nexora:open-right-panel:unknown";
-      const nextView = requestedView ? resolveSafeRightPanelView(requestedView) : null;
-      traceLegacyPanelSyncAttempt(
-        "event:nexora:open-right-panel",
-        rightPanelState.view ?? null,
-        nextView ?? null,
-        requestedView || null
-      );
-
-      if (source !== "canonical-ui:user-nav") {
-        traceLegacyPanelSyncBlocked(
-          "event:nexora:open-right-panel",
-          rightPanelState.view ?? null,
-          nextView ?? null,
-          requestedView || null
-        );
+        typeof detail?.view === "string" && detail.view.trim().length > 0
+          ? (detail.view.trim() as RightPanelView)
+          : null;
+      if (!requestedView && !detail?.tab && !detail?.leftNav && !detail?.section) {
         return;
       }
-
-      if (!nextView) {
-        traceLegacyPanelSyncBlocked(
-          "event:nexora:open-right-panel",
-          rightPanelState.view ?? null,
-          null,
-          requestedView || null
-        );
-        return;
-      }
-
-      openRightPanel(nextView, detail?.contextId ?? null);
+      dispatchCanonicalAction(normalizeOpenRightPanelEventDetail(detail));
     };
 
     window.addEventListener("nexora:open-right-panel", onOpenRightPanel as EventListener);
-    return () => {
-      window.removeEventListener("nexora:open-right-panel", onOpenRightPanel as EventListener);
-    };
-  }, [openRightPanel, rightPanelState.view, traceLegacyPanelSyncAttempt, traceLegacyPanelSyncBlocked]);
+    return () => window.removeEventListener("nexora:open-right-panel", onOpenRightPanel as EventListener);
+  }, [dispatchCanonicalAction]);
 
   useEffect(() => {
-    const onInspectorSectionChanged = (event: Event) => {
-      const detail = (event as CustomEvent<InspectorSectionChangedDetail>).detail;
-      const legacyTab = typeof detail?.eventTab === "string" ? detail.eventTab.trim() : "";
-      const nextView = legacyTab ? mapLegacyTabToRightPanelView(legacyTab) : null;
-      traceLegacyPanelSyncAttempt(
-        "event:nexora:inspector-section-changed",
-        rightPanelState.view ?? null,
-        nextView ?? null,
-        legacyTab || null
-      );
-      traceLegacyPanelSyncBlocked(
-        "event:nexora:inspector-section-changed",
-        rightPanelState.view ?? null,
-        nextView ?? null,
-        legacyTab || null
-      );
-    };
-
-    window.addEventListener("nexora:inspector-section-changed", onInspectorSectionChanged as EventListener);
-    return () => {
-      window.removeEventListener("nexora:inspector-section-changed", onInspectorSectionChanged as EventListener);
-    };
-  }, [openRightPanel, rightPanelState.view, traceLegacyPanelSyncAttempt, traceLegacyPanelSyncBlocked]);
-
-  useEffect(() => {
+    if (!rightPanelTab) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[Home][RIGHT_PANEL_TAB_EVENT_SKIPPED]", {
+          currentView: rightPanelState.view ?? null,
+          reason: "No valid legacy tab mapping was available for the current panel view.",
+        });
+      }
+      return;
+    }
+    // Legacy tab sync is metadata-only. The concrete panel identity remains rightPanelState.view.
     window.dispatchEvent(
       new CustomEvent("nexora:right-panel-tab-changed", {
-        detail: { tab: rightPanelTab },
+        detail: { tab: rightPanelTab, view: rightPanelState.view ?? null },
       })
     );
-  }, [rightPanelTab]);
+  }, [rightPanelState.view, rightPanelTab]);
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora] rightPanelState:", rightPanelState);
-    }
+    return;
   }, [rightPanelState]);
-
+  useEffect(() => {
+    return;
+  }, [rightPanelState.view]);
+  useEffect(() => {
+    return;
+  }, [requestRightPanelOpen, rightPanelState.view]);
+  useEffect(() => {
+    return;
+  }, [requestRightPanelOpen, rightPanelState.view]);
+  useEffect(() => {
+    return;
+  }, [rightPanelState.view]);
   useEffect(() => {
     setIsClientMounted(true);
   }, []);
@@ -2096,37 +2123,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [lastAnalysisSummary, setLastAnalysisSummary] = useState<string | null>(null);
   const [sceneWarn, setSceneWarn] = useState<string | null>(null);
   const [conflicts, setConflicts] = useState<any[]>([]);
-  const [objectSelection, setObjectSelection] = useState<any | null>(null);
   const [memoryInsights, setMemoryInsights] = useState<any | null>(null);
   const [riskPropagation, setRiskPropagation] = useState<any | null>(null);
   const [strategicAdvice, setStrategicAdvice] = useState<any | null>(null);
   useEffect(() => {
-    setActiveMode(activeDomainExperience.experience.preferredProductMode);
-    const preferredLegacyTab =
-      typeof activeDomainExperience.experience.preferredRightPanelTab === "string"
-        ? activeDomainExperience.experience.preferredRightPanelTab.trim()
-        : "";
-    const attemptedView = preferredLegacyTab ? mapLegacyTabToRightPanelView(preferredLegacyTab) : null;
-    traceLegacyPanelSyncAttempt(
-      "effect:activeDomainExperience.preferredRightPanelTab",
-      rightPanelState.view ?? null,
-      attemptedView ?? null,
-      preferredLegacyTab || null
-    );
-    if (attemptedView && attemptedView !== rightPanelState.view) {
-      traceLegacyPanelSyncBlocked(
-        "effect:activeDomainExperience.preferredRightPanelTab",
-        rightPanelState.view ?? null,
-        attemptedView,
-        preferredLegacyTab || null
-      );
-    }
+    // Disabled legacy sync — controlled by explicit user actions only
     setProductModeId(activeDomainExperience.experience.preferredWorkspaceModeId);
   }, [
     activeDomainExperience,
-    rightPanelState.view,
-    traceLegacyPanelSyncAttempt,
-    traceLegacyPanelSyncBlocked,
   ]);
   const [strategyKpi, setStrategyKpi] = useState<any | null>(null);
   const [decisionCockpit, setDecisionCockpit] = useState<any | null>(null);
@@ -2154,22 +2158,53 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     error: null,
   });
   const activeExecutiveView =
-    rightPanelState.view === "simulate" || rightPanelState.view === "compare"
+    rightPanelState.view === "simulate" ||
+    rightPanelState.view === "compare" ||
+    rightPanelState.view === "dashboard"
       ? rightPanelState.view
-      : "dashboard";
+      : null;
   const handleOpenDashboard = useCallback(() => {
-    openRightPanel("dashboard");
-  }, [openRightPanel]);
-  const handleOpenObject = useCallback((objectId?: string | null) => {
-    openRightPanel("object", objectId ?? null);
-  }, [openRightPanel]);
+    dispatchCanonicalAction(
+      normalizeOpenPanelCta({
+        view: "dashboard",
+        rawSource: "handleOpenDashboard",
+        source: "system",
+        surface: "legacy_shell",
+      })
+    );
+  }, [dispatchCanonicalAction]);
+  const handleOpenObject = useCallback(
+    (objectId?: string | null) => {
+      const id = objectId != null ? String(objectId).trim() : "";
+      if (id) {
+        dispatchCanonicalAction(
+          normalizeFocusObject({
+            objectId: id,
+            source: "panel_cta",
+            surface: "sub_panel",
+            rawSource: "handleOpenObject",
+          })
+        );
+      } else {
+        dispatchCanonicalAction(
+          normalizeOpenPanelCta({
+            view: "object",
+            contextId: null,
+            rawSource: "handleOpenObject:panel_only",
+            source: "panel_cta",
+            surface: "sub_panel",
+          })
+        );
+      }
+    },
+    [dispatchCanonicalAction]
+  );
   const handleCloseRightPanel = useCallback(() => {
     closeRightPanel();
   }, [closeRightPanel]);
   const [noSceneUpdate, setNoSceneUpdate] = useState(false);
   const [focusPinned, setFocusPinned] = useState(false);
   const [focusMode, setFocusMode] = useState<"all" | "selected">("all");
-  const [focusedId, setFocusedId] = useState<string | null>(null);
   const [focusOwnership, setFocusOwnership] = useState<FocusOwnershipState>({
     source: "none",
     objectId: null,
@@ -2238,7 +2273,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [objectUxById, setObjectUxById] = useState<Record<string, { opacity?: number; scale?: number }>>({});
   const [selectedObjectInfo, setSelectedObjectInfo] = useState<ResolvedObjectDetails | null>(null);
   const [selectionLocked, setSelectionLocked] = useState(false);
-  const [selectedObjectIdState, setSelectedObjectIdState] = useState<string | null>(null);
   const claimFocusOwnership = useCallback((next: FocusOwnershipState) => {
     setFocusOwnership(next);
     if (process.env.NODE_ENV !== "production") {
@@ -2264,6 +2298,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const handleDragStart = useCallback(() => {}, []);
   const handleDragEnd = useCallback(() => {}, []);
   const [prefs, setPrefs] = useState<ScenePrefs>(() => loadPrefsFromStorage() ?? defaultPrefs);
+
+  useEffect(() => {
+    const onPatch = (ev: Event) => {
+      const detail = (ev as CustomEvent<Partial<ScenePrefs>>).detail;
+      if (!detail || typeof detail !== "object") return;
+      setPrefs((prev) => ({ ...prev, ...detail }));
+    };
+    window.addEventListener("nexora:scene-prefs-patch", onPatch as EventListener);
+    return () => window.removeEventListener("nexora:scene-prefs-patch", onPatch as EventListener);
+  }, []);
+
   const [isOrbiting, setIsOrbiting] = useState(false);
   const [cameraLockedByUser, setCameraLockedByUser] = useState(false);
   const [episodeId, setEpisodeId] = useState<string | null>(null);
@@ -2284,10 +2329,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [chatRequestStatus]);
 
   useEffect(() => {
-    if (rightPanelState.isOpen && activeInspectorReportTab === "war_room") {
+    if (rightPanelState.isOpen && rightPanelState.view === "war_room") {
       warRoom.openWarRoom();
     }
-  }, [activeInspectorReportTab, rightPanelState.isOpen, warRoom.openWarRoom]);
+  }, [rightPanelState.isOpen, rightPanelState.view, warRoom.openWarRoom]);
 
   useEffect(() => {
     // Inspector PANEL is disabled; keep rail only. Do not auto-open.
@@ -2389,10 +2434,207 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [environmentConfig]
   );
+  const applyGuardedResponsePayload = useCallback(
+    (
+      nextPayload: unknown,
+      stage: DecisionTraceEvent["stage"],
+      summary: string,
+      confidence?: number | null
+    ) => {
+      const normalized = normalizeDecisionPayload(nextPayload);
+      emitDecisionTrace({
+        stage,
+        projectId: activeProjectId,
+        confidence: confidence ?? null,
+        summary,
+        metadata: {
+          validation_missing: normalized.validation.missing,
+          validation_warnings: normalized.validation.warnings,
+          recovery_actions: normalized.recoveryActions,
+          payload_valid: normalized.validation.isValid,
+        },
+      });
+      setResponseData(normalized.payload);
+      return normalized.payload;
+    },
+    [activeProjectId, emitDecisionTrace, normalizeDecisionPayload]
+  );
   const guardedResponseData = useMemo<any | null>(
     () => normalizeDecisionPayload(responseData).payload,
     [normalizeDecisionPayload, responseData]
   );
+  const [visibleUiState, setVisibleUiState] = useState<{
+    sceneJson: SceneJson | null;
+    responseData: any | null;
+    objectSelection: any | null;
+    selectedObjectId: string | null;
+    focusedId: string | null;
+    conflicts: any[];
+    memoryInsights: any | null;
+    riskPropagation: any | null;
+    strategicAdvice: any | null;
+    decisionCockpit: any | null;
+    opponentModel: any | null;
+    strategicPatterns: any | null;
+  }>({
+    sceneJson: null,
+    responseData: null,
+    objectSelection: null,
+    selectedObjectId: null,
+    focusedId: null,
+    conflicts: [],
+    memoryInsights: null,
+    riskPropagation: null,
+    strategicAdvice: null,
+    decisionCockpit: null,
+    opponentModel: null,
+    strategicPatterns: null,
+  });
+  useEffect(() => {
+    const submitActive = loading || chatRequestStatus === "submitting";
+    setVisibleUiState((prev) => {
+      const nextSceneJson = hasRenderableSceneForVisibleState(sceneJson)
+        ? sceneJson
+        : submitActive
+        ? prev.sceneJson
+        : sceneJson;
+      const nextResponseData = hasRenderableResponseForVisibleState(guardedResponseData)
+        ? guardedResponseData
+        : submitActive
+        ? prev.responseData
+        : guardedResponseData;
+      const nextObjectSelection = hasMeaningfulSelectionForVisibleState(objectSelection)
+        ? objectSelection
+        : submitActive
+        ? prev.objectSelection
+        : !hasMeaningfulSelectionForVisibleState(prev.objectSelection) &&
+            !hasMeaningfulSelectionForVisibleState(objectSelection)
+        ? prev.objectSelection
+        : objectSelection;
+      const nextSelectedObjectId =
+        typeof selectedObjectIdState === "string" && selectedObjectIdState.trim().length > 0
+          ? selectedObjectIdState
+          : submitActive
+          ? prev.selectedObjectId
+          : selectedObjectIdState ?? null;
+      const nextFocusedId =
+        typeof focusedId === "string" && focusedId.trim().length > 0
+          ? focusedId
+          : submitActive
+          ? prev.focusedId
+          : focusedId ?? null;
+      const rawConflicts = Array.isArray(conflicts) ? conflicts : [];
+      const nextConflicts =
+        rawConflicts.length > 0
+          ? conflicts
+          : submitActive
+          ? prev.conflicts
+          : prev.conflicts.length === 0
+          ? prev.conflicts
+          : rawConflicts;
+      const nextMemoryInsights =
+        asRecord(memoryInsights) ? memoryInsights : submitActive ? prev.memoryInsights : memoryInsights;
+      const nextRiskPropagation =
+        asRecord(riskPropagation) ? riskPropagation : submitActive ? prev.riskPropagation : riskPropagation;
+      const nextStrategicAdvice =
+        asRecord(strategicAdvice) ? strategicAdvice : submitActive ? prev.strategicAdvice : strategicAdvice;
+      const nextDecisionCockpit =
+        asRecord(decisionCockpit) ? decisionCockpit : submitActive ? prev.decisionCockpit : decisionCockpit;
+      const nextOpponentModel =
+        asRecord(opponentModel) ? opponentModel : submitActive ? prev.opponentModel : opponentModel;
+      const nextStrategicPatterns =
+        asRecord(strategicPatterns) ? strategicPatterns : submitActive ? prev.strategicPatterns : strategicPatterns;
+
+      const nextState = {
+        sceneJson: nextSceneJson,
+        responseData: nextResponseData,
+        objectSelection: nextObjectSelection,
+        selectedObjectId: nextSelectedObjectId,
+        focusedId: nextFocusedId,
+        conflicts: nextConflicts,
+        memoryInsights: nextMemoryInsights,
+        riskPropagation: nextRiskPropagation,
+        strategicAdvice: nextStrategicAdvice,
+        decisionCockpit: nextDecisionCockpit,
+        opponentModel: nextOpponentModel,
+        strategicPatterns: nextStrategicPatterns,
+      };
+
+      const unchanged =
+        prev.sceneJson === nextState.sceneJson &&
+        prev.responseData === nextState.responseData &&
+        prev.objectSelection === nextState.objectSelection &&
+        prev.selectedObjectId === nextState.selectedObjectId &&
+        prev.focusedId === nextState.focusedId &&
+        prev.conflicts === nextState.conflicts &&
+        prev.memoryInsights === nextState.memoryInsights &&
+        prev.riskPropagation === nextState.riskPropagation &&
+        prev.strategicAdvice === nextState.strategicAdvice &&
+        prev.decisionCockpit === nextState.decisionCockpit &&
+        prev.opponentModel === nextState.opponentModel &&
+        prev.strategicPatterns === nextState.strategicPatterns;
+
+      if (process.env.NODE_ENV !== "production") {
+        if (unchanged && submitActive) {
+          console.log("[Nexora][ChatSubmit][PreserveVisibleState]", {
+            hasResponseData: Boolean(prev.responseData),
+            hasSceneJson: Boolean(prev.sceneJson),
+            hasPanelData: Boolean(prev.responseData ?? prev.strategicAdvice ?? prev.riskPropagation),
+            selectedObjectId: prev.selectedObjectId ?? null,
+            panelView: rightPanelState.view ?? null,
+            preserved: true,
+          });
+        } else if (!unchanged) {
+          console.log("[Nexora][ChatSubmit][CommitNewVisibleState]", {
+            hasResponseData: Boolean(nextState.responseData),
+            hasSceneJson: Boolean(nextState.sceneJson),
+            hasPanelData: Boolean(nextState.responseData ?? nextState.strategicAdvice ?? nextState.riskPropagation),
+            selectedObjectId: nextState.selectedObjectId ?? null,
+            panelView: rightPanelState.view ?? null,
+            preserved: false,
+          });
+        } else if (!hasRenderableResponseForVisibleState(guardedResponseData) && !hasRenderableSceneForVisibleState(sceneJson)) {
+          console.log("[Nexora][ChatSubmit][RejectedTransientState]", {
+            hasResponseData: Boolean(guardedResponseData),
+            hasSceneJson: Boolean(sceneJson),
+            hasPanelData: Boolean(strategicAdvice ?? riskPropagation),
+            selectedObjectId: selectedObjectIdState ?? null,
+            panelView: rightPanelState.view ?? null,
+          });
+        }
+      }
+
+      return unchanged ? prev : nextState;
+    });
+  }, [
+    chatRequestStatus,
+    conflicts,
+    decisionCockpit,
+    focusedId,
+    guardedResponseData,
+    loading,
+    memoryInsights,
+    objectSelection,
+    opponentModel,
+    rightPanelState.view,
+    riskPropagation,
+    sceneJson,
+    selectedObjectIdState,
+    strategicAdvice,
+    strategicPatterns,
+  ]);
+  const visibleSceneJson = visibleUiState.sceneJson;
+  const visibleResponseData = visibleUiState.responseData;
+  const visibleObjectSelection = visibleUiState.objectSelection;
+  const visibleSelectedObjectId = visibleUiState.selectedObjectId;
+  const visibleFocusedId = visibleUiState.focusedId;
+  const visibleConflicts = visibleUiState.conflicts;
+  const visibleMemoryInsights = visibleUiState.memoryInsights;
+  const visibleRiskPropagation = visibleUiState.riskPropagation;
+  const visibleStrategicAdvice = visibleUiState.strategicAdvice;
+  const visibleDecisionCockpit = visibleUiState.decisionCockpit;
+  const visibleOpponentModel = visibleUiState.opponentModel;
+  const visibleStrategicPatterns = visibleUiState.strategicPatterns;
   useEffect(() => {
     if (!guardedResponseData) return;
     emitDecisionTrace({
@@ -2418,8 +2660,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const buildExplorationSceneSignature = useCallback((nextScene: SceneJson | null): string => {
     const objects = Array.isArray(nextScene?.scene?.objects) ? nextScene.scene.objects : [];
     if (!objects.length) return "";
-    const relations = Array.isArray((nextScene as any)?.scene?.relations) ? (nextScene as any).scene.relations : [];
-    const loops = Array.isArray((nextScene as any)?.scene?.loops) ? (nextScene as any).scene.loops : [];
+    const relations = Array.isArray(nextScene?.scene?.relations) ? nextScene.scene.relations : [];
+    const loops = Array.isArray(nextScene?.scene?.loops) ? nextScene.scene.loops : [];
     const objectIds = objects
       .map((obj: any) => String(obj?.id ?? obj?.label ?? "").trim())
       .filter(Boolean)
@@ -2587,12 +2829,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     return null;
   }, []);
   const ensureBackendUserId = useCallback((): string => {
-    let userId: string | null = null;
-    try {
-      userId = window.localStorage.getItem(SESSION_KEY);
-    } catch {
-      userId = null;
-    }
+    let userId: string | null = readSessionIdForPersistence();
     if (!userId && process.env.NODE_ENV !== "production") {
       const newUserId = `dev-${Math.random().toString(36).slice(2, 10)}`;
       userId = newUserId;
@@ -2621,23 +2858,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   );
   const deriveProductFlowViewModel = useCallback(
     (payload: BackendChatResponse, fallbackScene: SceneJson | null) => {
-      const nextSceneJson: SceneJson | null = payload.scene_json
-        ? normalizeSceneJson(payload.scene_json as any)
-        : fallbackScene;
-      const nextKpi = (payload as any)?.scene_json?.scene?.kpi ?? null;
-      const baseLoops = normalizeLoops((payload as any)?.scene_json?.scene?.loops);
-      const sceneObjects: any[] =
-        nextSceneJson && Array.isArray((nextSceneJson as any)?.scene?.objects)
-          ? ((nextSceneJson as any).scene.objects as any[])
-          : [];
+      const sceneInner = asRecord(asRecord(payload.scene_json)?.["scene"]);
+      const nextSceneJson: SceneJson | null =
+        payload.scene_json != null && typeof payload.scene_json === "object" && !Array.isArray(payload.scene_json)
+          ? normalizeSceneJson(payload.scene_json)
+          : fallbackScene;
+      const nextKpi = sceneInner?.["kpi"] ?? null;
+      const baseLoops = normalizeLoops(sceneInner?.["loops"]);
+      const sceneObjects =
+        nextSceneJson && Array.isArray(nextSceneJson.scene?.objects) ? nextSceneJson.scene.objects : [];
       const nextLoops = resolveLoopPlaceholders(baseLoops, sceneObjects);
+      const nextActiveLoop = readSceneJsonActiveLoop(payload.scene_json) || null;
+      const suggestionsRaw = sceneInner?.["loops_suggestions"];
       return {
         nextSceneJson,
         nextKpi,
         nextLoops,
-        nextActiveLoop: (payload as any)?.scene_json?.scene?.active_loop ?? null,
-        nextLoopSuggestions: Array.isArray((payload as any)?.scene_json?.scene?.loops_suggestions)
-          ? ((payload as any)?.scene_json?.scene?.loops_suggestions as string[])
+        nextActiveLoop,
+        nextLoopSuggestions: Array.isArray(suggestionsRaw)
+          ? (suggestionsRaw as string[]).filter((s): s is string => typeof s === "string")
           : [],
         nextConflicts: extractConflicts(payload),
         nextObjectSelection: extractObjectSelection(payload),
@@ -2756,38 +2995,170 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
     ) => {
       const shouldApplyVisualState = options?.applyVisualState !== false;
-      setKpi(viewModel.nextKpi);
-      setConflicts(viewModel.nextConflicts);
-      if (shouldApplyVisualState) {
-        setObjectSelection(viewModel.nextObjectSelection);
-        setRiskPropagation(viewModel.nextRiskPropagation);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][HomeScreen][PanelStateTransition]", {
+          phase: "apply_product_flow_view_model",
+          panelView: rightPanelState.view ?? null,
+          hasVisiblePanelState: Boolean(
+            visibleResponseData ?? visibleStrategicAdvice ?? visibleDecisionCockpit ?? visibleRiskPropagation
+          ),
+          hasVisibleSceneState: Boolean(visibleSceneJson),
+        });
       }
-      setMemoryInsights(viewModel.nextMemoryInsights);
-      setStrategicAdvice(viewModel.nextStrategicAdvice);
-      setStrategyKpi(viewModel.nextStrategyKpi);
-      setDecisionCockpit(viewModel.nextDecisionCockpit);
-      setProductModeContext(viewModel.nextProductModeContext);
+      const shouldAcceptKpi = shouldAcceptMeaningfulRecordReplacement(viewModel.nextKpi, kpi);
+      const shouldAcceptConflicts = shouldAcceptMeaningfulArrayReplacement(viewModel.nextConflicts, conflicts);
+      const shouldAcceptObjectSelection = shouldApplyVisualState
+        ? hasMeaningfulSelectionForVisibleState(viewModel.nextObjectSelection) ||
+          !hasMeaningfulSelectionForVisibleState(visibleObjectSelection)
+        : false;
+      const shouldAcceptRiskPropagation = shouldApplyVisualState
+        ? shouldAcceptMeaningfulRecordReplacement(viewModel.nextRiskPropagation, visibleRiskPropagation)
+        : false;
+      const shouldAcceptMemoryInsights = shouldAcceptMeaningfulRecordReplacement(viewModel.nextMemoryInsights, visibleMemoryInsights);
+      const shouldAcceptStrategicAdvice = shouldAcceptMeaningfulRecordReplacement(viewModel.nextStrategicAdvice, visibleStrategicAdvice);
+      const shouldAcceptStrategyKpi = shouldAcceptMeaningfulRecordReplacement(viewModel.nextStrategyKpi, strategyKpi);
+      const shouldAcceptDecisionCockpit = shouldAcceptMeaningfulRecordReplacement(viewModel.nextDecisionCockpit, visibleDecisionCockpit);
+      const shouldAcceptProductModeContext = shouldAcceptMeaningfulRecordReplacement(
+        viewModel.nextProductModeContext,
+        productModeContext
+      );
+      const shouldAcceptAiReasoning = shouldAcceptMeaningfulRecordReplacement(viewModel.nextAiReasoning, aiReasoning);
+      const shouldAcceptPlatformAssembly = shouldAcceptMeaningfulRecordReplacement(
+        viewModel.nextPlatformAssembly,
+        platformAssembly
+      );
+      const shouldAcceptAutonomousExploration = shouldAcceptMeaningfulRecordReplacement(
+        viewModel.nextAutonomousExploration,
+        autonomousExploration
+      );
+      const shouldAcceptOpponentModel = shouldAcceptMeaningfulRecordReplacement(
+        viewModel.nextOpponentModel,
+        visibleOpponentModel
+      );
+      const shouldAcceptStrategicPatterns = shouldAcceptMeaningfulRecordReplacement(
+        viewModel.nextStrategicPatterns,
+        visibleStrategicPatterns
+      );
+      const shouldAcceptLoops = shouldApplyVisualState
+        ? shouldAcceptMeaningfulArrayReplacement(viewModel.nextLoops, loops)
+        : false;
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][HomeScreen][MeaningfulReplacementAccepted]", {
+          panelView: rightPanelState.view ?? null,
+          accepted: {
+            kpi: shouldAcceptKpi,
+            conflicts: shouldAcceptConflicts,
+            objectSelection: shouldAcceptObjectSelection,
+            riskPropagation: shouldAcceptRiskPropagation,
+            memoryInsights: shouldAcceptMemoryInsights,
+            strategicAdvice: shouldAcceptStrategicAdvice,
+            decisionCockpit: shouldAcceptDecisionCockpit,
+            loops: shouldAcceptLoops,
+          },
+        });
+        if (
+          !shouldAcceptConflicts ||
+          (shouldApplyVisualState && (!shouldAcceptObjectSelection || !shouldAcceptRiskPropagation || !shouldAcceptLoops)) ||
+          !shouldAcceptMemoryInsights ||
+          !shouldAcceptStrategicAdvice ||
+          !shouldAcceptDecisionCockpit
+        ) {
+          console.warn("[Nexora][HomeScreen][DestructiveResetBlocked]", {
+            panelView: rightPanelState.view ?? null,
+            blocked: {
+              conflicts: !shouldAcceptConflicts,
+              objectSelection: shouldApplyVisualState ? !shouldAcceptObjectSelection : false,
+              riskPropagation: shouldApplyVisualState ? !shouldAcceptRiskPropagation : false,
+              memoryInsights: !shouldAcceptMemoryInsights,
+              strategicAdvice: !shouldAcceptStrategicAdvice,
+              decisionCockpit: !shouldAcceptDecisionCockpit,
+              loops: shouldApplyVisualState ? !shouldAcceptLoops : false,
+            },
+          });
+        }
+      }
+
+      setKpi((prev: KPIState | null) => (shouldAcceptKpi ? viewModel.nextKpi : prev));
+      setConflicts((prev: typeof conflicts) => (shouldAcceptConflicts ? viewModel.nextConflicts : prev));
+      if (shouldApplyVisualState) {
+        setObjectSelection((prev: typeof objectSelection) =>
+          shouldAcceptObjectSelection ? viewModel.nextObjectSelection : prev
+        );
+        setRiskPropagation((prev: typeof riskPropagation) =>
+          shouldAcceptRiskPropagation ? viewModel.nextRiskPropagation : prev
+        );
+      }
+      setMemoryInsights((prev: typeof memoryInsights) =>
+        shouldAcceptMemoryInsights ? viewModel.nextMemoryInsights : prev
+      );
+      setStrategicAdvice((prev: typeof strategicAdvice) =>
+        shouldAcceptStrategicAdvice ? viewModel.nextStrategicAdvice : prev
+      );
+      setStrategyKpi((prev: typeof strategyKpi) => (shouldAcceptStrategyKpi ? viewModel.nextStrategyKpi : prev));
+      setDecisionCockpit((prev: typeof decisionCockpit) =>
+        shouldAcceptDecisionCockpit ? viewModel.nextDecisionCockpit : prev
+      );
+      setProductModeContext((prev: typeof productModeContext) =>
+        shouldAcceptProductModeContext ? viewModel.nextProductModeContext : prev
+      );
       if (viewModel.nextProductModeContext?.mode_id) {
         setProductModeId(String(viewModel.nextProductModeContext.mode_id));
       }
-      setAiReasoning(viewModel.nextAiReasoning);
-      setPlatformAssembly(viewModel.nextPlatformAssembly);
-      setAutonomousExploration(viewModel.nextAutonomousExploration);
-      setOpponentModel(viewModel.nextOpponentModel);
-      setStrategicPatterns(viewModel.nextStrategicPatterns);
+      setAiReasoning((prev: typeof aiReasoning) => (shouldAcceptAiReasoning ? viewModel.nextAiReasoning : prev));
+      setPlatformAssembly((prev: typeof platformAssembly) =>
+        shouldAcceptPlatformAssembly ? viewModel.nextPlatformAssembly : prev
+      );
+      setAutonomousExploration((prev: typeof autonomousExploration) =>
+        shouldAcceptAutonomousExploration ? viewModel.nextAutonomousExploration : prev
+      );
+      setOpponentModel((prev: typeof opponentModel) => (shouldAcceptOpponentModel ? viewModel.nextOpponentModel : prev));
+      setStrategicPatterns((prev: typeof strategicPatterns) =>
+        shouldAcceptStrategicPatterns ? viewModel.nextStrategicPatterns : prev
+      );
       if (shouldApplyVisualState) {
-        setLoops(viewModel.nextLoops);
-        setActiveLoopId(viewModel.nextActiveLoop ?? null);
-        setLoopSuggestions(viewModel.nextLoopSuggestions);
+        setLoops((prev: SceneLoop[]) => (shouldAcceptLoops ? viewModel.nextLoops : prev));
+        if (shouldAcceptLoops || viewModel.nextActiveLoop != null) {
+          setActiveLoopId(viewModel.nextActiveLoop ?? null);
+        }
+        setLoopSuggestions((prev: string[]) =>
+          shouldAcceptMeaningfulArrayReplacement(viewModel.nextLoopSuggestions, prev)
+            ? viewModel.nextLoopSuggestions
+            : prev
+        );
       }
-      if (
-        options?.syncSceneState !== false &&
-        viewModel.nextSceneJson &&
-        hasForcedSceneUpdate(payload, viewModel.nextSceneJson)
-      ) {
-        setSceneJson(viewModel.nextSceneJson);
-        setNoSceneUpdate(false);
+      if (options?.syncSceneState !== false && viewModel.nextSceneJson && hasForcedSceneUpdate(payload, viewModel.nextSceneJson)) {
+        const sceneDecision = evaluateProductFlowForcedScene(viewModel.nextSceneJson, payload);
+        if (isSceneCanonReplaceDecision(sceneDecision)) {
+          if (process.env.NODE_ENV !== "production") {
+            console.log("[Nexora][HomeScreen][SceneStateTransition]", {
+              phase: "scene_replacement_committed",
+              panelView: rightPanelState.view ?? null,
+              hasPreviousScene: Boolean(visibleSceneJson),
+              contractDecision: sceneDecision.kind,
+            });
+          }
+          setSceneJson(sceneDecision.scene);
+          setNoSceneUpdate(false);
+        } else {
+          if (process.env.NODE_ENV !== "production") {
+            console.log("[Nexora][HomeScreen][SceneStateTransition]", {
+              phase: "scene_replacement_contract_rejected",
+              panelView: rightPanelState.view ?? null,
+              contractReason: sceneDecision.reason,
+            });
+          }
+          setNoSceneUpdate(true);
+        }
       } else if (options?.syncSceneState !== false) {
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[Nexora][HomeScreen][SceneStateTransition]", {
+            phase: "scene_replacement_deferred",
+            panelView: rightPanelState.view ?? null,
+            hasPreviousScene: Boolean(visibleSceneJson),
+            hasNextScene: Boolean(viewModel.nextSceneJson),
+          });
+        }
         setNoSceneUpdate(true);
       }
       setSourceLabel((payload as any)?.source ?? null);
@@ -2803,7 +3174,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         setSceneWarn(null);
       }
     },
-    [applyActions]
+    [
+      aiReasoning,
+      applyActions,
+      autonomousExploration,
+      conflicts,
+      kpi,
+      loops,
+      platformAssembly,
+      productModeContext,
+      rightPanelState.view,
+      strategyKpi,
+      visibleDecisionCockpit,
+      visibleMemoryInsights,
+      visibleObjectSelection,
+      visibleOpponentModel,
+      visibleResponseData,
+      visibleRiskPropagation,
+      visibleSceneJson,
+      visibleStrategicAdvice,
+      visibleStrategicPatterns,
+    ]
   );
   const instanceLabelMap = useMemo(() => {
     const list = Array.isArray(config?.instances) ? config?.instances : [];
@@ -2828,9 +3219,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const resolveSceneObjectLabel = useCallback(
     (id: string | null | undefined) => {
       if (!id) return null;
-      return resolveSceneObjectById(sceneJson, id)?.label ?? null;
+      return resolveSceneObjectById(visibleSceneJson, id)?.label ?? null;
     },
-    [sceneJson]
+    [visibleSceneJson]
   );
   const resolveObjectLabel = useCallback(
     (id: string) => resolveSceneObjectLabel(id) ?? objectProfiles[id]?.label ?? instanceLabelMap[id] ?? id,
@@ -2841,16 +3232,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [typeLabelMap]
   );
   const highlightedObjectIdSet = useMemo(() => {
-    const ids = Array.isArray(objectSelection?.highlighted_objects) ? objectSelection.highlighted_objects : [];
+    const ids = Array.isArray(visibleObjectSelection?.highlighted_objects)
+      ? visibleObjectSelection.highlighted_objects
+      : [];
     return new Set((ids as any[]).filter((x) => typeof x === "string") as string[]);
-  }, [objectSelection]);
+  }, [visibleObjectSelection]);
   const riskSourceObjectIdSet = useMemo(() => {
-    const ids = Array.isArray(riskPropagation?.sources) ? riskPropagation.sources : [];
+    const ids = Array.isArray(visibleRiskPropagation?.sources) ? visibleRiskPropagation.sources : [];
     return new Set((ids as any[]).filter((x) => typeof x === "string") as string[]);
-  }, [riskPropagation]);
+  }, [visibleRiskPropagation]);
   const getUxForObject = useCallback(
     (id: string) => {
-      const sceneObjects = Array.isArray((sceneJson as any)?.scene?.objects) ? ((sceneJson as any).scene.objects as any[]) : [];
+      const sceneObjects = Array.isArray(visibleSceneJson?.scene?.objects) ? visibleSceneJson.scene.objects : [];
       const sceneObject = sceneObjects.find((entry: any) => String(entry?.id ?? entry?.name ?? "") === id) ?? null;
       const profileUx = objectProfiles[id]?.ux;
       const localUx = objectUxById[id];
@@ -2877,14 +3270,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       return merged;
     },
-    [highlightedObjectIdSet, objectProfiles, objectUxById, riskSourceObjectIdSet, sceneJson]
+    [highlightedObjectIdSet, objectProfiles, objectUxById, riskSourceObjectIdSet, visibleSceneJson]
   );
   const resolveSelectedObjectDetails = useCallback(
     (id: string | null) => {
       if (!id) return null;
       const details = composeResolvedObjectDetails({
         objectId: id,
-        scene: sceneJson,
+        scene: visibleSceneJson,
         cachedProfile: objectProfiles[id] ?? null,
         ux: getUxForObject(id),
         override: overridesRef.current[id],
@@ -2898,7 +3291,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       return details;
     },
-    [getUxForObject, instanceLabelMap, objectProfiles, sceneJson]
+    [getUxForObject, instanceLabelMap, objectProfiles, visibleSceneJson]
   );
   const updateSelectedObjectInfo = useCallback(
     (id: string | null) => {
@@ -2906,28 +3299,94 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [resolveSelectedObjectDetails]
   );
+  const tracePostSuccessContextDecision = useCallback(
+    (
+      label:
+        | "[Nexora][ContextGuardBlocked]"
+        | "[Nexora][PostSuccessContextAccepted]"
+        | "[Nexora][PostSuccessContextPreserved]",
+      detail: {
+        currentTargetId?: string | null;
+        nextTargetId?: string | null;
+        source: "demoFlow" | "narrative" | "objectResolver" | "chatSuccess" | "focus";
+        targetInScene: boolean;
+        preserved?: boolean;
+      }
+    ) => {
+      if (process.env.NODE_ENV === "production") return;
+      console.log(label, {
+        currentView: rightPanelState.view ?? null,
+        currentTargetId: detail.currentTargetId ?? null,
+        nextTargetId: detail.nextTargetId ?? null,
+        targetInScene: detail.targetInScene,
+        source: detail.source,
+        preserved: detail.preserved === true,
+      });
+      if (label === "[Nexora][ContextGuardBlocked]" || label === "[Nexora][PostSuccessContextPreserved]") {
+        emitDebugEvent({
+          type: "post_success_invalidation",
+          layer: "post_success",
+          source: "HomeScreen",
+          status: "warn",
+          message: label,
+          metadata: {
+            currentView: rightPanelState.view ?? null,
+            currentTargetId: detail.currentTargetId ?? null,
+            nextTargetId: detail.nextTargetId ?? null,
+            targetInScene: detail.targetInScene,
+            source: detail.source,
+            preserved: detail.preserved === true,
+          },
+        });
+      }
+    },
+    [rightPanelState.view]
+  );
   const syncFocusedObjectFromResponse = useCallback(
     (payload: BackendChatResponse, options?: { allowFocusMutation?: boolean }) => {
       const allowFocusMutation = options?.allowFocusMutation === true;
       const ctxInfo = (payload as any)?.context?.object_info;
       if (ctxInfo && typeof ctxInfo === "object" && ctxInfo.id) {
+        const resolvedTargetId = String(ctxInfo.id);
+        const resolvedDetails = resolveSelectedObjectDetails(resolvedTargetId);
         setSelectedObjectInfo((prev) => {
-          const resolved = resolveSelectedObjectDetails(String(ctxInfo.id));
-          if (!resolved) return prev;
+          if (!resolvedDetails) return prev;
           return {
-            ...resolved,
-            label: typeof ctxInfo.label === "string" && ctxInfo.label.trim().length > 0 ? ctxInfo.label : resolved.label,
-            title: typeof ctxInfo.label === "string" && ctxInfo.label.trim().length > 0 ? ctxInfo.label : resolved.title,
-            summary: typeof ctxInfo.summary === "string" && ctxInfo.summary.trim().length > 0 ? ctxInfo.summary : resolved.summary,
-            tags: Array.isArray(ctxInfo.tags) ? ctxInfo.tags : resolved.tags,
+            ...resolvedDetails,
+            label:
+              typeof ctxInfo.label === "string" && ctxInfo.label.trim().length > 0 ? ctxInfo.label : resolvedDetails.label,
+            title:
+              typeof ctxInfo.label === "string" && ctxInfo.label.trim().length > 0 ? ctxInfo.label : resolvedDetails.title,
+            summary:
+              typeof ctxInfo.summary === "string" && ctxInfo.summary.trim().length > 0
+                ? ctxInfo.summary
+                : resolvedDetails.summary,
+            tags: Array.isArray(ctxInfo.tags) ? ctxInfo.tags : resolvedDetails.tags,
           };
         });
         if (allowFocusMutation && !focusPinned) {
-          setFocusedId(ctxInfo.id);
+          if (!resolvedDetails) {
+            tracePostSuccessContextDecision("[Nexora][ContextGuardBlocked]", {
+              currentTargetId: selectedObjectIdState ?? focusedId ?? null,
+              nextTargetId: resolvedTargetId,
+              source: "chatSuccess",
+              targetInScene: false,
+              preserved: Boolean(selectedObjectIdState ?? focusedId),
+            });
+            return;
+          }
+          tracePostSuccessContextDecision("[Nexora][PostSuccessContextAccepted]", {
+            currentTargetId: selectedObjectIdState ?? focusedId ?? null,
+            nextTargetId: resolvedTargetId,
+            source: "chatSuccess",
+            targetInScene: true,
+            preserved: false,
+          });
+          setFocusedId(resolvedTargetId);
           setFocusMode("selected");
           claimFocusOwnership({
             source: "backend_intelligence",
-            objectId: String(ctxInfo.id),
+            objectId: resolvedTargetId,
             isPersistent: false,
             reason: "Backend context returned a focus object.",
           });
@@ -2943,6 +3402,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         ctxAllowed.length > 0
       ) {
         const first = ctxAllowed[0] as string;
+        const resolvedAllowed = resolveSelectedObjectDetails(first);
+        if (!resolvedAllowed) {
+          tracePostSuccessContextDecision("[Nexora][ContextGuardBlocked]", {
+            currentTargetId: selectedObjectIdState ?? focusedId ?? null,
+            nextTargetId: first,
+            source: "chatSuccess",
+            targetInScene: false,
+            preserved: Boolean(selectedObjectIdState ?? focusedId),
+          });
+          return;
+        }
+        tracePostSuccessContextDecision("[Nexora][PostSuccessContextAccepted]", {
+          currentTargetId: selectedObjectIdState ?? focusedId ?? null,
+          nextTargetId: first,
+          source: "chatSuccess",
+          targetInScene: true,
+          preserved: false,
+        });
         setFocusedId(first);
         setFocusMode("selected");
         updateSelectedObjectInfo(first);
@@ -2957,7 +3434,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
       }
     },
-    [claimFocusOwnership, focusMode, focusPinned, resolveSelectedObjectDetails, setFocusMode, setFocusedId, updateSelectedObjectInfo]
+    [
+      claimFocusOwnership,
+      focusMode,
+      focusPinned,
+      focusedId,
+      resolveSelectedObjectDetails,
+      selectedObjectIdState,
+      setFocusMode,
+      setFocusedId,
+      tracePostSuccessContextDecision,
+      updateSelectedObjectInfo,
+    ]
   );
   const applyUnifiedSceneReaction = useCallback(
     (
@@ -2967,8 +3455,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         allowSceneReplacement?: boolean;
       }
     ) => {
-      const sceneForOverrides = (options?.sceneReplacement ?? sceneJson) as SceneJson | null;
+      const sceneForOverrides = options?.sceneReplacement ?? sceneJson;
       const normalizedReaction = normalizeReactionForScene(reaction, sceneForOverrides);
+      const sceneChatCorrelation = activeChatDebugCorrelationRef.current;
+      const sceneChatMeta =
+        sceneChatCorrelation ? { chatCorrelationId: sceneChatCorrelation } : {};
+      if (normalizedReaction.sceneJson && options?.allowSceneReplacement !== true) {
+        emitDebugEvent({
+          type: "scene_overwrite_blocked",
+          layer: "scene",
+          source: "HomeScreen",
+          status: "warn",
+          message: "Scene replacement payload blocked (not allowed for this apply path)",
+          metadata: {
+            reactionSource: reaction.source ?? null,
+            hasSceneReplacementOption: Boolean(options?.sceneReplacement),
+            ...sceneChatMeta,
+          },
+          correlationId: sceneChatCorrelation ?? undefined,
+        });
+        emitGuardRailAlerts(
+          runGuardChecks(
+            {
+              trigger: "scene_update",
+              correlationId: sceneChatCorrelation ?? null,
+              scene: { overwriteBlocked: true, sceneJsonWhileDisallowed: true },
+            },
+            getRecentDebugEvents()
+          )
+        );
+      }
       const nextHighlighted = normalizedReaction.highlightedObjectIds.map((x) => String(x));
       const nextRiskSources = Array.isArray(normalizedReaction.riskSources)
         ? normalizedReaction.riskSources.map((x) => String(x))
@@ -2977,9 +3493,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         ? normalizedReaction.riskTargets.map((x) => String(x))
         : [];
 
-      const sceneObjects = Array.isArray(sceneForOverrides?.scene?.objects) ? (sceneForOverrides?.scene?.objects as any[]) : [];
+      const sceneObjects = Array.isArray(sceneForOverrides?.scene?.objects) ? sceneForOverrides.scene.objects : [];
       const allSceneObjectIds = sceneObjects
-        .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `obj_${idx}`))
+        .map((obj: unknown, idx: number) => {
+          const o = asRecord(obj);
+          return String(o?.id ?? o?.name ?? `obj_${idx}`);
+        })
         .filter(Boolean);
       const effectiveHighlighted = nextHighlighted;
       const effectivePrimaryId = normalizedReaction.primaryObjectId ?? effectiveHighlighted[0] ?? null;
@@ -2997,6 +3516,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const primaryHighlightedId = effectivePrimaryId;
       const shouldDimUnrelated =
         normalizedReaction.dimUnrelatedObjects === true && effectiveHighlighted.length > 0;
+      const hasMeaningfulReaction =
+        effectiveHighlighted.length > 0 ||
+        nextRiskSources.length > 0 ||
+        nextRiskTargets.length > 0 ||
+        shouldDimUnrelated;
+      const reactionSignature = JSON.stringify({
+        sceneObjectCount: allSceneObjectIds.length,
+        highlighted: effectiveHighlighted,
+        riskSources: nextRiskSources,
+        riskTargets: nextRiskTargets,
+        primary: effectivePrimaryId,
+        dim: shouldDimUnrelated,
+      });
 
       if (process.env.NODE_ENV !== "production") {
         console.log("[UNIFIED PIPELINE]", {
@@ -3004,6 +3536,62 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           resolved: effectiveHighlighted,
         });
       }
+      if (!hasMeaningfulReaction) {
+        if (process.env.NODE_ENV !== "production") {
+          console.debug("[Nexora][ReactionSkipped]", {
+            reason: "empty_reaction",
+            highlightedCount: effectiveHighlighted.length,
+            riskSourceCount: nextRiskSources.length,
+            riskTargetCount: nextRiskTargets.length,
+          });
+        }
+        emitDebugEvent({
+          type: "debug_warning",
+          layer: "scene",
+          source: "HomeScreen",
+          status: "warn",
+          message: "Unified reaction skipped (empty)",
+          metadata: { code: "reaction_empty", reactionSource: reaction.source ?? null, ...sceneChatMeta },
+          correlationId: sceneChatCorrelation ?? undefined,
+        });
+        return;
+      }
+      if (lastUnifiedReactionSignatureRef.current === reactionSignature) {
+        if (process.env.NODE_ENV !== "production") {
+          console.debug("[Nexora][ReactionSkipped]", {
+            reason: "duplicate_reaction",
+            primaryObjectId: effectivePrimaryId,
+            highlightedCount: effectiveHighlighted.length,
+            riskSourceCount: nextRiskSources.length,
+            riskTargetCount: nextRiskTargets.length,
+          });
+        }
+        emitDebugEvent({
+          type: "debug_warning",
+          layer: "scene",
+          source: "HomeScreen",
+          status: "info",
+          message: "Unified reaction skipped (duplicate signature)",
+          metadata: { code: "reaction_duplicate", primaryObjectId: effectivePrimaryId ?? null, ...sceneChatMeta },
+          correlationId: sceneChatCorrelation ?? undefined,
+        });
+        return;
+      }
+      lastUnifiedReactionSignatureRef.current = reactionSignature;
+      emitDebugEvent({
+        type: "scene_update_requested",
+        layer: "scene",
+        source: "HomeScreen",
+        status: "info",
+        message: "Applying unified scene reaction",
+        metadata: {
+          reactionSource: reaction.source ?? null,
+          primaryObjectId: effectivePrimaryId ?? null,
+          highlightedCount: effectiveHighlighted.length,
+          ...sceneChatMeta,
+        },
+        correlationId: sceneChatCorrelation ?? undefined,
+      });
       if (
         process.env.NODE_ENV !== "production" &&
         shouldDimUnrelated &&
@@ -3069,8 +3657,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
 
       if (options?.allowSceneReplacement && options?.sceneReplacement) {
-        setSceneJson(options.sceneReplacement);
-        setNoSceneUpdate(false);
+        const sceneDecision = evaluateUnifiedReactionSceneReplacement(options.sceneReplacement);
+        if (isSceneCanonReplaceDecision(sceneDecision)) {
+          setSceneJson(sceneDecision.scene);
+          setNoSceneUpdate(false);
+        } else if (process.env.NODE_ENV !== "production") {
+          console.warn("[Nexora][HomeScreen][UnsafeSceneBlocked]", {
+            reason: "scene_replacement_not_renderable",
+            reactionSource: reaction.source ?? null,
+            contractReason: sceneDecision.reason,
+          });
+        }
       }
 
       if (Array.isArray(normalizedReaction.actions) && normalizedReaction.actions.length > 0) {
@@ -3088,19 +3685,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
 
       if (normalizedReaction.allowFocusMutation) {
-        syncFocusedObjectFromResponse(
-          {
-            context: {
-              object_info:
-                primaryHighlightedId
-                  ? { id: primaryHighlightedId, label: primaryHighlightedId }
-                  : null,
-              allowed_objects: effectiveHighlighted,
-            },
-          } as any,
-          { allowFocusMutation: true }
-        );
+        const focusSyncPayload: BackendChatResponse = {
+          context: {
+            object_info:
+              primaryHighlightedId
+                ? { id: primaryHighlightedId, label: primaryHighlightedId }
+                : null,
+            allowed_objects: effectiveHighlighted,
+          },
+        };
+        syncFocusedObjectFromResponse(focusSyncPayload, { allowFocusMutation: true });
       }
+
+      emitDebugEvent({
+        type: "scene_update_applied",
+        layer: "scene",
+        source: "HomeScreen",
+        status: "ok",
+        message: "Unified scene reaction applied",
+        metadata: {
+          primaryObjectId: primaryHighlightedId ?? null,
+          highlightedCount: effectiveHighlighted.length,
+          allowSceneReplacement: options?.allowSceneReplacement === true,
+          ...sceneChatMeta,
+        },
+        correlationId: sceneChatCorrelation ?? undefined,
+      });
+      emitGuardRailAlerts(
+        runGuardChecks(
+          { trigger: "scene_update", correlationId: sceneChatCorrelation ?? null },
+          getRecentDebugEvents()
+        )
+      );
     },
     [
       applyActions,
@@ -3179,7 +3795,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     (executionResult: Awaited<ReturnType<typeof executeNexoraAction>>) => {
       const applyResult = applyNexoraUiState({
         result: executionResult,
-        currentState: {
+        currentState: buildNexoraUiReadableStateForApply({
           rightPanelTab,
           activeInspectorReportTab,
           inspectorOpen,
@@ -3191,65 +3807,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           messages,
           memory,
           responseData,
-        },
-        adapters: {
-          openRightPanel: (tab) => {
-            const canonicalView = resolveSafeRightPanelView(tab as RightPanelView);
-            traceLegacyPanelSyncAttempt(
-              "adapter:applyExecutionResultToUi.openRightPanel",
-              rightPanelState.view ?? null,
-              canonicalView,
-              typeof tab === "string" ? tab : null
-            );
-            openRightPanel(canonicalView);
-          },
-          setRightPanelTab: (tab: RightPanelTab) => {
-            const attemptedView = mapLegacyTabToRightPanelView(tab);
-            traceLegacyPanelSyncAttempt(
-              "adapter:applyExecutionResultToUi.setRightPanelTab",
-              rightPanelState.view ?? null,
-              attemptedView ?? null,
-              tab
-            );
-            traceLegacyPanelSyncBlocked(
-              "adapter:applyExecutionResultToUi.setRightPanelTab",
-              rightPanelState.view ?? null,
-              attemptedView ?? null,
-              tab
-            );
-          },
-          setActiveInspectorReportTab: (tab: InspectorReportTab | null) => {
-            const attemptedView = tab ? mapLegacyTabToRightPanelView(tab) : null;
-            traceLegacyPanelSyncAttempt(
-              "adapter:applyExecutionResultToUi.setActiveInspectorReportTab",
-              rightPanelState.view ?? null,
-              attemptedView ?? null,
-              tab
-            );
-            traceLegacyPanelSyncBlocked(
-              "adapter:applyExecutionResultToUi.setActiveInspectorReportTab",
-              rightPanelState.view ?? null,
-              attemptedView ?? null,
-              tab
-            );
-          },
-          setInspectorOpen: (open: boolean | ((prev: boolean) => boolean)) => {
-            const nextOpen = typeof open === "function" ? open(rightPanelState.isOpen) : open;
-            if (!nextOpen) {
-              handleCloseRightPanel();
-              return;
-            }
-            if (!rightPanelState.view) {
-              traceLegacyPanelSyncBlocked(
-                "adapter:applyExecutionResultToUi.setInspectorOpen",
-                rightPanelState.view ?? null,
-                null,
-                null
-              );
-              return;
-            }
-            openRightPanel(rightPanelState.view, rightPanelState.contextId ?? null);
-          },
+        }),
+        adapters: createNexoraUiAdaptersForExecutionApply({
+          preferredRightPanelLegacyTabRef,
+          rightPanelIsOpen: rightPanelState.isOpen,
+          handleCloseRightPanel,
           setSceneJson,
           setSceneWarn,
           setNoSceneUpdate,
@@ -3276,7 +3838,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           setAutonomousExploration,
           setOpponentModel,
           setStrategicPatterns,
-          setConflicts: (value) => setConflicts(Array.isArray(value) ? value : []),
+          setConflictsNormalized: (value) => setConflicts(Array.isArray(value) ? value : []),
           setSelectedObjectInfo,
           updateSelectedObjectInfo,
           setObjectProfiles,
@@ -3289,26 +3851,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           setActiveLoopId,
           setLoopSuggestions,
           setProductModeId,
-          applyUnifiedReaction: applyUnifiedSceneReaction,
+          applyUnifiedSceneReaction,
           applyProductFlowViewModel,
-        },
+        }),
       });
 
-      traceHighlightFlow("homescreen_after_apply", {
-        highlightedObjectIds: executionResult.highlightedObjectIds,
-        focusedObjectId: executionResult.focusedObjectId ?? null,
-        allowSceneMutation: executionResult.allowSceneMutation,
-        appliedSceneMutation: executionResult.appliedSceneMutation,
-        rightPanelTab,
-        activeInspectorReportTab,
-        selectedObjectId: selectedObjectIdState,
-        focusedId,
-        focusMode,
-        focusPinned,
-        applySummary: applyResult.summary,
-        appliedSections: applyResult.appliedSections,
-        skippedSections: applyResult.skippedSections,
-      });
+      traceHighlightFlow(
+        "homescreen_after_apply",
+        buildHomescreenExecutionApplyTracePayload({
+          executionResult,
+          rightPanelTab,
+          activeInspectorReportTab,
+          selectedObjectId: selectedObjectIdState,
+          focusedId,
+          focusMode,
+          focusPinned,
+          applyResult,
+        })
+      );
 
       return applyResult;
     },
@@ -3325,7 +3885,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       handleCloseRightPanel,
       memory,
       messages,
-      openRightPanel,
       rightPanelState.contextId,
       rightPanelState.isOpen,
       rightPanelState.view,
@@ -3333,191 +3892,48 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       rightPanelTab,
       sceneJson,
       selectedObjectIdState,
-      traceLegacyPanelSyncAttempt,
-      traceLegacyPanelSyncBlocked,
       updateSelectedObjectInfo,
     ]
   );
   const applyRetailTriggerEnhancement = useCallback(
-    (rawPayload: any, userText: string, fallbackScene: SceneJson | null) => {
-      if (!rawPayload || typeof rawPayload !== "object") return rawPayload;
+    (rawPayload: unknown, userText: string, fallbackScene: SceneJson | null) => {
+      const payloadRecord =
+        typeof rawPayload === "object" && rawPayload !== null ? (rawPayload as Record<string, unknown>) : null;
+      const nestedDomain =
+        payloadRecord?.scene_json && typeof payloadRecord.scene_json === "object"
+          ? String(
+              (
+                (payloadRecord.scene_json as Record<string, unknown>).meta as
+                  | Record<string, unknown>
+                  | undefined
+              )?.domain ?? ""
+            ).trim()
+          : "";
+      const fromScene = String(fallbackScene?.meta?.domain ?? "").trim();
       const modeContext = buildActiveModeContext({
         modeId: productModeId,
-        projectDomain:
-          String((fallbackScene as any)?.meta?.domain ?? (rawPayload as any)?.scene_json?.meta?.domain ?? "").trim() ||
-          undefined,
+        projectDomain: fromScene || nestedDomain || undefined,
       });
-      const genericEnhanced = applyGenericPromptFeedbackEnhancement(rawPayload, userText, fallbackScene, modeContext, {
-        workspaceId: activeWorkspaceId,
-        selectedObjectId: selectedObjectIdState,
-        memoryState: memory,
-        environmentConfig,
-      });
-      if (!isRetailScenePayload(genericEnhanced, fallbackScene)) return genericEnhanced;
-      if (!isRetailDemoScene(fallbackScene)) return genericEnhanced;
-
-      const cfg = detectRetailTriggerConfig(userText);
-      if (!cfg) return genericEnhanced;
-
-      const next: any = { ...genericEnhanced };
-
-      const baseRisk = extractRiskPropagation(next) ?? {};
-      let nextEdges = Array.isArray(baseRisk?.edges) ? baseRisk.edges : [];
-      cfg.riskEdges.forEach((edge) => {
-        nextEdges = upsertRiskEdge(nextEdges, edge.from, edge.to, edge.base, edge.delta);
-      });
-      const nextSources = Array.from(
-        new Set(nextEdges.map((e: any) => String(e?.from ?? "")).filter(Boolean))
-      );
-      next.risk_propagation = {
-        ...baseRisk,
-        edges: nextEdges,
-        sources: nextSources,
-        summary: cfg.riskSummary,
-      };
-
-      const baseAdvice = extractStrategicAdvice(next) ?? {};
-      const primaryAdvice = {
-        id: `retail_${cfg.id}`,
-        type: "retail_response",
-        action: cfg.adviceAction,
-        targets: cfg.targets,
-        impact: cfg.adviceImpact,
-        priority: 1,
-      };
-      const existingActions = Array.isArray(baseAdvice?.recommended_actions)
-        ? baseAdvice.recommended_actions.filter((a: any) => a && a.action !== cfg.adviceAction).slice(0, 2)
-        : [];
-      next.strategic_advice = {
-        ...baseAdvice,
-        recommended_actions: [primaryAdvice, ...existingActions],
-        primary_recommendation: primaryAdvice,
-        why: cfg.adviceWhy,
-        confidence: Math.max(0.72, Number(baseAdvice?.confidence ?? 0.72)),
-        summary: `Recommended action: ${cfg.adviceAction}`,
-      };
-
-      const baseSelection = extractObjectSelection(next) ?? {};
-      const priorHighlights = Array.isArray(baseSelection?.highlighted_objects)
-        ? baseSelection.highlighted_objects
-        : [];
-      next.object_selection = {
-        ...baseSelection,
-        highlighted_objects: Array.from(new Set([...cfg.targets, ...priorHighlights])),
-      };
-
-      const baseConflicts = extractConflicts(next);
-      const conflictSeeds = cfg.targets.slice(0, 3);
-      const seededConflicts =
-        conflictSeeds.length >= 2
-          ? [{ pair: [conflictSeeds[0], conflictSeeds[1]], score: 0.65 }]
-          : [];
-      next.conflicts = seededConflicts.concat(Array.isArray(baseConflicts) ? baseConflicts : []).slice(0, 4);
-
-      const baseScene = next?.scene_json && typeof next.scene_json === "object" ? next.scene_json : null;
-      if (baseScene?.scene) {
-        const prevFragility = baseScene.scene?.fragility ?? {};
-        const prevDrivers = prevFragility?.drivers ?? {};
-        const dInv = clamp(Number(prevDrivers.inventory_pressure ?? 0.45) + Number(cfg.driverDelta.inventory_pressure ?? 0), 0, 1);
-        const dTime = clamp(Number(prevDrivers.time_pressure ?? 0.45) + Number(cfg.driverDelta.time_pressure ?? 0), 0, 1);
-        const dQuality = clamp(Number(prevDrivers.quality_risk ?? 0.42) + Number(cfg.driverDelta.quality_risk ?? 0), 0, 1);
-        const prevRisk = Number(baseScene?.scene?.kpi?.risk ?? 0.52);
-        const nextRisk = clamp(prevRisk + cfg.kpiRiskDelta, 0, 1);
-        const nextScore = clamp(Number(prevFragility?.score ?? 0.5) + cfg.kpiRiskDelta * 0.8, 0, 1);
-
-        baseScene.scene.fragility = {
-          ...prevFragility,
-          score: nextScore,
-          level: nextScore >= 0.7 ? "high" : nextScore >= 0.45 ? "medium" : "low",
-          drivers: {
-            ...prevDrivers,
-            inventory_pressure: dInv,
-            time_pressure: dTime,
-            quality_risk: dQuality,
-          },
-        };
-        baseScene.scene.kpi = {
-          ...(baseScene.scene.kpi ?? {}),
-          risk: nextRisk,
-        };
-        next.scene_json = baseScene;
-      }
-
-      const timelineImpact = {
-        trigger: cfg.id,
-        immediate: cfg.timelineSteps[0],
-        near_term: cfg.timelineSteps[1],
-        follow_up: cfg.timelineSteps[2],
-        steps: cfg.timelineSteps,
-      };
-      next.timeline_impact = timelineImpact;
-      next.reply = buildReadableDemoReply({
-        riskSummary: cfg.riskSummary,
-        timelineSteps: cfg.timelineSteps,
-        action: cfg.adviceAction,
-        matchedNames: cfg.targets
-          .map((id) => {
-            const obj = baseScene?.scene?.objects?.find((candidate: any) => String(candidate?.id ?? "") === id);
-            return obj ? getObjectDisplayLabel(obj) : "";
-          })
-          .filter(Boolean),
-      });
-      const executiveSummarySurface = buildExecutiveSummarySurface({
-        matchedNames: cfg.targets
-          .map((id) => {
-            const obj = baseScene?.scene?.objects?.find((candidate: any) => String(candidate?.id ?? "") === id);
-            return obj ? getObjectDisplayLabel(obj) : "";
-          })
-          .filter(Boolean),
-        riskSummary: cfg.riskSummary,
-        timelineSteps: cfg.timelineSteps,
-        adviceAction: cfg.adviceAction,
-        adviceWhy: cfg.adviceWhy,
+      return applyRetailDemoChatPayloadEnhancement(rawPayload, userText, fallbackScene, {
+        modeContext,
+        reasoningHints: {
+          workspaceId: activeWorkspaceId,
+          selectedObjectId: selectedObjectIdState,
+          memoryState: memory,
+          environmentConfig,
+        },
         domainLabel: activeDomainExperience.experience.label,
-        framingStyle: activeDomainExperience.experience.executiveFramingStyle,
-      });
-      next.executive_summary_surface = executiveSummarySurface;
-      next.analysis_summary = executiveSummarySurface.summary;
-      if (next.executive_insight && typeof next.executive_insight === "object") {
-        next.executive_insight = {
-          ...next.executive_insight,
-          summary: executiveSummarySurface.summary,
-          explanation_notes: Array.from(
-            new Set([
-              executiveSummarySurface.happened,
-              executiveSummarySurface.why_it_matters,
-              ...(Array.isArray(next.executive_insight?.explanation_notes) ? next.executive_insight.explanation_notes : []),
-            ])
-          ),
-        };
-      }
-      if (next.decision_cockpit && typeof next.decision_cockpit === "object") {
-        next.decision_cockpit = {
-          ...next.decision_cockpit,
-          executive: {
-            ...(next.decision_cockpit.executive ?? {}),
-            summary: executiveSummarySurface.summary,
-            happened: executiveSummarySurface.happened,
-            why_it_matters: executiveSummarySurface.why_it_matters,
-            what_to_do: executiveSummarySurface.what_to_do,
-          },
-        };
-      }
-
-      next.canonical_recommendation = buildCanonicalRecommendation(next);
-
-      return enforceSafeDefaults(sanitizeDecisionPayload(next));
+        executiveFramingStyle: activeDomainExperience.experience.executiveFramingStyle,
+      }) as BackendChatResponse;
     },
     [
-      extractConflicts,
-      extractObjectSelection,
-      extractRiskPropagation,
-      extractStrategicAdvice,
-      productModeId,
+      activeDomainExperience.experience.executiveFramingStyle,
+      activeDomainExperience.experience.label,
       activeWorkspaceId,
-      selectedObjectIdState,
-      memory,
       environmentConfig,
+      memory,
+      productModeId,
+      selectedObjectIdState,
     ]
   );
   const [activeLoopId, setActiveLoopId] = useState<string | null>(null);
@@ -3535,36 +3951,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const key = String(snapshotKey || "").trim();
       if (!key) return;
 
-      const parseKey = (k: string) => {
-        const parts = k.split(":");
-        if (parts.length === 2) {
-          const id = parts[0];
-          const ts = Number(parts[1]);
-          return { id, ts: Number.isFinite(ts) ? ts : null };
-        }
-        return { id: k, ts: null as number | null };
-      };
-
-      const { id, ts } = parseKey(key);
-
-      const pickFromList = (list: DecisionSnapshot[]) => {
-        const candidates = list.filter((s) => {
-          if (!s) return false;
-          if (ts !== null) return s.id === id && s.timestamp === ts;
-          return s.id === id;
-        });
-        if (candidates.length === 0) return null;
-        // If multiple snapshots share an id, pick the newest
-        return candidates.reduce((best, cur) => (cur.timestamp > best.timestamp ? cur : best));
-      };
+      const { id, ts } = parseDecisionSnapshotKey(key);
 
       // 1) Try in-memory first (fast)
-      let snap: DecisionSnapshot | null = pickFromList(Array.isArray(snapshots) ? snapshots : []);
+      let snap: DecisionSnapshot | null = pickDecisionSnapshotFromList(
+        Array.isArray(snapshots) ? snapshots : [],
+        id,
+        ts
+      );
 
       // 2) If not found, try persisted snapshots
       if (!snap) {
         const persisted = loadSnapshots(projectId);
-        snap = pickFromList(persisted);
+        snap = pickDecisionSnapshotFromList(persisted, id, ts);
         // Keep in-memory state in sync if we found one
         if (snap) {
           setSnapshots(persisted);
@@ -3579,17 +3978,63 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         return;
       }
 
-      // Restore decision state
+      // Restore scene first, then loops/selection, then panel (avoids panel/scene desync).
+      const rawScene = snap.sceneJson;
+      const sceneDecision = evaluateSnapshotRestoreScene(rawScene);
+      if (isSceneCanonReplaceDecision(sceneDecision)) {
+        setSceneJson(sceneDecision.scene);
+        setNoSceneUpdate(false);
+      } else if (rawScene != null && process.env.NODE_ENV !== "production") {
+        console.warn("[Nexora][HomeScreen][SceneShapeRejected]", {
+          reason: "snapshot_scene_not_renderable",
+          snapshotId: snap.id,
+          contractReason: sceneDecision.kind === "reject" ? sceneDecision.reason : "",
+        });
+      }
+
       setLoops(Array.isArray(snap.loops) ? snap.loops : []);
       setActiveLoopId(snap.activeLoopId ?? null);
       setSelectedLoopId(snap.activeLoopId ?? null);
+
+      const sel = typeof snap.selectedObjectId === "string" && snap.selectedObjectId.trim() ? snap.selectedObjectId.trim() : null;
+      if (sel) {
+        selectedSetterRef.current(sel);
+        setSelectedObjectIdState(sel);
+      } else {
+        selectedSetterRef.current(null);
+        setSelectedObjectIdState(null);
+      }
+
+      queueMicrotask(() => {
+        if (snap.rightPanelOpen && snap.rightPanelView) {
+          dispatchCanonicalAction(
+            normalizeOpenPanelCta({
+              view: snap.rightPanelView as Exclude<RightPanelView, null>,
+              contextId: null,
+              rawSource: "snapshot_restore",
+              source: "system",
+              surface: "legacy_shell",
+            })
+          );
+        } else {
+          closeRightPanel();
+        }
+      });
+
+      // eslint-disable-next-line no-console
+      console.log("[Nexora][SnapshotLoaded]", {
+        id: snap.id,
+        timestamp: snap.timestamp,
+        hasScene: Boolean(rawScene),
+        panelView: snap.rightPanelView ?? null,
+      });
 
       if (process.env.NODE_ENV !== "production") {
         // eslint-disable-next-line no-console
         console.debug("[decision] applied snapshot", snap.id, snap.timestamp);
       }
     },
-    [snapshots, projectId]
+    [closeRightPanel, dispatchCanonicalAction, snapshots, projectId]
   );
 
   useEffect(() => {
@@ -3637,22 +4082,52 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [snapshots, compareAId, compareBId]);
   const lastSnapshotRef = useRef<string | null>(null);
   const saveDecisionSnapshotNow = useCallback(() => {
-    if (!Array.isArray(loops) || loops.length === 0) return;
+    const hasLoops = Array.isArray(loops) && loops.length > 0;
+    const hasScene = Boolean(sceneJson && typeof sceneJson === "object");
+    if (!hasLoops && !hasScene) return;
     try {
+      let sceneClone: unknown = null;
+      if (sceneJson) {
+        try {
+          sceneClone =
+            typeof structuredClone === "function"
+              ? structuredClone(sceneJson)
+              : JSON.parse(JSON.stringify(sceneJson));
+        } catch {
+          sceneClone = null;
+        }
+      }
       const snapshot: DecisionSnapshot = {
         id: `ds_${Date.now()}`,
         timestamp: Date.now(),
         projectId,
-        loops,
+        loops: Array.isArray(loops) ? loops : [],
         activeLoopId: activeLoopId ?? null,
+        sceneJson: sceneClone,
+        selectedObjectId: selectedObjectIdState ?? null,
+        rightPanelView: rightPanelState.view ?? null,
+        rightPanelOpen: Boolean(rightPanelState.isOpen),
       };
       const next = appendSnapshot(projectId, snapshot);
       setSnapshots(next);
-      lastSnapshotRef.current = JSON.stringify({ loops, activeLoopId: activeLoopId ?? null });
+      lastSnapshotRef.current = JSON.stringify({
+        loops: snapshot.loops,
+        activeLoopId: snapshot.activeLoopId,
+        scene: Boolean(sceneClone),
+        panel: snapshot.rightPanelView,
+      });
+      // eslint-disable-next-line no-console
+      console.log("[Nexora][SnapshotSaved]", {
+        id: snapshot.id,
+        loops: snapshot.loops.length,
+        hasScene: Boolean(sceneClone),
+        panelView: snapshot.rightPanelView,
+        panelOpen: snapshot.rightPanelOpen,
+      });
     } catch {
       // ignore persistence errors
     }
-  }, [activeLoopId, loops, projectId]);
+  }, [activeLoopId, loops, projectId, sceneJson, rightPanelState.isOpen, rightPanelState.view, selectedObjectIdState]);
   const effectiveActiveLoopId = selectedLoopId ?? activeLoopId;
   const selectLoop = useCallback((id: string | null) => {
     setSelectedLoopId(id);
@@ -3757,8 +4232,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         setEpisodeId(project?.chat?.episodeId ?? null);
         setMessages(normalizeMessages(project?.chat?.messages ?? []));
 
-        const nextScene = project?.scene?.sceneJson ? normalizeSceneJson(project.scene.sceneJson) : null;
-        setSceneJson(nextScene);
+        const sceneDecision = project?.scene?.sceneJson
+          ? evaluateWorkspaceHydrateScene(project.scene.sceneJson)
+          : canonDecisionMissingSceneBlob();
+        setSceneJson(sceneJsonFromCanonDecision(sceneDecision));
         setSelectedObjectIdState(project?.scene?.selectedObjectId ?? null);
         setFocusedId(project?.scene?.focusedId ?? null);
         setFocusMode(project?.scene?.focusMode ?? "all");
@@ -3840,7 +4317,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   useEffect(() => {
     const next = buildActiveModeContext({
       modeId: productModeId,
-      projectDomain: String((sceneJson as any)?.meta?.domain ?? "").trim() || undefined,
+      projectDomain: readSceneJsonMetaString(sceneJson, "domain") || undefined,
       workspaceId: activeWorkspaceId,
       projectId: activeProjectId,
     });
@@ -4118,6 +4595,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const detail = (event as CustomEvent<{ id?: string }>).detail;
       const id = typeof detail?.id === "string" ? detail.id.trim() : "";
       if (!id) return;
+      const resolved = resolveSelectedObjectDetails(id);
+      if (!resolved) {
+        tracePostSuccessContextDecision("[Nexora][ContextGuardBlocked]", {
+          currentTargetId: selectedObjectIdState ?? focusedId ?? null,
+          nextTargetId: id,
+          source: "objectResolver",
+          targetInScene: false,
+          preserved: Boolean(selectedObjectIdState ?? focusedId),
+        });
+        return;
+      }
+      tracePostSuccessContextDecision("[Nexora][PostSuccessContextAccepted]", {
+        currentTargetId: selectedObjectIdState ?? focusedId ?? null,
+        nextTargetId: id,
+        source: "objectResolver",
+        targetInScene: true,
+        preserved: false,
+      });
       claimFocusOwnership({
         source: "executive_recommendation",
         objectId: id,
@@ -4135,13 +4630,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     };
     window.addEventListener("nexora:set-focus-object", onSetFocusObject as EventListener);
     return () => window.removeEventListener("nexora:set-focus-object", onSetFocusObject as EventListener);
-  }, [applyUnifiedSceneReaction, claimFocusOwnership, setViewMode]);
+  }, [
+    applyUnifiedSceneReaction,
+    claimFocusOwnership,
+    focusedId,
+    resolveSelectedObjectDetails,
+    selectedObjectIdState,
+    setViewMode,
+    tracePostSuccessContextDecision,
+  ]);
   useEffect(() => {
     const onApplyFragilityScan = (event: Event) => {
-      const detail = (event as CustomEvent<{ result?: FragilityScanResponse | null }>).detail;
+      const detail = (event as CustomEvent<{ result?: FragilityScanResponse | null; bridge?: string }>).detail;
       const result = detail?.result;
       if (!result?.ok) return;
-      const sceneBridge = applyFragilityScenePayload(sceneJson, result.scene_payload);
+      const domainId = activeDomainExperience.experience.domainId;
+      const rawDriversEarly = result.drivers ?? [];
+      const enrichedDriversEarly = enrichFragilityDriversForDomain(rawDriversEarly, domainId);
+      const sceneBridge = applyFragilityScenePayload(sceneJson, result.scene_payload, { domainId });
       const highlightIds = Array.from(
         new Set([
           ...sceneBridge.matchedObjectIds,
@@ -4153,46 +4659,290 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         ])
       );
 
+      const sceneObjects = Array.isArray(sceneJson?.scene?.objects) ? sceneJson.scene.objects : [];
+      const sceneObjectIds = sceneObjects
+        .map((obj: unknown, idx: number) => {
+          const o = asRecord(obj);
+          return String(o?.id ?? o?.name ?? `obj_${idx}`);
+        })
+        .filter(Boolean);
+
+      const calibrationCorpus = [
+        result.summary,
+        ...enrichedDriversEarly.flatMap((d) =>
+          [d.label, d.dimension, d.evidence_text].filter(
+            (x): x is string => typeof x === "string" && Boolean(String(x).trim())
+          )
+        ),
+      ].join(" ");
+
+      const sceneObjectsCal = sceneObjects.map((obj: unknown) => {
+        const o = asRecord(obj);
+        return {
+          id: String(o?.id ?? ""),
+          name: typeof o?.name === "string" ? o.name : undefined,
+          label: typeof o?.label === "string" ? o.label : undefined,
+          tags: Array.isArray(o?.tags) ? (o.tags as unknown[]).map(String) : undefined,
+        };
+      });
+
+      const alignedHighlightIds = alignFragilityHighlightIdsForClarity({
+        sceneObjectIds,
+        highlightIds,
+        matchedObjectIds: sceneBridge.matchedObjectIds,
+        suggestedFocusIds: sceneBridge.suggestedFocusIds,
+        reasonsByObject: result.scene_payload?.reasons_by_object,
+        domainId,
+        calibrationCorpus,
+        sceneObjects: sceneObjectsCal,
+      });
+
+      const riskSourcesAligned = sceneBridge.matchedObjectIds.filter((id) => alignedHighlightIds.includes(id));
+
+      const rawDrivers = rawDriversEarly;
+      const enrichedDrivers = enrichedDriversEarly;
+      const fragilityScanForState = { ...result, drivers: enrichedDrivers };
+
       setResponseData((prev: Record<string, unknown> | null) =>
         normalizeDecisionPayload({
           ...(prev ?? {}),
-          fragility_scan: result,
+          fragility_scan: fragilityScanForState,
           fragility: {
             score: result.fragility_score,
             level: result.fragility_level,
             summary: result.summary,
-            drivers: Object.fromEntries(
-              (result.drivers ?? []).map((driver) => [driver.id, driver.score])
-            ),
+            drivers: Object.fromEntries(enrichedDrivers.map((driver) => [driver.id, driver.score])),
             overlay_summary: sceneBridge.overlaySummary,
           },
         }).payload
       );
 
-      const unifiedFragilityReaction = buildUnifiedReactionFromFragilityRun({
-        highlightedObjectIds: highlightIds,
-        riskSources: sceneBridge.matchedObjectIds,
-        riskTargets: highlightIds,
+      const baseFragilityReaction = buildUnifiedReactionFromFragilityRun({
+        highlightedObjectIds: alignedHighlightIds,
+        riskSources: riskSourcesAligned.length > 0 ? riskSourcesAligned : sceneBridge.matchedObjectIds,
+        riskTargets: alignedHighlightIds,
         reason: result.summary,
         activeLoopId: null,
         loopSuggestions: [],
         actions: [],
       });
+      const sceneScopedFragilityReaction = normalizeReactionForScene(baseFragilityReaction, sceneJson);
+      const unifiedFragilityReaction = tuneUnifiedReactionForFragilityLevel(
+        sceneScopedFragilityReaction,
+        result.fragility_level
+      );
 
       applyUnifiedSceneReaction(unifiedFragilityReaction, {
         sceneReplacement: null,
         allowSceneReplacement: false,
       });
+
+      const captions = buildClarityCaptionsByObjectId({
+        objectIds: alignedHighlightIds,
+        payload: result.scene_payload,
+        drivers: enrichedDrivers,
+        domainId,
+      });
+      const insightLine = buildPipelineInsightLine(result.summary, enrichedDrivers, result.fragility_level, domainId);
+      const decisionLayer = deriveNexoraDecisionLayer({
+        domainId,
+        fragilityLevel: result.fragility_level,
+        drivers: enrichedDrivers,
+        highlightObjectIds: alignedHighlightIds,
+        summary: result.summary,
+      });
+
+      const multiCtx = pendingTrustMultiSourceContextRef.current;
+      const sourceCount = multiCtx?.sourceCount ?? 1;
+      const successfulSourceCount = multiCtx?.successfulSourceCount ?? 1;
+      const mergedSignalCount =
+        multiCtx?.mergedSignalCount ??
+        (typeof result.debug?.signal_count === "number"
+          ? result.debug.signal_count
+          : Math.max((result.drivers ?? []).length, 0));
+      const mergeMetaRecord = multiCtx?.mergeMeta;
+      let sourceWeightsParsed: Record<string, number> | null = null;
+      const sw0 = mergeMetaRecord?.source_weights;
+      if (sw0 && typeof sw0 === "object" && !Array.isArray(sw0)) {
+        const o: Record<string, number> = {};
+        for (const [k, v] of Object.entries(sw0 as Record<string, unknown>)) {
+          if (typeof v === "number" && Number.isFinite(v)) o[k] = v;
+        }
+        if (Object.keys(o).length > 0) sourceWeightsParsed = o;
+      }
+
+      const trustInput: NexoraTrustValidationInput = {
+        pipelineStatus: "ready",
+        fragilityLevel: normalizeFragilityLevelForUi(result.fragility_level),
+        mergedSignalCount,
+        sourceCount,
+        successfulSourceCount,
+        mergeWarnings: multiCtx?.bundleWarnings,
+        drivers: enrichedDrivers,
+        hasSummary: Boolean(result.summary?.trim()),
+        sourceWeights: sourceWeightsParsed,
+        domainId,
+        executionOutcomeFeedback: loadExecutionOutcomeForRun(lastAuditRecordRef.current?.runId)?.outcomeLabel ?? null,
+      };
+      if (process.env.NODE_ENV !== "production") {
+        const currentRunId = lastAuditRecordRef.current?.runId ?? null;
+        const outcomeForRun = loadExecutionOutcomeForRun(currentRunId);
+        const sig = `${currentRunId ?? "none"}|${outcomeForRun ? 1 : 0}`;
+        if (sig !== lastB20Fix1OutcomeLookupSigRef.current) {
+          lastB20Fix1OutcomeLookupSigRef.current = sig;
+          globalThis.console?.debug?.("[Nexora][B20-FIX-1] outcome_lookup_resolved", {
+            runId: currentRunId,
+            hasOutcome: Boolean(outcomeForRun),
+          });
+        }
+      }
+      lastNexoraTrustEvaluationInputRef.current = trustInput;
+      const trust = evaluateNexoraTrustValidation(trustInput);
+
+      const decisionTone = adjustDecisionToneForTrust(
+        decisionLayer.decisionTone,
+        trust.confidenceTier,
+        result.fragility_level,
+        domainId
+      );
+
+      if (process.env.NODE_ENV !== "production") {
+        const b13Bias = getB13TrustEvidenceBiasMerged(domainId, mergedSignalCount, successfulSourceCount);
+        const b13DriverSig = driversEnrichmentSignature(rawDrivers, enrichedDrivers);
+        const b13Applied = b13Bias !== 0 || b13DriverSig.split("::")[0] !== b13DriverSig.split("::")[1];
+        if (b13Applied) {
+          const b13Sig = `${domainId}:${b13Bias.toFixed(3)}:${b13DriverSig}`;
+          if (b13Sig !== lastB13FrontSigRef.current) {
+            lastB13FrontSigRef.current = b13Sig;
+            globalThis.console?.debug?.("[Nexora][B13] domain_applied", {
+              domainId,
+              trustBias: b13Bias,
+              driversTouched: b13DriverSig.split("::")[0] !== b13DriverSig.split("::")[1],
+            });
+          }
+        }
+        const tSig = buildNexoraTrustValidationSignature(trust);
+        if (tSig !== lastB12TrustSigRef.current) {
+          lastB12TrustSigRef.current = tSig;
+          globalThis.console?.debug?.("[Nexora][B12] trust_validation_ready", {
+            tier: trust.confidenceTier,
+            score: trust.confidenceScore,
+            warnings: trust.validationWarnings.length,
+          });
+        }
+      }
+
+      const trustPatch: Pick<
+        NexoraPipelineStatusUi,
+        "confidenceScore" | "confidenceTier" | "validationWarnings" | "trustSummaryLine"
+      > = {
+        confidenceScore: trust.confidenceScore,
+        confidenceTier: trust.confidenceTier,
+        validationWarnings: [...trust.validationWarnings],
+        trustSummaryLine: trust.trustSummaryLine,
+      };
+
+      pipelineB7ActionContextRef.current = {
+        posture: decisionLayer.posture,
+        tradeoff: decisionLayer.tradeoff,
+        nextMove: decisionLayer.recommendedAction,
+        objectIds: [...alignedHighlightIds],
+        drivers: enrichedDrivers.slice(0, 8).map((d) => ({
+          id: String(d.id ?? ""),
+          label: String(d.label ?? ""),
+          score: typeof d.score === "number" ? d.score : undefined,
+        })),
+        fragilityLevel: result.fragility_level,
+        summary: String(result.summary ?? ""),
+      };
+      const alignedSet = new Set(alignedHighlightIds);
+
+      if (alignedHighlightIds.length > 0 && sceneObjectIds.length > 0) {
+        for (const objectId of sceneObjectIds) {
+          if (!alignedSet.has(objectId)) {
+            setOverrideRef.current?.(objectId, { caption: "", showCaption: false });
+          }
+        }
+        for (const objectId of alignedHighlightIds) {
+          const cap = captions[objectId];
+          if (cap) {
+            setOverrideRef.current?.(objectId, { caption: cap, showCaption: true });
+          }
+        }
+      }
+
+      if (detail?.bridge !== "phase_b2") {
+        commitPipelineStatusRef.current?.({
+          ...createInitialPipelineStatusUi(),
+          status: "ready",
+          source: "scanner",
+          signalsCount: typeof result.debug?.signal_count === "number" ? result.debug.signal_count : 0,
+          mappedObjectsCount: countMappedObjectsFromFragilityScan(result),
+          fragilityLevel: normalizeFragilityLevelForUi(result.fragility_level),
+          summary: result.summary?.trim() ? result.summary.trim().slice(0, 160) : null,
+          insightLine,
+          decisionPosture: decisionLayer.posture,
+          decisionTradeoff: decisionLayer.tradeoff,
+          decisionNextMove: decisionLayer.recommendedAction,
+          decisionTone,
+          updatedAt: Date.now(),
+          errorMessage: null,
+          lastBridgeSource: "fragility_scan",
+          ...trustPatch,
+        });
+      } else {
+        mergePipelineStatusRef.current?.({
+          decisionPosture: decisionLayer.posture,
+          decisionTradeoff: decisionLayer.tradeoff,
+          decisionNextMove: decisionLayer.recommendedAction,
+          decisionTone,
+          ...trustPatch,
+        });
+      }
+
+      if (process.env.NODE_ENV !== "production") {
+        const b5Sig = buildB5ClaritySignature({
+          alignedHighlightIds,
+          captions,
+          insightLine,
+        });
+        if (
+          alignedHighlightIds.length > 0 &&
+          b5Sig !== lastB5ClaritySigRef.current &&
+          shouldEmitStableNexoraTrace("b5", b5Sig)
+        ) {
+          lastB5ClaritySigRef.current = b5Sig;
+          globalThis.console?.log?.("[Nexora][B5] clarity_applied", {
+            highlights: alignedHighlightIds.length,
+            hasInsight: Boolean(insightLine),
+          });
+        }
+        const b7Sig = buildNexoraDecisionLayerSignature(decisionLayer);
+        if (b7Sig !== lastB7DecisionSigRef.current && shouldEmitStableNexoraTrace("b7", b7Sig)) {
+          lastB7DecisionSigRef.current = b7Sig;
+          globalThis.console?.log?.("[Nexora][B7] decision_layer_ready", {
+            tone: decisionTone,
+            posture: decisionLayer.posture,
+          });
+        }
+      }
+
+      if (process.env.NODE_ENV !== "production" && detail?.bridge === "phase_b2") {
+        const sceneLogKey = `${result.fragility_level}:${[...alignedHighlightIds].map(String).sort().join(",")}`;
+        if (sceneLogKey !== lastB2SceneReactionLogRef.current && shouldEmitStableNexoraTrace("b2", sceneLogKey)) {
+          lastB2SceneReactionLogRef.current = sceneLogKey;
+          globalThis.console?.log?.("[Nexora][B2] scene_reaction_applied", {
+            level: result.fragility_level,
+            highlights: alignedHighlightIds.length,
+          });
+        }
+      }
     };
 
     window.addEventListener("nexora:apply-fragility-scan", onApplyFragilityScan as EventListener);
     return () =>
       window.removeEventListener("nexora:apply-fragility-scan", onApplyFragilityScan as EventListener);
-  }, [
-    applyUnifiedSceneReaction,
-    normalizeDecisionPayload,
-    sceneJson,
-  ]);
+  }, [activeDomainExperience.experience.domainId, applyUnifiedSceneReaction, normalizeDecisionPayload, sceneJson]);
   const isRestoringRef = useRef(false);
   const [overridesVersion, setOverridesVersion] = useState(0);
   const autoBackupTimerRef = useRef<number | null>(null);
@@ -4231,7 +4981,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   // Source: scene_json.scene.nexora_mvp (added by backend/main.py)
   // We keep this strictly additive and non-breaking.
   // =====================
-  const nexoraMvp = (sceneJson as any)?.scene?.nexora_mvp ?? null;
+  const nexoraMvp = sceneJson?.scene?.["nexora_mvp"] ?? null;
 
   // Map Nexora MVP objects to the existing SceneCanvas object ids.
   // Goal: make reactions happen on your real cubes/objects (professional), not a separate overlay.
@@ -4247,7 +4997,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, []);
 
   const nexoraGraphObjects = useMemo(() => {
-    const list: any[] = Array.isArray(nexoraMvp?.objects) ? nexoraMvp.objects : [];
+    const mvpRec = asRecord(nexoraMvp);
+    const list: unknown[] = Array.isArray(mvpRec?.["objects"]) ? (mvpRec["objects"] as unknown[]) : [];
     return list
       .map((o: any) => {
         const id = String(o?.id ?? "").trim();
@@ -4272,7 +5023,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [nexoraMvp]);
 
   const nexoraGraphLoops = useMemo(() => {
-    const list: any[] = Array.isArray(nexoraMvp?.loops) ? nexoraMvp.loops : [];
+    const mvpRec = asRecord(nexoraMvp);
+    const list: unknown[] = Array.isArray(mvpRec?.["loops"]) ? (mvpRec["loops"] as unknown[]) : [];
     return list
       .map((l: any) => {
         const id = String(l?.id ?? "").trim();
@@ -4613,10 +5365,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setActiveWorkspaceId(workspaceId);
       setWorkspaceProjects(workspace.projects);
       setActiveProjectId(nextActiveProjectId);
-      const restored =
-        workspace.projects[nextActiveProjectId] ??
-        workspace.projects[Object.keys(workspace.projects)[0] ?? DEFAULT_PROJECT_ID] ??
-        null;
+      const restored = pickWorkspaceProjectForHydrate(
+        workspace.projects,
+        nextActiveProjectId,
+        DEFAULT_PROJECT_ID
+      );
       if (restored) {
         applyWorkspaceProjectState(restored);
       }
@@ -4624,26 +5377,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
     const loaded = loadProject();
     if (loaded) {
-      const loadedScene = loaded.sceneJson ? normalizeSceneJson(loaded.sceneJson) : null;
-      const inferred = inferProjectMetaFromScene(loadedScene);
-      const loadedProjectId = inferred.projectId || DEFAULT_PROJECT_ID;
-      const loadedState: WorkspaceProjectState = {
-        ...createEmptyProjectState(loadedProjectId, inferred.name || loadedProjectId),
-        id: loadedProjectId,
-        name: inferred.name || loadedProjectId,
-        domain: inferred.domain,
-        chat: {
-          messages: normalizeMessages(loaded.messages),
-          activeMode: loaded.activeMode ?? "business",
-          episodeId: null,
-        },
-        scene: {
-          ...createEmptyProjectState(loadedProjectId, inferred.name || loadedProjectId).scene,
-          sceneJson: loadedScene,
-        },
-      };
-      setActiveProjectId(loadedProjectId);
-      setWorkspaceProjects((prev) => ({ ...prev, [loadedProjectId]: loadedState }));
+      const loadedState = buildWorkspaceProjectStateFromLoadedProject(loaded, DEFAULT_PROJECT_ID);
+      setActiveProjectId(loadedState.id);
+      setWorkspaceProjects((prev) => ({ ...prev, [loadedState.id]: loadedState }));
       applyWorkspaceProjectState(loadedState);
       if (loaded.sessionId) {
         try {
@@ -4972,7 +5708,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   const pulseObjectByText = useCallback((text: string) => {
     const t = String(text || "").toLowerCase();
-    const isRetailDemo = String((sceneJson as any)?.meta?.demo_id ?? "").toLowerCase() === "retail_supply_chain_fragility";
+    const isRetailDemo = readSceneJsonMetaString(sceneJson, "demo_id").toLowerCase() === RETAIL_DEMO_ID;
 
     const pulseTargets = (ids: string[]) => {
       if (!Array.isArray(ids) || !ids.length) return;
@@ -4993,36 +5729,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     };
 
     if (isRetailDemo) {
-      if (/\bsupplier\b.*\bdelay\b|\bdelay\b.*\bsupplier\b/.test(t)) {
-        pulseTargets(["obj_supplier_1", "obj_delivery_1", "obj_delay_1", "obj_inventory_1"]);
-        return;
-      }
-      if (/\binventory\b.*\bdrop\b|\bdrop\b.*\binventory\b/.test(t)) {
-        pulseTargets(["obj_inventory_1", "obj_warehouse_1", "obj_order_flow_1", "obj_customer_satisfaction_1"]);
-        return;
-      }
-      if (/\bdemand\b.*\bspike\b|\bspike\b.*\bdemand\b/.test(t)) {
-        pulseTargets(["obj_demand_1", "obj_order_flow_1", "obj_inventory_1", "obj_warehouse_1"]);
-        return;
-      }
-      if (/\bprice\b.*\bincrease\b|\bincrease\b.*\bprice\b/.test(t)) {
-        pulseTargets(["obj_price_1", "obj_demand_1", "obj_cash_pressure_1", "obj_customer_satisfaction_1"]);
-        return;
-      }
-      if (/\bdelivery\b.*\bdisruption\b|\bdisruption\b.*\bdelivery\b/.test(t)) {
-        pulseTargets(["obj_delivery_1", "obj_delay_1", "obj_inventory_1", "obj_order_flow_1"]);
-        return;
-      }
-      if (/\bcash\b.*\bpressure\b|\bpressure\b.*\bcash\b/.test(t)) {
-        pulseTargets(["obj_cash_pressure_1", "obj_order_flow_1", "obj_price_1", "obj_customer_satisfaction_1"]);
-        return;
-      }
-      if (/\bcustomer\b.*\btrust\b|\btrust\b.*\bdrop\b/.test(t)) {
-        pulseTargets(["obj_customer_satisfaction_1", "obj_order_flow_1", "obj_delivery_1", "obj_cash_pressure_1"]);
-        return;
-      }
-      if (/\boperational\b.*\bbottleneck\b|\bbottleneck\b/.test(t)) {
-        pulseTargets(["obj_delivery_1", "obj_warehouse_1", "obj_order_flow_1", "obj_inventory_1"]);
+      const pulseIds = resolveRetailDemoPulseObjectIdsForPrompt(text);
+      if (pulseIds?.length) {
+        pulseTargets(pulseIds);
         return;
       }
     }
@@ -5063,11 +5772,53 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   const finalizeChatRequest = useCallback(
     (seq: number, status: ChatRequestLifecycleStatus, options?: { clearInput?: boolean }) => {
+      if (activePanelFamilyAuditRef.current?.seq === seq) {
+        const auditToClear = activePanelFamilyAuditRef.current;
+        if (pendingPanelFamilyAuditClearTimeoutRef.current !== null) {
+          window.clearTimeout(pendingPanelFamilyAuditClearTimeoutRef.current);
+        }
+        pendingPanelFamilyAuditClearTimeoutRef.current = window.setTimeout(() => {
+          const currentAudit = activePanelFamilyAuditRef.current;
+          if (!currentAudit || currentAudit.seq !== seq) {
+            pendingPanelFamilyAuditClearTimeoutRef.current = null;
+            return;
+          }
+          activePanelFamilyAuditRef.current = null;
+          lastPanelFamilyAuditKeyRef.current = null;
+          lastClearedPanelFamilyAuditRef.current = {
+            ...currentAudit,
+            clearedAt: Date.now(),
+            clearReason: `finalize_request:${status}`,
+          };
+          traceAuditRef("clear", {
+            source: currentAudit.source,
+            seq: currentAudit.seq,
+            prompt: currentAudit.prompt,
+            expectedFamily: currentAudit.expectedFamily ?? null,
+            contractRenderable: currentAudit.contractRenderable === true,
+            contractSalvaged: currentAudit.contractSalvaged === true,
+            reason: `finalize_request:${status}`,
+          });
+          pendingPanelFamilyAuditClearTimeoutRef.current = null;
+        }, 0);
+      }
       if (activeChatRequestRef.current?.seq === seq) {
         window.clearTimeout(activeChatRequestRef.current.timeoutId);
         activeChatRequestRef.current = null;
       }
       if (!isLatestChatRequest(seq)) return;
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][HomeScreen][LoadingState]", {
+          phase: "finalize_request",
+          status,
+          panelView: rightPanelState.view ?? null,
+          hasVisiblePanelState: Boolean(
+            visibleResponseData ?? visibleStrategicAdvice ?? visibleDecisionCockpit ?? visibleRiskPropagation
+          ),
+          hasVisibleSceneState: Boolean(visibleSceneJson),
+          hasVisibleSelection: Boolean(visibleSelectedObjectId ?? visibleFocusedId ?? visibleObjectSelection),
+        });
+      }
       setChatRequestStatus(status);
       setLoading(false);
       isSendingRef.current = false;
@@ -5075,7 +5826,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         setInput("");
       }
     },
-    [isLatestChatRequest]
+    [
+      isLatestChatRequest,
+      traceAuditRef,
+      rightPanelState.view,
+      visibleDecisionCockpit,
+      visibleFocusedId,
+      visibleObjectSelection,
+      visibleResponseData,
+      visibleRiskPropagation,
+      visibleSceneJson,
+      visibleSelectedObjectId,
+      visibleStrategicAdvice,
+    ]
   );
 
   const sendText = useCallback(async (textRaw: string, requestId?: string, options?: SendTextOptions) => {
@@ -5102,6 +5865,59 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       timeoutId,
       timedOut: false,
     };
+    const chatCorrelationId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    activeChatDebugCorrelationRef.current = chatCorrelationId;
+    emitDebugEvent({
+      type: "chat_submitted",
+      layer: "chat",
+      source: "HomeScreen",
+      status: "info",
+      message: "Chat message submitted",
+      metadata: {
+        textLength: text.length,
+        source: options?.source ?? "user",
+        requestId: requestId ?? null,
+        requestSeq,
+        mode: activeMode,
+        domain: activeDomainExperience.experience.domainId,
+      },
+      correlationId: chatCorrelationId,
+    });
+    const finishLocalChatDebug = (path: string, extra?: Record<string, unknown>) => {
+      emitDebugEvent({
+        type: "chat_local_shortcut",
+        layer: "chat",
+        source: "HomeScreen",
+        status: "info",
+        message: `Local chat path: ${path}`,
+        metadata: {
+          path,
+          requestSeq,
+          skippedMainPipeline: true,
+          skippedBackend: true,
+          ...extra,
+        },
+        correlationId: chatCorrelationId,
+      });
+      emitDebugEvent({
+        type: "chat_response_completed",
+        layer: "chat",
+        source: "HomeScreen",
+        status: "ok",
+        message: "Chat turn finished (local handler)",
+        metadata: { path, requestSeq, localShortcut: true, ...extra },
+        correlationId: chatCorrelationId,
+      });
+      emitGuardRailAlerts(
+        runGuardChecks(
+          { trigger: "chat_response", chat: { chatCorrelationId }, correlationId: chatCorrelationId },
+          getRecentDebugEvents()
+        )
+      );
+      if (activeChatDebugCorrelationRef.current === chatCorrelationId) {
+        activeChatDebugCorrelationRef.current = null;
+      }
+    };
     traceDemoFlowEvent({
       phase: "started",
       source: options?.source ?? "chat",
@@ -5111,6 +5927,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     });
     isSendingRef.current = true;
     setChatRequestStatus("submitting");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Nexora][HomeScreen][ChatSubmit]", {
+        phase: "submit_start",
+        panelView: rightPanelState.view ?? null,
+        hasVisiblePanelState: Boolean(
+          visibleResponseData ?? visibleStrategicAdvice ?? visibleDecisionCockpit ?? visibleRiskPropagation
+        ),
+        hasVisibleSceneState: Boolean(visibleSceneJson),
+        selectedObjectId: visibleSelectedObjectId ?? null,
+        focusedId: visibleFocusedId ?? null,
+      });
+    }
     pulseObjectByText(text);
     let lifecycleStatus: ChatRequestLifecycleStatus = "submitting";
     let shouldClearInput = false;
@@ -5137,25 +5965,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           emitChatResult(reply, true, requestId);
           setNoSceneUpdate(false);
           setSourceLabel(null);
-          const sessionId = (() => {
-            try {
-              return window.localStorage.getItem(SESSION_KEY);
-            } catch {
-              return null;
-            }
-          })();
-          const snapshot: PersistedProject = {
-            version: "1",
-            savedAt: new Date().toISOString(),
-            sessionId,
+          const snapshot = buildPersistedProjectSnapshot({
             activeMode,
             sceneJson,
             messages: nextMessages,
-          };
+          });
           saveProject(snapshot);
           pushHistory(snapshot);
           lifecycleStatus = "success";
           shouldClearInput = true;
+          finishLocalChatDebug("selected_size_no_selection");
           return;
         }
 
@@ -5171,25 +5990,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           setOverrideRef.current(selectedId, { scale: sel.nextScale });
           setNoSceneUpdate(false);
           setSourceLabel(null);
-          const sessionId = (() => {
-            try {
-              return window.localStorage.getItem(SESSION_KEY);
-            } catch {
-              return null;
-            }
-          })();
-          const snapshot: PersistedProject = {
-            version: "1",
-            savedAt: new Date().toISOString(),
-            sessionId,
+          const snapshot = buildPersistedProjectSnapshot({
             activeMode,
             sceneJson,
             messages: nextMessages,
-          };
+          });
           saveProject(snapshot);
           pushHistory(snapshot);
           lifecycleStatus = "success";
           shouldClearInput = true;
+          finishLocalChatDebug("selected_size_command");
           return;
         }
       }
@@ -5208,25 +6018,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setPrefs((prev) => ({ ...prev, globalScale: sizeResult.nextScale }));
       setNoSceneUpdate(false);
       setSourceLabel(null);
-      const sessionId = (() => {
-        try {
-          return window.localStorage.getItem(SESSION_KEY);
-        } catch {
-          return null;
-        }
-      })();
-      const snapshot: PersistedProject = {
-        version: "1",
-        savedAt: new Date().toISOString(),
-        sessionId,
+      const snapshot = buildPersistedProjectSnapshot({
         activeMode,
         sceneJson,
         messages: nextMessages,
-      };
+      });
       saveProject(snapshot);
       pushHistory(snapshot);
       lifecycleStatus = "success";
       shouldClearInput = true;
+      finishLocalChatDebug("global_size_command");
       return;
     }
 
@@ -5237,8 +6038,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       focusModeStore === "pinned" ? (pinnedId ?? undefined) : (focusedId ?? undefined);
 
     const availableSceneObjectIds = Array.isArray(sceneJson?.scene?.objects)
-      ? (sceneJson.scene.objects as any[])
-          .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
+      ? sceneJson.scene.objects
+          .map((obj: SceneObject, idx: number) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
           .filter(Boolean)
       : [];
 
@@ -5246,7 +6047,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       text,
       activeMode,
       activeDomain: activeDomainExperience.experience.domainId,
-      currentRightPanelTab: rightPanelTab,
+      currentRightPanelTab: rightPanelState.view,
       selectedObjectId: selectedObjectIdState,
       availableSceneObjectIds,
       sceneJson,
@@ -5254,14 +6055,79 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       productModeContext: productModeContext as Record<string, unknown> | null,
     });
 
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][IntentRouter]", intentRoute);
-    }
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][IntentRouter]", intentRoute);
+      }
+
+      const { requestedView, expectedFamily } = resolvePreferredPanelFamilyFromIntent(
+        intentRoute.preferredPanel,
+        "action_intent"
+      );
+      if (requestedView === null && options?.guidedPrompt) {
+        logPanelGuidedPromptWarn({
+          phase: "skipped_empty_view",
+          rawView: intentRoute.preferredPanel ?? null,
+          source: options?.source ?? "user",
+          prompt: options.guidedPrompt.prompt ?? text,
+        });
+      }
+      if (pendingPanelFamilyAuditClearTimeoutRef.current !== null) {
+        window.clearTimeout(pendingPanelFamilyAuditClearTimeoutRef.current);
+        pendingPanelFamilyAuditClearTimeoutRef.current = null;
+      }
+      activePanelFamilyAuditRef.current = {
+        seq: requestSeq,
+        prompt: text,
+        expectedFamily,
+        source: options?.source ?? "user",
+      };
+      traceAuditRef("set", {
+        source: options?.source ?? "user",
+        seq: requestSeq,
+        prompt: text,
+        expectedFamily: expectedFamily ?? null,
+        contractRenderable: false,
+        contractSalvaged: false,
+        reason: "chat_submit_expected_family",
+      });
+      tracePanelFlowRuntime("prompt_submitted");
+      tracePanelFamilyAudit("[Nexora][PanelFamilyAudit] expected_family", {
+        expectedFamily: expectedFamily ?? null,
+        intent: intentRoute.intent,
+        preferredPanel: intentRoute.preferredPanel ?? null,
+      });
+      tracePanelFlowRuntime("expected_family", {
+        requestedView: expectedFamily ?? null,
+      });
+
+    emitDebugEvent({
+      type: "chat_intent_detected",
+      layer: "intent",
+      source: "HomeScreen",
+      status: "info",
+      message: `Intent ${intentRoute.intent}`,
+      metadata: {
+        intent: intentRoute.intent,
+        target: intentRoute.target ?? null,
+        preferredPanel: intentRoute.preferredPanel ?? null,
+        expectedFamily: expectedFamily ?? null,
+        shouldCallBackend: intentRoute.shouldCallBackend,
+        shouldRunScanner: intentRoute.shouldRunScanner,
+        shouldRunSimulation: intentRoute.shouldRunSimulation,
+        shouldGenerateAdvice: intentRoute.shouldGenerateAdvice,
+        shouldAffectPanels: intentRoute.shouldAffectPanels,
+        shouldAffectScene: intentRoute.shouldAffectScene,
+        sceneMutation: intentRoute.sceneMutation,
+        primaryObjectId: intentRoute.primaryObjectId ?? null,
+        requestSeq,
+      },
+      correlationId: chatCorrelationId,
+    });
 
     if (intentRoute.intent === "chat_general" && !intentRoute.primaryObjectId) {
-      setNoSceneUpdate(false);
-      setSourceLabel(null);
-    }
+    setNoSceneUpdate(false);
+    setSourceLabel(null);
+  }
 
     const shouldShowLoading =
       intentRoute.shouldCallBackend ||
@@ -5270,6 +6136,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       intentRoute.shouldGenerateAdvice;
 
     if (shouldShowLoading) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][HomeScreen][LoadingState]", {
+          phase: "loading_started",
+          panelView: rightPanelState.view ?? null,
+          hasVisiblePanelState: Boolean(
+            visibleResponseData ?? visibleStrategicAdvice ?? visibleDecisionCockpit ?? visibleRiskPropagation
+          ),
+          hasVisibleSceneState: Boolean(visibleSceneJson),
+          hasVisibleSelection: Boolean(visibleSelectedObjectId ?? visibleFocusedId ?? visibleObjectSelection),
+        });
+      }
       setLoading(true);
       setNoSceneUpdate(false);
       setSourceLabel(null);
@@ -5277,13 +6154,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     }
 
     try {
+      emitDebugEvent({
+        type: "chat_request_started",
+        layer: "chat",
+        source: "HomeScreen",
+        status: "info",
+        message: "Chat execution pipeline started",
+        metadata: {
+          requestSeq,
+          shouldShowLoading,
+          shouldCallBackend: intentRoute.shouldCallBackend,
+        },
+        correlationId: chatCorrelationId,
+      });
       const executionResult = await executeNexoraAction({
       userText: text,
       route: intentRoute,
       activeMode,
       activeDomain: activeDomainExperience.experience.domainId,
       currentScene: sceneJson,
-      currentRightPanelTab: rightPanelTab,
+      currentRightPanelTab: rightPanelState.view,
       selectedObjectId: selectedObjectIdState,
       objectProfiles,
       productModeContext,
@@ -5331,6 +6221,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const routerResult = executionResult.localDecisionPayload;
     const hasLocalActions = Array.isArray(routerResult?.actions) && routerResult.actions.length > 0;
     const hasBackendPayload = Boolean(executionResult.backendPayload);
+    const rawFamilyDiag = readPanelFamilySliceDiagnostics(
+      activePanelFamilyAuditRef.current?.expectedFamily ?? null,
+      panelFamilyDataFromExecutionPayloads(
+        executionResult.backendPayload,
+        executionResult.localDecisionPayload
+      )
+    );
+    tracePanelFamilyAudit("[Nexora][PanelFamilyAudit] raw_payload_presence", {
+      rawFamilyPresent: rawFamilyDiag.familyPresent,
+      rawPayloadShape: rawFamilyDiag.payloadShape,
+    });
     traceDemoFlowEvent({
       phase: "response_received",
       source: options?.source ?? "chat",
@@ -5342,6 +6243,71 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         allowSceneMutation: executionResult.allowSceneMutation,
       },
     });
+
+    emitDebugEvent({
+      type: "chat_action_extracted",
+      layer: "intent",
+      source: "HomeScreen",
+      status: executionResult.ok ? "ok" : "warn",
+      message: executionResult.executionSummary ?? "execution",
+      metadata: {
+        ok: executionResult.ok,
+        executedSteps: executionResult.executedSteps,
+        hasLocalActions,
+        hasBackendPayload,
+        shouldOpenPanel: executionResult.shouldOpenPanel,
+        shouldUpdateInspector: executionResult.shouldUpdateInspector,
+        preferredPanel: executionResult.preferredPanel ?? null,
+        appliedSceneMutation: executionResult.appliedSceneMutation,
+        allowSceneMutation: executionResult.allowSceneMutation,
+        hasUnifiedReaction: Boolean(executionResult.unifiedReaction),
+        hasSceneReplacement: Boolean(executionResult.sceneReplacement),
+        hasScenePatch: Boolean(executionResult.scenePatch),
+        errorCount: Array.isArray(executionResult.errors) ? executionResult.errors.length : 0,
+        warningCount: Array.isArray(executionResult.warnings) ? executionResult.warnings.length : 0,
+        requestSeq,
+      },
+      correlationId: chatCorrelationId,
+    });
+
+    if (executionResult.shouldOpenPanel || executionResult.preferredPanel) {
+      emitDebugEvent({
+        type: "chat_panel_request",
+        layer: "chat",
+        source: "HomeScreen",
+        status: "info",
+        message: "Chat result requests panel / inspector update",
+        metadata: {
+          shouldOpenPanel: executionResult.shouldOpenPanel,
+          preferredPanel: executionResult.preferredPanel ?? null,
+          preferredInspectorTab: executionResult.preferredInspectorTab ?? null,
+          requestSeq,
+        },
+        correlationId: chatCorrelationId,
+      });
+    }
+
+    const hasChatSceneRequest =
+      executionResult.appliedSceneMutation !== "none" ||
+      Boolean(executionResult.unifiedReaction) ||
+      Boolean(executionResult.sceneReplacement) ||
+      Boolean(executionResult.scenePatch);
+    if (hasChatSceneRequest) {
+      emitDebugEvent({
+        type: "chat_scene_request",
+        layer: "chat",
+        source: "HomeScreen",
+        status: "info",
+        message: "Chat result includes scene mutation / reaction",
+        metadata: {
+          appliedSceneMutation: executionResult.appliedSceneMutation,
+          hasUnifiedReaction: Boolean(executionResult.unifiedReaction),
+          hasSceneReplacement: Boolean(executionResult.sceneReplacement),
+          requestSeq,
+        },
+        correlationId: chatCorrelationId,
+      });
+    }
 
     if (
       shouldApplyExecutionResultImmediately({
@@ -5433,6 +6399,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setLastActions([]);
       lifecycleStatus = executionResult.ok ? "success" : "error";
       shouldClearInput = executionResult.ok;
+      if (executionResult.ok && !hasLocalActions) {
+        emitDebugEvent({
+          type: "chat_noop_result",
+          layer: "chat",
+          source: "HomeScreen",
+          status: "info",
+          message: "No backend payload and no local actions (fallback reply only)",
+          metadata: {
+            requestSeq,
+            hadPanelIntent: Boolean(executionResult.shouldOpenPanel || executionResult.preferredPanel),
+            hadSceneIntent: hasChatSceneRequest,
+          },
+          correlationId: chatCorrelationId,
+        });
+      }
       return;
     }
 
@@ -5450,6 +6431,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         emitChatResult(msg, false, requestId);
         setLastActions([]);
         lifecycleStatus = "error";
+        emitDebugEvent({
+          type: "chat_error",
+          layer: "chat",
+          source: "HomeScreen",
+          status: "error",
+          message: msg,
+          metadata: { requestSeq, reason: "backend_response_error" },
+          correlationId: chatCorrelationId,
+        });
         return;
       }
       const userBackendMsg = makeMsg("user", text);
@@ -5462,12 +6452,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setActiveMode(nextActiveMode);
       const viewModel = deriveProductFlowViewModel(data, sceneJson);
       const shouldApplySceneMutation = hasMeaningfulSceneMutation(data, sceneJson);
-      const incomingSceneJson = data.scene_json
-        ? normalizeSceneJson(data.scene_json as SceneJson)
-        : null;
-      const viewModelSceneJson = viewModel?.nextSceneJson
-        ? normalizeSceneJson(viewModel.nextSceneJson as SceneJson)
-        : null;
+      const incomingSceneJson = data.scene_json ? normalizeSceneJson(data.scene_json) : null;
+      const viewModelSceneJson = viewModel?.nextSceneJson ? normalizeSceneJson(viewModel.nextSceneJson) : null;
       const shouldReplaceIncomingSceneFromChat = shouldAcceptIncomingSceneReplacement(
         data,
         sceneJson,
@@ -5479,16 +6465,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         viewModelSceneJson
       );
 
-      const acceptedSceneForChatReplacement =
-        (executionResult.allowSceneMutation &&
-          viewModelSceneJson &&
-          shouldReplaceViewModelSceneFromChat &&
-          viewModelSceneJson) ||
-        (executionResult.allowSceneMutation &&
-          incomingSceneJson &&
-          shouldReplaceIncomingSceneFromChat &&
-          incomingSceneJson) ||
-        null;
+      const acceptedSceneForChatReplacement = pickAcceptedChatSceneReplacement({
+        allowSceneMutation: executionResult.allowSceneMutation,
+        viewModelSceneJson,
+        incomingSceneJson,
+        shouldReplaceViewModelSceneFromChat,
+        shouldReplaceIncomingSceneFromChat,
+      });
 
       if (acceptedSceneForChatReplacement) {
         try {
@@ -5496,8 +6479,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           if (policy === "clear") {
             clearAllOverridesRef.current?.();
           } else if (policy === "match") {
-            const objsForPolicy: any[] = Array.isArray(acceptedSceneForChatReplacement?.scene?.objects)
-              ? (acceptedSceneForChatReplacement as any).scene.objects
+            const objsForPolicy: SceneObject[] = Array.isArray(acceptedSceneForChatReplacement?.scene?.objects)
+              ? acceptedSceneForChatReplacement.scene.objects
               : [];
             const validIds = objsForPolicy.map((o: any, idx: number) => o.id ?? o.name ?? `${o.type ?? "obj"}:${idx}`);
             pruneOverridesRef.current?.(validIds);
@@ -5536,39 +6519,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               allowSceneEffects: shouldApplySceneEffectsFromChat,
               fallbackHighlightedObjectIds: executionResult.highlightedObjectIds,
               fallbackPrimaryObjectId: executionResult.focusedObjectId ?? intentRoute.primaryObjectId ?? null,
-              reactionModeHint:
-                intentRoute.intent === "fragility_scan"
-                  ? "risk"
-                  : intentRoute.intent === "simulation_run"
-                  ? "propagation"
-                  : intentRoute.intent === "strategy_advice"
-                  ? "decision"
-                  : intentRoute.intent === "object_focus"
-                  ? "focus"
-                  : null,
+              reactionModeHint: reactionModeHintFromIntent(intentRoute.intent),
             });
-      const nextObjectSelectionFromReaction =
-        unifiedChatReaction &&
-        ((Array.isArray(unifiedChatReaction.highlightedObjectIds) && unifiedChatReaction.highlightedObjectIds.length > 0) ||
-          unifiedChatReaction.dimUnrelatedObjects ||
-          (Array.isArray(unifiedChatReaction.riskSources) && unifiedChatReaction.riskSources.length > 0) ||
-          (Array.isArray(unifiedChatReaction.riskTargets) && unifiedChatReaction.riskTargets.length > 0))
-          ? {
-              ...(viewModel.nextObjectSelection && typeof viewModel.nextObjectSelection === "object"
-                ? viewModel.nextObjectSelection
-                : {}),
-              highlighted_objects: Array.isArray(unifiedChatReaction.highlightedObjectIds)
-                ? unifiedChatReaction.highlightedObjectIds
-                : [],
-              dim_unrelated_objects: unifiedChatReaction.dimUnrelatedObjects === true,
-              risk_sources: Array.isArray(unifiedChatReaction.riskSources)
-                ? unifiedChatReaction.riskSources
-                : [],
-              risk_targets: Array.isArray(unifiedChatReaction.riskTargets)
-                ? unifiedChatReaction.riskTargets
-                : [],
-            }
-          : viewModel.nextObjectSelection;
+      const nextObjectSelectionFromReaction = mergeNextObjectSelectionFromUnifiedReaction(
+        unifiedChatReaction,
+        viewModel.nextObjectSelection
+      );
       const enrichedExecutionResult = {
         ...executionResult,
         chatReply: assistantMsg.text,
@@ -5631,27 +6587,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         (incomingSceneJson || viewModelSceneJson) &&
         shouldApplySceneMutation &&
         !acceptedSceneForChatReplacement &&
-        process.env.NODE_ENV !== "production"
+        process.env.NODE_ENV !== "production" &&
+        !isPilotProductMode
       ) {
         setSceneWarn("⚠️ Rejected incompatible fallback scene replacement.");
       }
 
-      const sessionId = (() => {
-        try {
-          return window.localStorage.getItem(SESSION_KEY);
-        } catch {
-          return null;
-        }
-      })();
-
-      const snapshot: PersistedProject = {
-        version: "1",
-        savedAt: new Date().toISOString(),
-        sessionId,
+      const snapshot = buildPersistedProjectSnapshot({
         activeMode: nextActiveMode,
         sceneJson: acceptedSceneForChatReplacement ?? sceneJson,
         messages: finalMessages,
-      };
+      });
       saveProject(snapshot);
       pushHistory(snapshot);
 
@@ -5676,12 +6622,48 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       const timedOut = activeChatRequestRef.current?.seq === requestSeq && activeChatRequestRef.current.timedOut === true;
       lifecycleStatus = isAbortLikeError(e) ? "aborted" : "error";
-      const msg = getChatLifecycleErrorMessage(e, timedOut);
+      const msg = isPilotProductMode ? NEXORA_PIPELINE_USER_FAILURE : getChatLifecycleErrorMessage(e, timedOut);
       if (!isAbortLikeError(e) || timedOut) {
         setMessages((m) => appendMessages(m, [makeMsg("assistant", msg)]));
         emitChatResult(msg, false, requestId);
+        emitDebugEvent({
+          type: "chat_error",
+          layer: "chat",
+          source: "HomeScreen",
+          status: "error",
+          message: msg,
+          metadata: { requestSeq, timedOut, reason: "chat_pipeline_exception" },
+          correlationId: chatCorrelationId,
+        });
       }
     } finally {
+      if (activeChatDebugCorrelationRef.current === chatCorrelationId) {
+        emitDebugEvent({
+          type: "chat_response_completed",
+          layer: "chat",
+          source: "HomeScreen",
+          status:
+            lifecycleStatus === "error"
+              ? "error"
+              : lifecycleStatus === "aborted" || lifecycleStatus === "stale_ignored"
+                ? "warn"
+                : "ok",
+          message: `Chat pipeline finalized: ${lifecycleStatus}`,
+          metadata: {
+            lifecycleStatus,
+            requestSeq,
+            clearInput: shouldClearInput,
+          },
+          correlationId: chatCorrelationId,
+        });
+        emitGuardRailAlerts(
+          runGuardChecks(
+            { trigger: "chat_response", chat: { chatCorrelationId }, correlationId: chatCorrelationId },
+            getRecentDebugEvents()
+          )
+        );
+        activeChatDebugCorrelationRef.current = null;
+      }
       finalizeChatRequest(requestSeq, lifecycleStatus, { clearInput: shouldClearInput });
     }
   }, [
@@ -5715,6 +6697,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     updateObjectUx,
     finalizeChatRequest,
     isLatestChatRequest,
+    isPilotProductMode,
   ]);
   const runRetailDemoStep = useCallback(
     async (step: DemoScriptStep) => {
@@ -5742,17 +6725,44 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     demoFlowPauseRef.current = retailDemoFlow.notifyManualInteraction;
   }, [retailDemoFlow.notifyManualInteraction]);
 
+  const submitGuidedPrompt = useCallback(
+    (text: string, requestId?: string, source: GuidedPromptSource = "guided_prompt") => {
+      const trimmedText = text.trim();
+      if (!trimmedText) return;
+
+      logPanelGuidedPromptWarn({
+        phase: "blind_submit",
+        source,
+        prompt: trimmedText,
+        currentView: rightPanelState.view ?? null,
+        path: "normal_chat_dispatch",
+        notes: "Guided prompt currently routes through sendText without dedicated panel priming.",
+      });
+
+      void sendText(trimmedText, requestId, { source: "user" });
+    },
+    [rightPanelState.view, sendText]
+  );
+
   useEffect(() => {
     const onSubmitChat = (event: Event) => {
-      const detail = (event as CustomEvent<{ text?: string; requestId?: string }>).detail;
+      const detail = (event as CustomEvent<{
+        text?: string;
+        requestId?: string;
+        source?: "user" | "guided_prompt";
+      }>).detail;
       const text = typeof detail?.text === "string" ? detail.text : "";
       const requestId = typeof detail?.requestId === "string" ? detail.requestId : undefined;
       if (!text.trim()) return;
+      if (detail?.source === "guided_prompt") {
+        submitGuidedPrompt(text, requestId, "assistant_prompt_chip");
+        return;
+      }
       void sendText(text, requestId);
     };
     window.addEventListener("nexora:submit-chat", onSubmitChat as EventListener);
     return () => window.removeEventListener("nexora:submit-chat", onSubmitChat as EventListener);
-  }, [sendText]);
+  }, [sendText, submitGuidedPrompt]);
 
   const send = useCallback(() => {
     void sendText(input);
@@ -5760,35 +6770,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   const handleUndo = useCallback(() => {
     const history = loadHistory();
-    if (history.length < 2) return;
-    history.pop(); // remove current
-    const prev = history[history.length - 1];
-    if (!prev) return;
+    const popped = prepareUndoHistoryPop(history);
+    if (!popped) return;
+    const { nextHistory, target: prev } = popped;
 
     setActiveMode(prev.activeMode ?? "business");
-    setSceneJson(prev.sceneJson ? normalizeSceneJson(prev.sceneJson) : null);
+    const undoSceneDecision = prev.sceneJson ? evaluateHistoryUndoScene(prev.sceneJson) : canonDecisionMissingSceneBlob();
+    setSceneJson(sceneJsonFromCanonDecision(undoSceneDecision));
     setMessages(normalizeMessages(prev.messages));
     try {
-      window.localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      window.localStorage.setItem(HISTORY_KEY, JSON.stringify(nextHistory));
       if (prev.sessionId) window.localStorage.setItem(SESSION_KEY, prev.sessionId);
     } catch {
       // ignore
     }
-    saveProject({
-      ...prev,
-      savedAt: new Date().toISOString(),
-    });
+    saveProject(withPersistedProjectSavedAt(prev));
   }, []);
 
   const handleExport = useCallback(() => {
     const currentProject =
       workspaceProjects[activeProjectId] ?? buildActiveProjectState(activeProjectId);
-    const exported = exportProjectFile(currentProject);
-    const blob = new Blob([JSON.stringify(exported.file, null, 2)], { type: "application/json" });
+    const { json, filename, mimeType } = prepareWorkspaceProjectExportJson(currentProject);
+    const blob = new Blob([json], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${currentProject.id || "nexora"}-project.nexora.json`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   }, [activeProjectId, buildActiveProjectState, workspaceProjects]);
@@ -5797,40 +6804,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const parsed = JSON.parse(reader.result as string);
-        const normalized = parseImportedProjectFile(parsed);
-        if (!normalized.file) {
-          throw new Error(normalized.errors[0] ?? "Invalid project file");
-        }
-
-        const currentWorkspace = {
-          id: activeWorkspaceId,
+        const text = typeof reader.result === "string" ? reader.result : "";
+        const currentWorkspace = buildWorkspaceStateForProjectImport({
+          workspaceId: activeWorkspaceId,
           activeProjectId,
-          projects: {
-            ...workspaceProjects,
-            [activeProjectId]: buildActiveProjectState(activeProjectId),
-          },
-        };
-        const imported = importProjectFileToWorkspace(currentWorkspace, normalized.file, {
+          workspaceProjects,
+          activeProjectSnapshot: buildActiveProjectState(activeProjectId),
+        });
+        const prepared = prepareProjectImportFromFileText(text, currentWorkspace, {
           activate: true,
           collision: "rename",
         });
-        if (!imported.ok) {
-          throw new Error(imported.errors[0] ?? "Import failed");
+        if (!prepared.ok) {
+          throw new Error(prepared.errorMessage);
         }
+        const { importResult, parseWarnings } = prepared;
 
-        setActiveWorkspaceId(imported.workspace.id || DEFAULT_WORKSPACE_ID);
-        setWorkspaceProjects(imported.workspace.projects);
-        setActiveProjectId(imported.activeProjectId);
-        applyWorkspaceProjectState(imported.project);
-        const warnings = [...normalized.warnings, ...imported.warnings].filter(Boolean);
-        if (warnings.length) {
-          setMessages((m) =>
-            appendMessages(m, [makeMsg("assistant", `Project imported with notes: ${warnings.join(" ")}`)])
-          );
+        setActiveWorkspaceId(importResult.workspace.id || DEFAULT_WORKSPACE_ID);
+        setWorkspaceProjects(importResult.workspace.projects);
+        setActiveProjectId(importResult.activeProjectId);
+        applyWorkspaceProjectState(importResult.project);
+        const note = composeImportWarningAssistantText(parseWarnings, importResult.warnings);
+        if (note) {
+          setMessages((m) => appendMessages(m, [makeMsg("assistant", note)]));
         }
-      } catch (err: any) {
-        setMessages((m) => appendMessages(m, [makeMsg("assistant", err?.message ?? "Import failed")]));
+      } catch (err: unknown) {
+        setMessages((m) => appendMessages(m, [makeMsg("assistant", messageImportUnknownError(err))]));
       }
     };
     reader.readAsText(file);
@@ -5843,11 +6842,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   ]);
 
   const buildBackup = useCallback((): BackupV1 => {
-    const sessionId = (() => {
-      try { return window.localStorage.getItem(SESSION_KEY); } catch { return null; }
-    })();
-
-    return buildBackupController({
+    return buildScreenBackupV1({
       activeCompanyId,
       activeMode,
       activeTemplateId,
@@ -5864,7 +6859,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       selectedObjectId: selectedObjectIdState,
       overrides: overridesRef.current ?? {},
       objectUxById: objectUxById ?? {},
-      sessionId,
     });
   }, [
     activeCompanyId,
@@ -5905,21 +6899,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       // core state
       setActiveMode(b.activeMode ?? "business");
       setActiveTemplateId(b.activeTemplateId ?? "quality_protection");
-      setActiveSidePanel(
-        b.hudTab &&
-        b.hudTab !== "chat" &&
-        b.hudTab !== "object" &&
-        b.hudTab !== "scene" &&
-        b.hudTab !== "loops" &&
-        b.hudTab !== "kpi" &&
-        b.hudTab !== "decisions"
-          ? b.hudTab
-          : "decisions"
-      );
+      setActiveSidePanel(resolveHudTabAfterBackupRestore(b.hudTab));
       setPrefs(b.prefs ?? defaultPrefs);
 
       // scene + chat
-      setSceneJson(b.sceneJson ? normalizeSceneJson(b.sceneJson) : null);
+      const backupSceneDecision = b.sceneJson ? evaluateBackupRestoreScene(b.sceneJson) : canonDecisionMissingSceneBlob();
+      setSceneJson(sceneJsonFromCanonDecision(backupSceneDecision));
       setMessages(normalizeMessages(b.messages));
 
       // loops
@@ -5956,23 +6941,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setMessages((m) => appendMessages(m, [makeMsg("assistant", "⚠️ No backup found.")]));
       return;
     }
-    const lines = buildRestorePreviewLines({
-      activeCompanyId,
-      activeMode,
-      activeTemplateId,
-      hudTab: activeSidePanel,
-      loops,
-      activeLoopId,
-      selectedLoopId,
-      focusedId,
-      focusMode,
-      focusPinned,
-      selectedObjectId: selectedObjectIdState,
-      messagesLen: messages.length,
-      overridesKeysCount: Object.keys(overridesRef.current ?? {}).length,
-      backup: b,
-    });
-    setRestorePreview({ backup: b, lines });
+    setRestorePreview(
+      buildBackupRestorePreviewContents({
+        backup: b,
+        activeCompanyId,
+        activeMode,
+        activeTemplateId,
+        hudTab: activeSidePanel,
+        loops,
+        activeLoopId,
+        selectedLoopId,
+        focusedId,
+        focusMode,
+        focusPinned,
+        selectedObjectId: selectedObjectIdState,
+        messagesLen: messages.length,
+        overridesKeysCount: Object.keys(overridesRef.current ?? {}).length,
+      })
+    );
   }, [
     activeCompanyId,
     activeMode,
@@ -6046,6 +7032,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const handleFocusFromLoop = useCallback(
     (id: string) => {
       if (!id) return;
+      const resolved = resolveSelectedObjectDetails(id);
+      if (!resolved) {
+        tracePostSuccessContextDecision("[Nexora][ContextGuardBlocked]", {
+          currentTargetId: selectedObjectIdState ?? focusedId ?? null,
+          nextTargetId: id,
+          source: "focus",
+          targetInScene: false,
+          preserved: Boolean(selectedObjectIdState ?? focusedId),
+        });
+        return;
+      }
+      tracePostSuccessContextDecision("[Nexora][PostSuccessContextAccepted]", {
+        currentTargetId: selectedObjectIdState ?? focusedId ?? null,
+        nextTargetId: id,
+        source: "focus",
+        targetInScene: true,
+        preserved: false,
+      });
       selectedSetterRef.current(id);
       setFocusedId(id);
       claimFocusOwnership({
@@ -6057,7 +7061,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setFocusMode("selected");
       setViewMode("input");
     },
-    [claimFocusOwnership, setFocusMode, setViewMode]
+    [
+      claimFocusOwnership,
+      focusedId,
+      resolveSelectedObjectDetails,
+      selectedObjectIdState,
+      setFocusMode,
+      setViewMode,
+      tracePostSuccessContextDecision,
+    ]
   );
 
 
@@ -6065,12 +7077,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     if (process.env.NODE_ENV === "production") return;
     setReplayError(null);
     setReplaying(true);
-    let userId: string | null = null;
-    try {
-      userId = window.localStorage.getItem(SESSION_KEY);
-    } catch {
-      userId = null;
-    }
+    let userId: string | null = readSessionIdForPersistence();
     if (!userId) {
       try {
         userId = window.localStorage.getItem("dev_replay_user_id");
@@ -6102,12 +7109,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const handleSceneUpdateFromTimeline = useCallback((payload: any) => {
     applyGuardedResponsePayload(payload ?? null, "feedback", "Timeline payload applied.");
     const nextScene = payload?.scene_json;
-    const normalizedNextScene =
-      nextScene && typeof nextScene === "object" ? normalizeSceneJson(nextScene as SceneJson) : null;
-    if (normalizedNextScene && hasForcedSceneUpdate(payload, normalizedNextScene)) {
-      setSceneJson(normalizedNextScene);
+    const sceneDecision = evaluateTimelineForceScene(nextScene, payload);
+    if (isSceneCanonReplaceDecision(sceneDecision)) {
+      setSceneJson(sceneDecision.scene);
       setNoSceneUpdate(false);
-    } else if (normalizedNextScene) {
+    } else if (nextScene != null && typeof nextScene === "object" && !Array.isArray(nextScene)) {
       setNoSceneUpdate(true);
       const timelineReaction = buildUnifiedReactionFromChatResponse(payload, {
         acceptedSceneForChatReplacement: null,
@@ -6172,14 +7178,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     extractStrategicPatterns,
   ]);
 
-  const loadDomainDemoScenario = useCallback((requestedDomainId?: string | null) => {
+  const loadDomainDemoScenario = useCallback(async (requestedDomainId?: string | null) => {
+    const requested = String(requestedDomainId ?? activeDomainExperience.experience.domainId ?? "")
+      .trim()
+      .toLowerCase();
     const demoDefinition = resolveDomainDemo(requestedDomainId ?? activeDomainExperience.experience.domainId);
-    const payload = demoDefinition.analysis as any;
-    const nextScene = normalizeSceneJson(demoDefinition.scene as any);
-    const nextLoops = normalizeLoops((nextScene as any)?.scene?.loops);
-    const nextActiveLoop = String((nextScene as any)?.scene?.active_loop ?? "").trim() || null;
-    const nextLoopSuggestions = Array.isArray((nextScene as any)?.scene?.loops_suggestions)
-      ? (((nextScene as any).scene.loops_suggestions as string[]) ?? [])
+    const basePayload = demoDefinition.analysis as Record<string, unknown>;
+    let mergedPayload: Record<string, unknown> = { ...basePayload };
+    let nextScene = normalizeSceneJson(demoDefinition.scene);
+    const sceneObjects = Array.isArray(nextScene.scene?.objects) ? nextScene.scene.objects : [];
+    if (sceneObjects.length === 0) {
+      // eslint-disable-next-line no-console
+      console.warn("[Nexora][DemoLoad] skipped — scene_json has no objects", { requestedDomainId: requested });
+      return;
+    }
+    const sceneDomain = readSceneJsonMetaString(nextScene, "domain").trim().toLowerCase();
+    if (sceneDomain && sceneDomain !== requested) {
+      // eslint-disable-next-line no-console
+      console.warn("[Nexora][DemoLoad] domain mismatch — scene not applied", { sceneDomain, requested });
+      return;
+    }
+    const prevMetaRecord = asRecord(nextScene.meta) ?? {};
+    nextScene = {
+      ...nextScene,
+      meta: { ...prevMetaRecord, domain: sceneDomain || requested, force_scene_update: true },
+    };
+    const nextLoops = normalizeLoops(nextScene.scene?.loops);
+    const nextActiveLoop = readSceneJsonActiveLoop(nextScene) || null;
+    const nextLoopSuggestions = Array.isArray(nextScene.scene?.loops_suggestions)
+      ? (nextScene.scene.loops_suggestions as string[]).filter((s): s is string => typeof s === "string")
       : [];
     const inferred = inferProjectMetaFromScene(nextScene);
     const nextProjectId = inferred.projectId || DEFAULT_PROJECT_ID;
@@ -6196,28 +7223,59 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       ...prev,
       [nextProjectId]: prev[nextProjectId] ?? createEmptyProjectState(nextProjectId, inferred.name || nextProjectId),
     }));
-    applyGuardedResponsePayload(payload, "feedback", "Domain demo payload loaded.");
-    setSceneJson(nextScene);
+    const promptText = buildDemoStrategicAnalysisPrompt(demoDefinition, activeDomainExperience);
+    try {
+      const out = await postStrategicAnalysisText({ text: promptText });
+      if (out.ok && out.decision_analysis && typeof out.decision_analysis === "object") {
+        const decisionAnalysis = JSON.parse(JSON.stringify(out.decision_analysis)) as Record<string, unknown>;
+        mergedPayload = { ...mergedPayload, decision_analysis: decisionAnalysis };
+        nextScene = { ...nextScene, decision_analysis: decisionAnalysis };
+        if (process.env.NODE_ENV !== "production") {
+          // eslint-disable-next-line no-console
+          console.log("[Nexora][DecisionAnalysis][ScenarioLoad][Attached]", {
+            strategies: Array.isArray(decisionAnalysis.strategies) ? decisionAnalysis.strategies.length : 0,
+          });
+        }
+      }
+    } catch {
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.warn("[Nexora][DecisionAnalysis][ScenarioLoad][Attached] request_failed");
+      }
+    }
+    applyGuardedResponsePayload(mergedPayload, "feedback", "Domain demo payload loaded.");
+    const demoSceneDecision = evaluateDomainDemoScene(nextScene);
+    const demoScene = sceneJsonFromCanonDecision(demoSceneDecision);
+    if (demoScene) {
+      setSceneJson(demoScene);
+    }
     clearAllOverridesRef.current?.();
     setLoops(nextLoops);
     setActiveLoopId(nextActiveLoop);
     setSelectedLoopId(null);
     setLoopSuggestions(nextLoopSuggestions);
-    setKpi((payload?.scene_json?.scene?.kpi as KPIState) ?? null);
-    setConflicts(extractConflicts(payload));
-    setObjectSelection(extractObjectSelection(payload));
-    setRiskPropagation(extractRiskPropagation(payload));
-    setStrategicAdvice(extractStrategicAdvice(payload));
-    setStrategyKpi(extractStrategyKpi(payload));
-    setDecisionCockpit(extractDecisionCockpit(payload));
-    const nextProductModeContextD = extractProductModeContext(payload);
+    const mergedRec = asRecord(mergedPayload);
+    const kpiCandidate =
+      mergedRec?.["kpi"] ??
+      asRecord(mergedRec?.["context"])?.["kpi"] ??
+      asRecord(asRecord(mergedRec?.["scene_json"])?.["scene"])?.["kpi"] ??
+      nextScene.scene?.kpi ??
+      null;
+    setKpi(normalizeKpiStateFromUnknown(kpiCandidate));
+    setConflicts(extractConflicts(mergedPayload));
+    setObjectSelection(extractObjectSelection(mergedPayload));
+    setRiskPropagation(extractRiskPropagation(mergedPayload));
+    setStrategicAdvice(extractStrategicAdvice(mergedPayload));
+    setStrategyKpi(extractStrategyKpi(mergedPayload));
+    setDecisionCockpit(extractDecisionCockpit(mergedPayload));
+    const nextProductModeContextD = extractProductModeContext(mergedPayload);
     setProductModeContext(nextProductModeContextD);
     if (nextProductModeContextD?.mode_id) setProductModeId(String(nextProductModeContextD.mode_id));
-    setAiReasoning(extractAiReasoning(payload));
-    setPlatformAssembly(extractPlatformAssembly(payload));
-    setAutonomousExploration(extractAutonomousExploration(payload));
-    setOpponentModel(extractOpponentModel(payload));
-    setStrategicPatterns(extractStrategicPatterns(payload));
+    setAiReasoning(extractAiReasoning(mergedPayload));
+    setPlatformAssembly(extractPlatformAssembly(mergedPayload));
+    setAutonomousExploration(extractAutonomousExploration(mergedPayload));
+    setOpponentModel(extractOpponentModel(mergedPayload));
+    setStrategicPatterns(extractStrategicPatterns(mergedPayload));
     setCameraLockedByUser(false);
     setIsOrbiting(false);
     setFocusMode("all");
@@ -6243,6 +7301,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     );
   }, [
     activeDomainExperience,
+    activeProfile?.hero_summary,
+    applyGuardedResponsePayload,
     clearFocusOwnership,
     extractConflicts,
     extractObjectSelection,
@@ -6264,18 +7324,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   useEffect(() => {
     const onLoadDemo = (event: Event) => {
       const detail = (event as CustomEvent<{ domainId?: string | null }>).detail;
-      loadDomainDemoScenario(detail?.domainId ?? activeDomainExperience.experience.domainId);
+      void loadDomainDemoScenario(detail?.domainId ?? activeDomainExperience.experience.domainId);
     };
     window.addEventListener("nexora:load-demo-scenario", onLoadDemo as EventListener);
     return () => window.removeEventListener("nexora:load-demo-scenario", onLoadDemo as EventListener);
   }, [activeDomainExperience, loadDomainDemoScenario]);
 
   useEffect(() => {
-    const currentSceneDomainId = String((sceneJson as any)?.meta?.domain ?? "").trim().toLowerCase();
+    const currentSceneDomainId = readSceneJsonMetaString(sceneJson, "domain").toLowerCase();
     if (!workspaceHydrated || didAutoLoadDomainDemoRef.current) return;
     if (sceneJson && currentSceneDomainId === activeDomainExperience.experience.domainId) return;
     didAutoLoadDomainDemoRef.current = true;
-    loadDomainDemoScenario(activeDomainExperience.experience.domainId);
+    void loadDomainDemoScenario(activeDomainExperience.experience.domainId);
   }, [activeDomainExperience, loadDomainDemoScenario, sceneJson, workspaceHydrated]);
 
   useEffect(() => {
@@ -6284,6 +7344,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         detail: {
           sceneJson,
           responseData,
+          rightPanelView: rightPanelState.view ?? null,
           messages,
           kpi,
           activeMode,
@@ -6324,15 +7385,40 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             adviceFramingHints: activeDomainExperience.experience.adviceFramingHints,
             executiveFramingStyle: activeDomainExperience.experience.executiveFramingStyle,
             sharedCoreEngineId: activeDomainExperience.sharedCore.id,
+            demoScenarioTitle: activeDomainExperience.experience.demoScenarioTitle,
+            demoBusinessContext: activeDomainExperience.experience.demoBusinessContext,
+            demoDecisionQuestion: activeDomainExperience.experience.demoDecisionQuestion,
           },
           sharedCoreEngine: activeDomainExperience.sharedCore,
+          sourceLabel: sourceLabel ?? null,
+          demoPresentation: {
+            loadDone: Boolean(sceneJson),
+            askedDone: messages.some(
+              (m) =>
+                m.role === "user" && typeof m.text === "string" && String(m.text).trim().length > 0
+            ),
+            insightOpen: Boolean(rightPanelState.isOpen && rightPanelState.view),
+            guidedPromptsVisible:
+              Boolean(sceneJson) &&
+              readSceneJsonMetaString(sceneJson, "demo_id").toLowerCase() ===
+                String(activeDomainDemo.id).toLowerCase() &&
+              !messages.some(
+                (m) =>
+                  m.role === "user" && typeof m.text === "string" && String(m.text).trim().length > 0
+              ),
+          },
         },
       })
     );
   }, [
+    activeDomainDemo.id,
     activeDomainExperience,
     sceneJson,
     responseData,
+    rightPanelState.view,
+    rightPanelState.isOpen,
+    sourceLabel,
+    messages,
     kpi,
     activeMode,
     activeLoopId,
@@ -6364,43 +7450,60 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     return selectedObjectInfo?.label ?? null;
   }, [resolveObjectLabel, selectedObjectInfo, warRoom.session.draft.selectedObjectId]);
   const strategicCouncil = useMemo(
-    () => normalizeStrategicCouncilResult((responseData as any)?.strategic_council ?? (sceneJson as any)?.strategic_council ?? null),
-    [responseData, sceneJson]
+    () =>
+      normalizeStrategicCouncilResult(
+        asRecord(visibleResponseData)?.["strategic_council"] ?? visibleSceneJson?.["strategic_council"] ?? null
+      ),
+    [visibleResponseData, visibleSceneJson]
   );
   const { impact: decisionImpact } = useDecisionImpact({
-    propagation: riskPropagation ?? null,
+    propagation: visibleRiskPropagation ?? null,
     decisionPath: warRoom.scenarioTrigger?.payload && typeof warRoom.scenarioTrigger.payload === "object"
       ? ((warRoom.scenarioTrigger.payload as any).decisionPath ?? null)
       : null,
-    strategicAdvice: strategicAdvice ?? null,
+    strategicAdvice: visibleStrategicAdvice ?? null,
     strategicCouncil: strategicCouncil ?? null,
     scenarioAction: warRoom.scenarioTrigger ?? null,
-    sceneJson,
+    sceneJson: visibleSceneJson,
     source: "home_screen",
   });
   const decisionExecutionScenario = useMemo(
     () => ({
       active_mode: activeMode,
-      scene_label: String((sceneJson as any)?.meta?.label ?? (sceneJson as any)?.meta?.demo_title ?? "Nexora Scene"),
+      scene_label:
+        readSceneJsonMetaString(visibleSceneJson, "label") ||
+        readSceneJsonMetaString(visibleSceneJson, "demo_title") ||
+        "Nexora Scene",
       demo_profile_id: activeProfile?.id ?? null,
-      selected_object_id: selectedObjectIdState ?? null,
-      focused_object_id: focusedId ?? null,
+      selected_object_id: visibleSelectedObjectId ?? null,
+      focused_object_id: visibleFocusedId ?? null,
       scenario_trigger: warRoom.scenarioTrigger ?? null,
     }),
-    [activeMode, activeProfile?.id, focusedId, sceneJson, selectedObjectIdState, warRoom.scenarioTrigger]
+    [activeMode, activeProfile?.id, visibleFocusedId, visibleSceneJson, visibleSelectedObjectId, warRoom.scenarioTrigger]
   );
   const decisionOverrideIdsRef = useRef<string[]>([]);
   const narrativeOverrideIdsRef = useRef<string[]>([]);
   const sceneFocusIdSet = useMemo(() => {
-    const sceneObjects = Array.isArray((sceneJson as any)?.scene?.objects) ? ((sceneJson as any).scene.objects as Array<Record<string, unknown>>) : [];
+    const sceneObjects = Array.isArray(visibleSceneJson?.scene?.objects) ? visibleSceneJson.scene.objects : [];
     return new Set(sceneObjects.map((item) => String(item?.id ?? "").trim()).filter(Boolean));
-  }, [sceneJson]);
+  }, [visibleSceneJson]);
+  const currentSceneTargetId = useMemo(() => {
+    if (typeof selectedObjectIdState === "string" && sceneFocusIdSet.has(selectedObjectIdState)) {
+      return selectedObjectIdState;
+    }
+    if (typeof focusedId === "string" && sceneFocusIdSet.has(focusedId)) {
+      return focusedId;
+    }
+    return null;
+  }, [focusedId, sceneFocusIdSet, selectedObjectIdState]);
   const resolvedFocusOwnership = useMemo(() => {
     const candidates: FocusOwnershipState[] = [];
     if (focusOwnership.source !== "none") {
       const objectId =
         focusOwnership.source === "backend_intelligence" || focusOwnership.source === "scanner_primary"
-          ? Array.isArray(objectSelection?.highlighted_objects) && focusOwnership.objectId && objectSelection.highlighted_objects.map(String).includes(focusOwnership.objectId)
+          ? Array.isArray(visibleObjectSelection?.highlighted_objects) &&
+            focusOwnership.objectId &&
+            visibleObjectSelection.highlighted_objects.map(String).includes(focusOwnership.objectId)
             ? focusOwnership.objectId
             : null
           : focusOwnership.objectId;
@@ -6418,20 +7521,46 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       });
     }
     return resolveFocusOwnership(candidates, sceneFocusIdSet);
-  }, [focusOwnership, narrativeSceneBinding.focusId, narrativeSceneBinding.isActive, narrativeSceneBinding.stepId, objectSelection, sceneFocusIdSet]);
+  }, [
+    focusOwnership,
+    narrativeSceneBinding.focusId,
+    narrativeSceneBinding.isActive,
+    narrativeSceneBinding.stepId,
+    sceneFocusIdSet,
+    visibleObjectSelection,
+  ]);
+  const narrativeObjectSelection = useMemo(
+    () => getSceneScopedObjectSelection(narrativeSceneBinding.objectSelection, sceneFocusIdSet),
+    [narrativeSceneBinding.objectSelection, sceneFocusIdSet]
+  );
   const effectiveObjectSelection = useMemo(() => {
-    if (narrativeSceneBinding.isActive) {
-      return narrativeSceneBinding.objectSelection;
+    if (narrativeSceneBinding.isActive && narrativeObjectSelection) {
+      return narrativeObjectSelection;
     }
-    return objectSelection ?? null;
-  }, [narrativeSceneBinding.isActive, narrativeSceneBinding.objectSelection, objectSelection]);
+    return visibleObjectSelection ?? null;
+  }, [narrativeObjectSelection, narrativeSceneBinding.isActive, visibleObjectSelection]);
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
       console.log("[Nexora][FocusOwnership] resolved", resolvedFocusOwnership);
     }
+    const nextTargetId =
+      typeof resolvedFocusOwnership.objectId === "string" && resolvedFocusOwnership.objectId.trim().length > 0
+        ? resolvedFocusOwnership.objectId
+        : null;
+    const nextTargetInScene = nextTargetId ? sceneFocusIdSet.has(nextTargetId) : false;
     if (resolvedFocusOwnership.source === "none") {
       const shouldClearStaleFocus =
         focusOwnership.source !== "none" || !!activeProfile || narrativeOverrideIdsRef.current.length > 0;
+      if (shouldClearStaleFocus && currentSceneTargetId) {
+        tracePostSuccessContextDecision("[Nexora][PostSuccessContextPreserved]", {
+          currentTargetId: currentSceneTargetId,
+          nextTargetId: null,
+          source: "focus",
+          targetInScene: true,
+          preserved: true,
+        });
+        return;
+      }
       if (shouldClearStaleFocus && (focusedId || selectedObjectIdState)) {
         setFocusedId(null);
         selectedSetterRef.current(null);
@@ -6447,27 +7576,73 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       return;
     }
-    if (resolvedFocusOwnership.objectId && focusedId !== resolvedFocusOwnership.objectId) {
-      setFocusedId(resolvedFocusOwnership.objectId);
+    if (nextTargetId && !nextTargetInScene) {
+      tracePostSuccessContextDecision("[Nexora][ContextGuardBlocked]", {
+        currentTargetId: currentSceneTargetId,
+        nextTargetId,
+        source: resolvedFocusOwnership.source === "narrative_step" ? "narrative" : "focus",
+        targetInScene: false,
+        preserved: Boolean(currentSceneTargetId),
+      });
+      return;
     }
-    if (resolvedFocusOwnership.objectId && selectedObjectIdState !== resolvedFocusOwnership.objectId) {
-      selectedSetterRef.current(resolvedFocusOwnership.objectId);
-      setSelectedObjectIdState(resolvedFocusOwnership.objectId);
+    if (
+      resolvedFocusOwnership.source === "narrative_step" &&
+      currentSceneTargetId &&
+      nextTargetId &&
+      currentSceneTargetId !== nextTargetId &&
+      focusOwnership.source === "none"
+    ) {
+      tracePostSuccessContextDecision("[Nexora][PostSuccessContextPreserved]", {
+        currentTargetId: currentSceneTargetId,
+        nextTargetId,
+        source: "narrative",
+        targetInScene: true,
+        preserved: true,
+      });
+      return;
+    }
+    if (nextTargetId && focusedId !== nextTargetId) {
+      tracePostSuccessContextDecision("[Nexora][PostSuccessContextAccepted]", {
+        currentTargetId: currentSceneTargetId,
+        nextTargetId,
+        source: resolvedFocusOwnership.source === "narrative_step" ? "narrative" : "focus",
+        targetInScene: true,
+        preserved: false,
+      });
+      setFocusedId(nextTargetId);
+    }
+    if (nextTargetId && selectedObjectIdState !== nextTargetId) {
+      selectedSetterRef.current(nextTargetId);
+      setSelectedObjectIdState(nextTargetId);
       window.setTimeout(() => {
-        updateSelectedObjectInfo(resolvedFocusOwnership.objectId);
+        updateSelectedObjectInfo(nextTargetId);
       }, 0);
     }
   }, [
     activeProfile,
     clearFocusOwnership,
+    currentSceneTargetId,
     focusOwnership.source,
     focusedId,
     resolvedFocusOwnership,
+    sceneFocusIdSet,
     selectedObjectIdState,
     setFocusedId,
+    tracePostSuccessContextDecision,
     updateSelectedObjectInfo,
   ]);
   useEffect(() => {
+    const nextSignature = JSON.stringify({
+      active: narrativeSceneBinding.isActive,
+      focusId: narrativeSceneBinding.focusId ?? null,
+      highlightIds: narrativeSceneBinding.highlightIds,
+      dimIds: narrativeSceneBinding.dimIds,
+    });
+    if (lastNarrativeOverrideSignatureRef.current === nextSignature) {
+      return;
+    }
+    lastNarrativeOverrideSignatureRef.current = nextSignature;
     const previousIds = narrativeOverrideIdsRef.current;
     previousIds.forEach((id) => {
       setOverrideRef.current?.(id, { scale: 1, opacity: 1 });
@@ -6511,31 +7686,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       scenario: decisionExecutionScenario ?? null,
     };
   }, [decisionExecutionScenario, focusedId, selectedObjectIdState]);
-  const applyGuardedResponsePayload = useCallback(
-    (
-      nextPayload: unknown,
-      stage: DecisionTraceEvent["stage"],
-      summary: string,
-      confidence?: number | null
-    ) => {
-      const normalized = normalizeDecisionPayload(nextPayload);
-      emitDecisionTrace({
-        stage,
-        projectId: activeProjectId,
-        confidence: confidence ?? null,
-        summary,
-        metadata: {
-          validation_missing: normalized.validation.missing,
-          validation_warnings: normalized.validation.warnings,
-          recovery_actions: normalized.recoveryActions,
-          payload_valid: normalized.validation.isValid,
-        },
-      });
-      setResponseData(normalized.payload);
-      return normalized.payload;
-    },
-    [activeProjectId, emitDecisionTrace, normalizeDecisionPayload]
-  );
   const runSafeDecisionExecution = useCallback(
     async (
       endpoint: string,
@@ -6561,448 +7711,286 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [environmentConfig, guardedResponseData]
   );
 
-  const openDecisionExecutionPanel = useCallback((nextView: "simulate" | "compare") => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora] Opening right panel");
-      console.log("[Nexora] Active executive view:", nextView);
-    }
-    openRightPanel(nextView);
-  }, [openRightPanel]);
+  const hasDecisionExecutionContext = useCallback(
+    (payload: DecisionExecutionPayload) =>
+      Boolean(guardedResponseData ?? sceneJson) ||
+      Boolean(payload.scenario) ||
+      (Array.isArray(payload.selected_objects) && payload.selected_objects.length > 0) ||
+      (Array.isArray(payload.context) && payload.context.length > 0),
+    [guardedResponseData, sceneJson]
+  );
 
-  const handleOpenSimulatePanel = useCallback(async () => {
-    const decisionRequestSeq = nextDemoFlowSequence(decisionFlowSeqRef);
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora] Simulate clicked");
-      console.log("[Nexora][RiskFlowRunSimulation]", {
-        requestedView: "simulate",
-      });
-      console.log("[Nexora][RunSimulationCanonicalOpen]", {
-        targetView: "simulate",
-      });
-    }
-    traceDemoFlowEvent({
-      phase: "started",
-      source: "decision_simulate",
-      seq: decisionRequestSeq,
-      detail: { requestedView: "simulate" },
-    });
-    openDecisionExecutionPanel("simulate");
-    setDecisionExecutionLoading(true);
-    setDecisionUiState((current) => ({
-      status: "loading",
-      mode: "simulate",
-      data: current.data,
-      error: null,
-    }));
+  const openDecisionExecutionPanel = useCallback(
+    async (
+      mode: "simulate" | "compare",
+      originView: RightPanelView | null = null
+    ) => {
+      if (decisionExecutionLoading) {
+        return;
+      }
 
-    try {
       const payload = buildDecisionPayload();
-      const executionIntent = {
-        id: "intent:simulate:current",
-        action: "Simulate current decision",
-        source: "recommendation" as const,
+      const requestedOriginView = originView ?? rightPanelState.view ?? null;
+      const targetView: ExecutiveActionTarget = mode;
+      const action: ExecutiveActionIntent =
+        mode === "compare" ? "compare_options" : "run_simulation";
+      const endpoint = mode === "compare" ? "/decision/compare" : "/decision/simulate";
+      const contextAvailable = hasDecisionExecutionContext(payload);
+      const decisionRequestSeq = nextDemoFlowSequence(decisionFlowSeqRef);
+      const fallbackMessage = getPanelActionFallbackMessage(action);
+      const executionIntent: DecisionExecutionIntent = {
+        id: `intent:${mode}:current`,
+        action: mode === "compare" ? "Compare current decision" : "Simulate current decision",
+        source: mode === "compare" ? "compare" : "recommendation",
         target_ids: Array.isArray(payload.selected_objects) ? payload.selected_objects : [],
         simulation_ready: true,
         compare_ready: true,
         safe_mode: true,
       };
-      const execution = await runSafeDecisionExecution("/decision/simulate", payload, executionIntent);
-      const result = execution.result;
-      if (!result) {
-        throw new Error(execution.error ?? "Simulation execution did not return a result.");
-      }
-      traceDemoFlowEvent({
-        phase: "response_received",
-        source: "decision_simulate",
-        seq: decisionRequestSeq,
-        detail: {
-          executionMode: execution.mode,
-          hasResult: true,
-        },
-      });
-      const normalizedSimulation =
-        normalizeBackendSimulation((result as { decision_simulation?: unknown } | null)?.decision_simulation ?? null) ??
-        normalizeBackendSimulation(result?.simulation_result ?? null);
-      if (!isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
-        traceDemoFlowEvent({
-          phase: "stale_ignored",
-          source: "decision_simulate",
-          seq: decisionRequestSeq,
-        });
-        return;
-      }
-      setDecisionResult(result);
-      setResponseData((current: any) =>
-        normalizeDecisionPayload(
-          {
-            ...appendDecisionActionTrace({
-              payload: current,
-              workspaceId: activeWorkspaceId,
-              projectId: activeProjectId,
-              mode: "simulate",
-              summary:
-                execution.mode === "real"
-                  ? "Simulation executed for the current recommendation."
-                  : "Simulation fell back to preview-safe execution.",
-              confidence:
-                typeof result?.simulation_result?.impact_score === "number"
-                  ? result.simulation_result.impact_score
-                  : null,
-              targetIds: Array.isArray(result?.simulation_result?.affected_objects)
-                ? result.simulation_result.affected_objects
-                : [],
-            }),
-            decision_result: result,
-            decision_simulation: normalizedSimulation ?? current?.decision_simulation ?? null,
-          }
-        ).payload
-      );
-      if (process.env.NODE_ENV !== "production" && normalizedSimulation) {
-        console.log("[Nexora][SimulationFlow]", {
-          triggered: true,
-          impacted: normalizedSimulation.impacted_nodes.length,
-          links: normalizedSimulation.propagation.length,
-        });
-      }
-      emitDecisionTrace({
-        stage: "simulation",
-        projectId: activeProjectId,
-        confidence:
-          typeof result?.simulation_result?.impact_score === "number"
-            ? result.simulation_result.impact_score
-            : null,
-        summary:
-          execution.mode === "real"
-            ? "Simulation executed successfully."
-            : execution.error ?? "Simulation fell back to preview mode.",
-        metadata: {
-          endpoint: "/decision/simulate",
-          execution_mode: execution.mode,
-        },
-      });
-      traceDemoFlowEvent({
-        phase: "canonical_result_ready",
-        source: "decision_simulate",
-        seq: decisionRequestSeq,
-        detail: {
-          affectedObjectCount: Array.isArray(result?.simulation_result?.affected_objects)
-            ? result.simulation_result.affected_objects.length
-            : 0,
-        },
-      });
-      setDecisionUiState({
-        status: "ready",
-        mode: "simulate",
-        data: result,
-        error: execution.mode === "preview" ? execution.error ?? null : null,
-      });
-      traceDemoFlowEvent({
-        phase: "commit_applied",
-        source: "decision_simulate",
-        seq: decisionRequestSeq,
-        detail: { mode: execution.mode },
-      });
-    } catch (error) {
-      if (!isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
-        traceDemoFlowEvent({
-          phase: "stale_ignored",
-          source: "decision_simulate",
-          seq: decisionRequestSeq,
-        });
-        return;
-      }
-      console.error("[Nexora][DecisionExecution] request failed", { endpoint: "/decision/simulate", error });
-      const fallback: DecisionExecutionResult = {
-        simulation_result: {
-          impact_score: 0.68,
-          risk_change: -0.12,
-          kpi_effects: [],
-          affected_objects: ["obj_delivery"],
-        },
-        comparison: [],
-        scene_actions: {
-          highlight: ["obj_delivery"],
-          dim: [],
-        },
-      };
-      const fallbackSimulation =
-        normalizeBackendSimulation(fallback?.simulation_result ?? null) ??
-        null;
-      setDecisionResult(fallback);
-      setResponseData((current: any) =>
-        normalizeDecisionPayload(
-          {
-            ...appendDecisionActionTrace({
-              payload: current,
-              workspaceId: activeWorkspaceId,
-              projectId: activeProjectId,
-              mode: "simulate",
-              summary: "Fallback simulation opened for the current recommendation.",
-              confidence:
-                typeof fallback?.simulation_result?.impact_score === "number"
-                  ? fallback.simulation_result.impact_score
-                  : null,
-              targetIds: Array.isArray(fallback?.simulation_result?.affected_objects)
-                ? fallback.simulation_result.affected_objects
-                : [],
-            }),
-            decision_result: fallback,
-            decision_simulation: fallbackSimulation ?? current?.decision_simulation ?? null,
-          }
-        ).payload
-      );
-      if (process.env.NODE_ENV !== "production" && fallbackSimulation) {
-        console.log("[Nexora][SimulationFlow]", {
-          triggered: true,
-          impacted: fallbackSimulation.impacted_nodes.length,
-          links: fallbackSimulation.propagation.length,
-        });
-      }
-      emitDecisionTrace({
-        stage: "simulation",
-        projectId: activeProjectId,
-        confidence:
-          typeof fallback?.simulation_result?.impact_score === "number"
-            ? fallback.simulation_result.impact_score
-            : null,
-        summary: "Simulation backend failed. Fallback simulation opened.",
-        metadata: {
-          endpoint: "/decision/simulate",
-        },
-      });
-      traceDemoFlowEvent({
-        phase: "canonical_result_ready",
-        source: "decision_simulate",
-        seq: decisionRequestSeq,
-        detail: { mode: "fallback" },
-      });
-      setDecisionUiState({
-        status: "ready",
-        mode: "simulate",
-        data: fallback,
-        error: "Simulation is not available yet. Showing fallback result.",
-      });
-      traceDemoFlowEvent({
-        phase: "commit_applied",
-        source: "decision_simulate",
-        seq: decisionRequestSeq,
-        detail: { mode: "fallback" },
-      });
-    } finally {
-      if (isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
-        setDecisionExecutionLoading(false);
-      }
-    }
-  }, [activeProjectId, activeWorkspaceId, buildDecisionPayload, emitDecisionTrace, normalizeDecisionPayload, openDecisionExecutionPanel, runSafeDecisionExecution]);
 
-  const handleOpenComparePanel = useCallback(async () => {
-    const decisionRequestSeq = nextDemoFlowSequence(decisionFlowSeqRef);
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora] Compare clicked");
-    }
-    traceDemoFlowEvent({
-      phase: "started",
-      source: "decision_compare",
-      seq: decisionRequestSeq,
-      detail: { requestedView: "compare" },
-    });
-    openDecisionExecutionPanel("compare");
-    setDecisionExecutionLoading(true);
-    setDecisionUiState((current) => ({
-      status: "loading",
-      mode: "compare",
-      data: current.data,
-      error: null,
-    }));
+      const applyExecutionOutcome = (
+        result: DecisionExecutionResult,
+        status: "ready" | "error",
+        errorMessage: string | null,
+        summary: string,
+        executionMode: "real" | "preview" | "fallback"
+      ) => {
+        const normalizedSimulation =
+          normalizeBackendSimulation((result as { decision_simulation?: unknown } | null)?.decision_simulation ?? null) ??
+          normalizeBackendSimulation(result?.simulation_result ?? null);
 
-    try {
-      const payload = buildDecisionPayload();
-      const executionIntent = {
-        id: "intent:compare:current",
-        action: "Compare current decision",
-        source: "compare" as const,
-        target_ids: Array.isArray(payload.selected_objects) ? payload.selected_objects : [],
-        simulation_ready: true,
-        compare_ready: true,
-        safe_mode: true,
-      };
-      const execution = await runSafeDecisionExecution("/decision/compare", payload, executionIntent);
-      const result = execution.result;
-      if (!result) {
-        throw new Error(execution.error ?? "Compare execution did not return a result.");
-      }
-      traceDemoFlowEvent({
-        phase: "response_received",
-        source: "decision_compare",
-        seq: decisionRequestSeq,
-        detail: {
-          executionMode: execution.mode,
-          hasResult: true,
-        },
-      });
-      if (!isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
-        traceDemoFlowEvent({
-          phase: "stale_ignored",
-          source: "decision_compare",
-          seq: decisionRequestSeq,
+        setDecisionResult(result);
+        setResponseData((current: any) =>
+          normalizeDecisionPayload(
+            {
+              ...appendDecisionActionTrace({
+                payload: current,
+                workspaceId: activeWorkspaceId,
+                projectId: activeProjectId,
+                mode,
+                summary,
+                confidence:
+                  mode === "compare"
+                    ? typeof result?.comparison?.[0]?.score === "number"
+                      ? result.comparison[0].score
+                      : null
+                    : typeof result?.simulation_result?.impact_score === "number"
+                      ? result.simulation_result.impact_score
+                      : null,
+                targetIds: Array.isArray(result?.simulation_result?.affected_objects)
+                  ? result.simulation_result.affected_objects
+                  : [],
+              }),
+              decision_result: result,
+              decision_simulation: normalizedSimulation ?? current?.decision_simulation ?? null,
+            }
+          ).payload
+        );
+        setDecisionUiState({
+          status,
+          mode,
+          data: result,
+          error: errorMessage,
         });
-        return;
-      }
-      setDecisionResult(result);
-      setResponseData((current: any) =>
-        normalizeDecisionPayload(
-          appendDecisionActionTrace({
-            payload: current,
-            workspaceId: activeWorkspaceId,
-            projectId: activeProjectId,
-            mode: "compare",
-            summary:
-              execution.mode === "real"
-                ? "Comparison opened for the current recommendation and alternatives."
-                : "Comparison fell back to preview-safe execution.",
-            confidence:
-              typeof result?.comparison?.[0]?.score === "number"
+        emitDecisionTrace({
+          stage: "simulation",
+          projectId: activeProjectId,
+          confidence:
+            mode === "compare"
+              ? typeof result?.comparison?.[0]?.score === "number"
                 ? result.comparison[0].score
+                : null
+              : typeof result?.simulation_result?.impact_score === "number"
+                ? result.simulation_result.impact_score
                 : null,
-            targetIds: Array.isArray(result?.simulation_result?.affected_objects)
-              ? result.simulation_result.affected_objects
-              : [],
-          })
-        ).payload
-      );
-      emitDecisionTrace({
-        stage: "simulation",
-        projectId: activeProjectId,
-        confidence:
-          typeof result?.comparison?.[0]?.score === "number"
-            ? result.comparison[0].score
-            : null,
-        summary:
-          execution.mode === "real"
-            ? "Comparison executed successfully."
-            : execution.error ?? "Comparison fell back to preview mode.",
-        metadata: {
-          endpoint: "/decision/compare",
-          execution_mode: execution.mode,
-        },
-      });
+          summary,
+          metadata: {
+            endpoint,
+            execution_mode: executionMode,
+            mode,
+          },
+        });
+        if (isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
+          lastExplicitPanelIntentRef.current = {
+            view: targetView,
+            source: "openDecisionExecutionPanel",
+            clickedTab: targetView,
+            clickedNav: "strategy_group",
+            timestamp: Date.now(),
+          };
+          dispatchCanonicalAction(
+            normalizeOpenPanelCta({
+              view: targetView,
+              contextId: null,
+              clickedTab: targetView,
+              clickedNav: "strategy_group",
+              rawSource: "openDecisionExecutionPanel",
+              source: "panel_cta",
+              surface: "decision_flow",
+            })
+          );
+          globalThis.console.log("[NEXORA_DECISION_PANEL_OPEN]", {
+            mode,
+            targetView,
+          });
+        }
+      };
+
+      const buildPreviewResult = (): DecisionExecutionResult => {
+        const previewResult = buildPreviewDecisionExecutionResult({
+          intent: executionIntent,
+          responseData: guardedResponseData,
+        });
+        if (mode === "compare") {
+          return {
+            ...previewResult,
+            comparison: [
+              { option: "Option A", score: 0.68 },
+              { option: "Option B", score: 0.59 },
+            ],
+            comparison_result: {
+              best_option_id: "option_a",
+              comparison_summary: "Preview comparison is active until backend compare is available.",
+              options: [
+                { id: "option_a", label: "Option A", score: 0.68 },
+                { id: "option_b", label: "Option B", score: 0.59 },
+              ],
+            },
+          };
+        }
+        return previewResult;
+      };
+
       traceDemoFlowEvent({
-        phase: "canonical_result_ready",
-        source: "decision_compare",
+        phase: "started",
+        source: mode === "compare" ? "decision_compare" : "decision_simulate",
         seq: decisionRequestSeq,
         detail: {
-          optionCount: Array.isArray(result?.comparison) ? result.comparison.length : 0,
+          requestedView: targetView,
+          originView: requestedOriginView,
+          contextAvailable,
         },
       });
-      setDecisionUiState({
-        status: "ready",
-        mode: "compare",
-        data: result,
-        error: execution.mode === "preview" ? execution.error ?? null : null,
+      setDecisionExecutionLoading(true);
+      setDecisionUiState((current) => ({
+        status: "loading",
+        mode,
+        data: current.data,
+        error: null,
+      }));
+      globalThis.console.log("[NEXORA_DECISION_EXECUTION]", {
+        mode,
+        status: "loading",
+        hasData: false,
       });
-      traceDemoFlowEvent({
-        phase: "commit_applied",
-        source: "decision_compare",
-        seq: decisionRequestSeq,
-        detail: { mode: execution.mode },
-      });
-    } catch (error) {
-      if (!isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
-        traceDemoFlowEvent({
-          phase: "stale_ignored",
-          source: "decision_compare",
-          seq: decisionRequestSeq,
+
+      try {
+        if (!contextAvailable) {
+          const previewResult = buildPreviewResult();
+          applyExecutionOutcome(
+            previewResult,
+            "ready",
+            fallbackMessage,
+            mode === "compare"
+              ? "Comparison context is unavailable. Showing preview result."
+              : "Simulation context is unavailable. Showing preview result.",
+            "preview"
+          );
+          globalThis.console.log("[NEXORA_DECISION_EXECUTION]", {
+            mode,
+            status: "ready",
+            hasData: true,
+          });
+          return;
+        }
+
+        const execution = await runSafeDecisionExecution(endpoint, payload, executionIntent);
+        const result = execution.result;
+        if (!result) {
+          throw new Error(execution.error ?? `${mode} execution did not return a result.`);
+        }
+        if (!isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
+          traceDemoFlowEvent({
+            phase: "stale_ignored",
+            source: mode === "compare" ? "decision_compare" : "decision_simulate",
+            seq: decisionRequestSeq,
+          });
+          return;
+        }
+
+        applyExecutionOutcome(
+          result,
+          "ready",
+          execution.mode === "preview" ? execution.error ?? null : null,
+          mode === "compare"
+            ? execution.mode === "real"
+              ? "Comparison executed successfully."
+              : execution.error ?? "Comparison fell back to preview mode."
+            : execution.mode === "real"
+              ? "Simulation executed successfully."
+              : execution.error ?? "Simulation fell back to preview mode.",
+          execution.mode === "failed" ? "fallback" : execution.mode
+        );
+        globalThis.console.log("[NEXORA_DECISION_EXECUTION]", {
+          mode,
+          status: "ready",
+          hasData: true,
         });
-        return;
+      } catch (error) {
+        if (!isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
+          traceDemoFlowEvent({
+            phase: "stale_ignored",
+            source: mode === "compare" ? "decision_compare" : "decision_simulate",
+            seq: decisionRequestSeq,
+          });
+          return;
+        }
+        console.error("[Nexora][DecisionExecution] request failed", { endpoint, error });
+        const previewResult = buildPreviewResult();
+        applyExecutionOutcome(
+          previewResult,
+          "ready",
+          mode === "compare"
+            ? "Comparison is not available yet. Showing preview result."
+            : "Simulation is not available yet. Showing preview result.",
+          mode === "compare"
+            ? "Compare backend failed. Preview comparison opened."
+            : "Simulation backend failed. Preview simulation opened.",
+          "fallback"
+        );
+        globalThis.console.log("[NEXORA_DECISION_EXECUTION]", {
+          mode,
+          status: "error",
+          hasData: true,
+        });
+      } finally {
+        if (isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
+          setDecisionExecutionLoading(false);
+        }
       }
-      console.error("[Nexora][DecisionExecution] request failed", { endpoint: "/decision/compare", error });
-      const fallback: DecisionExecutionResult = {
-        simulation_result: {
-          impact_score: 0.68,
-          risk_change: -0.12,
-          kpi_effects: [],
-          affected_objects: [],
-        },
-        comparison: [
-          { option: "Option A", score: 0.68 },
-          { option: "Option B", score: 0.59 },
-        ],
-        scene_actions: {
-          highlight: [],
-          dim: [],
-        },
-      };
-      setDecisionResult(fallback);
-      setResponseData((current: any) =>
-        normalizeDecisionPayload(
-          appendDecisionActionTrace({
-            payload: current,
-            workspaceId: activeWorkspaceId,
-            projectId: activeProjectId,
-            mode: "compare",
-            summary: "Fallback comparison opened for the current recommendation.",
-            confidence:
-              typeof fallback?.comparison?.[0]?.score === "number"
-                ? fallback.comparison[0].score
-                : null,
-            targetIds: Array.isArray(fallback?.simulation_result?.affected_objects)
-              ? fallback.simulation_result.affected_objects
-              : [],
-          })
-        ).payload
-      );
-      emitDecisionTrace({
-        stage: "simulation",
-        projectId: activeProjectId,
-        confidence:
-          typeof fallback?.comparison?.[0]?.score === "number"
-            ? fallback.comparison[0].score
-            : null,
-        summary: "Compare backend failed. Fallback comparison opened.",
-        metadata: {
-          endpoint: "/decision/compare",
-        },
-      });
-      traceDemoFlowEvent({
-        phase: "canonical_result_ready",
-        source: "decision_compare",
-        seq: decisionRequestSeq,
-        detail: { mode: "fallback" },
-      });
-      setDecisionUiState({
-        status: "ready",
-        mode: "compare",
-        data: fallback,
-        error: "Comparison is not available yet. Showing fallback result.",
-      });
-      traceDemoFlowEvent({
-        phase: "commit_applied",
-        source: "decision_compare",
-        seq: decisionRequestSeq,
-        detail: { mode: "fallback" },
-      });
-    } finally {
-      if (isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
-        setDecisionExecutionLoading(false);
-      }
-    }
-  }, [activeProjectId, activeWorkspaceId, buildDecisionPayload, emitDecisionTrace, normalizeDecisionPayload, openDecisionExecutionPanel, runSafeDecisionExecution]);
+    },
+    [
+      activeProjectId,
+      activeWorkspaceId,
+      buildDecisionPayload,
+      decisionExecutionLoading,
+      emitDecisionTrace,
+      dispatchCanonicalAction,
+      guardedResponseData,
+      hasDecisionExecutionContext,
+      normalizeDecisionPayload,
+      rightPanelState.view,
+      runSafeDecisionExecution,
+    ]
+  );
 
   const runDemoScenario = useCallback(async () => {
-    loadDomainDemoScenario(activeDomainExperience.experience.domainId);
+    await loadDomainDemoScenario(activeDomainExperience.experience.domainId);
     await sendText("inventory shortage is delaying delivery", `demo:investor-flow:${Date.now()}`, {
       source: "demo",
     });
-    window.setTimeout(() => {
-      void handleOpenSimulatePanel();
-    }, 450);
-    window.setTimeout(() => {
-      void handleOpenComparePanel();
-    }, 1200);
   }, [
     activeDomainExperience.experience.domainId,
-    handleOpenComparePanel,
-    handleOpenSimulatePanel,
     loadDomainDemoScenario,
     sendText,
   ]);
@@ -7030,57 +8018,65 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     };
   }, [runDemoScenario]);
 
-  const handleOpenDecisionPolicyPanel = useCallback((contextId: string | null = null) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][CanonicalPanelOpen]", {
-        source: "handleOpenDecisionPolicyPanel",
-        requestedView: "decision_policy",
-        contextId,
-      });
-    }
-    openRightPanel("decision_policy", contextId);
-  }, [openRightPanel]);
+  const handleOpenDecisionPolicyPanel = useCallback(
+    (contextId: string | null = null) => {
+      dispatchCanonicalAction(
+        normalizeOpenPanelCta({
+          view: "decision_policy",
+          contextId,
+          rawSource: "handleOpenDecisionPolicyPanel",
+          source: "system",
+          surface: "sub_panel",
+        })
+      );
+    },
+    [dispatchCanonicalAction]
+  );
 
-  const handleOpenDecisionGovernancePanel = useCallback((contextId: string | null = null) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][CanonicalPanelOpen]", {
-        source: "handleOpenDecisionGovernancePanel",
-        requestedView: "decision_governance",
-        contextId,
-      });
-      console.warn("[Nexora][PolicyHijackBlocked]", {
-        source: "handleOpenDecisionGovernancePanel",
-        attemptedView: "dashboard",
-      });
-    }
-    openRightPanel("decision_governance", contextId);
-  }, [openRightPanel]);
+  const handleOpenDecisionGovernancePanel = useCallback(
+    (contextId: string | null = null) => {
+      dispatchCanonicalAction(
+        normalizeOpenPanelCta({
+          view: "decision_governance",
+          contextId,
+          rawSource: "handleOpenDecisionGovernancePanel",
+          source: "system",
+          surface: "sub_panel",
+        })
+      );
+    },
+    [dispatchCanonicalAction]
+  );
 
-  const handleOpenExecutiveApprovalPanel = useCallback((contextId: string | null = null) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][CanonicalPanelOpen]", {
-        source: "handleOpenExecutiveApprovalPanel",
-        requestedView: "executive_approval",
-        contextId,
-      });
-      console.warn("[Nexora][PolicyHijackBlocked]", {
-        source: "handleOpenExecutiveApprovalPanel",
-        attemptedView: "dashboard",
-      });
-    }
-    openRightPanel("executive_approval", contextId);
-  }, [openRightPanel]);
+  const handleOpenExecutiveApprovalPanel = useCallback(
+    (contextId: string | null = null) => {
+      dispatchCanonicalAction(
+        normalizeOpenPanelCta({
+          view: "executive_approval",
+          contextId,
+          rawSource: "handleOpenExecutiveApprovalPanel",
+          source: "system",
+          surface: "sub_panel",
+        })
+      );
+    },
+    [dispatchCanonicalAction]
+  );
 
-  const handleOpenTimelinePanel = useCallback((contextId: string | null = null) => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][CanonicalPanelOpen]", {
-        source: "handleOpenTimelinePanel",
-        requestedView: "timeline",
-        contextId,
-      });
-    }
-    openRightPanel("timeline", contextId);
-  }, [openRightPanel]);
+  const handleOpenTimelinePanel = useCallback(
+    (contextId: string | null = null) => {
+      dispatchCanonicalAction(
+        normalizeOpenPanelCta({
+          view: "timeline",
+          contextId,
+          rawSource: "handleOpenTimelinePanel",
+          source: "system",
+          surface: "sub_panel",
+        })
+      );
+    },
+    [dispatchCanonicalAction]
+  );
 
   const handlePreviewDecision = useCallback(
     (intent: DecisionExecutionIntent | null): DecisionAutomationResult => {
@@ -7126,7 +8122,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         mode: "preview",
         summary: `Preview applied to ${intent.target_ids.length} ${intent.target_ids.length === 1 ? "target" : "targets"}.`,
         affected_target_ids: intent.target_ids,
-        next_view: rightPanelState.view ?? "dashboard",
+        next_view: rightPanelState.view ?? null,
       };
     },
     [activeProjectId, activeWorkspaceId, emitDecisionTrace, guardedResponseData, normalizeDecisionPayload, rightPanelState.view]
@@ -7176,7 +8172,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         mode: "apply",
         summary: `Safe mode is active across ${intent.target_ids.length} ${intent.target_ids.length === 1 ? "target" : "targets"}.`,
         affected_target_ids: intent.target_ids,
-        next_view: rightPanelState.view ?? "dashboard",
+        next_view: rightPanelState.view ?? null,
       };
     },
     [activeProjectId, activeWorkspaceId, emitDecisionTrace, guardedResponseData, normalizeDecisionPayload, rightPanelState.view]
@@ -7344,31 +8340,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [warRoom.applyOverlaySummary]
   );
-  const panelData = useMemo<PanelSharedData>(
+  const panelDataValidation = useMemo<PanelSharedDataValidationResult>(
     () => {
-      const scannerPanelData = buildCanonicalPanelData(guardedResponseData ?? null);
+      const DEBUG_PANEL_TRACE = process.env.NODE_ENV !== "production";
+      const guardedResponseRecord =
+        visibleResponseData && typeof visibleResponseData === "object" && !Array.isArray(visibleResponseData)
+          ? visibleResponseData
+          : null;
+      const scannerPanelData = buildCanonicalPanelData(visibleResponseData ?? null);
       const promptAdviceFeedback =
-        guardedResponseData?.prompt_feedback?.advice_feedback &&
-        typeof guardedResponseData.prompt_feedback.advice_feedback === "object"
-          ? guardedResponseData.prompt_feedback.advice_feedback
+        visibleResponseData?.prompt_feedback?.advice_feedback &&
+        typeof visibleResponseData.prompt_feedback.advice_feedback === "object"
+          ? visibleResponseData.prompt_feedback.advice_feedback
           : null;
       const canonicalRecommendationSource =
-        guardedResponseData?.canonical_recommendation &&
-        typeof guardedResponseData.canonical_recommendation === "object"
-          ? guardedResponseData.canonical_recommendation
+        visibleResponseData?.canonical_recommendation &&
+        typeof visibleResponseData.canonical_recommendation === "object"
+          ? visibleResponseData.canonical_recommendation
           : null;
       const sourceAdvice =
-        strategicAdvice ??
-        guardedResponseData?.strategic_advice ??
+        visibleStrategicAdvice ??
+        visibleResponseData?.strategic_advice ??
         promptAdviceFeedback ??
         canonicalRecommendationSource ??
         null;
-      const sourceDashboard = guardedResponseData?.executive_summary_surface ?? null;
+      const sourceDashboard = visibleResponseData?.executive_summary_surface ?? null;
       const decisionAdviceSlice = decisionResult?.advice_slice ?? null;
       const decisionTimelineSlice = decisionResult?.timeline_slice ?? null;
       const decisionWarRoomSlice = decisionResult?.war_room_slice ?? null;
       const decisionSimulation =
-        normalizeBackendSimulation(guardedResponseData?.decision_simulation ?? null) ??
+        normalizeBackendSimulation(visibleResponseData?.decision_simulation ?? null) ??
         normalizeBackendSimulation(decisionResult?.simulation_result ?? null) ??
         null;
       // --- Normalize simulation for contract ---
@@ -7392,14 +8393,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           }
         : null;
       const simulationTimelineSource =
-        guardedResponseData?.decision_simulation?.timeline &&
-        typeof guardedResponseData.decision_simulation.timeline === "object"
-          ? guardedResponseData.decision_simulation.timeline
+        visibleResponseData?.decision_simulation?.timeline &&
+        typeof visibleResponseData.decision_simulation.timeline === "object"
+          ? visibleResponseData.decision_simulation.timeline
           : null;
       const replayTimelineSource =
-        guardedResponseData?.decision_replay?.timeline &&
-        typeof guardedResponseData.decision_replay.timeline === "object"
-          ? guardedResponseData.decision_replay.timeline
+        visibleResponseData?.decision_replay?.timeline &&
+        typeof visibleResponseData.decision_replay.timeline === "object"
+          ? visibleResponseData.decision_replay.timeline
           : null;
       const timelineFromSimulation = simulationTimelineSource
         ? {
@@ -7503,11 +8504,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           }
         : null;
       const mappedCompare =
-        guardedResponseData?.decision_comparison ??
-        guardedResponseData?.comparison ??
+        visibleResponseData?.decision_comparison ??
+        visibleResponseData?.comparison ??
         decisionResult?.comparison ??
         null;
-      const mappedReplay = guardedResponseData?.decision_replay ?? null;
+      const mappedReplay = visibleResponseData?.decision_replay ?? null;
       const fallbackWarRoom =
         fallbackAdvice ||
         mappedSimulation ||
@@ -7536,7 +8537,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               canonical_recommendation: canonicalRecommendationSource ?? null,
               decision_simulation: mappedSimulation,
               decision_comparison: mappedCompare,
-              decision_cockpit: decisionCockpit ?? guardedResponseData?.decision_cockpit ?? null,
+              decision_cockpit: visibleDecisionCockpit ?? visibleResponseData?.decision_cockpit ?? null,
               executive_summary_surface: mappedDashboard,
               strategic_council: strategicCouncil ?? null,
             }
@@ -7589,7 +8590,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               };
             })()
           : scannerPanelData.warRoom ??
-        guardedResponseData?.multi_agent_decision ??
+        visibleResponseData?.multi_agent_decision ??
         warRoom.intelligence ??
         fallbackWarRoom ??
         null;
@@ -7607,30 +8608,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             })
           : scannerPanelData.timeline ??
         timelineFromSimulation ??
-        guardedResponseData?.timeline_impact ??
+        visibleResponseData?.timeline_impact ??
         null;
-      const nextPanelData: PanelSharedData = {
-        raw: guardedResponseData ?? sceneJson ?? null,
-        responseData: guardedResponseData ?? null,
-        sceneJson: sceneJson ?? null,
+      const nextPanelDataInput = {
+        ...(guardedResponseRecord ?? {}),
+        raw: visibleResponseData ?? visibleSceneJson ?? null,
+        responseData: visibleResponseData ?? null,
+        sceneJson: visibleSceneJson ?? null,
+        scene_json: visibleSceneJson ?? null,
         dashboard: mappedDashboard,
         advice: mappedAdvice,
         strategicAdvice: mappedAdvice,
-        promptFeedback: guardedResponseData?.prompt_feedback ?? null,
-        decisionCockpit: decisionCockpit ?? guardedResponseData?.decision_cockpit ?? null,
+        promptFeedback: visibleResponseData?.prompt_feedback ?? null,
+        prompt_feedback: visibleResponseData?.prompt_feedback ?? null,
+        decisionCockpit: visibleDecisionCockpit ?? visibleResponseData?.decision_cockpit ?? null,
+        decision_cockpit: visibleDecisionCockpit ?? visibleResponseData?.decision_cockpit ?? null,
         executiveSummary: mappedDashboard,
         simulation: mappedSimulation,
+        decision_simulation: visibleResponseData?.decision_simulation ?? decisionResult?.simulation_result ?? null,
+        decisionSimulation: visibleResponseData?.decision_simulation ?? decisionResult?.simulation_result ?? null,
         timeline: mappedTimeline,
-        risk: riskPropagation ?? guardedResponseData?.risk_propagation ?? null,
-        memory: memoryInsights ?? guardedResponseData?.decision_memory ?? null,
+        risk: visibleRiskPropagation ?? visibleResponseData?.risk_propagation ?? null,
+        memory: visibleMemoryInsights ?? visibleResponseData?.decision_memory ?? null,
         replay: mappedReplay,
-        canonicalRecommendation: guardedResponseData?.canonical_recommendation ?? null,
+        canonicalRecommendation: visibleResponseData?.canonical_recommendation ?? null,
+        canonical_recommendation: visibleResponseData?.canonical_recommendation ?? null,
         decisionResult: decisionResult ?? null,
+        decision_result: decisionResult ?? null,
         warRoom: mappedWarRoom,
+        war_room: mappedWarRoom,
         compare: mappedCompare,
-        governance: guardedResponseData?.decision_governance ?? null,
-        approval: guardedResponseData?.approval_workflow ?? null,
-        policy: guardedResponseData?.decision_policy ?? null,
+        governance: visibleResponseData?.decision_governance ?? null,
+        approval: visibleResponseData?.approval_workflow ?? null,
+        policy: visibleResponseData?.decision_policy ?? null,
         // --- Normalize strategicCouncil for contract ---
         strategicCouncil: strategicCouncil
           ? {
@@ -7652,9 +8662,98 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         orgMemory: null,
         strategicCommand: null,
         memoryEntries: decisionMemoryEntries,
+        nexoraB8PanelContext,
       };
-
-      if (process.env.NODE_ENV !== "production") {
+      const activeFamilyAudit = activePanelFamilyAuditRef.current;
+      const panelContract = validatePanelSharedDataWithDiagnostics(nextPanelDataInput);
+      const nextPanelData = panelContract.data;
+      const familyContractDiag = readPanelFamilyContractDiagnostics(
+        activeFamilyAudit?.expectedFamily ?? null,
+        nextPanelDataInput as Record<string, unknown>,
+        nextPanelData as Record<string, unknown>
+      );
+      tracePanelFamilyAudit("[Nexora][PanelFamilyAudit] canonical_presence", {
+        canonicalFamilyPresent: familyContractDiag.canonical.familyPresent,
+        canonicalPayloadShape: familyContractDiag.canonical.payloadShape,
+      });
+      const contractRenderable = familyContractDiag.contractRenderable;
+      const contractSalvaged = Boolean(activeFamilyAudit && familyContractDiag.payloadsLikelySalvaged);
+      if (activeFamilyAudit && activePanelFamilyAuditRef.current?.seq === activeFamilyAudit.seq) {
+        activePanelFamilyAuditRef.current = {
+          ...activePanelFamilyAuditRef.current,
+          contractRenderable,
+          contractSalvaged,
+        };
+        traceAuditRef("update", {
+          source: activePanelFamilyAuditRef.current.source,
+          seq: activePanelFamilyAuditRef.current.seq,
+          prompt: activePanelFamilyAuditRef.current.prompt,
+          expectedFamily: activePanelFamilyAuditRef.current.expectedFamily ?? null,
+          contractRenderable,
+          contractSalvaged,
+          reason: "contract_validation_result",
+        });
+      } else if (activeFamilyAudit) {
+        traceAuditRef("stale_overwrite_blocked", {
+          source: activeFamilyAudit.source,
+          seq: activeFamilyAudit.seq,
+          prompt: activeFamilyAudit.prompt,
+          expectedFamily: activeFamilyAudit.expectedFamily ?? null,
+          contractRenderable,
+          contractSalvaged,
+          reason: "contract_validation_seq_mismatch",
+        });
+      }
+      tracePanelFamilyAudit("[Nexora][PanelFamilyAudit] contract_result", {
+        salvaged: contractSalvaged,
+        renderable: contractRenderable,
+        validatedPayloadShape: familyContractDiag.validated.payloadShape,
+      });
+      tracePanelFlowRuntime("contract_result", {
+        requestedView: activeFamilyAudit?.expectedFamily ?? null,
+        dashboardOverride:
+          rightPanelState.view === "dashboard" &&
+          Boolean(activeFamilyAudit?.expectedFamily) &&
+          activeFamilyAudit?.expectedFamily !== "dashboard" &&
+          contractRenderable,
+      });
+      if (DEBUG_PANEL_TRACE) {
+        console.log("[Nexora][Trace][HomeScreenRaw]", {
+          hasResponseData: Boolean(visibleResponseData),
+          hasSceneJson: Boolean(visibleSceneJson),
+          hasStrategicAdvice: Boolean(visibleStrategicAdvice),
+          hasDecisionCockpit: Boolean(visibleDecisionCockpit),
+          hasDecisionResult: Boolean(decisionResult),
+          hasRiskPropagation: Boolean(visibleRiskPropagation),
+          hasConflicts: Array.isArray(visibleConflicts) ? visibleConflicts.length : 0,
+          hasWarRoomIntelligence: Boolean(warRoom.intelligence),
+          hasMemoryEntries: Array.isArray(decisionMemoryEntries) ? decisionMemoryEntries.length : 0,
+          currentRightPanelView: rightPanelState.view ?? null,
+        });
+        console.log("[Nexora][Trace][HomeScreenPanelData]", {
+          hasDashboard: Boolean(
+            mappedDashboard ??
+              visibleDecisionCockpit ??
+              visibleResponseData?.executive_summary_surface ??
+              visibleResponseData?.decision_cockpit
+          ),
+          hasAdvice: Boolean(mappedAdvice ?? visibleStrategicAdvice ?? visibleResponseData?.strategic_advice),
+          hasTimeline: Boolean(mappedTimeline ?? decisionTimelineSlice ?? visibleResponseData?.timeline_impact),
+          hasSimulation: Boolean(mappedSimulation ?? visibleResponseData?.decision_simulation ?? decisionResult?.simulation_result),
+          hasRisk: Boolean(visibleRiskPropagation ?? visibleResponseData?.risk_propagation),
+          hasFragility: Boolean(
+            scannerPanelData.fragility ??
+              visibleResponseData?.fragility ??
+              visibleResponseData?.fragility_scan ??
+              visibleSceneJson?.scene?.fragility
+          ),
+          hasConflict: Boolean(
+            visibleResponseData?.conflict ??
+              visibleResponseData?.conflicts ??
+              visibleResponseData?.multi_agent_decision?.conflicts
+          ),
+          hasWarRoom: Boolean(mappedWarRoom ?? strategicCouncil ?? warRoom.intelligence),
+        });
         console.log("[Nexora][CanonicalPanelData]", {
           source: scannerPanelData.advice || scannerPanelData.timeline || scannerPanelData.warRoom ? "scanner_truth" : "fallback",
           hasAdvice: Boolean(nextPanelData.advice ?? nextPanelData.strategicAdvice),
@@ -7663,56 +8762,199 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         });
       }
 
-      return validatePanelSharedData(nextPanelData);
+      return panelContract;
     },
     [
-      guardedResponseData,
-      sceneJson,
-      strategicAdvice,
-      decisionCockpit,
-      riskPropagation,
-      memoryInsights,
+      visibleResponseData,
+      visibleSceneJson,
+      visibleStrategicAdvice,
+      visibleDecisionCockpit,
+      visibleRiskPropagation,
+      visibleMemoryInsights,
+      visibleConflicts,
       decisionResult,
       warRoom.intelligence,
       strategicCouncil,
       decisionMemoryEntries,
+      rightPanelState.view,
+      traceAuditRef,
+      nexoraB8PanelContext,
     ]
   );
+  const panelData = panelDataValidation.data;
+  const stablePanelData = useShallowStableObject(panelData);
+
+  const panelDataForResolver = useMemo<PanelSharedData>(() => {
+    void panelResolverB18Epoch;
+    return {
+      ...stablePanelData,
+      nexoraAuditRecord: lastAuditRecordRef.current,
+      nexoraPipelineTrust: nexoraPanelB18TrustRef.current,
+      nexoraBiasLayerContext: biasLayerContext,
+      nexoraOperatorMode: nexoraMode,
+    } as PanelSharedData;
+  }, [stablePanelData, panelResolverB18Epoch, biasLayerContext, nexoraMode]);
+
+  const centerCompareNexoraB18 = useMemo(() => {
+    if (centerComponent !== "compare") return null;
+    const resolved = buildPanelResolvedData("compare", panelDataForResolver);
+    const raw = resolved.data;
+    const rec = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
+    return (rec?.nexoraB18Compare as NexoraB18CompareResolved | undefined) ?? null;
+  }, [centerComponent, panelDataForResolver]);
+
+  const lastHomePanelContractDebugSigRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (!panelDataValidation.contractFailed) return;
+    const sig = panelDataValidation.contractDebugSignature;
+    if (lastHomePanelContractDebugSigRef.current === sig) return;
+    lastHomePanelContractDebugSigRef.current = sig;
+    const detail = panelDataValidation.contractFailureDetail;
+    if (!detail) return;
+    emitDebugEvent({
+      type: "contract_validation_failed",
+      layer: "contract",
+      source: "panelDataContract",
+      status: "warn",
+      message: `PanelSharedData validation failed (${detail.issueCount} issues); salvaged`,
+      metadata: {
+        issueCount: detail.issueCount,
+        issuePaths: detail.issuePaths,
+        rejectedSlices: detail.rejectedSlices,
+      },
+    });
+    emitGuardRailAlerts(runGuardChecks({ trigger: "contract_check" }, getRecentDebugEvents()));
+  }, [panelDataValidation.contractFailed, panelDataValidation.contractDebugSignature]);
+
+  const previousPanelDataRef = useRef<PanelSharedData | null>(null);
+  const previousResponseDataRef = useRef<typeof visibleResponseData | null>(null);
+  const previousSceneJsonRef = useRef<typeof visibleSceneJson | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const panelDataRefChanged = previousPanelDataRef.current !== stablePanelData;
+    const responseDataRefChanged = previousResponseDataRef.current !== visibleResponseData;
+    const sceneJsonRefChanged = previousSceneJsonRef.current !== visibleSceneJson;
+    if (!panelDataRefChanged && !responseDataRefChanged && !sceneJsonRefChanged) {
+      return;
+    }
+    console.log("[NEXORA][DATA_STABILITY]", {
+      panelDataRefChanged,
+      responseDataRefChanged,
+      sceneJsonRefChanged,
+    });
+    previousPanelDataRef.current = stablePanelData;
+    previousResponseDataRef.current = visibleResponseData;
+    previousSceneJsonRef.current = visibleSceneJson;
+  }, [stablePanelData, visibleResponseData, visibleSceneJson]);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
       console.log("[Nexora][PanelDataDebug]", {
-        hasSimulation: Boolean(panelData.simulation),
-        timeline: panelData.timeline ?? null,
-        advice: panelData.advice ?? panelData.strategicAdvice ?? null,
-        dashboard: panelData.dashboard ?? panelData.executiveSummary ?? null,
+        hasSimulation: Boolean(stablePanelData.simulation),
+        timeline: stablePanelData.timeline ?? null,
+        advice: stablePanelData.advice ?? stablePanelData.strategicAdvice ?? null,
+        dashboard: stablePanelData.dashboard ?? stablePanelData.executiveSummary ?? null,
       });
     }
-  }, [panelData]);
+  }, [stablePanelData]);
+
+  const panelFamilyAuditSnapshot = activePanelFamilyAuditRef.current;
+  const panelFamilyAuditReadSig = useMemo(() => {
+    if (panelFamilyAuditSnapshot) {
+      return [
+        "read",
+        panelFamilyAuditSnapshot.source,
+        panelFamilyAuditSnapshot.seq ?? "null",
+        panelFamilyAuditSnapshot.prompt ?? "",
+        panelFamilyAuditSnapshot.expectedFamily ?? "null",
+        panelFamilyAuditSnapshot.contractRenderable ? "1" : "0",
+        panelFamilyAuditSnapshot.contractSalvaged ? "1" : "0",
+      ].join("|");
+    }
+    const lastClearedAudit = lastClearedPanelFamilyAuditRef.current;
+    if (
+      lastClearedAudit &&
+      Date.now() - lastClearedAudit.clearedAt < 2000 &&
+      rightPanelState.view !== null
+    ) {
+      return [
+        "early_clear_detected",
+        lastClearedAudit.source,
+        lastClearedAudit.seq ?? "null",
+        lastClearedAudit.prompt ?? "",
+        lastClearedAudit.expectedFamily ?? "null",
+        lastClearedAudit.contractRenderable ? "1" : "0",
+        lastClearedAudit.contractSalvaged ? "1" : "0",
+      ].join("|");
+    }
+    return null;
+  }, [panelFamilyAuditSnapshot, rightPanelState.view]);
+  const lastPanelFamilyAuditReadSigRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!panelFamilyAuditReadSig) return;
+    if (panelFamilyAuditReadSig === lastPanelFamilyAuditReadSigRef.current) return;
+    lastPanelFamilyAuditReadSigRef.current = panelFamilyAuditReadSig;
+    if (panelFamilyAuditSnapshot) {
+      traceAuditRef("read", {
+        source: panelFamilyAuditSnapshot.source,
+        seq: panelFamilyAuditSnapshot.seq,
+        prompt: panelFamilyAuditSnapshot.prompt,
+        expectedFamily: panelFamilyAuditSnapshot.expectedFamily ?? null,
+        contractRenderable: panelFamilyAuditSnapshot.contractRenderable === true,
+        contractSalvaged: panelFamilyAuditSnapshot.contractSalvaged === true,
+        reason: "build_host_debug_props",
+      });
+      return;
+    }
+    const lastClearedAudit = lastClearedPanelFamilyAuditRef.current;
+    if (!lastClearedAudit) return;
+    traceAuditRef("early_clear_detected", {
+      source: lastClearedAudit.source,
+      seq: lastClearedAudit.seq,
+      prompt: lastClearedAudit.prompt,
+      expectedFamily: lastClearedAudit.expectedFamily ?? null,
+      contractRenderable: lastClearedAudit.contractRenderable === true,
+      contractSalvaged: lastClearedAudit.contractSalvaged === true,
+      reason: lastClearedAudit.clearReason,
+    });
+  }, [panelFamilyAuditReadSig, panelFamilyAuditSnapshot, traceAuditRef]);
+
+  const panelFamilyAuditDebug = useShallowStableObject(
+    panelFamilyAuditSnapshot
+      ? {
+          prompt: panelFamilyAuditSnapshot.prompt,
+          expectedFamily: panelFamilyAuditSnapshot.expectedFamily,
+          source: panelFamilyAuditSnapshot.source,
+          contractRenderable: panelFamilyAuditSnapshot.contractRenderable === true,
+          contractSalvaged: panelFamilyAuditSnapshot.contractSalvaged === true,
+        }
+      : null
+  );
 
   const panelContent = (
     <RightPanelHost
       rightPanelState={rightPanelState}
-      panelData={panelData}
+      panelData={panelDataForResolver}
       backendBase={BACKEND_BASE}
       episodeId={episodeId}
-      sceneJson={sceneJson ?? undefined}
-      responseData={guardedResponseData ?? undefined}
+      sceneJson={visibleSceneJson ?? undefined}
+      responseData={visibleResponseData ?? undefined}
       activeMode={activeMode}
-      conflicts={conflicts ?? undefined}
-      objectSelection={objectSelection ?? undefined}
-      memoryInsights={memoryInsights ?? undefined}
+      conflicts={visibleConflicts ?? undefined}
+      objectSelection={visibleObjectSelection ?? undefined}
+      memoryInsights={visibleMemoryInsights ?? undefined}
       decisionMemoryEntries={decisionMemoryEntries}
-      riskPropagation={riskPropagation ?? undefined}
-      strategicAdvice={strategicAdvice ?? undefined}
+      riskPropagation={visibleRiskPropagation ?? undefined}
+      strategicAdvice={visibleStrategicAdvice ?? undefined}
       strategicCouncil={strategicCouncil ?? undefined}
       decisionImpact={decisionImpact ?? undefined}
-      decisionCockpit={decisionCockpit ?? undefined}
-      opponentModel={opponentModel ?? undefined}
-      strategicPatterns={strategicPatterns ?? undefined}
-      selectedObjectId={selectedObjectIdState ?? null}
+      decisionCockpit={visibleDecisionCockpit ?? undefined}
+      opponentModel={visibleOpponentModel ?? undefined}
+      strategicPatterns={visibleStrategicPatterns ?? undefined}
+      selectedObjectId={visibleSelectedObjectId ?? null}
       selectedObjectLabel={selectedObjectLabelForWarRoom}
-      focusedId={focusedId ?? null}
+      focusedId={visibleFocusedId ?? null}
       resolveObjectLabel={resolveSceneObjectLabel}
       demoProfile={activeProfile ?? undefined}
       decisionResult={decisionResult ?? undefined}
@@ -7720,33 +8962,84 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       decisionStatus={decisionUiState.status}
       decisionError={decisionUiState.error}
       activeExecutiveView={activeExecutiveView}
+      guidedPromptDebug={null}
+      panelFamilyAuditDebug={panelFamilyAuditDebug}
       warRoom={warRoom}
       onSceneUpdateFromTimeline={handleSceneUpdateFromTimeline}
-      onSimulateDecision={handleOpenSimulatePanel}
-      onCompareOptions={handleOpenComparePanel}
-      onOpenWarRoom={() => {
-        warRoom.openWarRoom();
-        openRightPanel("war_room");
-      }}
-      onOpenStrategicCommand={() => openRightPanel("strategic_command")}
-      onOpenTimeline={handleOpenTimelinePanel}
-      onOpenMemory={() => openRightPanel("memory")}
-      onOpenDecisionLifecycle={() => openRightPanel("decision_lifecycle")}
-      onOpenStrategicLearning={() => openRightPanel("strategic_learning")}
-      onOpenMetaDecision={() => openRightPanel("meta_decision")}
-      onOpenCognitiveStyle={() => openRightPanel("cognitive_style")}
-      onOpenTeamDecision={() => openRightPanel("team_decision")}
-      onOpenCollaborationIntelligence={() => openRightPanel("collaboration_intelligence")}
-      onOpenDecisionCouncil={() => openRightPanel("decision_council")}
-      onOpenOrgMemory={() => openRightPanel("org_memory")}
+      onSimulateDecision={() =>
+        dispatchCanonicalAction(normalizeRunSimulation({ rawSource: "RightPanelHost:simulate" }))
+      }
+      onCompareOptions={() =>
+        dispatchCanonicalAction(normalizeCompareOptions({ rawSource: "RightPanelHost:compare" }))
+      }
+      onOpenWarRoom={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "war_room", rawSource: "RightPanelHost:war_room" }))
+      }
+      onOpenRiskFlow={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "risk", rawSource: "RightPanelHost:risk" }))
+      }
+      onOpenWhyThis={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "advice", rawSource: "RightPanelHost:advice" }))
+      }
+      onOpenStrategicCommand={() =>
+        dispatchCanonicalAction(
+          normalizeOpenPanelCta({ view: "strategic_command", rawSource: "RightPanelHost:strategic_command" })
+        )
+      }
+      onOpenTimeline={() =>
+        dispatchCanonicalAction(normalizeOpenCenterTimeline({ rawSource: "RightPanelHost:timeline" }))
+      }
+      onOpenMemory={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "memory", rawSource: "RightPanelHost:memory" }))
+      }
+      onOpenDecisionLifecycle={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "decision_lifecycle", rawSource: "RightPanelHost:decision_lifecycle" }))
+      }
+      onOpenStrategicLearning={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "strategic_learning", rawSource: "RightPanelHost:strategic_learning" }))
+      }
+      onOpenMetaDecision={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "meta_decision", rawSource: "RightPanelHost:meta_decision" }))
+      }
+      onOpenCognitiveStyle={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "cognitive_style", rawSource: "RightPanelHost:cognitive_style" }))
+      }
+      onOpenTeamDecision={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "team_decision", rawSource: "RightPanelHost:team_decision" }))
+      }
+      onOpenCollaborationIntelligence={() =>
+        dispatchCanonicalAction(
+          normalizeOpenPanelCta({ view: "collaboration_intelligence", rawSource: "RightPanelHost:collaboration_intelligence" })
+        )
+      }
+      onOpenDecisionCouncil={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "decision_council", rawSource: "RightPanelHost:decision_council" }))
+      }
+      onOpenOrgMemory={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "org_memory", rawSource: "RightPanelHost:org_memory" }))
+      }
       onOpenDecisionPolicy={handleOpenDecisionPolicyPanel}
       onOpenDecisionGovernance={handleOpenDecisionGovernancePanel}
       onOpenExecutiveApproval={handleOpenExecutiveApprovalPanel}
-      onOpenDecisionTimeline={() => openRightPanel("decision_timeline")}
-      onOpenConfidenceCalibration={() => openRightPanel("confidence_calibration")}
-      onOpenOutcomeFeedback={() => openRightPanel("outcome_feedback")}
-      onOpenPatternIntelligence={() => openRightPanel("pattern_intelligence")}
-      onOpenScenarioTree={() => openRightPanel("scenario_tree")}
+      onOpenDecisionTimeline={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "decision_timeline", rawSource: "RightPanelHost:decision_timeline" }))
+      }
+      onOpenConfidenceCalibration={() =>
+        dispatchCanonicalAction(
+          normalizeOpenPanelCta({ view: "confidence_calibration", rawSource: "RightPanelHost:confidence_calibration" })
+        )
+      }
+      onOpenOutcomeFeedback={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "outcome_feedback", rawSource: "RightPanelHost:outcome_feedback" }))
+      }
+      onOpenPatternIntelligence={() =>
+        dispatchCanonicalAction(
+          normalizeOpenPanelCta({ view: "pattern_intelligence", rawSource: "RightPanelHost:pattern_intelligence" })
+        )
+      }
+      onOpenScenarioTree={() =>
+        dispatchCanonicalAction(normalizeOpenPanelCta({ view: "scenario_tree", rawSource: "RightPanelHost:scenario_tree" }))
+      }
       onOpenDashboard={handleOpenDashboard}
       onPreviewDecision={handlePreviewDecision}
       onSaveScenario={handleSaveDecisionScenario}
@@ -7760,35 +9053,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
         handleOpenDashboard();
       }}
+      onOpenCenterComponent={openCenterComponent}
     />
   );
-  const getInspectorHostId = useCallback((tab: InspectorReportTab) => {
-    return tab === "conflict"
-      ? "nexora-inspector-conflict-host"
-      : tab === "object_focus"
-      ? "nexora-inspector-focus-host"
-      : tab === "memory_insights"
-      ? "nexora-inspector-memory-host"
-      : tab === "risk_flow"
-      ? "nexora-inspector-riskflow-host"
-      : tab === "replay"
-      ? "nexora-inspector-replay-host"
-      : tab === "strategic_advice"
-      ? "nexora-inspector-advice-host"
-      : tab === "opponent_moves"
-      ? "nexora-inspector-opponent-host"
-      : tab === "strategic_patterns"
-      ? "nexora-inspector-patterns-host"
-      : tab === "executive_dashboard"
-      ? "nexora-inspector-exec-host"
-      : tab === "war_room"
-      ? "nexora-inspector-warroom-host"
-      : tab === "collaboration"
-      ? "nexora-inspector-collab-host"
-      : tab === "workspace"
-      ? "nexora-inspector-workspace-host"
-      : "nexora-inspector-timeline-host";
-  }, []);
+  const activeInspectorHostId = useMemo(
+    () =>
+      resolveRightPanelInspectorHostId(
+        rightPanelState.view,
+        rightPanelTab ?? preferredRightPanelLegacyTabRef.current
+      ),
+    [rightPanelState.view, rightPanelTab]
+  );
 
   useEffect(() => {
     if (!isClientMounted) {
@@ -7796,15 +9071,40 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       return;
     }
 
-    if (!activeInspectorReportTab) {
+    if (!activeInspectorHostId) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][RightPanelHost]", {
+          stage: "host_cleared_no_target",
+          view: rightPanelState.view ?? null,
+          activeInspectorHostId: null,
+        });
+      }
       setInspectorPortalHost(null);
       return;
     }
 
-    const hostId = getInspectorHostId(activeInspectorReportTab);
-    const host = document.getElementById(hostId);
-    setInspectorPortalHost(host instanceof HTMLElement ? host : null);
-  }, [activeInspectorReportTab, getInspectorHostId, isClientMounted]);
+    const host = document.getElementById(activeInspectorHostId);
+    if (host instanceof HTMLElement) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][RightPanelHost]", {
+          stage: "host_resolved",
+          view: rightPanelState.view ?? null,
+          activeInspectorHostId,
+        });
+      }
+      setInspectorPortalHost(host);
+      return;
+    }
+
+    // Preserve previous host during transient shell-section churn.
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[Nexora][RightPanelHost]", {
+        stage: "host_missing_preserve_previous",
+        view: rightPanelState.view ?? null,
+        activeInspectorHostId,
+      });
+    }
+  }, [activeInspectorHostId, isClientMounted, rightPanelState.view]);
 
   const timelineInspectorNode =
     isClientMounted && inspectorPortalHost && panelContent
@@ -7820,17 +9120,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   ) : null;
 
   const isDomainDemoActive =
-    String((sceneJson as any)?.meta?.demo_id ?? "").toLowerCase() ===
+    readSceneJsonMetaString(visibleSceneJson, "demo_id").toLowerCase() ===
     String(activeDomainDemo.id).toLowerCase();
   const hasUserPrompt = messages.some(
     (m) => m.role === "user" && typeof m.text === "string" && m.text.trim().length > 0
   );
-  const showDomainPromptGuide = !!sceneJson && isDomainDemoActive && !hasUserPrompt;
+  const showDomainPromptGuide = !!visibleSceneJson && isDomainDemoActive && !hasUserPrompt;
   const domainPromptSuggestions = activeDomainExperience.experience.promptExamples;
   const launchDomainActive = isLaunchDomain(activeDomainExperience.experience.domainId);
   const isRetailStoryScene =
-    !!sceneJson &&
-    (String((sceneJson as any)?.meta?.demo_id ?? "").toLowerCase() === RETAIL_DEMO_ID ||
+    !!visibleSceneJson &&
+    (readSceneJsonMetaString(visibleSceneJson, "demo_id").toLowerCase() === RETAIL_DEMO_ID ||
       activeDomainExperience.experience.domainId === "retail");
   const retailDemoAccent = useMemo(() => {
     if (!isRetailStoryScene || !retailDemoFlow.currentStep) return null;
@@ -7854,12 +9154,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [isRetailStoryScene, retailDemoFlow.currentStep]);
   const traceSceneObjectIds = useMemo(
     () =>
-      Array.isArray(sceneJson?.scene?.objects)
-        ? (sceneJson.scene.objects as any[])
+      Array.isArray(visibleSceneJson?.scene?.objects)
+        ? (visibleSceneJson.scene.objects as any[])
             .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
             .slice(0, 12)
         : [],
-    [sceneJson]
+    [visibleSceneJson]
   );
   useEffect(() => {
     traceHighlightFlow("homescreen_before_scene", {
@@ -7872,7 +9172,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       focusMode,
       focusPinned,
       rightPanelTab,
-      hasSceneJson: !!sceneJson,
+      hasSceneJson: !!visibleSceneJson,
       sceneObjectIds: traceSceneObjectIds,
     });
   }, [
@@ -7881,7 +9181,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     focusedId,
     effectiveObjectSelection,
     rightPanelTab,
-    sceneJson,
+    visibleSceneJson,
     selectedObjectIdState,
     traceSceneObjectIds,
   ]);
@@ -7898,12 +9198,1441 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [activeDomainExperience]
   );
 
+  const decisionAnalysisSelectorResponseSignature = useMemo(() => {
+    const rd = visibleResponseData && typeof visibleResponseData === "object" ? (visibleResponseData as Record<string, unknown>) : null;
+    return JSON.stringify({
+      hasData: Boolean(rd),
+      keys: rd ? Object.keys(rd).sort().slice(0, 24) : [],
+      summary: typeof rd?.analysis_summary === "string" ? rd.analysis_summary : null,
+      hasDecisionAnalysis: Boolean(rd && typeof rd.decision_analysis === "object" && rd.decision_analysis),
+    });
+  }, [visibleResponseData]);
+
+  const decisionAnalysisSelectorSceneSignature = useMemo(() => {
+    const sj = visibleSceneJson && typeof visibleSceneJson === "object" ? (visibleSceneJson as Record<string, unknown>) : null;
+    const scene = sj?.scene && typeof sj.scene === "object" ? (sj.scene as Record<string, unknown>) : null;
+    return JSON.stringify({
+      hasData: Boolean(sj),
+      keys: sj ? Object.keys(sj).sort().slice(0, 24) : [],
+      hasDecisionAnalysis: Boolean(sj && typeof sj.decision_analysis === "object" && sj.decision_analysis),
+      hasNestedDecisionAnalysis: Boolean(scene && typeof scene.decision_analysis === "object" && scene.decision_analysis),
+    });
+  }, [visibleSceneJson]);
+
+  const decisionAnalysisForInvestorDemo = useMemo(
+    () => pickDecisionAnalysisFromResponse(visibleResponseData, visibleSceneJson),
+    [decisionAnalysisSelectorResponseSignature, decisionAnalysisSelectorSceneSignature]
+  );
+  const investorDemoExplanationBlock = useMemo(
+    () =>
+      buildScenarioExplanationFromDecisionAnalysis(
+        decisionAnalysisForInvestorDemo,
+        visibleSceneJson,
+        visibleResponseData
+      ),
+    [decisionAnalysisForInvestorDemo, visibleResponseData, visibleSceneJson]
+  );
+  const investorDemoHasScenario = useMemo(() => hasRenderableScenario(visibleSceneJson), [visibleSceneJson]);
+  const investorDemoHasAnalysis = decisionAnalysisForInvestorDemo != null;
+
+  useEffect(() => {
+    if (!investorDemo.demo.active) return;
+    const step = investorDemo.demo.step;
+    if (step < 1 || !investorDemoHasAnalysis) return;
+    dispatchCanonicalAction(
+      normalizeOpenPanelCta({
+        view: "explanation",
+        contextId: null,
+        legacyTab: "explanation",
+        section: "explanation",
+        rawSource: "investor_demo:auto_explanation",
+        source: "demo",
+        surface: "guided_flow",
+      })
+    );
+  }, [investorDemo.demo.active, investorDemo.demo.step, investorDemoHasAnalysis, dispatchCanonicalAction]);
+
+  useEffect(() => {
+    if (!investorDemo.demo.active) return;
+    if (investorDemo.demo.step < 1 || !investorDemoHasAnalysis) return;
+    const primaryId =
+      resolveInvestorDemoFocusObjectId(visibleResponseData, visibleSceneJson) ??
+      extractSceneObjectIds(visibleSceneJson)[0] ??
+      null;
+    if (!primaryId) return;
+    setObjectSelection((prev: any) => ({
+      ...(prev && typeof prev === "object" ? prev : {}),
+      highlighted_objects: [primaryId],
+    }));
+    setFocusedId(primaryId);
+    setSelectedObjectIdState(primaryId);
+    setFocusMode("selected");
+    updateSelectedObjectInfo(primaryId);
+    claimFocusOwnership({
+      source: "narrative_step",
+      objectId: primaryId,
+      isPersistent: false,
+      reason: "Investor demo guided highlight.",
+    });
+    setResponseData((prev: any) => {
+      if (!prev || typeof prev !== "object") return prev;
+      const baseSel = prev.object_selection && typeof prev.object_selection === "object" ? prev.object_selection : {};
+      return {
+        ...prev,
+        object_selection: {
+          ...baseSel,
+          highlighted_objects: [primaryId],
+        },
+      };
+    });
+  }, [
+    claimFocusOwnership,
+    investorDemo.demo.active,
+    investorDemo.demo.step,
+    investorDemoHasAnalysis,
+    setFocusMode,
+    updateSelectedObjectInfo,
+    visibleResponseData,
+    visibleSceneJson,
+  ]);
+
+  useEffect(() => {
+    if (!investorDemo.demo.active) return;
+    const step = investorDemo.demo.step;
+    if (step < 1 || step > 5) return;
+    const keys = ["", "problem", "cause", "impact", "recommendation", "trust"] as const;
+    const key = keys[step];
+    if (!key) return;
+    const t = window.setTimeout(() => {
+      document.querySelector(`[data-investor-demo-section="${key}"]`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }, 160);
+    return () => window.clearTimeout(t);
+  }, [investorDemo.demo.active, investorDemo.demo.step]);
+
+  const investorDemoOverlayModel = useMemo(() => {
+    const b = investorDemoExplanationBlock;
+    const trim = (s: string, n: number) => {
+      const t = String(s ?? "").trim();
+      if (t.length <= n) return t;
+      return `${t.slice(0, Math.max(1, n - 1)).trimEnd()}…`;
+    };
+    const step = investorDemo.demo.step;
+    const fallback = (line: string, empty: string) => (String(line ?? "").trim() ? trim(line, 320) : empty);
+    if (step === 0) {
+      return {
+        title: "Investor demo",
+        description:
+          investorDemoHasAnalysis && investorDemoHasScenario
+            ? "Press Next to walk through this scenario with live decision data."
+            : "Walk the story on whatever is loaded now — run Analyze and load a scenario for richer panels. You can still advance each step.",
+      };
+    }
+    if (step === 1) {
+      return {
+        title: "Problem",
+        description: `This is where the system is under pressure.\n\n${fallback(
+          b.problem,
+          "No problem summary yet — continue or run Analyze for live copy."
+        )}`,
+      };
+    }
+    if (step === 2) {
+      return {
+        title: "Cause",
+        description: `The issue is driven by these underlying signals.\n\n${fallback(
+          b.cause,
+          "No cause line yet — continue or run Analyze for live copy."
+        )}`,
+      };
+    }
+    if (step === 3) {
+      return {
+        title: "Impact",
+        description: `If not addressed, this will affect system performance.\n\n${fallback(
+          b.impact,
+          "No impact line yet — continue or run Analyze for live copy."
+        )}`,
+      };
+    }
+    if (step === 4) {
+      return {
+        title: "Decision",
+        description: `Nexora recommends this action to stabilize the system.\n\n${fallback(
+          b.recommendation,
+          "No recommendation yet — continue or run Analyze for live copy."
+        )}`,
+      };
+    }
+    const trust = b.trust;
+    const trustSnippet = trust
+      ? [trust.whyThisBullets[0], trust.evidence[0], trust.confidence.summaryLine].filter(Boolean).join(" ")
+      : "";
+    return {
+      title: "Trust",
+      description: `This decision is backed by simulation and strategy comparison.\n\n${
+        trustSnippet.trim()
+          ? trim(trustSnippet, 360)
+          : "Trust details will populate after decision analysis. You can still finish the tour."
+      }`,
+    };
+  }, [
+    investorDemo.demo.step,
+    investorDemoExplanationBlock,
+    investorDemoHasAnalysis,
+    investorDemoHasScenario,
+  ]);
+
+  const isDevIngestion = process.env.NODE_ENV !== "production" && getNexoraProductMode() !== "pilot";
+  const [lastTextIngestionResult, setLastTextIngestionResult] = useState<HomeScreenLastIngestion>(null);
+  const lastTextIngestionResultRef = useRef<HomeScreenLastIngestion>(null);
+  /** Dedupes `[Nexora][IngestionDebug] global_updated` when the exposed snapshot is unchanged. */
+  const lastNexoraIngestionGlobalExposeSigRef = useRef<string | null>(null);
+  const [lastMultiSourceIngestion, setLastMultiSourceIngestion] = useState<MultiSourceIngestionResponse | null>(null);
+  const lastMultiSourceIngestionRef = useRef<MultiSourceIngestionResponse | null>(null);
+  const lastIngestionFragilityBridgeSigRef = useRef<string | null>(null);
+  const lastMultiSourceBridgeSigRef = useRef<string | null>(null);
+  const lastPipelineStatusSigRef = useRef<string | null>(null);
+  const [pipelineStatusUi, setPipelineStatusUi] = useState<NexoraPipelineStatusUi>(() => createInitialPipelineStatusUi());
+  const lastAuditSignatureRef = useRef<string | null>(null);
+  const [auditHudEpoch, setAuditHudEpoch] = useState(0);
+  const lastReplaySnapshotRef = useRef<NexoraReplaySnapshot | null>(null);
+  const lastReplayApplySignatureRef = useRef<string | null>(null);
+  /** B.41 — dedupe domain usage rows: runId|requested|resolved|effective */
+  const lastB41DomainUsageSigRef = useRef<string | null>(null);
+  const lastExportBundleRef = useRef<NexoraExportBundle | null>(null);
+  const lastB15BundleSigRef = useRef<string | null>(null);
+  /** B.19 — append scenario memory at most once per audit signature (no write loops). */
+  const lastB19ScenarioMemoryAppendSigRef = useRef<string | null>(null);
+  const [runHistoryEpoch, setRunHistoryEpoch] = useState(0);
+  const recentRunsForHud = useMemo(() => loadNexoraRunHistory().slice(0, 5), [runHistoryEpoch]);
+  const [importBundleOpen, setImportBundleOpen] = useState(false);
+  const [importBundleDraft, setImportBundleDraft] = useState("");
+  const [importBundleError, setImportBundleError] = useState<string | null>(null);
+  const [importBundleHint, setImportBundleHint] = useState<string | null>(null);
+  const lastB17ImportBundleSigRef = useRef<string | null>(null);
+
+  const commitPipelineStatus = useCallback((next: NexoraPipelineStatusUi) => {
+    if (shouldSkipPipelineStatusCommit(next, lastPipelineStatusSigRef.current)) return;
+    if (!next.decisionPosture) {
+      pipelineB7ActionContextRef.current = null;
+      setNexoraB8PanelContext(null);
+    }
+    lastPipelineStatusSigRef.current = buildPipelineStatusSignature(next);
+    setPipelineStatusUi(next);
+  }, []);
+
+  const mergePipelineStatus = useCallback((partial: Partial<NexoraPipelineStatusUi>) => {
+    setPipelineStatusUi((prev) => {
+      const next: NexoraPipelineStatusUi = { ...prev, ...partial };
+      if (shouldSkipPipelineStatusCommit(next, lastPipelineStatusSigRef.current)) return prev;
+      if (!next.decisionPosture) {
+        pipelineB7ActionContextRef.current = null;
+        if (typeof queueMicrotask === "function") {
+          queueMicrotask(() => setNexoraB8PanelContext(null));
+        } else {
+          setTimeout(() => setNexoraB8PanelContext(null), 0);
+        }
+      }
+      lastPipelineStatusSigRef.current = buildPipelineStatusSignature(next);
+      return next;
+    });
+  }, []);
+
+  commitPipelineStatusRef.current = commitPipelineStatus;
+  mergePipelineStatusRef.current = mergePipelineStatus;
+
+  const runbookStepId = useMemo((): NexoraRunbookStepId => {
+    const audit = lastAuditRecordRef.current;
+    const runId = audit?.runId ?? null;
+    const hasRecordedOutcome = runId ? Boolean(loadExecutionOutcomeForRun(runId)) : false;
+    const hasB7Decision =
+      pipelineStatusUi.status === "ready" &&
+      Boolean(
+        pipelineStatusUi.decisionPosture ||
+          pipelineStatusUi.decisionTradeoff ||
+          pipelineStatusUi.decisionNextMove
+      );
+    return resolveRunbookStep({
+      pipelineStatus: pipelineStatusUi.status,
+      centerCompareOpen: centerComponent === "compare",
+      rightPanelCompareOpen: rightPanelState.view === "compare" || rightPanelTab === "compare",
+      hasB7Decision,
+      hasRecordedOutcome,
+    });
+  }, [
+    pipelineStatusUi.status,
+    pipelineStatusUi.decisionPosture,
+    pipelineStatusUi.decisionTradeoff,
+    pipelineStatusUi.decisionNextMove,
+    centerComponent,
+    rightPanelState.view,
+    rightPanelTab,
+    auditHudEpoch,
+    executionOutcomeHudEpoch,
+  ]);
+
+  const runbookSurfaceHints = useMemo(() => buildRunbookSurfaceHints(runbookStepId), [runbookStepId]);
+
+  const [pipelineFeedbackKeys, setPipelineFeedbackKeys] = useState<Set<string>>(new Set());
+
+  const refreshPipelineFeedbackSelection = useCallback(() => {
+    const rid = lastAuditRecordRef.current?.runId;
+    if (!rid || pipelineStatusUi.status !== "ready") {
+      setPipelineFeedbackKeys(new Set());
+      return;
+    }
+    setPipelineFeedbackKeys(
+      new Set(loadNexoraFeedback().filter((r) => r.runId === rid).map((r) => `${r.runId}|${r.type}`))
+    );
+  }, [pipelineStatusUi.status]);
+
+  useEffect(() => {
+    refreshPipelineFeedbackSelection();
+  }, [auditHudEpoch, refreshPipelineFeedbackSelection]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.addEventListener(NEXORA_FEEDBACK_CHANGED_EVENT, refreshPipelineFeedbackSelection);
+    return () => window.removeEventListener(NEXORA_FEEDBACK_CHANGED_EVENT, refreshPipelineFeedbackSelection);
+  }, [refreshPipelineFeedbackSelection]);
+
+  const recordPipelineFeedback = useCallback((runId: string, type: NexoraFeedbackType) => {
+    const id = runId.trim();
+    if (!id) return;
+    let note: string | undefined;
+    if (type === "not_helpful" || type === "confusing" || type === "incorrect") {
+      const raw = typeof window !== "undefined" ? window.prompt("Optional: what felt wrong?") : null;
+      if (raw === null) return;
+      note = raw.trim() ? raw.trim().slice(0, 500) : undefined;
+    }
+    saveNexoraFeedback({ runId: id, type, timestamp: Date.now(), note });
+    setPipelineFeedbackKeys((prev) => new Set(prev).add(`${id}|${type}`));
+  }, []);
+
+  const pilotOperatorSynthSigRef = useRef<string | null>(null);
+  const pilotOperatorSynthRef = useRef<NexoraPilotSynthesis | null>(null);
+  const [pilotOperatorInsightText, setPilotOperatorInsightText] = useState<string | null>(null);
+  const [pilotInsightInputTick, setPilotInsightInputTick] = useState(0);
+
+  useEffect(() => {
+    if (!isPilotProductMode || typeof window === "undefined") return;
+    const bump = () => setPilotInsightInputTick((n) => n + 1);
+    window.addEventListener(NEXORA_FEEDBACK_CHANGED_EVENT, bump);
+    return () => window.removeEventListener(NEXORA_FEEDBACK_CHANGED_EVENT, bump);
+  }, [isPilotProductMode]);
+
+  useEffect(() => {
+    if (!isPilotProductMode) {
+      pilotOperatorSynthSigRef.current = null;
+      pilotOperatorSynthRef.current = null;
+      setPilotOperatorInsightText(null);
+      return;
+    }
+    if (pipelineStatusUi.status !== "ready") {
+      setPilotOperatorInsightText(null);
+      return;
+    }
+    if (!lastAuditRecordRef.current?.runId) {
+      setPilotOperatorInsightText(null);
+      return;
+    }
+    const domainId = activeDomainExperience.experience.domainId;
+    const input = collectNexoraPilotSynthesisInputFromBrowser(null, domainId);
+    const sig = buildNexoraPilotSynthesisInputSignature(input, domainId);
+    let synth = pilotOperatorSynthRef.current;
+    if (!synth || pilotOperatorSynthSigRef.current !== sig) {
+      synth = buildNexoraPilotSynthesis(input, domainId);
+      pilotOperatorSynthRef.current = synth;
+      pilotOperatorSynthSigRef.current = sig;
+    }
+    const base = buildDomainAwareOperatorInsightLine({ synthesis: synth, domainId });
+    const hint = buildDomainAwareOperatorInsightHint({ synthesis: synth, domainId });
+    const line = hint ? `${base} ${hint}` : base;
+    setPilotOperatorInsightText((prev) => (prev === line ? prev : line));
+    emitDomainOperatorInsightReadyDevOnce({
+      signature: sig,
+      domain: normalizeOperatorInsightDomain(domainId),
+      line,
+    });
+  }, [
+    isPilotProductMode,
+    pipelineStatusUi.status,
+    auditHudEpoch,
+    executionOutcomeHudEpoch,
+    pilotInsightInputTick,
+    activeDomainExperience.experience.domainId,
+  ]);
+
+  const lastEmittedRunbookStepRef = useRef<string | null>(null);
+  const runbookGuidanceCtx = useNexoraRunbookGuidanceOptional();
+  useEffect(() => {
+    const setHints = runbookGuidanceCtx?.setHints;
+    if (!setHints) return;
+    const next = buildRunbookSurfaceHints(runbookStepId);
+    setHints((prev) => {
+      if (
+        prev.commandBar === next.commandBar &&
+        prev.comparePanel === next.comparePanel &&
+        prev.pipelineAfterAnalysis === next.pipelineAfterAnalysis &&
+        prev.pipelineAfterDecision === next.pipelineAfterDecision &&
+        prev.pipelineAfterOutcome === next.pipelineAfterOutcome
+      ) {
+        return prev;
+      }
+      return next;
+    });
+  }, [runbookStepId, runbookGuidanceCtx]);
+
+  useEffect(() => {
+    const prev = lastEmittedRunbookStepRef.current;
+    if (prev === runbookStepId) return;
+    if (prev != null) {
+      logRunbookStepChangedIfDev(prev, runbookStepId);
+    }
+    lastEmittedRunbookStepRef.current = runbookStepId;
+  }, [runbookStepId]);
+
+  useEffect(() => {
+    if (pipelineStatusUi.status !== "ready") return;
+    if (!openCompareAfterPipelineReadyRef.current) return;
+    openCompareAfterPipelineReadyRef.current = false;
+    dispatchCanonicalAction(
+      normalizeCompareOptions({
+        source: "panel_cta",
+        surface: "center_overlay",
+        rawSource: "HomeScreen:pilot_demo_open_compare",
+      })
+    );
+  }, [pipelineStatusUi.status, dispatchCanonicalAction]);
+
+  useEffect(() => {
+    return installNexoraExecutionOutcomeBridge();
+  }, []);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production" || typeof window === "undefined" || isPilotProductMode) return;
+    const w = window as Window & { __NEXORA_DEBUG__?: Record<string, unknown> };
+    const next: Record<string, unknown> = {
+      ...(w.__NEXORA_DEBUG__ ?? {}),
+      lastPipelineStatus: pipelineStatusUi,
+      /** B.49 — correlates B.20 outcomes + B.32 feedback to the active audit run in dev tools. */
+      lastAuditRunId: lastAuditRecordRef.current?.runId ?? null,
+      activePilotDomainId: activeDomainExperience.experience.domainId,
+    };
+    if (pipelineStatusUi.status === "error" && pipelineStatusUi.errorMessage) {
+      next.lastError = pipelineStatusUi.errorMessage;
+    }
+    if (decisionQualityReport) {
+      next.lastDecisionQualityReview = {
+        qualityTier: decisionQualityReport.qualityTier,
+        trend: decisionQualityReport.trend,
+        summary: decisionQualityReport.summary,
+      };
+    } else {
+      next.lastDecisionQualityReview = null;
+    }
+    w.__NEXORA_DEBUG__ = next;
+    window.dispatchEvent(new CustomEvent(NEXORA_WORKFLOW_DEBUG_UPDATED));
+  }, [
+    pipelineStatusUi,
+    decisionQualityReport,
+    isPilotProductMode,
+    activeDomainExperience.experience.domainId,
+    auditHudEpoch,
+  ]);
+
+  /** B.49 — in pilot dev/prod builds, still mirror pipeline + run id for console / extensions (no QA pack side-effects). */
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production" || typeof window === "undefined" || !isPilotProductMode) return;
+    const w = window as Window & { __NEXORA_DEBUG__?: Record<string, unknown> };
+    w.__NEXORA_DEBUG__ = {
+      ...(w.__NEXORA_DEBUG__ ?? {}),
+      lastPipelineStatus: pipelineStatusUi,
+      lastAuditRunId: lastAuditRecordRef.current?.runId ?? null,
+    };
+    window.dispatchEvent(new CustomEvent(NEXORA_WORKFLOW_DEBUG_UPDATED));
+  }, [pipelineStatusUi, auditHudEpoch, isPilotProductMode]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production" || typeof window === "undefined" || isPilotProductMode) return;
+    const w = window as Window & { __NEXORA_DEBUG__?: Record<string, unknown> };
+    const domainPackQA = runDomainPackQAAndLogDev();
+    const domainPackRollout = runDomainPackRolloutAndLogDev();
+    w.__NEXORA_DEBUG__ = { ...(w.__NEXORA_DEBUG__ ?? {}), domainPackQA, domainPackRollout };
+  }, [isPilotProductMode, activeDomainExperience.experience.domainId]);
+
+  const onRecordExecutionOutcome = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const audit = lastAuditRecordRef.current;
+    if (!audit?.runId || pipelineStatusUi.status !== "ready") return;
+    const raw = window.prompt("What happened? Enter fragility: low, medium, high, or critical");
+    if (raw == null) return;
+    const actualTier = normalizeOutcomeFragilityInput(raw.trim());
+    if (!actualTier) {
+      window.alert("Invalid fragility. Use: low, medium, high, or critical.");
+      return;
+    }
+    const expectedRaw = pipelineStatusUi.fragilityLevel ?? audit.scanner.fragilityLevel ?? "medium";
+    const expected = normalizeOutcomeFragilityInput(String(expectedRaw)) ?? "medium";
+    const { score, label } = evaluateExecutionOutcome(expected, actualTier);
+    const outcome: NexoraExecutionOutcome = {
+      runId: audit.runId,
+      expectedFragilityLevel: expected,
+      actualFragilityLevel: actualTier,
+      outcomeScore: score,
+      outcomeLabel: label,
+      recordedAt: Date.now(),
+    };
+    saveExecutionOutcome(outcome);
+    logNexoraMetric("outcome_recorded", { runId: audit.runId, mode: nexoraMode });
+    lastExecutionOutcomeRef.current = outcome;
+    window.dispatchEvent(new CustomEvent(NEXORA_EXECUTION_OUTCOME_RECORDED, { detail: outcome }));
+    emitExecutionOutcomeRecordedDev(outcome);
+    const base = lastNexoraTrustEvaluationInputRef.current;
+    if (base) {
+      const trust = evaluateNexoraTrustValidation({
+        ...base,
+        executionOutcomeFeedback: outcome.outcomeLabel,
+      });
+      mergePipelineStatus({
+        confidenceScore: trust.confidenceScore,
+        confidenceTier: trust.confidenceTier,
+        validationWarnings: [...trust.validationWarnings],
+        trustSummaryLine: trust.trustSummaryLine,
+      });
+    }
+    setPanelResolverB18Epoch((n) => n + 1);
+    setExecutionOutcomeHudEpoch((n) => n + 1);
+  }, [mergePipelineStatus, pipelineStatusUi.fragilityLevel, pipelineStatusUi.status, nexoraMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onReplayApply = (ev: Event) => {
+      const custom = ev as CustomEvent<NexoraReplayApplyEventDetail>;
+      const detail = custom.detail;
+      if (!detail?.payload?.snapshot) return;
+      const { payload, force } = detail;
+      const sig = buildReplayApplySignature(payload);
+      if (!force && lastReplayApplySignatureRef.current === sig) {
+        return;
+      }
+      lastReplayApplySignatureRef.current = sig;
+
+      const sceneIdSet = buildSceneObjectIdSet(sceneJson);
+      const { focusInScene, highlightsInScene } = filterReplaySnapshotIdsForScene(payload.snapshot, sceneIdSet);
+      const snap = payload.snapshot;
+
+      if (focusInScene) {
+        setFocusedId(focusInScene);
+      }
+
+      const selected =
+        focusInScene ?? (highlightsInScene.length > 0 ? highlightsInScene[0] ?? null : null);
+      setSelectedObjectIdState(selected);
+
+      const reason =
+        typeof snap.trust.summary === "string" && snap.trust.summary.trim()
+          ? snap.trust.summary.trim().slice(0, 200)
+          : "Restored run highlights";
+
+      if (highlightsInScene.length > 0) {
+        const base = buildUnifiedReactionFromFragilityRun({
+          highlightedObjectIds: highlightsInScene,
+          riskSources: [],
+          riskTargets: highlightsInScene,
+          reason,
+          activeLoopId: null,
+          loopSuggestions: [],
+          actions: [],
+        });
+        const scoped = normalizeReactionForScene(base, sceneJson);
+        const tuned = tuneUnifiedReactionForFragilityLevel(scoped, snap.scene.fragilityLevel);
+        applyUnifiedSceneReaction(tuned, { allowSceneReplacement: false });
+      } else if (focusInScene) {
+        const panel = buildPanelFocusReaction({ objectId: focusInScene, reason });
+        const scoped = normalizeReactionForScene(panel, sceneJson);
+        const tuned = tuneUnifiedReactionForFragilityLevel(scoped, snap.scene.fragilityLevel);
+        applyUnifiedSceneReaction(tuned, { allowSceneReplacement: false });
+      }
+
+      mergePipelineStatus({
+        fragilityLevel: normalizeFragilityLevelForUi(snap.scene.fragilityLevel),
+        confidenceTier: snap.trust.confidenceTier ?? null,
+        trustSummaryLine: snap.trust.summary?.trim() ? snap.trust.summary.trim().slice(0, 200) : null,
+        decisionPosture: snap.decision?.posture ?? null,
+        decisionTradeoff: snap.decision?.tradeoff ?? null,
+        decisionNextMove: snap.decision?.nextMove ?? null,
+        multiSourceSourceCount: snap.sources.total,
+        multiSourceSuccessfulCount: snap.sources.successful,
+        replayRestoredRunId: snap.runId,
+        updatedAt: Date.now(),
+      });
+
+      logNexoraMetric("replay_used", { runId: snap.runId, mode: nexoraMode });
+
+      const requestedRaw = activeDomainExperience.experience.domainId;
+      const resolved = resolveNexoraLocaleDomainId(requestedRaw);
+      const effective = toSafeLocaleDomainIdForRollout(requestedRaw);
+      const reqNorm =
+        typeof requestedRaw === "string" && requestedRaw.trim() ? requestedRaw.trim() : null;
+      const rid = snap.runId?.trim();
+      if (rid) {
+        const usageSig = `${rid}|${reqNorm ?? ""}|${resolved}|${effective}`;
+        if (usageSig !== lastB41DomainUsageSigRef.current) {
+          lastB41DomainUsageSigRef.current = usageSig;
+          logDomainUsage({
+            domainRequested: reqNorm,
+            domainResolved: resolved,
+            domainEffective: effective,
+            timestamp: Date.now(),
+          });
+          emitDomainUsageLoggedDevOnce(rid);
+        }
+      }
+
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console?.debug?.("[Nexora][B16] replay_applied", {
+          runId: snap.runId,
+          source: payload.source,
+          focus: focusInScene,
+          highlights: highlightsInScene.length,
+        });
+      }
+    };
+    window.addEventListener(NEXORA_REPLAY_APPLY_EVENT, onReplayApply as EventListener);
+    return () => window.removeEventListener(NEXORA_REPLAY_APPLY_EVENT, onReplayApply as EventListener);
+  }, [
+    sceneJson,
+    setFocusedId,
+    setSelectedObjectIdState,
+    applyUnifiedSceneReaction,
+    mergePipelineStatus,
+    nexoraMode,
+    activeDomainExperience.experience.domainId,
+  ]);
+
+  useEffect(() => {
+    lastTextIngestionResultRef.current = lastTextIngestionResult;
+  }, [lastTextIngestionResult]);
+
+  useEffect(() => {
+    lastMultiSourceIngestionRef.current = lastMultiSourceIngestion;
+  }, [lastMultiSourceIngestion]);
+
+  /** B.14 — build compact audit when pipeline reaches ready; dedupe by full record signature. */
+  useEffect(() => {
+    if (pipelineStatusUi.status !== "ready") {
+      lastAuditRecordRef.current = null;
+      nexoraPanelB18TrustRef.current = null;
+      setPanelResolverB18Epoch((n) => n + 1);
+      lastAuditSignatureRef.current = null;
+      lastReplaySnapshotRef.current = null;
+      lastExportBundleRef.current = null;
+      lastB15BundleSigRef.current = null;
+      lastB19ScenarioMemoryAppendSigRef.current = null;
+      lastNexoraTrustEvaluationInputRef.current = null;
+      lastB20Fix1OutcomeLookupSigRef.current = null;
+      if (typeof window !== "undefined" && process.env.NODE_ENV !== "production" && !isPilotProductMode) {
+        delete (window as Window & { __NEXORA_LAST_AUDIT__?: NexoraAuditRecord }).__NEXORA_LAST_AUDIT__;
+      }
+      return;
+    }
+    const ctx = pipelineB7ActionContextRef.current;
+    const record = buildNexoraAuditRecord({
+      multiSourceResult: lastMultiSourceIngestion,
+      pipelineStatus: pipelineStatusUi,
+      decisionContext: ctx
+        ? {
+            posture: ctx.posture,
+            tradeoff: ctx.tradeoff,
+            nextMove: ctx.nextMove,
+            driverLabels: ctx.drivers.map((d) => d.label),
+          }
+        : null,
+      domain: activeDomainExperience.experience.domainId,
+    });
+    const sig = buildNexoraAuditSignature(record);
+    const auditChanged = sig !== lastAuditSignatureRef.current;
+    if (auditChanged) {
+      lastAuditSignatureRef.current = sig;
+    }
+    lastAuditRecordRef.current = record;
+    nexoraPanelB18TrustRef.current = {
+      confidenceTier: pipelineStatusUi.confidenceTier,
+      trustSummaryLine: pipelineStatusUi.trustSummaryLine,
+      fragilityLevel: pipelineStatusUi.fragilityLevel,
+    };
+    setPanelResolverB18Epoch((n) => n + 1);
+
+    const replaySnapshot = buildNexoraReplaySnapshot({
+      audit: record,
+      pipelineStatus: pipelineStatusUi,
+      focusedObjectId: selectedObjectIdState?.trim() || focusedId?.trim() || null,
+      highlightedObjectIds: pipelineB7ActionContextRef.current?.objectIds ?? [],
+    });
+    lastReplaySnapshotRef.current = replaySnapshot;
+    const exportBundle = buildNexoraExportBundle({ record, replaySnapshot });
+    lastExportBundleRef.current = exportBundle;
+    const b15Sig = exportBundleStableSignature(exportBundle);
+    const exportSnapshotChanged = b15Sig !== lastB15BundleSigRef.current;
+    if (exportSnapshotChanged) {
+      lastB15BundleSigRef.current = b15Sig;
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console?.debug?.("[Nexora][B15] export_bundle_ready", { runId: record.runId });
+      }
+    }
+
+    if (auditChanged || exportSnapshotChanged) {
+      setAuditHudEpoch((n) => n + 1);
+    }
+    if (auditChanged && typeof window !== "undefined" && process.env.NODE_ENV !== "production" && !isPilotProductMode) {
+      (window as Window & { __NEXORA_LAST_AUDIT__?: NexoraAuditRecord }).__NEXORA_LAST_AUDIT__ = record;
+    }
+    if (auditChanged && process.env.NODE_ENV !== "production") {
+      globalThis.console?.debug?.("[Nexora][B14] audit_record_built", { runId: record.runId });
+    }
+
+    if (auditChanged && record.runId?.trim()) {
+      const requestedRaw = activeDomainExperience.experience.domainId;
+      const resolved = resolveNexoraLocaleDomainId(requestedRaw);
+      const effective = toSafeLocaleDomainIdForRollout(requestedRaw);
+      const reqNorm =
+        typeof requestedRaw === "string" && requestedRaw.trim() ? requestedRaw.trim() : null;
+      const usageSig = `${record.runId.trim()}|${reqNorm ?? ""}|${resolved}|${effective}`;
+      if (usageSig !== lastB41DomainUsageSigRef.current) {
+        lastB41DomainUsageSigRef.current = usageSig;
+        logDomainUsage({
+          domainRequested: reqNorm,
+          domainResolved: resolved,
+          domainEffective: effective,
+          timestamp: Date.now(),
+        });
+        emitDomainUsageLoggedDevOnce(record.runId.trim());
+      }
+    }
+
+    if (typeof window !== "undefined" && lastB19ScenarioMemoryAppendSigRef.current !== sig) {
+      lastB19ScenarioMemoryAppendSigRef.current = sig;
+      const memory = loadScenarioMemory();
+      const outcomesForBias = loadExecutionOutcomes();
+      const qualityForBias = evaluateDecisionQuality({ outcomes: outcomesForBias, memory });
+      const biasCtxAppend = buildNexoraBiasLayerContext({
+        quality: qualityForBias,
+        memory,
+        outcomes: outcomesForBias,
+        operatorMode: nexoraMode,
+      });
+      const trustInput = {
+        confidenceTier: pipelineStatusUi.confidenceTier ?? record.trust.confidenceTier ?? undefined,
+        summary: pipelineStatusUi.trustSummaryLine ?? record.trust.summary ?? null,
+      };
+      const decision = ctx
+        ? {
+            posture: ctx.posture?.trim() || undefined,
+            tradeoff: ctx.tradeoff?.trim() || undefined,
+            nextMove: ctx.nextMove?.trim() || undefined,
+          }
+        : record.decision ?? undefined;
+      const resolved = resolveNexoraB18WithMemory({
+        audit: record,
+        trust: trustInput,
+        decision,
+        memory,
+        adaptiveBias: biasCtxAppend.governedBiasForPick,
+        biasGovernance: biasCtxAppend.governance,
+        adaptiveBiasStrengthBand: biasCtxAppend.biasStrengthBand,
+        nexoraOperatorMode: nexoraMode,
+      });
+      appendScenarioMemory({
+        runId: record.runId,
+        fragilityLevel: pipelineStatusUi.fragilityLevel ?? record.scanner.fragilityLevel,
+        confidenceTier: pipelineStatusUi.confidenceTier ?? record.trust.confidenceTier,
+        decisionPosture: ctx?.posture?.trim() || record.decision?.posture,
+        decisionTradeoff: ctx?.tradeoff?.trim() || record.decision?.tradeoff,
+        decisionNextMove: ctx?.nextMove?.trim() || record.decision?.nextMove,
+        recommendedOptionId: resolved.recommendedOptionId ?? undefined,
+        timestamp: Date.now(),
+      });
+      emitScenarioMemoryAppendedDev(record.runId);
+      setPanelResolverB18Epoch((n) => n + 1);
+    }
+  }, [
+    pipelineStatusUi,
+    lastMultiSourceIngestion,
+    activeDomainExperience.experience.domainId,
+    selectedObjectIdState,
+    focusedId,
+    nexoraMode,
+    isPilotProductMode,
+  ]);
+
+  /** B.28 — pipeline + compare + decision funnel metrics (localStorage). */
+  useEffect(() => {
+    const st = pipelineStatusUi.status;
+    const prev = prevPipelineStatusForMetricRef.current;
+    if (prev != null) {
+      if (st === "ready" && prev !== "ready") {
+        logNexoraMetric("analysis_completed", {
+          runId: lastAuditRecordRef.current?.runId,
+          mode: nexoraMode,
+        });
+      }
+      if (st === "error" && prev !== "error") {
+        logNexoraMetric("error_occurred", {
+          runId: lastAuditRecordRef.current?.runId,
+          mode: nexoraMode,
+        });
+      }
+    }
+    if (st !== "ready") {
+      lastDecisionRunIdForMetricRef.current = null;
+    }
+    prevPipelineStatusForMetricRef.current = st;
+  }, [pipelineStatusUi.status, nexoraMode, auditHudEpoch]);
+
+  useEffect(() => {
+    const open =
+      centerComponent === "compare" ||
+      rightPanelState.view === "compare" ||
+      rightPanelTab === "compare";
+    if (open && !prevCompareOpenForMetricRef.current) {
+      logNexoraMetric("compare_opened", {
+        runId: lastAuditRecordRef.current?.runId,
+        mode: nexoraMode,
+      });
+    }
+    prevCompareOpenForMetricRef.current = open;
+  }, [centerComponent, rightPanelState.view, rightPanelTab, nexoraMode, auditHudEpoch]);
+
+  useEffect(() => {
+    if (pipelineStatusUi.status !== "ready" || !pipelineStatusUi.decisionPosture) return;
+    const rid = lastAuditRecordRef.current?.runId;
+    if (!rid) return;
+    if (lastDecisionRunIdForMetricRef.current === rid) return;
+    lastDecisionRunIdForMetricRef.current = rid;
+    logNexoraMetric("decision_made", { runId: rid, mode: nexoraMode });
+  }, [pipelineStatusUi.status, pipelineStatusUi.decisionPosture, auditHudEpoch, nexoraMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onCfg = () => setBiasGovernanceConfigEpoch((n) => n + 1);
+    window.addEventListener(BIAS_GOVERNANCE_CONFIG_CHANGED_EVENT, onCfg);
+    return () => window.removeEventListener(BIAS_GOVERNANCE_CONFIG_CHANGED_EVENT, onCfg);
+  }, []);
+
+  /** B.21 + B.23 — quality + governed bias layer (signature-guarded). */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (pipelineStatusUi.status !== "ready") {
+      lastDecisionQualitySigRef.current = null;
+      lastDecisionQualityReportRef.current = null;
+      lastBiasLayerApplyKeyRef.current = null;
+      setDecisionQualityReport(null);
+      setBiasLayerContext(null);
+      return;
+    }
+    const outcomes = loadExecutionOutcomes();
+    const memoryRows = loadScenarioMemory();
+    const sig = buildDecisionQualityInputSignature(outcomes, memoryRows);
+    const applyKey = `${sig}|${biasGovernanceConfigEpoch}|${nexoraMode}`;
+    if (applyKey === lastBiasLayerApplyKeyRef.current) {
+      return;
+    }
+    lastBiasLayerApplyKeyRef.current = applyKey;
+    lastDecisionQualitySigRef.current = sig;
+    const report = evaluateDecisionQuality({ outcomes, memory: memoryRows });
+    const biasCtx = buildNexoraBiasLayerContext({
+      quality: report,
+      memory: memoryRows,
+      outcomes,
+      operatorMode: nexoraMode,
+    });
+    lastDecisionQualityReportRef.current = report;
+    setDecisionQualityReport(report);
+    setBiasLayerContext(biasCtx);
+    emitDecisionQualityReadyDev(sig);
+    emitAdaptiveBiasReadyDev(buildAdaptiveBiasDevLogKey(sig, biasCtx.rawBias));
+    emitBiasGovernanceReadyDev(
+      buildBiasGovernanceLogKey(biasCtx.config, sig, biasCtx.rawBias, biasCtx.governance, nexoraMode)
+    );
+  }, [pipelineStatusUi.status, auditHudEpoch, executionOutcomeHudEpoch, biasGovernanceConfigEpoch, nexoraMode]);
+
+  /** Client-only dev global: mirrors last successful text ingestion only (single write path). */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (process.env.NODE_ENV === "production" || isPilotProductMode) return;
+
+    type WinIngestion = Window & { __NEXORA_LAST_INGESTION__?: HomeScreenLastIngestion };
+    const w = window as WinIngestion;
+
+    const clearGlobal = (reason: string) => {
+      if (w.__NEXORA_LAST_INGESTION__ !== undefined) {
+        delete w.__NEXORA_LAST_INGESTION__;
+        globalThis.console?.debug?.("[Nexora][IngestionDebug] global_cleared_or_unchanged", { reason });
+      }
+      lastNexoraIngestionGlobalExposeSigRef.current = null;
+    };
+
+    if (lastTextIngestionResult === null) {
+      clearGlobal("no_successful_ingestion");
+      return;
+    }
+
+    if (!lastTextIngestionResult.ok) {
+      clearGlobal("ingestion_response_not_ok");
+      return;
+    }
+
+    w.__NEXORA_LAST_INGESTION__ = lastTextIngestionResult;
+    const sig = [
+      lastTextIngestionResult.bundle.created_at,
+      lastTextIngestionResult.bundle.source.id,
+      lastTextIngestionResult.bundle.signals.length,
+    ].join("|");
+    if (lastNexoraIngestionGlobalExposeSigRef.current !== sig) {
+      lastNexoraIngestionGlobalExposeSigRef.current = sig;
+      globalThis.console?.debug?.("[Nexora][IngestionDebug] global_updated", {
+        ok: true,
+        signalCount: lastTextIngestionResult.bundle.signals.length,
+        sourceId: lastTextIngestionResult.bundle.source.id,
+      });
+    }
+  }, [lastTextIngestionResult, isPilotProductMode]);
+
+  useEffect(() => {
+    if (!isDevIngestion || typeof window === "undefined") return;
+    (
+      window as Window & {
+        __NEXORA_LAST_MULTI_SOURCE_INGESTION__?: MultiSourceIngestionResponse | null;
+      }
+    ).__NEXORA_LAST_MULTI_SOURCE_INGESTION__ = lastMultiSourceIngestion;
+  }, [isDevIngestion, lastMultiSourceIngestion]);
+
+  const runBusinessTextIngestionPipeline = useCallback(
+    async (text: string, sourceLabel: string) => {
+      const t = text.trim();
+      if (!t) return;
+      const bridgeSource = sourceLabel.trim() || "ingestion";
+      const res = await submitManualTextIngestion({
+        text: t,
+        title: "manual_text",
+        source_label: bridgeSource,
+        domain: activeDomainExperience.experience.domainId,
+      });
+      if (res === "skipped_in_flight") return;
+      logNexoraMetric("input_submitted", { mode: nexoraMode });
+      if (!res) {
+        setLastTextIngestionResult(null);
+        commitPipelineStatus({
+          ...createInitialPipelineStatusUi(),
+          status: "error",
+          source: "ingestion",
+          signalsCount: 0,
+          mappedObjectsCount: 0,
+          fragilityLevel: null,
+          summary: null,
+          insightLine: null,
+          updatedAt: Date.now(),
+          errorMessage: NEXORA_PIPELINE_USER_FAILURE,
+          lastBridgeSource: bridgeSource,
+        });
+        return;
+      }
+      if (!res.ok) {
+        setLastTextIngestionResult(null);
+        if (process.env.NODE_ENV !== "production") {
+          const errMsg =
+            Array.isArray(res.errors) && res.errors.length > 0
+              ? res.errors.map(String).join("; ").slice(0, 200)
+              : "Ingestion did not complete.";
+          globalThis.console?.debug?.("[Nexora][B26] pipeline_ingestion_errors", { errMsg });
+        }
+        commitPipelineStatus({
+          ...createInitialPipelineStatusUi(),
+          status: "error",
+          source: "ingestion",
+          signalsCount: res.bundle?.signals?.length ?? 0,
+          mappedObjectsCount: 0,
+          fragilityLevel: null,
+          summary: res.bundle?.summary?.trim() ? res.bundle.summary.trim().slice(0, 160) : null,
+          insightLine: null,
+          updatedAt: Date.now(),
+          errorMessage: NEXORA_PIPELINE_USER_FAILURE,
+          lastBridgeSource: bridgeSource,
+        });
+        return;
+      }
+
+      setLastTextIngestionResult(res);
+
+      const bridgeSig = buildIngestionFragilityBridgeSignature(res, activeDomainExperience.experience.domainId);
+      if (lastIngestionFragilityBridgeSigRef.current === bridgeSig) {
+        return;
+      }
+      lastIngestionFragilityBridgeSigRef.current = bridgeSig;
+
+      const summaryShort = res.bundle.summary?.trim() ? res.bundle.summary.trim().slice(0, 160) : null;
+      pendingTrustMultiSourceContextRef.current = null;
+      commitPipelineStatus({
+        ...createInitialPipelineStatusUi(),
+        status: "processing",
+        source: "ingestion",
+        signalsCount: res.bundle.signals.length,
+        mappedObjectsCount: 0,
+        fragilityLevel: null,
+        summary: summaryShort,
+        insightLine: null,
+        updatedAt: Date.now(),
+        errorMessage: null,
+        lastBridgeSource: bridgeSource,
+      });
+
+      try {
+        const scan = await runIngestionThroughFragilitySceneBridge({
+          ingestion: res,
+          domain: activeDomainExperience.experience.domainId,
+          workspaceId: activeWorkspaceId,
+          userId: ensureBackendUserId(),
+          sourceLabel,
+          bridgeSignature: bridgeSig,
+        });
+        if (scan?.ok) {
+          mergePipelineStatus({
+            status: "ready",
+            source: "ingestion",
+            signalsCount: res.bundle.signals.length,
+            mappedObjectsCount: countMappedObjectsFromFragilityScan(scan),
+            fragilityLevel: normalizeFragilityLevelForUi(scan.fragility_level),
+            summary: scan.summary?.trim() ? scan.summary.trim().slice(0, 160) : summaryShort,
+            insightLine: buildPipelineInsightLine(
+              scan.summary,
+              scan.drivers,
+              scan.fragility_level,
+              activeDomainExperience.experience.domainId
+            ),
+            updatedAt: Date.now(),
+            errorMessage: null,
+            lastBridgeSource: bridgeSource,
+          });
+        } else {
+          lastIngestionFragilityBridgeSigRef.current = null;
+          setLastTextIngestionResult(null);
+          commitPipelineStatus({
+            ...createInitialPipelineStatusUi(),
+            status: "error",
+            source: "ingestion",
+            signalsCount: res.bundle.signals.length,
+            mappedObjectsCount: 0,
+            fragilityLevel: null,
+            summary: summaryShort,
+            insightLine: null,
+            updatedAt: Date.now(),
+            errorMessage: NEXORA_PIPELINE_USER_FAILURE,
+            lastBridgeSource: bridgeSource,
+          });
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console?.warn?.("[Nexora][B2] fragility_bridge_failed", err);
+        }
+        lastIngestionFragilityBridgeSigRef.current = null;
+        setLastTextIngestionResult(null);
+        commitPipelineStatus({
+          ...createInitialPipelineStatusUi(),
+          status: "error",
+          source: "ingestion",
+          signalsCount: res.bundle.signals.length,
+          mappedObjectsCount: 0,
+          fragilityLevel: null,
+          summary: summaryShort,
+          insightLine: null,
+          updatedAt: Date.now(),
+          errorMessage: nexoraPipelineUserFacingMessage(err),
+          lastBridgeSource: bridgeSource,
+        });
+      }
+    },
+    [
+      activeDomainExperience.experience.domainId,
+      activeWorkspaceId,
+      commitPipelineStatus,
+      mergePipelineStatus,
+      ensureBackendUserId,
+      nexoraMode,
+    ]
+  );
+
+  const runMultiSourceFragilityPipeline = useCallback(
+    async (
+      multiRes: MultiSourceIngestionResponse,
+      domainOverride?: string | null,
+      options?: { bridgeTag?: "multi_source" | "scheduled" }
+    ) => {
+      const bridgeTag = options?.bridgeTag ?? "multi_source";
+      const meta = multiRes.bundle.merge_meta ?? {};
+      const srcCount = Number(meta.source_count ?? multiRes.bundle.sources.length);
+      const succCount = Number(meta.successful_source_count ?? 0);
+      const mergedCount = Number(meta.merged_signal_count ?? multiRes.bundle.signals.length);
+
+      if (!multiRes.ok) {
+        if (process.env.NODE_ENV !== "production" && multiRes.errors.length > 0) {
+          globalThis.console?.debug?.("[Nexora][B26] pipeline_multi_source_errors", {
+            errors: multiRes.errors.map(String).join("; ").slice(0, 200),
+          });
+        }
+        commitPipelineStatus({
+          ...createInitialPipelineStatusUi(),
+          status: "error",
+          source: "ingestion",
+          signalsCount: mergedCount,
+          mappedObjectsCount: 0,
+          fragilityLevel: null,
+          summary: multiRes.bundle.summary?.trim() ? multiRes.bundle.summary.trim().slice(0, 160) : null,
+          insightLine: null,
+          updatedAt: Date.now(),
+          errorMessage: NEXORA_PIPELINE_USER_FAILURE,
+          lastBridgeSource: bridgeTag,
+          multiSourceSourceCount: srcCount,
+          multiSourceSuccessfulCount: succCount,
+          multiSourceMergedSignalCount: mergedCount,
+        });
+        return;
+      }
+
+      const domain =
+        typeof domainOverride === "string" && domainOverride.trim()
+          ? domainOverride.trim()
+          : activeDomainExperience.experience.domainId;
+
+      const bridgeSig = buildMultiSourceBridgeSignature(multiRes, domain);
+      if (lastMultiSourceBridgeSigRef.current === bridgeSig) {
+        return;
+      }
+      lastMultiSourceBridgeSigRef.current = bridgeSig;
+
+      const summaryShort = multiRes.bundle.summary?.trim() ? multiRes.bundle.summary.trim().slice(0, 160) : null;
+      pendingTrustMultiSourceContextRef.current = {
+        mergeMeta: { ...(meta as Record<string, unknown>) },
+        sourceCount: srcCount,
+        successfulSourceCount: succCount,
+        mergedSignalCount: mergedCount,
+        bundleWarnings: [...(multiRes.bundle.warnings ?? [])].map(String),
+      };
+      commitPipelineStatus({
+        ...createInitialPipelineStatusUi(),
+        status: "processing",
+        source: "ingestion",
+        signalsCount: mergedCount,
+        mappedObjectsCount: 0,
+        fragilityLevel: null,
+        summary: summaryShort,
+        insightLine: null,
+        updatedAt: Date.now(),
+        errorMessage: null,
+        lastBridgeSource: bridgeTag,
+        multiSourceSourceCount: srcCount,
+        multiSourceSuccessfulCount: succCount,
+        multiSourceMergedSignalCount: mergedCount,
+      });
+
+      try {
+        const scan = await runMultiSourceThroughFragilitySceneBridge({
+          multi: multiRes,
+          domain,
+          workspaceId: activeWorkspaceId,
+          userId: ensureBackendUserId(),
+          bridgeSignature: bridgeSig,
+        });
+        if (scan?.ok) {
+          mergePipelineStatus({
+            status: "ready",
+            source: "ingestion",
+            signalsCount: mergedCount,
+            mappedObjectsCount: countMappedObjectsFromFragilityScan(scan),
+            fragilityLevel: normalizeFragilityLevelForUi(scan.fragility_level),
+            summary: scan.summary?.trim() ? scan.summary.trim().slice(0, 160) : summaryShort,
+            insightLine: buildPipelineInsightLine(
+              scan.summary,
+              scan.drivers,
+              scan.fragility_level,
+              activeDomainExperience.experience.domainId
+            ),
+            updatedAt: Date.now(),
+            errorMessage: null,
+            lastBridgeSource: bridgeTag,
+            multiSourceSourceCount: srcCount,
+            multiSourceSuccessfulCount: succCount,
+            multiSourceMergedSignalCount: mergedCount,
+          });
+        } else {
+          lastMultiSourceBridgeSigRef.current = null;
+          setLastMultiSourceIngestion(null);
+          commitPipelineStatus({
+            ...createInitialPipelineStatusUi(),
+            status: "error",
+            source: "ingestion",
+            signalsCount: mergedCount,
+            mappedObjectsCount: 0,
+            fragilityLevel: null,
+            summary: summaryShort,
+            insightLine: null,
+            updatedAt: Date.now(),
+            errorMessage: NEXORA_PIPELINE_USER_FAILURE,
+            lastBridgeSource: bridgeTag,
+            multiSourceSourceCount: srcCount,
+            multiSourceSuccessfulCount: succCount,
+            multiSourceMergedSignalCount: mergedCount,
+          });
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console?.warn?.("[Nexora][MultiSource] fragility_bridge_failed", err);
+        }
+        lastMultiSourceBridgeSigRef.current = null;
+        setLastMultiSourceIngestion(null);
+        commitPipelineStatus({
+          ...createInitialPipelineStatusUi(),
+          status: "error",
+          source: "ingestion",
+          signalsCount: mergedCount,
+          mappedObjectsCount: 0,
+          fragilityLevel: null,
+          summary: summaryShort,
+          insightLine: null,
+          updatedAt: Date.now(),
+          errorMessage: nexoraPipelineUserFacingMessage(err),
+          lastBridgeSource: bridgeTag,
+          multiSourceSourceCount: srcCount,
+          multiSourceSuccessfulCount: succCount,
+          multiSourceMergedSignalCount: mergedCount,
+        });
+      } finally {
+        pendingTrustMultiSourceContextRef.current = null;
+      }
+    },
+    [
+      activeDomainExperience.experience.domainId,
+      activeWorkspaceId,
+      commitPipelineStatus,
+      mergePipelineStatus,
+      ensureBackendUserId,
+    ]
+  );
+
+  const scheduledAssessmentInFlightRef = useRef<string | null>(null);
+
+  const runUnifiedMultiSourceAssessment = useCallback(
+    async (
+      payload: MultiSourceIngestionRequest,
+      entry: "product" | "dev" | "scheduled",
+      meta?: { scheduledDefinitionId?: string; scheduledDefinitionName?: string }
+    ): Promise<UnifiedMultiSourceRunOutcome> => {
+      if (entry === "product") {
+        traceProductionMultiSourceEntry(payload);
+      }
+      if (entry === "scheduled" && meta?.scheduledDefinitionId) {
+        traceScheduledAssessmentTriggered(meta.scheduledDefinitionId, meta.scheduledDefinitionName ?? "");
+      }
+      try {
+        const res = await submitMultiSourceIngestionDev(payload);
+        if (res === "skipped_in_flight") {
+          dispatchMultiSourceAssessmentComplete(false, entry);
+          return { kind: "skipped" };
+        }
+        if (res) setLastMultiSourceIngestion(res);
+        if (!res) {
+          dispatchMultiSourceAssessmentComplete(false, entry);
+          return { kind: "failed" };
+        }
+        logNexoraMetric("input_submitted", { mode: nexoraMode });
+        const bridgeTag = entry === "scheduled" ? "scheduled" : "multi_source";
+        await runMultiSourceFragilityPipeline(res, payload.domain ?? null, { bridgeTag });
+        dispatchMultiSourceAssessmentComplete(res.ok, entry);
+        return { kind: "ran", responseOk: res.ok };
+      } catch {
+        dispatchMultiSourceAssessmentComplete(false, entry);
+        return { kind: "failed" };
+      }
+    },
+    [runMultiSourceFragilityPipeline, nexoraMode]
+  );
+
+  const SCHEDULE_TICK_MS = 60_000;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const tick = () => {
+      const defs = loadScheduledAssessments().filter((d) => d.enabled);
+      const now = Date.now();
+      for (const def of defs) {
+        if (!isScheduledAssessmentDue(def, now)) continue;
+        if (scheduledAssessmentInFlightRef.current !== null) continue;
+        scheduledAssessmentInFlightRef.current = def.id;
+        void (async () => {
+          try {
+            const req = toMultiSourceRequest(def);
+            const outcome = await runUnifiedMultiSourceAssessment(req, "scheduled", {
+              scheduledDefinitionId: def.id,
+              scheduledDefinitionName: def.name,
+            });
+            let lastStatus: ScheduledAssessmentDefinition["lastStatus"] = "ok";
+            if (outcome.kind === "skipped") lastStatus = "skipped";
+            else if (outcome.kind === "failed") lastStatus = "error";
+            else if (!outcome.responseOk) lastStatus = "error";
+            else lastStatus = "ok";
+            updateScheduledAssessment(def.id, { lastRunAt: Date.now(), lastStatus });
+          } finally {
+            if (scheduledAssessmentInFlightRef.current === def.id) {
+              scheduledAssessmentInFlightRef.current = null;
+            }
+            window.dispatchEvent(new CustomEvent("nexora:scheduled-assessments-changed"));
+          }
+        })();
+        break;
+      }
+    };
+
+    const id = window.setInterval(tick, SCHEDULE_TICK_MS);
+    return () => {
+      window.clearInterval(id);
+    };
+  }, [runUnifiedMultiSourceAssessment]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onRunBusinessTextIngestion = (event: Event) => {
+      const detail = (event as CustomEvent<{ text?: string; source?: string; openCompareAfter?: boolean }>).detail;
+      if (detail?.openCompareAfter === true) {
+        openCompareAfterPipelineReadyRef.current = true;
+      }
+      const rawText = typeof detail?.text === "string" ? detail.text : "";
+      const source =
+        typeof detail?.source === "string" && detail.source.trim() ? detail.source.trim() : "business_text";
+      void runBusinessTextIngestionPipeline(rawText, source);
+    };
+
+    const onLegacyDevIngest = (event: Event) => {
+      const detail = (event as CustomEvent<{ text?: string }>).detail;
+      const rawText = typeof detail?.text === "string" ? detail.text : "";
+      void runBusinessTextIngestionPipeline(rawText, "nexora:dev-run-text-ingestion");
+    };
+
+    const onDevMultiSourceIngestion = (event: Event) => {
+      const detail = (event as CustomEvent<DevMultiSourceIngestionEventDetail>).detail;
+      const payload = normalizeDevMultiSourcePayload(detail);
+      if (!payload) {
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console?.warn?.("[Nexora][MultiSource] dev_event_ignored", { reason: "invalid_detail" });
+        }
+        return;
+      }
+      void runUnifiedMultiSourceAssessment(payload, "dev");
+    };
+
+    const onProductMultiSourceAssessment = (event: Event) => {
+      const detail = (event as CustomEvent<DevMultiSourceIngestionEventDetail>).detail;
+      const payload = normalizeDevMultiSourcePayload(detail);
+      if (!payload) {
+        dispatchMultiSourceAssessmentComplete(false, "product");
+        return;
+      }
+      void runUnifiedMultiSourceAssessment(payload, "product");
+    };
+
+    window.addEventListener("nexora:run-business-text-ingestion", onRunBusinessTextIngestion as EventListener);
+    window.addEventListener("nexora:dev-run-text-ingestion", onLegacyDevIngest as EventListener);
+    window.addEventListener("nexora:dev-run-multi-source-ingestion", onDevMultiSourceIngestion as EventListener);
+    window.addEventListener("nexora:run-multi-source-assessment", onProductMultiSourceAssessment as EventListener);
+
+    return () => {
+      window.removeEventListener("nexora:run-business-text-ingestion", onRunBusinessTextIngestion as EventListener);
+      window.removeEventListener("nexora:dev-run-text-ingestion", onLegacyDevIngest as EventListener);
+      window.removeEventListener("nexora:dev-run-multi-source-ingestion", onDevMultiSourceIngestion as EventListener);
+      window.removeEventListener("nexora:run-multi-source-assessment", onProductMultiSourceAssessment as EventListener);
+    };
+  }, [runBusinessTextIngestionPipeline, runUnifiedMultiSourceAssessment]);
+
+  useEffect(() => {
+    if (!isDevIngestion || typeof window === "undefined") return;
+    void prefetchIngestionConnectorCatalogDev();
+
+    const w = window as Window & {
+      __NEXORA_INGESTION_DEV__?: {
+        run: (text: string) => Promise<void>;
+        getLast: () => HomeScreenLastIngestion;
+        runMultiSource: (payload: MultiSourceIngestionRequest) => Promise<void>;
+        getLastMultiSource: () => MultiSourceIngestionResponse | null;
+      };
+    };
+    w.__NEXORA_INGESTION_DEV__ = {
+      run: async (text: string) => {
+        await runBusinessTextIngestionPipeline(text, "window.__NEXORA_INGESTION_DEV__");
+      },
+      getLast: () => lastTextIngestionResultRef.current,
+      runMultiSource: async (payload) => {
+        await runUnifiedMultiSourceAssessment(payload, "dev");
+      },
+      getLastMultiSource: () => lastMultiSourceIngestionRef.current,
+    };
+
+    return () => {
+      delete w.__NEXORA_INGESTION_DEV__;
+    };
+  }, [isDevIngestion, runBusinessTextIngestionPipeline, runUnifiedMultiSourceAssessment]);
+
+  const investorDemoCanGoNext =
+    investorDemo.demo.active && investorDemo.demo.step <= INVESTOR_DEMO_MAX_STEP;
+  const investorDemoOverlayNode = investorDemo.demo.active ? (
+    <InvestorDemoOverlay
+      title={investorDemoOverlayModel.title}
+      description={investorDemoOverlayModel.description}
+      step={investorDemo.demo.step}
+      maxStep={INVESTOR_DEMO_MAX_STEP}
+      canGoNext={investorDemoCanGoNext}
+      onNext={investorDemo.nextStep}
+      onBack={investorDemo.backStep}
+      onExit={investorDemo.exitDemo}
+      showBack={investorDemo.demo.step > 0}
+    />
+  ) : null;
+
+  const pipelineStatusFragilityColor =
+    pipelineStatusUi.fragilityLevel === "critical" || pipelineStatusUi.fragilityLevel === "high"
+      ? nx.risk
+      : pipelineStatusUi.fragilityLevel === "medium"
+        ? nx.warning
+        : pipelineStatusUi.fragilityLevel === "low"
+          ? nx.accentMuted
+          : nx.muted;
+
+  const showPipelineStatusHud =
+    pipelineStatusUi.status === "processing" ||
+    pipelineStatusUi.status === "ready" ||
+    pipelineStatusUi.status === "error";
+
   const sceneNode = (
     <div style={{ position: "relative", width: "100%", height: "100%", background: "transparent", zIndex: 0 }}>
       {/* Three.js (Canvas always mounted for stable hooks) */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: centerComponent ? "min(40%, 420px)" : 0,
+          zIndex: 0,
+          transition: "bottom 180ms ease",
+        }}
+      >
         <SceneCanvas
           prefs={prefs}
+          resolvedUiTheme={resolvedTheme}
+          motionCalm={prefs.motionIntensity === "low"}
           camPos={camPos}
           starCount={starCount}
           isDraggingHUD={false}
@@ -7914,12 +10643,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           showCameraHelper={showCameraHelper}
           focusPinned={focusPinned}
           focusMode={focusMode}
-          focusedId={focusedId}
+          focusedId={visibleFocusedId}
           effectiveActiveLoopId={effectiveActiveLoopId}
           cameraLockedByUser={cameraLockedByUser}
           isOrbiting={isOrbiting}
-          sceneJson={sceneJson}
-          propagationPayload={responseData}
+          sceneJson={visibleSceneJson}
+          propagationPayload={visibleResponseData}
           scenarioTrigger={warRoom.scenarioTrigger}
           onScenarioOverlayChange={handleWarRoomOverlayChange}
           objectSelection={effectiveObjectSelection}
@@ -7951,6 +10680,828 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         />
       </div>
 
+      {showPipelineStatusHud ? (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "absolute",
+            top: 12,
+            left: 12,
+            zIndex: 6,
+            maxWidth: 320,
+            pointerEvents: "none",
+            borderRadius: 12,
+            border: `1px solid ${nx.borderSoft}`,
+            background: "color-mix(in srgb, var(--nx-bg-deep) 82%, transparent)",
+            backdropFilter: "blur(10px)",
+            boxShadow: nx.headerShadow,
+            padding: "10px 12px",
+            transition: "opacity 220ms ease, transform 220ms ease",
+            opacity: pipelineStatusUi.status === "processing" ? 0.92 : 1,
+          }}
+        >
+          <div style={{ color: nx.lowMuted, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+            Nexora pipeline
+            {pipelineStatusUi.replayRestoredRunId ? (
+              <span
+                style={{
+                  marginLeft: 8,
+                  color: nx.accentInk,
+                  fontWeight: 800,
+                  letterSpacing: "0.06em",
+                  textTransform: "none",
+                }}
+              >
+                · Restored run
+              </span>
+            ) : null}
+          </div>
+          <div style={{ color: nx.text, fontSize: 12, fontWeight: 700, marginTop: 4, lineHeight: 1.35 }}>
+            Status:{" "}
+            <span style={{ color: pipelineStatusUi.status === "error" ? nx.risk : nx.accentInk }}>
+              {pipelineStatusUi.status === "processing"
+                ? "Processing"
+                : pipelineStatusUi.status === "error"
+                  ? "Error"
+                  : "Ready"}
+            </span>
+          </div>
+          {!isPilotProductMode ? (
+            <>
+              <div style={{ color: nx.muted, fontSize: 10, marginTop: 6, lineHeight: 1.4 }}>
+                Mode:{" "}
+                <strong style={{ color: nx.text }}>{nexoraMode === "pure" ? "Pure" : "Adaptive"}</strong>
+              </div>
+              <div style={{ color: nx.lowMuted, fontSize: 9, marginTop: 2, lineHeight: 1.35 }}>
+                {nexoraMode === "pure"
+                  ? "Baseline analysis (no historical bias)"
+                  : "Using past outcomes to guide decisions"}
+              </div>
+            </>
+          ) : null}
+          <div style={{ color: nx.muted, fontSize: 11, marginTop: 6, lineHeight: 1.45, display: "flex", flexDirection: "column", gap: 2 }}>
+            <span>
+              Signals: <strong style={{ color: nx.text }}>{pipelineStatusUi.signalsCount}</strong>
+              {" · "}
+              Objects: <strong style={{ color: nx.text }}>{pipelineStatusUi.mappedObjectsCount}</strong>
+            </span>
+            {pipelineStatusUi.multiSourceSourceCount != null ? (
+              <span>
+                Multi-source:{" "}
+                <strong style={{ color: nx.text }}>
+                  {pipelineStatusUi.multiSourceSuccessfulCount ?? 0}/{pipelineStatusUi.multiSourceSourceCount}
+                </strong>{" "}
+                sources · merged{" "}
+                <strong style={{ color: nx.text }}>{pipelineStatusUi.multiSourceMergedSignalCount ?? 0}</strong>
+              </span>
+            ) : null}
+            <span>
+              Fragility:{" "}
+              <strong style={{ color: pipelineStatusFragilityColor }}>
+                {pipelineStatusUi.fragilityLevel
+                  ? pipelineStatusUi.fragilityLevel.charAt(0).toUpperCase() + pipelineStatusUi.fragilityLevel.slice(1)
+                  : pipelineStatusUi.status === "processing"
+                    ? "…"
+                    : "—"}
+              </strong>
+            </span>
+            {pipelineStatusUi.insightLine ? (
+              <span
+                style={{
+                  color: nx.accentInk,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  lineHeight: 1.35,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+                title={pipelineStatusUi.insightLine}
+              >
+                {pipelineStatusUi.insightLine}
+              </span>
+            ) : null}
+            {pipelineStatusUi.status === "ready" && runbookSurfaceHints.pipelineAfterAnalysis ? (
+              <span style={{ color: nx.lowMuted, fontSize: 9, lineHeight: 1.35, marginTop: 4, display: "block" }}>
+                {runbookSurfaceHints.pipelineAfterAnalysis}
+              </span>
+            ) : null}
+            {pipelineStatusUi.status === "ready" &&
+            (pipelineStatusUi.confidenceTier ||
+              (pipelineStatusUi.replayRestoredRunId && pipelineStatusUi.trustSummaryLine)) ? (
+              <div style={{ marginTop: 4, paddingTop: 4, borderTop: `1px solid ${nx.borderSoft}` }}>
+                <span style={{ color: nx.lowMuted, fontSize: 8, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Trust
+                </span>
+                <div style={{ color: nx.text, fontSize: 10, fontWeight: 700, marginTop: 2 }}>
+                  Confidence:{" "}
+                  <span style={{ color: nx.accentInk }}>
+                    {pipelineStatusUi.confidenceTier
+                      ? pipelineStatusUi.confidenceTier.charAt(0).toUpperCase() +
+                        pipelineStatusUi.confidenceTier.slice(1)
+                      : "—"}
+                  </span>
+                </div>
+                {pipelineStatusUi.trustSummaryLine ? (
+                  <span style={{ color: nx.muted, fontSize: 9, lineHeight: 1.35, marginTop: 2, display: "block" }}>
+                    {pipelineStatusUi.trustSummaryLine}
+                  </span>
+                ) : null}
+                {pipelineStatusUi.validationWarnings.length > 0 ? (
+                  <span style={{ color: nx.warning, fontSize: 9, lineHeight: 1.35, marginTop: 2, display: "block" }}>
+                    {pipelineStatusUi.validationWarnings[0]}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+            {pipelineStatusUi.status === "ready" && decisionQualityReport ? (
+              <div style={{ marginTop: 4, paddingTop: 4, borderTop: `1px solid ${nx.borderSoft}` }}>
+                <span
+                  style={{
+                    color: nx.lowMuted,
+                    fontSize: 8,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Decision quality
+                </span>
+                <div style={{ color: nx.text, fontSize: 10, fontWeight: 700, marginTop: 2 }}>
+                  Quality:{" "}
+                  <span style={{ color: nx.accentInk }}>
+                    {decisionQualityReport.qualityTier.charAt(0).toUpperCase() +
+                      decisionQualityReport.qualityTier.slice(1)}
+                  </span>
+                  {" · "}
+                  Trend:{" "}
+                  <span style={{ color: nx.accentInk }}>
+                    {decisionQualityReport.trend.charAt(0).toUpperCase() + decisionQualityReport.trend.slice(1)}
+                  </span>
+                </div>
+                {decisionQualityReport.bestPosture ? (
+                  <div style={{ color: nx.muted, fontSize: 9, marginTop: 2, lineHeight: 1.35 }}>
+                    Best posture:{" "}
+                    <strong style={{ color: nx.text }}>{decisionQualityReport.bestPosture}</strong>
+                    {decisionQualityReport.weakestPosture ? (
+                      <span style={{ color: nx.lowMuted }}>
+                        {" "}
+                        · Weakest: <strong style={{ color: nx.text }}>{decisionQualityReport.weakestPosture}</strong>
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+                <span style={{ color: nx.muted, fontSize: 9, lineHeight: 1.35, marginTop: 2, display: "block" }}>
+                  {decisionQualityReport.summary.length > 220
+                    ? `${decisionQualityReport.summary.slice(0, 220)}…`
+                    : decisionQualityReport.summary}
+                </span>
+              </div>
+            ) : null}
+            {pipelineStatusUi.status === "ready" && lastAuditRecordRef.current
+              ? (() => {
+                  void auditHudEpoch;
+                  void executionOutcomeHudEpoch;
+                  const audit = lastAuditRecordRef.current!;
+                  const ex = loadExecutionOutcomeForRun(audit.runId);
+                  const drivers = audit.scanner.drivers ?? [];
+                  const d1 = drivers[0];
+                  const d2 = drivers[1];
+                  const conf = audit.trust.confidenceTier
+                    ? audit.trust.confidenceTier.charAt(0).toUpperCase() + audit.trust.confidenceTier.slice(1)
+                    : "—";
+                  const used = `${audit.merge.successfulSourceCount}/${audit.merge.sourceCount}`;
+                  return (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        paddingTop: 6,
+                        borderTop: `1px solid ${nx.borderSoft}`,
+                        pointerEvents: "auto",
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: nx.lowMuted,
+                          fontSize: 8,
+                          fontWeight: 700,
+                          letterSpacing: "0.08em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Why this result?
+                      </span>
+                      <div style={{ color: nx.muted, fontSize: 9, lineHeight: 1.4, marginTop: 4 }}>
+                        {d1 ? (
+                          <span style={{ display: "block" }}>
+                            <strong style={{ color: nx.text }}>1.</strong> {d1}
+                          </span>
+                        ) : (
+                          <span style={{ display: "block", color: nx.lowMuted }}>Top drivers: —</span>
+                        )}
+                        {d2 ? (
+                          <span style={{ display: "block", marginTop: 2 }}>
+                            <strong style={{ color: nx.text }}>2.</strong> {d2}
+                          </span>
+                        ) : null}
+                        <span style={{ display: "block", marginTop: 4 }}>
+                          Confidence: <strong style={{ color: nx.text }}>{conf}</strong>
+                          {audit.trust.summary ? (
+                            <span style={{ color: nx.lowMuted }}> · {audit.trust.summary.slice(0, 72)}</span>
+                          ) : null}
+                        </span>
+                        <span style={{ display: "block", marginTop: 2 }}>
+                          Sources: <strong style={{ color: nx.text }}>{used}</strong> used
+                        </span>
+                      </div>
+                      <div style={{ marginTop: 8 }} role="region" aria-label="Was this helpful">
+                        <span
+                          style={{
+                            color: nx.lowMuted,
+                            fontSize: 8,
+                            fontWeight: 700,
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Was this helpful?
+                        </span>
+                        <div
+                          role="group"
+                          aria-label="Feedback"
+                          style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 5, alignItems: "center" }}
+                        >
+                          <button
+                            type="button"
+                            className="nx-pipeline-hud-cta"
+                            disabled={pipelineFeedbackKeys.has(`${audit.runId}|helpful`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              recordPipelineFeedback(audit.runId, "helpful");
+                            }}
+                            style={{
+                              cursor: pipelineFeedbackKeys.has(`${audit.runId}|helpful`) ? "default" : "pointer",
+                              fontSize: 9,
+                              fontWeight: 700,
+                              padding: "3px 8px",
+                              borderRadius: 6,
+                              border: `1px solid ${nx.borderSoft}`,
+                              background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                              color: nx.accentInk,
+                              opacity: pipelineFeedbackKeys.has(`${audit.runId}|helpful`) ? 0.55 : 1,
+                            }}
+                          >
+                            👍 Yes
+                          </button>
+                          <button
+                            type="button"
+                            className="nx-pipeline-hud-cta"
+                            disabled={pipelineFeedbackKeys.has(`${audit.runId}|not_helpful`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              recordPipelineFeedback(audit.runId, "not_helpful");
+                            }}
+                            style={{
+                              cursor: pipelineFeedbackKeys.has(`${audit.runId}|not_helpful`) ? "default" : "pointer",
+                              fontSize: 9,
+                              fontWeight: 700,
+                              padding: "3px 8px",
+                              borderRadius: 6,
+                              border: `1px solid ${nx.borderSoft}`,
+                              background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                              color: nx.textSoft,
+                              opacity: pipelineFeedbackKeys.has(`${audit.runId}|not_helpful`) ? 0.55 : 1,
+                            }}
+                          >
+                            👎 No
+                          </button>
+                          <button
+                            type="button"
+                            className="nx-pipeline-hud-cta"
+                            disabled={pipelineFeedbackKeys.has(`${audit.runId}|confusing`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              recordPipelineFeedback(audit.runId, "confusing");
+                            }}
+                            style={{
+                              cursor: pipelineFeedbackKeys.has(`${audit.runId}|confusing`) ? "default" : "pointer",
+                              fontSize: 9,
+                              fontWeight: 700,
+                              padding: "3px 8px",
+                              borderRadius: 6,
+                              border: `1px solid ${nx.borderSoft}`,
+                              background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                              color: nx.warning,
+                              opacity: pipelineFeedbackKeys.has(`${audit.runId}|confusing`) ? 0.55 : 1,
+                            }}
+                          >
+                            ⚠️ Confusing
+                          </button>
+                        </div>
+                      </div>
+                      {ex ? (
+                        <div style={{ marginTop: 6, color: "#bae6fd", fontSize: 10, fontWeight: 700 }}>
+                          Outcome:{" "}
+                          {ex.outcomeLabel === "better" ? "Better" : ex.outcomeLabel === "worse" ? "Worse" : "Same"}
+                        </div>
+                      ) : null}
+                      {ex && runbookSurfaceHints.pipelineAfterOutcome ? (
+                        <div style={{ marginTop: 4, color: nx.lowMuted, fontSize: 9, lineHeight: 1.35 }}>
+                          {runbookSurfaceHints.pipelineAfterOutcome}
+                        </div>
+                      ) : null}
+                      {isPilotProductMode && pilotOperatorInsightText ? (
+                        <span
+                          style={{
+                            color: nx.lowMuted,
+                            fontSize: 9,
+                            lineHeight: 1.45,
+                            marginTop: 6,
+                            display: "block",
+                          }}
+                        >
+                          {pilotOperatorInsightText}
+                        </span>
+                      ) : null}
+                      {isPilotProductMode && pilotRuntimeDomainLine ? (
+                        <span
+                          style={{
+                            color: nx.lowMuted,
+                            fontSize: 9,
+                            lineHeight: 1.45,
+                            marginTop: 4,
+                            display: "block",
+                          }}
+                        >
+                          {pilotRuntimeDomainLine}
+                        </span>
+                      ) : null}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, alignItems: "center" }}>
+                        <button
+                          type="button"
+                          className="nx-pipeline-hud-cta"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void navigator.clipboard?.writeText(serializeAudit(audit)).catch(() => {});
+                          }}
+                          style={{
+                            cursor: "pointer",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            border: `1px solid ${nx.borderSoft}`,
+                            background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                            color: nx.accentInk,
+                          }}
+                        >
+                          Copy audit JSON
+                        </button>
+                        <button
+                          type="button"
+                          className="nx-pipeline-hud-cta"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const b = lastExportBundleRef.current;
+                            if (!b) return;
+                            void navigator.clipboard?.writeText(serializeExportBundle(b)).catch(() => {});
+                          }}
+                          style={{
+                            cursor: "pointer",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            border: `1px solid ${nx.borderSoft}`,
+                            background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                            color: nx.accentInk,
+                          }}
+                        >
+                          Export bundle
+                        </button>
+                        <button
+                          type="button"
+                          className="nx-pipeline-hud-cta"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const snap = lastReplaySnapshotRef.current;
+                            if (!snap) return;
+                            appendNexoraRunHistory({
+                              savedAt: Date.now(),
+                              record: audit,
+                              replaySnapshot: snap,
+                            });
+                            setRunHistoryEpoch((n) => n + 1);
+                          }}
+                          style={{
+                            cursor: "pointer",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            border: `1px solid ${nx.borderSoft}`,
+                            background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                            color: nx.muted,
+                          }}
+                        >
+                          Save run
+                        </button>
+                        <button
+                          type="button"
+                          className="nx-pipeline-hud-cta"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setImportBundleOpen((open) => {
+                              const next = !open;
+                              if (next) {
+                                setImportBundleError(null);
+                                setImportBundleHint(null);
+                              }
+                              return next;
+                            });
+                          }}
+                          style={{
+                            cursor: "pointer",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            border: `1px solid ${nx.borderSoft}`,
+                            background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                            color: nx.accentInk,
+                          }}
+                        >
+                          Import bundle
+                        </button>
+                        <button
+                          type="button"
+                          className="nx-pipeline-hud-cta"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRecordExecutionOutcome();
+                          }}
+                          style={{
+                            cursor: "pointer",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            border: `1px solid ${nx.borderSoft}`,
+                            background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                            color: nx.accentInk,
+                          }}
+                        >
+                          Record outcome
+                        </button>
+                      </div>
+                      {importBundleOpen ? (
+                        <div
+                          style={{
+                            marginTop: 8,
+                            paddingTop: 8,
+                            borderTop: `1px solid ${nx.borderSoft}`,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 6,
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: nx.lowMuted,
+                              fontSize: 8,
+                              fontWeight: 700,
+                              letterSpacing: "0.06em",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Paste export JSON
+                          </span>
+                          <textarea
+                            value={importBundleDraft}
+                            onChange={(ev) => setImportBundleDraft(ev.target.value)}
+                            onClick={(ev) => ev.stopPropagation()}
+                            rows={5}
+                            spellCheck={false}
+                            placeholder='{"version":"1",...}'
+                            style={{
+                              width: "100%",
+                              maxWidth: 280,
+                              resize: "vertical",
+                              fontSize: 9,
+                              fontFamily: "ui-monospace, monospace",
+                              padding: 6,
+                              borderRadius: 6,
+                              border: `1px solid ${nx.borderSoft}`,
+                              background: "color-mix(in srgb, var(--nx-bg-deep) 88%, transparent)",
+                              color: nx.text,
+                              boxSizing: "border-box",
+                            }}
+                          />
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                            <button
+                              type="button"
+                              className="nx-pipeline-hud-cta"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setImportBundleError(null);
+                                setImportBundleHint(null);
+                                const result = parseNexoraImportBundle(importBundleDraft);
+                                if (!result.ok || !result.bundle) {
+                                  setImportBundleError(result.error ?? "Import failed.");
+                                  return;
+                                }
+                                const bundle = result.bundle;
+                                const sig = exportBundleStableSignature(bundle);
+                                if (lastB17ImportBundleSigRef.current === sig) {
+                                  setImportBundleHint("Already applied this bundle.");
+                                  return;
+                                }
+                                lastB17ImportBundleSigRef.current = sig;
+                                if (bundle.replaySnapshot) {
+                                  dispatchNexoraReplayApply({
+                                    snapshot: bundle.replaySnapshot,
+                                    source: "imported_bundle",
+                                  });
+                                  appendNexoraRunHistory({
+                                    savedAt: Date.now(),
+                                    record: bundle.record,
+                                    replaySnapshot: bundle.replaySnapshot,
+                                  });
+                                  setRunHistoryEpoch((n) => n + 1);
+                                  if (process.env.NODE_ENV !== "production") {
+                                    globalThis.console?.debug?.("[Nexora][B17] import_bundle_applied", {
+                                      runId: bundle.record.runId,
+                                      replay: true,
+                                    });
+                                  }
+                                } else {
+                                  setImportBundleHint("Bundle imported without replay snapshot.");
+                                }
+                              }}
+                              style={{
+                                cursor: "pointer",
+                                fontSize: 9,
+                                fontWeight: 700,
+                                padding: "3px 8px",
+                                borderRadius: 6,
+                                border: `1px solid ${nx.borderSoft}`,
+                                background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                                color: nx.accentInk,
+                              }}
+                            >
+                              Apply import
+                            </button>
+                            <button
+                              type="button"
+                              className="nx-pipeline-hud-cta"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setImportBundleOpen(false);
+                                setImportBundleError(null);
+                                setImportBundleHint(null);
+                              }}
+                              style={{
+                                cursor: "pointer",
+                                fontSize: 9,
+                                fontWeight: 700,
+                                padding: "3px 8px",
+                                borderRadius: 6,
+                                border: `1px solid ${nx.borderSoft}`,
+                                color: nx.lowMuted,
+                              }}
+                            >
+                              Close
+                            </button>
+                          </div>
+                          {importBundleError ? (
+                            <span style={{ color: nx.risk, fontSize: 9, lineHeight: 1.35 }}>{importBundleError}</span>
+                          ) : null}
+                          {importBundleHint ? (
+                            <span style={{ color: nx.muted, fontSize: 9, lineHeight: 1.35 }}>{importBundleHint}</span>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      {recentRunsForHud.length > 0 ? (
+                        <div style={{ marginTop: 8 }}>
+                          <span
+                            style={{
+                              color: nx.lowMuted,
+                              fontSize: 8,
+                              fontWeight: 700,
+                              letterSpacing: "0.06em",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Recent runs
+                          </span>
+                          {recentRunsForHud.map((h) => (
+                            <div
+                              key={h.record.runId + h.savedAt}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: 6,
+                                marginTop: 4,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  color: nx.muted,
+                                  fontSize: 9,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  maxWidth: 160,
+                                }}
+                                title={h.record.runId}
+                              >
+                                {h.record.runId.length > 22 ? `${h.record.runId.slice(0, 22)}…` : h.record.runId}
+                              </span>
+                              <button
+                                type="button"
+                                className="nx-pipeline-hud-cta"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  dispatchNexoraReplayApply({
+                                    snapshot: h.replaySnapshot,
+                                    source: "recent_runs",
+                                  });
+                                }}
+                                style={{
+                                  cursor: "pointer",
+                                  fontSize: 8,
+                                  fontWeight: 700,
+                                  padding: "2px 6px",
+                                  borderRadius: 6,
+                                  border: `1px solid ${nx.borderSoft}`,
+                                  background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                                  color: nx.accentInk,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                Restore
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            className="nx-pipeline-hud-cta"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearNexoraRunHistory();
+                              setRunHistoryEpoch((n) => n + 1);
+                            }}
+                            style={{
+                              cursor: "pointer",
+                              fontSize: 8,
+                              fontWeight: 700,
+                              marginTop: 6,
+                              padding: "2px 6px",
+                              borderRadius: 6,
+                              border: `1px solid ${nx.borderSoft}`,
+                              color: nx.lowMuted,
+                            }}
+                          >
+                            Clear history
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })()
+              : null}
+            {pipelineStatusUi.status === "ready" && pipelineStatusUi.decisionPosture ? (
+              <div style={{ pointerEvents: "auto", marginTop: 6, paddingTop: 6, borderTop: `1px solid ${nx.borderSoft}` }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  <span style={{ color: nx.lowMuted, fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    Decision
+                  </span>
+                  <span style={{ color: nx.text, fontSize: 10, fontWeight: 700, lineHeight: 1.3 }}>
+                    Posture: {pipelineStatusUi.decisionPosture}
+                  </span>
+                  {pipelineStatusUi.decisionTradeoff ? (
+                    <span style={{ color: nx.muted, fontSize: 9, lineHeight: 1.35 }}>Tradeoff: {pipelineStatusUi.decisionTradeoff}</span>
+                  ) : null}
+                  {pipelineStatusUi.decisionNextMove ? (
+                    <span style={{ color: nx.accentInk, fontSize: 9, fontWeight: 600, lineHeight: 1.35 }}>
+                      Next: {pipelineStatusUi.decisionNextMove}
+                    </span>
+                  ) : null}
+                  {runbookSurfaceHints.pipelineAfterDecision ? (
+                    <span style={{ color: nx.lowMuted, fontSize: 9, lineHeight: 1.35, marginTop: 4 }}>
+                      {runbookSurfaceHints.pipelineAfterDecision}
+                    </span>
+                  ) : null}
+                </div>
+                <div
+                  role="group"
+                  aria-label="Decision actions"
+                  style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, alignItems: "center" }}
+                >
+                  <button
+                    type="button"
+                    className="nx-pipeline-hud-cta"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      dispatchPipelineHudB7Simulate();
+                    }}
+                    style={{
+                      cursor: "pointer",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      padding: "3px 8px",
+                      borderRadius: 6,
+                      border: `1px solid ${nx.borderSoft}`,
+                      background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                      color: nx.accentInk,
+                    }}
+                  >
+                    Simulate
+                  </button>
+                  <button
+                    type="button"
+                    className="nx-pipeline-hud-cta"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      dispatchPipelineHudB7Compare();
+                    }}
+                    style={{
+                      cursor: "pointer",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      padding: "3px 8px",
+                      borderRadius: 6,
+                      border: `1px solid ${nx.borderSoft}`,
+                      background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                      color: nx.accentInk,
+                    }}
+                  >
+                    Compare
+                  </button>
+                  <button
+                    type="button"
+                    className="nx-pipeline-hud-cta"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      dispatchPipelineHudB7WhyThis();
+                    }}
+                    style={{
+                      cursor: "pointer",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      padding: "3px 8px",
+                      borderRadius: 6,
+                      border: `1px solid ${nx.borderSoft}`,
+                      background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+                      color: nx.muted,
+                    }}
+                  >
+                    Why this?
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            {pipelineStatusUi.summary ? (
+              <span style={{ color: nx.lowMuted, fontSize: 10, marginTop: 2, maxHeight: 36, overflow: "hidden" }}>
+                {pipelineStatusUi.summary}
+              </span>
+            ) : null}
+            {pipelineStatusUi.status === "error" && pipelineStatusUi.errorMessage ? (
+              <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span style={{ color: nx.risk, fontSize: 10 }}>
+                  {isPilotProductMode ? NEXORA_PIPELINE_USER_FAILURE : pipelineStatusUi.errorMessage}
+                </span>
+                {(() => {
+                  const guide = explainPipelineHudFailure({
+                    status: pipelineStatusUi.status,
+                    source: pipelineStatusUi.source,
+                    errorMessage: isPilotProductMode ? NEXORA_PIPELINE_USER_FAILURE : pipelineStatusUi.errorMessage,
+                  });
+                  return guide ? (
+                    <span style={{ color: nx.muted, fontSize: 9, lineHeight: 1.35 }}>{guide}</span>
+                  ) : null;
+                })()}
+              </span>
+            ) : null}
+            {pipelineStatusUi.lastBridgeSource ? (
+              <span style={{ color: nx.lowMuted, fontSize: 9, marginTop: 4 }}>
+                Source:{" "}
+                {pipelineStatusUi.lastBridgeSource === "command_bar"
+                  ? "Command bar"
+                  : pipelineStatusUi.lastBridgeSource.replace(/_/g, " ")}
+                {pipelineStatusUi.updatedAt ? ` · ${new Date(pipelineStatusUi.updatedAt).toLocaleTimeString()}` : null}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      <div aria-hidden style={sceneVignetteLayerStyle} />
+
+      <NexoraRunbookPanel currentStepId={runbookStepId} onRunDemo={runPilotDemoScenario} />
+
       <RetailDemoOverlay
         visible={isRetailStoryScene}
         script={RETAIL_FRAGILITY_DEMO_SCRIPT}
@@ -7968,44 +11519,44 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         onStepForward={retailDemoFlow.currentStepIndex < 0 ? retailDemoFlow.restart : retailDemoFlow.stepForward}
       />
 
-      {!sceneJson && (
+      {!visibleSceneJson && (
         <div
           style={{
             position: "absolute",
             inset: 0,
+            zIndex: 2,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#cbd5e1",
+            color: "var(--nx-muted)",
             fontSize: 14,
             pointerEvents: "auto",
-            background: "rgba(0,0,0,0.2)",
+            background: "var(--nx-overlay-backdrop)",
           }}
         >
           <div
             style={{
+              ...sceneOverlayCardStyle,
               textAlign: "left",
               lineHeight: 1.5,
-              maxWidth: 520,
-              padding: 14,
-              borderRadius: 12,
-              border: "1px solid rgba(148,163,184,0.18)",
-              background: "rgba(15,23,42,0.78)",
-              boxShadow: "0 10px 32px rgba(2,6,23,0.32)",
             }}
           >
-            <div style={{ color: "#e2e8f0", fontSize: 18, fontWeight: 800 }}>
+            <div style={{ color: nx.lowMuted, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Getting started
+            </div>
+            <div style={{ color: nx.text, fontSize: 18, fontWeight: 800, marginTop: 6 }}>
               {activeDomainExperience.experience.helperTitle}
             </div>
-            <div style={{ color: "#cbd5e1", fontSize: 12, marginTop: 8 }}>
+            <div style={{ color: nx.muted, fontSize: 13, marginTop: 10, lineHeight: 1.55 }}>
               {activeDomainExperience.experience.helperBody}
             </div>
-            <div style={{ color: "#94a3b8", fontSize: 11, marginTop: 6 }}>
-              {`The shared Nexora core stays the same; this domain pack changes the starter demo, prompt examples, panel emphasis, and cockpit framing.`}
+            <div style={{ color: nx.lowMuted, fontSize: 12, marginTop: 10, lineHeight: 1.5 }}>
+              One decision engine: this workspace sets the starter scenario, prompts, and which executive panels surface first.
             </div>
             {!launchDomainActive ? (
-              <div style={{ color: "#fbbf24", fontSize: 11, marginTop: 6 }}>
-                Preview domain: the shipping MVP centers Business, DevOps, and Finance. This workspace still runs on the same shared core engine.
+              <div style={{ color: nx.warning, fontSize: 12, marginTop: 10, lineHeight: 1.45 }}>
+                You are in a preview workspace. The launch experience highlights Business, DevOps, and Finance — the
+                underlying engine is unchanged.
               </div>
             ) : null}
             <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -8079,48 +11630,334 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             position: "absolute",
             left: 16,
             top: 16,
+            zIndex: 12,
+            ...sceneOverlayCardStyle,
             maxWidth: 560,
-            zIndex: 11,
-            padding: 10,
-            borderRadius: 12,
-            border: "1px solid rgba(148,163,184,0.18)",
-            background: "rgba(15,23,42,0.82)",
-            boxShadow: "0 8px 24px rgba(2,6,23,0.3)",
+            padding: 14,
           }}
         >
-          <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 700 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+            <span
+              style={{
+                fontSize: 9,
+                fontWeight: 800,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "#93c5fd",
+                padding: "2px 7px",
+                borderRadius: 8,
+                border: "1px solid rgba(96,165,250,0.28)",
+                background: "rgba(59,130,246,0.1)",
+              }}
+            >
+              Demo mode
+            </span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: nx.muted }}>Prompts ready</span>
+          </div>
+          {(activeDomainExperience.experience.demoScenarioTitle ||
+            activeDomainExperience.experience.demoBusinessContext ||
+            activeDomainExperience.experience.demoDecisionQuestion) && (
+            <div
+              style={{
+                marginBottom: 10,
+                padding: 10,
+                borderRadius: 10,
+                border: "1px solid rgba(148,163,184,0.15)",
+                background: "rgba(2,6,23,0.35)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+              }}
+            >
+              {activeDomainExperience.experience.demoScenarioTitle ? (
+                <div style={{ color: nx.text, fontSize: 13, fontWeight: 800, lineHeight: 1.3 }}>
+                  {activeDomainExperience.experience.demoScenarioTitle}
+                </div>
+              ) : null}
+              {activeDomainExperience.experience.demoBusinessContext ? (
+                <div style={{ color: "#cbd5e1", fontSize: 11, lineHeight: 1.45 }}>
+                  <span style={{ color: "#94a3b8" }}>Context · </span>
+                  {activeDomainExperience.experience.demoBusinessContext}
+                </div>
+              ) : null}
+              {activeDomainExperience.experience.demoDecisionQuestion ? (
+                <div style={{ color: "#cbd5e1", fontSize: 11, lineHeight: 1.45 }}>
+                  <span style={{ color: "#94a3b8" }}>Decision focus · </span>
+                  {activeDomainExperience.experience.demoDecisionQuestion}
+                </div>
+              ) : null}
+            </div>
+          )}
+          <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            Suggested flow
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6, marginBottom: 10 }}>
+            {(["Load scenario", "Ask the system", "Inspect the recommendation"] as const).map((label, idx) => {
+              const active = idx === 1;
+              return (
+                <div
+                  key={label}
+                  style={{
+                    flex: "1 1 120px",
+                    minWidth: 0,
+                    padding: "6px 8px",
+                    borderRadius: 10,
+                    border: active ? "1px solid rgba(96,165,250,0.4)" : "1px solid rgba(148,163,184,0.15)",
+                    background: active ? "rgba(59,130,246,0.14)" : "rgba(2,6,23,0.35)",
+                    fontSize: 10,
+                    fontWeight: active ? 700 : 600,
+                    color: active ? nx.text : nx.muted,
+                    lineHeight: 1.35,
+                  }}
+                >
+                  <span style={{ color: active ? "#93c5fd" : nx.lowMuted, marginRight: 4 }}>{idx + 1}.</span>
+                  {label}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            Guided prompts
+          </div>
+          <div style={{ color: nx.text, fontSize: 14, fontWeight: 800, marginTop: 4 }}>
             {activeDomainExperience.experience.promptGuideTitle}
           </div>
-          <div style={{ color: "#94a3b8", fontSize: 11, marginTop: 4 }}>
+          <div style={{ color: nx.muted, fontSize: 12, marginTop: 6, lineHeight: 1.5 }}>
             {activeDomainExperience.experience.promptGuideBody}
           </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10, rowGap: 8 }}>
             {domainPromptSuggestions.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
                 disabled={loading}
-                onClick={() => void sendText(prompt)}
+                onClick={() => submitGuidedPrompt(prompt, undefined, "domain_prompt_guide")}
                 style={{
-                  height: 28,
-                  padding: "0 10px",
+                  minHeight: 30,
+                  padding: "6px 12px",
                   borderRadius: 999,
                   border: "1px solid rgba(148,163,184,0.2)",
-                  background: "rgba(2,6,23,0.45)",
-                  color: "#cbd5e1",
+                  background: "rgba(59,130,246,0.12)",
+                  color: "#dbeafe",
                   cursor: loading ? "not-allowed" : "pointer",
                   fontSize: 11,
+                  fontWeight: 600,
+                  lineHeight: 1.35,
                   opacity: loading ? 0.65 : 1,
+                  textAlign: "left",
                 }}
               >
                 {prompt}
               </button>
             ))}
           </div>
-          <div style={{ color: "#64748b", fontSize: 11, marginTop: 8 }}>
+          <div style={{ color: nx.lowMuted, fontSize: 11, marginTop: 8, lineHeight: 1.45 }}>
             {launchDomainActive
-              ? "Watch the key nodes react, then read the executive brief for what happened, why it matters, and what to do next."
-              : "Preview domain: use the shared demo flow, then read the executive brief to see how this domain evolves on the same core engine."}
+              ? "Watch the network respond, then open the executive brief for impact, rationale, and recommended moves."
+              : "Run the guided demo, then review the brief to see how this industry lens reads the same engine."}
+          </div>
+        </div>
+      ) : null}
+
+      {centerComponent ? (
+        <div
+          id="nexora-secondary-workspace"
+          style={{
+            position: "absolute",
+            zIndex: 11,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: centerComponentVisible ? "min(40%, 420px)" : 0,
+            maxHeight: 420,
+            minHeight: centerComponentVisible ? 220 : 0,
+            borderTop: `1px solid ${nx.border}`,
+            borderTopLeftRadius: 14,
+            borderTopRightRadius: 14,
+            background: nx.workspacePanelBg,
+            backdropFilter: "blur(8px)",
+            boxShadow: nx.workspaceShadow,
+            overflow: "hidden",
+            pointerEvents: "auto",
+            transition: "height 180ms ease, min-height 180ms ease, opacity 180ms ease",
+            opacity: centerComponentVisible ? 1 : 0,
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div
+              style={{
+                flexShrink: 0,
+                padding: "14px 18px 12px",
+                borderBottom: `1px solid ${nx.dividerStrong}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+                <div style={{ color: nx.text, fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em" }}>
+                  {centerComponent === "compare"
+                    ? "Option Comparison"
+                    : centerComponent === "timeline"
+                    ? "Decision Timeline"
+                    : "Deep Analysis"}
+                </div>
+                <div style={{ color: nx.lowMuted, fontSize: 11, lineHeight: 1.4 }}>
+                  Deep analysis workspace. Scene remains visible for context.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeCenterComponent}
+                style={{
+                  height: 28,
+                  padding: "0 10px",
+                  borderRadius: 8,
+                  border: `1px solid ${nx.workspaceCloseBorder}`,
+                  background: nx.workspaceCloseBg,
+                  color: nx.muted,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                Close
+              </button>
+            </div>
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                Primary analysis
+              </div>
+              {centerComponent === "compare" ? (
+                <DecisionComparePanel
+                  responseData={visibleResponseData ?? undefined}
+                  strategicAdvice={visibleStrategicAdvice ?? visibleSceneJson?.["strategic_advice"] ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? undefined}
+                  nexoraB8PanelContext={nexoraB8PanelContext}
+                  nexoraB18Compare={centerCompareNexoraB18}
+                  decisionLoading={decisionExecutionLoading}
+                  decisionStatus={decisionUiState.status}
+                  decisionError={decisionUiState.error}
+                  memoryEntries={decisionMemoryEntries}
+                  onApplyRecommended={() =>
+                    dispatchCanonicalAction(
+                      normalizeRunSimulation({
+                        source: "panel_cta",
+                        surface: "center_overlay",
+                        rawSource: "DecisionComparePanel:applyRecommended",
+                      })
+                    )
+                  }
+                  onSimulateDeeper={() =>
+                    dispatchCanonicalAction(
+                      normalizeRunSimulation({
+                        source: "panel_cta",
+                        surface: "center_overlay",
+                        rawSource: "DecisionComparePanel:simulateDeeper",
+                      })
+                    )
+                  }
+                  onViewRiskFlow={() =>
+                    dispatchCanonicalAction(
+                      normalizeOpenPanelCta({
+                        view: "risk",
+                        rawSource: "DecisionComparePanel:risk",
+                      })
+                    )
+                  }
+                  onViewScenarioTree={() =>
+                    dispatchCanonicalAction(
+                      normalizeOpenPanelCta({
+                        view: "scenario_tree",
+                        rawSource: "DecisionComparePanel:scenario_tree",
+                      })
+                    )
+                  }
+                  onOpenDecisionTimeline={() =>
+                    dispatchCanonicalAction(
+                      normalizeOpenCenterTimeline({
+                        source: "panel_cta",
+                        surface: "center_overlay",
+                        rawSource: "DecisionComparePanel:decision_timeline",
+                      })
+                    )
+                  }
+                  onPreviewDecision={handlePreviewDecision}
+                  onSaveScenario={handleSaveDecisionScenario}
+                  onApplyDecisionSafe={handleApplyDecisionSafe}
+                  onOpenDecisionPolicy={handleOpenDecisionPolicyPanel}
+                  onOpenExecutiveApproval={handleOpenExecutiveApprovalPanel}
+                  resolveObjectLabel={resolveSceneObjectLabel}
+                />
+              ) : null}
+              {centerComponent === "timeline" ? (
+                <DecisionTimelinePanel
+                  responseData={(stablePanelData.timeline ?? visibleResponseData ?? visibleSceneJson) as any}
+                  strategicAdvice={(stablePanelData.advice ?? stablePanelData.strategicAdvice ?? visibleStrategicAdvice) as any}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? undefined}
+                  decisionLoading={decisionExecutionLoading}
+                  decisionStatus={decisionUiState.status}
+                  decisionError={decisionUiState.error}
+                  resolveObjectLabel={resolveSceneObjectLabel}
+                  onCompareOptions={() =>
+                    dispatchCanonicalAction(
+                      normalizeCompareOptions({
+                        source: "panel_cta",
+                        surface: "center_overlay",
+                        rawSource: "DecisionTimelinePanel:compare",
+                      })
+                    )
+                  }
+                  onSimulateDecision={() =>
+                    dispatchCanonicalAction(
+                      normalizeRunSimulation({
+                        source: "panel_cta",
+                        surface: "center_overlay",
+                        rawSource: "DecisionTimelinePanel:simulate",
+                      })
+                    )
+                  }
+                  onReturnToWarRoom={() =>
+                    dispatchCanonicalAction(
+                      normalizeOpenPanelCta({
+                        view: "war_room",
+                        rawSource: "DecisionTimelinePanel:war_room",
+                      })
+                    )
+                  }
+                />
+              ) : null}
+              {!investorDemo.demo.active ? (
+                <>
+                  <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4 }}>
+                    Explore next
+                  </div>
+                  <div
+                    style={{
+                      borderRadius: 12,
+                      border: "1px solid rgba(148,163,184,0.14)",
+                      background: "rgba(2,6,23,0.34)",
+                      padding: "10px 12px",
+                      color: nx.muted,
+                      fontSize: 12,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Use the right rail for summary and quick pivots. Open deep views here when you need detailed comparison, timeline, or extended analysis.
+                  </div>
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}
@@ -8132,17 +11969,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             position: "absolute",
             right: 16,
             bottom: 16,
-            padding: "6px 10px",
-            borderRadius: 10,
-            background: "rgba(0,0,0,0.55)",
-            color: "white",
-            fontSize: 12,
-            border: "1px solid rgba(255,255,255,0.12)",
             pointerEvents: "none",
-            zIndex: 10,
+            zIndex: 12,
+            ...sceneWorkingBadgeStyle,
           }}
         >
-          Working…
+          Analyzing…
         </div>
       ) : null}
     </div>
@@ -8157,6 +11989,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       {sceneNode}
       {timelineInspectorNode}
       {alertOverlayNode}
+      {investorDemoOverlayNode}
     </div>
   );
 };

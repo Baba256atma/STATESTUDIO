@@ -7,13 +7,12 @@ import {
 import { createUniversalDomainPackTemplate } from "../domainPackTemplate";
 
 export const BUSINESS_DOMAIN_PROMPT_EXAMPLES = [
-  "supplier delay",
-  "demand spike",
-  "cash pressure",
-  "delivery disruption",
-  "inventory stress",
-  "customer trust decline",
-  "capacity bottleneck",
+  "Where is margin pressure constraining delivery and inventory?",
+  "What should leadership stabilize first?",
+  "Which bottleneck breaks customer commitments next?",
+  "How does cash pressure interact with service quality?",
+  "What reduces operational fragility without adding cost?",
+  "Where is demand stress showing up first?",
 ];
 
 export const BUSINESS_DOMAIN_TEMPLATE = createUniversalDomainPackTemplate({
@@ -27,7 +26,7 @@ export const BUSINESS_DOMAIN_TEMPLATE = createUniversalDomainPackTemplate({
   promptExamples: BUSINESS_DOMAIN_PROMPT_EXAMPLES,
   tags: ["business", "operations", "flow", "fragility", "continuity"],
   visibleNavGroups: ["scene_group", "strategy_group", "risk_group", "workspace_group", "executive_group"],
-  visibleSections: ["scene", "objects", "focus", "timeline", "advice", "conflict", "risk_flow", "risk", "workspace", "executive"],
+  visibleSections: ["scene", "objects", "focus", "timeline", "advice", "explanation", "conflict", "risk_flow", "risk", "workspace", "executive"],
   scenarioKpiMapping: DEFAULT_DOMAIN_SCENARIO_KPI_MAPPINGS.business,
   adviceConfig: DEFAULT_DOMAIN_ADVICE_CONFIGS.business,
   experienceDefaults: {
@@ -36,10 +35,13 @@ export const BUSINESS_DOMAIN_TEMPLATE = createUniversalDomainPackTemplate({
     preferredRightPanelTab: "executive_dashboard",
     helperTitle: "See how business pressure moves through supply, capacity, fulfillment, and customer trust",
     helperBody: "Focus on business fragility, bottlenecks, KPI stress, and the next stabilizing move across the operating system.",
-    promptGuideTitle: "Start with a business system pressure prompt.",
-    promptGuideBody: "Prompt -> business pressure -> fragile path -> KPI exposure -> recommended action. Use short prompts tied to operations, demand, cash, or delivery stress.",
+    promptGuideTitle: "Ask a focused operations question",
+    promptGuideBody: "Frame pressure on flow, cash, or delivery—Nexora surfaces the fragile path, then use the executive rail for the recommended move.",
     executiveFramingStyle: "operational",
     demoLabel: "Business Operations Fragility Demo",
+    demoScenarioTitle: "Operating pressure",
+    demoBusinessContext: "Flow, inventory, and customer commitments interact—strain shows up across the network.",
+    demoDecisionQuestion: "Where should leadership stabilize flow before the next demand step?",
   },
   vocabulary: [
     { id: "supplier", label: "Supplier", coreRole: "source", synonyms: ["vendor"], tags: ["upstream", "dependency"] },

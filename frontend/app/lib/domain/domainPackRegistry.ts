@@ -25,6 +25,7 @@ export type NexoraShellSectionKey =
   | "timeline"
   | "advice"
   | "conflict"
+  | "explanation"
   | "risk_flow"
   | "risk"
   | "replay"
@@ -79,6 +80,9 @@ export interface NexoraDomainPack {
     promptGuideBody?: string;
     executiveFramingStyle?: "systemic" | "operational" | "financial" | "resilience" | "strategic";
     demoLabel?: string;
+    demoScenarioTitle?: string;
+    demoBusinessContext?: string;
+    demoDecisionQuestion?: string;
   } | null;
   vocabulary?: NexoraDomainVocabularyEntry[];
   scannerHints?: NexoraDomainScannerHintTemplate[];
@@ -120,7 +124,7 @@ export const DEFAULT_DOMAIN_PACKS: Record<string, NexoraDomainPack> = {
     panelIds: ["general_overview_panel", "general_risk_panel", "general_advice_panel"],
     cockpitSummaryBlocks: ["overview", "risk", "action"],
     visibleNavGroups: ["scene_group", "strategy_group", "risk_group", "workspace_group", "executive_group"],
-    visibleSections: ["scene", "objects", "focus", "timeline", "advice", "conflict", "risk_flow", "risk", "workspace", "executive"],
+      visibleSections: ["scene", "objects", "focus", "timeline", "advice", "explanation", "conflict", "risk_flow", "risk", "workspace", "executive"],
     scenarioKpiMapping: null,
     adviceConfig: null,
     tags: ["general", "core", "systems"],
@@ -138,7 +142,7 @@ export const DEFAULT_DOMAIN_PACKS: Record<string, NexoraDomainPack> = {
     panelIds: ["strategy_overview_panel", "strategy_advice_panel", "strategy_exec_panel"],
     cockpitSummaryBlocks: ["overview", "position", "alternatives", "action"],
     visibleNavGroups: ["scene_group", "strategy_group", "risk_group", "memory_group", "executive_group"],
-    visibleSections: ["scene", "objects", "timeline", "advice", "conflict", "risk", "memory", "opponent", "patterns", "executive"],
+      visibleSections: ["scene", "objects", "timeline", "advice", "explanation", "conflict", "risk", "memory", "opponent", "patterns", "executive"],
     scenarioKpiMapping: DEFAULT_DOMAIN_SCENARIO_KPI_MAPPINGS.strategy,
     adviceConfig: DEFAULT_DOMAIN_ADVICE_CONFIGS.strategy,
     tags: ["strategy", "competition", "market"],

@@ -5,6 +5,7 @@ import React from "react";
 import ConflictMapPanel from "../panels/ConflictMapPanel";
 import ObjectSelectionPanel from "../panels/ObjectSelectionPanel";
 import RiskPropagationPanel from "../panels/RiskPropagationPanel";
+import { RiskExplanationPanel } from "../panels/RiskExplanationPanel";
 import DecisionReplayPanel from "../panels/DecisionReplayPanel";
 import StrategicAdvicePanel from "../panels/StrategicAdvicePanel";
 import OpponentMovesPanel from "../panels/OpponentMovesPanel";
@@ -46,14 +47,41 @@ import type { DecisionAutomationResult } from "../../lib/execution/decisionAutom
 import type { DecisionExecutionIntent } from "../../lib/execution/decisionExecutionIntent";
 import { RightPanelFallback } from "./RightPanelFallback";
 import { buildPanelResolvedData } from "../../lib/panels/buildPanelResolvedData";
+import type { NexoraB18CompareResolved, NexoraB18SimulateResolved } from "../../lib/scenario/nexoraScenarioBuilder.ts";
 import type { PanelResolvedData, PanelSharedData } from "../../lib/panels/panelDataResolverTypes";
-import { validatePanelSharedData } from "../../lib/panels/panelDataContract";
-import { ensurePanelSafeRender } from "../../lib/ui/right-panel/panelRegressionGuard";
-import { runPanelConsistencyTestHarness } from "../../lib/ui/right-panel/panelTestHarness";
-import { autoFixRightPanelState } from "../../lib/ui/right-panel/panelAutoFix";
-import { getPanelIntelligence } from "../../lib/ui/right-panel/panelIntelligence";
-import { getPanelCognitiveFlow, recordPanelCognitiveFlowHistory } from "../../lib/ui/right-panel/panelCognitiveFlow";
-import { getRightPanelRegistryEntry } from "../../lib/ui/right-panel/rightPanelRegistry";
+import { validatePanelSharedDataWithDiagnostics } from "../../lib/panels/panelDataContract";
+import { getPanelCognitiveFlow } from "../../lib/ui/right-panel/panelCognitiveFlow";
+import { buildAdvicePanelPayload } from "./builders/buildAdvicePanelPayload";
+import { buildConflictPanelPayload } from "./builders/buildConflictPanelPayload";
+import { buildTimelinePanelPayload } from "./builders/buildTimelinePanelPayload";
+import { buildDashboardPanelPayload } from "./builders/buildDashboardPanelPayload";
+import { buildWarRoomPanelPayload } from "./builders/buildWarRoomPanelPayload";
+import { normalizeWarRoomIntelligence } from "./normalizers/normalizeWarRoomIntelligence";
+import { normalizeStrategicCouncilPanelData } from "./normalizers/normalizeStrategicCouncilPanelData";
+import {
+  buildCanonicalPanelPayload,
+  buildMergedPanelData,
+} from "../../lib/panels/panelDataAdapter";
+import { peekPanelSelfDebugLink } from "../../lib/debug/debugCorrelationBridge";
+import { emitDebugEvent, shouldEmitSelfDebug } from "../../lib/debug/debugEmit";
+import { getRecentDebugEvents } from "../../lib/debug/debugEventStore";
+import { emitGuardRailAlerts, runGuardChecks } from "../../lib/debug/debugGuardRails";
+import { insightPanelHostFrame } from "../ui/nexoraTheme";
+import { pickDecisionAnalysisFromResponse } from "../../lib/panels/buildScenarioExplanationFromDecisionAnalysis";
+import { dedupeCaseFallbackLog } from "../../lib/debug/panelConsoleTraceDedupe";
+const logConflictPayloadSource = (..._args: any[]) => {};
+const logPanelDataUnderfed = (..._args: any[]) => {};
+const logPanelFallback = (..._args: any[]) => {};
+const logPanelFlow = (..._args: any[]) => {};
+const logPanelPayloadSource = (..._args: any[]) => {};
+const logPanelRender = (..._args: any[]) => {};
+const logPanelRenderDeep = (..._args: any[]) => {};
+const logPanelResolver = (..._args: any[]) => {};
+const logRegistryMiss = (..._args: any[]) => {};
+const logRenderGuardTrace = (..._args: any[]) => {};
+const logRightPanelSafeRender = (..._args: any[]) => {};
+const logRiskFlowRunSimulation = (..._args: any[]) => {};
+const logUnsupportedViewFallback = (..._args: any[]) => {};
 
 type RightPanelHostProps = {
   rightPanelState: RightPanelState;
@@ -84,11 +112,30 @@ type RightPanelHostProps = {
   decisionStatus?: "idle" | "loading" | "ready" | "error";
   decisionError?: string | null;
   activeExecutiveView?: "simulate" | "compare" | "dashboard" | null;
+  guidedPromptDebug?: {
+    prompt: string;
+    resolvedPanel: RightPanelView;
+    actualView: RightPanelView | null;
+    contractSalvaged: boolean;
+    contractRenderable: boolean;
+  } | null;
+  panelFamilyAuditDebug?: {
+    prompt: string;
+    expectedFamily: RightPanelView;
+    source: string;
+    contractRenderable?: boolean;
+    contractSalvaged?: boolean;
+  } | null;
   warRoom: WarRoomController;
   onSceneUpdateFromTimeline: (payload: any) => void;
   onSimulateDecision?: (() => void) | null;
+  onRunContextualSimulation?: ((originView: RightPanelView) => void) | null;
   onCompareOptions?: (() => void) | null;
+  onRunContextualCompare?: ((originView: RightPanelView) => void) | null;
   onOpenWarRoom?: (() => void) | null;
+  onOpenContextualWarRoom?: ((originView: RightPanelView) => void) | null;
+  onOpenRiskFlow?: ((originView: RightPanelView) => void) | null;
+  onOpenWhyThis?: ((originView: RightPanelView) => void) | null;
   onCloseWarRoom?: (() => void) | null;
   onOpenStrategicCommand?: (() => void) | null;
   onOpenTimeline?: (() => void) | null;
@@ -111,54 +158,165 @@ type RightPanelHostProps = {
   onOpenPatternIntelligence?: (() => void) | null;
   onOpenObject?: ((id?: string | null) => void) | null;
   onOpenScenarioTree?: (() => void) | null;
+  onOpenCenterComponent?: ((component: "compare" | "timeline" | "analysis") => void) | null;
   onPreviewDecision?: ((intent: DecisionExecutionIntent | null) => DecisionAutomationResult | Promise<DecisionAutomationResult | void> | void) | null;
   onSaveScenario?: ((intent: DecisionExecutionIntent | null) => DecisionAutomationResult | Promise<DecisionAutomationResult | void> | void) | null;
   onApplyDecisionSafe?: ((intent: DecisionExecutionIntent | null) => DecisionAutomationResult | Promise<DecisionAutomationResult | void> | void) | null;
 };
 
-export function RightPanelHost(props: RightPanelHostProps) {
-  const guardedView = ensurePanelSafeRender(props.rightPanelState.view, true);
-  const safeView = guardedView.safeView;
-  const panelStateEpoch = props.rightPanelState.timestamp ?? 0;
+type PanelDataReadiness = "empty" | "partial" | "full";
 
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[Nexora][PanelRender]", {
-      view: safeView,
-      isOpen: props.rightPanelState.isOpen,
-      componentMatched: !guardedView.shouldFallback,
-      contextId: props.rightPanelState.contextId ?? null,
-      timestamp: panelStateEpoch,
-      hasData: Boolean(props.responseData ?? props.sceneJson ?? props.decisionResult ?? props.decisionMemoryEntries?.length),
-    });
+function traceViewSync(detail: {
+  label:
+    | "[Nexora][ViewSync] host_render"
+    | "[Nexora][ViewSync] desync_detected"
+    | "[Nexora][ViewSync] desync_fixed";
+  activeTab: string | null;
+  currentRightPanelView: string | null;
+  renderedView: string | null;
+  legacyTab: string | null;
+  source: string;
+  reason: string;
+}) {
+  return;
+}
+
+function shouldTracePayloadSelection(view: RightPanelView | null, panel: "advice" | "conflict" | "timeline" | "dashboard" | "war_room" | "risk"): boolean {
+  if (panel === "advice") return view === "advice";
+  if (panel === "conflict") return view === "conflict";
+  if (panel === "timeline") {
+    return (
+      view === "timeline" ||
+      view === "decision_timeline" ||
+      view === "confidence_calibration" ||
+      view === "outcome_feedback" ||
+      view === "pattern_intelligence" ||
+      view === "scenario_tree"
+    );
   }
+  if (panel === "dashboard") {
+    return (
+      view === "dashboard" ||
+      view === "strategic_command" ||
+      view === "decision_lifecycle" ||
+      view === "strategic_learning" ||
+      view === "meta_decision" ||
+      view === "cognitive_style" ||
+      view === "team_decision" ||
+      view === "org_memory" ||
+      view === "decision_governance" ||
+      view === "decision_policy" ||
+      view === "executive_approval" ||
+      view === "decision_council" ||
+      view === "collaboration_intelligence" ||
+      view === "kpi"
+    );
+  }
+  if (panel === "war_room") return view === "war_room";
+  return view === "risk" || view === "fragility";
+}
+
+function isConcreteSelfRenderingView(
+  view: RightPanelView | null
+): view is "advice" | "timeline" | "war_room" | "risk" | "fragility" | "object" {
+  return (
+    view === "advice" ||
+    view === "timeline" ||
+    view === "war_room" ||
+    view === "risk" ||
+    view === "fragility" ||
+    view === "object"
+  );
+}
+
+function renderConcretePanelEmptyState(
+  view: "advice" | "timeline" | "war_room",
+  onSuggestedAction: (() => void) | null
+) {
+  if (view === "timeline") {
+    return (
+      <RightPanelFallback
+        title="Timeline"
+        message="No focused timeline yet. Run a simulation to see how the decision path unfolds."
+        suggestedActionLabel="Run Simulation"
+        onSuggestedAction={onSuggestedAction}
+      />
+    );
+  }
+  if (view === "advice") {
+    return (
+      <RightPanelFallback
+        title="Advice"
+        message="No strategic advice surface yet. Continue the analysis to populate recommendations."
+        suggestedActionLabel="Review Context"
+        onSuggestedAction={onSuggestedAction}
+      />
+    );
+  }
+  return (
+    <RightPanelFallback
+      title="War Room"
+      message="War Room context is not loaded yet. Open the scenario to compare moves and constraints."
+      suggestedActionLabel="Open War Room Context"
+      onSuggestedAction={onSuggestedAction}
+    />
+  );
+}
+
+export function RightPanelHost(props: RightPanelHostProps) {
+  const DEBUG_PANEL_TRACE = false;
+  const viewToRender = props.rightPanelState.view;
+  const panelStateEpoch = props.rightPanelState.timestamp ?? 0;
+  const lastRenderViewSignatureRef = React.useRef<string | null>(null);
+  const lastConcretePanelRenderSignatureRef = React.useRef<string | null>(null);
+  const responseStrategicAdvice = props.responseData?.strategic_advice;
+  const responseConflict = props.responseData?.conflict;
+  const responseConflicts = props.responseData?.conflicts;
+  const responseTimelineImpact = props.responseData?.timeline_impact;
+  const responseSimulationTimeline = props.responseData?.decision_simulation?.timeline;
+  const responseExecutiveSummary = props.responseData?.executive_summary_surface;
+  const responseDecisionCockpit = props.responseData?.decision_cockpit;
+  const sceneStrategicAdvice = props.sceneJson?.strategic_advice;
+  const warRoomIntelligence = props.warRoom.intelligence;
+
+  logPanelRender({
+    view: viewToRender,
+    isOpen: props.rightPanelState.isOpen,
+    componentMatched: true,
+    contextId: props.rightPanelState.contextId ?? null,
+    timestamp: panelStateEpoch,
+    hasData: Boolean(props.responseData ?? props.sceneJson ?? props.decisionResult ?? props.decisionMemoryEntries?.length),
+  });
 
   const dashboardRecommendation = useCanonicalRecommendation(props.responseData ?? props.sceneJson ?? null);
   const warRoomRecommendation = useCanonicalRecommendation(props.warRoom.intelligence ?? null);
-  const mergedPanelData = React.useMemo<PanelSharedData>(
-    () => ({
-      ...props.panelData,
-      strategicAdvice: props.panelData.strategicAdvice ?? props.strategicAdvice ?? props.sceneJson?.strategic_advice ?? null,
-      decisionCockpit: props.panelData.decisionCockpit ?? props.decisionCockpit ?? props.responseData?.decision_cockpit ?? null,
-      executiveSummary: props.panelData.executiveSummary ?? props.responseData?.executive_summary_surface ?? null,
-      simulation: props.panelData.simulation ?? props.responseData?.decision_simulation ?? null,
-      timeline: props.panelData.timeline ?? props.responseData?.timeline_impact ?? null,
-      risk: props.panelData.risk ?? props.riskPropagation ?? props.responseData?.risk_propagation ?? null,
-      memory: props.panelData.memory ?? props.memoryInsights ?? null,
-      canonicalRecommendation: props.panelData.canonicalRecommendation ?? dashboardRecommendation ?? null,
-      decisionResult: props.panelData.decisionResult ?? props.decisionResult ?? null,
-      warRoom: props.panelData.warRoom ?? props.warRoom.intelligence ?? null,
-      compare:
-        props.panelData.compare ??
-        props.responseData?.decision_comparison ??
-        props.responseData?.comparison ??
-        props.decisionResult?.comparison_result ??
-        null,
-      governance: props.panelData.governance ?? props.responseData?.decision_governance ?? null,
-      approval: props.panelData.approval ?? props.responseData?.approval_workflow ?? null,
-      policy: props.panelData.policy ?? props.responseData?.decision_policy ?? null,
-      strategicCouncil: props.panelData.strategicCouncil ?? props.strategicCouncil ?? null,
-      memoryEntries: props.panelData.memoryEntries ?? props.decisionMemoryEntries ?? [],
-    }),
+  const normalizedWarRoomPanelData = React.useMemo(
+    () => normalizeWarRoomIntelligence(props.warRoom.intelligence),
+    [props.warRoom.intelligence]
+  );
+  const normalizedStrategicCouncil = React.useMemo(
+    () => normalizeStrategicCouncilPanelData(props.strategicCouncil),
+    [props.strategicCouncil]
+  );
+  const aggregatedPanelData = React.useMemo<PanelSharedData>(
+    () =>
+      buildMergedPanelData({
+        panelData: props.panelData,
+        responseData: props.responseData,
+        sceneJson: props.sceneJson,
+        strategicAdvice: props.strategicAdvice,
+        riskPropagation: props.riskPropagation,
+        conflicts: props.conflicts,
+        decisionResult: props.decisionResult,
+        memoryInsights: props.memoryInsights,
+        warRoomIntelligence: props.warRoom.intelligence,
+        strategicCouncil: props.strategicCouncil,
+        decisionCockpit: props.decisionCockpit,
+        decisionMemoryEntries: props.decisionMemoryEntries,
+        canonicalRecommendation: dashboardRecommendation,
+        normalizedWarRoomPanelData,
+        normalizedStrategicCouncil,
+      }),
     [
       props.panelData,
       props.strategicAdvice,
@@ -168,118 +326,108 @@ export function RightPanelHost(props: RightPanelHostProps) {
       props.riskPropagation,
       props.memoryInsights,
       props.decisionResult,
-      props.warRoom.intelligence,
-      props.strategicCouncil,
+      normalizedWarRoomPanelData,
+      normalizedStrategicCouncil,
       props.decisionMemoryEntries,
       dashboardRecommendation,
     ]
   );
-  const safePanelData = React.useMemo<PanelSharedData>(
-    () => validatePanelSharedData(mergedPanelData),
-    [mergedPanelData]
+  const panelContractValidation = React.useMemo(
+    () => validatePanelSharedDataWithDiagnostics(aggregatedPanelData),
+    [aggregatedPanelData]
   );
+  const validatedPanelData = panelContractValidation.data;
+
+  const lastHostPanelContractDebugSigRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!shouldEmitSelfDebug()) return;
+    if (!panelContractValidation.contractFailed) return;
+    const sig = panelContractValidation.contractDebugSignature;
+    if (lastHostPanelContractDebugSigRef.current === sig) return;
+    lastHostPanelContractDebugSigRef.current = sig;
+    const detail = panelContractValidation.contractFailureDetail;
+    if (!detail) return;
+    emitDebugEvent({
+      type: "contract_validation_failed",
+      layer: "contract",
+      source: "panelDataContract",
+      status: "warn",
+      message: `PanelSharedData validation failed (${detail.issueCount} issues); salvaged`,
+      metadata: {
+        issueCount: detail.issueCount,
+        issuePaths: detail.issuePaths,
+        rejectedSlices: detail.rejectedSlices,
+        via: "RightPanelHost",
+      },
+    });
+    emitGuardRailAlerts(runGuardChecks({ trigger: "contract_check" }, getRecentDebugEvents()));
+  }, [panelContractValidation.contractFailed, panelContractValidation.contractDebugSignature]);
   const resolvedPanel = React.useMemo(
-    () => {
-      void panelStateEpoch;
-      return isResolverManagedView(safeView)
-        ? buildPanelResolvedData(safeView, safePanelData)
-        : null;
-    },
-    [safeView, safePanelData, panelStateEpoch]
+    () => (viewToRender && isResolverManagedView(viewToRender) ? buildPanelResolvedData(viewToRender, validatedPanelData) : null),
+    [viewToRender, validatedPanelData]
   );
-  const autoFixed = React.useMemo(
-    () => {
-      void panelStateEpoch;
-      return autoFixRightPanelState({
-        view: safeView,
-        contextId: props.rightPanelState.contextId ?? null,
-        panelData: safePanelData,
-        resolverStatus: resolvedPanel?.status,
-      });
-    },
-    [safeView, props.rightPanelState.contextId, safePanelData, resolvedPanel?.status, panelStateEpoch]
-  );
-  const effectiveView = autoFixed.fixedView ?? safeView;
-  const effectivePanelData = autoFixed.fixedPanelData ?? safePanelData;
-  const effectiveResolvedPanel = React.useMemo(
-    () => {
-      void panelStateEpoch;
-      return isResolverManagedView(effectiveView)
-        ? buildPanelResolvedData(effectiveView, effectivePanelData)
-        : null;
-    },
-    [effectiveView, effectivePanelData, panelStateEpoch]
-  );
-  const canonicalPanelPayload = React.useMemo(
-    () => ({
-      ...effectivePanelData,
-      responseData: effectivePanelData.responseData ?? props.responseData ?? props.sceneJson ?? null,
-      strategic_advice:
-        effectivePanelData.advice ??
-        effectivePanelData.strategicAdvice ??
-        props.strategicAdvice ??
-        props.sceneJson?.strategic_advice ??
-        null,
-      canonical_recommendation: effectivePanelData.canonicalRecommendation ?? dashboardRecommendation ?? null,
-      decision_simulation: effectivePanelData.simulation ?? props.responseData?.decision_simulation ?? null,
-      timeline_impact: effectivePanelData.timeline ?? props.responseData?.timeline_impact ?? null,
-      decision_policy: effectivePanelData.policy ?? props.responseData?.decision_policy ?? null,
-      decision_governance: effectivePanelData.governance ?? props.responseData?.decision_governance ?? null,
-      approval_workflow: effectivePanelData.approval ?? props.responseData?.approval_workflow ?? null,
-      multi_agent_decision: effectivePanelData.warRoom ?? null,
-    }),
+  const effectivePanelData = validatedPanelData;
+  const basePanelPayload = React.useMemo(
+    () =>
+      buildCanonicalPanelPayload({
+        panelData: effectivePanelData,
+        responseData: props.responseData,
+        sceneJson: props.sceneJson,
+        strategicAdvice: props.strategicAdvice,
+        canonicalRecommendation: dashboardRecommendation,
+      }),
     [effectivePanelData, props.responseData, props.sceneJson, props.strategicAdvice, dashboardRecommendation]
   );
-  const panelIntelligence = React.useMemo(
-    () => {
-      void panelStateEpoch;
-      return getPanelIntelligence({
-        view: effectiveView,
-        panelData: effectivePanelData,
-        resolverStatus: effectiveResolvedPanel?.status,
-        context: {
-          selectedObjectId: props.selectedObjectId ?? props.rightPanelState.contextId ?? null,
-          sceneJson: props.sceneJson ?? null,
-          activeMode: props.activeMode ?? null,
-          memory: props.memoryInsights ?? effectivePanelData.memory ?? null,
-          simulation: effectivePanelData.simulation ?? props.responseData?.decision_simulation ?? null,
-          risk: effectivePanelData.risk ?? props.riskPropagation ?? null,
-          userIntent:
-            typeof props.responseData?.ai_reasoning?.intent === "string"
-              ? props.responseData.ai_reasoning.intent
-              : null,
-        },
-      });
-    },
-    [
-      effectiveView,
-      effectivePanelData,
-      effectiveResolvedPanel?.status,
-      props.selectedObjectId,
-      props.rightPanelState.contextId,
-      props.sceneJson,
-      props.activeMode,
-      props.memoryInsights,
-      props.responseData,
-      props.riskPropagation,
-      panelStateEpoch,
-    ]
+  const preserveConcreteSelfRenderingView = isConcreteSelfRenderingView(viewToRender);
+  function traceConcretePanelRender(usedSamePanelEmptyState: boolean) {
+    if (process.env.NODE_ENV === "production") return;
+    if (!isConcreteSelfRenderingView(viewToRender)) return;
+    if (!usedSamePanelEmptyState) return;
+    const signature = [
+      props.rightPanelState.view ?? "null",
+      viewToRender ?? "null",
+      "1",
+    ].join("|");
+    if (lastConcretePanelRenderSignatureRef.current === signature) return;
+    lastConcretePanelRenderSignatureRef.current = signature;
+    globalThis.console.log("[Nexora][ConcretePanelEmptyState]", {
+      panel: viewToRender ?? null,
+    });
+  }
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const signature = [
+      props.rightPanelState.view ?? "null",
+      viewToRender ?? "null",
+    ].join("|");
+    if (lastRenderViewSignatureRef.current === signature) {
+      return;
+    }
+    lastRenderViewSignatureRef.current = signature;
+    globalThis.console.log("[NEXORA][HOST_RENDER]", {
+      requested: props.rightPanelState.view ?? null,
+      rendered: viewToRender ?? null,
+    });
+  }, [props.rightPanelState.view, viewToRender]);
+  const bestResolvedPanel = resolvedPanel;
+  const bestResolvedPanelData = bestResolvedPanel?.data ?? null;
+  const bestResolvedPanelRecord =
+    bestResolvedPanelData && typeof bestResolvedPanelData === "object" && !Array.isArray(bestResolvedPanelData)
+      ? (bestResolvedPanelData as Record<string, unknown>)
+      : null;
+  const bestResolvedPanelStatus = bestResolvedPanel?.status ?? null;
+  const bestResolvedPanelReadiness = React.useMemo(
+    () => getResolvedPanelReadiness(viewToRender, bestResolvedPanel),
+    [viewToRender, bestResolvedPanel]
   );
-  const intelligentView = panelIntelligence.adaptedView ?? effectiveView;
-  const intelligentResolvedPanel = React.useMemo(
-    () => {
-      void panelStateEpoch;
-      return isResolverManagedView(intelligentView)
-        ? buildPanelResolvedData(intelligentView, effectivePanelData)
-        : null;
-    },
-    [intelligentView, effectivePanelData, panelStateEpoch]
+  const hasRenderableBestResolvedPanel = React.useMemo(
+    () => hasRenderableResolvedPanelData(viewToRender, bestResolvedPanel),
+    [viewToRender, bestResolvedPanel]
   );
   const cognitiveFlow = React.useMemo(
-    () => {
-      void panelStateEpoch;
-      return getPanelCognitiveFlow({
-        currentView: intelligentView,
+    () =>
+      getPanelCognitiveFlow({
+        currentView: viewToRender,
         panelData: effectivePanelData,
         context: {
           intent:
@@ -288,87 +436,309 @@ export function RightPanelHost(props: RightPanelHostProps) {
               : undefined,
           riskLevel: getRiskSignalLevel(effectivePanelData.risk ?? props.riskPropagation ?? null),
           hasSimulation: Boolean(effectivePanelData.simulation ?? props.responseData?.decision_simulation),
-          hasRecommendation: hasRecommendationSignal(effectivePanelData),
+          hasRecommendation: hasRecommendationSignal(effectivePanelData, props.responseData, props.sceneJson),
           hasDecision: Boolean(props.decisionResult ?? effectivePanelData.approval ?? effectivePanelData.policy),
           hasOutcome: Boolean(props.decisionMemoryEntries?.length),
         },
-      });
-    },
+      }),
     [
-      intelligentView,
+      viewToRender,
       effectivePanelData,
       props.responseData,
       props.riskPropagation,
       props.decisionResult,
       props.decisionMemoryEntries,
-      panelStateEpoch,
+      props.sceneJson,
     ]
   );
-  const cognitiveNextAction = React.useMemo(
-    () => resolveFlowAction(cognitiveFlow.nextRecommendedView, props),
-    [cognitiveFlow.nextRecommendedView, props]
-  );
-  const handleRiskFlowRunSimulation = () => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][RiskFlowRunSimulation]", {
-        requestedView: "simulate",
-      });
-    }
+  const handleRiskFlowRunSimulation = React.useCallback(() => {
+    logRiskFlowRunSimulation(viewToRender);
     props.onSimulateDecision?.();
-  };
-  const registryEntry = getRightPanelRegistryEntry(intelligentView);
+  }, [viewToRender, props.onSimulateDecision]);
+  const handleContextualSimulationAction = React.useCallback(() => {
+    props.onSimulateDecision?.();
+  }, [props.onSimulateDecision]);
+  const handleContextualCompareAction = React.useCallback(() => {
+    props.onCompareOptions?.();
+  }, [props.onCompareOptions]);
+  const handleContextualWarRoomAction = React.useCallback(() => {
+    props.onOpenWarRoom?.();
+  }, [props.onOpenWarRoom]);
+  const handleContextualRiskFlowAction = React.useCallback(() => {
+    props.onOpenRiskFlow?.(viewToRender);
+  }, [props.onOpenRiskFlow, viewToRender]);
+  const handleContextualWhyThisAction = React.useCallback(() => {
+    props.onOpenWhyThis?.(viewToRender);
+  }, [props.onOpenWhyThis, viewToRender]);
   const resolvedPanelData =
-    intelligentResolvedPanel?.data ??
-    effectiveResolvedPanel?.data ??
-    resolvedPanel?.data ??
+    bestResolvedPanelData ??
     null;
-
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
-    if (!props.rightPanelState.isOpen) return;
-    runPanelConsistencyTestHarness({
-      currentView: intelligentView,
-      panelData: effectivePanelData,
+  const effectiveAdvicePayload = React.useMemo(() => {
+    const { payload, sourceFlags } = buildAdvicePanelPayload({
+      currentView: viewToRender,
+      resolvedPanelData,
+      canonicalAdvice: effectivePanelData.advice,
+      canonicalStrategicAdvice: effectivePanelData.strategicAdvice,
+      rawStrategicAdvice: props.strategicAdvice,
+      responseStrategicAdvice,
+      sceneStrategicAdvice,
     });
-  }, [props.rightPanelState.isOpen, intelligentView, effectivePanelData, panelStateEpoch]);
+    logPanelPayloadSource("advice", viewToRender, {
+      usedResolved: sourceFlags.usedResolved,
+      usedCanonical: sourceFlags.usedCanonical,
+      usedRaw: sourceFlags.usedRaw,
+    });
+    return payload;
+  }, [
+    viewToRender,
+    resolvedPanelData,
+    effectivePanelData.advice,
+    effectivePanelData.strategicAdvice,
+    props.strategicAdvice,
+    responseStrategicAdvice,
+    sceneStrategicAdvice,
+  ]);
+  const effectiveConflictPayload = React.useMemo(() => {
+    const { payload, sourceFlags } = buildConflictPanelPayload({
+      currentView: viewToRender,
+      resolvedPanelData,
+      canonicalConflict: effectivePanelData.conflict,
+      responseConflict,
+      responseConflicts,
+      legacyConflicts: props.conflicts,
+    });
+    logConflictPayloadSource(viewToRender, sourceFlags);
+    return payload;
+  }, [viewToRender, resolvedPanelData, effectivePanelData.conflict, responseConflict, responseConflicts, props.conflicts]);
+  const effectiveTimelinePayload = React.useMemo(() => {
+    const { payload, sourceFlags } = buildTimelinePanelPayload({
+      currentView: viewToRender,
+      resolvedPanelData,
+      canonicalTimeline: effectivePanelData.timeline,
+      rawTimelineImpact: responseTimelineImpact,
+      rawSimulationTimeline: responseSimulationTimeline,
+      canonicalPanelPayload: basePanelPayload,
+      advicePayload: effectiveAdvicePayload,
+      fallbackStrategicAdvice: basePanelPayload.strategic_advice,
+    });
+    logPanelPayloadSource("timeline", viewToRender, {
+      usedResolved: sourceFlags.usedResolved,
+      usedCanonical: sourceFlags.usedCanonical,
+      usedRaw: sourceFlags.usedRaw,
+    });
+    return payload;
+  }, [
+    viewToRender,
+    resolvedPanelData,
+    effectivePanelData.timeline,
+    responseTimelineImpact,
+    responseSimulationTimeline,
+    basePanelPayload,
+    effectiveAdvicePayload,
+  ]);
+  const effectiveDashboardPayload = React.useMemo(() => {
+    const { payload, sourceFlags } = buildDashboardPanelPayload({
+      currentView: viewToRender,
+      resolvedPanelData,
+      dashboard: effectivePanelData.dashboard,
+      decisionCockpitSlice: effectivePanelData.decisionCockpit,
+      executiveSummary: effectivePanelData.executiveSummary,
+      rawExecutiveSummary: responseExecutiveSummary,
+      rawDecisionCockpit: responseDecisionCockpit,
+      canonicalPanelPayload: basePanelPayload,
+      decisionCockpit: props.decisionCockpit,
+      advicePayload: effectiveAdvicePayload,
+      fallbackStrategicAdvice: basePanelPayload.strategic_advice,
+      conflictPayload: effectiveConflictPayload,
+      responseConflict,
+      responseConflicts,
+      legacyConflicts: props.conflicts,
+    });
+    logPanelPayloadSource("dashboard", viewToRender, {
+      usedResolved: sourceFlags.usedResolved,
+      usedCanonical: sourceFlags.usedCanonical,
+      usedRaw: sourceFlags.usedRaw,
+    });
+    return payload;
+  }, [
+    viewToRender,
+    resolvedPanelData,
+    effectivePanelData.dashboard,
+    effectivePanelData.decisionCockpit,
+    effectivePanelData.executiveSummary,
+    responseExecutiveSummary,
+    responseDecisionCockpit,
+    basePanelPayload,
+    props.decisionCockpit,
+    effectiveAdvicePayload,
+    effectiveConflictPayload,
+    responseConflict,
+    responseConflicts,
+    props.conflicts,
+  ]);
+  const effectiveWarRoomPayload = React.useMemo(() => {
+    const { payload, sourceFlags } = buildWarRoomPanelPayload({
+      currentView: viewToRender,
+      resolvedPanelData,
+      warRoom: effectivePanelData.warRoom,
+      strategicCouncil: effectivePanelData.strategicCouncil,
+      canonicalRecommendation: effectivePanelData.canonicalRecommendation,
+      normalizedWarRoomPanelData,
+      rawWarRoomIntelligence: warRoomIntelligence,
+      canonicalPanelPayload: basePanelPayload,
+      advicePayload: effectiveAdvicePayload,
+      fallbackStrategicAdvice: basePanelPayload.strategic_advice,
+      warRoomRecommendation,
+      dashboardRecommendation,
+    });
+    logPanelPayloadSource("war_room", viewToRender, {
+      usedResolved: sourceFlags.usedResolved,
+      usedCanonical: sourceFlags.usedCanonical,
+      usedRaw: sourceFlags.usedRaw,
+    });
+    return payload;
+  }, [
+    viewToRender,
+    resolvedPanelData,
+    effectivePanelData.warRoom,
+    effectivePanelData.strategicCouncil,
+    effectivePanelData.canonicalRecommendation,
+    normalizedWarRoomPanelData,
+    warRoomIntelligence,
+    basePanelPayload,
+    effectiveAdvicePayload,
+    warRoomRecommendation,
+    dashboardRecommendation,
+  ]);
+  const effectiveRiskPayload = React.useMemo(() => {
+    const resolvedRecord = asLooseRecord(bestResolvedPanelData);
+    const payload =
+      (viewToRender === "fragility"
+        ? effectivePanelData.fragility ?? effectivePanelData.risk
+        : effectivePanelData.risk ?? effectivePanelData.fragility) ??
+      (viewToRender === "fragility"
+        ? resolvedRecord ?? props.riskPropagation ?? props.sceneJson?.risk_propagation ?? props.sceneJson?.scene?.risk_propagation ?? null
+        : resolvedRecord ?? props.riskPropagation ?? props.sceneJson?.risk_propagation ?? props.sceneJson?.scene?.risk_propagation ?? null);
+    return payload;
+  }, [
+    bestResolvedPanelData,
+    effectivePanelData.fragility,
+    effectivePanelData.risk,
+    viewToRender,
+    props.riskPropagation,
+    props.sceneJson,
+  ]);
+
+  const fragilityScanFallbackUi = React.useMemo(
+    () => (
+      <RightPanelFallback
+        title="Fragility"
+        message="No fragility scan is available yet. Run analysis to inspect system fragility."
+        suggestedActionLabel="Run Simulation"
+        onSuggestedAction={handleRiskFlowRunSimulation}
+      />
+    ),
+    [handleRiskFlowRunSimulation]
+  );
+
+  const riskPanelEmptyFallbackUi = React.useMemo(
+    () => (
+      <RightPanelFallback
+        title="Risk"
+        message="No risk propagation is available yet. Run analysis or simulation to inspect exposure."
+        suggestedActionLabel="Run Simulation"
+        onSuggestedAction={handleRiskFlowRunSimulation}
+      />
+    ),
+    [handleRiskFlowRunSimulation]
+  );
 
   React.useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
-    if (!props.rightPanelState.isOpen) return;
-    recordPanelCognitiveFlowHistory(intelligentView);
-  }, [props.rightPanelState.isOpen, intelligentView, panelStateEpoch]);
-
-  if (!props.rightPanelState.isOpen) {
-    return null;
-  }
-
-  if (!props.rightPanelState.view) {
-    return (
-      <RightPanelFallback
-        title="Panel Unavailable"
-        message="No panel target was provided, so Nexora is showing a guarded fallback in place."
-        suggestedActionLabel={cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null}
-        onSuggestedAction={cognitiveNextAction ?? null}
-      />
-    );
-  }
-
-  if (guardedView.shouldFallback) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[Nexora][PanelFallback]", {
-        panel: safeView,
-        reason: guardedView.reason,
+    if (process.env.NODE_ENV !== "production" && viewToRender !== props.rightPanelState.view) {
+      globalThis.console.error("[NEXORA][ILLEGAL_OVERRIDE]", {
+        requested: props.rightPanelState.view ?? null,
+        rendered: viewToRender ?? null,
+      });
+      const hostLink = peekPanelSelfDebugLink();
+      emitDebugEvent({
+        type: "debug_warning",
+        layer: "host",
+        source: "RightPanelHost",
+        status: "error",
+        message: "Host render view differs from panel state view",
+        metadata: {
+          code: "host_render_mismatch",
+          requested: props.rightPanelState.view ?? null,
+          rendered: viewToRender ?? null,
+          ...(hostLink
+            ? {
+                panelCorrelationId: hostLink.panelCorrelationId,
+                ...(hostLink.chatCorrelationId ? { chatCorrelationId: hostLink.chatCorrelationId } : {}),
+              }
+            : {}),
+        },
+        correlationId: hostLink?.panelCorrelationId ?? undefined,
       });
     }
-    return (
-      <RightPanelFallback
-        title="Panel Guard"
-        message="This panel could not be rendered safely, so Nexora opened a guarded fallback instead."
-        suggestedActionLabel={cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null}
-        onSuggestedAction={cognitiveNextAction ?? resolveViewFallbackAction(safeView, props)}
-      />
-    );
-  }
+  }, [props.rightPanelState.view, viewToRender]);
+
+  const lastHostDebugSignatureRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!shouldEmitSelfDebug()) return;
+    if (!props.rightPanelState.isOpen) return;
+    const requested = props.rightPanelState.view ?? null;
+    const rendered = viewToRender ?? null;
+    const signature = `${requested ?? "null"}|${rendered ?? "null"}|${hasRenderableBestResolvedPanel ? "1" : "0"}`;
+    if (lastHostDebugSignatureRef.current === signature) return;
+    lastHostDebugSignatureRef.current = signature;
+
+    const hostLink = peekPanelSelfDebugLink();
+    const hostLinkMeta = hostLink
+      ? {
+          panelCorrelationId: hostLink.panelCorrelationId,
+          ...(hostLink.chatCorrelationId ? { chatCorrelationId: hostLink.chatCorrelationId } : {}),
+          linkRequestedView: hostLink.requestedView,
+          linkRawSource: hostLink.rawSource,
+        }
+      : {};
+
+    if (!rendered) {
+      emitDebugEvent({
+        type: "panel_fallback_used",
+        layer: "host",
+        source: "RightPanelHost",
+        status: "warn",
+        message: "No panel target in host; guarded fallback",
+        metadata: {
+          reason: "no_panel_target",
+          requestedView: requested,
+          ...hostLinkMeta,
+        },
+        correlationId: hostLink?.panelCorrelationId ?? undefined,
+      });
+      return;
+    }
+
+    emitDebugEvent({
+      type: "panel_rendered",
+      layer: "host",
+      source: "RightPanelHost",
+      status: "ok",
+      message: `Rendering panel ${rendered}`,
+      metadata: {
+        view: rendered,
+        requestedView: requested,
+        hasRenderableResolved: hasRenderableBestResolvedPanel,
+        ...hostLinkMeta,
+      },
+      correlationId: hostLink?.panelCorrelationId ?? undefined,
+    });
+  }, [
+    props.rightPanelState.isOpen,
+    props.rightPanelState.view,
+    viewToRender,
+    hasRenderableBestResolvedPanel,
+  ]);
 
   const hasDecisionContext = Boolean(
     dashboardRecommendation ??
@@ -383,91 +753,33 @@ export function RightPanelHost(props: RightPanelHostProps) {
       effectivePanelData.warRoom
   );
 
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[Nexora][PanelRenderDeep]", {
-      incomingView: props.rightPanelState.view ?? null,
-      afterRouter: safeView,
-      finalView: intelligentView,
-      resolverStatus:
-        intelligentResolvedPanel?.status ??
-        effectiveResolvedPanel?.status ??
-        resolvedPanel?.status ??
-        null,
-      hasData: Boolean(resolvedPanelData),
-    });
-    if (
-      (intelligentView === "advice" || intelligentView === "timeline" || intelligentView === "war_room") &&
-      shouldRenderResolvedFallback(intelligentResolvedPanel) &&
-      (effectivePanelData.advice ||
-        effectivePanelData.strategicAdvice ||
-        effectivePanelData.timeline ||
-        effectivePanelData.simulation ||
-        effectivePanelData.warRoom)
-    ) {
-      console.warn("[Nexora][PanelDataUnderfed]", {
-        panel: intelligentView,
-        availableKeys: Object.keys(effectivePanelData ?? {}),
-      });
-    }
+  // Important: keep all hooks above this point.
+  // Conditional returns below preserve React hook order stability.
+  if (!props.rightPanelState.isOpen) {
+    return null;
   }
 
-  if (process.env.NODE_ENV !== "production" && (effectiveResolvedPanel || resolvedPanel)) {
-    const resolverStatus = intelligentResolvedPanel?.status ?? effectiveResolvedPanel?.status ?? resolvedPanel.status;
-    const usedFallback =
-      autoFixed.fixType === "fallback_applied" ||
-      shouldRenderResolvedFallback(intelligentResolvedPanel) ||
-      shouldRenderResolvedFallback(effectiveResolvedPanel);
-    console.log("[Nexora][PanelResolver]", {
-      panel: intelligentView,
-      status: resolverStatus,
-      missingFields: intelligentResolvedPanel?.missingFields ?? effectiveResolvedPanel?.missingFields ?? resolvedPanel.missingFields,
-    });
-    console.log("[Nexora][PanelFlow]", {
-      requestedView: props.rightPanelState.view ?? null,
-      resolvedView: safeView,
-      finalView: intelligentView,
-      resolverStatus,
-      hasResolvedData: Boolean(resolvedPanelData),
-      usedFallback,
-    });
-    console.log("[Nexora][RightPanelSafeRender]", {
-      view: intelligentView,
-      fixType: autoFixed.fixType,
-      prioritizedBlocks: panelIntelligence.enhancements.prioritizeBlocks ?? [],
-      cognitiveStep: cognitiveFlow.currentStep,
-      nextRecommendedView: cognitiveFlow.nextRecommendedView,
-    });
-  }
-
-  if (!registryEntry.componentExists && registryEntry.fallbackAllowed) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[Nexora][AutoFixPanelRegistryMiss]", {
-        canonicalView: intelligentView,
-        reason: "component_unavailable",
-      });
-    }
-    return renderFallbackForView(
-      intelligentView,
-      cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-      cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
+  if (!viewToRender) {
+    return (
+      <RightPanelFallback
+        title="No focused insight yet"
+        message="Select a view from the executive rail or continue your analysis to open a matching insight."
+        suggestedActionLabel={cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null}
+        onSuggestedAction={null}
+      />
     );
   }
 
-  if (isResolverManagedView(intelligentView) && !resolvedPanelData) {
-    return renderFallbackForView(
-      intelligentView,
-      cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-      cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
-    );
-  }
-
-  switch (intelligentView) {
+  return (
+    <div style={insightPanelHostFrame}>
+      {(() => {
+        switch (viewToRender) {
     case "strategic_command":
-      if (shouldRenderResolvedFallback(intelligentResolvedPanel)) {
+      if (shouldRenderResolvedFallback(bestResolvedPanel)) {
         return renderResolvedFallback(
-          intelligentResolvedPanel,
+          bestResolvedPanel,
           cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-          cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
+          null
         );
       }
       return (
@@ -481,18 +793,18 @@ export function RightPanelHost(props: RightPanelHostProps) {
           onOpenView={(view) => {
             if (view === "dashboard" || view === "simulate" || view === "compare") {
               if (view === "compare") {
-                props.onCompareOptions?.();
+                handleContextualCompareAction();
                 return;
               }
               if (view === "simulate") {
-                props.onSimulateDecision?.();
+                handleContextualSimulationAction();
                 return;
               }
               props.onOpenDashboard?.();
               return;
             }
             if (view === "timeline") return props.onOpenTimeline?.();
-            if (view === "war_room") return props.onOpenWarRoom?.();
+            if (view === "war_room") return handleContextualWarRoomAction();
             if (view === "team_decision") return props.onOpenTeamDecision?.();
             if (view === "collaboration_intelligence") return props.onOpenCollaborationIntelligence?.();
             if (view === "decision_governance") return props.onOpenDecisionGovernance?.();
@@ -506,46 +818,51 @@ export function RightPanelHost(props: RightPanelHostProps) {
         />
       );
     case "timeline":
-      if (shouldRenderResolvedFallback(intelligentResolvedPanel)) {
-        return renderResolvedFallback(
-          intelligentResolvedPanel,
-          cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-          cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
-        );
-      }
-      if (!hasDecisionContext) {
+      if (props.onOpenCenterComponent) {
         return (
           <RightPanelFallback
-            title="Timeline"
-            message="No risk progression timeline available yet."
-            suggestedActionLabel="Run Simulation"
-            onSuggestedAction={props.onSimulateDecision ?? null}
+            title="Decision Timeline"
+            message="Timeline summary is available in this rail. Open the center workspace for the full timeline view."
+            suggestedActionLabel="View Timeline"
+            onSuggestedAction={() => props.onOpenCenterComponent?.("timeline")}
           />
         );
       }
+      if (shouldRenderResolvedFallback(bestResolvedPanel)) {
+        dedupeCaseFallbackLog("timeline", "resolved_panel_fallback", {
+          readiness: bestResolvedPanelReadiness,
+          hasRenderable: hasRenderableBestResolvedPanel,
+        });
+        traceConcretePanelRender(true);
+        return renderConcretePanelEmptyState("timeline", props.onSimulateDecision ?? null);
+      }
+      if (!hasRenderableBestResolvedPanel && props.decisionStatus !== "loading" && props.decisionStatus !== "error") {
+        dedupeCaseFallbackLog("timeline", "resolved_panel_not_renderable", {
+          readiness: bestResolvedPanelReadiness,
+          decisionStatus: props.decisionStatus ?? null,
+        });
+        traceConcretePanelRender(true);
+        return renderConcretePanelEmptyState("timeline", props.onSimulateDecision ?? null);
+      }
+      traceConcretePanelRender(false);
       return (
         <DecisionTimelinePanel
-          responseData={canonicalPanelPayload}
-          strategicAdvice={
-            effectivePanelData.advice ??
-            effectivePanelData.strategicAdvice ??
-            props.strategicAdvice ??
-            props.sceneJson?.strategic_advice ??
-            null
-          }
+          responseData={effectiveTimelinePayload}
+          strategicAdvice={effectiveAdvicePayload}
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? undefined}
           decisionLoading={props.decisionLoading ?? false}
           decisionStatus={props.decisionStatus ?? "idle"}
           decisionError={props.decisionError ?? null}
           resolveObjectLabel={props.resolveObjectLabel ?? null}
-          onCompareOptions={props.onCompareOptions ?? null}
-          onSimulateDecision={props.onSimulateDecision ?? null}
-          onReturnToWarRoom={props.onOpenWarRoom ?? null}
+          onCompareOptions={handleContextualCompareAction}
+          onSimulateDecision={handleContextualSimulationAction}
+          onReturnToWarRoom={handleContextualWarRoomAction}
         />
       );
     case "decision_lifecycle":
       if (!hasDecisionContext) {
+        dedupeCaseFallbackLog("decision_lifecycle", "missing_decision_context", {});
         return (
           <RightPanelFallback
             title="Decision Lifecycle"
@@ -563,9 +880,9 @@ export function RightPanelHost(props: RightPanelHostProps) {
           memoryEntries={props.decisionMemoryEntries ?? []}
           workspaceId={props.responseData?.workspace_id ?? null}
           projectId={props.responseData?.project_id ?? null}
-          onOpenDecisionTimeline={props.onOpenDecisionTimeline ?? null}
+          onOpenDecisionTimeline={handleContextualWhyThisAction}
           onOpenOutcomeFeedback={props.onOpenOutcomeFeedback ?? null}
-          onOpenCompare={props.onCompareOptions ?? null}
+          onOpenCompare={handleContextualCompareAction}
         />
       );
     case "strategic_learning":
@@ -584,7 +901,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
           responseData={props.responseData ?? props.sceneJson ?? null}
           canonicalRecommendation={dashboardRecommendation}
           memoryEntries={props.decisionMemoryEntries ?? []}
-          onOpenCompare={props.onCompareOptions ?? null}
+          onOpenCompare={handleContextualCompareAction}
           onOpenTimeline={props.onOpenTimeline ?? null}
           onOpenMemory={props.onOpenMemory ?? null}
         />
@@ -598,7 +915,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
           memoryEntries={props.decisionMemoryEntries ?? []}
-          onOpenCompare={props.onCompareOptions ?? null}
+          onOpenCompare={handleContextualCompareAction}
           onOpenTimeline={props.onOpenTimeline ?? null}
           onOpenMemory={props.onOpenMemory ?? null}
         />
@@ -610,9 +927,9 @@ export function RightPanelHost(props: RightPanelHostProps) {
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
           memoryEntries={props.decisionMemoryEntries ?? []}
-          onOpenCompare={props.onCompareOptions ?? null}
+          onOpenCompare={handleContextualCompareAction}
           onOpenTimeline={props.onOpenTimeline ?? null}
-          onOpenWarRoom={props.onOpenWarRoom ?? null}
+          onOpenWarRoom={handleContextualWarRoomAction}
           onOpenCognitiveStyle={props.onOpenCognitiveStyle ?? null}
           onOpenCollaborationIntelligence={props.onOpenCollaborationIntelligence ?? null}
         />
@@ -632,11 +949,11 @@ export function RightPanelHost(props: RightPanelHostProps) {
         />
       );
     case "decision_council":
-      if (shouldRenderResolvedFallback(intelligentResolvedPanel)) {
+      if (shouldRenderResolvedFallback(bestResolvedPanel)) {
         return renderResolvedFallback(
-          intelligentResolvedPanel,
+          bestResolvedPanel,
           cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-          cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
+          null
         );
       }
       return (
@@ -647,7 +964,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
           memoryEntries={props.decisionMemoryEntries ?? []}
-          onOpenCompare={props.onCompareOptions ?? null}
+          onOpenCompare={handleContextualCompareAction}
           onOpenDecisionGovernance={props.onOpenDecisionGovernance ?? null}
           onOpenExecutiveApproval={props.onOpenExecutiveApproval ?? null}
           onOpenCollaborationIntelligence={props.onOpenCollaborationIntelligence ?? null}
@@ -665,11 +982,11 @@ export function RightPanelHost(props: RightPanelHostProps) {
         />
       );
     case "decision_governance":
-      if (shouldRenderResolvedFallback(intelligentResolvedPanel)) {
+      if (shouldRenderResolvedFallback(bestResolvedPanel)) {
         return renderResolvedFallback(
-          intelligentResolvedPanel,
+          bestResolvedPanel,
           cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-          cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
+          null
         );
       }
       return (
@@ -678,17 +995,17 @@ export function RightPanelHost(props: RightPanelHostProps) {
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
           memoryEntries={props.decisionMemoryEntries ?? []}
-          onOpenCompare={props.onCompareOptions ?? null}
+          onOpenCompare={handleContextualCompareAction}
           onOpenTimeline={props.onOpenTimeline ?? null}
           onOpenTeamDecision={props.onOpenTeamDecision ?? null}
         />
       );
     case "decision_policy":
-      if (shouldRenderResolvedFallback(intelligentResolvedPanel)) {
+      if (shouldRenderResolvedFallback(bestResolvedPanel)) {
         return renderResolvedFallback(
-          intelligentResolvedPanel,
+          bestResolvedPanel,
           cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-          cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
+          null
         );
       }
       return (
@@ -699,16 +1016,16 @@ export function RightPanelHost(props: RightPanelHostProps) {
           memoryEntries={props.decisionMemoryEntries ?? []}
           onOpenDecisionGovernance={props.onOpenDecisionGovernance ?? null}
           onOpenExecutiveApproval={props.onOpenExecutiveApproval ?? null}
-          onOpenCompare={props.onCompareOptions ?? null}
+          onOpenCompare={handleContextualCompareAction}
           onOpenTimeline={props.onOpenTimeline ?? null}
         />
       );
     case "executive_approval":
-      if (shouldRenderResolvedFallback(intelligentResolvedPanel)) {
+      if (shouldRenderResolvedFallback(bestResolvedPanel)) {
         return renderResolvedFallback(
-          intelligentResolvedPanel,
+          bestResolvedPanel,
           cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-          cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
+          null
         );
       }
       return (
@@ -719,13 +1036,14 @@ export function RightPanelHost(props: RightPanelHostProps) {
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
           memoryEntries={props.decisionMemoryEntries ?? []}
-          onOpenCompare={props.onCompareOptions ?? null}
+          onOpenCompare={handleContextualCompareAction}
           onOpenDecisionGovernance={props.onOpenDecisionGovernance ?? null}
           onOpenTimeline={props.onOpenTimeline ?? null}
         />
       );
     case "decision_timeline":
-      if (!hasDecisionContext) {
+      if (!hasRenderableBestResolvedPanel && !hasDecisionContext) {
+        dedupeCaseFallbackLog("decision_timeline", "missing_decision_context", {});
         return (
           <RightPanelFallback
             title="Decision Timeline"
@@ -758,7 +1076,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
           memoryEntries={props.decisionMemoryEntries ?? []}
-          onOpenDecisionTimeline={props.onOpenDecisionTimeline ?? null}
+          onOpenDecisionTimeline={handleContextualWhyThisAction}
         />
       );
     case "pattern_intelligence":
@@ -767,16 +1085,34 @@ export function RightPanelHost(props: RightPanelHostProps) {
           canonicalRecommendation={dashboardRecommendation}
           memoryEntries={props.decisionMemoryEntries ?? []}
           onOpenMemory={props.onOpenMemory ?? null}
-          onOpenCompare={props.onCompareOptions ?? null}
+          onOpenCompare={handleContextualCompareAction}
           onOpenConfidenceCalibration={props.onOpenConfidenceCalibration ?? null}
         />
       );
+    case "explanation":
+      return (
+        <RiskExplanationPanel
+          responseData={props.responseData}
+          sceneJson={props.sceneJson}
+          selectedObjectId={props.selectedObjectId ?? props.focusedId ?? null}
+          selectedObjectLabel={props.selectedObjectLabel ?? null}
+          canonicalRecommendation={dashboardRecommendation}
+          decisionResult={props.decisionResult ?? null}
+          onSimulateDecision={props.onSimulateDecision ?? null}
+          onApplyDecisionSafe={props.onApplyDecisionSafe ?? null}
+        />
+      );
     case "conflict":
-      return <ConflictMapPanel conflicts={props.conflicts ?? []} />;
+      return <ConflictMapPanel conflicts={effectiveConflictPayload} />;
     case "object":
-      return props.rightPanelState.contextId ?? props.selectedObjectId ?? props.focusedId ? (
-        <ObjectSelectionPanel selection={props.objectSelection ?? props.sceneJson?.object_selection ?? null} />
-      ) : (
+      if (props.rightPanelState.contextId ?? props.selectedObjectId ?? props.focusedId) {
+        return <ObjectSelectionPanel selection={props.objectSelection ?? props.sceneJson?.object_selection ?? null} />;
+      }
+      dedupeCaseFallbackLog("object", "missing_object_context", {
+        contextId: props.rightPanelState.contextId ?? null,
+        selectedObjectId: props.selectedObjectId ?? null,
+      });
+      return (
         <RightPanelFallback
           title="Object Focus"
           message="No object is selected yet. Choose an object from the scene or timeline first."
@@ -794,8 +1130,8 @@ export function RightPanelHost(props: RightPanelHostProps) {
           decisionResult={props.decisionResult ?? null}
           resolveObjectLabel={props.resolveObjectLabel ?? null}
           onOpenTimeline={props.onOpenTimeline ?? null}
-          onOpenCompare={props.onCompareOptions ?? null}
-          onOpenWarRoom={props.onOpenWarRoom ?? null}
+          onOpenCompare={handleContextualCompareAction}
+          onOpenWarRoom={handleContextualWarRoomAction}
           onOpenObject={props.onOpenObject ?? null}
         />
       );
@@ -808,38 +1144,35 @@ export function RightPanelHost(props: RightPanelHostProps) {
           decisionResult={props.decisionResult ?? undefined}
           memoryEntries={props.decisionMemoryEntries ?? []}
           resolveObjectLabel={props.resolveObjectLabel ?? null}
-          onOpenCompare={props.onCompareOptions ?? null}
+          onOpenCompare={handleContextualCompareAction}
           onOpenTimeline={props.onOpenTimeline ?? null}
-          onOpenWarRoom={props.onOpenWarRoom ?? null}
+          onOpenWarRoom={handleContextualWarRoomAction}
           onOpenObject={props.onOpenObject ?? null}
         />
       );
     case "risk":
-      return props.riskPropagation ?? props.sceneJson?.risk_propagation ?? props.sceneJson?.scene?.risk_propagation ? (
+      if (hasRenderableRiskPayload(effectiveRiskPayload)) {
+        return (
         <RiskPropagationPanel
-          risk={props.riskPropagation ?? props.sceneJson?.risk_propagation ?? props.sceneJson?.scene?.risk_propagation ?? null}
+          risk={effectiveRiskPayload}
+          showRiskFlowEntry
+          onOpenRiskFlow={handleContextualRiskFlowAction}
         />
-      ) : (
-        <RightPanelFallback
-          title="Risk"
-          message="No risk propagation is available yet. Run analysis or simulation to inspect exposure."
-          suggestedActionLabel="Run Simulation"
-          onSuggestedAction={handleRiskFlowRunSimulation}
-        />
-      );
+        );
+      }
+      dedupeCaseFallbackLog("risk", "risk_payload_not_renderable", riskPayloadFallbackSignature(effectiveRiskPayload));
+      return riskPanelEmptyFallbackUi;
     case "fragility":
-      return props.riskPropagation ?? props.sceneJson?.risk_propagation ?? props.sceneJson?.scene?.risk_propagation ? (
+      if (hasRenderableRiskPayload(effectiveRiskPayload)) {
+        return (
         <RiskPropagationPanel
-          risk={props.riskPropagation ?? props.sceneJson?.risk_propagation ?? props.sceneJson?.scene?.risk_propagation ?? null}
+          risk={effectiveRiskPayload}
+          showRiskFlowEntry={false}
         />
-      ) : (
-        <RightPanelFallback
-          title="Fragility"
-          message="No fragility scan is available yet. Run analysis to inspect system fragility."
-          suggestedActionLabel="Run Simulation"
-          onSuggestedAction={handleRiskFlowRunSimulation}
-        />
-      );
+        );
+      }
+      dedupeCaseFallbackLog("fragility", "fragility_payload_not_renderable", riskPayloadFallbackSignature(effectiveRiskPayload));
+      return fragilityScanFallbackUi;
     case "replay":
       return (
         <DecisionReplayPanel
@@ -849,23 +1182,27 @@ export function RightPanelHost(props: RightPanelHostProps) {
         />
       );
     case "advice":
-      if (shouldRenderResolvedFallback(intelligentResolvedPanel)) {
-        return renderResolvedFallback(
-          intelligentResolvedPanel,
-          cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-          cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
+      if (shouldRenderResolvedFallback(bestResolvedPanel) || !hasRenderableBestResolvedPanel) {
+        dedupeCaseFallbackLog(
+          "advice",
+          shouldRenderResolvedFallback(bestResolvedPanel) ? "resolved_panel_fallback" : "resolved_panel_not_renderable",
+          {
+            readiness: bestResolvedPanelReadiness,
+            hasRenderable: hasRenderableBestResolvedPanel,
+            resolvedFallback: shouldRenderResolvedFallback(bestResolvedPanel),
+          }
+        );
+        traceConcretePanelRender(true);
+        return renderConcretePanelEmptyState(
+          "advice",
+          null
         );
       }
+      traceConcretePanelRender(false);
       return (
         <StrategicAdvicePanel
           data={effectivePanelData}
-          advice={
-            effectivePanelData.advice ??
-            effectivePanelData.strategicAdvice ??
-            props.strategicAdvice ??
-            props.sceneJson?.strategic_advice ??
-            null
-          }
+          advice={effectiveAdvicePayload}
           canonicalRecommendation={dashboardRecommendation}
         />
       );
@@ -875,24 +1212,29 @@ export function RightPanelHost(props: RightPanelHostProps) {
       return <StrategicPatternsPanel patterns={props.strategicPatterns ?? props.sceneJson?.strategic_patterns ?? null} />;
     case "dashboard":
     case "simulate":
-      if (intelligentView === "dashboard" && shouldRenderResolvedFallback(intelligentResolvedPanel)) {
+      if ((viewToRender === "dashboard" || viewToRender === "simulate") && shouldRenderResolvedFallback(bestResolvedPanel)) {
+        dedupeCaseFallbackLog(viewToRender ?? "unknown", "resolved_panel_fallback", {
+          readiness: bestResolvedPanelReadiness,
+        });
         return renderResolvedFallback(
-          intelligentResolvedPanel,
+          bestResolvedPanel,
           cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-          cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
+          null
         );
       }
-      if (!hasDecisionContext && intelligentView === "simulate") {
+      if (!hasRenderableBestResolvedPanel && !hasDecisionContext && viewToRender === "simulate") {
+        dedupeCaseFallbackLog("simulate", "missing_decision_context", { hasDecisionContext });
         return (
           <RightPanelFallback
             title="Simulation"
             message="No simulation available yet. Run a scenario to generate results."
             suggestedActionLabel="Run Simulation"
-            onSuggestedAction={props.onSimulateDecision ?? null}
+            onSuggestedAction={handleContextualSimulationAction}
           />
         );
       }
-      if (!hasDecisionContext && intelligentView === "dashboard") {
+      if (!hasRenderableBestResolvedPanel && !hasDecisionContext && viewToRender === "dashboard") {
+        dedupeCaseFallbackLog("dashboard", "missing_decision_context", { hasDecisionContext });
         return (
           <RightPanelFallback
             title="Executive Dashboard"
@@ -905,16 +1247,16 @@ export function RightPanelHost(props: RightPanelHostProps) {
       return (
         <ExecutiveDashboardPanel
           sceneJson={props.sceneJson ?? undefined}
-          responseData={props.responseData ?? undefined}
+          responseData={effectiveDashboardPayload}
           activeMode={props.activeMode}
-          conflicts={props.conflicts ?? undefined}
+          conflicts={Array.isArray(effectiveConflictPayload) ? effectiveConflictPayload : props.conflicts ?? undefined}
           objectSelection={props.objectSelection ?? undefined}
           riskPropagation={props.riskPropagation ?? undefined}
           decisionMemoryEntries={props.decisionMemoryEntries ?? undefined}
-          strategicAdvice={props.strategicAdvice ?? undefined}
+          strategicAdvice={effectiveAdvicePayload ?? undefined}
           strategicCouncil={props.strategicCouncil ?? undefined}
           decisionImpact={props.decisionImpact ?? undefined}
-          decisionCockpit={props.decisionCockpit ?? undefined}
+          decisionCockpit={(effectivePanelData.decisionCockpit ?? props.decisionCockpit) ?? undefined}
           canonicalRecommendation={dashboardRecommendation}
           selectedObjectLabel={props.selectedObjectLabel}
           resolveObjectLabel={props.resolveObjectLabel ?? null}
@@ -923,10 +1265,11 @@ export function RightPanelHost(props: RightPanelHostProps) {
           decisionLoading={props.decisionLoading ?? false}
           decisionStatus={props.decisionStatus ?? "idle"}
           decisionError={props.decisionError ?? null}
-          activeExecutiveView={intelligentView === "simulate" ? "simulate" : props.activeExecutiveView ?? "dashboard"}
-          onSimulateDecision={props.onSimulateDecision ?? null}
-          onCompareOptions={props.onCompareOptions ?? null}
-          onOpenWarRoom={props.onOpenWarRoom ?? null}
+          activeExecutiveView={viewToRender === "simulate" ? "simulate" : props.activeExecutiveView ?? "dashboard"}
+          nexoraB8PanelContext={effectivePanelData.nexoraB8PanelContext ?? null}
+          onSimulateDecision={handleContextualSimulationAction}
+          onCompareOptions={handleContextualCompareAction}
+          onOpenWarRoom={handleContextualWarRoomAction}
           onOpenStrategicCommand={props.onOpenStrategicCommand ?? null}
           onOpenTimeline={props.onOpenTimeline ?? null}
           onOpenScenarioTree={props.onOpenScenarioTree ?? null}
@@ -942,30 +1285,50 @@ export function RightPanelHost(props: RightPanelHostProps) {
           onOpenDecisionPolicy={props.onOpenDecisionPolicy ?? null}
           onOpenDecisionGovernance={props.onOpenDecisionGovernance ?? null}
           onOpenExecutiveApproval={props.onOpenExecutiveApproval ?? null}
-          onOpenDecisionTimeline={props.onOpenDecisionTimeline ?? null}
+          onOpenDecisionTimeline={handleContextualWhyThisAction}
           onOpenConfidenceCalibration={props.onOpenConfidenceCalibration ?? null}
           onOpenOutcomeFeedback={props.onOpenOutcomeFeedback ?? null}
           onOpenPatternIntelligence={props.onOpenPatternIntelligence ?? null}
           onPreviewDecision={props.onPreviewDecision ?? null}
           onSaveScenario={props.onSaveScenario ?? null}
           onApplyDecisionSafe={props.onApplyDecisionSafe ?? null}
+          nexoraB18Simulate={
+            viewToRender === "simulate"
+              ? ((bestResolvedPanelRecord?.nexoraB18Simulate as NexoraB18SimulateResolved | undefined) ?? null)
+              : null
+          }
         />
       );
     case "compare":
-      if (shouldRenderResolvedFallback(intelligentResolvedPanel)) {
-        return renderResolvedFallback(
-          intelligentResolvedPanel,
-          cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-          cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
+      if (props.onOpenCenterComponent) {
+        return (
+          <RightPanelFallback
+            title="Compare Options"
+            message="Comparison highlights are available here. Open the center workspace for deep multi-option analysis."
+            suggestedActionLabel="Open Compare"
+            onSuggestedAction={() => props.onOpenCenterComponent?.("compare")}
+          />
         );
       }
-      if (!hasDecisionContext) {
+      if (shouldRenderResolvedFallback(bestResolvedPanel)) {
+        dedupeCaseFallbackLog("compare", "resolved_panel_fallback", { readiness: bestResolvedPanelReadiness });
+        return renderResolvedFallback(
+          bestResolvedPanel,
+          cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
+          null
+        );
+      }
+      if (!hasRenderableBestResolvedPanel && !hasDecisionContext && props.decisionStatus !== "loading" && props.decisionStatus !== "error") {
+        dedupeCaseFallbackLog("compare", "missing_decision_context", {
+          hasDecisionContext,
+          decisionStatus: props.decisionStatus ?? null,
+        });
         return (
           <RightPanelFallback
             title="Compare Options"
             message="No comparison data is available yet. Compare options after analysis."
             suggestedActionLabel="Compare Options"
-            onSuggestedAction={props.onCompareOptions ?? null}
+            onSuggestedAction={handleContextualCompareAction}
           />
         );
       }
@@ -979,41 +1342,43 @@ export function RightPanelHost(props: RightPanelHostProps) {
           decisionStatus={props.decisionStatus ?? "idle"}
           decisionError={props.decisionError ?? null}
           memoryEntries={props.decisionMemoryEntries ?? []}
-          onApplyRecommended={props.onSimulateDecision ?? props.onOpenWarRoom ?? null}
-          onSimulateDeeper={props.onSimulateDecision ?? null}
-          onViewRiskFlow={props.onOpenWarRoom ?? null}
+          onApplyRecommended={handleContextualSimulationAction}
+          onSimulateDeeper={handleContextualSimulationAction}
+          onViewRiskFlow={handleContextualRiskFlowAction}
           onViewScenarioTree={props.onOpenScenarioTree ?? null}
-          onOpenDecisionTimeline={props.onOpenDecisionTimeline ?? null}
+          onOpenDecisionTimeline={handleContextualWhyThisAction}
           onPreviewDecision={props.onPreviewDecision ?? null}
           onSaveScenario={props.onSaveScenario ?? null}
           onApplyDecisionSafe={props.onApplyDecisionSafe ?? null}
           onOpenDecisionPolicy={props.onOpenDecisionPolicy ?? null}
           onOpenExecutiveApproval={props.onOpenExecutiveApproval ?? null}
           resolveObjectLabel={props.resolveObjectLabel ?? null}
+          nexoraB8PanelContext={effectivePanelData.nexoraB8PanelContext ?? null}
+          nexoraB18Compare={
+            (bestResolvedPanelRecord?.nexoraB18Compare as NexoraB18CompareResolved | undefined) ?? null
+          }
         />
       );
     case "war_room":
-      if (shouldRenderResolvedFallback(intelligentResolvedPanel)) {
-        return renderResolvedFallback(
-          intelligentResolvedPanel,
-          cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-          cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
-        );
+      if (shouldRenderResolvedFallback(bestResolvedPanel)) {
+        dedupeCaseFallbackLog("war_room", "resolved_panel_fallback", { readiness: bestResolvedPanelReadiness });
+        traceConcretePanelRender(true);
+        return renderConcretePanelEmptyState("war_room", handleContextualWarRoomAction);
       }
-      if (!hasDecisionContext && !effectivePanelData.warRoom && !props.warRoom?.intelligence) {
+      if (!hasRenderableBestResolvedPanel) {
+        dedupeCaseFallbackLog("war_room", "resolved_panel_not_renderable", {
+          readiness: bestResolvedPanelReadiness,
+        });
+        traceConcretePanelRender(true);
         return (
-          <RightPanelFallback
-            title="War Room"
-            message="No executive summary available yet."
-            suggestedActionLabel="Open War Room Context"
-            onSuggestedAction={props.onSimulateDecision ?? null}
-          />
+          renderConcretePanelEmptyState("war_room", handleContextualWarRoomAction)
         );
       }
+      traceConcretePanelRender(false);
       return (
         <WarRoomPanel
           controller={props.warRoom}
-          intelligence={(effectivePanelData.warRoom ?? canonicalPanelPayload) as Record<string, unknown> | null}
+          intelligence={effectiveWarRoomPayload as Record<string, unknown> | null}
           selectedObjectLabel={props.selectedObjectLabel ?? null}
           strategicCouncil={props.strategicCouncil ?? null}
           decisionImpact={props.decisionImpact ?? undefined}
@@ -1026,9 +1391,9 @@ export function RightPanelHost(props: RightPanelHostProps) {
           decisionError={props.decisionError ?? null}
           activeExecutiveView={props.activeExecutiveView ?? "dashboard"}
           memoryEntries={props.decisionMemoryEntries ?? []}
-          onSimulateDecision={props.onSimulateDecision ?? null}
-          onCompareOptions={props.onCompareOptions ?? null}
-          onOpenDecisionTimeline={props.onOpenDecisionTimeline ?? null}
+          onSimulateDecision={handleContextualSimulationAction}
+          onCompareOptions={handleContextualCompareAction}
+          onOpenDecisionTimeline={handleContextualWhyThisAction}
           onPreviewDecision={props.onPreviewDecision ?? null}
           onSaveScenario={props.onSaveScenario ?? null}
           onApplyDecisionSafe={props.onApplyDecisionSafe ?? null}
@@ -1049,24 +1414,29 @@ export function RightPanelHost(props: RightPanelHostProps) {
         />
       );
     case "kpi":
+      dedupeCaseFallbackLog("kpi", "missing_kpi_analysis", {});
       return (
         <RightPanelFallback
           title="KPI"
-          message="No KPI analysis is available yet. Run an analysis to populate executive metrics."
+          message="No KPI readout is available yet. Run an analysis to surface executive metrics here."
           suggestedActionLabel="Review Advice"
           onSuggestedAction={props.onOpenStrategicCommand ?? null}
         />
       );
     default:
-      if (process.env.NODE_ENV !== "production") {
-        console.warn("[Nexora] RightPanelHost fell back for unsupported view:", intelligentView);
-      }
-      return renderFallbackForView(
-        intelligentView,
-        cognitiveFlow.showNextStepCTA ? cognitiveFlow.nextStepLabel : null,
-        cognitiveNextAction ?? resolveViewFallbackAction(intelligentView, props)
+      logUnsupportedViewFallback(viewToRender);
+      return (
+        <RightPanelFallback
+          title="No focused insight yet"
+          message="Select a scenario or question from the rail to open a matching executive view."
+          suggestedActionLabel={null}
+          onSuggestedAction={null}
+        />
       );
-  }
+        }
+      })()}
+    </div>
+  );
 }
 
 function isResolverManagedView(view: RightPanelView): view is Exclude<RightPanelView, null> {
@@ -1074,6 +1444,7 @@ function isResolverManagedView(view: RightPanelView): view is Exclude<RightPanel
     view === "advice" ||
     view === "dashboard" ||
     view === "simulate" ||
+    view === "conflict" ||
     view === "risk" ||
     view === "timeline" ||
     view === "compare" ||
@@ -1092,60 +1463,242 @@ function shouldRenderResolvedFallback(
   return Boolean(resolved && (resolved.status === "fallback" || resolved.status === "empty_but_guided"));
 }
 
+function getResolvedPanelReadiness(
+  view: RightPanelView,
+  resolved: PanelResolvedData | null
+): PanelDataReadiness {
+  if (!resolved || shouldRenderResolvedFallback(resolved)) {
+    return "empty";
+  }
+
+  const data = resolved.data;
+  if (Array.isArray(data)) {
+    return data.length > 0 ? "partial" : "empty";
+  }
+
+  const record = asLooseRecord(data);
+  if (!record) {
+    return data ? "partial" : "empty";
+  }
+
+  const keys = Object.keys(record);
+  if (!keys.length) {
+    return "empty";
+  }
+
+  const hasText = (...fields: string[]) =>
+    fields.some((field) => typeof record[field] === "string" && String(record[field]).trim().length > 0);
+  const hasArray = (...fields: string[]) =>
+    fields.some((field) => Array.isArray(record[field]) && (record[field] as unknown[]).length > 0);
+  const hasNestedText = (field: string, nestedField: string) => {
+    const nested = asLooseRecord(record[field]);
+    return typeof nested?.[nestedField] === "string" && String(nested[nestedField]).trim().length > 0;
+  };
+
+  if (view === "advice") {
+    if (
+      hasArray("recommended_actions", "recommendations") ||
+      hasText("summary", "title", "recommendation", "action", "why", "risk_summary") ||
+      hasNestedText("primary_recommendation", "summary") ||
+      hasNestedText("primary_recommendation", "action")
+    ) {
+      return hasArray("recommended_actions", "recommendations") ? "full" : "partial";
+    }
+    return "partial";
+  }
+
+  if (view === "timeline") {
+    if (
+      hasArray("events", "steps", "stages", "timeline", "markers", "phases") ||
+      hasText("summary", "headline", "immediate", "near_term", "label")
+    ) {
+      return hasArray("events", "steps", "stages", "timeline", "markers", "phases") ? "full" : "partial";
+    }
+    return "partial";
+  }
+
+  if (view === "dashboard" || view === "war_room" || view === "strategic_command") {
+    if (
+      hasArray("options", "compare", "decision_blocks", "priorities", "risks", "recommended_actions") ||
+      hasText(
+        "summary",
+        "headline",
+        "recommendation",
+        "action",
+        "what_to_do",
+        "why_it_matters",
+        "happened",
+        "rationale",
+        "posture",
+        "simulation_summary",
+        "compare_summary",
+        "executive_summary"
+      )
+    ) {
+      return hasArray("options", "compare", "decision_blocks", "priorities", "risks", "recommended_actions")
+        ? "full"
+        : "partial";
+    }
+    return "partial";
+  }
+
+  if (view === "simulate") {
+    const b18 = asLooseRecord(record.nexoraB18Simulate);
+    if (b18 && Array.isArray(b18.variants) && (b18.variants as unknown[]).length > 0) {
+      return "partial";
+    }
+    if (
+      hasArray("options", "compare", "decision_blocks", "priorities", "risks", "recommended_actions") ||
+      hasText(
+        "summary",
+        "headline",
+        "recommendation",
+        "action",
+        "what_to_do",
+        "why_it_matters",
+        "happened",
+        "rationale",
+        "posture",
+        "simulation_summary",
+        "compare_summary",
+        "executive_summary"
+      )
+    ) {
+      return hasArray("options", "compare", "decision_blocks", "priorities", "risks", "recommended_actions")
+        ? "full"
+        : "partial";
+    }
+    return "partial";
+  }
+
+  if (view === "compare") {
+    const b18c = asLooseRecord(record.nexoraB18Compare);
+    if (b18c && Array.isArray(b18c.variants) && (b18c.variants as unknown[]).length > 0) {
+      return "partial";
+    }
+    if (hasArray("options", "comparison") || hasText("summary", "recommendation", "rationale")) {
+      return hasArray("options", "comparison") ? "full" : "partial";
+    }
+    return "partial";
+  }
+
+  if (view === "conflict") {
+    if (hasArray("conflicts", "tradeoffs", "tensions", "conflict_points") || hasText("summary", "headline", "posture")) {
+      return hasArray("conflicts", "tradeoffs", "tensions", "conflict_points") ? "full" : "partial";
+    }
+    return "partial";
+  }
+
+  if (view === "decision_governance" || view === "decision_policy" || view === "executive_approval" || view === "decision_council") {
+    if (hasText("summary", "recommendation", "status", "what_to_do", "why_it_matters") || hasArray("options")) {
+      return hasArray("options") ? "full" : "partial";
+    }
+    return "partial";
+  }
+
+  return keys.length > 0 ? "partial" : "empty";
+}
+
+function hasRenderableResolvedPanelData(
+  view: RightPanelView,
+  resolved: PanelResolvedData | null
+) {
+  return getResolvedPanelReadiness(view, resolved) !== "empty";
+}
+
+function hasRenderableRiskPayload(risk: unknown) {
+  const record = asLooseRecord(risk);
+  if (!record) return false;
+  const edges = Array.isArray(record.edges) ? record.edges : [];
+  const drivers = Array.isArray(record.drivers) ? record.drivers : [];
+  const sources = Array.isArray(record.sources) ? record.sources : [];
+  const summary = typeof record.summary === "string" ? record.summary.trim() : "";
+  const level = typeof record.level === "string" ? record.level.trim() : "";
+  const riskLevel = typeof record.risk_level === "string" ? record.risk_level.trim() : "";
+  return edges.length > 0 || drivers.length > 0 || sources.length > 0 || summary.length > 0 || level.length > 0 || riskLevel.length > 0;
+}
+
+/** Stable semantic signature for CASE_FALLBACK dedupe when risk/fragility payload is thin or empty. */
+function riskPayloadFallbackSignature(risk: unknown): Record<string, unknown> {
+  const record = asLooseRecord(risk);
+  if (!record) return { shape: "none" };
+  const edges = Array.isArray(record.edges) ? record.edges.length : 0;
+  const drivers = Array.isArray(record.drivers) ? record.drivers.length : 0;
+  const sources = Array.isArray(record.sources) ? record.sources.length : 0;
+  const summary = typeof record.summary === "string" ? record.summary : "";
+  const level = typeof record.level === "string" ? record.level : "";
+  const riskLevel = typeof record.risk_level === "string" ? record.risk_level : "";
+  return {
+    edges,
+    drivers,
+    sources,
+    summaryLen: summary.length,
+    level,
+    riskLevel,
+  };
+}
+
+function isPanelRenderable(
+  view: RightPanelView,
+  input: {
+    resolved: PanelResolvedData | null;
+    panelData: PanelSharedData | null | undefined;
+    objectContextId?: string | null;
+    selectedObjectId?: string | null;
+    objectSelection?: unknown;
+    sceneJson?: unknown;
+  }
+) {
+  if (!view) return false;
+  if (view === "fragility") {
+    return hasRenderableRiskPayload(input.panelData?.fragility ?? input.panelData?.risk ?? null);
+  }
+  if (view === "object") {
+    return hasMeaningfulObjectViewPayload({
+      contextId: input.objectContextId ?? null,
+      selectedObjectId: input.selectedObjectId ?? null,
+      objectSelection: input.objectSelection ?? null,
+      sceneJson: input.sceneJson ?? null,
+    });
+  }
+  if (isResolverManagedView(view)) {
+    return hasRenderableResolvedPanelData(view, input.resolved);
+  }
+  const slice = (input.panelData as Record<string, unknown> | null | undefined)?.[view];
+  if (Array.isArray(slice)) return slice.length > 0;
+  if (slice && typeof slice === "object") return Object.keys(slice as Record<string, unknown>).length > 0;
+  return Boolean(slice);
+}
+
 function renderResolvedFallback(
   resolved: PanelResolvedData | null,
   suggestedActionLabel: string | null,
   onSuggestedAction: (() => void) | null
 ) {
-  if (process.env.NODE_ENV !== "production") {
-    console.warn("[Nexora][PanelFallback]", {
-      canonicalView: resolved?.title ?? "Panel",
-      fallbackReason: resolved?.status ?? "fallback",
-    });
-  }
+  logPanelFallback({
+    canonicalView: resolved?.title ?? "Panel",
+    fallbackReason: resolved?.status ?? "fallback",
+  });
   return (
     <RightPanelFallback
       title={resolved?.title ?? "Panel"}
-      message={resolved?.message ?? "This panel is waiting for more decision context."}
+      message={resolved?.message ?? "Select a scenario or question to populate this executive view."}
       suggestedActionLabel={suggestedActionLabel ?? resolved?.suggestedActionLabel ?? null}
       onSuggestedAction={onSuggestedAction}
     />
   );
 }
 
-function renderFallbackForView(
-  view: RightPanelView,
-  suggestedActionLabel: string | null,
-  onSuggestedAction: (() => void) | null
+function hasRecommendationSignal(
+  panelData: PanelSharedData | null | undefined,
+  responseData?: unknown,
+  sceneJson?: unknown
 ) {
-  const copy = view ? getRightPanelRegistryEntry(view) : null;
-  if (process.env.NODE_ENV !== "production") {
-    if (copy) {
-      console.warn("[Nexora][PanelFallback]", {
-        canonicalView: view,
-        fallbackReason: "view_fallback",
-      });
-    } else {
-      console.warn("[Nexora][AutoFixPanelRegistryMiss]", {
-        canonicalView: view ?? null,
-        reason: "unknown_view_bypassed_router",
-      });
-    }
+  const da = pickDecisionAnalysisFromResponse(responseData, sceneJson);
+  const rec = da?.recommended_action as Record<string, unknown> | undefined;
+  if (rec && typeof rec.id === "string" && rec.id.trim().length > 0) {
+    return true;
   }
-  return (
-    <RightPanelFallback
-      title={copy?.fallbackTitle ?? "Panel Unavailable"}
-      message={
-        copy?.fallbackMessage ??
-        `Unknown panel: ${String(view ?? "unknown")}. Nexora kept your requested view and rendered a guarded fallback instead.`
-      }
-      suggestedActionLabel={suggestedActionLabel}
-      onSuggestedAction={onSuggestedAction}
-    />
-  );
-}
-
-function hasRecommendationSignal(panelData: PanelSharedData | null | undefined) {
   const advice = panelData?.strategicAdvice as Record<string, unknown> | null | undefined;
   const recommendation = panelData?.canonicalRecommendation as Record<string, unknown> | null | undefined;
   const actions = advice?.recommended_actions;
@@ -1170,29 +1723,25 @@ function getRiskSignalLevel(risk: unknown) {
   return 0;
 }
 
-function resolveFlowAction(view: RightPanelView, props: RightPanelHostProps) {
-  if (view === "dashboard") return props.onOpenDashboard ?? props.onOpenStrategicCommand ?? null;
-  if (view === "risk") return props.onOpenWarRoom ?? props.onOpenDashboard ?? null;
-  if (view === "simulate") return props.onSimulateDecision ?? props.onOpenDashboard ?? null;
-  if (view === "decision_council") return props.onOpenDecisionCouncil ?? props.onOpenDashboard ?? null;
-  if (view === "war_room") return props.onOpenWarRoom ?? props.onOpenDashboard ?? null;
-  if (view === "memory") return props.onOpenMemory ?? props.onOpenOrgMemory ?? props.onOpenDashboard ?? null;
-  return props.onOpenDashboard ?? null;
+function hasMeaningfulObjectViewPayload(args: {
+  contextId: string | null;
+  selectedObjectId: string | null;
+  objectSelection: unknown;
+  sceneJson: unknown;
+}) {
+  if (typeof args.contextId === "string" && args.contextId.trim().length > 0) return true;
+  if (typeof args.selectedObjectId === "string" && args.selectedObjectId.trim().length > 0) return true;
+
+  const selection = asLooseRecord(args.objectSelection);
+  const highlighted = Array.isArray(selection?.highlighted_objects) ? selection.highlighted_objects : [];
+  if (highlighted.length > 0) return true;
+
+  const sceneJson = asLooseRecord(args.sceneJson);
+  const sceneSelection = asLooseRecord(sceneJson?.object_selection);
+  const sceneHighlighted = Array.isArray(sceneSelection?.highlighted_objects) ? sceneSelection.highlighted_objects : [];
+  return sceneHighlighted.length > 0;
 }
 
-function resolveViewFallbackAction(view: RightPanelView, props: RightPanelHostProps) {
-  if (view === "risk" || view === "fragility") return props.onSimulateDecision ?? props.onOpenWarRoom ?? null;
-  if (view === "timeline") return props.onSimulateDecision ?? props.onOpenTimeline ?? null;
-  if (view === "compare") return props.onCompareOptions ?? null;
-  if (view === "war_room") return props.onOpenWarRoom ?? props.onSimulateDecision ?? null;
-  if (view === "decision_council") return props.onOpenDecisionCouncil ?? null;
-  if (view === "decision_governance") return props.onOpenDecisionGovernance ?? null;
-  if (view === "executive_approval") return props.onOpenExecutiveApproval ?? null;
-  if (view === "decision_policy") return props.onOpenDecisionPolicy ?? null;
-  if (view === "strategic_command") return props.onOpenStrategicCommand ?? null;
-  if (view === "memory" || view === "org_memory") return props.onOpenMemory ?? props.onOpenOrgMemory ?? null;
-  if (view === "workspace" || view === "object") return props.onOpenObject ? () => props.onOpenObject?.(props.selectedObjectId ?? null) : null;
-  if (view === "simulate") return props.onSimulateDecision ?? null;
-  if (view === "dashboard") return props.onOpenStrategicCommand ?? props.onOpenDashboard ?? null;
-  return null;
+function asLooseRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }

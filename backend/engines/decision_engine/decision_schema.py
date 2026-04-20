@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -50,6 +50,16 @@ class RecommendedAction(BaseModel):
 
     id: str
     reason: str
+    title: str = ""
+    action: str = ""
+    rationale: str = ""
+    expected_outcome: str = ""
+    priority: Literal["high", "medium", "low"] = "medium"
+    time_horizon: Literal["immediate", "short", "medium"] = "short"
+    why_this: str = ""
+    evidence: list[str] = Field(default_factory=list)
+    tradeoffs: str = ""
+    confidence_reason: str = ""
 
 
 class RiskAnalysis(BaseModel):

@@ -10,6 +10,28 @@ import type {
 
 export type DecisionExecutionPayload = DecisionExecutionRequest;
 
+export type DecisionExecutionKpiEffect = {
+  kpi: string;
+  change: number;
+};
+
+export type DecisionExecutionSimulationResult = {
+  impact_score: number;
+  risk_change: number;
+  kpi_effects: DecisionExecutionKpiEffect[];
+  affected_objects: string[];
+};
+
+export type DecisionExecutionComparisonItem = {
+  option: string;
+  score: number;
+};
+
+export type DecisionExecutionSceneActions = {
+  highlight: string[];
+  dim: string[];
+};
+
 export type DecisionExecutionRecommendation = {
   recommended_option_id: string;
   reason: string;
@@ -24,18 +46,16 @@ export type DecisionExecutionComparisonResult = {
   options: Array<Record<string, unknown>>;
 };
 
-export type DecisionExecutionResult = GeneratedDecisionExecutionResponse & {
+export type DecisionExecutionResult = Omit<
+  GeneratedDecisionExecutionResponse,
+  "simulation_result" | "comparison" | "scene_actions"
+> & {
+  simulation_result: DecisionExecutionSimulationResult;
+  comparison: DecisionExecutionComparisonItem[];
+  scene_actions: DecisionExecutionSceneActions;
   advice_slice?: CanonicalAdvicePanelData | null;
   timeline_slice?: CanonicalTimelinePanelData | null;
   war_room_slice?: CanonicalWarRoomPanelData | null;
   recommendation?: DecisionExecutionRecommendation | null;
   comparison_result?: DecisionExecutionComparisonResult | null;
 };
-
-export type DecisionExecutionSimulationResult = DecisionExecutionResult["simulation_result"];
-export type DecisionExecutionComparisonItem = DecisionExecutionResult["comparison"][number];
-export type DecisionExecutionSceneActions = DecisionExecutionResult["scene_actions"];
-export type DecisionExecutionKpiEffect =
-  DecisionExecutionSimulationResult extends { kpi_effects?: Array<infer Effect> }
-    ? Effect
-    : Record<string, unknown>;
