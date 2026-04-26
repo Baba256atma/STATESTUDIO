@@ -133,7 +133,7 @@ export default function HomePage() {
                   <InvestorDemoProvider>
                     <NexoraOperatorModeProvider>
                       <NexoraRunbookGuidanceProvider>
-                        <NexoraShell onSwitchWorkspace={handleChangeDomain}>
+                        <NexoraShell>
                           <HomeScreen domainExperience={resolvedSelection} />
                         </NexoraShell>
                       </NexoraRunbookGuidanceProvider>

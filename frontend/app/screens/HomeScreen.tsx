@@ -9556,7 +9556,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     return runDecisionAssistant({
       domainId: activeDomainExperience.experience.domainId,
       userIntent: lastUser,
-      selectedObjectId: (visibleSelectedObjectId ?? selectedObjectIdState ?? undefined) ?? undefined,
+      selectedObjectId: visibleSelectedObjectId ?? selectedObjectIdState ?? undefined,
       activePanel: rightPanelState.view ?? undefined,
       riskLevel: b7?.fragilityLevel ?? (typeof b8?.fragilityLevel === "string" ? b8.fragilityLevel : undefined) ?? riskFromResponse,
       fragileObjectIds: b7?.objectIds?.length
