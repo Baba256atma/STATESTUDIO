@@ -226,3 +226,256 @@ html[data-theme="day"] .nexora-secondary-cta:hover {
   background: var(--nx-bg-deep);
   color: var(--nx-text);
 }
+
+/* Right rail: insight control (header + quick-insights menu). */
+.nexora-insight-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border-radius: 8px;
+  border: none;
+  background: color-mix(in srgb, var(--nx-surface-panel) 80%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nx-border-soft) 90%, transparent);
+  font-size: 15px;
+  line-height: 1;
+  cursor: default;
+}
+
+/* Severity colors: insight icon + header state label. */
+.insight-green {
+  color: #22c55e;
+}
+.insight-orange {
+  color: #f59e0b;
+}
+.insight-red {
+  color: #ef4444;
+}
+.insight-neutral {
+  color: #9ca3af;
+}
+
+.nexora-insight-icon:focus-visible {
+  outline: 2px solid var(--nx-focus-ring);
+  outline-offset: 1px;
+}
+
+.nexora-insight-icon-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.nexora-insight-icon-wrap--header {
+  display: inline-flex;
+  align-items: center;
+}
+
+.nexora-insight-icon--header {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.nexora-insight-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+  max-width: min(320px, 92vw);
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--nx-popover-bg);
+  box-shadow: var(--nx-popover-shadow);
+  border: 1px solid color-mix(in srgb, var(--nx-border) 55%, transparent);
+}
+
+.nexora-insight-dropdown-item {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--nx-text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nexora-insight-dropdown-item:hover {
+  background: color-mix(in srgb, var(--nx-accent) 10%, var(--nx-bg-deep));
+}
+
+.nexora-insight-dropdown-item:focus-visible {
+  outline: 2px solid var(--nx-focus-ring);
+  outline-offset: 0;
+}
+
+.nexora-badge {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--nx-accent-muted);
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--nx-accent-soft) 65%, transparent);
+  box-shadow: inset 0 0 0 1px var(--nx-border-soft);
+}
+
+/* Left nav: Demo control + portaled menu */
+.nexora-nav-demo {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 4px;
+  margin: 0;
+  border-radius: 10px;
+  border: 1px solid var(--nx-border);
+  background: color-mix(in srgb, var(--nx-surface-panel) 55%, transparent);
+  color: var(--nx-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.15;
+  cursor: pointer;
+  position: relative;
+}
+
+.nexora-nav-demo:hover {
+  border-color: color-mix(in srgb, var(--nx-accent) 28%, var(--nx-border));
+  color: var(--nx-text-soft);
+}
+
+.nexora-nav-demo:focus-visible {
+  outline: 2px solid var(--nx-focus-ring);
+  outline-offset: 1px;
+}
+
+.nexora-demo-live-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--nx-bg-app) 85%, transparent);
+}
+
+.nexora-demo-dropdown {
+  /* width / max-height / position: set inline to match `SceneSettingsMenu` nav popover */
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--nx-popover-bg);
+  box-shadow: var(--nx-popover-shadow);
+  border: 1px solid var(--nx-border);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nexora-demo-section-title {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nx-low-muted);
+  margin-bottom: 6px;
+}
+
+.nexora-demo-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nexora-demo-section button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--nx-border);
+  background: color-mix(in srgb, var(--nx-surface-panel) 70%, transparent);
+  color: var(--nx-text);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nexora-demo-section button:hover {
+  background: color-mix(in srgb, var(--nx-accent) 8%, var(--nx-bg-deep));
+}
+
+.nexora-demo-mode-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nexora-demo-mode-row button.nexora-demo-mode-active {
+  border-color: color-mix(in srgb, var(--nx-accent) 40%, var(--nx-border));
+  background: color-mix(in srgb, var(--nx-accent-soft) 80%, transparent);
+}
+
+/* Top bar: brand cluster + workspace switch */
+.nexora-top-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nexora-workspace-switch {
+  margin: 0;
+  padding: 0 2px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--nx-muted);
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.nexora-workspace-switch:hover {
+  color: var(--nx-text);
+}
+
+.nexora-workspace-switch:focus-visible {
+  outline: 2px solid var(--nx-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.nexora-workspace-switch-label {
+  display: inline-block;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}

@@ -10,19 +10,74 @@ import {
 } from "../lib/api/ingestionApi";
 
 let __ingestionInFlight = false;
+let hasFetchedConnectorCatalog = false;
+let hasLoggedConnectorCatalogFailure = false;
+const CONNECTOR_CATALOG_TIMEOUT_MS = 3000;
 
 export type HomeScreenLastIngestion = TextIngestionResponse | null;
 
 /** `skipped_in_flight` when another manual ingestion request is already running (single-flight guard). */
 export type SubmitManualTextIngestionResult = TextIngestionResponse | null | "skipped_in_flight";
 
+export type ConnectorCatalogAvailability = {
+  status: "ready" | "unavailable";
+  message: string | null;
+  catalog: unknown[];
+};
+
+async function safeFetchConnectorCatalog(): Promise<unknown[]> {
+  let timeoutId: number | null = null;
+  try {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = globalThis.setTimeout(() => {
+        reject(new Error("timeout"));
+      }, CONNECTOR_CATALOG_TIMEOUT_MS);
+    });
+    const res = await Promise.race([fetchConnectorCatalog(), timeoutPromise]);
+    if (!res) {
+      throw new Error("empty_response");
+    }
+    if (!Array.isArray(res)) {
+      throw new Error("invalid_response");
+    }
+    return res;
+  } catch (e) {
+    if (process.env.NODE_ENV === "development" && !hasLoggedConnectorCatalogFailure) {
+      hasLoggedConnectorCatalogFailure = true;
+      globalThis.console?.warn?.("[Nexora][IngestionUI] connector_catalog_failed", {
+        reason: e instanceof Error ? e.message : "unknown",
+      });
+    }
+    return [];
+  } finally {
+    if (timeoutId != null) {
+      globalThis.clearTimeout(timeoutId);
+    }
+  }
+}
+
+export async function getConnectorCatalogAvailabilityDev(): Promise<ConnectorCatalogAvailability> {
+  const catalog = await safeFetchConnectorCatalog();
+  if (!catalog || catalog.length === 0) {
+    return {
+      status: "unavailable",
+      message: "Connectors not available",
+      catalog: [],
+    };
+  }
+  return {
+    status: "ready",
+    message: null,
+    catalog,
+  };
+}
+
 export async function prefetchIngestionConnectorCatalogDev(): Promise<void> {
   if (process.env.NODE_ENV === "production") return;
-  try {
-    await fetchConnectorCatalog();
-  } catch (e) {
-    globalThis.console?.error?.("[Nexora][IngestionUI] request_failed", { context: "connector_catalog", error: e });
-  }
+  if (hasFetchedConnectorCatalog) return;
+  hasFetchedConnectorCatalog = true;
+  // No retries here: failed state should stay silent and stable.
+  await safeFetchConnectorCatalog();
 }
 
 /**
@@ -62,7 +117,7 @@ export async function submitManualTextIngestion(
     return res;
   } catch (err) {
     if (process.env.NODE_ENV !== "production") {
-      globalThis.console?.error?.("[Nexora][IngestionUI] request_failed", err);
+      globalThis.console?.warn?.("[Nexora][IngestionUI] request_failed", err);
     }
     return null;
   } finally {

@@ -8,8 +8,12 @@ export type PanelOpenSource =
   | "left_nav"
   | "inspector_section"
   | "cta"
+  /** Scene object selection: may only route to SCN/object (enforced in HomeScreen authority). */
+  | "object_click"
   | "effect_auto"
   | "adapter_auto"
+  /** Blocked at controller: scene must not drive panel opens (feedback loop). */
+  | "scene_update"
   | "unknown";
 
 export type PanelRequestIntent = {

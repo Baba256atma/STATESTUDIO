@@ -91,6 +91,12 @@ export function DebugInspector(): null | React.ReactElement {
     setEvents([]);
   }, []);
 
+  useEffect(() => {
+    const toggleFromSettings = () => setOpen((v) => !v);
+    window.addEventListener("nexora:devtools-toggle-self-debug", toggleFromSettings);
+    return () => window.removeEventListener("nexora:devtools-toggle-self-debug", toggleFromSettings);
+  }, []);
+
   if (!shouldEmitSelfDebug()) {
     return null;
   }
@@ -101,28 +107,6 @@ export function DebugInspector(): null | React.ReactElement {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        title="Nexora dev self-debug"
-        style={{
-          position: "fixed",
-          right: 12,
-          bottom: 12,
-          zIndex: 99990,
-          height: 32,
-          padding: "0 12px",
-          borderRadius: 8,
-          border: "1px solid rgba(96,165,250,0.35)",
-          background: "rgba(15,23,42,0.92)",
-          color: "#e2e8f0",
-          fontSize: 11,
-          fontWeight: 700,
-          cursor: "pointer",
-        }}
-      >
-        Self-Debug {open ? "Hide" : "Show"}
-      </button>
       {open ? (
         <div
           style={{
@@ -144,22 +128,40 @@ export function DebugInspector(): null | React.ReactElement {
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <span style={{ fontWeight: 800 }}>Nexora self-debug (dev)</span>
-            <button
-              type="button"
-              onClick={handleClear}
-              style={{
-                height: 26,
-                padding: "0 10px",
-                borderRadius: 6,
-                border: "1px solid rgba(148,163,184,0.3)",
-                background: "rgba(30,41,59,0.9)",
-                color: "#cbd5e1",
-                cursor: "pointer",
-                fontSize: 11,
-              }}
-            >
-              Clear
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={handleClear}
+                style={{
+                  height: 26,
+                  padding: "0 10px",
+                  borderRadius: 6,
+                  border: "1px solid rgba(148,163,184,0.3)",
+                  background: "rgba(30,41,59,0.9)",
+                  color: "#cbd5e1",
+                  cursor: "pointer",
+                  fontSize: 11,
+                }}
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                style={{
+                  height: 26,
+                  padding: "0 10px",
+                  borderRadius: 6,
+                  border: "1px solid rgba(148,163,184,0.3)",
+                  background: "rgba(30,41,59,0.9)",
+                  color: "#cbd5e1",
+                  cursor: "pointer",
+                  fontSize: 11,
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
 
           <div

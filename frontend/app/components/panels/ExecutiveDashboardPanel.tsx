@@ -43,7 +43,6 @@ import { buildDecisionGovernanceState } from "../../lib/governance/buildDecision
 import { buildApprovalWorkflowState } from "../../lib/approval/buildApprovalWorkflowState";
 import { loadApprovalWorkflowEnvelope } from "../../lib/approval/approvalWorkflowStore";
 import { guardHeavyComputation } from "../../lib/ops/performanceGuard";
-import { RightPanelFallback } from "../right-panel/RightPanelFallback";
 import { dedupePanelConsoleTrace } from "../../lib/debug/panelConsoleTraceDedupe";
 import type { NexoraB18SimulateResolved } from "../../lib/scenario/nexoraScenarioBuilder.ts";
 
@@ -100,16 +99,30 @@ type ExecutiveDashboardPanelProps = {
 };
 
 export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelProps) {
-  const hasDashboardData = Boolean(
-    props.sceneJson ??
-      props.responseData ??
-      props.canonicalRecommendation ??
-      props.decisionResult ??
-      props.decisionCockpit ??
-      props.strategicAdvice ??
-      props.riskPropagation ??
-      props.decisionMemoryEntries?.length
+  const hasDashboardData = React.useMemo(
+    () =>
+      Boolean(
+        props.sceneJson ??
+          props.responseData ??
+          props.canonicalRecommendation ??
+          props.decisionResult ??
+          props.decisionCockpit ??
+          props.strategicAdvice ??
+          props.riskPropagation ??
+          props.decisionMemoryEntries?.length
+      ),
+    [
+      props.sceneJson,
+      props.responseData,
+      props.canonicalRecommendation,
+      props.decisionResult,
+      props.decisionCockpit,
+      props.strategicAdvice,
+      props.riskPropagation,
+      props.decisionMemoryEntries,
+    ]
   );
+  const showSoftEmptyState = !hasDashboardData;
 
   const fragility =
     props.sceneJson?.scene?.fragility ??
@@ -131,16 +144,30 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
 
   const strategicAdvice = props.strategicAdvice ?? props.responseData?.strategic_advice ?? null;
   const cockpitExecutive = props.decisionCockpit?.executive ?? props.responseData?.decision_cockpit?.executive ?? null;
-  const canonicalRecommendation =
-    props.canonicalRecommendation ??
-    props.responseData?.canonical_recommendation ??
-    buildCanonicalRecommendation({
-      strategicAdvice,
+  const canonicalRecommendation = React.useMemo(
+    () =>
+      props.canonicalRecommendation ??
+      props.responseData?.canonical_recommendation ??
+      (hasDashboardData
+        ? buildCanonicalRecommendation({
+            strategicAdvice,
+            cockpitExecutive,
+            promptFeedback: props.responseData?.prompt_feedback ?? null,
+            decisionSimulation: props.responseData?.decision_simulation ?? null,
+            reply: props.responseData?.reply ?? null,
+          })
+        : null),
+    [
       cockpitExecutive,
-      promptFeedback: props.responseData?.prompt_feedback ?? null,
-      decisionSimulation: props.responseData?.decision_simulation ?? null,
-      reply: props.responseData?.reply ?? null,
-    });
+      hasDashboardData,
+      props.canonicalRecommendation,
+      props.responseData?.canonical_recommendation,
+      props.responseData?.decision_simulation,
+      props.responseData?.prompt_feedback,
+      props.responseData?.reply,
+      strategicAdvice,
+    ]
+  );
 
   dedupePanelConsoleTrace("PanelComponent", "dashboard", "main", {
     meaningfulData: hasDashboardData,
@@ -150,27 +177,58 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
     hasDecisionResult: Boolean(props.decisionResult),
   });
 
-  const decisionBrief = mapDecisionBrief({
-    fragility,
-    decisionImpact: props.decisionImpact ?? null,
-    strategicAdvice,
-    strategicCouncil: null,
-    cockpitExecutive,
-    canonicalRecommendation,
-    promptFeedback: props.responseData?.prompt_feedback ?? null,
-    decisionSimulation: props.responseData?.decision_simulation ?? null,
-    reply: props.responseData?.reply ?? null,
-    selectedObjectLabel: props.selectedObjectLabel ?? null,
-    resolveObjectLabel: props.resolveObjectLabel ?? null,
+  dedupePanelConsoleTrace("PanelComponent", "dashboard", "surface_state", {
+    hasDashboardData,
+    showSoftEmptyState,
+    activeExecutiveView: props.activeExecutiveView ?? "dashboard",
+    hasResponseData: Boolean(props.responseData),
+    hasSceneJson: Boolean(props.sceneJson),
+    hasRecommendation: Boolean(canonicalRecommendation),
+    hasDecisionResult: Boolean(props.decisionResult),
   });
 
-  const compareModel = guardHeavyComputation("executive_dashboard_compare_model", () =>
-    buildComparePanelModel({
+  const decisionBrief = React.useMemo(
+    () =>
+      guardHeavyComputation("executive_dashboard_decision_brief", () =>
+        mapDecisionBrief({
+          fragility,
+          decisionImpact: props.decisionImpact ?? null,
+          strategicAdvice,
+          strategicCouncil: null,
+          cockpitExecutive,
+          canonicalRecommendation,
+          promptFeedback: props.responseData?.prompt_feedback ?? null,
+          decisionSimulation: props.responseData?.decision_simulation ?? null,
+          reply: props.responseData?.reply ?? null,
+          selectedObjectLabel: props.selectedObjectLabel ?? null,
+          resolveObjectLabel: props.resolveObjectLabel ?? null,
+        })
+      ),
+    [
       canonicalRecommendation,
-      decisionResult: props.decisionResult ?? null,
+      cockpitExecutive,
+      fragility,
+      props.decisionImpact,
+      props.responseData?.decision_simulation,
+      props.responseData?.prompt_feedback,
+      props.responseData?.reply,
+      props.resolveObjectLabel,
+      props.selectedObjectLabel,
       strategicAdvice,
-      responseData: props.responseData ?? null,
-    })
+    ]
+  );
+
+  const compareModel = React.useMemo(
+    () =>
+      guardHeavyComputation("executive_dashboard_compare_model", () =>
+        buildComparePanelModel({
+          canonicalRecommendation,
+          decisionResult: props.decisionResult ?? null,
+          strategicAdvice,
+          responseData: props.responseData ?? null,
+        })
+      ),
+    [canonicalRecommendation, props.decisionResult, props.responseData, strategicAdvice]
   );
 
   const nexoraB18SimulateBlock = React.useMemo(
@@ -178,24 +236,32 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
     [props.nexoraB18Simulate?.signature]
   );
 
-  const scenarioTree = guardHeavyComputation("executive_dashboard_scenario_tree", () =>
-    buildScenarioBranchingTreeModel({
-      responseData: props.responseData ?? null,
-      canonicalRecommendation,
-      decisionResult: props.decisionResult ?? null,
-      strategicAdvice,
-      memoryEntries: props.decisionMemoryEntries ?? [],
-    })
+  const scenarioTree = React.useMemo(
+    () =>
+      guardHeavyComputation("executive_dashboard_scenario_tree", () =>
+        buildScenarioBranchingTreeModel({
+          responseData: props.responseData ?? null,
+          canonicalRecommendation,
+          decisionResult: props.decisionResult ?? null,
+          strategicAdvice,
+          memoryEntries: props.decisionMemoryEntries ?? [],
+        })
+      ),
+    [canonicalRecommendation, props.decisionMemoryEntries, props.decisionResult, props.responseData, strategicAdvice]
   );
 
-  const confidenceModel = buildDecisionConfidenceModel({
-    canonicalRecommendation,
-    responseData: props.responseData ?? props.sceneJson ?? null,
-    decisionResult: props.decisionResult ?? null,
-  });
+  const confidenceModel = React.useMemo(
+    () =>
+      buildDecisionConfidenceModel({
+        canonicalRecommendation,
+        responseData: props.responseData ?? props.sceneJson ?? null,
+        decisionResult: props.decisionResult ?? null,
+      }),
+    [canonicalRecommendation, props.decisionResult, props.responseData, props.sceneJson]
+  );
 
-  const memoryEntries = props.decisionMemoryEntries ?? [];
-  const recentMemory = memoryEntries.slice(0, 3);
+  const memoryEntries = React.useMemo(() => props.decisionMemoryEntries ?? [], [props.decisionMemoryEntries]);
+  const recentMemory = React.useMemo(() => memoryEntries.slice(0, 3), [memoryEntries]);
   const focusLabel =
     props.selectedObjectLabel ??
     resolveLabel(
@@ -237,78 +303,131 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
     alternativeFuture?.impact_summary ??
     compareModel.tradeoffs[0] ??
     "The main divergence is how much operational stability the recommended path preserves versus the alternatives.";
-  const executionIntent = buildDecisionExecutionIntent({
-    source: "recommendation",
-    canonicalRecommendation,
-    responseData: props.responseData ?? null,
-    decisionResult: props.decisionResult ?? null,
-  });
-  const decisionTrace = guardHeavyComputation("executive_dashboard_decision_trace", () =>
-    buildDecisionTimelineView(
-      buildDecisionTimeline({
+  const executionIntent = React.useMemo(
+    () =>
+      buildDecisionExecutionIntent({
+        source: "recommendation",
+        canonicalRecommendation,
+        responseData: props.responseData ?? null,
+        decisionResult: props.decisionResult ?? null,
+      }),
+    [canonicalRecommendation, props.decisionResult, props.responseData]
+  );
+  const decisionTrace = React.useMemo(
+    () =>
+      guardHeavyComputation("executive_dashboard_decision_trace", () =>
+        buildDecisionTimelineView(
+          buildDecisionTimeline({
+            responseData: props.responseData ?? null,
+            canonicalRecommendation,
+            memoryEntries,
+          })
+        ).slice(-3)
+      ),
+    [canonicalRecommendation, memoryEntries, props.responseData]
+  );
+  const calibration = React.useMemo(
+    () =>
+      buildDecisionConfidenceCalibration({
+        canonicalRecommendation,
+        confidenceModel,
+        outcomeAssessment: buildDecisionOutcomeAssessment({
+          canonicalRecommendation,
+          responseData: props.responseData ?? null,
+          decisionResult: props.decisionResult ?? null,
+          memoryEntries,
+        }),
+        memoryEntries,
+      }),
+    [canonicalRecommendation, confidenceModel, memoryEntries, props.decisionResult, props.responseData]
+  );
+  const observedAssessment = React.useMemo(
+    () =>
+      buildObservedOutcomeAssessment({
+        canonicalRecommendation,
+        responseData: props.responseData ?? null,
+        decisionResult: props.decisionResult ?? null,
+        memoryEntries,
+      }),
+    [canonicalRecommendation, memoryEntries, props.decisionResult, props.responseData]
+  );
+  const outcomeFeedback = React.useMemo(
+    () =>
+      buildDecisionOutcomeFeedback({
+        canonicalRecommendation,
+        observedAssessment,
+        memoryEntry: memoryEntries[0] ?? null,
+        responseData: props.responseData ?? null,
+      }),
+    [canonicalRecommendation, memoryEntries, observedAssessment, props.responseData]
+  );
+  const feedbackCalibration = React.useMemo(
+    () =>
+      buildDecisionFeedbackSignal({
+        canonicalRecommendation,
+        outcomeFeedback,
+        priorAdjustedScore: memoryEntries[0]?.calibration_result?.adjusted_confidence_score ?? null,
+      }),
+    [canonicalRecommendation, memoryEntries, outcomeFeedback]
+  );
+  const patternIntelligence = React.useMemo(
+    () =>
+      buildDecisionPatternIntelligence({
+        memoryEntries,
+        canonicalRecommendation,
+      }),
+    [canonicalRecommendation, memoryEntries]
+  );
+  const strategicLearning = React.useMemo(
+    () =>
+      buildStrategicLearningState({
+        memoryEntries,
+        canonicalRecommendation,
+      }),
+    [canonicalRecommendation, memoryEntries]
+  );
+  const metaDecision = React.useMemo(
+    () =>
+      buildMetaDecisionState({
+        reasoning: props.responseData?.ai_reasoning ?? null,
+        simulation: props.responseData?.decision_simulation ?? null,
+        comparison: props.responseData?.decision_comparison ?? props.responseData?.comparison ?? null,
+        canonicalRecommendation,
+        calibration,
+        responseData: props.responseData ?? null,
+        memoryEntries,
+      }),
+    [
+      calibration,
+      canonicalRecommendation,
+      memoryEntries,
+      props.responseData?.ai_reasoning,
+      props.responseData?.comparison,
+      props.responseData?.decision_comparison,
+      props.responseData?.decision_simulation,
+      props.responseData,
+    ]
+  );
+  const defaultCognitiveStyle = React.useMemo(
+    () =>
+      selectDefaultCognitiveStyle({
+        activeMode: props.activeMode ?? null,
+        rightPanelView: props.activeExecutiveView ?? "dashboard",
         responseData: props.responseData ?? null,
         canonicalRecommendation,
-        memoryEntries,
-      })
-    ).slice(-3)
+      }),
+    [canonicalRecommendation, props.activeExecutiveView, props.activeMode, props.responseData]
   );
-  const calibration = buildDecisionConfidenceCalibration({
-    canonicalRecommendation,
-    confidenceModel,
-    outcomeAssessment: buildDecisionOutcomeAssessment({
-      canonicalRecommendation,
-      responseData: props.responseData ?? null,
-      decisionResult: props.decisionResult ?? null,
-      memoryEntries,
-    }),
-    memoryEntries,
-  });
-  const observedAssessment = buildObservedOutcomeAssessment({
-    canonicalRecommendation,
-    responseData: props.responseData ?? null,
-    decisionResult: props.decisionResult ?? null,
-    memoryEntries,
-  });
-  const outcomeFeedback = buildDecisionOutcomeFeedback({
-    canonicalRecommendation,
-    observedAssessment,
-    memoryEntry: memoryEntries[0] ?? null,
-    responseData: props.responseData ?? null,
-  });
-  const feedbackCalibration = buildDecisionFeedbackSignal({
-    canonicalRecommendation,
-    outcomeFeedback,
-    priorAdjustedScore: memoryEntries[0]?.calibration_result?.adjusted_confidence_score ?? null,
-  });
-  const patternIntelligence = buildDecisionPatternIntelligence({
-    memoryEntries,
-    canonicalRecommendation,
-  });
-  const strategicLearning = buildStrategicLearningState({
-    memoryEntries,
-    canonicalRecommendation,
-  });
-  const metaDecision = buildMetaDecisionState({
-    reasoning: props.responseData?.ai_reasoning ?? null,
-    simulation: props.responseData?.decision_simulation ?? null,
-    comparison: props.responseData?.decision_comparison ?? props.responseData?.comparison ?? null,
-    canonicalRecommendation,
-    calibration,
-    responseData: props.responseData ?? null,
-    memoryEntries,
-  });
-  const defaultCognitiveStyle = selectDefaultCognitiveStyle({
-    activeMode: props.activeMode ?? null,
-    rightPanelView: props.activeExecutiveView ?? "dashboard",
-    responseData: props.responseData ?? null,
-    canonicalRecommendation,
-  });
-  const teamDecision = buildTeamDecisionState({
-    responseData: props.responseData ?? null,
-    canonicalRecommendation,
-    decisionResult: props.decisionResult ?? null,
-    memoryEntries,
-  });
+  const teamDecision = React.useMemo(
+    () =>
+      buildTeamDecisionState({
+        responseData: props.responseData ?? null,
+        canonicalRecommendation,
+        decisionResult: props.decisionResult ?? null,
+        memoryEntries,
+      }),
+    [canonicalRecommendation, memoryEntries, props.decisionResult, props.responseData]
+  );
   const collaborationEnvelope = React.useMemo(
     () =>
       loadCollaborationEnvelope(
@@ -318,48 +437,68 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       ),
     [props.responseData?.workspace_id, props.responseData?.project_id, executionIntent?.id, canonicalRecommendation?.id]
   );
-  const collaborationState = buildCollaborationState({
-    canonicalRecommendation,
-    decisionExecutionIntent: executionIntent,
-    responseData: props.responseData ?? null,
-    decisionResult: props.decisionResult ?? null,
-    memoryEntries,
-    collaborationInputs: collaborationEnvelope?.inputs ?? [],
-    teamDecisionState: teamDecision,
-  });
-  const decisionCouncil = buildAutonomousDecisionCouncilState({
-    responseData: props.responseData ?? null,
-    canonicalRecommendation,
-    decisionResult: props.decisionResult ?? null,
-    memoryEntries,
-    collaborationInputs: collaborationEnvelope?.inputs ?? [],
-  });
+  const collaborationState = React.useMemo(
+    () =>
+      buildCollaborationState({
+        canonicalRecommendation,
+        decisionExecutionIntent: executionIntent,
+        responseData: props.responseData ?? null,
+        decisionResult: props.decisionResult ?? null,
+        memoryEntries,
+        collaborationInputs: collaborationEnvelope?.inputs ?? [],
+        teamDecisionState: teamDecision,
+      }),
+    [canonicalRecommendation, collaborationEnvelope?.inputs, executionIntent, memoryEntries, props.decisionResult, props.responseData, teamDecision]
+  );
+  const decisionCouncil = React.useMemo(
+    () =>
+      buildAutonomousDecisionCouncilState({
+        responseData: props.responseData ?? null,
+        canonicalRecommendation,
+        decisionResult: props.decisionResult ?? null,
+        memoryEntries,
+        collaborationInputs: collaborationEnvelope?.inputs ?? [],
+      }),
+    [canonicalRecommendation, collaborationEnvelope?.inputs, memoryEntries, props.decisionResult, props.responseData]
+  );
   const orgMemoryEntries = React.useMemo(() => {
     const scoped = loadOrgScopedDecisionMemoryEntries(props.responseData?.workspace_id ?? null);
     return Array.from(new Map([...scoped, ...memoryEntries].map((entry) => [entry.id, entry])).values());
   }, [props.responseData?.workspace_id, memoryEntries]);
-  const orgMemory = buildOrgMemoryState({
-    memoryEntries: orgMemoryEntries,
-    canonicalRecommendation,
-  });
-  const policy = buildDecisionPolicyState({
-    canonicalRecommendation,
-    decisionExecutionIntent: executionIntent,
-    decisionResult: props.decisionResult ?? null,
-    responseData: props.responseData ?? null,
-    memoryEntries,
-  });
-  const governance = buildDecisionGovernanceState({
-    canonicalRecommendation,
-    decisionExecutionIntent: executionIntent,
-    decisionResult: props.decisionResult ?? null,
-    responseData: props.responseData ?? null,
-    memoryEntries,
-    orgMemoryState: orgMemory,
-    teamDecisionState: teamDecision,
-    metaDecisionState: metaDecision,
-    policyState: policy,
-  });
+  const orgMemory = React.useMemo(
+    () =>
+      buildOrgMemoryState({
+        memoryEntries: orgMemoryEntries,
+        canonicalRecommendation,
+      }),
+    [canonicalRecommendation, orgMemoryEntries]
+  );
+  const policy = React.useMemo(
+    () =>
+      buildDecisionPolicyState({
+        canonicalRecommendation,
+        decisionExecutionIntent: executionIntent,
+        decisionResult: props.decisionResult ?? null,
+        responseData: props.responseData ?? null,
+        memoryEntries,
+      }),
+    [canonicalRecommendation, executionIntent, memoryEntries, props.decisionResult, props.responseData]
+  );
+  const governance = React.useMemo(
+    () =>
+      buildDecisionGovernanceState({
+        canonicalRecommendation,
+        decisionExecutionIntent: executionIntent,
+        decisionResult: props.decisionResult ?? null,
+        responseData: props.responseData ?? null,
+        memoryEntries,
+        orgMemoryState: orgMemory,
+        teamDecisionState: teamDecision,
+        metaDecisionState: metaDecision,
+        policyState: policy,
+      }),
+    [canonicalRecommendation, executionIntent, memoryEntries, metaDecision, orgMemory, policy, props.decisionResult, props.responseData, teamDecision]
+  );
   const approvalEnvelope = React.useMemo(
     () =>
       loadApprovalWorkflowEnvelope(
@@ -369,34 +508,59 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       ),
     [props.responseData?.workspace_id, props.responseData?.project_id, governance.decision_id, executionIntent?.id, canonicalRecommendation?.id]
   );
-  const approvalWorkflow = buildApprovalWorkflowState({
-    canonicalRecommendation,
-    decisionExecutionIntent: executionIntent,
-    decisionGovernance: governance,
-    decisionResult: props.decisionResult ?? null,
-    responseData: props.responseData ?? null,
-    memoryEntries,
-    existingWorkflow: approvalEnvelope?.workflow ?? null,
-    policyState: policy,
-  });
-  const strategicCommand = buildStrategicCommandState({
-    responseData: props.responseData ?? null,
-    canonicalRecommendation,
-    decisionResult: props.decisionResult ?? null,
-    memoryEntries,
-    collaborationInputs: collaborationEnvelope?.inputs ?? [],
-    confidenceModel,
-    calibration,
-    outcomeFeedback,
-    metaDecision,
-    teamDecision,
-    collaborationState,
-    orgMemory,
-    policyState: policy,
-    governanceState: governance,
-    approvalWorkflow,
-    decisionCouncil,
-  });
+  const approvalWorkflow = React.useMemo(
+    () =>
+      buildApprovalWorkflowState({
+        canonicalRecommendation,
+        decisionExecutionIntent: executionIntent,
+        decisionGovernance: governance,
+        decisionResult: props.decisionResult ?? null,
+        responseData: props.responseData ?? null,
+        memoryEntries,
+        existingWorkflow: approvalEnvelope?.workflow ?? null,
+        policyState: policy,
+      }),
+    [approvalEnvelope?.workflow, canonicalRecommendation, executionIntent, governance, memoryEntries, policy, props.decisionResult, props.responseData]
+  );
+  const strategicCommand = React.useMemo(
+    () =>
+      buildStrategicCommandState({
+        responseData: props.responseData ?? null,
+        canonicalRecommendation,
+        decisionResult: props.decisionResult ?? null,
+        memoryEntries,
+        collaborationInputs: collaborationEnvelope?.inputs ?? [],
+        confidenceModel,
+        calibration,
+        outcomeFeedback,
+        metaDecision,
+        teamDecision,
+        collaborationState,
+        orgMemory,
+        policyState: policy,
+        governanceState: governance,
+        approvalWorkflow,
+        decisionCouncil,
+      }),
+    [
+      approvalWorkflow,
+      calibration,
+      canonicalRecommendation,
+      collaborationEnvelope?.inputs,
+      collaborationState,
+      confidenceModel,
+      decisionCouncil,
+      governance,
+      memoryEntries,
+      metaDecision,
+      orgMemory,
+      outcomeFeedback,
+      policy,
+      props.decisionResult,
+      props.responseData,
+      teamDecision,
+    ]
+  );
   const surfaceLabel =
     props.activeExecutiveView === "simulate"
       ? "Decision Simulation"
@@ -423,17 +587,6 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       : typeof simulationContract?.impact?.risk_change === "number"
         ? simulationContract.impact.risk_change
         : null;
-
-  if (!hasDashboardData) {
-    return (
-      <RightPanelFallback
-        title="Executive Dashboard"
-        message="Dashboard is waiting for decision context."
-        suggestedActionLabel={props.onOpenStrategicCommand ? "Open Strategic Command" : undefined}
-        onSuggestedAction={props.onOpenStrategicCommand ?? null}
-      />
-    );
-  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, minHeight: 0, overflow: "auto", padding: 2 }}>
@@ -469,6 +622,21 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
           ) : null}
         </div>
         <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45, maxWidth: 480 }}>{surfaceSummary}</div>
+        {showSoftEmptyState ? (
+          <div style={{ ...softCardStyle, padding: 12, gap: 8 }}>
+            <div style={{ color: "#f8fafc", fontSize: 13, fontWeight: 800 }}>Executive Dashboard</div>
+            <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45 }}>
+              Waiting for decision context. Nexora is keeping the dashboard surface open while data settles.
+            </div>
+            {props.onOpenStrategicCommand ? (
+              <div>
+                <button type="button" onClick={props.onOpenStrategicCommand} style={secondaryButtonStyle}>
+                  Open Strategic Command
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         {props.activeExecutiveView === "simulate" && props.nexoraB8PanelContext ? (
           <div
             style={{
@@ -608,6 +776,8 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
         ) : null}
       </div>
 
+      {hasDashboardData ? (
+        <>
       {props.demoProfile ? <CustomerDemoHero profile={props.demoProfile} /> : null}
 
       <DashboardSection
@@ -1277,6 +1447,8 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
           </div>
         </div>
       </DashboardSection>
+        </>
+      ) : null}
     </div>
   );
 }

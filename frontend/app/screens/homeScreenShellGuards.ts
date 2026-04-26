@@ -40,6 +40,7 @@ export function toPanelOpenSource(source: string | null | undefined): PanelOpenS
     return "guided_prompt";
   }
   if (source === "cta") return "cta";
+  if (source === "object_click") return "object_click";
   if (source.startsWith("effect:")) return "effect_auto";
   if (source.startsWith("adapter:")) return "adapter_auto";
   if (source.startsWith("left_nav")) return "left_nav";

@@ -1,4 +1,4 @@
-import type { RightPanelView } from "../ui/right-panel/rightPanelTypes";
+import type { CenterExecutionSurface, RightPanelView } from "../ui/right-panel/rightPanelTypes";
 
 /** Who initiated the action (product-facing taxonomy). */
 export type NexoraActionSource =
@@ -19,7 +19,8 @@ export type NexoraActionSurface =
   | "legacy_shell"
   | "sub_panel"
   | "decision_flow"
-  | "guided_flow";
+  | "guided_flow"
+  | "scene";
 
 export type NexoraOpenPanelIntent = {
   kind: "open_panel";
@@ -39,6 +40,7 @@ export type NexoraActionIntent =
   | { kind: "run_simulation" }
   | { kind: "compare_options" }
   | { kind: "open_center_timeline" }
+  | { kind: "open_center_execution"; surface: CenterExecutionSurface }
   | { kind: "focus_object"; objectId: string | null }
   | { kind: "start_demo" }
   | { kind: "noop"; reason?: string };
@@ -67,6 +69,7 @@ export type ActionRouteRejectReason =
   | "unknown_intent"
   | "invalid_empty_route"
   | "guard_rejected"
+  | "same_view_same_context"
   | "continuity_preserved";
 
 export type ActionRouteContinuityHint =
@@ -78,8 +81,10 @@ export type ActionRouteContinuityHint =
 
 export type ActionRouteExecutionMode =
   | "open_right_panel"
+  | "open_center_simulation"
   | "open_center_compare"
   | "open_center_timeline"
+  | "open_center_execution"
   | "start_investor_demo"
   | "noop";
 
@@ -103,6 +108,7 @@ export type ActionRouteOk = {
   resolvedPanelView: RightPanelView;
   resolvedObjectTargetId: string | null;
   execution: ActionRouteExecutionMode;
+  centerSurface?: CenterExecutionSurface | null;
   panelRequest?: ActionRoutePanelRequest;
   continuityHint: ActionRouteContinuityHint;
 };

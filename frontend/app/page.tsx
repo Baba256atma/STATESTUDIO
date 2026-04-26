@@ -10,7 +10,6 @@ import { resolveDomainExperience } from "./lib/domain/domainExperienceRegistry";
 import { DEFAULT_LAUNCH_DOMAIN_ID } from "./lib/product/mvpShippingPlan";
 import { DebugInspector } from "./components/debug/DebugInspector";
 import { NexoraDevTasksWidget } from "./components/dev/NexoraDevTasksWidget";
-import { tertiaryButtonStyle } from "./components/ui/nexoraTheme";
 import {
   DEFAULT_THEME_MODE,
   getSystemPrefersDark,
@@ -120,20 +119,6 @@ export default function HomePage() {
         >
           {domainConfirmed ? (
             <>
-              <button
-                type="button"
-                onClick={handleChangeDomain}
-                title="Return to domain selection"
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  left: 12,
-                  zIndex: 30,
-                  ...tertiaryButtonStyle,
-                }}
-              >
-                Switch workspace
-              </button>
               <div
                 style={{
                   flex: 1,
@@ -148,7 +133,7 @@ export default function HomePage() {
                   <InvestorDemoProvider>
                     <NexoraOperatorModeProvider>
                       <NexoraRunbookGuidanceProvider>
-                        <NexoraShell>
+                        <NexoraShell onSwitchWorkspace={handleChangeDomain}>
                           <HomeScreen domainExperience={resolvedSelection} />
                         </NexoraShell>
                       </NexoraRunbookGuidanceProvider>

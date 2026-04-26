@@ -21,6 +21,7 @@ import {
 
 const STORAGE_KEY = "nexora.scenarioMemory.v1";
 const MAX_ENTRIES = 20;
+const MAX_STRING_FIELD_LEN = 500;
 
 const VALID_OPTION_IDS = new Set(["conservative", "balanced", "aggressive"]);
 
@@ -62,34 +63,130 @@ function isValidEntry(x: unknown): x is NexoraScenarioMemoryEntry {
   return typeof o.runId === "string" && Boolean(o.runId.trim()) && typeof o.timestamp === "number" && Number.isFinite(o.timestamp);
 }
 
+function isQuotaExceededError(error: unknown): boolean {
+  return (
+    error instanceof DOMException &&
+    (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED")
+  );
+}
+
+/** Strip unknown keys and cap string lengths so stored JSON stays small. */
+export function compactScenarioMemoryEntry(entry: NexoraScenarioMemoryEntry): NexoraScenarioMemoryEntry {
+  const slice = (s: string | undefined, max: number) =>
+    s == null ? undefined : String(s).slice(0, max);
+  const out: NexoraScenarioMemoryEntry = {
+    runId: slice(entry.runId, 128) ?? "",
+    timestamp: entry.timestamp,
+  };
+  const frag = slice(entry.fragilityLevel, MAX_STRING_FIELD_LEN);
+  if (frag) out.fragilityLevel = frag;
+  const tier = slice(entry.confidenceTier, MAX_STRING_FIELD_LEN);
+  if (tier) out.confidenceTier = tier;
+  const posture = slice(entry.decisionPosture, MAX_STRING_FIELD_LEN);
+  if (posture) out.decisionPosture = posture;
+  const tradeoff = slice(entry.decisionTradeoff, MAX_STRING_FIELD_LEN);
+  if (tradeoff) out.decisionTradeoff = tradeoff;
+  const nextMove = slice(entry.decisionNextMove, MAX_STRING_FIELD_LEN);
+  if (nextMove) out.decisionNextMove = nextMove;
+  const opt = slice(entry.recommendedOptionId, 64);
+  if (opt) out.recommendedOptionId = opt;
+  if (typeof entry.executionOutcomeScore === "number" && Number.isFinite(entry.executionOutcomeScore)) {
+    out.executionOutcomeScore = entry.executionOutcomeScore;
+  }
+  if (entry.executionOutcomeLabel === "worse" || entry.executionOutcomeLabel === "same" || entry.executionOutcomeLabel === "better") {
+    out.executionOutcomeLabel = entry.executionOutcomeLabel;
+  }
+  return out;
+}
+
+function safeSetScenarioMemory(entries: NexoraScenarioMemoryEntry[]): void {
+  if (typeof window === "undefined") return;
+  let next = entries.slice(0, MAX_ENTRIES).map(compactScenarioMemoryEntry).filter(isValidEntry);
+
+  while (next.length > 0) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return;
+    } catch (error) {
+      if (!isQuotaExceededError(error)) {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[Nexora][ScenarioMemory] write_failed", error);
+        }
+        return;
+      }
+      if (next.length <= 1) {
+        try {
+          window.localStorage.removeItem(STORAGE_KEY);
+        } catch {
+          // ignore
+        }
+        return;
+      }
+      next = next.slice(0, Math.max(1, Math.floor(next.length / 2)));
+    }
+  }
+}
+
+/** Trim or clear corrupted / oversized scenario memory. Safe to call from load/append recovery. */
+export function repairScenarioMemoryStorage(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) {
+      window.localStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+    const trimmed = parsed.filter(isValidEntry).map(compactScenarioMemoryEntry).slice(0, 10);
+    safeSetScenarioMemory(trimmed);
+  } catch {
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }
+}
+
 export function loadScenarioMemory(): NexoraScenarioMemoryEntry[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const v = JSON.parse(raw) as unknown;
-    if (!Array.isArray(v)) return [];
-    return v.filter(isValidEntry);
+    if (!Array.isArray(v)) {
+      repairScenarioMemoryStorage();
+      return [];
+    }
+    return v.filter(isValidEntry).map(compactScenarioMemoryEntry);
   } catch {
+    repairScenarioMemoryStorage();
     return [];
   }
 }
 
 export function appendScenarioMemory(entry: NexoraScenarioMemoryEntry): void {
   if (typeof window === "undefined") return;
-  const all = loadScenarioMemory();
-  const prior = all.find((e) => e.runId === entry.runId);
-  const prev = all.filter((e) => e.runId !== entry.runId);
-  const merged: NexoraScenarioMemoryEntry =
-    prior && prior.executionOutcomeLabel != null
-      ? {
-          ...entry,
-          executionOutcomeLabel: prior.executionOutcomeLabel,
-          executionOutcomeScore: prior.executionOutcomeScore,
-        }
-      : entry;
-  prev.unshift(merged);
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prev.slice(0, MAX_ENTRIES)));
+  try {
+    const all = loadScenarioMemory();
+    const prior = all.find((e) => e.runId === entry.runId);
+    const prev = all.filter((e) => e.runId !== entry.runId);
+    const merged: NexoraScenarioMemoryEntry =
+      prior && prior.executionOutcomeLabel != null
+        ? {
+            ...entry,
+            executionOutcomeLabel: prior.executionOutcomeLabel,
+            executionOutcomeScore: prior.executionOutcomeScore,
+          }
+        : entry;
+    prev.unshift(merged);
+    safeSetScenarioMemory(prev);
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[Nexora][ScenarioMemory] append_skipped", error);
+    }
+  }
 }
 
 export function clearScenarioMemory(): void {
@@ -205,26 +302,32 @@ export function emitScenarioMemoryAppendedDev(runId: string): void {
 /** Merge B.20 outcome into the scenario-memory row for this run (creates minimal row if missing). */
 export function mergeExecutionOutcomeIntoScenarioMemory(outcome: NexoraExecutionOutcome): void {
   if (typeof window === "undefined") return;
-  const all = loadScenarioMemory();
-  const idx = all.findIndex((e) => e.runId === outcome.runId);
-  if (idx >= 0) {
-    const next = [...all];
-    const cur = next[idx]!;
-    next[idx] = {
-      ...cur,
+  try {
+    const all = loadScenarioMemory();
+    const idx = all.findIndex((e) => e.runId === outcome.runId);
+    if (idx >= 0) {
+      const next = [...all];
+      const cur = next[idx]!;
+      next[idx] = {
+        ...cur,
+        executionOutcomeScore: outcome.outcomeScore,
+        executionOutcomeLabel: outcome.outcomeLabel,
+      };
+      safeSetScenarioMemory(next);
+      return;
+    }
+    appendScenarioMemory({
+      runId: outcome.runId,
+      fragilityLevel: outcome.actualFragilityLevel,
+      timestamp: outcome.recordedAt,
       executionOutcomeScore: outcome.outcomeScore,
       executionOutcomeLabel: outcome.outcomeLabel,
-    };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next.slice(0, MAX_ENTRIES)));
-    return;
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[Nexora][ScenarioMemory] merge_outcome_skipped", error);
+    }
   }
-  appendScenarioMemory({
-    runId: outcome.runId,
-    fragilityLevel: outcome.actualFragilityLevel,
-    timestamp: outcome.recordedAt,
-    executionOutcomeScore: outcome.outcomeScore,
-    executionOutcomeLabel: outcome.outcomeLabel,
-  });
 }
 
 /** Subscribe to B.20 custom events (idempotent merge into B.19 store). */

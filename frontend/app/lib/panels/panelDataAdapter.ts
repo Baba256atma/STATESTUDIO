@@ -54,6 +54,7 @@ const mergedPanelDataCache = new WeakMap<
   object,
   {
     deps: unknown[];
+    signature: string;
     result: PanelSharedData;
   }
 >();
@@ -61,6 +62,7 @@ const canonicalPanelPayloadCache = new WeakMap<
   object,
   {
     deps: unknown[];
+    signature: string;
     result: Record<string, unknown>;
   }
 >();
@@ -82,6 +84,60 @@ function shallowEqualRecord(
   const rightKeys = Object.keys(right);
   if (leftKeys.length !== rightKeys.length) return false;
   return leftKeys.every((key) => Object.is(left[key], right[key]));
+}
+
+function stableSerialize(value: unknown): string {
+  try {
+    return JSON.stringify(value, (_key, current) => {
+      if (current && typeof current === "object" && !Array.isArray(current)) {
+        const record = current as Record<string, unknown>;
+        return Object.keys(record)
+          .sort()
+          .reduce<Record<string, unknown>>((acc, key) => {
+            acc[key] = record[key];
+            return acc;
+          }, {});
+      }
+      return current;
+    }) ?? "null";
+  } catch {
+    return "[unserializable]";
+  }
+}
+
+function buildMergedPanelDataSignature(value: PanelSharedData): string {
+  return stableSerialize({
+    dashboard: value.dashboard ?? null,
+    advice: value.advice ?? null,
+    strategicAdvice: value.strategicAdvice ?? null,
+    decisionCockpit: value.decisionCockpit ?? null,
+    executiveSummary: value.executiveSummary ?? null,
+    simulation: value.simulation ?? null,
+    timeline: value.timeline ?? null,
+    risk: value.risk ?? null,
+    fragility: value.fragility ?? null,
+    conflict: value.conflict ?? null,
+    memory: value.memory ?? null,
+    canonicalRecommendation: value.canonicalRecommendation ?? null,
+    decisionResult: value.decisionResult ?? null,
+    warRoom: value.warRoom ?? null,
+    compare: value.compare ?? null,
+    governance: value.governance ?? null,
+    approval: value.approval ?? null,
+    policy: value.policy ?? null,
+    strategicCouncil: value.strategicCouncil ?? null,
+    memoryEntries: Array.isArray(value.memoryEntries)
+      ? value.memoryEntries.map((entry) => ({
+          id: (entry as Record<string, unknown>)?.id ?? null,
+          decision_id: (entry as Record<string, unknown>)?.decision_id ?? null,
+          timestamp: (entry as Record<string, unknown>)?.timestamp ?? null,
+        }))
+      : [],
+  });
+}
+
+function buildCanonicalPayloadSignature(value: Record<string, unknown>): string {
+  return stableSerialize(value);
 }
 
 function asRecord(value: unknown): LooseRecord | null {
@@ -557,12 +613,14 @@ export function buildMergedPanelData(input: BuildMergedPanelDataInput): PanelSha
   }
 
   const result =
-    cached && shallowEqualRecord(cached.result as Record<string, unknown>, merged as Record<string, unknown>)
+    cached && (cached.signature === buildMergedPanelDataSignature(merged) || shallowEqualRecord(cached.result as Record<string, unknown>, merged as Record<string, unknown>))
       ? cached.result
       : merged;
 
+  const mergedSignature = buildMergedPanelDataSignature(merged);
   mergedPanelDataCache.set(cacheKey, {
     deps,
+    signature: mergedSignature,
     result,
   });
   return result;
@@ -620,11 +678,13 @@ export function buildCanonicalPanelPayload(
   };
 
   const result =
-    cached && shallowEqualRecord(cached.result, payload)
+    cached && (cached.signature === buildCanonicalPayloadSignature(payload) || shallowEqualRecord(cached.result, payload))
       ? cached.result
       : payload;
+  const payloadSignature = buildCanonicalPayloadSignature(payload);
   canonicalPanelPayloadCache.set(cacheKey, {
     deps,
+    signature: payloadSignature,
     result,
   });
   return result;

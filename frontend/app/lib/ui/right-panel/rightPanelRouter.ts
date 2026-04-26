@@ -42,6 +42,7 @@ export const RIGHT_PANEL_SHELL_SECTIONS = [
   "focus",
   "memory",
   "risk_flow",
+  "fragility",
   "replay",
   "advice",
   "opponent",
@@ -50,6 +51,7 @@ export const RIGHT_PANEL_SHELL_SECTIONS = [
   "war_room",
   "collaboration",
   "workspace",
+  "input",
 ] as const;
 
 export type RightPanelShellSection = (typeof RIGHT_PANEL_SHELL_SECTIONS)[number];
@@ -91,6 +93,7 @@ export const RIGHT_PANEL_RAIL_TABS = [
   "executive_approval",
   "decision_council",
   "collaboration_intelligence",
+  "input",
   "kpi",
 ] as const;
 
@@ -160,6 +163,9 @@ const LEGACY_TAB_TO_RIGHT_PANEL_VIEW: Record<string, CanonicalRightPanelView> = 
   explanation: "explanation",
   replay: "replay",
   kpi: "kpi",
+  input: "input",
+  source_input: "input",
+  data_source: "input",
 };
 
 const RIGHT_PANEL_VIEW_TO_LEGACY_TAB: Record<CanonicalRightPanelView, string> = {
@@ -180,6 +186,7 @@ const RIGHT_PANEL_VIEW_TO_LEGACY_TAB: Record<CanonicalRightPanelView, string> = 
   risk: "risk_flow",
   fragility: "fragility_scan",
   object: "object_focus",
+  object_focus: "object_focus",
   timeline: "timeline",
   decision_timeline: "decision_timeline",
   confidence_calibration: "confidence_calibration",
@@ -198,6 +205,8 @@ const RIGHT_PANEL_VIEW_TO_LEGACY_TAB: Record<CanonicalRightPanelView, string> = 
   opponent: "opponent_moves",
   collaboration: "collaboration",
   workspace: "workspace",
+  /** Legacy tab for `input` view — must be `"input"` so tab-changed sync cannot imply Scene (`"scene"`). */
+  input: "input",
 };
 
 const RIGHT_PANEL_LEFT_NAV_TO_ROUTE: Record<
@@ -243,7 +252,7 @@ const RIGHT_PANEL_RAIL_TAB_TO_ROUTE: Record<
   object_focus: { resolvedView: "object", shellSection: "focus" },
   memory_insights: { resolvedView: "memory", shellSection: "memory" },
   risk_flow: { resolvedView: "risk", shellSection: "risk_flow" },
-  fragility_scan: { resolvedView: "fragility", shellSection: "risk" },
+  fragility_scan: { resolvedView: "fragility", shellSection: "fragility" },
   replay: { resolvedView: "replay", shellSection: "replay" },
   strategic_advice: { resolvedView: "advice", shellSection: "advice" },
   opponent_moves: { resolvedView: "opponent", shellSection: "opponent" },
@@ -252,6 +261,7 @@ const RIGHT_PANEL_RAIL_TAB_TO_ROUTE: Record<
   war_room: { resolvedView: "war_room", shellSection: "war_room" },
   collaboration: { resolvedView: "collaboration", shellSection: "collaboration" },
   workspace: { resolvedView: "workspace", shellSection: "workspace" },
+  input: { resolvedView: "input", shellSection: "input" },
   simulate: { resolvedView: "simulate", shellSection: "timeline" },
   compare: { resolvedView: "compare", shellSection: "timeline" },
   decision_timeline: { resolvedView: "decision_timeline", shellSection: "timeline" },
@@ -290,8 +300,9 @@ const RIGHT_PANEL_VIEW_TO_SHELL_SECTION: Record<CanonicalRightPanelView, RightPa
   executive_approval: "executive",
   explanation: "explanation",
   risk: "risk_flow",
-  fragility: "risk",
+  fragility: "fragility",
   object: "focus",
+  object_focus: "focus",
   timeline: "timeline",
   decision_timeline: "timeline",
   confidence_calibration: "timeline",
@@ -310,44 +321,8 @@ const RIGHT_PANEL_VIEW_TO_SHELL_SECTION: Record<CanonicalRightPanelView, RightPa
   opponent: "opponent",
   collaboration: "collaboration",
   workspace: "workspace",
-};
-
-const RIGHT_PANEL_VIEW_TO_HOST_ID: Record<CanonicalRightPanelView, string> = {
-  strategic_command: "nexora-inspector-exec-host",
-  dashboard: "nexora-inspector-exec-host",
-  simulate: "nexora-inspector-timeline-host",
-  compare: "nexora-inspector-timeline-host",
-  decision_lifecycle: "nexora-inspector-exec-host",
-  strategic_learning: "nexora-inspector-exec-host",
-  meta_decision: "nexora-inspector-exec-host",
-  cognitive_style: "nexora-inspector-exec-host",
-  team_decision: "nexora-inspector-exec-host",
-  org_memory: "nexora-inspector-exec-host",
-  decision_governance: "nexora-inspector-exec-host",
-  decision_policy: "nexora-inspector-exec-host",
-  executive_approval: "nexora-inspector-exec-host",
-  explanation: "nexora-inspector-riskflow-host",
-  risk: "nexora-inspector-riskflow-host",
-  fragility: "nexora-inspector-riskflow-host",
-  object: "nexora-inspector-focus-host",
-  timeline: "nexora-inspector-timeline-host",
-  decision_timeline: "nexora-inspector-timeline-host",
-  confidence_calibration: "nexora-inspector-timeline-host",
-  outcome_feedback: "nexora-inspector-timeline-host",
-  pattern_intelligence: "nexora-inspector-timeline-host",
-  collaboration_intelligence: "nexora-inspector-exec-host",
-  decision_council: "nexora-inspector-exec-host",
-  scenario_tree: "nexora-inspector-timeline-host",
-  advice: "nexora-inspector-advice-host",
-  kpi: "nexora-inspector-exec-host",
-  war_room: "nexora-inspector-warroom-host",
-  conflict: "nexora-inspector-conflict-host",
-  memory: "nexora-inspector-memory-host",
-  replay: "nexora-inspector-replay-host",
-  patterns: "nexora-inspector-patterns-host",
-  opponent: "nexora-inspector-opponent-host",
-  collaboration: "nexora-inspector-collab-host",
-  workspace: "nexora-inspector-workspace-host",
+  /** Nexora shell section for Source / input — must stay `"input"` (never scene/workspace). */
+  input: "input",
 };
 
 function warnUnmapped(kind: string, value: string | null | undefined) {
@@ -513,6 +488,9 @@ export function resolveRightPanelShellSectionForView(
   return RIGHT_PANEL_VIEW_TO_SHELL_SECTION[view] ?? null;
 }
 
+/** Single stable DOM mount for `RightPanelHost` portaled content (avoids remount on view / section change). */
+export const NEXORA_RIGHT_PANEL_PORTAL_HOST_ID = "nexora-right-panel-root";
+
 export function resolveRightPanelInspectorHostId(
   view: RightPanelView,
   preferredLegacyTab: string | null = null
@@ -523,7 +501,7 @@ export function resolveRightPanelInspectorHostId(
   if (preferredLegacyTab === "scene" || preferredLegacyTab === "object" || preferredLegacyTab === "object_focus") {
     return null;
   }
-  return RIGHT_PANEL_VIEW_TO_HOST_ID[view] ?? null;
+  return NEXORA_RIGHT_PANEL_PORTAL_HOST_ID;
 }
 
 export function resolveCanonicalRightPanelRoute(args: {

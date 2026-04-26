@@ -4,7 +4,7 @@
 
 import type { MultiSourceIngestionResponse } from "../lib/api/ingestionApi";
 import type { NexoraAuditRecord } from "../lib/audit/nexoraAuditContract.ts";
-import { serializeAudit } from "../lib/audit/nexoraAuditContract.ts";
+import { serializeAudit, sortJsonDeterministic } from "../lib/audit/nexoraAuditContract.ts";
 import { buildPipelineStatusSignature, type NexoraPipelineStatusUi } from "./nexoraPipelineStatus.ts";
 
 export type NexoraAuditBuilderInput = {
@@ -116,4 +116,18 @@ export function buildNexoraAuditRecord(input: NexoraAuditBuilderInput): NexoraAu
 
 export function buildNexoraAuditSignature(record: NexoraAuditRecord): string {
   return serializeAudit(record);
+}
+
+/** Stable signature for deduping panel resolver / memory writes (excludes volatile ids and timestamps). */
+export function buildNexoraAuditSemanticSignature(record: NexoraAuditRecord): string {
+  const subset = {
+    domain: record.domain,
+    sources: record.sources,
+    merge: record.merge,
+    signals: record.signals,
+    scanner: record.scanner,
+    trust: record.trust,
+    decision: record.decision,
+  };
+  return JSON.stringify(sortJsonDeterministic(subset));
 }

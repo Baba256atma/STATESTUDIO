@@ -62,6 +62,38 @@ const b18ScenarioBuiltLogged = new Set<string>();
 const b18CompareRecommendedLogged = new Set<string>();
 const b19MemoryAnalyzedLogged = new Set<string>();
 
+const resolvedPanelCache = new WeakMap<object, Map<ResolvedPanelName, PanelResolvedData>>();
+const resolvedPanelNullInputCache = new Map<ResolvedPanelName, PanelResolvedData>();
+
+function readCachedResolvedPanelResult(
+  sourceData: PanelSharedData | null | undefined,
+  panel: ResolvedPanelName
+): PanelResolvedData | null {
+  if (!sourceData || typeof sourceData !== "object") {
+    return resolvedPanelNullInputCache.get(panel) ?? null;
+  }
+  const byPanel = resolvedPanelCache.get(sourceData as object);
+  return byPanel?.get(panel) ?? null;
+}
+
+function cacheResolvedPanelResult(
+  sourceData: PanelSharedData | null | undefined,
+  panel: ResolvedPanelName,
+  result: PanelResolvedData
+): PanelResolvedData {
+  if (!sourceData || typeof sourceData !== "object") {
+    resolvedPanelNullInputCache.set(panel, result);
+    return result;
+  }
+  let byPanel = resolvedPanelCache.get(sourceData as object);
+  if (!byPanel) {
+    byPanel = new Map<ResolvedPanelName, PanelResolvedData>();
+    resolvedPanelCache.set(sourceData as object, byPanel);
+  }
+  byPanel.set(panel, result);
+  return result;
+}
+
 function emitB18ScenarioBuilt(sig: string) {
   if (process.env.NODE_ENV === "production") return;
   if (b18ScenarioBuiltLogged.has(sig)) return;
@@ -1057,6 +1089,10 @@ export function buildPanelResolvedData(
   data: PanelSharedData | null | undefined
 ): PanelResolvedData {
   const safeData: PanelSharedData = data ?? ({} as PanelSharedData);
+  const cached = readCachedResolvedPanelResult(data, panel);
+  if (cached) {
+    return cached;
+  }
   const promptFeedback = asRecord(safeData.promptFeedback);
   const decisionCockpit = asRecord(safeData.decisionCockpit);
   const executiveSummary = asRecord(safeData.executiveSummary);
@@ -1095,7 +1131,7 @@ export function buildPanelResolvedData(
       const resolved = selectedSource?.value ?? null;
       if (!selectedSource) {
         tracePanelResolution("advice", null, null, false, false, ["recommendation", "recommended_actions", "summary"]);
-        return buildConcretePanelEmptyState(panel, ["recommendation", "recommended_actions", "summary"]);
+        return cacheResolvedPanelResult(data, panel, buildConcretePanelEmptyState(panel, ["recommendation", "recommended_actions", "summary"]));
       }
       const safeResolved = resolved ?? {};
       const hasPrimaryData = hasAdvicePrimary(safeResolved);
@@ -1107,7 +1143,7 @@ export function buildPanelResolvedData(
         ...(effectiveHasPartialData ? [] : ["summary"]),
       ];
       if (!hasPrimaryData && !effectiveHasPartialData) {
-        return buildConcretePanelEmptyState(panel, missingFields);
+        return cacheResolvedPanelResult(data, panel, buildConcretePanelEmptyState(panel, missingFields));
       }
       tracePanelResolution(
         "advice",
@@ -1117,13 +1153,13 @@ export function buildPanelResolvedData(
         effectiveHasPartialData,
         missingFields
       );
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData: effectiveHasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields,
-      });
+      }));
     }
     case "dashboard": {
       const cockpitExecutive = asRecord(decisionCockpit?.executive);
@@ -1163,7 +1199,7 @@ export function buildPanelResolvedData(
           },
         });
         tracePanelResolution("dashboard", selected.support?.family ?? null, null, false, false, ["executive_context", "summary"]);
-        return buildPanelFallbackState(panel, "empty_but_guided", ["executive_context", "summary"]);
+        return cacheResolvedPanelResult(data, panel, buildPanelFallbackState(panel, "empty_but_guided", ["executive_context", "summary"]));
       }
       const safeResolved = resolved ?? {};
       const record = asRecord(safeResolved);
@@ -1190,13 +1226,13 @@ export function buildPanelResolvedData(
         effectiveHasPartialData,
         missingFields
       );
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData: effectiveHasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields,
-      });
+      }));
     }
     case "risk": {
       const selected = selectRiskSource({
@@ -1224,13 +1260,13 @@ export function buildPanelResolvedData(
         hasPartialData,
         missingFields
       );
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields,
-      });
+      }));
     }
     case "fragility": {
       const selected = selectFragilitySource({
@@ -1263,13 +1299,13 @@ export function buildPanelResolvedData(
         hasPartialData,
         missingFields
       );
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields,
-      });
+      }));
     }
     case "timeline": {
       const selected = selectTimelineSource({
@@ -1283,7 +1319,7 @@ export function buildPanelResolvedData(
       const resolved = selectedSource?.value ?? null;
       if (!selectedSource) {
         tracePanelResolution("timeline", null, null, false, false, ["timeline", "summary"]);
-        return buildConcretePanelEmptyState(panel, ["timeline", "summary"]);
+        return cacheResolvedPanelResult(data, panel, buildConcretePanelEmptyState(panel, ["timeline", "summary"]));
       }
       const safeResolved = resolved ?? {};
       const hasPrimaryData = hasTimelinePrimary(safeResolved);
@@ -1294,7 +1330,7 @@ export function buildPanelResolvedData(
         ...(effectiveHasPartialData ? [] : ["summary"]),
       ];
       if (!hasPrimaryData && !effectiveHasPartialData) {
-        return buildConcretePanelEmptyState(panel, missingFields);
+        return cacheResolvedPanelResult(data, panel, buildConcretePanelEmptyState(panel, missingFields));
       }
       tracePanelResolution(
         "timeline",
@@ -1304,13 +1340,13 @@ export function buildPanelResolvedData(
         effectiveHasPartialData,
         missingFields
       );
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData: effectiveHasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields,
-      });
+      }));
     }
     case "simulate": {
       const fragilitySimAnchor = buildFragilitySimulationAnchor(scannerFragility);
@@ -1333,7 +1369,7 @@ export function buildPanelResolvedData(
           },
         });
         tracePanelResolution("simulate", null, null, false, false, ["simulation", "summary"]);
-        return buildPanelFallbackState(panel, "empty_but_guided", ["simulation", "summary"]);
+        return cacheResolvedPanelResult(data, panel, buildPanelFallbackState(panel, "empty_but_guided", ["simulation", "summary"]));
       }
       const safeResolved = resolved ?? {};
       const b8Sim = extractNexoraB8FromSharedData(safeData);
@@ -1372,13 +1408,13 @@ export function buildPanelResolvedData(
         effectiveHasPartialData,
         missingFields
       );
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: mergedSim,
         hasPrimaryData,
         hasPartialData: effectiveHasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields,
-      });
+      }));
     }
     case "war_room": {
       const selected = selectWarRoomSource({
@@ -1398,7 +1434,7 @@ export function buildPanelResolvedData(
       ]);
       if (!selected.primary && !selected.partial) {
         tracePanelResolution("war_room", selected.support?.family ?? null, null, false, false, ["war_room_context", "summary"]);
-        return buildConcretePanelEmptyState(panel, ["war_room_context", "summary"]);
+        return cacheResolvedPanelResult(data, panel, buildConcretePanelEmptyState(panel, ["war_room_context", "summary"]));
       }
       const safeResolved = resolved ?? {};
       const hasPrimaryData = hasWarRoomPrimary(safeResolved);
@@ -1409,7 +1445,7 @@ export function buildPanelResolvedData(
         ...(effectiveHasPartialData ? [] : ["summary"]),
       ];
       if (!hasPrimaryData && !effectiveHasPartialData) {
-        return buildConcretePanelEmptyState(panel, missingFields);
+        return cacheResolvedPanelResult(data, panel, buildConcretePanelEmptyState(panel, missingFields));
       }
       tracePanelResolution(
         "war_room",
@@ -1419,13 +1455,13 @@ export function buildPanelResolvedData(
         effectiveHasPartialData,
         missingFields
       );
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData: effectiveHasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields,
-      });
+      }));
     }
     case "compare": {
       const fragilityCompareAnchor = buildFragilityCompareAnchor(scannerFragility);
@@ -1447,7 +1483,7 @@ export function buildPanelResolvedData(
           },
         });
         tracePanelResolution("compare", null, null, false, false, ["options", "summary"]);
-        return buildPanelFallbackState(panel, "empty_but_guided", ["options", "summary"]);
+        return cacheResolvedPanelResult(data, panel, buildPanelFallbackState(panel, "empty_but_guided", ["options", "summary"]));
       }
       const safeResolved = resolved ?? {};
       const b8Cmp = extractNexoraB8FromSharedData(safeData);
@@ -1486,13 +1522,13 @@ export function buildPanelResolvedData(
         effectiveHasPartialData,
         missingFields
       );
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: mergedCmp,
         hasPrimaryData,
         hasPartialData: effectiveHasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields,
-      });
+      }));
     }
     case "decision_policy": {
       const selected = selectPolicySource({
@@ -1520,13 +1556,13 @@ export function buildPanelResolvedData(
         hasPartialData,
         missingFields
       );
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields,
-      });
+      }));
     }
     case "executive_approval": {
       const selected = selectApprovalSource({
@@ -1554,13 +1590,13 @@ export function buildPanelResolvedData(
         hasPartialData,
         missingFields
       );
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields,
-      });
+      }));
     }
     case "conflict": {
       const selected = selectConflictSource({
@@ -1589,7 +1625,7 @@ export function buildPanelResolvedData(
           },
         });
         tracePanelResolution("conflict", null, null, false, false, ["conflict_context", "summary"]);
-        return buildPanelFallbackState(panel, "empty_but_guided", ["conflict_context", "summary"]);
+        return cacheResolvedPanelResult(data, panel, buildPanelFallbackState(panel, "empty_but_guided", ["conflict_context", "summary"]));
       }
       const safeResolved = resolved ?? {};
       const hasPrimaryData = hasConflictPrimary(safeResolved);
@@ -1614,13 +1650,13 @@ export function buildPanelResolvedData(
         effectiveHasPartialData,
         missingFields
       );
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData: effectiveHasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields,
-      });
+      }));
     }
     case "strategic_command": {
       const resolved = pickFirst([
@@ -1635,13 +1671,13 @@ export function buildPanelResolvedData(
       const hasPartialData = hasSummaryLike(record, ["summary", "happened", "why_it_matters", "what_to_do"]);
       const effectiveHasPartialData =
         hasPartialData || (!hasPrimaryData && !hasPartialData && hasAnyRenderableFamilyRecord(safeResolved));
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData: effectiveHasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields: ["summary"],
-      });
+      }));
     }
     case "decision_governance": {
       const resolved = pickFirst([
@@ -1656,13 +1692,13 @@ export function buildPanelResolvedData(
       const hasPartialData = hasSummaryLike(record, ["summary", "happened", "why_it_matters", "what_to_do"]);
       const effectiveHasPartialData =
         hasPartialData || (!hasPrimaryData && !hasPartialData && hasAnyRenderableFamilyRecord(safeResolved));
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData: effectiveHasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields: ["governance_context"],
-      });
+      }));
     }
     case "decision_council": {
       const resolved = pickFirst([
@@ -1677,15 +1713,28 @@ export function buildPanelResolvedData(
       const hasPartialData = hasSummaryLike(record) || hasText(record?.recommendation);
       const effectiveHasPartialData =
         hasPartialData || (!hasPrimaryData && !hasPartialData && hasAnyRenderableFamilyRecord(safeResolved));
-      return buildResult(panel, {
+      return cacheResolvedPanelResult(data, panel, buildResult(panel, {
         data: safeResolved,
         hasPrimaryData,
         hasPartialData: effectiveHasPartialData,
         hasFallbackData: Boolean(resolved),
         missingFields: ["council_guidance"],
-      });
+      }));
+    }
+    case "input": {
+      return cacheResolvedPanelResult(
+        data,
+        panel,
+        buildResult(panel, {
+          data: { entry: "source_control" },
+          hasPrimaryData: true,
+          hasPartialData: true,
+          hasFallbackData: true,
+          missingFields: [],
+        })
+      );
     }
     default:
-      return buildPanelFallbackState(panel, "fallback", ["unsupported_panel"]);
+      return cacheResolvedPanelResult(data, panel, buildPanelFallbackState(panel, "fallback", ["unsupported_panel"]));
   }
 }

@@ -65,7 +65,7 @@ export function normalizeUnifiedSceneReaction(
     return ids.filter((id) => sceneObjectIdSet.has(id));
   };
 
-  const maxHighlightedObjectIds = Math.max(1, Math.min(5, Number(options?.maxHighlightedObjectIds ?? 3)));
+  const maxHighlightedObjectIds = Math.max(1, Math.min(3, Number(options?.maxHighlightedObjectIds ?? 3)));
   const highlightedObjectIds = filterSceneIds(reaction.highlightedObjectIds);
   const riskSources = filterSceneIds(reaction.riskSources);
   const riskTargets = filterSceneIds(reaction.riskTargets);

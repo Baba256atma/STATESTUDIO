@@ -2,9 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  mapRightPanelViewToLegacyTab,
   resolveCanonicalRightPanelRoute,
   resolveRightPanelLeftNavRoute,
   resolveRightPanelRailRoute,
+  resolveRightPanelShellSectionForView,
   resolveSafeRightPanelView,
 } from "./rightPanelRouter.ts";
 
@@ -33,11 +35,11 @@ test("left nav executive_group resolves to dashboard and not simulate", () => {
   assert.notEqual(route?.resolvedView, "simulate");
 });
 
-test("right rail object_focus resolves to object and focus section", () => {
+test("right rail object_focus resolves to object_focus and focus section", () => {
   const route = resolveRightPanelRailRoute("object_focus");
 
   assert.ok(route);
-  assert.equal(route?.resolvedView, "object");
+  assert.equal(route?.resolvedView, "object_focus");
   assert.equal(route?.shellSection, "focus");
 });
 
@@ -47,6 +49,26 @@ test("right rail risk_flow resolves to risk and not workspace", () => {
   assert.ok(route);
   assert.equal(route?.resolvedView, "risk");
   assert.notEqual(route?.resolvedView, "workspace");
+});
+
+test("right rail fragility_scan resolves to fragility view and fragility shell section", () => {
+  const route = resolveRightPanelRailRoute("fragility_scan");
+
+  assert.ok(route);
+  assert.equal(route?.resolvedView, "fragility");
+  assert.equal(route?.shellSection, "fragility");
+});
+
+test("right rail input resolves to input view and input shell section; legacy tab is input not scene", () => {
+  const route = resolveRightPanelRailRoute("input");
+
+  assert.ok(route);
+  assert.equal(route?.resolvedView, "input");
+  assert.equal(route?.shellSection, "input");
+  assert.equal(mapRightPanelViewToLegacyTab("input"), "input");
+  assert.equal(resolveRightPanelShellSectionForView("input"), "input");
+  assert.notEqual(resolveRightPanelShellSectionForView("input"), "scene");
+  assert.notEqual(resolveRightPanelShellSectionForView("input"), "workspace");
 });
 
 test("invalid click target is blocked instead of silently rerouted", () => {
@@ -78,7 +100,7 @@ test("click routing does not default unrelated targets to simulate", () => {
   const riskRoute = resolveCanonicalRightPanelRoute({ legacyTab: "risk_flow" });
   const executiveRoute = resolveCanonicalRightPanelRoute({ leftNav: "executive_group" });
 
-  assert.equal(focusRoute?.resolvedView, "object");
+  assert.equal(focusRoute?.resolvedView, "object_focus");
   assert.equal(riskRoute?.resolvedView, "risk");
   assert.equal(executiveRoute?.resolvedView, "dashboard");
   assert.notEqual(focusRoute?.resolvedView, "simulate");

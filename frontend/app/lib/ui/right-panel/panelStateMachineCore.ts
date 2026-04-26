@@ -21,6 +21,7 @@ export type PanelView =
   | "executive_approval"
   | "explanation"
   | "object"
+  | "object_focus"
   | "risk"
   | "fragility"
   | "advice"
@@ -76,7 +77,7 @@ export type PanelResult = {
 
 export function getPanelFamily(view: PanelView): PanelFamily {
   if (view === "workspace") return "scene_workspace";
-  if (view === "object") return "object";
+  if (view === "object" || view === "object_focus") return "object";
   if (view === "risk" || view === "fragility" || view === "conflict" || view === "explanation") return "risk";
   if (view === "advice") return "advice";
   if (

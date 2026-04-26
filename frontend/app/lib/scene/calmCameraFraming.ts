@@ -6,7 +6,7 @@ export const CALM_FRAMING = {
   /** Multiplier on computed scene radius — pulls camera back for edge margins. */
   groupRadiusPadding: 1.14,
   /** OrbitControls / auto-frame lerp per frame (lower = calmer). */
-  shellCameraLerp: 0.038,
+  shellCameraLerp: 0.06,
   /** Max world-units camera may move toward desired position in one frame. */
   maxCamPosStep: 0.32,
   /** Max world-units OrbitControls target may move toward desired in one frame. */
@@ -32,8 +32,8 @@ export const CALM_FRAMING = {
   narrativeBiasOther: 0.07,
   simulationBiasScale: 0.05,
   /** SceneRenderer CameraLerper lerp (rotation/position feel). */
-  lerperAlpha: 0.042,
-  lerperAlphaMotionCalm: 0.028,
+  lerperAlpha: 0.06,
+  lerperAlphaMotionCalm: 0.04,
 } as const;
 
 export function sceneRadiusFromBoundsSize(size: [number, number, number]): number {

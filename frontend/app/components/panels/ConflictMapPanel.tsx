@@ -2,8 +2,13 @@
 
 import React from "react";
 import { cardStyle, nx, softCardStyle } from "../ui/nexoraTheme";
-import { EmptyStateCard } from "../ui/panelStates";
 import { dedupeNexoraDevLog, dedupePanelConsoleTrace } from "../../lib/debug/panelConsoleTraceDedupe";
+import { logPanelOnce } from "../../lib/debug/panelLogSignature";
+import { resolveConflictReadiness } from "../../lib/panels/panelDataReadiness";
+import { buildConflictIntelligence, logPanelIntelligence } from "../../lib/intelligence/panelIntelligence";
+import { buildConflictDecisionSet } from "../../lib/decision/decisionEngine";
+import { PanelDecisionSetSection } from "./PanelDecisionSetSection";
+import { RightPanelFallback } from "../right-panel/RightPanelFallback";
 
 type ConflictItem = {
   a?: string;
@@ -93,44 +98,32 @@ export default function ConflictMapPanel({
     getString(conflictRecord?.summary) ??
     getString(conflictRecord?.headline) ??
     getString(conflictRecord?.posture);
-  const hasThinRenderableConflict = normalizedConflicts.length > 0 || Boolean(summary);
+  const inputType =
+    Array.isArray(conflicts) ? "array" : conflicts && typeof conflicts === "object" ? "object" : "empty";
+  const readiness = resolveConflictReadiness(conflicts);
 
   React.useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
-    console.warn("[Nexora][PanelLifecycle] mounted", {
+    logPanelOnce("[Nexora][PanelDataState]", {
       panel: "conflict",
-      readiness: normalizedConflicts.length > 0 ? "full" : hasThinRenderableConflict ? "thin" : "empty",
+      readiness,
       shape: {
-        inputType: Array.isArray(conflicts) ? "array" : conflicts && typeof conflicts === "object" ? "object" : "empty",
+        inputType,
         normalizedCount: normalizedConflicts.length,
         hasSummary: Boolean(summary),
       },
     });
-    return () => {
-      console.warn("[Nexora][PanelLifecycle] unmounted", {
-        panel: "conflict",
-      });
-    };
-  }, []);
+  }, [readiness, inputType, normalizedConflicts.length, summary]);
 
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
-    if (!hasThinRenderableConflict) return;
-    if (normalizedConflicts.length > 0) return;
-    console.warn("[Nexora][PanelLifecycle] thin_data_received", {
-      panel: "conflict",
-      readiness: "thin",
-      shape: {
-        inputType: Array.isArray(conflicts) ? "array" : conflicts && typeof conflicts === "object" ? "object" : "empty",
-        normalizedCount: normalizedConflicts.length,
-        hasSummary: Boolean(summary),
-      },
-    });
-  }, [conflicts, hasThinRenderableConflict, normalizedConflicts.length, summary]);
+  if (readiness === "loading") {
+    return <RightPanelFallback mode="loading" embedded />;
+  }
+  if (readiness === "empty") {
+    return <RightPanelFallback mode="empty" embedded message="No active conflicts detected." />;
+  }
 
   if (DEBUG_PANEL_TRACE) {
     dedupePanelConsoleTrace("PanelComponent", "conflict", "main", {
-      meaningfulData: hasThinRenderableConflict,
+      meaningfulData: true,
       inputType: Array.isArray(conflicts) ? "array" : conflicts && typeof conflicts === "object" ? "object" : "empty",
       normalizedCount: normalizedConflicts.length,
       hasSummary: Boolean(summary),
@@ -141,66 +134,104 @@ export default function ConflictMapPanel({
     });
   }
 
-  if (normalizedConflicts.length === 0 && !summary) {
-    if (DEBUG_PANEL_TRACE) {
-      console.warn("[Nexora][PanelBlankGuard] triggered", {
-        panel: "conflict",
-        reason: "no_conflict_items_or_summary",
-      });
-      console.warn("[Nexora][PanelLifecycle] blank_or_fallback_render", {
-        panel: "conflict",
-        readiness: "empty",
-        shape: {
-          inputType: Array.isArray(conflicts) ? "array" : conflicts && typeof conflicts === "object" ? "object" : "empty",
-          normalizedCount: 0,
-          hasSummary: false,
-        },
-      });
-    }
-    return <EmptyStateCard text="No active conflicts detected." />;
-  }
+  const intelligence = React.useMemo(
+    () => buildConflictIntelligence({ summary, items: normalizedConflicts }),
+    [summary, normalizedConflicts]
+  );
 
-  if (DEBUG_PANEL_TRACE && normalizedConflicts.length === 0 && summary) {
-    dedupePanelConsoleTrace("PanelThinRender", "conflict", "summary_only", {
-      reason: "summary_only_conflict",
-    });
-  }
+  React.useEffect(() => {
+    logPanelIntelligence("conflict", intelligence);
+  }, [intelligence]);
+
+  const decisionSet = React.useMemo(
+    () =>
+      buildConflictDecisionSet({
+        summary,
+        conflictCount: normalizedConflicts.length,
+      }),
+    [summary, normalizedConflicts.length]
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {summary ? (
+      <div style={{ ...softCardStyle, border: "1px solid rgba(251,191,36,0.25)", padding: 12 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: nx.lowMuted }}>
+          Primary insight
+        </div>
         <div
           style={{
-            ...softCardStyle,
-            padding: 10,
-            color: nx.text,
+            marginTop: 8,
+            fontSize: 15,
+            fontWeight: 800,
+            color: "#fef3c7",
+            lineHeight: 1.35,
+            maxHeight: "4.6em",
+            overflow: "hidden",
+          }}
+        >
+          {intelligence.primary}
+        </div>
+        <div
+          style={{
+            marginTop: 8,
             fontSize: 12,
-            lineHeight: 1.5,
+            color: nx.muted,
+            opacity: 0.78,
+            lineHeight: 1.45,
+            maxHeight: "4.5em",
+            overflow: "hidden",
           }}
         >
-          {summary}
+          {intelligence.implication}
         </div>
-      ) : null}
-      {normalizedConflicts.map((c, i) => (
-        <div
-          key={i}
-          style={{
-            ...cardStyle,
-            padding: 10,
-            background: nx.bgPanelSoft,
-          }}
-        >
-          <div style={{ fontSize: 12, color: nx.text, fontWeight: 600 }}>
-            {String(c?.a ?? "unknown")} {"\u2194"} {String(c?.b ?? "unknown")}
-          </div>
-          <div style={{ fontSize: 11, color: nx.muted }}>
-            {String(c?.reason ?? "")}
-          </div>
-          <div style={{ fontSize: 10, color: nx.lowMuted }}>
-            score: {Number(c?.score ?? 0).toFixed(3)}
-          </div>
+        <div style={{ marginTop: 10, fontSize: 12, color: nx.text, lineHeight: 1.45 }}>
+          <strong>Recommended action:</strong> {intelligence.action}
         </div>
-      ))}
+        <div style={{ marginTop: 8, fontSize: 11, color: nx.lowMuted, opacity: 0.72 }}>
+          Confidence: {(intelligence.confidence * 100).toFixed(0)}%
+        </div>
+      </div>
+
+      <PanelDecisionSetSection view="conflict" decisionSet={decisionSet} />
+
+      <details style={{ borderRadius: 8 }}>
+        <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: nx.muted }}>
+          Details: posture summary & tension list
+        </summary>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+          {summary ? (
+            <div
+              style={{
+                ...softCardStyle,
+                padding: 10,
+                color: nx.text,
+                fontSize: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              {summary}
+            </div>
+          ) : null}
+          {normalizedConflicts.map((c, i) => (
+            <div
+              key={i}
+              style={{
+                ...cardStyle,
+                padding: 10,
+                background: nx.bgPanelSoft,
+              }}
+            >
+              <div style={{ fontSize: 12, color: nx.text, fontWeight: 600 }}>
+                {String(c?.a ?? "unknown")} {"\u2194"} {String(c?.b ?? "unknown")}
+              </div>
+              <div style={{ fontSize: 11, color: nx.muted }}>{String(c?.reason ?? "")}</div>
+              <div style={{ fontSize: 10, color: nx.lowMuted }}>
+                score: {Number(c?.score ?? 0).toFixed(3)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </details>
     </div>
   );
 }

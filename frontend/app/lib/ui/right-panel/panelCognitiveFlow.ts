@@ -64,6 +64,30 @@ declare global {
   }
 }
 
+let lastCognitiveFlowLogSignature = "";
+let lastHistorySignature = "";
+let lastHistorySnapshot: CognitiveFlowState["history"] = [];
+
+function buildHistorySignature(history: CognitiveFlowState["history"]): string {
+  return history
+    .map((entry) => `${String(entry.view ?? "null")}:${Number(entry.timestamp ?? 0)}`)
+    .join("|");
+}
+
+function buildCognitiveFlowLogSignature(payload: {
+  step: CognitiveFlowStep;
+  nextStep: CognitiveFlowStep;
+  confidence: number;
+  currentView: RightPanelView;
+}): string {
+  return [
+    payload.step,
+    payload.nextStep,
+    payload.confidence.toFixed(3),
+    String(payload.currentView ?? "null"),
+  ].join("|");
+}
+
 function clampConfidence(value: number) {
   return Math.min(1, Math.max(0.35, value));
 }
@@ -75,6 +99,7 @@ function normalizeIntent(value: string | undefined): string {
 function detectCurrentStep(input: CognitiveFlowInput): CognitiveFlowState["currentStep"] {
   const intent = normalizeIntent(input.context.intent);
 
+  if (input.currentView === "input") return "analyze";
   if (input.context.hasOutcome) return "review";
   if (input.context.hasDecision) return "act";
   if (input.context.hasRecommendation) return "decide";
@@ -105,7 +130,24 @@ function estimateConfidence(step: CognitiveFlowStep, input: CognitiveFlowInput) 
 
 function readFlowHistory(): CognitiveFlowState["history"] {
   if (typeof window === "undefined") return [];
-  return Array.isArray(window.__NEXORA_FLOW_HISTORY__) ? window.__NEXORA_FLOW_HISTORY__ : [];
+  const raw = Array.isArray(window.__NEXORA_FLOW_HISTORY__) ? window.__NEXORA_FLOW_HISTORY__ : [];
+  const sanitized = raw
+    .filter(
+      (entry): entry is { view: RightPanelView; timestamp: number } =>
+        Boolean(entry) && typeof entry === "object" && "timestamp" in entry
+    )
+    .map((entry) => ({
+      view: entry.view,
+      timestamp: Number(entry.timestamp ?? 0),
+    }))
+    .slice(-12);
+  const signature = buildHistorySignature(sanitized);
+  if (signature === lastHistorySignature) {
+    return lastHistorySnapshot;
+  }
+  lastHistorySignature = signature;
+  lastHistorySnapshot = sanitized;
+  return sanitized;
 }
 
 export function recordPanelCognitiveFlowHistory(view: RightPanelView) {
@@ -118,6 +160,8 @@ export function recordPanelCognitiveFlowHistory(view: RightPanelView) {
       ? existing
       : [...existing, nextEntry].slice(-12);
   window.__NEXORA_FLOW_HISTORY__ = deduped;
+  lastHistorySnapshot = deduped;
+  lastHistorySignature = buildHistorySignature(deduped);
   return deduped;
 }
 
@@ -130,12 +174,21 @@ export function getPanelCognitiveFlow(input: CognitiveFlowInput): CognitiveFlowO
   const nextStepLabel = STEP_LABEL_MAP[nextStep];
 
   if (process.env.NODE_ENV !== "production") {
-    console.log("[Nexora][CognitiveFlow]", {
+    const logSignature = buildCognitiveFlowLogSignature({
       step: currentStep,
       nextStep,
       confidence,
       currentView: input.currentView,
     });
+    if (lastCognitiveFlowLogSignature !== logSignature) {
+      lastCognitiveFlowLogSignature = logSignature;
+      console.log("[Nexora][CognitiveFlow]", {
+        step: currentStep,
+        nextStep,
+        confidence,
+        currentView: input.currentView,
+      });
+    }
   }
 
   return {

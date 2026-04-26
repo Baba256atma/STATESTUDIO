@@ -264,6 +264,52 @@ function uniqueIds(values: Array<string | null | undefined>): string[] {
   return Array.from(new Set(values.map((value) => normalizeId(value)).filter(Boolean)));
 }
 
+export type FragilityScenePayloadSignatureOptions = {
+  /** Sorted scene object ids (or similar) so the same scanner payload reapplies when the scene graph changes. */
+  sceneFingerprint?: string | null;
+};
+
+/**
+ * Stable signature for fragility scanner scene payloads (dedupe apply before mutating scene).
+ */
+export function buildFragilityScenePayloadSignature(
+  payload: FragilityScenePayload | null | undefined,
+  options?: FragilityScenePayloadSignatureOptions | null
+): string {
+  if (!payload) {
+    return JSON.stringify({ nil: true, sceneFingerprint: options?.sceneFingerprint ?? "" });
+  }
+  const highlighted = uniqueIds(payload.highlighted_object_ids ?? []);
+  const primary = uniqueIds(payload.primary_object_ids ?? []);
+  const affected = uniqueIds(payload.affected_object_ids ?? []);
+  const focus = uniqueIds(payload.suggested_focus ?? []);
+  const highlightTargets = uniqueIds(
+    (Array.isArray(payload.highlights) ? payload.highlights : []).map((h) => h?.target)
+  );
+  const objectIds = uniqueIds((Array.isArray(payload.objects) ? payload.objects : []).map((o) => o?.id));
+  const dim = payload.dim_unrelated_objects === true;
+  const fragScore =
+    payload.state_vector && typeof payload.state_vector.fragility_score === "number"
+      ? payload.state_vector.fragility_score
+      : null;
+  const fragLevel =
+    payload.state_vector && typeof payload.state_vector.fragility_level === "string"
+      ? payload.state_vector.fragility_level
+      : null;
+  return JSON.stringify({
+    highlighted: highlighted.sort((a, b) => a.localeCompare(b)),
+    primary: primary.sort((a, b) => a.localeCompare(b)),
+    affected: affected.sort((a, b) => a.localeCompare(b)),
+    focus: focus.sort((a, b) => a.localeCompare(b)),
+    highlightTargets: highlightTargets.sort((a, b) => a.localeCompare(b)),
+    objects: objectIds.sort((a, b) => a.localeCompare(b)),
+    dim,
+    fragScore,
+    fragLevel,
+    sceneFingerprint: options?.sceneFingerprint ?? "",
+  });
+}
+
 export function applyFragilityScenePayload(
   currentSceneState: SceneJson | null,
   payload: FragilityScenePayload | null | undefined,

@@ -1,4 +1,4 @@
-import { CANONICAL_RIGHT_PANEL_VIEWS, type RightPanelView } from "../ui/right-panel/rightPanelTypes";
+import { CANONICAL_RIGHT_PANEL_VIEWS, type CenterExecutionSurface, type RightPanelView } from "../ui/right-panel/rightPanelTypes";
 import type { CanonicalNexoraAction, NexoraActionSource, NexoraActionSurface } from "./actionTypes";
 
 function createActionId(): string {
@@ -31,6 +31,10 @@ export type OpenRightPanelEventDetail = {
   section?: string | null;
   source?: string | null;
   contextId?: string | null;
+  clickedTab?: string | null;
+  clickedNav?: string | null;
+  preserveIfSameContext?: boolean;
+  allowAutoOverride?: boolean;
 };
 
 /** Normalize `nexora:open-right-panel` custom event detail. */
@@ -41,6 +45,10 @@ export function normalizeOpenRightPanelEventDetail(detail: OpenRightPanelEventDe
     viewCandidate && isCanonicalPanelView(viewCandidate) ? viewCandidate : null;
 
   const source = inferSourceFromOpenPanelMeta(detail?.source ?? null);
+  const rawSource =
+    typeof detail?.source === "string" && detail.source.trim()
+      ? `event:nexora:open-right-panel:${detail.source.trim()}`
+      : "event:nexora:open-right-panel";
 
   return {
     actionId: createActionId(),
@@ -53,9 +61,13 @@ export function normalizeOpenRightPanelEventDetail(detail: OpenRightPanelEventDe
       legacyTab: detail?.tab ?? null,
       leftNav: detail?.leftNav ?? null,
       section: detail?.section ?? null,
+      clickedTab: detail?.clickedTab ?? null,
+      clickedNav: detail?.clickedNav ?? null,
+      preserveIfSameContext: detail?.preserveIfSameContext,
+      allowAutoOverride: detail?.allowAutoOverride,
     },
     target: { type: "panel", id: view },
-    meta: { rawSource: "event:nexora:open-right-panel", timestamp: Date.now() },
+    meta: { rawSource, timestamp: Date.now() },
   };
 }
 
@@ -71,7 +83,7 @@ export function normalizeRunSimulation(args: {
     source: args.source ?? "panel_cta",
     surface: args.surface ?? "panel_cta",
     intent: { kind: "run_simulation" },
-    target: { type: "panel", id: "simulate" },
+    target: { type: "center", id: "simulation" },
     meta: { rawSource: args.rawSource ?? "panel_cta:simulate", timestamp: Date.now() },
     ...(args.payload && Object.keys(args.payload).length > 0 ? { payload: args.payload } : {}),
   };
@@ -106,6 +118,22 @@ export function normalizeOpenCenterTimeline(args: {
     intent: { kind: "open_center_timeline" },
     target: { type: "center", id: "timeline" },
     meta: { rawSource: args.rawSource ?? "panel_cta:timeline", timestamp: Date.now() },
+  };
+}
+
+export function normalizeOpenObjectInspectionCenter(args?: {
+  source?: NexoraActionSource;
+  surface?: NexoraActionSurface;
+  rawSource?: string;
+}): CanonicalNexoraAction {
+  const centerSurface: CenterExecutionSurface = "object_inspection";
+  return {
+    actionId: createActionId(),
+    source: args?.source ?? "panel_cta",
+    surface: args?.surface ?? "sub_panel",
+    intent: { kind: "open_center_execution", surface: centerSurface },
+    target: { type: "center", id: centerSurface },
+    meta: { rawSource: args?.rawSource ?? "scene_inspect_objects_btn", timestamp: Date.now() },
   };
 }
 

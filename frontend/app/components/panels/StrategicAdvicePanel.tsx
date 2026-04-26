@@ -8,6 +8,11 @@ import type { PanelSharedData } from "../../lib/panels/panelDataResolverTypes";
 import type { AdviceAction, AdvicePanelData, SimulationPanelData } from "../../lib/panels/panelDataContract";
 import { RightPanelFallback } from "../right-panel/RightPanelFallback";
 import { dedupeNexoraDevLog, dedupePanelConsoleTrace } from "../../lib/debug/panelConsoleTraceDedupe";
+import { logPanelOnce } from "../../lib/debug/panelLogSignature";
+import { resolveAdviceReadiness } from "../../lib/panels/panelDataReadiness";
+import { buildAdviceIntelligence, logPanelIntelligence } from "../../lib/intelligence/panelIntelligence";
+import { buildAdviceDecisionSet } from "../../lib/decision/decisionEngine";
+import { PanelDecisionSetSection } from "./PanelDecisionSetSection";
 import {
   buildAdviceWhyLines,
   extractNexoraB8FromSharedData,
@@ -99,6 +104,30 @@ export default function StrategicAdvicePanel({
     traceNexoraB9PanelMeaningEnriched("advice", nexoraB8);
   }, [nexoraB8]);
 
+  const readiness = resolveAdviceReadiness(panelData ?? null, advice, canonicalRecommendation ?? null);
+
+  React.useEffect(() => {
+    logPanelOnce("[Nexora][PanelDataState]", {
+      panel: "advice",
+      readiness,
+      status: resolved.status,
+    });
+  }, [readiness, resolved.status]);
+
+  if (readiness === "loading") {
+    return <RightPanelFallback mode="loading" embedded />;
+  }
+  if (readiness === "empty") {
+    return (
+      <RightPanelFallback
+        mode="empty"
+        embedded
+        title={resolved.title ?? "Strategic Advice"}
+        message={resolved.message ?? "No strategic advice is available yet."}
+      />
+    );
+  }
+
   if (DEBUG_PANEL_TRACE) {
     dedupePanelConsoleTrace("PanelComponent", "advice", "main", {
       meaningfulData: Boolean(summary || primaryRecommendation || actions.length),
@@ -115,223 +144,204 @@ export default function StrategicAdvicePanel({
     });
   }
 
-  const hasThinRenderableAdvice = Boolean(summary || primaryRecommendation || actions.length || why || executiveSummary);
-
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
-    console.warn("[Nexora][PanelLifecycle] mounted", {
-      panel: "advice",
-      readiness:
-        resolved.status === "ready" ? "full" : resolved.status === "partial" ? "thin" : "empty",
-      status: resolved.status,
-      shape: {
-        hasSummary: Boolean(summary),
-        hasRecommendation: Boolean(primaryRecommendation),
-        actionsCount: actions.length,
-        hasWhy: Boolean(why),
-        hasExecutiveSummary: Boolean(executiveSummary),
-      },
-    });
-    return () => {
-      console.warn("[Nexora][PanelLifecycle] unmounted", {
-        panel: "advice",
-      });
-    };
-  }, []);
-
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
-    if (!hasThinRenderableAdvice) return;
-    console.warn("[Nexora][PanelLifecycle] thin_data_received", {
-      panel: "advice",
-      readiness: resolved.status === "ready" ? "full" : "thin",
-      status: resolved.status,
-      shape: {
-        hasSummary: Boolean(summary),
-        hasRecommendation: Boolean(primaryRecommendation),
-        actionsCount: actions.length,
-        hasWhy: Boolean(why),
-        hasExecutiveSummary: Boolean(executiveSummary),
-      },
-    });
-  }, [actions.length, executiveSummary, hasThinRenderableAdvice, primaryRecommendation, resolved.status, summary, why]);
-
-  if (resolved.status === "fallback" || resolved.status === "empty_but_guided") {
-    if (hasThinRenderableAdvice) {
-      if (DEBUG_PANEL_TRACE) {
-        dedupeNexoraDevLog("[Nexora][PanelRenderMismatch]", "advice_fallback", {
-          panel: "advice",
-          resolverStatus: resolved.status,
-          reason: "component_kept_thin_render",
-        });
-        dedupePanelConsoleTrace("PanelThinRender", "advice", "fallback_thin", {
-          hasSummary: Boolean(summary),
-          hasRecommendation: Boolean(primaryRecommendation),
-          actionsCount: actions.length,
-        });
-      }
-    } else {
-      if (DEBUG_PANEL_TRACE) {
-        console.warn("[Nexora][PanelBlankGuard] triggered", {
-          panel: "advice",
-          reason: "resolver_fallback_and_no_thin_content",
-        });
-        console.warn("[Nexora][PanelLifecycle] blank_or_fallback_render", {
-          panel: "advice",
-          readiness: "empty",
-          status: resolved.status,
-          shape: {
-            hasSummary: Boolean(summary),
-            hasRecommendation: Boolean(primaryRecommendation),
-            actionsCount: actions.length,
-            hasWhy: Boolean(why),
-            hasExecutiveSummary: Boolean(executiveSummary),
-          },
-        });
-      }
-      return (
-        <RightPanelFallback
-          title={resolved.title ?? "Strategic Advice"}
-          message={resolved.message ?? "No strategic advice is available yet."}
-          suggestedActionLabel={resolved.suggestedActionLabel ?? null}
-          onSuggestedAction={null}
-        />
-      );
-    }
-  }
-
-  if (DEBUG_PANEL_TRACE && hasThinRenderableAdvice && resolved.status === "partial") {
-    dedupePanelConsoleTrace("PanelThinRender", "advice", "partial", {
-      hasSummary: Boolean(summary),
-      hasRecommendation: Boolean(primaryRecommendation),
-      actionsCount: actions.length,
-    });
-  }
-
   if (DEBUG_PANEL_TRACE && !Array.isArray(normalizedAdvice.recommended_actions)) {
     console.warn("[Nexora] StrategicAdvicePanel received no recommended_actions", {
       source: resolvedAdvice ? "resolved" : compatibilityAdvice ? "compatibility" : "none",
     });
   }
 
+  const intelligence = React.useMemo(
+    () =>
+      buildAdviceIntelligence({
+        summary,
+        primaryRecommendation,
+        why,
+        executiveSummary,
+        actionsCount: actions.length,
+        confidenceRaw: confidence,
+      }),
+    [summary, primaryRecommendation, why, executiveSummary, actions.length, confidence]
+  );
+
+  React.useEffect(() => {
+    logPanelIntelligence("advice", intelligence);
+  }, [intelligence]);
+
+  const decisionSet = React.useMemo(
+    () =>
+      buildAdviceDecisionSet({
+        summary,
+        primaryRecommendation,
+        actionsCount: actions.length,
+      }),
+    [summary, primaryRecommendation, actions.length]
+  );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {adviceWhyLines.length > 0 ? (
+      <div style={{ ...softCardStyle, border: "1px solid rgba(96,165,250,0.28)", padding: 12 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: nx.lowMuted }}>
+          Primary insight
+        </div>
         <div
           style={{
-            ...softCardStyle,
-            padding: 12,
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-            borderLeft: "3px solid rgba(96,165,250,0.45)",
+            marginTop: 8,
+            fontSize: 15,
+            fontWeight: 800,
+            color: "#f8fafc",
+            lineHeight: 1.35,
+            maxHeight: "4.6em",
+            overflow: "hidden",
           }}
         >
-          <div style={{ color: nx.lowMuted, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-            Why this direction
-          </div>
-          {adviceWhyLines.map((line) => (
-            <div key={line} style={{ color: nx.text, fontSize: 11, lineHeight: 1.45 }}>
-              {line}
-            </div>
-          ))}
+          {intelligence.primary}
         </div>
-      ) : null}
-      {recommendation ? (
-        <RecommendationCard rec={recommendation} />
-      ) : (
-        <div style={{ ...softCardStyle, color: nx.text, fontSize: 12 }}>
-          No action is ready yet. Run a scan or scenario to surface the next move.
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: 12,
+            color: nx.muted,
+            opacity: 0.78,
+            lineHeight: 1.45,
+            maxHeight: "4.5em",
+            overflow: "hidden",
+          }}
+        >
+          {intelligence.implication}
         </div>
-      )}
-
-      <div
-        style={{
-          ...cardStyle,
-          border: "1px solid rgba(96,165,250,0.28)",
-          boxShadow: "inset 0 0 0 1px rgba(96,165,250,0.08)",
-        }}
-      >
-        <div style={sectionTitleStyle}>Do Now</div>
-        <div style={primaryMetricStyle}>{primaryRecommendation ?? "No strategic advice available yet."}</div>
-        <div style={{ color: nx.text, fontSize: 12 }}>{summary}</div>
-        {confidence ? (
-          <div style={{ color: "#93c5fd", fontSize: 12 }}>
-            Confidence: {typeof confidence === "number" ? confidence.toFixed(2) : String(confidence)}
-          </div>
-        ) : null}
+        <div style={{ marginTop: 10, fontSize: 12, color: nx.text, lineHeight: 1.45 }}>
+          <strong>Recommended action:</strong> {intelligence.action}
+        </div>
+        <div style={{ marginTop: 8, fontSize: 11, color: nx.lowMuted, opacity: 0.72 }}>
+          Confidence: {(intelligence.confidence * 100).toFixed(0)}%
+        </div>
       </div>
 
-      <div style={{ ...softCardStyle, color: nx.text, fontSize: 12 }}>
-        {why ?? "No strategic rationale is available yet."}
-      </div>
-      {executiveSummary ? (
-        <div style={{ ...softCardStyle, color: "#cbd5e1", fontSize: 12 }}>
-          Executive summary: {executiveSummary}
-        </div>
-      ) : null}
+      <PanelDecisionSetSection view="advice" decisionSet={decisionSet} />
 
-      {simulationSummary || impactedNodes.length || riskDelta !== null ? (
-        <div style={{ ...softCardStyle, padding: 10, gap: 6, display: "flex", flexDirection: "column" }}>
-          <div style={{ color: nx.text, fontWeight: 700, fontSize: 13 }}>Expected Impact</div>
-          <div style={{ color: "#cbd5e1", fontSize: 12 }}>
-            {simulationSummary ?? "This action path already has a projected business effect."}
-          </div>
-          {impactedNodes.length ? (
-            <div style={{ color: nx.muted, fontSize: 11 }}>
-              Impacted objects: {impactedNodes.slice(0, 5).join(", ")}
-            </div>
-          ) : null}
-          {riskDelta !== null ? (
-            <div style={{ color: riskDelta <= 0 ? "#86efac" : "#fca5a5", fontSize: 11 }}>
-              Risk change: {riskDelta > 0 ? "+" : ""}
-              {riskDelta.toFixed(2)}
-            </div>
-          ) : null}
-        </div>
-      ) : supportingDriverLabels.length || relatedObjectIds.length ? (
-          <div style={{ ...softCardStyle, padding: 10, gap: 6, display: "flex", flexDirection: "column" }}>
-          <div style={{ color: nx.text, fontWeight: 700, fontSize: 13 }}>Why This Matters</div>
-          {supportingDriverLabels.length ? (
-            <div style={{ color: "#cbd5e1", fontSize: 12 }}>
-              Active drivers: {supportingDriverLabels.slice(0, 4).join(", ")}
-            </div>
-          ) : null}
-          {relatedObjectIds.length ? (
-            <div style={{ color: nx.muted, fontSize: 11 }}>
-              Related objects: {relatedObjectIds.slice(0, 5).join(", ")}
-            </div>
-          ) : null}
-        </div>
-      ) : (
-          <div style={{ ...softCardStyle, padding: 10, color: nx.muted, fontSize: 12 }}>
-          No additional operating context is available yet.
-          </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {actions.length ? (
-          actions.map((action, idx: number) => (
+      <details style={{ borderRadius: 8 }}>
+        <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: nx.muted }}>
+          Details: rationale, recommendation card, impact & actions
+        </summary>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+          {adviceWhyLines.length > 0 ? (
             <div
-              key={idx}
               style={{
                 ...softCardStyle,
-                padding: 10,
+                padding: 12,
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                borderLeft: "3px solid rgba(96,165,250,0.45)",
               }}
             >
-              <div style={{ color: nx.text, fontWeight: 700, fontSize: 13 }}>{action.action ?? "Suggested action"}</div>
-              {action.tradeoff ? <div style={{ color: nx.muted, fontSize: 11 }}>Trade-off: {action.tradeoff}</div> : null}
-              <div style={{ color: "#cbd5e1", fontSize: 12 }}>
-                {action.impact_summary ?? "Alternative path retained for comparison."}
+              <div style={{ color: nx.lowMuted, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                Why this direction
               </div>
+              {adviceWhyLines.map((line) => (
+                <div key={line} style={{ color: nx.text, fontSize: 11, lineHeight: 1.45 }}>
+                  {line}
+                </div>
+              ))}
             </div>
-          ))
-        ) : (
-          <div style={{ ...softCardStyle, padding: 10, color: nx.muted, fontSize: 12 }}>
-            No action alternatives are available yet. Run a scan or scenario to build options.
+          ) : null}
+          {recommendation ? (
+            <RecommendationCard rec={recommendation} />
+          ) : (
+            <div style={{ ...softCardStyle, color: nx.text, fontSize: 12 }}>
+              No action is ready yet. Run a scan or scenario to surface the next move.
+            </div>
+          )}
+
+          <div
+            style={{
+              ...cardStyle,
+              border: "1px solid rgba(96,165,250,0.28)",
+              boxShadow: "inset 0 0 0 1px rgba(96,165,250,0.08)",
+            }}
+          >
+            <div style={sectionTitleStyle}>Do Now</div>
+            <div style={primaryMetricStyle}>{primaryRecommendation ?? "No strategic advice available yet."}</div>
+            <div style={{ color: nx.text, fontSize: 12 }}>{summary}</div>
+            {confidence ? (
+              <div style={{ color: "#93c5fd", fontSize: 12 }}>
+                Model confidence: {typeof confidence === "number" ? confidence.toFixed(2) : String(confidence)}
+              </div>
+            ) : null}
           </div>
-        )}
-      </div>
+
+          <div style={{ ...softCardStyle, color: nx.text, fontSize: 12 }}>
+            {why ?? "No strategic rationale is available yet."}
+          </div>
+          {executiveSummary ? (
+            <div style={{ ...softCardStyle, color: "#cbd5e1", fontSize: 12 }}>
+              Executive summary: {executiveSummary}
+            </div>
+          ) : null}
+
+          {simulationSummary || impactedNodes.length || riskDelta !== null ? (
+            <div style={{ ...softCardStyle, padding: 10, gap: 6, display: "flex", flexDirection: "column" }}>
+              <div style={{ color: nx.text, fontWeight: 700, fontSize: 13 }}>Expected Impact</div>
+              <div style={{ color: "#cbd5e1", fontSize: 12 }}>
+                {simulationSummary ?? "This action path already has a projected business effect."}
+              </div>
+              {impactedNodes.length ? (
+                <div style={{ color: nx.muted, fontSize: 11 }}>
+                  Impacted objects: {impactedNodes.slice(0, 5).join(", ")}
+                </div>
+              ) : null}
+              {riskDelta !== null ? (
+                <div style={{ color: riskDelta <= 0 ? "#86efac" : "#fca5a5", fontSize: 11 }}>
+                  Risk change: {riskDelta > 0 ? "+" : ""}
+                  {riskDelta.toFixed(2)}
+                </div>
+              ) : null}
+            </div>
+          ) : supportingDriverLabels.length || relatedObjectIds.length ? (
+            <div style={{ ...softCardStyle, padding: 10, gap: 6, display: "flex", flexDirection: "column" }}>
+              <div style={{ color: nx.text, fontWeight: 700, fontSize: 13 }}>Why This Matters</div>
+              {supportingDriverLabels.length ? (
+                <div style={{ color: "#cbd5e1", fontSize: 12 }}>
+                  Active drivers: {supportingDriverLabels.slice(0, 4).join(", ")}
+                </div>
+              ) : null}
+              {relatedObjectIds.length ? (
+                <div style={{ color: nx.muted, fontSize: 11 }}>
+                  Related objects: {relatedObjectIds.slice(0, 5).join(", ")}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div style={{ ...softCardStyle, padding: 10, color: nx.muted, fontSize: 12 }}>
+              No additional operating context is available yet.
+            </div>
+          )}
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {actions.length ? (
+              actions.map((action, idx: number) => (
+                <div
+                  key={idx}
+                  style={{
+                    ...softCardStyle,
+                    padding: 10,
+                  }}
+                >
+                  <div style={{ color: nx.text, fontWeight: 700, fontSize: 13 }}>{action.action ?? "Suggested action"}</div>
+                  {action.tradeoff ? <div style={{ color: nx.muted, fontSize: 11 }}>Trade-off: {action.tradeoff}</div> : null}
+                  <div style={{ color: "#cbd5e1", fontSize: 12 }}>
+                    {action.impact_summary ?? "Alternative path retained for comparison."}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ ...softCardStyle, padding: 10, color: nx.muted, fontSize: 12 }}>
+                No action alternatives are available yet. Run a scan or scenario to build options.
+              </div>
+            )}
+          </div>
+        </div>
+      </details>
     </div>
   );
 }

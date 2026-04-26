@@ -95,11 +95,12 @@ export function resolveRightPanelFamily(
   if (!view) {
     return null;
   }
+  if (view === "input") return "scene";
   if (view === "workspace") {
     if (preferredLegacyTab === "scene") return "scene";
     return "workflow";
   }
-  if (view === "object") return "object";
+  if (view === "object" || view === "object_focus") return "object";
   if (view === "risk" || view === "fragility" || view === "conflict" || view === "explanation") return "risk";
   if (view === "advice") return "advice";
   if (
@@ -140,9 +141,18 @@ export function resolveRightPanelFamily(
 
 export function resolveRightPanelFamilyFromSection(section: string | null | undefined): RightPanelFamily | null {
   if (!section) return null;
+  if (section === "input") return "scene";
   if (section === "scene" || section === "workspace") return "scene";
   if (section === "objects" || section === "focus") return "object";
-  if (section === "risk" || section === "risk_flow" || section === "conflict" || section === "explanation") return "risk";
+  if (
+    section === "risk" ||
+    section === "risk_flow" ||
+    section === "fragility" ||
+    section === "conflict" ||
+    section === "explanation"
+  ) {
+    return "risk";
+  }
   if (section === "advice") return "advice";
   if (section === "timeline") return "timeline";
   if (section === "war_room") return "war_room";

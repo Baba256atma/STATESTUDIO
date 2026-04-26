@@ -3,16 +3,20 @@ import { normalizeUnifiedSceneReaction, type UnifiedSceneReaction } from "./unif
 
 export function normalizeReactionForScene(
   reaction: UnifiedSceneReaction,
-  scene: SceneJson | null | undefined
+  scene: SceneJson | null | undefined,
+  options?: { maxHighlightedObjectIds?: number }
 ): UnifiedSceneReaction {
   const sceneObjectIds = Array.isArray(scene?.scene?.objects)
     ? scene.scene.objects
         .map((object: SceneObject, idx: number) => String(object?.id ?? object?.name ?? `${object?.type ?? "obj"}:${idx}`))
         .filter(Boolean)
     : [];
+  const cap = options?.maxHighlightedObjectIds;
+  const maxHighlighted =
+    typeof cap === "number" && Number.isFinite(cap) ? Math.max(1, Math.min(3, Math.round(cap))) : 3;
   return normalizeUnifiedSceneReaction(reaction, {
     sceneObjectIds,
-    maxHighlightedObjectIds: 3,
+    maxHighlightedObjectIds: maxHighlighted,
   });
 }
 

@@ -48,21 +48,13 @@ export function resolveActionRoute(action: CanonicalNexoraAction, ctx: ActionRou
       return { status: "rejected", reason: "unknown_intent", detail: intent.reason ?? "noop" };
     }
     case "run_simulation": {
-      const view: Exclude<RightPanelView, null> = "simulate";
-      const panelRequest: ActionRoutePanelRequest = {
-        view,
-        contextId: null,
-        source: "cta",
-        rawSource: action.meta?.rawSource ?? "actionRouter:run_simulation",
-      };
       return {
         status: "ok",
         resolvedIntent: "run_simulation",
-        resolvedPanelView: view,
+        resolvedPanelView: ctx.currentView,
         resolvedObjectTargetId: null,
-        execution: "open_right_panel",
-        panelRequest,
-        continuityHint: continuityHintForPanel(ctx, view, null),
+        execution: "open_center_simulation",
+        continuityHint: "none",
       };
     }
     case "compare_options": {
@@ -85,6 +77,17 @@ export function resolveActionRoute(action: CanonicalNexoraAction, ctx: ActionRou
         continuityHint: "none",
       };
     }
+    case "open_center_execution": {
+      return {
+        status: "ok",
+        resolvedIntent: "open_center_execution",
+        resolvedPanelView: ctx.currentView,
+        resolvedObjectTargetId: null,
+        execution: "open_center_execution",
+        centerSurface: intent.surface,
+        continuityHint: "none",
+      };
+    }
     case "start_demo": {
       return {
         status: "ok",
@@ -101,11 +104,17 @@ export function resolveActionRoute(action: CanonicalNexoraAction, ctx: ActionRou
         return { status: "rejected", reason: "missing_target", detail: "focus_object requires objectId" };
       }
       const view: Exclude<RightPanelView, null> = "object";
+      const rawSource = String(action.meta?.rawSource ?? "actionRouter:focus_object");
+      const fromSceneClick = rawSource.includes("scene:");
       const panelRequest: ActionRoutePanelRequest = {
         view,
         contextId: oid,
+        /** Align shell rail with Focus (object_focus), not generic Objects (object). */
+        legacyTab: "object_focus",
         source: action.source === "panel_cta" ? "cta" : "direct_open",
-        rawSource: action.meta?.rawSource ?? "actionRouter:focus_object",
+        rawSource,
+        /** Scene re-clicks must still sync rail + Nexora tab (avoid same_view_same_context preserve). */
+        preserveIfSameContext: fromSceneClick ? false : undefined,
       };
       return {
         status: "ok",
@@ -118,11 +127,15 @@ export function resolveActionRoute(action: CanonicalNexoraAction, ctx: ActionRou
       };
     }
     case "open_panel": {
-      const hasAlias = Boolean(
-        intent.legacyTab?.trim() || intent.leftNav?.trim() || intent.section?.trim()
+      const hasAliasOrSubnav = Boolean(
+        intent.legacyTab?.trim() ||
+          intent.leftNav?.trim() ||
+          intent.section?.trim() ||
+          intent.clickedTab?.trim() ||
+          intent.clickedNav?.trim()
       );
       const v = intent.view;
-      if (!v && !hasAlias) {
+      if (!v && !hasAliasOrSubnav) {
         return { status: "rejected", reason: "invalid_empty_route", detail: "open_panel missing view and aliases" };
       }
       if (v && !isCanonicalPanelView(v)) {
@@ -148,19 +161,35 @@ export function resolveActionRoute(action: CanonicalNexoraAction, ctx: ActionRou
         ? continuityHintForPanel(ctx, v, intent.contextId ?? null)
         : ("none" as const);
 
-      if (v && ctx.currentView === v && hasAlias) {
-        continuityHint = "same_view_subnav";
+      const sameViewSameContext =
+        Boolean(v) &&
+        ctx.currentView === v &&
+        (ctx.currentContextId ?? null) === (intent.contextId ?? null);
+
+      if (sameViewSameContext && hasAliasOrSubnav) {
         traceActionRouterContinuity(action, "same_view_subnav", {
           view: v,
           section: intent.section ?? null,
           leftNav: intent.leftNav ?? null,
           legacyTab: intent.legacyTab ?? null,
         });
+        return {
+          status: "rejected",
+          reason: "same_view_same_context",
+          detail: `open_panel noop:${String(v)}`,
+        };
+      }
+      if (sameViewSameContext && !hasAliasOrSubnav) {
+        return {
+          status: "rejected",
+          reason: "same_view_same_context",
+          detail: `open_panel noop:${String(v)}`,
+        };
       }
 
       // Minimal churn guard: refuse a clearly empty canonical view when no aliases (already handled),
       // and soften accidental "null view" opens when a protected panel is active (continuity).
-      if (!v && hasAlias && ctx.currentView && isProtectedRightPanelView(ctx.currentView)) {
+      if (!v && hasAliasOrSubnav && ctx.currentView && isProtectedRightPanelView(ctx.currentView)) {
         traceActionRouterContinuity(action, "alias_open_with_protected_current", {
           currentView: ctx.currentView,
           panelSource,

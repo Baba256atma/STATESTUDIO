@@ -15,6 +15,10 @@ export function isAbortLikeError(error: unknown): boolean {
 export function getChatLifecycleErrorMessage(error: unknown, timedOut: boolean): string {
   if (timedOut) return "Request timed out. Please try again.";
   if (isAbortLikeError(error)) return "Request canceled.";
-  if (error instanceof Error && error.message.trim()) return error.message;
+  const raw = error instanceof Error && error.message.trim() ? error.message.trim().toLowerCase() : "";
+  if (/failed to fetch|networkerror|network request failed|load failed|econnrefused|socket hang up/i.test(raw)) {
+    return "System temporarily unavailable.";
+  }
+  if (error instanceof Error && error.message.trim()) return error.message.trim();
   return "Sorry, I couldn't reach the server.";
 }

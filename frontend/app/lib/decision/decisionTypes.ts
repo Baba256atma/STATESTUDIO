@@ -119,3 +119,6 @@ export function compareDecisionSnapshots(a: DecisionSnapshot, b: DecisionSnapsho
     summary,
   };
 }
+
+// --- Deterministic Decision Assistant (scenario / recommendation support logic) ---
+export * from "./decisionAssistantTypes.ts";

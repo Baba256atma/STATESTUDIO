@@ -78,6 +78,7 @@ type SceneCanvasProps = {
   } | null;
   getUxForObject: (id: string) => { shape?: string; base_color?: string; opacity?: number; scale?: number } | null;
   objectUxById?: Record<string, { opacity?: number; scale?: number }>;
+  selectedObjectId?: string | null;
 
   loops: any[];
   showLoops: boolean;
@@ -114,6 +115,36 @@ function SceneFogSync({ color, near, far }: { color: string; near: number; far: 
       scene.fog = null;
     };
   }, [scene, color, near, far]);
+  return null;
+}
+
+/** Demand frameloop: keep drawing while stable; pause invalidation briefly during shell column width animation. */
+function SceneDemandInvalidateDriver({
+  layoutPauseRef,
+  invalidateOutRef,
+  sceneJson,
+  isOrbiting,
+  localIsOrbitingRef,
+}: {
+  layoutPauseRef: React.MutableRefObject<boolean>;
+  invalidateOutRef: React.MutableRefObject<(() => void) | null>;
+  sceneJson: unknown;
+  isOrbiting: boolean;
+  localIsOrbitingRef: React.MutableRefObject<boolean>;
+}) {
+  const { invalidate } = useThree();
+  useLayoutEffect(() => {
+    invalidateOutRef.current = invalidate;
+    invalidate();
+  }, [invalidate, invalidateOutRef]);
+  useEffect(() => {
+    invalidate();
+  }, [sceneJson, invalidate]);
+  useFrame(() => {
+    const orbiting = isOrbiting || localIsOrbitingRef.current;
+    if (layoutPauseRef.current && !orbiting) return;
+    invalidate();
+  });
   return null;
 }
 
@@ -307,6 +338,7 @@ function sceneObjectsSignature(objects: any[]): string {
 }
 
 function CameraIntelligence({
+  selectedObjectId,
   focusPinned,
   focusMode,
   focusedId,
@@ -320,7 +352,10 @@ function CameraIntelligence({
   localIsOrbitingRef,
   preserveCameraOnClearRef,
   orbitControlsEnabled,
+  layoutPauseRef,
+  layoutResumeNonce: _layoutResumeNonce,
 }: {
+  selectedObjectId: string | null;
   focusPinned: boolean;
   focusMode: "all" | "selected";
   focusedId: string | null;
@@ -334,6 +369,9 @@ function CameraIntelligence({
   localIsOrbitingRef?: React.MutableRefObject<boolean>;
   preserveCameraOnClearRef?: React.MutableRefObject<boolean>;
   orbitControlsEnabled: boolean;
+  layoutPauseRef?: React.MutableRefObject<boolean>;
+  /** Bumped when left command column finishes width transition so layout-aware framing can re-run. */
+  layoutResumeNonce?: number;
 }) {
   const { camera, size } = useThree();
   const focusTargetRef = useRef<THREE.Vector3>(new THREE.Vector3());
@@ -356,12 +394,18 @@ function CameraIntelligence({
   const lastCameraPosRef = useRef<THREE.Vector3>(new THREE.Vector3(camPos[0], camPos[1], camPos[2]));
   const lastControlTargetRef = useRef<THREE.Vector3>(new THREE.Vector3());
   const lastCameraAssistKeyRef = useRef<string>("");
+  const lastCameraFocusSignatureRef = useRef<string | null>(null);
   const baselineCamPosRef = useRef<THREE.Vector3>(new THREE.Vector3(camPos[0], camPos[1], camPos[2]));
   const baselineLookAtRef = useRef<THREE.Vector3>(new THREE.Vector3());
   const lastBaselineSignatureRef = useRef<string>("");
   const lastDriftRecoveryAtRef = useRef<number>(0);
   const lastDriftLogSigRef = useRef<string>("");
   const lastRecoveryLogSigRef = useRef<string>("");
+  const lastLayoutFrameAppliedAtRef = useRef<number>(0);
+  const lastLayoutFrameKeyRef = useRef<string>("");
+  const lastViewportRef = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
+  /** Stops micro-jitter when camera is already essentially at the framing target. */
+  const lastCamToTargetDistRef = useRef<number | null>(null);
 
   /** World-units: desired already matches baseline (avoid pointless recovery writes). */
   const FRAMING_DESIRED_BASELINE_EPS = 0.00025;
@@ -426,6 +470,9 @@ function CameraIntelligence({
 
     const objects = Array.isArray(sceneJson?.scene?.objects) ? sceneJson.scene.objects : [];
     const signature = sceneObjectsSignature(objects);
+    const viewportDelta = Math.abs(size.width - lastViewportRef.current.width) + Math.abs(size.height - lastViewportRef.current.height);
+    lastViewportRef.current = { width: size.width, height: size.height };
+    if (layoutPauseRef?.current) return;
     if (!signature || signature === "empty") return;
     if (lastAutoFrameSigRef.current === signature) return;
 
@@ -442,14 +489,33 @@ function CameraIntelligence({
       verticalBias: frameSpec.verticalBias,
       pullback: frameSpec.pullback,
     });
+
+    const frameKey = [
+      signature,
+      hudDockSide ?? "none",
+      size.width.toFixed(1),
+      size.height.toFixed(1),
+      frame.position.map((n) => n.toFixed(3)).join(","),
+      frame.lookAt.map((n) => n.toFixed(3)).join(","),
+    ].join("|");
+
+    const now = performance.now();
+    const frameAlreadyApplied = lastLayoutFrameKeyRef.current === frameKey;
+    const tinyViewportChange = viewportDelta < 2;
+    const recentlyApplied = now - lastLayoutFrameAppliedAtRef.current < 250;
+
+    if (frameAlreadyApplied || (tinyViewportChange && recentlyApplied)) {
+      return;
+    }
+
     captureBaselineFrame(frame.position, frame.lookAt, `${signature}:${hudDockSide ?? "none"}:${size.width}x${size.height}`);
     desiredCamPosRef.current.set(frame.position[0], frame.position[1], frame.position[2]);
     desiredLookAtRef.current.set(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
     currentLookAtRef.current.set(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
 
     // Apply the fresh frame immediately so first visible frame is stable.
-    const now = performance.now();
-    const autoCameraSuspended = now < suspendAutoCameraUntilRef.current;
+    const applyNow = performance.now();
+    const autoCameraSuspended = applyNow < suspendAutoCameraUntilRef.current;
     if (!cameraLockedByUser && !(localIsOrbitingRef?.current || isOrbiting) && !autoCameraSuspended) {
       if (process.env.NODE_ENV !== "production") {
         console.log("[Nexora][SceneInteraction] layout-aware frame region updated", frameSpec);
@@ -466,11 +532,38 @@ function CameraIntelligence({
         camera.lookAt(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
       }
     }
+    lastLayoutFrameAppliedAtRef.current = applyNow;
+    lastLayoutFrameKeyRef.current = frameKey;
 
     lastAutoFrameSigRef.current = signature;
-  }, [sceneJson, hudDockSide, camera, cameraLockedByUser, controlsRef, isOrbiting, localIsOrbitingRef, size.height, size.width]);
+  }, [
+    sceneJson,
+    hudDockSide,
+    camera,
+    cameraLockedByUser,
+    controlsRef,
+    isOrbiting,
+    localIsOrbitingRef,
+    size.height,
+    size.width,
+    _layoutResumeNonce,
+  ]);
 
   useEffect(() => {
+    const stableSelectedId =
+      typeof selectedObjectId === "string" && selectedObjectId.trim().length > 0
+        ? selectedObjectId.trim()
+        : null;
+    const cameraFocusSignature = stableSelectedId ? `selected:${stableSelectedId}` : "none";
+    if (lastCameraFocusSignatureRef.current === cameraFocusSignature) {
+      return;
+    }
+    lastCameraFocusSignatureRef.current = cameraFocusSignature;
+
+    if (!stableSelectedId) {
+      return;
+    }
+
     const isFocusActive = focusPinned || focusMode === "selected";
     if (!isFocusActive || !focusedId) {
       // Empty-scene deselection should not force camera reframe/reset.
@@ -520,11 +613,11 @@ function CameraIntelligence({
       lastControlTargetRef.current.copy(controls.target);
     }
     // Keep desired camera target stable unless an explicit framing system changes it.
-    lastFocusIdRef.current = focusedId;
+    lastFocusIdRef.current = stableSelectedId;
     const targetObject = Array.isArray(sceneJson?.scene?.objects)
       ? (sceneJson.scene.objects as any[]).find((item) => {
           const stableId = String(item?.id ?? item?.name ?? "");
-          return stableId === focusedId;
+          return stableId === stableSelectedId;
         })
       : null;
     const targetPos = targetObject ? readObjectPos(targetObject) : null;
@@ -539,7 +632,7 @@ function CameraIntelligence({
     desiredCamPosRef.current.copy(baselineCamPos);
     desiredLookAtRef.current.copy(baselineLookAt);
     const projected = new THREE.Vector3(targetPos[0], targetPos[1], targetPos[2]).project(camera);
-    const assistKey = `${focusedId}:${projected.x.toFixed(1)}:${projected.y.toFixed(1)}`;
+    const assistKey = `${stableSelectedId}:${projected.x.toFixed(1)}:${projected.y.toFixed(1)}`;
     if (lastCameraAssistKeyRef.current === assistKey) return;
     const isVisible = isProjectedPointWithinSafeRegion(projected, frameSpec.safeRegion);
     if (isVisible) {
@@ -567,10 +660,14 @@ function CameraIntelligence({
     desiredCamPosRef.current.y += delta.y * CALM_FRAMING.focusAssistCamPosVerticalScale;
     suspendAutoCameraUntilRef.current = performance.now() + 380;
     lastCameraAssistKeyRef.current = assistKey;
+    globalThis.console?.debug?.("[Nexora][CalmCameraMove]", {
+      selectedObjectId: stableSelectedId,
+      signature: cameraFocusSignature,
+    });
     if (process.env.NODE_ENV !== "production") {
       console.log("[Nexora][Framing] assist applied", { focusedId, projected, safeRegion: frameSpec.safeRegion });
     }
-  }, [focusPinned, focusMode, focusedId, sceneJson, overridesRef, preserveCameraOnClearRef, cameraLockedByUser, orbitControlsEnabled, controlsRef, camera, hudDockSide, size.height, size.width]);
+  }, [camera, cameraLockedByUser, controlsRef, focusMode, focusPinned, focusedId, hudDockSide, orbitControlsEnabled, overridesRef, preserveCameraOnClearRef, sceneJson, selectedObjectId, size.height, size.width]);
 
   const applyHudShift = (lookAt: THREE.Vector3, camPosV: THREE.Vector3) => {
     const frameSpec = resolveLayoutAwareFrameSpec({
@@ -592,6 +689,15 @@ function CameraIntelligence({
 
     if (userOrbiting) {
       suspendAutoCameraUntilRef.current = now + CALM_FRAMING.userSettleAfterOrbitMs;
+      lastCameraPosRef.current.copy(camera.position);
+      lastCamToTargetDistRef.current = null;
+      if (controls?.target) {
+        lastControlTargetRef.current.copy(controls.target);
+      }
+      return;
+    }
+
+    if (layoutPauseRef?.current) {
       lastCameraPosRef.current.copy(camera.position);
       if (controls?.target) {
         lastControlTargetRef.current.copy(controls.target);
@@ -631,13 +737,17 @@ function CameraIntelligence({
         baselineLookAt: [shiftedBaseLook.x, shiftedBaseLook.y, shiftedBaseLook.z],
       });
 
-      const driftExceeded = drift.positionDistance > 0.7 || drift.lookAtDistance > 0.45;
+      const driftExceeded = drift.positionDistance > 0.85 || drift.lookAtDistance > 0.55;
 
       if (driftExceeded) {
         const desiredPosDelta = desiredCamPosRef.current.distanceTo(baselineCamPosRef.current);
         const desiredLookDelta = desiredLookAtRef.current.distanceTo(baselineLookAtRef.current);
         const desiredAlreadyBaseline =
           desiredPosDelta < FRAMING_DESIRED_BASELINE_EPS && desiredLookDelta < FRAMING_DESIRED_BASELINE_EPS;
+        const recoveryCoolingDown = now - lastLayoutFrameAppliedAtRef.current < 420;
+        if (recoveryCoolingDown && desiredAlreadyBaseline) {
+          return;
+        }
 
         let appliedRecovery = false;
         if (!desiredAlreadyBaseline) {
@@ -682,31 +792,60 @@ function CameraIntelligence({
 
     const lerpA = CALM_FRAMING.shellCameraLerp;
     const prevCam = lastCameraPosRef.current;
-    camera.position.lerp(camPosV, lerpA);
-    const dcx = camera.position.x - prevCam.x;
-    const dcy = camera.position.y - prevCam.y;
-    const dcz = camera.position.z - prevCam.z;
-    const cd = Math.sqrt(dcx * dcx + dcy * dcy + dcz * dcz);
-    if (cd > CALM_FRAMING.maxCamPosStep && cd > 1e-6) {
-      const s = CALM_FRAMING.maxCamPosStep / cd;
-      camera.position.set(prevCam.x + dcx * s, prevCam.y + dcy * s, prevCam.z + dcz * s);
+    const distToTarget = camera.position.distanceTo(camPosV);
+    const CAM_SNAP_EPS = 0.015;
+    if (distToTarget < CAM_SNAP_EPS) {
+      camera.position.copy(camPosV);
+      lastCamToTargetDistRef.current = 0;
+    } else {
+      const prevDist = lastCamToTargetDistRef.current;
+      lastCamToTargetDistRef.current = distToTarget;
+      if (
+        prevDist != null &&
+        Math.abs(distToTarget - prevDist) < 0.0001 &&
+        distToTarget < 0.06
+      ) {
+        camera.position.copy(camPosV);
+      } else {
+        camera.position.lerp(camPosV, lerpA);
+        const dcx = camera.position.x - prevCam.x;
+        const dcy = camera.position.y - prevCam.y;
+        const dcz = camera.position.z - prevCam.z;
+        const cd = Math.sqrt(dcx * dcx + dcy * dcy + dcz * dcz);
+        if (cd > CALM_FRAMING.maxCamPosStep && cd > 1e-6) {
+          const s = CALM_FRAMING.maxCamPosStep / cd;
+          camera.position.set(prevCam.x + dcx * s, prevCam.y + dcy * s, prevCam.z + dcz * s);
+        }
+      }
+    }
+    if (camera.position.distanceTo(camPosV) < CAM_SNAP_EPS) {
+      camera.position.copy(camPosV);
+      lastCamToTargetDistRef.current = 0;
     }
     lastCameraPosRef.current.copy(camera.position);
 
     // Drive look direction through OrbitControls when present
     if (controls?.target) {
       const pt = controls.target;
-      const ptx = pt.x;
-      const pty = pt.y;
-      const ptz = pt.z;
-      pt.lerp(lookAt, lerpA);
-      const dtx = pt.x - ptx;
-      const dty = pt.y - pty;
-      const dtz = pt.z - ptz;
-      const td = Math.sqrt(dtx * dtx + dty * dty + dtz * dtz);
-      if (td > CALM_FRAMING.maxTargetStep && td > 1e-6) {
-        const s = CALM_FRAMING.maxTargetStep / td;
-        pt.set(ptx + dtx * s, pty + dty * s, ptz + dtz * s);
+      const TARGET_SNAP = 0.015;
+      if (pt.distanceTo(lookAt) < TARGET_SNAP) {
+        pt.copy(lookAt);
+      } else {
+        const ptx = pt.x;
+        const pty = pt.y;
+        const ptz = pt.z;
+        pt.lerp(lookAt, lerpA);
+        const dtx = pt.x - ptx;
+        const dty = pt.y - pty;
+        const dtz = pt.z - ptz;
+        const td = Math.sqrt(dtx * dtx + dty * dty + dtz * dtz);
+        if (td > CALM_FRAMING.maxTargetStep && td > 1e-6) {
+          const s = CALM_FRAMING.maxTargetStep / td;
+          pt.set(ptx + dtx * s, pty + dty * s, ptz + dtz * s);
+        }
+        if (pt.distanceTo(lookAt) < TARGET_SNAP) {
+          pt.copy(lookAt);
+        }
       }
       lastControlTargetRef.current.copy(controls.target);
       controls.update();
@@ -714,17 +853,25 @@ function CameraIntelligence({
     }
 
     const cl = currentLookAtRef.current;
-    const clx = cl.x;
-    const cly = cl.y;
-    const clz = cl.z;
-    cl.lerp(lookAt, lerpA);
-    const dlx = cl.x - clx;
-    const dly = cl.y - cly;
-    const dlz = cl.z - clz;
-    const ld = Math.sqrt(dlx * dlx + dly * dly + dlz * dlz);
-    if (ld > CALM_FRAMING.maxTargetStep && ld > 1e-6) {
-      const s = CALM_FRAMING.maxTargetStep / ld;
-      cl.set(clx + dlx * s, cly + dly * s, clz + dlz * s);
+    const TARGET_SNAP_FALLBACK = 0.015;
+    if (cl.distanceTo(lookAt) < TARGET_SNAP_FALLBACK) {
+      cl.copy(lookAt);
+    } else {
+      const clx = cl.x;
+      const cly = cl.y;
+      const clz = cl.z;
+      cl.lerp(lookAt, lerpA);
+      const dlx = cl.x - clx;
+      const dly = cl.y - cly;
+      const dlz = cl.z - clz;
+      const ld = Math.sqrt(dlx * dlx + dly * dly + dlz * dlz);
+      if (ld > CALM_FRAMING.maxTargetStep && ld > 1e-6) {
+        const s = CALM_FRAMING.maxTargetStep / ld;
+        cl.set(clx + dlx * s, cly + dly * s, clz + dlz * s);
+      }
+      if (cl.distanceTo(lookAt) < TARGET_SNAP_FALLBACK) {
+        cl.copy(lookAt);
+      }
     }
     lastControlTargetRef.current.copy(currentLookAtRef.current);
     camera.lookAt(currentLookAtRef.current);
@@ -733,7 +880,7 @@ function CameraIntelligence({
   return null;
 }
 
-export function SceneCanvas(props: SceneCanvasProps) {
+function SceneCanvasComponent(props: SceneCanvasProps) {
   const resolvedUi: ResolvedUiTheme = props.resolvedUiTheme ?? "night";
   const atmosphere: SceneAtmosphereMode = (props.prefs?.theme ?? "night") as SceneAtmosphereMode;
   const sceneEnv = useMemo(
@@ -746,6 +893,21 @@ export function SceneCanvas(props: SceneCanvasProps) {
   );
   const orbitMode = props.prefs?.orbitMode ?? "auto";
   const selectedIdCtx = useSelectedId();
+  const lastHighlightedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const nextSelectedId = typeof props.selectedObjectId === "string" ? props.selectedObjectId.trim() : "";
+    if (!nextSelectedId) {
+      lastHighlightedRef.current = null;
+      return;
+    }
+    if (selectedIdCtx === nextSelectedId) return;
+    if (lastHighlightedRef.current === nextSelectedId) return;
+    lastHighlightedRef.current = nextSelectedId;
+    const id = requestAnimationFrame(() => {
+      props.selectedSetterRef.current?.(nextSelectedId);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [props.selectedObjectId, props.selectedSetterRef, selectedIdCtx]);
   const {
     propagationOverlay,
     scenarioOverlayPackage,
@@ -940,10 +1102,16 @@ export function SceneCanvas(props: SceneCanvasProps) {
   const controlsRef = useRef<any>(null);
   const localIsOrbitingRef = useRef<boolean>(false);
   const preserveCameraOnClearRef = useRef<boolean>(false);
+  const leftColumnLayoutPauseRef = useRef(false);
+  const sceneInvalidateRef = useRef<(() => void) | null>(null);
+  const leftColumnLayoutTimerRef = useRef<number | null>(null);
+  const lastLeftCommandOpenForLayoutRef = useRef<boolean | null>(null);
+  const [leftColumnLayoutResumeNonce, setLeftColumnLayoutResumeNonce] = useState(0);
   const tmpWorld = useMemo(() => new THREE.Vector3(), []);
   const [isHudInteracting, setIsHudInteracting] = useState(false);
   const isHudInteractingRef = useRef(false);
   const lastOverlayDispatchKeyRef = useRef<string>("");
+  const lastHighlightTraceSigRef = useRef<string>("");
 
   // Camera mode values may come from UI as: "orbit" | "fixed" (new)
   // or legacy values: "auto" | "manual".
@@ -967,12 +1135,16 @@ export function SceneCanvas(props: SceneCanvasProps) {
         : [],
     [props.sceneJson]
   );
+  const rawHighlightedObjectIds = Array.isArray(combinedObjectSelection?.highlighted_objects)
+    ? combinedObjectSelection.highlighted_objects.map(String)
+    : [];
+  const rawHighlightedObjectIdsSig = useMemo(
+    () => JSON.stringify(rawHighlightedObjectIds),
+    [rawHighlightedObjectIds]
+  );
   const highlightedObjectIds = useMemo(
-    () =>
-      Array.isArray(combinedObjectSelection?.highlighted_objects)
-        ? combinedObjectSelection.highlighted_objects.map(String)
-        : [],
-    [combinedObjectSelection]
+    () => Array.from(new Set(rawHighlightedObjectIds)).sort(),
+    [rawHighlightedObjectIdsSig]
   );
   const sceneJsonForRenderer = useMemo(() => {
     if (!props.sceneJson) return null;
@@ -1002,6 +1174,19 @@ export function SceneCanvas(props: SceneCanvasProps) {
       combinedObjectSelection?.dim_unrelated_objects === true
         ? sceneObjectIds.filter((id) => !highlightedSet.has(id) && id !== props.focusedId && id !== selectedIdCtx).slice(0, 6)
         : [];
+
+    const traceSig = JSON.stringify({
+      highlightedObjectIds,
+      dimUnrelatedObjects: combinedObjectSelection?.dim_unrelated_objects === true,
+      focusedId: props.focusedId ?? null,
+      selectedObjectId: selectedIdCtx ?? null,
+      pinnedId: props.focusPinned ? props.focusedId ?? null : null,
+      focusMode: props.focusMode,
+      protectedIds,
+      dimmedIds,
+    });
+    if (lastHighlightTraceSigRef.current === traceSig) return;
+    lastHighlightTraceSigRef.current = traceSig;
 
     traceHighlightFlow("scene_canvas", {
       highlightedObjectIds,
@@ -1033,6 +1218,53 @@ export function SceneCanvas(props: SceneCanvasProps) {
       localIsOrbitingRef.current = false;
     }
   }, [isFixedCamera]);
+
+  useEffect(() => {
+    const onLeftCommandOpenChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ open?: boolean }>).detail;
+      if (typeof detail?.open !== "boolean") return;
+      if (lastLeftCommandOpenForLayoutRef.current === null) {
+        lastLeftCommandOpenForLayoutRef.current = detail.open;
+        return;
+      }
+      if (lastLeftCommandOpenForLayoutRef.current === detail.open) return;
+      lastLeftCommandOpenForLayoutRef.current = detail.open;
+      leftColumnLayoutPauseRef.current = true;
+      if (leftColumnLayoutTimerRef.current != null) {
+        window.clearTimeout(leftColumnLayoutTimerRef.current);
+      }
+      leftColumnLayoutTimerRef.current = window.setTimeout(() => {
+        leftColumnLayoutTimerRef.current = null;
+        leftColumnLayoutPauseRef.current = false;
+        setLeftColumnLayoutResumeNonce((n) => n + 1);
+        sceneInvalidateRef.current?.();
+      }, 180);
+    };
+    window.addEventListener("nexora:left-command-open-changed", onLeftCommandOpenChanged as EventListener);
+    return () => {
+      window.removeEventListener("nexora:left-command-open-changed", onLeftCommandOpenChanged as EventListener);
+      if (leftColumnLayoutTimerRef.current != null) {
+        window.clearTimeout(leftColumnLayoutTimerRef.current);
+        leftColumnLayoutTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let raf = 0;
+    const onResize = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+        sceneInvalidateRef.current?.();
+      });
+    };
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (ev: KeyboardEvent) => {
@@ -1205,6 +1437,7 @@ export function SceneCanvas(props: SceneCanvasProps) {
         overflow: "hidden",
         flex: "1 1 0%",
         zIndex: 0,
+        contain: "layout size style",
       }}
     >
       {props.storyAccent ? (
@@ -1246,6 +1479,9 @@ export function SceneCanvas(props: SceneCanvasProps) {
         </div>
       ) : null}
       <Canvas
+        frameloop="demand"
+        dpr={[1, 1.5]}
+        gl={{ antialias: false, powerPreference: "high-performance" }}
         shadows={shadowsEnabled}
         camera={{ position: props.camPos ?? [0, 0, 5], fov: 50, near: 0.1, far: 250 }}
         style={{ width: "100%", height: "100%", display: "block" }}
@@ -1253,10 +1489,18 @@ export function SceneCanvas(props: SceneCanvasProps) {
         onContextMenu={handleCanvasContextMenu}
         onPointerMissed={handlePointerMissed}
       >
+        <SceneDemandInvalidateDriver
+          layoutPauseRef={leftColumnLayoutPauseRef}
+          invalidateOutRef={sceneInvalidateRef}
+          sceneJson={props.sceneJson}
+          isOrbiting={props.isOrbiting}
+          localIsOrbitingRef={localIsOrbitingRef}
+        />
         <color attach="background" args={[sceneEnv.clearColor]} />
         <SceneFogSync color={sceneEnv.fogColor} near={sceneEnv.fogNear} far={sceneEnv.fogFar} />
 
         <CameraIntelligence
+          selectedObjectId={selectedIdCtx ?? null}
           focusPinned={props.focusPinned}
           focusMode={props.focusMode}
           focusedId={props.focusedId}
@@ -1270,6 +1514,8 @@ export function SceneCanvas(props: SceneCanvasProps) {
           localIsOrbitingRef={localIsOrbitingRef}
           preserveCameraOnClearRef={preserveCameraOnClearRef}
           orbitControlsEnabled={orbitControlsEnabled}
+          layoutPauseRef={leftColumnLayoutPauseRef}
+          layoutResumeNonce={leftColumnLayoutResumeNonce}
         />
 
         {sceneEnv.showStars ? (
@@ -1352,3 +1598,5 @@ export function SceneCanvas(props: SceneCanvasProps) {
     </div>
   );
 }
+
+export const SceneCanvas = React.memo(SceneCanvasComponent);

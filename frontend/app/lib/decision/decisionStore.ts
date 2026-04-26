@@ -1,7 +1,16 @@
 import type { DecisionSnapshot, DecisionStoreState } from "./decisionTypes";
+import type { DecisionInsightOutput } from "./decisionIntelligenceTypes";
 
 const STORE_VERSION = 1;
 const SNAPSHOT_LIMIT = 50;
+const DEV = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+
+let currentDecision: DecisionInsightOutput | null = null;
+let lastDecisionSignature: string | null = null;
+let lastResultSignature: string | null = null;
+let lastNotifyTime = 0;
+let decisionExecutionCount = 0;
+const decisionSubscribers = new Set<(decision: DecisionInsightOutput | null) => void>();
 
 const makeKey = (projectId: string): string =>
   `stateStudio:decisionSnapshots:${projectId || "default"}`;
@@ -93,4 +102,48 @@ export function clearSnapshots(projectId: string): void {
   } catch {
     // ignore
   }
+}
+
+export function resetDecisionExecutionGuard(): void {
+  decisionExecutionCount = 0;
+}
+
+function notifyDecisionSubscribers(result: DecisionInsightOutput | null): void {
+  const now = Date.now();
+  if (now - lastNotifyTime < 30) return;
+  lastNotifyTime = now;
+  for (const subscriber of decisionSubscribers) {
+    subscriber(result);
+  }
+}
+
+export function setDecision(result: DecisionInsightOutput, signature: string): void {
+  decisionExecutionCount += 1;
+  if (DEV && decisionExecutionCount > 10) {
+    globalThis.console?.warn?.("[Nexora][DecisionLoopDetected] forced stop", {
+      signature,
+      executionCount: decisionExecutionCount,
+    });
+    return;
+  }
+  if (signature === lastResultSignature) return;
+  lastResultSignature = signature;
+  if (signature === lastDecisionSignature) return;
+  lastDecisionSignature = signature;
+  currentDecision = result;
+  notifyDecisionSubscribers(currentDecision);
+}
+
+export function getDecision(): DecisionInsightOutput | null {
+  return currentDecision;
+}
+
+export function subscribeDecision(
+  callback: (decision: DecisionInsightOutput | null) => void
+): () => void {
+  if (decisionSubscribers.has(callback)) return () => {};
+  decisionSubscribers.add(callback);
+  return () => {
+    decisionSubscribers.delete(callback);
+  };
 }

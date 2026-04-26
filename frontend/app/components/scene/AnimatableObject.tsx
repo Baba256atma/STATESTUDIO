@@ -2,10 +2,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
 import { Html, Line, useCursor } from "@react-three/drei";
 
-import { smoothValue } from "../../lib/smooth";
 import type { SceneObject } from "../../lib/sceneTypes";
 import { useStateVector, useSetSelectedId, useOverrides, useSelectedId } from "../SceneContext";
 import { clamp } from "../../lib/sizeCommands";
@@ -35,7 +33,6 @@ import {
   buildProfessionalObjectLabelName,
   compactScannerReason,
   computeAutoColor,
-  computeAutoIntensity,
   geometryFor,
   hashIdToUnit,
   normalizeScannerLabelSeverity,
@@ -49,6 +46,7 @@ import {
 import { deriveAnimatableVisualState } from "./animatableObject/deriveAnimatableVisualState";
 import { buildAnimatableLabelState } from "./animatableObject/buildAnimatableLabelState";
 import { buildAnimatableMotionState } from "./animatableObject/buildAnimatableMotionState";
+import { getCalmSeverityVisual } from "../../lib/scene/calmSeverityVisuals";
 
 export type AnimatableObjectProps = {
   obj: SceneObject;
@@ -208,7 +206,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const uxScale = typeof uxOverrides.scale === "number" ? clamp(uxOverrides.scale, 0.5, 2.0) : 1;
   const finalUniform = clamp(originalUniform * (overrideScale ?? 1) * uxScale * (globalScale ?? 1), 0.15, 2.0);
   const ambientPhase = useMemo(() => hashIdToUnit(String(stableIdWithName)) * Math.PI * 2, [stableIdWithName]);
-  const focusScaleMul = isFocused ? 1.03 : dimOthers ? 0.97 : 1.0;
+  const focusScaleMul = isFocused ? 1.13 : dimOthers ? 0.95 : 1.0;
   const shape = resolveGeometryKindForObject({
     obj,
     explicitShape: (obj as any).shape ?? ux?.shape,
@@ -290,6 +288,10 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     ]
   );
   const scannerEmphasis = Math.min(1, Math.max(0, typeof obj.scanner_emphasis === "number" ? obj.scanner_emphasis : 0));
+  const calmSeverityVisual = useMemo(
+    () => getCalmSeverityVisual(obj.scanner_severity),
+    [obj.scanner_severity]
+  );
   const derivedVisualState = useMemo(
     () =>
       deriveAnimatableVisualState({
@@ -459,6 +461,9 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     setHoveredId?.(null);
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
+    if (selectedIdCtx === stableIdWithName || selectedIdCtx === stableId) {
+      return;
+    }
     setSelectedId(stableIdWithName);
   };
 
@@ -480,7 +485,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
           return Math.max(Math.min(adjusted, softShadowFloor), theme === "day" ? 0.5 : 0.4);
         }
         if (!isFocusActive || !genericFocusDimmed) return adjusted;
-        return theme === "day" ? Math.min(adjusted, 0.28) : Math.min(adjusted, 0.18);
+        return theme === "day" ? Math.min(adjusted, 0.3) : Math.min(adjusted, 0.24);
       })(),
       emissive: material.emissive,
       emissiveIntensity: material.emissiveIntensity,
@@ -522,7 +527,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       : scannerBackgroundDimmed
       ? baseOpacity
       : genericFocusDimmed
-      ? baseOpacity
+      ? Math.min(baseOpacity, calmSeverityVisual.dimOpacity)
       : scannerOpacity;
   const storyAdjustedOpacity =
     scannerSceneActive && scannerHierarchyRole !== "neutral"
@@ -787,8 +792,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     };
   }, [lineGeometry, pointsGeometry, tubeGeometry]);
 
-  const smoothUniform = useRef<number>(finalUniform);
-  const speed = tokens.motion.objectEmphasisLerp;
+  const calmSelectionScale = isSelected ? 1.04 : isFocused ? 1.02 : 1;
   const motionState = useMemo(
     () =>
       buildAnimatableMotionState({
@@ -869,72 +873,24 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   useEffect(() => {
     const mesh = ref.current;
     if (mesh) {
-      const value = smoothUniform.current;
-      const scale = value * focusScaleMul * scannerScaleMul;
-      mesh.scale.set((baseScale[0] ?? 1) * scale, (baseScale[1] ?? 1) * scale, (baseScale[2] ?? 1) * scale);
-    }
-  }, [baseScale, focusScaleMul, scannerScaleMul]);
-
-  useFrame((state, delta) => {
-    const mesh = ref.current;
-    if (!mesh) return;
-
-    smoothUniform.current = smoothValue(smoothUniform.current, finalUniform, speed, delta);
-
-    const elapsed = state.clock.getElapsedTime();
-    const intensity = computeAutoIntensity(tags, anim?.intensity ?? 0.3, stateVector);
-
-    let pulseFactor = 1;
-    if (anim?.type === "pulse") {
-      pulseFactor = 1 + Math.sin(elapsed * 2) * motionState.animPulseBase * intensity;
-    }
-
-    try {
+      mesh.position.set(finalPosition[0] ?? 0, finalPosition[1] ?? 0, finalPosition[2] ?? 0);
       mesh.rotation.set(finalRotation[0] ?? 0, finalRotation[1] ?? 0, finalRotation[2] ?? 0);
-    } catch {}
-
-    if (anim?.type === "spin") {
-      mesh.rotation.y += 0.01 * intensity;
+      const staticScale = finalUniform * scannerScaleMul * calmSelectionScale * tokens.interaction.sceneObjectEmphasis;
+      mesh.scale.set(
+        (baseScale[0] ?? 1) * staticScale,
+        (baseScale[1] ?? 1) * staticScale,
+        (baseScale[2] ?? 1) * staticScale
+      );
     }
-
-    if (anim?.type === "wobble") {
-      mesh.rotation.x += Math.sin(elapsed * 2) * motionState.wobbleBase * intensity;
-      mesh.rotation.z += Math.cos(elapsed * 2) * motionState.wobbleBase * intensity;
-    }
-
-    const driftX =
-      Math.cos(elapsed * 0.31 * motionState.driftSpeed + ambientPhase) * motionState.driftAmplitude[0];
-    const driftY =
-      Math.sin(elapsed * 0.45 * motionState.driftSpeed + ambientPhase) * motionState.driftAmplitude[1];
-    const driftZ =
-      Math.sin(elapsed * 0.27 * motionState.driftSpeed + ambientPhase * 0.7) * motionState.driftAmplitude[2];
-    const targetX = motionState.spatialBase[0] + driftX;
-    const targetY = motionState.spatialBase[1] + driftY;
-    const targetZ = motionState.spatialBase[2] + driftZ;
-    const nextX = smoothValue(mesh.position.x, targetX, 6, delta);
-    const nextY = smoothValue(mesh.position.y, targetY, 6, delta);
-    const nextZ = smoothValue(mesh.position.z, targetZ, 6, delta);
-    mesh.position.set(nextX, nextY, nextZ);
-
-    const scannerPulse =
-      motionState.scannerPulseAmplitude > 0
-        ? 1 + Math.sin(elapsed * motionState.scannerPulseSpeed + ambientPhase) * motionState.scannerPulseAmplitude
-        : 1;
-    const simulationPulse =
-      motionState.simulationPulseAmplitude > 0
-        ? 1 +
-          Math.sin(elapsed * motionState.simulationPulseSpeed + ambientPhase * 0.7) *
-            motionState.simulationPulseAmplitude
-        : 1;
-    const applied =
-      smoothUniform.current *
-      pulseFactor *
-      scannerPulse *
-      simulationPulse *
-      motionState.staticScaleMul *
-      tokens.interaction.sceneObjectEmphasis;
-    mesh.scale.set((baseScale[0] ?? 1) * applied, (baseScale[1] ?? 1) * applied, (baseScale[2] ?? 1) * applied);
-  });
+  }, [
+    baseScale,
+    calmSelectionScale,
+    finalPosition,
+    finalRotation,
+    finalUniform,
+    scannerScaleMul,
+    tokens.interaction.sceneObjectEmphasis,
+  ]);
 
   let node: React.ReactNode = null;
   if (obj.type === "points_cloud" && pointsGeometry) {
@@ -1083,10 +1039,14 @@ export const AnimatableObject = React.memo(function AnimatableObject({
             emissive={isFocused ? "#ffffff" : isSelected ? "#ffffff" : scannerHighlighted ? scannerColor : materialProps.emissive}
             emissiveIntensity={
               isFocused
-                ? Math.max(0.85, (materialProps.emissiveIntensity ?? 0) + (theme === "day" ? 0.35 : 0.55))
+                ? Math.max(
+                    calmSeverityVisual.glowStrength,
+                    (materialProps.emissiveIntensity ?? 0) +
+                      calmSeverityVisual.outlineStrength * (theme === "day" ? 0.35 : 0.55)
+                  )
                 : isSelected
-                ? Math.max(0.6, materialProps.emissiveIntensity ?? 0)
-                : warRoomAdjustedEmissiveIntensity
+                ? Math.max(calmSeverityVisual.glowStrength, materialProps.emissiveIntensity ?? 0)
+                : Math.max(warRoomAdjustedEmissiveIntensity, calmSeverityVisual.glowStrength)
             }
             transparent
             opacity={memoryAdjustedOpacity}
@@ -1153,7 +1113,12 @@ export const AnimatableObject = React.memo(function AnimatableObject({
                 alignItems: "center",
                 gap: 6,
                 fontSize: 11,
-                fontWeight: 800,
+                fontWeight:
+                  calmSeverityVisual.labelWeight === "strong"
+                    ? 800
+                    : calmSeverityVisual.labelWeight === "medium"
+                      ? 700
+                      : 600,
                 letterSpacing: 0.1,
                 textTransform: "none",
                 color: scannerLabelTone.titleColor,

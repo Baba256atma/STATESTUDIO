@@ -19,6 +19,9 @@ type ResolvePropagationTriggerParams = {
   now?: number;
 };
 
+let lastPropagationCandidatesSignature: string | null = null;
+let lastPropagationResolvedSignature: string | null = null;
+
 function normalizeId(value: string | null | undefined): string | null {
   const next = String(value ?? "").trim();
   return next.length > 0 ? next : null;
@@ -185,20 +188,30 @@ export function resolvePropagationTrigger(
     (!!activeTrigger && !shouldReusePayload && !shouldRequestBackend && !!params.allowPreviewFallback);
 
   if (process.env.NODE_ENV !== "production") {
-    console.debug("[Nexora][PropagationTrigger] candidates", sortedTriggers.map((trigger) => ({
+    const candidatePayload = sortedTriggers.map((trigger) => ({
       kind: trigger.kind,
       sourceId: trigger.source_object_id,
       priority: trigger.priority,
       routePolicy: trigger.route_policy,
-    })));
-    console.debug("[Nexora][PropagationTrigger] resolved", {
+    }));
+    const candidateSignature = JSON.stringify(candidatePayload);
+    if (candidateSignature !== lastPropagationCandidatesSignature) {
+      lastPropagationCandidatesSignature = candidateSignature;
+      console.debug("[Nexora][PropagationTrigger] candidates", candidatePayload);
+    }
+    const resolvedPayload = {
       kind: activeTrigger?.kind ?? null,
       sourceId: activeTrigger?.source_object_id ?? null,
       resolutionReason,
       shouldReusePayload,
       shouldRequestBackend,
       shouldFallbackPreview,
-    });
+    };
+    const resolvedSignature = JSON.stringify(resolvedPayload);
+    if (resolvedSignature !== lastPropagationResolvedSignature) {
+      lastPropagationResolvedSignature = resolvedSignature;
+      console.debug("[Nexora][PropagationTrigger] resolved", resolvedPayload);
+    }
   }
 
   return {

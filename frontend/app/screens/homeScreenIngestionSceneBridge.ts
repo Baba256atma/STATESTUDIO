@@ -198,9 +198,20 @@ export async function runIngestionThroughFragilitySceneBridge(options: {
   }
 
   if (typeof window !== "undefined") {
+    const intakeHandoff = sourceLabel === "source_control_panel" ? ("input_center" as const) : null;
     window.dispatchEvent(
       new CustomEvent("nexora:apply-fragility-scan", {
-        detail: { result: scanResult, bridge: "phase_b2" as const },
+        detail: {
+          result: scanResult,
+          bridge: "phase_b2" as const,
+          intakeHandoff,
+          reactionPolicy: {
+            maxPrimary: 1,
+            maxSecondary: 1,
+            dimOthers: true,
+            forceFocus: true,
+          },
+        },
       })
     );
   }

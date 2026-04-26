@@ -638,13 +638,7 @@ function resolveCameraIntelligenceTarget(params: {
     roleById,
   } = params;
 
-  const hoveredRole = roleById(hoveredId);
-  if (hoveredId && hoveredRole !== "neutral") {
-    const hoveredPosition = resolveStableObjectPosition(objects, hoveredId);
-    if (hoveredPosition) {
-      return { target: hoveredPosition, role: hoveredRole, kind: "hover" };
-    }
-  }
+  // Calm camera policy: hover never drives camera target.
 
   const selectedRole = roleById(selectedId);
   if (selectedId && selectedRole !== "neutral") {
@@ -996,18 +990,14 @@ function AnimatedDashedEdge({
     if (geomRef.current.computeLineDistances) geomRef.current.computeLineDistances();
   }, [points]);
 
-  useFrame((state) => {
+  useEffect(() => {
     if (dashedMatRef.current) {
-      const t = state.clock.getElapsedTime();
-      // animate via scale for a subtle flowing feel; dashOffset is not typed on the material
-      dashedMatRef.current.scale = 1 + Math.sin(t * (active ? 1.2 : 0.8)) * 0.25;
+      dashedMatRef.current.scale = 1;
     }
     if (solidMatRef.current) {
-      const t = state.clock.getElapsedTime();
-      const pulse = 0.05 * Math.sin(t * 1.8);
-      solidMatRef.current.opacity = Math.min(1, opacity + 0.25 + pulse);
+      solidMatRef.current.opacity = Math.min(1, opacity + 0.25);
     }
-  });
+  }, [opacity]);
 
   const dashSize = 0.2 + clamp01(strength) * 0.35;
   const gapSize = 0.25 + clamp01(strength) * 0.4;
@@ -1215,7 +1205,7 @@ export type SceneRendererProps = {
 // --------------------
 // Main renderer
 // --------------------
-export function SceneRenderer({
+function SceneRendererComponent({
   sceneJson,
   objectSelection,
   shadowsEnabled,
@@ -1544,13 +1534,8 @@ export function SceneRenderer({
       }),
     [decisionCenter, hoveredId, objects, resolvedPrimaryRenderId, roleById, sceneCenter, selectedIdCtx]
   );
-  const cameraBiasTarget =
-    scannerSceneActive ||
-    cameraIntelligence.kind === "selected" ||
-    cameraIntelligence.kind === "primary" ||
-    cameraIntelligence.kind === "decision_center"
-      ? cameraIntelligence.target
-      : null;
+  // Strict calm camera rule: renderer-level camera bias only follows explicit selection.
+  const cameraBiasTarget = cameraIntelligence.kind === "selected" ? cameraIntelligence.target : null;
   const anims = ((sceneJson.scene?.animations ?? []) as any[]);
   const loopList: SceneLoop[] = Array.isArray(loops) ? loops : (sceneJson as any)?.scene?.loops ?? [];
   const activeLoopId: string | null =
@@ -2004,17 +1989,15 @@ export function SceneRenderer({
     });
   }, [focusIdentitySet, focusMode, focusedId, hasValidFocusedTarget]);
 
-  useFrame(() => {
+  useEffect(() => {
     const g = parallaxGroup.current;
     if (!g) return;
     const cx = typeof chatOffset?.x === "number" ? chatOffset.x : 0;
     const cy = typeof chatOffset?.y === "number" ? chatOffset.y : 0;
-    const targetX = -cx * 0.9;
-    const targetY = cy * 0.6;
-    const k = motionCalm ? 0.055 : 0.09;
-    g.position.x += (targetX - g.position.x) * k;
-    g.position.y += (targetY - g.position.y) * k;
-  });
+    // Calm scene: keep parallax static, no frame-by-frame drift.
+    g.position.x = -cx * 0.9;
+    g.position.y = cy * 0.6;
+  }, [chatOffset?.x, chatOffset?.y]);
 
   return (
     <>
@@ -2141,3 +2124,5 @@ export function SceneRenderer({
     </>
   );
 }
+
+export const SceneRenderer = React.memo(SceneRendererComponent);

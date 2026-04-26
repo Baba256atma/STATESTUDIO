@@ -73,7 +73,7 @@ const LEGACY_MAPPING_CASES: Array<{
   expectedViews: CanonicalRightPanelView[];
   contractFamily: "legacy_tab_mapping";
 }> = [
-  { input: "object_focus", expectedViews: ["object"], contractFamily: "legacy_tab_mapping" },
+  { input: "object_focus", expectedViews: ["object_focus"], contractFamily: "legacy_tab_mapping" },
   { input: "strategic_advice", expectedViews: ["advice"], contractFamily: "legacy_tab_mapping" },
   { input: "executive_dashboard", expectedViews: ["dashboard"], contractFamily: "legacy_tab_mapping" },
   { input: "risk_flow", expectedViews: ["risk"], contractFamily: "legacy_tab_mapping" },

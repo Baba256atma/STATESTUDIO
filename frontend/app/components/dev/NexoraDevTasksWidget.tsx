@@ -161,6 +161,12 @@ export function NexoraDevTasksWidget({ workspaceDomainId }: NexoraDevTasksWidget
     refreshAll();
   }, [refreshAll]);
 
+  useEffect(() => {
+    const openFromSettings = () => setOpen(true);
+    window.addEventListener("nexora:devtools-open-roadmap", openFromSettings);
+    return () => window.removeEventListener("nexora:devtools-open-roadmap", openFromSettings);
+  }, []);
+
   const sortedTasks = useMemo(() => sortDevTasks(tasks), [tasks]);
   const displayTasks = useMemo(() => {
     if (!focusPhaseId?.trim()) return sortedTasks;
@@ -248,28 +254,6 @@ export function NexoraDevTasksWidget({ workspaceDomainId }: NexoraDevTasksWidget
 
   return (
     <>
-      <button
-        type="button"
-        title="Nexora dev tasks & roadmap (local)"
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          position: "fixed",
-          left: 12,
-          bottom: 12,
-          zIndex: 99990,
-          height: 32,
-          padding: "0 12px",
-          borderRadius: 8,
-          border: "1px solid rgba(251,191,36,0.4)",
-          background: "rgba(15,23,42,0.92)",
-          color: "#fde68a",
-          fontSize: 11,
-          fontWeight: 700,
-          cursor: "pointer",
-        }}
-      >
-        Dev / Roadmap {open ? "▼" : "▶"}
-      </button>
       {open ? (
         <div
           style={{

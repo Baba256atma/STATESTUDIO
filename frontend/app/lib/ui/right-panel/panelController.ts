@@ -24,7 +24,8 @@ function toRouterSource(
     source === "guided_prompt" ||
     source === "left_nav" ||
     source === "inspector_section" ||
-    source === "cta"
+    source === "cta" ||
+    source === "object_click"
   ) {
     return "direct_open";
   }
@@ -90,6 +91,18 @@ export function resolvePanelDecision(
   request: PanelRequestIntent,
   context: PanelControllerContext
 ): PanelDecision {
+  if (request.source === "scene_update") {
+    const result: PanelDecision = {
+      kind: "block",
+      nextState: context.currentPanelState,
+      reason: "scene_update_panel_feedback_blocked",
+      normalizedSource: request.source,
+      resolvedView: context.currentPanelState.view ?? null,
+    };
+    traceDecision(request, context, result);
+    return result;
+  }
+
   if (request.close) {
     const result: PanelDecision = {
       kind: "close",
@@ -113,6 +126,24 @@ export function resolvePanelDecision(
       reason: "resolve_safe_view_failed",
       normalizedSource: request.source,
       resolvedView: null,
+    };
+    traceDecision(request, context, result);
+    return result;
+  }
+
+  if (
+    isAutomaticPanelSource(request.source) &&
+    currentState.view &&
+    currentState.isOpen &&
+    resolvedView !== currentState.view &&
+    request.allowAutoOverride !== true
+  ) {
+    const result: PanelDecision = {
+      kind: "block",
+      nextState: currentState,
+      reason: "automatic_route_preserves_user_panel",
+      normalizedSource: request.source,
+      resolvedView,
     };
     traceDecision(request, context, result);
     return result;
@@ -160,6 +191,7 @@ export function resolvePanelDecision(
 
   if (
     request.preserveIfSameContext !== false &&
+    currentState.isOpen === true &&
     currentState.view === resolvedView &&
     (currentState.contextId ?? null) === nextContextId
   ) {

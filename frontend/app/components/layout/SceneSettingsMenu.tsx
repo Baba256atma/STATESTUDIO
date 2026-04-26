@@ -14,9 +14,20 @@ function emitPrefsPatch(patch: Partial<ScenePrefs>) {
   window.dispatchEvent(new CustomEvent<Partial<ScenePrefs>>("nexora:scene-prefs-patch", { detail: patch }));
 }
 
+function emitDevToolsEvent(type: "roadmap" | "debug"): void {
+  if (typeof window === "undefined") return;
+  if (type === "roadmap") {
+    window.dispatchEvent(new CustomEvent("nexora:devtools-open-roadmap"));
+  } else {
+    window.dispatchEvent(new CustomEvent("nexora:devtools-toggle-self-debug"));
+  }
+}
+
+export type SceneSettingsMenuVariant = "header" | "navSettings" | "navInput";
+
 type SceneSettingsMenuProps = {
-  /** Icon-only trigger for left nav; menu opens to the right of the rail (portaled). */
-  variant?: "header" | "navIcon";
+  /** `header` — inline header control. `navSettings` — ⚙️ left rail, theme/scene popover only. `navInput` — 📡 opens center input (no right panel). */
+  variant?: SceneSettingsMenuVariant;
 };
 
 type NavPopoverLayout = { left: number; bottom: number; maxHeight: number };
@@ -49,6 +60,7 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
   const rootRef = useRef<HTMLDivElement>(null);
   const menuPanelRef = useRef<HTMLDivElement>(null);
   const [navPopoverLayout, setNavPopoverLayout] = useState<NavPopoverLayout | null>(null);
+  const [inputCenterOpen, setInputCenterOpen] = useState(false);
 
   const applyPreset = useCallback((preset: "dark_space" | "grid" | "minimal") => {
     if (preset === "dark_space") {
@@ -60,9 +72,10 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
     }
     setOpen(false);
   }, []);
+  const isDevMode = process.env.NODE_ENV !== "production";
 
   const updateNavPopoverLayout = useCallback(() => {
-    if (variant !== "navIcon" || !open) return;
+    if (variant !== "navSettings" || !open) return;
     const anchor = rootRef.current;
     if (!anchor) return;
     const ar = anchor.getBoundingClientRect();
@@ -80,15 +93,12 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
   }, [variant, open]);
 
   useLayoutEffect(() => {
-    if (!open || variant !== "navIcon") {
-      setNavPopoverLayout(null);
-      return;
-    }
+    if (!open || variant !== "navSettings") return;
     updateNavPopoverLayout();
   }, [open, variant, updateNavPopoverLayout]);
 
   useEffect(() => {
-    if (!open || variant !== "navIcon") return;
+    if (!open || variant !== "navSettings") return;
     const onResizeOrScroll = () => updateNavPopoverLayout();
     window.addEventListener("resize", onResizeOrScroll);
     window.addEventListener("scroll", onResizeOrScroll, true);
@@ -97,6 +107,23 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
       window.removeEventListener("scroll", onResizeOrScroll, true);
     };
   }, [open, variant, updateNavPopoverLayout]);
+
+  useEffect(() => {
+    if (variant !== "navSettings") return;
+    const onOpenAppearance = () => setOpen(true);
+    window.addEventListener("nexora:open-scene-appearance-menu", onOpenAppearance);
+    return () => window.removeEventListener("nexora:open-scene-appearance-menu", onOpenAppearance);
+  }, [variant]);
+
+  useEffect(() => {
+    if (variant !== "navInput") return;
+    const onVis = (event: Event) => {
+      const d = (event as CustomEvent<{ open?: boolean }>).detail;
+      setInputCenterOpen(d?.open === true);
+    };
+    window.addEventListener("nexora:input-center-visibility", onVis as EventListener);
+    return () => window.removeEventListener("nexora:input-center-visibility", onVis as EventListener);
+  }, [variant]);
 
   useEffect(() => {
     if (!open) return;
@@ -111,7 +138,7 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
   }, [open]);
 
   const menuPanelBase: React.CSSProperties = {
-    width: variant === "navIcon" ? NAV_POPOVER_WIDTH : undefined,
+    width: variant === "navSettings" ? NAV_POPOVER_WIDTH : undefined,
     minWidth: variant === "header" ? 220 : undefined,
     padding: 12,
     borderRadius: 12,
@@ -127,18 +154,18 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
   };
 
   const menuPanelInlineStyle: React.CSSProperties | null =
-    variant === "navIcon"
-      ? null
-      : {
+    variant === "header"
+      ? {
           position: "absolute",
           right: 0,
           top: "calc(100% + 8px)",
           zIndex: 50,
           ...menuPanelBase,
-        };
+        }
+      : null;
 
   const menuPanelFixedStyle: React.CSSProperties | null =
-    variant === "navIcon" && navPopoverLayout
+    variant === "navSettings" && navPopoverLayout
       ? {
           position: "fixed",
           left: navPopoverLayout.left,
@@ -149,32 +176,47 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
         }
       : null;
 
-  const triggerStyle: React.CSSProperties =
-    variant === "navIcon"
-      ? {
-          width: 44,
-          height: 44,
-          padding: 0,
-          borderRadius: 12,
-          border: `1px solid ${nx.border}`,
-          background: nx.bgPanelSoft,
-          color: nx.lowMuted,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }
-      : {
-          height: 36,
-          padding: "0 12px",
-          borderRadius: 10,
-          border: `1px solid ${nx.border}`,
-          background: nx.secondaryCtaBg,
-          color: nx.muted,
-          fontSize: 12,
-          fontWeight: 600,
-          cursor: "pointer",
-        };
+  const navSettingsTriggerStyle: React.CSSProperties = {
+    width: 44,
+    height: 44,
+    padding: 0,
+    borderRadius: 12,
+    border: open ? `1px solid ${nx.navTileActiveBorder}` : `1px solid ${nx.border}`,
+    background: open ? nx.navTileActiveBg : nx.bgPanelSoft,
+    color: open ? nx.text : nx.lowMuted,
+    boxShadow: open ? nx.navTileActiveShadow : "none",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const navInputTriggerStyle: React.CSSProperties = {
+    width: 44,
+    height: 44,
+    padding: 0,
+    borderRadius: 12,
+    border: inputCenterOpen ? `1px solid ${nx.navTileActiveBorder}` : `1px solid ${nx.border}`,
+    background: inputCenterOpen ? nx.navTileActiveBg : nx.bgPanelSoft,
+    color: inputCenterOpen ? nx.text : nx.lowMuted,
+    boxShadow: inputCenterOpen ? nx.navTileActiveShadow : "none",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const headerTriggerStyle: React.CSSProperties = {
+    height: 36,
+    padding: "0 12px",
+    borderRadius: 10,
+    border: `1px solid ${nx.border}`,
+    background: nx.secondaryCtaBg,
+    color: nx.muted,
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+  };
 
   const themeChip = (selected: boolean): React.CSSProperties => ({
     flex: 1,
@@ -236,30 +278,91 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
           Normal
         </button>
       </div>
+      {isDevMode ? (
+        <>
+          <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            Dev Tools
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <button
+              type="button"
+              style={rowBtn}
+              onClick={() => {
+                if (process.env.NODE_ENV !== "production") {
+                  globalThis.console?.debug?.("[Nexora][Settings] dev_tools_mounted");
+                  globalThis.console?.debug?.("[Nexora][Settings] roadmap_clicked");
+                }
+                emitDevToolsEvent("roadmap");
+                setOpen(false);
+              }}
+            >
+              🧭 Dev / RoadMap
+            </button>
+            <button
+              type="button"
+              style={rowBtn}
+              onClick={() => {
+                if (process.env.NODE_ENV !== "production") {
+                  globalThis.console?.debug?.("[Nexora][Settings] dev_tools_mounted");
+                  globalThis.console?.debug?.("[Nexora][Settings] debug_toggle");
+                }
+                emitDevToolsEvent("debug");
+              }}
+            >
+              🛠 Self-Debug Show
+            </button>
+          </div>
+        </>
+      ) : null}
     </>
   );
+
+  if (variant === "navInput") {
+    return (
+      <div ref={rootRef} style={{ position: "relative", flexShrink: 0 }}>
+        <button
+          type="button"
+          title="Input / Data source"
+          aria-label="Open input and data source in workspace"
+          onClick={() => {
+            if (process.env.NODE_ENV !== "production") {
+              console.log("[Nexora][SourcePanelOpen]", { surface: "center_workspace" });
+            }
+            window.dispatchEvent(new CustomEvent("nexora:open-input-center"));
+          }}
+          style={navInputTriggerStyle}
+        >
+          <span style={{ fontSize: 20, lineHeight: 1 }} aria-hidden>
+            📡
+          </span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div ref={rootRef} style={{ position: "relative", flexShrink: 0 }}>
       <button
         type="button"
-        aria-expanded={open}
+        aria-expanded={variant === "header" ? open : variant === "navSettings" ? open : undefined}
         aria-haspopup="true"
-        title="Settings"
-        aria-label="Settings"
-        onClick={() => setOpen((v) => !v)}
-        style={triggerStyle}
+        title={variant === "navSettings" ? "Settings" : "Settings"}
+        aria-label={variant === "navSettings" ? "Open settings" : "Settings"}
+        onClick={() => {
+          setOpen((v) => !v);
+        }}
+        style={variant === "navSettings" ? navSettingsTriggerStyle : headerTriggerStyle}
       >
-        {variant === "navIcon" ? <GearIcon /> : "Settings"}
+        {variant === "navSettings" ? <GearIcon /> : "Settings"}
       </button>
       {open && variant === "header" && menuPanelInlineStyle ? (
-        <div ref={menuPanelRef} style={menuPanelInlineStyle}>
+        <div ref={menuPanelRef} className="nexora-settings-popover" style={menuPanelInlineStyle}>
           {settingsPanelBody}
         </div>
       ) : null}
-      {open && variant === "navIcon" && menuPanelFixedStyle && typeof document !== "undefined"
+      {open && variant === "navSettings" && menuPanelFixedStyle && typeof document !== "undefined"
         ? createPortal(
-            <div ref={menuPanelRef} style={menuPanelFixedStyle}>
+            <div ref={menuPanelRef} className="nexora-settings-popover" style={menuPanelFixedStyle}>
               {settingsPanelBody}
             </div>,
             document.body

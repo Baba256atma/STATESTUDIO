@@ -12,7 +12,12 @@ import { DecisionTimeline } from "../warroom/DecisionTimeline";
 import type { DecisionTimelineStage } from "../warroom/TimelineNode";
 import type { DecisionTimelineTransitionData } from "../warroom/TimelineTransition";
 import { nx, panelSurfaceStyle, primaryButtonStyle, secondaryButtonStyle, softCardStyle } from "../ui/nexoraTheme";
-import { dedupePanelConsoleTrace } from "../../lib/debug/panelConsoleTraceDedupe";
+import { logPanelOnce } from "../../lib/debug/panelLogSignature";
+import { resolveDecisionTimelineReadiness } from "../../lib/panels/panelDataReadiness";
+import { buildTimelineIntelligence, logPanelIntelligence } from "../../lib/intelligence/panelIntelligence";
+import { buildTimelineDecisionSet } from "../../lib/decision/decisionEngine";
+import { PanelDecisionSetSection } from "../panels/PanelDecisionSetSection";
+import { RightPanelFallback } from "../right-panel/RightPanelFallback";
 
 type DecisionTimelinePanelProps = {
   responseData?: any;
@@ -123,18 +128,49 @@ export function DecisionTimelinePanel(props: DecisionTimelinePanelProps) {
 
   const stages = React.useMemo(() => model.stages.map(mapStage), [model.stages]);
   const transitions = React.useMemo(() => buildTransitions(model.stages), [model.stages]);
-  dedupePanelConsoleTrace("PanelComponent", "timeline", "main", {
-    meaningfulData: model.stages.length > 0,
-    eventsCount: model.stages.reduce(
-      (count, stage) => count + (Array.isArray(stage.details) ? stage.details.length : 0),
-      0
-    ),
-    stagesCount: model.stages.length,
-    timelineCount: transitions.length,
-    hasPlayback: model.hasPlayback,
-    activeStageId,
-    hasSummary: Boolean(activeStage?.summary),
+
+  const readiness = resolveDecisionTimelineReadiness({
+    stageCount: model.stages.length,
+    decisionLoading: props.decisionLoading,
+    decisionStatus: props.decisionStatus ?? null,
   });
+
+  React.useEffect(() => {
+    logPanelOnce("[Nexora][PanelDataState]", { panel: "timeline", readiness });
+  }, [readiness]);
+
+  const timelineIntel = React.useMemo(
+    () =>
+      buildTimelineIntelligence({
+        stageCount: model.stages.length,
+        activeSummary: activeStage?.summary ?? null,
+        activeTitle: activeStage?.title ?? null,
+        recommendationLabel: activeStage?.recommendationLabel ?? null,
+        hasRecommendedPath: Boolean(activeStage?.isRecommendedPath),
+      }),
+    [
+      model.stages.length,
+      activeStage?.summary,
+      activeStage?.title,
+      activeStage?.recommendationLabel,
+      activeStage?.isRecommendedPath,
+    ]
+  );
+
+  React.useEffect(() => {
+    logPanelIntelligence("timeline", timelineIntel);
+  }, [timelineIntel]);
+
+  const timelineDecisionSet = React.useMemo(() => {
+    const afterStage = model.stages.find((s) => s.id === "after");
+    const whatIf = model.stages.find((s) => s.id === "what_if");
+    return buildTimelineDecisionSet({
+      stageCount: model.stages.length,
+      hasRecommendedPath: Boolean(afterStage?.isRecommendedPath),
+      recommendedSummary: afterStage?.summary ?? null,
+      alternativeHint: whatIf?.summary ?? whatIf?.details?.[0] ?? null,
+    });
+  }, [model.stages]);
 
   const handlePlayStory = React.useCallback(() => {
     if (!model.hasPlayback) return;
@@ -156,6 +192,25 @@ export function DecisionTimelinePanel(props: DecisionTimelinePanelProps) {
       ? "Building the decision story from the current simulation and recommendation."
       : null;
 
+  if (readiness === "loading") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <RightPanelFallback mode="loading" embedded />
+      </div>
+    );
+  }
+  if (readiness === "empty") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <RightPanelFallback
+          mode="empty"
+          embedded
+          message="No timeline segments yet. Run a simulation to build the decision story."
+        />
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ ...panelSurfaceStyle, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
@@ -165,109 +220,158 @@ export function DecisionTimelinePanel(props: DecisionTimelinePanelProps) {
         </div>
       </div>
 
-      {statusMessage ? (
-        <div style={{ ...softCardStyle, padding: 12, color: props.decisionStatus === "error" ? nx.warning : nx.muted, fontSize: 12, lineHeight: 1.5 }}>
-          {statusMessage}
-        </div>
+      {props.decisionStatus === "error" && statusMessage ? (
+        <div style={{ ...softCardStyle, padding: 12, color: nx.warning, fontSize: 12, lineHeight: 1.5 }}>{statusMessage}</div>
       ) : null}
 
-      <div style={{ ...softCardStyle, padding: 14, gap: 10, border: "1px solid rgba(96,165,250,0.18)" }}>
-        <div style={{ color: "#cbd5f5", fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-          Story Summary
+      <div style={{ ...softCardStyle, border: "1px solid rgba(96,165,250,0.22)", padding: 12 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: nx.lowMuted }}>
+          Primary insight
         </div>
-        <div style={{ color: "#f8fafc", fontSize: 14, fontWeight: 700, lineHeight: 1.45 }}>
-          {activeStage?.summary ?? "No timeline available. Run a simulation to see how the system evolves."}
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: 15,
+            fontWeight: 800,
+            color: "#f8fafc",
+            lineHeight: 1.35,
+            maxHeight: "4.6em",
+            overflow: "hidden",
+          }}
+        >
+          {timelineIntel.primary}
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button type="button" onClick={handlePlayStory} style={primaryButtonStyle}>
-            {model.playbackLabel ?? "Play story"}
-          </button>
-          <button type="button" onClick={() => setActiveStageId("after")} style={secondaryButtonStyle}>
-            Reset view
-          </button>
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: 12,
+            color: nx.muted,
+            opacity: 0.78,
+            lineHeight: 1.45,
+            maxHeight: "4.5em",
+            overflow: "hidden",
+          }}
+        >
+          {timelineIntel.implication}
+        </div>
+        <div style={{ marginTop: 10, fontSize: 12, color: nx.text, lineHeight: 1.45 }}>
+          <strong>Recommended action:</strong> {timelineIntel.action}
+        </div>
+        <div style={{ marginTop: 8, fontSize: 11, color: nx.lowMuted, opacity: 0.72 }}>
+          Confidence: {(timelineIntel.confidence * 100).toFixed(0)}%
         </div>
       </div>
 
-      <DecisionTimeline
-        stages={stages}
-        transitions={transitions}
-        activeStageId={activeStageId}
-        onSelectStage={(stage) => setActiveStageId(stage.id as ExecutiveDecisionTimelineStage["id"])}
-        emptyText="No timeline available. Run a simulation to see how the system evolves."
-      />
+      <PanelDecisionSetSection view="timeline" decisionSet={timelineDecisionSet} />
 
-      <div
-        style={{
-          ...panelSurfaceStyle,
-          padding: 14,
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          border: activeStage?.isRecommendedPath ? "1px solid rgba(96,165,250,0.24)" : `1px solid ${nx.border}`,
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <div>
-            <div style={{ color: "#cbd5f5", fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-              {activeStage?.title ?? "Timeline stage"}
-            </div>
-            <div style={{ color: "#f8fafc", fontSize: 15, fontWeight: 800, marginTop: 4 }}>
-              {activeStage?.recommendationLabel ?? "Decision story"}
-            </div>
-          </div>
-          {activeStage?.confidenceLevel ? (
-            <div style={{ color: "#93c5fd", fontSize: 11, fontWeight: 700 }}>
-              Confidence {activeStage.confidenceLevel}
-            </div>
+      <details style={{ borderRadius: 8 }}>
+        <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: nx.muted }}>
+          Details: story, stages, scope & next steps
+        </summary>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 10 }}>
+          {props.decisionStatus !== "error" && statusMessage ? (
+            <div style={{ ...softCardStyle, padding: 12, color: nx.muted, fontSize: 12, lineHeight: 1.5 }}>{statusMessage}</div>
           ) : null}
-        </div>
 
-        <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.5 }}>
-          {activeStage?.summary ?? "No stage summary available yet."}
-        </div>
+          <div style={{ ...softCardStyle, padding: 14, gap: 10, border: "1px solid rgba(96,165,250,0.18)" }}>
+            <div style={{ color: "#cbd5f5", fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+              Story Summary
+            </div>
+            <div style={{ color: "#f8fafc", fontSize: 14, fontWeight: 700, lineHeight: 1.45 }}>
+              {activeStage?.summary ?? "No timeline available. Run a simulation to see how the system evolves."}
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button type="button" onClick={handlePlayStory} style={primaryButtonStyle}>
+                {model.playbackLabel ?? "View analysis"}
+              </button>
+              <button type="button" onClick={() => setActiveStageId("after")} style={secondaryButtonStyle}>
+                Back
+              </button>
+            </div>
+          </div>
 
-        {(activeStage?.details?.length ?? 0) > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {(activeStage?.details ?? []).slice(0, 4).map((detail) => (
-              <div key={detail} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                <span style={{ color: "#93c5fd", fontSize: 12, fontWeight: 800, lineHeight: 1.4 }}>•</span>
-                <span style={{ color: nx.text, fontSize: 12, lineHeight: 1.45 }}>{detail}</span>
+          <DecisionTimeline
+            stages={stages}
+            transitions={transitions}
+            activeStageId={activeStageId}
+            onSelectStage={(stage) => setActiveStageId(stage.id as ExecutiveDecisionTimelineStage["id"])}
+            emptyText="No timeline available. Run a simulation to see how the system evolves."
+          />
+
+          <div
+            style={{
+              ...panelSurfaceStyle,
+              padding: 14,
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              border: activeStage?.isRecommendedPath ? "1px solid rgba(96,165,250,0.24)" : `1px solid ${nx.border}`,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ color: "#cbd5f5", fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                  {activeStage?.title ?? "Timeline stage"}
+                </div>
+                <div style={{ color: "#f8fafc", fontSize: 15, fontWeight: 800, marginTop: 4 }}>
+                  {activeStage?.recommendationLabel ?? "Decision story"}
+                </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.5 }}>
-            {activeStage?.id === "before"
-              ? "No current-state detail is available yet."
-              : activeStage?.id === "what_if"
-              ? "No alternative path is available yet. Use Compare Options to evaluate another move."
-              : "No projected outcome yet. Run a simulation to see the expected change."}
-          </div>
-        )}
+              {activeStage?.confidenceLevel ? (
+                <div style={{ color: "#93c5fd", fontSize: 11, fontWeight: 700 }}>
+                  Confidence {activeStage.confidenceLevel}
+                </div>
+              ) : null}
+            </div>
 
-        {activeStage?.target_ids?.length ? (
-          <div style={{ color: "#93c5fd", fontSize: 11, lineHeight: 1.45 }}>
-            Scope: {activeStage.target_ids.map((id) => props.resolveObjectLabel?.(id) ?? id).join(", ")}
-          </div>
-        ) : null}
-      </div>
+            <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.5 }}>
+              {activeStage?.summary ?? "No stage summary available yet."}
+            </div>
 
-      <div style={{ ...softCardStyle, padding: 12, gap: 10 }}>
-        <div style={{ color: "#cbd5f5", fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-          Explore Next
+            {(activeStage?.details?.length ?? 0) > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {(activeStage?.details ?? []).slice(0, 4).map((detail) => (
+                  <div key={detail} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                    <span style={{ color: "#93c5fd", fontSize: 12, fontWeight: 800, lineHeight: 1.4 }}>•</span>
+                    <span style={{ color: nx.text, fontSize: 12, lineHeight: 1.45 }}>{detail}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.5 }}>
+                {activeStage?.id === "before"
+                  ? "No current-state detail is available yet."
+                  : activeStage?.id === "what_if"
+                    ? "No alternative path is available yet. Use Compare Options to evaluate another move."
+                    : "No projected outcome yet. Run a simulation to see the expected change."}
+              </div>
+            )}
+
+            {activeStage?.target_ids?.length ? (
+              <div style={{ color: "#93c5fd", fontSize: 11, lineHeight: 1.45 }}>
+                Scope: {activeStage.target_ids.map((id) => props.resolveObjectLabel?.(id) ?? id).join(", ")}
+              </div>
+            ) : null}
+          </div>
+
+          <div style={{ ...softCardStyle, padding: 12, gap: 10 }}>
+            <div style={{ color: "#cbd5f5", fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+              Explore Next
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button type="button" onClick={props.onCompareOptions ?? (() => {})} style={primaryButtonStyle}>
+                Open Compare
+              </button>
+              <button type="button" onClick={props.onSimulateDecision ?? (() => {})} style={secondaryButtonStyle}>
+                Open Simulation
+              </button>
+              <button type="button" onClick={props.onReturnToWarRoom ?? (() => {})} style={secondaryButtonStyle}>
+                Back
+              </button>
+            </div>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button type="button" onClick={props.onCompareOptions ?? (() => {})} style={primaryButtonStyle}>
-            Compare Options
-          </button>
-          <button type="button" onClick={props.onSimulateDecision ?? (() => {})} style={secondaryButtonStyle}>
-            Simulate Recommended Move
-          </button>
-          <button type="button" onClick={props.onReturnToWarRoom ?? (() => {})} style={secondaryButtonStyle}>
-            Return to War Room
-          </button>
-        </div>
-      </div>
+      </details>
     </div>
   );
 }

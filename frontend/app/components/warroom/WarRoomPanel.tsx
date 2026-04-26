@@ -29,7 +29,11 @@ import { buildDecisionGovernanceState } from "../../lib/governance/buildDecision
 import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemoryTypes";
 import { buildApprovalWorkflowState } from "../../lib/approval/buildApprovalWorkflowState";
 import { loadApprovalWorkflowEnvelope } from "../../lib/approval/approvalWorkflowStore";
-import { dedupePanelConsoleTrace } from "../../lib/debug/panelConsoleTraceDedupe";
+import { logPanelOnce } from "../../lib/debug/panelLogSignature";
+import { resolveWarRoomReadiness } from "../../lib/panels/panelDataReadiness";
+import { buildWarRoomIntelligence, logPanelIntelligence } from "../../lib/intelligence/panelIntelligence";
+import { buildWarRoomDecisionSet } from "../../lib/decision/decisionEngine";
+import { PanelDecisionSetSection } from "../panels/PanelDecisionSetSection";
 
 type WarRoomPanelProps = {
   controller: WarRoomController;
@@ -68,6 +72,14 @@ export function WarRoomPanel(props: WarRoomPanelProps) {
   const panelLabels = props.demoProfile?.panel_labels ?? {};
   const emptyStateCopy = props.demoProfile?.empty_state_copy ?? {};
   const intelligence = (props.intelligence ?? props.controller.intelligence ?? null) as any;
+  const warRoomReadiness = resolveWarRoomReadiness({
+    intelligence: intelligence as Record<string, unknown> | null | undefined,
+    decisionLoading: props.decisionLoading,
+    decisionStatus: props.decisionStatus ?? null,
+  });
+  React.useEffect(() => {
+    logPanelOnce("[Nexora][PanelDataState]", { panel: "war_room", readiness: warRoomReadiness });
+  }, [warRoomReadiness]);
   const decisionBrief = mapDecisionBrief({
     fragility: intelligence?.fragility ?? null,
     decisionImpact: props.decisionImpact ?? null,
@@ -123,6 +135,44 @@ export function WarRoomPanel(props: WarRoomPanelProps) {
     canonicalRecommendation?.confidence.score ??
     decisionBrief.summary.confidence;
   const supportingDetailOpen = props.decisionStatus === "ready";
+
+  const warIntel = React.useMemo(
+    () =>
+      buildWarRoomIntelligence({
+        riskLevel: String(decisionBrief.summary.risk_level ?? ""),
+        situation: decisionBrief.summary.situation,
+        primaryObject: decisionBrief.summary.primary_object,
+        recommendationAction: canonicalRecommendation?.primary?.action ?? null,
+        confidenceScore:
+          typeof impactConfidence === "number" && Number.isFinite(impactConfidence) ? impactConfidence : 0.72,
+      }),
+    [
+      decisionBrief.summary.risk_level,
+      decisionBrief.summary.situation,
+      decisionBrief.summary.primary_object,
+      canonicalRecommendation?.primary?.action,
+      impactConfidence,
+    ]
+  );
+
+  React.useEffect(() => {
+    logPanelIntelligence("war_room", warIntel);
+  }, [warIntel]);
+
+  const warDecisionSet = React.useMemo(
+    () =>
+      buildWarRoomDecisionSet({
+        riskLevel: String(decisionBrief.summary.risk_level ?? ""),
+        situation: decisionBrief.summary.situation,
+        recommendationAction: canonicalRecommendation?.primary?.action ?? null,
+      }),
+    [
+      decisionBrief.summary.risk_level,
+      decisionBrief.summary.situation,
+      canonicalRecommendation?.primary?.action,
+    ]
+  );
+
   const executionIntent = buildDecisionExecutionIntent({
     source: "war_room",
     canonicalRecommendation,
@@ -162,15 +212,6 @@ export function WarRoomPanel(props: WarRoomPanelProps) {
     memoryEntries: props.memoryEntries ?? [],
     existingWorkflow: approvalEnvelope?.workflow ?? null,
     policyState: policy,
-  });
-  dedupePanelConsoleTrace("PanelComponent", "war_room", "main", {
-    meaningfulData: Boolean(intelligence),
-    hasIntelligence: Boolean(intelligence),
-    hasCanonicalRecommendation: Boolean(canonicalRecommendation),
-    prioritiesCount: Array.isArray(intelligence?.priorities) ? intelligence.priorities.length : 0,
-    risksCount: Array.isArray(intelligence?.risks) ? intelligence.risks.length : 0,
-    hasRecommendation: Boolean(intelligence?.recommendation ?? canonicalRecommendation?.primary?.action),
-    hasSummary: Boolean(intelligence?.summary),
   });
   const dispatchWarRoomAction = (actionId: WarRoomActionId) => {
     let resolvedView: string | null = null;
@@ -300,10 +341,55 @@ export function WarRoomPanel(props: WarRoomPanelProps) {
               onClick={props.onClose}
               style={{ color: nx.lowMuted, background: "transparent", border: "none", cursor: "pointer", fontSize: 12, padding: 0 }}
             >
-              Close
+              Back
             </button>
           </div>
         </div>
+
+        <div
+          style={{
+            borderRadius: 10,
+            border: "1px solid rgba(96,165,250,0.24)",
+            padding: 12,
+            background: "rgba(15,23,42,0.55)",
+          }}
+        >
+          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#94a3b8" }}>
+            Primary insight
+          </div>
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 15,
+              fontWeight: 800,
+              color: "#f8fafc",
+              lineHeight: 1.35,
+              maxHeight: "4.6em",
+              overflow: "hidden",
+            }}
+          >
+            {warIntel.primary}
+          </div>
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 12,
+              color: "#94a3b8",
+              opacity: 0.9,
+              lineHeight: 1.45,
+              maxHeight: "4.5em",
+              overflow: "hidden",
+            }}
+          >
+            {warIntel.implication}
+          </div>
+          <div style={{ marginTop: 10, fontSize: 12, color: "#e2e8f0", lineHeight: 1.45 }}>
+            <strong>Recommended action:</strong> {warIntel.action}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 11, color: "#64748b" }}>Confidence: {(warIntel.confidence * 100).toFixed(0)}%</div>
+        </div>
+
+        <PanelDecisionSetSection view="war_room" decisionSet={warDecisionSet} />
 
         <WarRoomSection
           label="Current Situation"

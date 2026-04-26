@@ -22,6 +22,15 @@ export function resetNexoraReliabilityLogDedupe(): void {
 
 export function emitNexoraB26HealthCheck(payload: Record<string, unknown>): void {
   if (process.env.NODE_ENV === "production") return;
+  let signature = "";
+  try {
+    signature = JSON.stringify(payload);
+  } catch {
+    signature = String(payload);
+  }
+  const k = key("health_check", signature);
+  if (seen.has(k)) return;
+  seen.add(k);
   globalThis.console?.debug?.("[Nexora][B26] health_check", payload);
 }
 

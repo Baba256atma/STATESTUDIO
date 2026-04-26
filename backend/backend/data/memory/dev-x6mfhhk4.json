@@ -7,24 +7,24 @@
     "trend": "stable"
   },
   "obj_delivery": {
-    "energy": 1.0,
-    "hits": 234,
+    "energy": 0.9886897095778797,
+    "hits": 288,
     "last_intensity": 0.34073961154861454,
-    "last_ts": 1775535144,
-    "trend": "stable"
+    "last_ts": 1777181483,
+    "trend": "rising"
   },
   "obj_inventory": {
-    "energy": 1.0,
-    "hits": 157,
+    "energy": 0.9886897095778797,
+    "hits": 217,
     "last_intensity": 0.34073961154861454,
-    "last_ts": 1775535144,
-    "trend": "stable"
+    "last_ts": 1777181483,
+    "trend": "rising"
   },
   "obj_risk_zone": {
-    "energy": 0.271617850932366,
-    "hits": 542,
-    "last_intensity": 0.43531139109288164,
-    "last_ts": 1776141517,
+    "energy": 0.9886897095778797,
+    "hits": 595,
+    "last_intensity": 0.34073961154861454,
+    "last_ts": 1777181483,
     "trend": "rising"
   }
 }

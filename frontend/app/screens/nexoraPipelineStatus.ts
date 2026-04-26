@@ -33,6 +33,10 @@ export type NexoraPipelineStatusUi = {
   trustSummaryLine: string | null;
   /** B.16 — non-null when HUD trust/decision lines were merged from a replay restore (cleared on fresh pipeline commits). */
   replayRestoredRunId: string | null;
+  /** Prompt 11B — short UX stage label for input pipeline (e.g. `starting`, `completed`). */
+  uxStage: string | null;
+  /** Prompt 11B — user-facing pipeline line (e.g. “Analyzing system…”). */
+  uxMessage: string | null;
 };
 
 export function createInitialPipelineStatusUi(): NexoraPipelineStatusUi {
@@ -59,6 +63,8 @@ export function createInitialPipelineStatusUi(): NexoraPipelineStatusUi {
     validationWarnings: [],
     trustSummaryLine: null,
     replayRestoredRunId: null,
+    uxStage: null,
+    uxMessage: null,
   };
 }
 
@@ -86,6 +92,8 @@ export function buildPipelineStatusSignature(s: NexoraPipelineStatusUi): string 
     tw: s.validationWarnings.join("|"),
     tsl: s.trustSummaryLine ? s.trustSummaryLine.slice(0, 120) : null,
     rr: s.replayRestoredRunId,
+    ux: s.uxStage,
+    uxm: s.uxMessage ? s.uxMessage.slice(0, 80) : null,
   });
 }
 

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
 
 import type { SceneLoop } from "../../lib/sceneTypes";
 import type { DecisionPathRendererEdge } from "../overlays/DecisionPathOverlayLayer";
@@ -468,12 +467,10 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
     });
   }, [activeMaterials]);
 
-  useFrame((state) => {
-    const elapsed = state.clock.getElapsedTime();
-    const pulse = 0.72 + 0.28 * Math.sin(elapsed * tokens.motion.relationPulseHz * 0.8);
+  useEffect(() => {
     const base = 0.26 + activeWeightMean * 0.16;
     activeMaterials.forEach((material) => {
-      material.opacity = Math.min(1, base + pulse * 0.38);
+      material.opacity = Math.min(1, base + 0.26);
     });
     scannerActiveGroups.forEach(({ role, isHovered, materials }) => {
       const style = getRelationEmphasisStyle({ relationRole: role, severity: relationSeverity, theme, active: true });
@@ -481,10 +478,10 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
         role === "primary_to_affected"
           ? scannerStoryReveal.edge
           : role === "affected_to_affected"
-          ? (scannerStoryReveal.edge + scannerStoryReveal.affected) * 0.5
-          : role === "primary_to_context" || role === "affected_to_context" || role === "context_to_context"
-          ? scannerStoryReveal.context
-          : 1;
+            ? (scannerStoryReveal.edge + scannerStoryReveal.affected) * 0.5
+            : role === "primary_to_context" || role === "affected_to_context" || role === "context_to_context"
+              ? scannerStoryReveal.context
+              : 1;
       const revealOpacity = role === "primary_to_affected" ? 0.52 + relationReveal * 0.48 : 0.32 + relationReveal * 0.38;
       const roleEdges = groupedEdges.active.get(role) ?? [];
       const memoryBoost = materials.length > 0 ? getEdgeMemoryStrength(roleEdges) : 0;
@@ -493,14 +490,6 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
       const simulationEdge = getCombinedSimulationEdge(roleEdges);
       const simulationStyle = simulationEdge ? getSimulationEdgeStyle(simulationEdge.depth, simulationEdge.strength) : getSimulationEdgeStyle(3, 0);
       const interactionBoost = isHovered ? hoveredInteractionProfile.edgeBoost : 1;
-      const rolePulse =
-        role === "primary_to_affected"
-          ? 0.08
-          : role === "primary_to_context"
-          ? 0.04
-          : role === "affected_to_affected"
-          ? 0.025
-          : 0.012;
       materials.forEach((material, index) => {
         const baseOpacity =
           style.opacity *
@@ -510,14 +499,25 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
           narrativeStyle.opacityMul *
           simulationStyle.opacityMul;
         const layeredOpacity = index === 0 ? baseOpacity : Math.max(0.08, baseOpacity * 0.46);
-        material.opacity = Math.min(
-          1,
-          layeredOpacity +
-            pulse * (rolePulse + narrativeStyle.pulseBoost + simulationStyle.pulseBoost) * relationReveal
-        );
+        material.opacity = Math.min(1, layeredOpacity);
       });
     });
-  });
+  }, [
+    activeMaterials,
+    activeWeightMean,
+    getCombinedSimulationEdge,
+    getDecisionNarrativeRole,
+    getEdgeMemoryStrength,
+    groupedEdges.active,
+    hoveredInteractionProfile.edgeBoost,
+    narrativeFocusStrength,
+    relationSeverity,
+    scannerActiveGroups,
+    scannerStoryReveal.affected,
+    scannerStoryReveal.context,
+    scannerStoryReveal.edge,
+    theme,
+  ]);
 
   const activeGeos = useMemo(() => {
     if (!activeGeo) return [] as THREE.BufferGeometry[];

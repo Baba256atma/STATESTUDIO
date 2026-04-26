@@ -16,6 +16,7 @@ export const CANONICAL_RIGHT_PANEL_VIEWS = [
   "risk",
   "fragility",
   "object",
+  "object_focus",
   "timeline",
   "decision_timeline",
   "confidence_calibration",
@@ -34,6 +35,8 @@ export const CANONICAL_RIGHT_PANEL_VIEWS = [
   "opponent",
   "collaboration",
   "workspace",
+  /** Primary entry: describe situation, attach context (no backend wiring yet). */
+  "input",
 ] as const;
 
 export const PROTECTED_RIGHT_PANEL_VIEWS = [
@@ -47,6 +50,13 @@ export const PROTECTED_RIGHT_PANEL_VIEWS = [
 export type CanonicalRightPanelView = (typeof CANONICAL_RIGHT_PANEL_VIEWS)[number];
 export type ProtectedRightPanelView = (typeof PROTECTED_RIGHT_PANEL_VIEWS)[number];
 export type RightPanelView = CanonicalRightPanelView | null;
+export type CenterExecutionSurface =
+  | "compare"
+  | "timeline"
+  | "analysis"
+  | "simulation"
+  | "workspace"
+  | "object_inspection";
 
 export function isProtectedRightPanelView(
   view: RightPanelView

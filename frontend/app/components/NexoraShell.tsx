@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { FragilityScannerMini } from "./scanner/FragilityScannerMini";
 import { nx } from "./ui/nexoraTheme";
 import type { FragilityDriver, FragilityScanResponse } from "../types/fragilityScanner";
@@ -40,6 +40,10 @@ import { getNexoraProductMode } from "../lib/product/nexoraProductMode.ts";
 /** Single source of truth: right rail width for every inspector / executive panel state. */
 const RIGHT_PANEL_WIDTH_PX = 430;
 
+/** Left command assistant column (mission-control chat / quick actions). */
+const LEFT_COMMAND_WIDTH_PX = 340;
+const LEFT_COMMAND_COLLAPSED_PX = 48;
+
 type NexoraShellProps = {
   children: React.ReactNode;
 };
@@ -71,9 +75,18 @@ type ActiveSectionKey =
   | "war_room"
   | "collaboration"
   | "workspace"
-  // MVP-FROZEN: reports/settings are retained for compatibility but not expanded for MVP.
+  | "fragility"
+  // MVP-FROZEN: reports are retained for compatibility but not expanded for MVP.
   | "reports"
-  | "settings";
+  | "input";
+
+/** Risk rail subtabs → canonical right-panel view (single authority). */
+const RISK_RAIL_TAB_TO_VIEW: Record<"explanation" | "conflict" | "risk_flow" | "fragility", RightPanelView> = {
+  explanation: "explanation",
+  conflict: "conflict",
+  risk_flow: "risk",
+  fragility: "fragility",
+};
 
 const LEFT_NAV_ITEMS: Array<{
   key: LeftNavGroupKey;
@@ -89,9 +102,18 @@ const LEFT_NAV_ITEMS: Array<{
 ];
 
 function groupForSection(section: ActiveSectionKey): LeftNavGroupKey {
+  if (section === "input") return "scene_group";
   if (section === "scene" || section === "objects" || section === "focus") return "scene_group";
   if (section === "timeline" || section === "advice" || section === "war_room") return "strategy_group";
-  if (section === "risk" || section === "conflict" || section === "risk_flow" || section === "explanation") return "risk_group";
+  if (
+    section === "risk" ||
+    section === "fragility" ||
+    section === "conflict" ||
+    section === "risk_flow" ||
+    section === "explanation"
+  ) {
+    return "risk_group";
+  }
   if (
     section === "replay" ||
     section === "memory" ||
@@ -108,6 +130,7 @@ function groupForSection(section: ActiveSectionKey): LeftNavGroupKey {
 
 function getRequestedViewForEventTab(eventTab: InspectorEventTab | null | undefined): RightPanelView {
   if (!eventTab) return null;
+  if (eventTab === "input") return "input";
   if (eventTab === "scene") return "workspace";
   if (eventTab === "object_focus") return "object";
   if (eventTab === "memory_insights") return "memory";
@@ -123,17 +146,27 @@ function getRequestedViewForEventTab(eventTab: InspectorEventTab | null | undefi
 function getRequestedViewForLeftNav(key: LeftNavGroupKey): RightPanelView {
   if (key === "scene_group") return "workspace";
   if (key === "strategy_group") return "simulate";
-  if (key === "risk_group") return "explanation";
+  if (key === "risk_group") return "risk";
   if (key === "workflow_group") return "memory";
   if (key === "executive_group") return "dashboard";
   return "workspace";
 }
 
+function panelFamilyForView(view: RightPanelView | null | undefined): "EXE" | "SCN" | "SIM" | "RSK" {
+  if (view === "input") return "SCN";
+  if (view === "dashboard" || view === "strategic_command" || view === "kpi") return "EXE";
+  if (view === "risk" || view === "fragility" || view === "explanation" || view === "conflict") return "RSK";
+  if (view === "workspace" || view === "object" || view === "object_focus") return "SCN";
+  return "SIM";
+}
+
 function getSectionForView(view: RightPanelView | null): ActiveSectionKey | null {
   if (!view) return null;
+  if (view === "input") return "input";
   if (view === "workspace") return "scene";
   if (view === "object") return "focus";
-  if (view === "risk" || view === "fragility") return "risk";
+  if (view === "risk") return "risk_flow";
+  if (view === "fragility") return "fragility";
   if (view === "explanation") return "explanation";
   if (view === "conflict") return "conflict";
   if (view === "memory") return "memory";
@@ -148,6 +181,23 @@ function getSectionForView(view: RightPanelView | null): ActiveSectionKey | null
     return "timeline";
   }
   if (view === "simulate" || view === "compare") return "timeline";
+  return null;
+}
+
+function isScnPanelView(view: RightPanelView | null | undefined): boolean {
+  return view === "workspace" || view === "object" || view === "object_focus";
+}
+
+function resolveScnSectionFromView(
+  view: RightPanelView | null | undefined,
+  explicitIntent: "scene" | "objects" | "focus" | null
+): ActiveSectionKey | null {
+  if (explicitIntent === "scene") return "scene";
+  if (explicitIntent === "objects") return "objects";
+  if (explicitIntent === "focus") return "focus";
+  if (view === "workspace") return "scene";
+  if (view === "object") return "objects";
+  if (view === "object_focus") return "focus";
   return null;
 }
 
@@ -180,7 +230,7 @@ const INSPECTOR_GROUPS: Record<
       { key: "explanation", label: "Explanation", eventTab: "explanation" },
       { key: "conflict", label: "Conflict", eventTab: "conflict" },
       { key: "risk_flow", label: "Risk Flow", eventTab: "risk_flow" },
-      { key: "risk", label: "Fragility", eventTab: "fragility_scan" },
+      { key: "fragility", label: "Fragility", eventTab: "fragility_scan" },
     ],
   },
   workflow_group: {
@@ -357,6 +407,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const [mode, setMode] = useState<"dashboard" | "studio">("dashboard");
   const [isInspectorOpen, setIsInspectorOpen] = useState(true);
   const [isAssistantDrawerOpen, setIsAssistantDrawerOpen] = useState(true);
+  const [leftCommandOpen, setLeftCommandOpen] = useState(true);
   const [chatInput, setChatInput] = useState("");
   const [multiSourcePopoverOpen, setMultiSourcePopoverOpen] = useState(false);
   const [multiSourceBusy, setMultiSourceBusy] = useState(false);
@@ -364,6 +415,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const [nexoraHealthTier, setNexoraHealthTier] = useState<"green" | "yellow" | "red">("red");
   const [scheduledDefs, setScheduledDefs] = useState<ScheduledAssessmentDefinition[]>([]);
   const lastRailAuditSignatureRef = React.useRef<string | null>(null);
+  const lastShellSectionResolvedEmitSigRef = useRef<string | null>(null);
   const lastRenderAuditRef = React.useRef<{ signature: string | null; count: number }>({
     signature: null,
     count: 0,
@@ -378,6 +430,10 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           : "Workspace ready. Enter a pressure prompt to analyze the current system.",
     },
   ]);
+  const stageChatPendingThinkingTimersRef = useRef<Map<string, number>>(new Map());
+  const [stageChatAwaitingReply, setStageChatAwaitingReply] = useState(false);
+  const [stageChatDelayedBusy, setStageChatDelayedBusy] = useState(false);
+  const stageChatBusyTimerRef = useRef<number | null>(null);
 
   const assessBusinessTextFromCommandBar = useCallback(() => {
     const text = chatInput.trim();
@@ -441,6 +497,26 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     return () => window.removeEventListener("nexora:scheduled-assessments-changed", sync);
   }, []);
 
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ open?: boolean }>).detail;
+      if (typeof detail?.open === "boolean") {
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[Nexora][LeftCommand] set-open", detail.open);
+        }
+        setLeftCommandOpen(detail.open);
+      }
+    };
+    window.addEventListener("nexora:left-command-set-open", handler);
+    return () => window.removeEventListener("nexora:left-command-set-open", handler);
+  }, []);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("nexora:left-command-open-changed", { detail: { open: leftCommandOpen } })
+    );
+  }, [leftCommandOpen]);
+
   const handleSaveScheduled = useCallback((payload: SaveScheduledPayload) => {
     const def: ScheduledAssessmentDefinition = {
       id: newScheduledAssessmentId(),
@@ -476,11 +552,29 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     const userId = `${requestId}-user`;
     const pendingId = `${requestId}-pending`;
     setChatInput("");
-    setChatMessages((prev) => [
-      ...prev,
-      { id: userId, role: "user", text },
-      { id: pendingId, role: "assistant", text: "Analyzing..." },
-    ]);
+    setStageChatAwaitingReply(true);
+    setStageChatDelayedBusy(false);
+    if (stageChatBusyTimerRef.current != null) {
+      window.clearTimeout(stageChatBusyTimerRef.current);
+    }
+    stageChatBusyTimerRef.current = window.setTimeout(() => {
+      setStageChatDelayedBusy(true);
+    }, 300);
+    setChatMessages((prev) => [...prev, { id: userId, role: "user", text }]);
+    const existingPendingTimer = stageChatPendingThinkingTimersRef.current.get(requestId);
+    if (existingPendingTimer != null) {
+      window.clearTimeout(existingPendingTimer);
+    }
+    const thinkingTimer = window.setTimeout(() => {
+      setChatMessages((prev) => {
+        const assistantFinal = `${requestId}-assistant`;
+        if (prev.some((m) => m.id === assistantFinal)) return prev;
+        if (prev.some((m) => m.id === pendingId)) return prev;
+        return [...prev, { id: pendingId, role: "assistant", text: "Analyzing…" }];
+      });
+      stageChatPendingThinkingTimersRef.current.delete(requestId);
+    }, 300);
+    stageChatPendingThinkingTimersRef.current.set(requestId, thinkingTimer);
     window.dispatchEvent(
       new CustomEvent("nexora:submit-chat", {
         detail: { text, requestId, source: options?.source ?? "user" },
@@ -492,6 +586,19 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     const onChatResult = (event: Event) => {
       const detail = (event as CustomEvent<{ reply?: string; ok?: boolean; requestId?: string }>).detail ?? {};
       const requestId = typeof detail.requestId === "string" ? detail.requestId : null;
+      setStageChatAwaitingReply(false);
+      setStageChatDelayedBusy(false);
+      if (stageChatBusyTimerRef.current != null) {
+        window.clearTimeout(stageChatBusyTimerRef.current);
+        stageChatBusyTimerRef.current = null;
+      }
+      if (requestId) {
+        const pendingTimer = stageChatPendingThinkingTimersRef.current.get(requestId);
+        if (pendingTimer != null) {
+          window.clearTimeout(pendingTimer);
+          stageChatPendingThinkingTimersRef.current.delete(requestId);
+        }
+      }
       const reply =
         typeof detail.reply === "string" && detail.reply.trim().length
           ? detail.reply
@@ -509,7 +616,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           return [...prev, { id: `${requestId}-assistant`, role: "assistant", text: reply }];
         }
         const next = [...prev];
-        next[idx] = { ...next[idx], text: reply };
+        next[idx] = { ...next[idx], id: `${requestId}-assistant`, text: reply };
         return next;
       });
     };
@@ -529,6 +636,8 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   }, []);
   
   const [activeSection, setActiveSection] = useState<ActiveSectionKey>(mode === "studio" ? "objects" : "executive");
+  const explicitScnIntentRef = useRef<"scene" | "objects" | "focus" | null>(null);
+  const lastShellSectionIntentSigRef = useRef<string | null>(null);
   const domainExperience = inspectorContext?.domainExperience ?? inspectorContext?.domainSelection ?? null;
   const {
     activeProfile,
@@ -561,19 +670,20 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     () => getSectionForView(upstreamRightPanelView),
     [upstreamRightPanelView]
   );
+  const scnResolvedSection = useMemo(
+    () => resolveScnSectionFromView(upstreamRightPanelView, explicitScnIntentRef.current),
+    [upstreamRightPanelView, activeSection]
+  );
   const resolvedActiveSection = useMemo(() => {
+    if (scnResolvedSection) {
+      return scnResolvedSection;
+    }
     if (!upstreamMappedSection) {
       return activeSection;
     }
 
     // Preserve local sub-navigation within the same family when upstream view points at that family.
     if (upstreamMappedSection === "focus" && (activeSection === "objects" || activeSection === "focus")) {
-      return activeSection;
-    }
-    if (
-      upstreamMappedSection === "risk" &&
-      (activeSection === "risk" || activeSection === "risk_flow" || activeSection === "explanation")
-    ) {
       return activeSection;
     }
     if (upstreamMappedSection === "scene" && activeSection === "scene") {
@@ -587,26 +697,23 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     }
 
     return upstreamMappedSection;
-  }, [activeSection, upstreamMappedSection]);
+  }, [activeSection, scnResolvedSection, upstreamMappedSection]);
 
-  const shellDebugSigRef = React.useRef<string | null>(null);
-  React.useEffect(() => {
-    const sig = `${resolvedActiveSection}|${upstreamRightPanelView ?? ""}|${upstreamMappedSection ?? ""}`;
-    if (shellDebugSigRef.current === sig) return;
-    shellDebugSigRef.current = sig;
-    emitDebugEvent({
-      type: "shell_section_resolved",
-      layer: "shell",
-      source: "NexoraShell",
-      status: "info",
-      message: `Shell section ${resolvedActiveSection}`,
-      metadata: {
-        resolvedActiveSection,
-        upstreamRightPanelView,
-        upstreamMappedSection,
-      },
+  useEffect(() => {
+    if (!isScnPanelView(upstreamRightPanelView)) {
+      explicitScnIntentRef.current = null;
+    }
+  }, [upstreamRightPanelView]);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    console.log("[Nexora][SCN][NarrowPatch]", {
+      explicitScnIntent: explicitScnIntentRef.current,
+      upstreamRightPanelView,
+      scnResolvedSection,
+      activeSection,
+      resolvedActiveSection,
     });
-  }, [resolvedActiveSection, upstreamRightPanelView, upstreamMappedSection]);
+  }, [upstreamRightPanelView, scnResolvedSection, activeSection, resolvedActiveSection]);
 
   const sectionTitle = useMemo(() => {
     const map: Record<typeof activeSection, string> = {
@@ -614,6 +721,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       objects: "Objects",
       kpi: "KPI",
       risk: "Risk",
+      fragility: "Fragility",
       loops: "Loops",
       timeline: "Timeline",
       conflict: "Conflict Map",
@@ -630,7 +738,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       collaboration: "Collaboration",
       workspace: "Workspace",
       reports: "Reports",
-      settings: "Settings",
+      input: "Input",
     };
     return map[resolvedActiveSection];
   }, [resolvedActiveSection]);
@@ -645,6 +753,8 @@ export default function NexoraShell({ children }: NexoraShellProps) {
         return "Track the business indicators that define current system health.";
       case "risk":
         return "See which fragility and pressure signals deserve executive attention.";
+      case "fragility":
+        return "Review scan drivers, weak links, and the current fragility posture.";
       case "loops":
         return "Review reinforcing and balancing loops shaping the current state.";
       case "timeline":
@@ -677,14 +787,36 @@ export default function NexoraShell({ children }: NexoraShellProps) {
         return "Product workspace, saved scenarios, and saved reports.";
       case "reports":
         return "Review saved reports, exports, and executive snapshots.";
-      case "settings":
-        return "Adjust workspace preferences and operating defaults.";
+      case "input":
+        return "Describe your situation or attach context so Nexora can analyze and recommend next moves.";
       default:
         return "Choose a surface to inspect the current business state.";
     }
   }, [resolvedActiveSection]);
 
   const activeNavGroup = useMemo(() => groupForSection(resolvedActiveSection), [resolvedActiveSection]);
+  const scenePanelCardFlowStyle: React.CSSProperties = useMemo(
+    () => ({
+      position: "relative",
+      width: "100%",
+      margin: 0,
+      flexShrink: 0,
+      zIndex: "auto",
+    }),
+    []
+  );
+  const lastScenePanelLayoutSigRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (mode !== "dashboard" || resolvedActiveSection !== "scene") return;
+    const sig = `${resolvedActiveSection}|${upstreamRightPanelView ?? "none"}`;
+    if (lastScenePanelLayoutSigRef.current === sig) return;
+    lastScenePanelLayoutSigRef.current = sig;
+    console.log("[Nexora][ScenePanelLayoutStable]", {
+      view: "scene",
+      sections: "normal-flow",
+    });
+  }, [mode, resolvedActiveSection, upstreamRightPanelView]);
   const sceneJson = inspectorContext?.sceneJson ?? inspectorContext?.responseData?.scene_json ?? null;
   const fragilityScanResult = (inspectorContext?.responseData?.fragility_scan ??
     inspectorContext?.fragilityScanResult ??
@@ -737,6 +869,33 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const objectSelection = inspectorContext?.objectSelection ?? null;
   const selectedObjectId =
     typeof inspectorContext?.selectedObjectId === "string" ? inspectorContext.selectedObjectId : null;
+
+  useEffect(() => {
+    const shellSectionResolvedMessage = `Shell section ${resolvedActiveSection}`;
+    const shellSectionResolvedEmitSig = JSON.stringify({
+      origin: "system",
+      type: "shell_section_resolved",
+      source: "NexoraShell",
+      message: shellSectionResolvedMessage,
+    });
+    if (lastShellSectionResolvedEmitSigRef.current === shellSectionResolvedEmitSig) {
+      return;
+    }
+    lastShellSectionResolvedEmitSigRef.current = shellSectionResolvedEmitSig;
+    emitDebugEvent({
+      type: "shell_section_resolved",
+      layer: "shell",
+      source: "NexoraShell",
+      status: "info",
+      message: shellSectionResolvedMessage,
+      metadata: {
+        resolvedActiveSection,
+        upstreamRightPanelView,
+        upstreamMappedSection,
+      },
+    });
+  }, [resolvedActiveSection]);
+
   const focusReasoning = useMemo(() => {
     const rankings = Array.isArray(objectSelection?.rankings) ? objectSelection.rankings : [];
     if (!focusedObjectId || !rankings.length) return null;
@@ -921,8 +1080,12 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     leftNavKey?: LeftNavGroupKey | null
   ) => {
     const explicitSection = section;
-    setActiveSection(section);
-    setIsInspectorOpen(true);
+    if (section !== activeSection) {
+      setActiveSection(section);
+      setIsInspectorOpen(true);
+    } else {
+      setIsInspectorOpen((open) => (open ? open : true));
+    }
     window.dispatchEvent(
       new CustomEvent<InspectorSectionChangedDetail>("nexora:inspector-section-changed", {
         detail: { section, eventTab: eventTab ?? null, source: "legacy-ui:user-nav" },
@@ -933,14 +1096,19 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       getRequestedViewForEventTab(eventTab) ??
       getRequestedViewForLeftNav(groupForSection(section));
     if (nextView) {
+      const openReason =
+        leftNavKey === "scene_group" && nextView === "workspace" ? "scn_auto_scene_open" : "shell_nav_intent";
       window.dispatchEvent(
         new CustomEvent("nexora:open-right-panel", {
           detail: {
+            family: panelFamilyForView(nextView),
             view: nextView,
             tab: eventTab ?? null,
             leftNav: leftNavKey ?? null,
             section: explicitSection,
-            source: "ui:user-nav",
+            source: leftNavKey ? "left_nav" : "sub_button",
+            forceOpen: true,
+            reason: openReason,
           },
         })
       );
@@ -968,7 +1136,21 @@ export default function NexoraShell({ children }: NexoraShellProps) {
         getRecentDebugEvents()
       )
     );
-  }, []);
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (!upstreamMappedSection) return;
+    if (
+      isScnPanelView(upstreamRightPanelView) &&
+      explicitScnIntentRef.current &&
+      explicitScnIntentRef.current !== "focus"
+    ) {
+      return;
+    }
+    if (isScnPanelView(upstreamRightPanelView)) return;
+    if (activeSection === upstreamMappedSection) return;
+    setActiveSection(upstreamMappedSection);
+  }, [activeSection, upstreamMappedSection, upstreamRightPanelView]);
   const focusObjectFromInspector = useCallback(
     (id: string) => {
       if (!id) return;
@@ -1037,13 +1219,13 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   React.useEffect(() => {
     const onOpenRightPanel = (event: Event) => {
       const detail = (event as CustomEvent<{ tab?: string; view?: string | null; section?: string | null }>).detail;
-      const nextView =
+      const requestedView =
         typeof detail?.view === "string" ? (detail.view as RightPanelView) : null;
       const explicitSection =
         typeof detail?.section === "string"
           ? (detail.section as ActiveSectionKey)
           : null;
-      const derivedSection = getSectionForView(nextView);
+      const derivedSection = getSectionForView(requestedView);
       const nextSection = explicitSection ?? derivedSection;
       if (
         process.env.NODE_ENV !== "production" &&
@@ -1054,27 +1236,54 @@ export default function NexoraShell({ children }: NexoraShellProps) {
         console.log("[Nexora][SectionPrecedence]", {
           explicitSection: explicitSection ?? null,
           derivedSection: derivedSection ?? null,
-          nextView: nextView ?? null,
+          nextView: requestedView ?? null,
         });
       }
+      const sig = `${requestedView ?? "null"}|${nextSection ?? "null"}|open_right_panel`;
+      if (lastShellSectionIntentSigRef.current === sig) return;
+      lastShellSectionIntentSigRef.current = sig;
       if (nextSection) {
-        setActiveSection(nextSection as ActiveSectionKey);
+        setActiveSection((prev) => (prev === nextSection ? prev : (nextSection as ActiveSectionKey)));
       }
     };
     window.addEventListener("nexora:open-right-panel", onOpenRightPanel as EventListener);
     return () => window.removeEventListener("nexora:open-right-panel", onOpenRightPanel as EventListener);
   }, []);
+  React.useEffect(() => {
+    const onAuthorityOpened = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          view?: string | null;
+          isOpen?: boolean;
+        }>
+      ).detail;
+      if (detail?.isOpen !== true) return;
+      const requestedView = typeof detail?.view === "string" ? (detail.view as RightPanelView) : null;
+      const nextSection = getSectionForView(requestedView);
+      if (nextSection) {
+        const sig = `${requestedView ?? "null"}|${nextSection}|authority_opened`;
+        if (lastShellSectionIntentSigRef.current !== sig) {
+          lastShellSectionIntentSigRef.current = sig;
+          setActiveSection((prev) => (prev === nextSection ? prev : nextSection));
+        }
+      }
+      setIsInspectorOpen((open) => (open ? open : true));
+    };
+    window.addEventListener("nexora:right-panel-authority-opened", onAuthorityOpened as EventListener);
+    return () =>
+      window.removeEventListener("nexora:right-panel-authority-opened", onAuthorityOpened as EventListener);
+  }, []);
 
   useEffect(() => {
     const onRightPanelTabChanged = (event: Event) => {
       const detail = (event as CustomEvent<{ tab?: string; view?: string | null }>).detail;
-      const nextView =
+      const requestedView =
         typeof detail?.view === "string" ? (detail.view as RightPanelView) : null;
       const explicitSection =
         typeof detail?.tab === "string"
           ? (detail.tab as ActiveSectionKey)
           : null;
-      const derivedSection = getSectionForView(nextView);
+      const derivedSection = getSectionForView(requestedView);
       const nextSection = explicitSection ?? derivedSection;
       if (
         process.env.NODE_ENV !== "production" &&
@@ -1085,11 +1294,14 @@ export default function NexoraShell({ children }: NexoraShellProps) {
         console.log("[Nexora][SectionPrecedence]", {
           explicitSection: explicitSection ?? null,
           derivedSection: derivedSection ?? null,
-          nextView: nextView ?? null,
+          nextView: requestedView ?? null,
         });
       }
+      const sig = `${requestedView ?? "null"}|${nextSection ?? "null"}|right_panel_tab_changed`;
+      if (lastShellSectionIntentSigRef.current === sig) return;
+      lastShellSectionIntentSigRef.current = sig;
       if (nextSection) {
-        setActiveSection(nextSection as ActiveSectionKey);
+        setActiveSection((prev) => (prev === nextSection ? prev : (nextSection as ActiveSectionKey)));
       }
     };
     window.addEventListener("nexora:right-panel-tab-changed", onRightPanelTabChanged as EventListener);
@@ -1252,6 +1464,9 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                   onClick={() => {
                     const requestedView = getRequestedViewForLeftNav(item.key);
                     const nextSection = getSectionForView(requestedView) ?? activeSection;
+                    if (item.key === "scene_group") {
+                      explicitScnIntentRef.current = "scene";
+                    }
                     setInspectorSection(nextSection, undefined, requestedView, item.key);
                   }}
                   style={{
@@ -1288,11 +1503,95 @@ export default function NexoraShell({ children }: NexoraShellProps) {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
+              gap: 8,
               paddingTop: 4,
             }}
           >
-            <SceneSettingsMenu variant="navIcon" />
+            <SceneSettingsMenu variant="navSettings" />
+            <SceneSettingsMenu variant="navInput" />
           </div>
+        </aside>
+
+        <aside
+          id="nexora-left-command-column"
+          style={{
+            flexGrow: 0,
+            flexShrink: 0,
+            flexBasis: leftCommandOpen ? LEFT_COMMAND_WIDTH_PX : LEFT_COMMAND_COLLAPSED_PX,
+            width: leftCommandOpen ? LEFT_COMMAND_WIDTH_PX : LEFT_COMMAND_COLLAPSED_PX,
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            borderRight: `1px solid ${nx.borderStrong}`,
+            background: nx.bgShell,
+            backdropFilter: "blur(10px)",
+            transition: "flex-basis 160ms ease, width 160ms ease",
+            willChange: "width",
+            position: "relative",
+          }}
+        >
+          <div
+            id="nexora-left-command-host"
+            style={{
+              flexGrow: 1,
+              flexShrink: 1,
+              flexBasis: 0,
+              minHeight: 0,
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          />
+          {!leftCommandOpen ? (
+            <button
+              type="button"
+              aria-label="Open Nexora Command"
+              title="Open Nexora Command"
+              onClick={() => {
+                if (typeof window === "undefined") return;
+                window.dispatchEvent(
+                  new CustomEvent("nexora:left-command-set-open", { detail: { open: true } })
+                );
+              }}
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 2,
+                margin: 0,
+                padding: 0,
+                border: "none",
+                borderRadius: 0,
+                background: "transparent",
+                cursor: "pointer",
+                display: "block",
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  writingMode: "vertical-rl",
+                  transform: "rotate(180deg)",
+                  fontSize: 12,
+                  letterSpacing: "1px",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  color: nx.text,
+                  opacity: 0.7,
+                  pointerEvents: "none",
+                }}
+              >
+                <span aria-hidden style={{ fontSize: 11, opacity: 0.85, marginBottom: 4 }}>
+                  ▶
+                </span>
+                Command
+              </div>
+            </button>
+          ) : null}
         </aside>
 
         {mode === "studio" ? (
@@ -1363,7 +1662,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                   <button
                     key={item.key}
                     type="button"
-                    onClick={() => setActiveSection(item.key)}
+                    onClick={() => setActiveSection((s) => (s === item.key ? s : item.key))}
                     style={{
                       width: "100%",
                       textAlign: "left",
@@ -1500,47 +1799,49 @@ export default function NexoraShell({ children }: NexoraShellProps) {
             }}
           />
 
-          <div
-            id="nexora-stage-assistant"
-            style={{
-              position: "absolute",
-              right: 12,
-              bottom: 12,
-              zIndex: 4,
-              pointerEvents: "auto",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              minHeight: 0,
-              ...(isAssistantDrawerOpen
-                ? {
-                    width: "min(320px, calc(100% - 24px))",
-                    maxWidth: 320,
-                    height: "40vh",
-                    maxHeight: "40vh",
-                  }
-                : { width: "auto", maxWidth: "min(320px, calc(100% - 24px))" }),
-            }}
-          >
-            <StrategicAssistantDrawer
-              isOpen={isAssistantDrawerOpen}
-              onToggle={toggleAssistantDrawer}
-              title="Strategic Assistant"
-              subtitle={demoContentActive ? `${scenarioLabel}` : "Executive intelligence for the active view."}
-              profileLabel={activeProfile?.label ?? null}
-              messages={renderedChatMessages}
-              promptChips={displayPrompts}
-              inputValue={chatInput}
-              inputPlaceholder={commandPlaceholder}
-              onInputChange={setChatInput}
-              onSubmit={handleAssistantSubmit}
-              onPromptSelect={submitPresetPrompt}
-              isBusy={renderedChatMessages[renderedChatMessages.length - 1]?.text === "Analyzing..."}
-              demoModeActive={demoContentActive}
-              demoValueHint={demoValueMomentLabel}
-              demoFlowActiveStep={demoFlowStepIndex}
-            />
-          </div>
+          {!leftCommandOpen ? (
+            <div
+              id="nexora-stage-assistant"
+              style={{
+                position: "absolute",
+                right: 12,
+                bottom: 12,
+                zIndex: 4,
+                pointerEvents: "auto",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "stretch",
+                minHeight: 0,
+                ...(isAssistantDrawerOpen
+                  ? {
+                      width: "min(320px, calc(100% - 24px))",
+                      maxWidth: 320,
+                      height: "40vh",
+                      maxHeight: "40vh",
+                    }
+                  : { width: "auto", maxWidth: "min(320px, calc(100% - 24px))" }),
+              }}
+            >
+              <StrategicAssistantDrawer
+                isOpen={isAssistantDrawerOpen}
+                onToggle={toggleAssistantDrawer}
+                title="Strategic Assistant"
+                subtitle={demoContentActive ? `${scenarioLabel}` : "Executive intelligence for the active view."}
+                profileLabel={activeProfile?.label ?? null}
+                messages={renderedChatMessages}
+                promptChips={displayPrompts}
+                inputValue={chatInput}
+                inputPlaceholder={commandPlaceholder}
+                onInputChange={setChatInput}
+                onSubmit={handleAssistantSubmit}
+                onPromptSelect={submitPresetPrompt}
+                isBusy={stageChatAwaitingReply && stageChatDelayedBusy}
+                demoModeActive={demoContentActive}
+                demoValueHint={demoValueMomentLabel}
+                demoFlowActiveStep={demoFlowStepIndex}
+              />
+            </div>
+          ) : null}
         </main>
 
         {/* RIGHT RAIL — fixed width; last column in layout row */}
@@ -1644,7 +1945,14 @@ export default function NexoraShell({ children }: NexoraShellProps) {
             {isInspectorOpen ? (
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
                 {activeSubTabs.map((tab) => {
-                  const isActive = resolvedActiveSection === tab.key;
+                  const riskMappedView =
+                    tab.key === "explanation" || tab.key === "conflict" || tab.key === "risk_flow" || tab.key === "fragility"
+                      ? RISK_RAIL_TAB_TO_VIEW[tab.key]
+                      : null;
+                  const isActive =
+                    riskMappedView != null
+                      ? upstreamRightPanelView === riskMappedView
+                      : resolvedActiveSection === tab.key;
                   return (
                     <button
                       key={tab.key}
@@ -1652,6 +1960,23 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                       title={tab.label}
                       aria-label={tab.label}
                       onClick={() => {
+                        if (riskMappedView != null) {
+                          if (process.env.NODE_ENV !== "production") {
+                            console.log("[Nexora][Tab→Authority]", { clicked: tab.key, mappedView: riskMappedView });
+                          }
+                          window.dispatchEvent(
+                            new CustomEvent("nexora:open-right-panel", {
+                              detail: {
+                                view: riskMappedView,
+                                family: panelFamilyForView(riskMappedView),
+                                source: "tab_click",
+                                forceOpen: true,
+                                reason: "risk_rail_subtab",
+                              },
+                            })
+                          );
+                          return;
+                        }
                         const route = resolveRightPanelRailRoute(tab.eventTab ?? null);
                         if (!route) {
                           return;
@@ -1664,6 +1989,15 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                           message: `Subtab ${tab.label}`,
                           metadata: { tabKey: tab.key, eventTab: tab.eventTab ?? null },
                         });
+                        if (tab.key === "scene") {
+                          explicitScnIntentRef.current = "scene";
+                        }
+                        if (tab.key === "objects") {
+                          explicitScnIntentRef.current = "objects";
+                        }
+                        if (tab.key === "focus") {
+                          explicitScnIntentRef.current = "focus";
+                        }
                         setInspectorSection(tab.key, tab.eventTab, route.resolvedView);
                       }}
                       style={{
@@ -1686,6 +2020,17 @@ export default function NexoraShell({ children }: NexoraShellProps) {
             ) : null}
           </div>
 
+          <div
+            style={{
+              flexGrow: 1,
+              flexShrink: 1,
+              flexBasis: 0,
+              minHeight: 0,
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
           {isInspectorOpen ? (
             <div
               id="nexora-inspector-body"
@@ -1704,104 +2049,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
               onWheelCapture={(e) => e.stopPropagation()}
               onTouchMoveCapture={(e) => e.stopPropagation()}
             >
-              {mode === "dashboard" && resolvedActiveSection === "scene" ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div
-                    style={{
-                      padding: 12,
-                      borderRadius: 12,
-                      border: `1px solid ${nx.border}`,
-                      background: nx.bgElevated,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 6,
-                    }}
-                  >
-                    <div style={{ color: nx.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700 }}>
-                      Scene Overview
-                    </div>
-                    <div style={{ color: nx.textSoft, fontSize: 12 }}>
-                      System-wide state and current operational context
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      padding: 12,
-                      borderRadius: 12,
-                      border: `1px solid ${nx.border}`,
-                      background: nx.bgElevated,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                    }}
-                  >
-                    <div style={{ color: nx.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700 }}>
-                      System Health
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                      <span style={{ color: nx.muted }}>Fragility</span>
-                      <span style={{ color: nx.text, fontWeight: 700 }}>{fragilityScore.toFixed(2)}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                      <span style={{ color: nx.muted }}>Level</span>
-                      <span style={{ color: nx.text, fontWeight: 700 }}>{fragilityLevel}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                      <span style={{ color: nx.muted }}>Volatility</span>
-                      <span style={{ color: nx.text, fontWeight: 700 }}>{volatility.toFixed(2)}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                      <span style={{ color: nx.muted }}>Risk drivers</span>
-                      <span style={{ color: nx.text, fontWeight: 700 }}>{driverEntries.length}</span>
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      padding: 10,
-                      borderRadius: 10,
-                      border: `1px solid ${nx.border}`,
-                      background: nx.bgControl,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 6,
-                    }}
-                  >
-                    <div style={{ color: nx.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700 }}>
-                      Dominant Signal
-                    </div>
-                    <div style={{ color: nx.text, fontSize: 13, fontWeight: 700 }}>
-                      {dominantDriver ? `Primary pressure: ${dominantDriver.key}` : "No dominant system pressure is active right now."}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      padding: 10,
-                      borderRadius: 10,
-                      border: `1px solid ${nx.border}`,
-                      background: nx.bgControl,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 6,
-                    }}
-                  >
-                    <div style={{ color: nx.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700 }}>
-                      Active Context
-                    </div>
-                    <div style={{ color: nx.textSoft, fontSize: 12 }}>
-                      Active loop: {inspectorContext?.activeLoopId ?? "-"}
-                    </div>
-                    <div style={{ color: nx.textSoft, fontSize: 12 }}>
-                      Scene mode: {inspectorContext?.activeMode ?? "-"}
-                    </div>
-                    <div style={{ color: nx.textSoft, fontSize: 12 }}>
-                      Dashboard mode: {mode === "dashboard" ? "Dashboard" : "Studio"}
-                    </div>
-                  </div>
-                </div>
-              ) : mode === "dashboard" && resolvedActiveSection === "objects" ? (
+              {mode === "dashboard" && resolvedActiveSection === "scene" ? null : mode === "dashboard" && resolvedActiveSection === "objects" ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div
                     style={{
@@ -1993,7 +2241,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                     </>
                   )}
                 </div>
-              ) : mode === "dashboard" && resolvedActiveSection === "risk" ? (
+              ) : mode === "dashboard" && resolvedActiveSection === "fragility" ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div
                     style={{
@@ -2110,6 +2358,24 @@ export default function NexoraShell({ children }: NexoraShellProps) {
               </button>
             </div>
           )}
+
+            <div
+              id="nexora-right-panel-root"
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 10,
+                overflow: "hidden",
+                overscrollBehavior: "contain",
+                WebkitOverflowScrolling: "touch",
+                visibility: isInspectorOpen ? "visible" : "hidden",
+                pointerEvents: isInspectorOpen ? "auto" : "none",
+              }}
+              onWheelCapture={(e) => e.stopPropagation()}
+              onTouchMoveCapture={(e) => e.stopPropagation()}
+              aria-hidden={!isInspectorOpen}
+            />
+          </div>
 
           {isInspectorOpen ? (
             <div
