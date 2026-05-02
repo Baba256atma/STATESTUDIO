@@ -35,12 +35,36 @@ export type NexoraOpenPanelIntent = {
   allowAutoOverride?: boolean;
 };
 
+/** Center workspace full surfaces (right rail stays preview/summary only). */
+export type NexoraComponentPanelId =
+  | "compare"
+  | "timeline"
+  | "confidence_calibration"
+  | "pattern_intelligence"
+  | "strategic_learning"
+  | "decision_strategic"
+  | "decision_lens"
+  | "collaboration_intelligence"
+  | "outcome_feedback"
+  | "decision_memory"
+  | "decision_lifecycle"
+  | "scenario_tree"
+  | "strategic_command_full"
+  | "team_decision"
+  | "decision_council"
+  | "org_memory"
+  | "decision_policy"
+  | "executive_approval"
+  | "decision_governance";
+
 export type NexoraActionIntent =
   | NexoraOpenPanelIntent
   | { kind: "run_simulation" }
   | { kind: "compare_options" }
   | { kind: "open_center_timeline" }
   | { kind: "open_center_execution"; surface: CenterExecutionSurface }
+  /** Opens the named component surface in the center workspace (canonical panel controller path). */
+  | { kind: "open_component_panel"; component: NexoraComponentPanelId }
   | { kind: "focus_object"; objectId: string | null }
   | { kind: "start_demo" }
   | { kind: "noop"; reason?: string };
@@ -85,6 +109,23 @@ export type ActionRouteExecutionMode =
   | "open_center_compare"
   | "open_center_timeline"
   | "open_center_execution"
+  | "open_center_strategic_command_full"
+  | "open_center_team_decision"
+  | "open_center_decision_council"
+  | "open_center_org_memory"
+  | "open_center_decision_policy"
+  | "open_center_executive_approval"
+  | "open_center_decision_governance"
+  | "open_center_confidence_calibration"
+  | "open_center_pattern_intelligence"
+  | "open_center_strategic_learning"
+  | "open_center_decision_strategic"
+  | "open_center_decision_lens"
+  | "open_center_collaboration_intelligence"
+  | "open_center_outcome_feedback"
+  | "open_center_decision_memory"
+  | "open_center_decision_lifecycle"
+  | "open_center_scenario_tree"
   | "start_investor_demo"
   | "noop";
 

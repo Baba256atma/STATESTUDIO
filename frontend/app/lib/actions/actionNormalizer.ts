@@ -1,5 +1,5 @@
 import { CANONICAL_RIGHT_PANEL_VIEWS, type CenterExecutionSurface, type RightPanelView } from "../ui/right-panel/rightPanelTypes";
-import type { CanonicalNexoraAction, NexoraActionSource, NexoraActionSurface } from "./actionTypes";
+import type { CanonicalNexoraAction, NexoraActionSource, NexoraActionSurface, NexoraComponentPanelId } from "./actionTypes";
 
 function createActionId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -104,6 +104,40 @@ export function normalizeCompareOptions(args: {
     meta: { rawSource: args.rawSource ?? "panel_cta:compare", timestamp: Date.now() },
     ...(args.payload && Object.keys(args.payload).length > 0 ? { payload: args.payload } : {}),
   };
+}
+
+/** Opens a full executive / decision workflow surface in the center workspace (not the right rail). */
+export function normalizeOpenComponentPanel(args: {
+  component: NexoraComponentPanelId;
+  source?: NexoraActionSource;
+  surface?: NexoraActionSurface;
+  rawSource?: string;
+}): CanonicalNexoraAction {
+  return {
+    actionId: createActionId(),
+    source: args.source ?? "panel_cta",
+    surface: args.surface ?? "center_overlay",
+    intent: { kind: "open_component_panel", component: args.component },
+    target: { type: "center", id: args.component },
+    meta: {
+      rawSource: args.rawSource ?? `open_component_panel:${args.component}`,
+      timestamp: Date.now(),
+    },
+  };
+}
+
+/** Opens full Strategic Command in the center component workspace (Panel Controller applies via dispatch). */
+export function normalizeOpenStrategicCommandFullPanel(args: {
+  source?: NexoraActionSource;
+  surface?: NexoraActionSurface;
+  rawSource?: string;
+}): CanonicalNexoraAction {
+  return normalizeOpenComponentPanel({
+    component: "strategic_command_full",
+    source: args.source,
+    surface: args.surface,
+    rawSource: args.rawSource ?? "explicit_command:strategic_command_full",
+  });
 }
 
 export function normalizeOpenCenterTimeline(args: {

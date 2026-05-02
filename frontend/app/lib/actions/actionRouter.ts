@@ -5,10 +5,12 @@ import {
 } from "../ui/right-panel/rightPanelTypes";
 import type {
   ActionRouteContinuityHint,
+  ActionRouteExecutionMode,
   ActionRoutePanelRequest,
   ActionRouteResult,
   ActionRouterContext,
   CanonicalNexoraAction,
+  NexoraComponentPanelId,
   NexoraOpenPanelIntent,
 } from "./actionTypes";
 import { traceActionRouterContinuity } from "./actionTrace";
@@ -85,6 +87,45 @@ export function resolveActionRoute(action: CanonicalNexoraAction, ctx: ActionRou
         resolvedObjectTargetId: null,
         execution: "open_center_execution",
         centerSurface: intent.surface,
+        continuityHint: "none",
+      };
+    }
+    case "open_component_panel": {
+      const executionByComponent: Record<NexoraComponentPanelId, ActionRouteExecutionMode> = {
+        compare: "open_center_compare",
+        timeline: "open_center_timeline",
+        confidence_calibration: "open_center_confidence_calibration",
+        pattern_intelligence: "open_center_pattern_intelligence",
+        strategic_learning: "open_center_strategic_learning",
+        decision_strategic: "open_center_decision_strategic",
+        decision_lens: "open_center_decision_lens",
+        collaboration_intelligence: "open_center_collaboration_intelligence",
+        outcome_feedback: "open_center_outcome_feedback",
+        decision_memory: "open_center_decision_memory",
+        decision_lifecycle: "open_center_decision_lifecycle",
+        scenario_tree: "open_center_scenario_tree",
+        strategic_command_full: "open_center_strategic_command_full",
+        team_decision: "open_center_team_decision",
+        decision_council: "open_center_decision_council",
+        org_memory: "open_center_org_memory",
+        decision_policy: "open_center_decision_policy",
+        executive_approval: "open_center_executive_approval",
+        decision_governance: "open_center_decision_governance",
+      };
+      const execution = executionByComponent[intent.component];
+      if (!execution) {
+        return {
+          status: "rejected",
+          reason: "unknown_intent",
+          detail: `unknown_component:${intent.component}`,
+        };
+      }
+      return {
+        status: "ok",
+        resolvedIntent: "open_component_panel",
+        resolvedPanelView: ctx.currentView,
+        resolvedObjectTargetId: null,
+        execution,
         continuityHint: "none",
       };
     }

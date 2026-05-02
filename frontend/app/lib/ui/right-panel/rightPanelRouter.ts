@@ -71,6 +71,7 @@ export const RIGHT_PANEL_RAIL_TABS = [
   "opponent_moves",
   "strategic_patterns",
   "executive_dashboard",
+  "executive_object",
   "war_room",
   "collaboration",
   "workspace",
@@ -109,6 +110,8 @@ export type CanonicalRouteResolution = {
 const LEGACY_TAB_TO_RIGHT_PANEL_VIEW: Record<string, CanonicalRightPanelView> = {
   strategic_command: "strategic_command",
   executive_dashboard: "dashboard",
+  executive_fallback: "dashboard",
+  executive_object: "executive_object",
   dashboard: "dashboard",
   scene: "workspace",
   scene_focus: "workspace",
@@ -171,6 +174,7 @@ const LEGACY_TAB_TO_RIGHT_PANEL_VIEW: Record<string, CanonicalRightPanelView> = 
 const RIGHT_PANEL_VIEW_TO_LEGACY_TAB: Record<CanonicalRightPanelView, string> = {
   strategic_command: "strategic_command",
   dashboard: EXECUTIVE_DASHBOARD_TAB,
+  executive_object: "executive_object",
   simulate: "simulate",
   compare: "compare",
   decision_lifecycle: "decision_lifecycle",
@@ -258,6 +262,7 @@ const RIGHT_PANEL_RAIL_TAB_TO_ROUTE: Record<
   opponent_moves: { resolvedView: "opponent", shellSection: "opponent" },
   strategic_patterns: { resolvedView: "patterns", shellSection: "patterns" },
   executive_dashboard: { resolvedView: "dashboard", shellSection: "executive" },
+  executive_object: { resolvedView: "executive_object", shellSection: "executive" },
   war_room: { resolvedView: "war_room", shellSection: "war_room" },
   collaboration: { resolvedView: "collaboration", shellSection: "collaboration" },
   workspace: { resolvedView: "workspace", shellSection: "workspace" },
@@ -287,6 +292,7 @@ const RIGHT_PANEL_RAIL_TAB_TO_ROUTE: Record<
 const RIGHT_PANEL_VIEW_TO_SHELL_SECTION: Record<CanonicalRightPanelView, RightPanelShellSection> = {
   strategic_command: "executive",
   dashboard: "executive",
+  executive_object: "executive",
   simulate: "timeline",
   compare: "timeline",
   decision_lifecycle: "executive",
@@ -509,39 +515,170 @@ export function resolveCanonicalRightPanelRoute(args: {
   legacyTab?: string | null;
   leftNav?: string | null;
 }): CanonicalRouteResolution | null {
+  const requestedViewRaw =
+    typeof args.requestedView === "string" ? args.requestedView.trim().toLowerCase() : null;
+  if (requestedViewRaw === "executive_object") {
+    return buildRouteResolution(
+      "executive_object",
+      resolveRightPanelLegacyTabForView("executive_object"),
+      resolveRightPanelShellSectionForView("executive_object"),
+      null
+    );
+  }
+  if (process.env.NODE_ENV !== "production") {
+    globalThis.console?.debug?.("[Nexora][RightPanelRouteTrace]", {
+      writer: "rightPanelRouter_input",
+      requestedView: typeof args.requestedView === "string" ? args.requestedView : null,
+      resolvedView: null,
+      family: null,
+      contextId: null,
+      reason: "resolveCanonicalRightPanelRoute",
+      source: "router",
+    });
+    globalThis.console?.debug?.("[Nexora][AnalyzeObjectRouteTrace]", {
+      stage: "right_panel_router_input",
+      requestedView: typeof args.requestedView === "string" ? args.requestedView : null,
+      resolvedView: null,
+      family: null,
+      contextId: null,
+      selectedObjectIdState: null,
+      focusedId: null,
+      rightPanelView: null,
+    });
+  }
   const safeRequestedView =
     typeof args.requestedView === "string" && args.requestedView.trim().length > 0
       ? resolveSafeRightPanelView(args.requestedView, "direct_open")
       : null;
 
+  // Never let rail/legacy fallback override explicit object-executive intent.
+  if (safeRequestedView === "executive_object") {
+    const resolution = buildRouteResolution(
+      "executive_object",
+      resolveRightPanelLegacyTabForView("executive_object"),
+      resolveRightPanelShellSectionForView("executive_object"),
+      null
+    );
+    globalThis.console?.debug?.("[Nexora][RightPanelWriter]", {
+      writer: "RightPanelRouter.resolveCanonicalRightPanelRoute",
+      nextView: resolution.resolvedView ?? null,
+      contextId: null,
+      reason: "requested_executive_object",
+    });
+    if (process.env.NODE_ENV !== "production") {
+      globalThis.console?.debug?.("[Nexora][RightPanelRouteTrace]", {
+        writer: "rightPanelRouter_output",
+        requestedView: typeof args.requestedView === "string" ? args.requestedView : null,
+        resolvedView: resolution.resolvedView ?? null,
+        family: "EXE",
+        contextId: null,
+        reason: "requested_executive_object",
+        source: "router",
+      });
+      globalThis.console?.debug?.("[Nexora][AnalyzeObjectRouteTrace]", {
+        stage: "right_panel_router_output",
+        requestedView: typeof args.requestedView === "string" ? args.requestedView : null,
+        resolvedView: resolution.resolvedView ?? null,
+        family: "EXE",
+        contextId: null,
+        selectedObjectIdState: null,
+        focusedId: null,
+        rightPanelView: resolution.resolvedView ?? null,
+      });
+    }
+    return resolution;
+  }
+
   if (safeRequestedView && PROTECTED_VIEWS.has(safeRequestedView)) {
-    return buildRouteResolution(
+    const resolution = buildRouteResolution(
       safeRequestedView,
       resolveRightPanelLegacyTabForView(safeRequestedView),
       resolveRightPanelShellSectionForView(safeRequestedView),
       null
     );
+    if (process.env.NODE_ENV !== "production") {
+      globalThis.console?.debug?.("[Nexora][AnalyzeObjectRouteTrace]", {
+        stage: "right_panel_router_output",
+        requestedView: typeof args.requestedView === "string" ? args.requestedView : null,
+        resolvedView: resolution.resolvedView ?? null,
+        family: null,
+        contextId: null,
+        selectedObjectIdState: null,
+        focusedId: null,
+        rightPanelView: resolution.resolvedView ?? null,
+      });
+    }
+    return resolution;
   }
 
   const railRoute = resolveRightPanelRailRoute(args.legacyTab);
   if (railRoute) {
+    if (process.env.NODE_ENV !== "production") {
+      globalThis.console?.debug?.("[Nexora][AnalyzeObjectRouteTrace]", {
+        stage: "right_panel_router_output",
+        requestedView: typeof args.requestedView === "string" ? args.requestedView : null,
+        resolvedView: railRoute.resolvedView ?? null,
+        family: null,
+        contextId: null,
+        selectedObjectIdState: null,
+        focusedId: null,
+        rightPanelView: railRoute.resolvedView ?? null,
+      });
+    }
     return railRoute;
   }
 
   const leftNavRoute = resolveRightPanelLeftNavRoute(args.leftNav);
   if (leftNavRoute) {
+    if (process.env.NODE_ENV !== "production") {
+      globalThis.console?.debug?.("[Nexora][AnalyzeObjectRouteTrace]", {
+        stage: "right_panel_router_output",
+        requestedView: typeof args.requestedView === "string" ? args.requestedView : null,
+        resolvedView: leftNavRoute.resolvedView ?? null,
+        family: null,
+        contextId: null,
+        selectedObjectIdState: null,
+        focusedId: null,
+        rightPanelView: leftNavRoute.resolvedView ?? null,
+      });
+    }
     return leftNavRoute;
   }
 
   if (safeRequestedView) {
-    return buildRouteResolution(
+    const resolution = buildRouteResolution(
       safeRequestedView,
       resolveRightPanelLegacyTabForView(safeRequestedView),
       resolveRightPanelShellSectionForView(safeRequestedView),
       null
     );
+    if (process.env.NODE_ENV !== "production") {
+      globalThis.console?.debug?.("[Nexora][AnalyzeObjectRouteTrace]", {
+        stage: "right_panel_router_output",
+        requestedView: typeof args.requestedView === "string" ? args.requestedView : null,
+        resolvedView: resolution.resolvedView ?? null,
+        family: null,
+        contextId: null,
+        selectedObjectIdState: null,
+        focusedId: null,
+        rightPanelView: resolution.resolvedView ?? null,
+      });
+    }
+    return resolution;
   }
 
+  if (process.env.NODE_ENV !== "production") {
+    globalThis.console?.debug?.("[Nexora][AnalyzeObjectRouteTrace]", {
+      stage: "right_panel_router_output",
+      requestedView: typeof args.requestedView === "string" ? args.requestedView : null,
+      resolvedView: null,
+      family: null,
+      contextId: null,
+      selectedObjectIdState: null,
+      focusedId: null,
+      rightPanelView: null,
+    });
+  }
   return null;
 }
 
@@ -661,4 +798,21 @@ export function mapRightPanelViewToLegacyInspectorTab(view: RightPanelView): str
     });
   }
   return null;
+}
+
+export function resolveChatPipelinePanelOpen(panel: string): RightPanelView {
+  const normalized = String(panel ?? "").trim().toUpperCase();
+  switch (normalized) {
+    case "RSK":
+      return "risk";
+    case "SIM_TIMELINE":
+      return "timeline";
+    case "SIM_WAR_ROOM":
+      return "war_room";
+    case "SCN":
+      return "workspace";
+    case "EXE":
+    default:
+      return "dashboard";
+  }
 }

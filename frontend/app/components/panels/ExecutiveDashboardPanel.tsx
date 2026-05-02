@@ -34,7 +34,7 @@ import { selectDefaultCognitiveStyle } from "../../lib/cognitive/selectDefaultCo
 import { buildTeamDecisionState } from "../../lib/team/buildTeamDecisionState";
 import { buildCollaborationState } from "../../lib/collaboration/buildCollaborationState";
 import { loadCollaborationEnvelope } from "../../lib/collaboration/collaborationStore";
-import { buildStrategicCommandState } from "../../lib/command/buildStrategicCommandState";
+import { StrategicCommandPreview } from "../executive/StrategicCommandPreview";
 import { buildAutonomousDecisionCouncilState } from "../../lib/council/buildAutonomousDecisionCouncilState";
 import { loadOrgScopedDecisionMemoryEntries } from "../../lib/decision/memory/decisionMemoryStore";
 import { buildOrgMemoryState } from "../../lib/org-memory/buildOrgMemoryState";
@@ -45,6 +45,7 @@ import { loadApprovalWorkflowEnvelope } from "../../lib/approval/approvalWorkflo
 import { guardHeavyComputation } from "../../lib/ops/performanceGuard";
 import { dedupePanelConsoleTrace } from "../../lib/debug/panelConsoleTraceDedupe";
 import type { NexoraB18SimulateResolved } from "../../lib/scenario/nexoraScenarioBuilder.ts";
+import type { FirstMeaningfulState } from "../../screens/homeScreenResponseReaders";
 
 type ExecutiveDashboardPanelProps = {
   sceneJson?: any;
@@ -62,11 +63,16 @@ type ExecutiveDashboardPanelProps = {
   resolveObjectLabel?: ((id: string | null | undefined) => string | null) | null;
   onOpenWarRoom?: (() => void) | null;
   onOpenStrategicCommand?: (() => void) | null;
+  /** Opens full Strategic Command in center workspace (canonical action). */
+  onOpenStrategicCommandFull?: (() => void) | null;
   demoProfile?: CustomerDemoProfile | null;
   decisionResult?: DecisionExecutionResult | null;
   decisionLoading?: boolean;
   decisionStatus?: "idle" | "loading" | "ready" | "error";
   decisionError?: string | null;
+  firstMeaningfulState?: FirstMeaningfulState | null;
+  mode?: "normal" | "empty";
+  isSystemUnhealthy?: boolean;
   activeExecutiveView?: "simulate" | "compare" | "dashboard" | null;
   /** B.9 — HUD decision context when simulate opened from pipeline CTAs. */
   nexoraB8PanelContext?: NexoraB8PanelContext | null;
@@ -99,6 +105,7 @@ type ExecutiveDashboardPanelProps = {
 };
 
 export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelProps) {
+  const panelMode = props.mode ?? "normal";
   const hasDashboardData = React.useMemo(
     () =>
       Boolean(
@@ -123,6 +130,17 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
     ]
   );
   const showSoftEmptyState = !hasDashboardData;
+  const firstMeaningfulState: FirstMeaningfulState =
+    props.firstMeaningfulState ?? {
+      headline: "System is ready for analysis",
+      insight: "No active risk or signal detected yet.",
+      action: "Describe your system in chat to begin.",
+      confidence: "low",
+      source: "synthetic",
+      shouldDeemphasize: false,
+      evidenceLabel: "No live signal yet",
+    };
+  const isRealFms = firstMeaningfulState.source === "real" || firstMeaningfulState.shouldDeemphasize === true;
 
   const fragility =
     props.sceneJson?.scene?.fragility ??
@@ -522,45 +540,6 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       }),
     [approvalEnvelope?.workflow, canonicalRecommendation, executionIntent, governance, memoryEntries, policy, props.decisionResult, props.responseData]
   );
-  const strategicCommand = React.useMemo(
-    () =>
-      buildStrategicCommandState({
-        responseData: props.responseData ?? null,
-        canonicalRecommendation,
-        decisionResult: props.decisionResult ?? null,
-        memoryEntries,
-        collaborationInputs: collaborationEnvelope?.inputs ?? [],
-        confidenceModel,
-        calibration,
-        outcomeFeedback,
-        metaDecision,
-        teamDecision,
-        collaborationState,
-        orgMemory,
-        policyState: policy,
-        governanceState: governance,
-        approvalWorkflow,
-        decisionCouncil,
-      }),
-    [
-      approvalWorkflow,
-      calibration,
-      canonicalRecommendation,
-      collaborationEnvelope?.inputs,
-      collaborationState,
-      confidenceModel,
-      decisionCouncil,
-      governance,
-      memoryEntries,
-      metaDecision,
-      orgMemory,
-      outcomeFeedback,
-      policy,
-      props.decisionResult,
-      props.responseData,
-      teamDecision,
-    ]
-  );
   const surfaceLabel =
     props.activeExecutiveView === "simulate"
       ? "Decision Simulation"
@@ -587,6 +566,34 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       : typeof simulationContract?.impact?.risk_change === "number"
         ? simulationContract.impact.risk_change
         : null;
+
+  if (panelMode === "empty") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 14, minHeight: 0, overflow: "auto", padding: 2 }}>
+        <div style={{ ...softCardStyle, padding: 12, gap: 8, border: "1px solid rgba(148,163,184,0.24)" }}>
+          <div style={{ color: "#cbd5f5", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em" }}>
+            {firstMeaningfulState.source === "synthetic" ? "Synthetic" : "Early signal"}
+          </div>
+          <div style={{ color: "#f8fafc", fontSize: 15, fontWeight: 800 }}>{firstMeaningfulState.headline}</div>
+          <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45 }}>
+            <strong>Insight:</strong> {firstMeaningfulState.insight}
+          </div>
+          <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45 }}>
+            <strong>Suggested Action:</strong> {firstMeaningfulState.action}
+          </div>
+          <div style={{ color: nx.lowMuted, fontSize: 11, opacity: 0.8 }}>
+            Confidence: <strong>{firstMeaningfulState.confidence}</strong> ·{" "}
+            {firstMeaningfulState.evidenceLabel ?? "No live signal yet"}
+          </div>
+        </div>
+        <div style={{ color: nx.lowMuted, fontSize: 12, opacity: 0.75 }}>
+          {props.isSystemUnhealthy
+            ? "Backend unavailable. Connect system before analysis."
+            : "No objects yet. Start by describing your system."}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, minHeight: 0, overflow: "auto", padding: 2 }}>
@@ -622,21 +629,65 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
           ) : null}
         </div>
         <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45, maxWidth: 480 }}>{surfaceSummary}</div>
-        {showSoftEmptyState ? (
-          <div style={{ ...softCardStyle, padding: 12, gap: 8 }}>
-            <div style={{ color: "#f8fafc", fontSize: 13, fontWeight: 800 }}>Executive Dashboard</div>
-            <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45 }}>
-              Waiting for decision context. Nexora is keeping the dashboard surface open while data settles.
+        {isRealFms ? (
+          <div style={{ color: nx.lowMuted, fontSize: 11, lineHeight: 1.35, opacity: 0.72 }}>
+            {firstMeaningfulState.evidenceLabel ?? "Based on current analysis"} · Confidence:{" "}
+            <strong>{firstMeaningfulState.confidence}</strong>
+          </div>
+        ) : (
+          <div style={{ ...softCardStyle, padding: 12, gap: 8, border: "1px solid rgba(96,165,250,0.24)" }}>
+            <div style={{ color: "#cbd5f5", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em" }}>
+              {firstMeaningfulState.source === "synthetic" ? "Synthetic" : "Early signal"}
             </div>
-            {props.onOpenStrategicCommand ? (
+            <div style={{ color: "#f8fafc", fontSize: 15, fontWeight: 800 }}>{firstMeaningfulState.headline}</div>
+            <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45 }}>
+              <strong>Insight:</strong> {firstMeaningfulState.insight}
+            </div>
+            <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45 }}>
+              <strong>Suggested Action:</strong> {firstMeaningfulState.action}
+            </div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <div style={{ color: "#cbd5f5", fontSize: 11, fontWeight: 700 }}>Confidence:</div>
+              <div
+                style={{
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  border: `1px solid ${nx.border}`,
+                  color:
+                    firstMeaningfulState.confidence === "high"
+                      ? "#86efac"
+                      : firstMeaningfulState.confidence === "medium"
+                        ? "#fcd34d"
+                        : "#fca5a5",
+                  fontSize: 10,
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                }}
+              >
+                {firstMeaningfulState.confidence}
+              </div>
+              <div style={{ color: nx.lowMuted, fontSize: 10 }}>
+                {firstMeaningfulState.evidenceLabel ??
+                  (firstMeaningfulState.source === "partial" ? "Based on early signals" : "No live signal yet")}
+              </div>
+            </div>
+            {showSoftEmptyState && (props.onOpenStrategicCommandFull || props.onOpenStrategicCommand) ? (
               <div>
-                <button type="button" onClick={props.onOpenStrategicCommand} style={secondaryButtonStyle}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (props.onOpenStrategicCommandFull) props.onOpenStrategicCommandFull();
+                    else props.onOpenStrategicCommand?.();
+                  }}
+                  style={secondaryButtonStyle}
+                >
                   Open Strategic Command
                 </button>
               </div>
             ) : null}
           </div>
-        ) : null}
+        )}
         {props.activeExecutiveView === "simulate" && props.nexoraB8PanelContext ? (
           <div
             style={{
@@ -782,31 +833,21 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
 
       <DashboardSection
         label="Strategic Command"
-        title={strategicCommand.headline}
-        summary={strategicCommand.summary}
+        title="Command preview"
+        summary="A compact read of posture and recommendation. Use the workspace below for full columns when you need depth."
         accent="primary"
       >
-        <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 10 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <OptionSummaryCard
-              title={`Priority: ${prettifyLabel(strategicCommand.priority)}`}
-              summary={strategicCommand.priority_reason}
-              tradeoff={strategicCommand.alerts[0]?.summary ?? null}
-              accent
-            />
-            <OptionSummaryCard
-              title="Next move"
-              summary={strategicCommand.next_move}
-              tradeoff={strategicCommand.next_move_reason}
-            />
-          </div>
-          <PreviewAside
-            label="Command posture"
-            body={strategicCommand.explanation}
-            ctaLabel="Open Strategic Command"
-            onClick={props.onOpenStrategicCommand ?? null}
-          />
-        </div>
+        <StrategicCommandPreview
+          workspaceId={props.responseData?.workspace_id ?? null}
+          projectId={props.responseData?.project_id ?? null}
+          responseData={props.responseData ?? props.sceneJson ?? null}
+          canonicalRecommendation={canonicalRecommendation}
+          decisionResult={props.decisionResult ?? null}
+          memoryEntries={memoryEntries}
+          onQuickSimulate={props.onSimulateDecision ?? null}
+          onQuickCompare={props.onCompareOptions ?? null}
+          onOpenFull={() => props.onOpenStrategicCommandFull?.()}
+        />
       </DashboardSection>
 
       <DashboardSection label="Current Situation" title={focusLabel} summary={situationText}>
@@ -1401,7 +1442,14 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
               <button type="button" onClick={props.onOpenWarRoom ?? (() => {})} style={secondaryButtonStyle}>
                 Open War Room
               </button>
-              <button type="button" onClick={props.onOpenStrategicCommand ?? (() => {})} style={secondaryButtonStyle}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (props.onOpenStrategicCommandFull) props.onOpenStrategicCommandFull();
+                  else props.onOpenStrategicCommand?.();
+                }}
+                style={secondaryButtonStyle}
+              >
                 Open Strategic Command
               </button>
               <button type="button" onClick={props.onOpenDecisionLifecycle ?? (() => {})} style={secondaryButtonStyle}>

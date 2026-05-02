@@ -60,6 +60,7 @@ function pickRiskLabel(
 export type PrimaryDecisionStripProps = {
   /** Existing merged panel payload (no new fetch). */
   panelData: unknown;
+  isEmptyState?: boolean;
 };
 
 /**
@@ -67,6 +68,7 @@ export type PrimaryDecisionStripProps = {
  * Read-only: derives copy from advice / canonical / fragility when present.
  */
 export function PrimaryDecisionStrip(props: PrimaryDecisionStripProps) {
+  if (props.isEmptyState) return null;
   const { actionLine, confidenceLabel, riskLabel } = useMemo(() => {
     const root = asRecord(props.panelData);
     const advice = asRecord(root?.strategicAdvice ?? root?.advice);

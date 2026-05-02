@@ -1,7 +1,17 @@
 import type { SceneJson, SceneLoop, StateVector } from "../lib/sceneTypes";
 import type { HUDTabKey } from "../components/HUDShell";
 
-export type Msg = { id?: string; role: "user" | "assistant"; text: string };
+export type Msg = {
+  id?: string;
+  role: "user" | "assistant";
+  text: string;
+  meta?: {
+    confidence?: number;
+    followUp?: string[];
+    /** Dev / pipeline: e.g. selected-object guard reason */
+    guard?: string;
+  };
+};
 
 export type ScenePrefs = {
   theme: "day" | "night" | "stars";
@@ -69,10 +79,15 @@ export const defaultPrefs: ScenePrefs = {
 };
 
 let msgIdSeq = 0;
-export const makeMsg = (role: "user" | "assistant", text: string): Msg => ({
+export const makeMsg = (
+  role: "user" | "assistant",
+  text: string,
+  meta?: Msg["meta"]
+): Msg => ({
   id: `m-${Date.now()}-${msgIdSeq++}`,
   role,
   text,
+  meta: meta ?? undefined,
 });
 
 export const normalizeMessages = (input?: Msg[] | null): Msg[] => {

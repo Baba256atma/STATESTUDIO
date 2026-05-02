@@ -13,6 +13,7 @@ let __ingestionInFlight = false;
 let hasFetchedConnectorCatalog = false;
 let hasLoggedConnectorCatalogFailure = false;
 const CONNECTOR_CATALOG_TIMEOUT_MS = 3000;
+const ENABLE_CONNECTOR_CATALOG_PREFETCH = false;
 
 export type HomeScreenLastIngestion = TextIngestionResponse | null;
 
@@ -26,6 +27,7 @@ export type ConnectorCatalogAvailability = {
 };
 
 async function safeFetchConnectorCatalog(): Promise<unknown[]> {
+  if (!ENABLE_CONNECTOR_CATALOG_PREFETCH) return [];
   let timeoutId: number | null = null;
   try {
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -42,7 +44,11 @@ async function safeFetchConnectorCatalog(): Promise<unknown[]> {
     }
     return res;
   } catch (e) {
-    if (process.env.NODE_ENV === "development" && !hasLoggedConnectorCatalogFailure) {
+    if (
+      ENABLE_CONNECTOR_CATALOG_PREFETCH &&
+      process.env.NODE_ENV === "development" &&
+      !hasLoggedConnectorCatalogFailure
+    ) {
       hasLoggedConnectorCatalogFailure = true;
       globalThis.console?.warn?.("[Nexora][IngestionUI] connector_catalog_failed", {
         reason: e instanceof Error ? e.message : "unknown",
@@ -74,6 +80,7 @@ export async function getConnectorCatalogAvailabilityDev(): Promise<ConnectorCat
 
 export async function prefetchIngestionConnectorCatalogDev(): Promise<void> {
   if (process.env.NODE_ENV === "production") return;
+  if (!ENABLE_CONNECTOR_CATALOG_PREFETCH) return;
   if (hasFetchedConnectorCatalog) return;
   hasFetchedConnectorCatalog = true;
   // No retries here: failed state should stay silent and stable.

@@ -46,6 +46,7 @@ import { CALM_FRAMING } from "../lib/scene/calmCameraFraming";
 import { AnimatableObject } from "./scene/AnimatableObject";
 import { LoopLinesAnimated } from "./scene/LoopLinesAnimated";
 const EMPTY_STRING_ARRAY: string[] = [];
+const STATIC_VISUAL_FREEZE = true;
 
 // --------------------
 // Geometry registry
@@ -1162,6 +1163,7 @@ function CameraLerper({
   const { camera } = useThree();
   const targetRef = useRef(new THREE.Vector3(...target));
   const lookAtRef = useRef(new THREE.Vector3(...lookAtTarget));
+  const lastCameraSignatureRef = useRef<string | null>(null);
   const alpha = motionCalm ? CALM_FRAMING.lerperAlphaMotionCalm : CALM_FRAMING.lerperAlpha;
   useEffect(() => {
     targetRef.current.set(...target);
@@ -1173,6 +1175,27 @@ function CameraLerper({
     if (!enabled) return;
     camera.position.lerp(targetRef.current, alpha);
     camera.lookAt(lookAtRef.current);
+    if (process.env.NODE_ENV !== "production") {
+      const position = camera.position.toArray().map((v) => Number(v.toFixed(4))) as [number, number, number];
+      const targetArr = [lookAtRef.current.x, lookAtRef.current.y, lookAtRef.current.z].map((v) => Number(v.toFixed(4))) as [
+        number,
+        number,
+        number
+      ];
+      const signature = JSON.stringify({
+        position,
+        target: targetArr,
+        reason: "camera_lerper_enabled",
+      });
+      if (lastCameraSignatureRef.current !== signature) {
+        lastCameraSignatureRef.current = signature;
+        console.debug("[Nexora][CameraChanged]", {
+          position,
+          target: targetArr,
+          reason: "camera_lerper_enabled",
+        });
+      }
+    }
   });
   return null;
 }
@@ -1285,6 +1308,37 @@ function SceneRendererComponent({
       payloadSceneHighlightedIds,
     ]
   );
+  const highlightedObjectId = highlightedIds[0] ?? null;
+  const sceneRenderSignature = useMemo(() => {
+    const selectedObjectId = typeof selectedIdCtx === "string" ? selectedIdCtx : null;
+    const semanticObjects = objects
+      .map((object, idx) => {
+        const stableId = String(object?.id ?? object?.name ?? `${object?.type ?? "obj"}:${idx}`);
+        const semantic = (object as { semantic?: { role?: unknown } })?.semantic;
+        return {
+          id: stableId,
+          severity: String((object as { severity?: unknown; scanner_severity?: unknown })?.severity ?? (object as { scanner_severity?: unknown })?.scanner_severity ?? ""),
+          state: String((object as { state?: unknown; status?: unknown })?.state ?? (object as { status?: unknown })?.status ?? ""),
+          role: String((object as { role?: unknown })?.role ?? semantic?.role ?? ""),
+          selected: stableId === selectedObjectId,
+        };
+      })
+      .sort((a, b) => a.id.localeCompare(b.id));
+    return JSON.stringify({
+      objects: semanticObjects,
+      selectedObjectId,
+      highlightedObjectId,
+    });
+  }, [highlightedObjectId, objects, selectedIdCtx]);
+  const lastSceneRenderSignatureRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (lastSceneRenderSignatureRef.current === sceneRenderSignature) return;
+    lastSceneRenderSignatureRef.current = sceneRenderSignature;
+    console.debug("[Nexora][SceneRenderSignatureChanged]", {
+      signature: sceneRenderSignature.slice(0, 240),
+    });
+  }, [sceneRenderSignature]);
   const objectSelectionRiskSourceIds = useMemo(() => readStringArrayField(objectSelection, "risk_sources"), [objectSelection]);
   const objectSelectionRiskTargetIds = useMemo(() => readStringArrayField(objectSelection, "risk_targets"), [objectSelection]);
   const payloadRiskSourceIds = useMemo(() => readStringArrayField(payload?.object_selection, "risk_sources"), [payload]);
@@ -1464,6 +1518,10 @@ function SceneRendererComponent({
     context: scannerSceneActive ? 1 : 1,
   });
   useEffect(() => {
+    if (STATIC_VISUAL_FREEZE) {
+      setScannerStoryReveal({ primary: 1, edge: 1, affected: 1, context: 1 });
+      return;
+    }
     if (!scannerSceneActive) {
       setScannerStoryReveal({ primary: 1, edge: 1, affected: 1, context: 1 });
       return;
@@ -1884,24 +1942,27 @@ function SceneRendererComponent({
       ? [Number(cam!.pos[0]) || 0, Number(cam!.pos[1]) || 3, Number(cam!.pos[2]) || 8]
       : [0, 3, 8];
   const cameraLocked = !!sceneJson.meta?.cameraLockedByUser;
-  const shouldUseCameraBias = !cameraLocked && !!cameraBiasTarget;
+  const shouldUseCameraBias = STATIC_VISUAL_FREEZE ? false : !cameraLocked && !!cameraBiasTarget;
   const parallaxGroup = useRef<THREE.Group>(null);
   const lastSceneTargetResolutionSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
+      const sortIds = (ids: string[]) => [...ids].sort((a, b) => a.localeCompare(b));
+      const normPayload = (v: unknown) =>
+        Array.isArray(v) ? sortIds(v.map(String).filter(Boolean)) : null;
       const signature = JSON.stringify({
-        payloadHighlighted: payload?.object_selection?.highlighted_objects ?? null,
-        sceneHighlighted: payload?.scene_json?.object_selection?.highlighted_objects ?? null,
-        contextHighlighted: payload?.context?.object_selection?.highlighted_objects ?? null,
-        highlightedIds,
-        scannerTargetIds,
+        payloadHighlighted: normPayload(payload?.object_selection?.highlighted_objects),
+        sceneHighlighted: normPayload(payload?.scene_json?.object_selection?.highlighted_objects),
+        contextHighlighted: normPayload(payload?.context?.object_selection?.highlighted_objects),
+        highlightedIds: sortIds(highlightedIds.map(String)),
+        scannerTargetIds: sortIds(scannerTargetIds.map(String)),
       });
       if (lastSceneTargetResolutionSignatureRef.current === signature) {
         return;
       }
       lastSceneTargetResolutionSignatureRef.current = signature;
-      console.group("[Nexora][SceneTargetResolution]");
+      console.groupCollapsed("[Nexora][SceneTargetResolution]");
       console.log("payload.object_selection.highlighted_objects", payload?.object_selection?.highlighted_objects);
       console.log(
         "payload.scene_json.object_selection.highlighted_objects",
@@ -1912,8 +1973,8 @@ function SceneRendererComponent({
         payload?.context?.object_selection?.highlighted_objects
       );
       console.log("highlightedIds", highlightedIds);
-      console.groupEnd();
       console.log("SCANNER TARGET IDS:", scannerTargetIds);
+      console.groupEnd();
     }
   }, [highlightedIds, payload, scannerTargetIds]);
 

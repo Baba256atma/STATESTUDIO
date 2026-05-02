@@ -259,8 +259,8 @@ function MetricCard(props: { label: string; value: string }) {
 function LineList(props: { items: string[]; empty: string }) {
   return props.items.length ? (
     <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
-      {props.items.map((item) => (
-        <div key={item} style={{ ...softCardStyle, padding: 10, gap: 4, color: nx.text, fontSize: 12, lineHeight: 1.45 }}>
+      {props.items.map((item, index) => (
+        <div key={`${String(item)}-${index}`} style={{ ...softCardStyle, padding: 10, gap: 4, color: nx.text, fontSize: 12, lineHeight: 1.45 }}>
           {item}
         </div>
       ))}

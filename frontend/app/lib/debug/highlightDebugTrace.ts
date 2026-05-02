@@ -17,6 +17,41 @@ const TRACE_SIG_TTL_MS = 1500;
 const traceSigSeenAt = new Map<string, number>();
 const sceneObjectStageSigByObject = new Map<string, string>();
 
+function sortIdList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return Array.from(new Set(value.map((v) => String(v ?? "").trim()).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b)
+  );
+}
+
+/** Stable key for high-churn stages so identical semantics do not re-log every frame. */
+function canonicalHighlightTraceKey(stage: HighlightTraceStage, payload: Record<string, unknown>): string {
+  if (stage === "scene_canvas") {
+    return JSON.stringify({
+      stage,
+      highlightedIds: sortIdList(payload.highlightedIds),
+      visualCandidateIds: sortIdList(payload.visualCandidateIds),
+      resolvedScannerTargetIds: sortIdList(payload.resolvedScannerTargetIds),
+      resolvedRiskSourceIds: sortIdList(payload.resolvedRiskSourceIds),
+      resolvedRiskTargetIds: sortIdList(payload.resolvedRiskTargetIds),
+      focusedId: typeof payload.focusedId === "string" ? payload.focusedId : null,
+      primaryTargetId: typeof payload.primaryTargetId === "string" ? payload.primaryTargetId : null,
+      primaryReason: typeof payload.primaryReason === "string" ? payload.primaryReason : null,
+      scannerSceneActive: payload.scannerSceneActive === true,
+      usedFallbackResolution: payload.usedFallbackResolution === true,
+    });
+  }
+  if (stage === "scene_object_state") {
+    return buildSceneObjectStageSignature(payload);
+  }
+  return "";
+}
+
+function roundTraceMaterial(n: unknown): number | null {
+  if (typeof n !== "number" || !Number.isFinite(n)) return null;
+  return Math.round(n * 1000) / 1000;
+}
+
 function buildSceneObjectStageSignature(payload: Record<string, unknown>): string {
   const objectId = String(payload.objectId ?? "");
   const semantic = {
@@ -27,6 +62,7 @@ function buildSceneObjectStageSignature(payload: Record<string, unknown>): strin
     isPinned: payload.isPinned === true,
     causalRole: typeof payload.causalRole === "string" ? payload.causalRole : null,
     rank: typeof payload.rank === "string" ? payload.rank : null,
+    scannerRank: typeof payload.scannerRank === "string" ? payload.scannerRank : null,
     opacityMode: typeof payload.opacityMode === "string" ? payload.opacityMode : null,
     colorMode: typeof payload.colorMode === "string" ? payload.colorMode : null,
     isRiskSource: payload.isRiskSource === true,
@@ -39,6 +75,10 @@ function buildSceneObjectStageSignature(payload: Record<string, unknown>): strin
     isProtectedFromDim: payload.isProtectedFromDim === true,
     dimUnrelatedObjects: payload.dimUnrelatedObjects === true,
     scannerBackgroundDimmed: payload.scannerBackgroundDimmed === true,
+    /** Quantized material snapshot — stops trace spam when only sub-mille noise changes. */
+    opacity: roundTraceMaterial(payload.opacity),
+    emissiveIntensity: roundTraceMaterial(payload.emissiveIntensity),
+    severity: typeof payload.severity === "string" ? payload.severity : null,
   };
   return JSON.stringify(semantic);
 }
@@ -82,7 +122,11 @@ export function traceHighlightFlow(
         sceneObjectStageSigByObject.set(objectId, stageSig);
       }
     }
-    const key = JSON.stringify({ stage, payload: safePayload });
+    const canonicalKey = canonicalHighlightTraceKey(stage, payload);
+    const key =
+      canonicalKey.length > 0
+        ? canonicalKey
+        : JSON.stringify({ stage, payload: safePayload });
     const now = Date.now();
     const previous = traceSigSeenAt.get(key);
     if (typeof previous === "number" && now - previous < TRACE_SIG_TTL_MS) {

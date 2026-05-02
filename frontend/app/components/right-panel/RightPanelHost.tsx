@@ -11,7 +11,8 @@ import StrategicAdvicePanel from "../panels/StrategicAdvicePanel";
 import OpponentMovesPanel from "../panels/OpponentMovesPanel";
 import StrategicPatternsPanel from "../panels/StrategicPatternsPanel";
 import ExecutiveDashboardPanel from "../panels/ExecutiveDashboardPanel";
-import { StrategicCommandPanel } from "../executive/StrategicCommandPanel";
+import ExecutiveObjectPanel from "../panels/ExecutiveObjectPanel";
+import { StrategicCommandPreview } from "../executive/StrategicCommandPreview";
 import { DecisionComparePanel } from "../executive/DecisionComparePanel";
 import { DecisionTimelinePanel } from "../executive/DecisionTimelinePanel";
 import { DecisionMemoryPanel } from "../executive/DecisionMemoryPanel";
@@ -35,26 +36,30 @@ import CollaborationPanel from "../panels/CollaborationPanel";
 import { WarRoomPanel } from "../warroom/WarRoomPanel";
 import type { CenterExecutionSurface, CanonicalRightPanelView, RightPanelState } from "../../lib/ui/right-panel/rightPanelTypes";
 import type { RightPanelView } from "../../lib/ui/right-panel/rightPanelTypes";
+import type { SceneObject } from "../../lib/sceneTypes";
 import type { DecisionExecutionResult } from "../../lib/executive/decisionExecutionTypes";
 import type { DecisionImpactState } from "../../lib/impact/decisionImpactTypes";
 import type { StrategicCouncilResult } from "../../lib/council/strategicCouncilTypes";
 import type { CustomerDemoProfile } from "../../lib/demo/customerDemoTypes";
 import type { WarRoomController } from "../../lib/warroom/warRoomTypes";
+import type { ExecutiveObjectPanelData } from "../../lib/panels/executiveObjectPanelData";
 import { useCanonicalRecommendation } from "../../lib/decision/recommendation/useCanonicalRecommendation";
 import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemoryTypes";
 import type { DecisionAutomationResult } from "../../lib/execution/decisionAutomationTypes";
 import type { DecisionExecutionIntent } from "../../lib/execution/decisionExecutionIntent";
 import { RightPanelFallback } from "./RightPanelFallback";
+import { isValidRightPanelView } from "../../lib/ui/right-panel/rightPanelRouter";
+import type { FirstMeaningfulState } from "../../screens/homeScreenResponseReaders";
 import { buildPanelResolvedData } from "../../lib/panels/buildPanelResolvedData";
 import type { NexoraB18CompareResolved } from "../../lib/scenario/nexoraScenarioBuilder.ts";
 import type { PanelResolvedData, PanelSharedData } from "../../lib/panels/panelDataResolverTypes";
-import { validatePanelSharedDataWithDiagnostics } from "../../lib/panels/panelDataContract";
-import { getPanelCognitiveFlow } from "../../lib/ui/right-panel/panelCognitiveFlow";
 import {
-  getPanelHelpSuggestions,
-  resolvePanelButtonRole,
-  type PanelHelpSuggestion,
-} from "../../lib/ui/right-panel/panelInteractionModel";
+  buildPanelContractSignature,
+  buildPanelSharedDataSignature,
+  type PanelSharedDataValidationResult,
+  validatePanelSharedDataWithDiagnostics,
+} from "../../lib/panels/panelDataContract";
+import { getPanelCognitiveFlow } from "../../lib/ui/right-panel/panelCognitiveFlow";
 import { buildAdvicePanelPayload } from "./builders/buildAdvicePanelPayload";
 import { buildConflictPanelPayload } from "./builders/buildConflictPanelPayload";
 import { buildTimelinePanelPayload } from "./builders/buildTimelinePanelPayload";
@@ -133,7 +138,10 @@ type RightPanelHostProps = {
   opponentModel?: any | null;
   strategicPatterns?: any | null;
   selectedObjectId?: string | null;
+  activeExecutiveObjectId?: string | null;
   selectedObjectLabel?: string | null;
+  /** Populated from HomeScreen for `executive_object` (object-scoped executive read). */
+  executiveObjectPanelData?: ExecutiveObjectPanelData | null;
   focusedId?: string | null;
   resolveObjectLabel?: ((id: string | null | undefined) => string | null) | null;
   demoProfile?: CustomerDemoProfile | null;
@@ -141,6 +149,11 @@ type RightPanelHostProps = {
   decisionLoading?: boolean;
   decisionStatus?: "idle" | "loading" | "ready" | "error";
   decisionError?: string | null;
+  firstMeaningfulState?: FirstMeaningfulState | null;
+  allowRealPanelData?: boolean;
+  isSystemUnhealthy?: boolean;
+  visibleSceneObjects?: SceneObject[];
+  hasVisibleSceneObjects?: boolean;
   activeExecutiveView?: "simulate" | "compare" | "dashboard" | null;
   guidedPromptDebug?: {
     prompt: string;
@@ -168,6 +181,8 @@ type RightPanelHostProps = {
   onOpenWhyThis?: ((originView: RightPanelView) => void) | null;
   onCloseWarRoom?: (() => void) | null;
   onOpenStrategicCommand?: (() => void) | null;
+  /** Opens full Strategic Command in center workspace (canonical action dispatch). */
+  onOpenStrategicCommandFull?: (() => void) | null;
   onOpenTimeline?: (() => void) | null;
   onOpenDashboard?: (() => void) | null;
   onOpenMemory?: (() => void) | null;
@@ -248,72 +263,6 @@ function shouldTracePayloadSelection(view: RightPanelView | null, panel: "advice
   return view === "risk" || view === "fragility";
 }
 
-function PanelHelpFooter(props: {
-  view: RightPanelView;
-  onOpenCenterComponent?: ((component: CenterExecutionSurface) => void) | null;
-  onOpenPanelView?: ((view: CanonicalRightPanelView) => void) | null;
-}) {
-  const suggestions = getPanelHelpSuggestions(props.view).slice(0, 2);
-  if (suggestions.length === 0) return null;
-  const handleSuggestion = (suggestion: PanelHelpSuggestion) => {
-    if (suggestion.targetType === "center_execution" && suggestion.centerSurface) {
-      props.onOpenCenterComponent?.(suggestion.centerSurface);
-      return;
-    }
-    if (suggestion.targetType === "right_panel" && suggestion.targetView) {
-      props.onOpenPanelView?.(suggestion.targetView);
-    }
-  };
-  return (
-    <section
-      aria-label="Panel help"
-      style={{
-        marginTop: 10,
-        paddingTop: 10,
-        borderTop: "1px solid rgba(148,163,184,0.14)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 6,
-      }}
-    >
-      <div style={{ color: "var(--nx-low-muted)", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-        Help
-      </div>
-      <div style={{ color: "var(--nx-muted)", fontSize: 11, lineHeight: 1.35 }}>
-        Use this rail to choose intent. Open the center workspace for execution.
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {suggestions.map((suggestion) => {
-          const role = resolvePanelButtonRole({
-            label: suggestion.label,
-            targetView: suggestion.targetView ?? null,
-          });
-          return (
-            <button
-              key={`${suggestion.targetType}:${suggestion.label}`}
-              type="button"
-              onClick={() => handleSuggestion(suggestion)}
-              style={{
-                height: 24,
-                padding: "0 8px",
-                borderRadius: 6,
-                border: "1px solid rgba(148,163,184,0.18)",
-                background: role === "processing" ? "rgba(59,130,246,0.12)" : "rgba(2,6,23,0.34)",
-                color: role === "processing" ? "var(--nx-accent-ink)" : "var(--nx-muted)",
-                cursor: "pointer",
-                fontSize: 10,
-                fontWeight: 700,
-              }}
-            >
-              {suggestion.label}
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 function executiveRiskStatusFrom01(risk01: number): { dot: string; label: string } {
   if (risk01 >= 0.72) return { dot: "🔴", label: "Critical" };
   if (risk01 >= 0.35) return { dot: "🟡", label: "Warning" };
@@ -336,6 +285,15 @@ function executiveTitlesForView(
       (id ? id : null) ||
       "Selection";
     return { title: "Scene Object", subtitle: `Inspecting ${label}` };
+  }
+  if (view === "executive_object") {
+    const id = typeof ctx.contextId === "string" ? ctx.contextId : null;
+    const label =
+      (ctx.selectedObjectLabel && String(ctx.selectedObjectLabel).trim()) ||
+      (id ? ctx.resolveObjectLabel?.(id) : null) ||
+      (id ? id : null) ||
+      "Selection";
+    return { title: "Executive decision", subtitle: `${label} · insight → risk → action` };
   }
   const known: Partial<Record<CanonicalRightPanelView, { title: string; subtitle: string }>> = {
     dashboard: { title: "Executive Overview", subtitle: "Decision posture and priorities" },
@@ -363,6 +321,7 @@ function ExecutivePanelHeaderBar(props: {
   title: string;
   subtitle: string;
   status: { dot: string; label: string };
+  onHelp?: (() => void) | null;
 }) {
   return (
     <header
@@ -383,6 +342,27 @@ function ExecutivePanelHeaderBar(props: {
           </div>
           <div style={{ fontSize: 11, color: "var(--nx-muted)", marginTop: 3, lineHeight: 1.35 }}>{props.subtitle}</div>
         </div>
+        <button
+          type="button"
+          onClick={() => props.onHelp?.()}
+          aria-label="Explain panel"
+          title="Explain panel"
+          style={{
+            flexShrink: 0,
+            width: 24,
+            height: 24,
+            borderRadius: 999,
+            border: "1px solid rgba(148,163,184,0.3)",
+            background: "rgba(15,23,42,0.55)",
+            color: "var(--nx-muted)",
+            cursor: "pointer",
+            fontSize: 12,
+            fontWeight: 700,
+            lineHeight: 1,
+          }}
+        >
+          ?
+        </button>
       </div>
     </header>
   );
@@ -411,11 +391,86 @@ function ExecutivePanelSkeletonBody() {
 
 export function RightPanelHost(props: RightPanelHostProps) {
   const DEBUG_PANEL_TRACE = false;
-  /** Authority is the only source of truth for which panel is shown (no lagged / alternate view). */
-  const viewToRender = props.rightPanelState.view;
+  const allowReal = props.allowRealPanelData ?? true;
+  const visibleSceneObjects = props.visibleSceneObjects ?? [];
+  const hasVisibleSceneObjects =
+    props.hasVisibleSceneObjects ?? visibleSceneObjects.length > 0;
+  const visibleSceneObjectIdSet = React.useMemo(
+    () =>
+      new Set(
+        visibleSceneObjects
+          .map((obj) => String(obj?.id ?? "").trim())
+          .filter(Boolean)
+      ),
+    [visibleSceneObjects]
+  );
+  const lastRightPanelObjectSourceTraceRef = React.useRef<string | null>(null);
+  const previousValidViewRef = React.useRef<RightPanelView>("workspace");
+  const requestedView = props.rightPanelState.view;
+  React.useEffect(() => {
+    if (isValidRightPanelView(requestedView)) {
+      previousValidViewRef.current = requestedView;
+    }
+  }, [requestedView]);
+  /** Keep rendering the last valid panel during transient invalid transitions. */
+  const viewToRender = isValidRightPanelView(requestedView)
+    ? requestedView
+    : previousValidViewRef.current ?? "workspace";
+  const lastAnalyzeRouteTraceSigRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const sig = JSON.stringify({
+      view: viewToRender ?? null,
+      contextId: props.rightPanelState.contextId ?? null,
+      selectedObjectId: props.selectedObjectId ?? null,
+      focusedId: props.focusedId ?? null,
+    });
+    if (lastAnalyzeRouteTraceSigRef.current === sig) return;
+    lastAnalyzeRouteTraceSigRef.current = sig;
+    globalThis.console?.debug?.("[Nexora][RightPanelWriter]", {
+      writer: "RightPanelHost.input",
+      nextView: viewToRender ?? null,
+      contextId: props.rightPanelState.contextId ?? null,
+      reason: "host_receive",
+    });
+    globalThis.console?.debug?.("[Nexora][RightPanelRouteTrace]", {
+      writer: "RightPanelHost.received",
+      requestedView: viewToRender ?? null,
+      resolvedView: viewToRender ?? null,
+      family:
+        viewToRender === "executive_object"
+          ? "EXE"
+          : viewToRender === "workspace" || viewToRender === "object" || viewToRender === "object_focus"
+            ? "SCN"
+            : viewToRender === "risk" || viewToRender === "fragility" || viewToRender === "explanation"
+              ? "RSK"
+              : "SIM",
+      contextId: props.rightPanelState.contextId ?? null,
+      reason: "host_receive",
+      source: "RightPanelHost",
+    });
+    globalThis.console?.debug?.("[Nexora][AnalyzeObjectRouteTrace]", {
+      stage: "right_panel_host_received",
+      requestedView: viewToRender ?? null,
+      resolvedView: viewToRender ?? null,
+      family:
+        viewToRender === "executive_object"
+          ? "EXE"
+          : viewToRender === "workspace" || viewToRender === "object" || viewToRender === "object_focus"
+            ? "SCN"
+            : viewToRender === "risk" || viewToRender === "fragility" || viewToRender === "explanation"
+              ? "RSK"
+              : "SIM",
+      contextId: props.rightPanelState.contextId ?? null,
+      selectedObjectIdState: props.selectedObjectId ?? null,
+      focusedId: props.focusedId ?? null,
+      rightPanelView: viewToRender ?? null,
+    });
+  }, [props.focusedId, props.rightPanelState.contextId, props.selectedObjectId, viewToRender]);
   const panelStateEpoch = props.rightPanelState.timestamp ?? 0;
   const [panelOpenHint, setPanelOpenHint] = React.useState<string | null>(null);
   const [panelOpenHintOpaque, setPanelOpenHintOpaque] = React.useState(false);
+  const [explainOpen, setExplainOpen] = React.useState(false);
   const panelOpenHintTimersRef = React.useRef<number[]>([]);
   const bodyRef = React.useRef<HTMLDivElement | null>(null);
   const lastScnSubviewResetLogRef = React.useRef<string | null>(null);
@@ -423,6 +478,9 @@ export function RightPanelHost(props: RightPanelHostProps) {
   const lastSceneRenderPathSigRef = React.useRef<string | null>(null);
   const lastScnSceneResolvedSigRef = React.useRef<string | null>(null);
   const [scnMode, setScnMode] = React.useState<"scene" | "workspace">("scene");
+  React.useEffect(() => {
+    setExplainOpen(false);
+  }, [viewToRender]);
   React.useEffect(() => {
     const clearHintTimers = () => {
       panelOpenHintTimersRef.current.forEach((id) => window.clearTimeout(id));
@@ -529,10 +587,18 @@ export function RightPanelHost(props: RightPanelHostProps) {
   // --- STABILITY PATCH (prevent resolver churn + re-render loop) ---
   const stablePanelDataRef = React.useRef<PanelSharedData | null>(null);
   const stablePanelSignatureRef = React.useRef<string | null>(null);
+  const validatedPanelCacheRef = React.useRef<{
+    signature: string | null;
+    result: PanelSharedDataValidationResult | null;
+  }>({
+    signature: null,
+    result: null,
+  });
+  const latestAggregatedPanelDataRef = React.useRef<PanelSharedData | null>(null);
 
   const stableAggregatedPanelData = React.useMemo(() => {
     try {
-      const signature = JSON.stringify(aggregatedPanelData);
+      const signature = buildPanelSharedDataSignature(aggregatedPanelData);
       if (stablePanelSignatureRef.current === signature && stablePanelDataRef.current) {
         return stablePanelDataRef.current;
       }
@@ -544,10 +610,29 @@ export function RightPanelHost(props: RightPanelHostProps) {
       return aggregatedPanelData;
     }
   }, [aggregatedPanelData]);
-  const panelContractValidation = React.useMemo(
-    () => validatePanelSharedDataWithDiagnostics(stableAggregatedPanelData),
-    [stableAggregatedPanelData]
-  );
+  React.useEffect(() => {
+    latestAggregatedPanelDataRef.current = stableAggregatedPanelData;
+  }, [stableAggregatedPanelData]);
+  const panelValidationSignature = React.useMemo(() => {
+    try {
+      return buildPanelContractSignature(stableAggregatedPanelData);
+    } catch {
+      return "panel-signature:error";
+    }
+  }, [stableAggregatedPanelData]);
+  const panelContractValidation = React.useMemo(() => {
+    const cached = validatedPanelCacheRef.current;
+    if (cached.signature === panelValidationSignature && cached.result) {
+      return cached.result;
+    }
+    const sourceData = latestAggregatedPanelDataRef.current ?? stableAggregatedPanelData;
+    const result = validatePanelSharedDataWithDiagnostics(sourceData);
+    validatedPanelCacheRef.current = {
+      signature: panelValidationSignature,
+      result,
+    };
+    return result;
+  }, [panelValidationSignature]);
   const validatedPanelData = panelContractValidation.data;
 
   const lastHostPanelContractDebugSigRef = React.useRef<string | null>(null);
@@ -1110,9 +1195,13 @@ export function RightPanelHost(props: RightPanelHostProps) {
           : riskSignal01 >= 0.35
             ? "warning"
             : "stable";
+    const dashboardRecommendationRecord =
+      dashboardRecommendation && typeof dashboardRecommendation === "object"
+        ? (dashboardRecommendation as unknown as Record<string, unknown>)
+        : null;
     const executivePrimary =
-      dashboardRecommendation?.summary ??
-      dashboardRecommendation?.headline ??
+      (typeof dashboardRecommendationRecord?.summary === "string" ? dashboardRecommendationRecord.summary : null) ??
+      (typeof dashboardRecommendationRecord?.headline === "string" ? dashboardRecommendationRecord.headline : null) ??
       (typeof props.responseData?.summary === "string" ? props.responseData.summary : null) ??
       "Scene posture is stable; inspect object-level pressure and risk flow to refine decisions.";
     const activeContextLine =
@@ -1121,9 +1210,11 @@ export function RightPanelHost(props: RightPanelHostProps) {
       (typeof props.responseData?.workspace_id === "string" ? props.responseData.workspace_id : null) ??
       "No active object context yet.";
     const hasSceneData = Boolean(
-      dashboardRecommendation?.summary ??
-        dashboardRecommendation?.headline ??
-        dashboardRecommendation?.recommended_action ??
+      (typeof dashboardRecommendationRecord?.summary === "string" ? dashboardRecommendationRecord.summary : null) ??
+        (typeof dashboardRecommendationRecord?.headline === "string" ? dashboardRecommendationRecord.headline : null) ??
+        (typeof dashboardRecommendationRecord?.recommended_action === "string"
+          ? dashboardRecommendationRecord.recommended_action
+          : null) ??
         effectivePanelData.risk ??
         effectivePanelData.fragility ??
         props.responseData?.summary ??
@@ -1132,7 +1223,9 @@ export function RightPanelHost(props: RightPanelHostProps) {
     const sceneModel = hasSceneData
       ? {
           primaryDecision:
-            dashboardRecommendation?.recommended_action ??
+            (typeof dashboardRecommendationRecord?.recommended_action === "string"
+              ? dashboardRecommendationRecord.recommended_action
+              : null) ??
             "Open Object Analysis to inspect leverage points before committing action.",
           riskSignal: Number.isFinite(riskSignal01) ? riskSignal01 : 0,
           fragilityLevel,
@@ -1208,104 +1301,16 @@ export function RightPanelHost(props: RightPanelHostProps) {
           <div style={{ marginTop: 6, color: nx.textSoft, fontSize: 12, lineHeight: 1.4 }}>{sceneModel.activeContext}</div>
         </div>
 
-        <div style={{ ...softCardStyle, ...sceneCardStyle, padding: 12 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: nx.lowMuted }}>
-            Help / Actions
-          </div>
-          <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {hasSceneData ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (props.onOpenObjectInspectionCenter) {
-                      props.onOpenObjectInspectionCenter();
-                      return;
-                    }
-                    props.onOpenCenterComponent?.("object_inspection");
-                  }}
-                  style={{
-                    borderRadius: 8,
-                    border: "1px solid rgba(148,163,184,0.22)",
-                    background: "rgba(2,6,23,0.38)",
-                    color: nx.text,
-                    padding: "8px 10px",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Open Object Analysis
-                </button>
-                <button
-                  type="button"
-                  onClick={() => props.onOpenCenterComponent?.("workspace")}
-                  style={{
-                    borderRadius: 8,
-                    border: "1px solid rgba(148,163,184,0.22)",
-                    background: "rgba(2,6,23,0.38)",
-                    color: nx.text,
-                    padding: "8px 10px",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Open Workspace
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => window.dispatchEvent(new CustomEvent("nexora:open-input-center"))}
-                  style={{
-                    borderRadius: 8,
-                    border: "1px solid rgba(148,163,184,0.22)",
-                    background: "rgba(2,6,23,0.38)",
-                    color: nx.text,
-                    padding: "8px 10px",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Analyze system
-                </button>
-                <button
-                  type="button"
-                  onClick={() => props.onOpenCenterComponent?.("workspace")}
-                  style={{
-                    borderRadius: 8,
-                    border: "1px solid rgba(148,163,184,0.22)",
-                    background: "rgba(2,6,23,0.38)",
-                    color: nx.text,
-                    padding: "8px 10px",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Open Workspace
-                </button>
-              </>
-            )}
-          </div>
-        </div>
       </div>
     );
   }, [
-    dashboardRecommendation?.headline,
-    dashboardRecommendation?.recommended_action,
-    dashboardRecommendation?.summary,
+    dashboardRecommendation,
     effectivePanelData.fragility,
     effectivePanelData.risk,
     nx.lowMuted,
     nx.muted,
     nx.text,
     nx.textSoft,
-    props.onOpenCenterComponent,
-    props.onOpenObjectInspectionCenter,
     props.responseData?.summary,
     props.responseData?.workspace_id,
     props.rightPanelState.contextId,
@@ -1379,12 +1384,17 @@ export function RightPanelHost(props: RightPanelHostProps) {
   }
 
   // Panel header titles must follow `rightPanelState.view` only — not shell section, not legacy tab metadata.
-  const panelHeaderCanonicalView = props.rightPanelState.view;
+  const panelHeaderCanonicalView = props.rightPanelState.view ?? "dashboard";
   const executiveTitles = executiveTitlesForView(panelHeaderCanonicalView, {
     contextId: props.rightPanelState.contextId,
     selectedObjectLabel: props.selectedObjectLabel,
     resolveObjectLabel: props.resolveObjectLabel,
   });
+  const onDemandExplainText = buildOnDemandExplanation(viewToRender);
+  const panelActionItems = React.useMemo(
+    () => extractPanelActions(props.panelData, props.responseData),
+    [props.panelData, props.responseData]
+  );
   const blockBodyForDecisionLoad =
     (props.decisionLoading || props.decisionStatus === "loading") &&
     isResolverManagedView(viewToRender) &&
@@ -1432,7 +1442,53 @@ export function RightPanelHost(props: RightPanelHostProps) {
           title={executiveTitles.title}
           subtitle={executiveTitles.subtitle}
           status={executiveStatus}
+          onHelp={() => setExplainOpen((v) => !v)}
         />
+        {explainOpen ? (
+          <div
+            style={{
+              margin: "8px 12px 0",
+              padding: "8px 10px",
+              borderRadius: 8,
+              border: "1px solid rgba(148,163,184,0.2)",
+              background: "rgba(15,23,42,0.45)",
+              color: "var(--nx-muted)",
+              fontSize: 11,
+              lineHeight: 1.4,
+            }}
+          >
+            {onDemandExplainText}
+          </div>
+        ) : null}
+        {panelActionItems.length > 0 ? (
+          <div style={{ margin: "8px 12px 0", display: "flex", flexDirection: "column", gap: 6 }}>
+            {panelActionItems.slice(0, 3).map((action, index) => {
+              const pct = Math.max(0, Math.min(100, Math.round(action.confidence * 100)));
+              return (
+                <button
+                  key={`${action.title}-${index}`}
+                  type="button"
+                  style={{
+                    textAlign: "left",
+                    borderRadius: 8,
+                    border: "1px solid rgba(148,163,184,0.2)",
+                    background: "rgba(15,23,42,0.4)",
+                    color: "var(--nx-text)",
+                    padding: "8px 10px",
+                    cursor: "default",
+                  }}
+                  title="Execution hook can be attached here"
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>{action.title}</div>
+                  <div style={{ marginTop: 4, fontSize: 10, color: "var(--nx-muted)", display: "flex", gap: 10 }}>
+                    <span>Impact: {action.impact}</span>
+                    <span>Confidence: {pct}%</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
       <div
         className="panel-body"
         ref={bodyRef}
@@ -1457,12 +1513,41 @@ export function RightPanelHost(props: RightPanelHostProps) {
           display: "flex",
           flexDirection: "column",
           gap: 12,
+          minHeight: 0,
         }}
       >
       {blockBodyForDecisionLoad ? (
         <ExecutivePanelSkeletonBody />
       ) : (
         (() => {
+        const blockedWhenNoRealData = new Set<RightPanelView>([
+          "dashboard",
+          "strategic_command",
+          "advice",
+          "timeline",
+          "decision_timeline",
+          "confidence_calibration",
+          "outcome_feedback",
+          "pattern_intelligence",
+          "scenario_tree",
+          "simulate",
+          "compare",
+          "war_room",
+        ]);
+        if (!allowReal && blockedWhenNoRealData.has(viewToRender)) {
+          return (
+            <ExecutiveDashboardPanel
+              sceneJson={undefined}
+              responseData={undefined}
+              decisionCockpit={undefined}
+              canonicalRecommendation={null}
+              decisionResult={undefined}
+              firstMeaningfulState={props.firstMeaningfulState ?? null}
+              mode="empty"
+              isSystemUnhealthy={props.isSystemUnhealthy === true}
+            />
+          );
+        }
         switch (viewToRender) {
     case "strategic_command":
       if (shouldRenderResolvedFallback(bestResolvedPanel)) {
@@ -1473,38 +1558,14 @@ export function RightPanelHost(props: RightPanelHostProps) {
         );
       }
       return (
-        <StrategicCommandPanel
+        <StrategicCommandPreview
           workspaceId={props.responseData?.workspace_id ?? null}
           projectId={props.responseData?.project_id ?? null}
           responseData={props.responseData ?? props.sceneJson ?? null}
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
           memoryEntries={props.decisionMemoryEntries ?? []}
-          onOpenView={(view) => {
-            if (view === "dashboard" || view === "simulate" || view === "compare") {
-              if (view === "compare") {
-                handleContextualCompareAction();
-                return;
-              }
-              if (view === "simulate") {
-                handleContextualSimulationAction();
-                return;
-              }
-              props.onOpenDashboard?.();
-              return;
-            }
-            if (view === "timeline") return props.onOpenTimeline?.();
-            if (view === "war_room") return handleContextualWarRoomAction();
-            if (view === "team_decision") return props.onOpenTeamDecision?.();
-            if (view === "collaboration_intelligence") return props.onOpenCollaborationIntelligence?.();
-            if (view === "decision_governance") return props.onOpenDecisionGovernance?.();
-            if (view === "executive_approval") return props.onOpenExecutiveApproval?.();
-            if (view === "decision_policy") return props.onOpenDecisionPolicy?.();
-            if (view === "decision_council") return props.onOpenDecisionCouncil?.();
-            if (view === "org_memory") return props.onOpenOrgMemory?.();
-            if (view === "strategic_learning") return props.onOpenStrategicLearning?.();
-            if (view === "decision_lifecycle") return props.onOpenDecisionLifecycle?.();
-          }}
+          onOpenFull={() => props.onOpenStrategicCommandFull?.()}
         />
       );
     case "timeline":
@@ -1837,13 +1898,58 @@ export function RightPanelHost(props: RightPanelHostProps) {
       }
       return <ConflictMapPanel conflicts={safeConflict as React.ComponentProps<typeof ConflictMapPanel>["conflicts"]} />;
     }
+    case "executive_object": {
+      const execObjectId = String(
+        props.rightPanelState.contextId ?? props.activeExecutiveObjectId ?? props.selectedObjectId ?? ""
+      ).trim();
+      return (
+        <ExecutiveObjectPanel data={props.executiveObjectPanelData ?? null} selectedObjectId={execObjectId || null} />
+      );
+    }
     case "object":
     case "object_focus": {
+      const objectListForPanel = hasVisibleSceneObjects ? visibleSceneObjects : [];
+      if (process.env.NODE_ENV !== "production") {
+        const trace = {
+          objectListCount: objectListForPanel.length,
+          objectListIds: objectListForPanel.map((o) => String(o?.id ?? o?.name ?? "unknown")),
+          hasVisibleSceneObjects,
+          source: "visibleSceneObjects",
+          currentView: props.rightPanelState.view,
+          contextId: props.rightPanelState.contextId ?? null,
+        };
+        const sig = JSON.stringify(trace);
+        if (lastRightPanelObjectSourceTraceRef.current !== sig) {
+          lastRightPanelObjectSourceTraceRef.current = sig;
+          console.warn("[Nexora][SceneParity][RightPanelObjectSource]", trace);
+        }
+      }
+      if (objectListForPanel.length === 0) {
+        return (
+          <RightPanelFallback
+            title="Objects"
+            message="No visible objects yet. Describe your system in chat to create the first model."
+          />
+        );
+      }
       const focusObjectId = String(
-        props.rightPanelState.contextId ?? props.selectedObjectId ?? props.focusedId ?? ""
+        props.activeExecutiveObjectId ?? props.selectedObjectId ?? props.focusedId ?? props.rightPanelState.contextId ?? ""
       ).trim();
+      if (focusObjectId && !visibleSceneObjectIdSet.has(focusObjectId)) {
+        return (
+          <RightPanelFallback
+            title="Object Context"
+            message="Selected object is not visible in the current scene. Choose a visible object or describe your system again."
+          />
+        );
+      }
       if (!focusObjectId) {
-        return null;
+        return (
+          <RightPanelFallback
+            title="Object Focus"
+            message="Select a visible object to inspect focus insight."
+          />
+        );
       }
       if (process.env.NODE_ENV !== "production") {
         globalThis.console?.debug?.("[Nexora][FocusRender]", {
@@ -2031,6 +2137,20 @@ export function RightPanelHost(props: RightPanelHostProps) {
         />
       );
     case "dashboard":
+      if (!allowReal) {
+        return (
+          <ExecutiveDashboardPanel
+            sceneJson={undefined}
+            responseData={undefined}
+            decisionCockpit={undefined}
+            canonicalRecommendation={null}
+            decisionResult={undefined}
+            firstMeaningfulState={props.firstMeaningfulState ?? null}
+            mode="empty"
+            isSystemUnhealthy={props.isSystemUnhealthy === true}
+          />
+        );
+      }
       return (
         <ExecutiveDashboardPanel
           sceneJson={props.sceneJson ?? undefined}
@@ -2052,12 +2172,16 @@ export function RightPanelHost(props: RightPanelHostProps) {
           decisionLoading={props.decisionLoading ?? false}
           decisionStatus={props.decisionStatus ?? "idle"}
           decisionError={props.decisionError ?? null}
+          firstMeaningfulState={props.firstMeaningfulState ?? null}
+          mode="normal"
+          isSystemUnhealthy={props.isSystemUnhealthy === true}
           activeExecutiveView={props.activeExecutiveView ?? "dashboard"}
           nexoraB8PanelContext={effectivePanelData.nexoraB8PanelContext ?? null}
           onSimulateDecision={handleContextualSimulationAction}
           onCompareOptions={handleContextualCompareAction}
           onOpenWarRoom={handleContextualWarRoomAction}
           onOpenStrategicCommand={props.onOpenStrategicCommand ?? null}
+          onOpenStrategicCommandFull={props.onOpenStrategicCommandFull ?? null}
           onOpenTimeline={props.onOpenTimeline ?? null}
           onOpenScenarioTree={props.onOpenScenarioTree ?? null}
           onOpenMemory={props.onOpenMemory ?? null}
@@ -2206,15 +2330,6 @@ export function RightPanelHost(props: RightPanelHostProps) {
         })()
       )}
       </div>
-      {viewToRender === "workspace" ? null : (
-        <div className="panel-section" style={{ position: "relative", width: "100%", margin: 0 }}>
-          <PanelHelpFooter
-            view={props.rightPanelState.view}
-            onOpenCenterComponent={props.onOpenCenterComponent ?? null}
-            onOpenPanelView={props.onOpenPanelView ?? null}
-          />
-        </div>
-      )}
       </div>
       </div>
     </div>
@@ -2571,4 +2686,55 @@ function hasMeaningfulObjectViewPayload(args: {
 
 function asLooseRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function buildOnDemandExplanation(view: RightPanelView): string {
+  switch (view) {
+    case "risk":
+    case "fragility":
+      return "This view shows where risk concentrates and how it propagates. Prioritize the nodes with highest downstream impact.";
+    case "timeline":
+    case "decision_timeline":
+      return "This view orders commitments by sequence and dependency. Resolve blocked stages first to reduce execution drift.";
+    case "war_room":
+      return "This view compares pressure paths and response options. Focus on the option with the strongest risk-adjusted outcome.";
+    case "dashboard":
+    case "strategic_command":
+      return "This view summarizes executive posture and decision momentum. Use it to choose the next high-impact move.";
+    default:
+      return "This view provides context for the active decision. Use actions below to move from insight to execution.";
+  }
+}
+
+function extractPanelActions(panelData: PanelSharedData, responseData: unknown): Array<{
+  title: string;
+  impact: "high" | "medium" | "low";
+  confidence: number;
+}> {
+  const out: Array<{ title: string; impact: "high" | "medium" | "low"; confidence: number }> = [];
+  const response = asLooseRecord(responseData);
+  const responseActions = Array.isArray(response?.actions) ? response.actions : [];
+  for (const raw of responseActions) {
+    const rec = asLooseRecord(raw);
+    if (!rec) continue;
+    const title = typeof rec.title === "string" ? rec.title.trim() : "";
+    if (!title) continue;
+    const impact = rec.impact === "high" || rec.impact === "medium" ? rec.impact : "low";
+    const confidenceRaw = Number(rec.confidence ?? 0.6);
+    const confidence = Number.isFinite(confidenceRaw) ? Math.max(0, Math.min(1, confidenceRaw)) : 0.6;
+    out.push({ title, impact, confidence });
+  }
+  if (out.length > 0) return out.slice(0, 3);
+  const strategicAdvice = asLooseRecord(panelData?.strategicAdvice);
+  const recommended = Array.isArray(strategicAdvice?.recommended_actions)
+    ? strategicAdvice?.recommended_actions
+    : [];
+  for (const raw of recommended) {
+    const rec = asLooseRecord(raw);
+    if (!rec) continue;
+    const title = typeof rec.title === "string" ? rec.title.trim() : typeof rec.action === "string" ? rec.action.trim() : "";
+    if (!title) continue;
+    out.push({ title, impact: "medium", confidence: 0.65 });
+  }
+  return out.slice(0, 3);
 }

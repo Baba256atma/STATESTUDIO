@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import Link from "next/link";
 import {
   listDomainExperiences,
   type NexoraDomainExperience,
@@ -155,12 +156,95 @@ export function DomainSelectionScreen({
                 </button>
               );
             })}
+            <NexoraPsychCard />
           </div>
         </div>
 
         <SelectionPreviewCard selected={selected} onContinue={onContinue} />
       </div>
     </div>
+  );
+}
+
+function NexoraPsychCard(): JSX.Element {
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Sycho][SYCHO-B01-FIX][DomainCardMounted]");
+    }
+  }, []);
+
+  return (
+    <Link href="/psych" data-nx="open-nexora-psych-domain-card" style={{ textDecoration: "none" }}>
+      <div
+        role="button"
+        style={{
+          textAlign: "left",
+          borderRadius: 18,
+          border: "1px solid rgba(148,163,184,0.14)",
+          background: "rgba(15,23,42,0.54)",
+          padding: 16,
+          cursor: "pointer",
+          minHeight: 156,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+        }}
+      >
+        <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+            <div style={{ color: "#e2e8f0", fontSize: 18, fontWeight: 800 }}>Nexora Psych</div>
+            <div
+              style={{
+                height: 22,
+                padding: "0 8px",
+                borderRadius: 999,
+                border: "1px solid rgba(34,197,94,0.22)",
+                background: "rgba(34,197,94,0.12)",
+                color: "#bbf7d0",
+                display: "inline-flex",
+                alignItems: "center",
+                fontSize: 10,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+              }}
+            >
+              LAUNCH
+            </div>
+          </div>
+          <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 8, lineHeight: 1.55 }}>
+            Self Mirror experience where conversation awakens a living 3D psychological scene.
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 14 }}>
+          {[
+            "PSYCH",
+            "SELF_MIRROR",
+            "3D_SCENE",
+          ].map((tag) => (
+            <div
+              key={tag}
+              style={{
+                height: 24,
+                padding: "0 8px",
+                borderRadius: 999,
+                border: "1px solid rgba(148,163,184,0.12)",
+                background: "rgba(2,6,23,0.42)",
+                color: "#cbd5e1",
+                display: "inline-flex",
+                alignItems: "center",
+                fontSize: 10,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+              }}
+            >
+              {tag}
+            </div>
+          ))}
+        </div>
+      </div>
+    </Link>
   );
 }
 

@@ -59,6 +59,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         client_ip = self._get_client_ip(request)
 
         if not self.limiter.allow_request(client_ip):
+            allowed_origins = {"http://localhost:3000", "http://127.0.0.1:3000"}
+            request_origin = request.headers.get("origin")
+            allow_origin = request_origin if request_origin in allowed_origins else "http://localhost:3000"
             return JSONResponse(
                 status_code=429,
                 content={
@@ -67,6 +70,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                         "type": "RATE_LIMIT_EXCEEDED",
                         "message": "Too many requests. Please try again later.",
                     },
+                },
+                headers={
+                    "Access-Control-Allow-Origin": allow_origin,
+                    "Access-Control-Allow-Credentials": "true",
                 },
             )
 

@@ -16,11 +16,14 @@ type ResolvePropagationTriggerParams = {
   propagationPayload?: unknown;
   scenarioTrigger?: ScenarioActionPropagationIntent | null;
   allowPreviewFallback?: boolean;
+  semanticSignature?: string | null;
   now?: number;
 };
 
 let lastPropagationCandidatesSignature: string | null = null;
 let lastPropagationResolvedSignature: string | null = null;
+let lastPropagationSemanticSignature: string | null = null;
+let lastPropagationSemanticResolution: PropagationTriggerResolution | null = null;
 
 function normalizeId(value: string | null | undefined): string | null {
   const next = String(value ?? "").trim();
@@ -75,6 +78,19 @@ function makeTrigger(params: {
 export function resolvePropagationTrigger(
   params: ResolvePropagationTriggerParams
 ): PropagationTriggerResolution {
+  const semanticSignature = params.semanticSignature ?? null;
+  if (
+    semanticSignature &&
+    semanticSignature === lastPropagationSemanticSignature &&
+    lastPropagationSemanticResolution
+  ) {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[Nexora][PropagationSkipped][DuplicateSemanticSignature]", {
+        semanticSig: semanticSignature,
+      });
+    }
+    return lastPropagationSemanticResolution;
+  }
   const now = Number.isFinite(params.now) ? Number(params.now) : Date.now();
   const candidateTriggers: PropagationTriggerIntent[] = [];
 
@@ -214,7 +230,7 @@ export function resolvePropagationTrigger(
     }
   }
 
-  return {
+  const resolution = {
     active_trigger: activeTrigger ?? null,
     candidate_triggers: sortedTriggers,
     resolution_reason: resolutionReason,
@@ -222,4 +238,9 @@ export function resolvePropagationTrigger(
     should_reuse_payload: !!shouldReusePayload,
     should_fallback_preview: !!shouldFallbackPreview,
   };
+  if (semanticSignature) {
+    lastPropagationSemanticSignature = semanticSignature;
+    lastPropagationSemanticResolution = resolution;
+  }
+  return resolution;
 }

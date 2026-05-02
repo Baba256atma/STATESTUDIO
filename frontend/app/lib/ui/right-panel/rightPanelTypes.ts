@@ -12,6 +12,8 @@ export const CANONICAL_RIGHT_PANEL_VIEWS = [
   "decision_governance",
   "decision_policy",
   "executive_approval",
+  /** Object-scoped executive read (Type-C): insight / risk / action — not the global dashboard. */
+  "executive_object",
   "explanation",
   "risk",
   "fragility",

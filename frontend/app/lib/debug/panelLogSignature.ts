@@ -9,7 +9,8 @@ export function logPanelOnce(
   const resolvedTtl =
     ttlMs ??
     (label.includes("[Nexora][PanelDataUpdate]") || label.includes("[Nexora][PanelBlankGuard]") ? 12000 : 2000);
-  const key = JSON.stringify({ label, payload });
+  const signature = payload.signature ?? payload;
+  const key = JSON.stringify({ label, signature });
   if (globalPanelLogSet.has(key)) return;
   globalPanelLogSet.add(key);
   console.warn(label, payload);

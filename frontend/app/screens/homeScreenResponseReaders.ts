@@ -11,6 +11,54 @@ import { hasForcedSceneUpdate, normalizeUnifiedSceneReaction, type UnifiedSceneR
 import type { SceneJson } from "../lib/sceneTypes";
 import { normalizeSceneJson } from "./homeScreenUtils";
 
+export type FirstMeaningfulState = {
+  headline: string;
+  insight: string;
+  action: string;
+  confidence: "low" | "medium" | "high";
+  source: "synthetic" | "partial" | "real";
+  shouldDeemphasize?: boolean;
+  evidenceLabel?: string;
+};
+
+export function buildFirstMeaningfulState(input: {
+  hasScene: boolean;
+  hasAnalysis: boolean;
+  hasSignals: boolean;
+}): FirstMeaningfulState {
+  if (input.hasAnalysis) {
+    return {
+      headline: "Current analysis is ready",
+      insight: "Real analysis is now available. Use the decision panel for details.",
+      action: "Review recommended action",
+      confidence: "high",
+      source: "real",
+      shouldDeemphasize: true,
+      evidenceLabel: "Based on current analysis",
+    };
+  }
+  if (input.hasSignals || input.hasScene) {
+    return {
+      headline: "Early signal detected",
+      insight: "Nexora has enough context to prepare an initial view.",
+      action: "Select an object or run analysis",
+      confidence: "medium",
+      source: "partial",
+      shouldDeemphasize: false,
+      evidenceLabel: "Based on early signals",
+    };
+  }
+  return {
+    headline: "System is ready for analysis",
+    insight: "No active risk or signal detected yet.",
+    action: "Describe your system in chat to begin.",
+    confidence: "low",
+    source: "synthetic",
+    shouldDeemphasize: false,
+    evidenceLabel: "No live signal yet",
+  };
+}
+
 export function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)

@@ -41,6 +41,8 @@ import {
 import type { ResolvedUiTheme } from "../lib/ui/nexoraUiTheme";
 import { nx } from "./ui/nexoraTheme";
 
+const CANVAS_STATIC_MODE = true;
+
 type SceneCanvasProps = {
   prefs: any;
   /** Resolved app chrome theme; drives scene clear color / fog / lights with atmosphere prefs. */
@@ -133,28 +135,55 @@ function SceneDemandInvalidateDriver({
   localIsOrbitingRef: React.MutableRefObject<boolean>;
 }) {
   const { invalidate } = useThree();
+  const lastFrameTickSignatureRef = useRef<string | null>(null);
   useLayoutEffect(() => {
     invalidateOutRef.current = invalidate;
+    if (process.env.NODE_ENV !== "production") {
+      const signature = "initial_layout_invalidate";
+      if (lastFrameTickSignatureRef.current !== signature) {
+        lastFrameTickSignatureRef.current = signature;
+        console.debug("[Nexora][CanvasFrameTick]", { reason: "initial_layout_invalidate" });
+      }
+    }
     invalidate();
   }, [invalidate, invalidateOutRef]);
   useEffect(() => {
+    if (process.env.NODE_ENV !== "production") {
+      const signature = "scene_payload_changed";
+      if (lastFrameTickSignatureRef.current !== signature) {
+        lastFrameTickSignatureRef.current = signature;
+        console.debug("[Nexora][CanvasFrameTick]", { reason: "scene_payload_changed" });
+      }
+    }
     invalidate();
   }, [sceneJson, invalidate]);
-  useFrame(() => {
-    const orbiting = isOrbiting || localIsOrbitingRef.current;
-    if (layoutPauseRef.current && !orbiting) return;
+  useEffect(() => {
+    if (!isOrbiting && !localIsOrbitingRef.current) return;
+    if (layoutPauseRef.current) return;
+    if (process.env.NODE_ENV !== "production") {
+      const signature = "orbit_interaction";
+      if (lastFrameTickSignatureRef.current !== signature) {
+        lastFrameTickSignatureRef.current = signature;
+        console.debug("[Nexora][CanvasFrameTick]", { reason: "orbit_interaction" });
+      }
+    }
     invalidate();
-  });
+  }, [invalidate, isOrbiting, layoutPauseRef, localIsOrbitingRef]);
   return null;
 }
 
 function AnimatedScaleGroup({
   target,
+  staticMode = false,
   children,
 }: {
   target: number;
+  staticMode?: boolean;
   children: React.ReactNode;
 }) {
+  if (staticMode) {
+    return <group scale={target}>{children}</group>;
+  }
   const g = useRef<THREE.Group>(null);
   const v = useRef<number>(target);
   useEffect(() => {
@@ -880,6 +909,61 @@ function CameraIntelligence({
   return null;
 }
 
+function StaticSceneFramer({
+  sceneJson,
+  controlsRef,
+  localIsOrbitingRef,
+  isOrbiting,
+  enabled,
+}: {
+  sceneJson: any | null;
+  controlsRef: React.MutableRefObject<any | null>;
+  localIsOrbitingRef: React.MutableRefObject<boolean>;
+  isOrbiting: boolean;
+  enabled: boolean;
+}) {
+  const { camera } = useThree();
+  const lastAppliedSignatureRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+    if (!sceneJson?.scene?.objects || !Array.isArray(sceneJson.scene.objects)) return;
+    if (isOrbiting || localIsOrbitingRef.current) return;
+    const objects = sceneJson.scene.objects as any[];
+    const sceneSignature = sceneObjectsSignature(objects);
+    if (lastAppliedSignatureRef.current === sceneSignature) return;
+    const bounds = computeSceneBounds(objects);
+    if (!bounds) return;
+
+    const [cx, cy, cz] = bounds.center;
+    const size = Math.max(bounds.size[0], bounds.size[1], bounds.size[2], 1);
+    const distance = size * 1.8;
+    const position: [number, number, number] = [cx, cy + size * 0.5, cz + distance];
+    const lookAt: [number, number, number] = [cx, cy, cz];
+
+    camera.position.set(position[0], position[1], position[2]);
+    const controls = controlsRef.current;
+    if (controls?.target) {
+      controls.target.set(lookAt[0], lookAt[1], lookAt[2]);
+      controls.update();
+    } else {
+      camera.lookAt(lookAt[0], lookAt[1], lookAt[2]);
+    }
+    lastAppliedSignatureRef.current = sceneSignature;
+
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[Nexora][StaticCameraFrameApplied]", {
+        signature: sceneSignature,
+        position,
+        lookAt,
+        size,
+      });
+    }
+  }, [camera, controlsRef, enabled, isOrbiting, localIsOrbitingRef, sceneJson]);
+
+  return null;
+}
+
 function SceneCanvasComponent(props: SceneCanvasProps) {
   const resolvedUi: ResolvedUiTheme = props.resolvedUiTheme ?? "night";
   const atmosphere: SceneAtmosphereMode = (props.prefs?.theme ?? "night") as SceneAtmosphereMode;
@@ -1122,6 +1206,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   // Global scale can easily make objects feel "too big". Keep a sane default and clamp the range.
   const rawGlobalScale = typeof props.prefs?.globalScale === "number" ? props.prefs.globalScale : 0.65;
   const globalScale = Math.min(1.6, Math.max(0.35, rawGlobalScale));
+  const resolvedGlobalScale = CANVAS_STATIC_MODE ? 1 : globalScale;
   const showGrid = typeof props.showGrid === "boolean" ? props.showGrid : !!props.prefs?.showGrid;
   const showAxes = typeof props.showAxes === "boolean" ? props.showAxes : !!props.prefs?.showAxes;
   const shadowsEnabled = !!props.prefs?.shadowsEnabled;
@@ -1483,7 +1568,12 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         dpr={[1, 1.5]}
         gl={{ antialias: false, powerPreference: "high-performance" }}
         shadows={shadowsEnabled}
-        camera={{ position: props.camPos ?? [0, 0, 5], fov: 50, near: 0.1, far: 250 }}
+        camera={{
+          position: CANVAS_STATIC_MODE ? [0, 6, 14] : props.camPos ?? [0, 0, 5],
+          fov: CANVAS_STATIC_MODE ? 45 : 50,
+          near: 0.1,
+          far: 250,
+        }}
         style={{ width: "100%", height: "100%", display: "block" }}
         onPointerDown={handleCanvasPointerDown}
         onContextMenu={handleCanvasContextMenu}
@@ -1499,23 +1589,32 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         <color attach="background" args={[sceneEnv.clearColor]} />
         <SceneFogSync color={sceneEnv.fogColor} near={sceneEnv.fogNear} far={sceneEnv.fogFar} />
 
-        <CameraIntelligence
-          selectedObjectId={selectedIdCtx ?? null}
-          focusPinned={props.focusPinned}
-          focusMode={props.focusMode}
-          focusedId={props.focusedId}
+        {!CANVAS_STATIC_MODE && (
+          <CameraIntelligence
+            selectedObjectId={selectedIdCtx ?? null}
+            focusPinned={props.focusPinned}
+            focusMode={props.focusMode}
+            focusedId={props.focusedId}
+            sceneJson={props.sceneJson}
+            camPos={props.camPos}
+            overridesRef={props.overridesRef}
+            cameraLockedByUser={props.cameraLockedByUser || isFixedCamera}
+            isOrbiting={props.isOrbiting}
+            hudDockSide={props.hudDockSide}
+            controlsRef={controlsRef}
+            localIsOrbitingRef={localIsOrbitingRef}
+            preserveCameraOnClearRef={preserveCameraOnClearRef}
+            orbitControlsEnabled={orbitControlsEnabled}
+            layoutPauseRef={leftColumnLayoutPauseRef}
+            layoutResumeNonce={leftColumnLayoutResumeNonce}
+          />
+        )}
+        <StaticSceneFramer
           sceneJson={props.sceneJson}
-          camPos={props.camPos}
-          overridesRef={props.overridesRef}
-          cameraLockedByUser={props.cameraLockedByUser || isFixedCamera}
-          isOrbiting={props.isOrbiting}
-          hudDockSide={props.hudDockSide}
           controlsRef={controlsRef}
           localIsOrbitingRef={localIsOrbitingRef}
-          preserveCameraOnClearRef={preserveCameraOnClearRef}
-          orbitControlsEnabled={orbitControlsEnabled}
-          layoutPauseRef={leftColumnLayoutPauseRef}
-          layoutResumeNonce={leftColumnLayoutResumeNonce}
+          isOrbiting={props.isOrbiting}
+          enabled={CANVAS_STATIC_MODE}
         />
 
         {sceneEnv.showStars ? (
@@ -1535,10 +1634,12 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
 
         <OrbitControls
           ref={controlsRef}
-          enabled={orbitControlsEnabled}
+          enabled={!CANVAS_STATIC_MODE && orbitControlsEnabled}
           enableZoom
-          enableRotate
+          enableRotate={!CANVAS_STATIC_MODE}
           enablePan={false}
+          enableDamping={false}
+          autoRotate={false}
           minDistance={1.5}
           maxDistance={80}
           mouseButtons={ORBIT_MOUSE_BUTTONS}
@@ -1546,7 +1647,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
           onEnd={handleOrbitEnd}
         />
 
-        <AnimatedScaleGroup target={globalScale}>
+        <AnimatedScaleGroup target={resolvedGlobalScale} staticMode={CANVAS_STATIC_MODE}>
           {showGrid && <gridHelper args={[10, 10]} />}
           {showAxes && <axesHelper args={[3]} />}
           {props.showCameraHelper ? (

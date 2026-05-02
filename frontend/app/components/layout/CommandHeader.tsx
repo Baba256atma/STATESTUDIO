@@ -23,6 +23,9 @@ type CommandHeaderProps = {
   commandPlaceholder: string;
   onCommandChange: (value: string) => void;
   onCommandSubmit: () => void;
+  /** MVP: top-bar Analyze only runs when a scene object is selected. */
+  analyzeObjectReady?: boolean;
+  onAnalyzeObjectClick?: (() => void) | null;
   onAssessBusinessText?: (() => void) | null;
   onOpenMultiSourceAssess?: (() => void) | null;
   onLoadDemo?: () => void;
@@ -140,10 +143,43 @@ export function CommandHeader(props: CommandHeaderProps) {
           ) : null}
         </div>
 
-        <div style={{ flex: "1 1 0%", maxWidth: 380, margin: "0 auto", display: "flex", justifyContent: "center" }}>
-          <button type="button" className="nexora-primary-cta" onClick={props.onCommandSubmit} style={primaryActionStyle}>
-            [{">"}] Analyze
-          </button>
+        <div style={{ flex: "1 1 0%", maxWidth: 420, margin: "0 auto", display: "flex", justifyContent: "center" }}>
+          {typeof props.onAnalyzeObjectClick === "function" ? (
+            <button
+              type="button"
+              className="nexora-primary-cta"
+              disabled={!props.analyzeObjectReady}
+              title={
+                props.analyzeObjectReady
+                  ? "Run analysis on the selected object"
+                  : "Select an object to analyze"
+              }
+              aria-label={
+                props.analyzeObjectReady
+                  ? "Analyze selected object"
+                  : "Analyze disabled: select an object first"
+              }
+              onClick={() => {
+                if (!props.analyzeObjectReady) return;
+                props.onAnalyzeObjectClick?.();
+              }}
+              style={{
+                ...primaryActionStyle,
+                opacity: props.analyzeObjectReady ? 1 : 0.55,
+                cursor: props.analyzeObjectReady ? "pointer" : "not-allowed",
+                maxWidth: "100%",
+                whiteSpace: "normal",
+                textAlign: "center",
+                lineHeight: 1.25,
+              }}
+            >
+              {props.analyzeObjectReady ? `[{">"}] Analyze Object` : "Select an object to analyze"}
+            </button>
+          ) : (
+            <button type="button" className="nexora-primary-cta" onClick={props.onCommandSubmit} style={primaryActionStyle}>
+              [{">"}] Analyze
+            </button>
+          )}
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, flex: "1 1 0%", minWidth: 0 }}>

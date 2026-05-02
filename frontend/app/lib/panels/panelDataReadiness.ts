@@ -6,8 +6,18 @@ import type { PanelSharedData } from "./panelDataResolverTypes";
 
 export type PanelReadiness = "empty" | "loading" | "ready";
 
+const EMPTY_RISK_PANEL_DATA = Object.freeze({
+  level: "unknown",
+  risk_level: "unknown",
+  edges: [] as unknown[],
+  drivers: [] as unknown[],
+  sources: [] as unknown[],
+  summary: "",
+});
+
 function riskRecord(risk: unknown): Record<string, unknown> | null {
-  return risk && typeof risk === "object" ? (risk as Record<string, unknown>) : null;
+  if (risk && typeof risk === "object") return risk as Record<string, unknown>;
+  return EMPTY_RISK_PANEL_DATA as unknown as Record<string, unknown>;
 }
 
 /** Unified contract: no “thin” UX — partial payloads count as ready. */

@@ -21,6 +21,8 @@ import {
   type SimulatedPathEdge,
 } from "./sceneRenderUtils";
 
+const STATIC_EDGE_VISUALS = true;
+
 type LoopEdge = {
   from: string;
   to: string;
@@ -107,7 +109,12 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
   void simulationSourceId;
   const tokens = useMemo(() => getThemeTokens(theme, modeId), [theme, modeId]);
   const relationSeverity = normalizeScannerLabelSeverity(undefined, scannerFragilityScore);
-  const hoveredInteractionProfile = getInteractionProfile(hoveredInteractionRole);
+  const effectiveHoveredInteractionRole = STATIC_EDGE_VISUALS ? "neutral" : hoveredInteractionRole;
+  const effectiveNarrativeFocusStrength = STATIC_EDGE_VISUALS ? 0 : narrativeFocusStrength;
+  const effectiveScannerStoryReveal = STATIC_EDGE_VISUALS
+    ? { primary: 1, edge: 1, affected: 1, context: 1 }
+    : scannerStoryReveal;
+  const hoveredInteractionProfile = getInteractionProfile(effectiveHoveredInteractionRole);
 
   const narrativePathEdgeSet = useMemo(
     () => new Set(narrativePathEdges.flatMap((edge) => [`${edge.from}::${edge.to}`, `${edge.to}::${edge.from}`])),
@@ -327,7 +334,7 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
     groupedEdges.inactive.forEach((edgeList, role) => {
       const geometry = buildLineSegmentsGeometry(edgeList, posMap);
       if (!geometry) return;
-      const isHovered = !!hoveredId && edgeList.some((edge) => edge.from === hoveredId || edge.to === hoveredId);
+      const isHovered = !STATIC_EDGE_VISUALS && !!hoveredId && edgeList.some((edge) => edge.from === hoveredId || edge.to === hoveredId);
       const leadProfile = resolveRelationVisualProfile({
         kind: edgeList[0]?.kind,
         polarity: edgeList[0]?.polarity,
@@ -337,16 +344,16 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
       const style = getRelationEmphasisStyle({ relationRole: role, severity: relationSeverity, theme, active: false });
       const relationReveal =
         role === "primary_to_affected"
-          ? scannerStoryReveal.edge
+          ? effectiveScannerStoryReveal.edge
           : role === "affected_to_affected"
-          ? (scannerStoryReveal.edge + scannerStoryReveal.affected) * 0.5
+          ? (effectiveScannerStoryReveal.edge + effectiveScannerStoryReveal.affected) * 0.5
           : role === "primary_to_context" || role === "affected_to_context" || role === "context_to_context"
-          ? scannerStoryReveal.context
+          ? effectiveScannerStoryReveal.context
           : 1;
       const revealOpacity = 0.42 + relationReveal * 0.58;
       const memoryBoost = getEdgeMemoryStrength(edgeList);
       const narrativeRole = getDecisionNarrativeRole(edgeList);
-      const narrativeStyle = getNarrativeEdgeStyle(narrativeRole, narrativeFocusStrength);
+      const narrativeStyle = getNarrativeEdgeStyle(narrativeRole, effectiveNarrativeFocusStrength);
       const simulationEdge = getCombinedSimulationEdge(edgeList);
       const simulationStyle = simulationEdge ? getSimulationEdgeStyle(simulationEdge.depth, simulationEdge.strength) : getSimulationEdgeStyle(3, 0);
       const interactionBoost = isHovered ? hoveredInteractionProfile.edgeBoost : 1;
@@ -378,7 +385,7 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
       });
     });
     return groups;
-  }, [getCombinedSimulationEdge, groupedEdges.inactive, hoveredId, hoveredInteractionProfile.edgeBoost, inactiveProfile.color, modeId, narrativeFocusStrength, posMap, relationSeverity, scannerSceneActive, scannerStoryReveal.affected, scannerStoryReveal.context, scannerStoryReveal.edge, theme, tokens.design.colors.relationNeutral]);
+  }, [effectiveNarrativeFocusStrength, effectiveScannerStoryReveal.affected, effectiveScannerStoryReveal.context, effectiveScannerStoryReveal.edge, getCombinedSimulationEdge, groupedEdges.inactive, hoveredId, hoveredInteractionProfile.edgeBoost, inactiveProfile.color, modeId, posMap, relationSeverity, scannerSceneActive, theme, tokens.design.colors.relationNeutral]);
 
   const scannerActiveGroups = useMemo(() => {
     if (!scannerSceneActive) return [] as Array<{
@@ -396,7 +403,7 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
     groupedEdges.active.forEach((edgeList, role) => {
       const baseGeometry = buildLineSegmentsGeometry(edgeList, posMap);
       if (!baseGeometry) return;
-      const isHovered = !!hoveredId && edgeList.some((edge) => edge.from === hoveredId || edge.to === hoveredId);
+      const isHovered = !STATIC_EDGE_VISUALS && !!hoveredId && edgeList.some((edge) => edge.from === hoveredId || edge.to === hoveredId);
       const leadProfile = resolveRelationVisualProfile({
         kind: edgeList[0]?.kind,
         polarity: edgeList[0]?.polarity,
@@ -406,16 +413,16 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
       const style = getRelationEmphasisStyle({ relationRole: role, severity: relationSeverity, theme, active: true });
       const relationReveal =
         role === "primary_to_affected"
-          ? scannerStoryReveal.edge
+          ? effectiveScannerStoryReveal.edge
           : role === "affected_to_affected"
-          ? (scannerStoryReveal.edge + scannerStoryReveal.affected) * 0.5
+          ? (effectiveScannerStoryReveal.edge + effectiveScannerStoryReveal.affected) * 0.5
           : role === "primary_to_context" || role === "affected_to_context" || role === "context_to_context"
-          ? scannerStoryReveal.context
+          ? effectiveScannerStoryReveal.context
           : 1;
       const revealOpacity = role === "primary_to_affected" ? 0.52 + relationReveal * 0.48 : 0.32 + relationReveal * 0.38;
       const memoryBoost = getEdgeMemoryStrength(edgeList);
       const narrativeRole = getDecisionNarrativeRole(edgeList);
-      const narrativeStyle = getNarrativeEdgeStyle(narrativeRole, narrativeFocusStrength);
+      const narrativeStyle = getNarrativeEdgeStyle(narrativeRole, effectiveNarrativeFocusStrength);
       const simulationEdge = getCombinedSimulationEdge(edgeList);
       const simulationStyle = simulationEdge ? getSimulationEdgeStyle(simulationEdge.depth, simulationEdge.strength) : getSimulationEdgeStyle(3, 0);
       const interactionBoost = isHovered ? hoveredInteractionProfile.edgeBoost : 1;
@@ -451,7 +458,7 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
       groups.push({ role, isHovered, geos, materials });
     });
     return groups;
-  }, [getCombinedSimulationEdge, groupedEdges.active, hoveredId, hoveredInteractionProfile.edgeBoost, modeId, narrativeFocusStrength, posMap, relationSeverity, scannerSceneActive, scannerStoryReveal.affected, scannerStoryReveal.context, scannerStoryReveal.edge, theme, tokens.design.colors.relationNeutral]);
+  }, [effectiveNarrativeFocusStrength, effectiveScannerStoryReveal.affected, effectiveScannerStoryReveal.context, effectiveScannerStoryReveal.edge, getCombinedSimulationEdge, groupedEdges.active, hoveredId, hoveredInteractionProfile.edgeBoost, modeId, posMap, relationSeverity, scannerSceneActive, theme, tokens.design.colors.relationNeutral]);
 
   useEffect(() => () => {
     try {
@@ -476,17 +483,17 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
       const style = getRelationEmphasisStyle({ relationRole: role, severity: relationSeverity, theme, active: true });
       const relationReveal =
         role === "primary_to_affected"
-          ? scannerStoryReveal.edge
+          ? effectiveScannerStoryReveal.edge
           : role === "affected_to_affected"
-            ? (scannerStoryReveal.edge + scannerStoryReveal.affected) * 0.5
+            ? (effectiveScannerStoryReveal.edge + effectiveScannerStoryReveal.affected) * 0.5
             : role === "primary_to_context" || role === "affected_to_context" || role === "context_to_context"
-              ? scannerStoryReveal.context
+              ? effectiveScannerStoryReveal.context
               : 1;
       const revealOpacity = role === "primary_to_affected" ? 0.52 + relationReveal * 0.48 : 0.32 + relationReveal * 0.38;
       const roleEdges = groupedEdges.active.get(role) ?? [];
       const memoryBoost = materials.length > 0 ? getEdgeMemoryStrength(roleEdges) : 0;
       const narrativeRole = getDecisionNarrativeRole(roleEdges);
-      const narrativeStyle = getNarrativeEdgeStyle(narrativeRole, narrativeFocusStrength);
+      const narrativeStyle = getNarrativeEdgeStyle(narrativeRole, effectiveNarrativeFocusStrength);
       const simulationEdge = getCombinedSimulationEdge(roleEdges);
       const simulationStyle = simulationEdge ? getSimulationEdgeStyle(simulationEdge.depth, simulationEdge.strength) : getSimulationEdgeStyle(3, 0);
       const interactionBoost = isHovered ? hoveredInteractionProfile.edgeBoost : 1;
@@ -510,12 +517,12 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
     getEdgeMemoryStrength,
     groupedEdges.active,
     hoveredInteractionProfile.edgeBoost,
-    narrativeFocusStrength,
+    effectiveNarrativeFocusStrength,
     relationSeverity,
     scannerActiveGroups,
-    scannerStoryReveal.affected,
-    scannerStoryReveal.context,
-    scannerStoryReveal.edge,
+    effectiveScannerStoryReveal.affected,
+    effectiveScannerStoryReveal.context,
+    effectiveScannerStoryReveal.edge,
     theme,
   ]);
 

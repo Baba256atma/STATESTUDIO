@@ -32,6 +32,16 @@ function uniqueIds(values: unknown): string[] {
   return Array.from(new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean)));
 }
 
+/**
+ * True when the reaction itself requests highlight/focus ids (before normalize fills from risk fallbacks).
+ * Empty / missing highlight + primary means "do not replace current scene selection" for object_selection.
+ */
+export function reactionHasExplicitHighlightIntent(reaction: UnifiedSceneReaction): boolean {
+  const rawHighlights = uniqueIds(reaction.highlightedObjectIds);
+  const rawPrimary = reaction.primaryObjectId ? String(reaction.primaryObjectId).trim() : "";
+  return rawHighlights.length > 0 || rawPrimary.length > 0;
+}
+
 export function hasForcedSceneUpdate(
   payload: unknown,
   incomingScene?: SceneJson | null | undefined

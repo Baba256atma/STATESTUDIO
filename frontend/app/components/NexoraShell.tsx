@@ -154,7 +154,9 @@ function getRequestedViewForLeftNav(key: LeftNavGroupKey): RightPanelView {
 
 function panelFamilyForView(view: RightPanelView | null | undefined): "EXE" | "SCN" | "SIM" | "RSK" {
   if (view === "input") return "SCN";
-  if (view === "dashboard" || view === "strategic_command" || view === "kpi") return "EXE";
+  if (view === "dashboard" || view === "strategic_command" || view === "kpi" || view === "executive_object") {
+    return "EXE";
+  }
   if (view === "risk" || view === "fragility" || view === "explanation" || view === "conflict") return "RSK";
   if (view === "workspace" || view === "object" || view === "object_focus") return "SCN";
   return "SIM";
@@ -174,7 +176,7 @@ function getSectionForView(view: RightPanelView | null): ActiveSectionKey | null
   if (view === "patterns") return "patterns";
   if (view === "opponent") return "opponent";
   if (view === "collaboration") return "collaboration";
-  if (view === "dashboard") return "executive";
+  if (view === "dashboard" || view === "executive_object") return "executive";
   if (view === "war_room") return "war_room";
   if (view === "advice") return "advice";
   if (view === "timeline" || view === "decision_timeline" || view === "confidence_calibration" || view === "outcome_feedback" || view === "pattern_intelligence" || view === "scenario_tree") {
@@ -409,6 +411,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const [isAssistantDrawerOpen, setIsAssistantDrawerOpen] = useState(true);
   const [leftCommandOpen, setLeftCommandOpen] = useState(true);
   const [chatInput, setChatInput] = useState("");
+  const [objectAnalyzeReady, setObjectAnalyzeReady] = useState(false);
   const [multiSourcePopoverOpen, setMultiSourcePopoverOpen] = useState(false);
   const [multiSourceBusy, setMultiSourceBusy] = useState(false);
   const [multiSourceError, setMultiSourceError] = useState<string | null>(null);
@@ -516,6 +519,35 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       new CustomEvent("nexora:left-command-open-changed", { detail: { open: leftCommandOpen } })
     );
   }, [leftCommandOpen]);
+
+  useEffect(() => {
+    const onEligibility = (event: Event) => {
+      const d = (event as CustomEvent<{ ready?: boolean }>).detail;
+      setObjectAnalyzeReady(d?.ready === true);
+    };
+    window.addEventListener("nexora:object-analyze-eligibility", onEligibility as EventListener);
+    return () => window.removeEventListener("nexora:object-analyze-eligibility", onEligibility as EventListener);
+  }, []);
+
+  const [inspectorContext, setInspectorContext] = useState<any>(null);
+  useEffect(() => {
+    const onInspectorContext = (event: Event) => {
+      const detail = (event as CustomEvent<any>).detail;
+      setInspectorContext(detail ?? null);
+    };
+    window.addEventListener("nexora:inspector-context", onInspectorContext as EventListener);
+    return () => window.removeEventListener("nexora:inspector-context", onInspectorContext as EventListener);
+  }, []);
+
+  const requestObjectAnalyzeFromTopBar = useCallback(() => {
+    if (!objectAnalyzeReady) return;
+    globalThis.console?.warn?.("[NEXORA_ANALYZE_CLICK_REACHED]", {
+      selectedObjectIdState: inspectorContext?.selectedObjectId ?? null,
+      focusedId: inspectorContext?.focusedId ?? null,
+      timestamp: Date.now(),
+    });
+    window.dispatchEvent(new CustomEvent("nexora:request-object-analyze"));
+  }, [inspectorContext?.focusedId, inspectorContext?.selectedObjectId, objectAnalyzeReady]);
 
   const handleSaveScheduled = useCallback((payload: SaveScheduledPayload) => {
     const def: ScheduledAssessmentDefinition = {
@@ -625,16 +657,6 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     return () => window.removeEventListener("nexora:chat-result", onChatResult as EventListener);
   }, []);
 
-  const [inspectorContext, setInspectorContext] = useState<any>(null);
-  useEffect(() => {
-    const onInspectorContext = (event: Event) => {
-      const detail = (event as CustomEvent<any>).detail;
-      setInspectorContext(detail ?? null);
-    };
-    window.addEventListener("nexora:inspector-context", onInspectorContext as EventListener);
-    return () => window.removeEventListener("nexora:inspector-context", onInspectorContext as EventListener);
-  }, []);
-  
   const [activeSection, setActiveSection] = useState<ActiveSectionKey>(mode === "studio" ? "objects" : "executive");
   const explicitScnIntentRef = useRef<"scene" | "objects" | "focus" | null>(null);
   const lastShellSectionIntentSigRef = useRef<string | null>(null);
@@ -659,6 +681,8 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     typeof inspectorContext?.rightPanelView === "string"
       ? (inspectorContext.rightPanelView as RightPanelView)
       : null;
+  const localRightPanelView: RightPanelView = null;
+  const finalRightPanelView: RightPanelView = upstreamRightPanelView ?? localRightPanelView ?? "scene";
   const navItems = useMemo(
     () =>
       LEFT_NAV_ITEMS.filter(
@@ -698,6 +722,32 @@ export default function NexoraShell({ children }: NexoraShellProps) {
 
     return upstreamMappedSection;
   }, [activeSection, scnResolvedSection, upstreamMappedSection]);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    globalThis.console?.debug?.("[Nexora][RightPanelRouteTrace]", {
+      writer: "NexoraShell_upstream",
+      requestedView: upstreamRightPanelView ?? null,
+      resolvedView: upstreamRightPanelView ?? null,
+      family: null,
+      contextId: null,
+      reason: "inspector_context",
+      source: "NexoraShell",
+    });
+    globalThis.console?.debug?.("[Nexora][RightPanelRouteTrace]", {
+      writer: "NexoraShell_final",
+      requestedView: upstreamRightPanelView ?? null,
+      resolvedView: finalRightPanelView ?? null,
+      family: null,
+      contextId: null,
+      reason: "final_view_resolution",
+      source: "NexoraShell",
+    });
+    globalThis.console?.debug?.("[Nexora][ShellRightPanelView]", {
+      upstreamRightPanelView: upstreamRightPanelView ?? null,
+      localRightPanelView: localRightPanelView ?? null,
+      finalRightPanelView: finalRightPanelView ?? null,
+    });
+  }, [finalRightPanelView, localRightPanelView, upstreamRightPanelView]);
 
   useEffect(() => {
     if (!isScnPanelView(upstreamRightPanelView)) {
@@ -1096,8 +1146,20 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       getRequestedViewForEventTab(eventTab) ??
       getRequestedViewForLeftNav(groupForSection(section));
     if (nextView) {
+      const isUserShellDashboard = nextView === "dashboard";
       const openReason =
-        leftNavKey === "scene_group" && nextView === "workspace" ? "scn_auto_scene_open" : "shell_nav_intent";
+        leftNavKey === "scene_group" && nextView === "workspace"
+          ? "scn_auto_scene_open"
+          : isUserShellDashboard
+            ? "dashboard_click"
+            : "shell_nav_intent";
+      const panelOpenSource = leftNavKey ? "left_nav" : isUserShellDashboard ? "manual_user_nav" : "sub_button";
+      globalThis.console?.debug?.("[Nexora][RightPanelWriter]", {
+        writer: "NexoraShell.setInspectorSection",
+        nextView,
+        contextId: null,
+        reason: openReason,
+      });
       window.dispatchEvent(
         new CustomEvent("nexora:open-right-panel", {
           detail: {
@@ -1106,7 +1168,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
             tab: eventTab ?? null,
             leftNav: leftNavKey ?? null,
             section: explicitSection,
-            source: leftNavKey ? "left_nav" : "sub_button",
+            source: panelOpenSource,
             forceOpen: true,
             reason: openReason,
           },
@@ -1358,6 +1420,8 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           commandPlaceholder={commandPlaceholder}
           onCommandChange={setChatInput}
           onCommandSubmit={sendChat}
+          analyzeObjectReady={objectAnalyzeReady}
+          onAnalyzeObjectClick={requestObjectAnalyzeFromTopBar}
           onAssessBusinessText={assessBusinessTextFromCommandBar}
           onOpenMultiSourceAssess={() => setMultiSourcePopoverOpen(true)}
           onLoadDemo={pilotOperatorChrome ? undefined : handleLoadDemo}
@@ -2365,6 +2429,9 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                 position: "absolute",
                 inset: 0,
                 zIndex: 10,
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
                 overflow: "hidden",
                 overscrollBehavior: "contain",
                 WebkitOverflowScrolling: "touch",

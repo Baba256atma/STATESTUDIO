@@ -90,10 +90,6 @@ export default function HomePage() {
     setDomainConfirmed(true);
   }, [selectedDomainId]);
 
-  const handleChangeDomain = React.useCallback(() => {
-    setDomainConfirmed(false);
-  }, []);
-
   const resolvedSelection = React.useMemo(
     () => resolveDomainExperience(selectedDomainId),
     [selectedDomainId]

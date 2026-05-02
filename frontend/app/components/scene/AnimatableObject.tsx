@@ -48,6 +48,18 @@ import { buildAnimatableLabelState } from "./animatableObject/buildAnimatableLab
 import { buildAnimatableMotionState } from "./animatableObject/buildAnimatableMotionState";
 import { getCalmSeverityVisual } from "../../lib/scene/calmSeverityVisuals";
 
+const CALM_MODE = true;
+const STATIC_OBJECT_TRANSFORMS = true;
+
+function roundMaterialScalar(value: number, decimals = 3): number {
+  if (!Number.isFinite(value)) return 0;
+  const f = 10 ** decimals;
+  return Math.round(value * f) / f;
+}
+const NEXORA_OBJECT_BASE_SCALE = 0.62;
+const NEXORA_OBJECT_FOCUSED_SCALE = 0.66;
+const NEXORA_OBJECT_SELECTED_SCALE = 0.68;
+
 export type AnimatableObjectProps = {
   obj: SceneObject;
   anim?: { type: "pulse" | "wobble" | "spin"; intensity: number };
@@ -141,6 +153,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   isDecisionPathSource = false,
 }: AnimatableObjectProps) {
   const ref = useRef<THREE.Object3D>(null);
+  const lastMaterialSignatureRef = useRef<string | null>(null);
   const stateVector = useStateVector();
   const setSelectedId = useSetSelectedId();
   const tags = obj.tags ?? [];
@@ -150,6 +163,16 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const overrides = useOverrides();
   const [hovered, setHovered] = useState(false);
   useCursor(hovered);
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[Nexora][ObjectMounted]", { id: stableIdWithName });
+    }
+    return () => {
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[Nexora][ObjectUnmounted]", { id: stableIdWithName });
+      }
+    };
+  }, [stableIdWithName]);
 
   const visualContext = useMemo<VisualLanguageContext>(
     () => ({ theme: theme ?? "night", mode_id: modeId }),
@@ -388,6 +411,11 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     scannerHaloVisible,
   } = derivedVisualState;
 
+  /** Freeze story/hover/attention/neighbor ramps for material math so opacity/emissive don't oscillate every frame. */
+  const materialStoryReveal = CALM_MODE ? 1 : nodeStoryReveal;
+  const materialNeighborDim = CALM_MODE ? 1 : neighborDimFactor;
+  const materialPassiveAttention = CALM_MODE ? 0 : passiveAttentionMemoryStrength;
+
   const color = useMemo(() => {
     const materialColor = material.color ?? ux?.base_color ?? "#cccccc";
     if (materialColor !== "auto") return materialColor;
@@ -507,7 +535,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const baseOpacity = materialProps.opacity ?? 0.9;
   const focusedOpacity = typeof uxOverrides.opacity === "number" ? clamp(uxOverrides.opacity, 0.1, 1) : 1.0;
   const hoveredOpacity =
-    isHovered && !isFocused && !isSelected
+    !CALM_MODE && isHovered && !isFocused && !isSelected
       ? Math.min(1, baseOpacity + tokens.interaction.hoverOpacityBoost + interactionProfile.opacityBoost)
       : baseOpacity;
   const scannerOpacity = showCalmScannerConfirmation
@@ -531,16 +559,16 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       : scannerOpacity;
   const storyAdjustedOpacity =
     scannerSceneActive && scannerHierarchyRole !== "neutral"
-      ? Math.min(1, finalOpacity * (0.9 + nodeStoryReveal * 0.1))
+      ? Math.min(1, finalOpacity * (0.9 + materialStoryReveal * 0.1))
       : finalOpacity;
-  const interactionAdjustedOpacity = clamp(storyAdjustedOpacity * neighborDimFactor, 0.08, 1);
+  const interactionAdjustedOpacity = clamp(storyAdjustedOpacity * materialNeighborDim, 0.08, 1);
   const narrativeAdjustedOpacity = clamp(
     interactionAdjustedOpacity * narrativeNodeStyle.opacityMul + narrativeNodeStyle.opacityBoost,
     0.08,
     1
   );
   const simulationAdjustedOpacity = clamp(narrativeAdjustedOpacity + simulationNodeStyle.opacityBoost, 0.08, 1);
-  const memoryAdjustedOpacity = clamp(simulationAdjustedOpacity + passiveAttentionMemoryStrength * 0.05, 0.08, 1);
+  const memoryAdjustedOpacity = clamp(simulationAdjustedOpacity + materialPassiveAttention * 0.05, 0.08, 1);
 
   const baseEmissiveIntensity = materialProps.emissiveIntensity ?? 0;
   const focusEmissiveBoost = isFocused
@@ -605,7 +633,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       : Math.max(focusEmissiveBoost, scannerGlowBoost);
   const selectedBoost = isSelected ? Math.max(tokens.interaction.selectionGlow, baseEmissiveIntensity) : baseEmissiveIntensity;
   const hoveredBoost =
-    hovered && !isSelected && !isFocused
+    !CALM_MODE && hovered && !isSelected && !isFocused
       ? Math.max(baseEmissiveIntensity + tokens.interaction.hoverIntensity, baseEmissiveIntensity)
       : baseEmissiveIntensity;
   const effectiveEmissiveIntensity =
@@ -618,16 +646,17 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       : Math.max(finalEmissiveIntensity, selectedBoost, hoveredBoost);
   const storyAdjustedEmissiveIntensity =
     scannerSceneActive && scannerHierarchyRole !== "neutral"
-      ? effectiveEmissiveIntensity * (0.74 + nodeStoryReveal * 0.26)
+      ? effectiveEmissiveIntensity * (0.74 + materialStoryReveal * 0.26)
       : effectiveEmissiveIntensity;
-  const interactionAdjustedEmissiveIntensity = Math.max(
-    0,
-    (isHovered ? storyAdjustedEmissiveIntensity + interactionProfile.emissiveBoost : storyAdjustedEmissiveIntensity) *
-      neighborDimFactor
-  );
+  const storyPlusHoverEmissive = CALM_MODE
+    ? storyAdjustedEmissiveIntensity
+    : isHovered
+      ? storyAdjustedEmissiveIntensity + interactionProfile.emissiveBoost
+      : storyAdjustedEmissiveIntensity;
+  const interactionAdjustedEmissiveIntensity = Math.max(0, storyPlusHoverEmissive * materialNeighborDim);
   const narrativeAdjustedEmissiveIntensity = interactionAdjustedEmissiveIntensity + narrativeNodeStyle.emissiveBoost;
   const simulationAdjustedEmissiveIntensity = narrativeAdjustedEmissiveIntensity + simulationNodeStyle.emissiveBoost;
-  const memoryAdjustedEmissiveIntensity = simulationAdjustedEmissiveIntensity + passiveAttentionMemoryStrength * 0.12;
+  const memoryAdjustedEmissiveIntensity = simulationAdjustedEmissiveIntensity + materialPassiveAttention * 0.12;
   const warRoomSeverity = normalizeScannerLabelSeverity(obj.scanner_severity, scannerFragilityScore);
   const warRoomEmissiveMul =
     warRoomSeverity === "critical" || warRoomSeverity === "high"
@@ -636,6 +665,60 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         ? 0.9
         : 1;
   const warRoomAdjustedEmissiveIntensity = memoryAdjustedEmissiveIntensity * warRoomEmissiveMul;
+
+  const rawMeshEmissiveIntensity = isFocused
+    ? Math.max(
+        calmSeverityVisual.glowStrength,
+        (materialProps.emissiveIntensity ?? 0) +
+          calmSeverityVisual.outlineStrength * (theme === "day" ? 0.35 : 0.55)
+      )
+    : isSelected
+      ? Math.max(calmSeverityVisual.glowStrength, materialProps.emissiveIntensity ?? 0)
+      : Math.max(warRoomAdjustedEmissiveIntensity, calmSeverityVisual.glowStrength);
+
+  const committedMeshOpacity = roundMaterialScalar(memoryAdjustedOpacity);
+  const committedMeshEmissiveIntensity = roundMaterialScalar(rawMeshEmissiveIntensity);
+  const committedMeshEmissiveHex = isFocused
+    ? "#ffffff"
+    : isSelected
+      ? "#ffffff"
+      : scannerHighlighted
+        ? scannerColor
+        : (materialProps.emissive as string | undefined) ?? "#000000";
+
+  const materialSignature = useMemo(
+    () =>
+      JSON.stringify({
+        id: stableIdWithName,
+        opacity: committedMeshOpacity,
+        emissiveIntensity: committedMeshEmissiveIntensity,
+        color: appliedColor,
+        emissive: committedMeshEmissiveHex,
+        severity: warRoomSeverity ?? "none",
+      }),
+    [
+      appliedColor,
+      committedMeshEmissiveHex,
+      committedMeshEmissiveIntensity,
+      committedMeshOpacity,
+      stableIdWithName,
+      warRoomSeverity,
+    ]
+  );
+
+  // Visual-only effect. Must not emit semantic propagation or scene state changes.
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (typeof window !== "undefined" && (window as any).__NEXORA_ALLOW_MATERIAL_WRITE__) {
+      console.error("[Nexora][VIOLATION] Material attempted state write");
+    }
+    if (lastMaterialSignatureRef.current === materialSignature) return;
+    lastMaterialSignatureRef.current = materialSignature;
+    console.debug("[Nexora][ObjectMaterialChanged]", {
+      objectId: stableIdWithName,
+      materialSig: materialSignature,
+    });
+  }, [appliedColor, committedMeshEmissiveHex, committedMeshEmissiveIntensity, committedMeshOpacity, materialSignature, stableIdWithName, warRoomSeverity]);
 
   useEffect(() => {
     traceScannerCausalityRole(
@@ -716,18 +799,24 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       isProtectedFromDim: visualState.isProtectedFromDim,
       dimUnrelatedObjects: scannerDimRequested,
       scannerBackgroundDimmed,
-      finalOpacity,
-      finalEmissiveIntensity: effectiveEmissiveIntensity,
+      opacity: committedMeshOpacity,
+      emissiveIntensity: committedMeshEmissiveIntensity,
+      severity: warRoomSeverity ?? "none",
     });
   }, [
-    effectiveEmissiveIntensity,
-    finalOpacity,
+    committedMeshEmissiveIntensity,
+    committedMeshOpacity,
     scannerBackgroundDimmed,
     scannerCausality.role,
     scannerDimRequested,
     scannerPolicy.rank,
     stableIdWithName,
-    visualState,
+    visualState.isFocused,
+    visualState.isHighlighted,
+    visualState.isPinned,
+    visualState.isProtectedFromDim,
+    visualState.isSelected,
+    warRoomSeverity,
   ]);
 
   const pointsData = ((obj as any).data?.points ?? null) as number[][] | null;
@@ -792,7 +881,18 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     };
   }, [lineGeometry, pointsGeometry, tubeGeometry]);
 
-  const calmSelectionScale = isSelected ? 1.04 : isFocused ? 1.02 : 1;
+  const calmScale = isSelected
+    ? NEXORA_OBJECT_SELECTED_SCALE
+    : isFocused
+    ? NEXORA_OBJECT_FOCUSED_SCALE
+    : NEXORA_OBJECT_BASE_SCALE;
+  const calmSelectionScale = calmScale;
+  const staticPosition = useMemo<[number, number, number]>(
+    () => [finalPosition[0] ?? 0, finalPosition[1] ?? 0, finalPosition[2] ?? 0],
+    [finalPosition]
+  );
+  const staticRotation = useMemo<[number, number, number]>(() => [0, 0, 0], []);
+  const staticScale = useMemo(() => calmScale, [calmScale]);
   const motionState = useMemo(
     () =>
       buildAnimatableMotionState({
@@ -829,7 +929,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         scannerFocused,
         isLowFragilityScan,
         sceneIdleSway: tokens.motion.sceneIdleSway,
-        motionCalm,
+        motionCalm: CALM_MODE ? true : motionCalm,
       }),
     [
       ambientPhase,
@@ -869,28 +969,83 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     ]
   );
   const { scannerScaleMul } = motionState;
+  const effectiveScannerScaleMul = CALM_MODE ? 1 : scannerScaleMul;
+  const transformSignature = useMemo(
+    () =>
+      JSON.stringify({
+        id: stableIdWithName,
+        position: STATIC_OBJECT_TRANSFORMS ? staticPosition : finalPosition,
+        rotation: STATIC_OBJECT_TRANSFORMS ? staticRotation : finalRotation,
+        scale: STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform * effectiveScannerScaleMul * calmSelectionScale,
+      }),
+    [
+      calmScale,
+      effectiveScannerScaleMul,
+      finalPosition,
+      finalRotation,
+      finalUniform,
+      stableIdWithName,
+      staticPosition,
+      staticRotation,
+      staticScale,
+    ]
+  );
+  const lastTransformSignatureRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (lastTransformSignatureRef.current === transformSignature) return;
+    lastTransformSignatureRef.current = transformSignature;
+    console.debug("[Nexora][ObjectTransformChanged]", {
+      id: stableIdWithName,
+      transformSignature,
+    });
+  }, [stableIdWithName, transformSignature]);
 
   useEffect(() => {
     const mesh = ref.current;
     if (mesh) {
-      mesh.position.set(finalPosition[0] ?? 0, finalPosition[1] ?? 0, finalPosition[2] ?? 0);
-      mesh.rotation.set(finalRotation[0] ?? 0, finalRotation[1] ?? 0, finalRotation[2] ?? 0);
-      const staticScale = finalUniform * scannerScaleMul * calmSelectionScale * tokens.interaction.sceneObjectEmphasis;
-      mesh.scale.set(
-        (baseScale[0] ?? 1) * staticScale,
-        (baseScale[1] ?? 1) * staticScale,
-        (baseScale[2] ?? 1) * staticScale
-      );
+      const appliedPosition = STATIC_OBJECT_TRANSFORMS ? staticPosition : finalPosition;
+      const appliedRotation = STATIC_OBJECT_TRANSFORMS ? staticRotation : finalRotation;
+      mesh.position.set(appliedPosition[0] ?? 0, appliedPosition[1] ?? 0, appliedPosition[2] ?? 0);
+      mesh.rotation.set(appliedRotation[0] ?? 0, appliedRotation[1] ?? 0, appliedRotation[2] ?? 0);
+      const resolvedScale = STATIC_OBJECT_TRANSFORMS
+        ? staticScale
+        : CALM_MODE
+        ? finalUniform * calmScale
+        : finalUniform * effectiveScannerScaleMul * calmSelectionScale * tokens.interaction.sceneObjectEmphasis;
+      if (STATIC_OBJECT_TRANSFORMS) {
+        mesh.scale.set(resolvedScale, resolvedScale, resolvedScale);
+      } else {
+        mesh.scale.set(
+          (baseScale[0] ?? 1) * resolvedScale,
+          (baseScale[1] ?? 1) * resolvedScale,
+          (baseScale[2] ?? 1) * resolvedScale
+        );
+      }
     }
   }, [
     baseScale,
-    calmSelectionScale,
+    calmScale,
     finalPosition,
     finalRotation,
     finalUniform,
-    scannerScaleMul,
+    effectiveScannerScaleMul,
+    staticPosition,
+    staticRotation,
+    staticScale,
     tokens.interaction.sceneObjectEmphasis,
   ]);
+  const finalObjectScale = STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform * calmScale;
+  const lastFinalScaleRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (lastFinalScaleRef.current === finalObjectScale) return;
+    lastFinalScaleRef.current = finalObjectScale;
+    console.debug("[Nexora][FinalObjectScale]", {
+      id: stableIdWithName,
+      scale: finalObjectScale,
+    });
+  }, [finalObjectScale, stableIdWithName]);
 
   let node: React.ReactNode = null;
   if (obj.type === "points_cloud" && pointsGeometry) {
@@ -972,7 +1127,12 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     );
   } else {
     const geometryNode = geometryFor(shape as GeometryKind);
-    const meshScale = Array.isArray(baseScale) ? (baseScale as any) : [baseScale ?? 1, baseScale ?? 1, baseScale ?? 1];
+    // Static mode: scale is owned by AnimatableObject group transform only.
+    const meshScale = STATIC_OBJECT_TRANSFORMS
+      ? [1, 1, 1]
+      : Array.isArray(baseScale)
+      ? (baseScale as any)
+      : [baseScale ?? 1, baseScale ?? 1, baseScale ?? 1];
 
     const meshProps = {
       castShadow: !!shadowsEnabled,
@@ -1036,20 +1196,10 @@ export const AnimatableObject = React.memo(function AnimatableObject({
           <meshStandardMaterial
             {...materialProps}
             color={appliedColor}
-            emissive={isFocused ? "#ffffff" : isSelected ? "#ffffff" : scannerHighlighted ? scannerColor : materialProps.emissive}
-            emissiveIntensity={
-              isFocused
-                ? Math.max(
-                    calmSeverityVisual.glowStrength,
-                    (materialProps.emissiveIntensity ?? 0) +
-                      calmSeverityVisual.outlineStrength * (theme === "day" ? 0.35 : 0.55)
-                  )
-                : isSelected
-                ? Math.max(calmSeverityVisual.glowStrength, materialProps.emissiveIntensity ?? 0)
-                : Math.max(warRoomAdjustedEmissiveIntensity, calmSeverityVisual.glowStrength)
-            }
+            emissive={committedMeshEmissiveHex}
+            emissiveIntensity={committedMeshEmissiveIntensity}
             transparent
-            opacity={memoryAdjustedOpacity}
+            opacity={committedMeshOpacity}
           />
         </mesh>
         <mesh
@@ -1069,11 +1219,11 @@ export const AnimatableObject = React.memo(function AnimatableObject({
 
   const captionText = ((overrideEntry.caption ?? "") as string).trim();
   const showCaption = overrideEntry.showCaption === true;
-  const labelY = ((baseScale[1] ?? 1) * finalUniform) * scannerScaleMul * 0.6 + 0.24;
+  const labelY = ((baseScale[1] ?? 1) * (STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform)) * effectiveScannerScaleMul * 0.6 + 0.24;
   const scannerLabelYOffset = isScannerLabelOwner ? 0.56 : 0.45;
 
   return (
-    <group ref={ref} position={finalPosition} visible={finalVisible}>
+    <group ref={ref} position={STATIC_OBJECT_TRANSFORMS ? staticPosition : finalPosition} visible={finalVisible}>
       {node}
       {showCaption && captionText.length > 0 && (
         <Html position={[0, labelY, 0]} center style={{ pointerEvents: "none" }}>

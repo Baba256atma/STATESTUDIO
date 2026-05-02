@@ -18,6 +18,17 @@ type RequestPropagationSimulationParams = {
   mode?: "preview" | "backend";
 };
 
+const propagationInFlightRef: { current: boolean } = { current: false };
+const lastPropagationSignatureRef: { current: string | null } = { current: null };
+
+function buildPropagationRequestSignature(payload: unknown): string {
+  try {
+    return JSON.stringify(payload);
+  } catch {
+    return "invalid_payload";
+  }
+}
+
 function buildObjectGraph(sceneJson: SceneJson | null | undefined, loops?: SceneLoop[] | null) {
   const objects = Array.isArray(sceneJson?.scene?.objects)
     ? sceneJson.scene.objects
@@ -70,6 +81,26 @@ export async function requestPropagationSimulation(
         mode,
       };
 
+  const requestSignature = buildPropagationRequestSignature(requestBody);
+  if (lastPropagationSignatureRef.current === requestSignature) {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[Nexora][PropagationSkipped]", {
+        reason: "same_signature",
+        sourceId: trimmedSourceId,
+      });
+    }
+    return null;
+  }
+  if (propagationInFlightRef.current) {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[Nexora][PropagationSkipped]", {
+        reason: "in_flight",
+        sourceId: trimmedSourceId,
+      });
+    }
+    return null;
+  }
+
   if (process.env.NODE_ENV !== "production") {
     console.debug("[Nexora][PropagationBridge][request]", {
       sourceId: trimmedSourceId,
@@ -81,11 +112,13 @@ export async function requestPropagationSimulation(
   }
 
   try {
+    propagationInFlightRef.current = true;
+    lastPropagationSignatureRef.current = requestSignature;
     const response = await fetchJson(`${apiBase()}/simulation/propagation`, {
       method: "POST",
       body: requestBody,
       timeoutMs: 8000,
-      retryNetworkErrors: true,
+      retryNetworkErrors: false,
     });
     const overlay = normalizePropagationOverlay(response);
     if (process.env.NODE_ENV !== "production") {
@@ -99,12 +132,20 @@ export async function requestPropagationSimulation(
     }
     return overlay;
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const status = typeof error === "object" && error !== null && "status" in error ? (error as any).status : null;
     if (process.env.NODE_ENV !== "production") {
       console.debug("[Nexora][PropagationBridge][fallback]", {
         sourceId: trimmedSourceId,
-        message: error instanceof Error ? error.message : String(error),
+        message,
+        status,
       });
     }
+    if (status === 429 || /failed to fetch|network|cors|too many requests/i.test(message)) {
+      return null;
+    }
     return null;
+  } finally {
+    propagationInFlightRef.current = false;
   }
 }

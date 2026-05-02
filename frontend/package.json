@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "psych:smoke": "rm -rf ./.tmp && tsc app/lib/psych/reactionTypes.ts app/lib/psych/reactionInterpreter.ts app/lib/psych/reactionEngine.ts app/lib/psych/reactionStore.ts app/lib/psych/reactionSmokeTest.ts --outDir ./.tmp && node ./.tmp/reactionSmokeTest.js && rm -rf ./.tmp",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

@@ -7,12 +7,16 @@ export type LeftCommandAssistantMessage = {
   id: string;
   role: "user" | "assistant";
   text: string;
+  confidence?: number;
+  followUp?: string[];
 };
 
 export type LeftCommandAssistantCommand = {
   id: string;
   label: string;
   hint?: string;
+  /** When true, quick command is visible but not clickable (MVP object-first Analyze). */
+  disabled?: boolean;
 };
 
 export type LeftCommandAssistantProps = {
@@ -32,13 +36,15 @@ export type LeftCommandAssistantProps = {
 /** Debounce before chat chrome shows “Analyzing…” / disables input (shared with HomeScreen). */
 export const FAST_CHAT_THRESHOLD_MS = 300;
 
-const DEFAULT_COMMANDS: LeftCommandAssistantCommand[] = [
-  { id: "analyze", label: "Analyze system", hint: "Run analysis on the current system" },
+export const DEFAULT_LEFT_COMMANDS: LeftCommandAssistantCommand[] = [
+  { id: "analyze", label: "Analyze object", hint: "Run analysis on the selected object" },
   { id: "compare", label: "Compare options", hint: "Open option comparison" },
   { id: "why_this", label: "Explain decision", hint: "Open strategic advice" },
   { id: "simulate", label: "Simulate next move", hint: "Run simulation" },
   { id: "risk_flow", label: "View risk flow", hint: "Open risk propagation" },
 ];
+
+const DEFAULT_COMMANDS = DEFAULT_LEFT_COMMANDS;
 
 function normalizeForDedupe(text: string): string {
   return text.replace(/\s+/g, " ").trim().toLowerCase();
@@ -121,7 +127,41 @@ function parseAssistantText(raw: string): ParsedLine[] {
   return out.length ? out : [{ kind: "plain", text: t }];
 }
 
-function AssistantMessageBody({ text, role }: { text: string; role: "user" | "assistant" }) {
+function ConfidenceBadge({ value }: { value?: number }) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  const pct = Math.max(0, Math.min(100, Math.round(value * 100)));
+  const color = pct >= 70 ? "#22c55e" : pct < 50 ? "#f59e0b" : "#94a3b8";
+  return (
+    <span
+      style={{
+        flexShrink: 0,
+        borderRadius: 999,
+        border: `1px solid ${color}55`,
+        background: `${color}22`,
+        color,
+        fontSize: 10,
+        fontWeight: 800,
+        padding: "2px 7px",
+        lineHeight: 1.2,
+      }}
+      title={`Confidence ${pct}%`}
+    >
+      {pct}%
+    </span>
+  );
+}
+
+function AssistantMessageBody({
+  text,
+  role,
+  confidence,
+  followUp,
+}: {
+  text: string;
+  role: "user" | "assistant";
+  confidence?: number;
+  followUp?: string[];
+}) {
   if (role === "user") {
     return <span style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{text}</span>;
   }
@@ -130,7 +170,34 @@ function AssistantMessageBody({ text, role }: { text: string; role: "user" | "as
   const hasStructure = parts.some((p) => p.kind === "label" || p.kind === "arrow");
 
   if (!hasStructure) {
-    return <span style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{text}</span>;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+          <span
+            style={{
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              lineHeight: 1.4,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {text}
+          </span>
+          <ConfidenceBadge value={confidence} />
+        </div>
+        {Array.isArray(followUp) && followUp.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: nx.lowMuted }}>
+            <span style={{ fontWeight: 700 }}>Next</span>
+            {followUp.slice(0, 2).map((step, index) => (
+              <span key={`${step}-${index}`}>→ {step}</span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -383,7 +450,12 @@ export const LeftCommandAssistant = React.memo(function LeftCommandAssistant(pro
                 transition: "opacity 200ms ease, transform 200ms ease",
               }}
             >
-              <AssistantMessageBody text={m.text} role={m.role} />
+              <AssistantMessageBody
+                text={m.text}
+                role={m.role}
+                confidence={m.confidence}
+                followUp={m.followUp}
+              />
             </div>
           ))
         )}
@@ -414,28 +486,34 @@ export const LeftCommandAssistant = React.memo(function LeftCommandAssistant(pro
           Quick commands
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {suggestedCommands.map((cmd) => (
-            <button
-              key={cmd.id}
-              type="button"
-              disabled={loading || !onRunCommand}
-              title={cmd.hint ?? cmd.label}
-              onClick={() => onRunCommand?.(cmd.id)}
-              style={{
-                padding: "5px 10px",
-                borderRadius: 999,
-                border: `1px solid ${nx.border}`,
-                background: nx.bgControl,
-                color: nx.text,
-                fontSize: 10,
-                fontWeight: 700,
-                cursor: loading || !onRunCommand ? "not-allowed" : "pointer",
-                opacity: loading ? 0.65 : 1,
-              }}
-            >
-              {cmd.label}
-            </button>
-          ))}
+          {suggestedCommands.map((cmd) => {
+            const cmdDisabled = loading || !onRunCommand || cmd.disabled === true;
+            return (
+              <button
+                key={cmd.id}
+                type="button"
+                disabled={cmdDisabled}
+                title={cmd.hint ?? cmd.label}
+                onClick={() => {
+                  if (cmdDisabled) return;
+                  onRunCommand?.(cmd.id);
+                }}
+                style={{
+                  padding: "5px 10px",
+                  borderRadius: 999,
+                  border: `1px solid ${nx.border}`,
+                  background: nx.bgControl,
+                  color: nx.text,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  cursor: cmdDisabled ? "not-allowed" : "pointer",
+                  opacity: loading || cmd.disabled ? 0.65 : 1,
+                }}
+              >
+                {cmd.label}
+              </button>
+            );
+          })}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
           <textarea
@@ -447,7 +525,7 @@ export const LeftCommandAssistant = React.memo(function LeftCommandAssistant(pro
                 if (!loading && input.trim()) onSubmit();
               }
             }}
-            placeholder="What is happening? What should we do?"
+            placeholder='Describe your system, e.g. "delivery is late because supplier capacity is constrained."'
             rows={2}
             disabled={loading}
             style={{

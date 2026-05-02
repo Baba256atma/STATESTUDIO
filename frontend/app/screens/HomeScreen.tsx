@@ -3,13 +3,22 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 // Removed unused R3F/Three imports
-import { chatToBackend } from "../lib/api/chatApi";
+import { chatToBackendLifecycle } from "../lib/api/chatApi";
 import {
   DEFAULT_CHAT_REQUEST_TIMEOUT_MS,
   getChatLifecycleErrorMessage,
   isAbortLikeError,
+  mapNexoraTargetPanelToRightPanelView,
+  runNexoraChatPromptPipeline,
   type ChatRequestLifecycleStatus,
 } from "../lib/chat/chatRequestLifecycle";
+import { buildFailureResponse } from "../lib/chat/nexoraChatPromptSystem";
+import {
+  evaluateChatPipelineStability,
+  isMeaningfulPanel,
+} from "../lib/chat/chatPipelineStability";
+import { evaluateSelectedObjectGuard } from "../lib/chat/selectedObjectGuard";
+import { resolveExplicitSelectedObject } from "../lib/selection/explicitSelectedObjectContract";
 import { getLocalChatResponse, userSafeChatMessage } from "../lib/chat/localChatFallback";
 import type { KPIState } from "../lib/api";
 import { analyzeFull } from "../lib/api/analyzeApi";
@@ -76,7 +85,7 @@ import type { UICommand } from "../lib/ui/uiCommands";
 import { RestorePreviewModal } from "../components/RestorePreviewModal";
 import { useNexoraUiTheme } from "../lib/ui/nexoraUiTheme";
 import { StrategicAlertOverlay } from "../components/StrategicAlertOverlay";
-import { nx, sceneOverlayCardStyle, sceneVignetteLayerStyle, sceneWorkingBadgeStyle } from "../components/ui/nexoraTheme";
+import { nx, sceneOverlayCardStyle, sceneVignetteLayerStyle, sceneWorkingBadgeStyle, softCardStyle } from "../components/ui/nexoraTheme";
 import {
   INITIAL_NEXORA_UI_STATE,
   resolveInteraction,
@@ -99,6 +108,13 @@ import {
 } from "../lib/decision/scenarioComparisonReplayContract";
 import { buildExecutiveInsightFromSimulation } from "../lib/decision/executiveExplainabilityContract";
 import { buildCanonicalRecommendation } from "../lib/decision/recommendation/buildCanonicalRecommendation";
+import { buildExecutiveObjectPanelData } from "../lib/panels/executiveObjectPanelData";
+import {
+  normalizePanelReason,
+  normalizePanelSource,
+  type PanelReason,
+  type PanelSource,
+} from "../lib/panels/panelAuthorityTypes";
 import type { CanonicalRecommendation } from "../lib/decision/recommendation/recommendationTypes";
 import { buildDecisionMemoryEntry } from "../lib/decision/memory/buildDecisionMemoryEntry";
 import type { DecisionMemoryEntry } from "../lib/decision/memory/decisionMemoryTypes";
@@ -175,6 +191,7 @@ import {
 import { parseDecisionSnapshotKey, pickDecisionSnapshotFromList } from "./homeScreenSnapshots";
 import {
   asRecord,
+  buildFirstMeaningfulState,
   buildUnifiedReactionFromChatResponse,
   buildUnifiedReactionFromFragilityRun,
   buildSceneObjectIdSet,
@@ -196,6 +213,7 @@ import {
   shouldAcceptIncomingSceneReplacement,
   shouldAcceptMeaningfulArrayReplacement,
   shouldAcceptMeaningfulRecordReplacement,
+  type FirstMeaningfulState,
 } from "./homeScreenResponseReaders";
 import {
   RETAIL_DEMO_ID,
@@ -362,8 +380,10 @@ import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
 import {
   hasForcedSceneUpdate,
   normalizeUnifiedSceneReaction,
+  reactionHasExplicitHighlightIntent,
   type UnifiedSceneReaction,
 } from "../lib/scene/unifiedReaction";
+import { buildSceneSemanticSignature } from "../lib/scene/sceneSemanticSignature";
 import {
   buildPanelFocusReaction,
   normalizeReactionForScene,
@@ -389,6 +409,20 @@ import { resolveFocusOwnership } from "../lib/focus/resolveFocusOwnership";
 import { runDecisionExecution } from "../lib/executive/decisionExecutionClient";
 import type { DecisionExecutionPayload, DecisionExecutionResult } from "../lib/executive/decisionExecutionTypes";
 import { DecisionComparePanel } from "../components/executive/DecisionComparePanel";
+import { TeamDecisionPanel } from "../components/executive/TeamDecisionPanel";
+import { AutonomousDecisionCouncilPanel } from "../components/executive/AutonomousDecisionCouncilPanel";
+import { OrgMemoryPanel } from "../components/executive/OrgMemoryPanel";
+import { DecisionPolicyPanel } from "../components/executive/DecisionPolicyPanel";
+import { DecisionGovernancePanel } from "../components/executive/DecisionGovernancePanel";
+import { ExecutiveApprovalPanel } from "../components/executive/ExecutiveApprovalPanel";
+import { StrategicLearningPanel } from "../components/executive/StrategicLearningPanel";
+import { MetaDecisionPanel } from "../components/executive/MetaDecisionPanel";
+import { CognitiveStylePanel } from "../components/executive/CognitiveStylePanel";
+import { CollaborationIntelligencePanel } from "../components/executive/CollaborationIntelligencePanel";
+import { DecisionOutcomeFeedbackPanel } from "../components/executive/DecisionOutcomeFeedbackPanel";
+import { DecisionPatternIntelligencePanel } from "../components/executive/DecisionPatternIntelligencePanel";
+import { DecisionMemoryPanel } from "../components/executive/DecisionMemoryPanel";
+import { ScenarioBranchingTreePanel } from "../components/executive/ScenarioBranchingTreePanel";
 import type { NexoraB18CompareResolved } from "../lib/scenario/nexoraScenarioBuilder.ts";
 import {
   appendScenarioMemory,
@@ -429,6 +463,8 @@ import {
   type NexoraDecisionQualityReport,
 } from "../lib/quality/nexoraDecisionQuality.ts";
 import { DecisionTimelinePanel } from "../components/executive/DecisionTimelinePanel";
+import { DecisionConfidenceCalibrationPanel } from "../components/executive/DecisionConfidenceCalibrationPanel";
+import { DecisionLifecyclePanel } from "../components/executive/DecisionLifecyclePanel";
 import { buildPreviewDecisionExecutionResult } from "../lib/execution/buildPreviewDecisionExecutionResult";
 import type { DecisionAutomationResult } from "../lib/execution/decisionAutomationTypes";
 import type { DecisionExecutionIntent } from "../lib/execution/decisionExecutionIntent";
@@ -443,10 +479,21 @@ import {
 import { recoverFromFailure } from "../lib/ops/aiFailureRecovery";
 import { logDecisionTrace, type DecisionTraceEvent } from "../lib/ops/aiTraceLogger";
 import { guardHeavyComputation } from "../lib/ops/performanceGuard";
+import { StrategicCommandFull } from "../components/executive/StrategicCommandFull";
 import { RightPanelHost } from "../components/right-panel/RightPanelHost";
+import { ChatPipelineQAPanel } from "../components/debug/ChatPipelineQAPanel";
 import { PrimaryDecisionStrip } from "../components/right-panel/PrimaryDecisionStrip";
-import { FAST_CHAT_THRESHOLD_MS, LeftCommandAssistant } from "../components/assistant/LeftCommandAssistant";
-import type { RightPanelState, RightPanelView, CenterExecutionSurface } from "../lib/ui/right-panel/rightPanelTypes";
+import {
+  DEFAULT_LEFT_COMMANDS,
+  FAST_CHAT_THRESHOLD_MS,
+  LeftCommandAssistant,
+} from "../components/assistant/LeftCommandAssistant";
+import type {
+  RightPanelState,
+  RightPanelView,
+  CenterExecutionSurface,
+  CanonicalRightPanelView,
+} from "../lib/ui/right-panel/rightPanelTypes";
 import type { PanelSharedData } from "../lib/panels/panelDataResolverTypes";
 import type { NexoraB8PanelContext } from "../lib/panels/panelDataContract";
 import { buildPanelResolvedData } from "../lib/panels/buildPanelResolvedData.ts";
@@ -458,15 +505,20 @@ import {
   normalizeCanonicalWarRoomPanelData,
 } from "../lib/panels/panelSliceNormalizer";
 import {
+  buildPanelContractSignature,
+  buildPanelSharedDataSignature,
+  EMPTY_PANEL_SHARED_DATA,
   validatePanelSharedDataWithDiagnostics,
   type PanelSharedDataValidationResult,
 } from "../lib/panels/panelDataContract";
 import {
   createClosedRightPanelState,
   mapLegacyTabToRightPanelView,
+  resolveChatPipelinePanelOpen,
   resolveRightPanelInspectorHostId,
   resolveRightPanelLegacyTabForView,
 } from "../lib/ui/right-panel/rightPanelRouter";
+import { applySceneFromChat } from "../lib/scene/sceneApplyContract";
 import { resolvePanelDecision } from "../lib/ui/right-panel/panelController";
 import type {
   PanelOpenSource,
@@ -475,6 +527,7 @@ import type {
 import { emitDebugEvent } from "../lib/debug/debugEmit";
 import { registerPanelSelfDebugLink } from "../lib/debug/debugCorrelationBridge";
 import { getRecentDebugEvents } from "../lib/debug/debugEventStore";
+import { traceSceneWrite, type SceneWriteSource } from "../lib/debug/sceneWriteTrace";
 import { emitGuardRailAlerts, runGuardChecks } from "../lib/debug/debugGuardRails";
 import { useInvestorDemo, INVESTOR_DEMO_MAX_STEP } from "../components/demo/InvestorDemoContext";
 import { registerNexoraActionDispatch } from "../lib/actions/actionDispatchRegistry";
@@ -483,11 +536,19 @@ import { resolveActionRoute } from "../lib/actions/actionRouter";
 import {
   normalizeCompareOptions,
   normalizeOpenCenterTimeline,
+  normalizeOpenComponentPanel,
   normalizeOpenPanelCta,
   normalizeOpenRightPanelEventDetail,
   normalizeRunSimulation,
   normalizeFocusObject,
 } from "../lib/actions/actionNormalizer";
+import {
+  mapRightPanelViewToCenterComponentId,
+  type ComponentPanelActionName,
+  type OpenComponentPanelContext,
+} from "../lib/componentPanel/componentPanelFromAction";
+import { resolveIntentToPanel } from "../lib/routing/intentResolver";
+import { expectedFamilyForIntent, type NexoraIntent, type PanelFamily } from "../lib/routing/intentPanelRegistry";
 import {
   traceActionRouterContinuity,
   traceActionRouterExecuted,
@@ -588,8 +649,65 @@ const LEGACY_RIGHT_PANEL_TABS = [
   "input",
 ] as const;
 
+function isAnalyzeLikeUserText(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (t.startsWith("explain ")) return false;
+  return (
+    t.includes("analyze") ||
+    t.includes("analyse") ||
+    t.includes("risk") ||
+    t.includes("what should we do") ||
+    t.includes("decision")
+  );
+}
+
 type LegacyRightPanelTab = (typeof LEGACY_RIGHT_PANEL_TABS)[number];
-type CenterComponentType = "compare" | "timeline" | "analysis" | null;
+type CenterComponentType =
+  | "compare"
+  | "timeline"
+  | "confidence_calibration"
+  | "pattern_intelligence"
+  | "strategic_learning"
+  | "decision_strategic"
+  | "decision_lens"
+  | "collaboration_intelligence"
+  | "outcome_feedback"
+  | "decision_memory"
+  | "decision_lifecycle"
+  | "scenario_tree"
+  | "analysis"
+  | "strategic_command_full"
+  | "team_decision"
+  | "decision_council"
+  | "org_memory"
+  | "decision_policy"
+  | "executive_approval"
+  | "decision_governance"
+  | null;
+
+const LARGE_CENTER_WORKSPACE_COMPONENTS = new Set<Exclude<CenterComponentType, null>>([
+  "strategic_command_full",
+  "team_decision",
+  "decision_council",
+  "org_memory",
+  "decision_policy",
+  "executive_approval",
+  "decision_governance",
+  "confidence_calibration",
+  "pattern_intelligence",
+  "strategic_learning",
+  "decision_strategic",
+  "decision_lens",
+  "collaboration_intelligence",
+  "outcome_feedback",
+  "decision_memory",
+  "decision_lifecycle",
+  "scenario_tree",
+]);
+
+function isLargeCenterWorkspaceComponent(c: CenterComponentType): boolean {
+  return c != null && LARGE_CENTER_WORKSPACE_COMPONENTS.has(c);
+}
 
 const NEXORA_PIPELINE_USER_FAILURE = "System couldn't complete analysis. Please try again.";
 
@@ -597,6 +715,16 @@ function nexoraPipelineUserFacingMessage(err: unknown): string {
   if (getNexoraProductMode() === "pilot") return NEXORA_PIPELINE_USER_FAILURE;
   if (err instanceof NexoraError) return err.safeMessage;
   return NEXORA_PIPELINE_USER_FAILURE;
+}
+
+function countSceneObjects(scene: any): number {
+  return Array.isArray(scene?.scene?.objects) ? scene.scene.objects.length : 0;
+}
+
+function sceneObjectIds(scene: any): string[] {
+  return Array.isArray(scene?.scene?.objects)
+    ? scene.scene.objects.map((obj: any) => String(obj?.id ?? obj?.name ?? "unknown"))
+    : [];
 }
 
 const INSPECTOR_REPORT_TABS = [
@@ -648,6 +776,40 @@ type SendTextOptions = {
     contextId?: string | null;
   };
 };
+
+type GettingStartedState = "empty" | "objects_no_selection" | "ready_with_selection";
+type EntryFlowState = "idle" | "describing_system" | "objects_created" | "ready_for_analysis";
+
+function resolveGettingStartedState(input: {
+  sceneJson: SceneJson | null;
+  selectedObjectId: string | null;
+}): GettingStartedState {
+  const objects = Array.isArray(input.sceneJson?.scene?.objects) ? input.sceneJson.scene.objects : [];
+  if (objects.length === 0) return "empty";
+  if (!input.selectedObjectId) return "objects_no_selection";
+  return "ready_with_selection";
+}
+
+function hasRenderableSceneObjects(scene: SceneJson | null): boolean {
+  return Array.isArray(scene?.scene?.objects) && scene.scene.objects.length > 0;
+}
+
+function buildStarterSceneFromText(_text: string): SceneJson {
+  return {
+    state_vector: {},
+    scene: {
+      objects: [
+        { id: "delivery", label: "Delivery", type: "node" } as any,
+        { id: "inventory", label: "Inventory", type: "node" } as any,
+        { id: "supplier", label: "Supplier", type: "node" } as any,
+      ],
+    },
+    object_selection: {
+      highlighted_objects: ["delivery"],
+      highlighted_ids: ["delivery"],
+    } as any,
+  } as SceneJson;
+}
 
 type PanelFamilyAuditState = {
   seq: number;
@@ -928,13 +1090,81 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const previousRightPanelViewRef = useRef<RightPanelView | null>(null);
   const lastRightPanelChangeSourceRef = useRef<string | null>(null);
   const lastPanelRequestSigRef = useRef<string | null>(null);
-  const lastPanelMergeCacheKeyRef = useRef<string | null>(null);
-  const lastPanelValidationCacheRef = useRef<PanelSharedDataValidationResult | null>(null);
+  const validatedPanelCacheRef = useRef<{
+    signature: string | null;
+    result: PanelSharedDataValidationResult | null;
+  }>({
+    signature: null,
+    result: null,
+  });
+  const getValidatedPanelSharedDataOnce = useCallback(
+    (rawPanelSharedData: unknown, signature: string): PanelSharedDataValidationResult => {
+      const cached = validatedPanelCacheRef.current;
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[Nexora][PanelValidationSignatureCheck]", {
+          previous: cached.signature,
+          next: signature,
+          same: cached.signature === signature,
+        });
+      }
+      if (cached.signature === signature && cached.result) {
+        return cached.result;
+      }
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[Nexora][PanelValidationActuallyRuns]", {
+          signature,
+        });
+      }
+      const result = validatePanelSharedDataWithDiagnostics(rawPanelSharedData);
+      validatedPanelCacheRef.current = {
+        signature,
+        result,
+      };
+      return result;
+    },
+    []
+  );
+  const lastValidatedAnalyzeRunRef = useRef<string | null>(null);
+  const latestPanelInputSignatureRef = useRef<string | null>(null);
+  const latestRawPanelSharedDataRef = useRef<unknown>(null);
+  const analyzeInFlightRef = useRef(false);
+  const analyzePreflightArmedRef = useRef(false);
+  const lastAnalyzeRequestAtRef = useRef(0);
+  const analyzeSelectionLockRef = useRef<{
+    objectId: string;
+    startedAt: number;
+    requestId?: string | null;
+  } | null>(null);
   const [sceneJson, setSceneJson] = useState<SceneJson | null>(null);
   const lastSceneApplySigRef = useRef<string | null>(null);
+  const lastUpstreamSceneApplySigBySourceRef = useRef<Map<string, string>>(new Map());
+  const lastSceneResetTraceSigRef = useRef<string | null>(null);
   const sceneIntentQueueRef = useRef<SceneIntent[]>([]);
   const [sceneIntentEpoch, setSceneIntentEpoch] = useState(0);
-
+  const buildSceneSemanticSigForUpstreamDedupe = useCallback(
+    (nextScene: SceneJson | null, source: string): string => {
+      const nextObjects = Array.isArray(nextScene?.scene?.objects) ? nextScene.scene.objects : [];
+      const objectIds = nextObjects
+        .map((obj: unknown, idx: number) => {
+          const o = asRecord(obj);
+          return String(o?.id ?? o?.name ?? `${o?.type ?? "obj"}:${idx}`);
+        })
+        .filter(Boolean);
+      const nextSelection = asRecord(nextScene)?.object_selection;
+      const highlightedIds = getHighlightedObjectIdsFromSelection(nextSelection);
+      const shouldDim = (nextSelection as any)?.dim_unrelated_objects === true;
+      const dimmedIds = shouldDim ? objectIds.filter((id) => !highlightedIds.includes(id)) : [];
+      return buildSceneSemanticSignature({
+        objectIds,
+        highlightedIds,
+        dimmedIds,
+        selectedId: null,
+        reactionMode: null,
+        propagationSource: source,
+      });
+    },
+    []
+  );
   const applySceneChangeSafe = useCallback(
     (
       nextOrUpdater: SceneJson | null | ((prev: SceneJson | null) => SceneJson | null),
@@ -946,8 +1176,209 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           typeof nextOrUpdater === "function"
             ? (nextOrUpdater as (p: SceneJson | null) => SceneJson | null)(prev)
             : nextOrUpdater;
+        if (next === prev) return prev;
+        const nextObjects = Array.isArray(next?.scene?.objects) ? next.scene.objects : [];
+        const prevCount = countSceneObjects(prev);
+        const nextCount = countSceneObjects(next);
+        const isSceneHydrationWrite = prevCount === 0 && nextCount > 0;
+        const isWorkspaceEmptySceneClear =
+          source === "workspace" && prevCount > 0 && nextCount === 0;
+        if (isWorkspaceEmptySceneClear) {
+          if (process.env.NODE_ENV !== "production") {
+            globalThis.console.warn("[Nexora][WorkspaceSceneClearBlocked]", {
+              source,
+              prevCount,
+              nextCount,
+              reason: "workspace_empty_payload_after_hydration",
+            });
+          }
+          return prev;
+        }
+        const isResetCandidate =
+          source === "workspace" || next == null || (prevCount > 0 && nextCount === 0);
+        if (process.env.NODE_ENV !== "production" && isResetCandidate) {
+          const resetTrace = {
+            source,
+            prevCount,
+            nextCount,
+            reason:
+              source === "workspace"
+                ? "workspace_apply"
+                : next == null
+                  ? "scene_null"
+                  : prevCount > 0 && nextCount === 0
+                    ? "objects_cleared"
+                    : "unknown",
+          };
+          const resetSig = JSON.stringify(resetTrace);
+          if (lastSceneResetTraceSigRef.current !== resetSig) {
+            lastSceneResetTraceSigRef.current = resetSig;
+            globalThis.console.warn("[Nexora][SceneParity][SceneResetCandidate]", resetTrace);
+          }
+        }
+        const objectIds = nextObjects
+          .map((obj: unknown, idx: number) => {
+            const o = asRecord(obj);
+            return String(o?.id ?? o?.name ?? `${o?.type ?? "obj"}:${idx}`);
+          })
+          .filter(Boolean);
+        const nextSelection = asRecord(next)?.object_selection;
+        const highlightedIds = getHighlightedObjectIdsFromSelection(nextSelection);
+        const shouldDim = (nextSelection as any)?.dim_unrelated_objects === true;
+        const dimmedIds = shouldDim ? objectIds.filter((id) => !highlightedIds.includes(id)) : [];
+        const semanticSig = buildSceneSemanticSignature({
+          objectIds,
+          highlightedIds,
+          dimmedIds,
+          selectedId: null,
+          reactionMode: null,
+          propagationSource: source,
+        });
+        const prevObjects = Array.isArray(prev?.scene?.objects) ? prev.scene.objects : [];
+        const prevObjectIds = prevObjects
+          .map((obj: unknown, idx: number) => {
+            const o = asRecord(obj);
+            return String(o?.id ?? o?.name ?? `${o?.type ?? "obj"}:${idx}`);
+          })
+          .filter(Boolean);
+        const prevSelection = asRecord(prev)?.object_selection;
+        const prevHighlightedIds = getHighlightedObjectIdsFromSelection(prevSelection);
+        const prevShouldDim = (prevSelection as any)?.dim_unrelated_objects === true;
+        const prevDimmedIds = prevShouldDim
+          ? prevObjectIds.filter((id) => !prevHighlightedIds.includes(id))
+          : [];
+        const prevSemanticSig = buildSceneSemanticSignature({
+          objectIds: prevObjectIds,
+          highlightedIds: prevHighlightedIds,
+          dimmedIds: prevDimmedIds,
+          selectedId: null,
+          reactionMode: null,
+          propagationSource: source,
+        });
+        const stablePrevObjects = prevObjects
+          .map((obj: unknown, idx: number) => {
+            const o = asRecord(obj);
+            return {
+              id: String(o?.id ?? o?.name ?? `${o?.type ?? "obj"}:${idx}`),
+              type: String(o?.type ?? ""),
+              label: String(o?.label ?? o?.name ?? ""),
+              state: String(o?.state ?? o?.status ?? ""),
+            };
+          })
+          .sort((a, b) => a.id.localeCompare(b.id));
+        const stableNextObjects = nextObjects
+          .map((obj: unknown, idx: number) => {
+            const o = asRecord(obj);
+            return {
+              id: String(o?.id ?? o?.name ?? `${o?.type ?? "obj"}:${idx}`),
+              type: String(o?.type ?? ""),
+              label: String(o?.label ?? o?.name ?? ""),
+              state: String(o?.state ?? o?.status ?? ""),
+            };
+          })
+          .sort((a, b) => a.id.localeCompare(b.id));
+        const hasExplicitObjectMutation =
+          JSON.stringify(stablePrevObjects) !== JSON.stringify(stableNextObjects);
+        const prevVisualSig = JSON.stringify({
+          scene: asRecord(prev)?.scene ?? null,
+          selection: prevSelection ?? null,
+        });
+        const nextVisualSig = JSON.stringify({
+          scene: asRecord(next)?.scene ?? null,
+          selection: nextSelection ?? null,
+        });
+        const normalizedSource = String(source ?? "").toLowerCase();
+        const isPanelDrivenSource =
+          normalizedSource.includes("panel") ||
+          normalizedSource.includes("rightpanelhost") ||
+          normalizedSource.includes("dashboard");
+        const hasNoMeaningfulSceneMutation =
+          !hasExplicitObjectMutation &&
+          prevSemanticSig === semanticSig &&
+          prevVisualSig === nextVisualSig;
+        if (isPanelDrivenSource && hasNoMeaningfulSceneMutation) {
+          if (process.env.NODE_ENV !== "production") {
+            globalThis.console.debug("[Nexora][SceneApplyBlocked][PanelOnlyChange]", {
+              source,
+              prevCount,
+              nextCount,
+            });
+          }
+          return prev;
+        }
+        if (prevSemanticSig === semanticSig && prevVisualSig === nextVisualSig) {
+          if (process.env.NODE_ENV !== "production") {
+            console.debug("[Nexora][UpstreamDedup][Skipped]", {
+              type: "scene",
+              signature: semanticSig,
+            });
+          }
+          return prev;
+        }
+        const sceneWriteSource: SceneWriteSource = source.includes("propagation")
+          ? "propagation"
+          : source === "chat" || source === "unified_reaction" || source.includes("intent")
+            ? "chat"
+            : source === "selection"
+              ? "selection"
+              : source.includes("click") || source.includes("manual") || source.includes("ui")
+                ? "ui_event"
+                : source.includes("ingestion")
+                  ? "ingestion"
+                  : source.includes("fallback")
+                    ? "system_fallback"
+                    : "system";
+        const shouldBypassSceneWriteDuplicateGuard =
+          isSceneHydrationWrite &&
+          (source === "workspace" ||
+            source === "demo" ||
+            source.includes("hydrate") ||
+            source.includes("restore") ||
+            source.includes("initial"));
+        if (process.env.NODE_ENV !== "production" && shouldBypassSceneWriteDuplicateGuard) {
+          globalThis.console.warn("[Nexora][SceneHydration][Allowed]", {
+            source,
+            prevCount,
+            nextCount,
+            objectIds,
+          });
+        }
+        const allowed = shouldBypassSceneWriteDuplicateGuard
+          ? true
+          : traceSceneWrite({
+              source: sceneWriteSource,
+              semanticSig,
+              context: {
+                writer: "HomeScreen.applySceneChangeSafe",
+                reason: source,
+                highlightedCount: highlightedIds.length,
+                objectCount: objectIds.length,
+                isSceneHydrationWrite,
+              },
+            });
+        if (typeof window !== "undefined") {
+          const w = window as unknown as {
+            __NEXORA_DEBUG__?: { chatPipeline?: Record<string, unknown> };
+          };
+          const prevDebug = (w.__NEXORA_DEBUG__?.chatPipeline ?? {}) as Record<string, unknown>;
+          w.__NEXORA_DEBUG__ = {
+            ...(w.__NEXORA_DEBUG__ ?? {}),
+            chatPipeline: {
+              ...prevDebug,
+              sceneWrite: {
+                source: sceneWriteSource,
+                semanticSig,
+                blocked: !allowed,
+              },
+              updatedAt: Date.now(),
+            },
+          };
+        }
+        if (!allowed) {
+          return prev;
+        }
         const sig = next == null ? "__scene_null__" : JSON.stringify(next);
-        if (!options?.bypassDedupe && lastSceneApplySigRef.current === sig) {
+        if (!options?.bypassDedupe && lastSceneApplySigRef.current === sig && !isSceneHydrationWrite) {
           return prev;
         }
         lastSceneApplySigRef.current = sig;
@@ -976,18 +1407,80 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     []
   );
+  const applySceneChangeUpstreamDedup = useCallback(
+    (nextScene: SceneJson | null, source: string, options?: { bypassDedupe?: boolean }) => {
+      const nextSemanticSig = buildSceneSemanticSigForUpstreamDedupe(nextScene, source);
+      const prev = lastUpstreamSceneApplySigBySourceRef.current.get(source) ?? null;
+      if (prev === nextSemanticSig) {
+        console.debug("[Nexora][UpstreamDedup][Skipped]", {
+          type: "scene",
+          source,
+          signature: nextSemanticSig,
+        });
+        return;
+      }
+      lastUpstreamSceneApplySigBySourceRef.current.set(source, nextSemanticSig);
+      applySceneChangeSafe(nextScene, source, options);
+    },
+    [applySceneChangeSafe, buildSceneSemanticSigForUpstreamDedupe]
+  );
 
   const setSceneJsonForExecutionApply = useCallback(
     (next: SceneJson | null | ((prev: SceneJson | null) => SceneJson | null)) => {
-      applySceneChangeSafe(next, "chat");
+      if (typeof next === "function") {
+        applySceneChangeSafe(next, "chat");
+        return;
+      }
+      applySceneChangeUpstreamDedup(next, "chat");
     },
-    [applySceneChangeSafe]
+    [applySceneChangeSafe, applySceneChangeUpstreamDedup]
   );
 
   const [loading, setLoading] = useState(false);
+  const [hasUserStartedFlow, setHasUserStartedFlow] = useState(false);
+  const hasUserStartedFlowRef = useRef(false);
+  useEffect(() => {
+    hasUserStartedFlowRef.current = hasUserStartedFlow;
+  }, [hasUserStartedFlow]);
+  const markUserStartedFlow = useCallback((source: string) => {
+    if (hasUserStartedFlowRef.current) return;
+    hasUserStartedFlowRef.current = true;
+    setHasUserStartedFlow(true);
+    setCenterOverlay(null);
+    setCenterComponent(null);
+    setCenterComponentVisible(false);
+    console.log("[Nexora][EntryUX][Started]", { source });
+  }, []);
+  const [entryFlowState, setEntryFlowState] = useState<EntryFlowState>("idle");
+  const entryFlowStateRef = useRef<EntryFlowState>("idle");
+  useEffect(() => {
+    entryFlowStateRef.current = entryFlowState;
+  }, [entryFlowState]);
+  const [showChatPipelineQA, setShowChatPipelineQA] = useState(false);
   const [chatRequestStatus, setChatRequestStatus] = useState<ChatRequestLifecycleStatus>("idle");
   /** Delayed UI busy (300ms) so fast chat replies never flash "Analyzing…". */
   const [chatDelayedBusy, setChatDelayedBusy] = useState(false);
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development" || typeof window === "undefined") return;
+    const sync = () => {
+      setShowChatPipelineQA(Boolean((window as any).__NEXORA_QA__));
+    };
+    sync();
+    window.addEventListener("nexora:qa-toggle", sync);
+    return () => window.removeEventListener("nexora:qa-toggle", sync);
+  }, []);
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development" || typeof window === "undefined") return;
+    (window as any).__NEXORA_SET_QA__ = (enabled: boolean) => {
+      (window as any).__NEXORA_QA__ = Boolean(enabled);
+      window.dispatchEvent(new Event("nexora:qa-toggle"));
+    };
+    return () => {
+      if ((window as any).__NEXORA_SET_QA__) {
+        delete (window as any).__NEXORA_SET_QA__;
+      }
+    };
+  }, []);
   const [activeMode, setActiveMode] = useState<string>(activeDomainExperience.experience.preferredProductMode);
   const [activeTemplateId, setActiveTemplateId] = useState<string>("quality_protection");
   const [autoBackupEnabled, setAutoBackupEnabled] = useState<boolean>(
@@ -997,6 +1490,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [alert, setAlert] = useState<{ level: any; score: number; reasons: string[] } | null>(null);
   const dismissAlert = useCallback(() => setAlert(null), []);
   const chatRequestSeqRef = useRef(0);
+  const latestChatPipelineRunIdRef = useRef<string | null>(null);
+  const lastAppliedChatPipelineSignatureRef = useRef<string | null>(null);
   const activePanelFamilyAuditRef = useRef<PanelFamilyAuditState | null>(null);
   const lastPanelFamilyAuditKeyRef = useRef<string | null>(null);
   const lastAuditRefTraceSignatureRef = useRef<string | null>(null);
@@ -1018,8 +1513,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const clickIntentLockRef = useRef<ClickIntentLockState | null>(null);
   const lastLegacySyncBlockKeyRef = useRef<string | null>(null);
   const lastUnifiedReactionSignatureRef = useRef<string | null>(null);
+  const lastUpstreamUnifiedReactionSigRef = useRef<string | null>(null);
+  const lastSceneSemanticApplyRef = useRef<string | null>(null);
   const lastSceneVisualApplySignatureRef = useRef<string | null>(null);
   const lastSelectionSignatureRef = useRef<string | null>(null);
+  const lastRiskPropagationSignatureRef = useRef<string | null>(null);
   const lastFragilityScenePayloadSigRef = useRef<string | null>(null);
   const lastPanelAuthorityTraceSigRef = useRef<string | null>(null);
   const lastPanelCallerMigratedSigRef = useRef<string | null>(null);
@@ -1027,6 +1525,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const lastPanelAuthorityResolvedSigRef = useRef<string | null>(null);
   const lastPanelMetricsSigRef = useRef<string | null>(null);
   const lastOpenIntentRef = useRef<string | null>(null);
+  const lastUpstreamPanelCommitSigRef = useRef<string | null>(null);
   /** Blocks invariant "re-open" after explicit user close (view may remain set). */
   const panelUserExplicitCloseRef = useRef(false);
   /** Authority instant-open lock: ignore controller state that would close/clear panel within this window. */
@@ -1096,6 +1595,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     delete w.__NEXORA_LAST_INGESTION__;
     delete w.__NEXORA_LAST_MULTI_SOURCE_INGESTION__;
     delete w.__NEXORA_INGESTION_DEV__;
+    delete w.__NEXORA_QA_FIXTURES__;
   }, [isPilotProductMode]);
   const lastBiasLayerApplyKeyRef = useRef<string | null>(null);
   const lastDecisionQualitySigRef = useRef<string | null>(null);
@@ -1115,14 +1615,167 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   } | null>(null);
   /** Dev self-debug: correlates panel/scene events with the active chat turn (cleared when the turn ends). */
   const activeChatDebugCorrelationRef = useRef<string | null>(null);
+  const chatLoopGuardActiveRef = useRef(false);
+  const lastChatDedupRef = useRef<{
+    text: string;
+    at: number;
+  } | null>(null);
+  const chatLoopGuardDepthRef = useRef(0);
+  const loopGuardInFlightByTextRef = useRef<Map<string, number>>(new Map());
+  const lastAppliedPanelEffectRef = useRef<{
+    signature: string;
+    at: number;
+  } | null>(null);
+  const lastAppliedSceneEffectRef = useRef<{
+    signature: string;
+    at: number;
+  } | null>(null);
+  const writeChatPipelineDebug = useCallback((partial: Record<string, unknown>) => {
+    if (process.env.NODE_ENV === "production" || typeof window === "undefined") return;
+    const w = window as Window & { __NEXORA_DEBUG__?: Record<string, unknown> };
+    const prev = (w.__NEXORA_DEBUG__?.chatPipeline as Record<string, unknown> | undefined) ?? {};
+    const {
+      loopGuard: partialLoop,
+      idempotency: partialIdem,
+      selectedObjectGuard: partialSelGuard,
+      explicitSelection: partialExplicitSelection,
+      analyzeSelectionLock: partialAnalyzeSelectionLock,
+      ...restPartial
+    } = partial;
+    const prevLoop =
+      prev.loopGuard !== undefined && typeof prev.loopGuard === "object" && prev.loopGuard !== null
+        ? { ...(prev.loopGuard as Record<string, unknown>) }
+        : {};
+    const mergedLoop =
+      partialLoop !== undefined && typeof partialLoop === "object" && partialLoop !== null
+        ? { ...prevLoop, ...(partialLoop as Record<string, unknown>) }
+        : Object.keys(prevLoop).length > 0
+          ? prevLoop
+          : undefined;
+    const prevIdem =
+      prev.idempotency !== undefined && typeof prev.idempotency === "object" && prev.idempotency !== null
+        ? { ...(prev.idempotency as Record<string, unknown>) }
+        : {};
+    const mergedIdem =
+      partialIdem !== undefined && typeof partialIdem === "object" && partialIdem !== null
+        ? { ...prevIdem, ...(partialIdem as Record<string, unknown>) }
+        : Object.keys(prevIdem).length > 0
+          ? prevIdem
+          : undefined;
+    const prevSelGuard =
+      prev.selectedObjectGuard !== undefined &&
+      typeof prev.selectedObjectGuard === "object" &&
+      prev.selectedObjectGuard !== null
+        ? { ...(prev.selectedObjectGuard as Record<string, unknown>) }
+        : {};
+    const mergedSelGuard =
+      partialSelGuard !== undefined && typeof partialSelGuard === "object" && partialSelGuard !== null
+        ? { ...prevSelGuard, ...(partialSelGuard as Record<string, unknown>) }
+        : Object.keys(prevSelGuard).length > 0
+          ? prevSelGuard
+          : undefined;
+    const prevExplicitSelection =
+      prev.explicitSelection !== undefined &&
+      typeof prev.explicitSelection === "object" &&
+      prev.explicitSelection !== null
+        ? { ...(prev.explicitSelection as Record<string, unknown>) }
+        : {};
+    const mergedExplicitSelection =
+      partialExplicitSelection !== undefined &&
+      typeof partialExplicitSelection === "object" &&
+      partialExplicitSelection !== null
+        ? { ...prevExplicitSelection, ...(partialExplicitSelection as Record<string, unknown>) }
+        : Object.keys(prevExplicitSelection).length > 0
+          ? prevExplicitSelection
+          : undefined;
+    const prevAnalyzeSelectionLock =
+      prev.analyzeSelectionLock !== undefined &&
+      typeof prev.analyzeSelectionLock === "object" &&
+      prev.analyzeSelectionLock !== null
+        ? { ...(prev.analyzeSelectionLock as Record<string, unknown>) }
+        : {};
+    const mergedAnalyzeSelectionLock =
+      partialAnalyzeSelectionLock !== undefined &&
+      typeof partialAnalyzeSelectionLock === "object" &&
+      partialAnalyzeSelectionLock !== null
+        ? { ...prevAnalyzeSelectionLock, ...(partialAnalyzeSelectionLock as Record<string, unknown>) }
+        : Object.keys(prevAnalyzeSelectionLock).length > 0
+          ? prevAnalyzeSelectionLock
+          : undefined;
+    w.__NEXORA_DEBUG__ = {
+      ...(w.__NEXORA_DEBUG__ ?? {}),
+      chatPipeline: {
+        ...prev,
+        ...restPartial,
+        ...(mergedLoop !== undefined ? { loopGuard: mergedLoop } : {}),
+        ...(mergedIdem !== undefined ? { idempotency: mergedIdem } : {}),
+        ...(mergedSelGuard !== undefined ? { selectedObjectGuard: mergedSelGuard } : {}),
+        ...(mergedExplicitSelection !== undefined ? { explicitSelection: mergedExplicitSelection } : {}),
+        ...(mergedAnalyzeSelectionLock !== undefined ? { analyzeSelectionLock: mergedAnalyzeSelectionLock } : {}),
+        updatedAt: Date.now(),
+      },
+    };
+  }, []);
+  const getAnalyzeLockedObjectId = useCallback((): string | null => {
+    const lock = analyzeSelectionLockRef.current;
+    if (!lock) return null;
+    if (Date.now() - lock.startedAt > 8000) {
+      analyzeSelectionLockRef.current = null;
+      writeChatPipelineDebug({
+        analyzeSelectionLock: {
+          active: false,
+          objectId: null,
+          lastReason: "expired",
+        },
+      });
+      return null;
+    }
+    return lock.objectId;
+  }, [writeChatPipelineDebug]);
+  function isAnalyzeLockActive(): boolean {
+    return Boolean(getAnalyzeLockedObjectId());
+  }
   const [rightPanelState, _setRightPanelState] = useState<RightPanelState>(() => ({
     ...createClosedRightPanelState(),
     view: mapLegacyTabToRightPanelView(activeDomainExperience.experience.preferredRightPanelTab) ?? null,
   }));
+  const rightPanelWriteMetaRef = useRef<{
+    writer: string;
+    source: string | null;
+    reason: string | null;
+  } | null>(null);
+  const stageRightPanelWriteMeta = useCallback(
+    (meta: { writer: string; source?: string | null; reason?: string | null }) => {
+      rightPanelWriteMetaRef.current = {
+        writer: meta.writer,
+        source: meta.source ?? null,
+        reason: meta.reason ?? null,
+      };
+    },
+    []
+  );
   const setRightPanelState = useCallback(
     (action: React.SetStateAction<RightPanelState>) => {
       _setRightPanelState((prev) => {
         const next = typeof action === "function" ? (action as (p: RightPanelState) => RightPanelState)(prev) : action;
+        const pendingMeta = rightPanelWriteMetaRef.current;
+        const samePanelState =
+          prev.view === next.view &&
+          prev.isOpen === next.isOpen &&
+          (prev.contextId ?? null) === (next.contextId ?? null);
+        if (samePanelState) {
+          rightPanelWriteMetaRef.current = null;
+          return prev;
+        }
+        globalThis.console?.warn?.("[NEXORA_RIGHT_PANEL_WRITE]", {
+          writer: pendingMeta?.writer ?? "HomeScreen.setRightPanelState",
+          prevView: prev.view ?? null,
+          nextView: next.view ?? null,
+          contextId: next.contextId ?? null,
+          source: pendingMeta?.source ?? null,
+          reason: pendingMeta?.reason ?? null,
+        });
+        rightPanelWriteMetaRef.current = null;
         if (prev.view && !next.view) {
           return prev;
         }
@@ -1131,11 +1784,224 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     []
   );
+  const PANEL_SOURCE_PRIORITY_VALUE: Record<PanelSource, number> = {
+    manual_user_nav: 5,
+    explicit_command: 4,
+    chat_intent: 3,
+    object_click: 2,
+    system_fallback: 1,
+  };
+  const activePanelAuthorityWindowRef = useRef<{
+    rank: PanelSource;
+    view: string | null;
+    contextId: string | null;
+    expiresAt: number;
+    reason: PanelReason | null;
+  }>({
+    rank: "system_fallback",
+    view: null,
+    contextId: null,
+    expiresAt: 0,
+    reason: null,
+  });
+  const commitRightPanelStateFromAuthority = useCallback(
+    (
+      action: React.SetStateAction<RightPanelState>,
+      meta: {
+        writer: string;
+        source?: PanelSource | string | null;
+        reason?: PanelReason | string | null;
+        allowExecutiveContextChange?: boolean;
+      }
+    ) => {
+      const normalizedSource = normalizePanelSource(meta.source);
+      const normalizedReason = normalizePanelReason(meta.reason);
+      stageRightPanelWriteMeta({
+        writer: meta.writer,
+        source: normalizedSource,
+        reason: normalizedReason,
+      });
+      setRightPanelState((prev) => {
+        const resolvedNext =
+          typeof action === "function"
+            ? (action as (p: RightPanelState) => RightPanelState)(prev)
+            : action;
+        const lockedObjectId = getAnalyzeLockedObjectId();
+        if (lockedObjectId) {
+          const nextView = resolvedNext.view ?? null;
+          const nextContextId = resolvedNext.contextId ?? null;
+          const isAllowedView =
+            nextView === "object" ||
+            nextView === "executive_object" ||
+            nextView === "object_focus";
+          const sameContext = nextContextId === lockedObjectId;
+          const isManual = normalizedSource === "manual_user_nav";
+          if (!isManual && (!isAllowedView || !sameContext)) {
+            globalThis.console?.warn?.("[Nexora][AnalyzeLock][PanelOverwriteBlocked]", {
+              attemptedView: nextView,
+              attemptedContextId: nextContextId,
+              lockedObjectId,
+              source: meta.source,
+              reason: meta.reason,
+            });
+            writeChatPipelineDebug({
+              analyzeSelectionLock: {
+                active: true,
+                objectId: lockedObjectId,
+                lastReason: "panel_overwrite_blocked",
+              },
+            });
+            return prev;
+          }
+        }
+        if (entryFlowState !== "ready_for_analysis") {
+          const nextView = resolvedNext.view ?? null;
+          const allowedDuringEntry =
+            nextView === "object" ||
+            nextView === "object_focus" ||
+            nextView === "workspace" ||
+            nextView === "dashboard";
+          if (!allowedDuringEntry) {
+            globalThis.console?.debug?.("[Nexora][EntryFlow][PanelBlockedDuringEntry]", {
+              entryFlowState,
+              attemptedView: nextView,
+              source: normalizedSource,
+              reason: normalizedReason,
+            });
+            return prev;
+          }
+        }
+        const now = Date.now();
+        const activeWindow = activePanelAuthorityWindowRef.current;
+        const nextRank = normalizedSource;
+        const isActiveWindow = activeWindow.expiresAt > now;
+        const nextIsLowerPriority =
+          PANEL_SOURCE_PRIORITY_VALUE[nextRank] < PANEL_SOURCE_PRIORITY_VALUE[activeWindow.rank];
+        const isExecutiveWindowGuarded =
+          isActiveWindow &&
+          activeWindow.view === "executive_object" &&
+          (nextRank === "object_click" || nextRank === "system_fallback") &&
+          ((resolvedNext.view ?? null) !== "executive_object" ||
+            (resolvedNext.contextId ?? null) !== (activeWindow.contextId ?? null));
+        const isGeneralLowerPriorityBlocked =
+          isActiveWindow &&
+          nextIsLowerPriority &&
+          Boolean(activeWindow.view) &&
+          (resolvedNext.view ?? null) !== (activeWindow.view ?? null);
+        if (isExecutiveWindowGuarded || isGeneralLowerPriorityBlocked) {
+          globalThis.console?.warn?.("[Nexora][PanelPriorityBlocked]", {
+            active: activeWindow,
+            nextView: resolvedNext.view ?? null,
+            nextContextId: resolvedNext.contextId ?? null,
+            nextRank,
+            source: normalizedSource,
+            reason: normalizedReason,
+            rawMeta: { source: meta.source, reason: meta.reason, writer: meta.writer },
+          });
+          return prev;
+        }
+        const isDashboardOverrideCandidate =
+          prev.view === "executive_object" &&
+          resolvedNext.view === "dashboard" &&
+          (resolvedNext.contextId ?? null) === null;
+        if (isDashboardOverrideCandidate) {
+          globalThis.console?.warn?.("[Nexora][DashboardOverrideCandidate]", {
+            writer: meta.writer ?? null,
+            source: meta.source ?? null,
+            reason: meta.reason ?? null,
+            normalizedSource,
+            normalizedReason,
+            prevView: prev.view ?? null,
+            nextView: resolvedNext.view ?? null,
+            prevContextId: prev.contextId ?? null,
+            nextContextId: resolvedNext.contextId ?? null,
+            activeWindow: activePanelAuthorityWindowRef.current,
+            stack: new Error("Dashboard override trace").stack,
+          });
+        }
+        if (
+          prev.view === "executive_object" &&
+          resolvedNext.view === "dashboard" &&
+          (resolvedNext.contextId ?? null) === null &&
+          normalizedSource !== "manual_user_nav"
+        ) {
+          globalThis.console?.warn?.("[Nexora][DashboardOverrideBlocked]", {
+            writer: meta.writer ?? null,
+            source: meta.source ?? null,
+            reason: meta.reason ?? null,
+            normalizedSource,
+            normalizedReason,
+            prevView: prev.view ?? null,
+            nextView: resolvedNext.view ?? null,
+            prevContextId: prev.contextId ?? null,
+            nextContextId: resolvedNext.contextId ?? null,
+            activeWindow: activePanelAuthorityWindowRef.current,
+          });
+          return prev;
+        }
+        if (
+          prev.view === "executive_object" &&
+          resolvedNext.view === "executive_object" &&
+          (prev.contextId ?? null) &&
+          (resolvedNext.contextId ?? null) !== (prev.contextId ?? null) &&
+          meta.allowExecutiveContextChange !== true
+        ) {
+          globalThis.console?.debug?.("[Nexora][ExecutiveContextPreserved]", {
+            source: normalizedSource,
+            writer: meta.writer,
+            previousContextId: prev.contextId ?? null,
+            attemptedContextId: resolvedNext.contextId ?? null,
+            reason: normalizedReason,
+          });
+          return {
+            ...resolvedNext,
+            contextId: prev.contextId ?? null,
+          };
+        }
+        if (nextRank === "manual_user_nav") {
+          activePanelAuthorityWindowRef.current = {
+            rank: "system_fallback",
+            view: null,
+            contextId: null,
+            expiresAt: 0,
+            reason: null,
+          };
+        } else if (nextRank === "explicit_command") {
+          activePanelAuthorityWindowRef.current = {
+            rank: nextRank,
+            view: resolvedNext.view ?? null,
+            contextId: resolvedNext.contextId ?? null,
+            expiresAt: now + 1500,
+            reason: normalizedReason,
+          };
+        } else if (nextRank === "chat_intent") {
+          activePanelAuthorityWindowRef.current = {
+            rank: nextRank,
+            view: resolvedNext.view ?? null,
+            contextId: resolvedNext.contextId ?? null,
+            expiresAt: now + 1000,
+            reason: normalizedReason,
+          };
+        }
+        globalThis.console?.debug?.("[Nexora][PanelCommit]", {
+          writer: meta.writer,
+          prevView: prev.view ?? null,
+          nextView: resolvedNext.view ?? null,
+          contextId: resolvedNext.contextId ?? null,
+          source: normalizedSource,
+          reason: normalizedReason,
+        });
+        return resolvedNext;
+      });
+    },
+    [entryFlowState, getAnalyzeLockedObjectId, setRightPanelState, stageRightPanelWriteMeta, writeChatPipelineDebug]
+  );
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
     console.log("RIGHT PANEL STATE:", rightPanelState);
   }, [rightPanelState]);
+  const lastAnalyzeRouteCommitSigRef = useRef<string | null>(null);
   const [centerComponent, setCenterComponent] = useState<CenterComponentType>(null);
   const [centerOverlay, setCenterOverlay] = useState<null | "input">(null);
   const [analysisHandoffBanner, setAnalysisHandoffBanner] = useState<{ highRisk: boolean } | null>(null);
@@ -1227,9 +2093,60 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const prevPipelineStatusForMetricRef = useRef<NexoraPipelineStatusUi["status"] | null>(null);
   const prevCompareOpenForMetricRef = useRef(false);
   const lastDecisionRunIdForMetricRef = useRef<string | null>(null);
-  const [objectSelection, setObjectSelection] = useState<any | null>(null);
+  const [objectSelection, _setObjectSelection] = useState<any | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
-  const [selectedObjectIdState, setSelectedObjectIdState] = useState<string | null>(null);
+  const [selectedObjectIdState, _setSelectedObjectIdState] = useState<string | null>(null);
+  const setObjectSelection = useCallback(
+    (nextOrUpdater: any | null | ((prev: any | null) => any | null)) => {
+      _setObjectSelection((prev: any | null) => {
+        const next = typeof nextOrUpdater === "function" ? nextOrUpdater(prev) : nextOrUpdater;
+        const highlighted = getHighlightedObjectIdsFromSelection(next);
+        if (next == null || highlighted.length === 0) {
+          return prev;
+        }
+        const semanticSig = JSON.stringify(next ?? null);
+        const allowed = traceSceneWrite({
+          source: "selection",
+          semanticSig,
+          context: { writer: "HomeScreen.setObjectSelection" },
+        });
+        writeChatPipelineDebug({
+          sceneWrite: {
+            source: "selection",
+            semanticSig,
+            blocked: !allowed,
+          },
+        });
+        return allowed ? next : prev;
+      });
+    },
+    [writeChatPipelineDebug]
+  );
+  const setSelectedObjectIdState = useCallback(
+    (nextOrUpdater: string | null | ((prev: string | null) => string | null)) => {
+      _setSelectedObjectIdState((prev) => {
+        const next = typeof nextOrUpdater === "function" ? nextOrUpdater(prev) : nextOrUpdater;
+        if (next == null) {
+          return prev;
+        }
+        const semanticSig = JSON.stringify({ selectedId: next ?? null });
+        const allowed = traceSceneWrite({
+          source: "selection",
+          semanticSig,
+          context: { writer: "HomeScreen.setSelectedObjectIdState" },
+        });
+        writeChatPipelineDebug({
+          sceneWrite: {
+            source: "selection",
+            semanticSig,
+            blocked: !allowed,
+          },
+        });
+        return allowed ? next : prev;
+      });
+    },
+    [writeChatPipelineDebug]
+  );
   const inspectorOpen = rightPanelState.isOpen;
   const highlightedObjectIds = useMemo(() => {
     const selectedHighlights = getHighlightedObjectIdsFromSelection(objectSelection);
@@ -1851,6 +2768,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         return decision;
       }
 
+      const shouldBlockStaleObjectClickOverride =
+        rightPanelState.view === "executive_object" &&
+        resolvedView === "object" &&
+        rawSource.includes("object_click:interaction_controller") &&
+        now < passiveDeselectGuardUntilRef.current;
+      const shouldBlockLatePlainObjectClickOverride =
+        rightPanelState.view === "executive_object" &&
+        resolvedView === "object" &&
+        request.source === "object_click" &&
+        now < passiveDeselectGuardUntilRef.current;
+      if (shouldBlockStaleObjectClickOverride || shouldBlockLatePlainObjectClickOverride) {
+        globalThis.console?.warn?.("[Nexora][ExecutiveObjectOverrideBlocked]", {
+          writer: "HomeScreen.applyPanelControllerRequest",
+          prevView: rightPanelState.view ?? null,
+          nextView: resolvedView ?? null,
+          contextId: nextContextId,
+          source: rawSource,
+          reason: shouldBlockStaleObjectClickOverride
+            ? "stale_object_click_within_analyze_guard_window"
+            : "late_plain_object_click_within_analyze_guard_window",
+          guardUntil: passiveDeselectGuardUntilRef.current,
+          now,
+        });
+        logBlocked("executive_object_stale_object_click_blocked", {
+          guardUntil: passiveDeselectGuardUntilRef.current,
+        });
+        return decision;
+      }
+
       if (!isAutomatic) {
         clickIntentLockRef.current = {
           view: resolvedView,
@@ -1929,38 +2875,89 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         reason: decision.reason,
         explicitUserIntent: !isAutomatic,
       });
-      setRightPanelState((prev) => {
-        const next = decision.nextState;
-        const PANEL_AUTHORITY_LOCK_MS = 120;
-        const lockAt = panelAuthorityLockAtRef.current;
-        if (lockAt > 0) {
-          const lockAge = Date.now() - lockAt;
-          if (lockAge >= 0 && lockAge < PANEL_AUTHORITY_LOCK_MS) {
-            if (!next.isOpen && prev.view != null) {
-              return prev;
-            }
-            if (next.isOpen && !next.view && prev.view != null) {
-              return prev;
+      const lockedAnalyzeId = getAnalyzeLockedObjectId();
+      if (lockedAnalyzeId && decision.nextState) {
+        const nextView = decision.nextState.view ?? null;
+        const nextCtx = decision.nextState.contextId ?? null;
+        const isAllowed =
+          (nextView === "object" ||
+            nextView === "executive_object" ||
+            nextView === "object_focus") &&
+          nextCtx === lockedAnalyzeId;
+        const isManual = normalizePanelSource(rawSource) === "manual_user_nav";
+        if (!isManual && !isAllowed) {
+          globalThis.console?.warn?.("[Nexora][AnalyzeLock][ControllerRequestBlocked]", {
+            requestedView: nextView,
+            requestedContextId: nextCtx,
+            lockedObjectId: lockedAnalyzeId,
+            source: request.source,
+            rawSource,
+          });
+          return;
+        }
+      }
+      const panelSig = JSON.stringify({
+        view: decision.nextState.view ?? null,
+        contextId: decision.nextState.contextId ?? null,
+      });
+      if (lastUpstreamPanelCommitSigRef.current === panelSig) {
+        console.debug("[Nexora][UpstreamDedup][Skipped]", {
+          type: "panel",
+          signature: panelSig,
+        });
+        return;
+      }
+      if (
+        rightPanelState.view === (decision.nextState.view ?? null) &&
+        (rightPanelState.contextId ?? null) === (decision.nextState.contextId ?? null) &&
+        rightPanelState.isOpen === decision.nextState.isOpen
+      ) {
+        console.debug("[Nexora][UpstreamDedup][Skipped]", {
+          type: "panel",
+          signature: panelSig,
+        });
+        return;
+      }
+      lastUpstreamPanelCommitSigRef.current = panelSig;
+      commitRightPanelStateFromAuthority(
+        (prev) => {
+          const next = decision.nextState;
+          const PANEL_AUTHORITY_LOCK_MS = 120;
+          const lockAt = panelAuthorityLockAtRef.current;
+          if (lockAt > 0) {
+            const lockAge = Date.now() - lockAt;
+            if (lockAge >= 0 && lockAge < PANEL_AUTHORITY_LOCK_MS) {
+              if (!next.isOpen && prev.view != null) {
+                return prev;
+              }
+              if (next.isOpen && !next.view && prev.view != null) {
+                return prev;
+              }
             }
           }
+          if (NEXORA_PANEL_DEPRECATION_DEBUG) {
+            console.warn("[Nexora][PanelDirectStateWrite]", {
+              view: next.view ?? null,
+              isOpen: next.isOpen,
+              source: "applyPanelControllerRequest",
+            });
+          }
+          if (
+            prev.view === next.view &&
+            prev.contextId === next.contextId &&
+            prev.isOpen === next.isOpen
+          ) {
+            return prev; // prevent unnecessary re-render loop
+          }
+          lastPanelRequestSigRef.current = panelRequestDedupeKey;
+          return next;
+        },
+        {
+          writer: "HomeScreen.applyPanelControllerRequest",
+          source: rawSource,
+          reason: decision.reason,
         }
-        if (NEXORA_PANEL_DEPRECATION_DEBUG) {
-          console.warn("[Nexora][PanelDirectStateWrite]", {
-            view: next.view ?? null,
-            isOpen: next.isOpen,
-            source: "applyPanelControllerRequest",
-          });
-        }
-        if (
-          prev.view === next.view &&
-          prev.contextId === next.contextId &&
-          prev.isOpen === next.isOpen
-        ) {
-          return prev; // prevent unnecessary re-render loop
-        }
-        lastPanelRequestSigRef.current = panelRequestDedupeKey;
-        return next;
-      });
+      );
       return decision;
     },
     [
@@ -1976,6 +2973,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       traceLegacySyncBlocked,
       traceRightPanelPathAudit,
       traceRightPanelStateMutation,
+      commitRightPanelStateFromAuthority,
+      getAnalyzeLockedObjectId,
     ]
   );
   const requestRightPanelOpen = useCallback(
@@ -2023,13 +3022,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, []);
   type NexoraPanelAuthoritySource =
     | "left_nav"
+    | "manual_user_nav"
     | "sub_button"
     | "tab_click"
     | "chat"
     | "scene"
     | "object_click"
+    | "analyze_object"
     | "system"
-    | "legacy_event";
+    | "legacy_event"
+    /** Strategic Command center panel — routes must stay in EXE decision layer (see handleStrategicCommandFullRouteView). */
+    | "strategic_command"
+    /** Compare / timeline / strategic center workbench — context merge + EXE guards in requestPanelAuthorityOpen. */
+    | "component_panel"
+    /** Executive rail preview CTAs — must not fall back to scene/dashboard. */
+    | "exe_preview"
+    | "dashboard_preview"
+    | "decision_strip";
   type NexoraPanelAuthorityRequest = {
     view: string;
     family?: "EXE" | "SCN" | "SIM" | "RSK";
@@ -2038,10 +3047,62 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     reason?: string;
     forceOpen?: boolean;
   };
+  const rightPanelRouteLockRef = useRef<{
+    view: RightPanelView;
+    contextId: string | null;
+    reason: string | null;
+  }>({ view: null, contextId: null, reason: null });
+  const passiveDeselectGuardUntilRef = useRef<number>(0);
+  const traceAnalyzeObjectRoute = useCallback(
+    (detail: {
+      stage:
+        | "analyze_success_before_route"
+        | "requestPanelAuthorityOpen_called"
+        | "after_state_commit";
+      requestedView?: string | null;
+      resolvedView?: string | null;
+      family?: string | null;
+      contextId?: string | null;
+      rightPanelView?: RightPanelView | null;
+    }) => {
+      if (process.env.NODE_ENV === "production") return;
+      globalThis.console?.debug?.("[Nexora][AnalyzeObjectRouteTrace]", {
+        stage: detail.stage,
+        requestedView: detail.requestedView ?? null,
+        resolvedView: detail.resolvedView ?? null,
+        family: detail.family ?? null,
+        contextId: detail.contextId ?? null,
+        selectedObjectIdState: selectedObjectIdState ?? null,
+        focusedId: focusedId ?? null,
+        rightPanelView: detail.rightPanelView ?? rightPanelState.view ?? null,
+      });
+    },
+    [focusedId, rightPanelState.view, selectedObjectIdState]
+  );
   const requestPanelAuthorityOpen = useCallback(
     (request: NexoraPanelAuthorityRequest) => {
-      const normalizedRequest: NexoraPanelAuthorityRequest =
-        request.source === "object_click"
+      const requestedRawView = String(request.view ?? "").trim().toLowerCase();
+      const hasContextId =
+        typeof request.contextId === "string" ? request.contextId.trim().length > 0 : Boolean(request.contextId);
+      if (isAnalyzeLockActive() && request.source !== "manual_user_nav") {
+        const lockedObjectId = getAnalyzeLockedObjectId();
+        if (lockedObjectId && (requestedRawView === "workspace" || !hasContextId)) {
+          globalThis.console?.warn?.("[Nexora][AnalyzeLock][WorkspaceBlocked]", {
+            request,
+            lockedObjectId,
+          });
+          writeChatPipelineDebug({
+            analyzeSelectionLock: {
+              active: true,
+              objectId: lockedObjectId,
+              lastReason: "workspace_or_null_context_blocked",
+            },
+          });
+          return;
+        }
+      }
+      let normalizedRequest: NexoraPanelAuthorityRequest =
+        request.source === "object_click" && requestedRawView !== "executive_object"
           ? {
               ...request,
               family: "SCN",
@@ -2049,8 +3110,117 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             }
           : request;
 
+      const mergeCenterPanelContext = (incoming: string | null | undefined): string | null => {
+        const inc = typeof incoming === "string" ? incoming.trim() : "";
+        if (inc) return inc;
+        const rp =
+          typeof rightPanelState.contextId === "string" ? rightPanelState.contextId.trim() : "";
+        if (rp) return rp;
+        const sel =
+          typeof selectedObjectIdState === "string" ? selectedObjectIdState.trim() : "";
+        if (sel) return sel;
+        const fid = typeof focusedId === "string" ? focusedId.trim() : "";
+        return fid || null;
+      };
+
+      const guardedNoDashboardFallbackSources: NexoraPanelAuthoritySource[] = [
+        "component_panel",
+        "strategic_command",
+        "exe_preview",
+        "dashboard_preview",
+        "decision_strip",
+      ];
+      const centerWorkbenchSource = guardedNoDashboardFallbackSources.includes(normalizedRequest.source);
+
+      if (centerWorkbenchSource) {
+        const mergedCtx = mergeCenterPanelContext(normalizedRequest.contextId);
+        normalizedRequest = {
+          ...normalizedRequest,
+          contextId: mergedCtx,
+        };
+
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console?.debug?.("[Nexora][ComponentPanelRoute]", {
+            requestedView: normalizedRequest.view,
+            family: normalizedRequest.family ?? null,
+            contextId: mergedCtx,
+            reason: normalizedRequest.reason ?? null,
+            source: normalizedRequest.source,
+          });
+        }
+
+        let probe = String(normalizedRequest.view ?? "").trim().toLowerCase();
+
+        const remapToExecutiveObject = (blocked: string, tag: string) => {
+          if (process.env.NODE_ENV !== "production") {
+            globalThis.console?.warn?.("[Nexora][ComponentPanelRouteBlocked]", {
+              blocked,
+              remappedTo: "executive_object",
+              contextId: mergedCtx,
+              requestedView: probe,
+              source: normalizedRequest.source,
+            });
+          }
+          normalizedRequest = {
+            ...normalizedRequest,
+            view: "executive_object",
+            family: "EXE",
+            contextId: mergedCtx,
+            reason: `${normalizedRequest.reason ?? "open"}:${tag}`,
+          };
+          probe = "executive_object";
+        };
+
+        if (probe === "dashboard" && normalizedRequest.source !== "manual_user_nav") {
+          if (!mergedCtx) {
+            if (process.env.NODE_ENV !== "production") {
+              globalThis.console?.warn?.("[Nexora][ComponentPanelRouteBlocked]", {
+                blocked: "dashboard_without_resolvable_context",
+                contextId: null,
+                requestedView: "dashboard",
+                source: normalizedRequest.source,
+              });
+            }
+            return;
+          }
+          remapToExecutiveObject("dashboard_from_center_workbench", "center_dashboard_to_exe");
+        } else if (probe === "workspace" || probe === "object" || probe === "object_focus") {
+          remapToExecutiveObject("scn_from_center_workbench", "center_scn_to_exe");
+        }
+      }
+
+      const routedIntentMatch = /^intent_route:([^:]+)/.exec(String(normalizedRequest.reason ?? ""));
+      const routedIntent = (routedIntentMatch?.[1] ?? null) as NexoraIntent | null;
+      if (routedIntent) {
+        const intentTarget = resolveIntentToPanel(routedIntent);
+        const expectedFamily = expectedFamilyForIntent(routedIntent);
+        if (intentTarget.type === "center") {
+          globalThis.console?.error?.("[Nexora][InvalidRoutingState]", {
+            intent: routedIntent,
+            contextId: normalizedRequest.contextId ?? null,
+            source: normalizedRequest.source,
+            reason: "center_intent_reached_right_panel_authority",
+          });
+          return;
+        }
+        if (
+          normalizedRequest.source !== "manual_user_nav" &&
+          routedIntent !== "unknown_intent" &&
+          intentTarget.family !== expectedFamily
+        ) {
+          globalThis.console?.error?.("[Nexora][CrossFamilyDriftBlocked]", {
+            intent: routedIntent,
+            targetFamily: intentTarget.family,
+            expectedFamily,
+            source: normalizedRequest.source,
+          });
+          return;
+        }
+      }
+
       const rawView = String(normalizedRequest.view ?? "").trim().toLowerCase();
       if (!rawView) return;
+      lastPanelAuthorityReasonRef.current = normalizedRequest.reason ?? null;
 
       const rapidNow = Date.now();
       if (rapidNow - panelAuthorityRapidIntentRef.current < 150) {
@@ -2068,15 +3238,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             : rawView === "fragility_scan"
               ? { view: "fragility" as RightPanelView, legacyTab: "fragility_scan" as string | null }
               : { view: rawView as RightPanelView, legacyTab: null };
+      const normalizedView = normalized.view;
 
       const sourceForRequest: PanelOpenSource =
         normalizedRequest.source === "legacy_event"
           ? "legacy_alias"
-          : normalizedRequest.source === "left_nav"
+          : normalizedRequest.source === "left_nav" || normalizedRequest.source === "manual_user_nav"
             ? "left_nav"
-            : normalizedRequest.source === "sub_button" || normalizedRequest.source === "tab_click"
+            : normalizedRequest.source === "sub_button" ||
+                normalizedRequest.source === "tab_click" ||
+                normalizedRequest.source === "strategic_command" ||
+                normalizedRequest.source === "component_panel" ||
+                normalizedRequest.source === "exe_preview" ||
+                normalizedRequest.source === "dashboard_preview" ||
+                normalizedRequest.source === "decision_strip"
               ? "cta"
-              : normalizedRequest.source === "system"
+              : normalizedRequest.source === "system" || normalizedRequest.source === "analyze_object"
                 ? "action_intent"
                 : normalizedRequest.source === "chat"
                   ? "action_intent"
@@ -2085,20 +3262,59 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                   : normalizedRequest.source === "scene"
                     ? "direct_open"
                     : "unknown";
+      const isExplicitUserPanelNavigation =
+        normalizedRequest.source === "left_nav" ||
+        normalizedRequest.source === "manual_user_nav" ||
+        normalizedRequest.source === "tab_click" ||
+        normalizedRequest.source === "object_click";
+      const isManualOverrideSource =
+        normalizedRequest.source === "left_nav" ||
+        normalizedRequest.source === "manual_user_nav" ||
+        normalizedRequest.source === "object_click" ||
+        normalizedRequest.source === "scene" ||
+        normalizedRequest.source === "tab_click";
       const rawSource = `panel_authority:${normalizedRequest.source}:${normalizedRequest.reason ?? "open"}`;
-      const FAST_SOURCES: NexoraPanelAuthoritySource[] = ["left_nav", "chat", "object_click", "tab_click"];
+      const FAST_SOURCES: NexoraPanelAuthoritySource[] = [
+        "left_nav",
+        "manual_user_nav",
+        "chat",
+        "object_click",
+        "tab_click",
+        "strategic_command",
+        "component_panel",
+        "exe_preview",
+        "dashboard_preview",
+        "decision_strip",
+      ];
       const shouldForceOpen =
         normalizedRequest.forceOpen === true ||
         FAST_SOURCES.includes(normalizedRequest.source) ||
-        ["sub_button", "system"].includes(normalizedRequest.source);
+        [
+          "sub_button",
+          "system",
+          "strategic_command",
+          "component_panel",
+          "exe_preview",
+          "dashboard_preview",
+          "decision_strip",
+        ].includes(normalizedRequest.source);
       const openIntentSig = JSON.stringify({
-        view: normalized.view ?? null,
+        view: normalizedView ?? null,
         contextId: normalizedRequest.contextId ?? null,
       });
+      if (normalizedRequest.source === "analyze_object") {
+        traceAnalyzeObjectRoute({
+          stage: "requestPanelAuthorityOpen_called",
+          requestedView: request.view ?? null,
+          resolvedView: normalizedView ?? null,
+          family: normalizedRequest.family ?? null,
+          contextId: normalizedRequest.contextId ?? null,
+        });
+      }
       if (
         lastOpenIntentRef.current === openIntentSig &&
         rightPanelState.isOpen === true &&
-        rightPanelState.view === normalized.view &&
+        rightPanelState.view === normalizedView &&
         (rightPanelState.contextId ?? null) === (normalizedRequest.contextId ?? null)
       ) {
         return;
@@ -2108,43 +3324,54 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       console.log("[Nexora][PanelRouteDecision]", {
         source: normalizedRequest.source,
         requested: request.view,
-        final: normalized.view,
+        final: normalizedView,
       });
-
-      setRightPanelState((prev) => {
-        const next = {
-          ...prev,
-          isOpen: true,
-          view: normalized.view,
+      globalThis.console?.debug?.("[Nexora][RightPanelWriter]", {
+        writer: "HomeScreen.requestPanelAuthorityOpen",
+        nextView: normalizedView ?? null,
+        contextId: normalizedRequest.contextId ?? null,
+        reason: normalizedRequest.reason ?? "open",
+      });
+      globalThis.console?.debug?.("[Nexora][RightPanelRouteTrace]", {
+        writer: "requestPanelAuthorityOpen",
+        requestedView: request.view ?? null,
+        resolvedView: normalizedView ?? null,
+        family: normalizedRequest.family ?? null,
+        contextId: normalizedRequest.contextId ?? null,
+        reason: normalizedRequest.reason ?? "open",
+        source: normalizedRequest.source,
+      });
+      const nowForObjectClickGuard = Date.now();
+      const shouldBlockLatePlainObjectClickOverride =
+        rightPanelState.view === "executive_object" &&
+        normalizedView === "object" &&
+        normalizedRequest.source === "object_click" &&
+        nowForObjectClickGuard < passiveDeselectGuardUntilRef.current;
+      if (shouldBlockLatePlainObjectClickOverride) {
+        globalThis.console?.warn?.("[Nexora][ExecutiveObjectOverrideBlocked]", {
+          writer: "requestPanelAuthorityOpen",
+          prevView: rightPanelState.view ?? null,
+          nextView: normalizedView ?? null,
           contextId: normalizedRequest.contextId ?? null,
-          timestamp: Date.now(),
-        };
-        if (
-          prev.isOpen === next.isOpen &&
-          prev.view === next.view &&
-          (prev.contextId ?? null) === (next.contextId ?? null)
-        ) {
-          return prev;
-        }
-        if (NEXORA_PANEL_DEPRECATION_DEBUG) {
-          console.log("[Nexora][PanelInstantOpen]", {
-            source: normalizedRequest.source,
-            view: normalized.view,
-            contextId: normalizedRequest.contextId ?? null,
-          });
-          console.warn("[Nexora][PanelDirectStateWrite]", {
-            view: next.view ?? null,
-            isOpen: next.isOpen,
-            source: "requestPanelAuthorityOpen:instant",
-          });
-        }
-        return next;
-      });
+          source: normalizedRequest.source,
+          guardUntil: passiveDeselectGuardUntilRef.current,
+          now: nowForObjectClickGuard,
+        });
+        return;
+      }
+
+      if (NEXORA_PANEL_DEPRECATION_DEBUG) {
+        console.log("[Nexora][PanelInstantOpenRedirectedToController]", {
+          source: normalizedRequest.source,
+          view: normalizedView,
+          contextId: normalizedRequest.contextId ?? null,
+        });
+      }
       if (process.env.NODE_ENV !== "production") {
         const sig = JSON.stringify({
           s: normalizedRequest.source,
           f: normalizedRequest.family ?? null,
-          v: normalized.view,
+          v: normalizedView,
           c: normalizedRequest.contextId ?? null,
           fo: shouldForceOpen,
           po: rightPanelState?.isOpen ?? null,
@@ -2154,7 +3381,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           console.warn("[Nexora][PanelAuthority]", {
             source: normalizedRequest.source,
             family: normalizedRequest.family ?? null,
-            view: normalized.view,
+            view: normalizedView,
             contextId: normalizedRequest.contextId ?? null,
             forceOpen: shouldForceOpen,
             previousOpen: rightPanelState?.isOpen,
@@ -2163,7 +3390,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         const migratedSig = JSON.stringify({
           source: normalizedRequest.source,
           family: normalizedRequest.family ?? null,
-          view: normalized.view,
+          view: normalizedView,
           reason: normalizedRequest.reason ?? "open",
         });
         if (migratedSig !== lastPanelCallerMigratedSigRef.current) {
@@ -2171,7 +3398,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           console.warn("[Nexora][PanelCallerMigrated]", {
             source: normalizedRequest.source,
             family: normalizedRequest.family ?? null,
-            view: normalized.view,
+            view: normalizedView,
             reason: normalizedRequest.reason ?? "open",
           });
         }
@@ -2179,7 +3406,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           source: normalizedRequest.source,
           family: normalizedRequest.family ?? null,
           requestedView: rawView,
-          canonicalView: normalized.view ?? null,
+          canonicalView: normalizedView ?? null,
           legacyTab: normalized.legacyTab ?? null,
           contextId: normalizedRequest.contextId ?? null,
           forceOpen: shouldForceOpen,
@@ -2194,7 +3421,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
       }
       requestRightPanelOpen({
-        view: normalized.view,
+        view: normalizedView,
         source: sourceForRequest,
         rawSource,
         contextId: normalizedRequest.contextId ?? null,
@@ -2211,6 +3438,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               return "→ Opening Recommendation";
             case "dashboard":
               return "→ Opening Executive Overview";
+            case "executive_object":
+              return "→ Opening executive insight";
             case "conflict":
               return "→ Opening Conflict Map";
             case "timeline":
@@ -2231,7 +3460,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           source: normalizedRequest.source,
           family: normalizedRequest.family ?? null,
           requestedView: rawView,
-          canonicalView: normalized.view,
+          canonicalView: normalizedView,
           contextId: normalizedRequest.contextId ?? null,
           forceOpen: shouldForceOpen,
           isOpen: true,
@@ -2242,23 +3471,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           console.log("[Nexora][PanelAuthorityResolved]", resolvedPayload);
         }
       }
-      window.setTimeout(() => {
-        setRightPanelState((prev) => {
-          if (!prev.view) return prev;
-          if (prev.isOpen) return prev;
-          if (NEXORA_PANEL_DEPRECATION_DEBUG) {
-            console.warn("[Nexora][VisibilityGuardReopen]", {
-              view: prev.view ?? null,
-            });
-            console.warn("[Nexora][PanelDirectStateWrite]", {
-              view: prev.view ?? null,
-              isOpen: true,
-              source: "visibility_guard_reopen",
-            });
-          }
-          return { ...prev, isOpen: true, timestamp: Date.now() };
-        });
-      }, 0);
+      // Deprecated bypass removed: visibility guard now relies on canonical controller open path only.
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("nexora:right-panel-authority-opened", {
@@ -2273,17 +3486,54 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         );
       }
     },
-    [requestRightPanelOpen, rightPanelState.contextId, rightPanelState.isOpen, rightPanelState.view]
+    [
+      focusedId,
+      getAnalyzeLockedObjectId,
+      requestRightPanelOpen,
+      rightPanelState.contextId,
+      rightPanelState.isOpen,
+      rightPanelState.view,
+      selectedObjectIdState,
+      traceAnalyzeObjectRoute,
+      writeChatPipelineDebug,
+    ]
   );
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (rightPanelRouteLockRef.current.view !== "executive_object") return;
+    const sig = JSON.stringify({
+      view: rightPanelState.view ?? null,
+      contextId: rightPanelState.contextId ?? null,
+      selectedObjectIdState: selectedObjectIdState ?? null,
+      focusedId: focusedId ?? null,
+      lockedContextId: rightPanelRouteLockRef.current.contextId,
+    });
+    if (lastAnalyzeRouteCommitSigRef.current === sig) return;
+    lastAnalyzeRouteCommitSigRef.current = sig;
+    traceAnalyzeObjectRoute({
+      stage: "after_state_commit",
+      requestedView: "executive_object",
+      resolvedView: rightPanelState.view ?? null,
+      family: rightPanelState.view === "executive_object" ? "EXE" : null,
+      contextId: rightPanelState.contextId ?? null,
+      rightPanelView: rightPanelState.view ?? null,
+    });
+  }, [focusedId, rightPanelState.contextId, rightPanelState.view, selectedObjectIdState, traceAnalyzeObjectRoute]);
   const openExePanel = useCallback(
-    (view: string, reason: string, contextId?: string | null) => {
+    (
+      view: string,
+      reason: string,
+      contextId?: string | null,
+      opts?: { source?: NexoraPanelAuthoritySource }
+    ) => {
+      const src = opts?.source ?? "sub_button";
       requestPanelAuthorityOpen({
-        source: "sub_button",
+        source: src,
         family: "EXE",
         view: String(view ?? ""),
         contextId: contextId ?? null,
         forceOpen: true,
-        reason,
+        reason: src === "component_panel" ? `${reason}:strategic_command_action` : reason,
       });
     },
     [requestPanelAuthorityOpen]
@@ -2302,27 +3552,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [requestPanelAuthorityOpen]
   );
   const openSimPanel = useCallback(
-    (view: string, reason: string, contextId?: string | null) => {
+    (
+      view: string,
+      reason: string,
+      contextId?: string | null,
+      opts?: { source?: NexoraPanelAuthoritySource }
+    ) => {
+      const src = opts?.source ?? "sub_button";
       requestPanelAuthorityOpen({
-        source: "sub_button",
+        source: src,
         family: "SIM",
         view: String(view ?? ""),
         contextId: contextId ?? null,
         forceOpen: true,
-        reason,
+        reason: src === "component_panel" ? `${reason}:strategic_command_action` : reason,
       });
     },
     [requestPanelAuthorityOpen]
   );
   const openRskPanel = useCallback(
-    (view: string, reason: string, contextId?: string | null) => {
+    (
+      view: string,
+      reason: string,
+      contextId?: string | null,
+      opts?: { source?: NexoraPanelAuthoritySource }
+    ) => {
+      const src = opts?.source ?? "sub_button";
       requestPanelAuthorityOpen({
-        source: "sub_button",
+        source: src,
         family: "RSK",
         view: String(view ?? ""),
         contextId: contextId ?? null,
         forceOpen: true,
-        reason,
+        reason: src === "component_panel" ? `${reason}:strategic_command_action` : reason,
       });
     },
     [requestPanelAuthorityOpen]
@@ -2330,24 +3592,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const requestPanelAuthorityClose = useCallback((reason?: string) => {
     panelUserExplicitCloseRef.current = true;
     panelAuthorityLockAtRef.current = 0;
-    setRightPanelState((prev) => {
-      if (!prev.isOpen) return prev;
-      const next = {
-        ...prev,
-        isOpen: false,
-        timestamp: Date.now(),
-      };
-      if (NEXORA_PANEL_DEPRECATION_DEBUG) {
-        console.warn("[Nexora][PanelDirectStateWrite]", {
-          view: next.view ?? null,
-          isOpen: next.isOpen,
-          source: "requestPanelAuthorityClose",
-        });
-        console.log("[Nexora][PanelAuthorityClosed]", { reason: reason ?? "unspecified" });
-      }
-      return next;
+    applyPanelControllerRequest({
+      requestedView: null,
+      close: true,
+      source: "direct_open",
+      rawSource: "authority_close",
+      contextId: rightPanelState.contextId ?? null,
     });
-  }, []);
+    if (NEXORA_PANEL_DEPRECATION_DEBUG) {
+      console.log("[Nexora][PanelAuthorityClosed]", { reason: reason ?? "unspecified" });
+    }
+  }, [applyPanelControllerRequest, rightPanelState.contextId]);
   const closeRightPanel = useCallback(() => {
     // TODO(NEXORA-PANEL): migrate to requestPanelAuthorityClose in Prompt 5
     emitDebugEvent({
@@ -2419,6 +3674,103 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_timeline_opened" });
         return;
       }
+      if (result.execution === "open_center_strategic_command_full") {
+        openCenterComponent("strategic_command_full");
+        traceActionRouterExecuted(action, {
+          execution: result.execution,
+          outcome: "center_strategic_command_full_opened",
+        });
+        return;
+      }
+      if (result.execution === "open_center_team_decision") {
+        openCenterComponent("team_decision");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_team_decision_opened" });
+        return;
+      }
+      if (result.execution === "open_center_decision_council") {
+        openCenterComponent("decision_council");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_decision_council_opened" });
+        return;
+      }
+      if (result.execution === "open_center_org_memory") {
+        openCenterComponent("org_memory");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_org_memory_opened" });
+        return;
+      }
+      if (result.execution === "open_center_decision_policy") {
+        openCenterComponent("decision_policy");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_decision_policy_opened" });
+        return;
+      }
+      if (result.execution === "open_center_executive_approval") {
+        openCenterComponent("executive_approval");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_executive_approval_opened" });
+        return;
+      }
+      if (result.execution === "open_center_decision_governance") {
+        openCenterComponent("decision_governance");
+        traceActionRouterExecuted(action, {
+          execution: result.execution,
+          outcome: "center_decision_governance_opened",
+        });
+        return;
+      }
+      if (result.execution === "open_center_confidence_calibration") {
+        openCenterComponent("confidence_calibration");
+        traceActionRouterExecuted(action, {
+          execution: result.execution,
+          outcome: "center_confidence_calibration_opened",
+        });
+        return;
+      }
+      if (result.execution === "open_center_pattern_intelligence") {
+        openCenterComponent("pattern_intelligence");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_pattern_intelligence_opened" });
+        return;
+      }
+      if (result.execution === "open_center_strategic_learning") {
+        openCenterComponent("strategic_learning");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_strategic_learning_opened" });
+        return;
+      }
+      if (result.execution === "open_center_decision_strategic") {
+        openCenterComponent("decision_strategic");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_decision_strategic_opened" });
+        return;
+      }
+      if (result.execution === "open_center_decision_lens") {
+        openCenterComponent("decision_lens");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_decision_lens_opened" });
+        return;
+      }
+      if (result.execution === "open_center_collaboration_intelligence") {
+        openCenterComponent("collaboration_intelligence");
+        traceActionRouterExecuted(action, {
+          execution: result.execution,
+          outcome: "center_collaboration_intelligence_opened",
+        });
+        return;
+      }
+      if (result.execution === "open_center_outcome_feedback") {
+        openCenterComponent("outcome_feedback");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_outcome_feedback_opened" });
+        return;
+      }
+      if (result.execution === "open_center_decision_memory") {
+        openCenterComponent("decision_memory");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_decision_memory_opened" });
+        return;
+      }
+      if (result.execution === "open_center_decision_lifecycle") {
+        openCenterComponent("decision_lifecycle");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_decision_lifecycle_opened" });
+        return;
+      }
+      if (result.execution === "open_center_scenario_tree") {
+        openCenterComponent("scenario_tree");
+        traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_scenario_tree_opened" });
+        return;
+      }
       if (result.execution === "open_right_panel" && result.panelRequest) {
         if (!result.panelRequest.view) {
           logPanelRejected({
@@ -2474,6 +3826,238 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       rightPanelState.contextId,
       rightPanelState.view,
     ]
+  );
+
+  const routeIntentToPanel = useCallback(
+    (
+      intent: NexoraIntent,
+      context: OpenComponentPanelContext
+    ) => {
+      const resolvedContextId = (() => {
+        const inc = typeof context.contextId === "string" ? context.contextId.trim() : "";
+        if (inc) return inc;
+        const rp = typeof rightPanelState.contextId === "string" ? rightPanelState.contextId.trim() : "";
+        if (rp) return rp;
+        const sel = typeof selectedObjectIdState === "string" ? selectedObjectIdState.trim() : "";
+        if (sel) return sel;
+        const fid = typeof focusedId === "string" ? focusedId.trim() : "";
+        return fid || null;
+      })();
+      const source = (context.source ?? "component_panel") as NexoraPanelAuthoritySource;
+      const resolved = resolveIntentToPanel(intent);
+      const expectedFamily = expectedFamilyForIntent(intent);
+      const resolvedFamily: PanelFamily = resolved.type === "right" ? resolved.family : expectedFamily;
+      const centerOnlyIntents = new Set<NexoraIntent>([
+        "open_pattern_intelligence",
+        "open_strategic_learning",
+        "open_decision_strategic",
+        "open_decision_lens",
+        "open_team_decision",
+        "open_collaboration_intelligence",
+        "open_outcome_feedback",
+        "open_decision_memory",
+        "open_decision_lifecycle",
+        "open_scenario_tree",
+      ]);
+
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console?.debug?.("[Nexora][IntentResolved]", {
+          intent,
+          targetType: resolved.type,
+          target: resolved.type === "center" ? resolved.component : resolved.view,
+          contextId: resolvedContextId,
+          source,
+        });
+        globalThis.console?.debug?.("[Nexora][ButtonIntentMapped]", {
+          buttonLabel: context.caller ?? "unknown_button",
+          intent,
+          targetType: resolved.type,
+          target: resolved.type === "center" ? resolved.component : resolved.view,
+          source,
+          contextId: resolvedContextId,
+        });
+      }
+
+      if (
+        source !== "manual_user_nav" &&
+        intent !== "unknown_intent" &&
+        resolvedFamily !== expectedFamily
+      ) {
+        globalThis.console?.error?.("[Nexora][CrossFamilyDriftBlocked]", {
+          intent,
+          targetFamily: resolvedFamily,
+          expectedFamily,
+          source,
+        });
+        globalThis.console?.error?.("[Nexora][ButtonIntentBlocked]", {
+          buttonLabel: context.caller ?? "unknown_button",
+          intent,
+          reason: "cross_family_drift",
+          source,
+          contextId: resolvedContextId,
+        });
+        return;
+      }
+
+      if (resolved.type === "center") {
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console?.debug?.("[Nexora][CenterPanelOpened]", {
+            component: resolved.component,
+            source: "exe_dashboard",
+          });
+        }
+        dispatchCanonicalAction(
+          normalizeOpenComponentPanel({
+            component: resolved.component,
+            source: "panel_cta",
+            surface: "center_overlay",
+            rawSource: context.caller
+              ? `intent_route:${intent}:${context.caller}`
+              : `intent_route:${intent}`,
+          })
+        );
+        return;
+      }
+
+      if (!resolved.view) {
+        globalThis.console?.error?.("[Nexora][InvalidRoutingState]", {
+          intent,
+          contextId: resolvedContextId,
+          source,
+          reason: "missing_resolved_view",
+        });
+        globalThis.console?.error?.("[Nexora][ButtonIntentBlocked]", {
+          buttonLabel: context.caller ?? "unknown_button",
+          intent,
+          reason: "missing_resolved_view",
+          source,
+          contextId: resolvedContextId,
+        });
+        return;
+      }
+      if (
+        centerOnlyIntents.has(intent) &&
+        (resolved.view === "timeline" || resolved.view === "dashboard")
+      ) {
+        globalThis.console?.error?.("[Nexora][InvalidCenterRouting]", { intent });
+        globalThis.console?.error?.("[Nexora][ButtonIntentBlocked]", {
+          buttonLabel: context.caller ?? "unknown_button",
+          intent,
+          reason: "invalid_center_routing",
+          source,
+          contextId: resolvedContextId,
+        });
+        return;
+      }
+      if (intent !== "unknown_intent" && !resolvedContextId && resolved.view !== "war_room") {
+        globalThis.console?.error?.("[Nexora][InvalidRoutingState]", {
+          intent,
+          contextId: resolvedContextId,
+          source,
+          reason: "missing_context_for_known_intent",
+        });
+        globalThis.console?.error?.("[Nexora][ButtonIntentBlocked]", {
+          buttonLabel: context.caller ?? "unknown_button",
+          intent,
+          reason: "missing_context_for_known_intent",
+          source,
+          contextId: resolvedContextId,
+        });
+        return;
+      }
+
+      requestPanelAuthorityOpen({
+        view: resolved.view,
+        family: resolved.family,
+        source,
+        contextId: resolvedContextId,
+        reason: context.reason ?? `intent_route:${intent}`,
+        forceOpen: true,
+      });
+    },
+    [
+      dispatchCanonicalAction,
+      focusedId,
+      requestPanelAuthorityOpen,
+      rightPanelState.contextId,
+      selectedObjectIdState,
+    ]
+  );
+
+  const openComponentPanelFromAction = useCallback(
+    (actionName: ComponentPanelActionName, context: OpenComponentPanelContext) => {
+      const intentForAction: Record<ComponentPanelActionName, NexoraIntent> = {
+        compare: "open_compare",
+        timeline: "open_timeline",
+        strategic_command_full: "open_strategic_command",
+        team_decision: "open_team_decision",
+        decision_council: "open_decision_council",
+        org_memory: "open_org_memory",
+        decision_policy: "open_decision_policy",
+        executive_approval: "open_executive_approval",
+        decision_governance: "open_decision_governance",
+        confidence_calibration: "open_calibration",
+        pattern_intelligence: "open_pattern_intelligence",
+        strategic_learning: "open_strategic_learning",
+        decision_strategic: "open_decision_strategic",
+        decision_lens: "open_decision_lens",
+        collaboration_intelligence: "open_collaboration_intelligence",
+        outcome_feedback: "open_outcome_feedback",
+        decision_memory: "open_decision_memory",
+        decision_lifecycle: "open_decision_lifecycle",
+        scenario_tree: "open_scenario_tree",
+      };
+      const intent = intentForAction[actionName] ?? "unknown_intent";
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console?.debug?.("[Nexora][LegacyButtonMigrated]", {
+          buttonLabel: actionName,
+          oldTarget: context.rawTarget ?? actionName,
+          newIntent: intent,
+          sourceFile: "HomeScreen.tsx",
+          contextId: context.contextId ?? null,
+        });
+        if (intent === "open_scenario_tree") {
+          globalThis.console?.debug?.("[Nexora][ButtonIntentMapped]", {
+            label: "Open Scenario Tree",
+            intent: "open_scenario_tree",
+            target: "center",
+            contextId: context.contextId ?? null,
+          });
+        }
+      }
+      if (intent === "unknown_intent") {
+        globalThis.console?.error?.("[Nexora][LegacyButtonUnmapped]", {
+          buttonLabel: actionName,
+          oldTarget: context.rawTarget ?? actionName,
+          sourceFile: "HomeScreen.tsx",
+          contextId: context.contextId ?? null,
+        });
+        return;
+      }
+      routeIntentToPanel(intent, context);
+    },
+    [routeIntentToPanel]
+  );
+  const migrateLegacyButtonToIntent = useCallback(
+    (
+      buttonLabel: string,
+      oldTarget: string,
+      newIntent: NexoraIntent,
+      sourceFile: string,
+      context: OpenComponentPanelContext
+    ) => {
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console?.debug?.("[Nexora][LegacyButtonMigrated]", {
+          buttonLabel,
+          oldTarget,
+          newIntent,
+          sourceFile,
+          contextId: context.contextId ?? null,
+        });
+      }
+      routeIntentToPanel(newIntent, context);
+    },
+    [routeIntentToPanel]
   );
 
   useEffect(() => {
@@ -2672,6 +4256,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         const rawEventSource = detail?.source;
         const resolvedAuthoritySource: NexoraPanelAuthoritySource =
           rawEventSource === "left_nav" ||
+          rawEventSource === "manual_user_nav" ||
           rawEventSource === "sub_button" ||
           rawEventSource === "tab_click" ||
           rawEventSource === "chat" ||
@@ -2716,11 +4301,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     if (panelUserExplicitCloseRef.current) return;
     if (!rightPanelState.view) return;
     if (rightPanelState.isOpen) return;
-    setRightPanelState((prev) => {
-      if (!prev.view || prev.isOpen) return prev;
-      return { ...prev, isOpen: true, timestamp: Date.now() };
+    applyPanelControllerRequest({
+      requestedView: rightPanelState.view,
+      source: "effect_auto",
+      rawSource: "panel_visibility_auto_reopen",
+      contextId: rightPanelState.contextId ?? null,
+      preserveIfSameContext: false,
+      allowAutoOverride: true,
     });
-  }, [rightPanelState.view, rightPanelState.isOpen]);
+  }, [
+    applyPanelControllerRequest,
+    rightPanelState.contextId,
+    rightPanelState.isOpen,
+    rightPanelState.view,
+  ]);
 
   useEffect(() => {
     if (!rightPanelTab) {
@@ -2848,8 +4442,222 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       ? rightPanelState.view
       : null;
   const handleOpenDashboard = useCallback(() => {
-    openExePanel("dashboard", "handle_open_dashboard", null);
-  }, [openExePanel]);
+    requestPanelAuthorityOpen({
+      view: "dashboard",
+      family: "EXE",
+      source: "tab_click",
+      reason: "manual_user_nav",
+      contextId: null,
+      forceOpen: true,
+    });
+  }, [requestPanelAuthorityOpen]);
+  const handleStrategicCommandFullRouteView = useCallback(
+    (view: CanonicalRightPanelView) => {
+      const execContextId =
+        typeof rightPanelState.contextId === "string" && rightPanelState.contextId.trim().length > 0
+          ? rightPanelState.contextId.trim()
+          : typeof selectedObjectIdState === "string" && selectedObjectIdState.trim().length > 0
+            ? selectedObjectIdState.trim()
+            : typeof focusedId === "string" && focusedId.trim().length > 0
+              ? focusedId.trim()
+              : null;
+
+      const logRoute = (payload: Record<string, unknown>) => {
+        if (process.env.NODE_ENV === "production") return;
+        globalThis.console?.debug?.("[Nexora][StrategicCommandRoute]", payload);
+      };
+      const logBlocked = (payload: Record<string, unknown>) => {
+        if (process.env.NODE_ENV === "production") return;
+        globalThis.console?.warn?.("[Nexora][StrategicCommandRouteBlocked]", payload);
+      };
+
+      const openExe = (resolvedView: CanonicalRightPanelView, reason: string) => {
+        logRoute({
+          requested: view,
+          resolved: resolvedView,
+          family: "EXE",
+          contextId: execContextId,
+          source: "strategic_command",
+          reason,
+        });
+        requestPanelAuthorityOpen({
+          view: resolvedView,
+          family: "EXE",
+          source: "strategic_command",
+          reason,
+          contextId: execContextId,
+          forceOpen: true,
+        });
+      };
+
+      const familyForPanelView = (v: CanonicalRightPanelView): "EXE" | "RSK" | "SIM" => {
+        if (v === "risk" || v === "fragility" || v === "explanation") return "RSK";
+        if (
+          v === "war_room" ||
+          v === "advice" ||
+          v === "memory" ||
+          v === "replay" ||
+          v === "scenario_tree" ||
+          v === "pattern_intelligence" ||
+          v === "confidence_calibration" ||
+          v === "outcome_feedback" ||
+          v === "conflict" ||
+          v === "collaboration" ||
+          v === "patterns" ||
+          v === "opponent" ||
+          v === "decision_timeline"
+        ) {
+          return "SIM";
+        }
+        return "EXE";
+      };
+
+      // Center execution surfaces — unchanged (center panel stays open)
+      if (view === "simulate") {
+        logRoute({ requested: view, path: "center_dispatch", kind: "simulate", contextId: execContextId });
+        dispatchCanonicalAction(
+          normalizeRunSimulation({
+            rawSource: "StrategicCommandFull:onOpenView",
+            surface: "center_overlay",
+            source: "panel_cta",
+          })
+        );
+        return;
+      }
+      if (view === "compare") {
+        logRoute({ requested: view, path: "center_dispatch", kind: "compare", contextId: execContextId });
+        migrateLegacyButtonToIntent(
+          "Open Compare",
+          "normalizeCompareOptions",
+          "open_compare",
+          "HomeScreen.tsx",
+          {
+            destinationSurface: "component_panel",
+            source: "strategic_command",
+            caller: "StrategicCommandFull:onOpenView:compare",
+            contextId: execContextId,
+          }
+        );
+        return;
+      }
+      if (view === "timeline") {
+        logRoute({ requested: view, path: "center_dispatch", kind: "timeline", contextId: execContextId });
+        migrateLegacyButtonToIntent(
+          "Open Timeline",
+          "normalizeOpenCenterTimeline",
+          "open_timeline",
+          "HomeScreen.tsx",
+          {
+            destinationSurface: "component_panel",
+            source: "strategic_command",
+            caller: "StrategicCommandFull:onOpenView:timeline",
+            contextId: execContextId,
+          }
+        );
+        return;
+      }
+
+      // Executive decision layer: never send Scene/SCN or global dashboard from Strategic Command
+      if (view === "dashboard") {
+        logBlocked({
+          requested: view,
+          blocked: "global_dashboard_route",
+          remapped: "executive_object",
+          contextId: execContextId,
+        });
+        openExe("executive_object", "strategic_command_full:governance_item_click");
+        return;
+      }
+      if (view === "workspace" || view === "object" || view === "object_focus") {
+        logBlocked({
+          requested: view,
+          blocked: "scn_scene_route",
+          remapped: "executive_object",
+          contextId: execContextId,
+        });
+        openExe("executive_object", `strategic_command_full:alignment_item_click:${view}`);
+        return;
+      }
+
+      if (view === "war_room") {
+        logRoute({ requested: view, resolved: "war_room", family: "SIM", contextId: execContextId });
+        openSimPanel("war_room", "strategic_command_full_route", execContextId, {
+          source: "strategic_command",
+        });
+        return;
+      }
+      if (view === "risk") {
+        logRoute({ requested: view, resolved: "risk", family: "RSK", contextId: execContextId });
+        openRskPanel("risk", "strategic_command_full_route", execContextId, {
+          source: "strategic_command",
+        });
+        return;
+      }
+      if (view === "fragility") {
+        logRoute({ requested: view, resolved: "fragility", family: "RSK", contextId: execContextId });
+        openRskPanel("fragility", "strategic_command_full_route", execContextId, {
+          source: "strategic_command",
+        });
+        return;
+      }
+
+      const centerOnlyComponent = mapRightPanelViewToCenterComponentId(view);
+      if (centerOnlyComponent) {
+        const intentByComponent: Record<string, NexoraIntent> = {
+          strategic_command_full: "open_strategic_command",
+          team_decision: "open_team_decision",
+          decision_council: "open_decision_council",
+          org_memory: "open_org_memory",
+          decision_policy: "open_decision_policy",
+          executive_approval: "open_executive_approval",
+          decision_governance: "open_decision_governance",
+        };
+        const intent = intentByComponent[centerOnlyComponent] ?? "unknown_intent";
+        logRoute({
+          requested: view,
+          path: "center_component_dispatch",
+          component: centerOnlyComponent,
+          intent,
+          contextId: execContextId,
+        });
+        routeIntentToPanel(intent, {
+          destinationSurface: "component_panel",
+          source: "strategic_command",
+          contextId: execContextId,
+          caller: `StrategicCommandFull:onOpenView:${view}`,
+        });
+        return;
+      }
+
+      const family = familyForPanelView(view);
+      logRoute({
+        requested: view,
+        resolved: view,
+        family,
+        contextId: execContextId,
+        reason: "strategic_command_full:panel_nav",
+      });
+      requestPanelAuthorityOpen({
+        view,
+        family,
+        source: "strategic_command",
+        reason: `strategic_command_full:routing_hint_click:${view}`,
+        contextId: execContextId,
+        forceOpen: true,
+      });
+    },
+    [
+      dispatchCanonicalAction,
+      focusedId,
+      migrateLegacyButtonToIntent,
+      openRskPanel,
+      openSimPanel,
+      requestPanelAuthorityOpen,
+      routeIntentToPanel,
+      rightPanelState.contextId,
+      selectedObjectIdState,
+    ]
+  );
   const handleOpenObject = useCallback(
     (objectId?: string | null) => {
       const id = objectId != null ? String(objectId).trim() : "";
@@ -3303,6 +5111,291 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const visibleDecisionCockpit = visibleUiState.decisionCockpit;
   const visibleOpponentModel = visibleUiState.opponentModel;
   const visibleStrategicPatterns = visibleUiState.strategicPatterns;
+  const visibleSceneObjects = Array.isArray(visibleSceneJson?.scene?.objects)
+    ? visibleSceneJson.scene.objects
+    : [];
+  const lastSceneParityVisibleTraceRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (!visibleSceneJson) return;
+    const count = visibleSceneObjects.length;
+    const ids = visibleSceneObjects.map((o: any) => o?.id ?? "unknown");
+    const signature = JSON.stringify({ count, ids });
+    if (lastSceneParityVisibleTraceRef.current === signature) return;
+    lastSceneParityVisibleTraceRef.current = signature;
+    globalThis.console.log("[Nexora][SceneParity][VISIBLE]", {
+      count,
+      ids,
+      hasObjects: count > 0,
+    });
+  }, [visibleSceneJson, visibleSceneObjects]);
+  const lastSceneParityTraceRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const trace = {
+      sceneJsonCount: countSceneObjects(sceneJson),
+      visibleSceneJsonCount: countSceneObjects(visibleSceneJson),
+      sceneJsonIds: sceneObjectIds(sceneJson),
+      visibleSceneJsonIds: sceneObjectIds(visibleSceneJson),
+      rightPanelView: rightPanelState.view,
+      rightPanelContextId: rightPanelState.contextId ?? null,
+    };
+    const sig = JSON.stringify(trace);
+    if (lastSceneParityTraceRef.current === sig) return;
+    lastSceneParityTraceRef.current = sig;
+    globalThis.console.warn("[Nexora][SceneParity][HomeScreen]", trace);
+  }, [sceneJson, visibleSceneJson, rightPanelState.view, rightPanelState.contextId]);
+  const hasVisibleSceneObjects = visibleSceneObjects.length > 0;
+  const normalizedHealth = String(healthInfo ?? "").trim().toLowerCase();
+  const isBackendHealthy =
+    normalizedHealth.length === 0 ||
+    normalizedHealth.includes("healthy") ||
+    normalizedHealth.includes("ok") ||
+    normalizedHealth.includes("green");
+  const isEmptyState = !hasVisibleSceneObjects;
+  const isSystemUnhealthy = !isBackendHealthy;
+  const allowRealPanelData = hasVisibleSceneObjects && isBackendHealthy;
+  const panelGateDebugSig = `${hasVisibleSceneObjects ? 1 : 0}|${isBackendHealthy ? 1 : 0}|${allowRealPanelData ? 1 : 0}`;
+  const lastPanelGateDebugSigRef = useRef<string | null>(null);
+  if (process.env.NODE_ENV !== "production" && lastPanelGateDebugSigRef.current !== panelGateDebugSig) {
+    lastPanelGateDebugSigRef.current = panelGateDebugSig;
+    console.debug("[Nexora][PanelGate]", {
+      hasObjects: hasVisibleSceneObjects,
+      isBackendHealthy,
+      allowRealPanelData,
+    });
+  }
+  const allowDecisionPanels = true;
+  const firstMeaningfulState: FirstMeaningfulState = useMemo(() => {
+    const hasScene = hasVisibleSceneObjects;
+    const hasAnalysis = Boolean(
+      asRecord(visibleResponseData?.decision_analysis) ??
+        visibleResponseData?.canonical_recommendation ??
+        visibleResponseData?.decision_cockpit
+    );
+    const hasSignals = Boolean(
+      visibleRiskPropagation?.sources?.length ||
+        visibleRiskPropagation?.targets?.length ||
+        visibleConflicts?.length ||
+        visibleMemoryInsights
+    );
+    return buildFirstMeaningfulState({
+      hasScene,
+      hasAnalysis,
+      hasSignals,
+    });
+  }, [hasVisibleSceneObjects, visibleResponseData, visibleRiskPropagation, visibleConflicts, visibleMemoryInsights]);
+  /** MVP: Analyze runs only when a scene object is selected (no global “analyze system”). */
+  const objectAnalyzeReady = useMemo(() => {
+    const hl = getHighlightedObjectIdsFromSelection(visibleObjectSelection);
+    return (
+      (typeof selectedObjectIdState === "string" && selectedObjectIdState.trim().length > 0) ||
+      (typeof focusedId === "string" && focusedId.trim().length > 0) ||
+      hl.length > 0
+    );
+  }, [selectedObjectIdState, focusedId, visibleObjectSelection]);
+  useEffect(() => {
+    if (entryFlowState === "ready_for_analysis") return;
+    const hasObjects = hasRenderableSceneObjects(sceneJson);
+    if (!hasObjects) return;
+    if (!hasUserStartedFlowRef.current) {
+      markUserStartedFlow("scene_hydrated");
+    }
+    setEntryFlowState((prev) => {
+      if (prev === "ready_for_analysis") return prev;
+      globalThis.console.log("[Nexora][EntryFlow][PromotedToReady]", {
+        from: prev,
+        reason: "scene_objects_detected",
+        objectCount: Array.isArray(sceneJson?.scene?.objects) ? sceneJson.scene.objects.length : 0,
+      });
+      return "ready_for_analysis";
+    });
+  }, [sceneJson, entryFlowState, markUserStartedFlow]);
+  const lastEmptyStatePanelEffectSigRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (entryFlowState !== "objects_created") return;
+    const hasObjects = Array.isArray(visibleSceneJson?.scene?.objects) && visibleSceneJson.scene.objects.length > 0;
+    const explicitSelection = resolveExplicitSelectedObject({
+      selectedObjectIdState,
+      objectSelection,
+    });
+    if (hasObjects && explicitSelection.hasExplicitSelection) {
+      setEntryFlowState("ready_for_analysis");
+    }
+  }, [entryFlowState, objectSelection, selectedObjectIdState, visibleSceneJson]);
+  useEffect(() => {
+    if (!isEmptyState) {
+      lastEmptyStatePanelEffectSigRef.current = null;
+      return;
+    }
+    const isDashboardNoop =
+      rightPanelState.view === "dashboard" && (rightPanelState.contextId ?? null) == null;
+    if (isDashboardNoop) {
+      console.debug("[Nexora][EmptyStateReset][SkippedDashboardNoop]", {
+        view: rightPanelState.view,
+        contextId: rightPanelState.contextId ?? null,
+      });
+      return;
+    }
+    const isAlreadyNeutral =
+      (rightPanelState.view === null || rightPanelState.view === "workspace") &&
+      (rightPanelState.contextId ?? null) == null;
+    if (isAlreadyNeutral) {
+      console.debug("[Nexora][EmptyStateReset][SkippedNeutralNoop]", {
+        view: rightPanelState.view,
+        contextId: rightPanelState.contextId ?? null,
+      });
+      return;
+    }
+    if (rightPanelState.view === "workspace") return;
+    const panelSig = JSON.stringify({
+      view: "workspace",
+      contextId: null,
+      reason: "no_objects",
+    });
+    if (lastEmptyStatePanelEffectSigRef.current === panelSig) {
+      console.debug("[Nexora][UpstreamDedup][Skipped]", {
+        type: "panel",
+        signature: panelSig,
+      });
+      return;
+    }
+    lastEmptyStatePanelEffectSigRef.current = panelSig;
+    if (process.env.NODE_ENV !== "production") {
+      const resetTrace = {
+        source: "empty_state_reset",
+        prevCount: countSceneObjects(sceneJson),
+        nextCount: countSceneObjects(visibleSceneJson),
+        reason: "no_objects",
+      };
+      const resetSig = JSON.stringify(resetTrace);
+      if (lastSceneResetTraceSigRef.current !== resetSig) {
+        lastSceneResetTraceSigRef.current = resetSig;
+        globalThis.console.warn("[Nexora][SceneParity][SceneResetCandidate]", resetTrace);
+      }
+    }
+    commitRightPanelStateFromAuthority(
+      (prev) => {
+        const prevView = prev.view ?? null;
+        const nextView = "workspace";
+        const nextContextId = null;
+        const isAlreadyNeutral =
+          (prevView === "workspace" || prevView === "dashboard") && nextView === "workspace" && nextContextId == null;
+        if (isAlreadyNeutral || (prevView === nextView && (prev.contextId ?? null) === nextContextId && prev.isOpen)) {
+          return prev;
+        }
+        return {
+          ...prev,
+          isOpen: true,
+          view: nextView,
+          contextId: nextContextId,
+          timestamp: Date.now(),
+        };
+      },
+      {
+        writer: "empty_state_reset",
+        source: "system_fallback",
+        reason: "no_objects",
+      }
+    );
+  }, [commitRightPanelStateFromAuthority, isEmptyState, rightPanelState.view, sceneJson, visibleSceneJson]);
+  useEffect(() => {
+    if (!isEmptyState) return;
+    const id = requestAnimationFrame(() => {
+      const inputEl = document.getElementById("nexora-chat-input") as HTMLInputElement | null;
+      inputEl?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isEmptyState]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(
+      new CustomEvent("nexora:object-analyze-eligibility", { detail: { ready: objectAnalyzeReady } })
+    );
+  }, [objectAnalyzeReady]);
+
+  const leftSuggestedCommands = useMemo(
+    () =>
+      DEFAULT_LEFT_COMMANDS.map((cmd) =>
+        cmd.id === "analyze"
+          ? {
+              ...cmd,
+              disabled:
+                isEmptyState ||
+                !objectAnalyzeReady ||
+                entryFlowState === "idle" ||
+                entryFlowState === "describing_system",
+              hint:
+                isEmptyState
+                  ? "Describe system first"
+                  : entryFlowState === "idle"
+                  ? "Start by describing your system"
+                  : entryFlowState === "describing_system"
+                    ? "Describe your system"
+                    : entryFlowState === "objects_created"
+                      ? "Select an object"
+                      : objectAnalyzeReady
+                        ? "Analyze Object"
+                        : "Select an object to analyze",
+            }
+          : cmd
+      ),
+    [entryFlowState, isEmptyState, objectAnalyzeReady]
+  );
+
+  const stableSceneObjectsSignature = useMemo(() => {
+    const sceneObjects = Array.isArray(visibleSceneJson?.scene?.objects) ? visibleSceneJson.scene.objects : [];
+    const semanticObjects = sceneObjects
+      .map((obj: unknown, idx: number) => {
+        const o = asRecord(obj);
+        const semantic = asRecord(o?.semantic);
+        const transform = asRecord(o?.transform);
+        const posRaw = Array.isArray(transform?.pos) ? transform?.pos : Array.isArray(o?.position) ? o?.position : null;
+        const px = posRaw && posRaw.length > 0 ? Number(posRaw[0] ?? 0) : 0;
+        const py = posRaw && posRaw.length > 1 ? Number(posRaw[1] ?? 0) : 0;
+        const pz = posRaw && posRaw.length > 2 ? Number(posRaw[2] ?? 0) : 0;
+        return {
+          id: String(o?.id ?? o?.name ?? `obj_${idx}`),
+          severity: String(o?.severity ?? o?.scanner_severity ?? ""),
+          state: String(o?.state ?? o?.status ?? ""),
+          role: String(o?.role ?? semantic?.role ?? ""),
+          label: String(o?.label ?? o?.name ?? ""),
+          x: Number.isFinite(px) ? Number(px.toFixed(4)) : 0,
+          y: Number.isFinite(py) ? Number(py.toFixed(4)) : 0,
+          z: Number.isFinite(pz) ? Number(pz.toFixed(4)) : 0,
+        };
+      })
+      .sort((a, b) => a.id.localeCompare(b.id));
+    return JSON.stringify(semanticObjects);
+  }, [visibleSceneJson]);
+  const lastStableSceneObjectsSignatureRef = useRef<string | null>(null);
+  const lastStableSceneJsonRef = useRef<typeof visibleSceneJson | null>(null);
+  const stableVisibleSceneJson = useMemo(() => {
+    if (!visibleSceneJson) return visibleSceneJson;
+    if (
+      lastStableSceneObjectsSignatureRef.current === stableSceneObjectsSignature &&
+      lastStableSceneJsonRef.current
+    ) {
+      if (process.env.NODE_ENV !== "production") {
+        const resetTrace = {
+          source: "visible_scene_fallback",
+          prevCount: countSceneObjects(visibleSceneJson),
+          nextCount: countSceneObjects(lastStableSceneJsonRef.current),
+          reason: "stable_signature_reuse",
+        };
+        const resetSig = JSON.stringify(resetTrace);
+        if (lastSceneResetTraceSigRef.current !== resetSig) {
+          lastSceneResetTraceSigRef.current = resetSig;
+          globalThis.console.warn("[Nexora][SceneParity][SceneResetCandidate]", resetTrace);
+        }
+      }
+      return lastStableSceneJsonRef.current;
+    }
+    lastStableSceneObjectsSignatureRef.current = stableSceneObjectsSignature;
+    lastStableSceneJsonRef.current = visibleSceneJson;
+    return visibleSceneJson;
+  }, [stableSceneObjectsSignature, visibleSceneJson]);
   useEffect(() => {
     if (!guardedResponseData) return;
     emitDecisionTrace({
@@ -3752,9 +5845,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       if (shouldApplyVisualState) {
         if (shouldAcceptObjectSelection) {
           const nextSel = viewModel.nextObjectSelection;
+          const nextHighlightedIds = getHighlightedObjectIdsFromSelection(nextSel);
+          const currentHighlightedIds = getHighlightedObjectIdsFromSelection(visibleObjectSelection);
+          const shouldPreserveSelectionFromWeakScenePayload =
+            Boolean(focusedId ?? selectedObjectIdState ?? currentHighlightedIds[0]) &&
+            nextHighlightedIds.length === 0;
+          if (shouldPreserveSelectionFromWeakScenePayload) {
+            if (process.env.NODE_ENV !== "production") {
+              console.debug("[Nexora][SelectionGuardSkipped]", {
+                reason: "weak_scene_payload_no_clear",
+                focusedId: focusedId ?? null,
+                selectedObjectId: selectedObjectIdState ?? null,
+              });
+            }
+          } else {
           const nextSig = buildSelectionSignature({
             focusedId: focusedId ?? null,
-            highlightedIds: getHighlightedObjectIdsFromSelection(nextSel),
+            highlightedIds: nextHighlightedIds,
             source: "panel",
           });
           const prevSelSig = lastSelectionSignatureRef.current;
@@ -3762,6 +5869,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           if (nextSig !== prevSelSig) {
             lastSelectionSignatureRef.current = nextSig;
             setObjectSelection(nextSel);
+          }
           }
         }
         setRiskPropagation((prev: typeof riskPropagation) =>
@@ -3817,7 +5925,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               contractDecision: sceneDecision.kind,
             });
           }
-          applySceneChangeSafe(sceneDecision.scene, "product_flow");
+          applySceneChangeUpstreamDedup(sceneDecision.scene, "product_flow");
           setNoSceneUpdate(false);
         } else {
           if (process.env.NODE_ENV !== "production") {
@@ -3908,6 +6016,134 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     (id: string) => resolveSceneObjectLabel(id) ?? objectProfiles[id]?.label ?? instanceLabelMap[id] ?? id,
     [instanceLabelMap, objectProfiles, resolveSceneObjectLabel]
   );
+  const liveExecutiveObjectId = useMemo(() => {
+    const focusedFromSelection =
+      typeof (visibleObjectSelection as { focusedId?: unknown } | null | undefined)?.focusedId === "string"
+        ? String((visibleObjectSelection as { focusedId?: string }).focusedId).trim()
+        : "";
+    const hl = getHighlightedObjectIdsFromSelection(visibleObjectSelection);
+    return (
+      String(selectedObjectIdState ?? "").trim() ||
+      focusedFromSelection ||
+      hl[0] ||
+      null
+    );
+  }, [selectedObjectIdState, visibleObjectSelection]);
+  const activeExecutiveObjectId = useMemo(() => {
+    return liveExecutiveObjectId || String(rightPanelState.contextId ?? "").trim() || null;
+  }, [liveExecutiveObjectId, rightPanelState.contextId]);
+  const executiveObjectPanelData = useMemo(() => {
+    if (!activeExecutiveObjectId) return null;
+    const reco = buildCanonicalRecommendation(visibleResponseData ?? visibleSceneJson ?? null);
+    return buildExecutiveObjectPanelData({
+      objectId: activeExecutiveObjectId,
+      objectName: resolveObjectLabel(activeExecutiveObjectId),
+      responseData: visibleResponseData,
+      sceneJson: visibleSceneJson,
+      riskPropagation: visibleRiskPropagation,
+      canonicalRecommendation: reco,
+    });
+  }, [
+    liveExecutiveObjectId,
+    visibleResponseData,
+    visibleSceneJson,
+    visibleRiskPropagation,
+    resolveObjectLabel,
+  ]);
+  const lastExecutiveObjectSyncSigRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const sig = JSON.stringify({
+      activeExecutiveObjectId: activeExecutiveObjectId ?? null,
+      rightPanelView: rightPanelState.view ?? null,
+      contextId: rightPanelState.contextId ?? null,
+    });
+    if (lastExecutiveObjectSyncSigRef.current === sig) return;
+    lastExecutiveObjectSyncSigRef.current = sig;
+    console.debug("[Nexora][ExecutiveObjectSync]", {
+      activeExecutiveObjectId: activeExecutiveObjectId ?? null,
+      rightPanelView: rightPanelState.view ?? null,
+      contextId: rightPanelState.contextId ?? null,
+    });
+  }, [activeExecutiveObjectId, rightPanelState.contextId, rightPanelState.view]);
+  const lastExecutiveContextSyncSigRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (rightPanelState.view !== "executive_object") return;
+    const lockedExecutiveContextId =
+      rightPanelRouteLockRef.current.view === "executive_object" &&
+      typeof rightPanelRouteLockRef.current.contextId === "string" &&
+      rightPanelRouteLockRef.current.contextId.trim().length > 0
+        ? rightPanelRouteLockRef.current.contextId.trim()
+        : null;
+    const normalizedCurrentContextId =
+      typeof rightPanelState.contextId === "string" && rightPanelState.contextId.trim().length > 0
+        ? rightPanelState.contextId.trim()
+        : null;
+    const selectedContextId =
+      typeof selectedObjectIdState === "string" && selectedObjectIdState.trim().length > 0
+        ? selectedObjectIdState.trim()
+        : null;
+    const focusedContextId =
+      typeof focusedId === "string" && focusedId.trim().length > 0 ? focusedId.trim() : null;
+    const nextContextId =
+      lockedExecutiveContextId ??
+      normalizedCurrentContextId ??
+      selectedContextId ??
+      focusedContextId ??
+      null;
+    if (!nextContextId) {
+      return;
+    }
+    if (lockedExecutiveContextId && normalizedCurrentContextId !== lockedExecutiveContextId) {
+      globalThis.console?.debug?.("[Nexora][ExecutiveContextPreserved]", {
+        source: "route_lock",
+        lockedContextId: lockedExecutiveContextId,
+        currentContextId: normalizedCurrentContextId,
+        selectedObjectId: selectedContextId,
+        focusedId: focusedContextId,
+      });
+    }
+    if (normalizedCurrentContextId === nextContextId) {
+      return;
+    }
+    const panelSig = JSON.stringify({
+      view: "executive_object",
+      contextId: nextContextId,
+      reason: "executive_object_context_sync",
+    });
+    if (lastExecutiveContextSyncSigRef.current === panelSig) {
+      console.debug("[Nexora][UpstreamDedup][Skipped]", {
+        type: "panel",
+        signature: panelSig,
+      });
+      return;
+    }
+    lastExecutiveContextSyncSigRef.current = panelSig;
+    commitRightPanelStateFromAuthority(
+      (prev) => {
+        if (prev.view !== "executive_object") return prev;
+        return {
+          ...prev,
+          view: "executive_object",
+          contextId: nextContextId,
+          isOpen: true,
+          timestamp: Date.now(),
+        };
+      },
+      {
+        writer: "HomeScreen.executive_object_context_sync",
+        source: "effect_auto",
+        reason: "executive_object_context_sync",
+        allowExecutiveContextChange: true,
+      }
+    );
+  }, [
+    rightPanelState.view,
+    rightPanelState.contextId,
+    selectedObjectIdState,
+    focusedId,
+    commitRightPanelStateFromAuthority,
+  ]);
   const resolveTypeLabel = useCallback(
     (id: string) => typeLabelMap[id] ?? id,
     [typeLabelMap]
@@ -4139,6 +6375,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     ) => {
       const sceneForOverrides = options?.sceneReplacement ?? sceneJson;
       const normalizedReaction = normalizeReactionForScene(reaction, sceneForOverrides);
+      const isAnalyzeSystemReaction = /analyze[_\s-]*system|analyze the current system/i.test(
+        `${normalizedReaction.reason ?? ""} ${normalizedReaction.fallbackHighlightText ?? ""}`
+      );
       const sceneChatCorrelation = activeChatDebugCorrelationRef.current;
       const sceneChatMeta =
         sceneChatCorrelation ? { chatCorrelationId: sceneChatCorrelation } : {};
@@ -4167,7 +6406,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           )
         );
       }
-      const nextHighlighted = normalizedReaction.highlightedObjectIds.map((x) => String(x));
+      const hasExplicitHighlightPayload = reactionHasExplicitHighlightIntent(reaction);
+      const nextHighlightedFromNormalize = normalizedReaction.highlightedObjectIds.map((x) => String(x));
       const nextRiskSources = Array.isArray(normalizedReaction.riskSources)
         ? normalizedReaction.riskSources.map((x) => String(x))
         : [];
@@ -4182,11 +6422,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           return String(o?.id ?? o?.name ?? `obj_${idx}`);
         })
         .filter(Boolean);
-      const effectiveHighlighted = nextHighlighted;
-      const effectivePrimaryId = normalizedReaction.primaryObjectId ?? effectiveHighlighted[0] ?? null;
-      const effectiveRelatedIds = Array.isArray(normalizedReaction.relatedObjectIds)
-        ? normalizedReaction.relatedObjectIds.filter((id) => id !== effectivePrimaryId)
-        : effectiveHighlighted.filter((id) => id !== effectivePrimaryId);
+      const currentHighlightedIds = getHighlightedObjectIdsFromSelection(visibleObjectSelection);
+      const hasStableSceneSelection =
+        currentHighlightedIds.length > 0 ||
+        (typeof focusedId === "string" && focusedId.length > 0) ||
+        (typeof selectedObjectIdState === "string" && selectedObjectIdState.length > 0);
+      const globalSceneAnalyzeMode = isAnalyzeSystemReaction && !hasStableSceneSelection;
+      if (process.env.NODE_ENV !== "production" && isAnalyzeSystemReaction) {
+        console.debug("[Nexora][AnalyzeMode]", {
+          mode: globalSceneAnalyzeMode ? "global_scene_analysis" : "focused_object_analysis",
+          hasSelectedObject: hasStableSceneSelection,
+        });
+      }
+      let effectiveHighlighted = nextHighlightedFromNormalize;
+      if (!hasExplicitHighlightPayload && hasStableSceneSelection) {
+        if (currentHighlightedIds.length > 0) {
+          effectiveHighlighted = currentHighlightedIds;
+        } else if (typeof focusedId === "string" && focusedId.length > 0) {
+          effectiveHighlighted = [focusedId];
+        } else if (typeof selectedObjectIdState === "string" && selectedObjectIdState.length > 0) {
+          effectiveHighlighted = [selectedObjectIdState];
+        }
+      }
+      let effectivePrimaryId: string | null = hasExplicitHighlightPayload
+        ? normalizedReaction.primaryObjectId ?? effectiveHighlighted[0] ?? null
+        : (focusedId ?? selectedObjectIdState ?? effectiveHighlighted[0] ?? null);
+      if (globalSceneAnalyzeMode) {
+        effectiveHighlighted = [];
+        effectivePrimaryId = null;
+      }
+      const effectiveRelatedIds = effectiveHighlighted.filter((id) => id !== effectivePrimaryId);
       const reactionScalePrimary = typeof normalizedReaction.primaryScale === "number" ? normalizedReaction.primaryScale : 1.1;
       const reactionScaleSecondary =
         typeof normalizedReaction.secondaryScale === "number" ? normalizedReaction.secondaryScale : 1.035;
@@ -4197,29 +6462,77 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
       const primaryHighlightedId = effectivePrimaryId;
       const shouldDimUnrelated =
-        normalizedReaction.dimUnrelatedObjects === true && effectiveHighlighted.length > 0;
+        !globalSceneAnalyzeMode &&
+        normalizedReaction.dimUnrelatedObjects === true &&
+        effectiveHighlighted.length > 0;
+      const dimmedIdsForSemanticSig = shouldDimUnrelated
+        ? allSceneObjectIds.filter((id) => !effectiveHighlighted.includes(id))
+        : [];
+      const sceneSemanticSignature = buildSceneSemanticSignature({
+        objectIds: allSceneObjectIds,
+        highlightedIds: effectiveHighlighted,
+        dimmedIds: dimmedIdsForSemanticSig,
+        selectedId: selectedObjectIdState ?? null,
+        reactionMode: normalizedReaction.reactionMode ?? null,
+        propagationSource: normalizedReaction.source ?? null,
+      });
       const hasMeaningfulReaction =
         effectiveHighlighted.length > 0 ||
         nextRiskSources.length > 0 ||
         nextRiskTargets.length > 0 ||
-        shouldDimUnrelated;
+        shouldDimUnrelated ||
+        (globalSceneAnalyzeMode &&
+          isAnalyzeSystemReaction &&
+          (nextRiskSources.length > 0 ||
+            nextRiskTargets.length > 0 ||
+            (Array.isArray(normalizedReaction.loopSuggestions) && normalizedReaction.loopSuggestions.length > 0) ||
+            normalizedReaction.activeLoopId != null ||
+            (Array.isArray(normalizedReaction.actions) && normalizedReaction.actions.length > 0)));
       const stableSceneObjects = sceneObjects
         .map((obj: unknown, idx: number) => {
           const o = asRecord(obj);
+          const semantic = asRecord(o?.semantic);
           return {
             id: String(o?.id ?? o?.name ?? `obj_${idx}`),
             severity: String(o?.severity ?? o?.fragility_level ?? ""),
             state: String(o?.state ?? o?.status ?? ""),
+            role: String(o?.role ?? semantic?.role ?? ""),
           };
         })
-        .sort((a, b) => a.id.localeCompare(b.id));
+        .sort((a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id));
+      const stableSceneEdges = (Array.isArray((sceneForOverrides as any)?.scene?.edges)
+        ? (sceneForOverrides as any).scene.edges
+        : []
+      )
+        .map((edge: unknown, idx: number) => {
+          const e = asRecord(edge);
+          return {
+            id: String(e?.id ?? `${e?.from ?? "src"}:${e?.to ?? "dst"}:${idx}`),
+            from: String(e?.from ?? ""),
+            to: String(e?.to ?? ""),
+            weight:
+              typeof e?.weight === "number"
+                ? Number(e.weight.toFixed(5))
+                : typeof e?.strength === "number"
+                  ? Number(e.strength.toFixed(5))
+                  : null,
+          };
+        })
+        .sort((a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id));
       const reactionSignature = JSON.stringify({
+        pipelineRunId: lastAuditRecordRef.current?.runId ?? null,
         sceneObjectCount: allSceneObjectIds.length,
+        selectedId: selectedObjectIdState ?? null,
+        focusedId: focusedId ?? null,
         highlighted: effectiveHighlighted,
         riskSources: nextRiskSources,
         riskTargets: nextRiskTargets,
         primary: effectivePrimaryId,
         dim: shouldDimUnrelated,
+        analyzeSystem: isAnalyzeSystemReaction,
+        globalSceneAnalyze: globalSceneAnalyzeMode,
+        sceneObjects: stableSceneObjects,
+        sceneEdges: stableSceneEdges,
       });
       const selectedObjectChanged = (selectedObjectIdState ?? null) !== (effectivePrimaryId ?? null);
       const sceneVisualSignature = JSON.stringify({
@@ -4257,6 +6570,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         });
         return;
       }
+      if (lastSceneSemanticApplyRef.current === sceneSemanticSignature) {
+        if (process.env.NODE_ENV !== "production") {
+          console.debug("[Nexora][SceneApply][SkippedDuplicateSemantic]", {
+            semanticSig: sceneSemanticSignature,
+          });
+        }
+        return;
+      }
+      lastSceneSemanticApplyRef.current = sceneSemanticSignature;
       if (lastUnifiedReactionSignatureRef.current === reactionSignature) {
         if (process.env.NODE_ENV !== "production") {
           console.debug("[Nexora][ReactionSkipped]", {
@@ -4289,6 +6611,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           reactionSource: reaction.source ?? null,
           primaryObjectId: effectivePrimaryId ?? null,
           highlightedCount: effectiveHighlighted.length,
+          analyzeMode: globalSceneAnalyzeMode ? "global_scene_analysis" : "focused_object_analysis",
           ...sceneChatMeta,
         },
         correlationId: sceneChatCorrelation ?? undefined,
@@ -4311,18 +6634,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       });
       const prevSelSig = lastSelectionSignatureRef.current;
       traceNexoraSelectionGuard(selectionSig, prevSelSig, guardChannel);
-      if (selectionSig !== prevSelSig) {
+      if (!globalSceneAnalyzeMode && selectionSig !== prevSelSig) {
         lastSelectionSignatureRef.current = selectionSig;
         setObjectSelection({
           highlighted_objects: effectiveHighlighted,
-          dim_unrelated_objects: shouldDimUnrelated,
+          dim_unrelated_objects: isAnalyzeSystemReaction ? false : shouldDimUnrelated,
         } as any);
       }
 
-      setRiskPropagation({
-        sources: nextRiskSources,
-        targets: nextRiskTargets,
-      } as any);
+      const riskPropagationSignature = JSON.stringify({
+        sources: [...nextRiskSources].sort((a, b) => a.localeCompare(b)),
+        targets: [...nextRiskTargets].sort((a, b) => a.localeCompare(b)),
+      });
+      if (lastRiskPropagationSignatureRef.current !== riskPropagationSignature) {
+        lastRiskPropagationSignatureRef.current = riskPropagationSignature;
+        setRiskPropagation({
+          sources: nextRiskSources,
+          targets: nextRiskTargets,
+        } as any);
+      }
 
       if (shouldSkipVisualApply) {
         if (process.env.NODE_ENV !== "production") {
@@ -4336,7 +6666,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       lastSceneVisualApplySignatureRef.current = sceneVisualSignature;
 
-      if (allSceneObjectIds.length > 0) {
+      if (!isAnalyzeSystemReaction && allSceneObjectIds.length > 0) {
         pruneOverridesRef.current?.(allSceneObjectIds);
         if (effectiveHighlighted.length === 0) {
           for (const objectId of allSceneObjectIds) {
@@ -4383,7 +6713,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       if (options?.allowSceneReplacement && options?.sceneReplacement) {
         const sceneDecision = evaluateUnifiedReactionSceneReplacement(options.sceneReplacement);
         if (isSceneCanonReplaceDecision(sceneDecision)) {
-          applySceneChangeSafe(sceneDecision.scene, reaction.source ?? "unified_reaction");
+          applySceneChangeUpstreamDedup(sceneDecision.scene, reaction.source ?? "unified_reaction");
           setNoSceneUpdate(false);
         } else if (process.env.NODE_ENV !== "production") {
           console.warn("[Nexora][HomeScreen][UnsafeSceneBlocked]", {
@@ -4403,14 +6733,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
       }
 
-      if (primaryHighlightedId) {
+      if (!isAnalyzeSystemReaction && hasExplicitHighlightPayload && primaryHighlightedId) {
         updateSelectedObjectInfo(primaryHighlightedId);
         if (selectedObjectChanged) {
           setSelectedObjectIdState(primaryHighlightedId);
         }
       }
 
-      if (normalizedReaction.allowFocusMutation) {
+      if (!isAnalyzeSystemReaction && hasExplicitHighlightPayload && normalizedReaction.allowFocusMutation) {
         const focusSyncPayload: BackendChatResponse = {
           context: {
             object_info:
@@ -4446,13 +6776,42 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [
       applyActions,
-      applySceneChangeSafe,
+      applySceneChangeUpstreamDedup,
       sceneJson,
       selectedObjectIdState,
       setSelectedObjectIdState,
+      focusedId,
       syncFocusedObjectFromResponse,
       updateSelectedObjectInfo,
+      visibleObjectSelection,
     ]
+  );
+  const applyUnifiedSceneReactionUpstreamDedup = useCallback(
+    (
+      reaction: UnifiedSceneReaction,
+      options?: {
+        sceneReplacement?: SceneJson | null;
+        allowSceneReplacement?: boolean;
+        isIngestionUpdate?: boolean;
+      }
+    ) => {
+      const reactionSig = JSON.stringify({
+        reaction,
+        allowSceneReplacement: options?.allowSceneReplacement === true,
+        hasSceneReplacement: Boolean(options?.sceneReplacement),
+        isIngestionUpdate: options?.isIngestionUpdate === true,
+      });
+      if (lastUpstreamUnifiedReactionSigRef.current === reactionSig) {
+        console.debug("[Nexora][UpstreamDedup][Skipped]", {
+          type: "reaction",
+          signature: reactionSig,
+        });
+        return;
+      }
+      lastUpstreamUnifiedReactionSigRef.current = reactionSig;
+      applyUnifiedSceneReaction(reaction, options);
+    },
+    [applyUnifiedSceneReaction]
   );
 
   const emitSceneIntent = useCallback((intent: SceneIntent) => {
@@ -4467,7 +6826,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       if (!intent) break;
       const reaction = buildSceneReactionFromIntent(intent);
       if (!reaction) continue;
-      applyUnifiedSceneReaction(reaction, { allowSceneReplacement: false });
+      applyUnifiedSceneReactionUpstreamDedup(reaction, { allowSceneReplacement: false });
     }
   }, [sceneIntentEpoch, applyUnifiedSceneReaction]);
 
@@ -4532,7 +6891,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             }
           : reaction;
 
-      applyUnifiedSceneReaction(softenedReaction, { allowSceneReplacement: false });
+      applyUnifiedSceneReactionUpstreamDedup(softenedReaction, { allowSceneReplacement: false });
     },
     [applyUnifiedSceneReaction, sceneJson]
   );
@@ -4691,6 +7050,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [compareBId, setCompareBId] = useState<string | null>(null);
   const [diffState, setDiffState] = useState<ReturnType<typeof diffSnapshots> | null>(null);
   const [activeSidePanel, setActiveSidePanel] = useState<HUDTabKey>("decisions");
+  const lastPanelAuthorityReasonRef = useRef<string | null>(null);
+  useEffect(() => {
+    const lastReason = lastPanelAuthorityReasonRef.current;
+    if (activeSidePanel !== "decisions") return;
+    if (lastReason !== "analyze_object_success") return;
+    const currentView = rightPanelState.view;
+    if (currentView && currentView !== "dashboard") return;
+    const lockedContextId =
+      rightPanelRouteLockRef.current.view === "executive_object"
+        ? rightPanelRouteLockRef.current.contextId
+        : null;
+    const fallbackContextId =
+      typeof rightPanelState.contextId === "string" && rightPanelState.contextId.trim().length > 0
+        ? rightPanelState.contextId.trim()
+        : null;
+    const routeContextId = lockedContextId ?? fallbackContextId ?? null;
+    if (!routeContextId) return;
+    requestPanelAuthorityOpen({
+      view: "executive_object",
+      family: "EXE",
+      source: "analyze_object",
+      reason: "analyze_object_success",
+      contextId: routeContextId,
+      forceOpen: true,
+    });
+  }, [
+    activeSidePanel,
+    requestPanelAuthorityOpen,
+    rightPanelState.contextId,
+    rightPanelState.view,
+  ]);
   // --- panelContent block is moved below ---
   const handleApplySnapshot = useCallback(
     (snapshotKey: string) => {
@@ -4728,7 +7118,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const rawScene = snap.sceneJson;
       const sceneDecision = evaluateSnapshotRestoreScene(rawScene);
       if (isSceneCanonReplaceDecision(sceneDecision)) {
-        applySceneChangeSafe(sceneDecision.scene, "snapshot", { bypassDedupe: true });
+        applySceneChangeUpstreamDedup(sceneDecision.scene, "snapshot", { bypassDedupe: true });
         setNoSceneUpdate(false);
       } else if (rawScene != null && process.env.NODE_ENV !== "production") {
         console.warn("[Nexora][HomeScreen][SceneShapeRejected]", {
@@ -4890,6 +7280,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const selectedSetterRef = useRef<(id: string | null) => void>(() => {});
   const handleSelectedChangeRef = useRef<(id: string | null) => void>(() => {});
   const selectedIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const lockedAnalyzeObjectId = getAnalyzeLockedObjectId();
+    if (!lockedAnalyzeObjectId) return;
+    if (selectedObjectIdState === lockedAnalyzeObjectId) return;
+    console.log("[Nexora][AnalyzeSelectionLock][PreventedClear]", {
+      objectId: lockedAnalyzeObjectId,
+    });
+    setSelectedObjectIdState(lockedAnalyzeObjectId);
+    selectedSetterRef.current?.(lockedAnalyzeObjectId);
+    updateSelectedObjectInfo(lockedAnalyzeObjectId);
+    writeChatPipelineDebug({
+      analyzeSelectionLock: {
+        active: true,
+        objectId: lockedAnalyzeObjectId,
+        lastReason: "prevented_clear",
+      },
+    });
+  }, [
+    getAnalyzeLockedObjectId,
+    selectedObjectIdState,
+    updateSelectedObjectInfo,
+    writeChatPipelineDebug,
+  ]);
   const overridesRef = useRef<Record<string, any>>({});
   const setOverrideRef = useRef<(id: string, patch: any) => void>(() => {});
   const setViewMode = useSetViewMode();
@@ -4969,6 +7382,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         if (!nextView) {
           requestPanelAuthorityClose("interaction_controller_close");
         } else {
+          globalThis.console?.debug?.("[Nexora][RightPanelWriter]", {
+            writer: "HomeScreen.dispatchInteraction",
+            nextView,
+            contextId: next.selectedObjectId ?? null,
+            reason: "interaction_controller",
+          });
+          globalThis.console?.debug?.("[Nexora][RightPanelRouteTrace]", {
+            writer: "dispatchInteraction",
+            requestedView: nextView ?? null,
+            resolvedView: nextView ?? null,
+            family: nextView === "risk" || nextView === "fragility" ? "RSK" : nextView === "dashboard" ? "EXE" : "SCN",
+            contextId: next.selectedObjectId ?? null,
+            reason: "interaction_controller",
+            source: intent.source,
+            rightPanel: next.rightPanel ?? null,
+            normalizedPanelAuthoritySource:
+              intent.source === "scene"
+                ? "object_click"
+                : intent.source === "chat"
+                  ? "chat_intent"
+                  : intent.source === "left_nav"
+                    ? "manual_user_nav"
+                    : "explicit_command",
+          });
           requestPanelAuthorityOpen({
             source:
               intent.source === "scene"
@@ -4988,7 +7425,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       return next;
     },
-    [mapInteractionPanelToRightPanelView, requestPanelAuthorityClose, requestPanelAuthorityOpen, resolveSelectedObjectDetails]
+    [
+      activeExecutiveObjectId,
+      mapInteractionPanelToRightPanelView,
+      requestPanelAuthorityClose,
+      requestPanelAuthorityOpen,
+      resolveSelectedObjectDetails,
+      rightPanelState.view,
+    ]
   );
   useEffect(() => {
     const onOpenRightPanel = (event: Event) => {
@@ -5016,6 +7460,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             : source === "object_click"
               ? "scene"
               : "cta_button";
+      if (process.env.NODE_ENV !== "production" && source === "left_nav") {
+        console.debug("[Nexora][PanelOpenNoSceneChange]", {
+          panel,
+          sceneSignature: stableSceneObjectsSignature,
+        });
+      }
       recordInteractionIntent({
         type: "open_panel",
         source: mappedSource,
@@ -5024,7 +7474,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     };
     window.addEventListener("nexora:open-right-panel", onOpenRightPanel as EventListener);
     return () => window.removeEventListener("nexora:open-right-panel", onOpenRightPanel as EventListener);
-  }, [recordInteractionIntent]);
+  }, [recordInteractionIntent, stableSceneObjectsSignature]);
   useEffect(() => {
     const onObjectsPanelSelect = (event: Event) => {
       const detail = (event as CustomEvent<{ objectId?: string | null }>).detail;
@@ -5206,7 +7656,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         const sceneDecision = project?.scene?.sceneJson
           ? evaluateWorkspaceHydrateScene(project.scene.sceneJson)
           : canonDecisionMissingSceneBlob();
-        applySceneChangeSafe(sceneJsonFromCanonDecision(sceneDecision), "workspace", { bypassDedupe: true });
+        applySceneChangeUpstreamDedup(sceneJsonFromCanonDecision(sceneDecision), "workspace", { bypassDedupe: true });
         setSelectedObjectIdState(project?.scene?.selectedObjectId ?? null);
         setFocusedId(project?.scene?.focusedId ?? null);
         setFocusMode(project?.scene?.focusMode ?? "all");
@@ -5492,6 +7942,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         if (!id || selectedObjectIdState !== id) return;
       }
       if (!id) {
+        if (Date.now() <= passiveDeselectGuardUntilRef.current) {
+          if (process.env.NODE_ENV !== "production") {
+            globalThis.console?.debug?.("[Nexora][SelectionGuardSkipped]", {
+              reason: "ignore_passive_deselect_after_analyze",
+              guardUntil: passiveDeselectGuardUntilRef.current,
+              focusedId: focusedId ?? null,
+              selectedObjectId: selectedObjectIdState ?? null,
+            });
+          }
+          return;
+        }
+        const currentHighlights = getHighlightedObjectIdsFromSelection(visibleObjectSelection);
+        if (focusedId || selectedObjectIdState || currentHighlights.length > 0) {
+          if (process.env.NODE_ENV !== "production") {
+            globalThis.console?.debug?.("[Nexora][SelectionGuardSkipped]", {
+              reason: "ignore_implicit_scene_clear",
+              focusedId: focusedId ?? null,
+              selectedObjectId: selectedObjectIdState ?? null,
+            });
+          }
+          return;
+        }
         const clearSig = buildSelectionSignature({
           focusedId: null,
           highlightedIds: [],
@@ -5510,6 +7982,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         clearFocusOwnership("Selection cleared.");
         return;
       }
+      markUserStartedFlow("object_click");
 
       const clickSig = buildSelectionSignature({
         focusedId: id,
@@ -5559,7 +8032,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       clearFocusOwnership,
       dispatchInteraction,
       resolveSelectedObjectDetails,
+      markUserStartedFlow,
       selectionLocked,
+      focusedId,
+      selectedObjectIdState,
+      visibleObjectSelection,
       claimFocusOwnership,
       updateSelectedObjectInfo,
       setFocusedId,
@@ -5600,7 +8077,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         source: "chat",
         payload: { objectId: id, panel: "focus_insight" },
       });
-      applyUnifiedSceneReaction(
+      applyUnifiedSceneReactionUpstreamDedup(
         buildPanelFocusReaction({
           objectId: id,
           reason: "Focus requested by command, panel, or recommendation.",
@@ -5748,7 +8225,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         };
       }
 
-      applyUnifiedSceneReaction(unifiedFragilityReaction, {
+      applyUnifiedSceneReactionUpstreamDedup(unifiedFragilityReaction, {
         sceneReplacement: null,
         allowSceneReplacement: false,
         isIngestionUpdate: true,
@@ -6279,7 +8756,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     setSimLastError(null);
     try {
       const payload = buildChatRequestPayload("__tick__");
-      const raw = await chatToBackend(payload);
+      const raw = await chatToBackendLifecycle(payload);
       const data = raw as BackendChatResponse;
       applyGuardedResponsePayload(data, "feedback", "Simulation tick payload updated.");
       if (!data || (data as any).ok === false || (data as any).error) {
@@ -6858,9 +9335,201 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     ]
   );
 
+  function normalizeChatInputForDedup(value: string): string {
+    return value.trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
+  function buildChatEffectSignature(input: {
+    intent: string;
+    targetPanel: string;
+    sceneSignature?: string | null;
+    userInput: string;
+  }): string {
+    return [
+      input.intent,
+      input.targetPanel,
+      input.sceneSignature ?? "no-scene",
+      input.userInput.trim().toLowerCase().replace(/\s+/g, " "),
+    ].join("::");
+  }
+
   const sendText = useCallback(async (textRaw: string, requestId?: string, options?: SendTextOptions) => {
     const text = textRaw.trim();
     if (!text) return;
+    markUserStartedFlow("chat_message");
+    const isDescribePhase = entryFlowStateRef.current === "describing_system";
+    const hasSceneObjects = Array.isArray(sceneJson?.scene?.objects) && sceneJson.scene.objects.length > 0;
+    if (isDescribePhase) {
+      const starterScene = buildStarterSceneFromText(text);
+      applySceneChangeUpstreamDedup(starterScene, "describe_system", { bypassDedupe: true });
+      setObjectSelection({
+        highlighted_objects: ["delivery"],
+        highlighted_ids: ["delivery"],
+        dim_unrelated_objects: false,
+      } as any);
+      setSelectedObjectIdState("delivery");
+      setEntryFlowState("objects_created");
+      setCenterOverlay(null);
+      setCenterComponent(null);
+      setCenterComponentVisible(false);
+      requestPanelAuthorityOpen({
+        view: "object",
+        source: "manual_user_nav",
+        reason: "describe_system_objects_created",
+        contextId: "delivery",
+        forceOpen: true,
+      });
+      const userMsg = makeMsg("user", text);
+      const assistantMsg = makeMsg("assistant", "I created a starter system map. Select an object and run Analyze.");
+      const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
+      setMessages(nextMessages);
+      emitChatResult(assistantMsg.text, true, requestId);
+      saveProject(
+        buildPersistedProjectSnapshot({
+          activeMode,
+          sceneJson: starterScene,
+          messages: nextMessages,
+        })
+      );
+      pushHistory(
+        buildPersistedProjectSnapshot({
+          activeMode,
+          sceneJson: starterScene,
+          messages: nextMessages,
+        })
+      );
+      return;
+    }
+    if (!hasSceneObjects && options?.source !== "demo") {
+      const starterScene = buildStarterSceneFromText(text);
+      applySceneChangeUpstreamDedup(starterScene, "describe_system", { bypassDedupe: true });
+      setObjectSelection({
+        highlighted_objects: ["delivery"],
+        highlighted_ids: ["delivery"],
+        dim_unrelated_objects: false,
+      } as any);
+      setSelectedObjectIdState("delivery");
+      setEntryFlowState("objects_created");
+      requestPanelAuthorityOpen({
+        view: "object",
+        source: "manual_user_nav",
+        reason: "chat_no_objects_starter_scene",
+        contextId: "delivery",
+        forceOpen: true,
+      });
+      const userMsg = makeMsg("user", text);
+      const assistantMsg = makeMsg(
+        "assistant",
+        "Got it. I'll build starter objects from this system description."
+      );
+      const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
+      setMessages(nextMessages);
+      emitChatResult(assistantMsg.text, true, requestId);
+      const snapshot = buildPersistedProjectSnapshot({
+        activeMode,
+        sceneJson: starterScene,
+        messages: nextMessages,
+      });
+      saveProject(snapshot);
+      pushHistory(snapshot);
+      return;
+    }
+
+    const normalizedText = normalizeChatInputForDedup(text);
+    const lastDedup = lastChatDedupRef.current;
+    const now = Date.now();
+    if (lastDedup && lastDedup.text === normalizedText && now - lastDedup.at < 700) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][ChatLoopGuard][DedupedRapidDuplicate]", {
+          text: normalizedText,
+          deltaMs: now - lastDedup.at,
+        });
+      }
+      writeChatPipelineDebug({
+        loopGuard: {
+          dedupedRapidDuplicate: true,
+          lastReason: "deduped_rapid_duplicate",
+          lastAt: now,
+        },
+      });
+      return;
+    }
+    lastChatDedupRef.current = {
+      text: normalizedText,
+      at: now,
+    };
+
+    if ((loopGuardInFlightByTextRef.current.get(normalizedText) ?? 0) > 0) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][ChatLoopGuard][SkippedReentrantRun]", {
+          text: normalizedText,
+        });
+      }
+      writeChatPipelineDebug({
+        loopGuard: {
+          skippedReentrantRun: true,
+          lastReason: "skipped_reentrant_same_text",
+          lastAt: Date.now(),
+        },
+      });
+      return;
+    }
+
+    try {
+      const prevInflight = loopGuardInFlightByTextRef.current.get(normalizedText) ?? 0;
+      loopGuardInFlightByTextRef.current.set(normalizedText, prevInflight + 1);
+      chatLoopGuardDepthRef.current += 1;
+      chatLoopGuardActiveRef.current = true;
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][ChatLoopGuard]", {
+          text: normalizedText,
+          loopGuardActive: chatLoopGuardActiveRef.current,
+          lastDedup: lastChatDedupRef.current,
+          depth: chatLoopGuardDepthRef.current,
+        });
+      }
+
+      const runSendTextLifecycle = async () => {
+    const isAnalyzeCommand = /analyze[_\s-]*system|analyze the current system/i.test(text);
+    const analyzeHl = getHighlightedObjectIdsFromSelection(objectSelection);
+    const explicitSelection = resolveExplicitSelectedObject({
+      selectedObjectIdState,
+      objectSelection,
+    });
+    const lockedAnalyzeObjectId = isAnalyzeCommand ? getAnalyzeLockedObjectId() : null;
+    const stableAnalyzeObjectId = explicitSelection.explicitSelectedObjectId ?? lockedAnalyzeObjectId;
+    const routeExecutiveObjectOnSuccess = isAnalyzeCommand && explicitSelection.hasExplicitSelection;
+    if (isAnalyzeCommand) {
+      if (!explicitSelection.hasExplicitSelection) {
+        if (process.env.NODE_ENV !== "production") {
+          console.debug("[Nexora][AnalyzeBlocked]", { reason: "mvp_object_first" });
+        }
+        return;
+      }
+      const objectId = explicitSelection.explicitSelectedObjectId;
+      if (objectId) {
+        analyzeSelectionLockRef.current = {
+          objectId,
+          startedAt: Date.now(),
+          requestId: requestId ?? null,
+        };
+        console.log("[Nexora][AnalyzeSelectionLock][Armed]", { objectId });
+        writeChatPipelineDebug({
+          analyzeSelectionLock: {
+            active: true,
+            objectId,
+            lastReason: "armed",
+          },
+        });
+      }
+    }
+    if (isAnalyzeCommand && analyzeInFlightRef.current && !analyzePreflightArmedRef.current) {
+      return;
+    }
+    if (isAnalyzeCommand) {
+      analyzeInFlightRef.current = true;
+      analyzePreflightArmedRef.current = false;
+    }
     if (options?.source !== "demo") {
       demoFlowPauseRef.current();
     }
@@ -6869,6 +9538,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       activeChatRequestRef.current.controller.abort();
     }
     const requestSeq = nextDemoFlowSequence(chatRequestSeqRef);
+    const runId = `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    latestChatPipelineRunIdRef.current = runId;
+    writeChatPipelineDebug({
+      runId,
+      userInput: text,
+      lifecycleStatus: "submitting",
+      staleSkipped: false,
+    });
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => {
       const active = activeChatRequestRef.current;
@@ -7096,6 +9773,368 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       objectProfiles: objectProfiles as Record<string, unknown>,
       productModeContext: productModeContext as Record<string, unknown> | null,
     });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Nexora][ExplicitSelection][Resolved]", {
+        selectedObjectIdState,
+        explicitSelectedObjectId: explicitSelection.explicitSelectedObjectId,
+        hasExplicitSelection: explicitSelection.hasExplicitSelection,
+        reason: explicitSelection.reason,
+      });
+    }
+    writeChatPipelineDebug({
+      explicitSelection: {
+        explicitSelectedObjectId: explicitSelection.explicitSelectedObjectId,
+        hasExplicitSelection: explicitSelection.hasExplicitSelection,
+        reason: explicitSelection.reason,
+      },
+    });
+    if (isAnalyzeLikeUserText(text) && !explicitSelection.hasExplicitSelection) {
+      const guardReason = "analysis_requires_selected_object";
+      const assistantMessage = "Select an object first so I can analyze the right surface.";
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][ChatPipeline][SelectedObjectGuardBlocked]", {
+          reason: guardReason,
+          intent: intentRoute.intent,
+          targetPanel: intentRoute.preferredPanel ?? null,
+        });
+      }
+      if (!isMeaningfulPanel(rightPanelState.view ?? null)) {
+        requestPanelAuthorityOpen({
+          view: "workspace",
+          family: "SCN",
+          source: "chat",
+          contextId: null,
+          reason: "selected_object_required",
+          forceOpen: true,
+        });
+      }
+      const userMsg = makeMsg("user", text);
+      const assistantMsg = makeMsg("assistant", assistantMessage, {
+        confidence: 0.2,
+        guard: guardReason,
+      });
+      const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
+      setMessages(nextMessages);
+      emitChatResult(assistantMessage, true, requestId);
+      setNoSceneUpdate(false);
+      setSourceLabel(null);
+      const snapshot = buildPersistedProjectSnapshot({
+        activeMode,
+        sceneJson,
+        messages: nextMessages,
+      });
+      saveProject(snapshot);
+      pushHistory(snapshot);
+      lifecycleStatus = "success";
+      shouldClearInput = true;
+      finishLocalChatDebug("selected_object_guard_pre_route", { reason: guardReason });
+      writeChatPipelineDebug({
+        selectedObjectGuard: {
+          blocked: true,
+          reason: guardReason,
+          selectedObjectId: null,
+          intent: intentRoute.intent,
+          targetPanel: intentRoute.preferredPanel ?? null,
+          assistantMessage,
+        },
+        signature: `guard::${guardReason}`,
+        sceneSignature: `guard::${guardReason}`,
+        lifecycleStatus: "success",
+        sceneReactionApplied: false,
+        lastCompletedAt: Date.now(),
+      });
+      finalizeChatRequest(requestSeq, "success", { clearInput: true });
+      return;
+    }
+    const promptPipeline = await runNexoraChatPromptPipeline({
+      userInput: text,
+      context: {
+        selectedObjectId: selectedObjectIdState ?? null,
+        focusedObjectId: focusedId ?? null,
+        rightPanelContextId: rightPanelState.contextId ?? null,
+      },
+      engines: {
+        runExplainEngine: () => ({
+          explanation: intentRoute.explanation,
+          related_panel: intentRoute.preferredPanel ?? "dashboard",
+        }),
+        runAnalysisEngine: () => ({
+          insight: intentRoute.explanation,
+          options: [],
+          recommended: "Review panel context and commit next step.",
+          confidence: intentRoute.confidence,
+        }),
+        runDecisionEngine: () => ({
+          insight: intentRoute.explanation,
+          options: [],
+          recommended: "Choose the lowest-risk option with highest confidence.",
+          confidence: intentRoute.confidence,
+        }),
+        runContextBuilder: () => ({
+          missing: ["context_id"],
+          questions:
+            selectedObjectIdState || focusedId
+              ? ["Which objective should this decision optimize first?"]
+              : ["Which object or loop should this analysis focus on?"],
+        }),
+      },
+    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Nexora][ChatPipeline]", {
+        runId,
+        intent: promptPipeline.intent,
+        target_engine: promptPipeline.routing.target_engine,
+        target_panel: promptPipeline.routing.target_panel,
+        confidence: promptPipeline.coreResponse.confidence,
+        coreResponse: promptPipeline.coreResponse,
+      });
+    }
+
+    const pipelinePanelToken = promptPipeline.coreResponse.recommended_panel || promptPipeline.routing.target_panel;
+    const pipelinePanelView =
+      resolveChatPipelinePanelOpen(pipelinePanelToken) ??
+      mapNexoraTargetPanelToRightPanelView(promptPipeline.routing.target_panel);
+    const pipelinePanelFamily =
+      pipelinePanelToken === "RSK"
+        ? "RSK"
+        : pipelinePanelToken === "SIM_TIMELINE" || pipelinePanelToken === "SIM_WAR_ROOM"
+          ? "SIM"
+          : pipelinePanelToken === "SCN"
+            ? "SCN"
+            : "EXE";
+    const stability = evaluateChatPipelineStability({
+      runId,
+      intent: promptPipeline.intent,
+      targetPanel: pipelinePanelToken,
+      confidence: promptPipeline.coreResponse.confidence,
+      userInput: text,
+      currentPanel: rightPanelState.view ?? null,
+      lastAppliedSignature: lastAppliedChatPipelineSignatureRef.current,
+    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Nexora][ChatPipeline][Stability]", {
+        runId,
+        intent: promptPipeline.intent,
+        targetPanel: pipelinePanelToken,
+        confidence: promptPipeline.coreResponse.confidence,
+        shouldOpenPanel: stability.shouldOpenPanel,
+        shouldApplyScene: stability.shouldApplyScene,
+        reason: stability.reason,
+      });
+    }
+    writeChatPipelineDebug({
+      runId,
+      intent: promptPipeline.intent,
+      targetPanel: pipelinePanelToken,
+      confidence: promptPipeline.coreResponse.confidence,
+      stabilityReason: stability.reason,
+      shouldOpenPanel: stability.shouldOpenPanel,
+      shouldApplyScene: stability.shouldApplyScene,
+      panelView: pipelinePanelView ?? null,
+      message: promptPipeline.coreResponse.insight,
+    });
+    if (latestChatPipelineRunIdRef.current !== runId) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][ChatPipeline][SkippedStale]", { runId });
+      }
+      writeChatPipelineDebug({
+        runId,
+        staleSkipped: true,
+        lifecycleStatus: "stale_ignored",
+      });
+      return;
+    }
+
+    const selectedGuard = evaluateSelectedObjectGuard({
+      intent: promptPipeline.intent,
+      userInput: text,
+      selectedObjectId: stableAnalyzeObjectId,
+    });
+
+    if (selectedGuard.blocked) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[Nexora][ChatPipeline][SelectedObjectGuardBlocked]", {
+          reason: selectedGuard.reason,
+          intent: promptPipeline.intent,
+          targetPanel: promptPipeline.routing.target_panel,
+        });
+      }
+      if (!isMeaningfulPanel(rightPanelState.view ?? null)) {
+        requestPanelAuthorityOpen({
+          view: "workspace",
+          family: "SCN",
+          source: "chat",
+          contextId: stableAnalyzeObjectId,
+          reason: "selected_object_required",
+          forceOpen: true,
+        });
+      }
+      const userMsg = makeMsg("user", text);
+      const assistantMsg = makeMsg("assistant", selectedGuard.assistantMessage, {
+        confidence: 0.2,
+        guard: selectedGuard.reason,
+      });
+      const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
+      setMessages(nextMessages);
+      emitChatResult(selectedGuard.assistantMessage, true, requestId);
+      setNoSceneUpdate(false);
+      setSourceLabel(null);
+      const snapshot = buildPersistedProjectSnapshot({
+        activeMode,
+        sceneJson,
+        messages: nextMessages,
+      });
+      saveProject(snapshot);
+      pushHistory(snapshot);
+      lifecycleStatus = "success";
+      shouldClearInput = true;
+      finishLocalChatDebug("selected_object_guard", { reason: selectedGuard.reason });
+      writeChatPipelineDebug({
+        selectedObjectGuard: {
+          blocked: true,
+          reason: selectedGuard.reason,
+          selectedObjectId: stableAnalyzeObjectId,
+          intent: promptPipeline.intent,
+          targetPanel: promptPipeline.routing.target_panel,
+          assistantMessage: selectedGuard.assistantMessage,
+        },
+        signature: stability.signature,
+        sceneSignature: stability.signature,
+        lifecycleStatus: "success",
+        sceneReactionApplied: false,
+        lastCompletedAt: Date.now(),
+      });
+      finalizeChatRequest(requestSeq, "success", { clearInput: true });
+      return;
+    }
+
+    writeChatPipelineDebug({
+      selectedObjectGuard: {
+        blocked: false,
+        reason: selectedGuard.reason,
+        selectedObjectId: stableAnalyzeObjectId,
+        intent: promptPipeline.intent,
+        targetPanel: promptPipeline.routing.target_panel,
+      },
+    });
+
+    const effectNow = Date.now();
+    if (pipelinePanelView && !routeExecutiveObjectOnSuccess && stability.shouldOpenPanel) {
+      const panelEffectSignature = `${promptPipeline.intent}::${pipelinePanelToken}`;
+      const lastPanelEffect = lastAppliedPanelEffectRef.current;
+      if (
+        lastPanelEffect &&
+        lastPanelEffect.signature === panelEffectSignature &&
+        effectNow - lastPanelEffect.at < 2000
+      ) {
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[Nexora][ChatPipeline][PanelIdempotentSkip]", {
+            panelEffectSignature,
+          });
+        }
+        writeChatPipelineDebug({
+          idempotency: {
+            panelSkipped: true,
+            lastPanelSignature: panelEffectSignature,
+            lastReason: "panel_idempotent_ttl",
+          },
+        });
+      } else {
+        requestPanelAuthorityOpen({
+          view: pipelinePanelView,
+          family: pipelinePanelFamily,
+          source: "chat",
+          contextId: stableAnalyzeObjectId ?? rightPanelState.contextId ?? null,
+          reason: "chat_prompt_pipeline",
+          forceOpen: true,
+        });
+        lastAppliedPanelEffectRef.current = {
+          signature: panelEffectSignature,
+          at: effectNow,
+        };
+        writeChatPipelineDebug({
+          idempotency: {
+            panelSkipped: false,
+            lastPanelSignature: panelEffectSignature,
+            lastReason: "panel_applied",
+          },
+        });
+      }
+    }
+
+    const pipelineSceneReaction = applySceneFromChat({
+      insight: promptPipeline.coreResponse.insight,
+      actions: promptPipeline.coreResponse.actions,
+      intent: promptPipeline.intent,
+      routing: promptPipeline.routing,
+      candidateObjectIds: [
+        explicitSelection.explicitSelectedObjectId ?? "",
+      ].filter(Boolean),
+    });
+    const pipelineSceneLineSignature = [
+      promptPipeline.intent,
+      promptPipeline.routing.target_engine,
+      promptPipeline.routing.target_panel,
+      pipelineSceneReaction.highlightedObjectIds.join(","),
+    ].join("::");
+    const sceneEffectSignature = buildChatEffectSignature({
+      intent: promptPipeline.intent,
+      targetPanel: pipelinePanelToken,
+      sceneSignature: pipelineSceneLineSignature,
+      userInput: text,
+    });
+    let sceneReactionAppliedThisTurn = false;
+    if (
+      latestChatPipelineRunIdRef.current === runId &&
+      stability.shouldApplyScene &&
+      pipelineSceneReaction.highlightedObjectIds.length > 0
+    ) {
+      const lastSceneEffect = lastAppliedSceneEffectRef.current;
+      if (
+        lastSceneEffect &&
+        lastSceneEffect.signature === sceneEffectSignature &&
+        effectNow - lastSceneEffect.at < 3000
+      ) {
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[Nexora][ChatPipeline][SceneIdempotentSkip]", {
+            sceneEffectSignature,
+          });
+        }
+        writeChatPipelineDebug({
+          idempotency: {
+            sceneSkipped: true,
+            lastSceneSignature: sceneEffectSignature,
+            lastReason: "scene_idempotent_ttl",
+          },
+        });
+      } else {
+        applyUnifiedSceneReactionUpstreamDedup(pipelineSceneReaction, {
+          allowSceneReplacement: false,
+          sceneReplacement: null,
+        });
+        lastAppliedSceneEffectRef.current = {
+          signature: sceneEffectSignature,
+          at: effectNow,
+        };
+        sceneReactionAppliedThisTurn = true;
+        writeChatPipelineDebug({
+          idempotency: {
+            sceneSkipped: false,
+            lastSceneSignature: sceneEffectSignature,
+            lastReason: "scene_applied",
+          },
+        });
+      }
+    }
+    if (latestChatPipelineRunIdRef.current === runId) {
+      lastAppliedChatPipelineSignatureRef.current = stability.signature;
+      writeChatPipelineDebug({
+        runId,
+        signature: stability.signature,
+        sceneSignature: pipelineSceneLineSignature,
+        sceneReactionApplied: sceneReactionAppliedThisTurn,
+      });
+    }
 
       if (process.env.NODE_ENV !== "production") {
         console.log("[Nexora][IntentRouter]", intentRoute);
@@ -7105,22 +10144,55 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         intentRoute.preferredPanel,
         "action_intent"
       );
-      if (requestedView) {
-        requestPanelAuthorityOpen({
-          view: requestedView,
-          family:
-            requestedView === "dashboard" || requestedView === "strategic_command"
-              ? "EXE"
-              : requestedView === "risk" || requestedView === "fragility" || requestedView === "explanation"
-                ? "RSK"
-                : requestedView === "workspace" || requestedView === "object" || requestedView === "object_focus"
-                  ? "SCN"
-                  : "SIM",
-          source: "chat",
-          contextId: selectedObjectIdState ?? null,
-          reason: "chat_submit_instant_open",
-          forceOpen: true,
-        });
+      if (requestedView && !routeExecutiveObjectOnSuccess && !pipelinePanelView) {
+        const instantPanelSig = `${promptPipeline.intent}::${requestedView}`;
+        const lastInstantPanel = lastAppliedPanelEffectRef.current;
+        const instantNow = Date.now();
+        if (
+          lastInstantPanel &&
+          lastInstantPanel.signature === instantPanelSig &&
+          instantNow - lastInstantPanel.at < 2000
+        ) {
+          if (process.env.NODE_ENV !== "production") {
+            console.log("[Nexora][ChatPipeline][PanelIdempotentSkip]", {
+              panelEffectSignature: instantPanelSig,
+            });
+          }
+          writeChatPipelineDebug({
+            idempotency: {
+              panelSkipped: true,
+              lastPanelSignature: instantPanelSig,
+              lastReason: "panel_idempotent_ttl_instant",
+            },
+          });
+        } else {
+          requestPanelAuthorityOpen({
+            view: requestedView,
+            family:
+              requestedView === "dashboard" || requestedView === "strategic_command" || requestedView === "executive_object"
+                ? "EXE"
+                : requestedView === "risk" || requestedView === "fragility" || requestedView === "explanation"
+                  ? "RSK"
+                  : requestedView === "workspace" || requestedView === "object" || requestedView === "object_focus"
+                    ? "SCN"
+                    : "SIM",
+            source: "chat",
+            contextId: selectedObjectIdState ?? null,
+            reason: "chat_submit_instant_open",
+            forceOpen: true,
+          });
+          lastAppliedPanelEffectRef.current = {
+            signature: instantPanelSig,
+            at: instantNow,
+          };
+          writeChatPipelineDebug({
+            idempotency: {
+              panelSkipped: false,
+              lastPanelSignature: instantPanelSig,
+              lastReason: "panel_applied_instant",
+            },
+          });
+        }
         if (NEXORA_PANEL_DEPRECATION_DEBUG) {
           console.log("[Nexora][ChatInstantOpen]", {
             requestedView,
@@ -7261,7 +10333,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             console.debug("chat payload", payload);
           }
 
-          const raw = await chatToBackend(payload, { signal: controller.signal });
+          const raw = await chatToBackendLifecycle(payload, { signal: controller.signal });
           if (process.env.NODE_ENV !== "production") {
             console.debug("chat response", raw);
           }
@@ -7401,10 +10473,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
     if (hasLocalActions) {
       const userMsg = makeMsg("user", text);
-      const assistantMsg = makeMsg("assistant", routerResult.assistantReply);
+      const assistantMsg = makeMsg(
+        "assistant",
+        promptPipeline.coreResponse.insight || routerResult.assistantReply,
+        {
+          confidence: promptPipeline.coreResponse.confidence,
+          followUp: promptPipeline.coreResponse.actions.slice(0, 2).map((a) => a.title),
+        }
+      );
       const routedMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
       setMessages(routedMessages);
-      emitChatResult(routerResult.assistantReply, true, requestId);
+      emitChatResult(assistantMsg.text, true, requestId);
 
       applyDecisionActions(routerResult.actions, {
         setOverride: setOverrideRef.current,
@@ -7462,11 +10541,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     if (!executionResult.backendPayload) {
       const userMsg = makeMsg("user", text);
       const fallbackReply =
+        promptPipeline.coreResponse.insight ??
         executionResult.chatReply ??
         executionResult.errors[0] ??
         executionResult.warnings[0] ??
         intentRoute.explanation;
-      const assistantMsg = makeMsg("assistant", fallbackReply);
+      const assistantMsg = makeMsg("assistant", fallbackReply, {
+        confidence: promptPipeline.coreResponse.confidence,
+        followUp: promptPipeline.coreResponse.actions.slice(0, 2).map((a) => a.title),
+      });
       const routedMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
       setMessages(routedMessages);
       emitChatResult(fallbackReply, executionResult.ok, requestId);
@@ -7567,17 +10650,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         setNoSceneUpdate(true);
       }
       const assistantReply =
-        typeof data.reply === "string" && data.reply.trim().length > 0
+        promptPipeline.coreResponse.insight ||
+        (typeof data.reply === "string" && data.reply.trim().length > 0
           ? data.reply
           : executionResult.chatReply ??
             intentRoute.explanation ??
-            "I understood the request, but the response came back without a readable reply.";
-      const assistantMsg = makeMsg("assistant", assistantReply);
+            `${firstMeaningfulState.headline}. Confidence: ${firstMeaningfulState.confidence}. ${firstMeaningfulState.evidenceLabel ?? "No live signal yet"}.`);
+      const assistantMsg = makeMsg("assistant", assistantReply, {
+        confidence: promptPipeline.coreResponse.confidence,
+        followUp: promptPipeline.coreResponse.actions.slice(0, 2).map((a) => a.title),
+      });
       const finalMessages = appendMessages(baseMessages, [assistantMsg]);
       setMessages(finalMessages);
       emitChatResult(assistantMsg.text, true, requestId);
       const nextActions = Array.isArray((data as any)?.actions) ? ((data as any).actions as any[]) : [];
       setLastActions(nextActions);
+      if (nextActions.length === 0) {
+        setLastActions(promptPipeline.coreResponse.actions);
+      }
       const shouldApplySceneEffectsFromChat =
         executionResult.allowSceneMutation && executionResult.appliedSceneMutation !== "none";
       const retailChatTrigger = detectRetailTriggerConfig(text);
@@ -7596,23 +10686,48 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               fallbackPrimaryObjectId: executionResult.focusedObjectId ?? intentRoute.primaryObjectId ?? null,
               reactionModeHint: reactionModeHintFromIntent(intentRoute.intent),
             });
-      const nextObjectSelectionFromReaction = mergeNextObjectSelectionFromUnifiedReaction(
-        unifiedChatReaction,
-        viewModel.nextObjectSelection
-      );
+      const analyzeSelectionHighlights = getHighlightedObjectIdsFromSelection(objectSelection);
+      const hasSelectedObjectForAnalyze =
+        (typeof selectedObjectIdState === "string" && selectedObjectIdState.trim().length > 0) ||
+        (typeof focusedId === "string" && focusedId.trim().length > 0) ||
+        analyzeSelectionHighlights.length > 0;
+      const globalSceneAnalyze = isAnalyzeCommand && !hasSelectedObjectForAnalyze;
+      const unifiedReactionForApply =
+        globalSceneAnalyze && unifiedChatReaction
+          ? {
+              ...unifiedChatReaction,
+              highlightedObjectIds: [],
+              primaryObjectId: null,
+              relatedObjectIds: [],
+              riskSources: [],
+              riskTargets: [],
+              dimUnrelatedObjects: false,
+              allowFocusMutation: false,
+              reason: [unifiedChatReaction.reason, "Analyze the current system (global_scene_analysis)"]
+                .filter((s) => typeof s === "string" && s.trim().length > 0)
+                .join(" "),
+            }
+          : unifiedChatReaction;
+      const nextObjectSelectionFromReaction = globalSceneAnalyze
+        ? viewModel.nextObjectSelection
+        : mergeNextObjectSelectionFromUnifiedReaction(unifiedChatReaction, viewModel.nextObjectSelection);
       const enrichedExecutionResult = {
         ...executionResult,
         chatReply: assistantMsg.text,
         backendPayload: data,
-        highlightedObjectIds:
-          Array.isArray(unifiedChatReaction?.highlightedObjectIds) && unifiedChatReaction.highlightedObjectIds.length > 0
+        highlightedObjectIds: globalSceneAnalyze
+          ? []
+          : Array.isArray(unifiedChatReaction?.highlightedObjectIds) && unifiedChatReaction.highlightedObjectIds.length > 0
             ? unifiedChatReaction.highlightedObjectIds
             : executionResult.highlightedObjectIds,
-        focusedObjectId:
-          (Array.isArray(unifiedChatReaction?.highlightedObjectIds) ? unifiedChatReaction.highlightedObjectIds[0] : null) ??
-          executionResult.focusedObjectId ??
-          null,
-        unifiedReaction: executionResult.allowSceneMutation ? unifiedChatReaction : null,
+        focusedObjectId: globalSceneAnalyze
+          ? null
+          : (Array.isArray(unifiedChatReaction?.highlightedObjectIds)
+              ? unifiedChatReaction.highlightedObjectIds[0]
+              : null) ??
+            executionResult.focusedObjectId ??
+            null,
+        unifiedReaction: executionResult.allowSceneMutation ? unifiedReactionForApply : null,
         sceneReplacement: acceptedSceneForChatReplacement,
         panelUpdates: {
           preferredPanel: executionResult.preferredPanel,
@@ -7684,6 +10799,73 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       lifecycleStatus = "success";
       shouldClearInput = true;
+      if (routeExecutiveObjectOnSuccess && isLatestChatRequest(requestSeq)) {
+        const routeContextId =
+          explicitSelection.explicitSelectedObjectId ?? getAnalyzeLockedObjectId();
+        if (!routeContextId) {
+          console.warn("[Nexora][ExecutiveRouteBlocked][NoExplicitSelection]", {
+            selectedObjectIdState,
+            focusedId,
+            analyzeHl,
+          });
+          return;
+        }
+        traceAnalyzeObjectRoute({
+          stage: "analyze_success_before_route",
+          requestedView: "executive_object",
+          resolvedView: "executive_object",
+          family: "EXE",
+          contextId: routeContextId,
+          rightPanelView: rightPanelState.view ?? null,
+        });
+        globalThis.console?.warn?.("[NEXORA_EXECUTIVE_ROUTE_ATTEMPT]", {
+          view: "executive_object",
+          contextId: routeContextId,
+          timestamp: Date.now(),
+        });
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console?.debug?.("[Nexora][AnalyzeRouting]", {
+            targetView: "executive_object",
+            contextId: routeContextId,
+          });
+        }
+        passiveDeselectGuardUntilRef.current = Date.now() + 1200;
+        setActiveSidePanel("decisions");
+        requestPanelAuthorityOpen({
+          view: "executive_object",
+          family: "EXE",
+          source: "analyze_object",
+          reason: "analyze_object_success",
+          contextId: routeContextId,
+          forceOpen: true,
+        });
+        globalThis.console?.warn?.("[Nexora][AnalyzeFinalPanelTarget]", {
+          family: "EXE",
+          view: "executive_object",
+          contextId: routeContextId,
+          activeSidePanel,
+        });
+        rightPanelRouteLockRef.current = {
+          view: "executive_object",
+          contextId: routeContextId,
+          reason: "analyze_object_success",
+        };
+        globalThis.console?.debug?.("[Nexora][RightPanelWriter]", {
+          writer: "HomeScreen.analyze_success",
+          nextView: "executive_object",
+          contextId: routeContextId,
+          reason: "analyze_object_success",
+        });
+        globalThis.console?.debug?.("[Nexora][RightPanelRouteTrace]", {
+          writer: "analyze_success_route",
+          requestedView: "executive_object",
+          resolvedView: "executive_object",
+          family: "EXE",
+          contextId: routeContextId,
+          reason: "analyze_object_success",
+          source: "analyze_object",
+        });
+      }
     } catch (e: any) {
       if (!isLatestChatRequest(requestSeq)) {
         traceDemoFlowEvent({
@@ -7711,19 +10893,54 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
       }
       if (!isAbortLikeError(e) || timedOut) {
-        setMessages((m) => appendMessages(m, [makeMsg("assistant", msg)]));
-        emitChatResult(msg, false, requestId);
+        const fallback = buildFailureResponse();
+        const fallbackPanelView = resolveChatPipelinePanelOpen(fallback.recommended_panel);
+        const preserveCurrentPanel = isMeaningfulPanel(rightPanelState.view ?? null);
+        if (fallbackPanelView && !preserveCurrentPanel) {
+          requestPanelAuthorityOpen({
+            view: fallbackPanelView,
+            family: "SCN",
+            source: "chat",
+            reason: "chat_pipeline_fallback",
+            contextId: stableAnalyzeObjectId ?? rightPanelState.contextId ?? null,
+            forceOpen: true,
+          });
+        }
+        setMessages((m) => appendMessages(m, [makeMsg("assistant", fallback.insight)]));
+        emitChatResult(fallback.insight, false, requestId);
         emitDebugEvent({
           type: "chat_error",
           layer: "chat",
           source: "HomeScreen",
           status: "error",
-          message: msg,
+          message: fallback.insight,
           metadata: { requestSeq, timedOut, reason: "chat_pipeline_exception" },
           correlationId: chatCorrelationId,
         });
+        writeChatPipelineDebug({
+          runId,
+          lifecycleStatus,
+          fallbackUsed: true,
+          message: fallback.insight,
+        });
       }
     } finally {
+      if (isAnalyzeCommand) {
+        analyzeInFlightRef.current = false;
+        window.setTimeout(() => {
+          console.log("[Nexora][AnalyzeSelectionLock][Released]", {
+            objectId: analyzeSelectionLockRef.current?.objectId ?? null,
+          });
+          analyzeSelectionLockRef.current = null;
+          writeChatPipelineDebug({
+            analyzeSelectionLock: {
+              active: false,
+              objectId: null,
+              lastReason: "released",
+            },
+          });
+        }, 500);
+      }
       if (loadingDelayTimer != null) {
         window.clearTimeout(loadingDelayTimer);
       }
@@ -7731,6 +10948,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         window.clearTimeout(chatBusyIndicatorTimer);
       }
       setChatDelayedBusy(false);
+      writeChatPipelineDebug({
+        runId,
+        lifecycleStatus,
+        lastCompletedAt: Date.now(),
+      });
       if (activeChatDebugCorrelationRef.current === chatCorrelationId) {
         emitDebugEvent({
           type: "chat_response_completed",
@@ -7760,9 +10982,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       finalizeChatRequest(requestSeq, lifecycleStatus, { clearInput: shouldClearInput });
     }
+      };
+
+      await runSendTextLifecycle();
+    } finally {
+      window.setTimeout(() => {
+        const cur = loopGuardInFlightByTextRef.current.get(normalizedText) ?? 1;
+        const next = cur - 1;
+        if (next <= 0) {
+          loopGuardInFlightByTextRef.current.delete(normalizedText);
+        } else {
+          loopGuardInFlightByTextRef.current.set(normalizedText, next);
+        }
+        chatLoopGuardDepthRef.current = Math.max(0, chatLoopGuardDepthRef.current - 1);
+        chatLoopGuardActiveRef.current = chatLoopGuardDepthRef.current > 0;
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[Nexora][ChatLoopGuard][Released]", {
+            text: normalizedText,
+            depth: chatLoopGuardDepthRef.current,
+          });
+        }
+        writeChatPipelineDebug({
+          loopGuard: {
+            lastReason: "released",
+            lastAt: Date.now(),
+          },
+        });
+      }, 0);
+    }
   }, [
+    activeExecutiveObjectId,
     activeMode,
     activeDomainExperience,
+    activeSidePanel,
     episodeId,
     focusMode,
     focusModeStore,
@@ -7792,7 +11044,40 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     finalizeChatRequest,
     isLatestChatRequest,
     isPilotProductMode,
+    objectSelection,
+    requestPanelAuthorityOpen,
+    writeChatPipelineDebug,
   ]);
+  const runChatInputForQA = useCallback(
+    async (qaInput: string) => {
+      const requestId = `qa:${Date.now()}:${Math.random().toString(36).slice(2, 7)}`;
+      await sendText(qaInput, requestId, { source: "user" });
+      if (typeof window === "undefined") return {};
+      const w = window as Window & { __NEXORA_DEBUG__?: Record<string, unknown> };
+      return (w.__NEXORA_DEBUG__?.chatPipeline as Record<string, unknown> | undefined) ?? {};
+    },
+    [sendText]
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const w = window as Window & {
+      __NEXORA_QA_FIXTURES__?: {
+        clearExplicitSelection?: () => void;
+        restoreExplicitSelection?: () => void;
+      };
+    };
+    w.__NEXORA_QA_FIXTURES__ = {
+      ...(w.__NEXORA_QA_FIXTURES__ ?? {}),
+      clearExplicitSelection: () => {
+        selectedSetterRef.current?.(null);
+        setSelectedObjectIdState(null);
+        setSelectedObjectInfo(null);
+      },
+      restoreExplicitSelection: () => {
+        // No-op by default; scenarios can set their own object selection explicitly.
+      },
+    };
+  }, [setSelectedObjectIdState, setSelectedObjectInfo]);
   const runRetailDemoStep = useCallback(
     async (step: DemoScriptStep) => {
       applyDemoStepFallbackReaction(step);
@@ -7858,6 +11143,119 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     return () => window.removeEventListener("nexora:submit-chat", onSubmitChat as EventListener);
   }, [sendText, submitGuidedPrompt]);
 
+  useEffect(() => {
+    const onRequestObjectAnalyze = () => {
+      const explicitSelection = resolveExplicitSelectedObject({
+        selectedObjectIdState,
+        objectSelection,
+      });
+      if (!explicitSelection.hasExplicitSelection) {
+        console.warn("[Nexora][AnalyzeBlocked][NoExplicitSelection]", {
+          selectedObjectIdState,
+          focusedId,
+        });
+        return;
+      }
+      const now = Date.now();
+      if (now - lastAnalyzeRequestAtRef.current < 1500) {
+        console.warn("[Nexora][AnalyzeLoopPrevented]", {
+          reason: "analyze_debounce",
+          deltaMs: now - lastAnalyzeRequestAtRef.current,
+        });
+        return;
+      }
+      if (analyzeInFlightRef.current) {
+        console.warn("[Nexora][AnalyzeLoopPrevented]", {
+          reason: "analyze_already_in_flight",
+        });
+        return;
+      }
+      lastAnalyzeRequestAtRef.current = now;
+      analyzeInFlightRef.current = true;
+      analyzePreflightArmedRef.current = true;
+      if (explicitSelection.explicitSelectedObjectId) {
+        analyzeSelectionLockRef.current = {
+          objectId: explicitSelection.explicitSelectedObjectId,
+          startedAt: Date.now(),
+          requestId: null,
+        };
+        console.log("[Nexora][AnalyzeSelectionLock][Armed]", {
+          objectId: explicitSelection.explicitSelectedObjectId,
+        });
+        writeChatPipelineDebug({
+          analyzeSelectionLock: {
+            active: true,
+            objectId: explicitSelection.explicitSelectedObjectId,
+            lastReason: "armed",
+          },
+        });
+      }
+      console.log("[Nexora][AnalyzeAllowed][ExplicitSelection]", {
+        objectId: explicitSelection.explicitSelectedObjectId,
+      });
+      globalThis.console?.warn?.("[NEXORA_ANALYZE_SENDTEXT_REACHED]", {
+        selectedObjectIdState: selectedObjectIdState ?? null,
+        focusedId: focusedId ?? null,
+        timestamp: Date.now(),
+      });
+      void sendText("Analyze the current system.", undefined, { source: "user" });
+    };
+    window.addEventListener("nexora:request-object-analyze", onRequestObjectAnalyze as EventListener);
+    return () => window.removeEventListener("nexora:request-object-analyze", onRequestObjectAnalyze as EventListener);
+  }, [sendText, selectedObjectIdState, focusedId, objectSelection]);
+
+  useEffect(() => {
+    const onExecutiveObjectAction = (
+      event: Event
+    ) => {
+      const detail = (event as CustomEvent<{ action?: string; objectId?: string }>).detail;
+      const action = String(detail?.action ?? "").trim();
+      const objectIdFromEvent = String(detail?.objectId ?? "").trim();
+      const routeContextId =
+        objectIdFromEvent ||
+        activeExecutiveObjectId ||
+        (typeof selectedObjectIdState === "string" && selectedObjectIdState.trim()) ||
+        (typeof focusedId === "string" && focusedId.trim()) ||
+        null;
+      if (!routeContextId) return;
+      if (action === "war_room") {
+        requestPanelAuthorityOpen({
+          view: "war_room",
+          family: "SIM",
+          source: "sub_button",
+          reason: "executive_object_action",
+          contextId: routeContextId,
+          forceOpen: true,
+        });
+        return;
+      }
+      if (action === "compare_options") {
+        requestPanelAuthorityOpen({
+          view: "compare",
+          family: "SIM",
+          source: "sub_button",
+          reason: "executive_object_action",
+          contextId: routeContextId,
+          forceOpen: true,
+        });
+        return;
+      }
+      if (action === "next_move") {
+        requestPanelAuthorityOpen({
+          view: "advice",
+          family: "SIM",
+          source: "sub_button",
+          reason: "executive_object_action",
+          contextId: routeContextId,
+          forceOpen: true,
+        });
+      }
+    };
+    window.addEventListener("nexora:executive-object-action", onExecutiveObjectAction as EventListener);
+    return () =>
+      window.removeEventListener("nexora:executive-object-action", onExecutiveObjectAction as EventListener);
+  }, [activeExecutiveObjectId, focusedId, requestPanelAuthorityOpen, selectedObjectIdState]);
+
   const send = useCallback(() => {
     void sendText(input);
   }, [input, sendText]);
@@ -7878,11 +11276,66 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     (commandId: string) => {
       switch (commandId) {
         case "analyze": {
+          markUserStartedFlow("left_command_analyze");
+          if (!objectAnalyzeReady) return;
+          const explicitSelection = resolveExplicitSelectedObject({
+            selectedObjectIdState,
+            objectSelection,
+          });
+          if (!explicitSelection.hasExplicitSelection) {
+            console.warn("[Nexora][AnalyzeBlocked][NoExplicitSelection]", {
+              source: "left_command_analyze",
+            });
+            return;
+          }
+          const now = Date.now();
+          if (now - lastAnalyzeRequestAtRef.current < 1500) {
+            console.warn("[Nexora][AnalyzeLoopPrevented]", {
+              reason: "analyze_debounce",
+              deltaMs: now - lastAnalyzeRequestAtRef.current,
+            });
+            return;
+          }
+          if (analyzeInFlightRef.current) {
+            console.warn("[Nexora][AnalyzeLoopPrevented]", {
+              reason: "analyze_already_in_flight",
+            });
+            return;
+          }
+          lastAnalyzeRequestAtRef.current = now;
+          analyzeInFlightRef.current = true;
+          analyzePreflightArmedRef.current = true;
+          if (explicitSelection.explicitSelectedObjectId) {
+            analyzeSelectionLockRef.current = {
+              objectId: explicitSelection.explicitSelectedObjectId,
+              startedAt: Date.now(),
+              requestId: null,
+            };
+            console.log("[Nexora][AnalyzeSelectionLock][Armed]", {
+              objectId: explicitSelection.explicitSelectedObjectId,
+            });
+            writeChatPipelineDebug({
+              analyzeSelectionLock: {
+                active: true,
+                objectId: explicitSelection.explicitSelectedObjectId,
+                lastReason: "armed",
+              },
+            });
+          }
+          console.log("[Nexora][AnalyzeAllowed][ExplicitSelection]", {
+            objectId: explicitSelection.explicitSelectedObjectId,
+          });
           const t = input.trim();
+          globalThis.console?.warn?.("[NEXORA_ANALYZE_SENDTEXT_REACHED]", {
+            selectedObjectIdState: selectedObjectIdState ?? null,
+            focusedId: focusedId ?? null,
+            timestamp: Date.now(),
+          });
           void sendText(t || "Analyze the current system.");
           return;
         }
         case "compare":
+          markUserStartedFlow("left_command_compare");
           dispatchCanonicalAction(
             normalizeCompareOptions({ rawSource: "LeftCommandAssistant:compare" })
           );
@@ -7897,6 +11350,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           });
           return;
         case "simulate":
+          markUserStartedFlow("left_command_simulate");
           dispatchCanonicalAction(
             normalizeRunSimulation({ rawSource: "LeftCommandAssistant:simulate" })
           );
@@ -7914,7 +11368,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           break;
       }
     },
-    [dispatchCanonicalAction, input, requestPanelAuthorityOpen, sendText]
+    [
+      dispatchCanonicalAction,
+      focusedId,
+      input,
+      markUserStartedFlow,
+      objectAnalyzeReady,
+      objectSelection,
+      requestPanelAuthorityOpen,
+      selectedObjectIdState,
+      sendText,
+    ]
   );
 
   const handleUndo = useCallback(() => {
@@ -7925,7 +11389,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
     setActiveMode(prev.activeMode ?? "business");
     const undoSceneDecision = prev.sceneJson ? evaluateHistoryUndoScene(prev.sceneJson) : canonDecisionMissingSceneBlob();
-    applySceneChangeSafe(sceneJsonFromCanonDecision(undoSceneDecision), "undo", { bypassDedupe: true });
+    applySceneChangeUpstreamDedup(sceneJsonFromCanonDecision(undoSceneDecision), "undo", { bypassDedupe: true });
     setMessages(normalizeMessages(prev.messages));
     try {
       window.localStorage.setItem(HISTORY_KEY, JSON.stringify(nextHistory));
@@ -8053,7 +11517,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
       // scene + chat
       const backupSceneDecision = b.sceneJson ? evaluateBackupRestoreScene(b.sceneJson) : canonDecisionMissingSceneBlob();
-      applySceneChangeSafe(sceneJsonFromCanonDecision(backupSceneDecision), "backup", { bypassDedupe: true });
+      applySceneChangeUpstreamDedup(sceneJsonFromCanonDecision(backupSceneDecision), "backup", { bypassDedupe: true });
       setMessages(normalizeMessages(b.messages));
 
       // loops
@@ -8260,7 +11724,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const nextScene = payload?.scene_json;
     const sceneDecision = evaluateTimelineForceScene(nextScene, payload);
     if (isSceneCanonReplaceDecision(sceneDecision)) {
-      applySceneChangeSafe(sceneDecision.scene, "timeline");
+      applySceneChangeUpstreamDedup(sceneDecision.scene, "timeline");
       setNoSceneUpdate(false);
     } else if (nextScene != null && typeof nextScene === "object" && !Array.isArray(nextScene)) {
       setNoSceneUpdate(true);
@@ -8276,7 +11740,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             : null,
         reactionModeHint: "propagation",
       });
-      applyUnifiedSceneReaction(timelineReaction, { allowSceneReplacement: false });
+      applyUnifiedSceneReactionUpstreamDedup(timelineReaction, { allowSceneReplacement: false });
     }
 
     const nextFragility =
@@ -8411,7 +11875,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const demoSceneDecision = evaluateDomainDemoScene(nextScene);
     const demoScene = sceneJsonFromCanonDecision(demoSceneDecision);
     if (demoScene) {
-      applySceneChangeSafe(demoScene, "demo", { bypassDedupe: true });
+      applySceneChangeUpstreamDedup(demoScene, "demo", { bypassDedupe: true });
     }
     clearAllOverridesRef.current?.();
     setLoops(nextLoops);
@@ -9228,31 +12692,63 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [runDemoScenario]);
 
   const handleOpenDecisionPolicyPanel = useCallback(
-    (contextId: string | null = null) => {
-      openExePanel("decision_policy", "handle_open_decision_policy", contextId);
+    (contextId: string | null = null, meta?: { source?: NexoraPanelAuthoritySource }) => {
+      void meta;
+      openComponentPanelFromAction("decision_policy", {
+        destinationSurface: "component_panel",
+        source: meta?.source ?? "exe_preview",
+        caller: "handle_open_decision_policy",
+        contextId: contextId ?? null,
+        reason: "open_decision_policy_center",
+      });
     },
-    [openExePanel]
+    [openComponentPanelFromAction]
   );
 
   const handleOpenDecisionGovernancePanel = useCallback(
-    (contextId: string | null = null) => {
-      openExePanel("decision_governance", "handle_open_decision_governance", contextId);
+    (contextId: string | null = null, meta?: { source?: NexoraPanelAuthoritySource }) => {
+      void meta;
+      openComponentPanelFromAction("decision_governance", {
+        destinationSurface: "component_panel",
+        source: meta?.source ?? "exe_preview",
+        caller: "handle_open_decision_governance",
+        contextId: contextId ?? null,
+        reason: "open_decision_governance_center",
+      });
     },
-    [openExePanel]
+    [openComponentPanelFromAction]
   );
 
   const handleOpenExecutiveApprovalPanel = useCallback(
-    (contextId: string | null = null) => {
-      openExePanel("executive_approval", "handle_open_executive_approval", contextId);
+    (contextId: string | null = null, meta?: { source?: NexoraPanelAuthoritySource }) => {
+      void meta;
+      openComponentPanelFromAction("executive_approval", {
+        destinationSurface: "component_panel",
+        source: meta?.source ?? "exe_preview",
+        caller: "handle_open_executive_approval",
+        contextId: contextId ?? null,
+        reason: "open_executive_approval_center",
+      });
     },
-    [openExePanel]
+    [openComponentPanelFromAction]
   );
 
   const handleOpenTimelinePanel = useCallback(
     (contextId: string | null = null) => {
-      openSimPanel("timeline", "handle_open_timeline", contextId);
+      migrateLegacyButtonToIntent(
+        "Open Timeline",
+        "openSimPanel:timeline",
+        "open_timeline",
+        "HomeScreen.tsx",
+        {
+        destinationSurface: "component_panel",
+        source: "exe_preview",
+        caller: "handle_open_timeline",
+        contextId,
+        }
+      );
     },
-    [openSimPanel]
+    [migrateLegacyButtonToIntent]
   );
 
   const handlePreviewDecision = useCallback(
@@ -9884,18 +13380,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         mappedTimeline,
         mappedWarRoom,
       });
-      const panelMergeLoopGuardKey = JSON.stringify({
-        assistantMerged,
-        view: rightPanelState.view ?? null,
-        dmLen: decisionMemoryEntries.length,
-        sel: selectedObjectIdState ?? null,
-      });
-      if (
-        lastPanelMergeCacheKeyRef.current === panelMergeLoopGuardKey &&
-        lastPanelValidationCacheRef.current !== null
-      ) {
-        return lastPanelValidationCacheRef.current;
-      }
       decisionAssistantPanelMergeTraceRef.current = buildPanelMergeTraceFromEnrichment({
         mappedAdvice,
         mappedCompare,
@@ -9960,8 +13444,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         memoryEntries: decisionMemoryEntries,
         nexoraB8PanelContext,
       };
+      const panelInputSignature = buildPanelContractSignature(nextPanelDataInput);
+      latestPanelInputSignatureRef.current = panelInputSignature;
+      latestRawPanelSharedDataRef.current = nextPanelDataInput;
       const activeFamilyAudit = activePanelFamilyAuditRef.current;
-      const panelContract = validatePanelSharedDataWithDiagnostics(nextPanelDataInput);
+      const cachedPanelValidation = validatedPanelCacheRef.current;
+      const shouldDeferPanelValidation =
+        interactionUiState.ingestion.status === "loading" || analyzeInFlightRef.current;
+      const panelContract = shouldDeferPanelValidation
+        ? cachedPanelValidation.result ?? {
+            data: EMPTY_PANEL_SHARED_DATA,
+            contractFailed: false,
+            contractDebugSignature: `deferred:${panelInputSignature}`,
+            contractFailureDetail: null,
+          }
+        : cachedPanelValidation.signature === panelInputSignature && cachedPanelValidation.result
+          ? cachedPanelValidation.result
+          : getValidatedPanelSharedDataOnce(nextPanelDataInput, panelInputSignature);
       const nextPanelData = panelContract.data;
       const familyContractDiag = readPanelFamilyContractDiagnostics(
         activeFamilyAudit?.expectedFamily ?? null,
@@ -10058,13 +13557,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         });
       }
 
-      lastPanelMergeCacheKeyRef.current = panelMergeLoopGuardKey;
-      lastPanelValidationCacheRef.current = panelContract;
       return panelContract;
     },
     [
       visibleResponseData,
-      visibleSceneJson,
+      stableVisibleSceneJson,
       visibleStrategicAdvice,
       visibleDecisionCockpit,
       visibleRiskPropagation,
@@ -10079,10 +13576,44 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       traceAuditRef,
       nexoraB8PanelContext,
       decisionAssistantOutput,
+      interactionUiState.ingestion.status,
+      getValidatedPanelSharedDataOnce,
     ]
   );
   const panelData = panelDataValidation.data;
-  const stablePanelData = useShallowStableObject(panelData);
+  const stablePanelDataBySignatureRef = useRef<PanelSharedData | null>(null);
+  const stablePanelDataBySignatureSigRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (interactionUiState.ingestion.status !== "success") return;
+    const panelInputSignature = latestPanelInputSignatureRef.current;
+    const rawPanelSharedData = latestRawPanelSharedDataRef.current;
+    if (!panelInputSignature || !rawPanelSharedData) return;
+    const runId = lastAuditRecordRef.current?.runId ?? panelInputSignature;
+    if (lastValidatedAnalyzeRunRef.current === runId) return;
+    if (validatedPanelCacheRef.current.signature === panelInputSignature && validatedPanelCacheRef.current.result) {
+      lastValidatedAnalyzeRunRef.current = runId;
+      return;
+    }
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[Nexora][AnalyzeSceneApplyOnce]", { runId });
+      console.debug("[Nexora][PanelValidationDeferred]", { runId, panelInputSignature });
+    }
+    const result = getValidatedPanelSharedDataOnce(rawPanelSharedData, panelInputSignature);
+    validatedPanelCacheRef.current = {
+      signature: panelInputSignature,
+      result,
+    };
+    lastValidatedAnalyzeRunRef.current = runId;
+  }, [interactionUiState.ingestion.status, getValidatedPanelSharedDataOnce]);
+  const stablePanelData = useMemo(() => {
+    const nextSignature = buildPanelSharedDataSignature(panelData);
+    if (stablePanelDataBySignatureSigRef.current === nextSignature && stablePanelDataBySignatureRef.current) {
+      return stablePanelDataBySignatureRef.current;
+    }
+    stablePanelDataBySignatureSigRef.current = nextSignature;
+    stablePanelDataBySignatureRef.current = panelData;
+    return panelData;
+  }, [panelData]);
   const decisionAssistantSceneOrchestrationSig = useMemo(
     () =>
       JSON.stringify({
@@ -10116,6 +13647,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       return;
     }
 
+    const hasUserSceneTarget =
+      (typeof selectedObjectIdState === "string" && selectedObjectIdState.trim().length > 0) ||
+      (typeof focusedId === "string" && focusedId.trim().length > 0) ||
+      getHighlightedObjectIdsFromSelection(objectSelection).length > 0;
+    if (!hasUserSceneTarget) {
+      decisionAssistantSceneTelemetryRef.current = {
+        applied: false,
+        skippedReason: "global_scene_no_object_target",
+      };
+      return;
+    }
+
     const sig = JSON.stringify({
       h: action.highlightObjectIds,
       d: action.dimObjectIds,
@@ -10133,7 +13676,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     decisionAssistantSceneTelemetryRef.current = { applied: true, skippedReason: null };
 
     emitSceneIntent({ type: "assistant_scene", payload: action });
-  }, [decisionAssistantSceneOrchestrationSig, emitSceneIntent]);
+  }, [decisionAssistantSceneOrchestrationSig, emitSceneIntent, focusedId, objectSelection, selectedObjectIdState]);
 
   useEffect(() => {
     logDecisionAssistantTelemetryOnce(
@@ -10304,6 +13847,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [openCenterComponent]
   );
+  const lastRightPanelHostInputTraceRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const trace = {
+      count: visibleSceneObjects.length,
+      ids: visibleSceneObjects.map((o: any) => o?.id ?? "unknown"),
+    };
+    const sig = JSON.stringify({ ...trace, hasVisibleSceneObjects });
+    if (lastRightPanelHostInputTraceRef.current === sig) return;
+    lastRightPanelHostInputTraceRef.current = sig;
+    globalThis.console.log("[Nexora][RightPanel][VISIBLE_SOURCE]", trace);
+  }, [visibleSceneObjects, hasVisibleSceneObjects]);
 
   const panelContent = (
     <div
@@ -10312,12 +13867,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         flexDirection: "column",
         flex: 1,
         minHeight: 0,
+        height: "100%",
         width: "100%",
         overflow: "hidden",
+        boxSizing: "border-box",
       }}
     >
-      <PrimaryDecisionStrip panelData={stablePanelData} />
+      {allowDecisionPanels ? <PrimaryDecisionStrip panelData={stablePanelData} isEmptyState={isEmptyState} /> : null}
       <div style={{ flex: 1, minHeight: 0, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {allowDecisionPanels ? (
         <RightPanelHost
       rightPanelState={rightPanelState}
       panelData={panelDataForResolver}
@@ -10338,7 +13896,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       opponentModel={visibleOpponentModel ?? undefined}
       strategicPatterns={visibleStrategicPatterns ?? undefined}
       selectedObjectId={visibleSelectedObjectId ?? null}
+      activeExecutiveObjectId={liveExecutiveObjectId}
       selectedObjectLabel={selectedObjectLabelForWarRoom}
+      executiveObjectPanelData={executiveObjectPanelData}
       focusedId={visibleFocusedId ?? null}
       resolveObjectLabel={resolveSceneObjectLabel}
       demoProfile={activeProfile ?? undefined}
@@ -10346,6 +13906,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       decisionLoading={decisionExecutionLoading}
       decisionStatus={decisionUiState.status}
       decisionError={decisionUiState.error}
+      firstMeaningfulState={firstMeaningfulState}
+      allowRealPanelData={allowRealPanelData}
+      isSystemUnhealthy={isSystemUnhealthy}
+      visibleSceneObjects={visibleSceneObjects}
+      hasVisibleSceneObjects={hasVisibleSceneObjects}
       activeExecutiveView={activeExecutiveView}
       guidedPromptDebug={null}
       panelFamilyAuditDebug={panelFamilyAuditDebug}
@@ -10355,7 +13920,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         dispatchCanonicalAction(normalizeRunSimulation({ rawSource: "RightPanelHost:simulate" }))
       }
       onCompareOptions={() =>
-        dispatchCanonicalAction(normalizeCompareOptions({ rawSource: "RightPanelHost:compare" }))
+        migrateLegacyButtonToIntent("Open Compare", "normalizeCompareOptions", "open_compare", "HomeScreen.tsx", {
+          destinationSurface: "component_panel",
+          source: "exe_preview",
+          caller: "RightPanelHost:compare",
+        })
       }
       onOpenWarRoom={() =>
         requestPanelAuthorityOpen({
@@ -10385,102 +13954,121 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         })
       }
       onOpenStrategicCommand={() =>
-        requestPanelAuthorityOpen({
-          view: "strategic_command",
-          family: "EXE",
-          source: "sub_button",
-          reason: "right_panel_host_strategic_command",
-          forceOpen: true,
+        routeIntentToPanel("open_strategic_command", {
+          destinationSurface: "component_panel",
+          source: "exe_preview",
+          caller: "right_panel_host_strategic_command",
         })
       }
+      onOpenStrategicCommandFull={() => {
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console?.debug?.("[Nexora][StrategicCommand][OpenFull]", {
+            source: "exe_preview",
+            target: "component_panel",
+            contextId: rightPanelState.contextId ?? null,
+          });
+        }
+        routeIntentToPanel("open_strategic_command", {
+          destinationSurface: "component_panel",
+          source: "exe_preview",
+          caller: "sub_button:strategic_command_preview_open_full",
+        });
+      }}
       onOpenTimeline={() =>
-        requestPanelAuthorityOpen({
-          view: "timeline",
-          family: "SIM",
-          source: "sub_button",
-          reason: "right_panel_host_timeline",
-          forceOpen: true,
-        })
+        migrateLegacyButtonToIntent(
+          "Open Timeline",
+          "normalizeOpenCenterTimeline",
+          "open_timeline",
+          "HomeScreen.tsx",
+          {
+            destinationSurface: "component_panel",
+            source: "exe_preview",
+            caller: "RightPanelHost:timeline",
+          }
+        )
       }
       onOpenMemory={() =>
-        requestPanelAuthorityOpen({
-          view: "memory",
-          family: "SIM",
-          source: "sub_button",
-          reason: "right_panel_host_memory",
-          forceOpen: true,
+        migrateLegacyButtonToIntent("Open Decision Memory", "requestPanelAuthorityOpen:memory", "open_decision_memory", "HomeScreen.tsx", {
+          destinationSurface: "component_panel",
+          source: "exe_preview",
+          caller: "RightPanelHost:memory",
         })
       }
       onOpenDecisionLifecycle={() =>
-        requestPanelAuthorityOpen({
-          view: "decision_lifecycle",
-          family: "EXE",
-          source: "sub_button",
-          reason: "right_panel_host_decision_lifecycle",
-          forceOpen: true,
-        })
+        migrateLegacyButtonToIntent(
+          "Open Lifecycle",
+          "requestPanelAuthorityOpen:decision_lifecycle",
+          "open_decision_lifecycle",
+          "HomeScreen.tsx",
+          {
+            destinationSurface: "component_panel",
+            source: "exe_preview",
+            caller: "RightPanelHost:decision_lifecycle",
+          }
+        )
       }
       onOpenStrategicLearning={() =>
-        requestPanelAuthorityOpen({
-          view: "strategic_learning",
-          family: "EXE",
-          source: "sub_button",
-          reason: "right_panel_host_strategic_learning",
-          forceOpen: true,
-        })
+        migrateLegacyButtonToIntent(
+          "Open Strategic Learning",
+          "requestPanelAuthorityOpen:strategic_learning",
+          "open_strategic_learning",
+          "HomeScreen.tsx",
+          {
+            destinationSurface: "component_panel",
+            source: "exe_preview",
+            caller: "RightPanelHost:strategic_learning",
+          }
+        )
       }
       onOpenMetaDecision={() =>
-        requestPanelAuthorityOpen({
-          view: "meta_decision",
-          family: "EXE",
-          source: "sub_button",
-          reason: "right_panel_host_meta_decision",
-          forceOpen: true,
+        migrateLegacyButtonToIntent("Open Decision Strategic", "requestPanelAuthorityOpen:meta_decision", "open_decision_strategic", "HomeScreen.tsx", {
+          destinationSurface: "component_panel",
+          source: "exe_preview",
+          caller: "RightPanelHost:decision_strategic",
         })
       }
       onOpenCognitiveStyle={() =>
-        requestPanelAuthorityOpen({
-          view: "cognitive_style",
-          family: "EXE",
-          source: "sub_button",
-          reason: "right_panel_host_cognitive_style",
-          forceOpen: true,
+        migrateLegacyButtonToIntent("Open Decision Lens", "requestPanelAuthorityOpen:cognitive_style", "open_decision_lens", "HomeScreen.tsx", {
+          destinationSurface: "component_panel",
+          source: "exe_preview",
+          caller: "RightPanelHost:decision_lens",
         })
       }
       onOpenTeamDecision={() =>
-        requestPanelAuthorityOpen({
-          view: "team_decision",
-          family: "EXE",
-          source: "sub_button",
-          reason: "right_panel_host_team_decision",
-          forceOpen: true,
+        openComponentPanelFromAction("team_decision", {
+          destinationSurface: "component_panel",
+          source: "exe_preview",
+          caller: "RightPanelHost:team_decision",
+          reason: "executive_dashboard_open_team_decision",
         })
       }
       onOpenCollaborationIntelligence={() =>
-        requestPanelAuthorityOpen({
-          view: "collaboration_intelligence",
-          family: "EXE",
-          source: "sub_button",
-          reason: "right_panel_host_collaboration_intelligence",
-          forceOpen: true,
-        })
+        migrateLegacyButtonToIntent(
+          "Open Collaboration Intelligence",
+          "requestPanelAuthorityOpen:collaboration_intelligence",
+          "open_collaboration_intelligence",
+          "HomeScreen.tsx",
+          {
+            destinationSurface: "component_panel",
+            source: "exe_preview",
+            caller: "RightPanelHost:collaboration_intelligence",
+          }
+        )
       }
       onOpenDecisionCouncil={() =>
-        requestPanelAuthorityOpen({
-          view: "decision_council",
-          family: "EXE",
-          source: "sub_button",
-          reason: "right_panel_host_decision_council",
-          forceOpen: true,
+        openComponentPanelFromAction("decision_council", {
+          destinationSurface: "component_panel",
+          source: "exe_preview",
+          caller: "RightPanelHost:decision_council",
+          reason: "executive_dashboard_open_decision_council",
         })
       }
       onOpenOrgMemory={() =>
-        requestPanelAuthorityOpen({
-          view: "org_memory",
-          family: "EXE",
-          source: "sub_button",
-          reason: "right_panel_host_org_memory",
-          forceOpen: true,
+        openComponentPanelFromAction("org_memory", {
+          destinationSurface: "component_panel",
+          source: "exe_preview",
+          caller: "RightPanelHost:org_memory",
+          reason: "executive_dashboard_open_org_memory",
         })
       }
       onOpenDecisionPolicy={handleOpenDecisionPolicyPanel}
@@ -10496,40 +14084,50 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         })
       }
       onOpenConfidenceCalibration={() =>
-        requestPanelAuthorityOpen({
-          view: "confidence_calibration",
-          family: "SIM",
-          source: "sub_button",
-          reason: "right_panel_host_confidence_calibration",
-          forceOpen: true,
-        })
+        migrateLegacyButtonToIntent(
+          "Open Confidence Calibration",
+          "requestPanelAuthorityOpen:confidence_calibration",
+          "open_calibration",
+          "HomeScreen.tsx",
+          {
+            destinationSurface: "component_panel",
+            source: "exe_preview",
+            caller: "RightPanelHost:confidence_calibration",
+          }
+        )
       }
       onOpenOutcomeFeedback={() =>
-        requestPanelAuthorityOpen({
-          view: "outcome_feedback",
-          family: "SIM",
-          source: "sub_button",
-          reason: "right_panel_host_outcome_feedback",
-          forceOpen: true,
+        migrateLegacyButtonToIntent("Open Outcome Feedback", "requestPanelAuthorityOpen:outcome_feedback", "open_outcome_feedback", "HomeScreen.tsx", {
+          destinationSurface: "component_panel",
+          source: "exe_preview",
+          caller: "RightPanelHost:outcome_feedback",
         })
       }
       onOpenPatternIntelligence={() =>
-        requestPanelAuthorityOpen({
-          view: "pattern_intelligence",
-          family: "SIM",
-          source: "sub_button",
-          reason: "right_panel_host_pattern_intelligence",
-          forceOpen: true,
-        })
+        migrateLegacyButtonToIntent(
+          "Open Pattern Intelligence",
+          "requestPanelAuthorityOpen:pattern_intelligence",
+          "open_pattern_intelligence",
+          "HomeScreen.tsx",
+          {
+            destinationSurface: "component_panel",
+            source: "exe_preview",
+            caller: "RightPanelHost:pattern_intelligence",
+          }
+        )
       }
       onOpenScenarioTree={() =>
-        requestPanelAuthorityOpen({
-          view: "scenario_tree",
-          family: "SIM",
-          source: "sub_button",
-          reason: "right_panel_host_scenario_tree",
-          forceOpen: true,
-        })
+        migrateLegacyButtonToIntent(
+          "Open Scenario Tree",
+          "requestPanelAuthorityOpen:scenario_tree",
+          "open_scenario_tree",
+          "HomeScreen.tsx",
+          {
+            destinationSurface: "component_panel",
+            source: "exe_preview",
+            caller: "RightPanelHost:scenario_tree",
+          }
+        )
       }
       onOpenDashboard={handleOpenDashboard}
       onOpenPanelView={(view) =>
@@ -10556,6 +14154,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }}
       onOpenCenterComponent={handleOpenCenterExecutionSurface}
         />
+        ) : (
+          <div
+            style={{
+              ...softCardStyle,
+              margin: 12,
+              padding: 12,
+              color: nx.muted,
+              fontSize: 12,
+            }}
+          >
+            No analysis yet. Start by describing your system.
+          </div>
+        )}
       </div>
     </div>
   );
@@ -10615,6 +14226,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         id: String(m.id ?? `msg-${idx}-${m.role}`),
         role: m.role,
         text: typeof m.text === "string" ? m.text : String(m.text ?? ""),
+        confidence:
+          m.role === "assistant" && typeof m.meta?.confidence === "number"
+            ? m.meta.confidence
+            : undefined,
+        followUp:
+          m.role === "assistant" && Array.isArray(m.meta?.followUp)
+            ? m.meta.followUp.slice(0, 2)
+            : undefined,
       })),
     [messages]
   );
@@ -10640,6 +14259,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             input={input}
             loading={chatDelayedBusy}
             activeContextSummary={leftCommandContextSummary}
+            suggestedCommands={leftSuggestedCommands}
             onInputChange={setInput}
             onSubmit={send}
             onClose={handleLeftCommandPanelClose}
@@ -10663,6 +14283,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       onDismiss={dismissAlert}
     />
   ) : null;
+  const chatQAPanelNode =
+    process.env.NODE_ENV === "development" && showChatPipelineQA ? (
+      <ChatPipelineQAPanel runChatInput={runChatInputForQA} />
+    ) : null;
 
   const isDomainDemoActive =
     readSceneJsonMetaString(visibleSceneJson, "demo_id").toLowerCase() ===
@@ -10710,6 +14334,138 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     () => [...traceSceneObjectIds].sort((a, b) => a.localeCompare(b)).join("|"),
     [traceSceneObjectIds]
   );
+  const gettingStartedExplicitSelection = resolveExplicitSelectedObject({
+    selectedObjectIdState,
+    objectSelection,
+  });
+  const gettingStartedState = resolveGettingStartedState({
+    sceneJson: visibleSceneJson,
+    selectedObjectId: gettingStartedExplicitSelection.explicitSelectedObjectId,
+  });
+  const hasAnalysisForCompare = Boolean(decisionResult ?? readCanonicalRecommendation(visibleResponseData, visibleSceneJson));
+  const selectedObjectLabelForGettingStarted =
+    resolveSceneObjectLabel(gettingStartedExplicitSelection.explicitSelectedObjectId) ??
+    gettingStartedExplicitSelection.explicitSelectedObjectId;
+  const logGettingStartedAction = useCallback(
+    (
+      action:
+        | "load_demo"
+        | "describe_system"
+        | "open_objects"
+        | "highlight_selectable"
+        | "ask_assistant"
+        | "read_executive_brief"
+        | "analyze_object"
+        | "view_object"
+        | "compare_options"
+    ) => {
+      console.log("[Nexora][GettingStarted][Action]", {
+        action,
+        state: gettingStartedState,
+      });
+    },
+    [gettingStartedState]
+  );
+  const handleGettingStartedLoadDemo = useCallback(() => {
+    markUserStartedFlow("load_demo_click");
+    logGettingStartedAction("load_demo");
+    setEntryFlowState("objects_created");
+    window.dispatchEvent(
+      new CustomEvent("nexora:load-demo-scenario", {
+        detail: {
+          demo: activeDomainExperience.experience.defaultDemoId,
+          domainId: activeDomainExperience.experience.domainId,
+        },
+      })
+    );
+  }, [activeDomainExperience, logGettingStartedAction, markUserStartedFlow]);
+  const handleGettingStartedDescribeSystem = useCallback(() => {
+    markUserStartedFlow("describe_system_click");
+    logGettingStartedAction("describe_system");
+    setEntryFlowState("describing_system");
+    requestAnimationFrame(() => {
+      const inputEl = document.getElementById("nexora-chat-input") as HTMLInputElement | null;
+      inputEl?.focus();
+    });
+  }, [logGettingStartedAction, markUserStartedFlow]);
+  const handleGettingStartedReadExecutiveBrief = useCallback(() => {
+    markUserStartedFlow("read_executive_brief_click");
+    logGettingStartedAction("read_executive_brief");
+    handleOpenDashboard();
+  }, [handleOpenDashboard, logGettingStartedAction, markUserStartedFlow]);
+  const handleGettingStartedOpenObjects = useCallback(() => {
+    markUserStartedFlow("open_objects_click");
+    logGettingStartedAction("open_objects");
+    requestPanelAuthorityOpen({
+      view: "object",
+      source: "manual_user_nav",
+      reason: "getting_started_open_objects",
+      contextId: null,
+      forceOpen: true,
+    });
+  }, [logGettingStartedAction, markUserStartedFlow, requestPanelAuthorityOpen]);
+  const handleGettingStartedHighlightSelectable = useCallback(() => {
+    markUserStartedFlow("highlight_selectable_click");
+    logGettingStartedAction("highlight_selectable");
+    const objects = Array.isArray(visibleSceneJson?.scene?.objects) ? visibleSceneJson.scene.objects : [];
+    const highlighted = objects
+      .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
+      .filter(Boolean)
+      .slice(0, 12);
+    setObjectSelection({
+      highlighted_objects: highlighted,
+      dim_unrelated_objects: false,
+    } as any);
+  }, [logGettingStartedAction, markUserStartedFlow, setObjectSelection, visibleSceneJson]);
+  const handleGettingStartedAskAssistant = useCallback(() => {
+    markUserStartedFlow("ask_assistant_click");
+    logGettingStartedAction("ask_assistant");
+    setInput("Which object should I analyze first?");
+    setCenterOverlay("input");
+  }, [logGettingStartedAction, markUserStartedFlow]);
+  const handleGettingStartedAnalyzeObject = useCallback(() => {
+    markUserStartedFlow("analyze_object_click");
+    logGettingStartedAction("analyze_object");
+    window.dispatchEvent(new Event("nexora:request-object-analyze"));
+  }, [logGettingStartedAction, markUserStartedFlow]);
+  const handleGettingStartedViewObject = useCallback(() => {
+    markUserStartedFlow("view_object_click");
+    logGettingStartedAction("view_object");
+    requestPanelAuthorityOpen({
+      view: "object",
+      source: "manual_user_nav",
+      reason: "getting_started_view_object",
+      contextId: gettingStartedExplicitSelection.explicitSelectedObjectId ?? null,
+      forceOpen: true,
+    });
+  }, [gettingStartedExplicitSelection.explicitSelectedObjectId, logGettingStartedAction, markUserStartedFlow, requestPanelAuthorityOpen]);
+  const handleGettingStartedCompareOptions = useCallback(() => {
+    markUserStartedFlow("compare_options_click");
+    logGettingStartedAction("compare_options");
+    if (!hasAnalysisForCompare) {
+      setSceneWarn("Run analysis first to compare options.");
+      return;
+    }
+    requestPanelAuthorityOpen({
+      view: "compare",
+      family: "SIM",
+      source: "manual_user_nav",
+      reason: "getting_started_compare_options",
+      contextId: gettingStartedExplicitSelection.explicitSelectedObjectId ?? null,
+      forceOpen: true,
+    });
+  }, [
+    gettingStartedExplicitSelection.explicitSelectedObjectId,
+    hasAnalysisForCompare,
+    logGettingStartedAction,
+    markUserStartedFlow,
+    requestPanelAuthorityOpen,
+  ]);
+  const shouldShowGettingStarted =
+    !hasUserStartedFlow &&
+    (entryFlowState === "idle" || entryFlowState === "describing_system") &&
+    centerComponent == null;
+  const showGettingStartedCenter = false;
   const homescreenBeforeSceneTriggerSig = useMemo(
     () =>
       JSON.stringify({
@@ -11323,12 +15079,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         });
         const scoped = normalizeReactionForScene(base, sceneJson);
         const tuned = tuneUnifiedReactionForFragilityLevel(scoped, snap.scene.fragilityLevel);
-        applyUnifiedSceneReaction(tuned, { allowSceneReplacement: false });
+        applyUnifiedSceneReactionUpstreamDedup(tuned, { allowSceneReplacement: false });
       } else if (focusInScene) {
         const panel = buildPanelFocusReaction({ objectId: focusInScene, reason });
         const scoped = normalizeReactionForScene(panel, sceneJson);
         const tuned = tuneUnifiedReactionForFragilityLevel(scoped, snap.scene.fragilityLevel);
-        applyUnifiedSceneReaction(tuned, { allowSceneReplacement: false });
+        applyUnifiedSceneReactionUpstreamDedup(tuned, { allowSceneReplacement: false });
       }
 
       mergePipelineStatus({
@@ -12331,6 +16087,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     return { line1, line2 };
   }, [highlightedObjectIdsSig, visibleRiskPropagation, pipelineStatusUi.fragilityLevel]);
 
+  const centerWorkflowContextId = useMemo(() => {
+    const rp = typeof rightPanelState.contextId === "string" ? rightPanelState.contextId.trim() : "";
+    if (rp) return rp;
+    const sel = typeof selectedObjectIdState === "string" ? selectedObjectIdState.trim() : "";
+    if (sel) return sel;
+    const fid = typeof focusedId === "string" ? focusedId.trim() : "";
+    return fid || null;
+  }, [focusedId, rightPanelState.contextId, selectedObjectIdState]);
+
+  const stableSceneJsonDuringPanelValidation = stableVisibleSceneJson;
+  const lastSceneCanvasInputTraceRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const count = countSceneObjects(stableSceneJsonDuringPanelValidation);
+    const ids = sceneObjectIds(stableSceneJsonDuringPanelValidation);
+    const sig = JSON.stringify({ count, ids });
+    if (lastSceneCanvasInputTraceRef.current === sig) return;
+    lastSceneCanvasInputTraceRef.current = sig;
+    globalThis.console.log("[Nexora][SceneCanvas][INPUT]", {
+      count,
+      ids,
+    });
+  }, [stableSceneJsonDuringPanelValidation]);
   const sceneNode = (
     <div style={{ position: "relative", width: "100%", height: "100%", background: "transparent", zIndex: 0 }}>
       {centerOverlay === "input" ? (
@@ -12376,7 +16155,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           left: 0,
           right: 0,
           top: 0,
-          bottom: centerComponent ? "min(40%, 420px)" : 0,
+          bottom:
+            centerComponent && !isLargeCenterWorkspaceComponent(centerComponent) ? "min(40%, 420px)" : 0,
           zIndex: 0,
           transition: "bottom 180ms ease",
           contain: "layout size style",
@@ -12401,7 +16181,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           effectiveActiveLoopId={effectiveActiveLoopId}
           cameraLockedByUser={cameraLockedByUser}
           isOrbiting={isOrbiting}
-          sceneJson={visibleSceneJson}
+          sceneJson={stableSceneJsonDuringPanelValidation}
           propagationPayload={visibleResponseData}
           scenarioTrigger={warRoom.scenarioTrigger}
           onScenarioOverlayChange={handleWarRoomOverlayChange}
@@ -13274,7 +17054,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         onStepForward={retailDemoFlow.currentStepIndex < 0 ? retailDemoFlow.restart : retailDemoFlow.stepForward}
       />
 
-      {!visibleSceneJson && (
+      {showGettingStartedCenter ? (
         <div
           style={{
             position: "absolute",
@@ -13294,90 +17074,80 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               ...sceneOverlayCardStyle,
               textAlign: "left",
               lineHeight: 1.5,
+              maxWidth: 560,
             }}
           >
             <div style={{ color: nx.lowMuted, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              Getting started
+              {gettingStartedState === "empty" ? "Getting started" : gettingStartedState === "objects_no_selection" ? "Select an object to analyze" : "Ready to analyze"}
             </div>
             <div style={{ color: nx.text, fontSize: 18, fontWeight: 800, marginTop: 6 }}>
-              {activeDomainExperience.experience.helperTitle}
+              {gettingStartedState === "empty"
+                ? "Describe your system in one sentence. I will map it and show you what matters."
+                : gettingStartedState === "objects_no_selection"
+                  ? "Choose one object in the scene or object list first."
+                  : `Ready to analyze: ${selectedObjectLabelForGettingStarted ?? "selected object"}`}
             </div>
-            <div style={{ color: nx.muted, fontSize: 13, marginTop: 10, lineHeight: 1.55 }}>
-              {activeDomainExperience.experience.helperBody}
-            </div>
-            <div style={{ color: nx.lowMuted, fontSize: 12, marginTop: 10, lineHeight: 1.5 }}>
-              One decision engine: this workspace sets the starter scenario, prompts, and which executive panels surface first.
-            </div>
-            {!launchDomainActive ? (
-              <div style={{ color: nx.warning, fontSize: 12, marginTop: 10, lineHeight: 1.45 }}>
-                You are in a preview workspace. The launch experience highlights Business, DevOps, and Finance — the
-                underlying engine is unchanged.
+            {gettingStartedState === "empty" ? (
+              <div style={{ color: nx.lowMuted, fontSize: 12, marginTop: 6 }}>
+                Example: "Delivery is late due to supplier delays."
               </div>
             ) : null}
-            <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {[
-                `1. Load the ${activeDomainExperience.experience.label.toLowerCase()} demo`,
-                "2. Enter a pressure prompt",
-                "3. Read the executive brief",
-              ].map((step) => (
-                <div
-                  key={step}
-                  style={{
-                    height: 28,
-                    padding: "0 10px",
-                    borderRadius: 999,
-                    border: "1px solid rgba(148,163,184,0.18)",
-                    background: "rgba(2,6,23,0.45)",
-                    color: "#cbd5e1",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    fontSize: 11,
-                    fontWeight: 600,
-                  }}
-                >
-                  {step}
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 10, color: "#94a3b8", fontSize: 11 }}>
-              {`Panel emphasis: ${domainPanelEmphasisLabels.join(", ") || "Executive Dashboard"}`}
-            </div>
             <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <button
-                type="button"
-                onClick={() =>
-                  window.dispatchEvent(
-                    new CustomEvent("nexora:load-demo-scenario", {
-                      detail: {
-                        demo: activeDomainExperience.experience.defaultDemoId,
-                        domainId: activeDomainExperience.experience.domainId,
-                      },
-                    })
-                  )
-                }
-                style={{
-                  height: 30,
-                  padding: "0 10px",
-                  borderRadius: 999,
-                  border: "1px solid rgba(96,165,250,0.35)",
-                  background: "rgba(59,130,246,0.16)",
-                  color: "#dbeafe",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                {`Start ${activeDomainExperience.experience.label} Demo`}
-              </button>
-              <div style={{ color: "#64748b", fontSize: 11 }}>
-                {`Use a prompt like ${activeDomainExperience.experience.promptExamples.slice(0, 3).join(", ")} to see the full decision story.`}
-              </div>
+              {gettingStartedState === "empty" ? (
+                <>
+                  <button type="button" onClick={handleGettingStartedLoadDemo} style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(96,165,250,0.38)", background: "rgba(59,130,246,0.2)", color: "#dbeafe", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    Load Business Demo
+                  </button>
+                  <button type="button" onClick={handleGettingStartedDescribeSystem} style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(148,163,184,0.22)", background: "rgba(2,6,23,0.5)", color: "#cbd5e1", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    Describe System
+                  </button>
+                  <button type="button" onClick={handleGettingStartedReadExecutiveBrief} style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(148,163,184,0.22)", background: "rgba(2,6,23,0.5)", color: "#cbd5e1", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    Read Executive Brief
+                  </button>
+                </>
+              ) : null}
+              {gettingStartedState === "objects_no_selection" ? (
+                <>
+                  <button type="button" onClick={handleGettingStartedOpenObjects} style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(96,165,250,0.38)", background: "rgba(59,130,246,0.2)", color: "#dbeafe", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    Open Objects
+                  </button>
+                  <button type="button" onClick={handleGettingStartedHighlightSelectable} style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(148,163,184,0.22)", background: "rgba(2,6,23,0.5)", color: "#cbd5e1", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    Highlight selectable objects
+                  </button>
+                  <button type="button" onClick={handleGettingStartedAskAssistant} style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(148,163,184,0.22)", background: "rgba(2,6,23,0.5)", color: "#cbd5e1", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    Ask Assistant
+                  </button>
+                </>
+              ) : null}
+              {gettingStartedState === "ready_with_selection" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleGettingStartedAnalyzeObject}
+                    disabled={!objectAnalyzeReady}
+                    title={!objectAnalyzeReady ? "Select an object first" : undefined}
+                    style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(96,165,250,0.38)", background: objectAnalyzeReady ? "rgba(59,130,246,0.2)" : "rgba(71,85,105,0.25)", color: objectAnalyzeReady ? "#dbeafe" : "#94a3b8", fontSize: 12, fontWeight: 700, cursor: objectAnalyzeReady ? "pointer" : "not-allowed", opacity: objectAnalyzeReady ? 1 : 0.7 }}
+                  >
+                    Analyze Object
+                  </button>
+                  <button type="button" onClick={handleGettingStartedViewObject} style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(148,163,184,0.22)", background: "rgba(2,6,23,0.5)", color: "#cbd5e1", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    View Object
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGettingStartedCompareOptions}
+                    disabled={!hasAnalysisForCompare}
+                    title={!hasAnalysisForCompare ? "Run analysis first to compare options." : undefined}
+                    style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(148,163,184,0.22)", background: hasAnalysisForCompare ? "rgba(2,6,23,0.5)" : "rgba(71,85,105,0.25)", color: hasAnalysisForCompare ? "#cbd5e1" : "#94a3b8", fontSize: 12, fontWeight: 600, cursor: hasAnalysisForCompare ? "pointer" : "not-allowed", opacity: hasAnalysisForCompare ? 1 : 0.7 }}
+                  >
+                    Compare Options
+                  </button>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {showDomainPromptGuide ? (
         <div
@@ -13520,22 +17290,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           style={{
             position: "absolute",
             zIndex: 11,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: centerComponentVisible ? "min(40%, 420px)" : 0,
-            maxHeight: 420,
-            minHeight: centerComponentVisible ? 220 : 0,
-            borderTop: `1px solid ${nx.border}`,
-            borderTopLeftRadius: 14,
-            borderTopRightRadius: 14,
+            pointerEvents: "auto",
             background: nx.workspacePanelBg,
             backdropFilter: "blur(8px)",
             boxShadow: nx.workspaceShadow,
             overflow: "hidden",
-            pointerEvents: "auto",
-            transition: "height 180ms ease, min-height 180ms ease, opacity 180ms ease",
+            transition: "height 180ms ease, min-height 180ms ease, opacity 180ms ease, transform 180ms ease",
             opacity: centerComponentVisible ? 1 : 0,
+            ...(isLargeCenterWorkspaceComponent(centerComponent)
+              ? {
+                  top: "10vh",
+                  left: "50%",
+                  right: "auto",
+                  bottom: "auto",
+                  transform: centerComponentVisible ? "translateX(-50%)" : "translateX(-50%) scale(0.98)",
+                  width: "min(900px, calc(100% - 32px))",
+                  height: centerComponentVisible ? "min(70vh, 880px)" : 0,
+                  maxHeight: "min(70vh, 880px)",
+                  minHeight: centerComponentVisible ? 240 : 0,
+                  borderRadius: 16,
+                  border: `1px solid ${nx.border}`,
+                }
+              : {
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: centerComponentVisible ? "min(40%, 420px)" : 0,
+                  maxHeight: 420,
+                  minHeight: centerComponentVisible ? 220 : 0,
+                  borderTop: `1px solid ${nx.border}`,
+                  borderTopLeftRadius: 14,
+                  borderTopRightRadius: 14,
+                }),
           }}
         >
           <div
@@ -13562,11 +17348,49 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                   {centerComponent === "compare"
                     ? "Option Comparison"
                     : centerComponent === "timeline"
-                    ? "Decision Timeline"
-                    : "Deep Analysis"}
+                      ? "Decision Timeline"
+                      : centerComponent === "strategic_command_full"
+                        ? "Strategic Command"
+                        : centerComponent === "team_decision"
+                          ? "Team Decision"
+                          : centerComponent === "decision_council"
+                            ? "Decision Council"
+                            : centerComponent === "org_memory"
+                              ? "Organization Memory"
+                              : centerComponent === "decision_policy"
+                                ? "Decision Policy"
+                                : centerComponent === "executive_approval"
+                                  ? "Executive Approval"
+                                  : centerComponent === "decision_governance"
+                                    ? "Decision Governance"
+                                    : centerComponent === "confidence_calibration"
+                                      ? "Confidence Calibration"
+                                      : centerComponent === "pattern_intelligence"
+                                        ? "Pattern Intelligence"
+                                        : centerComponent === "strategic_learning"
+                                          ? "Strategic Learning"
+                                          : centerComponent === "decision_strategic"
+                                            ? "Decision Strategic"
+                                            : centerComponent === "decision_lens"
+                                              ? "Decision Lens"
+                                              : centerComponent === "collaboration_intelligence"
+                                                ? "Collaboration Intelligence"
+                                                : centerComponent === "outcome_feedback"
+                                                  ? "Outcome Feedback"
+                                                  : centerComponent === "decision_memory"
+                                                    ? "Decision Memory"
+                                                    : centerComponent === "decision_lifecycle"
+                                                      ? "Decision Lifecycle"
+                                                      : centerComponent === "scenario_tree"
+                                                        ? "Scenario Tree"
+                                    : "Deep Analysis"}
                 </div>
                 <div style={{ color: nx.lowMuted, fontSize: 11, lineHeight: 1.4 }}>
-                  Deep analysis workspace. Scene remains visible for context.
+                  {centerComponent === "strategic_command_full"
+                    ? "Insight, actions, and impact — your compact war-room workspace."
+                    : isLargeCenterWorkspaceComponent(centerComponent)
+                      ? "Full executive workflow. The right rail stays on your current context for summary."
+                      : "Deep analysis workspace. Scene remains visible for context."}
                 </div>
               </div>
               <button
@@ -13588,9 +17412,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               </button>
             </div>
             <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                Primary analysis
-              </div>
+              {centerComponent === "compare" ||
+              centerComponent === "timeline" ||
+              centerComponent === "analysis" ? (
+                <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  Primary analysis
+                </div>
+              ) : null}
+              {centerComponent === "strategic_command_full" ? (
+                <StrategicCommandFull
+                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
+                  projectId={visibleResponseData?.project_id ?? activeProjectId ?? null}
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? undefined}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenView={handleStrategicCommandFullRouteView}
+                />
+              ) : null}
               {centerComponent === "compare" ? (
                 <DecisionComparePanel
                   responseData={visibleResponseData ?? undefined}
@@ -13622,10 +17461,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                     )
                   }
                   onViewRiskFlow={() =>
-                    openRskPanel("risk_flow", "decision_compare_view_risk_flow", null)
+                    openRskPanel("risk_flow", "decision_compare_view_risk_flow", null, {
+                      source: "component_panel",
+                    })
                   }
                   onViewScenarioTree={() =>
-                    openSimPanel("scenario_tree", "decision_compare_view_scenario_tree", null)
+                    openSimPanel("scenario_tree", "decision_compare_view_scenario_tree", null, {
+                      source: "component_panel",
+                    })
                   }
                   onOpenDecisionTimeline={() =>
                     dispatchCanonicalAction(
@@ -13639,8 +17482,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                   onPreviewDecision={handlePreviewDecision}
                   onSaveScenario={handleSaveDecisionScenario}
                   onApplyDecisionSafe={handleApplyDecisionSafe}
-                  onOpenDecisionPolicy={handleOpenDecisionPolicyPanel}
-                  onOpenExecutiveApproval={handleOpenExecutiveApprovalPanel}
+                  onOpenDecisionPolicy={() =>
+                    handleOpenDecisionPolicyPanel(null, { source: "component_panel" })
+                  }
+                  onOpenExecutiveApproval={() =>
+                    handleOpenExecutiveApprovalPanel(null, { source: "component_panel" })
+                  }
                   resolveObjectLabel={resolveSceneObjectLabel}
                 />
               ) : null}
@@ -13673,11 +17520,722 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                     )
                   }
                   onReturnToWarRoom={() =>
-                    openSimPanel("war_room", "decision_timeline_return_war_room", null)
+                    openSimPanel("war_room", "decision_timeline_return_war_room", null, {
+                      source: "component_panel",
+                    })
                   }
                 />
               ) : null}
-              {!investorDemo.demo.active ? (
+              {centerComponent === "team_decision" ? (
+                <TeamDecisionPanel
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? undefined}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenCompare={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Compare",
+                      "normalizeCompareOptions",
+                      "open_compare",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_team_decision:compare",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenTimeline={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Timeline",
+                      "normalizeOpenCenterTimeline",
+                      "open_timeline",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_team_decision:timeline",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenWarRoom={() =>
+                    openSimPanel("war_room", "center_team_decision_war_room", centerWorkflowContextId, {
+                      source: "component_panel",
+                    })
+                  }
+                  onOpenCognitiveStyle={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Decision Lens",
+                      "requestPanelAuthorityOpen:cognitive_style",
+                      "open_decision_lens",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_team_decision:cognitive_style",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenCollaborationIntelligence={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Collaboration Intelligence",
+                      "requestPanelAuthorityOpen:collaboration_intelligence",
+                      "open_collaboration_intelligence",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_team_decision:collaboration_intelligence",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                />
+              ) : null}
+              {centerComponent === "decision_council" ? (
+                <AutonomousDecisionCouncilPanel
+                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
+                  projectId={visibleResponseData?.project_id ?? activeProjectId ?? null}
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? undefined}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenCompare={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Compare",
+                      "normalizeCompareOptions",
+                      "open_compare",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_council:compare",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenDecisionGovernance={() =>
+                    openComponentPanelFromAction("decision_governance", {
+                      destinationSurface: "component_panel",
+                      source: "decision_strip",
+                      caller: "center_decision_council",
+                      contextId: centerWorkflowContextId,
+                    })
+                  }
+                  onOpenExecutiveApproval={() =>
+                    openComponentPanelFromAction("executive_approval", {
+                      destinationSurface: "component_panel",
+                      source: "decision_strip",
+                      caller: "center_decision_council",
+                      contextId: centerWorkflowContextId,
+                    })
+                  }
+                  onOpenCollaborationIntelligence={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Collaboration Intelligence",
+                      "requestPanelAuthorityOpen:collaboration_intelligence",
+                      "open_collaboration_intelligence",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_council:collaboration_intelligence",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                />
+              ) : null}
+              {centerComponent === "org_memory" ? (
+                <OrgMemoryPanel
+                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
+                  memoryEntries={decisionMemoryEntries}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  onOpenMemory={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Decision Memory",
+                      "requestPanelAuthorityOpen:memory",
+                      "open_decision_memory",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_org_memory:memory",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenStrategicLearning={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Strategic Learning",
+                      "requestPanelAuthorityOpen:strategic_learning",
+                      "open_strategic_learning",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_org_memory:strategic_learning",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenTeamDecision={() =>
+                    openComponentPanelFromAction("team_decision", {
+                      destinationSurface: "component_panel",
+                      source: "decision_strip",
+                      caller: "center_org_memory",
+                      contextId: centerWorkflowContextId,
+                    })
+                  }
+                />
+              ) : null}
+              {centerComponent === "decision_policy" ? (
+                <DecisionPolicyPanel
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? undefined}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenDecisionGovernance={() =>
+                    openComponentPanelFromAction("decision_governance", {
+                      destinationSurface: "component_panel",
+                      source: "decision_strip",
+                      caller: "center_decision_policy",
+                      contextId: centerWorkflowContextId,
+                    })
+                  }
+                  onOpenExecutiveApproval={() =>
+                    openComponentPanelFromAction("executive_approval", {
+                      destinationSurface: "component_panel",
+                      source: "decision_strip",
+                      caller: "center_decision_policy",
+                      contextId: centerWorkflowContextId,
+                    })
+                  }
+                  onOpenCompare={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Compare",
+                      "normalizeCompareOptions",
+                      "open_compare",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_policy:compare",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenTimeline={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Timeline",
+                      "normalizeOpenCenterTimeline",
+                      "open_timeline",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_policy:timeline",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                />
+              ) : null}
+              {centerComponent === "executive_approval" ? (
+                <ExecutiveApprovalPanel
+                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
+                  projectId={visibleResponseData?.project_id ?? activeProjectId ?? null}
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? undefined}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenCompare={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Compare",
+                      "normalizeCompareOptions",
+                      "open_compare",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_executive_approval:compare",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenDecisionGovernance={() =>
+                    openComponentPanelFromAction("decision_governance", {
+                      destinationSurface: "component_panel",
+                      source: "decision_strip",
+                      caller: "center_executive_approval",
+                      contextId: centerWorkflowContextId,
+                    })
+                  }
+                  onOpenTimeline={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Timeline",
+                      "normalizeOpenCenterTimeline",
+                      "open_timeline",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_executive_approval:timeline",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                />
+              ) : null}
+              {centerComponent === "decision_governance" ? (
+                <DecisionGovernancePanel
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? undefined}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenCompare={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Compare",
+                      "normalizeCompareOptions",
+                      "open_compare",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_governance:compare",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenTimeline={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Timeline",
+                      "normalizeOpenCenterTimeline",
+                      "open_timeline",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_governance:timeline",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenTeamDecision={() =>
+                    openComponentPanelFromAction("team_decision", {
+                      destinationSurface: "component_panel",
+                      source: "decision_strip",
+                      caller: "center_decision_governance",
+                      contextId: centerWorkflowContextId,
+                    })
+                  }
+                />
+              ) : null}
+              {centerComponent === "confidence_calibration" ? (
+                <DecisionConfidenceCalibrationPanel
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  decisionResult={decisionResult ?? undefined}
+                  memoryEntries={decisionMemoryEntries}
+                />
+              ) : null}
+              {centerComponent === "pattern_intelligence" ? (
+                <DecisionPatternIntelligencePanel
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenMemory={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Decision Memory",
+                      "pattern_intelligence:memory",
+                      "open_decision_memory",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_pattern_intelligence:memory",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenCompare={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Compare",
+                      "pattern_intelligence:compare",
+                      "open_compare",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_pattern_intelligence:compare",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenConfidenceCalibration={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Confidence Calibration",
+                      "pattern_intelligence:confidence_calibration",
+                      "open_calibration",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_pattern_intelligence:confidence_calibration",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                />
+              ) : null}
+              {centerComponent === "strategic_learning" ? (
+                <StrategicLearningPanel
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenMemory={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Decision Memory",
+                      "strategic_learning:memory",
+                      "open_decision_memory",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_strategic_learning:memory",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenPatternIntelligence={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Pattern Intelligence",
+                      "strategic_learning:pattern_intelligence",
+                      "open_pattern_intelligence",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_strategic_learning:pattern_intelligence",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenDecisionLifecycle={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Lifecycle",
+                      "requestPanelAuthorityOpen:decision_lifecycle",
+                      "open_decision_lifecycle",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_strategic_learning:decision_lifecycle",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                />
+              ) : null}
+              {centerComponent === "decision_strategic" ? (
+                <MetaDecisionPanel
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenCompare={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Compare",
+                      "meta_decision:compare",
+                      "open_compare",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_strategic:compare",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenTimeline={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Timeline",
+                      "meta_decision:timeline",
+                      "open_timeline",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_strategic:timeline",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenMemory={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Decision Memory",
+                      "meta_decision:memory",
+                      "open_decision_memory",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_strategic:memory",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                />
+              ) : null}
+              {centerComponent === "decision_lens" ? (
+                <CognitiveStylePanel
+                  activeMode={activeMode ?? null}
+                  rightPanelView={rightPanelState.view ?? null}
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? null}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenCompare={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Compare",
+                      "decision_lens:compare",
+                      "open_compare",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_lens:compare",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenTimeline={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Timeline",
+                      "decision_lens:timeline",
+                      "open_timeline",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_lens:timeline",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenMemory={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Decision Memory",
+                      "decision_lens:memory",
+                      "open_decision_memory",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_lens:memory",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                />
+              ) : null}
+              {centerComponent === "collaboration_intelligence" ? (
+                <CollaborationIntelligencePanel
+                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
+                  projectId={visibleResponseData?.project_id ?? activeProjectId ?? null}
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? null}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenTeamDecision={() =>
+                    openComponentPanelFromAction("team_decision", {
+                      destinationSurface: "component_panel",
+                      source: "component_panel",
+                      caller: "center_collaboration_intelligence:team_decision",
+                      contextId: centerWorkflowContextId,
+                    })
+                  }
+                  onOpenDecisionGovernance={() =>
+                    openComponentPanelFromAction("decision_governance", {
+                      destinationSurface: "component_panel",
+                      source: "component_panel",
+                      caller: "center_collaboration_intelligence:decision_governance",
+                      contextId: centerWorkflowContextId,
+                    })
+                  }
+                  onOpenExecutiveApproval={() =>
+                    openComponentPanelFromAction("executive_approval", {
+                      destinationSurface: "component_panel",
+                      source: "component_panel",
+                      caller: "center_collaboration_intelligence:executive_approval",
+                      contextId: centerWorkflowContextId,
+                    })
+                  }
+                />
+              ) : null}
+              {centerComponent === "outcome_feedback" ? (
+                <DecisionOutcomeFeedbackPanel
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? null}
+                  memoryEntries={decisionMemoryEntries}
+                  onOpenDecisionTimeline={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Timeline",
+                      "outcome_feedback:decision_timeline",
+                      "open_timeline",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_outcome_feedback:timeline",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                />
+              ) : null}
+              {centerComponent === "decision_memory" ? (
+                <DecisionMemoryPanel
+                  entries={decisionMemoryEntries}
+                  memoryInsights={visibleMemoryInsights ?? null}
+                  responseData={visibleResponseData ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? null}
+                  resolveObjectLabel={resolveSceneObjectLabel}
+                  onOpenTimeline={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Timeline",
+                      "decision_memory:timeline",
+                      "open_timeline",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_memory:timeline",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenCompare={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Compare",
+                      "decision_memory:compare",
+                      "open_compare",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_memory:compare",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenWarRoom={() =>
+                    openSimPanel("war_room", "center_decision_memory:war_room", centerWorkflowContextId, {
+                      source: "component_panel",
+                    })
+                  }
+                  onOpenObject={handleOpenObject}
+                />
+              ) : null}
+              {centerComponent === "decision_lifecycle" ? (
+                <DecisionLifecyclePanel
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? undefined}
+                  memoryEntries={decisionMemoryEntries}
+                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
+                  projectId={visibleResponseData?.project_id ?? activeProjectId ?? null}
+                  onOpenDecisionTimeline={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Timeline",
+                      "decision_lifecycle:timeline",
+                      "open_timeline",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_lifecycle:timeline",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenOutcomeFeedback={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Outcome Feedback",
+                      "decision_lifecycle:outcome_feedback",
+                      "open_outcome_feedback",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_lifecycle:outcome_feedback",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenCompare={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Compare",
+                      "decision_lifecycle:compare",
+                      "open_compare",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_decision_lifecycle:compare",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                />
+              ) : null}
+              {centerComponent === "scenario_tree" ? (
+                <ScenarioBranchingTreePanel
+                  responseData={visibleResponseData ?? visibleSceneJson ?? null}
+                  canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
+                  decisionResult={decisionResult ?? null}
+                  strategicAdvice={visibleStrategicAdvice ?? visibleSceneJson?.["strategic_advice"] ?? null}
+                  memoryEntries={decisionMemoryEntries}
+                  resolveObjectLabel={resolveSceneObjectLabel}
+                  onOpenCompare={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Compare",
+                      "scenario_tree:compare",
+                      "open_compare",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_scenario_tree:compare",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenTimeline={() =>
+                    migrateLegacyButtonToIntent(
+                      "Open Timeline",
+                      "scenario_tree:timeline",
+                      "open_timeline",
+                      "HomeScreen.tsx",
+                      {
+                        destinationSurface: "component_panel",
+                        source: "component_panel",
+                        caller: "center_scenario_tree:timeline",
+                        contextId: centerWorkflowContextId,
+                      }
+                    )
+                  }
+                  onOpenWarRoom={() =>
+                    openSimPanel("war_room", "center_scenario_tree:war_room", centerWorkflowContextId, {
+                      source: "component_panel",
+                    })
+                  }
+                  onOpenObject={handleOpenObject}
+                />
+              ) : null}
+              {!investorDemo.demo.active && !isLargeCenterWorkspaceComponent(centerComponent) ? (
                 <>
                   <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4 }}>
                     Explore next
@@ -13731,8 +18289,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       {timelineInspectorNode}
       {alertOverlayNode}
       {investorDemoOverlayNode}
+      {chatQAPanelNode}
     </div>
   );
 };
 
 export default HomeScreen;
+
+// removed NexoraPsychHomeEntry (moved to Domain Selection page)

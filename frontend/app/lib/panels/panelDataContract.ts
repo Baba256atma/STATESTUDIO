@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { logPanelOnce } from "../debug/panelLogSignature";
 
 const NullableString = z.string().nullable().optional().default(null);
 
@@ -339,6 +340,67 @@ export type PanelSharedDataValidationResult = {
     rejectedSlices: string[];
   } | null;
 };
+
+function summarizeSlice(input: unknown): Record<string, unknown> {
+  const value = input && typeof input === "object" && !Array.isArray(input) ? (input as Record<string, unknown>) : {};
+  const volatileKeyPattern = /time|epoch|run|id|updated|generated/i;
+  return {
+    keys: Object.keys(value)
+      .filter((key) => !volatileKeyPattern.test(key))
+      .sort(),
+    level:
+      (typeof value.level === "string" && value.level.trim()) ||
+      (typeof value.risk_level === "string" && value.risk_level.trim()) ||
+      null,
+    edgesCount: Array.isArray(value.edges) ? value.edges.length : 0,
+    driversCount: Array.isArray(value.drivers) ? value.drivers.length : 0,
+    sourcesCount: Array.isArray(value.sources) ? value.sources.length : 0,
+    summary: typeof value.summary === "string" ? value.summary.slice(0, 80) : null,
+    headline: typeof value.headline === "string" ? value.headline.slice(0, 80) : null,
+  };
+}
+
+export function buildPanelContractSignature(input: unknown): string {
+  try {
+    const value = input && typeof input === "object" && !Array.isArray(input) ? (input as Record<string, unknown>) : {};
+    const volatileKeyPattern = /time|epoch|run|id|updated|generated/i;
+    return JSON.stringify({
+      keys: Object.keys(value)
+        .filter((key) => !volatileKeyPattern.test(key))
+        .sort(),
+      risk: summarizeSlice(value.risk),
+      fragility: summarizeSlice(value.fragility),
+      simulation: summarizeSlice(value.simulation ?? value.decision_simulation ?? value.decisionSimulation),
+      advice: summarizeSlice(value.advice ?? value.strategicAdvice),
+      actionsCount: Array.isArray(value.actions) ? value.actions.length : 0,
+    });
+  } catch {
+    return "invalid";
+  }
+}
+
+export function buildPanelSharedDataSignature(data: PanelSharedData): string {
+  return JSON.stringify({
+    keys: Object.keys(data ?? {}).sort(),
+    dashboard: buildPanelContractSignature(data.dashboard ?? data.executiveSummary ?? data.decisionCockpit ?? null),
+    advice: buildPanelContractSignature(data.advice ?? data.strategicAdvice ?? null),
+    risk: buildPanelContractSignature(data.risk ?? null),
+    fragility: buildPanelContractSignature(data.fragility ?? null),
+    conflict: buildPanelContractSignature(data.conflict ?? null),
+    timeline: buildPanelContractSignature(data.timeline ?? null),
+    simulation: buildPanelContractSignature(data.simulation ?? null),
+    warRoom: buildPanelContractSignature(data.warRoom ?? null),
+  });
+}
+
+const lastPanelValidationSignatureRef: { current: string | null } = { current: null };
+const lastPanelValidationResultRef: { current: PanelSharedDataValidationResult | null } = { current: null };
+const lastValidTraceSignatureRef: { current: string | null } = { current: null };
+const MAX_PANEL_SALVAGE_PASSES = 1;
+const PANEL_VALIDATION_CACHE = new Map<string, PanelSharedDataValidationResult>();
+const ACTIVE_PANEL_VALIDATION_SIGNATURES = new Set<string>();
+const SLICE_SALVAGE_CACHE = new Map<string, unknown>();
+export const EMPTY_PANEL_SHARED_DATA: PanelSharedData = Object.freeze(PanelSharedDataSchema.parse({})) as PanelSharedData;
 
 const NullableDashboardSchema = DashboardPanelDataSchema.nullable().optional().default(null);
 const NullableAdviceSchema = AdvicePanelDataSchema.nullable().optional().default(null);
@@ -733,7 +795,8 @@ function tracePanelContractWeakening(
   status: "family_weakened" | "family_preserved" | "salvage_too_thin",
   family: string,
   beforeValue: unknown,
-  afterValue: unknown
+  afterValue: unknown,
+  rootSignature: string
 ) {
   if (process.env.NODE_ENV === "production") return;
   const payload = {
@@ -742,10 +805,13 @@ function tracePanelContractWeakening(
     resultingSalvagedShape: describeSliceShape(afterValue),
     renderable: isRenderableNormalizedSlice(family, afterValue),
   };
-  const signature = JSON.stringify({ status, ...payload });
+  const signature = rootSignature;
   if (panelContractWeakeningSignatures.has(signature)) return;
   panelContractWeakeningSignatures.add(signature);
-  console.warn(`[Nexora][PanelContractWeakening] ${status}`, payload);
+  logPanelOnce(`[Nexora][PanelContractWeakening] ${status}`, {
+    signature,
+    ...payload,
+  });
 }
 
 
@@ -1219,10 +1285,44 @@ function safeParseSlice<T>(
   schema: z.ZodType<T>,
   value: unknown,
   fallback: T,
-  issuesBySlice: Map<string, Array<Record<string, unknown>>>
+  issuesBySlice: Map<string, Array<Record<string, unknown>>>,
+  context: { rootSignature: string }
 ): T {
+  const sliceKey = `${context.rootSignature}:${label}`;
+  if (SLICE_SALVAGE_CACHE.has(sliceKey)) {
+    return SLICE_SALVAGE_CACHE.get(sliceKey) as T;
+  }
+
+  if (label === "fragility" && isObject(value)) {
+    const hasMinimalRenderable = Boolean(
+      getString(value.headline) ||
+        getString(value.summary) ||
+        getString(value.level) ||
+        (Array.isArray(value.drivers) && value.drivers.length > 0) ||
+        (Array.isArray(value.edges) && value.edges.length > 0)
+    );
+    if (hasMinimalRenderable) {
+      const minimalFragility = {
+        level: getString(value.level) ?? "unknown",
+        headline: getString(value.headline),
+        summary: getString(value.summary),
+        drivers: Array.isArray(value.drivers) ? value.drivers : [],
+        edges: Array.isArray(value.edges) ? value.edges : [],
+        sources: Array.isArray(value.sources) ? value.sources : [],
+      };
+      const parsedMinimal = schema.safeParse(minimalFragility);
+      if (parsedMinimal.success) {
+        SLICE_SALVAGE_CACHE.set(sliceKey, parsedMinimal.data as T);
+        return parsedMinimal.data;
+      }
+    }
+  }
+
   const result = schema.safeParse(value);
-  if (result.success) return result.data;
+  if (result.success) {
+    SLICE_SALVAGE_CACHE.set(sliceKey, result.data);
+    return result.data;
+  }
 
   const normalizedValue = (() => {
     switch (label) {
@@ -1278,21 +1378,25 @@ function safeParseSlice<T>(
         meaningfulFields: getRenderableMeaningfulFields(label, normalizedValue),
         salvagedShape: describeSliceShape(normalizedValue),
       };
-      const signature = JSON.stringify(payload);
+      const signature = context.rootSignature;
       if (!panelContractSliceNormalizedSignatures.has(signature)) {
         panelContractSliceNormalizedSignatures.add(signature);
-        console.warn("[Nexora][PanelContractSliceNormalized]", payload);
+        logPanelOnce("[Nexora][PanelContractSliceNormalized]", {
+          signature,
+          ...payload,
+        });
       }
     }
     if (!renderable) {
-      tracePanelContractWeakening("salvage_too_thin", label, value, normalizedValue);
+      tracePanelContractWeakening("salvage_too_thin", label, value, normalizedValue, context.rootSignature);
       return fallback;
     }
-    tracePanelContractWeakening("family_preserved", label, value, normalizedValue);
+    tracePanelContractWeakening("family_preserved", label, value, normalizedValue, context.rootSignature);
+    SLICE_SALVAGE_CACHE.set(sliceKey, normalizedValue as T);
     return normalizedValue as T;
   }
 
-  tracePanelContractWeakening("family_weakened", label, value, fallback);
+  tracePanelContractWeakening("family_weakened", label, value, fallback, context.rootSignature);
 
   issuesBySlice.set(
     label,
@@ -1314,72 +1418,80 @@ function safeParseSlice<T>(
       })(),
     }))
   );
+  SLICE_SALVAGE_CACHE.set(sliceKey, fallback);
   return fallback;
 }
 
 function salvagePanelSharedData(
   normalized: Record<string, unknown>,
-  issuesBySlice: Map<string, Array<Record<string, unknown>>>
+  issuesBySlice: Map<string, Array<Record<string, unknown>>>,
+  context: { rootSignature: string }
 ): PanelSharedData {
   const salvaged = {
     ...normalized,
-    dashboard: safeParseSlice("dashboard", NullableDashboardSchema, normalized.dashboard, null, issuesBySlice),
+    dashboard: safeParseSlice("dashboard", NullableDashboardSchema, normalized.dashboard, null, issuesBySlice, context),
     executiveSummary: safeParseSlice(
       "executiveSummary",
       NullableDashboardSchema,
       normalized.executiveSummary,
       null,
-      issuesBySlice
+      issuesBySlice,
+      context
     ),
     decisionCockpit: safeParseSlice(
       "decisionCockpit",
       NullableDashboardSchema,
       normalized.decisionCockpit,
       null,
-      issuesBySlice
+      issuesBySlice,
+      context
     ),
-    advice: safeParseSlice("advice", NullableAdviceSchema, normalized.advice, null, issuesBySlice),
+    advice: safeParseSlice("advice", NullableAdviceSchema, normalized.advice, null, issuesBySlice, context),
     strategicAdvice: safeParseSlice(
       "strategicAdvice",
       NullableAdviceSchema,
       normalized.strategicAdvice,
       null,
-      issuesBySlice
+      issuesBySlice,
+      context
     ),
-    risk: safeParseSlice("risk", NullableRiskSchema, normalized.risk, null, issuesBySlice),
-    fragility: safeParseSlice("fragility", NullableFragilitySchema, normalized.fragility, null, issuesBySlice),
-    conflict: safeParseSlice("conflict", NullableConflictSchema, normalized.conflict, null, issuesBySlice),
-    compare: safeParseSlice("compare", NullableCompareSchema, normalized.compare, null, issuesBySlice),
-    timeline: safeParseSlice("timeline", NullableTimelineSchema, normalized.timeline, null, issuesBySlice),
-    memory: safeParseSlice("memory", NullableMemorySchema, normalized.memory, null, issuesBySlice),
-    replay: safeParseSlice("replay", NullableReplaySchema, normalized.replay, null, issuesBySlice),
-    governance: safeParseSlice("governance", NullableGovernanceSchema, normalized.governance, null, issuesBySlice),
-    approval: safeParseSlice("approval", NullableApprovalSchema, normalized.approval, null, issuesBySlice),
-    policy: safeParseSlice("policy", NullablePolicySchema, normalized.policy, null, issuesBySlice),
+    risk: safeParseSlice("risk", NullableRiskSchema, normalized.risk, null, issuesBySlice, context),
+    fragility: safeParseSlice("fragility", NullableFragilitySchema, normalized.fragility, null, issuesBySlice, context),
+    conflict: safeParseSlice("conflict", NullableConflictSchema, normalized.conflict, null, issuesBySlice, context),
+    compare: safeParseSlice("compare", NullableCompareSchema, normalized.compare, null, issuesBySlice, context),
+    timeline: safeParseSlice("timeline", NullableTimelineSchema, normalized.timeline, null, issuesBySlice, context),
+    memory: safeParseSlice("memory", NullableMemorySchema, normalized.memory, null, issuesBySlice, context),
+    replay: safeParseSlice("replay", NullableReplaySchema, normalized.replay, null, issuesBySlice, context),
+    governance: safeParseSlice("governance", NullableGovernanceSchema, normalized.governance, null, issuesBySlice, context),
+    approval: safeParseSlice("approval", NullableApprovalSchema, normalized.approval, null, issuesBySlice, context),
+    policy: safeParseSlice("policy", NullablePolicySchema, normalized.policy, null, issuesBySlice, context),
     strategicCouncil: safeParseSlice(
       "strategicCouncil",
       NullableCouncilSchema,
       normalized.strategicCouncil,
       null,
-      issuesBySlice
+      issuesBySlice,
+      context
     ),
     strategicLearning: safeParseSlice(
       "strategicLearning",
       NullableStrategicLearningSchema,
       normalized.strategicLearning,
       null,
-      issuesBySlice
+      issuesBySlice,
+      context
     ),
-    orgMemory: safeParseSlice("orgMemory", NullableOrgMemorySchema, normalized.orgMemory, null, issuesBySlice),
+    orgMemory: safeParseSlice("orgMemory", NullableOrgMemorySchema, normalized.orgMemory, null, issuesBySlice, context),
     strategicCommand: safeParseSlice(
       "strategicCommand",
       NullableStrategicCommandSchema,
       normalized.strategicCommand,
       null,
-      issuesBySlice
+      issuesBySlice,
+      context
     ),
-    simulation: safeParseSlice("simulation", NullableSimulationSchema, normalized.simulation, null, issuesBySlice),
-    warRoom: safeParseSlice("warRoom", NullableWarRoomSchema, normalized.warRoom, null, issuesBySlice),
+    simulation: safeParseSlice("simulation", NullableSimulationSchema, normalized.simulation, null, issuesBySlice, context),
+    warRoom: safeParseSlice("warRoom", NullableWarRoomSchema, normalized.warRoom, null, issuesBySlice, context),
     memoryEntries: Array.isArray(normalized.memoryEntries) ? normalized.memoryEntries : [],
     nexoraB8PanelContext: (() => {
       const parsed = NexoraB8PanelContextSchema.nullable().safeParse(normalized.nexoraB8PanelContext ?? null);
@@ -1391,11 +1503,44 @@ function salvagePanelSharedData(
 }
 
 export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSharedDataValidationResult {
-  const DEBUG_PANEL_TRACE = process.env.NODE_ENV !== "production";
-  const normalized = normalizePanelSharedDataInput(input);
-  const result = PanelSharedDataSchema.safeParse(normalized);
+  const rootSignature = buildPanelContractSignature(input);
+  const cached = PANEL_VALIDATION_CACHE.get(rootSignature);
+  if (cached) {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[Nexora][PanelValidationCacheHit]", { signature: rootSignature });
+    }
+    return cached;
+  }
+  if (lastPanelValidationSignatureRef.current === rootSignature && lastPanelValidationResultRef.current) {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[Nexora][PanelValidationHardBypass]", { signature: rootSignature });
+    }
+    return lastPanelValidationResultRef.current;
+  }
+  if (ACTIVE_PANEL_VALIDATION_SIGNATURES.has(rootSignature)) {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[Nexora][PanelValidationReentryBlocked]", { signature: rootSignature });
+    }
+    return (
+      lastPanelValidationResultRef.current ?? {
+        data: EMPTY_PANEL_SHARED_DATA,
+        contractFailed: false,
+        contractDebugSignature: "reentry_blocked",
+        contractFailureDetail: null,
+      }
+    );
+  }
+  ACTIVE_PANEL_VALIDATION_SIGNATURES.add(rootSignature);
+  if (process.env.NODE_ENV !== "production") {
+    console.debug("[Nexora][PanelValidationCacheMiss]", { signature: rootSignature });
+  }
+  try {
+    const DEBUG_PANEL_TRACE = process.env.NODE_ENV !== "production";
+    const normalized = normalizePanelSharedDataInput(input);
+    const result = PanelSharedDataSchema.safeParse(normalized);
 
   if (!result.success) {
+    let salvageCount = 0;
     if (DEBUG_PANEL_TRACE) {
       const detailedIssues = result.error.issues.map((issue) => {
         const value = getValueAtPath(normalized, issue.path);
@@ -1426,7 +1571,11 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
       console.groupEnd();
     }
     const issuesBySlice = new Map<string, Array<Record<string, unknown>>>();
-    const salvaged = salvagePanelSharedData(normalized, issuesBySlice);
+    salvageCount += 1;
+    const salvaged =
+      salvageCount > MAX_PANEL_SALVAGE_PASSES
+        ? (lastPanelValidationResultRef.current?.data ?? EMPTY_PANEL_SHARED_DATA)
+        : salvagePanelSharedData(normalized, issuesBySlice, { rootSignature });
     const issuePaths = result.error.issues.slice(0, 12).map((issue) => issue.path.join(".") || "(root)");
     const rejectedSlices = Array.from(issuesBySlice.keys());
     const contractDebugSignature = `fail:${result.error.issues.length}:${issuePaths.join("|")}:${rejectedSlices.sort().join(",")}`;
@@ -1467,10 +1616,12 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
           warRoom: describeSliceShape(salvaged.warRoom),
         },
       };
-      const signature = JSON.stringify(payload);
-      if (!panelContractSalvagedSignatures.has(signature)) {
-        panelContractSalvagedSignatures.add(signature);
-        console.warn("[Nexora][PanelContractSalvaged]", payload);
+      if (!panelContractSalvagedSignatures.has(rootSignature)) {
+        panelContractSalvagedSignatures.add(rootSignature);
+        logPanelOnce("[Nexora][PanelContractSalvaged]", {
+          signature: rootSignature,
+          ...payload,
+        });
       }
       issuesBySlice.forEach((sliceIssues, slice) => {
         console.warn("[Nexora][PanelContractSliceRejected]", {
@@ -1480,7 +1631,7 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
       });
     }
 
-    return {
+    const nextResult: PanelSharedDataValidationResult = {
       data: salvaged,
       contractFailed: true,
       contractDebugSignature,
@@ -1490,9 +1641,20 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
         rejectedSlices,
       },
     };
+    const stableSignature = `fail:${contractDebugSignature}:${buildPanelSharedDataSignature(nextResult.data)}`;
+    lastPanelValidationSignatureRef.current = rootSignature;
+    lastPanelValidationResultRef.current = nextResult;
+    PANEL_VALIDATION_CACHE.set(rootSignature, nextResult);
+    if (PANEL_VALIDATION_CACHE.size > 50) {
+      PANEL_VALIDATION_CACHE.clear();
+      PANEL_VALIDATION_CACHE.set(rootSignature, nextResult);
+    }
+    return nextResult;
   }
 
-  if (DEBUG_PANEL_TRACE) {
+  const validatedSignature = buildPanelSharedDataSignature(result.data);
+  if (DEBUG_PANEL_TRACE && lastValidTraceSignatureRef.current !== validatedSignature) {
+    lastValidTraceSignatureRef.current = validatedSignature;
     console.log("[Nexora][Trace][ValidatedPanelData]", {
       dashboard: Boolean(result.data.dashboard ?? result.data.executiveSummary ?? result.data.decisionCockpit),
       advice: Boolean(result.data.advice ?? result.data.strategicAdvice),
@@ -1538,12 +1700,24 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
     console.groupEnd();
   }
 
-  return {
+  const nextResult: PanelSharedDataValidationResult = {
     data: result.data,
     contractFailed: false,
     contractDebugSignature: "ok",
     contractFailureDetail: null,
   };
+  const stableSignature = `ok:${validatedSignature}`;
+  lastPanelValidationSignatureRef.current = rootSignature;
+  lastPanelValidationResultRef.current = nextResult;
+  PANEL_VALIDATION_CACHE.set(rootSignature, nextResult);
+  if (PANEL_VALIDATION_CACHE.size > 50) {
+    PANEL_VALIDATION_CACHE.clear();
+    PANEL_VALIDATION_CACHE.set(rootSignature, nextResult);
+  }
+  return nextResult;
+  } finally {
+    ACTIVE_PANEL_VALIDATION_SIGNATURES.delete(rootSignature);
+  }
 }
 
 export function validatePanelSharedData(input: unknown): PanelSharedData {

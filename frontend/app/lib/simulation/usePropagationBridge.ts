@@ -18,6 +18,7 @@ import { resolvePropagationTrigger } from "./resolvePropagationTrigger";
 import type { PropagationOverlayState } from "./propagationTypes";
 import type { ScenarioActionPropagationIntent } from "./propagationTriggerTypes";
 import type { ScenarioActionResponsePayload, ScenarioOverlayPackage } from "./scenarioActionTypes";
+import { buildSceneSemanticSignature } from "../scene/sceneSemanticSignature";
 
 type PropagationModeState = "backend" | "preview" | "idle";
 
@@ -110,6 +111,28 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
   const [propagationError, setPropagationError] = useState<string | null>(null);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const activeRequestKeyRef = useRef<string | null>(null);
+  const lastPropagationAttemptSignatureRef = useRef<string | null>(null);
+  const lastPropagationSemanticSignatureRef = useRef<string | null>(null);
+  const lastBridgeSignatureRef = useRef<string | null>(null);
+  const lastBridgeResolvedSignatureRef = useRef<string | null>(null);
+  const propagationRequestInFlightRef = useRef(false);
+  const propagationSemanticSignature = useMemo(
+    () =>
+      buildSceneSemanticSignature({
+        objectIds: Array.isArray(sceneJson?.scene?.objects)
+          ? sceneJson.scene.objects
+              .map((object: any, idx: number) => String(object?.id ?? object?.name ?? `${object?.type ?? "obj"}:${idx}`))
+              .filter(Boolean)
+          : [],
+        highlightedIds: [selectedObjectId, scannerPrimaryObjectId, manualActionObjectId]
+          .map((value) => String(value ?? "").trim())
+          .filter(Boolean),
+        selectedId: selectedObjectId ?? null,
+        reactionMode: scenarioTrigger?.intent?.mode ?? null,
+        propagationSource: scenarioTrigger?.intent?.source_object_id ?? selectedObjectId ?? null,
+      }),
+    [manualActionObjectId, scannerPrimaryObjectId, scenarioTrigger?.intent?.mode, scenarioTrigger?.intent?.source_object_id, sceneJson, selectedObjectId]
+  );
   const triggerResolution = useMemo(
     () =>
       resolvePropagationTrigger({
@@ -119,8 +142,9 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
         propagationPayload,
         scenarioTrigger,
         allowPreviewFallback: previewEnabled,
+        semanticSignature: propagationSemanticSignature,
       }),
-    [manualActionObjectId, manualSourceId, previewEnabled, propagationPayload, scannerPrimaryObjectId, scenarioTrigger, sceneJson, selectedObjectId]
+    [manualActionObjectId, manualSourceId, previewEnabled, propagationPayload, propagationSemanticSignature, scannerPrimaryObjectId, scenarioTrigger, sceneJson, selectedObjectId]
   );
   const activeTrigger = triggerResolution.active_trigger;
   const resolvedSourceId = normalizeId(activeTrigger?.source_object_id);
@@ -213,6 +237,30 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
 
   useEffect(() => {
     if (!requestKey || !resolvedSourceId) return;
+    if (lastPropagationSemanticSignatureRef.current === propagationSemanticSignature) {
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[Nexora][PropagationSkipped][DuplicateSemanticSignature]", {
+          semanticSig: propagationSemanticSignature,
+        });
+      }
+      return;
+    }
+    const bridgeTargetIds =
+      activeTrigger?.payload?.impacted_nodes?.map((node) => String(node?.object_id ?? "").trim()).filter(Boolean) ?? [];
+    const bridgeSig = JSON.stringify({
+      sourceId: resolvedSourceId,
+      targetIds: Array.from(new Set(bridgeTargetIds)).sort((a, b) => a.localeCompare(b)),
+      mode: activeTrigger?.mode_hint ?? "backend",
+      reason: triggerResolution.resolution_reason,
+    });
+    if (lastBridgeSignatureRef.current === bridgeSig) {
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[Nexora][PropagationBridge][SkippedDuplicate]", { bridgeSig });
+      }
+      return;
+    }
+    lastPropagationSemanticSignatureRef.current = propagationSemanticSignature;
+    lastBridgeSignatureRef.current = bridgeSig;
     if (triggerResolution.should_reuse_payload && embeddedBackendOverlay) {
       return;
     }
@@ -235,7 +283,31 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
       return;
     }
 
+    const attemptSignature = `${requestKey}::${refreshNonce}`;
+    if (lastPropagationAttemptSignatureRef.current === attemptSignature) {
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[Nexora][PropagationSkipped]", {
+          reason: "same_signature",
+          sourceId: resolvedSourceId,
+          requestKey,
+        });
+      }
+      return;
+    }
+    if (propagationRequestInFlightRef.current) {
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[Nexora][PropagationSkipped]", {
+          reason: "in_flight",
+          sourceId: resolvedSourceId,
+          requestKey,
+        });
+      }
+      return;
+    }
+
     let cancelled = false;
+    propagationRequestInFlightRef.current = true;
+    lastPropagationAttemptSignatureRef.current = attemptSignature;
     activeRequestKeyRef.current = requestKey;
     setPropagationLoading(true);
     setPropagationError(null);
@@ -324,9 +396,11 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
         });
       }
       setPropagationLoading(false);
+      propagationRequestInFlightRef.current = false;
     }).catch((error) => {
       if (cancelled || activeRequestKeyRef.current !== requestKey) return;
       setPropagationLoading(false);
+      propagationRequestInFlightRef.current = false;
       setPropagationError(error instanceof Error ? error.message : "Propagation request failed");
       if (process.env.NODE_ENV !== "production") {
         console.debug("[Nexora][PropagationBridge] preview fallback used", {
@@ -338,6 +412,7 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
 
     return () => {
       cancelled = true;
+      propagationRequestInFlightRef.current = false;
     };
   }, [
     decay,
@@ -350,7 +425,11 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
     sceneJson,
     sceneSupportsBackendPropagation,
     triggerResolution.should_request_backend,
+    triggerResolution.resolution_reason,
     triggerResolution.should_reuse_payload,
+    propagationSemanticSignature,
+    activeTrigger?.mode_hint,
+    activeTrigger?.payload?.impacted_nodes,
   ]);
 
   const previewOverlay = useMemo(() => {
@@ -424,6 +503,23 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
     if (!resolvedSourceId) return;
+    const bridgeSig = JSON.stringify({
+      sourceId: resolvedSourceId,
+      targetIds: Array.from(
+        new Set(
+          (activeTrigger?.payload?.impacted_nodes ?? [])
+            .map((node) => String(node?.object_id ?? "").trim())
+            .filter(Boolean)
+        )
+      ).sort((a, b) => a.localeCompare(b)),
+      mode: activeTrigger?.mode_hint ?? "backend",
+      reason: triggerResolution.resolution_reason,
+    });
+    if (lastBridgeResolvedSignatureRef.current === bridgeSig) {
+      console.debug("[Nexora][PropagationBridge][SkippedDuplicate]", { bridgeSig });
+      return;
+    }
+    lastBridgeResolvedSignatureRef.current = bridgeSig;
     console.debug("[Nexora][PropagationBridge] source resolved", {
       sourceId: resolvedSourceId,
       sourceKind: activeTrigger?.kind ?? null,
@@ -431,7 +527,7 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
       propagationMode,
       resolutionReason: triggerResolution.resolution_reason,
     });
-  }, [activeTrigger?.kind, propagationMode, requestKey, resolvedSourceId, triggerResolution.resolution_reason]);
+  }, [activeTrigger?.kind, activeTrigger?.mode_hint, activeTrigger?.payload?.impacted_nodes, propagationMode, requestKey, resolvedSourceId, triggerResolution.resolution_reason]);
 
   return {
     propagationOverlay: propagationOverlay as PropagationOverlayState | null,

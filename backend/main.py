@@ -38,6 +38,8 @@ from app.routers.collaboration_router import router as collaboration_router
 from app.routers.product_router import router as product_router
 from app.routers.fragility_scanner_router import router as fragility_scanner_router
 from ingestion.router import router as ingestion_router
+from psych.main import router as psych_router
+from routers.psych_router import router as psych_interpret_router
 from app.routers.strategic_council_router import router as strategic_council_router
 from app.routers.decision_router import router as decision_execution_router
 from app.routes.decision_routes import router as decision_routes_router
@@ -263,6 +265,8 @@ app.include_router(collaboration_router)
 app.include_router(product_router)
 app.include_router(fragility_scanner_router)
 app.include_router(ingestion_router)
+app.include_router(psych_router)
+app.include_router(psych_interpret_router)
 app.include_router(strategic_council_router)
 app.include_router(decision_execution_router)
 

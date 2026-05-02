@@ -3,7 +3,7 @@
 import React from "react";
 import { cardStyle, nx, softCardStyle } from "../ui/nexoraTheme";
 import { EmptyStateCard } from "../ui/panelStates";
-import type { RiskPanelData } from "../../lib/panels/panelDataContract";
+import { buildPanelContractSignature, type RiskPanelData } from "../../lib/panels/panelDataContract";
 import { resolveRiskReadiness } from "../../lib/panels/panelDataReadiness";
 import { logPanelOnce } from "../../lib/debug/panelLogSignature";
 import { RightPanelFallback } from "../right-panel/RightPanelFallback";
@@ -231,13 +231,15 @@ export default function RiskPropagationPanel({
   onOpenRiskFlow?: (() => void) | null;
 }) {
   const readiness = resolveRiskReadiness(risk);
+  const riskSignature = React.useMemo(() => buildPanelContractSignature(risk), [risk]);
 
   React.useEffect(() => {
     logPanelOnce("[Nexora][PanelDataState]", {
       panel: mode === "fragility" ? "fragility" : "risk",
       readiness,
+      signature: riskSignature,
     });
-  }, [mode, readiness]);
+  }, [mode, readiness, riskSignature]);
 
   if (readiness === "loading") {
     return <RightPanelFallback mode="loading" embedded />;

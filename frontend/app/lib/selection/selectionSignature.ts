@@ -22,6 +22,7 @@ export function traceNexoraSelectionGuard(
 ): void {
   if (process.env.NODE_ENV === "production") return;
   const skipped = nextSig === prevSig;
+  if (skipped) return;
   console.log("[Nexora][SelectionGuard]", { nextSig, prevSig, skipped, source });
 }
 

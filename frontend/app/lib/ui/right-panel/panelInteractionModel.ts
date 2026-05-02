@@ -123,6 +123,11 @@ export function getPanelHelpSuggestions(view: RightPanelView): PanelHelpSuggesti
         { label: "Open compare", targetType: "center_execution", centerSurface: "compare" },
         { label: "Open timeline", targetType: "center_execution", centerSurface: "timeline" },
       ];
+    case "executive_object":
+      return [
+        { label: "Inspect risk flow", targetType: "right_panel", targetView: "risk" },
+        { label: "Open timeline", targetType: "center_execution", centerSurface: "timeline" },
+      ];
     default:
       return [
         { label: "Review advice", targetType: "right_panel", targetView: "advice" },
