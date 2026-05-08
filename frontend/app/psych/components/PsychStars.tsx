@@ -9,6 +9,9 @@ import React, { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useEmotionStore } from "../engine/useEmotionStore";
+import { mapEmotionToElements } from "../engine/emotionElementMapping";
+import { buildAtmosphere, emotionInputFromStore, type AtmosphereState } from "../engine/sceneAtmosphere";
+import { getMemoryFamiliarity, getMemoryScores, loadMemory } from "../engine/memoryEngine";
 
 type PsychStarsProps = {
   compact?: boolean;
@@ -118,6 +121,19 @@ function PsychStars({ compact = false, energy = 50 }: PsychStarsProps): React.JS
   const smoothPersonalityFocusRef = useRef(0);
   const smoothPersonalityFearRef = useRef(0);
   const smoothPersonalityCuriosityRef = useRef(0);
+  const smoothSceneReactionRef = useRef(0);
+  const smoothAtmosphereRef = useRef<AtmosphereState>({
+    ambientIntensity: 0.34,
+    contrast: 1,
+    calmFactor: 0,
+    tensionFactor: 0,
+    warmth: 0,
+    brightness: 0.85,
+  });
+  const baseFarColorRef = useRef(new THREE.Color("#cfe8ff"));
+  const baseNearColorRef = useRef(new THREE.Color("#d9f2ff"));
+  const baseDustColorRef = useRef(new THREE.Color("#7dd3fc"));
+  const atmosphereTintRef = useRef(new THREE.Color("#cfe8ff"));
   const counts = compact
     ? { far: 600, near: 450, dust: 500 }
     : { far: 1000, near: 700, dust: 700 };
@@ -152,6 +168,27 @@ function PsychStars({ compact = false, energy = 50 }: PsychStarsProps): React.JS
     if (!groupRef.current) return;
     const t = performance.now() * 0.0001;
     const meaning = emotion.current.meaning;
+    const atmosphereEmotion = emotionInputFromStore(emotion.current);
+    const atmosphereScores = mapEmotionToElements(atmosphereEmotion);
+    const targetAtmosphere = buildAtmosphere(atmosphereScores, atmosphereEmotion);
+    const memory = loadMemory();
+    const memoryScores = getMemoryScores(memory);
+    const baselineWarmth = Math.max(-0.12, Math.min(0.12, (memoryScores.fire + memoryScores.sun - memoryScores.water) * 0.12));
+    const baselineCalm = Math.max(0, Math.min(0.12, (memoryScores.water + memoryScores.earth) * 0.06));
+    targetAtmosphere.warmth = Math.max(-1, Math.min(1, targetAtmosphere.warmth + baselineWarmth));
+    targetAtmosphere.calmFactor = Math.max(0, Math.min(1, targetAtmosphere.calmFactor + baselineCalm));
+    targetAtmosphere.brightness = Math.max(0.6, Math.min(1.2, targetAtmosphere.brightness + getMemoryFamiliarity(memory) * 0.03));
+    const atmosphere = smoothAtmosphereRef.current;
+    atmosphere.ambientIntensity += (targetAtmosphere.ambientIntensity - atmosphere.ambientIntensity) * 0.05;
+    atmosphere.contrast += (targetAtmosphere.contrast - atmosphere.contrast) * 0.05;
+    atmosphere.calmFactor += (targetAtmosphere.calmFactor - atmosphere.calmFactor) * 0.05;
+    atmosphere.tensionFactor += (targetAtmosphere.tensionFactor - atmosphere.tensionFactor) * 0.05;
+    atmosphere.warmth += (targetAtmosphere.warmth - atmosphere.warmth) * 0.05;
+    atmosphere.brightness += (targetAtmosphere.brightness - atmosphere.brightness) * 0.05;
+    const sceneReaction = emotion.current.sceneReaction;
+    const reactionActive = !!sceneReaction && performance.now() < sceneReaction.pulseUntil;
+    const reactionTarget = reactionActive ? sceneReaction.intensity : 0;
+    smoothSceneReactionRef.current += (reactionTarget - smoothSceneReactionRef.current) * 0.06;
     const personality = emotion.current.personality;
     const adaptiveEnabled = emotion.current.adaptivePersonalityEnabled;
     const targetFocusBias = adaptiveEnabled ? personality.focusBias : 0;
@@ -169,17 +206,35 @@ function PsychStars({ compact = false, energy = 50 }: PsychStarsProps): React.JS
     const dominantModeBoost = adaptiveEnabled && personality.dominantMode === "explorative" ? 1 + smoothPersonalityCuriosityRef.current * 0.05 : 1;
     const dominantModeDim = adaptiveEnabled && personality.dominantMode === "reactive" ? 1 - smoothPersonalityFearRef.current * 0.08 : 1;
     const emotionGlow = (1 + smoothEmotionIntensityRef.current * 0.3) * fearDim * explorationBoost * dominantModeBoost * dominantModeDim;
+    const sceneGlow = sceneReaction ? 1 + smoothSceneReactionRef.current * sceneReaction.glow : 1;
+    const sceneMotion = sceneReaction ? 1 + smoothSceneReactionRef.current * sceneReaction.motion : 1;
     const explorationScale = meaning.type === "exploration" ? smoothMeaningWeightRef.current * 0.01 : 0;
+    const sceneScale = sceneReaction ? smoothSceneReactionRef.current * sceneReaction.orbitScale : 0;
     const controlDamp = meaning.type === "control" ? 1 - smoothMeaningWeightRef.current * 0.35 : 1;
     const personalityMotion = adaptiveEnabled && personality.dominantMode === "explorative" ? 1.05 : adaptiveEnabled && personality.dominantMode === "reactive" ? 0.94 : 1;
-    groupRef.current.rotation.z += 0.0003 * controlDamp * personalityMotion;
-    groupRef.current.rotation.y += 0.00015 * controlDamp * personalityMotion;
-    groupRef.current.position.x = Math.sin(t) * 0.05 * controlDamp * personalityMotion;
-    groupRef.current.position.y = Math.cos(t) * 0.05 * controlDamp * personalityMotion;
-    groupRef.current.scale.setScalar(1 + Math.sin(t * 0.5) * 0.01 + explorationScale);
-    if (farMaterialRef.current) farMaterialRef.current.opacity = 0.5 * energyGlow * emotionGlow;
-    if (nearMaterialRef.current) nearMaterialRef.current.opacity = 0.68 * energyGlow * emotionGlow;
-    if (dustMaterialRef.current) dustMaterialRef.current.opacity = Math.min(0.3, 0.16 * energyGlow * emotionGlow);
+    const motionScale = 1 + atmosphere.tensionFactor * 0.2 - atmosphere.calmFactor * 0.2;
+    const calmPositionDamp = 1 - atmosphere.calmFactor * 0.1;
+    const atmosphereGlow = atmosphere.brightness * atmosphere.contrast * (1 - atmosphere.calmFactor * 0.2 + atmosphere.tensionFactor * 0.2);
+    const pulseAmplitude = 0.01 + atmosphere.tensionFactor * 0.01 - atmosphere.calmFactor * 0.005;
+    groupRef.current.rotation.z += 0.0003 * controlDamp * personalityMotion * sceneMotion * motionScale;
+    groupRef.current.rotation.y += 0.00015 * controlDamp * personalityMotion * sceneMotion * motionScale;
+    groupRef.current.position.x = Math.sin(t) * 0.05 * controlDamp * personalityMotion * sceneMotion * calmPositionDamp;
+    groupRef.current.position.y = Math.cos(t) * 0.05 * controlDamp * personalityMotion * sceneMotion * calmPositionDamp;
+    groupRef.current.scale.setScalar(1 + Math.sin(t * 0.5) * pulseAmplitude + explorationScale + sceneScale);
+    const tint = atmosphere.warmth >= 0 ? "#ffd7a3" : "#b9e8ff";
+    atmosphereTintRef.current.set(tint);
+    if (farMaterialRef.current) {
+      farMaterialRef.current.opacity = Math.min(0.9, 0.5 * energyGlow * emotionGlow * sceneGlow * atmosphereGlow);
+      farMaterialRef.current.color.copy(baseFarColorRef.current).lerp(atmosphereTintRef.current, Math.min(0.16, Math.abs(atmosphere.warmth) * 0.14));
+    }
+    if (nearMaterialRef.current) {
+      nearMaterialRef.current.opacity = Math.min(0.96, 0.68 * energyGlow * emotionGlow * sceneGlow * atmosphereGlow);
+      nearMaterialRef.current.color.copy(baseNearColorRef.current).lerp(atmosphereTintRef.current, Math.min(0.18, Math.abs(atmosphere.warmth) * 0.16));
+    }
+    if (dustMaterialRef.current) {
+      dustMaterialRef.current.opacity = Math.min(0.4, 0.16 * energyGlow * emotionGlow * sceneGlow * atmosphereGlow);
+      dustMaterialRef.current.color.copy(baseDustColorRef.current).lerp(atmosphereTintRef.current, Math.min(0.22, Math.abs(atmosphere.warmth) * 0.18));
+    }
   });
 
   // ## SYCHO_STARS_RULE:

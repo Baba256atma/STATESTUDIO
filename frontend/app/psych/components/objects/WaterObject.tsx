@@ -11,6 +11,7 @@ import * as THREE from "three";
 import { useRef } from "react";
 import type { PsychVisualProps } from "../../lib/visual/psychVisualMapping";
 import { useEmotionStore } from "../../engine/useEmotionStore";
+import { getElementVisualScore, logVisualIntensity, mapScoreToVisual } from "../../engine/elementVisualIntensity";
 
 type Props = { brightness?: number; activity?: number; selected?: boolean; visual?: PsychVisualProps; onObjectClick?: (id: string) => void };
 
@@ -25,6 +26,8 @@ const WaterObject = React.memo(function WaterObject({ brightness = 0.6, activity
   const smoothVisual = useRef<PsychVisualProps>({ ...DEFAULT_VISUAL });
   const emotion = useEmotionStore();
   const smoothCalmRef = useRef(0.3);
+  const smoothElementScoreRef = useRef(0);
+  const lastIntensityLogAtRef = useRef(0);
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
@@ -33,20 +36,28 @@ const WaterObject = React.memo(function WaterObject({ brightness = 0.6, activity
     smoothVisual.current.pulse = THREE.MathUtils.lerp(smoothVisual.current.pulse, visual.pulse, alpha);
     smoothVisual.current.scale = THREE.MathUtils.lerp(smoothVisual.current.scale, visual.scale, alpha);
     smoothVisual.current.rotation = THREE.MathUtils.lerp(smoothVisual.current.rotation, visual.rotation, alpha);
+    const sceneReaction = emotion.current.sceneReaction;
+    const sceneBoost = sceneReaction && performance.now() < sceneReaction.pulseUntil && sceneReaction.affectedObjects.includes("water") ? sceneReaction.intensity : 0;
+    const elementScore = getElementVisualScore("water", emotion.current);
+    smoothElementScoreRef.current += (elementScore - smoothElementScoreRef.current) * 0.05;
+    const elementVisual = mapScoreToVisual(smoothElementScoreRef.current);
+    const dominantPulse = smoothElementScoreRef.current > 0.6 ? 1 + Math.sin(t * 1.2) * 0.018 : 1;
+    logVisualIntensity("water", smoothElementScoreRef.current, lastIntensityLogAtRef);
     smoothCalmRef.current += (emotion.current.calm - smoothCalmRef.current) * 0.05;
     if (ref.current) {
       const calmFlow = smoothCalmRef.current;
       const wave = 1 + Math.sin(t * (0.72 + smoothVisual.current.pulse * 0.35)) * (0.028 + smoothVisual.current.scale * 0.24 + calmFlow * 0.018) * (0.4 + activity);
-      ref.current.scale.set((0.54 + smoothVisual.current.scale + calmFlow * 0.035) * wave * (0.82 + brightness * 0.28), (0.48 + smoothVisual.current.scale * 0.55 + calmFlow * 0.02) * (1 + Math.cos(t * 0.8) * 0.024), (0.54 + smoothVisual.current.scale + calmFlow * 0.035) * wave);
-      ref.current.rotation.y = t * (0.08 + smoothVisual.current.rotation * 0.05) * (0.3 + activity);
+      ref.current.scale.set((0.54 + smoothVisual.current.scale + calmFlow * 0.035 + sceneBoost * 0.025) * wave * (0.82 + brightness * 0.28) * elementVisual.scale * dominantPulse, (0.48 + smoothVisual.current.scale * 0.55 + calmFlow * 0.02 + sceneBoost * 0.012) * (1 + Math.cos(t * 0.8) * 0.024) * elementVisual.scale, (0.54 + smoothVisual.current.scale + calmFlow * 0.035 + sceneBoost * 0.025) * wave * elementVisual.scale * dominantPulse);
+      ref.current.position.y = Math.sin(t * 0.9) * elementVisual.motion;
+      ref.current.rotation.y = t * (0.08 + smoothVisual.current.rotation * 0.05 + elementVisual.motion) * (0.3 + activity);
     }
-    if (haloRef.current) haloRef.current.scale.setScalar(1.0 + smoothVisual.current.scale * 1.4 + smoothCalmRef.current * 0.12 + Math.sin(t * 0.8) * 0.024);
+    if (haloRef.current) haloRef.current.scale.setScalar((1.0 + smoothVisual.current.scale * 1.4 + smoothCalmRef.current * 0.12 + Math.sin(t * 0.8) * 0.024) * (1 + smoothElementScoreRef.current * 0.06));
     if (ringRef.current) ringRef.current.rotation.z = t * (0.06 + smoothVisual.current.rotation * 0.045);
     if (materialRef.current) {
-      materialRef.current.emissiveIntensity = 0.08 + brightness * 0.12 + smoothVisual.current.glow * 0.16 + smoothCalmRef.current * 0.16;
-      materialRef.current.opacity = Math.min(0.78, 0.56 + brightness * 0.12 + smoothCalmRef.current * 0.08);
+      materialRef.current.emissiveIntensity = 0.06 + elementVisual.glow * 0.16 + brightness * 0.12 + smoothVisual.current.glow * 0.16 + smoothCalmRef.current * 0.16 + sceneBoost * 0.12;
+      materialRef.current.opacity = Math.min(0.86, 0.34 + elementVisual.opacity * 0.34 + brightness * 0.12 + smoothCalmRef.current * 0.08);
     }
-    if (haloMaterialRef.current) haloMaterialRef.current.opacity = Math.min(0.4, 0.1 + brightness * 0.035 + smoothVisual.current.glow * 0.055 + smoothCalmRef.current * 0.06);
+    if (haloMaterialRef.current) haloMaterialRef.current.opacity = Math.min(0.48, 0.06 + elementVisual.opacity * 0.1 + brightness * 0.035 + smoothVisual.current.glow * 0.055 + smoothCalmRef.current * 0.06 + sceneBoost * 0.06);
   });
 
   return (

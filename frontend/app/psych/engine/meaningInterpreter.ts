@@ -31,7 +31,7 @@ export function disableMeaningLayer(): void {
 export function interpretMeaning(input: string): MeaningSignal {
   const text = input.toLowerCase();
 
-  if (text.includes("who am i") || text.includes("myself")) {
+  if (text.includes("who am i") || text.includes("what am i") || text.includes("myself") || text.includes("identity") || text.includes("mirror") || text.includes("face")) {
     return { type: "identity", weight: 0.9 };
   }
 

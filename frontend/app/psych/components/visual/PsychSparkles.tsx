@@ -8,6 +8,7 @@
 import React, { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { useEmotionStore } from "../../engine/useEmotionStore";
 
 type PsychSparklesProps = {
   intensity: number;
@@ -69,6 +70,8 @@ function PsychSparkles({ intensity }: PsychSparklesProps): React.JSX.Element {
   const materialRef = useRef<THREE.PointsMaterial | null>(null);
   const layerRef = useRef<SparkleLayer | null>(null);
   const currentIntensityRef = useRef(sparkleTargetIntensity);
+  const sceneReactionRef = useRef(0);
+  const emotion = useEmotionStore();
 
   if (!layerRef.current) {
     layerRef.current = createSparkleGeometry();
@@ -78,14 +81,18 @@ function PsychSparkles({ intensity }: PsychSparklesProps): React.JSX.Element {
 
   useFrame((_, delta) => {
     const safeDelta = Math.min(delta, 0.033);
+    const sceneReaction = emotion.current.sceneReaction;
+    const reactionTarget = sceneReaction && performance.now() < sceneReaction.pulseUntil ? sceneReaction.intensity : 0;
+    sceneReactionRef.current = THREE.MathUtils.lerp(sceneReactionRef.current, reactionTarget, safeDelta * 4);
+    const particleBoost = sceneReaction ? sceneReaction.particles * sceneReactionRef.current : 0;
     currentIntensityRef.current = THREE.MathUtils.lerp(currentIntensityRef.current, sparkleTargetIntensity, safeDelta * 5);
 
     if (materialRef.current) {
-      materialRef.current.opacity = 0.16 + currentIntensityRef.current * 0.38;
-      materialRef.current.size = 0.045 + currentIntensityRef.current * 0.035;
+      materialRef.current.opacity = Math.max(0.06, 0.16 + currentIntensityRef.current * 0.38 + particleBoost * 0.16);
+      materialRef.current.size = 0.045 + currentIntensityRef.current * 0.035 + Math.max(0, particleBoost) * 0.014;
     }
     if (groupRef.current) {
-      groupRef.current.rotation.y += safeDelta * (0.015 + currentIntensityRef.current * 0.025);
+      groupRef.current.rotation.y += safeDelta * (0.015 + currentIntensityRef.current * 0.025 + particleBoost * 0.025);
       groupRef.current.rotation.z += safeDelta * 0.01;
     }
   });

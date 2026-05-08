@@ -10,6 +10,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import type { PsychVisualProps } from "../../lib/visual/psychVisualMapping";
 import { useEmotionStore } from "../../engine/useEmotionStore";
+import { getElementVisualScore, logVisualIntensity, mapScoreToVisual } from "../../engine/elementVisualIntensity";
 
 type Props = { brightness?: number; activity?: number; selected?: boolean; visual?: PsychVisualProps; onObjectClick?: (id: string) => void };
 
@@ -27,6 +28,8 @@ const AirObject = React.memo(function AirObject({ brightness = 0.5, activity = 0
   const smoothVisual = useRef<PsychVisualProps>({ ...DEFAULT_VISUAL });
   const emotion = useEmotionStore();
   const smoothCuriosityRef = useRef(0.3);
+  const smoothElementScoreRef = useRef(0);
+  const lastIntensityLogAtRef = useRef(0);
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
@@ -35,16 +38,23 @@ const AirObject = React.memo(function AirObject({ brightness = 0.5, activity = 0
     smoothVisual.current.pulse = THREE.MathUtils.lerp(smoothVisual.current.pulse, visual.pulse, alpha);
     smoothVisual.current.scale = THREE.MathUtils.lerp(smoothVisual.current.scale, visual.scale, alpha);
     smoothVisual.current.rotation = THREE.MathUtils.lerp(smoothVisual.current.rotation, visual.rotation, alpha);
+    const sceneReaction = emotion.current.sceneReaction;
+    const sceneBoost = sceneReaction && performance.now() < sceneReaction.pulseUntil && sceneReaction.affectedObjects.includes("air") ? sceneReaction.intensity : 0;
+    const elementScore = getElementVisualScore("air", emotion.current);
+    smoothElementScoreRef.current += (elementScore - smoothElementScoreRef.current) * 0.05;
+    const elementVisual = mapScoreToVisual(smoothElementScoreRef.current);
+    const dominantPulse = smoothElementScoreRef.current > 0.6 ? 1 + Math.sin(t * 1.8) * 0.018 : 1;
+    logVisualIntensity("air", smoothElementScoreRef.current, lastIntensityLogAtRef);
     smoothCuriosityRef.current += (emotion.current.curiosity - smoothCuriosityRef.current) * 0.05;
-    const motion = 0.5 + activity + smoothVisual.current.rotation * 0.45 + smoothCuriosityRef.current * 0.28;
+    const motion = 0.5 + activity + smoothVisual.current.rotation * 0.45 + smoothCuriosityRef.current * 0.28 + sceneBoost * 0.18 + elementVisual.motion * 8;
     if (ringARef.current) ringARef.current.rotation.z = t * 0.18 * motion;
     if (ringBRef.current) ringBRef.current.rotation.z = -t * 0.12 * motion;
-    if (haloRef.current) haloRef.current.scale.setScalar(1 + smoothVisual.current.scale * 1.3 + Math.sin(t * (0.9 + smoothVisual.current.pulse * 0.25)) * 0.025);
-    if (nodeARef.current) nodeARef.current.position.set(Math.sin(t * (0.8 + smoothVisual.current.pulse * 0.25)) * (0.1 + smoothVisual.current.scale), Math.cos(t * 0.6) * 0.06, 0.38);
+    if (haloRef.current) haloRef.current.scale.setScalar((1 + smoothVisual.current.scale * 1.3 + Math.sin(t * (0.9 + smoothVisual.current.pulse * 0.25)) * 0.025) * elementVisual.scale * dominantPulse);
+    if (nodeARef.current) nodeARef.current.position.set(Math.sin(t * (0.8 + smoothVisual.current.pulse * 0.25)) * (0.1 + smoothVisual.current.scale + elementVisual.motion), Math.cos(t * 0.6) * 0.06 + Math.sin(t) * elementVisual.motion, 0.38);
     if (nodeBRef.current) nodeBRef.current.position.set(Math.cos(t * 0.55) * (-0.42 - smoothVisual.current.scale), Math.sin(t * (0.7 + smoothVisual.current.pulse * 0.18)) * 0.12, -0.08);
     if (nodeCRef.current) nodeCRef.current.position.set(Math.sin(t * 0.7) * (0.34 + smoothVisual.current.scale), Math.cos(t * 0.5) * -0.14, 0.12);
-    if (haloMaterialRef.current) haloMaterialRef.current.opacity = Math.min(0.3, 0.06 + brightness * 0.032 + smoothVisual.current.glow * 0.038 + smoothCuriosityRef.current * 0.045);
-    if (ringAMaterialRef.current) ringAMaterialRef.current.opacity = Math.min(0.64, 0.26 + brightness * 0.052 + smoothVisual.current.glow * 0.066 + smoothCuriosityRef.current * 0.06);
+    if (haloMaterialRef.current) haloMaterialRef.current.opacity = Math.min(0.4, 0.03 + elementVisual.opacity * 0.08 + brightness * 0.032 + smoothVisual.current.glow * 0.038 + smoothCuriosityRef.current * 0.045 + sceneBoost * 0.06);
+    if (ringAMaterialRef.current) ringAMaterialRef.current.opacity = Math.min(0.78, 0.18 + elementVisual.opacity * 0.18 + brightness * 0.052 + smoothVisual.current.glow * 0.066 + smoothCuriosityRef.current * 0.06 + sceneBoost * 0.08);
   });
 
   return (

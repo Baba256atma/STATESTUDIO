@@ -11,7 +11,11 @@ import PsychSparkles from "./visual/PsychSparkles";
 import NebulaField from "./effects/NebulaField";
 import EmotionSparkles from "./effects/EmotionSparkles";
 import PsychElementRing from "./objects/PsychElementRing";
+import WhisperNode from "./objects/WhisperNode";
 import { useEmotionStore } from "../engine/useEmotionStore";
+import { mapEmotionToElements } from "../engine/emotionElementMapping";
+import { buildAtmosphere, emotionInputFromStore } from "../engine/sceneAtmosphere";
+import type { InspirationSignal } from "../engine/inspirationEngine";
 import type { ObjectState, PsychElementId } from "../../lib/psych/reactionTypes";
 import type { PsychState } from "../../lib/psych/reactionTypes";
 
@@ -20,6 +24,7 @@ type PsychSceneProps = {
   objects?: Record<PsychElementId, ObjectState>;
   selectedObjectId?: PsychElementId | null;
   compactStars?: boolean;
+  inspirationSignal?: InspirationSignal | null;
   onObjectClick?: (id: string) => void;
 };
 
@@ -39,9 +44,12 @@ function CameraMicroReaction({ psychState }: { psychState: PsychState }): null {
     const energy = Math.max(0, psychState.energy - 50) / 50;
     const intensity = Math.min(1, Math.max(tension, energy * 0.65));
     const meaning = emotion.current.meaning;
+    const sceneReaction = emotion.current.sceneReaction;
+    const sceneReactionActive = !!sceneReaction && performance.now() < sceneReaction.pulseUntil;
+    const sceneStability = sceneReactionActive && (sceneReaction.meaningType === "calm" || sceneReaction.meaningType === "control") ? sceneReaction.intensity * 0.25 : 0;
     const controlTarget = meaning.type === "control" ? meaning.weight : 0;
     smoothControlRef.current += (controlTarget - smoothControlRef.current) * 0.05;
-    const controlStability = 1 - smoothControlRef.current * 0.45;
+    const controlStability = 1 - smoothControlRef.current * 0.45 - sceneStability;
     const baseZ = 7.2;
     const targetZ = baseZ - intensity * 0.2 * controlStability;
     const safeDelta = Math.min(delta, 0.033);
@@ -68,7 +76,32 @@ function BreathingSpace({ children }: { children: React.ReactNode }): React.JSX.
   return <group ref={sceneRef}>{children}</group>;
 }
 
-const PsychScene = React.memo(function PsychScene({ psychState = DEFAULT_PSYCH_STATE, objects, selectedObjectId = null, compactStars = false, onObjectClick }: PsychSceneProps): React.JSX.Element {
+function AtmosphereAmbientLight({ energyGlow, inspirationGlow, heatField }: { energyGlow: number; inspirationGlow: number; heatField: boolean }): React.JSX.Element {
+  const lightRef = React.useRef<THREE.AmbientLight | null>(null);
+  const colorRef = React.useRef(new THREE.Color("#f0f6ff"));
+  const tintRef = React.useRef(new THREE.Color("#f0f6ff"));
+  const emotion = useEmotionStore();
+
+  useFrame(() => {
+    if (!lightRef.current) return;
+    const atmosphereEmotion = emotionInputFromStore(emotion.current);
+    const scores = mapEmotionToElements(atmosphereEmotion);
+    const atmosphere = buildAtmosphere(scores, atmosphereEmotion);
+    const targetIntensity = THREE.MathUtils.clamp(
+      atmosphere.ambientIntensity + energyGlow * 0.08 + inspirationGlow * 0.035 + (heatField ? 0.04 : 0),
+      0.2,
+      0.95
+    );
+    lightRef.current.intensity = THREE.MathUtils.lerp(lightRef.current.intensity, targetIntensity, 0.05);
+    tintRef.current.set(atmosphere.warmth >= 0 ? "#ffd8a0" : "#d9f5ff");
+    colorRef.current.set(heatField ? "#ffd8a0" : "#f0f6ff").lerp(tintRef.current, Math.min(0.28, Math.abs(atmosphere.warmth) * 0.22));
+    lightRef.current.color.lerp(colorRef.current, 0.05);
+  });
+
+  return <ambientLight ref={lightRef} intensity={0.24 + energyGlow * 0.08 + inspirationGlow * 0.035 + (heatField ? 0.04 : 0)} color={heatField ? "#ffd8a0" : "#f0f6ff"} />;
+}
+
+const PsychScene = React.memo(function PsychScene({ psychState = DEFAULT_PSYCH_STATE, objects, selectedObjectId = null, compactStars = false, inspirationSignal = null, onObjectClick }: PsychSceneProps): React.JSX.Element {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") console.log("[Sycho][SYCHO-B02][SceneMounted]");
     if (process.env.NODE_ENV !== "production") console.log("[Sycho][SYCHO-B03.5-FIX][OrbitControlsReady]");
@@ -77,6 +110,8 @@ const PsychScene = React.memo(function PsychScene({ psychState = DEFAULT_PSYCH_S
 
   const energyGlow = Math.max(0, psychState.energy - 50) / 50;
   const fireGlow = Math.max(0, psychState.tension - 50) / 50;
+  const inspirationActive = !!inspirationSignal && Date.now() < inspirationSignal.pulseUntil;
+  const inspirationGlow = inspirationActive ? inspirationSignal.intensity : 0;
   const heatField = energyGlow > 0.35 && fireGlow > 0.35;
   const objectValues = useMemo(() => Object.values(objects ?? {}), [objects]);
   const globalIntensity = useMemo(() => {
@@ -99,7 +134,7 @@ const PsychScene = React.memo(function PsychScene({ psychState = DEFAULT_PSYCH_S
             GPU-safe and non-reactive to avoid WebGL errors. */}
         <color attach="background" args={["#020617"]} />
         <fog attach="fog" args={["#020617", 10, 80]} />
-        <ambientLight intensity={0.24 + energyGlow * 0.08 + (heatField ? 0.04 : 0)} color={heatField ? "#ffd8a0" : "#f0f6ff"} />
+        <AtmosphereAmbientLight energyGlow={energyGlow} inspirationGlow={inspirationGlow} heatField={heatField} />
         <directionalLight position={[5, 5, 5]} intensity={0.48} />
         <pointLight position={[0, 1.6, 2.8]} intensity={0.55 + energyGlow * 0.18 + fireGlow * 0.12} color={heatField ? "#ffb35c" : "#d8ad72"} />
         <hemisphereLight args={[0x1c2430, 0x061018, 0.12]} />
@@ -107,11 +142,12 @@ const PsychScene = React.memo(function PsychScene({ psychState = DEFAULT_PSYCH_S
         <BreathingSpace>
           <NebulaField />
           <PsychNebula />
-          <PsychStars compact={compactStars} energy={psychState.energy} />
+          <PsychStars compact={compactStars} energy={psychState.energy + inspirationGlow * 12} />
           <EmotionSparkles intensity={globalIntensity} />
           <PsychFoggySun intensity={egoIntensity} />
           <PsychSparkles intensity={globalIntensity} />
           <PsychElementRing psychState={psychState} objects={objects} selectedObjectId={selectedObjectId} onObjectClick={onObjectClick} />
+          <WhisperNode signal={inspirationSignal} />
         </BreathingSpace>
         <OrbitControls
           enableRotate={true}

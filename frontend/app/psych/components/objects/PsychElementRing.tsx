@@ -49,6 +49,11 @@ const DEFAULT_OBJECTS: Record<PsychElementId, ObjectState> = {
   ego: { id: "ego", brightness: 0.2, activity: 0.1 },
 };
 
+function setPointerCursor(active: boolean): void {
+  if (typeof document === "undefined") return;
+  document.body.style.cursor = active ? "pointer" : "";
+}
+
 const CONNECTION_POINTS_BY_ID = Object.fromEntries(
   PSYCH_ELEMENT_CONFIGS
     .filter((cfg) => cfg.id !== "ego")
@@ -58,6 +63,7 @@ const CONNECTION_POINTS_BY_ID = Object.fromEntries(
 const PsychElementRing = React.memo(function PsychElementRing({ psychState, objects, selectedObjectId = null, onObjectClick }: PsychElementRingProps) {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") console.log("[Sycho][SYCHO-B03][ObjectsMounted]");
+    return () => setPointerCursor(false);
   }, []);
 
   const resolvedObjects = useMemo(() => objects ?? DEFAULT_OBJECTS, [objects]);
@@ -88,6 +94,7 @@ const PsychElementRing = React.memo(function PsychElementRing({ psychState, obje
         }
         const pos = cfg.position as [number, number, number];
         const objectState = resolvedObjects[key];
+        const clickId = key === "water" ? "liquid" : key;
         const visualIntensity = Math.min(1, (objectState?.brightness ?? cfg.defaultBrightness) * 0.58 + (objectState?.activity ?? cfg.defaultActivity) * 0.42);
         const props = {
           brightness: objectState?.brightness ?? cfg.defaultBrightness,
@@ -99,6 +106,21 @@ const PsychElementRing = React.memo(function PsychElementRing({ psychState, obje
         const haloColor = new THREE.Color(cfg.baseColor);
         return (
           <group key={key} position={pos} scale={OBJECT_SCALE} name={`psych-object-${key === "water" ? "liquid" : key}`}>
+            <mesh
+              data-nx={`psych-object-${key === "water" ? "liquid" : key}-hit-area`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onObjectClick?.(clickId);
+              }}
+              onPointerOver={(event) => {
+                event.stopPropagation();
+                setPointerCursor(true);
+              }}
+              onPointerOut={() => setPointerCursor(false)}
+            >
+              <sphereGeometry args={[1.72, 20, 10]} />
+              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            </mesh>
             <mesh rotation={ORBIT_TILT} renderOrder={-2} scale={1 + visualIntensity * 0.04}>
               <torusGeometry args={[1.34, 0.009, 8, 112]} />
               <meshBasicMaterial color={haloColor} transparent opacity={0.18 + visualIntensity * 0.22} depthWrite={false} />

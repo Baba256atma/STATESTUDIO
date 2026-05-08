@@ -9,6 +9,8 @@ import React, { useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import type { PsychVisualProps } from "../../lib/visual/psychVisualMapping";
+import { useEmotionStore } from "../../engine/useEmotionStore";
+import { getElementVisualScore, logVisualIntensity, mapScoreToVisual } from "../../engine/elementVisualIntensity";
 
 type Props = { brightness?: number; activity?: number; selected?: boolean; visual?: PsychVisualProps; onObjectClick?: (id: string) => void };
 
@@ -21,6 +23,9 @@ const EarthObject = React.memo(function EarthObject({ brightness = 0.45, activit
   const materialRef = useRef<THREE.MeshStandardMaterial | null>(null);
   const haloMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const smoothVisual = useRef<PsychVisualProps>({ ...DEFAULT_VISUAL });
+  const emotion = useEmotionStore();
+  const smoothElementScoreRef = useRef(0);
+  const lastIntensityLogAtRef = useRef(0);
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
@@ -29,16 +34,24 @@ const EarthObject = React.memo(function EarthObject({ brightness = 0.45, activit
     smoothVisual.current.pulse = THREE.MathUtils.lerp(smoothVisual.current.pulse, visual.pulse, alpha);
     smoothVisual.current.scale = THREE.MathUtils.lerp(smoothVisual.current.scale, visual.scale, alpha);
     smoothVisual.current.rotation = THREE.MathUtils.lerp(smoothVisual.current.rotation, visual.rotation, alpha);
+    const sceneReaction = emotion.current.sceneReaction;
+    const sceneBoost = sceneReaction && performance.now() < sceneReaction.pulseUntil && sceneReaction.affectedObjects.includes("earth") ? sceneReaction.intensity : 0;
+    const elementScore = getElementVisualScore("earth", emotion.current);
+    smoothElementScoreRef.current += (elementScore - smoothElementScoreRef.current) * 0.05;
+    const elementVisual = mapScoreToVisual(smoothElementScoreRef.current);
+    const dominantPulse = smoothElementScoreRef.current > 0.6 ? 1 + Math.sin(t * 0.9) * 0.012 : 1;
+    logVisualIntensity("earth", smoothElementScoreRef.current, lastIntensityLogAtRef);
     if (ref.current) {
       const breath = 1 + Math.sin(t * (0.45 + smoothVisual.current.pulse * 0.12)) * smoothVisual.current.scale * 0.24;
-      ref.current.scale.setScalar(breath);
-      ref.current.rotation.y = t * (0.1 + smoothVisual.current.rotation * 0.03);
+      ref.current.scale.setScalar(breath * elementVisual.scale * dominantPulse);
+      ref.current.position.y = Math.sin(t * 0.45) * elementVisual.motion * 0.7;
+      ref.current.rotation.y = t * (0.1 + smoothVisual.current.rotation * 0.03 + elementVisual.motion * 0.5) * (1 - sceneBoost * 0.12);
       ref.current.rotation.x = Math.sin(t * 0.05) * 0.02;
     }
-    if (haloRef.current) haloRef.current.scale.setScalar(1 + smoothVisual.current.scale + Math.sin(t * 0.7) * 0.015 * (1 + activity));
+    if (haloRef.current) haloRef.current.scale.setScalar((1 + smoothVisual.current.scale + Math.sin(t * 0.7) * 0.015 * (1 + activity)) * (1 + smoothElementScoreRef.current * 0.06));
     if (ringRef.current) ringRef.current.rotation.z = t * (0.035 + smoothVisual.current.rotation * 0.012);
-    if (materialRef.current) materialRef.current.emissiveIntensity = 0.04 + brightness * 0.08 + smoothVisual.current.glow * 0.08;
-    if (haloMaterialRef.current) haloMaterialRef.current.opacity = Math.min(0.28, 0.1 + brightness * 0.035 + smoothVisual.current.glow * 0.035);
+    if (materialRef.current) materialRef.current.emissiveIntensity = 0.03 + elementVisual.glow * 0.08 + brightness * 0.08 + smoothVisual.current.glow * 0.08 + sceneBoost * 0.06;
+    if (haloMaterialRef.current) haloMaterialRef.current.opacity = Math.min(0.36, 0.05 + elementVisual.opacity * 0.08 + brightness * 0.035 + smoothVisual.current.glow * 0.035 + sceneBoost * 0.04);
   });
 
   return (

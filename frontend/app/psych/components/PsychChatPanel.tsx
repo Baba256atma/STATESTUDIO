@@ -2,10 +2,14 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { revealEgoFaceDebug } from "../engine/useEmotionStore";
+import { disableInnerDialogue, enableInnerDialogue, isInnerDialogueEnabled, type InnerDialogueTone } from "../engine/innerDialogueEngine";
+import type { Speaker } from "../engine/elementVoiceRouter";
 
 type ChatMessage = {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   text: string;
+  source?: Speaker;
+  tone?: InnerDialogueTone | "inner" | "mystery" | "element";
 };
 
 type PsychChatPanelProps = {
@@ -14,12 +18,14 @@ type PsychChatPanelProps = {
   setDrawerRatio?: (n: number) => void;
   onClose?: () => void;
   onSendMessage?: (text: string) => string | void | Promise<string | void>;
-  assistantMessage?: { id: number; text: string } | null;
+  onUserActivity?: () => void;
+  assistantMessage?: { id: number; text: string; role?: "assistant" | "system"; source?: Speaker; tone?: InnerDialogueTone | "inner" | "mystery" | "element" } | null;
 };
 
-export default function PsychChatPanel({ mobile = false, drawerRatio, setDrawerRatio, onClose, onSendMessage, assistantMessage }: PsychChatPanelProps) {
+export default function PsychChatPanel({ mobile = false, drawerRatio, setDrawerRatio, onClose, onSendMessage, onUserActivity, assistantMessage }: PsychChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
+  const [innerDialogueEnabled, setInnerDialogueEnabled] = useState(true);
   const listRef = useRef<HTMLDivElement | null>(null);
   const lastAssistantMessageId = useRef<number | null>(null);
   const chipActions = [
@@ -37,17 +43,33 @@ export default function PsychChatPanel({ mobile = false, drawerRatio, setDrawerR
   useEffect(() => {
     if (!assistantMessage || lastAssistantMessageId.current === assistantMessage.id) return;
     lastAssistantMessageId.current = assistantMessage.id;
-    setMessages((m) => [...m, { role: "assistant", text: assistantMessage.text }]);
+    const delay = assistantMessage.role === "system" ? 520 : 0;
+    const timeout = window.setTimeout(() => {
+      setMessages((m) => [...m, {
+        role: assistantMessage.role ?? "assistant",
+        text: assistantMessage.text,
+        source: assistantMessage.source,
+        tone: assistantMessage.tone,
+      }]);
+    }, delay);
+    return () => window.clearTimeout(timeout);
   }, [assistantMessage]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setInnerDialogueEnabled(isInnerDialogueEnabled()), 0);
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   const sendText = (rawText: string) => {
     const text = rawText.trim();
     if (!text) return;
+    onUserActivity?.();
     if (text === "__NX_REVEAL_EGO_FACE__") {
-      revealEgoFaceDebug(5000);
+      revealEgoFaceDebug(8000);
       setMessages((m) => [...m, { role: "assistant", text: "The Ego face is revealed for a moment." }]);
       if (process.env.NODE_ENV !== "production") {
         console.log("[Sycho][B12.6.5][FaceRevealDebug]");
+        console.log("[Sycho][B12.6.10-FIX][FaceForcedVisible]");
       }
       return;
     }
@@ -68,6 +90,14 @@ export default function PsychChatPanel({ mobile = false, drawerRatio, setDrawerR
       .catch(() => {
         setMessages((m) => [...m, { role: "assistant", text: "I can still feel the local field shifting." }]);
       });
+  };
+
+  const toggleInnerDialogue = () => {
+    const next = !innerDialogueEnabled;
+    if (next) enableInnerDialogue();
+    else disableInnerDialogue();
+    setInnerDialogueEnabled(next);
+    onUserActivity?.();
   };
 
   const send = () => {
@@ -96,6 +126,21 @@ export default function PsychChatPanel({ mobile = false, drawerRatio, setDrawerR
           </div>
           <div>
             {mobile ? <button onClick={onClose} style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#cbd5e1", padding: "5px 8px" }}>Close</button> : null}
+            <button
+              type="button"
+              onClick={toggleInnerDialogue}
+              style={{
+                marginLeft: mobile ? 6 : 0,
+                background: innerDialogueEnabled ? "rgba(250,204,21,0.1)" : "rgba(255,255,255,0.035)",
+                border: "1px solid rgba(250,204,21,0.12)",
+                borderRadius: 8,
+                color: innerDialogueEnabled ? "#f8ecd0" : "#94a3b8",
+                padding: "5px 8px",
+                fontSize: 11,
+              }}
+            >
+              Inner Voice {innerDialogueEnabled ? "On" : "Off"}
+            </button>
           </div>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
@@ -123,6 +168,12 @@ export default function PsychChatPanel({ mobile = false, drawerRatio, setDrawerR
         {messages.length === 0 ? <div style={{ color: "rgba(148, 163, 184, 0.78)", fontSize: 13 }}>Say something and watch the field answer.</div> : null}
         {messages.map((m, i) => {
           const isUser = m.role === "user";
+          const isEgoVoice = m.source === "ego";
+          const isInnerVoice = (m.role === "system" && !isEgoVoice) || isEgoVoice;
+          const isOracle = m.source === "oracle";
+          const isWhisper = m.source === "whisper" || isOracle;
+          const isElementVoice = m.tone === "element" && !!m.source && !isEgoVoice && !isWhisper;
+          const elementLabel = isElementVoice ? `${m.source}: ` : "";
           return (
             <div
               key={i}
@@ -131,17 +182,19 @@ export default function PsychChatPanel({ mobile = false, drawerRatio, setDrawerR
                 maxWidth: "88%",
                 marginBottom: 9,
                 marginLeft: isUser ? "auto" : 0,
-                padding: "8px 10px",
-                border: isUser ? "1px solid rgba(125, 211, 252, 0.13)" : "1px solid rgba(250, 204, 21, 0.13)",
-                background: isUser ? "rgba(14, 116, 144, 0.18)" : "linear-gradient(135deg, rgba(250, 204, 21, 0.09), rgba(14, 165, 233, 0.08))",
-                color: isUser ? "#dff7ff" : "#f8ecd0",
+                padding: isInnerVoice || isWhisper ? "7px 10px" : "8px 10px",
+                border: isUser ? "1px solid rgba(125, 211, 252, 0.13)" : isElementVoice ? "1px solid rgba(125, 211, 252, 0.16)" : isOracle ? "1px solid rgba(253, 230, 138, 0.2)" : isWhisper ? "1px solid rgba(196, 181, 253, 0.13)" : isEgoVoice ? "1px solid rgba(148, 163, 184, 0.12)" : isInnerVoice ? "1px solid rgba(250, 204, 21, 0.08)" : "1px solid rgba(250, 204, 21, 0.13)",
+                background: isUser ? "rgba(14, 116, 144, 0.18)" : isElementVoice ? "linear-gradient(135deg, rgba(14, 165, 233, 0.07), rgba(250, 204, 21, 0.055))" : isOracle ? "linear-gradient(135deg, rgba(250, 204, 21, 0.11), rgba(124, 58, 237, 0.12), rgba(14, 165, 233, 0.05))" : isWhisper ? "linear-gradient(135deg, rgba(250, 204, 21, 0.07), rgba(124, 58, 237, 0.075), rgba(14, 165, 233, 0.045))" : isEgoVoice ? "linear-gradient(135deg, rgba(148, 163, 184, 0.08), rgba(14, 165, 233, 0.04))" : isInnerVoice ? "linear-gradient(135deg, rgba(250, 204, 21, 0.055), rgba(14, 165, 233, 0.045))" : "linear-gradient(135deg, rgba(250, 204, 21, 0.09), rgba(14, 165, 233, 0.08))",
+                color: isUser ? "#dff7ff" : isElementVoice ? "rgba(224, 242, 254, 0.88)" : isOracle ? "rgba(254, 243, 199, 0.92)" : isWhisper ? "rgba(253, 230, 138, 0.84)" : isEgoVoice ? "rgba(203, 213, 225, 0.82)" : isInnerVoice ? "rgba(248, 236, 208, 0.76)" : "#f8ecd0",
                 borderRadius: 10,
-                fontSize: 13,
+                fontSize: isInnerVoice || isWhisper ? 12 : 13,
                 lineHeight: 1.38,
-                boxShadow: isUser ? "none" : "0 8px 28px rgba(0,0,0,0.12)",
+                fontStyle: isInnerVoice || isWhisper ? "italic" : "normal",
+                boxShadow: isUser || isInnerVoice || isWhisper ? "none" : "0 8px 28px rgba(0,0,0,0.12)",
+                opacity: isOracle ? 0.92 : isWhisper ? 0.82 : isEgoVoice ? 0.84 : isInnerVoice ? (m.tone === "whisper" ? 0.76 : 0.86) : 1,
               }}
             >
-              {m.text}
+              {isOracle ? "oracle: " : isWhisper ? "whisper: " : isEgoVoice ? "ego: " : elementLabel || (isInnerVoice ? "(inner voice) " : "")}{m.text}
             </div>
           );
         })}
@@ -149,7 +202,11 @@ export default function PsychChatPanel({ mobile = false, drawerRatio, setDrawerR
       <div style={{ padding: 10, borderTop: "1px solid rgba(125, 211, 252, 0.09)", display: "flex", gap: 8 }}>
         <input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            setInput(e.target.value);
+            onUserActivity?.();
+          }}
+          onFocus={onUserActivity}
           onKeyDown={(e) => { if (e.key === "Enter") send(); }}
           placeholder="Name what is moving..."
           style={{
