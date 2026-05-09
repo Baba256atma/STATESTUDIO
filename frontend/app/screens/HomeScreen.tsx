@@ -85,6 +85,13 @@ import type { UICommand } from "../lib/ui/uiCommands";
 import { RestorePreviewModal } from "../components/RestorePreviewModal";
 import { useNexoraUiTheme } from "../lib/ui/nexoraUiTheme";
 import { StrategicAlertOverlay } from "../components/StrategicAlertOverlay";
+import { TypeCDevInspector } from "../components/dev/TypeCDevInspector";
+import { TypeCConnectionSuggestionPanel } from "../components/typec/TypeCConnectionSuggestionPanel";
+import { TypeCDecisionPanel } from "../components/typec/TypeCDecisionPanel";
+import { TypeCExecutiveSummaryCard } from "../components/typec/TypeCExecutiveSummaryCard";
+import { TypeCScenarioComparePanel } from "../components/typec/TypeCScenarioComparePanel";
+import { TypeCScenarioDraftPanel } from "../components/typec/TypeCScenarioDraftPanel";
+import { TypeCWarRoomPanel } from "../components/typec/TypeCWarRoomPanel";
 import { nx, sceneOverlayCardStyle, sceneVignetteLayerStyle, sceneWorkingBadgeStyle, softCardStyle } from "../components/ui/nexoraTheme";
 import {
   INITIAL_NEXORA_UI_STATE,
@@ -151,6 +158,69 @@ import {
 import { buildPlatformAssemblyState } from "../lib/platform/platformAssemblyContract";
 import { runAutonomousScenarioExploration } from "../lib/exploration/autonomousScenarioExplorer";
 import { createInitialMemoryState, deriveVisualPatch, updateMemory } from "../lib/memory/decisionMemory";
+import { getNexoraMode } from "../lib/typec/nexoraTypeCMode";
+import { detectTypeCIntent } from "../lib/typec/typeCIntent";
+import { addTypeCObjectToScene } from "../lib/typec/typeCObjectActions";
+import { buildTypeCObjectDraft } from "../lib/typec/typeCObjectDraft";
+import { ensureTypeCCoreObject } from "../lib/typec/typeCSceneBootstrap";
+import { addTypeCSystemModelToScene } from "../lib/typec/typeCSystemModeling";
+import {
+  addScenarioToState,
+  buildTypeCScenarioFromScene,
+  ignoreTypeCScenario,
+  markScenarioReadyForDecision,
+  selectTypeCScenario,
+} from "../lib/typec/typeCScenarioBuilder";
+import type { TypeCScenarioState } from "../lib/typec/typeCScenarioTypes";
+import {
+  createTypeCPipelineEvent,
+  type TypeCPipelineEvent,
+  type TypeCPipelineEventInput,
+} from "../lib/typec/typeCPipelineTracker";
+import {
+  buildTypeCDecisionReadinessSnapshot,
+  type TypeCDecisionReadinessSnapshot,
+} from "../lib/typec/typeCDecisionReadiness";
+import {
+  buildTypeCDecisionDraft,
+  type TypeCDecisionDraft,
+} from "../lib/typec/typeCDecisionDraft";
+import {
+  buildTypeCExecutiveSummary as buildTypeCExecutiveSummaryFromDraft,
+  type TypeCExecutiveSummary,
+} from "../lib/typec/typeCExecutiveSummary";
+import { buildTypeCExecutiveSummary as buildTypeCExecutiveSummaryFromState } from "../lib/typec/buildTypeCExecutiveSummary";
+import {
+  buildTypeCAIExecutiveInsight,
+  type TypeCAIExecutiveInsight,
+} from "../lib/typec/aiTypeCExecutiveInsight";
+import {
+  applyTypeCConnectionSuggestionsToScene,
+  buildTypeCConnectionSuggestions,
+  type TypeCConnectionSuggestion,
+} from "../lib/typec/typeCConnectionSuggestions";
+import {
+  buildTypeCScenarioDrafts,
+  type TypeCScenarioDraft,
+} from "../lib/typec/typeCScenarioDrafts";
+import {
+  compareTypeCScenarioSimulations,
+  type TypeCScenarioComparison,
+} from "../lib/typec/typeCScenarioComparison";
+import {
+  buildTypeCDecisionRecommendation,
+  type TypeCDecisionRecommendation,
+} from "../lib/typec/typeCDecisionRecommendation";
+import {
+  clearTypeCScenarioSimulation,
+  simulateTypeCScenario,
+  type TypeCScenarioSimulation,
+} from "../lib/typec/typeCScenarioSimulation";
+import {
+  buildTypeCExecutiveActions,
+  type TypeCExecutiveAction,
+} from "../lib/typec/typeCExecutiveActions";
+import { resolveTypeCActionPanel } from "../lib/typec/routeTypeCExecutiveAction";
 import type { MemoryStateV1 } from "../lib/memory/memoryTypes";
 import type { RiskAlert, StrategicState, EmotionalFx, ScenePatch, SceneObjectPatch } from "../lib/contracts";
 import {
@@ -1045,6 +1115,36 @@ type HomeScreenProps = {
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const isPilotProductMode = useMemo(() => getNexoraProductMode() === "pilot", []);
+  const typeCMode = useMemo(() => getNexoraMode(), []);
+  const lastTypeCSignatureRef = useRef<string | null>(null);
+  const lastTypeCExecutiveActionPanelRef = useRef<{ signature: string; at: number } | null>(null);
+  const typeCPipelineEventsRef = useRef<TypeCPipelineEvent[]>([]);
+  const [typeCScenarioState, setTypeCScenarioState] = useState<TypeCScenarioState>({
+    scenarios: [],
+    selectedScenarioId: null,
+  });
+  const [typeCDecisionReadiness, setTypeCDecisionReadiness] =
+    useState<TypeCDecisionReadinessSnapshot | null>(null);
+  const [typeCDecisionDraft, setTypeCDecisionDraft] =
+    useState<TypeCDecisionDraft | null>(null);
+  const [typeCCommandExecutiveSummary, setTypeCCommandExecutiveSummary] =
+    useState<TypeCExecutiveSummary | null>(null);
+  const [typeCAIExecutiveInsight, setTypeCAIExecutiveInsight] =
+    useState<TypeCAIExecutiveInsight | null>(null);
+  const [connectionSuggestions, setConnectionSuggestions] =
+    useState<TypeCConnectionSuggestion[] | null>(null);
+  const [scenarioDrafts, setScenarioDrafts] =
+    useState<TypeCScenarioDraft[] | null>(null);
+  const [activeTypeCScenario, setActiveTypeCScenario] =
+    useState<TypeCScenarioDraft | null>(null);
+  const [activeSimulation, setActiveSimulation] =
+    useState<TypeCScenarioSimulation | null>(null);
+  const [scenarioComparison, setScenarioComparison] =
+    useState<TypeCScenarioComparison | null>(null);
+  const [scenarioComparisonDrafts, setScenarioComparisonDrafts] =
+    useState<TypeCScenarioDraft[] | null>(null);
+  const [decisionRecommendation, setDecisionRecommendation] =
+    useState<TypeCDecisionRecommendation | null>(null);
   const { nexoraMode } = useNexoraOperatorMode();
   const { resolvedTheme } = useNexoraUiTheme();
   const console = React.useMemo(
@@ -1061,6 +1161,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     () => domainExperience ?? resolveDomainExperience("general"),
     [domainExperience]
   );
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") {
+      globalThis.console.log("[Nexora][Mode]", { mode: typeCMode });
+    }
+  }, [typeCMode]);
   const { activeProfile } = useCustomerDemoMode(activeDomainExperience.experience.domainId);
   const activeDomainDemo = useMemo(
     () => resolveDomainDemo(activeDomainExperience.experience.domainId),
@@ -1434,6 +1539,633 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       applySceneChangeUpstreamDedup(next, "chat");
     },
     [applySceneChangeSafe, applySceneChangeUpstreamDedup]
+  );
+
+  useEffect(() => {
+    if (typeCMode !== "type_c") return;
+    applySceneChangeSafe((prev) => {
+      const next = ensureTypeCCoreObject(prev, typeCMode);
+      if (next === prev) return prev;
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console.log("[Nexora][TypeC][CoreObjectAdded]", {
+          objectId: "nexora_core",
+        });
+      }
+      return next;
+    }, "type_c_bootstrap", { bypassDedupe: true });
+  }, [applySceneChangeSafe, typeCMode]);
+
+  const trackTypeCPipelineEvent = useCallback((eventInput: TypeCPipelineEventInput) => {
+    if (process.env.NODE_ENV === "production") return;
+
+    const event = createTypeCPipelineEvent(eventInput);
+    typeCPipelineEventsRef.current = [
+      ...typeCPipelineEventsRef.current.slice(-24),
+      event,
+    ];
+
+    if (typeof window !== "undefined") {
+      const debugWindow = window as typeof window & {
+        __NEXORA_DEBUG__?: Record<string, unknown>;
+      };
+      debugWindow.__NEXORA_DEBUG__ = debugWindow.__NEXORA_DEBUG__ ?? {};
+      debugWindow.__NEXORA_DEBUG__.typeCPipelineEvents = typeCPipelineEventsRef.current;
+    }
+
+    globalThis.console.log("[Nexora][TypeC][PipelineEvent]", event);
+  }, []);
+
+  const refreshTypeCDecisionReadiness = useCallback(
+    (scenarioStateOverride?: TypeCScenarioState): TypeCDecisionReadinessSnapshot => {
+      const snapshot = buildTypeCDecisionReadinessSnapshot({
+        scene: sceneJson,
+        scenarioState: scenarioStateOverride ?? typeCScenarioState,
+      });
+
+      setTypeCDecisionReadiness((prev) => {
+        if (prev?.id === snapshot.id) return prev;
+        return snapshot;
+      });
+
+      if (process.env.NODE_ENV !== "production") {
+        const logPayload = {
+          level: snapshot.level,
+          scenarioId: snapshot.scenarioId,
+          missing: snapshot.missing,
+        };
+        globalThis.console.log("[Nexora][TypeC][DecisionReadinessSnapshot]", logPayload);
+        if (snapshot.level === "not_ready") {
+          globalThis.console.log("[Nexora][TypeC][DecisionReadinessSkipped]", logPayload);
+        }
+      }
+
+      trackTypeCPipelineEvent({
+        step: "decision_readiness_snapshot",
+        scenarioId: snapshot.scenarioId ?? undefined,
+        reason: snapshot.level,
+      });
+
+      return snapshot;
+    },
+    [sceneJson, trackTypeCPipelineEvent, typeCScenarioState]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const debugWindow = window as typeof window & {
+      __NEXORA_DEBUG__?: Record<string, unknown>;
+    };
+    debugWindow.__NEXORA_DEBUG__ = debugWindow.__NEXORA_DEBUG__ ?? {};
+    debugWindow.__NEXORA_DEBUG__.typeCDecisionReadiness = typeCDecisionReadiness;
+  }, [typeCDecisionReadiness]);
+
+  const createTypeCDecisionDraft = useCallback((): boolean => {
+    if (typeCMode !== "type_c") {
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console.log("[Nexora][TypeC][DecisionDraftSkipped]", {
+          reason: "mode_not_type_c",
+        });
+      }
+      trackTypeCPipelineEvent({
+        step: "skipped",
+        intentType: "create_decision_draft",
+        reason: "mode_not_type_c",
+      });
+      return false;
+    }
+
+    const readiness =
+      typeCDecisionReadiness ??
+      buildTypeCDecisionReadinessSnapshot({
+        scene: sceneJson,
+        scenarioState: typeCScenarioState,
+      });
+    const draft = buildTypeCDecisionDraft({
+      readiness,
+      scene: sceneJson,
+    });
+
+    if (!draft) {
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console.log("[Nexora][TypeC][DecisionDraftSkipped]", {
+          reason: "draft_build_failed",
+        });
+      }
+      trackTypeCPipelineEvent({
+        step: "skipped",
+        intentType: "create_decision_draft",
+        reason: "draft_build_failed",
+      });
+      return false;
+    }
+
+    setTypeCDecisionReadiness((prev) => {
+      if (prev?.id === readiness.id) return prev;
+      return readiness;
+    });
+    setTypeCDecisionDraft((prev) => {
+      if (prev?.id === draft.id) return prev;
+      return draft;
+    });
+
+    trackTypeCPipelineEvent({
+      step: "decision_draft_created",
+      scenarioId: draft.scenarioId ?? undefined,
+      reason: draft.posture,
+    });
+
+    if (process.env.NODE_ENV !== "production") {
+      globalThis.console.log("[Nexora][TypeC][DecisionDraftCreated]", {
+        posture: draft.posture,
+        confidence: draft.confidence,
+        scenarioId: draft.scenarioId,
+      });
+    }
+
+    return true;
+  }, [
+    sceneJson,
+    trackTypeCPipelineEvent,
+    typeCDecisionReadiness,
+    typeCMode,
+    typeCScenarioState,
+  ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const debugWindow = window as typeof window & {
+      __NEXORA_DEBUG__?: Record<string, unknown>;
+    };
+    debugWindow.__NEXORA_DEBUG__ = debugWindow.__NEXORA_DEBUG__ ?? {};
+    debugWindow.__NEXORA_DEBUG__.typeCDecisionDraft = typeCDecisionDraft;
+  }, [typeCDecisionDraft]);
+
+  const createTypeCExecutiveSummary = useCallback((): boolean => {
+    if (typeCMode !== "type_c") {
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console.log("[Nexora][TypeC][ExecutiveSummarySkipped]", {
+          reason: "mode_not_type_c",
+        });
+      }
+      trackTypeCPipelineEvent({
+        step: "skipped",
+        intentType: "create_executive_summary",
+        reason: "mode_not_type_c",
+      });
+      return false;
+    }
+
+    const readiness =
+      typeCDecisionReadiness ??
+      buildTypeCDecisionReadinessSnapshot({
+        scene: sceneJson,
+        scenarioState: typeCScenarioState,
+      });
+    const draft =
+      typeCDecisionDraft ??
+      buildTypeCDecisionDraft({
+        readiness,
+        scene: sceneJson,
+      });
+    const summary = buildTypeCExecutiveSummaryFromDraft({ draft });
+
+    if (!summary) {
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console.log("[Nexora][TypeC][ExecutiveSummarySkipped]", {
+          reason: "summary_build_failed",
+        });
+      }
+      trackTypeCPipelineEvent({
+        step: "skipped",
+        intentType: "create_executive_summary",
+        reason: "summary_build_failed",
+      });
+      return false;
+    }
+
+    if (!typeCDecisionReadiness) {
+      setTypeCDecisionReadiness(readiness);
+    }
+    if (!typeCDecisionDraft && draft) {
+      setTypeCDecisionDraft(draft);
+    }
+    setTypeCCommandExecutiveSummary((prev) => {
+      if (prev?.id === summary.id) return prev;
+      return summary;
+    });
+
+    trackTypeCPipelineEvent({
+      step: "executive_summary_created",
+      scenarioId: summary.scenarioId ?? undefined,
+      reason: summary.confidence.label,
+    });
+
+    if (process.env.NODE_ENV !== "production") {
+      globalThis.console.log("[Nexora][TypeC][ExecutiveSummaryCreated]", {
+        scenarioId: summary.scenarioId,
+        confidence: summary.confidence.value,
+        confidenceLabel: summary.confidence.label,
+        headline: summary.headline,
+      });
+    }
+
+    return true;
+  }, [
+    sceneJson,
+    trackTypeCPipelineEvent,
+    typeCDecisionDraft,
+    typeCDecisionReadiness,
+    typeCMode,
+    typeCScenarioState,
+  ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const debugWindow = window as typeof window & {
+      __NEXORA_DEBUG__?: Record<string, unknown>;
+    };
+    debugWindow.__NEXORA_DEBUG__ = debugWindow.__NEXORA_DEBUG__ ?? {};
+    debugWindow.__NEXORA_DEBUG__.typeCCommandExecutiveSummary = typeCCommandExecutiveSummary;
+  }, [typeCCommandExecutiveSummary]);
+
+  const createTypeCScenarioDraft = useCallback((): boolean => {
+    if (typeCMode !== "type_c" || !sceneJson) {
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console.log("[Nexora][TypeC][ScenarioDraftSkipped]", {
+          reason: typeCMode !== "type_c" ? "mode_not_type_c" : "missing_scene",
+        });
+      }
+      trackTypeCPipelineEvent({
+        step: "skipped",
+        intentType: "create_scenario",
+        reason: typeCMode !== "type_c" ? "mode_not_type_c" : "missing_scene",
+      });
+      return false;
+    }
+
+    setTypeCScenarioState((prev) => {
+      const scenario = buildTypeCScenarioFromScene(sceneJson);
+      if (!scenario) {
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console.log("[Nexora][TypeC][ScenarioDraftSkipped]", {
+            reason: "insufficient_scene_graph",
+          });
+        }
+        trackTypeCPipelineEvent({
+          step: "skipped",
+          intentType: "create_scenario",
+          reason: "insufficient_scene_graph",
+        });
+        return prev;
+      }
+
+      const next = addScenarioToState(prev, scenario);
+      if (next === prev) {
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console.log("[Nexora][TypeC][ScenarioDraftSkipped]", {
+            reason: "duplicate_scenario",
+            scenarioId: scenario.id,
+          });
+        }
+        trackTypeCPipelineEvent({
+          step: "skipped",
+          intentType: "create_scenario",
+          scenarioId: scenario.id,
+          reason: "duplicate_scenario",
+        });
+        return prev;
+      }
+
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console.log("[Nexora][TypeC][ScenarioDraftCreated]", {
+          scenarioId: scenario.id,
+        });
+      }
+      trackTypeCPipelineEvent({
+        step: "scenario_draft_created",
+        intentType: "create_scenario",
+        objectIds: scenario.objectIds,
+        scenarioId: scenario.id,
+      });
+      globalThis.queueMicrotask(() => refreshTypeCDecisionReadiness(next));
+      return next;
+    });
+
+    return true;
+  }, [refreshTypeCDecisionReadiness, sceneJson, trackTypeCPipelineEvent, typeCMode]);
+
+  const applyTypeCScenarioStatusIntent = useCallback(
+    (intentType: "select_scenario" | "ignore_scenario" | "ready_for_decision"): boolean => {
+      if (typeCMode !== "type_c") return false;
+
+      setTypeCScenarioState((prev) => {
+        const buildDraftState = (): TypeCScenarioState => {
+          if (!sceneJson) return prev;
+          const scenario = buildTypeCScenarioFromScene(sceneJson);
+          if (!scenario) return prev;
+          return addScenarioToState(prev, scenario);
+        };
+        const latestDraftId = (state: TypeCScenarioState): string | null =>
+          [...state.scenarios].reverse().find((scenario) => scenario.status === "draft")?.id ?? null;
+        const firstDraftId = (state: TypeCScenarioState): string | null =>
+          state.scenarios.find((scenario) => scenario.status === "draft")?.id ?? null;
+        const logSkipped = (reason: string) => {
+          if (process.env.NODE_ENV !== "production") {
+            globalThis.console.log("[Nexora][TypeC][ScenarioStatusSkipped]", { intent: intentType, reason });
+          }
+          trackTypeCPipelineEvent({
+            step: "skipped",
+            intentType,
+            reason,
+          });
+        };
+
+        if (intentType === "select_scenario") {
+          if (prev.selectedScenarioId) {
+            if (process.env.NODE_ENV !== "production") {
+              globalThis.console.log("[Nexora][TypeC][ScenarioSelected]", { scenarioId: prev.selectedScenarioId });
+            }
+            trackTypeCPipelineEvent({
+              step: "scenario_selected",
+              intentType,
+              scenarioId: prev.selectedScenarioId,
+              reason: "already_selected",
+            });
+            return prev;
+          }
+          const working = buildDraftState();
+          const scenarioId = working.selectedScenarioId ?? firstDraftId(working);
+          if (!scenarioId) {
+            logSkipped("no_draft_scenario");
+            return prev;
+          }
+          const next = selectTypeCScenario(working, scenarioId);
+          if (next === working) {
+            logSkipped("selection_noop");
+            return prev;
+          }
+          if (process.env.NODE_ENV !== "production") {
+            globalThis.console.log("[Nexora][TypeC][ScenarioSelected]", { scenarioId });
+          }
+          trackTypeCPipelineEvent({
+            step: "scenario_selected",
+            intentType,
+            scenarioId,
+          });
+          globalThis.queueMicrotask(() => refreshTypeCDecisionReadiness(next));
+          return next;
+        }
+
+        if (intentType === "ignore_scenario") {
+          const scenarioId = prev.selectedScenarioId ?? latestDraftId(prev);
+          if (!scenarioId) {
+            logSkipped("no_scenario_to_ignore");
+            return prev;
+          }
+          const next = ignoreTypeCScenario(prev, scenarioId);
+          if (next === prev) {
+            logSkipped("ignore_noop");
+            return prev;
+          }
+          if (process.env.NODE_ENV !== "production") {
+            globalThis.console.log("[Nexora][TypeC][ScenarioIgnored]", { scenarioId });
+          }
+          trackTypeCPipelineEvent({
+            step: "scenario_ignored",
+            intentType,
+            scenarioId,
+          });
+          globalThis.queueMicrotask(() => refreshTypeCDecisionReadiness(next));
+          return next;
+        }
+
+        let working = prev.selectedScenarioId ? prev : buildDraftState();
+        const scenarioId = working.selectedScenarioId ?? firstDraftId(working);
+        if (!scenarioId) {
+          logSkipped("no_scenario_to_mark_ready");
+          return prev;
+        }
+        if (working.scenarios.find((scenario) => scenario.id === scenarioId)?.status === "draft") {
+          working = selectTypeCScenario(working, scenarioId);
+        }
+        const next = markScenarioReadyForDecision(working, scenarioId);
+        if (next === working) {
+          logSkipped("ready_noop");
+          return prev;
+        }
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console.log("[Nexora][TypeC][ScenarioReadyForDecision]", { scenarioId });
+        }
+        trackTypeCPipelineEvent({
+          step: "scenario_ready_for_decision",
+          intentType,
+          scenarioId,
+        });
+        globalThis.queueMicrotask(() => refreshTypeCDecisionReadiness(next));
+        return next;
+      });
+
+      return true;
+    },
+    [refreshTypeCDecisionReadiness, sceneJson, trackTypeCPipelineEvent, typeCMode]
+  );
+
+  const cancelTypeCConnectionSuggestions = useCallback(() => {
+    setConnectionSuggestions(null);
+  }, []);
+
+  const cancelTypeCScenarioDrafts = useCallback(() => {
+    setScenarioDrafts(null);
+  }, []);
+
+  const applyTypeCConnectionSuggestions = useCallback(
+    (suggestions: TypeCConnectionSuggestion[]) => {
+      if (!suggestions.length) {
+        setConnectionSuggestions(null);
+        return;
+      }
+
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        const next = applyTypeCConnectionSuggestionsToScene(prev, suggestions);
+        if (next !== prev) {
+          const drafts = buildTypeCScenarioDrafts({
+            sceneJson: next,
+            newConnections: suggestions,
+          });
+          globalThis.queueMicrotask(() => {
+            setScenarioDrafts(drafts.length ? drafts : null);
+          });
+        }
+        return next;
+      }, "type_c_connection_suggestions_apply", { bypassDedupe: true });
+
+      setConnectionSuggestions(null);
+    },
+    [applySceneChangeSafe]
+  );
+
+  const applyTypeCChatIntent = useCallback(
+    (userText: string): boolean => {
+      if (typeCMode !== "type_c") return false;
+
+      const intent = detectTypeCIntent(userText);
+      if (intent.type === "none") return false;
+
+      const signature =
+        intent.type === "model_system"
+          ? `model:${intent.labels.join(">")}`
+          : intent.type === "create_scenario"
+            ? `scenario:${(sceneJson?.scene?.objects ?? []).map((object) => String(object.id ?? "")).join(">")}`
+            : intent.type === "select_scenario" ||
+                intent.type === "ignore_scenario" ||
+                intent.type === "ready_for_decision"
+              ? `scenario_status:${intent.type}:${typeCScenarioState.selectedScenarioId ?? "none"}:${typeCScenarioState.scenarios
+                  .map((scenario) => `${scenario.id}:${scenario.status}`)
+                  .join(">")}`
+              : intent.type === "check_decision_readiness"
+                ? `decision_readiness:${typeCScenarioState.selectedScenarioId ?? "none"}:${typeCScenarioState.scenarios
+                    .map((scenario) => `${scenario.id}:${scenario.status}`)
+                    .join(">")}:${sceneJson?.scene?.objects?.length ?? 0}:${sceneJson?.scene?.loops?.length ?? 0}`
+                : intent.type === "create_decision_draft"
+                  ? `decision_draft:${typeCDecisionReadiness?.id ?? "none"}:${typeCScenarioState.selectedScenarioId ?? "none"}:${typeCScenarioState.scenarios
+                      .map((scenario) => `${scenario.id}:${scenario.status}`)
+                      .join(">")}:${sceneJson?.scene?.objects?.length ?? 0}:${sceneJson?.scene?.loops?.length ?? 0}`
+                  : intent.type === "create_executive_summary"
+                    ? `executive_summary:${typeCDecisionReadiness?.id ?? "none"}:${typeCScenarioState.selectedScenarioId ?? "none"}:${typeCScenarioState.scenarios
+                        .map((scenario) => `${scenario.id}:${scenario.status}`)
+                        .join(">")}:${sceneJson?.scene?.objects?.length ?? 0}:${sceneJson?.scene?.loops?.length ?? 0}`
+              : `add:${intent.label}`;
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console.log("[Nexora][TypeC][IntentDetected]", intent);
+      }
+      trackTypeCPipelineEvent({
+        step: "intent_detected",
+        input: userText,
+        intentType: intent.type,
+      });
+
+      if (lastTypeCSignatureRef.current === signature) {
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console.log("[Nexora][TypeC][Deduped]", { signature });
+        }
+        trackTypeCPipelineEvent({
+          step: "deduped",
+          input: userText,
+          intentType: intent.type,
+          reason: signature,
+        });
+        return true;
+      }
+
+      lastTypeCSignatureRef.current = signature;
+      if (intent.type === "create_scenario") {
+        createTypeCScenarioDraft();
+        return true;
+      }
+      if (
+        intent.type === "select_scenario" ||
+        intent.type === "ignore_scenario" ||
+        intent.type === "ready_for_decision"
+      ) {
+        applyTypeCScenarioStatusIntent(intent.type);
+        return true;
+      }
+      if (intent.type === "check_decision_readiness") {
+        refreshTypeCDecisionReadiness();
+        return true;
+      }
+      if (intent.type === "create_decision_draft") {
+        createTypeCDecisionDraft();
+        return true;
+      }
+      if (intent.type === "create_executive_summary") {
+        createTypeCExecutiveSummary();
+        return true;
+      }
+
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+
+        const sceneWithCore = ensureTypeCCoreObject(prev, typeCMode);
+        if (!sceneWithCore) return prev;
+
+        const next =
+          intent.type === "model_system"
+            ? addTypeCSystemModelToScene(sceneWithCore, intent.labels)
+            : addTypeCObjectToScene(sceneWithCore, {
+                label: intent.label,
+                prompt: userText,
+              });
+
+        if (next === sceneWithCore) {
+          if (process.env.NODE_ENV !== "production") {
+            globalThis.console.log("[Nexora][TypeC][SkippedDuplicate]", {
+              intent: intent.type,
+              label: intent.type === "add_object" ? intent.label : undefined,
+              labels: intent.type === "model_system" ? intent.labels : undefined,
+            });
+          }
+          trackTypeCPipelineEvent({
+            step: "skipped",
+            input: userText,
+            intentType: intent.type,
+            objectIds: intent.type === "model_system" ? intent.labels : intent.type === "add_object" ? [intent.label] : undefined,
+            reason: "duplicate_or_no_scene_change",
+          });
+          return prev;
+        }
+
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console.log(
+            intent.type === "model_system" ? "[Nexora][TypeC][ChatModelSystem]" : "[Nexora][TypeC][ChatAddObject]",
+            intent.type === "model_system" ? { labels: intent.labels, reason: intent.reason } : intent.label
+          );
+        }
+        trackTypeCPipelineEvent({
+          step: intent.type === "model_system" ? "system_model_added" : "object_added",
+          input: userText,
+          intentType: intent.type,
+          objectIds:
+            intent.type === "model_system"
+              ? intent.labels
+              : intent.type === "add_object"
+                ? [intent.label]
+                : undefined,
+          reason: intent.type === "model_system" ? intent.reason : undefined,
+        });
+        if (intent.type === "add_object") {
+          const newObject = buildTypeCObjectDraft({
+            label: intent.label,
+            prompt: userText,
+          });
+          const suggestions = buildTypeCConnectionSuggestions({
+            newObject,
+            sceneJson: next,
+          });
+          globalThis.queueMicrotask(() => {
+            setConnectionSuggestions(suggestions.length ? suggestions : null);
+          });
+        }
+        return next;
+      }, intent.type === "model_system" ? "type_c_chat_model_system" : "type_c_chat_add_object", { bypassDedupe: true });
+
+      return true;
+    },
+    [
+      applySceneChangeSafe,
+      applyTypeCScenarioStatusIntent,
+      createTypeCScenarioDraft,
+      createTypeCDecisionDraft,
+      createTypeCExecutiveSummary,
+      refreshTypeCDecisionReadiness,
+      sceneJson,
+      trackTypeCPipelineEvent,
+      typeCDecisionDraft,
+      typeCDecisionReadiness,
+      typeCMode,
+      typeCScenarioState,
+    ]
   );
 
   const [loading, setLoading] = useState(false);
@@ -3589,6 +4321,71 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [requestPanelAuthorityOpen]
   );
+  const openTypeCScenarioDraftWarRoom = useCallback(
+    (draft: TypeCScenarioDraft) => {
+      if (!draft) return;
+      if (!sceneJson) return;
+      const simulation = simulateTypeCScenario({
+        scenario: draft,
+        sceneJson,
+      });
+      globalThis.console.info("[Nexora][TypeC][ScenarioDraftOpenWarRoom]", {
+        scenarioId: draft.id,
+        title: draft.title,
+        riskLevel: simulation.riskLevel,
+      });
+      setActiveTypeCScenario(draft);
+      setActiveSimulation(simulation);
+      openSimPanel("war_room", "type_c_scenario_draft_open_war_room", draft.id);
+      setScenarioDrafts(null);
+    },
+    [openSimPanel, sceneJson]
+  );
+  const compareTypeCScenarioDrafts = useCallback(
+    (drafts: TypeCScenarioDraft[]) => {
+      if (!sceneJson || drafts.length < 2) return;
+      const simulations = drafts.map((draft) =>
+        simulateTypeCScenario({
+          scenario: draft,
+          sceneJson,
+        })
+      );
+      const comparison = compareTypeCScenarioSimulations({
+        scenarios: drafts,
+        simulations,
+      });
+      const recommendation = buildTypeCDecisionRecommendation({ comparison });
+      setScenarioComparison(comparison);
+      setScenarioComparisonDrafts(drafts);
+      setDecisionRecommendation(recommendation);
+      globalThis.console.info("[Nexora][TypeC][ScenarioComparisonCreated]", {
+        scenarioIds: comparison.scenarioIds,
+        bestOptionId: comparison.bestOptionId,
+        highestRiskScenarioId: comparison.highestRiskScenarioId,
+        recommendedScenarioId: recommendation.recommendedScenarioId,
+      });
+    },
+    [sceneJson]
+  );
+  const closeTypeCScenarioCompare = useCallback(() => {
+    setScenarioComparison(null);
+    setScenarioComparisonDrafts(null);
+    setDecisionRecommendation(null);
+  }, []);
+  const openBestTypeCScenarioInWarRoom = useCallback(() => {
+    if (!scenarioComparison?.bestOptionId) return;
+    const draft = scenarioComparisonDrafts?.find((candidate) => candidate.id === scenarioComparison.bestOptionId);
+    if (!draft) return;
+    setScenarioComparison(null);
+    setScenarioComparisonDrafts(null);
+    setDecisionRecommendation(null);
+    openTypeCScenarioDraftWarRoom(draft);
+  }, [openTypeCScenarioDraftWarRoom, scenarioComparison, scenarioComparisonDrafts]);
+  const exitTypeCScenarioSimulation = useCallback(() => {
+    setActiveSimulation(clearTypeCScenarioSimulation());
+    setActiveTypeCScenario(null);
+    globalThis.console.info("[Nexora][TypeC][ScenarioSimulationExited]");
+  }, []);
   const requestPanelAuthorityClose = useCallback((reason?: string) => {
     panelUserExplicitCloseRef.current = true;
     panelAuthorityLockAtRef.current = 0;
@@ -9357,9 +10154,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const text = textRaw.trim();
     if (!text) return;
     markUserStartedFlow("chat_message");
+    const handledTypeCChatIntent = applyTypeCChatIntent(text);
     const isDescribePhase = entryFlowStateRef.current === "describing_system";
     const hasSceneObjects = Array.isArray(sceneJson?.scene?.objects) && sceneJson.scene.objects.length > 0;
-    if (isDescribePhase) {
+    if (isDescribePhase && !handledTypeCChatIntent) {
       const starterScene = buildStarterSceneFromText(text);
       applySceneChangeUpstreamDedup(starterScene, "describe_system", { bypassDedupe: true });
       setObjectSelection({
@@ -9400,7 +10198,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       );
       return;
     }
-    if (!hasSceneObjects && options?.source !== "demo") {
+    if (!hasSceneObjects && options?.source !== "demo" && !handledTypeCChatIntent) {
       const starterScene = buildStarterSceneFromText(text);
       applySceneChangeUpstreamDedup(starterScene, "describe_system", { bypassDedupe: true });
       setObjectSelection({
@@ -11029,6 +11827,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     productModeContext,
     rightPanelTab,
     selectedObjectIdState,
+    applyTypeCChatIntent,
     applyExecutionResultToUi,
     applyProductFlowViewModel,
     applyUICommands,
@@ -12197,11 +12996,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [narrativeSceneBinding.objectSelection, sceneFocusIdSet]
   );
   const effectiveObjectSelection = useMemo(() => {
+    if (activeSimulation) {
+      const baseSelection =
+        narrativeSceneBinding.isActive && narrativeObjectSelection
+          ? narrativeObjectSelection
+          : visibleObjectSelection ?? null;
+      const highlighted = [
+        ...getHighlightedObjectIdsFromSelection(baseSelection),
+        ...activeSimulation.affectedObjectIds,
+      ];
+      return {
+        ...(baseSelection ?? {}),
+        highlighted_objects: [...new Set(highlighted)].filter(Boolean),
+        risk_sources: [
+          ...new Set(activeSimulation.propagationPaths.map((path) => path.from).filter(Boolean)),
+        ],
+        risk_targets: [
+          ...new Set(activeSimulation.propagationPaths.map((path) => path.to).filter(Boolean)),
+        ],
+        dim_unrelated_objects: true,
+      };
+    }
     if (narrativeSceneBinding.isActive && narrativeObjectSelection) {
       return narrativeObjectSelection;
     }
     return visibleObjectSelection ?? null;
-  }, [narrativeObjectSelection, narrativeSceneBinding.isActive, visibleObjectSelection]);
+  }, [activeSimulation, narrativeObjectSelection, narrativeSceneBinding.isActive, visibleObjectSelection]);
   const effectiveObjectSelectionTraceSig = useMemo(
     () =>
       buildSelectionSignature({
@@ -14772,6 +15592,133 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   commitPipelineStatusRef.current = commitPipelineStatus;
   mergePipelineStatusRef.current = mergePipelineStatus;
+
+  const typeCDerivedExecutiveSummary = useMemo(
+    () =>
+      buildTypeCExecutiveSummaryFromState({
+        sceneJson,
+        selectedObjectId: selectedObjectIdState,
+        focusedObjectId: focusedId,
+        fragilitySignals: {
+          pipelineStatus: pipelineStatusUi,
+          riskPropagation: visibleRiskPropagation,
+          responseData: visibleResponseData,
+          highlightedObjectIds,
+        },
+      }),
+    [
+      focusedId,
+      highlightedObjectIds,
+      pipelineStatusUi,
+      sceneJson,
+      selectedObjectIdState,
+      visibleResponseData,
+      visibleRiskPropagation,
+    ]
+  );
+  const typeCExecutiveSummary = typeCDerivedExecutiveSummary ?? typeCCommandExecutiveSummary;
+
+  const enhanceTypeCExecutiveSummary = useCallback((): TypeCAIExecutiveInsight | null => {
+    if (!typeCExecutiveSummary) return null;
+    const objects = Array.isArray(sceneJson?.scene?.objects) ? sceneJson.scene.objects : [];
+    const labelFor = (id: string | null | undefined): string | null => {
+      if (!id) return null;
+      const object = objects.find((candidate) => String(candidate.id ?? "") === id);
+      const label = String(object?.label ?? object?.name ?? object?.display_label ?? "").trim();
+      return label || null;
+    };
+    const insight = buildTypeCAIExecutiveInsight({
+      deterministicSummary: typeCExecutiveSummary,
+      sceneContext: {
+        objectCount: objects.length,
+        selectedObjectLabel: labelFor(selectedObjectIdState),
+        focusedObjectLabel: labelFor(focusedId),
+      },
+    });
+
+    setTypeCAIExecutiveInsight(insight);
+
+    if (process.env.NODE_ENV !== "production") {
+      globalThis.console.log("[Nexora][TypeC][AIExecutiveInsightCreated]", {
+        source: insight.source,
+        headline: insight.headline,
+      });
+    }
+
+    return insight;
+  }, [focusedId, sceneJson, selectedObjectIdState, typeCExecutiveSummary]);
+
+  const handleEnhanceTypeCExecutiveSummary = useCallback(async (): Promise<void> => {
+    const insight = enhanceTypeCExecutiveSummary();
+    if (!insight) {
+      throw new Error("type_c_ai_insight_unavailable");
+    }
+  }, [enhanceTypeCExecutiveSummary]);
+
+  const typeCExecutiveActions = useMemo(
+    () =>
+      typeCExecutiveSummary
+        ? buildTypeCExecutiveActions({
+            summary: typeCExecutiveSummary,
+            aiInsight: typeCAIExecutiveInsight,
+            selectedObjectId: selectedObjectIdState,
+          })
+        : [],
+    [selectedObjectIdState, typeCAIExecutiveInsight, typeCExecutiveSummary]
+  );
+
+  const handleTypeCExecutiveAction = useCallback(
+    (action: TypeCExecutiveAction): void => {
+      const resolved = resolveTypeCActionPanel(action);
+      if (!resolved) return;
+
+      const contextId = action.targetObjectId ?? selectedObjectIdState ?? focusedId ?? null;
+      const signature = `${action.id}:${action.kind}:${resolved.panelId}:${contextId ?? "none"}`;
+      const now = Date.now();
+      const last = lastTypeCExecutiveActionPanelRef.current;
+      if (last?.signature === signature && now - last.at < 600) return;
+      lastTypeCExecutiveActionPanelRef.current = { signature, at: now };
+
+      globalThis.console.info("[Nexora][TypeC][ActionToPanel]", {
+        actionId: action.id,
+        kind: action.kind,
+        panelId: resolved.panelId,
+        reason: resolved.reason,
+      });
+
+      if (resolved.panelId === "object_focus") {
+        openScnPanel("object_focus", contextId, "type_c_executive_action_analyze_object");
+        return;
+      }
+      if (resolved.panelId === "risk") {
+        openRskPanel("risk", "type_c_executive_action_explain_risk", contextId);
+        return;
+      }
+      if (resolved.panelId === "risk_flow") {
+        openRskPanel("risk_flow", "type_c_executive_action_monitor_signal", contextId);
+        return;
+      }
+      if (resolved.panelId === "war_room") {
+        openSimPanel("war_room", "type_c_executive_action_open_scenario", contextId);
+        return;
+      }
+      if (resolved.panelId === "compare") {
+        openSimPanel("compare", "type_c_executive_action_compare_options", contextId);
+      }
+    },
+    [focusedId, openRskPanel, openScnPanel, openSimPanel, selectedObjectIdState]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const debugWindow = window as typeof window & {
+      __NEXORA_DEBUG__?: Record<string, unknown>;
+    };
+    debugWindow.__NEXORA_DEBUG__ = debugWindow.__NEXORA_DEBUG__ ?? {};
+    debugWindow.__NEXORA_DEBUG__.typeCExecutiveSummary = typeCExecutiveSummary;
+    debugWindow.__NEXORA_DEBUG__.typeCAIExecutiveInsight = typeCAIExecutiveInsight;
+    debugWindow.__NEXORA_DEBUG__.enhanceTypeCExecutiveSummary = enhanceTypeCExecutiveSummary;
+  }, [enhanceTypeCExecutiveSummary, typeCAIExecutiveInsight, typeCExecutiveSummary]);
 
   const runbookStepId = useMemo((): NexoraRunbookStepId => {
     const audit = lastAuditRecordRef.current;
@@ -18290,6 +19237,53 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       {alertOverlayNode}
       {investorDemoOverlayNode}
       {chatQAPanelNode}
+      <TypeCScenarioDraftPanel
+        key={scenarioDrafts?.map((draft) => draft.id).join("|") ?? "none"}
+        drafts={scenarioDrafts}
+        onCancel={cancelTypeCScenarioDrafts}
+        onOpenWarRoom={openTypeCScenarioDraftWarRoom}
+        onCompare={compareTypeCScenarioDrafts}
+      />
+      <TypeCScenarioComparePanel
+        comparison={scenarioComparison}
+        onClose={closeTypeCScenarioCompare}
+        onOpenBest={openBestTypeCScenarioInWarRoom}
+      />
+      <TypeCDecisionPanel
+        recommendation={decisionRecommendation}
+        comparison={scenarioComparison}
+      />
+      <TypeCWarRoomPanel
+        scenario={activeTypeCScenario}
+        simulation={activeSimulation}
+        onExit={exitTypeCScenarioSimulation}
+      />
+      <TypeCConnectionSuggestionPanel
+        key={connectionSuggestions?.map((suggestion) => suggestion.id).join("|") ?? "none"}
+        suggestions={connectionSuggestions}
+        onCancel={cancelTypeCConnectionSuggestions}
+        onApplySelected={applyTypeCConnectionSuggestions}
+      />
+      {typeCExecutiveSummary ? (
+        <TypeCExecutiveSummaryCard
+          summary={typeCExecutiveSummary}
+          aiInsight={typeCAIExecutiveInsight}
+          onEnhance={handleEnhanceTypeCExecutiveSummary}
+          hasSelectedObject={Boolean(selectedObjectIdState)}
+          executiveActions={typeCExecutiveActions}
+          onExecutiveAction={handleTypeCExecutiveAction}
+        />
+      ) : null}
+      {process.env.NODE_ENV !== "production" ? (
+        <TypeCDevInspector
+          scenarioState={typeCScenarioState}
+          readiness={typeCDecisionReadiness}
+          decisionDraft={typeCDecisionDraft}
+          executiveSummary={typeCExecutiveSummary}
+          aiExecutiveInsight={typeCAIExecutiveInsight}
+          pipelineEvents={typeCPipelineEventsRef.current}
+        />
+      ) : null}
     </div>
   );
 };
