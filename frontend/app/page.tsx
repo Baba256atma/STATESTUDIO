@@ -5,6 +5,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { SceneStateProvider } from "./components/SceneContext";
 import { HomeScreen } from "./screens/HomeScreen";
 import NexoraShell from "./components/NexoraShell";
+import NexoraOSShell from "./os/NexoraOSShell";
 import { DomainSelectionScreen } from "./components/DomainSelectionScreen";
 import { resolveDomainExperience } from "./lib/domain/domainExperienceRegistry";
 import { DEFAULT_LAUNCH_DOMAIN_ID } from "./lib/product/mvpShippingPlan";
@@ -129,9 +130,11 @@ export default function HomePage() {
                   <InvestorDemoProvider>
                     <NexoraOperatorModeProvider>
                       <NexoraRunbookGuidanceProvider>
-                        <NexoraShell>
-                          <HomeScreen domainExperience={resolvedSelection} />
-                        </NexoraShell>
+                        <NexoraOSShell>
+                          <NexoraShell>
+                            <HomeScreen domainExperience={resolvedSelection} />
+                          </NexoraShell>
+                        </NexoraOSShell>
                       </NexoraRunbookGuidanceProvider>
                     </NexoraOperatorModeProvider>
                   </InvestorDemoProvider>

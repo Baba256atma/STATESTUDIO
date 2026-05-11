@@ -6,6 +6,7 @@ import type { TypeCAIExecutiveInsight } from "../../lib/typec/aiTypeCExecutiveIn
 import type { TypeCDecisionDraft } from "../../lib/typec/typeCDecisionDraft.ts";
 import type { TypeCDecisionReadinessSnapshot } from "../../lib/typec/typeCDecisionReadiness.ts";
 import type { TypeCExecutiveSummary } from "../../lib/typec/typeCExecutiveSummary.ts";
+import type { TypeCMultiAgentInsight } from "../../lib/typec/typeCMultiAgentContracts.ts";
 import type { TypeCPipelineEvent } from "../../lib/typec/typeCPipelineTracker.ts";
 import type { TypeCScenarioState } from "../../lib/typec/typeCScenarioTypes.ts";
 
@@ -15,6 +16,7 @@ export type TypeCDevInspectorProps = {
   decisionDraft: TypeCDecisionDraft | null;
   executiveSummary: TypeCExecutiveSummary | null;
   aiExecutiveInsight?: TypeCAIExecutiveInsight | null;
+  multiAgentInsight?: TypeCMultiAgentInsight | null;
   pipelineEvents: TypeCPipelineEvent[];
 };
 
@@ -65,6 +67,7 @@ export function TypeCDevInspector({
   decisionDraft,
   executiveSummary,
   aiExecutiveInsight = null,
+  multiAgentInsight = null,
   pipelineEvents,
 }: TypeCDevInspectorProps): React.ReactElement | null {
   if (process.env.NODE_ENV === "production") return null;
@@ -98,6 +101,7 @@ export function TypeCDevInspector({
         <div>headline: {short(executiveSummary?.headline)}</div>
         <div>confidence: {executiveSummary?.confidence.label ?? "none"}</div>
         <div>ai: {short(aiExecutiveInsight?.headline)}</div>
+        <div>multi-agent: {short(multiAgentInsight?.synthesis.executiveSummary)}</div>
       </div>
 
       <div style={sectionStyle}>

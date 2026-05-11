@@ -34,9 +34,11 @@ import { CollaborationIntelligencePanel } from "../executive/CollaborationIntell
 import { AutonomousDecisionCouncilPanel } from "../executive/AutonomousDecisionCouncilPanel";
 import CollaborationPanel from "../panels/CollaborationPanel";
 import { WarRoomPanel } from "../warroom/WarRoomPanel";
+import { DomainObjectCatalogPanel } from "../domain/DomainObjectCatalogPanel";
 import type { CenterExecutionSurface, CanonicalRightPanelView, RightPanelState } from "../../lib/ui/right-panel/rightPanelTypes";
 import type { RightPanelView } from "../../lib/ui/right-panel/rightPanelTypes";
 import type { SceneObject } from "../../lib/sceneTypes";
+import type { AddObjectMenuItem } from "../../lib/domain/domainAddObjectAdapter";
 import type { DecisionExecutionResult } from "../../lib/executive/decisionExecutionTypes";
 import type { DecisionImpactState } from "../../lib/impact/decisionImpactTypes";
 import type { StrategicCouncilResult } from "../../lib/council/strategicCouncilTypes";
@@ -154,6 +156,8 @@ type RightPanelHostProps = {
   isSystemUnhealthy?: boolean;
   visibleSceneObjects?: SceneObject[];
   hasVisibleSceneObjects?: boolean;
+  domainCatalogDomainId?: unknown;
+  onAddDomainObject?: ((item: AddObjectMenuItem) => void) | null;
   activeExecutiveView?: "simulate" | "compare" | "dashboard" | null;
   guidedPromptDebug?: {
     prompt: string;
@@ -1926,10 +1930,16 @@ export function RightPanelHost(props: RightPanelHostProps) {
       }
       if (objectListForPanel.length === 0) {
         return (
-          <RightPanelFallback
-            title="Objects"
-            message="No visible objects yet. Describe your system in chat to create the first model."
-          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <RightPanelFallback
+              title="Objects"
+              message="No visible objects yet. Describe your system in chat to create the first model."
+            />
+            <DomainObjectCatalogPanel
+              domainId={props.domainCatalogDomainId ?? "general"}
+              onSelectObject={props.onAddDomainObject ?? undefined}
+            />
+          </div>
         );
       }
       const focusObjectId = String(
@@ -1945,10 +1955,16 @@ export function RightPanelHost(props: RightPanelHostProps) {
       }
       if (!focusObjectId) {
         return (
-          <RightPanelFallback
-            title="Object Focus"
-            message="Select a visible object to inspect focus insight."
-          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <RightPanelFallback
+              title="Object Focus"
+              message="Select a visible object to inspect focus insight."
+            />
+            <DomainObjectCatalogPanel
+              domainId={props.domainCatalogDomainId ?? "general"}
+              onSelectObject={props.onAddDomainObject ?? undefined}
+            />
+          </div>
         );
       }
       if (process.env.NODE_ENV !== "production") {

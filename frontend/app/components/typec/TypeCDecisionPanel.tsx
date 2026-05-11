@@ -8,6 +8,7 @@ import type { TypeCScenarioComparison } from "../../lib/typec/typeCScenarioCompa
 export type TypeCDecisionPanelProps = {
   recommendation: TypeCDecisionRecommendation | null;
   comparison: TypeCScenarioComparison | null;
+  onExecute?: () => void;
 };
 
 const panelStyle = {
@@ -55,6 +56,7 @@ function pct(value: number): string {
 export function TypeCDecisionPanel({
   recommendation,
   comparison,
+  onExecute,
 }: TypeCDecisionPanelProps): React.ReactElement | null {
   if (!recommendation) return null;
 
@@ -90,6 +92,29 @@ export function TypeCDecisionPanel({
         <div style={labelStyle}>Next Move</div>
         <p style={textStyle}>{recommendation.nextAction}</p>
       </div>
+
+      {onExecute ? (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+          <button
+            type="button"
+            onClick={onExecute}
+            disabled={!recommendation.recommendedScenarioId}
+            style={{
+              borderRadius: 8,
+              border: "1px solid rgba(253, 224, 71, 0.26)",
+              background: "rgba(15, 23, 42, 0.54)",
+              color: "rgba(254, 249, 195, 0.92)",
+              cursor: recommendation.recommendedScenarioId ? "pointer" : "not-allowed",
+              fontSize: 11,
+              fontWeight: 800,
+              opacity: recommendation.recommendedScenarioId ? 1 : 0.55,
+              padding: "6px 9px",
+            }}
+          >
+            Execute
+          </button>
+        </div>
+      ) : null}
     </aside>
   );
 }

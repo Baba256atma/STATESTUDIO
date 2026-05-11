@@ -129,6 +129,19 @@ export function resolveActionRoute(action: CanonicalNexoraAction, ctx: ActionRou
         continuityHint: "none",
       };
     }
+    case "add_domain_object": {
+      if (!intent.request?.templateId) {
+        return { status: "rejected", reason: "missing_target", detail: "add_domain_object requires templateId" };
+      }
+      return {
+        status: "ok",
+        resolvedIntent: "add_domain_object",
+        resolvedPanelView: ctx.currentView,
+        resolvedObjectTargetId: null,
+        execution: "noop",
+        continuityHint: "none",
+      };
+    }
     case "start_demo": {
       return {
         status: "ok",
@@ -198,7 +211,7 @@ export function resolveActionRoute(action: CanonicalNexoraAction, ctx: ActionRou
         allowAutoOverride: intent.allowAutoOverride,
       };
 
-      let continuityHint: ActionRouteContinuityHint = v
+      const continuityHint: ActionRouteContinuityHint = v
         ? continuityHintForPanel(ctx, v, intent.contextId ?? null)
         : ("none" as const);
 

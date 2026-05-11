@@ -43,6 +43,8 @@ from routers.psych_router import router as psych_interpret_router
 from app.routers.strategic_council_router import router as strategic_council_router
 from app.routers.decision_router import router as decision_execution_router
 from app.routes.decision_routes import router as decision_routes_router
+from app.routes.typec_ai import router as typec_ai_router
+from app.routes.typec_sandbox import router as typec_sandbox_router
 from app.services.event_store_mem import EventStoreMem
 from app.services.chat_ai import llm_chat_actions
 from app.services import build_loops_from_kpi
@@ -254,6 +256,8 @@ app.include_router(ai_local_router)
 app.include_router(events_router)
 app.include_router(debug_router)
 app.include_router(decision_routes_router)
+app.include_router(typec_ai_router)
+app.include_router(typec_sandbox_router)
 app.include_router(config_router)
 app.include_router(scenario_router)
 app.include_router(montecarlo_router)

@@ -86,9 +86,16 @@ import { RestorePreviewModal } from "../components/RestorePreviewModal";
 import { useNexoraUiTheme } from "../lib/ui/nexoraUiTheme";
 import { StrategicAlertOverlay } from "../components/StrategicAlertOverlay";
 import { TypeCDevInspector } from "../components/dev/TypeCDevInspector";
+import { TypeCAdaptiveGuidancePanel } from "../components/typec/TypeCAdaptiveGuidancePanel";
+import { TypeCAIPanel } from "../components/typec/TypeCAIPanel";
 import { TypeCConnectionSuggestionPanel } from "../components/typec/TypeCConnectionSuggestionPanel";
+import { TypeCAlertPanel } from "../components/typec/TypeCAlertPanel";
 import { TypeCDecisionPanel } from "../components/typec/TypeCDecisionPanel";
+import { TypeCExecutionPanel } from "../components/typec/TypeCExecutionPanel";
 import { TypeCExecutiveSummaryCard } from "../components/typec/TypeCExecutiveSummaryCard";
+import { TypeCMemoryPanel } from "../components/typec/TypeCMemoryPanel";
+import { TypeCMultiAgentPanel } from "../components/typec/TypeCMultiAgentPanel";
+import { TypeCSandboxPanel } from "../components/typec/TypeCSandboxPanel";
 import { TypeCScenarioComparePanel } from "../components/typec/TypeCScenarioComparePanel";
 import { TypeCScenarioDraftPanel } from "../components/typec/TypeCScenarioDraftPanel";
 import { TypeCWarRoomPanel } from "../components/typec/TypeCWarRoomPanel";
@@ -195,6 +202,21 @@ import {
   type TypeCAIExecutiveInsight,
 } from "../lib/typec/aiTypeCExecutiveInsight";
 import {
+  buildTypeCAIInsightRequest,
+  requestTypeCAIInsight,
+} from "../lib/typec/typeCAIAdapter";
+import type { TypeCAIInsightResponse } from "../lib/typec/typeCAIContracts";
+import {
+  buildTypeCMultiAgentRequest,
+  requestTypeCMultiAgentInsight,
+} from "../lib/typec/typeCMultiAgentAdapter";
+import type { TypeCMultiAgentInsight } from "../lib/typec/typeCMultiAgentContracts";
+import {
+  buildTypeCSandboxRequest,
+  requestTypeCSandboxResult,
+} from "../lib/typec/typeCSandboxAdapter";
+import type { TypeCSandboxResult, TypeCSandboxStrategy } from "../lib/typec/typeCSandboxContracts";
+import {
   applyTypeCConnectionSuggestionsToScene,
   buildTypeCConnectionSuggestions,
   type TypeCConnectionSuggestion,
@@ -211,6 +233,28 @@ import {
   buildTypeCDecisionRecommendation,
   type TypeCDecisionRecommendation,
 } from "../lib/typec/typeCDecisionRecommendation";
+import {
+  pauseTypeCExecution,
+  startTypeCExecution,
+  stopTypeCExecution,
+  type TypeCExecutionState,
+} from "../lib/typec/typeCExecutionState";
+import {
+  acknowledgeTypeCAlert,
+  buildTypeCAlerts,
+  clearTypeCAlerts,
+  mergeTypeCAlerts,
+  type TypeCAlert,
+} from "../lib/typec/typeCAlerts";
+import {
+  addTypeCMemoryEntry,
+  buildTypeCMemoryEntry,
+  clearTypeCMemory,
+  createEmptyTypeCMemoryState,
+  deriveTypeCLearningSignals,
+  type TypeCMemoryState,
+} from "../lib/typec/typeCMemory";
+import { buildTypeCAdaptiveGuidance } from "../lib/typec/typeCAdaptiveGuidance";
 import {
   clearTypeCScenarioSimulation,
   simulateTypeCScenario,
@@ -438,6 +482,8 @@ import {
   resolveDomainExperience,
   type NexoraResolvedDomainExperience,
 } from "../lib/domain/domainExperienceRegistry";
+import type { AddObjectMenuItem } from "../lib/domain/domainAddObjectAdapter.ts";
+import { applyDomainCatalogSelectionToScene } from "../lib/domain/domainCatalogSelection.ts";
 import { buildDemoStrategicAnalysisPrompt, resolveDomainDemo } from "../lib/demo/domainDemoRegistry";
 import { executeNexoraAction } from "../lib/execution/actionExecutionLayer";
 import type { FragilityScanResponse } from "../types/fragilityScanner";
@@ -1131,6 +1177,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     useState<TypeCExecutiveSummary | null>(null);
   const [typeCAIExecutiveInsight, setTypeCAIExecutiveInsight] =
     useState<TypeCAIExecutiveInsight | null>(null);
+  const [typeCAIInsight, setTypeCAIInsight] =
+    useState<TypeCAIInsightResponse | null>(null);
+  const [typeCAIInsightLoading, setTypeCAIInsightLoading] = useState(false);
+  const [typeCAIInsightError, setTypeCAIInsightError] = useState<string | null>(null);
+  const [typeCMultiAgentInsight, setTypeCMultiAgentInsight] =
+    useState<TypeCMultiAgentInsight | null>(null);
+  const [typeCMultiAgentLoading, setTypeCMultiAgentLoading] = useState(false);
+  const [typeCMultiAgentError, setTypeCMultiAgentError] = useState<string | null>(null);
+  const [typeCSandboxResult, setTypeCSandboxResult] =
+    useState<TypeCSandboxResult | null>(null);
+  const [typeCSandboxLoading, setTypeCSandboxLoading] = useState(false);
+  const [typeCSandboxError, setTypeCSandboxError] = useState<string | null>(null);
   const [connectionSuggestions, setConnectionSuggestions] =
     useState<TypeCConnectionSuggestion[] | null>(null);
   const [scenarioDrafts, setScenarioDrafts] =
@@ -1145,6 +1203,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     useState<TypeCScenarioDraft[] | null>(null);
   const [decisionRecommendation, setDecisionRecommendation] =
     useState<TypeCDecisionRecommendation | null>(null);
+  const [executionState, setExecutionState] =
+    useState<TypeCExecutionState | null>(null);
+  const [executionScenario, setExecutionScenario] =
+    useState<TypeCScenarioDraft | null>(null);
+  const [typeCAlerts, setTypeCAlerts] = useState<TypeCAlert[]>([]);
+  const [typeCMemoryState, setTypeCMemoryState] =
+    useState<TypeCMemoryState>(() => createEmptyTypeCMemoryState());
   const { nexoraMode } = useNexoraOperatorMode();
   const { resolvedTheme } = useNexoraUiTheme();
   const console = React.useMemo(
@@ -1528,6 +1593,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       applySceneChangeSafe(nextScene, source, options);
     },
     [applySceneChangeSafe, buildSceneSemanticSigForUpstreamDedupe]
+  );
+
+  const handleDomainCatalogObjectSelect = useCallback(
+    (item: AddObjectMenuItem) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        const result = applyDomainCatalogSelectionToScene({
+          currentScene: prev,
+          item,
+        });
+        if (!result.success || !result.nextScene) return prev;
+        return result.nextScene;
+      }, "domain_object_catalog_ui_add");
+    },
+    [applySceneChangeSafe]
   );
 
   const setSceneJsonForExecutionApply = useCallback(
@@ -4381,6 +4461,209 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     setDecisionRecommendation(null);
     openTypeCScenarioDraftWarRoom(draft);
   }, [openTypeCScenarioDraftWarRoom, scenarioComparison, scenarioComparisonDrafts]);
+  const handleStartTypeCExecution = useCallback(() => {
+    const scenarioId = decisionRecommendation?.recommendedScenarioId;
+    if (!scenarioId || !sceneJson) return;
+    const draft = scenarioComparisonDrafts?.find((candidate) => candidate.id === scenarioId);
+    if (!draft) return;
+    const simulation = simulateTypeCScenario({
+      scenario: draft,
+      sceneJson,
+    });
+    const nextExecution = startTypeCExecution({
+      scenario: draft,
+      simulation,
+    });
+    setExecutionScenario(draft);
+    setExecutionState(nextExecution);
+    setTypeCAlerts(clearTypeCAlerts());
+    setActiveTypeCScenario(draft);
+    setActiveSimulation(simulation);
+    globalThis.console.info("[Nexora][TypeC][ExecutionStarted]", {
+      scenarioId: draft.id,
+      riskLevel: nextExecution.riskLevel,
+      monitoredSignals: nextExecution.monitoredSignals.length,
+    });
+  }, [decisionRecommendation, scenarioComparisonDrafts, sceneJson]);
+  const handlePauseTypeCExecution = useCallback(() => {
+    setExecutionState((prev) => pauseTypeCExecution(prev));
+    globalThis.console.info("[Nexora][TypeC][ExecutionPaused]");
+  }, []);
+  const handleStopTypeCExecution = useCallback(() => {
+    const memoryEntry = executionState
+      ? buildTypeCMemoryEntry({
+          executionState,
+          decisionRecommendation,
+        })
+      : null;
+    if (memoryEntry) {
+      setTypeCMemoryState((prev) => addTypeCMemoryEntry(prev, memoryEntry));
+      globalThis.console.info("[Nexora][TypeC][MemoryEntryAdded]", {
+        scenarioId: memoryEntry.scenarioId,
+        outcome: memoryEntry.outcome,
+        riskLevel: memoryEntry.riskLevel,
+      });
+    }
+    setExecutionState(stopTypeCExecution());
+    setExecutionScenario(null);
+    setTypeCAlerts(clearTypeCAlerts());
+    setActiveSimulation(clearTypeCScenarioSimulation());
+    setActiveTypeCScenario(null);
+    globalThis.console.info("[Nexora][TypeC][ExecutionStopped]");
+  }, [decisionRecommendation, executionState]);
+  const handleAcknowledgeTypeCAlert = useCallback((alertId: string) => {
+    setTypeCAlerts((prev) => acknowledgeTypeCAlert(prev, alertId));
+    globalThis.console.info("[Nexora][TypeC][AlertAcknowledged]", { alertId });
+  }, []);
+  const handleClearTypeCAlerts = useCallback(() => {
+    setTypeCAlerts(clearTypeCAlerts());
+    globalThis.console.info("[Nexora][TypeC][AlertsCleared]");
+  }, []);
+  const handleClearTypeCMemory = useCallback(() => {
+    setTypeCMemoryState(clearTypeCMemory());
+    globalThis.console.info("[Nexora][TypeC][MemoryCleared]");
+  }, []);
+  const typeCLearningSignals = useMemo(
+    () => deriveTypeCLearningSignals(typeCMemoryState),
+    [typeCMemoryState]
+  );
+  const typeCAdaptiveGuidance = useMemo(
+    () =>
+      buildTypeCAdaptiveGuidance({
+        decision: decisionRecommendation,
+        execution: executionState,
+        memory: typeCMemoryState,
+      }),
+    [decisionRecommendation, executionState, typeCMemoryState]
+  );
+  const typeCAIInsightRequest = useMemo(
+    () =>
+      buildTypeCAIInsightRequest({
+        decisionRecommendation,
+        adaptiveGuidance: typeCAdaptiveGuidance,
+        memorySummary: typeCLearningSignals,
+      }),
+    [decisionRecommendation, typeCAdaptiveGuidance, typeCLearningSignals]
+  );
+  const canGenerateTypeCAIInsight = Boolean(decisionRecommendation || typeCAdaptiveGuidance);
+  const handleGenerateTypeCAIInsight = useCallback(async () => {
+    if (!canGenerateTypeCAIInsight || typeCAIInsightLoading) return;
+    setTypeCAIInsightLoading(true);
+    setTypeCAIInsightError(null);
+    try {
+      const insight = await requestTypeCAIInsight(typeCAIInsightRequest);
+      setTypeCAIInsight(insight);
+      globalThis.console.info("[Nexora][TypeC][AIInsightGenerated]", {
+        confidence: insight.confidence,
+      });
+    } catch {
+      setTypeCAIInsightError("AI insight failed. Deterministic guidance is still available.");
+    } finally {
+      setTypeCAIInsightLoading(false);
+    }
+  }, [canGenerateTypeCAIInsight, typeCAIInsightLoading, typeCAIInsightRequest]);
+  const handleCloseTypeCAIInsight = useCallback(() => {
+    setTypeCAIInsight(null);
+    setTypeCAIInsightError(null);
+  }, []);
+  const typeCMultiAgentRequest = useMemo(
+    () =>
+      buildTypeCMultiAgentRequest({
+        recommendation: decisionRecommendation,
+        adaptiveGuidance: typeCAdaptiveGuidance,
+        memorySummary: typeCLearningSignals,
+      }),
+    [decisionRecommendation, typeCAdaptiveGuidance, typeCLearningSignals]
+  );
+  const canRunTypeCMultiAgent = Boolean(decisionRecommendation || typeCAdaptiveGuidance);
+  const handleRunTypeCMultiAgent = useCallback(async () => {
+    if (!canRunTypeCMultiAgent || typeCMultiAgentLoading) return;
+    setTypeCMultiAgentLoading(true);
+    setTypeCMultiAgentError(null);
+    try {
+      const insight = await requestTypeCMultiAgentInsight(typeCMultiAgentRequest);
+      setTypeCMultiAgentInsight(insight);
+      globalThis.console.info("[Nexora][TypeC][MultiAgentInsightGenerated]", {
+        agents: insight.agentResponses.length,
+        confidence: insight.synthesis.confidence,
+      });
+    } catch {
+      setTypeCMultiAgentError("Strategic intelligence failed. Deterministic guidance is still available.");
+    } finally {
+      setTypeCMultiAgentLoading(false);
+    }
+  }, [canRunTypeCMultiAgent, typeCMultiAgentLoading, typeCMultiAgentRequest]);
+  const handleCloseTypeCMultiAgent = useCallback(() => {
+    setTypeCMultiAgentInsight(null);
+    setTypeCMultiAgentError(null);
+  }, []);
+  const typeCSandboxRequest = useMemo(
+    () =>
+      buildTypeCSandboxRequest({
+        sceneJson,
+        currentRecommendation: decisionRecommendation,
+        activeScenario: activeTypeCScenario,
+      }),
+    [activeTypeCScenario, decisionRecommendation, sceneJson]
+  );
+  const canRunTypeCSandbox = Boolean(typeCSandboxRequest);
+  const handleRunTypeCSandbox = useCallback(async () => {
+    if (!typeCSandboxRequest || typeCSandboxLoading) return;
+    setTypeCSandboxLoading(true);
+    setTypeCSandboxError(null);
+    try {
+      const result = await requestTypeCSandboxResult(typeCSandboxRequest);
+      setTypeCSandboxResult(result);
+      globalThis.console.info("[Nexora][TypeC][SandboxRunComplete]", {
+        strategies: result.strategies.length,
+        bestStrategyId: result.bestStrategyId ?? null,
+      });
+    } catch {
+      setTypeCSandboxError("Autonomous sandbox failed. No real system state was changed.");
+    } finally {
+      setTypeCSandboxLoading(false);
+    }
+  }, [typeCSandboxLoading, typeCSandboxRequest]);
+  const handleCloseTypeCSandbox = useCallback(() => {
+    setTypeCSandboxResult(null);
+    setTypeCSandboxError(null);
+  }, []);
+  const handleReviewTypeCSandboxStrategy = useCallback((strategy: TypeCSandboxStrategy) => {
+    globalThis.console.info("[Nexora][TypeC][SandboxStrategyReview]", {
+      strategyId: strategy.id,
+      title: strategy.title,
+    });
+  }, []);
+  const handleCompareTypeCSandboxStrategy = useCallback((strategy: TypeCSandboxStrategy) => {
+    globalThis.console.info("[Nexora][TypeC][SandboxStrategyCompare]", {
+      strategyId: strategy.id,
+      title: strategy.title,
+    });
+  }, []);
+  const handlePromoteTypeCSandboxStrategy = useCallback((strategy: TypeCSandboxStrategy) => {
+    globalThis.console.info("[Nexora][TypeC][SandboxStrategyPromotedToReviewQueue]", {
+      strategyId: strategy.id,
+      title: strategy.title,
+      advisoryOnly: true,
+    });
+  }, []);
+  useEffect(() => {
+    if (
+      !executionState ||
+      (executionState.status !== "running" && executionState.status !== "paused")
+    ) {
+      return undefined;
+    }
+
+    const refreshAlerts = () => {
+      const nextAlerts = buildTypeCAlerts({ executionState });
+      setTypeCAlerts((prev) => mergeTypeCAlerts(prev, nextAlerts));
+    };
+
+    refreshAlerts();
+    const id = window.setInterval(refreshAlerts, 4_000);
+    return () => window.clearInterval(id);
+  }, [executionState]);
   const exitTypeCScenarioSimulation = useCallback(() => {
     setActiveSimulation(clearTypeCScenarioSimulation());
     setActiveTypeCScenario(null);
@@ -12996,7 +13279,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [narrativeSceneBinding.objectSelection, sceneFocusIdSet]
   );
   const effectiveObjectSelection = useMemo(() => {
-    if (activeSimulation) {
+    const executionOverlayActive =
+      executionState?.status === "running" || executionState?.status === "paused";
+    if (activeSimulation && (executionOverlayActive || !executionState || executionState.status === "stopped")) {
       const baseSelection =
         narrativeSceneBinding.isActive && narrativeObjectSelection
           ? narrativeObjectSelection
@@ -13021,7 +13306,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       return narrativeObjectSelection;
     }
     return visibleObjectSelection ?? null;
-  }, [activeSimulation, narrativeObjectSelection, narrativeSceneBinding.isActive, visibleObjectSelection]);
+  }, [
+    activeSimulation,
+    executionState,
+    narrativeObjectSelection,
+    narrativeSceneBinding.isActive,
+    visibleObjectSelection,
+  ]);
   const effectiveObjectSelectionTraceSig = useMemo(
     () =>
       buildSelectionSignature({
@@ -14731,6 +15022,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       isSystemUnhealthy={isSystemUnhealthy}
       visibleSceneObjects={visibleSceneObjects}
       hasVisibleSceneObjects={hasVisibleSceneObjects}
+      domainCatalogDomainId={activeDomainExperience.experience.domainId}
+      onAddDomainObject={handleDomainCatalogObjectSelect}
       activeExecutiveView={activeExecutiveView}
       guidedPromptDebug={null}
       panelFamilyAuditDebug={panelFamilyAuditDebug}
@@ -19238,7 +19531,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       {investorDemoOverlayNode}
       {chatQAPanelNode}
       <TypeCScenarioDraftPanel
-        key={scenarioDrafts?.map((draft) => draft.id).join("|") ?? "none"}
+        key={`typec-scenario-drafts-${scenarioDrafts?.map((draft) => draft.id).join("|") || "empty"}`}
         drafts={scenarioDrafts}
         onCancel={cancelTypeCScenarioDrafts}
         onOpenWarRoom={openTypeCScenarioDraftWarRoom}
@@ -19252,6 +19545,51 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       <TypeCDecisionPanel
         recommendation={decisionRecommendation}
         comparison={scenarioComparison}
+        onExecute={handleStartTypeCExecution}
+      />
+      <TypeCAdaptiveGuidancePanel guidance={typeCAdaptiveGuidance} />
+      <TypeCAIPanel
+        insight={typeCAIInsight}
+        loading={typeCAIInsightLoading}
+        error={typeCAIInsightError}
+        canGenerate={canGenerateTypeCAIInsight}
+        onGenerate={handleGenerateTypeCAIInsight}
+        onClose={handleCloseTypeCAIInsight}
+      />
+      <TypeCMultiAgentPanel
+        insight={typeCMultiAgentInsight}
+        loading={typeCMultiAgentLoading}
+        error={typeCMultiAgentError}
+        canRun={canRunTypeCMultiAgent}
+        onRun={handleRunTypeCMultiAgent}
+        onClose={handleCloseTypeCMultiAgent}
+      />
+      <TypeCSandboxPanel
+        result={typeCSandboxResult}
+        loading={typeCSandboxLoading}
+        error={typeCSandboxError}
+        canRun={canRunTypeCSandbox}
+        onRun={handleRunTypeCSandbox}
+        onClose={handleCloseTypeCSandbox}
+        onReview={handleReviewTypeCSandboxStrategy}
+        onCompare={handleCompareTypeCSandboxStrategy}
+        onPromote={handlePromoteTypeCSandboxStrategy}
+      />
+      <TypeCExecutionPanel
+        executionState={executionState}
+        scenario={executionScenario}
+        onPause={handlePauseTypeCExecution}
+        onStop={handleStopTypeCExecution}
+      />
+      <TypeCAlertPanel
+        alerts={typeCAlerts}
+        onAcknowledge={handleAcknowledgeTypeCAlert}
+        onClearAll={handleClearTypeCAlerts}
+      />
+      <TypeCMemoryPanel
+        memoryState={typeCMemoryState}
+        learningSignals={typeCLearningSignals}
+        onClearMemory={handleClearTypeCMemory}
       />
       <TypeCWarRoomPanel
         scenario={activeTypeCScenario}
@@ -19259,7 +19597,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         onExit={exitTypeCScenarioSimulation}
       />
       <TypeCConnectionSuggestionPanel
-        key={connectionSuggestions?.map((suggestion) => suggestion.id).join("|") ?? "none"}
+        key={`typec-connection-suggestions-${connectionSuggestions?.map((suggestion) => suggestion.id).join("|") || "empty"}`}
         suggestions={connectionSuggestions}
         onCancel={cancelTypeCConnectionSuggestions}
         onApplySelected={applyTypeCConnectionSuggestions}
@@ -19281,6 +19619,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           decisionDraft={typeCDecisionDraft}
           executiveSummary={typeCExecutiveSummary}
           aiExecutiveInsight={typeCAIExecutiveInsight}
+          multiAgentInsight={typeCMultiAgentInsight}
           pipelineEvents={typeCPipelineEventsRef.current}
         />
       ) : null}

@@ -1,4 +1,5 @@
 import type { CenterExecutionSurface, RightPanelView } from "../ui/right-panel/rightPanelTypes";
+import type { DomainObjectCreationRequest } from "../domain/domainObjectCreation";
 
 /** Who initiated the action (product-facing taxonomy). */
 export type NexoraActionSource =
@@ -65,6 +66,8 @@ export type NexoraActionIntent =
   | { kind: "open_center_execution"; surface: CenterExecutionSurface }
   /** Opens the named component surface in the center workspace (canonical panel controller path). */
   | { kind: "open_component_panel"; component: NexoraComponentPanelId }
+  /** Typed request envelope for domain object creation. Scene writes are applied by the caller through the safe scene gateway. */
+  | { kind: "add_domain_object"; request: DomainObjectCreationRequest }
   | { kind: "focus_object"; objectId: string | null }
   | { kind: "start_demo" }
   | { kind: "noop"; reason?: string };
