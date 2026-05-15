@@ -49,3 +49,4 @@ export {
   rankExecutiveSignals,
   topExecutiveSignals,
 } from "./executiveSignalHierarchy.ts";
+export * as DecisionIntelligence from "./decisionIntelligenceBundle.ts";

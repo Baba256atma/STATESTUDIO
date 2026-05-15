@@ -1,5 +1,5 @@
 import { dedupeByStableKey } from "../intelligence/shared/dedupe.ts";
-import { isKnownConnector } from "./connectorRegistry.ts";
+import { isKnownNexoraLiveConnector } from "./nexoraLiveConnectorRegistry.ts";
 import type { ExternalSignalValidationResult, NormalizedExternalOperationalSignal } from "./externalSignalTypes.ts";
 
 export function validateExternalSignal(params: {
@@ -19,7 +19,7 @@ export function validateExternalSignal(params: {
   if (now > 0 && signal.timestamp > 0 && now - signal.timestamp > maxAgeMs) warnings.push("External signal is stale.");
   if (signal.severity < 0 || signal.severity > 1) warnings.push("External signal severity must be normalized to 0..1.");
   if (!signal.ingestionSignature.trim()) warnings.push("External signal ingestion signature is required.");
-  if (!isKnownConnector(signal.sourceConnectorId) && signal.sourceConnectorId !== "unknown_connector") {
+  if (!isKnownNexoraLiveConnector(signal.sourceConnectorId) && signal.sourceConnectorId !== "unknown_connector") {
     warnings.push(`Unknown connector id: ${signal.sourceConnectorId}`);
   }
 

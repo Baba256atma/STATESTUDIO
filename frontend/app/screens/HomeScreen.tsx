@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-// Removed unused R3F/Three imports
 import { chatToBackendLifecycle } from "../lib/api/chatApi";
 import {
-  DEFAULT_CHAT_REQUEST_TIMEOUT_MS,
   getChatLifecycleErrorMessage,
   isAbortLikeError,
   mapNexoraTargetPanelToRightPanelView,
@@ -23,7 +21,6 @@ import { getLocalChatResponse, userSafeChatMessage } from "../lib/chat/localChat
 import type { KPIState } from "../lib/api";
 import { analyzeFull } from "../lib/api/analyzeApi";
 import { postStrategicAnalysisText } from "../lib/api/client";
-// Removed unused SceneRenderer import
 import { SceneCanvas } from "../components/SceneCanvas";
 import SourceControlPanel from "../components/panels/SourceControlPanel";
 import type { HUDTabKey } from "../components/HUDShell";
@@ -37,23 +34,12 @@ import {
   type DecisionAssistantPanelMergeTrace,
 } from "../lib/decision";
 import { useSetViewMode } from "../components/SceneContext";
-import { clamp, parseSizeCommand, parseSelectedSizeCommand } from "../lib/sizeCommands";
-import {
-  useOverrides,
-  useSetOverride,
-  useClearAllOverrides,
-  usePruneOverridesTo,
-  useSelectedId,
-} from "../components/SceneContext";
+import { clamp } from "../lib/sizeCommands";
 import { getRecentEvents } from "../lib/api/events";
 import { delay } from "../lib/delay";
-import type { SceneJson, SceneLoop, SceneObject, LoopType } from "../lib/sceneTypes";
+import type { SceneJson, SceneLoop, LoopType } from "../lib/sceneTypes";
 import { buildSceneReactionFromIntent, type SceneIntent } from "../lib/scene/sceneIntent";
-import {
-  appendSnapshot,
-  clearSnapshots,
-  loadSnapshots,
-} from "../lib/decision/decisionStore";
+import { appendSnapshot, loadSnapshots } from "../lib/decision/decisionStore";
 import { normalizeLoops } from "../lib/loops/loopContract";
 import { resolveLoopPlaceholders } from "../lib/loops/loopResolver";
 import { makeLoopFromTemplate } from "../lib/loops/loopTemplates";
@@ -82,7 +68,6 @@ import {
 import { composeResolvedObjectDetails, type ResolvedObjectDetails } from "../lib/scene/composeResolvedObjectDetails";
 import { resolveSceneObjectById } from "../lib/scene/resolveSceneObjectById";
 import type { UICommand } from "../lib/ui/uiCommands";
-import { RestorePreviewModal } from "../components/RestorePreviewModal";
 import { useNexoraUiTheme } from "../lib/ui/nexoraUiTheme";
 import { StrategicAlertOverlay } from "../components/StrategicAlertOverlay";
 import { TypeCDevInspector } from "../components/dev/TypeCDevInspector";
@@ -99,6 +84,20 @@ import { TypeCSandboxPanel } from "../components/typec/TypeCSandboxPanel";
 import { TypeCScenarioComparePanel } from "../components/typec/TypeCScenarioComparePanel";
 import { TypeCScenarioDraftPanel } from "../components/typec/TypeCScenarioDraftPanel";
 import { TypeCWarRoomPanel } from "../components/typec/TypeCWarRoomPanel";
+import { D3StatusHud } from "../components/operational/D3StatusHud.tsx";
+import {
+  defaultOperationalAlertRules,
+  deriveOperationalMonitoringSnapshot,
+  deriveOperationalPropagationPreview,
+  deriveOperationalRiskImpactMap,
+  detectOperationalChanges,
+  evaluateOperationalAlerts,
+  logD3OperationalDiagnosticsDeduped,
+  runD3DevTimed,
+  toMonitoringSnapshotInput,
+  type OperationalMonitoringSnapshot,
+  type OperationalPipelineStatusBrief,
+} from "../lib/operational/index.ts";
 import { nx, sceneOverlayCardStyle, sceneVignetteLayerStyle, sceneWorkingBadgeStyle, softCardStyle } from "../components/ui/nexoraTheme";
 import {
   INITIAL_NEXORA_UI_STATE,
@@ -111,16 +110,6 @@ import { useStrategicRadar } from "../lib/strategy/useStrategicRadar";
 import { computeRiskLevel } from "../lib/risk/riskEscalationEngine";
 import { appendRiskEvent } from "../lib/risk/riskEventStore";
 import { routeChatInput } from "../lib/decision/decisionRouter";
-import {
-  buildSimulationResult,
-  createSimulationInputFromPrompt,
-} from "../lib/decision/simulationContract";
-import {
-  buildReplaySequence,
-  compareScenarioSnapshots,
-  createScenarioSnapshot,
-} from "../lib/decision/scenarioComparisonReplayContract";
-import { buildExecutiveInsightFromSimulation } from "../lib/decision/executiveExplainabilityContract";
 import { buildCanonicalRecommendation } from "../lib/decision/recommendation/buildCanonicalRecommendation";
 import { buildExecutiveObjectPanelData } from "../lib/panels/executiveObjectPanelData";
 import {
@@ -129,7 +118,6 @@ import {
   type PanelReason,
   type PanelSource,
 } from "../lib/panels/panelAuthorityTypes";
-import type { CanonicalRecommendation } from "../lib/decision/recommendation/recommendationTypes";
 import { buildDecisionMemoryEntry } from "../lib/decision/memory/buildDecisionMemoryEntry";
 import type { DecisionMemoryEntry } from "../lib/decision/memory/decisionMemoryTypes";
 import {
@@ -140,29 +128,13 @@ import { buildObservedOutcomeAssessment } from "../lib/decision/outcome/buildObs
 import { buildDecisionOutcomeFeedback } from "../lib/decision/outcome/buildDecisionOutcomeFeedback";
 import { buildDecisionFeedbackSignal } from "../lib/decision/outcome/buildDecisionFeedbackSignal";
 import { applyDecisionFeedbackToMemory } from "../lib/decision/outcome/applyDecisionFeedbackToMemory";
-import {
-  buildStrategyAwareExecutiveNotes,
-  buildStrategyKpiContext,
-} from "../lib/strategy/strategyKpiContract";
-import { buildDecisionCockpitState } from "../lib/cockpit/decisionCockpitContract";
-import { buildActiveModeContext, getProductMode, type ActiveModeContext } from "../lib/modes/productModesContract";
-import { buildReasoningOutput, createReasoningInput } from "../lib/reasoning/aiReasoningContract";
-import { orchestrateMultiAgentDecision } from "../lib/reasoning/multiAgentDecisionEngineContract";
-import {
-  appendAuditEvents,
-  appendTrustProvenance,
-  buildProjectGovernanceContext,
-  createAuditEvent,
-  createTrustProvenance,
-} from "../lib/governance/governanceTrustAuditContract";
+import { buildActiveModeContext, getProductMode } from "../lib/modes/productModesContract";
 import { appendDecisionActionTrace } from "../lib/governance/appendDecisionActionTrace";
 import {
   buildEnvironmentConfig,
   isFeatureEnabled,
   resolveNexoraEnvironment,
-  type EnvironmentConfig,
 } from "../lib/ops/environmentDeploymentContract";
-import { buildPlatformAssemblyState } from "../lib/platform/platformAssemblyContract";
 import { runAutonomousScenarioExploration } from "../lib/exploration/autonomousScenarioExplorer";
 import { createInitialMemoryState, deriveVisualPatch, updateMemory } from "../lib/memory/decisionMemory";
 import { getNexoraMode } from "../lib/typec/nexoraTypeCMode";
@@ -171,102 +143,77 @@ import { addTypeCObjectToScene } from "../lib/typec/typeCObjectActions";
 import { buildTypeCObjectDraft } from "../lib/typec/typeCObjectDraft";
 import { ensureTypeCCoreObject } from "../lib/typec/typeCSceneBootstrap";
 import { addTypeCSystemModelToScene } from "../lib/typec/typeCSystemModeling";
-import {
-  addScenarioToState,
-  buildTypeCScenarioFromScene,
-  ignoreTypeCScenario,
-  markScenarioReadyForDecision,
-  selectTypeCScenario,
-} from "../lib/typec/typeCScenarioBuilder";
 import type { TypeCScenarioState } from "../lib/typec/typeCScenarioTypes";
-import {
-  createTypeCPipelineEvent,
-  type TypeCPipelineEvent,
-  type TypeCPipelineEventInput,
-} from "../lib/typec/typeCPipelineTracker";
-import {
-  buildTypeCDecisionReadinessSnapshot,
-  type TypeCDecisionReadinessSnapshot,
-} from "../lib/typec/typeCDecisionReadiness";
-import {
-  buildTypeCDecisionDraft,
-  type TypeCDecisionDraft,
-} from "../lib/typec/typeCDecisionDraft";
-import {
-  buildTypeCExecutiveSummary as buildTypeCExecutiveSummaryFromDraft,
-  type TypeCExecutiveSummary,
-} from "../lib/typec/typeCExecutiveSummary";
+import type { TypeCPipelineEvent } from "../lib/typec/typeCPipelineTracker";
+import type { TypeCDecisionReadinessSnapshot } from "../lib/typec/typeCDecisionReadiness";
+import type { TypeCDecisionDraft } from "../lib/typec/typeCDecisionDraft";
+import type { TypeCExecutiveSummary } from "../lib/typec/typeCExecutiveSummary";
 import { buildTypeCExecutiveSummary as buildTypeCExecutiveSummaryFromState } from "../lib/typec/buildTypeCExecutiveSummary";
 import {
-  buildTypeCAIExecutiveInsight,
-  type TypeCAIExecutiveInsight,
-} from "../lib/typec/aiTypeCExecutiveInsight";
-import {
   buildTypeCAIInsightRequest,
-  requestTypeCAIInsight,
 } from "../lib/typec/typeCAIAdapter";
 import type { TypeCAIInsightResponse } from "../lib/typec/typeCAIContracts";
+import type { TypeCAIExecutiveInsight } from "../lib/typec/aiTypeCExecutiveInsight";
 import {
   buildTypeCMultiAgentRequest,
-  requestTypeCMultiAgentInsight,
 } from "../lib/typec/typeCMultiAgentAdapter";
 import type { TypeCMultiAgentInsight } from "../lib/typec/typeCMultiAgentContracts";
 import {
   buildTypeCSandboxRequest,
-  requestTypeCSandboxResult,
 } from "../lib/typec/typeCSandboxAdapter";
-import type { TypeCSandboxResult, TypeCSandboxStrategy } from "../lib/typec/typeCSandboxContracts";
+import type { TypeCSandboxResult } from "../lib/typec/typeCSandboxContracts";
 import {
-  applyTypeCConnectionSuggestionsToScene,
   buildTypeCConnectionSuggestions,
   type TypeCConnectionSuggestion,
 } from "../lib/typec/typeCConnectionSuggestions";
+import type { TypeCScenarioDraft } from "../lib/typec/typeCScenarioDrafts";
+import type { TypeCExecutionState } from "../lib/typec/typeCExecutionState";
+import type { TypeCAlert } from "../lib/typec/typeCAlerts";
 import {
-  buildTypeCScenarioDrafts,
-  type TypeCScenarioDraft,
-} from "../lib/typec/typeCScenarioDrafts";
-import {
-  compareTypeCScenarioSimulations,
-  type TypeCScenarioComparison,
-} from "../lib/typec/typeCScenarioComparison";
-import {
-  buildTypeCDecisionRecommendation,
-  type TypeCDecisionRecommendation,
-} from "../lib/typec/typeCDecisionRecommendation";
-import {
-  pauseTypeCExecution,
-  startTypeCExecution,
-  stopTypeCExecution,
-  type TypeCExecutionState,
-} from "../lib/typec/typeCExecutionState";
-import {
-  acknowledgeTypeCAlert,
-  buildTypeCAlerts,
-  clearTypeCAlerts,
-  mergeTypeCAlerts,
-  type TypeCAlert,
-} from "../lib/typec/typeCAlerts";
-import {
-  addTypeCMemoryEntry,
-  buildTypeCMemoryEntry,
-  clearTypeCMemory,
   createEmptyTypeCMemoryState,
   deriveTypeCLearningSignals,
   type TypeCMemoryState,
 } from "../lib/typec/typeCMemory";
 import { buildTypeCAdaptiveGuidance } from "../lib/typec/typeCAdaptiveGuidance";
-import {
-  clearTypeCScenarioSimulation,
-  simulateTypeCScenario,
-  type TypeCScenarioSimulation,
-} from "../lib/typec/typeCScenarioSimulation";
+import type { TypeCScenarioSimulation } from "../lib/typec/typeCScenarioSimulation";
+import type { TypeCScenarioComparison } from "../lib/typec/typeCScenarioComparison";
+import type { TypeCDecisionRecommendation } from "../lib/typec/typeCDecisionRecommendation";
 import {
   buildTypeCExecutiveActions,
   type TypeCExecutiveAction,
 } from "../lib/typec/typeCExecutiveActions";
 import { resolveTypeCActionPanel } from "../lib/typec/routeTypeCExecutiveAction";
+import {
+  TYPE_C_ORCHESTRATION_EXTRACTION_PLAN,
+  type TypeCApplySceneUpdateRef,
+  type TypeCExecutiveInsightContextRef,
+  type TypeCOrchestrationRefs,
+  type TypeCOrchestrationState,
+  type TypeCOpenSimPanelForTypeCRef,
+} from "./hooks/typec/useTypeCOrchestration.types.ts";
+import { useTypeCOrchestration } from "./hooks/typec/useTypeCOrchestration.ts";
+import type { SceneApplyControllerRefs } from "./hooks/scene/useSceneApplyController.types.ts";
+import { useSceneApplyController } from "./hooks/scene/useSceneApplyController.ts";
+import {
+  useRightPanelController,
+  useRightPanelControllerBridgeWiring,
+  emitRightPanelDiagnosticDev,
+} from "./hooks/right-panel/useRightPanelController.ts";
+import { normalizeRawAuthorityPanelView } from "./hooks/right-panel/rightPanelAuthorityRoute.ts";
+import {
+  RIGHT_PANEL_CONTROLLER_EXTRACTION_PLAN,
+  type RequestPanelAuthorityOpenFn,
+  type RightPanelBridgeRefs,
+} from "./hooks/right-panel/useRightPanelController.types.ts";
+import {
+  CHAT_PIPELINE_CONTROLLER_EXTRACTION_PLAN,
+  type ChatPipelineBridgeCallbacks,
+  type ChatPipelineSendTextDeps,
+  type EmitChatPipelineDiagnosticFn,
+} from "./hooks/chat/useChatPipelineController.types.ts";
+import { buildChatEffectSignature, normalizeChatInputForDedup } from "./hooks/chat/chatPipelineSendTextHelpers.ts";
+import { useChatPipelineController } from "./hooks/chat/useChatPipelineController.ts";
 import type { MemoryStateV1 } from "../lib/memory/memoryTypes";
-import type { RiskAlert, StrategicState, EmotionalFx, ScenePatch, SceneObjectPatch } from "../lib/contracts";
 import {
   Msg,
   ScenePrefs,
@@ -323,7 +270,6 @@ import {
   readPanelFamilySliceDiagnostics,
   readSceneJsonActiveLoop,
   readSceneJsonMetaString,
-  sceneJsonFromUnknown,
   shouldAcceptIncomingSceneReplacement,
   shouldAcceptMeaningfulArrayReplacement,
   shouldAcceptMeaningfulRecordReplacement,
@@ -340,7 +286,6 @@ import {
   resolveRetailDemoPulseObjectIdsForPrompt,
 } from "./homeScreenRetailDemo";
 import {
-  logPanelClose,
   logPanelContinuityPreserved,
   logPanelDecision,
   logPanelGuidedPromptWarn,
@@ -495,7 +440,6 @@ import { resolveRetailHighlightedObjectIds } from "../lib/domains/retail/resolve
 import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
 import {
   hasForcedSceneUpdate,
-  normalizeUnifiedSceneReaction,
   reactionHasExplicitHighlightIntent,
   type UnifiedSceneReaction,
 } from "../lib/scene/unifiedReaction";
@@ -517,7 +461,7 @@ import {
   shouldApplyExecutionResultImmediately,
   traceDemoFlowEvent,
 } from "../lib/demo/demoFlowOrchestrator";
-import { RETAIL_FRAGILITY_DEMO_SCRIPT, type DemoScriptStep, type DemoVisualMode } from "../lib/demo/demoScript";
+import { RETAIL_FRAGILITY_DEMO_SCRIPT, type DemoScriptStep } from "../lib/demo/demoScript";
 import { useCustomerDemoMode } from "../lib/demo/useCustomerDemoMode";
 import { useNarrativeSceneBinding, useNarrativeSceneBindingDebug } from "../lib/demo/useNarrativeSceneBinding";
 import type { FocusOwnershipState } from "../lib/focus/focusOwnershipTypes";
@@ -599,11 +543,7 @@ import { StrategicCommandFull } from "../components/executive/StrategicCommandFu
 import { RightPanelHost } from "../components/right-panel/RightPanelHost";
 import { ChatPipelineQAPanel } from "../components/debug/ChatPipelineQAPanel";
 import { PrimaryDecisionStrip } from "../components/right-panel/PrimaryDecisionStrip";
-import {
-  DEFAULT_LEFT_COMMANDS,
-  FAST_CHAT_THRESHOLD_MS,
-  LeftCommandAssistant,
-} from "../components/assistant/LeftCommandAssistant";
+import { DEFAULT_LEFT_COMMANDS, LeftCommandAssistant } from "../components/assistant/LeftCommandAssistant";
 import type {
   RightPanelState,
   RightPanelView,
@@ -643,7 +583,7 @@ import type {
 import { emitDebugEvent } from "../lib/debug/debugEmit";
 import { registerPanelSelfDebugLink } from "../lib/debug/debugCorrelationBridge";
 import { getRecentDebugEvents } from "../lib/debug/debugEventStore";
-import { traceSceneWrite, type SceneWriteSource } from "../lib/debug/sceneWriteTrace";
+import { traceSceneWrite } from "../lib/debug/sceneWriteTrace";
 import { emitGuardRailAlerts, runGuardChecks } from "../lib/debug/debugGuardRails";
 import { useInvestorDemo, INVESTOR_DEMO_MAX_STEP } from "../components/demo/InvestorDemoContext";
 import { registerNexoraActionDispatch } from "../lib/actions/actionDispatchRegistry";
@@ -653,10 +593,8 @@ import {
   normalizeCompareOptions,
   normalizeOpenCenterTimeline,
   normalizeOpenComponentPanel,
-  normalizeOpenPanelCta,
   normalizeOpenRightPanelEventDetail,
   normalizeRunSimulation,
-  normalizeFocusObject,
 } from "../lib/actions/actionNormalizer";
 import {
   mapRightPanelViewToCenterComponentId,
@@ -709,16 +647,6 @@ import {
   collectNexoraPilotSynthesisInputFromBrowser,
   type NexoraPilotSynthesis,
 } from "../lib/review/nexoraPilotSynthesis.ts";
-
-type FullRegistrarProps = {
-  selectedIdRefLocal: React.MutableRefObject<string | null>;
-  overridesRefLocal: React.MutableRefObject<Record<string, any>>;
-  setOverrideRefLocal: React.MutableRefObject<(id: string, patch: any) => void>;
-  onSelectedChange: (id: string | null) => void;
-  bumpOverridesVersion: React.Dispatch<React.SetStateAction<number>>;
-  clearAllOverridesRef: React.MutableRefObject<() => void>;
-  pruneOverridesRef: React.MutableRefObject<(ids: string[]) => void>;
-};
 
 // Legacy shell/inspector tab ids are kept only for compatibility boundaries.
 const LEGACY_RIGHT_PANEL_TABS = [
@@ -861,12 +789,6 @@ const INSPECTOR_REPORT_TABS = [
 
 type InspectorReportTab = (typeof INSPECTOR_REPORT_TABS)[number];
 
-type InspectorSectionChangedDetail = {
-  section?: string;
-  eventTab?: LegacyRightPanelTab | null;
-  source?: string | null;
-};
-
 type RightPanelOpenRequestDetail = {
   view?: RightPanelView | string | null;
   tab?: string | null;
@@ -883,15 +805,6 @@ type GuidedPromptSource =
   | "domain_prompt_guide"
   | "assistant_prompt_chip"
   | "guided_prompt";
-
-type SendTextOptions = {
-  source?: "user" | "demo";
-  guidedPrompt?: {
-    prompt: string;
-    resolvedPanel: RightPanelView;
-    contextId?: string | null;
-  };
-};
 
 type GettingStartedState = "empty" | "objects_no_selection" | "ready_with_selection";
 type EntryFlowState = "idle" | "describing_system" | "objects_created" | "ready_for_analysis";
@@ -954,39 +867,6 @@ type ClickIntentLockState = {
 
 const CLICK_INTENT_LOCK_TTL_MS = 4000;
 
-function logCtaTraceResolution(
-  action: string,
-  originView: RightPanelView | null,
-  resolvedTarget: string,
-  fallbackMessage?: string | null
-): void {
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[NEXORA][CTA_TRACE_RESOLUTION]", {
-      action,
-      originView: originView ?? null,
-      resolvedTarget,
-      isExecutiveTarget: isExecutiveActionTarget(resolvedTarget),
-      fallbackMessage: fallbackMessage ?? null,
-    });
-  }
-}
-
-function logCtaTraceConsumer(
-  action: string,
-  originView: RightPanelView | null,
-  resolvedTarget: string,
-  consumer: "openDecisionExecutionPanel" | "openRightPanel"
-): void {
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[NEXORA][CTA_TRACE_CONSUMER]", {
-      action,
-      originView: originView ?? null,
-      resolvedTarget,
-      consumer,
-    });
-  }
-}
-
 function isInspectorReportTab(tab: LegacyRightPanelTab | null | undefined): tab is InspectorReportTab {
   return typeof tab === "string" && INSPECTOR_REPORT_TABS.includes(tab as InspectorReportTab);
 }
@@ -1016,59 +896,6 @@ function useShallowStableObject<T extends Record<string, unknown> | null>(value:
   return value;
 }
 
-function FullRegistrar({
-  selectedIdRefLocal,
-  overridesRefLocal,
-  setOverrideRefLocal,
-  onSelectedChange,
-  bumpOverridesVersion,
-  clearAllOverridesRef,
-  pruneOverridesRef,
-}: FullRegistrarProps) {
-  const selectedId = useSelectedId();
-  const overrides = useOverrides();
-  const setOverride = useSetOverride();
-  const clearAll = useClearAllOverrides();
-  const pruneTo = usePruneOverridesTo();
-
-  const prevSelectedIdRef = useRef<string | null>(null);
-  const lastOverridesKeyRef = useRef<string>("");
-
-  useEffect(() => {
-    if (prevSelectedIdRef.current === selectedId) return;
-    prevSelectedIdRef.current = selectedId;
-    onSelectedChange(selectedId);
-    selectedIdRefLocal.current = selectedId;
-  }, [selectedId, onSelectedChange, selectedIdRefLocal]);
-
-  useEffect(() => {
-    const obj = overrides && typeof overrides === "object" ? (overrides as any) : {};
-    const ids = Object.keys(obj).sort();
-    const nextKey = ids.map((id) => `${id}:${stableStringify(obj[id])}`).join("|");
-
-    if (lastOverridesKeyRef.current === nextKey) return;
-
-    lastOverridesKeyRef.current = nextKey;
-    overridesRefLocal.current = overrides;
-    if (typeof bumpOverridesVersion === "function") {
-      bumpOverridesVersion((v) => v + 1);
-    }
-  }, [overrides, stableStringify, overridesRefLocal, bumpOverridesVersion]);
-
-  useEffect(() => {
-    setOverrideRefLocal.current = (id: string, patch: any) => setOverride(id, patch);
-  }, [setOverride, setOverrideRefLocal]);
-
-  useEffect(() => {
-    clearAllOverridesRef.current = clearAll;
-  }, [clearAll, clearAllOverridesRef]);
-
-  useEffect(() => {
-    pruneOverridesRef.current = pruneTo;
-  }, [pruneTo, pruneOverridesRef]);
-
-  return null;
-}
 const BACKEND_BASE =
   (typeof process !== "undefined" && process.env.NEXT_PUBLIC_BACKEND_URL) || "http://127.0.0.1:8000";
 const NEXORA_PANEL_DEPRECATION_DEBUG = true;
@@ -1154,17 +981,32 @@ function loadPrefsFromStorage(): ScenePrefs | null {
  *
  * Intentionally remains large for: backup restore apply sequencing, payload slice extractors used only here,
  * and inspector ↔ legacy tab ref coordination.
+ *
+ * O1 Optimization Rules:
+ * - extract only one orchestration zone per prompt
+ * - preserve public contracts
+ * - do not rewrite routing
+ * - do not mutate sceneJson directly
+ * - do not add render-time debug emissions
+ * - keep logs dev-only and deduped
+ * - prefer hooks over large inline orchestration blocks
+ *
+ * See `HomeScreenOptimizationInventory.md` for extraction ownership and bug-tracking checklist.
  */
 type HomeScreenProps = {
   domainExperience?: NexoraResolvedDomainExperience;
 };
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
+  // Shell surface: state + refs → O5 controller composition → derived memos/callbacks/effects → JSX (O5:6).
   const isPilotProductMode = useMemo(() => getNexoraProductMode() === "pilot", []);
   const typeCMode = useMemo(() => getNexoraMode(), []);
   const lastTypeCSignatureRef = useRef<string | null>(null);
   const lastTypeCExecutiveActionPanelRef = useRef<{ signature: string; at: number } | null>(null);
   const typeCPipelineEventsRef = useRef<TypeCPipelineEvent[]>([]);
+  const prevD3MonitoringSnapshotRef = useRef<OperationalMonitoringSnapshot | null>(null);
+  const lastOperationalChangeLogSigRef = useRef<string | null>(null);
+  // O1 Extraction Boundary: Type-C orchestration
   const [typeCScenarioState, setTypeCScenarioState] = useState<TypeCScenarioState>({
     scenarios: [],
     selectedScenarioId: null,
@@ -1210,6 +1052,100 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [typeCAlerts, setTypeCAlerts] = useState<TypeCAlert[]>([]);
   const [typeCMemoryState, setTypeCMemoryState] =
     useState<TypeCMemoryState>(() => createEmptyTypeCMemoryState());
+
+  const typeCOrchestrationState = useMemo<TypeCOrchestrationState>(
+    () => ({
+      scenario: {
+        typeCScenarioState,
+        typeCDecisionReadiness,
+        typeCDecisionDraft,
+        typeCCommandExecutiveSummary,
+      },
+      ai: {
+        typeCAIExecutiveInsight,
+        typeCAIInsight,
+        typeCAIInsightLoading,
+        typeCAIInsightError,
+      },
+      multiAgent: {
+        typeCMultiAgentInsight,
+        typeCMultiAgentLoading,
+        typeCMultiAgentError,
+      },
+      sandbox: {
+        typeCSandboxResult,
+        typeCSandboxLoading,
+        typeCSandboxError,
+      },
+      simulation: {
+        connectionSuggestions,
+        scenarioDrafts,
+        activeTypeCScenario,
+        activeSimulation,
+        scenarioComparison,
+        scenarioComparisonDrafts,
+        decisionRecommendation,
+      },
+      execution: {
+        executionState,
+        executionScenario,
+      },
+      alertsMemory: {
+        typeCAlerts,
+        typeCMemoryState,
+      },
+    }),
+    [
+      typeCScenarioState,
+      typeCDecisionReadiness,
+      typeCDecisionDraft,
+      typeCCommandExecutiveSummary,
+      typeCAIExecutiveInsight,
+      typeCAIInsight,
+      typeCAIInsightLoading,
+      typeCAIInsightError,
+      typeCMultiAgentInsight,
+      typeCMultiAgentLoading,
+      typeCMultiAgentError,
+      typeCSandboxResult,
+      typeCSandboxLoading,
+      typeCSandboxError,
+      connectionSuggestions,
+      scenarioDrafts,
+      activeTypeCScenario,
+      activeSimulation,
+      scenarioComparison,
+      scenarioComparisonDrafts,
+      decisionRecommendation,
+      executionState,
+      executionScenario,
+      typeCAlerts,
+      typeCMemoryState,
+    ]
+  );
+
+  const typeCOrchestrationRefs = useMemo<TypeCOrchestrationRefs>(
+    () => ({
+      lastTypeCSignatureRef,
+      lastTypeCExecutiveActionPanelRef,
+      typeCPipelineEventsRef,
+    }),
+    [lastTypeCSignatureRef, lastTypeCExecutiveActionPanelRef, typeCPipelineEventsRef]
+  );
+
+  const typeCExecutiveInsightContextRef = useRef<TypeCExecutiveInsightContextRef["current"]>({
+    focusedId: null,
+    selectedObjectIdState: null,
+    typeCExecutiveSummary: null,
+  });
+
+  const applyTypeCSceneUpdateRef = useRef<TypeCApplySceneUpdateRef["current"]>(null);
+  const openTypeCSimPanelRef = useRef<TypeCOpenSimPanelForTypeCRef["current"]>(null);
+  const rightPanelBridgeRefs = useMemo<Partial<RightPanelBridgeRefs>>(
+    () => ({ typeCOpenSimPanelRef: openTypeCSimPanelRef }),
+    [openTypeCSimPanelRef]
+  );
+
   const { nexoraMode } = useNexoraOperatorMode();
   const { resolvedTheme } = useNexoraUiTheme();
   const console = React.useMemo(
@@ -1226,6 +1162,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     () => domainExperience ?? resolveDomainExperience("general"),
     [domainExperience]
   );
+  // O5 keep: dev-only mode log (separate from extraction baselines).
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
       globalThis.console.log("[Nexora][Mode]", { mode: typeCMode });
@@ -1257,9 +1194,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const messagesRef = useRef<Msg[]>([]);
   const decisionMemorySignatureRef = useRef<string>("");
   const isSendingRef = useRef(false);
-  const previousRightPanelViewRef = useRef<RightPanelView | null>(null);
   const lastRightPanelChangeSourceRef = useRef<string | null>(null);
-  const lastPanelRequestSigRef = useRef<string | null>(null);
+  /** O3:5 — wired after `requestPanelAuthorityOpen` / `requestPanelAuthorityClose` are defined (same tick as render). */
+  const panelAuthorityOpenBridgeRef = useRef<RequestPanelAuthorityOpenFn | null>(null);
+  const panelAuthorityCloseBridgeRef = useRef<((reason?: string) => void) | null>(null);
   const validatedPanelCacheRef = useRef<{
     signature: string | null;
     result: PanelSharedDataValidationResult | null;
@@ -1306,9 +1244,183 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     requestId?: string | null;
   } | null>(null);
   const [sceneJson, setSceneJson] = useState<SceneJson | null>(null);
-  const lastSceneApplySigRef = useRef<string | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [selectedObjectIdState, _setSelectedObjectIdState] = useState<string | null>(null);
+
+  const typeCLearningSignals = useMemo(
+    () => deriveTypeCLearningSignals(typeCMemoryState),
+    [typeCMemoryState]
+  );
+  const typeCAdaptiveGuidance = useMemo(
+    () =>
+      buildTypeCAdaptiveGuidance({
+        decision: decisionRecommendation,
+        execution: executionState,
+        memory: typeCMemoryState,
+      }),
+    [decisionRecommendation, executionState, typeCMemoryState]
+  );
+  const typeCAIInsightRequest = useMemo(
+    () =>
+      buildTypeCAIInsightRequest({
+        decisionRecommendation,
+        adaptiveGuidance: typeCAdaptiveGuidance,
+        memorySummary: typeCLearningSignals,
+      }),
+    [decisionRecommendation, typeCAdaptiveGuidance, typeCLearningSignals]
+  );
+  const canGenerateTypeCAIInsight = Boolean(decisionRecommendation || typeCAdaptiveGuidance);
+  const typeCMultiAgentRequest = useMemo(
+    () =>
+      buildTypeCMultiAgentRequest({
+        recommendation: decisionRecommendation,
+        adaptiveGuidance: typeCAdaptiveGuidance,
+        memorySummary: typeCLearningSignals,
+      }),
+    [decisionRecommendation, typeCAdaptiveGuidance, typeCLearningSignals]
+  );
+  const canRunTypeCMultiAgent = Boolean(decisionRecommendation || typeCAdaptiveGuidance);
+  const typeCSandboxRequest = useMemo(
+    () =>
+      buildTypeCSandboxRequest({
+        sceneJson,
+        currentRecommendation: decisionRecommendation,
+        activeScenario: activeTypeCScenario,
+      }),
+    [activeTypeCScenario, decisionRecommendation, sceneJson]
+  );
+  const canRunTypeCSandbox = Boolean(typeCSandboxRequest);
+
+  // ======================================================
+  // O5 Shell Composition: Controllers
+  // Hook order: scene apply before Type-C (bridge ref only; no applySceneChangeSafe from Type-C).
+  // Right panel + chat hooks stay below after panel state and chatPipelineSendTextDeps (TDZ / hook rules).
+  // ======================================================
+  // Final shell contract:
+  // HomeScreen wires state + controllers + render layout.
+  // Orchestration lives in Type-C, Scene, Right Panel, and Chat Pipeline controllers.
   const lastUpstreamSceneApplySigBySourceRef = useRef<Map<string, string>>(new Map());
   const lastSceneResetTraceSigRef = useRef<string | null>(null);
+  const lastSceneSemanticApplyRef = useRef<string | null>(null);
+  const lastSceneVisualApplySignatureRef = useRef<string | null>(null);
+  const sceneApplyControllerRefs = useMemo<Partial<SceneApplyControllerRefs>>(
+    () => ({
+      lastSceneSemanticSignatureRef: lastSceneSemanticApplyRef,
+      lastSceneRenderSignatureRef: lastSceneVisualApplySignatureRef,
+    }),
+    [lastSceneSemanticApplyRef, lastSceneVisualApplySignatureRef]
+  );
+  const sceneApplyBridgeRefs = useMemo(
+    () => ({
+      applyTypeCSceneUpdateRef,
+    }),
+    [applyTypeCSceneUpdateRef]
+  );
+  // O2 Extraction Boundary: Scene apply — shell owns `sceneJson` + upstream dedupe; hook owns `applySceneChangeSafe` (see `useSceneApplyController.ts`).
+  const sceneApplyController = useSceneApplyController({
+    sceneJson,
+    setSceneJson,
+    selectedObjectId: selectedObjectIdState,
+    focusedObjectId: focusedId,
+    refs: sceneApplyControllerRefs,
+    lastSceneResetTraceSigRef,
+    sceneApplyConsoleDebug: console.debug,
+    bridgeRefs: sceneApplyBridgeRefs,
+  });
+  const {
+    callbacks: { applySceneChangeSafe, emitSceneApplyDiagnostic },
+  } = sceneApplyController;
+
+  // --- Type-C orchestration ---
+  const typeCOrchestration = useTypeCOrchestration({
+    enabled: typeCMode === "type_c",
+    mode: typeCMode,
+    typeCMode,
+    sceneJson,
+    state: typeCOrchestrationState,
+    refs: typeCOrchestrationRefs,
+    setTypeCScenarioState,
+    setTypeCDecisionReadiness,
+    setTypeCDecisionDraft,
+    setTypeCCommandExecutiveSummary,
+    typeCExecutiveInsightContextRef,
+    canGenerateTypeCAIInsight,
+    canRunTypeCMultiAgent,
+    typeCAIInsightRequest,
+    typeCMultiAgentRequest,
+    typeCSandboxRequest,
+    setTypeCAIExecutiveInsight,
+    setTypeCAIInsight,
+    setTypeCAIInsightLoading,
+    setTypeCAIInsightError,
+    setTypeCMultiAgentInsight,
+    setTypeCMultiAgentLoading,
+    setTypeCMultiAgentError,
+    setTypeCSandboxResult,
+    setTypeCSandboxLoading,
+    setTypeCSandboxError,
+    applyTypeCSceneUpdateRef,
+    openTypeCSimPanelRef,
+    setConnectionSuggestions,
+    setScenarioDrafts,
+    setActiveTypeCScenario,
+    setActiveSimulation,
+    setScenarioComparison,
+    setScenarioComparisonDrafts,
+    setDecisionRecommendation,
+    setExecutionState,
+    setExecutionScenario,
+    setTypeCAlerts,
+    setTypeCMemoryState,
+  });
+  const {
+    callbacks: {
+      trackTypeCPipelineEvent,
+      refreshTypeCDecisionReadiness,
+      createTypeCDecisionDraft,
+      createTypeCExecutiveSummary,
+      createTypeCScenarioDraft,
+      applyTypeCScenarioStatusIntent,
+      enhanceTypeCExecutiveSummary,
+      handleEnhanceTypeCExecutiveSummary,
+      handleGenerateTypeCAIInsight,
+      handleCloseTypeCAIInsight,
+      handleRunTypeCMultiAgent,
+      handleCloseTypeCMultiAgent,
+      handleRunTypeCSandbox,
+      handleCloseTypeCSandbox,
+      handleReviewTypeCSandboxStrategy,
+      handleCompareTypeCSandboxStrategy,
+      handlePromoteTypeCSandboxStrategy,
+      cancelTypeCConnectionSuggestions,
+      cancelTypeCScenarioDrafts,
+      applyTypeCConnectionSuggestions,
+      openTypeCScenarioDraftWarRoom,
+      compareTypeCScenarioDrafts,
+      closeTypeCScenarioCompare,
+      openBestTypeCScenarioInWarRoom,
+      exitTypeCScenarioSimulation,
+      handleStartTypeCExecution,
+      handlePauseTypeCExecution,
+      handleStopTypeCExecution,
+      handleAcknowledgeTypeCAlert,
+      handleClearTypeCAlerts,
+      handleClearTypeCMemory,
+    },
+  } = typeCOrchestration;
+
+  // O5: dev __NEXORA_DEBUG__ mirror for Type-C read models (one effect; same keys as prior three).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const debugWindow = window as typeof window & {
+      __NEXORA_DEBUG__?: Record<string, unknown>;
+    };
+    debugWindow.__NEXORA_DEBUG__ = debugWindow.__NEXORA_DEBUG__ ?? {};
+    debugWindow.__NEXORA_DEBUG__.typeCDecisionReadiness = typeCDecisionReadiness;
+    debugWindow.__NEXORA_DEBUG__.typeCDecisionDraft = typeCDecisionDraft;
+    debugWindow.__NEXORA_DEBUG__.typeCCommandExecutiveSummary = typeCCommandExecutiveSummary;
+  }, [typeCDecisionReadiness, typeCDecisionDraft, typeCCommandExecutiveSummary]);
+
   const sceneIntentQueueRef = useRef<SceneIntent[]>([]);
   const [sceneIntentEpoch, setSceneIntentEpoch] = useState(0);
   const buildSceneSemanticSigForUpstreamDedupe = useCallback(
@@ -1335,255 +1447,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     []
   );
-  const applySceneChangeSafe = useCallback(
-    (
-      nextOrUpdater: SceneJson | null | ((prev: SceneJson | null) => SceneJson | null),
-      source: string,
-      options?: { bypassDedupe?: boolean }
-    ) => {
-      setSceneJson((prev) => {
-        const next =
-          typeof nextOrUpdater === "function"
-            ? (nextOrUpdater as (p: SceneJson | null) => SceneJson | null)(prev)
-            : nextOrUpdater;
-        if (next === prev) return prev;
-        const nextObjects = Array.isArray(next?.scene?.objects) ? next.scene.objects : [];
-        const prevCount = countSceneObjects(prev);
-        const nextCount = countSceneObjects(next);
-        const isSceneHydrationWrite = prevCount === 0 && nextCount > 0;
-        const isWorkspaceEmptySceneClear =
-          source === "workspace" && prevCount > 0 && nextCount === 0;
-        if (isWorkspaceEmptySceneClear) {
-          if (process.env.NODE_ENV !== "production") {
-            globalThis.console.warn("[Nexora][WorkspaceSceneClearBlocked]", {
-              source,
-              prevCount,
-              nextCount,
-              reason: "workspace_empty_payload_after_hydration",
-            });
-          }
-          return prev;
-        }
-        const isResetCandidate =
-          source === "workspace" || next == null || (prevCount > 0 && nextCount === 0);
-        if (process.env.NODE_ENV !== "production" && isResetCandidate) {
-          const resetTrace = {
-            source,
-            prevCount,
-            nextCount,
-            reason:
-              source === "workspace"
-                ? "workspace_apply"
-                : next == null
-                  ? "scene_null"
-                  : prevCount > 0 && nextCount === 0
-                    ? "objects_cleared"
-                    : "unknown",
-          };
-          const resetSig = JSON.stringify(resetTrace);
-          if (lastSceneResetTraceSigRef.current !== resetSig) {
-            lastSceneResetTraceSigRef.current = resetSig;
-            globalThis.console.warn("[Nexora][SceneParity][SceneResetCandidate]", resetTrace);
-          }
-        }
-        const objectIds = nextObjects
-          .map((obj: unknown, idx: number) => {
-            const o = asRecord(obj);
-            return String(o?.id ?? o?.name ?? `${o?.type ?? "obj"}:${idx}`);
-          })
-          .filter(Boolean);
-        const nextSelection = asRecord(next)?.object_selection;
-        const highlightedIds = getHighlightedObjectIdsFromSelection(nextSelection);
-        const shouldDim = (nextSelection as any)?.dim_unrelated_objects === true;
-        const dimmedIds = shouldDim ? objectIds.filter((id) => !highlightedIds.includes(id)) : [];
-        const semanticSig = buildSceneSemanticSignature({
-          objectIds,
-          highlightedIds,
-          dimmedIds,
-          selectedId: null,
-          reactionMode: null,
-          propagationSource: source,
-        });
-        const prevObjects = Array.isArray(prev?.scene?.objects) ? prev.scene.objects : [];
-        const prevObjectIds = prevObjects
-          .map((obj: unknown, idx: number) => {
-            const o = asRecord(obj);
-            return String(o?.id ?? o?.name ?? `${o?.type ?? "obj"}:${idx}`);
-          })
-          .filter(Boolean);
-        const prevSelection = asRecord(prev)?.object_selection;
-        const prevHighlightedIds = getHighlightedObjectIdsFromSelection(prevSelection);
-        const prevShouldDim = (prevSelection as any)?.dim_unrelated_objects === true;
-        const prevDimmedIds = prevShouldDim
-          ? prevObjectIds.filter((id) => !prevHighlightedIds.includes(id))
-          : [];
-        const prevSemanticSig = buildSceneSemanticSignature({
-          objectIds: prevObjectIds,
-          highlightedIds: prevHighlightedIds,
-          dimmedIds: prevDimmedIds,
-          selectedId: null,
-          reactionMode: null,
-          propagationSource: source,
-        });
-        const stablePrevObjects = prevObjects
-          .map((obj: unknown, idx: number) => {
-            const o = asRecord(obj);
-            return {
-              id: String(o?.id ?? o?.name ?? `${o?.type ?? "obj"}:${idx}`),
-              type: String(o?.type ?? ""),
-              label: String(o?.label ?? o?.name ?? ""),
-              state: String(o?.state ?? o?.status ?? ""),
-            };
-          })
-          .sort((a, b) => a.id.localeCompare(b.id));
-        const stableNextObjects = nextObjects
-          .map((obj: unknown, idx: number) => {
-            const o = asRecord(obj);
-            return {
-              id: String(o?.id ?? o?.name ?? `${o?.type ?? "obj"}:${idx}`),
-              type: String(o?.type ?? ""),
-              label: String(o?.label ?? o?.name ?? ""),
-              state: String(o?.state ?? o?.status ?? ""),
-            };
-          })
-          .sort((a, b) => a.id.localeCompare(b.id));
-        const hasExplicitObjectMutation =
-          JSON.stringify(stablePrevObjects) !== JSON.stringify(stableNextObjects);
-        const prevVisualSig = JSON.stringify({
-          scene: asRecord(prev)?.scene ?? null,
-          selection: prevSelection ?? null,
-        });
-        const nextVisualSig = JSON.stringify({
-          scene: asRecord(next)?.scene ?? null,
-          selection: nextSelection ?? null,
-        });
-        const normalizedSource = String(source ?? "").toLowerCase();
-        const isPanelDrivenSource =
-          normalizedSource.includes("panel") ||
-          normalizedSource.includes("rightpanelhost") ||
-          normalizedSource.includes("dashboard");
-        const hasNoMeaningfulSceneMutation =
-          !hasExplicitObjectMutation &&
-          prevSemanticSig === semanticSig &&
-          prevVisualSig === nextVisualSig;
-        if (isPanelDrivenSource && hasNoMeaningfulSceneMutation) {
-          if (process.env.NODE_ENV !== "production") {
-            globalThis.console.debug("[Nexora][SceneApplyBlocked][PanelOnlyChange]", {
-              source,
-              prevCount,
-              nextCount,
-            });
-          }
-          return prev;
-        }
-        if (prevSemanticSig === semanticSig && prevVisualSig === nextVisualSig) {
-          if (process.env.NODE_ENV !== "production") {
-            console.debug("[Nexora][UpstreamDedup][Skipped]", {
-              type: "scene",
-              signature: semanticSig,
-            });
-          }
-          return prev;
-        }
-        const sceneWriteSource: SceneWriteSource = source.includes("propagation")
-          ? "propagation"
-          : source === "chat" || source === "unified_reaction" || source.includes("intent")
-            ? "chat"
-            : source === "selection"
-              ? "selection"
-              : source.includes("click") || source.includes("manual") || source.includes("ui")
-                ? "ui_event"
-                : source.includes("ingestion")
-                  ? "ingestion"
-                  : source.includes("fallback")
-                    ? "system_fallback"
-                    : "system";
-        const shouldBypassSceneWriteDuplicateGuard =
-          isSceneHydrationWrite &&
-          (source === "workspace" ||
-            source === "demo" ||
-            source.includes("hydrate") ||
-            source.includes("restore") ||
-            source.includes("initial"));
-        if (process.env.NODE_ENV !== "production" && shouldBypassSceneWriteDuplicateGuard) {
-          globalThis.console.warn("[Nexora][SceneHydration][Allowed]", {
-            source,
-            prevCount,
-            nextCount,
-            objectIds,
-          });
-        }
-        const allowed = shouldBypassSceneWriteDuplicateGuard
-          ? true
-          : traceSceneWrite({
-              source: sceneWriteSource,
-              semanticSig,
-              context: {
-                writer: "HomeScreen.applySceneChangeSafe",
-                reason: source,
-                highlightedCount: highlightedIds.length,
-                objectCount: objectIds.length,
-                isSceneHydrationWrite,
-              },
-            });
-        if (typeof window !== "undefined") {
-          const w = window as unknown as {
-            __NEXORA_DEBUG__?: { chatPipeline?: Record<string, unknown> };
-          };
-          const prevDebug = (w.__NEXORA_DEBUG__?.chatPipeline ?? {}) as Record<string, unknown>;
-          w.__NEXORA_DEBUG__ = {
-            ...(w.__NEXORA_DEBUG__ ?? {}),
-            chatPipeline: {
-              ...prevDebug,
-              sceneWrite: {
-                source: sceneWriteSource,
-                semanticSig,
-                blocked: !allowed,
-              },
-              updatedAt: Date.now(),
-            },
-          };
-        }
-        if (!allowed) {
-          return prev;
-        }
-        const sig = next == null ? "__scene_null__" : JSON.stringify(next);
-        if (!options?.bypassDedupe && lastSceneApplySigRef.current === sig && !isSceneHydrationWrite) {
-          return prev;
-        }
-        lastSceneApplySigRef.current = sig;
-        if (process.env.NODE_ENV !== "production") {
-          const bucket =
-            source === "nexora_decision_assistant" ||
-            source === "intent_pipeline" ||
-            source.includes("intent")
-              ? "intent_pipeline"
-              : source === "feedback" ||
-                  source === "execution" ||
-                  source === "product_flow" ||
-                  source === "timeline" ||
-                  source === "snapshot" ||
-                  source === "unified_reaction" ||
-                  source === "chat"
-                ? "chat"
-                : source.includes("scan")
-                  ? "scanner"
-                  : source;
-          window.console.log("[SceneApply]", bucket);
-        }
-        if (next === prev) return prev;
-        return next;
-      });
-    },
-    []
-  );
   const applySceneChangeUpstreamDedup = useCallback(
     (nextScene: SceneJson | null, source: string, options?: { bypassDedupe?: boolean }) => {
       const nextSemanticSig = buildSceneSemanticSigForUpstreamDedupe(nextScene, source);
       const prev = lastUpstreamSceneApplySigBySourceRef.current.get(source) ?? null;
       if (prev === nextSemanticSig) {
-        console.debug("[Nexora][UpstreamDedup][Skipped]", {
-          type: "scene",
+        emitSceneApplyDiagnostic("apply_skipped", {
+          skippedReason: "upstream_semantic_map",
           source,
           signature: nextSemanticSig,
         });
@@ -1592,7 +1462,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       lastUpstreamSceneApplySigBySourceRef.current.set(source, nextSemanticSig);
       applySceneChangeSafe(nextScene, source, options);
     },
-    [applySceneChangeSafe, buildSceneSemanticSigForUpstreamDedupe]
+    [applySceneChangeSafe, buildSceneSemanticSigForUpstreamDedupe, emitSceneApplyDiagnostic]
   );
 
   const handleDomainCatalogObjectSelect = useCallback(
@@ -1621,6 +1491,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [applySceneChangeSafe, applySceneChangeUpstreamDedup]
   );
 
+  // O5 keep: shell-level Type-C core object bootstrap via scene apply (gated on mode).
   useEffect(() => {
     if (typeCMode !== "type_c") return;
     applySceneChangeSafe((prev) => {
@@ -1634,456 +1505,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       return next;
     }, "type_c_bootstrap", { bypassDedupe: true });
   }, [applySceneChangeSafe, typeCMode]);
-
-  const trackTypeCPipelineEvent = useCallback((eventInput: TypeCPipelineEventInput) => {
-    if (process.env.NODE_ENV === "production") return;
-
-    const event = createTypeCPipelineEvent(eventInput);
-    typeCPipelineEventsRef.current = [
-      ...typeCPipelineEventsRef.current.slice(-24),
-      event,
-    ];
-
-    if (typeof window !== "undefined") {
-      const debugWindow = window as typeof window & {
-        __NEXORA_DEBUG__?: Record<string, unknown>;
-      };
-      debugWindow.__NEXORA_DEBUG__ = debugWindow.__NEXORA_DEBUG__ ?? {};
-      debugWindow.__NEXORA_DEBUG__.typeCPipelineEvents = typeCPipelineEventsRef.current;
-    }
-
-    globalThis.console.log("[Nexora][TypeC][PipelineEvent]", event);
-  }, []);
-
-  const refreshTypeCDecisionReadiness = useCallback(
-    (scenarioStateOverride?: TypeCScenarioState): TypeCDecisionReadinessSnapshot => {
-      const snapshot = buildTypeCDecisionReadinessSnapshot({
-        scene: sceneJson,
-        scenarioState: scenarioStateOverride ?? typeCScenarioState,
-      });
-
-      setTypeCDecisionReadiness((prev) => {
-        if (prev?.id === snapshot.id) return prev;
-        return snapshot;
-      });
-
-      if (process.env.NODE_ENV !== "production") {
-        const logPayload = {
-          level: snapshot.level,
-          scenarioId: snapshot.scenarioId,
-          missing: snapshot.missing,
-        };
-        globalThis.console.log("[Nexora][TypeC][DecisionReadinessSnapshot]", logPayload);
-        if (snapshot.level === "not_ready") {
-          globalThis.console.log("[Nexora][TypeC][DecisionReadinessSkipped]", logPayload);
-        }
-      }
-
-      trackTypeCPipelineEvent({
-        step: "decision_readiness_snapshot",
-        scenarioId: snapshot.scenarioId ?? undefined,
-        reason: snapshot.level,
-      });
-
-      return snapshot;
-    },
-    [sceneJson, trackTypeCPipelineEvent, typeCScenarioState]
-  );
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const debugWindow = window as typeof window & {
-      __NEXORA_DEBUG__?: Record<string, unknown>;
-    };
-    debugWindow.__NEXORA_DEBUG__ = debugWindow.__NEXORA_DEBUG__ ?? {};
-    debugWindow.__NEXORA_DEBUG__.typeCDecisionReadiness = typeCDecisionReadiness;
-  }, [typeCDecisionReadiness]);
-
-  const createTypeCDecisionDraft = useCallback((): boolean => {
-    if (typeCMode !== "type_c") {
-      if (process.env.NODE_ENV !== "production") {
-        globalThis.console.log("[Nexora][TypeC][DecisionDraftSkipped]", {
-          reason: "mode_not_type_c",
-        });
-      }
-      trackTypeCPipelineEvent({
-        step: "skipped",
-        intentType: "create_decision_draft",
-        reason: "mode_not_type_c",
-      });
-      return false;
-    }
-
-    const readiness =
-      typeCDecisionReadiness ??
-      buildTypeCDecisionReadinessSnapshot({
-        scene: sceneJson,
-        scenarioState: typeCScenarioState,
-      });
-    const draft = buildTypeCDecisionDraft({
-      readiness,
-      scene: sceneJson,
-    });
-
-    if (!draft) {
-      if (process.env.NODE_ENV !== "production") {
-        globalThis.console.log("[Nexora][TypeC][DecisionDraftSkipped]", {
-          reason: "draft_build_failed",
-        });
-      }
-      trackTypeCPipelineEvent({
-        step: "skipped",
-        intentType: "create_decision_draft",
-        reason: "draft_build_failed",
-      });
-      return false;
-    }
-
-    setTypeCDecisionReadiness((prev) => {
-      if (prev?.id === readiness.id) return prev;
-      return readiness;
-    });
-    setTypeCDecisionDraft((prev) => {
-      if (prev?.id === draft.id) return prev;
-      return draft;
-    });
-
-    trackTypeCPipelineEvent({
-      step: "decision_draft_created",
-      scenarioId: draft.scenarioId ?? undefined,
-      reason: draft.posture,
-    });
-
-    if (process.env.NODE_ENV !== "production") {
-      globalThis.console.log("[Nexora][TypeC][DecisionDraftCreated]", {
-        posture: draft.posture,
-        confidence: draft.confidence,
-        scenarioId: draft.scenarioId,
-      });
-    }
-
-    return true;
-  }, [
-    sceneJson,
-    trackTypeCPipelineEvent,
-    typeCDecisionReadiness,
-    typeCMode,
-    typeCScenarioState,
-  ]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const debugWindow = window as typeof window & {
-      __NEXORA_DEBUG__?: Record<string, unknown>;
-    };
-    debugWindow.__NEXORA_DEBUG__ = debugWindow.__NEXORA_DEBUG__ ?? {};
-    debugWindow.__NEXORA_DEBUG__.typeCDecisionDraft = typeCDecisionDraft;
-  }, [typeCDecisionDraft]);
-
-  const createTypeCExecutiveSummary = useCallback((): boolean => {
-    if (typeCMode !== "type_c") {
-      if (process.env.NODE_ENV !== "production") {
-        globalThis.console.log("[Nexora][TypeC][ExecutiveSummarySkipped]", {
-          reason: "mode_not_type_c",
-        });
-      }
-      trackTypeCPipelineEvent({
-        step: "skipped",
-        intentType: "create_executive_summary",
-        reason: "mode_not_type_c",
-      });
-      return false;
-    }
-
-    const readiness =
-      typeCDecisionReadiness ??
-      buildTypeCDecisionReadinessSnapshot({
-        scene: sceneJson,
-        scenarioState: typeCScenarioState,
-      });
-    const draft =
-      typeCDecisionDraft ??
-      buildTypeCDecisionDraft({
-        readiness,
-        scene: sceneJson,
-      });
-    const summary = buildTypeCExecutiveSummaryFromDraft({ draft });
-
-    if (!summary) {
-      if (process.env.NODE_ENV !== "production") {
-        globalThis.console.log("[Nexora][TypeC][ExecutiveSummarySkipped]", {
-          reason: "summary_build_failed",
-        });
-      }
-      trackTypeCPipelineEvent({
-        step: "skipped",
-        intentType: "create_executive_summary",
-        reason: "summary_build_failed",
-      });
-      return false;
-    }
-
-    if (!typeCDecisionReadiness) {
-      setTypeCDecisionReadiness(readiness);
-    }
-    if (!typeCDecisionDraft && draft) {
-      setTypeCDecisionDraft(draft);
-    }
-    setTypeCCommandExecutiveSummary((prev) => {
-      if (prev?.id === summary.id) return prev;
-      return summary;
-    });
-
-    trackTypeCPipelineEvent({
-      step: "executive_summary_created",
-      scenarioId: summary.scenarioId ?? undefined,
-      reason: summary.confidence.label,
-    });
-
-    if (process.env.NODE_ENV !== "production") {
-      globalThis.console.log("[Nexora][TypeC][ExecutiveSummaryCreated]", {
-        scenarioId: summary.scenarioId,
-        confidence: summary.confidence.value,
-        confidenceLabel: summary.confidence.label,
-        headline: summary.headline,
-      });
-    }
-
-    return true;
-  }, [
-    sceneJson,
-    trackTypeCPipelineEvent,
-    typeCDecisionDraft,
-    typeCDecisionReadiness,
-    typeCMode,
-    typeCScenarioState,
-  ]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const debugWindow = window as typeof window & {
-      __NEXORA_DEBUG__?: Record<string, unknown>;
-    };
-    debugWindow.__NEXORA_DEBUG__ = debugWindow.__NEXORA_DEBUG__ ?? {};
-    debugWindow.__NEXORA_DEBUG__.typeCCommandExecutiveSummary = typeCCommandExecutiveSummary;
-  }, [typeCCommandExecutiveSummary]);
-
-  const createTypeCScenarioDraft = useCallback((): boolean => {
-    if (typeCMode !== "type_c" || !sceneJson) {
-      if (process.env.NODE_ENV !== "production") {
-        globalThis.console.log("[Nexora][TypeC][ScenarioDraftSkipped]", {
-          reason: typeCMode !== "type_c" ? "mode_not_type_c" : "missing_scene",
-        });
-      }
-      trackTypeCPipelineEvent({
-        step: "skipped",
-        intentType: "create_scenario",
-        reason: typeCMode !== "type_c" ? "mode_not_type_c" : "missing_scene",
-      });
-      return false;
-    }
-
-    setTypeCScenarioState((prev) => {
-      const scenario = buildTypeCScenarioFromScene(sceneJson);
-      if (!scenario) {
-        if (process.env.NODE_ENV !== "production") {
-          globalThis.console.log("[Nexora][TypeC][ScenarioDraftSkipped]", {
-            reason: "insufficient_scene_graph",
-          });
-        }
-        trackTypeCPipelineEvent({
-          step: "skipped",
-          intentType: "create_scenario",
-          reason: "insufficient_scene_graph",
-        });
-        return prev;
-      }
-
-      const next = addScenarioToState(prev, scenario);
-      if (next === prev) {
-        if (process.env.NODE_ENV !== "production") {
-          globalThis.console.log("[Nexora][TypeC][ScenarioDraftSkipped]", {
-            reason: "duplicate_scenario",
-            scenarioId: scenario.id,
-          });
-        }
-        trackTypeCPipelineEvent({
-          step: "skipped",
-          intentType: "create_scenario",
-          scenarioId: scenario.id,
-          reason: "duplicate_scenario",
-        });
-        return prev;
-      }
-
-      if (process.env.NODE_ENV !== "production") {
-        globalThis.console.log("[Nexora][TypeC][ScenarioDraftCreated]", {
-          scenarioId: scenario.id,
-        });
-      }
-      trackTypeCPipelineEvent({
-        step: "scenario_draft_created",
-        intentType: "create_scenario",
-        objectIds: scenario.objectIds,
-        scenarioId: scenario.id,
-      });
-      globalThis.queueMicrotask(() => refreshTypeCDecisionReadiness(next));
-      return next;
-    });
-
-    return true;
-  }, [refreshTypeCDecisionReadiness, sceneJson, trackTypeCPipelineEvent, typeCMode]);
-
-  const applyTypeCScenarioStatusIntent = useCallback(
-    (intentType: "select_scenario" | "ignore_scenario" | "ready_for_decision"): boolean => {
-      if (typeCMode !== "type_c") return false;
-
-      setTypeCScenarioState((prev) => {
-        const buildDraftState = (): TypeCScenarioState => {
-          if (!sceneJson) return prev;
-          const scenario = buildTypeCScenarioFromScene(sceneJson);
-          if (!scenario) return prev;
-          return addScenarioToState(prev, scenario);
-        };
-        const latestDraftId = (state: TypeCScenarioState): string | null =>
-          [...state.scenarios].reverse().find((scenario) => scenario.status === "draft")?.id ?? null;
-        const firstDraftId = (state: TypeCScenarioState): string | null =>
-          state.scenarios.find((scenario) => scenario.status === "draft")?.id ?? null;
-        const logSkipped = (reason: string) => {
-          if (process.env.NODE_ENV !== "production") {
-            globalThis.console.log("[Nexora][TypeC][ScenarioStatusSkipped]", { intent: intentType, reason });
-          }
-          trackTypeCPipelineEvent({
-            step: "skipped",
-            intentType,
-            reason,
-          });
-        };
-
-        if (intentType === "select_scenario") {
-          if (prev.selectedScenarioId) {
-            if (process.env.NODE_ENV !== "production") {
-              globalThis.console.log("[Nexora][TypeC][ScenarioSelected]", { scenarioId: prev.selectedScenarioId });
-            }
-            trackTypeCPipelineEvent({
-              step: "scenario_selected",
-              intentType,
-              scenarioId: prev.selectedScenarioId,
-              reason: "already_selected",
-            });
-            return prev;
-          }
-          const working = buildDraftState();
-          const scenarioId = working.selectedScenarioId ?? firstDraftId(working);
-          if (!scenarioId) {
-            logSkipped("no_draft_scenario");
-            return prev;
-          }
-          const next = selectTypeCScenario(working, scenarioId);
-          if (next === working) {
-            logSkipped("selection_noop");
-            return prev;
-          }
-          if (process.env.NODE_ENV !== "production") {
-            globalThis.console.log("[Nexora][TypeC][ScenarioSelected]", { scenarioId });
-          }
-          trackTypeCPipelineEvent({
-            step: "scenario_selected",
-            intentType,
-            scenarioId,
-          });
-          globalThis.queueMicrotask(() => refreshTypeCDecisionReadiness(next));
-          return next;
-        }
-
-        if (intentType === "ignore_scenario") {
-          const scenarioId = prev.selectedScenarioId ?? latestDraftId(prev);
-          if (!scenarioId) {
-            logSkipped("no_scenario_to_ignore");
-            return prev;
-          }
-          const next = ignoreTypeCScenario(prev, scenarioId);
-          if (next === prev) {
-            logSkipped("ignore_noop");
-            return prev;
-          }
-          if (process.env.NODE_ENV !== "production") {
-            globalThis.console.log("[Nexora][TypeC][ScenarioIgnored]", { scenarioId });
-          }
-          trackTypeCPipelineEvent({
-            step: "scenario_ignored",
-            intentType,
-            scenarioId,
-          });
-          globalThis.queueMicrotask(() => refreshTypeCDecisionReadiness(next));
-          return next;
-        }
-
-        let working = prev.selectedScenarioId ? prev : buildDraftState();
-        const scenarioId = working.selectedScenarioId ?? firstDraftId(working);
-        if (!scenarioId) {
-          logSkipped("no_scenario_to_mark_ready");
-          return prev;
-        }
-        if (working.scenarios.find((scenario) => scenario.id === scenarioId)?.status === "draft") {
-          working = selectTypeCScenario(working, scenarioId);
-        }
-        const next = markScenarioReadyForDecision(working, scenarioId);
-        if (next === working) {
-          logSkipped("ready_noop");
-          return prev;
-        }
-        if (process.env.NODE_ENV !== "production") {
-          globalThis.console.log("[Nexora][TypeC][ScenarioReadyForDecision]", { scenarioId });
-        }
-        trackTypeCPipelineEvent({
-          step: "scenario_ready_for_decision",
-          intentType,
-          scenarioId,
-        });
-        globalThis.queueMicrotask(() => refreshTypeCDecisionReadiness(next));
-        return next;
-      });
-
-      return true;
-    },
-    [refreshTypeCDecisionReadiness, sceneJson, trackTypeCPipelineEvent, typeCMode]
-  );
-
-  const cancelTypeCConnectionSuggestions = useCallback(() => {
-    setConnectionSuggestions(null);
-  }, []);
-
-  const cancelTypeCScenarioDrafts = useCallback(() => {
-    setScenarioDrafts(null);
-  }, []);
-
-  const applyTypeCConnectionSuggestions = useCallback(
-    (suggestions: TypeCConnectionSuggestion[]) => {
-      if (!suggestions.length) {
-        setConnectionSuggestions(null);
-        return;
-      }
-
-      applySceneChangeSafe((prev) => {
-        if (!prev) return prev;
-        const next = applyTypeCConnectionSuggestionsToScene(prev, suggestions);
-        if (next !== prev) {
-          const drafts = buildTypeCScenarioDrafts({
-            sceneJson: next,
-            newConnections: suggestions,
-          });
-          globalThis.queueMicrotask(() => {
-            setScenarioDrafts(drafts.length ? drafts : null);
-          });
-        }
-        return next;
-      }, "type_c_connection_suggestions_apply", { bypassDedupe: true });
-
-      setConnectionSuggestions(null);
-    },
-    [applySceneChangeSafe]
-  );
 
   const applyTypeCChatIntent = useCallback(
     (userText: string): boolean => {
@@ -2298,15 +1719,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [autoBackupEnabled, setAutoBackupEnabled] = useState<boolean>(
     process.env.NODE_ENV !== "production"
   );
-  const [restorePreview, setRestorePreview] = useState<null | { backup: BackupV1; lines: string[] }>(null);
+  const [, setRestorePreview] = useState<null | { backup: BackupV1; lines: string[] }>(null);
   const [alert, setAlert] = useState<{ level: any; score: number; reasons: string[] } | null>(null);
   const dismissAlert = useCallback(() => setAlert(null), []);
   const chatRequestSeqRef = useRef(0);
   const latestChatPipelineRunIdRef = useRef<string | null>(null);
   const lastAppliedChatPipelineSignatureRef = useRef<string | null>(null);
+  const chatPipelineDiagnosticRef = useRef<EmitChatPipelineDiagnosticFn | null>(null);
+  /** QA:5 — once-only dev architecture-stable marker (no state updates). */
+  const homeScreenQa5ArchitectureStableLoggedRef = useRef(false);
   const activePanelFamilyAuditRef = useRef<PanelFamilyAuditState | null>(null);
   const lastPanelFamilyAuditKeyRef = useRef<string | null>(null);
-  const lastAuditRefTraceSignatureRef = useRef<string | null>(null);
   const pendingPanelFamilyAuditClearTimeoutRef = useRef<number | null>(null);
   const lastClearedPanelFamilyAuditRef = useRef<
     | (PanelFamilyAuditState & {
@@ -2326,8 +1749,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const lastLegacySyncBlockKeyRef = useRef<string | null>(null);
   const lastUnifiedReactionSignatureRef = useRef<string | null>(null);
   const lastUpstreamUnifiedReactionSigRef = useRef<string | null>(null);
-  const lastSceneSemanticApplyRef = useRef<string | null>(null);
-  const lastSceneVisualApplySignatureRef = useRef<string | null>(null);
   const lastSelectionSignatureRef = useRef<string | null>(null);
   const lastRiskPropagationSignatureRef = useRef<string | null>(null);
   const lastFragilityScenePayloadSigRef = useRef<string | null>(null);
@@ -2336,7 +1757,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const lastPanelAuthorityAuditSigRef = useRef<string | null>(null);
   const lastPanelAuthorityResolvedSigRef = useRef<string | null>(null);
   const lastPanelMetricsSigRef = useRef<string | null>(null);
-  const lastOpenIntentRef = useRef<string | null>(null);
   const lastUpstreamPanelCommitSigRef = useRef<string | null>(null);
   /** Blocks invariant "re-open" after explicit user close (view may remain set). */
   const panelUserExplicitCloseRef = useRef(false);
@@ -2547,6 +1967,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   function isAnalyzeLockActive(): boolean {
     return Boolean(getAnalyzeLockedObjectId());
   }
+  // O3 shell: right panel state + write meta (`useRightPanelController` below). Routing stays deduped / anti-flash.
   const [rightPanelState, _setRightPanelState] = useState<RightPanelState>(() => ({
     ...createClosedRightPanelState(),
     view: mapLegacyTabToRightPanelView(activeDomainExperience.experience.preferredRightPanelTab) ?? null,
@@ -2595,6 +2016,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       });
     },
     []
+  );
+  const getRightPanelSnapshotForController = useCallback(
+    () => ({
+      view: rightPanelState.view ?? null,
+      contextId: rightPanelState.contextId ?? null,
+    }),
+    [rightPanelState.view, rightPanelState.contextId]
   );
   const PANEL_SOURCE_PRIORITY_VALUE: Record<PanelSource, number> = {
     manual_user_nav: 5,
@@ -2701,15 +2129,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           Boolean(activeWindow.view) &&
           (resolvedNext.view ?? null) !== (activeWindow.view ?? null);
         if (isExecutiveWindowGuarded || isGeneralLowerPriorityBlocked) {
-          globalThis.console?.warn?.("[Nexora][PanelPriorityBlocked]", {
-            active: activeWindow,
-            nextView: resolvedNext.view ?? null,
-            nextContextId: resolvedNext.contextId ?? null,
-            nextRank,
-            source: normalizedSource,
-            reason: normalizedReason,
-            rawMeta: { source: meta.source, reason: meta.reason, writer: meta.writer },
-          });
+          emitRightPanelDiagnosticDev(
+            "panel_open_requested",
+            {
+              detail: "panel_priority_blocked",
+              normalizedView: resolvedNext.view ?? null,
+              contextId: resolvedNext.contextId ?? null,
+              source: String(normalizedSource),
+              reason: String(normalizedReason),
+              writer: meta.writer ?? null,
+            },
+            JSON.stringify({
+              k: "panel_priority_blocked",
+              nextRank,
+              nextView: resolvedNext.view ?? null,
+              activeRank: activeWindow.rank,
+              activeView: activeWindow.view ?? null,
+            })
+          );
           return prev;
         }
         const isDashboardOverrideCandidate =
@@ -2737,18 +2174,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           (resolvedNext.contextId ?? null) === null &&
           normalizedSource !== "manual_user_nav"
         ) {
-          globalThis.console?.warn?.("[Nexora][DashboardOverrideBlocked]", {
-            writer: meta.writer ?? null,
-            source: meta.source ?? null,
-            reason: meta.reason ?? null,
-            normalizedSource,
-            normalizedReason,
-            prevView: prev.view ?? null,
-            nextView: resolvedNext.view ?? null,
-            prevContextId: prev.contextId ?? null,
-            nextContextId: resolvedNext.contextId ?? null,
-            activeWindow: activePanelAuthorityWindowRef.current,
-          });
+          emitRightPanelDiagnosticDev(
+            "dashboard_spam_blocked",
+            {
+              detail: "override_blocked",
+              writer: meta.writer ?? null,
+              source: String(meta.source ?? normalizedSource),
+              reason: String(meta.reason ?? normalizedReason),
+              normalizedView: resolvedNext.view ?? null,
+              contextId: resolvedNext.contextId ?? null,
+            },
+            JSON.stringify({
+              k: "dashboard_override_blocked",
+              prevView: prev.view ?? null,
+              nextView: resolvedNext.view ?? null,
+            })
+          );
           return prev;
         }
         if (
@@ -2795,24 +2236,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             reason: normalizedReason,
           };
         }
-        globalThis.console?.debug?.("[Nexora][PanelCommit]", {
-          writer: meta.writer,
-          prevView: prev.view ?? null,
-          nextView: resolvedNext.view ?? null,
-          contextId: resolvedNext.contextId ?? null,
-          source: normalizedSource,
-          reason: normalizedReason,
-        });
         return resolvedNext;
       });
     },
     [entryFlowState, getAnalyzeLockedObjectId, setRightPanelState, stageRightPanelWriteMeta, writeChatPipelineDebug]
   );
 
-  useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
-    console.log("RIGHT PANEL STATE:", rightPanelState);
-  }, [rightPanelState]);
   const lastAnalyzeRouteCommitSigRef = useRef<string | null>(null);
   const [centerComponent, setCenterComponent] = useState<CenterComponentType>(null);
   const [centerOverlay, setCenterOverlay] = useState<null | "input">(null);
@@ -2906,8 +2335,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const prevCompareOpenForMetricRef = useRef(false);
   const lastDecisionRunIdForMetricRef = useRef<string | null>(null);
   const [objectSelection, _setObjectSelection] = useState<any | null>(null);
-  const [focusedId, setFocusedId] = useState<string | null>(null);
-  const [selectedObjectIdState, _setSelectedObjectIdState] = useState<string | null>(null);
   const setObjectSelection = useCallback(
     (nextOrUpdater: any | null | ((prev: any | null) => any | null)) => {
       _setObjectSelection((prev: any | null) => {
@@ -3373,6 +2800,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [debugPanelLockState, rightPanelState.contextId, rightPanelState.view, traceClickState]
   );
+  // --- Right panel controller ---
+  // O3 complete: `useRightPanelController` owns open/close/authority orchestration.
+  const rightPanelController = useRightPanelController({
+    activePanelId: rightPanelState.view ?? null,
+    activePanelView: rightPanelState.view ?? null,
+    selectedObjectId: selectedObjectIdState,
+    focusedObjectId: focusedId,
+    rightPanelIsOpen: rightPanelState.isOpen,
+    getRightPanelSnapshot: getRightPanelSnapshotForController,
+    panelAuthorityOpenBridgeRef,
+    panelAuthorityCloseBridgeRef,
+    clearClickIntentLock,
+    traceRightPanelPathAudit,
+    traceRightPanelStateMutation,
+    lastRightPanelChangeSourceRef,
+    bridgeRefs: rightPanelBridgeRefs,
+  });
+  const { closeRightPanel, openRightPanel } = rightPanelController.callbacks;
   const applyPanelControllerRequest = useCallback(
     (request: PanelRequestIntent & { source: PanelOpenSource; rawSource?: string | null }) => {
       const panelRequestDedupeKey = JSON.stringify({
@@ -3385,7 +2830,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         cci: rightPanelState.contextId ?? null,
         co: rightPanelState.isOpen,
       });
-      if (lastPanelRequestSigRef.current === panelRequestDedupeKey) {
+      if (rightPanelController.refs.lastPanelRequestSigRef.current === panelRequestDedupeKey) {
         return;
       }
 
@@ -3591,18 +3036,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         request.source === "object_click" &&
         now < passiveDeselectGuardUntilRef.current;
       if (shouldBlockStaleObjectClickOverride || shouldBlockLatePlainObjectClickOverride) {
-        globalThis.console?.warn?.("[Nexora][ExecutiveObjectOverrideBlocked]", {
-          writer: "HomeScreen.applyPanelControllerRequest",
-          prevView: rightPanelState.view ?? null,
-          nextView: resolvedView ?? null,
-          contextId: nextContextId,
-          source: rawSource,
-          reason: shouldBlockStaleObjectClickOverride
-            ? "stale_object_click_within_analyze_guard_window"
-            : "late_plain_object_click_within_analyze_guard_window",
-          guardUntil: passiveDeselectGuardUntilRef.current,
-          now,
-        });
+        emitRightPanelDiagnosticDev(
+          "panel_flash_blocked",
+          {
+            writer: "HomeScreen.applyPanelControllerRequest",
+            prevView: rightPanelState.view ?? null,
+            nextView: resolvedView ?? null,
+            normalizedView: rightPanelState.view ?? null,
+            contextId: nextContextId,
+            source: rawSource,
+            skippedReason: shouldBlockStaleObjectClickOverride
+              ? "stale_object_click_within_analyze_guard_window"
+              : "late_plain_object_click_within_analyze_guard_window",
+            detail: JSON.stringify({
+              guardUntil: passiveDeselectGuardUntilRef.current,
+              now,
+            }),
+            activePanelId: rightPanelState.view ?? null,
+          },
+          `exec_override_apply:${rawSource}:${String(resolvedView ?? "")}`
+        );
         logBlocked("executive_object_stale_object_click_blocked", {
           guardUntil: passiveDeselectGuardUntilRef.current,
         });
@@ -3713,10 +3166,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         contextId: decision.nextState.contextId ?? null,
       });
       if (lastUpstreamPanelCommitSigRef.current === panelSig) {
-        console.debug("[Nexora][UpstreamDedup][Skipped]", {
-          type: "panel",
-          signature: panelSig,
-        });
+        emitRightPanelDiagnosticDev(
+          "panel_open_requested",
+          {
+            detail: "upstream_dedupe_same_sig",
+            signature: panelSig,
+            activePanelId: rightPanelState.view ?? null,
+          },
+          `upstream_sig:${panelSig}`
+        );
         return;
       }
       if (
@@ -3724,10 +3182,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         (rightPanelState.contextId ?? null) === (decision.nextState.contextId ?? null) &&
         rightPanelState.isOpen === decision.nextState.isOpen
       ) {
-        console.debug("[Nexora][UpstreamDedup][Skipped]", {
-          type: "panel",
-          signature: panelSig,
-        });
+        emitRightPanelDiagnosticDev(
+          "panel_open_requested",
+          {
+            detail: "upstream_dedupe_same_state",
+            signature: panelSig,
+            normalizedView: decision.nextState.view ?? null,
+            contextId: decision.nextState.contextId ?? null,
+            activePanelId: rightPanelState.view ?? null,
+          },
+          `upstream_state:${panelSig}`
+        );
         return;
       }
       lastUpstreamPanelCommitSigRef.current = panelSig;
@@ -3761,7 +3226,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           ) {
             return prev; // prevent unnecessary re-render loop
           }
-          lastPanelRequestSigRef.current = panelRequestDedupeKey;
+          rightPanelController.refs.lastPanelRequestSigRef.current = panelRequestDedupeKey;
           return next;
         },
         {
@@ -3787,6 +3252,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       traceRightPanelStateMutation,
       commitRightPanelStateFromAuthority,
       getAnalyzeLockedObjectId,
+      rightPanelController.refs,
     ]
   );
   const requestRightPanelOpen = useCallback(
@@ -4042,14 +3508,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
       panelUserExplicitCloseRef.current = false;
       panelAuthorityLockAtRef.current = Date.now();
-      const normalized =
-        rawView === "focus"
-          ? { view: "object" as RightPanelView, legacyTab: "object_focus" as string | null }
-          : rawView === "risk_flow"
-            ? { view: "risk" as RightPanelView, legacyTab: "risk_flow" as string | null }
-            : rawView === "fragility_scan"
-              ? { view: "fragility" as RightPanelView, legacyTab: "fragility_scan" as string | null }
-              : { view: rawView as RightPanelView, legacyTab: null };
+      const normalized = normalizeRawAuthorityPanelView(rawView);
       const normalizedView = normalized.view;
 
       const sourceForRequest: PanelOpenSource =
@@ -4124,34 +3583,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         });
       }
       if (
-        lastOpenIntentRef.current === openIntentSig &&
+        rightPanelController.refs.lastOpenIntentRef.current === openIntentSig &&
         rightPanelState.isOpen === true &&
         rightPanelState.view === normalizedView &&
         (rightPanelState.contextId ?? null) === (normalizedRequest.contextId ?? null)
       ) {
         return;
       }
-      lastOpenIntentRef.current = openIntentSig;
+      rightPanelController.refs.lastOpenIntentRef.current = openIntentSig;
 
-      console.log("[Nexora][PanelRouteDecision]", {
-        source: normalizedRequest.source,
-        requested: request.view,
-        final: normalizedView,
-      });
-      globalThis.console?.debug?.("[Nexora][RightPanelWriter]", {
-        writer: "HomeScreen.requestPanelAuthorityOpen",
-        nextView: normalizedView ?? null,
-        contextId: normalizedRequest.contextId ?? null,
-        reason: normalizedRequest.reason ?? "open",
-      });
-      globalThis.console?.debug?.("[Nexora][RightPanelRouteTrace]", {
-        writer: "requestPanelAuthorityOpen",
+      emitRightPanelDiagnosticDev("panel_open_committed", {
+        source: String(normalizedRequest.source),
+        requested: request.view ?? null,
         requestedView: request.view ?? null,
-        resolvedView: normalizedView ?? null,
+        final: normalizedView ?? null,
+        normalizedView,
+        writer: "HomeScreen.requestPanelAuthorityOpen",
         family: normalizedRequest.family ?? null,
         contextId: normalizedRequest.contextId ?? null,
         reason: normalizedRequest.reason ?? "open",
-        source: normalizedRequest.source,
+        signature: openIntentSig,
+        activePanelId: rightPanelState.view ?? null,
       });
       const nowForObjectClickGuard = Date.now();
       const shouldBlockLatePlainObjectClickOverride =
@@ -4160,15 +3612,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         normalizedRequest.source === "object_click" &&
         nowForObjectClickGuard < passiveDeselectGuardUntilRef.current;
       if (shouldBlockLatePlainObjectClickOverride) {
-        globalThis.console?.warn?.("[Nexora][ExecutiveObjectOverrideBlocked]", {
-          writer: "requestPanelAuthorityOpen",
-          prevView: rightPanelState.view ?? null,
-          nextView: normalizedView ?? null,
-          contextId: normalizedRequest.contextId ?? null,
-          source: normalizedRequest.source,
-          guardUntil: passiveDeselectGuardUntilRef.current,
-          now: nowForObjectClickGuard,
-        });
+        emitRightPanelDiagnosticDev(
+          "panel_flash_blocked",
+          {
+            writer: "requestPanelAuthorityOpen",
+            prevView: rightPanelState.view ?? null,
+            nextView: normalizedView ?? null,
+            normalizedView: rightPanelState.view ?? null,
+            skippedReason: "late_plain_object_click_within_analyze_guard_window",
+            contextId: normalizedRequest.contextId ?? null,
+            source: String(normalizedRequest.source),
+            reason: String(normalizedRequest.reason ?? "open"),
+            detail: JSON.stringify({
+              guardUntil: passiveDeselectGuardUntilRef.current,
+              now: nowForObjectClickGuard,
+            }),
+            activePanelId: rightPanelState.view ?? null,
+          },
+          `exec_override_req:${openIntentSig}`
+        );
         return;
       }
 
@@ -4190,14 +3652,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         });
         if (sig !== lastPanelAuthorityTraceSigRef.current) {
           lastPanelAuthorityTraceSigRef.current = sig;
-          console.warn("[Nexora][PanelAuthority]", {
-            source: normalizedRequest.source,
-            family: normalizedRequest.family ?? null,
-            view: normalizedView,
-            contextId: normalizedRequest.contextId ?? null,
-            forceOpen: shouldForceOpen,
-            previousOpen: rightPanelState?.isOpen,
-          });
+          emitRightPanelDiagnosticDev(
+            "panel_open_requested",
+            {
+              detail: "panel_authority_trace",
+              source: String(normalizedRequest.source),
+              family: normalizedRequest.family ?? null,
+              view: normalizedView,
+              normalizedView,
+              contextId: normalizedRequest.contextId ?? null,
+              reason: String(normalizedRequest.reason ?? "open"),
+              skippedReason: null,
+              activePanelId: rightPanelState.view ?? null,
+            },
+            sig
+          );
         }
         const migratedSig = JSON.stringify({
           source: normalizedRequest.source,
@@ -4207,12 +3676,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         });
         if (migratedSig !== lastPanelCallerMigratedSigRef.current) {
           lastPanelCallerMigratedSigRef.current = migratedSig;
-          console.warn("[Nexora][PanelCallerMigrated]", {
-            source: normalizedRequest.source,
-            family: normalizedRequest.family ?? null,
-            view: normalizedView,
-            reason: normalizedRequest.reason ?? "open",
-          });
+          emitRightPanelDiagnosticDev(
+            "panel_open_requested",
+            {
+              detail: "panel_caller_migrated",
+              source: String(normalizedRequest.source),
+              family: normalizedRequest.family ?? null,
+              view: normalizedView,
+              normalizedView,
+              reason: normalizedRequest.reason ?? "open",
+              activePanelId: rightPanelState.view ?? null,
+            },
+            migratedSig
+          );
         }
         const auditPayload = {
           source: normalizedRequest.source,
@@ -4229,7 +3705,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         const auditSig = JSON.stringify(auditPayload);
         if (auditSig !== lastPanelAuthorityAuditSigRef.current) {
           lastPanelAuthorityAuditSigRef.current = auditSig;
-          console.warn("[Nexora][PanelAuthorityAudit]", auditPayload);
+          emitRightPanelDiagnosticDev(
+            "panel_open_requested",
+            {
+              detail: "panel_authority_audit",
+              source: String(auditPayload.source),
+              family: auditPayload.family ?? null,
+              requestedView: auditPayload.requestedView ?? null,
+              normalizedView: auditPayload.canonicalView ?? null,
+              reason: String(auditPayload.reason ?? "open"),
+              skippedReason: null,
+              contextId: auditPayload.contextId ?? null,
+              activePanelId: rightPanelState.view ?? null,
+            },
+            auditSig
+          );
         }
       }
       requestRightPanelOpen({
@@ -4308,8 +3798,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       selectedObjectIdState,
       traceAnalyzeObjectRoute,
       writeChatPipelineDebug,
+      rightPanelController.refs,
     ]
   );
+  panelAuthorityOpenBridgeRef.current = requestPanelAuthorityOpen as unknown as RequestPanelAuthorityOpenFn;
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
     if (rightPanelRouteLockRef.current.view !== "executive_object") return;
@@ -4382,6 +3874,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [requestPanelAuthorityOpen]
   );
+  useRightPanelControllerBridgeWiring({ bridgeRefs: rightPanelBridgeRefs, openSimPanel });
   const openRskPanel = useCallback(
     (
       view: string,
@@ -4401,274 +3894,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [requestPanelAuthorityOpen]
   );
-  const openTypeCScenarioDraftWarRoom = useCallback(
-    (draft: TypeCScenarioDraft) => {
-      if (!draft) return;
-      if (!sceneJson) return;
-      const simulation = simulateTypeCScenario({
-        scenario: draft,
-        sceneJson,
-      });
-      globalThis.console.info("[Nexora][TypeC][ScenarioDraftOpenWarRoom]", {
-        scenarioId: draft.id,
-        title: draft.title,
-        riskLevel: simulation.riskLevel,
-      });
-      setActiveTypeCScenario(draft);
-      setActiveSimulation(simulation);
-      openSimPanel("war_room", "type_c_scenario_draft_open_war_room", draft.id);
-      setScenarioDrafts(null);
-    },
-    [openSimPanel, sceneJson]
-  );
-  const compareTypeCScenarioDrafts = useCallback(
-    (drafts: TypeCScenarioDraft[]) => {
-      if (!sceneJson || drafts.length < 2) return;
-      const simulations = drafts.map((draft) =>
-        simulateTypeCScenario({
-          scenario: draft,
-          sceneJson,
-        })
-      );
-      const comparison = compareTypeCScenarioSimulations({
-        scenarios: drafts,
-        simulations,
-      });
-      const recommendation = buildTypeCDecisionRecommendation({ comparison });
-      setScenarioComparison(comparison);
-      setScenarioComparisonDrafts(drafts);
-      setDecisionRecommendation(recommendation);
-      globalThis.console.info("[Nexora][TypeC][ScenarioComparisonCreated]", {
-        scenarioIds: comparison.scenarioIds,
-        bestOptionId: comparison.bestOptionId,
-        highestRiskScenarioId: comparison.highestRiskScenarioId,
-        recommendedScenarioId: recommendation.recommendedScenarioId,
-      });
-    },
-    [sceneJson]
-  );
-  const closeTypeCScenarioCompare = useCallback(() => {
-    setScenarioComparison(null);
-    setScenarioComparisonDrafts(null);
-    setDecisionRecommendation(null);
-  }, []);
-  const openBestTypeCScenarioInWarRoom = useCallback(() => {
-    if (!scenarioComparison?.bestOptionId) return;
-    const draft = scenarioComparisonDrafts?.find((candidate) => candidate.id === scenarioComparison.bestOptionId);
-    if (!draft) return;
-    setScenarioComparison(null);
-    setScenarioComparisonDrafts(null);
-    setDecisionRecommendation(null);
-    openTypeCScenarioDraftWarRoom(draft);
-  }, [openTypeCScenarioDraftWarRoom, scenarioComparison, scenarioComparisonDrafts]);
-  const handleStartTypeCExecution = useCallback(() => {
-    const scenarioId = decisionRecommendation?.recommendedScenarioId;
-    if (!scenarioId || !sceneJson) return;
-    const draft = scenarioComparisonDrafts?.find((candidate) => candidate.id === scenarioId);
-    if (!draft) return;
-    const simulation = simulateTypeCScenario({
-      scenario: draft,
-      sceneJson,
-    });
-    const nextExecution = startTypeCExecution({
-      scenario: draft,
-      simulation,
-    });
-    setExecutionScenario(draft);
-    setExecutionState(nextExecution);
-    setTypeCAlerts(clearTypeCAlerts());
-    setActiveTypeCScenario(draft);
-    setActiveSimulation(simulation);
-    globalThis.console.info("[Nexora][TypeC][ExecutionStarted]", {
-      scenarioId: draft.id,
-      riskLevel: nextExecution.riskLevel,
-      monitoredSignals: nextExecution.monitoredSignals.length,
-    });
-  }, [decisionRecommendation, scenarioComparisonDrafts, sceneJson]);
-  const handlePauseTypeCExecution = useCallback(() => {
-    setExecutionState((prev) => pauseTypeCExecution(prev));
-    globalThis.console.info("[Nexora][TypeC][ExecutionPaused]");
-  }, []);
-  const handleStopTypeCExecution = useCallback(() => {
-    const memoryEntry = executionState
-      ? buildTypeCMemoryEntry({
-          executionState,
-          decisionRecommendation,
-        })
-      : null;
-    if (memoryEntry) {
-      setTypeCMemoryState((prev) => addTypeCMemoryEntry(prev, memoryEntry));
-      globalThis.console.info("[Nexora][TypeC][MemoryEntryAdded]", {
-        scenarioId: memoryEntry.scenarioId,
-        outcome: memoryEntry.outcome,
-        riskLevel: memoryEntry.riskLevel,
-      });
-    }
-    setExecutionState(stopTypeCExecution());
-    setExecutionScenario(null);
-    setTypeCAlerts(clearTypeCAlerts());
-    setActiveSimulation(clearTypeCScenarioSimulation());
-    setActiveTypeCScenario(null);
-    globalThis.console.info("[Nexora][TypeC][ExecutionStopped]");
-  }, [decisionRecommendation, executionState]);
-  const handleAcknowledgeTypeCAlert = useCallback((alertId: string) => {
-    setTypeCAlerts((prev) => acknowledgeTypeCAlert(prev, alertId));
-    globalThis.console.info("[Nexora][TypeC][AlertAcknowledged]", { alertId });
-  }, []);
-  const handleClearTypeCAlerts = useCallback(() => {
-    setTypeCAlerts(clearTypeCAlerts());
-    globalThis.console.info("[Nexora][TypeC][AlertsCleared]");
-  }, []);
-  const handleClearTypeCMemory = useCallback(() => {
-    setTypeCMemoryState(clearTypeCMemory());
-    globalThis.console.info("[Nexora][TypeC][MemoryCleared]");
-  }, []);
-  const typeCLearningSignals = useMemo(
-    () => deriveTypeCLearningSignals(typeCMemoryState),
-    [typeCMemoryState]
-  );
-  const typeCAdaptiveGuidance = useMemo(
-    () =>
-      buildTypeCAdaptiveGuidance({
-        decision: decisionRecommendation,
-        execution: executionState,
-        memory: typeCMemoryState,
-      }),
-    [decisionRecommendation, executionState, typeCMemoryState]
-  );
-  const typeCAIInsightRequest = useMemo(
-    () =>
-      buildTypeCAIInsightRequest({
-        decisionRecommendation,
-        adaptiveGuidance: typeCAdaptiveGuidance,
-        memorySummary: typeCLearningSignals,
-      }),
-    [decisionRecommendation, typeCAdaptiveGuidance, typeCLearningSignals]
-  );
-  const canGenerateTypeCAIInsight = Boolean(decisionRecommendation || typeCAdaptiveGuidance);
-  const handleGenerateTypeCAIInsight = useCallback(async () => {
-    if (!canGenerateTypeCAIInsight || typeCAIInsightLoading) return;
-    setTypeCAIInsightLoading(true);
-    setTypeCAIInsightError(null);
-    try {
-      const insight = await requestTypeCAIInsight(typeCAIInsightRequest);
-      setTypeCAIInsight(insight);
-      globalThis.console.info("[Nexora][TypeC][AIInsightGenerated]", {
-        confidence: insight.confidence,
-      });
-    } catch {
-      setTypeCAIInsightError("AI insight failed. Deterministic guidance is still available.");
-    } finally {
-      setTypeCAIInsightLoading(false);
-    }
-  }, [canGenerateTypeCAIInsight, typeCAIInsightLoading, typeCAIInsightRequest]);
-  const handleCloseTypeCAIInsight = useCallback(() => {
-    setTypeCAIInsight(null);
-    setTypeCAIInsightError(null);
-  }, []);
-  const typeCMultiAgentRequest = useMemo(
-    () =>
-      buildTypeCMultiAgentRequest({
-        recommendation: decisionRecommendation,
-        adaptiveGuidance: typeCAdaptiveGuidance,
-        memorySummary: typeCLearningSignals,
-      }),
-    [decisionRecommendation, typeCAdaptiveGuidance, typeCLearningSignals]
-  );
-  const canRunTypeCMultiAgent = Boolean(decisionRecommendation || typeCAdaptiveGuidance);
-  const handleRunTypeCMultiAgent = useCallback(async () => {
-    if (!canRunTypeCMultiAgent || typeCMultiAgentLoading) return;
-    setTypeCMultiAgentLoading(true);
-    setTypeCMultiAgentError(null);
-    try {
-      const insight = await requestTypeCMultiAgentInsight(typeCMultiAgentRequest);
-      setTypeCMultiAgentInsight(insight);
-      globalThis.console.info("[Nexora][TypeC][MultiAgentInsightGenerated]", {
-        agents: insight.agentResponses.length,
-        confidence: insight.synthesis.confidence,
-      });
-    } catch {
-      setTypeCMultiAgentError("Strategic intelligence failed. Deterministic guidance is still available.");
-    } finally {
-      setTypeCMultiAgentLoading(false);
-    }
-  }, [canRunTypeCMultiAgent, typeCMultiAgentLoading, typeCMultiAgentRequest]);
-  const handleCloseTypeCMultiAgent = useCallback(() => {
-    setTypeCMultiAgentInsight(null);
-    setTypeCMultiAgentError(null);
-  }, []);
-  const typeCSandboxRequest = useMemo(
-    () =>
-      buildTypeCSandboxRequest({
-        sceneJson,
-        currentRecommendation: decisionRecommendation,
-        activeScenario: activeTypeCScenario,
-      }),
-    [activeTypeCScenario, decisionRecommendation, sceneJson]
-  );
-  const canRunTypeCSandbox = Boolean(typeCSandboxRequest);
-  const handleRunTypeCSandbox = useCallback(async () => {
-    if (!typeCSandboxRequest || typeCSandboxLoading) return;
-    setTypeCSandboxLoading(true);
-    setTypeCSandboxError(null);
-    try {
-      const result = await requestTypeCSandboxResult(typeCSandboxRequest);
-      setTypeCSandboxResult(result);
-      globalThis.console.info("[Nexora][TypeC][SandboxRunComplete]", {
-        strategies: result.strategies.length,
-        bestStrategyId: result.bestStrategyId ?? null,
-      });
-    } catch {
-      setTypeCSandboxError("Autonomous sandbox failed. No real system state was changed.");
-    } finally {
-      setTypeCSandboxLoading(false);
-    }
-  }, [typeCSandboxLoading, typeCSandboxRequest]);
-  const handleCloseTypeCSandbox = useCallback(() => {
-    setTypeCSandboxResult(null);
-    setTypeCSandboxError(null);
-  }, []);
-  const handleReviewTypeCSandboxStrategy = useCallback((strategy: TypeCSandboxStrategy) => {
-    globalThis.console.info("[Nexora][TypeC][SandboxStrategyReview]", {
-      strategyId: strategy.id,
-      title: strategy.title,
-    });
-  }, []);
-  const handleCompareTypeCSandboxStrategy = useCallback((strategy: TypeCSandboxStrategy) => {
-    globalThis.console.info("[Nexora][TypeC][SandboxStrategyCompare]", {
-      strategyId: strategy.id,
-      title: strategy.title,
-    });
-  }, []);
-  const handlePromoteTypeCSandboxStrategy = useCallback((strategy: TypeCSandboxStrategy) => {
-    globalThis.console.info("[Nexora][TypeC][SandboxStrategyPromotedToReviewQueue]", {
-      strategyId: strategy.id,
-      title: strategy.title,
-      advisoryOnly: true,
-    });
-  }, []);
-  useEffect(() => {
-    if (
-      !executionState ||
-      (executionState.status !== "running" && executionState.status !== "paused")
-    ) {
-      return undefined;
-    }
-
-    const refreshAlerts = () => {
-      const nextAlerts = buildTypeCAlerts({ executionState });
-      setTypeCAlerts((prev) => mergeTypeCAlerts(prev, nextAlerts));
-    };
-
-    refreshAlerts();
-    const id = window.setInterval(refreshAlerts, 4_000);
-    return () => window.clearInterval(id);
-  }, [executionState]);
-  const exitTypeCScenarioSimulation = useCallback(() => {
-    setActiveSimulation(clearTypeCScenarioSimulation());
-    setActiveTypeCScenario(null);
-    globalThis.console.info("[Nexora][TypeC][ScenarioSimulationExited]");
-  }, []);
   const requestPanelAuthorityClose = useCallback((reason?: string) => {
     panelUserExplicitCloseRef.current = true;
     panelAuthorityLockAtRef.current = 0;
@@ -4683,34 +3908,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       console.log("[Nexora][PanelAuthorityClosed]", { reason: reason ?? "unspecified" });
     }
   }, [applyPanelControllerRequest, rightPanelState.contextId]);
-  const closeRightPanel = useCallback(() => {
-    // TODO(NEXORA-PANEL): migrate to requestPanelAuthorityClose in Prompt 5
-    emitDebugEvent({
-      type: "panel_reset_detected",
-      layer: "panel",
-      source: "HomeScreen",
-      status: "info",
-      message: "Right panel close invoked",
-      metadata: { previousView: rightPanelState.view ?? null, rawSource: "closeRightPanel" },
-    });
-    requestPanelAuthorityClose("closeRightPanel");
-    clearClickIntentLock("panel_closed", {
-      source: "closeRightPanel",
-      nextView: null,
-      nextContextId: null,
-    });
-    logPanelClose({
-      previousView: rightPanelState.view ?? null,
-    });
-    traceRightPanelPathAudit("closeRightPanel", null, "direct_state_write");
-    lastRightPanelChangeSourceRef.current = "closeRightPanel";
-    traceRightPanelStateMutation(
-      "closeRightPanel",
-      rightPanelState.view ?? null,
-      null,
-      rightPanelState.contextId ?? null
-    );
-  }, [clearClickIntentLock, requestPanelAuthorityClose, rightPanelState, traceRightPanelPathAudit, traceRightPanelStateMutation]);
+  panelAuthorityCloseBridgeRef.current = requestPanelAuthorityClose;
+
   const openCenterComponent = useCallback((component: Exclude<CenterComponentType, null>) => {
     if (centerComponentCloseTimerRef.current != null) {
       window.clearTimeout(centerComponentCloseTimerRef.current);
@@ -5145,6 +4344,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     return () => registerNexoraActionDispatch(null);
   }, [dispatchCanonicalAction]);
 
+  // O1 Extraction Boundary: Demo / pilot controller
   const runPilotDemoScenario = useCallback(() => {
     const scenario = NEXORA_PILOT_SCENARIOS.find((s) => s.id === "finance_margin_pressure");
     if (!scenario || scenario.input.type !== "text") return;
@@ -5877,12 +5077,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [mcError, setMcError] = useState<string | null>(null);
   const [mcReport, setMcReport] = useState<any | null>(null);
   const [mcResult, setMcResult] = useState<any | null>(null);
-
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "production" && chatRequestStatus !== "idle") {
-      console.debug("[Nexora][ChatLifecycle]", chatRequestStatus);
-    }
-  }, [chatRequestStatus]);
 
   useEffect(() => {
     if (rightPanelState.isOpen && rightPanelState.view === "war_room") {
@@ -7651,11 +6845,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         return;
       }
       if (lastSceneSemanticApplyRef.current === sceneSemanticSignature) {
-        if (process.env.NODE_ENV !== "production") {
-          console.debug("[Nexora][SceneApply][SkippedDuplicateSemantic]", {
-            semanticSig: sceneSemanticSignature,
-          });
-        }
+        emitSceneApplyDiagnostic("apply_skipped", {
+          skippedReason: "unified_reaction_duplicate_semantic",
+          signature: sceneSemanticSignature,
+          semanticSig: sceneSemanticSignature,
+        });
         return;
       }
       lastSceneSemanticApplyRef.current = sceneSemanticSignature;
@@ -7857,6 +7051,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [
       applyActions,
       applySceneChangeUpstreamDedup,
+      emitSceneApplyDiagnostic,
       sceneJson,
       selectedObjectIdState,
       setSelectedObjectIdState,
@@ -9931,6 +9126,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     handleSelectedChangeRef.current = handleSelectedChange;
   }, [handleSelectedChange]);
 
+  // O1 Extraction Boundary: Persistence controller
   useEffect(() => {
     const workspace = loadWorkspaceSnapshot();
     if (workspace?.projects && typeof workspace.projects === "object") {
@@ -10381,16 +9577,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         activeChatRequestRef.current = null;
       }
       if (!isLatestChatRequest(seq)) return;
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][HomeScreen][LoadingState]", {
-          phase: "finalize_request",
-          status,
-          panelView: rightPanelState.view ?? null,
-          hasVisiblePanelState: Boolean(
-            visibleResponseData ?? visibleStrategicAdvice ?? visibleDecisionCockpit ?? visibleRiskPropagation
-          ),
-          hasVisibleSceneState: Boolean(visibleSceneJson),
-          hasVisibleSelection: Boolean(visibleSelectedObjectId ?? visibleFocusedId ?? visibleObjectSelection),
+      const diag = chatPipelineDiagnosticRef.current;
+      if (diag) {
+        const ev =
+          status === "error" || status === "aborted" ? "request_failed" : "request_completed";
+        diag(ev, {
+          requestSeq: seq,
+          chatRequestStatus: status,
+          skippedReason: `finalize_request:${status}`,
+          targetPanel: rightPanelState.view ?? null,
         });
       }
       setChatRequestStatus(status);
@@ -10415,1683 +9610,218 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     ]
   );
 
-  function normalizeChatInputForDedup(value: string): string {
-    return value.trim().toLowerCase().replace(/\s+/g, " ");
-  }
-
-  function buildChatEffectSignature(input: {
-    intent: string;
-    targetPanel: string;
-    sceneSignature?: string | null;
-    userInput: string;
-  }): string {
-    return [
-      input.intent,
-      input.targetPanel,
-      input.sceneSignature ?? "no-scene",
-      input.userInput.trim().toLowerCase().replace(/\s+/g, " "),
-    ].join("::");
-  }
-
-  const sendText = useCallback(async (textRaw: string, requestId?: string, options?: SendTextOptions) => {
-    const text = textRaw.trim();
-    if (!text) return;
-    markUserStartedFlow("chat_message");
-    const handledTypeCChatIntent = applyTypeCChatIntent(text);
-    const isDescribePhase = entryFlowStateRef.current === "describing_system";
-    const hasSceneObjects = Array.isArray(sceneJson?.scene?.objects) && sceneJson.scene.objects.length > 0;
-    if (isDescribePhase && !handledTypeCChatIntent) {
-      const starterScene = buildStarterSceneFromText(text);
-      applySceneChangeUpstreamDedup(starterScene, "describe_system", { bypassDedupe: true });
-      setObjectSelection({
-        highlighted_objects: ["delivery"],
-        highlighted_ids: ["delivery"],
-        dim_unrelated_objects: false,
-      } as any);
-      setSelectedObjectIdState("delivery");
-      setEntryFlowState("objects_created");
-      setCenterOverlay(null);
-      setCenterComponent(null);
-      setCenterComponentVisible(false);
-      requestPanelAuthorityOpen({
-        view: "object",
-        source: "manual_user_nav",
-        reason: "describe_system_objects_created",
-        contextId: "delivery",
-        forceOpen: true,
-      });
-      const userMsg = makeMsg("user", text);
-      const assistantMsg = makeMsg("assistant", "I created a starter system map. Select an object and run Analyze.");
-      const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
-      setMessages(nextMessages);
-      emitChatResult(assistantMsg.text, true, requestId);
-      saveProject(
-        buildPersistedProjectSnapshot({
-          activeMode,
-          sceneJson: starterScene,
-          messages: nextMessages,
-        })
-      );
-      pushHistory(
-        buildPersistedProjectSnapshot({
-          activeMode,
-          sceneJson: starterScene,
-          messages: nextMessages,
-        })
-      );
-      return;
-    }
-    if (!hasSceneObjects && options?.source !== "demo" && !handledTypeCChatIntent) {
-      const starterScene = buildStarterSceneFromText(text);
-      applySceneChangeUpstreamDedup(starterScene, "describe_system", { bypassDedupe: true });
-      setObjectSelection({
-        highlighted_objects: ["delivery"],
-        highlighted_ids: ["delivery"],
-        dim_unrelated_objects: false,
-      } as any);
-      setSelectedObjectIdState("delivery");
-      setEntryFlowState("objects_created");
-      requestPanelAuthorityOpen({
-        view: "object",
-        source: "manual_user_nav",
-        reason: "chat_no_objects_starter_scene",
-        contextId: "delivery",
-        forceOpen: true,
-      });
-      const userMsg = makeMsg("user", text);
-      const assistantMsg = makeMsg(
-        "assistant",
-        "Got it. I'll build starter objects from this system description."
-      );
-      const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
-      setMessages(nextMessages);
-      emitChatResult(assistantMsg.text, true, requestId);
-      const snapshot = buildPersistedProjectSnapshot({
-        activeMode,
-        sceneJson: starterScene,
-        messages: nextMessages,
-      });
-      saveProject(snapshot);
-      pushHistory(snapshot);
-      return;
-    }
-
-    const normalizedText = normalizeChatInputForDedup(text);
-    const lastDedup = lastChatDedupRef.current;
-    const now = Date.now();
-    if (lastDedup && lastDedup.text === normalizedText && now - lastDedup.at < 700) {
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][ChatLoopGuard][DedupedRapidDuplicate]", {
-          text: normalizedText,
-          deltaMs: now - lastDedup.at,
-        });
-      }
-      writeChatPipelineDebug({
-        loopGuard: {
-          dedupedRapidDuplicate: true,
-          lastReason: "deduped_rapid_duplicate",
-          lastAt: now,
-        },
-      });
-      return;
-    }
-    lastChatDedupRef.current = {
-      text: normalizedText,
-      at: now,
-    };
-
-    if ((loopGuardInFlightByTextRef.current.get(normalizedText) ?? 0) > 0) {
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][ChatLoopGuard][SkippedReentrantRun]", {
-          text: normalizedText,
-        });
-      }
-      writeChatPipelineDebug({
-        loopGuard: {
-          skippedReentrantRun: true,
-          lastReason: "skipped_reentrant_same_text",
-          lastAt: Date.now(),
-        },
-      });
-      return;
-    }
-
-    try {
-      const prevInflight = loopGuardInFlightByTextRef.current.get(normalizedText) ?? 0;
-      loopGuardInFlightByTextRef.current.set(normalizedText, prevInflight + 1);
-      chatLoopGuardDepthRef.current += 1;
-      chatLoopGuardActiveRef.current = true;
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][ChatLoopGuard]", {
-          text: normalizedText,
-          loopGuardActive: chatLoopGuardActiveRef.current,
-          lastDedup: lastChatDedupRef.current,
-          depth: chatLoopGuardDepthRef.current,
-        });
-      }
-
-      const runSendTextLifecycle = async () => {
-    const isAnalyzeCommand = /analyze[_\s-]*system|analyze the current system/i.test(text);
-    const analyzeHl = getHighlightedObjectIdsFromSelection(objectSelection);
-    const explicitSelection = resolveExplicitSelectedObject({
-      selectedObjectIdState,
-      objectSelection,
-    });
-    const lockedAnalyzeObjectId = isAnalyzeCommand ? getAnalyzeLockedObjectId() : null;
-    const stableAnalyzeObjectId = explicitSelection.explicitSelectedObjectId ?? lockedAnalyzeObjectId;
-    const routeExecutiveObjectOnSuccess = isAnalyzeCommand && explicitSelection.hasExplicitSelection;
-    if (isAnalyzeCommand) {
-      if (!explicitSelection.hasExplicitSelection) {
-        if (process.env.NODE_ENV !== "production") {
-          console.debug("[Nexora][AnalyzeBlocked]", { reason: "mvp_object_first" });
-        }
-        return;
-      }
-      const objectId = explicitSelection.explicitSelectedObjectId;
-      if (objectId) {
-        analyzeSelectionLockRef.current = {
-          objectId,
-          startedAt: Date.now(),
-          requestId: requestId ?? null,
-        };
-        console.log("[Nexora][AnalyzeSelectionLock][Armed]", { objectId });
-        writeChatPipelineDebug({
-          analyzeSelectionLock: {
-            active: true,
-            objectId,
-            lastReason: "armed",
-          },
-        });
-      }
-    }
-    if (isAnalyzeCommand && analyzeInFlightRef.current && !analyzePreflightArmedRef.current) {
-      return;
-    }
-    if (isAnalyzeCommand) {
-      analyzeInFlightRef.current = true;
-      analyzePreflightArmedRef.current = false;
-    }
-    if (options?.source !== "demo") {
-      demoFlowPauseRef.current();
-    }
-    if (activeChatRequestRef.current) {
-      window.clearTimeout(activeChatRequestRef.current.timeoutId);
-      activeChatRequestRef.current.controller.abort();
-    }
-    const requestSeq = nextDemoFlowSequence(chatRequestSeqRef);
-    const runId = `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    latestChatPipelineRunIdRef.current = runId;
-    writeChatPipelineDebug({
-      runId,
-      userInput: text,
-      lifecycleStatus: "submitting",
-      staleSkipped: false,
-    });
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => {
-      const active = activeChatRequestRef.current;
-      if (!active || active.seq !== requestSeq) return;
-      active.timedOut = true;
-      controller.abort();
-    }, DEFAULT_CHAT_REQUEST_TIMEOUT_MS);
-    activeChatRequestRef.current = {
-      seq: requestSeq,
-      controller,
-      timeoutId,
-      timedOut: false,
-    };
-    const chatCorrelationId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    activeChatDebugCorrelationRef.current = chatCorrelationId;
-    emitDebugEvent({
-      type: "chat_submitted",
-      layer: "chat",
-      source: "HomeScreen",
-      status: "info",
-      message: "Chat message submitted",
-      metadata: {
-        textLength: text.length,
-        source: options?.source ?? "user",
-        requestId: requestId ?? null,
-        requestSeq,
-        mode: activeMode,
-        domain: activeDomainExperience.experience.domainId,
-      },
-      correlationId: chatCorrelationId,
-    });
-    const finishLocalChatDebug = (path: string, extra?: Record<string, unknown>) => {
-      emitDebugEvent({
-        type: "chat_local_shortcut",
-        layer: "chat",
-        source: "HomeScreen",
-        status: "info",
-        message: `Local chat path: ${path}`,
-        metadata: {
-          path,
-          requestSeq,
-          skippedMainPipeline: true,
-          skippedBackend: true,
-          ...extra,
-        },
-        correlationId: chatCorrelationId,
-      });
-      emitDebugEvent({
-        type: "chat_response_completed",
-        layer: "chat",
-        source: "HomeScreen",
-        status: "ok",
-        message: "Chat turn finished (local handler)",
-        metadata: { path, requestSeq, localShortcut: true, ...extra },
-        correlationId: chatCorrelationId,
-      });
-      emitGuardRailAlerts(
-        runGuardChecks(
-          { trigger: "chat_response", chat: { chatCorrelationId }, correlationId: chatCorrelationId },
-          getRecentDebugEvents()
-        )
-      );
-      if (activeChatDebugCorrelationRef.current === chatCorrelationId) {
-        activeChatDebugCorrelationRef.current = null;
-      }
-    };
-    traceDemoFlowEvent({
-      phase: "started",
-      source: options?.source ?? "chat",
-      seq: requestSeq,
-      requestId,
-      detail: { textLength: text.length },
-    });
-    isSendingRef.current = true;
-    setChatRequestStatus("submitting");
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][HomeScreen][ChatSubmit]", {
-        phase: "submit_start",
-        panelView: rightPanelState.view ?? null,
-        hasVisiblePanelState: Boolean(
-          visibleResponseData ?? visibleStrategicAdvice ?? visibleDecisionCockpit ?? visibleRiskPropagation
-        ),
-        hasVisibleSceneState: Boolean(visibleSceneJson),
-        selectedObjectId: visibleSelectedObjectId ?? null,
-        focusedId: visibleFocusedId ?? null,
-      });
-    }
-    pulseObjectByText(text);
-    let lifecycleStatus: ChatRequestLifecycleStatus = "submitting";
-    let shouldClearInput = false;
-
-    if (/\bfocus\b/i.test(text)) {
-      const candidateId = selectedIdRef.current ?? selectedObjectIdState ?? null;
-      const cmds: UICommand[] = [];
-      if (candidateId) cmds.push({ type: "select", id: candidateId });
-      cmds.push({ type: "toast", message: "Focus applied" });
-      applyUICommands(cmds);
-    }
-
-    // Handle selected-object size commands first (no backend call)
-    try {
-      const hasSelectedKeyword = /\bselected\b/i.test(text);
-      const selectedId = selectedIdRef.current;
-      if (hasSelectedKeyword) {
-        if (!selectedId) {
-          const reply = "⚠️ No object selected. Click an object first.";
-          const userMsg = makeMsg("user", text);
-          const assistantMsg = makeMsg("assistant", reply);
-          const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
-          setMessages(nextMessages);
-          emitChatResult(reply, true, requestId);
-          setNoSceneUpdate(false);
-          setSourceLabel(null);
-          const snapshot = buildPersistedProjectSnapshot({
-            activeMode,
-            sceneJson,
-            messages: nextMessages,
-          });
-          saveProject(snapshot);
-          pushHistory(snapshot);
-          lifecycleStatus = "success";
-          shouldClearInput = true;
-          finishLocalChatDebug("selected_size_no_selection");
-          return;
-        }
-
-        const cur = overridesRef.current[selectedId]?.scale ?? 1;
-        const sel = parseSelectedSizeCommand(text, cur);
-        if (sel.handled) {
-          const userMsg = makeMsg("user", text);
-          const assistantMsg = makeMsg("assistant", sel.reply);
-          const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
-          setMessages(nextMessages);
-          emitChatResult(sel.reply, true, requestId);
-          // apply override
-          setOverrideRef.current(selectedId, { scale: sel.nextScale });
-          setNoSceneUpdate(false);
-          setSourceLabel(null);
-          const snapshot = buildPersistedProjectSnapshot({
-            activeMode,
-            sceneJson,
-            messages: nextMessages,
-          });
-          saveProject(snapshot);
-          pushHistory(snapshot);
-          lifecycleStatus = "success";
-          shouldClearInput = true;
-          finishLocalChatDebug("selected_size_command");
-          return;
-        }
-      }
-    } catch (err) {
-      // fall through to normal flow on any error
-    }
-
-    // Global size commands handled next
-    const sizeResult = parseSizeCommand(text, prefs.globalScale);
-    if (sizeResult.handled) {
-      const userMsg = makeMsg("user", text);
-      const assistantMsg = makeMsg("assistant", sizeResult.reply);
-      const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
-      setMessages(nextMessages);
-      emitChatResult(sizeResult.reply, true, requestId);
-      setPrefs((prev) => ({ ...prev, globalScale: sizeResult.nextScale }));
-      setNoSceneUpdate(false);
-      setSourceLabel(null);
-      const snapshot = buildPersistedProjectSnapshot({
-        activeMode,
-        sceneJson,
-        messages: nextMessages,
-      });
-      saveProject(snapshot);
-      pushHistory(snapshot);
-      lifecycleStatus = "success";
-      shouldClearInput = true;
-      finishLocalChatDebug("global_size_command");
-      return;
-    }
-
-    if (options?.source !== "demo") {
-      const localResponse = getLocalChatResponse(text);
-      if (localResponse) {
-        const userMsg = makeMsg("user", text);
-        const assistantMsg = makeMsg("assistant", localResponse);
-        const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
-        setMessages(nextMessages);
-        emitChatResult(localResponse, true, requestId);
-        setNoSceneUpdate(false);
-        setSourceLabel(null);
-        const snapshot = buildPersistedProjectSnapshot({
-          activeMode,
-          sceneJson,
-          messages: nextMessages,
-        });
-        saveProject(snapshot);
-        pushHistory(snapshot);
-        lifecycleStatus = "success";
-        shouldClearInput = true;
-        finishLocalChatDebug("local_chat_fallback");
-        finalizeChatRequest(requestSeq, "success", { clearInput: true });
-        return;
-      }
-    }
-
-    // Decision router (deterministic, local)
-    // IMPORTANT: Only handle locally when there are actual deterministic actions to apply.
-    // Otherwise, fall through to the backend so the chat remains useful.
-    const focusedObjectId: string | undefined =
-      focusModeStore === "pinned" ? (pinnedId ?? undefined) : (focusedId ?? undefined);
-
-    const availableSceneObjectIds = Array.isArray(sceneJson?.scene?.objects)
-      ? sceneJson.scene.objects
-          .map((obj: SceneObject, idx: number) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
-          .filter(Boolean)
-      : [];
-
-    const intentRoute = resolveNexoraIntentRoute({
-      text,
-      activeMode,
-      activeDomain: activeDomainExperience.experience.domainId,
-      currentRightPanelTab: rightPanelState.view,
-      selectedObjectId: selectedObjectIdState,
-      availableSceneObjectIds,
-      sceneJson,
-      objectProfiles: objectProfiles as Record<string, unknown>,
-      productModeContext: productModeContext as Record<string, unknown> | null,
-    });
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][ExplicitSelection][Resolved]", {
-        selectedObjectIdState,
-        explicitSelectedObjectId: explicitSelection.explicitSelectedObjectId,
-        hasExplicitSelection: explicitSelection.hasExplicitSelection,
-        reason: explicitSelection.reason,
-      });
-    }
-    writeChatPipelineDebug({
-      explicitSelection: {
-        explicitSelectedObjectId: explicitSelection.explicitSelectedObjectId,
-        hasExplicitSelection: explicitSelection.hasExplicitSelection,
-        reason: explicitSelection.reason,
-      },
-    });
-    if (isAnalyzeLikeUserText(text) && !explicitSelection.hasExplicitSelection) {
-      const guardReason = "analysis_requires_selected_object";
-      const assistantMessage = "Select an object first so I can analyze the right surface.";
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][ChatPipeline][SelectedObjectGuardBlocked]", {
-          reason: guardReason,
-          intent: intentRoute.intent,
-          targetPanel: intentRoute.preferredPanel ?? null,
-        });
-      }
-      if (!isMeaningfulPanel(rightPanelState.view ?? null)) {
-        requestPanelAuthorityOpen({
-          view: "workspace",
-          family: "SCN",
-          source: "chat",
-          contextId: null,
-          reason: "selected_object_required",
-          forceOpen: true,
-        });
-      }
-      const userMsg = makeMsg("user", text);
-      const assistantMsg = makeMsg("assistant", assistantMessage, {
-        confidence: 0.2,
-        guard: guardReason,
-      });
-      const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
-      setMessages(nextMessages);
-      emitChatResult(assistantMessage, true, requestId);
-      setNoSceneUpdate(false);
-      setSourceLabel(null);
-      const snapshot = buildPersistedProjectSnapshot({
-        activeMode,
-        sceneJson,
-        messages: nextMessages,
-      });
-      saveProject(snapshot);
-      pushHistory(snapshot);
-      lifecycleStatus = "success";
-      shouldClearInput = true;
-      finishLocalChatDebug("selected_object_guard_pre_route", { reason: guardReason });
-      writeChatPipelineDebug({
-        selectedObjectGuard: {
-          blocked: true,
-          reason: guardReason,
-          selectedObjectId: null,
-          intent: intentRoute.intent,
-          targetPanel: intentRoute.preferredPanel ?? null,
-          assistantMessage,
-        },
-        signature: `guard::${guardReason}`,
-        sceneSignature: `guard::${guardReason}`,
-        lifecycleStatus: "success",
-        sceneReactionApplied: false,
-        lastCompletedAt: Date.now(),
-      });
-      finalizeChatRequest(requestSeq, "success", { clearInput: true });
-      return;
-    }
-    const promptPipeline = await runNexoraChatPromptPipeline({
-      userInput: text,
-      context: {
-        selectedObjectId: selectedObjectIdState ?? null,
-        focusedObjectId: focusedId ?? null,
-        rightPanelContextId: rightPanelState.contextId ?? null,
-      },
-      engines: {
-        runExplainEngine: () => ({
-          explanation: intentRoute.explanation,
-          related_panel: intentRoute.preferredPanel ?? "dashboard",
-        }),
-        runAnalysisEngine: () => ({
-          insight: intentRoute.explanation,
-          options: [],
-          recommended: "Review panel context and commit next step.",
-          confidence: intentRoute.confidence,
-        }),
-        runDecisionEngine: () => ({
-          insight: intentRoute.explanation,
-          options: [],
-          recommended: "Choose the lowest-risk option with highest confidence.",
-          confidence: intentRoute.confidence,
-        }),
-        runContextBuilder: () => ({
-          missing: ["context_id"],
-          questions:
-            selectedObjectIdState || focusedId
-              ? ["Which objective should this decision optimize first?"]
-              : ["Which object or loop should this analysis focus on?"],
-        }),
-      },
-    });
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][ChatPipeline]", {
-        runId,
-        intent: promptPipeline.intent,
-        target_engine: promptPipeline.routing.target_engine,
-        target_panel: promptPipeline.routing.target_panel,
-        confidence: promptPipeline.coreResponse.confidence,
-        coreResponse: promptPipeline.coreResponse,
-      });
-    }
-
-    const pipelinePanelToken = promptPipeline.coreResponse.recommended_panel || promptPipeline.routing.target_panel;
-    const pipelinePanelView =
-      resolveChatPipelinePanelOpen(pipelinePanelToken) ??
-      mapNexoraTargetPanelToRightPanelView(promptPipeline.routing.target_panel);
-    const pipelinePanelFamily =
-      pipelinePanelToken === "RSK"
-        ? "RSK"
-        : pipelinePanelToken === "SIM_TIMELINE" || pipelinePanelToken === "SIM_WAR_ROOM"
-          ? "SIM"
-          : pipelinePanelToken === "SCN"
-            ? "SCN"
-            : "EXE";
-    const stability = evaluateChatPipelineStability({
-      runId,
-      intent: promptPipeline.intent,
-      targetPanel: pipelinePanelToken,
-      confidence: promptPipeline.coreResponse.confidence,
-      userInput: text,
-      currentPanel: rightPanelState.view ?? null,
-      lastAppliedSignature: lastAppliedChatPipelineSignatureRef.current,
-    });
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][ChatPipeline][Stability]", {
-        runId,
-        intent: promptPipeline.intent,
-        targetPanel: pipelinePanelToken,
-        confidence: promptPipeline.coreResponse.confidence,
-        shouldOpenPanel: stability.shouldOpenPanel,
-        shouldApplyScene: stability.shouldApplyScene,
-        reason: stability.reason,
-      });
-    }
-    writeChatPipelineDebug({
-      runId,
-      intent: promptPipeline.intent,
-      targetPanel: pipelinePanelToken,
-      confidence: promptPipeline.coreResponse.confidence,
-      stabilityReason: stability.reason,
-      shouldOpenPanel: stability.shouldOpenPanel,
-      shouldApplyScene: stability.shouldApplyScene,
-      panelView: pipelinePanelView ?? null,
-      message: promptPipeline.coreResponse.insight,
-    });
-    if (latestChatPipelineRunIdRef.current !== runId) {
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][ChatPipeline][SkippedStale]", { runId });
-      }
-      writeChatPipelineDebug({
-        runId,
-        staleSkipped: true,
-        lifecycleStatus: "stale_ignored",
-      });
-      return;
-    }
-
-    const selectedGuard = evaluateSelectedObjectGuard({
-      intent: promptPipeline.intent,
-      userInput: text,
-      selectedObjectId: stableAnalyzeObjectId,
-    });
-
-    if (selectedGuard.blocked) {
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][ChatPipeline][SelectedObjectGuardBlocked]", {
-          reason: selectedGuard.reason,
-          intent: promptPipeline.intent,
-          targetPanel: promptPipeline.routing.target_panel,
-        });
-      }
-      if (!isMeaningfulPanel(rightPanelState.view ?? null)) {
-        requestPanelAuthorityOpen({
-          view: "workspace",
-          family: "SCN",
-          source: "chat",
-          contextId: stableAnalyzeObjectId,
-          reason: "selected_object_required",
-          forceOpen: true,
-        });
-      }
-      const userMsg = makeMsg("user", text);
-      const assistantMsg = makeMsg("assistant", selectedGuard.assistantMessage, {
-        confidence: 0.2,
-        guard: selectedGuard.reason,
-      });
-      const nextMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
-      setMessages(nextMessages);
-      emitChatResult(selectedGuard.assistantMessage, true, requestId);
-      setNoSceneUpdate(false);
-      setSourceLabel(null);
-      const snapshot = buildPersistedProjectSnapshot({
-        activeMode,
-        sceneJson,
-        messages: nextMessages,
-      });
-      saveProject(snapshot);
-      pushHistory(snapshot);
-      lifecycleStatus = "success";
-      shouldClearInput = true;
-      finishLocalChatDebug("selected_object_guard", { reason: selectedGuard.reason });
-      writeChatPipelineDebug({
-        selectedObjectGuard: {
-          blocked: true,
-          reason: selectedGuard.reason,
-          selectedObjectId: stableAnalyzeObjectId,
-          intent: promptPipeline.intent,
-          targetPanel: promptPipeline.routing.target_panel,
-          assistantMessage: selectedGuard.assistantMessage,
-        },
-        signature: stability.signature,
-        sceneSignature: stability.signature,
-        lifecycleStatus: "success",
-        sceneReactionApplied: false,
-        lastCompletedAt: Date.now(),
-      });
-      finalizeChatRequest(requestSeq, "success", { clearInput: true });
-      return;
-    }
-
-    writeChatPipelineDebug({
-      selectedObjectGuard: {
-        blocked: false,
-        reason: selectedGuard.reason,
-        selectedObjectId: stableAnalyzeObjectId,
-        intent: promptPipeline.intent,
-        targetPanel: promptPipeline.routing.target_panel,
-      },
-    });
-
-    const effectNow = Date.now();
-    if (pipelinePanelView && !routeExecutiveObjectOnSuccess && stability.shouldOpenPanel) {
-      const panelEffectSignature = `${promptPipeline.intent}::${pipelinePanelToken}`;
-      const lastPanelEffect = lastAppliedPanelEffectRef.current;
-      if (
-        lastPanelEffect &&
-        lastPanelEffect.signature === panelEffectSignature &&
-        effectNow - lastPanelEffect.at < 2000
-      ) {
-        if (process.env.NODE_ENV !== "production") {
-          console.log("[Nexora][ChatPipeline][PanelIdempotentSkip]", {
-            panelEffectSignature,
-          });
-        }
-        writeChatPipelineDebug({
-          idempotency: {
-            panelSkipped: true,
-            lastPanelSignature: panelEffectSignature,
-            lastReason: "panel_idempotent_ttl",
-          },
-        });
-      } else {
-        requestPanelAuthorityOpen({
-          view: pipelinePanelView,
-          family: pipelinePanelFamily,
-          source: "chat",
-          contextId: stableAnalyzeObjectId ?? rightPanelState.contextId ?? null,
-          reason: "chat_prompt_pipeline",
-          forceOpen: true,
-        });
-        lastAppliedPanelEffectRef.current = {
-          signature: panelEffectSignature,
-          at: effectNow,
-        };
-        writeChatPipelineDebug({
-          idempotency: {
-            panelSkipped: false,
-            lastPanelSignature: panelEffectSignature,
-            lastReason: "panel_applied",
-          },
-        });
-      }
-    }
-
-    const pipelineSceneReaction = applySceneFromChat({
-      insight: promptPipeline.coreResponse.insight,
-      actions: promptPipeline.coreResponse.actions,
-      intent: promptPipeline.intent,
-      routing: promptPipeline.routing,
-      candidateObjectIds: [
-        explicitSelection.explicitSelectedObjectId ?? "",
-      ].filter(Boolean),
-    });
-    const pipelineSceneLineSignature = [
-      promptPipeline.intent,
-      promptPipeline.routing.target_engine,
-      promptPipeline.routing.target_panel,
-      pipelineSceneReaction.highlightedObjectIds.join(","),
-    ].join("::");
-    const sceneEffectSignature = buildChatEffectSignature({
-      intent: promptPipeline.intent,
-      targetPanel: pipelinePanelToken,
-      sceneSignature: pipelineSceneLineSignature,
-      userInput: text,
-    });
-    let sceneReactionAppliedThisTurn = false;
-    if (
-      latestChatPipelineRunIdRef.current === runId &&
-      stability.shouldApplyScene &&
-      pipelineSceneReaction.highlightedObjectIds.length > 0
-    ) {
-      const lastSceneEffect = lastAppliedSceneEffectRef.current;
-      if (
-        lastSceneEffect &&
-        lastSceneEffect.signature === sceneEffectSignature &&
-        effectNow - lastSceneEffect.at < 3000
-      ) {
-        if (process.env.NODE_ENV !== "production") {
-          console.log("[Nexora][ChatPipeline][SceneIdempotentSkip]", {
-            sceneEffectSignature,
-          });
-        }
-        writeChatPipelineDebug({
-          idempotency: {
-            sceneSkipped: true,
-            lastSceneSignature: sceneEffectSignature,
-            lastReason: "scene_idempotent_ttl",
-          },
-        });
-      } else {
-        applyUnifiedSceneReactionUpstreamDedup(pipelineSceneReaction, {
-          allowSceneReplacement: false,
-          sceneReplacement: null,
-        });
-        lastAppliedSceneEffectRef.current = {
-          signature: sceneEffectSignature,
-          at: effectNow,
-        };
-        sceneReactionAppliedThisTurn = true;
-        writeChatPipelineDebug({
-          idempotency: {
-            sceneSkipped: false,
-            lastSceneSignature: sceneEffectSignature,
-            lastReason: "scene_applied",
-          },
-        });
-      }
-    }
-    if (latestChatPipelineRunIdRef.current === runId) {
-      lastAppliedChatPipelineSignatureRef.current = stability.signature;
-      writeChatPipelineDebug({
-        runId,
-        signature: stability.signature,
-        sceneSignature: pipelineSceneLineSignature,
-        sceneReactionApplied: sceneReactionAppliedThisTurn,
-      });
-    }
-
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][IntentRouter]", intentRoute);
-      }
-
-      const { requestedView, expectedFamily } = resolvePreferredPanelFamilyFromIntent(
-        intentRoute.preferredPanel,
-        "action_intent"
-      );
-      if (requestedView && !routeExecutiveObjectOnSuccess && !pipelinePanelView) {
-        const instantPanelSig = `${promptPipeline.intent}::${requestedView}`;
-        const lastInstantPanel = lastAppliedPanelEffectRef.current;
-        const instantNow = Date.now();
-        if (
-          lastInstantPanel &&
-          lastInstantPanel.signature === instantPanelSig &&
-          instantNow - lastInstantPanel.at < 2000
-        ) {
-          if (process.env.NODE_ENV !== "production") {
-            console.log("[Nexora][ChatPipeline][PanelIdempotentSkip]", {
-              panelEffectSignature: instantPanelSig,
-            });
-          }
-          writeChatPipelineDebug({
-            idempotency: {
-              panelSkipped: true,
-              lastPanelSignature: instantPanelSig,
-              lastReason: "panel_idempotent_ttl_instant",
-            },
-          });
-        } else {
-          requestPanelAuthorityOpen({
-            view: requestedView,
-            family:
-              requestedView === "dashboard" || requestedView === "strategic_command" || requestedView === "executive_object"
-                ? "EXE"
-                : requestedView === "risk" || requestedView === "fragility" || requestedView === "explanation"
-                  ? "RSK"
-                  : requestedView === "workspace" || requestedView === "object" || requestedView === "object_focus"
-                    ? "SCN"
-                    : "SIM",
-            source: "chat",
-            contextId: selectedObjectIdState ?? null,
-            reason: "chat_submit_instant_open",
-            forceOpen: true,
-          });
-          lastAppliedPanelEffectRef.current = {
-            signature: instantPanelSig,
-            at: instantNow,
-          };
-          writeChatPipelineDebug({
-            idempotency: {
-              panelSkipped: false,
-              lastPanelSignature: instantPanelSig,
-              lastReason: "panel_applied_instant",
-            },
-          });
-        }
-        if (NEXORA_PANEL_DEPRECATION_DEBUG) {
-          console.log("[Nexora][ChatInstantOpen]", {
-            requestedView,
-            expectedFamily: expectedFamily ?? null,
-            source: options?.source ?? "user",
-          });
-        }
-      }
-      if (requestedView === null && options?.guidedPrompt) {
-        logPanelGuidedPromptWarn({
-          phase: "skipped_empty_view",
-          rawView: intentRoute.preferredPanel ?? null,
-          source: options?.source ?? "user",
-          prompt: options.guidedPrompt.prompt ?? text,
-        });
-      }
-      if (pendingPanelFamilyAuditClearTimeoutRef.current !== null) {
-        window.clearTimeout(pendingPanelFamilyAuditClearTimeoutRef.current);
-        pendingPanelFamilyAuditClearTimeoutRef.current = null;
-      }
-      activePanelFamilyAuditRef.current = {
-        seq: requestSeq,
-        prompt: text,
-        expectedFamily,
-        source: options?.source ?? "user",
-      };
-      traceAuditRef("set", {
-        source: options?.source ?? "user",
-        seq: requestSeq,
-        prompt: text,
-        expectedFamily: expectedFamily ?? null,
-        contractRenderable: false,
-        contractSalvaged: false,
-        reason: "chat_submit_expected_family",
-      });
-      tracePanelFlowRuntime("prompt_submitted");
-      tracePanelFamilyAudit("[Nexora][PanelFamilyAudit] expected_family", {
-        expectedFamily: expectedFamily ?? null,
-        intent: intentRoute.intent,
-        preferredPanel: intentRoute.preferredPanel ?? null,
-      });
-      tracePanelFlowRuntime("expected_family", {
-        requestedView: expectedFamily ?? null,
-      });
-
-    emitDebugEvent({
-      type: "chat_intent_detected",
-      layer: "intent",
-      source: "HomeScreen",
-      status: "info",
-      message: `Intent ${intentRoute.intent}`,
-      metadata: {
-        intent: intentRoute.intent,
-        target: intentRoute.target ?? null,
-        preferredPanel: intentRoute.preferredPanel ?? null,
-        expectedFamily: expectedFamily ?? null,
-        shouldCallBackend: intentRoute.shouldCallBackend,
-        shouldRunScanner: intentRoute.shouldRunScanner,
-        shouldRunSimulation: intentRoute.shouldRunSimulation,
-        shouldGenerateAdvice: intentRoute.shouldGenerateAdvice,
-        shouldAffectPanels: intentRoute.shouldAffectPanels,
-        shouldAffectScene: intentRoute.shouldAffectScene,
-        sceneMutation: intentRoute.sceneMutation,
-        primaryObjectId: intentRoute.primaryObjectId ?? null,
-        requestSeq,
-      },
-      correlationId: chatCorrelationId,
-    });
-
-    if (intentRoute.intent === "chat_general" && !intentRoute.primaryObjectId) {
-    setNoSceneUpdate(false);
-    setSourceLabel(null);
-  }
-
-    const shouldShowLoading =
-      intentRoute.shouldCallBackend ||
-      intentRoute.shouldRunScanner ||
-      intentRoute.shouldRunSimulation ||
-      intentRoute.shouldGenerateAdvice;
-
-    let loadingDelayTimer: number | null = null;
-    let chatBusyIndicatorTimer: number | null = window.setTimeout(() => {
-      setChatDelayedBusy(true);
-    }, FAST_CHAT_THRESHOLD_MS);
-
-    try {
-      if (shouldShowLoading) {
-        loadingDelayTimer = window.setTimeout(() => {
-          if (process.env.NODE_ENV !== "production") {
-            console.log("[Nexora][HomeScreen][LoadingState]", {
-              phase: "loading_started",
-              panelView: rightPanelState.view ?? null,
-              hasVisiblePanelState: Boolean(
-                visibleResponseData ?? visibleStrategicAdvice ?? visibleDecisionCockpit ?? visibleRiskPropagation
-              ),
-              hasVisibleSceneState: Boolean(visibleSceneJson),
-              hasVisibleSelection: Boolean(visibleSelectedObjectId ?? visibleFocusedId ?? visibleObjectSelection),
-            });
-          }
-          setLoading(true);
-          setNoSceneUpdate(false);
-          setSourceLabel(null);
-          setCameraLockedByUser(false);
-        }, FAST_CHAT_THRESHOLD_MS);
-      }
-
-      emitDebugEvent({
-        type: "chat_request_started",
-        layer: "chat",
-        source: "HomeScreen",
-        status: "info",
-        message: "Chat execution pipeline started",
-        metadata: {
-          requestSeq,
-          shouldShowLoading,
-          shouldCallBackend: intentRoute.shouldCallBackend,
-        },
-        correlationId: chatCorrelationId,
-      });
-      await new Promise<void>((r) => queueMicrotask(() => r()));
-      const executionResult = await executeNexoraAction({
-      userText: text,
-      route: intentRoute,
-      activeMode,
-      activeDomain: activeDomainExperience.experience.domainId,
-      currentScene: sceneJson,
-      currentRightPanelTab: rightPanelState.view,
-      selectedObjectId: selectedObjectIdState,
-      objectProfiles,
-      productModeContext,
-      memoryState: memory,
-      environmentConfig,
-      handlers: {
-        runBackendChat: async (nextText: string) => {
-          const payload = buildChatRequestPayload(nextText);
-
-          if (process.env.NODE_ENV !== "production") {
-            console.debug("chat payload", payload);
-          }
-
-          const raw = await chatToBackendLifecycle(payload, { signal: controller.signal });
-          if (process.env.NODE_ENV !== "production") {
-            console.debug("chat response", raw);
-          }
-          return raw;
-        },
-        runLocalDecisionRouter: (nextText: string) =>
-          routeChatInput(nextText, {
-            focusedObjectId,
-            activeLoopId: activeLoopIdStore ?? undefined,
-            focusMode: focusModeStore,
-            pinnedLabel: selectedObjectInfo?.label ?? undefined,
-          }),
-      },
-    });
-
-    if (!isLatestChatRequest(requestSeq)) {
-      traceDemoFlowEvent({
-        phase: "stale_ignored",
-        source: options?.source ?? "chat",
-        seq: requestSeq,
-        requestId,
-      });
-      lifecycleStatus = "stale_ignored";
-      return;
-    }
-
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][ActionExecution]", executionResult);
-    }
-
-    const routerResult = executionResult.localDecisionPayload;
-    const hasLocalActions = Array.isArray(routerResult?.actions) && routerResult.actions.length > 0;
-    const hasBackendPayload = Boolean(executionResult.backendPayload);
-    const rawFamilyDiag = readPanelFamilySliceDiagnostics(
-      activePanelFamilyAuditRef.current?.expectedFamily ?? null,
-      panelFamilyDataFromExecutionPayloads(
-        executionResult.backendPayload,
-        executionResult.localDecisionPayload
-      )
-    );
-    tracePanelFamilyAudit("[Nexora][PanelFamilyAudit] raw_payload_presence", {
-      rawFamilyPresent: rawFamilyDiag.familyPresent,
-      rawPayloadShape: rawFamilyDiag.payloadShape,
-    });
-    traceDemoFlowEvent({
-      phase: "response_received",
-      source: options?.source ?? "chat",
-      seq: requestSeq,
-      requestId,
-      detail: {
-        hasLocalActions,
-        hasBackendPayload,
-        allowSceneMutation: executionResult.allowSceneMutation,
-      },
-    });
-
-    emitDebugEvent({
-      type: "chat_action_extracted",
-      layer: "intent",
-      source: "HomeScreen",
-      status: executionResult.ok ? "ok" : "warn",
-      message: executionResult.executionSummary ?? "execution",
-      metadata: {
-        ok: executionResult.ok,
-        executedSteps: executionResult.executedSteps,
-        hasLocalActions,
-        hasBackendPayload,
-        shouldOpenPanel: executionResult.shouldOpenPanel,
-        shouldUpdateInspector: executionResult.shouldUpdateInspector,
-        preferredPanel: executionResult.preferredPanel ?? null,
-        appliedSceneMutation: executionResult.appliedSceneMutation,
-        allowSceneMutation: executionResult.allowSceneMutation,
-        hasUnifiedReaction: Boolean(executionResult.unifiedReaction),
-        hasSceneReplacement: Boolean(executionResult.sceneReplacement),
-        hasScenePatch: Boolean(executionResult.scenePatch),
-        errorCount: Array.isArray(executionResult.errors) ? executionResult.errors.length : 0,
-        warningCount: Array.isArray(executionResult.warnings) ? executionResult.warnings.length : 0,
-        requestSeq,
-      },
-      correlationId: chatCorrelationId,
-    });
-
-    if (executionResult.shouldOpenPanel || executionResult.preferredPanel) {
-      emitDebugEvent({
-        type: "chat_panel_request",
-        layer: "chat",
-        source: "HomeScreen",
-        status: "info",
-        message: "Chat result requests panel / inspector update",
-        metadata: {
-          shouldOpenPanel: executionResult.shouldOpenPanel,
-          preferredPanel: executionResult.preferredPanel ?? null,
-          preferredInspectorTab: executionResult.preferredInspectorTab ?? null,
-          requestSeq,
-        },
-        correlationId: chatCorrelationId,
-      });
-    }
-
-    const hasChatSceneRequest =
-      executionResult.appliedSceneMutation !== "none" ||
-      Boolean(executionResult.unifiedReaction) ||
-      Boolean(executionResult.sceneReplacement) ||
-      Boolean(executionResult.scenePatch);
-    if (hasChatSceneRequest) {
-      emitDebugEvent({
-        type: "chat_scene_request",
-        layer: "chat",
-        source: "HomeScreen",
-        status: "info",
-        message: "Chat result includes scene mutation / reaction",
-        metadata: {
-          appliedSceneMutation: executionResult.appliedSceneMutation,
-          hasUnifiedReaction: Boolean(executionResult.unifiedReaction),
-          hasSceneReplacement: Boolean(executionResult.sceneReplacement),
-          requestSeq,
-        },
-        correlationId: chatCorrelationId,
-      });
-    }
-
-    if (
-      shouldApplyExecutionResultImmediately({
-        hasLocalActions,
-        hasBackendPayload,
-      })
-    ) {
-      applyExecutionResultToUi(executionResult);
-      traceDemoFlowEvent({
-        phase: "commit_applied",
-        source: options?.source ?? "chat",
-        seq: requestSeq,
-        requestId,
-        detail: { mode: hasLocalActions ? "local_actions" : "fallback_reply" },
-      });
-    }
-
-    if (hasLocalActions) {
-      const userMsg = makeMsg("user", text);
-      const assistantMsg = makeMsg(
-        "assistant",
-        promptPipeline.coreResponse.insight || routerResult.assistantReply,
-        {
-          confidence: promptPipeline.coreResponse.confidence,
-          followUp: promptPipeline.coreResponse.actions.slice(0, 2).map((a) => a.title),
-        }
-      );
-      const routedMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
-      setMessages(routedMessages);
-      emitChatResult(assistantMsg.text, true, requestId);
-
-      applyDecisionActions(routerResult.actions, {
-        setOverride: setOverrideRef.current,
-        updateObjectUx,
-      });
-
-      // Update memory (pure) and persist. Any visual side-effects must be scheduled
-      // AFTER React finishes the current update to avoid cross-component updates during render.
-      setMemory((prev) => {
-        const next = updateMemory(prev, {
-          now: Date.now(),
-          focusedObjectId,
-          activeLoopId: activeLoopIdStore ?? undefined,
-          actions: routerResult.actions,
-          text,
-          mode: activeMode,
-        });
-
-        try {
-          window.localStorage.setItem(MEMORY_KEY, JSON.stringify(next));
-        } catch {
-          // ignore
-        }
-
-        const targets = routerResult.actions
-          .map((a: any) => (a && typeof (a as any).target === "string" ? (a as any).target : null))
-          .filter((t: string | null): t is string => !!t);
-
-        // Defer visual patches; applying overrides touches SceneStateProvider.
-        pendingVisualPatchesRef.current = { memory: next, targets };
-
-        return next;
-      });
-
-      // Apply derived visual patches on the next tick to avoid React warning:
-      // "Cannot update a component while rendering a different component".
-      window.setTimeout(() => {
-        const pending = pendingVisualPatchesRef.current;
-        if (!pending) return;
-        pendingVisualPatchesRef.current = null;
-
-        for (const targetId of pending.targets) {
-          const patch = deriveVisualPatch(pending.memory, targetId);
-          if (patch && (patch.scale !== undefined || patch.opacity !== undefined)) {
-            setOverrideRef.current?.(targetId, patch);
-          }
-        }
-      }, 0);
-
-      lifecycleStatus = "success";
-      shouldClearInput = true;
-      return;
-    }
-
-    if (!executionResult.backendPayload) {
-      const userMsg = makeMsg("user", text);
-      const fallbackReply =
-        promptPipeline.coreResponse.insight ??
-        executionResult.chatReply ??
-        executionResult.errors[0] ??
-        executionResult.warnings[0] ??
-        intentRoute.explanation;
-      const assistantMsg = makeMsg("assistant", fallbackReply, {
-        confidence: promptPipeline.coreResponse.confidence,
-        followUp: promptPipeline.coreResponse.actions.slice(0, 2).map((a) => a.title),
-      });
-      const routedMessages = appendMessages(messagesRef.current, [userMsg, assistantMsg]);
-      setMessages(routedMessages);
-      emitChatResult(fallbackReply, executionResult.ok, requestId);
-      setLastActions([]);
-      lifecycleStatus = executionResult.ok ? "success" : "error";
-      shouldClearInput = executionResult.ok;
-      if (executionResult.ok && !hasLocalActions) {
-        emitDebugEvent({
-          type: "chat_noop_result",
-          layer: "chat",
-          source: "HomeScreen",
-          status: "info",
-          message: "No backend payload and no local actions (fallback reply only)",
-          metadata: {
-            requestSeq,
-            hadPanelIntent: Boolean(executionResult.shouldOpenPanel || executionResult.preferredPanel),
-            hadSceneIntent: hasChatSceneRequest,
-          },
-          correlationId: chatCorrelationId,
-        });
-      }
-      return;
-    }
-
-    // No deterministic actions to apply locally → use backend for assistant reply.
-      const raw = executionResult.backendPayload;
-      const data = applyRetailTriggerEnhancement(raw, text, sceneJson) as BackendChatResponse;
-      if (typeof data?.episode_id === "string" && data.episode_id.trim()) {
-        setEpisodeId(data.episode_id);
-      }
-      if (!data || (data as any).ok === false || (data as any).error) {
-        const rawMsg =
-          ((data as any)?.error?.message as string | undefined) ??
-          "Request failed; no changes applied.";
-        const msg = userSafeChatMessage(rawMsg);
-        setMessages((m) => appendMessages(m, [makeMsg("assistant", msg)]));
-        emitChatResult(msg, false, requestId);
-        setLastActions([]);
-        lifecycleStatus = "error";
-        emitDebugEvent({
-          type: "chat_error",
-          layer: "chat",
-          source: "HomeScreen",
-          status: "error",
-          message: msg,
-          metadata: { requestSeq, reason: "backend_response_error" },
-          correlationId: chatCorrelationId,
-        });
-        return;
-      }
-      const userBackendMsg = makeMsg("user", text);
-      const baseMessages = appendMessages(messagesRef.current, [userBackendMsg]);
-      setMessages(baseMessages);
-      const nextActiveMode: string =
-        typeof (data as any)?.active_mode === "string" && (data as any).active_mode.trim().length
-          ? (data as any).active_mode
-          : activeMode;
-      setActiveMode(nextActiveMode);
-      const viewModel = deriveProductFlowViewModel(data, sceneJson);
-      const shouldApplySceneMutation = hasMeaningfulSceneMutation(data, sceneJson);
-      const incomingSceneJson = data.scene_json ? normalizeSceneJson(data.scene_json) : null;
-      const viewModelSceneJson = viewModel?.nextSceneJson ? normalizeSceneJson(viewModel.nextSceneJson) : null;
-      const shouldReplaceIncomingSceneFromChat = shouldAcceptIncomingSceneReplacement(
-        data,
-        sceneJson,
-        incomingSceneJson
-      );
-      const shouldReplaceViewModelSceneFromChat = shouldAcceptIncomingSceneReplacement(
-        data,
-        sceneJson,
-        viewModelSceneJson
-      );
-
-      const acceptedSceneForChatReplacement = pickAcceptedChatSceneReplacement({
-        allowSceneMutation: executionResult.allowSceneMutation,
-        viewModelSceneJson,
-        incomingSceneJson,
-        shouldReplaceViewModelSceneFromChat,
-        shouldReplaceIncomingSceneFromChat,
-      });
-
-      if (acceptedSceneForChatReplacement) {
-        try {
-          const policy = prefs.overridePolicy ?? "match";
-          if (policy === "clear") {
-            clearAllOverridesRef.current?.();
-          } else if (policy === "match") {
-            const objsForPolicy: SceneObject[] = Array.isArray(acceptedSceneForChatReplacement?.scene?.objects)
-              ? acceptedSceneForChatReplacement.scene.objects
-              : [];
-            const validIds = objsForPolicy.map((o: any, idx: number) => o.id ?? o.name ?? `${o.type ?? "obj"}:${idx}`);
-            pruneOverridesRef.current?.(validIds);
-          }
-        } catch (e) {
-          // ignore policy errors
-        }
-      } else if (incomingSceneJson || viewModelSceneJson) {
-        setNoSceneUpdate(true);
-      }
-      const assistantReply =
-        promptPipeline.coreResponse.insight ||
-        (typeof data.reply === "string" && data.reply.trim().length > 0
-          ? data.reply
-          : executionResult.chatReply ??
-            intentRoute.explanation ??
-            `${firstMeaningfulState.headline}. Confidence: ${firstMeaningfulState.confidence}. ${firstMeaningfulState.evidenceLabel ?? "No live signal yet"}.`);
-      const assistantMsg = makeMsg("assistant", assistantReply, {
-        confidence: promptPipeline.coreResponse.confidence,
-        followUp: promptPipeline.coreResponse.actions.slice(0, 2).map((a) => a.title),
-      });
-      const finalMessages = appendMessages(baseMessages, [assistantMsg]);
-      setMessages(finalMessages);
-      emitChatResult(assistantMsg.text, true, requestId);
-      const nextActions = Array.isArray((data as any)?.actions) ? ((data as any).actions as any[]) : [];
-      setLastActions(nextActions);
-      if (nextActions.length === 0) {
-        setLastActions(promptPipeline.coreResponse.actions);
-      }
-      const shouldApplySceneEffectsFromChat =
-        executionResult.allowSceneMutation && executionResult.appliedSceneMutation !== "none";
-      const retailChatTrigger = detectRetailTriggerConfig(text);
-      const unifiedChatReaction =
-        retailChatTrigger &&
-        isRetailScenePayload(data, acceptedSceneForChatReplacement ?? sceneJson) &&
-        isRetailDemoScene(acceptedSceneForChatReplacement ?? sceneJson)
-          ? buildUnifiedReactionFromRetailTriggerConfig(
-              retailChatTrigger,
-              acceptedSceneForChatReplacement ?? sceneJson
-            )
-          : buildUnifiedReactionFromChatResponse(data, {
-              acceptedSceneForChatReplacement,
-              allowSceneEffects: shouldApplySceneEffectsFromChat,
-              fallbackHighlightedObjectIds: executionResult.highlightedObjectIds,
-              fallbackPrimaryObjectId: executionResult.focusedObjectId ?? intentRoute.primaryObjectId ?? null,
-              reactionModeHint: reactionModeHintFromIntent(intentRoute.intent),
-            });
-      const analyzeSelectionHighlights = getHighlightedObjectIdsFromSelection(objectSelection);
-      const hasSelectedObjectForAnalyze =
-        (typeof selectedObjectIdState === "string" && selectedObjectIdState.trim().length > 0) ||
-        (typeof focusedId === "string" && focusedId.trim().length > 0) ||
-        analyzeSelectionHighlights.length > 0;
-      const globalSceneAnalyze = isAnalyzeCommand && !hasSelectedObjectForAnalyze;
-      const unifiedReactionForApply =
-        globalSceneAnalyze && unifiedChatReaction
-          ? {
-              ...unifiedChatReaction,
-              highlightedObjectIds: [],
-              primaryObjectId: null,
-              relatedObjectIds: [],
-              riskSources: [],
-              riskTargets: [],
-              dimUnrelatedObjects: false,
-              allowFocusMutation: false,
-              reason: [unifiedChatReaction.reason, "Analyze the current system (global_scene_analysis)"]
-                .filter((s) => typeof s === "string" && s.trim().length > 0)
-                .join(" "),
-            }
-          : unifiedChatReaction;
-      const nextObjectSelectionFromReaction = globalSceneAnalyze
-        ? viewModel.nextObjectSelection
-        : mergeNextObjectSelectionFromUnifiedReaction(unifiedChatReaction, viewModel.nextObjectSelection);
-      const enrichedExecutionResult = {
-        ...executionResult,
-        chatReply: assistantMsg.text,
-        backendPayload: data,
-        highlightedObjectIds: globalSceneAnalyze
-          ? []
-          : Array.isArray(unifiedChatReaction?.highlightedObjectIds) && unifiedChatReaction.highlightedObjectIds.length > 0
-            ? unifiedChatReaction.highlightedObjectIds
-            : executionResult.highlightedObjectIds,
-        focusedObjectId: globalSceneAnalyze
-          ? null
-          : (Array.isArray(unifiedChatReaction?.highlightedObjectIds)
-              ? unifiedChatReaction.highlightedObjectIds[0]
-              : null) ??
-            executionResult.focusedObjectId ??
-            null,
-        unifiedReaction: executionResult.allowSceneMutation ? unifiedReactionForApply : null,
-        sceneReplacement: acceptedSceneForChatReplacement,
-        panelUpdates: {
-          preferredPanel: executionResult.preferredPanel,
-          preferredInspectorTab: executionResult.preferredInspectorTab,
-          viewModel,
-          objectSelection: nextObjectSelectionFromReaction,
-          memoryInsights: viewModel.nextMemoryInsights,
-          riskPropagation: viewModel.nextRiskPropagation,
-          strategicAdvice: viewModel.nextStrategicAdvice,
-          strategyKpi: viewModel.nextStrategyKpi,
-          decisionCockpit: viewModel.nextDecisionCockpit,
-          productModeContext: viewModel.nextProductModeContext,
-          productModeId: viewModel.nextProductModeContext?.mode_id ?? null,
-          aiReasoning: viewModel.nextAiReasoning,
-          platformAssembly: viewModel.nextPlatformAssembly,
-          autonomousExploration: viewModel.nextAutonomousExploration,
-          opponentModel: viewModel.nextOpponentModel,
-          strategicPatterns: viewModel.nextStrategicPatterns,
-          conflicts: viewModel.nextConflicts,
-          kpi: viewModel.nextKpi,
-          loops: viewModel.nextLoops,
-          activeLoopId: viewModel.nextActiveLoop ?? null,
-          loopSuggestions: viewModel.nextLoopSuggestions,
-        },
-      };
-      traceDemoFlowEvent({
-        phase: "canonical_result_ready",
-        source: options?.source ?? "chat",
-        seq: requestSeq,
-        requestId,
-        detail: {
-          highlightedObjectCount: Array.isArray(unifiedChatReaction?.highlightedObjectIds)
-            ? unifiedChatReaction.highlightedObjectIds.length
-            : 0,
-          hasPanelViewModel: Boolean(viewModel),
-        },
-      });
-      applyExecutionResultToUi(enrichedExecutionResult);
-      traceDemoFlowEvent({
-        phase: "commit_applied",
-        source: options?.source ?? "chat",
-        seq: requestSeq,
-        requestId,
-        detail: { mode: "backend_canonical" },
-      });
-      if (
-        (incomingSceneJson || viewModelSceneJson) &&
-        shouldApplySceneMutation &&
-        !acceptedSceneForChatReplacement &&
-        process.env.NODE_ENV !== "production" &&
-        !isPilotProductMode
-      ) {
-        setSceneWarn("⚠️ Rejected incompatible fallback scene replacement.");
-      }
-
-      const snapshot = buildPersistedProjectSnapshot({
-        activeMode: nextActiveMode,
-        sceneJson: acceptedSceneForChatReplacement ?? sceneJson,
-        messages: finalMessages,
-      });
-      saveProject(snapshot);
-      pushHistory(snapshot);
-
-      try {
-        const replay = await analyzeFull({ episodeId, text });
-        if (isLatestChatRequest(requestSeq) && replay?.episode_id) setEpisodeId(replay.episode_id);
-      } catch {
-        // ignore replay errors to keep chat responsive
-      }
-      lifecycleStatus = "success";
-      shouldClearInput = true;
-      if (routeExecutiveObjectOnSuccess && isLatestChatRequest(requestSeq)) {
-        const routeContextId =
-          explicitSelection.explicitSelectedObjectId ?? getAnalyzeLockedObjectId();
-        if (!routeContextId) {
-          console.warn("[Nexora][ExecutiveRouteBlocked][NoExplicitSelection]", {
-            selectedObjectIdState,
-            focusedId,
-            analyzeHl,
-          });
-          return;
-        }
-        traceAnalyzeObjectRoute({
-          stage: "analyze_success_before_route",
-          requestedView: "executive_object",
-          resolvedView: "executive_object",
-          family: "EXE",
-          contextId: routeContextId,
-          rightPanelView: rightPanelState.view ?? null,
-        });
-        globalThis.console?.warn?.("[NEXORA_EXECUTIVE_ROUTE_ATTEMPT]", {
-          view: "executive_object",
-          contextId: routeContextId,
-          timestamp: Date.now(),
-        });
-        if (process.env.NODE_ENV !== "production") {
-          globalThis.console?.debug?.("[Nexora][AnalyzeRouting]", {
-            targetView: "executive_object",
-            contextId: routeContextId,
-          });
-        }
-        passiveDeselectGuardUntilRef.current = Date.now() + 1200;
-        setActiveSidePanel("decisions");
-        requestPanelAuthorityOpen({
-          view: "executive_object",
-          family: "EXE",
-          source: "analyze_object",
-          reason: "analyze_object_success",
-          contextId: routeContextId,
-          forceOpen: true,
-        });
-        globalThis.console?.warn?.("[Nexora][AnalyzeFinalPanelTarget]", {
-          family: "EXE",
-          view: "executive_object",
-          contextId: routeContextId,
-          activeSidePanel,
-        });
-        rightPanelRouteLockRef.current = {
-          view: "executive_object",
-          contextId: routeContextId,
-          reason: "analyze_object_success",
-        };
-        globalThis.console?.debug?.("[Nexora][RightPanelWriter]", {
-          writer: "HomeScreen.analyze_success",
-          nextView: "executive_object",
-          contextId: routeContextId,
-          reason: "analyze_object_success",
-        });
-        globalThis.console?.debug?.("[Nexora][RightPanelRouteTrace]", {
-          writer: "analyze_success_route",
-          requestedView: "executive_object",
-          resolvedView: "executive_object",
-          family: "EXE",
-          contextId: routeContextId,
-          reason: "analyze_object_success",
-          source: "analyze_object",
-        });
-      }
-    } catch (e: any) {
-      if (!isLatestChatRequest(requestSeq)) {
-        traceDemoFlowEvent({
-          phase: "stale_ignored",
-          source: options?.source ?? "chat",
-          seq: requestSeq,
-          requestId,
-        });
-        lifecycleStatus = "stale_ignored";
-        return;
-      }
-      const timedOut = activeChatRequestRef.current?.seq === requestSeq && activeChatRequestRef.current.timedOut === true;
-      lifecycleStatus = isAbortLikeError(e) ? "aborted" : "error";
-      let msg = isPilotProductMode ? NEXORA_PIPELINE_USER_FAILURE : getChatLifecycleErrorMessage(e, timedOut);
-      msg = userSafeChatMessage(msg);
-      if (
-        !isPilotProductMode &&
-        intentRoute.shouldCallBackend &&
-        (!isAbortLikeError(e) || timedOut)
-      ) {
-        const networkLike =
-          /system temporarily unavailable|couldn't reach the server|request timed out/i.test(msg) || timedOut;
-        if (networkLike) {
-          msg = "I couldn't analyze the system right now, but you can still explore objects manually.";
-        }
-      }
-      if (!isAbortLikeError(e) || timedOut) {
-        const fallback = buildFailureResponse();
-        const fallbackPanelView = resolveChatPipelinePanelOpen(fallback.recommended_panel);
-        const preserveCurrentPanel = isMeaningfulPanel(rightPanelState.view ?? null);
-        if (fallbackPanelView && !preserveCurrentPanel) {
-          requestPanelAuthorityOpen({
-            view: fallbackPanelView,
-            family: "SCN",
-            source: "chat",
-            reason: "chat_pipeline_fallback",
-            contextId: stableAnalyzeObjectId ?? rightPanelState.contextId ?? null,
-            forceOpen: true,
-          });
-        }
-        setMessages((m) => appendMessages(m, [makeMsg("assistant", fallback.insight)]));
-        emitChatResult(fallback.insight, false, requestId);
-        emitDebugEvent({
-          type: "chat_error",
-          layer: "chat",
-          source: "HomeScreen",
-          status: "error",
-          message: fallback.insight,
-          metadata: { requestSeq, timedOut, reason: "chat_pipeline_exception" },
-          correlationId: chatCorrelationId,
-        });
-        writeChatPipelineDebug({
-          runId,
-          lifecycleStatus,
-          fallbackUsed: true,
-          message: fallback.insight,
-        });
-      }
-    } finally {
-      if (isAnalyzeCommand) {
-        analyzeInFlightRef.current = false;
-        window.setTimeout(() => {
-          console.log("[Nexora][AnalyzeSelectionLock][Released]", {
-            objectId: analyzeSelectionLockRef.current?.objectId ?? null,
-          });
-          analyzeSelectionLockRef.current = null;
-          writeChatPipelineDebug({
-            analyzeSelectionLock: {
-              active: false,
-              objectId: null,
-              lastReason: "released",
-            },
-          });
-        }, 500);
-      }
-      if (loadingDelayTimer != null) {
-        window.clearTimeout(loadingDelayTimer);
-      }
-      if (chatBusyIndicatorTimer != null) {
-        window.clearTimeout(chatBusyIndicatorTimer);
-      }
-      setChatDelayedBusy(false);
-      writeChatPipelineDebug({
-        runId,
-        lifecycleStatus,
-        lastCompletedAt: Date.now(),
-      });
-      if (activeChatDebugCorrelationRef.current === chatCorrelationId) {
-        emitDebugEvent({
-          type: "chat_response_completed",
-          layer: "chat",
-          source: "HomeScreen",
-          status:
-            lifecycleStatus === "error"
-              ? "error"
-              : lifecycleStatus === "aborted" || lifecycleStatus === "stale_ignored"
-                ? "warn"
-                : "ok",
-          message: `Chat pipeline finalized: ${lifecycleStatus}`,
-          metadata: {
-            lifecycleStatus,
-            requestSeq,
-            clearInput: shouldClearInput,
-          },
-          correlationId: chatCorrelationId,
-        });
-        emitGuardRailAlerts(
-          runGuardChecks(
-            { trigger: "chat_response", chat: { chatCorrelationId }, correlationId: chatCorrelationId },
-            getRecentDebugEvents()
-          )
+  const releaseChatSendingLock = useCallback(() => {
+    isSendingRef.current = false;
+  }, []);
+  const chatPipelineShellError = chatRequestStatus === "error" ? "chat_error" : null;
+  const chatPipelineRefs = useMemo(
+    () => ({
+      activeRunIdRef: latestChatPipelineRunIdRef,
+      lastAssistantMessageSignatureRef: lastAppliedChatPipelineSignatureRef,
+    }),
+    [latestChatPipelineRunIdRef, lastAppliedChatPipelineSignatureRef]
+  );
+  const chatPipelineBridges = useMemo(
+    () => ({
+      applySceneChangeSafe: ((nextOrUpdater: unknown, source: string, options?: { bypassDedupe?: boolean }) => {
+        applySceneChangeSafe(
+          nextOrUpdater as SceneJson | null | ((prev: SceneJson | null) => SceneJson | null),
+          source,
+          options
         );
-        activeChatDebugCorrelationRef.current = null;
-      }
-      finalizeChatRequest(requestSeq, lifecycleStatus, { clearInput: shouldClearInput });
-    }
-      };
-
-      await runSendTextLifecycle();
-    } finally {
-      window.setTimeout(() => {
-        const cur = loopGuardInFlightByTextRef.current.get(normalizedText) ?? 1;
-        const next = cur - 1;
-        if (next <= 0) {
-          loopGuardInFlightByTextRef.current.delete(normalizedText);
-        } else {
-          loopGuardInFlightByTextRef.current.set(normalizedText, next);
-        }
-        chatLoopGuardDepthRef.current = Math.max(0, chatLoopGuardDepthRef.current - 1);
-        chatLoopGuardActiveRef.current = chatLoopGuardDepthRef.current > 0;
-        if (process.env.NODE_ENV !== "production") {
-          console.log("[Nexora][ChatLoopGuard][Released]", {
-            text: normalizedText,
-            depth: chatLoopGuardDepthRef.current,
-          });
-        }
-        writeChatPipelineDebug({
-          loopGuard: {
-            lastReason: "released",
-            lastAt: Date.now(),
-          },
+      }) as NonNullable<ChatPipelineBridgeCallbacks["applySceneChangeSafe"]>,
+      applySceneChangeUpstreamDedup: ((nextOrUpdater: unknown, source: string, options?: { bypassDedupe?: boolean }) => {
+        applySceneChangeUpstreamDedup(nextOrUpdater as SceneJson | null, source, options);
+      }) as NonNullable<ChatPipelineBridgeCallbacks["applySceneChangeUpstreamDedup"]>,
+      applyUnifiedSceneReactionUpstreamDedup: ((
+        reaction: unknown,
+        options: { allowSceneReplacement: boolean; sceneReplacement?: unknown | null }
+      ) => {
+        applyUnifiedSceneReactionUpstreamDedup(reaction as UnifiedSceneReaction, {
+          allowSceneReplacement: options.allowSceneReplacement,
+          sceneReplacement: (options.sceneReplacement ?? undefined) as SceneJson | null | undefined,
         });
-      }, 0);
-    }
-  }, [
+      }) as NonNullable<ChatPipelineBridgeCallbacks["applyUnifiedSceneReactionUpstreamDedup"]>,
+      openRightPanel: openRightPanel
+        ? (((view: string, source: string, options?: Record<string, unknown>) => {
+            openRightPanel(view, source, options);
+          }) as NonNullable<ChatPipelineBridgeCallbacks["openRightPanel"]>)
+        : null,
+      requestPanelAuthorityOpen: ((req) => {
+        requestPanelAuthorityOpen(req as NexoraPanelAuthorityRequest);
+      }) as RequestPanelAuthorityOpenFn,
+      closeRightPanel: closeRightPanel ?? null,
+      applyTypeCChatIntent,
+      runTypeCAction: null,
+    }),
+    [
+      applySceneChangeSafe,
+      applySceneChangeUpstreamDedup,
+      applyUnifiedSceneReactionUpstreamDedup,
+      applyTypeCChatIntent,
+      closeRightPanel,
+      openRightPanel,
+      requestPanelAuthorityOpen,
+    ]
+  );
+
+  const chatPipelineSendTextDeps = useMemo(
+    (): ChatPipelineSendTextDeps => ({
+      activeChatDebugCorrelationRef,
+      activeChatRequestRef,
+      activeDomainExperience,
+      activeExecutiveObjectId,
+      activeLoopIdStore,
+      activeMode,
+      activePanelFamilyAuditRef,
+      activeSidePanel,
+      analyzeFull,
+      analyzeInFlightRef,
+      analyzePreflightArmedRef,
+      analyzeSelectionLockRef,
+      appendMessages,
+      applyDecisionActions,
+      applyExecutionResultToUi,
+      applyProductFlowViewModel,
+      applyRetailTriggerEnhancement,
+      applySceneFromChat,
+      applyUICommands,
+      buildChatEffectSignature,
+      buildChatRequestPayload,
+      buildFailureResponse,
+      buildPersistedProjectSnapshot,
+      buildStarterSceneFromText,
+      buildUnifiedReactionFromChatResponse,
+      buildUnifiedReactionFromRetailTriggerConfig,
+      chatLoopGuardActiveRef,
+      chatLoopGuardDepthRef,
+      chatRequestSeqRef,
+      chatToBackendLifecycle,
+      clearAllOverridesRef,
+      demoFlowPauseRef,
+      deriveProductFlowViewModel,
+      deriveVisualPatch,
+      detectRetailTriggerConfig,
+      emitChatResult,
+      emitDebugEvent,
+      emitGuardRailAlerts,
+      entryFlowStateRef,
+      environmentConfig,
+      episodeId,
+      evaluateChatPipelineStability,
+      evaluateSelectedObjectGuard,
+      executeNexoraAction,
+      finalizeChatRequest,
+      firstMeaningfulState,
+      focusMode,
+      focusModeStore,
+      focusPinned,
+      focusedId,
+      getAnalyzeLockedObjectId,
+      getChatLifecycleErrorMessage,
+      getHighlightedObjectIdsFromSelection,
+      getLocalChatResponse,
+      getRecentDebugEvents,
+      hasMeaningfulSceneMutation,
+      isAbortLikeError,
+      isAnalyzeLikeUserText,
+      isLatestChatRequest,
+      isMeaningfulPanel,
+      isPilotProductMode,
+      isRetailDemoScene,
+      isRetailScenePayload,
+      isSendingRef,
+      lastAppliedChatPipelineSignatureRef,
+      lastAppliedPanelEffectRef,
+      lastAppliedSceneEffectRef,
+      lastChatDedupRef,
+      latestChatPipelineRunIdRef,
+      loading,
+      logPanelGuidedPromptWarn,
+      loopGuardInFlightByTextRef,
+      makeMsg,
+      mapNexoraTargetPanelToRightPanelView,
+      markUserStartedFlow,
+      memory,
+      mergeNextObjectSelectionFromUnifiedReaction,
+      messagesRef,
+      nextDemoFlowSequence,
+      normalizeChatInputForDedup,
+      normalizeSceneJson,
+      objectProfiles,
+      objectSelection,
+      overridesRef,
+      panelFamilyDataFromExecutionPayloads,
+      passiveDeselectGuardUntilRef,
+      pendingPanelFamilyAuditClearTimeoutRef,
+      pendingVisualPatchesRef,
+      pickAcceptedChatSceneReplacement,
+      pinnedId,
+      prefs,
+      productModeContext,
+      pruneOverridesRef,
+      pulseObjectByText,
+      pushHistory,
+      reactionModeHintFromIntent,
+      readPanelFamilySliceDiagnostics,
+      resolveChatPipelinePanelOpen,
+      resolveExplicitSelectedObject,
+      resolveNexoraIntentRoute,
+      resolvePreferredPanelFamilyFromIntent,
+      rightPanelRouteLockRef,
+      rightPanelState,
+      rightPanelTab,
+      routeChatInput,
+      runGuardChecks,
+      runNexoraChatPromptPipeline,
+      saveProject,
+      sceneJson,
+      selectedIdRef,
+      selectedObjectIdState,
+      selectedObjectInfo,
+      setActiveMode,
+      setActiveSidePanel,
+      setCameraLockedByUser,
+      setCenterComponent,
+      setCenterComponentVisible,
+      setCenterOverlay,
+      setChatDelayedBusy,
+      setChatRequestStatus,
+      setEntryFlowState,
+      setEpisodeId,
+      setLastActions,
+      setLoading,
+      setMemory,
+      setMessages,
+      setNoSceneUpdate,
+      setObjectSelection,
+      setOverrideRef,
+      setPrefs,
+      setSceneWarn,
+      setSelectedObjectIdState,
+      setSourceLabel,
+      shouldAcceptIncomingSceneReplacement,
+      shouldApplyExecutionResultImmediately,
+      traceAnalyzeObjectRoute,
+      traceAuditRef,
+      traceDemoFlowEvent,
+      tracePanelFamilyAudit,
+      tracePanelFlowRuntime,
+      updateMemory,
+      updateObjectUx,
+      updateSelectedObjectInfo,
+      userSafeChatMessage,
+      visibleDecisionCockpit,
+      visibleFocusedId,
+      visibleObjectSelection,
+      visibleResponseData,
+      visibleRiskPropagation,
+      visibleSceneJson,
+      visibleSelectedObjectId,
+      visibleStrategicAdvice,
+      writeChatPipelineDebug,
+    }),
+    [
     activeExecutiveObjectId,
     activeMode,
     activeDomainExperience,
@@ -12110,7 +9840,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     productModeContext,
     rightPanelTab,
     selectedObjectIdState,
-    applyTypeCChatIntent,
     applyExecutionResultToUi,
     applyProductFlowViewModel,
     applyUICommands,
@@ -12119,7 +9848,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     sceneJson,
     emitChatResult,
     applyRetailTriggerEnhancement,
-    applyUnifiedSceneReaction,
     pulseObjectByText,
     updateSelectedObjectInfo,
     updateObjectUx,
@@ -12127,9 +9855,51 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     isLatestChatRequest,
     isPilotProductMode,
     objectSelection,
-    requestPanelAuthorityOpen,
     writeChatPipelineDebug,
-  ]);
+    ],
+  );
+
+  // --- Chat pipeline controller ---
+  // O4 complete: `useChatPipelineController` owns sendText + pipeline; shell owns chat state + deps + bridges.
+  const chatPipelineController = useChatPipelineController({
+    messages,
+    inputValue: input,
+    isLoading: loading || chatRequestStatus === "submitting",
+    error: chatPipelineShellError,
+    lastRunId: latestChatPipelineRunIdRef.current,
+    refs: chatPipelineRefs,
+    bridges: chatPipelineBridges,
+    sendTextDeps: chatPipelineSendTextDeps,
+    setMessages,
+    setChatRequestStatus,
+    setLoading,
+    setChatDelayedBusy,
+    releaseChatSendingLock,
+  });
+  const {
+    callbacks: { sendText, appendMessage, replaceMessages, clearChatError },
+    emitChatPipelineDiagnostic,
+  } = chatPipelineController;
+  useEffect(() => {
+    chatPipelineDiagnosticRef.current = emitChatPipelineDiagnostic;
+    return () => {
+      chatPipelineDiagnosticRef.current = null;
+    };
+  }, [emitChatPipelineDiagnostic]);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (homeScreenQa5ArchitectureStableLoggedRef.current) return;
+    homeScreenQa5ArchitectureStableLoggedRef.current = true;
+    globalThis.console.info("[Nexora][QA][ArchitectureStable]", {
+      hasSceneController: Boolean(sceneApplyController),
+      hasRightPanelController: Boolean(rightPanelController),
+      hasChatController: Boolean(chatPipelineController),
+      hasTypeCController: Boolean(typeCOrchestration),
+      qaCompleted: true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- QA:5 once-only shell composition marker (ref-guarded)
+  }, []);
+
   const runChatInputForQA = useCallback(
     async (qaInput: string) => {
       const requestId = `qa:${Date.now()}:${Math.random().toString(36).slice(2, 7)}`;
@@ -15911,42 +13681,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   );
   const typeCExecutiveSummary = typeCDerivedExecutiveSummary ?? typeCCommandExecutiveSummary;
 
-  const enhanceTypeCExecutiveSummary = useCallback((): TypeCAIExecutiveInsight | null => {
-    if (!typeCExecutiveSummary) return null;
-    const objects = Array.isArray(sceneJson?.scene?.objects) ? sceneJson.scene.objects : [];
-    const labelFor = (id: string | null | undefined): string | null => {
-      if (!id) return null;
-      const object = objects.find((candidate) => String(candidate.id ?? "") === id);
-      const label = String(object?.label ?? object?.name ?? object?.display_label ?? "").trim();
-      return label || null;
-    };
-    const insight = buildTypeCAIExecutiveInsight({
-      deterministicSummary: typeCExecutiveSummary,
-      sceneContext: {
-        objectCount: objects.length,
-        selectedObjectLabel: labelFor(selectedObjectIdState),
-        focusedObjectLabel: labelFor(focusedId),
-      },
-    });
-
-    setTypeCAIExecutiveInsight(insight);
-
-    if (process.env.NODE_ENV !== "production") {
-      globalThis.console.log("[Nexora][TypeC][AIExecutiveInsightCreated]", {
-        source: insight.source,
-        headline: insight.headline,
-      });
-    }
-
-    return insight;
-  }, [focusedId, sceneJson, selectedObjectIdState, typeCExecutiveSummary]);
-
-  const handleEnhanceTypeCExecutiveSummary = useCallback(async (): Promise<void> => {
-    const insight = enhanceTypeCExecutiveSummary();
-    if (!insight) {
-      throw new Error("type_c_ai_insight_unavailable");
-    }
-  }, [enhanceTypeCExecutiveSummary]);
+  typeCExecutiveInsightContextRef.current = {
+    focusedId,
+    selectedObjectIdState,
+    typeCExecutiveSummary,
+  };
 
   const typeCExecutiveActions = useMemo(
     () =>
@@ -16680,6 +14419,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     ).__NEXORA_LAST_MULTI_SOURCE_INGESTION__ = lastMultiSourceIngestion;
   }, [isDevIngestion, lastMultiSourceIngestion]);
 
+  // O1 Extraction Boundary: Ingestion controller
   const runBusinessTextIngestionPipeline = useCallback(
     async (text: string, sourceLabel: string): Promise<boolean> => {
       const t = text.trim();
@@ -19519,12 +17259,136 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   );
 
   // --- Render ---
+  /** D3.14 — read-model: Nexora pipeline HUD + (dev) Type-C pipeline events → `deriveOperationalMonitoringSnapshot`. */
+  const d3MonitoringSnapshot = useMemo(() => {
+    return runD3DevTimed("deriveOperationalMonitoringSnapshot", () => {
+      const pipelineStatus: OperationalPipelineStatusBrief = {
+        status: pipelineStatusUi.status,
+        source: pipelineStatusUi.source,
+        signalsCount: pipelineStatusUi.signalsCount,
+        mappedObjectsCount: pipelineStatusUi.mappedObjectsCount,
+        fragilityLevel: pipelineStatusUi.fragilityLevel,
+        summary: pipelineStatusUi.summary,
+        insightLine: pipelineStatusUi.insightLine,
+        errorMessage: pipelineStatusUi.errorMessage,
+        updatedAt: pipelineStatusUi.updatedAt,
+      };
+      const pipelineEventsSlice =
+        process.env.NODE_ENV !== "production" ? typeCPipelineEventsRef.current.slice() : [];
+
+      return deriveOperationalMonitoringSnapshot(
+        toMonitoringSnapshotInput({
+          pipelineEvents: pipelineEventsSlice,
+          pipelineStatus,
+        })
+      );
+    });
+  }, [
+    buildPipelineStatusSignature(pipelineStatusUi),
+    stableSceneObjectsSignature,
+    typeCDecisionReadiness?.id,
+    typeCScenarioState,
+    typeCAlerts,
+    executionState,
+    auditHudEpoch,
+  ]);
+
+  const d3OperationalPrevProbe =
+    prevD3MonitoringSnapshotRef.current == null
+      ? "__null__"
+      : `${prevD3MonitoringSnapshotRef.current.id}|${prevD3MonitoringSnapshotRef.current.updatedAt}`;
+
+  const d3OperationalChangeSummary = useMemo(
+    () =>
+      detectOperationalChanges({
+        previousSnapshot: prevD3MonitoringSnapshotRef.current,
+        currentSnapshot: d3MonitoringSnapshot,
+      }),
+    [d3MonitoringSnapshot, d3OperationalPrevProbe]
+  );
+
+  useLayoutEffect(() => {
+    prevD3MonitoringSnapshotRef.current = d3MonitoringSnapshot;
+  }, [d3MonitoringSnapshot]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const s = d3OperationalChangeSummary;
+    const sig = `${d3MonitoringSnapshot.updatedAt}|${s.totalChanges}|${s.worseningCount}|${s.improvingCount}|${s.stableCount}`;
+    if (lastOperationalChangeLogSigRef.current === sig) return;
+    lastOperationalChangeLogSigRef.current = sig;
+    globalThis.console.debug("[Nexora][OperationalChange]", {
+      totalChanges: s.totalChanges,
+      criticalChanges: s.criticalChanges,
+      worseningCount: s.worseningCount,
+      improvingCount: s.improvingCount,
+      stableCount: s.stableCount,
+    });
+  }, [d3MonitoringSnapshot, d3OperationalChangeSummary]);
+
+  const d3PropagationPreview = useMemo(
+    () =>
+      runD3DevTimed("deriveOperationalPropagationPreview", () =>
+        deriveOperationalPropagationPreview({
+          monitoringSnapshot: d3MonitoringSnapshot,
+          operationalChangeSummary: d3OperationalChangeSummary,
+          sceneJson: stableVisibleSceneJson,
+        })
+      ),
+    [d3MonitoringSnapshot, d3OperationalChangeSummary, stableVisibleSceneJson]
+  );
+
+  const d3OperationalRiskImpactMap = useMemo(
+    () =>
+      runD3DevTimed("deriveOperationalRiskImpactMap", () =>
+        deriveOperationalRiskImpactMap({
+          monitoringSnapshot: d3MonitoringSnapshot,
+          operationalChangeSummary: d3OperationalChangeSummary,
+          propagationPreview: d3PropagationPreview,
+          sceneJson: stableVisibleSceneJson,
+        })
+      ),
+    [d3MonitoringSnapshot, d3OperationalChangeSummary, d3PropagationPreview, stableVisibleSceneJson]
+  );
+
+  const d3OperationalAlerts = useMemo(
+    () =>
+      runD3DevTimed("evaluateOperationalAlerts", () =>
+        evaluateOperationalAlerts({
+          monitoringSnapshot: d3MonitoringSnapshot,
+          operationalChangeSummary: d3OperationalChangeSummary,
+          propagationPreview: d3PropagationPreview,
+          operationalRiskImpactMap: d3OperationalRiskImpactMap,
+          rules: defaultOperationalAlertRules,
+        })
+      ),
+    [d3MonitoringSnapshot, d3OperationalChangeSummary, d3PropagationPreview, d3OperationalRiskImpactMap]
+  );
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    logD3OperationalDiagnosticsDeduped({
+      monitoringSnapshot: d3MonitoringSnapshot,
+      operationalChangeSummary: d3OperationalChangeSummary,
+      propagationPreview: d3PropagationPreview,
+      operationalRiskImpactMap: d3OperationalRiskImpactMap,
+      alertEvaluation: d3OperationalAlerts,
+    });
+  }, [d3MonitoringSnapshot, d3OperationalChangeSummary, d3PropagationPreview, d3OperationalRiskImpactMap, d3OperationalAlerts]);
+
   return (
     <div
       id="nexora-home"
       style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}
     >
       {sceneNode}
+      <D3StatusHud
+        snapshot={d3MonitoringSnapshot}
+        changeSummary={d3OperationalChangeSummary}
+        propagationPreview={d3PropagationPreview}
+        riskImpactMap={d3OperationalRiskImpactMap}
+        alertEvaluation={d3OperationalAlerts}
+      />
       {leftCommandPortalNode}
       {timelineInspectorNode}
       {alertOverlayNode}

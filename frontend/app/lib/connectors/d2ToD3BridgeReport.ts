@@ -1,6 +1,6 @@
 import { buildD2ProductionReadinessReport } from "../architecture/d2ProductionReadinessReport.ts";
 import { buildD3ConnectorReadinessChecklist } from "./d3ConnectorReadinessChecklist.ts";
-import { listNexoraConnectors } from "./connectorRegistry.ts";
+import { listNexoraConnectors } from "./nexoraLiveConnectorRegistry.ts";
 
 export type D2ToD3BridgeReport = {
   readyForD3: boolean;

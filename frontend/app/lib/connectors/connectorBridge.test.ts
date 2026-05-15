@@ -4,7 +4,7 @@ import test from "node:test";
 import { buildAsyncConnectorBatch, shouldRecomputeConnectorIntelligence } from "./asyncOrchestrationSafeguards.ts";
 import { resolveConnectorDomainHints } from "./connectorDomainMapping.ts";
 import { runConnectorIngressBoundary } from "./connectorIngressBoundary.ts";
-import { getNexoraConnector, listNexoraConnectors } from "./connectorRegistry.ts";
+import { getNexoraConnector, listNexoraConnectors } from "./nexoraLiveConnectorRegistry.ts";
 import { buildD2ToD3BridgeReport } from "./d2ToD3BridgeReport.ts";
 import { buildD3ConnectorReadinessChecklist } from "./d3ConnectorReadinessChecklist.ts";
 import { normalizeExternalSignal, normalizeExternalSignals } from "./normalizeExternalSignals.ts";

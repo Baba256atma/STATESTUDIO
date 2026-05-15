@@ -1,5 +1,5 @@
 import type { NexoraDomainId } from "../domain/domainTypes.ts";
-import { getNexoraConnector } from "./connectorRegistry.ts";
+import { getNexoraConnector } from "./nexoraLiveConnectorRegistry.ts";
 
 const CONNECTOR_DOMAIN_MAP: Record<string, NexoraDomainId[]> = {
   jira: ["pmo"],

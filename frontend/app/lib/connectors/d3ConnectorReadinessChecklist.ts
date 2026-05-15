@@ -1,4 +1,4 @@
-import { listNexoraConnectors } from "./connectorRegistry.ts";
+import { listNexoraConnectors } from "./nexoraLiveConnectorRegistry.ts";
 import { listConnectorDomainMappings } from "./connectorDomainMapping.ts";
 
 export type D3ConnectorReadinessCategory =
