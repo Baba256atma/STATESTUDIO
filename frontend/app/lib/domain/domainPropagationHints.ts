@@ -1,3 +1,5 @@
+import type { DomainRelationshipSemantic } from "./domainRelationshipTypes.ts";
+
 export type DomainPropagationHint = {
   sourceObjectId: string;
   targetObjectId: string;
@@ -29,6 +31,60 @@ function propagationTypeFor(edge: unknown): DomainPropagationHint["propagationTy
   return "delay";
 }
 
+function semanticFor(edge: unknown): DomainRelationshipSemantic | null {
+  const record = asRecord(edge);
+  const metadata = asRecord(record.metadata);
+  const relationshipMeta = asRecord(metadata.domainRelationshipMeta ?? metadata.relationshipMeta);
+  const raw = String(relationshipMeta.semantic ?? metadata.semantic ?? record.semantic ?? "").toLowerCase();
+  if (
+    [
+      "dependency",
+      "flow",
+      "risk",
+      "ownership",
+      "communication",
+      "financial",
+      "control",
+      "support",
+      "monitoring",
+    ].includes(raw)
+  ) {
+    return raw as DomainRelationshipSemantic;
+  }
+  const relationshipType = String(metadata.relationshipType ?? record.relationshipType ?? record.kind ?? record.type ?? "").toLowerCase();
+  if (relationshipType.includes("risk")) return "risk";
+  if (relationshipType.includes("flow")) return "flow";
+  if (relationshipType.includes("constraint") || relationshipType.includes("decision")) return "control";
+  if (relationshipType.includes("feedback")) return "monitoring";
+  if (relationshipType.includes("dependency")) return "dependency";
+  return null;
+}
+
+function semanticMultiplier(semantic: DomainRelationshipSemantic | null): number {
+  switch (semantic) {
+    case "dependency":
+      return 1.18;
+    case "risk":
+      return 1.22;
+    case "financial":
+      return 1.12;
+    case "flow":
+      return 1.08;
+    case "control":
+      return 0.92;
+    case "ownership":
+      return 0.86;
+    case "support":
+      return 0.82;
+    case "communication":
+      return 0.78;
+    case "monitoring":
+      return 0.65;
+    default:
+      return 1;
+  }
+}
+
 export function deriveDomainPropagationHints(params: {
   objects: unknown[];
   edges?: unknown[];
@@ -55,10 +111,11 @@ export function deriveDomainPropagationHints(params: {
 
     const weight = typeof record.weight === "number" && Number.isFinite(record.weight) ? record.weight : 0.55;
     const typeBoost = propagationType === "risk" ? 0.16 : propagationType === "dependency" ? 0.08 : 0;
+    const semantic = semanticFor(edge);
     hints.push({
       sourceObjectId: from,
       targetObjectId: to,
-      propagationStrength: Number(clamp01(weight + typeBoost).toFixed(2)),
+      propagationStrength: Number(clamp01((weight + typeBoost) * semanticMultiplier(semantic)).toFixed(2)),
       propagationType,
     });
   }

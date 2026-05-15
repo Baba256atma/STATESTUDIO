@@ -44,3 +44,37 @@ test("risk paths become risk propagation hints", () => {
 
   assert.equal(hints.find((hint) => hint.sourceObjectId === "inventory")?.propagationType, "risk");
 });
+
+test("semantic dependency strengthens propagation safely", () => {
+  const hints = deriveDomainPropagationHints({
+    objects,
+    edges: [
+      {
+        from: "supplier",
+        to: "inventory",
+        kind: "domain_flow",
+        weight: 0.5,
+        metadata: { domainRelationshipMeta: { semantic: "dependency" } },
+      },
+    ],
+  });
+
+  assert.equal(hints[0]?.propagationStrength, 0.59);
+});
+
+test("semantic monitoring weakens propagation safely", () => {
+  const hints = deriveDomainPropagationHints({
+    objects,
+    edges: [
+      {
+        from: "supplier",
+        to: "inventory",
+        kind: "domain_flow",
+        weight: 0.5,
+        metadata: { domainRelationshipMeta: { semantic: "monitoring" } },
+      },
+    ],
+  });
+
+  assert.equal(hints[0]?.propagationStrength, 0.33);
+});

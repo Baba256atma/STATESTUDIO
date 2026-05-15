@@ -24,4 +24,4 @@ out/
 .DS_Store
 
 # Temporary compiler output for psych smoke test
-.tmp/
+.tmp/*.blend

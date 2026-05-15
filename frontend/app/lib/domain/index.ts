@@ -56,6 +56,14 @@ export type {
   DomainRelationshipMatch,
 } from "./domainRelationshipEngine.ts";
 export { generateDomainRelationships } from "./domainRelationshipEngine.ts";
+export type {
+  DomainRelationshipMeta,
+  DomainRelationshipSemantic,
+} from "./domainRelationshipTypes.ts";
+export { inferDomainRelationshipMeta } from "./domainRelationshipRules.ts";
+export type { EnrichedDomainRelationship } from "./enrichDomainRelationships.ts";
+export { enrichDomainRelationships } from "./enrichDomainRelationships.ts";
+export { explainDomainRelationship } from "./domainRelationshipExplanation.ts";
 
 export type { DomainEdgeCreationResult } from "./domainEdgeFactory.ts";
 export { createDomainEdges } from "./domainEdgeFactory.ts";
@@ -83,15 +91,39 @@ export { calculateObjectFragilityScores } from "./domainFragilityScoring.ts";
 export { evaluateDomainRiskSignals } from "./domainRiskEvaluator.ts";
 export type { DomainPropagationHint } from "./domainPropagationHints.ts";
 export { deriveDomainPropagationHints } from "./domainPropagationHints.ts";
+export type {
+  DomainPropagationEvent,
+  DomainTimelineFrame,
+} from "./domainTimelinePropagation.ts";
+export { buildDomainPropagationFrames } from "./domainPropagationBuilder.ts";
+export { buildPropagationVisualizationState } from "./domainPropagationVisualization.ts";
+export { summarizePropagationTimeline } from "./domainTimelineSummary.ts";
 export { buildDomainRiskSceneAnnotations } from "./domainRiskSceneAnnotations.ts";
 export { summarizeDomainRiskSignals } from "./domainRiskSummary.ts";
 
 export type {
   DomainScenario,
+  DomainScenarioActionType,
   DomainScenarioImpact,
   DomainScenarioSeverity,
+  DomainScenarioType,
 } from "./domainScenarioTypes.ts";
 export { generateDomainScenarios } from "./domainScenarioGenerator.ts";
+export { deriveDomainScenarios } from "./deriveDomainScenarios.ts";
+export { matchDomainScenarioRules } from "./domainScenarioRules.ts";
+export type {
+  DomainScenarioIntelligencePriority,
+  DomainScenarioIntelligenceScore,
+} from "./domainScenarioIntelligenceScoring.ts";
+export { scoreDomainScenarioIntelligence } from "./domainScenarioIntelligenceScoring.ts";
+export {
+  buildDomainScenarioExecutiveSummary,
+  buildDomainScenarioProbableImpact,
+  buildDomainScenarioRecommendedFocus,
+  buildDomainScenarioTitle,
+} from "./domainScenarioNarratives.ts";
+export type { DomainScenarioOverlayState } from "./domainScenarioOverlays.ts";
+export { buildDomainScenarioOverlayState } from "./domainScenarioOverlays.ts";
 export type { DomainScenarioScore } from "./domainScenarioScoring.ts";
 export { scoreDomainScenarios } from "./domainScenarioScoring.ts";
 export type { DomainScenarioComparison } from "./domainScenarioComparison.ts";
@@ -121,6 +153,24 @@ export {
   validateDomainRiskSignal,
   validateDomainScenario,
 } from "./domainContractValidation.ts";
+export type {
+  DomainProjectLoadResult,
+  DomainProjectSaveResult,
+  DomainProjectSnapshot,
+  DomainProjectVersion,
+} from "./domainProjectTypes.ts";
+export { buildDomainProjectSnapshot } from "./domainProjectSnapshot.ts";
+export {
+  isDomainProjectSnapshot,
+  validateDomainProjectSnapshot,
+} from "./domainProjectValidation.ts";
+export { restoreDomainProjectScene } from "./domainProjectRestore.ts";
+export {
+  DOMAIN_PROJECT_STORAGE_KEY,
+  clearDomainProjectSnapshot,
+  loadDomainProjectSnapshot,
+  saveDomainProjectSnapshot,
+} from "./domainProjectStorage.ts";
 export {
   buildDomainSignature,
   dedupeBySignature,

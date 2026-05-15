@@ -47,6 +47,7 @@ import { deriveAnimatableVisualState } from "./animatableObject/deriveAnimatable
 import { buildAnimatableLabelState } from "./animatableObject/buildAnimatableLabelState";
 import { buildAnimatableMotionState } from "./animatableObject/buildAnimatableMotionState";
 import { getCalmSeverityVisual } from "../../lib/scene/calmSeverityVisuals";
+import { resolveSceneObjectIcon } from "../../lib/scene/objectIconMapping";
 
 const CALM_MODE = true;
 const STATIC_OBJECT_TRANSFORMS = true;
@@ -179,6 +180,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     [theme, modeId]
   );
   const tokens = useMemo(() => getThemeTokens(theme ?? "night", modeId), [theme, modeId]);
+  const objectIcon = useMemo(() => resolveSceneObjectIcon(obj), [obj]);
   const visualRole = useMemo<ObjectVisualRole>(() => deriveObjectVisualRole(obj, tags, visualContext), [obj, tags, visualContext]);
   const visualProfile = useMemo(() => buildObjectVisualProfile(obj, tags, visualContext), [obj, tags, visualContext]);
   const hierarchyStyle = useMemo(() => roleToHierarchyStyle(visualRole, visualContext), [visualRole, visualContext]);
@@ -1220,11 +1222,50 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const captionText = ((overrideEntry.caption ?? "") as string).trim();
   const showCaption = overrideEntry.showCaption === true;
   const labelY = ((baseScale[1] ?? 1) * (STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform)) * effectiveScannerScaleMul * 0.6 + 0.24;
+  const iconY = Math.max(0.1, labelY * 0.24);
   const scannerLabelYOffset = isScannerLabelOwner ? 0.56 : 0.45;
 
   return (
     <group ref={ref} position={STATIC_OBJECT_TRANSFORMS ? staticPosition : finalPosition} visible={finalVisible}>
       {node}
+      {objectIcon ? (
+        <Html position={[0, iconY, 0]} center style={{ pointerEvents: "none" }}>
+          <div
+            aria-hidden="true"
+            style={{
+              width: 28,
+              height: 28,
+              display: "grid",
+              placeItems: "center",
+              borderRadius: "999px",
+              background:
+                theme === "day"
+                  ? "radial-gradient(circle, rgba(255,255,255,0.88), rgba(255,255,255,0.22) 62%, rgba(255,255,255,0) 74%)"
+                  : "radial-gradient(circle, rgba(15,23,42,0.52), rgba(15,23,42,0.18) 62%, rgba(15,23,42,0) 74%)",
+              opacity: dimOthers ? 0.36 : 0.82,
+              filter:
+                theme === "day"
+                  ? "drop-shadow(0 0 5px rgba(15,23,42,0.28))"
+                  : "drop-shadow(0 0 7px rgba(125,211,252,0.34))",
+              transform: isFocused || isSelected ? "scale(1.08)" : "scale(1)",
+              transition: "opacity 180ms ease, transform 180ms ease",
+              userSelect: "none",
+            }}
+          >
+            <img
+              src={objectIcon.src}
+              alt=""
+              draggable={false}
+              style={{
+                width: 18,
+                height: 18,
+                display: "block",
+                objectFit: "contain",
+              }}
+            />
+          </div>
+        </Html>
+      ) : null}
       {showCaption && captionText.length > 0 && (
         <Html position={[0, labelY, 0]} center style={{ pointerEvents: "none" }}>
           <div
