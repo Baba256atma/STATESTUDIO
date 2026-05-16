@@ -173,15 +173,23 @@ export function normalizePropagationOverlay(
   if (!candidate) return null;
 
   const impactedNodes = Array.isArray(candidate.impacted_nodes)
-    ? candidate.impacted_nodes.map(normalizeNodeImpact).filter(Boolean)
+    ? candidate.impacted_nodes
+        .map(normalizeNodeImpact)
+        .filter((n): n is PropagationNodeImpact => n != null)
     : Array.isArray(decisionSimulationRecord?.impacted_nodes)
-      ? decisionSimulationRecord.impacted_nodes.map(normalizeNodeImpact).filter(Boolean)
-    : [];
+      ? decisionSimulationRecord.impacted_nodes
+          .map(normalizeNodeImpact)
+          .filter((n): n is PropagationNodeImpact => n != null)
+      : [];
   const impactedEdges = Array.isArray(candidate.impacted_edges)
-    ? candidate.impacted_edges.map(normalizeEdgeImpact).filter(Boolean)
+    ? candidate.impacted_edges
+        .map(normalizeEdgeImpact)
+        .filter((e): e is PropagationEdgeImpact => e != null)
     : Array.isArray(decisionSimulationRecord?.propagation)
-      ? decisionSimulationRecord.propagation.map(normalizeEdgeImpact).filter(Boolean)
-    : [];
+      ? decisionSimulationRecord.propagation
+          .map(normalizeEdgeImpact)
+          .filter((e): e is PropagationEdgeImpact => e != null)
+      : [];
   const sourceObjectId = String(candidate.source_object_id ?? candidate.sourceId ?? "").trim() || null;
 
   if (!sourceObjectId && impactedNodes.length === 0 && impactedEdges.length === 0) return null;

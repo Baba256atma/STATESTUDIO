@@ -102,7 +102,7 @@ function classifyRollout(
     };
   }
 
-  const pilotEligible = qa.status === "ready" && qa.score >= 0.75 && ro?.allowPilot !== false;
+  const pilotEligible = qa.status === "ready" && qa.score >= 0.75;
 
   if (pilotEligible) {
     if (!ro?.allowProduct) {
@@ -177,11 +177,11 @@ export function toSafeLocaleDomainIdForRollout(domainId?: string | null): Nexora
 
 /** B.13 trust delta with pack `trustBias`, using rollout-safe locale id in pilot mode. */
 export function getB13TrustEvidenceBiasMerged(
-  domainId?: string | null,
   mergedSignalCount: number,
   successfulSources: number,
+  domainId?: string | null,
 ): number {
-  let delta = getB13TrustEvidenceBias(domainId, mergedSignalCount, successfulSources);
+  let delta = getB13TrustEvidenceBias(mergedSignalCount, successfulSources, domainId);
   const safeId = toSafeLocaleDomainIdForRollout(domainId);
   const b = getNexoraLocalePack(safeId).trustBias;
   if (typeof b === "number") delta += b;

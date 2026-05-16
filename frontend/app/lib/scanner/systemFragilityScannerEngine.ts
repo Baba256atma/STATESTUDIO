@@ -139,7 +139,7 @@ function normalizeRuntimeModel(runtimeModel?: any): NormalizedRuntimeModel {
             activityLevel: clamp01(object?.activityLevel ?? 0.5),
             tags: safeList(object?.tags),
           }))
-          .filter((object) => object.id)
+          .filter((obj: NormalizedRuntimeModel["objects"][number]) => obj.id)
       : [],
     relations: Array.isArray(runtimeModel?.relations)
       ? runtimeModel.relations
@@ -152,7 +152,7 @@ function normalizeRuntimeModel(runtimeModel?: any): NormalizedRuntimeModel {
             volatility: clamp01(relation?.volatility ?? 0.3),
             tags: safeList(relation?.tags),
           }))
-          .filter((relation) => relation.id && relation.from && relation.to)
+          .filter((rel: NormalizedRuntimeModel["relations"][number]) => rel.id && rel.from && rel.to)
       : [],
     loops: Array.isArray(runtimeModel?.loops)
       ? runtimeModel.loops
@@ -165,7 +165,7 @@ function normalizeRuntimeModel(runtimeModel?: any): NormalizedRuntimeModel {
             stability: clamp01(loop?.stability ?? 0.7),
             tags: safeList(loop?.tags),
           }))
-          .filter((loop) => loop.id)
+          .filter((lp: NormalizedRuntimeModel["loops"][number]) => lp.id)
       : [],
     kpis: Array.isArray(runtimeModel?.kpis)
       ? runtimeModel.kpis
@@ -175,7 +175,7 @@ function normalizeRuntimeModel(runtimeModel?: any): NormalizedRuntimeModel {
             value: clamp01(kpi?.value ?? 0.5),
             trend: normalizeText(kpi?.trend ?? "stable"),
           }))
-          .filter((kpi) => kpi.id)
+          .filter((k: NormalizedRuntimeModel["kpis"][number]) => k.id)
       : [],
   };
 }

@@ -143,6 +143,16 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     isProtectedView: false,
     overridePolicy: "normal",
   },
+  executive_object: {
+    label: "Executive Object",
+    hostRenderKey: "executive_object",
+    componentExists: true,
+    fallbackAllowed: true,
+    fallbackTitle: "Executive Object",
+    fallbackMessage: "Object-scoped executive context is not ready yet.",
+    isProtectedView: false,
+    overridePolicy: "normal",
+  },
   explanation: {
     label: "Explanation",
     hostRenderKey: "explanation",

@@ -141,7 +141,7 @@ export function buildAdaptiveBias(input: {
   const optionConflict = Boolean(memDom && qDom && memDom !== qDom);
 
   let preferredOptionId: string | undefined =
-    qDom && VALID_OPTIONS.has(qDom) && quality.qualityTier !== "low" ? qDom : undefined;
+    qDom && VALID_OPTIONS.has(qDom) ? qDom : undefined;
 
   if (preferredOptionId && preferredOptionConflict(preferredOptionId, memory, outcomesByRunId)) {
     preferredOptionId = undefined;

@@ -112,7 +112,7 @@ export function getB13PayloadAliasExtension(domainId?: string | null): Record<st
 }
 
 /** Evidence bias for trust score (B.13.d), clamped by caller to ±0.1. */
-export function getB13TrustEvidenceBias(domainId?: string | null, mergedSignalCount: number, successfulSources: number): number {
+export function getB13TrustEvidenceBias(mergedSignalCount: number, successfulSources: number, domainId?: string | null): number {
   const key = normalizeB13MaturityDomain(domainId);
   let delta = 0;
   if (key === "finance") {

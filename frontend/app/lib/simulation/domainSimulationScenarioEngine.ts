@@ -111,6 +111,11 @@ function clamp01(value: number | undefined): number {
   return numeric;
 }
 
+function clamp01FromUnknown(value: unknown, fallback: number): number {
+  const n = Number(value);
+  return clamp01(Number.isFinite(n) ? n : fallback);
+}
+
 function uniq(values: string[]): string[] {
   return Array.from(new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean)));
 }
@@ -251,77 +256,81 @@ export function normalizeScenarioDefinition(
 
 export function buildBaselineObjectStateMap(runtimeModel: any): Record<string, Record<string, any>> {
   const objects = Array.isArray(runtimeModel?.objects) ? runtimeModel.objects : [];
-  return objects.reduce<ObjectStateMap>((acc, object) => {
-    const id = String(object?.id ?? "").trim();
+  return objects.reduce((acc: ObjectStateMap, object: unknown) => {
+    const id = String((object as { id?: unknown })?.id ?? "").trim();
     if (!id) return acc;
+    const o = object as Record<string, unknown>;
     acc[id] = {
       id,
-      label: typeof object?.label === "string" ? object.label : id,
-      coreRole: object?.coreRole ?? null,
-      domainId: object?.domainId ?? null,
-      activityLevel: clamp01(object?.activityLevel ?? 0.5),
-      riskLevel: clamp01(object?.riskLevel ?? 0.2),
-      stabilityLevel: clamp01(object?.stabilityLevel ?? 0.8),
-      tags: Array.isArray(object?.tags) ? uniq(object.tags.map((value: unknown) => String(value))) : [],
-      metadata: normalizeMetadata(object?.metadata),
+      label: typeof o.label === "string" ? o.label : id,
+      coreRole: o.coreRole ?? null,
+      domainId: o.domainId ?? null,
+      activityLevel: clamp01FromUnknown(o.activityLevel, 0.5),
+      riskLevel: clamp01FromUnknown(o.riskLevel, 0.2),
+      stabilityLevel: clamp01FromUnknown(o.stabilityLevel, 0.8),
+      tags: Array.isArray(o.tags) ? uniq(o.tags.map((value: unknown) => String(value))) : [],
+      metadata: normalizeMetadata(o.metadata),
     };
     return acc;
-  }, {});
+  }, {} as ObjectStateMap);
 }
 
 export function buildBaselineRelationStateMap(runtimeModel: any): Record<string, Record<string, any>> {
   const relations = Array.isArray(runtimeModel?.relations) ? runtimeModel.relations : [];
-  return relations.reduce<RelationStateMap>((acc, relation) => {
-    const id = String(relation?.id ?? "").trim();
+  return relations.reduce((acc: RelationStateMap, relation: unknown) => {
+    const id = String((relation as { id?: unknown })?.id ?? "").trim();
     if (!id) return acc;
+    const r = relation as Record<string, unknown>;
     acc[id] = {
       id,
-      from: String(relation?.from ?? "").trim(),
-      to: String(relation?.to ?? "").trim(),
-      relationType: relation?.relationType ?? null,
-      domainId: relation?.domainId ?? null,
-      strength: clamp01(relation?.strength ?? 0.6),
-      volatility: clamp01(relation?.volatility ?? 0.3),
-      tags: Array.isArray(relation?.tags) ? uniq(relation.tags.map((value: unknown) => String(value))) : [],
-      metadata: normalizeMetadata(relation?.metadata),
+      from: String(r.from ?? "").trim(),
+      to: String(r.to ?? "").trim(),
+      relationType: r.relationType ?? null,
+      domainId: r.domainId ?? null,
+      strength: clamp01FromUnknown(r.strength, 0.6),
+      volatility: clamp01FromUnknown(r.volatility, 0.3),
+      tags: Array.isArray(r.tags) ? uniq(r.tags.map((value: unknown) => String(value))) : [],
+      metadata: normalizeMetadata(r.metadata),
     };
     return acc;
-  }, {});
+  }, {} as RelationStateMap);
 }
 
 export function buildBaselineLoopStateMap(runtimeModel: any): Record<string, Record<string, any>> {
   const loops = Array.isArray(runtimeModel?.loops) ? runtimeModel.loops : [];
-  return loops.reduce<LoopStateMap>((acc, loop) => {
-    const id = String(loop?.id ?? "").trim();
+  return loops.reduce((acc: LoopStateMap, loop: unknown) => {
+    const id = String((loop as { id?: unknown })?.id ?? "").trim();
     if (!id) return acc;
+    const lp = loop as Record<string, unknown>;
     acc[id] = {
       id,
-      label: typeof loop?.label === "string" ? loop.label : id,
-      loopType: loop?.loopType ?? null,
-      nodes: Array.isArray(loop?.nodes) ? uniq(loop.nodes.map((value: unknown) => String(value))) : [],
-      intensity: clamp01(loop?.intensity ?? 0.5),
-      stability: clamp01(loop?.stability ?? 0.7),
-      domainId: loop?.domainId ?? null,
-      tags: Array.isArray(loop?.tags) ? uniq(loop.tags.map((value: unknown) => String(value))) : [],
+      label: typeof lp.label === "string" ? lp.label : id,
+      loopType: lp.loopType ?? null,
+      nodes: Array.isArray(lp.nodes) ? uniq(lp.nodes.map((value: unknown) => String(value))) : [],
+      intensity: clamp01FromUnknown(lp.intensity, 0.5),
+      stability: clamp01FromUnknown(lp.stability, 0.7),
+      domainId: lp.domainId ?? null,
+      tags: Array.isArray(lp.tags) ? uniq(lp.tags.map((value: unknown) => String(value))) : [],
     };
     return acc;
-  }, {});
+  }, {} as LoopStateMap);
 }
 
 export function buildBaselineKpiStateMap(runtimeModel: any): Record<string, Record<string, any>> {
   const kpis = Array.isArray(runtimeModel?.kpis) ? runtimeModel.kpis : [];
-  return kpis.reduce<KpiStateMap>((acc, kpi) => {
-    const id = String(kpi?.id ?? "").trim();
+  return kpis.reduce((acc: KpiStateMap, kpi: unknown) => {
+    const id = String((kpi as { id?: unknown })?.id ?? "").trim();
     if (!id) return acc;
+    const k = kpi as Record<string, unknown>;
     acc[id] = {
       id,
-      label: typeof kpi?.label === "string" ? kpi.label : id,
-      value: clamp01(kpi?.value ?? 0.5),
-      trend: kpi?.trend ?? "stable",
-      domainId: kpi?.domainId ?? null,
+      label: typeof k.label === "string" ? k.label : id,
+      value: clamp01FromUnknown(k.value, 0.5),
+      trend: k.trend ?? "stable",
+      domainId: k.domainId ?? null,
     };
     return acc;
-  }, {});
+  }, {} as KpiStateMap);
 }
 
 export function applyScenarioEventToObjectState(

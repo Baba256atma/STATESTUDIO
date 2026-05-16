@@ -37,7 +37,7 @@ export default function FocusInsightCard(props: FocusInsightCardProps) {
       .filter((edge: any) => String(edge?.from ?? "").trim() === selectedId)
       .map((edge: any) => String(edge?.to ?? "").trim())
       .filter(Boolean);
-    return targets.slice(0, 2).map((id) => toLabel(id));
+    return targets.slice(0, 2).map((id: string) => toLabel(id));
   })();
   const signalTitle =
     riskScore >= 0.72 ? "Risk pressure increasing" : riskScore >= 0.35 ? "Risk needs monitoring" : "Risk remains stable";

@@ -1,22 +1,31 @@
 /**
- * Dev-only timing for D3 derivations. No-op in production; avoids noisy logs (threshold ms).
+ * Dev-only timing for D3 derivations. Safe in browser + SSR (performance with Date.now fallback).
  */
 
-const D3_TIMING_LOG_THRESHOLD_MS = 18;
+function monotonicNowMs(): number {
+  try {
+    const perf = globalThis.performance;
+    if (perf && typeof perf.now === "function") {
+      return perf.now();
+    }
+  } catch {
+    // ignore
+  }
+  return Date.now();
+}
 
 export function runD3DevTimed<T>(label: string, fn: () => T): T {
-  if (typeof process !== "undefined" && process.env.NODE_ENV === "production") {
-    return fn();
-  }
-  const perf = typeof globalThis !== "undefined" ? (globalThis as unknown as { performance?: { now: () => number } }).performance : undefined;
-  const t0 = typeof perf?.now === "function" ? perf.now() : Date.now();
+  const startedAt = monotonicNowMs();
+
   try {
     return fn();
   } finally {
-    const t1 = typeof perf?.now === "function" ? perf.now() : Date.now();
-    const ms = t1 - t0;
-    if (ms >= D3_TIMING_LOG_THRESHOLD_MS && typeof globalThis !== "undefined" && globalThis.console?.debug) {
-      globalThis.console.debug(`[Nexora][D3][timing] ${label} ${ms.toFixed(1)}ms`);
+    if (typeof process === "undefined" || process.env.NODE_ENV !== "production") {
+      const durationMs = Math.round((monotonicNowMs() - startedAt) * 100) / 100;
+      globalThis.console?.debug?.("[Nexora][D3DevTimed]", {
+        label,
+        durationMs,
+      });
     }
   }
 }

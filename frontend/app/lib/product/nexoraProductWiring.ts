@@ -23,6 +23,7 @@ import {
 } from "../simulation/domainSimulationScenarioEngine";
 import {
   compareBaselineToScenario,
+  safeNumber,
 } from "../simulation/outcomeComparisonReplay";
 import {
   runAutonomousScenarioExploration,
@@ -105,6 +106,15 @@ function toTitleCase(value: string): string {
     .join(" ");
 }
 
+function tagsFromInterpretationMatches(
+  interpretation: NexoraDomainScenarioKpiInterpretation
+): string[] {
+  const scenarioTags =
+    interpretation.scenarioMatches?.flatMap((m) => m.tags ?? []) ?? [];
+  const kpiTags = interpretation.kpiMatches?.flatMap((m) => m.tags ?? []) ?? [];
+  return [...scenarioTags, ...kpiTags];
+}
+
 function resolveDomainId(args: NexoraUserPromptInput): string | null {
   const explicit = normalizeText(String(args.domainId ?? ""));
   if (explicit) return explicit;
@@ -148,7 +158,7 @@ function buildFallbackScenario(
     domainId,
     severity: interpretation.inferredPrimaryScenario?.severityHint ?? "moderate",
     tags: uniq([
-      ...(interpretation.inferredTags ?? []),
+      ...tagsFromInterpretationMatches(interpretation),
       ...(primaryKpi?.tags ?? []),
       domainId,
     ]),
@@ -216,7 +226,7 @@ function buildGenericObjectsFromScenario(
     label: toTitleCase(role),
     coreRole: role,
     domainId: domainId ?? interpretation.domainId ?? null,
-    tags: uniq([role, ...(interpretation.inferredTags ?? [])]),
+    tags: uniq([role, ...tagsFromInterpretationMatches(interpretation)]),
     sourceType: "product_wiring",
     metadata: {
       source: "scenario_roles",
@@ -289,7 +299,7 @@ function buildProjectForScenario(args: {
     relations,
     loops,
     tags: uniq([
-      ...(args.interpretation.inferredTags ?? []),
+      ...tagsFromInterpretationMatches(args.interpretation),
       ...(args.scenario.tags ?? []),
       "product_wiring",
     ]),

@@ -32,6 +32,20 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function asOptionalNumber(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  return undefined;
+}
+
+function asOptionalString(value: unknown): string | null {
+  if (typeof value === "string" && value.trim().length > 0) return value.trim();
+  return null;
+}
+
 function text(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
 }
@@ -71,18 +85,35 @@ function addIfMissing(
 export function buildDecisionTimeline(params: BuildDecisionTimelineParams): DecisionTimelineEvent[] {
   const responseData = params.responseData ?? null;
   const canonicalRecommendation =
-    params.canonicalRecommendation ?? responseData?.canonical_recommendation ?? null;
-  const canonicalTimelineEvents = Array.isArray(responseData?.timeline_impact?.events)
-    ? responseData.timeline_impact.events
-    : [];
+    (params.canonicalRecommendation ??
+      (responseData?.canonical_recommendation as CanonicalRecommendation | null | undefined)) ??
+    null;
+  const timelineImpact = asRecord(responseData?.timeline_impact);
+  const rawTimelineEvents = timelineImpact?.events;
+  const canonicalTimelineEvents = Array.isArray(rawTimelineEvents) ? rawTimelineEvents : [];
   const auditEvents = Array.isArray(responseData?.audit_events) ? (responseData.audit_events as AuditEvent[]) : [];
   const provenance = Array.isArray(responseData?.trust_provenance) ? (responseData.trust_provenance as TrustProvenance[]) : [];
   const provenanceById = new Map(provenance.map((entry) => [entry.id, entry]));
   const latestMemory = params.memoryEntries?.[0] ?? null;
+  const promptFeedback = asRecord(responseData?.prompt_feedback);
+  const executiveSummarySurface = asRecord(responseData?.executive_summary_surface);
+  const aiReasoning = asRecord(responseData?.ai_reasoning);
+  const decisionSimulation = asRecord(responseData?.decision_simulation);
+  const decisionSimulationImpact = asRecord(decisionSimulation?.impact);
+  const decisionSimulationRisk = asRecord(decisionSimulation?.risk);
+  const decisionSimulationScenario = asRecord(decisionSimulation?.scenario);
+  const decisionComparison = asRecord(responseData?.decision_comparison);
+  const comparison = asRecord(responseData?.comparison);
+  const multiAgentDecision = asRecord(responseData?.multi_agent_decision);
+  const promptFeedbackMultiAgent = asRecord(promptFeedback?.multi_agent);
+  const multiAgentConsensus = asRecord(multiAgentDecision?.consensus);
+  const promptFeedbackMultiAgentConsensus = asRecord(promptFeedbackMultiAgent?.consensus);
+  const multiAgentPlan = asRecord(multiAgentDecision?.plan);
+  const promptFeedbackMultiAgentPlan = asRecord(promptFeedbackMultiAgent?.plan);
   const prompt =
     text(params.prompt) ||
     text(latestMemory?.prompt) ||
-    text(responseData?.prompt_feedback?.prompt) ||
+    text(promptFeedback?.prompt) ||
     "";
 
   const events: DecisionTimelineEvent[] = [];
@@ -116,21 +147,21 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
           title: "AI reasoning generated",
           summary:
             text(responseData?.analysis_summary) ||
-            text(responseData?.executive_summary_surface?.why_it_matters) ||
+            text(executiveSummarySurface?.why_it_matters) ||
             "AI traced how pressure spreads through the current system.",
           source: "ai_reasoning",
           why: cleanArray(
             [
-              ...(responseData?.ai_reasoning?.ambiguity_notes ?? []),
+              ...asArray(aiReasoning?.ambiguity_notes),
               ...(auditEvent.explanation_notes ?? []),
             ],
             4
           ),
           signals: cleanArray(
             [
-              ...(responseData?.ai_reasoning?.matched_concepts ?? []),
-              responseData?.ai_reasoning?.intent,
-              responseData?.ai_reasoning?.path,
+              ...asArray(aiReasoning?.matched_concepts),
+              aiReasoning?.intent,
+              aiReasoning?.path,
             ],
             4
           ),
@@ -142,15 +173,15 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
           type: "simulation",
           title: "Simulation run",
           summary:
-            text(responseData?.decision_simulation?.impact?.summary) ||
-            text(responseData?.decision_simulation?.summary) ||
+            text(decisionSimulationImpact?.summary) ||
+            text(decisionSimulation?.summary) ||
             "Simulation estimated how the decision changes downstream pressure.",
           source: "simulation_engine",
           why: cleanArray(auditEvent.explanation_notes ?? [], 3),
           signals: cleanArray(
             [
-              ...(responseData?.decision_simulation?.risk?.affectedDimensions ?? []),
-              ...(responseData?.decision_simulation?.impact?.directlyAffectedObjectIds ?? []),
+              ...asArray(decisionSimulationRisk?.affectedDimensions),
+              ...asArray(decisionSimulationImpact?.directlyAffectedObjectIds),
             ],
             4
           ),
@@ -162,15 +193,15 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
           type: "comparison",
           title: "Comparison reviewed",
           summary:
-            text(responseData?.decision_comparison?.summary) ||
-            text(responseData?.comparison?.summary) ||
+            text(decisionComparison?.summary) ||
+            text(comparison?.summary) ||
             "Alternative paths were compared to clarify the trade-offs.",
           source: "simulation_engine",
           why: cleanArray(auditEvent.explanation_notes ?? [], 3),
           signals: cleanArray(
             [
-              ...(responseData?.decision_comparison?.tradeoffs ?? []),
-              ...(responseData?.comparison?.notes ?? []),
+              ...asArray(decisionComparison?.tradeoffs),
+              ...asArray(comparison?.notes),
             ],
             4
           ),
@@ -183,7 +214,7 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
           title: "Recommendation created",
           summary:
             text(canonicalRecommendation?.primary?.action) ||
-            text(responseData?.executive_summary_surface?.what_to_do) ||
+            text(executiveSummarySurface?.what_to_do) ||
             "A recommendation was selected from the available system signals.",
           source: "recommendation_engine",
           why: cleanArray(
@@ -252,7 +283,7 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
         timestamp: Date.now() + index,
         type: "reasoning",
         title: text(record?.label) || "Timeline event",
-        summary: text(record?.summary) || text(responseData?.timeline_impact?.summary) || "Risk progression update captured.",
+        summary: text(record?.summary) || text(timelineImpact?.summary) || "Risk progression update captured.",
         source: "recommendation_engine",
         confidence: typeof record?.confidence === "number" ? record.confidence : undefined,
         signals: cleanArray(
@@ -284,7 +315,7 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
   const reasoningProv = findProvenanceByKind(provenance, "prompt_interpretation");
   addIfMissing(
     events,
-    responseData?.ai_reasoning
+    aiReasoning
       ? {
           id: reasoningProv?.id ?? "timeline_reasoning",
           timestamp: toTimestamp(reasoningProv?.timestamp),
@@ -294,13 +325,14 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
             text(responseData?.analysis_summary) ||
             "AI traced how pressure spreads through the current system.",
           source: "ai_reasoning",
-          confidence: reasoningProv?.confidence ?? responseData?.ai_reasoning?.confidence,
-          why: cleanArray(responseData?.ai_reasoning?.ambiguity_notes ?? [], 4),
+          confidence:
+            asOptionalNumber(reasoningProv?.confidence) ?? asOptionalNumber(aiReasoning?.confidence),
+          why: cleanArray(asArray(aiReasoning?.ambiguity_notes), 4),
           signals: cleanArray(
             [
-              ...(responseData?.ai_reasoning?.matched_concepts ?? []),
-              responseData?.ai_reasoning?.path,
-              responseData?.ai_reasoning?.intent,
+              ...asArray(aiReasoning?.matched_concepts),
+              aiReasoning?.path,
+              aiReasoning?.intent,
             ],
             4
           ),
@@ -313,32 +345,32 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
   const multiAgentProv = findProvenanceByKind(provenance, "multi_agent_output");
   addIfMissing(
     events,
-    responseData?.multi_agent_decision || responseData?.prompt_feedback?.multi_agent
+    multiAgentDecision || promptFeedbackMultiAgent
       ? {
           id: multiAgentProv?.id ?? "timeline_multi_agent",
           timestamp: toTimestamp(multiAgentProv?.timestamp),
           type: "multi_agent",
           title: "Multi-agent review completed",
           summary:
-            text(responseData?.multi_agent_decision?.consensus?.summary) ||
-            text(responseData?.prompt_feedback?.multi_agent?.consensus?.summary) ||
+            text(multiAgentConsensus?.summary) ||
+            text(promptFeedbackMultiAgentConsensus?.summary) ||
             "Multiple strategic perspectives were merged into one decision view.",
           source: "multi_agent",
           confidence:
-            multiAgentProv?.confidence ??
-            responseData?.multi_agent_decision?.consensus?.merged_confidence ??
-            responseData?.prompt_feedback?.multi_agent?.consensus?.merged_confidence,
+            asOptionalNumber(multiAgentProv?.confidence) ??
+            asOptionalNumber(multiAgentConsensus?.merged_confidence) ??
+            asOptionalNumber(promptFeedbackMultiAgentConsensus?.merged_confidence),
           why: cleanArray(
             [
-              ...(responseData?.multi_agent_decision?.conflicts ?? []),
-              ...(responseData?.prompt_feedback?.multi_agent?.conflicts ?? []),
+              ...asArray(multiAgentDecision?.conflicts),
+              ...asArray(promptFeedbackMultiAgent?.conflicts),
             ],
             4
           ),
           signals: cleanArray(
             [
-              ...(responseData?.multi_agent_decision?.plan?.selected_agents ?? []),
-              ...(responseData?.prompt_feedback?.multi_agent?.plan?.selected_agents ?? []),
+              ...asArray(multiAgentPlan?.selected_agents),
+              ...asArray(promptFeedbackMultiAgentPlan?.selected_agents),
             ],
             4
           ),
@@ -351,29 +383,30 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
   const simulationProv = findProvenanceByKind(provenance, "simulation_output");
   addIfMissing(
     events,
-    responseData?.decision_simulation
+    decisionSimulation
       ? {
           id: simulationProv?.id ?? "timeline_simulation",
           timestamp: toTimestamp(simulationProv?.timestamp),
           type: "simulation",
           title: "Simulation run",
           summary:
-            text(responseData?.decision_simulation?.impact?.summary) ||
-            text(responseData?.decision_simulation?.summary) ||
+            text(decisionSimulationImpact?.summary) ||
+            text(decisionSimulation?.summary) ||
             "Simulation estimated how the decision changes downstream pressure.",
           source: "simulation_engine",
-          confidence: simulationProv?.confidence ?? responseData?.decision_simulation?.confidence,
+          confidence:
+            asOptionalNumber(simulationProv?.confidence) ?? asOptionalNumber(decisionSimulation?.confidence),
           related_ids: cleanArray(
             [
-              ...(responseData?.decision_simulation?.impact?.directlyAffectedObjectIds ?? []),
-              ...(responseData?.decision_simulation?.impact?.downstreamObjectIds ?? []),
+              ...asArray(decisionSimulationImpact?.directlyAffectedObjectIds),
+              ...asArray(decisionSimulationImpact?.downstreamObjectIds),
             ],
             6
           ),
           signals: cleanArray(
             [
-              ...(responseData?.decision_simulation?.risk?.affectedDimensions ?? []),
-              responseData?.decision_simulation?.scenario?.name,
+              ...asArray(decisionSimulationRisk?.affectedDimensions),
+              decisionSimulationScenario?.name,
             ],
             4
           ),
@@ -385,21 +418,21 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
 
   addIfMissing(
     events,
-    responseData?.decision_comparison || responseData?.comparison
+    decisionComparison || comparison
       ? {
           id: "timeline_comparison",
-          timestamp: toTimestamp(responseData?.decision_comparison?.timestamp),
+          timestamp: toTimestamp(decisionComparison?.timestamp),
           type: "comparison",
           title: "Comparison reviewed",
           summary:
-            text(responseData?.decision_comparison?.summary) ||
-            text(responseData?.comparison?.summary) ||
+            text(decisionComparison?.summary) ||
+            text(comparison?.summary) ||
             "Alternative futures were compared to expose the main trade-offs.",
           source: "simulation_engine",
           signals: cleanArray(
             [
-              ...(responseData?.decision_comparison?.tradeoffs ?? []),
-              ...(responseData?.comparison?.notes ?? []),
+              ...asArray(decisionComparison?.tradeoffs),
+              ...asArray(comparison?.notes),
             ],
             4
           ),
@@ -491,17 +524,28 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
     responseData,
   });
   const metaDecision = buildMetaDecisionState({
-    reasoning: responseData?.ai_reasoning ?? null,
-    simulation: responseData?.decision_simulation ?? null,
-    comparison: responseData?.decision_comparison ?? responseData?.comparison ?? null,
+    reasoning: aiReasoning ?? null,
+    simulation: decisionSimulation ?? null,
+    comparison: decisionComparison ?? comparison ?? null,
     canonicalRecommendation,
     calibration: null,
     responseData,
     memoryEntries: params.memoryEntries ?? [],
   });
+  const platformAssemblyForCognitive = asRecord(responseData?.platform_assembly);
+  const platformActiveModeForCognitive = asRecord(platformAssemblyForCognitive?.activeMode);
+  const rawActiveMode = responseData?.active_mode;
+  const assemblyModeLabel = text(platformActiveModeForCognitive?.mode_id);
+  const resolvedActiveMode: string | null =
+    (typeof rawActiveMode === "string" && rawActiveMode.trim().length > 0 ? rawActiveMode.trim() : null) ??
+    (assemblyModeLabel.length > 0 ? assemblyModeLabel : null);
+  const rawRightPanel = responseData?.right_panel_view;
+  const resolvedRightPanelView: string | null =
+    typeof rawRightPanel === "string" && rawRightPanel.trim().length > 0 ? rawRightPanel.trim() : null;
+
   const cognitiveStyle = selectDefaultCognitiveStyle({
-    activeMode: responseData?.active_mode ?? responseData?.platform_assembly?.activeMode?.mode_id ?? null,
-    rightPanelView: responseData?.right_panel_view ?? null,
+    activeMode: resolvedActiveMode,
+    rightPanelView: resolvedRightPanelView,
     responseData,
     canonicalRecommendation,
   });
@@ -540,8 +584,8 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
     policyState,
   });
   const approvalEnvelope = loadApprovalWorkflowEnvelope(
-    responseData?.workspace_id ?? null,
-    responseData?.project_id ?? null,
+    asOptionalString(responseData?.workspace_id),
+    asOptionalString(responseData?.project_id),
     governance.decision_id ?? canonicalRecommendation?.id ?? null
   );
   const approvalWorkflow = buildApprovalWorkflowState({
@@ -555,8 +599,8 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
     policyState,
   });
   const collaborationEnvelope = loadCollaborationEnvelope(
-    responseData?.workspace_id ?? null,
-    responseData?.project_id ?? null,
+    asOptionalString(responseData?.workspace_id),
+    asOptionalString(responseData?.project_id),
     governance.decision_id ?? canonicalRecommendation?.id ?? null
   );
   const collaborationState = buildCollaborationState({

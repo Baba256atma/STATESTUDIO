@@ -109,7 +109,7 @@ export function evaluateNexoraTrustValidation(input: NexoraTrustValidationInput)
   if (input.pipelineStatus === "error") score -= 0.22;
   if (ok >= 2 && coverage >= 1 && !hasContradiction && !hasLowEvidence) score += 0.06;
 
-  score += getB13TrustEvidenceBiasMerged(input.domainId, merged, ok);
+  score += getB13TrustEvidenceBiasMerged(merged, ok, input.domainId);
   if (input.executionOutcomeFeedback === "worse") score -= 0.1;
   if (input.executionOutcomeFeedback === "better") score += 0.05;
   score = clamp(Number(score.toFixed(4)), 0, 1);

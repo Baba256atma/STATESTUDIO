@@ -87,7 +87,7 @@ function synthesisSectionCoverage(pack: NexoraLocaleDomainPack): number {
 function vocabularyCoverage(pack: NexoraLocaleDomainPack): number {
   if (pack.id === "generic") return 1;
   const stems = Object.keys(pack.vocabulary ?? {}).length;
-  if (stems === 0 && (pack.id === "psych_yung" || pack.id === "generic")) return 1;
+  if (stems === 0 && pack.id === "psych_yung") return 1;
   return Math.min(1, stems / 3);
 }
 

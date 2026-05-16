@@ -682,7 +682,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       ? (inspectorContext.rightPanelView as RightPanelView)
       : null;
   const localRightPanelView: RightPanelView = null;
-  const finalRightPanelView: RightPanelView = upstreamRightPanelView ?? localRightPanelView ?? "scene";
+  const finalRightPanelView: RightPanelView = upstreamRightPanelView ?? localRightPanelView ?? "workspace";
   const navItems = useMemo(
     () =>
       LEFT_NAV_ITEMS.filter(

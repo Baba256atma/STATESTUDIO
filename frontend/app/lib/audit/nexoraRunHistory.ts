@@ -30,10 +30,10 @@ function isValidEntry(x: unknown): x is NexoraRunHistoryEntry {
   const o = x as Record<string, unknown>;
   return (
     typeof o.savedAt === "number" &&
-    o.record &&
+    o.record != null &&
     typeof o.record === "object" &&
     typeof (o.record as NexoraAuditRecord).runId === "string" &&
-    o.replaySnapshot &&
+    o.replaySnapshot != null &&
     typeof o.replaySnapshot === "object"
   );
 }

@@ -28,7 +28,7 @@ export type ConnectorCatalogAvailability = {
 
 async function safeFetchConnectorCatalog(): Promise<unknown[]> {
   if (!ENABLE_CONNECTOR_CATALOG_PREFETCH) return [];
-  let timeoutId: number | null = null;
+  let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
   try {
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = globalThis.setTimeout(() => {

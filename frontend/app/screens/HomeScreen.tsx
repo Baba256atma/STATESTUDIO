@@ -212,7 +212,7 @@ import {
   type EmitChatPipelineDiagnosticFn,
 } from "./hooks/chat/useChatPipelineController.types.ts";
 import { buildChatEffectSignature, normalizeChatInputForDedup } from "./hooks/chat/chatPipelineSendTextHelpers.ts";
-import { useChatPipelineController } from "./hooks/chat/useChatPipelineController.ts";
+import { useChatPipelineController } from "./hooks/chat";
 import type { MemoryStateV1 } from "../lib/memory/memoryTypes";
 import {
   Msg,
@@ -8576,7 +8576,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       );
 
       if (process.env.NODE_ENV !== "production") {
-        const b13Bias = getB13TrustEvidenceBiasMerged(domainId, mergedSignalCount, successfulSourceCount);
+        const b13Bias = getB13TrustEvidenceBiasMerged(mergedSignalCount, successfulSourceCount, domainId);
         const b13DriverSig = driversEnrichmentSignature(rawDrivers, enrichedDrivers);
         const b13Applied = b13Bias !== 0 || b13DriverSig.split("::")[0] !== b13DriverSig.split("::")[1];
         if (b13Applied) {

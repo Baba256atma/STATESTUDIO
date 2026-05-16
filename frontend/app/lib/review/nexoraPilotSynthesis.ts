@@ -120,7 +120,7 @@ function collectKeyFindings(input: NexoraPilotSynthesisInput): string[] {
   const q = input.quality;
   if (q?.qualityTier === "low") {
     out.push("Decision quality is weak");
-  } else if (q?.trend === "improving" && q.qualityTier !== "low") {
+  } else if (q?.trend === "improving") {
     out.push("Decision quality is improving");
   }
 

@@ -151,6 +151,10 @@ function uniq(values: string[]): string[] {
   );
 }
 
+function safeList(value: unknown): string[] {
+  return Array.isArray(value) ? uniq(value.map((entry) => String(entry))) : [];
+}
+
 function safeNumber(value: unknown, fallback = 0): number {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : fallback;

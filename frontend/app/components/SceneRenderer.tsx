@@ -991,6 +991,11 @@ function AnimatedDashedEdge({
     if (geomRef.current.computeLineDistances) geomRef.current.computeLineDistances();
   }, [points]);
 
+  const dashSize = 0.2 + clamp01(strength) * 0.35;
+  const gapSize = 0.25 + clamp01(strength) * 0.4;
+  const opacity = active ? Math.min(1, 0.5 + strength * 0.5) : Math.min(0.65, 0.25 + strength * 0.25);
+  const color = active ? "#f1c40f" : "#95a5a6";
+
   useEffect(() => {
     if (dashedMatRef.current) {
       dashedMatRef.current.scale = 1;
@@ -999,11 +1004,6 @@ function AnimatedDashedEdge({
       solidMatRef.current.opacity = Math.min(1, opacity + 0.25);
     }
   }, [opacity]);
-
-  const dashSize = 0.2 + clamp01(strength) * 0.35;
-  const gapSize = 0.25 + clamp01(strength) * 0.4;
-  const opacity = active ? Math.min(1, 0.5 + strength * 0.5) : Math.min(0.65, 0.25 + strength * 0.25);
-  const color = active ? "#f1c40f" : "#95a5a6";
 
   return (
     <group>
