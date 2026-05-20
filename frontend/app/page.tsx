@@ -25,6 +25,7 @@ import { InvestorDemoProvider } from "./components/demo/InvestorDemoContext";
 import { NexoraOperatorModeProvider } from "./lib/product/nexoraOperatorModeContext";
 import { getNexoraProductMode } from "./lib/product/nexoraProductMode";
 import { NexoraRunbookGuidanceProvider } from "./lib/pilot/nexoraRunbookGuidanceContext";
+import { AdaptiveGovernanceIntelligenceRootProvider } from "./lib/enterprise/governance";
 
 const DOMAIN_STORAGE_KEY = "nexora.selected_domain";
 
@@ -130,11 +131,16 @@ export default function HomePage() {
                   <InvestorDemoProvider>
                     <NexoraOperatorModeProvider>
                       <NexoraRunbookGuidanceProvider>
-                        <NexoraOSShell>
-                          <NexoraShell>
-                            <HomeScreen domainExperience={resolvedSelection} />
-                          </NexoraShell>
-                        </NexoraOSShell>
+                        <AdaptiveGovernanceIntelligenceRootProvider
+                          sessionHydrated={domainConfirmed}
+                          organizationId={`nexora-${resolvedSelection.experience.domainId}`}
+                        >
+                          <NexoraOSShell>
+                            <NexoraShell>
+                              <HomeScreen domainExperience={resolvedSelection} />
+                            </NexoraShell>
+                          </NexoraOSShell>
+                        </AdaptiveGovernanceIntelligenceRootProvider>
                       </NexoraRunbookGuidanceProvider>
                     </NexoraOperatorModeProvider>
                   </InvestorDemoProvider>

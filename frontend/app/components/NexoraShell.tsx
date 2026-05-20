@@ -5,6 +5,7 @@ import { FragilityScannerMini } from "./scanner/FragilityScannerMini";
 import { nx } from "./ui/nexoraTheme";
 import type { FragilityDriver, FragilityScanResponse } from "../types/fragilityScanner";
 import { CommandHeader } from "./layout/CommandHeader";
+import { BottomCommandDock, type ExecutiveCommandVerb } from "./layout/nexora/BottomCommandDock";
 import { MultiSourceAssessPopover, type SaveScheduledPayload } from "./layout/MultiSourceAssessPopover";
 import {
   deleteScheduledAssessment,
@@ -36,6 +37,7 @@ import { dispatchNexoraAction } from "../lib/actions/actionDispatchRegistry";
 import { normalizeStartDemoFromTopBar } from "../lib/actions/actionNormalizer";
 import { useNexoraRunbookGuidanceOptional } from "../lib/pilot/nexoraRunbookGuidanceContext";
 import { getNexoraProductMode } from "../lib/product/nexoraProductMode.ts";
+import { useAdaptiveGovernanceIntelligenceOptional } from "../lib/enterprise/governance";
 
 /** Single source of truth: right rail width for every inspector / executive panel state. */
 const RIGHT_PANEL_WIDTH_PX = 430;
@@ -390,6 +392,7 @@ function NexoraStatusStripCard(props: { label: string; labelColor: string; text:
 export default function NexoraShell({ children }: NexoraShellProps) {
   const pilotOperatorChrome = useMemo(() => getNexoraProductMode() === "pilot", []);
   const runbookGuidance = useNexoraRunbookGuidanceOptional();
+  const governanceIntel = useAdaptiveGovernanceIntelligenceOptional();
   const investorDemo = useInvestorDemo();
   const handleStartInvestorDemoRouted = useCallback(() => {
     const handled = dispatchNexoraAction(normalizeStartDemoFromTopBar());
@@ -411,6 +414,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const [isAssistantDrawerOpen, setIsAssistantDrawerOpen] = useState(true);
   const [leftCommandOpen, setLeftCommandOpen] = useState(true);
   const [chatInput, setChatInput] = useState("");
+  const [bottomCommandExpanded, setBottomCommandExpanded] = useState(true);
   const [objectAnalyzeReady, setObjectAnalyzeReady] = useState(false);
   const [multiSourcePopoverOpen, setMultiSourcePopoverOpen] = useState(false);
   const [multiSourceBusy, setMultiSourceBusy] = useState(false);
@@ -437,6 +441,60 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const [stageChatAwaitingReply, setStageChatAwaitingReply] = useState(false);
   const [stageChatDelayedBusy, setStageChatDelayedBusy] = useState(false);
   const stageChatBusyTimerRef = useRef<number | null>(null);
+
+  const [inspectorContext, setInspectorContext] = useState<any>(null);
+  useEffect(() => {
+    const onInspectorContext = (event: Event) => {
+      const detail = (event as CustomEvent<any>).detail;
+      setInspectorContext(detail ?? null);
+    };
+    window.addEventListener("nexora:inspector-context", onInspectorContext as EventListener);
+    return () => window.removeEventListener("nexora:inspector-context", onInspectorContext as EventListener);
+  }, []);
+
+  const requestObjectAnalyzeFromTopBar = useCallback(() => {
+    if (!objectAnalyzeReady) return;
+    globalThis.console?.warn?.("[NEXORA_ANALYZE_CLICK_REACHED]", {
+      selectedObjectIdState: inspectorContext?.selectedObjectId ?? null,
+      focusedId: inspectorContext?.focusedId ?? null,
+      timestamp: Date.now(),
+    });
+    window.dispatchEvent(new CustomEvent("nexora:request-object-analyze"));
+  }, [inspectorContext?.focusedId, inspectorContext?.selectedObjectId, objectAnalyzeReady]);
+
+  const handleExecutiveCommandVerb = useCallback((verb: ExecutiveCommandVerb) => {
+    if (verb === "ask") {
+      window.dispatchEvent(new CustomEvent("nexora:focus-bottom-command-dock"));
+      return;
+    }
+    if (verb === "analyze") {
+      requestObjectAnalyzeFromTopBar();
+      return;
+    }
+    if (verb === "simulate") {
+      window.dispatchEvent(
+        new CustomEvent("nexora:open-right-panel", {
+          detail: { view: "simulate", family: "SIM", source: "executive_command", forceOpen: true },
+        })
+      );
+      return;
+    }
+    if (verb === "compare") {
+      window.dispatchEvent(
+        new CustomEvent("nexora:open-right-panel", {
+          detail: { view: "compare", family: "SIM", source: "executive_command", forceOpen: true },
+        })
+      );
+      return;
+    }
+    if (verb === "inspect") {
+      window.dispatchEvent(
+        new CustomEvent("nexora:open-right-panel", {
+          detail: { view: "object", family: "SCN", source: "executive_command", forceOpen: true },
+        })
+      );
+    }
+  }, [requestObjectAnalyzeFromTopBar]);
 
   const assessBusinessTextFromCommandBar = useCallback(() => {
     const text = chatInput.trim();
@@ -528,26 +586,6 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     window.addEventListener("nexora:object-analyze-eligibility", onEligibility as EventListener);
     return () => window.removeEventListener("nexora:object-analyze-eligibility", onEligibility as EventListener);
   }, []);
-
-  const [inspectorContext, setInspectorContext] = useState<any>(null);
-  useEffect(() => {
-    const onInspectorContext = (event: Event) => {
-      const detail = (event as CustomEvent<any>).detail;
-      setInspectorContext(detail ?? null);
-    };
-    window.addEventListener("nexora:inspector-context", onInspectorContext as EventListener);
-    return () => window.removeEventListener("nexora:inspector-context", onInspectorContext as EventListener);
-  }, []);
-
-  const requestObjectAnalyzeFromTopBar = useCallback(() => {
-    if (!objectAnalyzeReady) return;
-    globalThis.console?.warn?.("[NEXORA_ANALYZE_CLICK_REACHED]", {
-      selectedObjectIdState: inspectorContext?.selectedObjectId ?? null,
-      focusedId: inspectorContext?.focusedId ?? null,
-      timestamp: Date.now(),
-    });
-    window.dispatchEvent(new CustomEvent("nexora:request-object-analyze"));
-  }, [inspectorContext?.focusedId, inspectorContext?.selectedObjectId, objectAnalyzeReady]);
 
   const handleSaveScheduled = useCallback((payload: SaveScheduledPayload) => {
     const def: ScheduledAssessmentDefinition = {
@@ -1430,6 +1468,10 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           onStartInvestorDemo={pilotOperatorChrome ? null : handleStartInvestorDemoRouted}
           investorDemoActive={investorDemo.demo.active}
           commandBarMicroHint={pilotOperatorChrome ? null : (runbookGuidance?.hints.commandBar ?? null)}
+          intelligenceStateLabel={systemStatus.label}
+          activeModeLabel={activeModeLabel}
+          decisionHeadline={executiveNarrative.decisionHeadline}
+          topDriverLabel={executiveNarrative.topDriverLabel}
         />
         <MultiSourceAssessPopover
           open={multiSourcePopoverOpen}
@@ -1757,6 +1799,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
         {/* CENTER STAGE */}
         <main
           id="nexora-stage"
+          className="nx-executive-stage"
           style={{
             flexGrow: 1,
             flexShrink: 1,
@@ -1890,7 +1933,15 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                 isOpen={isAssistantDrawerOpen}
                 onToggle={toggleAssistantDrawer}
                 title="Strategic Assistant"
-                subtitle={demoContentActive ? `${scenarioLabel}` : "Executive intelligence for the active view."}
+                subtitle={
+                  governanceIntel?.assistantUnifiedGovernanceLine?.trim() ||
+                  governanceIntel?.assistantAdaptationLine?.trim() ||
+                  governanceIntel?.assistantStabilityLine?.trim() ||
+                  governanceIntel?.assistantCalibrationLine?.trim() ||
+                  governanceIntel?.assistantCoherenceLine?.trim() ||
+                  governanceIntel?.assistantGovernanceLine?.trim() ||
+                  (demoContentActive ? `${scenarioLabel}` : "Executive intelligence for the active view.")
+                }
                 profileLabel={activeProfile?.label ?? null}
                 messages={renderedChatMessages}
                 promptChips={displayPrompts}
@@ -1978,7 +2029,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                     </div>
                     <span style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.2, letterSpacing: "-0.02em" }}>{activeGroupConfig?.label ?? sectionTitle}</span>
                     <span style={{ fontSize: 11, fontWeight: 500, color: nx.muted, lineHeight: 1.45, maxWidth: "100%" }}>
-                      Context and controls for the selected surface.
+                      Explainability, recommendations, and operational meaning for the active view.
                     </span>
                   </div>
                 ) : (
@@ -2457,18 +2508,19 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           </div>
         </aside>
       </div>
+      </div>
 
       <div
         id="nexora-status-strip"
         style={{
-          minHeight: 56,
+          minHeight: 0,
           flexGrow: 0,
           flexShrink: 0,
           flexBasis: "auto",
           display: "flex",
-          flexDirection: "row",
+          flexDirection: "column",
           alignItems: "stretch",
-          justifyContent: "space-between",
+          justifyContent: "flex-start",
           gap: 12,
           padding: "6px 14px",
           boxSizing: "border-box",
@@ -2498,6 +2550,40 @@ export default function NexoraShell({ children }: NexoraShellProps) {
             text={executiveNarrative.keyRiskStatement}
           />
         </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "flex-end",
+            gap: 12,
+            minWidth: 0,
+            flexWrap: "wrap",
+          }}
+        >
+        <BottomCommandDock
+          commandValue={chatInput}
+          placeholder={commandPlaceholder}
+          onCommandChange={setChatInput}
+          onSubmit={sendChat}
+          onSuggestion={(prompt) => {
+            setChatInput(prompt);
+            void sendChat();
+          }}
+          suggestions={
+            Array.isArray(domainExperience?.promptExamples)
+              ? domainExperience.promptExamples.slice(0, 3).map((v) => String(v))
+              : []
+          }
+          lastFeedback={stageChatAwaitingReply ? "Processing strategic request…" : null}
+          lastCommandPreview={chatInput.trim() || null}
+          expanded={bottomCommandExpanded}
+          onExpandChange={setBottomCommandExpanded}
+          analyzeReady={objectAnalyzeReady}
+          onVerb={handleExecutiveCommandVerb}
+          onLoadScenario={pilotOperatorChrome ? null : handleLoadDemo}
+          onAssessSources={assessBusinessTextFromCommandBar}
+        />
+
         <div
           id="nexora-replay-bar"
           style={{

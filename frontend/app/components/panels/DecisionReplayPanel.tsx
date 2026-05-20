@@ -131,9 +131,9 @@ export default function DecisionReplayPanel({ backendBase, episodeId, onSceneUpd
         boxSizing: "border-box",
       }}
     >
-      <div style={{ fontSize: 16, fontWeight: 800 }}>Decision Replay</div>
+      <div style={{ fontSize: 16, fontWeight: 800 }}>Operational replay</div>
       <div style={{ color: nx.muted, fontSize: 12 }}>
-        Episode: {episodeId || "Not started"}
+        Episode {episodeId || "not started"} — step through history without losing scene context.
       </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

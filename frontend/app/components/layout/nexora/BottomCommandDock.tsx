@@ -3,6 +3,9 @@
 import React from "react";
 import { nx } from "../../ui/nexoraTheme";
 
+/** Executive command verbs invoked from the bottom dock (canonical contract). */
+export type ExecutiveCommandVerb = "ask" | "analyze" | "simulate" | "compare" | "inspect";
+
 type BottomCommandDockProps = {
   commandValue: string;
   placeholder: string;
@@ -14,6 +17,9 @@ type BottomCommandDockProps = {
   lastCommandPreview: string | null;
   expanded: boolean;
   onExpandChange: (expanded: boolean) => void;
+  /** When set, dock may route executive verb actions (optional UI wiring). */
+  onVerb?: (verb: ExecutiveCommandVerb) => void;
+  analyzeReady?: boolean;
   onLoadScenario?: (() => void) | null;
   onAssessSources?: (() => void) | null;
 };

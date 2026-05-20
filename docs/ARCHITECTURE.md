@@ -47,6 +47,17 @@ The current frontend stack includes:
 
 The frontend is not only a presentation layer. It is the workspace where the user sees system structure, submits prompts, inspects propagation, and follows the transition from system pressure to decision insight.
 
+### Enterprise cognition phases (frontend)
+
+| Phase | Focus | Architecture doc |
+|-------|--------|------------------|
+| F9:1 | Adaptive governance intelligence & strategic oversight cognition | [F9:1](./architecture/F9-1-Adaptive-Governance-Intelligence.md) |
+| F9:2 | Strategic alignment integrity & enterprise coherence intelligence | [F9:2](./architecture/F9-2-Strategic-Alignment-Integrity.md) |
+| F9:3 | Adaptive strategic calibration & institutional decision quality intelligence | [F9:3](./architecture/F9-3-Adaptive-Strategic-Calibration.md) |
+| F9:4 | Institutional strategic pressure governance & executive stability intelligence | [F9:4](./architecture/F9-4-Institutional-Strategic-Pressure-Governance.md) |
+| F9:5 | Institutional strategic adaptation governance & autonomous organizational evolution intelligence | [F9:5](./architecture/F9-5-Institutional-Strategic-Adaptation-Governance.md) |
+| F9:6 | Unified adaptive governance runtime & institutional strategic evolution intelligence (F9 completion) | [F9:6](./architecture/F9-6-Unified-Adaptive-Governance-Runtime.md) |
+
 ## Backend Layer
 
 The backend is a FastAPI application that acts as Nexora’s system intelligence engine and orchestration layer.

@@ -32,6 +32,7 @@ import { DecisionPatternIntelligencePanel } from "../executive/DecisionPatternIn
 import { DecisionOutcomeFeedbackPanel } from "../executive/DecisionOutcomeFeedbackPanel";
 import { CollaborationIntelligencePanel } from "../executive/CollaborationIntelligencePanel";
 import { AutonomousDecisionCouncilPanel } from "../executive/AutonomousDecisionCouncilPanel";
+import { ExecutiveMetaCognitionCard } from "../executive/ExecutiveMetaCognitionCard";
 import CollaborationPanel from "../panels/CollaborationPanel";
 import { WarRoomPanel } from "../warroom/WarRoomPanel";
 import { DomainObjectCatalogPanel } from "../domain/DomainObjectCatalogPanel";
@@ -89,6 +90,7 @@ import {
   resolveRiskReadiness,
 } from "../../lib/panels/panelDataReadiness";
 import type { RiskPanelData } from "../../lib/panels/panelDataContract";
+import type { ExecutiveMetaCognitionSnapshot } from "../../lib/meta-cognition";
 const logConflictPayloadSource = (..._args: any[]) => {};
 const logPanelDataUnderfed = (..._args: any[]) => {};
 const logPanelFallback = (..._args: any[]) => {};
@@ -173,6 +175,7 @@ type RightPanelHostProps = {
     contractRenderable?: boolean;
     contractSalvaged?: boolean;
   } | null;
+  metaCognition?: ExecutiveMetaCognitionSnapshot | null;
   warRoom: WarRoomController;
   onSceneUpdateFromTimeline: (payload: any) => void;
   onSimulateDecision?: (() => void) | null;
@@ -1464,6 +1467,11 @@ export function RightPanelHost(props: RightPanelHostProps) {
             {onDemandExplainText}
           </div>
         ) : null}
+        {props.metaCognition ? (
+          <div style={{ margin: "8px 12px 0" }}>
+            <ExecutiveMetaCognitionCard snapshot={props.metaCognition} compact />
+          </div>
+        ) : null}
         {panelActionItems.length > 0 ? (
           <div style={{ margin: "8px 12px 0", display: "flex", flexDirection: "column", gap: 6 }}>
             {panelActionItems.slice(0, 3).map((action, index) => {
@@ -1636,6 +1644,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
           onCompareOptions={handleContextualCompareAction}
           onSimulateDecision={handleContextualSimulationAction}
           onReturnToWarRoom={handleContextualWarRoomAction}
+          metaCognition={props.metaCognition ?? null}
         />
       );
     case "decision_lifecycle":

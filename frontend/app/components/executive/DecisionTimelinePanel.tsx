@@ -18,6 +18,8 @@ import { buildTimelineIntelligence, logPanelIntelligence } from "../../lib/intel
 import { buildTimelineDecisionSet } from "../../lib/decision/decisionEngine";
 import { PanelDecisionSetSection } from "../panels/PanelDecisionSetSection";
 import { RightPanelFallback } from "../right-panel/RightPanelFallback";
+import type { ExecutiveMetaCognitionSnapshot } from "../../lib/meta-cognition";
+import { ExecutiveMetaCognitionCard } from "./ExecutiveMetaCognitionCard";
 
 type DecisionTimelinePanelProps = {
   responseData?: any;
@@ -31,6 +33,7 @@ type DecisionTimelinePanelProps = {
   onCompareOptions?: (() => void) | null;
   onSimulateDecision?: (() => void) | null;
   onReturnToWarRoom?: (() => void) | null;
+  metaCognition?: ExecutiveMetaCognitionSnapshot | null;
 };
 
 function toneToMetricTone(
@@ -264,6 +267,10 @@ export function DecisionTimelinePanel(props: DecisionTimelinePanelProps) {
 
       <PanelDecisionSetSection view="timeline" decisionSet={timelineDecisionSet} />
 
+      {props.metaCognition ? (
+        <ExecutiveMetaCognitionCard snapshot={props.metaCognition} compact />
+      ) : null}
+
       <details style={{ borderRadius: 8 }}>
         <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: nx.muted }}>
           Details: story, stages, scope & next steps
@@ -297,6 +304,12 @@ export function DecisionTimelinePanel(props: DecisionTimelinePanelProps) {
             onSelectStage={(stage) => setActiveStageId(stage.id as ExecutiveDecisionTimelineStage["id"])}
             emptyText="No timeline available. Run a simulation to see how the system evolves."
           />
+
+          {props.metaCognition ? (
+            <div style={{ ...softCardStyle, padding: 12, color: nx.muted, fontSize: 12, lineHeight: 1.45 }}>
+              {props.metaCognition.timelineReflectionLine}
+            </div>
+          ) : null}
 
           <div
             style={{

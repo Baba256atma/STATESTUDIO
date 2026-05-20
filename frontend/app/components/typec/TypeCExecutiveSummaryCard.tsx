@@ -9,14 +9,19 @@ import {
 } from "../../lib/typec/aiTypeCExecutiveInsight.ts";
 import type { TypeCExecutiveAction } from "../../lib/typec/typeCExecutiveActions.ts";
 import type { TypeCExecutiveSummary } from "../../lib/typec/typeCExecutiveSummary.ts";
+import type { ExecutiveMetaCognitionSnapshot } from "../../lib/meta-cognition";
+
+export type TypeCExecutiveSummaryCardPlacement = "stage" | "panel" | "overlay";
 
 export type TypeCExecutiveSummaryCardProps = {
+  placement?: TypeCExecutiveSummaryCardPlacement;
   summary: TypeCExecutiveSummary | null;
   aiInsight?: TypeCAIExecutiveInsight | null;
   onEnhance?: () => Promise<void>;
   hasSelectedObject?: boolean;
   executiveActions?: TypeCExecutiveAction[];
   onExecutiveAction?: (action: TypeCExecutiveAction) => void;
+  metaCognition?: ExecutiveMetaCognitionSnapshot | null;
 };
 
 const cardStyle = {
@@ -122,6 +127,7 @@ export function TypeCExecutiveSummaryCard({
   hasSelectedObject = true,
   executiveActions = [],
   onExecutiveAction,
+  metaCognition = null,
 }: TypeCExecutiveSummaryCardProps): React.ReactElement | null {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,6 +157,12 @@ export function TypeCExecutiveSummaryCard({
         <div style={textStyle}>{formatConfidence(summary)}</div>
       </div>
       <MiniList title="Why" items={summary.why} />
+      {metaCognition ? (
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>Reasoning Reflection</div>
+          <div style={textStyle}>{metaCognition.rightRailReflectionLine}</div>
+        </div>
+      ) : null}
       <MiniList title="Next Actions" items={summary.nextActions} />
       <MiniList title="Risk Notes" items={summary.riskNotes} />
       <button

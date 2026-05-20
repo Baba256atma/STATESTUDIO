@@ -70,6 +70,8 @@ import { resolveSceneObjectById } from "../lib/scene/resolveSceneObjectById";
 import type { UICommand } from "../lib/ui/uiCommands";
 import { useNexoraUiTheme } from "../lib/ui/nexoraUiTheme";
 import { StrategicAlertOverlay } from "../components/StrategicAlertOverlay";
+import { ExecutiveSceneOperationalStrip } from "../components/executive/ExecutiveSceneOperationalStrip";
+import { executiveStageFrameStyle } from "../components/executive/executiveProductSurfaceStyles";
 import { TypeCDevInspector } from "../components/dev/TypeCDevInspector";
 import { TypeCAdaptiveGuidancePanel } from "../components/typec/TypeCAdaptiveGuidancePanel";
 import { TypeCAIPanel } from "../components/typec/TypeCAIPanel";
@@ -98,6 +100,10 @@ import {
   type OperationalMonitoringSnapshot,
   type OperationalPipelineStatusBrief,
 } from "../lib/operational/index.ts";
+import {
+  buildExecutiveMetaCognitionSnapshot,
+  logMetaCognitionDiagnostics,
+} from "../lib/meta-cognition";
 import { nx, sceneOverlayCardStyle, sceneVignetteLayerStyle, sceneWorkingBadgeStyle, softCardStyle } from "../components/ui/nexoraTheme";
 import {
   INITIAL_NEXORA_UI_STATE,
@@ -12728,6 +12734,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [openCenterComponent]
   );
+  const previousMetaCognitionConfidenceRef = useRef<number | null>(null);
+  const executiveMetaCognitionSnapshot = useMemo(() => {
+    const canonicalRecommendation = readCanonicalRecommendation(visibleResponseData, stableVisibleSceneJson);
+    return buildExecutiveMetaCognitionSnapshot({
+      organizationId: activeWorkspaceId ?? activeProjectId ?? null,
+      sceneJson: stableVisibleSceneJson ?? visibleSceneJson ?? null,
+      responseData: visibleResponseData ?? null,
+      strategicAdvice: visibleStrategicAdvice ?? null,
+      canonicalRecommendation,
+      previousConfidence: previousMetaCognitionConfidenceRef.current,
+      timestamp: canonicalRecommendation?.created_at ?? 0,
+    });
+  }, [
+    activeProjectId,
+    activeWorkspaceId,
+    stableSceneObjectsSignature,
+    stableVisibleSceneJson,
+    visibleResponseData,
+    visibleSceneJson,
+    visibleStrategicAdvice,
+  ]);
+  useEffect(() => {
+    previousMetaCognitionConfidenceRef.current = executiveMetaCognitionSnapshot.confidenceEvolution.current;
+    logMetaCognitionDiagnostics(executiveMetaCognitionSnapshot);
+  }, [executiveMetaCognitionSnapshot]);
   const lastRightPanelHostInputTraceRef = useRef<string | null>(null);
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -12797,6 +12828,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       activeExecutiveView={activeExecutiveView}
       guidedPromptDebug={null}
       panelFamilyAuditDebug={panelFamilyAuditDebug}
+      metaCognition={executiveMetaCognitionSnapshot}
       warRoom={warRoom}
       onSceneUpdateFromTimeline={handleSceneUpdateFromTimeline}
       onSimulateDecision={() =>
@@ -13123,9 +13155,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   const leftCommandContextSummary = useMemo(() => {
     const s = (lastAnalysisSummary ?? "").trim();
-    if (!s) return null;
-    return s.length > 160 ? `${s.slice(0, 159)}…` : s;
-  }, [lastAnalysisSummary]);
+    const base = s.length > 160 ? `${s.slice(0, 159)}…` : s;
+    const reflection = executiveMetaCognitionSnapshot.assistantReflectionLine;
+    if (!base) return reflection.length > 220 ? `${reflection.slice(0, 219)}…` : reflection;
+    const combined = `${base} Meta-cognition: ${reflection}`;
+    return combined.length > 260 ? `${combined.slice(0, 259)}…` : combined;
+  }, [executiveMetaCognitionSnapshot, lastAnalysisSummary]);
 
   const leftCommandPortalNode =
     isClientMounted && leftCommandPortalHost ? (
@@ -15091,7 +15126,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     });
   }, [stableSceneJsonDuringPanelValidation]);
   const sceneNode = (
-    <div style={{ position: "relative", width: "100%", height: "100%", background: "transparent", zIndex: 0 }}>
+    <div className="nx-executive-scene-host" style={{ ...executiveStageFrameStyle, zIndex: 0 }}>
       {centerOverlay === "input" ? (
         <SourceControlPanel mode="center" onClose={() => setCenterOverlay(null)} />
       ) : null}
@@ -15107,26 +15142,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         </div>
       ) : null}
       <div
-        className="nx-scene-context"
         style={{
           position: "absolute",
           top: showPipelineStatusHud ? 96 : 12,
           left: 12,
           zIndex: 4,
-          maxWidth: 280,
           pointerEvents: "none",
-          opacity: 0.82,
-          borderRadius: 10,
-          padding: "8px 10px",
-          border: `1px solid ${nx.borderSoft}`,
-          background: "color-mix(in srgb, var(--nx-bg-deep) 78%, transparent)",
-          backdropFilter: "blur(8px)",
         }}
       >
-        <div style={{ fontSize: 10, fontWeight: 800, color: nx.text, lineHeight: 1.35 }}>{sceneContextOverlayLines.line1}</div>
-        <div style={{ fontSize: 9, fontWeight: 600, color: nx.muted, marginTop: 4, lineHeight: 1.35 }}>
-          {sceneContextOverlayLines.line2}
-        </div>
+        <ExecutiveSceneOperationalStrip
+          operationalState={
+            pipelineStatusUi.status === "processing"
+              ? "Processing"
+              : pipelineStatusUi.status === "error"
+                ? "Attention required"
+                : "Operational"
+          }
+          primarySignal={sceneContextOverlayLines.line1}
+          secondarySignal={sceneContextOverlayLines.line2}
+          activeInsight={typeCExecutiveSummary?.headline ?? null}
+          objectCount={countSceneObjects(stableSceneJsonDuringPanelValidation)}
+          fragilityLabel={pipelineStatusUi.fragilityLevel}
+        />
       </div>
       {/* Three.js (Canvas always mounted for stable hooks) */}
       <div
@@ -16481,6 +16518,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                   decisionStatus={decisionUiState.status}
                   decisionError={decisionUiState.error}
                   resolveObjectLabel={resolveSceneObjectLabel}
+                  metaCognition={executiveMetaCognitionSnapshot}
                   onCompareOptions={() =>
                     dispatchCanonicalAction(
                       normalizeCompareOptions({
@@ -17255,6 +17293,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           Analyzing…
         </div>
       ) : null}
+      {typeCExecutiveSummary ? (
+        <TypeCExecutiveSummaryCard
+          placement="stage"
+          summary={typeCExecutiveSummary}
+          aiInsight={typeCAIExecutiveInsight}
+          onEnhance={handleEnhanceTypeCExecutiveSummary}
+          hasSelectedObject={Boolean(selectedObjectIdState)}
+          executiveActions={typeCExecutiveActions}
+          onExecutiveAction={handleTypeCExecutiveAction}
+          metaCognition={executiveMetaCognitionSnapshot}
+        />
+      ) : null}
     </div>
   );
 
@@ -17466,16 +17516,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         onCancel={cancelTypeCConnectionSuggestions}
         onApplySelected={applyTypeCConnectionSuggestions}
       />
-      {typeCExecutiveSummary ? (
-        <TypeCExecutiveSummaryCard
-          summary={typeCExecutiveSummary}
-          aiInsight={typeCAIExecutiveInsight}
-          onEnhance={handleEnhanceTypeCExecutiveSummary}
-          hasSelectedObject={Boolean(selectedObjectIdState)}
-          executiveActions={typeCExecutiveActions}
-          onExecutiveAction={handleTypeCExecutiveAction}
-        />
-      ) : null}
       {process.env.NODE_ENV !== "production" ? (
         <TypeCDevInspector
           scenarioState={typeCScenarioState}
