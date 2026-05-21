@@ -57,6 +57,11 @@ The frontend is not only a presentation layer. It is the workspace where the use
 | F9:4 | Institutional strategic pressure governance & executive stability intelligence | [F9:4](./architecture/F9-4-Institutional-Strategic-Pressure-Governance.md) |
 | F9:5 | Institutional strategic adaptation governance & autonomous organizational evolution intelligence | [F9:5](./architecture/F9-5-Institutional-Strategic-Adaptation-Governance.md) |
 | F9:6 | Unified adaptive governance runtime & institutional strategic evolution intelligence (F9 completion) | [F9:6](./architecture/F9-6-Unified-Adaptive-Governance-Runtime.md) |
+| F10:1 | Autonomous executive meta-cognition & enterprise strategic self-awareness | [F10:1](./architecture/F10-1-Autonomous-Executive-Meta-Cognition.md) |
+| F10:3 | Institutional strategic reflection & executive cognitive evolution intelligence | [F10:3](./architecture/F10-3-Institutional-Strategic-Reflection.md) |
+| F10:4 | Autonomous strategic foresight & institutional future-state intelligence | [F10:4](./architecture/F10-4-Autonomous-Strategic-Foresight.md) |
+| F10:5 | Unified strategic consciousness & enterprise meta-intelligence completion | [F10:5](./architecture/F10-5-Unified-Strategic-Consciousness.md) |
+| F10:6 | Autonomous institutional intelligence & final enterprise cognitive runtime | [F10:6](./architecture/F10-6-Autonomous-Institutional-Intelligence.md) |
 
 ## Backend Layer
 

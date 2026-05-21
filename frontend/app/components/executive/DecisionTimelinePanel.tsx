@@ -19,7 +19,9 @@ import { buildTimelineDecisionSet } from "../../lib/decision/decisionEngine";
 import { PanelDecisionSetSection } from "../panels/PanelDecisionSetSection";
 import { RightPanelFallback } from "../right-panel/RightPanelFallback";
 import type { ExecutiveMetaCognitionSnapshot } from "../../lib/meta-cognition";
+import type { ExecutiveReasoningTransparency } from "../../lib/reasoning-transparency";
 import { ExecutiveMetaCognitionCard } from "./ExecutiveMetaCognitionCard";
+import { ExecutiveReasoningTransparencyCard } from "./ExecutiveReasoningTransparencyCard";
 
 type DecisionTimelinePanelProps = {
   responseData?: any;
@@ -34,6 +36,7 @@ type DecisionTimelinePanelProps = {
   onSimulateDecision?: (() => void) | null;
   onReturnToWarRoom?: (() => void) | null;
   metaCognition?: ExecutiveMetaCognitionSnapshot | null;
+  reasoningTransparency?: ExecutiveReasoningTransparency | null;
 };
 
 function toneToMetricTone(
@@ -270,6 +273,9 @@ export function DecisionTimelinePanel(props: DecisionTimelinePanelProps) {
       {props.metaCognition ? (
         <ExecutiveMetaCognitionCard snapshot={props.metaCognition} compact />
       ) : null}
+      {props.reasoningTransparency ? (
+        <ExecutiveReasoningTransparencyCard transparency={props.reasoningTransparency} compact />
+      ) : null}
 
       <details style={{ borderRadius: 8 }}>
         <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: nx.muted }}>
@@ -305,7 +311,11 @@ export function DecisionTimelinePanel(props: DecisionTimelinePanelProps) {
             emptyText="No timeline available. Run a simulation to see how the system evolves."
           />
 
-          {props.metaCognition ? (
+          {props.reasoningTransparency ? (
+            <div style={{ ...softCardStyle, padding: 12, color: nx.muted, fontSize: 12, lineHeight: 1.45 }}>
+              {props.reasoningTransparency.timelineLine}
+            </div>
+          ) : props.metaCognition ? (
             <div style={{ ...softCardStyle, padding: 12, color: nx.muted, fontSize: 12, lineHeight: 1.45 }}>
               {props.metaCognition.timelineReflectionLine}
             </div>

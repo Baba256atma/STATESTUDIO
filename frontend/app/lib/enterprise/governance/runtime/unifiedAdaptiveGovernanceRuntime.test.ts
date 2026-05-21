@@ -68,7 +68,19 @@ describe("unified adaptive governance runtime F9:6", () => {
 
     const runtime = merged.unifiedAdaptiveGovernanceRuntime;
     expect(runtime).not.toBeNull();
-    if (runtime && merged.unifiedGovernanceRuntimeActive) {
+    expect(merged.autonomousExecutiveMetaCognition).not.toBeNull();
+    expect(merged.institutionalStrategicReflection).not.toBeNull();
+    if (merged.enterpriseCognitiveRuntimeComplete) {
+      expect(merged.governanceHeadline).toBe(merged.institutionalHeadline);
+    } else if (merged.enterpriseMetaIntelligenceActive) {
+      expect(merged.governanceHeadline).toBe(merged.consciousnessHeadline);
+    } else if (merged.futureStateIntelligenceActive) {
+      expect(merged.governanceHeadline).toBe(merged.foresightHeadline);
+    } else if (merged.cognitiveEvolutionActive) {
+      expect(merged.governanceHeadline).toBe(merged.evolutionHeadline);
+    } else if (merged.executiveMetaCognitionActive) {
+      expect(merged.governanceHeadline).toBe(merged.reflectionHeadline);
+    } else if (runtime && merged.unifiedGovernanceRuntimeActive) {
       expect(merged.governanceHeadline).toBe(runtime.unifiedGovernanceHeadline);
     }
   });

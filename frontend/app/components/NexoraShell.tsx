@@ -1468,10 +1468,6 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           onStartInvestorDemo={pilotOperatorChrome ? null : handleStartInvestorDemoRouted}
           investorDemoActive={investorDemo.demo.active}
           commandBarMicroHint={pilotOperatorChrome ? null : (runbookGuidance?.hints.commandBar ?? null)}
-          intelligenceStateLabel={systemStatus.label}
-          activeModeLabel={activeModeLabel}
-          decisionHeadline={executiveNarrative.decisionHeadline}
-          topDriverLabel={executiveNarrative.topDriverLabel}
         />
         <MultiSourceAssessPopover
           open={multiSourcePopoverOpen}
@@ -1934,6 +1930,11 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                 onToggle={toggleAssistantDrawer}
                 title="Strategic Assistant"
                 subtitle={
+                  governanceIntel?.assistantInstitutionalIntelligenceLine?.trim() ||
+                  governanceIntel?.assistantMetaIntelligenceLine?.trim() ||
+                  governanceIntel?.assistantStrategicForesightLine?.trim() ||
+                  governanceIntel?.assistantInstitutionalReflectionLine?.trim() ||
+                  governanceIntel?.assistantMetaCognitionLine?.trim() ||
                   governanceIntel?.assistantUnifiedGovernanceLine?.trim() ||
                   governanceIntel?.assistantAdaptationLine?.trim() ||
                   governanceIntel?.assistantStabilityLine?.trim() ||
@@ -2571,7 +2572,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           }}
           suggestions={
             Array.isArray(domainExperience?.promptExamples)
-              ? domainExperience.promptExamples.slice(0, 3).map((v) => String(v))
+              ? domainExperience.promptExamples.slice(0, 3).map((v: unknown) => String(v))
               : []
           }
           lastFeedback={stageChatAwaitingReply ? "Processing strategic request…" : null}

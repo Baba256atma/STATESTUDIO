@@ -28,6 +28,21 @@ export function ExecutiveAdaptiveGovernanceShellSync() {
       root.removeAttribute("data-nexora-evolution-convergence");
       root.removeAttribute("data-nexora-unified-governance-runtime");
       root.removeAttribute("data-nexora-strategic-evolution-converged");
+      root.removeAttribute("data-nexora-meta-cognition-posture");
+      root.removeAttribute("data-nexora-executive-meta-cognition");
+      root.removeAttribute("data-nexora-strategic-self-awareness");
+      root.removeAttribute("data-nexora-cognitive-evolution-posture");
+      root.removeAttribute("data-nexora-institutional-reflection");
+      root.removeAttribute("data-nexora-cognitive-evolution");
+      root.removeAttribute("data-nexora-strategic-foresight-posture");
+      root.removeAttribute("data-nexora-strategic-foresight");
+      root.removeAttribute("data-nexora-future-state-intelligence");
+      root.removeAttribute("data-nexora-meta-intelligence-posture");
+      root.removeAttribute("data-nexora-unified-consciousness");
+      root.removeAttribute("data-nexora-enterprise-meta-intelligence");
+      root.removeAttribute("data-nexora-institutional-intelligence-posture");
+      root.removeAttribute("data-nexora-autonomous-institutional-intelligence");
+      root.removeAttribute("data-nexora-enterprise-cognitive-runtime-complete");
       return;
     }
 
@@ -85,6 +100,54 @@ export function ExecutiveAdaptiveGovernanceShellSync() {
       "data-nexora-strategic-evolution-converged",
       snapshot.institutionalStrategicEvolutionConverged ? "true" : "false"
     );
+    root.setAttribute("data-nexora-meta-cognition-posture", snapshot.metaCognitionPosture);
+    root.setAttribute(
+      "data-nexora-executive-meta-cognition",
+      snapshot.executiveMetaCognitionActive ? "true" : "false"
+    );
+    root.setAttribute(
+      "data-nexora-strategic-self-awareness",
+      snapshot.strategicSelfAwarenessActive ? "true" : "false"
+    );
+    root.setAttribute("data-nexora-cognitive-evolution-posture", snapshot.cognitiveEvolutionPosture);
+    root.setAttribute(
+      "data-nexora-institutional-reflection",
+      snapshot.institutionalReflectionActive ? "true" : "false"
+    );
+    root.setAttribute(
+      "data-nexora-cognitive-evolution",
+      snapshot.cognitiveEvolutionActive ? "true" : "false"
+    );
+    root.setAttribute("data-nexora-strategic-foresight-posture", snapshot.strategicForesightPosture);
+    root.setAttribute(
+      "data-nexora-strategic-foresight",
+      snapshot.strategicForesightActive ? "true" : "false"
+    );
+    root.setAttribute(
+      "data-nexora-future-state-intelligence",
+      snapshot.futureStateIntelligenceActive ? "true" : "false"
+    );
+    root.setAttribute("data-nexora-meta-intelligence-posture", snapshot.metaIntelligencePosture);
+    root.setAttribute(
+      "data-nexora-unified-consciousness",
+      snapshot.unifiedStrategicConsciousnessActive ? "true" : "false"
+    );
+    root.setAttribute(
+      "data-nexora-enterprise-meta-intelligence",
+      snapshot.enterpriseMetaIntelligenceActive ? "true" : "false"
+    );
+    root.setAttribute(
+      "data-nexora-institutional-intelligence-posture",
+      snapshot.institutionalIntelligencePosture
+    );
+    root.setAttribute(
+      "data-nexora-autonomous-institutional-intelligence",
+      snapshot.autonomousInstitutionalIntelligenceActive ? "true" : "false"
+    );
+    root.setAttribute(
+      "data-nexora-enterprise-cognitive-runtime-complete",
+      snapshot.enterpriseCognitiveRuntimeComplete ? "true" : "false"
+    );
 
     return () => {
       root.removeAttribute("data-nexora-governance-posture");
@@ -105,6 +168,21 @@ export function ExecutiveAdaptiveGovernanceShellSync() {
       root.removeAttribute("data-nexora-evolution-convergence");
       root.removeAttribute("data-nexora-unified-governance-runtime");
       root.removeAttribute("data-nexora-strategic-evolution-converged");
+      root.removeAttribute("data-nexora-meta-cognition-posture");
+      root.removeAttribute("data-nexora-executive-meta-cognition");
+      root.removeAttribute("data-nexora-strategic-self-awareness");
+      root.removeAttribute("data-nexora-cognitive-evolution-posture");
+      root.removeAttribute("data-nexora-institutional-reflection");
+      root.removeAttribute("data-nexora-cognitive-evolution");
+      root.removeAttribute("data-nexora-strategic-foresight-posture");
+      root.removeAttribute("data-nexora-strategic-foresight");
+      root.removeAttribute("data-nexora-future-state-intelligence");
+      root.removeAttribute("data-nexora-meta-intelligence-posture");
+      root.removeAttribute("data-nexora-unified-consciousness");
+      root.removeAttribute("data-nexora-enterprise-meta-intelligence");
+      root.removeAttribute("data-nexora-institutional-intelligence-posture");
+      root.removeAttribute("data-nexora-autonomous-institutional-intelligence");
+      root.removeAttribute("data-nexora-enterprise-cognitive-runtime-complete");
     };
   }, [snapshot]);
 

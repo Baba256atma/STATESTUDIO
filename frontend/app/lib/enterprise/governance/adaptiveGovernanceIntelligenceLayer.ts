@@ -3,6 +3,11 @@ import { adaptiveStrategicCalibrationLayer } from "./calibration/adaptiveStrateg
 import { institutionalStrategicPressureGovernanceLayer } from "./pressure/institutionalStrategicPressureGovernanceLayer";
 import { strategicAlignmentIntegrityLayer } from "./coherence/strategicAlignmentIntegrityLayer";
 import { governanceSynchronizationGovernance } from "./governanceSynchronizationGovernance";
+import { autonomousExecutiveMetaCognitionLayer } from "../metaCognition/autonomousExecutiveMetaCognitionLayer";
+import { institutionalStrategicReflectionLayer } from "../metaCognition/reflection/institutionalStrategicReflectionLayer";
+import { autonomousStrategicForesightLayer } from "../metaCognition/foresight/autonomousStrategicForesightLayer";
+import { unifiedStrategicConsciousnessRuntime } from "../metaCognition/consciousness/unifiedStrategicConsciousnessRuntime";
+import { autonomousInstitutionalIntelligenceRuntime } from "../metaCognition/institutionalRuntime/autonomousInstitutionalIntelligenceRuntime";
 import { unifiedAdaptiveGovernanceRuntime } from "./runtime/unifiedAdaptiveGovernanceRuntime";
 import type { ResolveAdaptiveGovernanceIntelligenceInput } from "./resolveAdaptiveGovernanceIntelligence";
 import type { AdaptiveGovernanceIntelligenceSnapshot } from "./adaptiveGovernanceTypes";
@@ -37,6 +42,11 @@ export class AdaptiveGovernanceIntelligenceLayer {
     institutionalStrategicPressureGovernanceLayer.reset();
     institutionalStrategicAdaptationGovernanceLayer.reset();
     unifiedAdaptiveGovernanceRuntime.reset();
+    autonomousExecutiveMetaCognitionLayer.reset();
+    institutionalStrategicReflectionLayer.reset();
+    autonomousStrategicForesightLayer.reset();
+    unifiedStrategicConsciousnessRuntime.reset();
+    autonomousInstitutionalIntelligenceRuntime.reset();
   }
 }
 

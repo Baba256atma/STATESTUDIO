@@ -104,6 +104,10 @@ import {
   buildExecutiveMetaCognitionSnapshot,
   logMetaCognitionDiagnostics,
 } from "../lib/meta-cognition";
+import {
+  buildExecutiveReasoningTransparency,
+  logReasoningTransparencyDiagnostics,
+} from "../lib/reasoning-transparency";
 import { nx, sceneOverlayCardStyle, sceneVignetteLayerStyle, sceneWorkingBadgeStyle, softCardStyle } from "../components/ui/nexoraTheme";
 import {
   INITIAL_NEXORA_UI_STATE,
@@ -12759,6 +12763,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     previousMetaCognitionConfidenceRef.current = executiveMetaCognitionSnapshot.confidenceEvolution.current;
     logMetaCognitionDiagnostics(executiveMetaCognitionSnapshot);
   }, [executiveMetaCognitionSnapshot]);
+  const executiveReasoningTransparency = useMemo(() => {
+    const canonicalRecommendation = readCanonicalRecommendation(visibleResponseData, stableVisibleSceneJson);
+    return buildExecutiveReasoningTransparency({
+      metaCognition: executiveMetaCognitionSnapshot,
+      canonicalRecommendation,
+      strategicAdvice: visibleStrategicAdvice ?? null,
+      timestamp: canonicalRecommendation?.created_at ?? executiveMetaCognitionSnapshot.timestamp,
+    });
+  }, [executiveMetaCognitionSnapshot, stableVisibleSceneJson, visibleResponseData, visibleStrategicAdvice]);
+  useEffect(() => {
+    logReasoningTransparencyDiagnostics(executiveReasoningTransparency);
+  }, [executiveReasoningTransparency]);
   const lastRightPanelHostInputTraceRef = useRef<string | null>(null);
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -12829,6 +12845,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       guidedPromptDebug={null}
       panelFamilyAuditDebug={panelFamilyAuditDebug}
       metaCognition={executiveMetaCognitionSnapshot}
+      reasoningTransparency={executiveReasoningTransparency}
       warRoom={warRoom}
       onSceneUpdateFromTimeline={handleSceneUpdateFromTimeline}
       onSimulateDecision={() =>
@@ -13156,11 +13173,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const leftCommandContextSummary = useMemo(() => {
     const s = (lastAnalysisSummary ?? "").trim();
     const base = s.length > 160 ? `${s.slice(0, 159)}…` : s;
-    const reflection = executiveMetaCognitionSnapshot.assistantReflectionLine;
+    const reflection = executiveReasoningTransparency.assistantLine;
     if (!base) return reflection.length > 220 ? `${reflection.slice(0, 219)}…` : reflection;
-    const combined = `${base} Meta-cognition: ${reflection}`;
+    const combined = `${base} Reasoning: ${reflection}`;
     return combined.length > 260 ? `${combined.slice(0, 259)}…` : combined;
-  }, [executiveMetaCognitionSnapshot, lastAnalysisSummary]);
+  }, [executiveReasoningTransparency, lastAnalysisSummary]);
 
   const leftCommandPortalNode =
     isClientMounted && leftCommandPortalHost ? (
@@ -13643,6 +13660,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const lastMultiSourceBridgeSigRef = useRef<string | null>(null);
   const lastPipelineStatusSigRef = useRef<string | null>(null);
   const [pipelineStatusUi, setPipelineStatusUi] = useState<NexoraPipelineStatusUi>(() => createInitialPipelineStatusUi());
+  const executiveReasoningTransparencyResolved = useMemo(() => {
+    const canonicalRecommendation = readCanonicalRecommendation(visibleResponseData, stableVisibleSceneJson);
+    return buildExecutiveReasoningTransparency({
+      metaCognition: executiveMetaCognitionSnapshot,
+      canonicalRecommendation,
+      strategicAdvice: visibleStrategicAdvice ?? null,
+      pipelineStatus: {
+        fragilityLevel: pipelineStatusUi.fragilityLevel,
+        summary: pipelineStatusUi.summary,
+        insightLine: pipelineStatusUi.insightLine,
+      },
+      timestamp: canonicalRecommendation?.created_at ?? executiveMetaCognitionSnapshot.timestamp,
+    });
+  }, [
+    executiveMetaCognitionSnapshot,
+    pipelineStatusUi.fragilityLevel,
+    pipelineStatusUi.insightLine,
+    pipelineStatusUi.summary,
+    stableVisibleSceneJson,
+    visibleResponseData,
+    visibleStrategicAdvice,
+  ]);
+  useEffect(() => {
+    logReasoningTransparencyDiagnostics(executiveReasoningTransparencyResolved);
+  }, [executiveReasoningTransparencyResolved]);
   const lastAuditSignatureRef = useRef<string | null>(null);
   const [auditHudEpoch, setAuditHudEpoch] = useState(0);
   const lastReplaySnapshotRef = useRef<NexoraReplaySnapshot | null>(null);
@@ -16519,6 +16561,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                   decisionError={decisionUiState.error}
                   resolveObjectLabel={resolveSceneObjectLabel}
                   metaCognition={executiveMetaCognitionSnapshot}
+                  reasoningTransparency={executiveReasoningTransparencyResolved}
                   onCompareOptions={() =>
                     dispatchCanonicalAction(
                       normalizeCompareOptions({
@@ -17303,6 +17346,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           executiveActions={typeCExecutiveActions}
           onExecutiveAction={handleTypeCExecutiveAction}
           metaCognition={executiveMetaCognitionSnapshot}
+          reasoningTransparency={executiveReasoningTransparencyResolved}
         />
       ) : null}
     </div>

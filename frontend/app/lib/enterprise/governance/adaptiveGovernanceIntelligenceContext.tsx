@@ -27,6 +27,21 @@ export type AdaptiveGovernanceIntelligenceContextValue = {
   assistantUnifiedGovernanceLine: string;
   unifiedGovernanceRuntimeActive: boolean;
   institutionalStrategicEvolutionConverged: boolean;
+  assistantMetaCognitionLine: string;
+  executiveMetaCognitionActive: boolean;
+  strategicSelfAwarenessActive: boolean;
+  assistantInstitutionalReflectionLine: string;
+  institutionalReflectionActive: boolean;
+  cognitiveEvolutionActive: boolean;
+  assistantStrategicForesightLine: string;
+  strategicForesightActive: boolean;
+  futureStateIntelligenceActive: boolean;
+  assistantMetaIntelligenceLine: string;
+  unifiedStrategicConsciousnessActive: boolean;
+  enterpriseMetaIntelligenceActive: boolean;
+  assistantInstitutionalIntelligenceLine: string;
+  autonomousInstitutionalIntelligenceActive: boolean;
+  enterpriseCognitiveRuntimeComplete: boolean;
 };
 
 const AdaptiveGovernanceIntelligenceContext =

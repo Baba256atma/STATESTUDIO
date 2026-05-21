@@ -10,6 +10,7 @@ export type ExecutiveReasoningPathStep =
   | "advisory_reasoning"
   | "governance_intelligence"
   | "meta_cognition_reflection"
+  | "transparent_executive_reasoning"
   | "executive_strategic_self_awareness";
 
 export type ExecutiveMetaCognitionAssumption = {

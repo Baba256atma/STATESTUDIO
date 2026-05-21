@@ -10,6 +10,7 @@ import {
 import type { TypeCExecutiveAction } from "../../lib/typec/typeCExecutiveActions.ts";
 import type { TypeCExecutiveSummary } from "../../lib/typec/typeCExecutiveSummary.ts";
 import type { ExecutiveMetaCognitionSnapshot } from "../../lib/meta-cognition";
+import type { ExecutiveReasoningTransparency } from "../../lib/reasoning-transparency";
 
 export type TypeCExecutiveSummaryCardPlacement = "stage" | "panel" | "overlay";
 
@@ -22,6 +23,7 @@ export type TypeCExecutiveSummaryCardProps = {
   executiveActions?: TypeCExecutiveAction[];
   onExecutiveAction?: (action: TypeCExecutiveAction) => void;
   metaCognition?: ExecutiveMetaCognitionSnapshot | null;
+  reasoningTransparency?: ExecutiveReasoningTransparency | null;
 };
 
 const cardStyle = {
@@ -128,6 +130,7 @@ export function TypeCExecutiveSummaryCard({
   executiveActions = [],
   onExecutiveAction,
   metaCognition = null,
+  reasoningTransparency = null,
 }: TypeCExecutiveSummaryCardProps): React.ReactElement | null {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -157,7 +160,12 @@ export function TypeCExecutiveSummaryCard({
         <div style={textStyle}>{formatConfidence(summary)}</div>
       </div>
       <MiniList title="Why" items={summary.why} />
-      {metaCognition ? (
+      {reasoningTransparency ? (
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>Reasoning Transparency</div>
+          <div style={textStyle}>{reasoningTransparency.rightRailLine}</div>
+        </div>
+      ) : metaCognition ? (
         <div style={sectionStyle}>
           <div style={sectionTitleStyle}>Reasoning Reflection</div>
           <div style={textStyle}>{metaCognition.rightRailReflectionLine}</div>

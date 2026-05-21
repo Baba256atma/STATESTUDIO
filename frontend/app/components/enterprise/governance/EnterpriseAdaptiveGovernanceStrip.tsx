@@ -11,26 +11,88 @@ export function EnterpriseAdaptiveGovernanceStrip(props: {
 }): React.ReactElement {
   const { governance } = props;
 
+  const institutionalDisplay =
+    governance.enterpriseCognitiveRuntimeComplete ||
+    (governance.autonomousInstitutionalIntelligenceActive &&
+      governance.institutionalIntelligencePosture !== "idle");
+
+  const consciousnessDisplay =
+    !institutionalDisplay &&
+    (governance.enterpriseMetaIntelligenceActive ||
+      (governance.unifiedStrategicConsciousnessActive &&
+        governance.metaIntelligencePosture !== "idle"));
+
+  const foresightDisplay =
+    !institutionalDisplay &&
+    !consciousnessDisplay &&
+    (governance.futureStateIntelligenceActive ||
+      (governance.strategicForesightActive && governance.strategicForesightPosture !== "idle"));
+
+  const evolutionDisplay =
+    !institutionalDisplay &&
+    !consciousnessDisplay &&
+    !foresightDisplay &&
+    (governance.cognitiveEvolutionActive ||
+      (governance.institutionalReflectionActive && governance.cognitiveEvolutionPosture !== "idle"));
+
+  const metaDisplay =
+    !institutionalDisplay &&
+    !consciousnessDisplay &&
+    !foresightDisplay &&
+    !evolutionDisplay &&
+    (governance.executiveMetaCognitionActive ||
+      (governance.strategicSelfAwarenessActive && governance.metaCognitionPosture !== "idle"));
+
   const unifiedDisplay =
-    governance.unifiedGovernanceRuntimeActive ||
-    (governance.institutionalStrategicEvolutionConverged &&
-      governance.evolutionConvergencePosture !== "idle");
+    !institutionalDisplay &&
+    !consciousnessDisplay &&
+    !foresightDisplay &&
+    !evolutionDisplay &&
+    !metaDisplay &&
+    (governance.unifiedGovernanceRuntimeActive ||
+      (governance.institutionalStrategicEvolutionConverged &&
+        governance.evolutionConvergencePosture !== "idle"));
 
   const adaptationDisplay =
+    !institutionalDisplay &&
+    !consciousnessDisplay &&
+    !foresightDisplay &&
+    !evolutionDisplay &&
+    !metaDisplay &&
     !unifiedDisplay &&
     (governance.organizationalEvolutionActive ||
       (governance.adaptationGovernanceActive && governance.adaptationPosture !== "idle"));
 
   const pressureDisplay =
+    !institutionalDisplay &&
+    !consciousnessDisplay &&
+    !foresightDisplay &&
+    !evolutionDisplay &&
+    !metaDisplay &&
     !unifiedDisplay &&
     !adaptationDisplay &&
     (governance.executiveStabilityActive ||
       (governance.pressureGovernanceActive && governance.pressurePosture !== "idle"));
 
-  const compact = unifiedDisplay
-    ? governance.evolutionConvergencePosture === "synchronized" ||
-      governance.evolutionConvergencePosture === "self_regulating"
-    : adaptationDisplay
+  const compact = institutionalDisplay
+    ? governance.institutionalIntelligencePosture === "complete" ||
+      governance.institutionalIntelligencePosture === "operational"
+    : consciousnessDisplay
+      ? governance.metaIntelligencePosture === "sustained" ||
+        governance.metaIntelligencePosture === "orchestrated"
+      : foresightDisplay
+      ? governance.strategicForesightPosture === "sustained" ||
+        governance.strategicForesightPosture === "anticipating"
+      : evolutionDisplay
+      ? governance.cognitiveEvolutionPosture === "sustained" ||
+        governance.cognitiveEvolutionPosture === "evolving"
+      : metaDisplay
+      ? governance.metaCognitionPosture === "transparent" ||
+        governance.metaCognitionPosture === "reflecting"
+      : unifiedDisplay
+      ? governance.evolutionConvergencePosture === "synchronized" ||
+        governance.evolutionConvergencePosture === "self_regulating"
+      : adaptationDisplay
       ? governance.adaptationPosture === "evolving" || governance.adaptationPosture === "progressive"
       : pressureDisplay
       ? governance.pressurePosture === "composed" || governance.pressurePosture === "resilient"
@@ -43,9 +105,19 @@ export function EnterpriseAdaptiveGovernanceStrip(props: {
           : governance.oversightPosture === "oversight_active" ||
             governance.oversightPosture === "synchronized";
 
-  const sectionLabel = unifiedDisplay
-    ? "Unified governance"
-    : adaptationDisplay
+  const sectionLabel = institutionalDisplay
+    ? "Enterprise cognition"
+    : consciousnessDisplay
+      ? "Meta-intelligence"
+      : foresightDisplay
+      ? "Strategic foresight"
+      : evolutionDisplay
+      ? "Cognitive evolution"
+      : metaDisplay
+      ? "Strategic self-awareness"
+      : unifiedDisplay
+      ? "Unified governance"
+      : adaptationDisplay
       ? "Organizational evolution"
       : pressureDisplay
       ? "Executive stability"
@@ -55,9 +127,19 @@ export function EnterpriseAdaptiveGovernanceStrip(props: {
           ? "Strategic coherence"
           : "Governance intelligence";
 
-  const subline = unifiedDisplay
-    ? governance.unifiedGovernanceSubline
-    : adaptationDisplay
+  const subline = institutionalDisplay
+    ? governance.institutionalSubline
+    : consciousnessDisplay
+      ? governance.consciousnessSubline
+      : foresightDisplay
+      ? governance.foresightSubline
+      : evolutionDisplay
+      ? governance.evolutionSubline
+      : metaDisplay
+      ? governance.reflectionSubline
+      : unifiedDisplay
+      ? governance.unifiedGovernanceSubline
+      : adaptationDisplay
       ? governance.evolutionSubline
       : pressureDisplay
       ? governance.stabilitySubline
@@ -67,11 +149,31 @@ export function EnterpriseAdaptiveGovernanceStrip(props: {
           ? governance.coherenceSubline
           : governance.governanceSubline;
 
-  const detailLine = adaptationDisplay
-    ? governance.transformationContinuityLine ||
-      governance.adaptationGovernanceLine ||
-      governance.operationalEvolutionLine
-    : pressureDisplay
+  const detailLine = institutionalDisplay
+    ? governance.synchronizationHealthLine ||
+      governance.adaptationContinuityLine ||
+      governance.executiveCognitionSyncLine
+    : consciousnessDisplay
+      ? governance.cognitionIntegrityLine ||
+        governance.crossLayerSyncLine ||
+        governance.executiveAttentionLine
+      : foresightDisplay
+      ? governance.trajectoryLine ||
+        governance.resilienceForecastLine ||
+        governance.strategicTimingLine
+      : evolutionDisplay
+      ? governance.strategicMaturityLine ||
+        governance.resilienceEvolutionLine ||
+        governance.organizationalLearningLine
+      : metaDisplay
+      ? governance.reasoningPathLine ||
+        governance.assumptionsLine ||
+        governance.uncertaintyLine
+      : adaptationDisplay
+      ? governance.transformationContinuityLine ||
+        governance.adaptationGovernanceLine ||
+        governance.operationalEvolutionLine
+      : pressureDisplay
       ? governance.executiveStabilityLine ||
         governance.escalationGovernanceLine ||
         governance.pressureStabilizationLine
@@ -85,9 +187,19 @@ export function EnterpriseAdaptiveGovernanceStrip(props: {
             governance.fragmentationAwarenessLine
           : governance.selfCalibrationLine || governance.oversightInterpretationLine;
 
-  const timelineLine = unifiedDisplay
-    ? governance.timelineStrategicEvolutionLine
-    : adaptationDisplay
+  const timelineLine = institutionalDisplay
+    ? governance.timelineInstitutionalContinuityLine
+    : consciousnessDisplay
+      ? governance.timelineStrategicContinuityLine
+      : foresightDisplay
+      ? governance.timelineFutureStateLine
+      : evolutionDisplay
+      ? governance.timelineInstitutionalEvolutionLine
+      : metaDisplay
+      ? governance.timelineReasoningLine
+      : unifiedDisplay
+      ? governance.timelineStrategicEvolutionLine
+      : adaptationDisplay
       ? governance.timelineTransformationLine
       : pressureDisplay
       ? governance.timelineStabilityLine
@@ -97,9 +209,19 @@ export function EnterpriseAdaptiveGovernanceStrip(props: {
           ? governance.timelineCoherenceLine
           : governance.timelineGovernanceLine;
 
-  const accentLine = adaptationDisplay
-    ? governance.adaptationGovernanceLine
-    : pressureDisplay
+  const accentLine = institutionalDisplay
+    ? governance.synchronizationHealthLine || governance.executiveCognitionSyncLine
+    : consciousnessDisplay
+      ? governance.continuityHealthLine || governance.cognitionIntegrityLine
+      : foresightDisplay
+      ? governance.uncertaintyFactorsLine || governance.resilienceForecastLine
+      : evolutionDisplay
+        ? governance.resilienceEvolutionLine || governance.strategicMaturityLine
+        : metaDisplay
+      ? governance.confidenceEvolutionLine || governance.advisoryLimitsLine
+      : adaptationDisplay
+      ? governance.adaptationGovernanceLine
+      : pressureDisplay
       ? governance.escalationGovernanceLine
       : governance.strategicCalibrationActive
         ? governance.refinementInterpretationLine
@@ -138,8 +260,27 @@ export function EnterpriseAdaptiveGovernanceStrip(props: {
       data-nx-strategic-evolution-converged={
         governance.institutionalStrategicEvolutionConverged ? "true" : "false"
       }
+      data-nx-meta-cognition-posture={governance.metaCognitionPosture}
+      data-nx-executive-meta-cognition={governance.executiveMetaCognitionActive ? "true" : "false"}
+      data-nx-strategic-self-awareness={governance.strategicSelfAwarenessActive ? "true" : "false"}
+      data-nx-cognitive-evolution-posture={governance.cognitiveEvolutionPosture}
+      data-nx-institutional-reflection={governance.institutionalReflectionActive ? "true" : "false"}
+      data-nx-cognitive-evolution={governance.cognitiveEvolutionActive ? "true" : "false"}
+      data-nx-strategic-foresight-posture={governance.strategicForesightPosture}
+      data-nx-strategic-foresight={governance.strategicForesightActive ? "true" : "false"}
+      data-nx-future-state-intelligence={governance.futureStateIntelligenceActive ? "true" : "false"}
+      data-nx-meta-intelligence-posture={governance.metaIntelligencePosture}
+      data-nx-unified-consciousness={governance.unifiedStrategicConsciousnessActive ? "true" : "false"}
+      data-nx-enterprise-meta-intelligence={governance.enterpriseMetaIntelligenceActive ? "true" : "false"}
+      data-nx-institutional-intelligence-posture={governance.institutionalIntelligencePosture}
+      data-nx-autonomous-institutional-intelligence={
+        governance.autonomousInstitutionalIntelligenceActive ? "true" : "false"
+      }
+      data-nx-enterprise-cognitive-runtime-complete={
+        governance.enterpriseCognitiveRuntimeComplete ? "true" : "false"
+      }
       style={enterpriseAdaptiveGovernanceStripStyle}
-      aria-label="Unified adaptive governance and institutional strategic evolution intelligence"
+      aria-label="Enterprise cognitive runtime, meta-intelligence, and governance orchestration"
     >
       <div
         style={{

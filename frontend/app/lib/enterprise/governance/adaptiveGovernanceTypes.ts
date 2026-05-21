@@ -13,6 +13,26 @@ import type {
   EvolutionConvergencePosture,
 } from "./runtime/unifiedAdaptiveGovernanceTypes";
 import type {
+  AutonomousExecutiveMetaCognitionLayerSnapshot,
+  MetaCognitionPosture,
+} from "../metaCognition/executiveMetaCognitionTypes";
+import type {
+  InstitutionalStrategicReflectionLayerSnapshot,
+  CognitiveEvolutionPosture,
+} from "../metaCognition/reflection/institutionalStrategicReflectionTypes";
+import type {
+  AutonomousStrategicForesightLayerSnapshot,
+  StrategicForesightPosture,
+} from "../metaCognition/foresight/institutionalFutureStateTypes";
+import type {
+  UnifiedStrategicConsciousnessRuntimeSnapshot,
+  MetaIntelligencePosture,
+} from "../metaCognition/consciousness/unifiedStrategicConsciousnessTypes";
+import type {
+  AutonomousInstitutionalIntelligenceRuntimeSnapshot,
+  InstitutionalIntelligencePosture,
+} from "../metaCognition/institutionalRuntime/enterpriseCognitiveRuntimeTypes";
+import type {
   InstitutionalStrategicPressureGovernanceSnapshot,
   PressureGovernancePosture,
 } from "./pressure/strategicPressureGovernanceTypes";
@@ -153,6 +173,70 @@ export type AdaptiveGovernanceIntelligenceSnapshot = {
   unifiedGovernanceRuntimeActive: boolean;
   institutionalStrategicEvolutionConverged: boolean;
   unifiedAdaptiveGovernanceRuntime: UnifiedAdaptiveGovernanceRuntimeSnapshot | null;
+  /** F10:1 — executive meta-cognition + strategic self-awareness */
+  metaCognitionPosture: MetaCognitionPosture;
+  reflectionHeadline: string;
+  reflectionSubline: string;
+  reasoningPathLine: string;
+  assumptionsLine: string;
+  uncertaintyLine: string;
+  confidenceEvolutionLine: string;
+  advisoryLimitsLine: string;
+  timelineReasoningLine: string;
+  assistantMetaCognitionLine: string;
+  executiveMetaCognitionActive: boolean;
+  strategicSelfAwarenessActive: boolean;
+  autonomousExecutiveMetaCognition: AutonomousExecutiveMetaCognitionLayerSnapshot | null;
+  /** F10:3 — institutional strategic reflection + cognitive evolution */
+  cognitiveEvolutionPosture: CognitiveEvolutionPosture;
+  evolutionHeadline: string;
+  evolutionSubline: string;
+  strategicMaturityLine: string;
+  resilienceEvolutionLine: string;
+  organizationalLearningLine: string;
+  timelineInstitutionalEvolutionLine: string;
+  assistantInstitutionalReflectionLine: string;
+  institutionalReflectionActive: boolean;
+  cognitiveEvolutionActive: boolean;
+  institutionalStrategicReflection: InstitutionalStrategicReflectionLayerSnapshot | null;
+  /** F10:4 — autonomous strategic foresight + future-state intelligence */
+  strategicForesightPosture: StrategicForesightPosture;
+  foresightHeadline: string;
+  foresightSubline: string;
+  trajectoryLine: string;
+  resilienceForecastLine: string;
+  strategicTimingLine: string;
+  uncertaintyFactorsLine: string;
+  timelineFutureStateLine: string;
+  assistantStrategicForesightLine: string;
+  strategicForesightActive: boolean;
+  futureStateIntelligenceActive: boolean;
+  autonomousStrategicForesight: AutonomousStrategicForesightLayerSnapshot | null;
+  /** F10:5 — unified strategic consciousness + enterprise meta-intelligence */
+  metaIntelligencePosture: MetaIntelligencePosture;
+  consciousnessHeadline: string;
+  consciousnessSubline: string;
+  cognitionIntegrityLine: string;
+  continuityHealthLine: string;
+  crossLayerSyncLine: string;
+  executiveAttentionLine: string;
+  timelineStrategicContinuityLine: string;
+  assistantMetaIntelligenceLine: string;
+  unifiedStrategicConsciousnessActive: boolean;
+  enterpriseMetaIntelligenceActive: boolean;
+  unifiedStrategicConsciousness: UnifiedStrategicConsciousnessRuntimeSnapshot | null;
+  /** F10:6 — autonomous institutional intelligence + final enterprise cognitive runtime */
+  institutionalIntelligencePosture: InstitutionalIntelligencePosture;
+  institutionalHeadline: string;
+  institutionalSubline: string;
+  synchronizationHealthLine: string;
+  adaptationContinuityLine: string;
+  executiveCognitionSyncLine: string;
+  timelineInstitutionalContinuityLine: string;
+  assistantInstitutionalIntelligenceLine: string;
+  autonomousInstitutionalIntelligenceActive: boolean;
+  enterpriseCognitiveRuntimeComplete: boolean;
+  autonomousInstitutionalIntelligence: AutonomousInstitutionalIntelligenceRuntimeSnapshot | null;
 };
 
 export const ADAPTIVE_GOVERNANCE_INTELLIGENCE_SYNC_EVENT =

@@ -91,6 +91,8 @@ import {
 } from "../../lib/panels/panelDataReadiness";
 import type { RiskPanelData } from "../../lib/panels/panelDataContract";
 import type { ExecutiveMetaCognitionSnapshot } from "../../lib/meta-cognition";
+import type { ExecutiveReasoningTransparency } from "../../lib/reasoning-transparency";
+import { ExecutiveReasoningTransparencyCard } from "../executive/ExecutiveReasoningTransparencyCard";
 const logConflictPayloadSource = (..._args: any[]) => {};
 const logPanelDataUnderfed = (..._args: any[]) => {};
 const logPanelFallback = (..._args: any[]) => {};
@@ -176,6 +178,7 @@ type RightPanelHostProps = {
     contractSalvaged?: boolean;
   } | null;
   metaCognition?: ExecutiveMetaCognitionSnapshot | null;
+  reasoningTransparency?: ExecutiveReasoningTransparency | null;
   warRoom: WarRoomController;
   onSceneUpdateFromTimeline: (payload: any) => void;
   onSimulateDecision?: (() => void) | null;
@@ -1472,6 +1475,11 @@ export function RightPanelHost(props: RightPanelHostProps) {
             <ExecutiveMetaCognitionCard snapshot={props.metaCognition} compact />
           </div>
         ) : null}
+        {props.reasoningTransparency ? (
+          <div style={{ margin: "8px 12px 0" }}>
+            <ExecutiveReasoningTransparencyCard transparency={props.reasoningTransparency} compact />
+          </div>
+        ) : null}
         {panelActionItems.length > 0 ? (
           <div style={{ margin: "8px 12px 0", display: "flex", flexDirection: "column", gap: 6 }}>
             {panelActionItems.slice(0, 3).map((action, index) => {
@@ -1645,6 +1653,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
           onSimulateDecision={handleContextualSimulationAction}
           onReturnToWarRoom={handleContextualWarRoomAction}
           metaCognition={props.metaCognition ?? null}
+          reasoningTransparency={props.reasoningTransparency ?? null}
         />
       );
     case "decision_lifecycle":
