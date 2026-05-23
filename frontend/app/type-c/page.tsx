@@ -1,119 +1,66 @@
 "use client";
 
-import Link from "next/link";
+import React from "react";
+import { ErrorBoundary } from "../components/ErrorBoundary";
+import { NexoraManagerWorkspaceShell } from "../components/workspace/NexoraManagerWorkspaceShell";
+import { TypeCWorkspaceInitFallback } from "../components/workspace/TypeCWorkspaceInitFallback";
+import { resolveDomainExperience } from "../lib/domain/domainExperienceRegistry";
+import {
+  TYPE_C_DOMAIN_STORAGE_KEY,
+  TYPE_C_GOVERNANCE_ORG_ID,
+  TYPE_C_MANAGER_DOMAIN_ID,
+} from "../lib/typec/typeCManagerWorkspaceRoute";
 
-const typeCTags = ["TYPE_C", "EXECUTIVE", "DECISION_OS"];
+function resolveTypeCWorkspaceDomain(): { domainId: string } | { error: string } {
+  try {
+    const resolved = resolveDomainExperience(TYPE_C_MANAGER_DOMAIN_ID);
+    if (!resolved?.experience?.domainId) {
+      return { error: "Domain experience could not be resolved for Type-C manager workspace." };
+    }
+    return { domainId: resolved.experience.domainId };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[Nexora][TypeC][WorkspaceInit]", error);
+    }
+    return { error: message };
+  }
+}
 
 export default function TypeCPage() {
+  const [initState] = React.useState(resolveTypeCWorkspaceDomain);
+
+  React.useEffect(() => {
+    try {
+      window.localStorage.setItem(TYPE_C_DOMAIN_STORAGE_KEY, TYPE_C_MANAGER_DOMAIN_ID);
+    } catch {
+      // Storage optional — workspace still loads with explicit domain id.
+    }
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[Nexora][TypeC][Route]", {
+        route: "/type-c",
+        domainId: "error" in initState ? null : initState.domainId,
+        mode: "type_c",
+      });
+    }
+  }, [initState]);
+
+  if ("error" in initState) {
+    return (
+      <TypeCWorkspaceInitFallback
+        detail="Type-C manager workspace could not initialize."
+        diagnostic={initState.error}
+      />
+    );
+  }
+
   return (
-    <main
-      data-nx="type-c-manager-workspace-page"
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-        background:
-          "radial-gradient(120% 120% at 80% 0%, rgba(14,165,233,0.18) 0%, rgba(15,23,42,0.96) 44%, #04070d 100%)",
-        color: "#f8fafc",
-      }}
-    >
-      <section
-        style={{
-          width: "min(760px, 100%)",
-          borderRadius: 24,
-          border: "1px solid rgba(148,163,184,0.16)",
-          background: "rgba(15,23,42,0.74)",
-          boxShadow: "0 22px 70px rgba(2,6,23,0.42)",
-          padding: 28,
-        }}
-      >
-        <div
-          style={{
-            color: "#7dd3fc",
-            fontSize: 12,
-            fontWeight: 800,
-            letterSpacing: 1.2,
-            textTransform: "uppercase",
-          }}
-        >
-          Nexora Type-C
-        </div>
-        <h1
-          style={{
-            margin: "10px 0 0",
-            fontSize: "clamp(34px, 6vw, 56px)",
-            lineHeight: 1,
-            letterSpacing: 0,
-          }}
-        >
-          Manager Workspace
-        </h1>
-        <p style={{ margin: "16px 0 0", color: "#cbd5e1", fontSize: 16, lineHeight: 1.7 }}>
-          Executive decision workspace for system modeling, fragility analysis, scenarios, war room, and monitored execution.
-        </p>
-
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 22 }}>
-          {typeCTags.map((tag) => (
-            <span
-              key={tag}
-              style={{
-                height: 26,
-                padding: "0 10px",
-                borderRadius: 999,
-                border: "1px solid rgba(125,211,252,0.18)",
-                background: "rgba(8,47,73,0.32)",
-                color: "#e0f2fe",
-                display: "inline-flex",
-                alignItems: "center",
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: 0.5,
-              }}
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-
-        <div
-          style={{
-            marginTop: 28,
-            padding: 16,
-            borderRadius: 16,
-            border: "1px solid rgba(148,163,184,0.12)",
-            background: "rgba(2,6,23,0.32)",
-            color: "#94a3b8",
-            fontSize: 13,
-            lineHeight: 1.65,
-          }}
-        >
-          This route is the safe Type-C entry point. The full Manager Workspace can be connected here without changing the existing domain selection behavior.
-        </div>
-
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
-          <Link
-            href="/"
-            style={{
-              height: 40,
-              borderRadius: 999,
-              border: "1px solid rgba(125,211,252,0.22)",
-              background: "rgba(14,165,233,0.14)",
-              color: "#e0f2fe",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "0 14px",
-              fontSize: 13,
-              fontWeight: 800,
-              textDecoration: "none",
-            }}
-          >
-            Back to Domains
-          </Link>
-        </div>
-      </section>
-    </main>
+    <ErrorBoundary>
+      <NexoraManagerWorkspaceShell
+        domainId={initState.domainId}
+        organizationId={TYPE_C_GOVERNANCE_ORG_ID}
+        sessionHydrated
+      />
+    </ErrorBoundary>
   );
 }

@@ -2,6 +2,9 @@
 
 import React from "react";
 import { nx } from "../ui/nexoraTheme";
+import {
+  getCommandHeaderResolvedContextLabel,
+} from "./commandHeaderContextLabel";
 
 type CommandHeaderProps = {
   pilotOperatorChrome?: boolean;
@@ -48,12 +51,37 @@ function healthChip(tier: "green" | "yellow" | "red" | null | undefined): { labe
   return { label: "Critical", color: nx.risk };
 }
 
+const COMMAND_HEADER_CONTEXT_FALLBACK = "Strategy";
+
 export function CommandHeader(props: CommandHeaderProps) {
   const pilot = Boolean(props.pilotOperatorChrome);
   const health = healthChip(props.systemHealthTier ?? "red");
   const statusColor = toneColor(props.statusTone);
   const identityLabel = pilot ? "Nexora Pilot" : "Nexora";
-  const context = (props.contextLabel ?? props.activeModeLabel ?? "").trim() || "Decision workspace";
+  const initialContextLabel = COMMAND_HEADER_CONTEXT_FALLBACK;
+  const resolvedContextLabel = getCommandHeaderResolvedContextLabel(
+    props.contextLabel,
+    props.activeModeLabel
+  );
+  const [hydrated, setHydrated] = React.useState(false);
+  const hydrationTraceLoggedRef = React.useRef(false);
+  const context = hydrated ? resolvedContextLabel : initialContextLabel;
+
+  React.useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (hydrationTraceLoggedRef.current) return;
+    if (!hydrated) return;
+    hydrationTraceLoggedRef.current = true;
+    globalThis.console?.info?.("[Nexora][Hydration][CommandHeaderLabelStable]", {
+      initialLabel: initialContextLabel,
+      resolvedLabel: resolvedContextLabel,
+      hydrated: true,
+    });
+  }, [hydrated, initialContextLabel, resolvedContextLabel]);
 
   React.useEffect(() => {
     if (process.env.NODE_ENV === "production") return;

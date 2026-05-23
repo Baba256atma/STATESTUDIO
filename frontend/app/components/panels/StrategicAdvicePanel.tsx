@@ -20,6 +20,7 @@ import {
 } from "../../lib/panels/nexoraPanelMeaning";
 import { EnterpriseAdaptiveGovernanceHost } from "../enterprise/governance/EnterpriseAdaptiveGovernanceHost";
 import { MVPReadinessDashboardHost } from "../runtime/MVPReadinessDashboardHost";
+import { shouldExposeExecutiveDevSurfaces } from "../../lib/ui/executiveWorkspacePresentation";
 
 type LooseRecord = Record<string, unknown>;
 
@@ -181,8 +182,12 @@ export default function StrategicAdvicePanel({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <EnterpriseAdaptiveGovernanceHost />
-      <MVPReadinessDashboardHost />
+      {shouldExposeExecutiveDevSurfaces() ? (
+        <>
+          <EnterpriseAdaptiveGovernanceHost />
+          <MVPReadinessDashboardHost />
+        </>
+      ) : null}
       <div style={{ ...softCardStyle, border: "1px solid rgba(96,165,250,0.28)", padding: 12 }}>
         <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: nx.lowMuted }}>
           Primary insight

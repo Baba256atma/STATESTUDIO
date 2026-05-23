@@ -151,7 +151,7 @@ function ConfidenceBadge({ value }: { value?: number }) {
   );
 }
 
-function AssistantMessageBody({
+export function AssistantMessageBody({
   text,
   role,
   confidence,

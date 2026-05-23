@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { bindDocumentListener, bindWindowListener } from "../lib/dom/domListenerLifecycle";
+import { useRefDomListener } from "../lib/dom/useDomListener";
 import { clamp, round2 } from "../lib/sizeCommands";
 import type { LoopType, SceneLoop } from "../lib/sceneTypes";
 import type { LayoutMode } from "../lib/contracts";
@@ -406,10 +408,13 @@ export function ChatHUD({
   }, [viewMode]);
 
   useEffect(() => {
-    const onResize = () => updateChatOffsetFromPos(FIXED_POS);
-    window.addEventListener("resize", onResize);
     updateChatOffsetFromPos(FIXED_POS);
-    return () => window.removeEventListener("resize", onResize);
+    return bindWindowListener(
+      "resize",
+      () => updateChatOffsetFromPos(FIXED_POS),
+      undefined,
+      { component: "ChatHUD", eventType: "resize" }
+    );
   }, [viewMode, updateChatOffsetFromPos]);
 
   useEffect(() => {
@@ -505,28 +510,29 @@ export function ChatHUD({
   const lastHintObjectIdRef = useRef<string | null>(null);
   const stickToBottomRef = useRef(true);
 
-  useEffect(() => {
-    const el = messagesScrollRef.current;
-    if (!el) {
-      if (process.env.NODE_ENV !== "production") {
-        console.warn("[Nexora][EventBinding] skipped_null_target", {
-          file: "frontend/app/components/ChatHUD.tsx",
-          function: "ChatHUD.useEffect(messagesScrollRef)",
-          targetName: "messagesScrollRef",
-        });
-      }
-      return;
-    }
-
-    const onScroll = () => {
+  useRefDomListener(
+    messagesScrollRef,
+    "scroll",
+    () => {
+      const el = messagesScrollRef.current;
+      if (!el) return;
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
       stickToBottomRef.current = distanceFromBottom <= 120;
-    };
+    },
+    [viewMode],
+    {
+      component: "ChatHUD",
+      elementId: "messagesScrollRef",
+      eventType: "scroll",
+    }
+  );
 
-    el.addEventListener("scroll", onScroll);
-    onScroll();
-    return () => el.removeEventListener("scroll", onScroll);
-  }, []);
+  useEffect(() => {
+    const el = messagesScrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottomRef.current = distanceFromBottom <= 120;
+  }, [viewMode]);
 
   useEffect(() => {
     if (viewMode === "hidden") return;
@@ -702,8 +708,10 @@ export function ChatHUD({
         redoOverrides();
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return bindWindowListener("keydown", onKey, undefined, {
+      component: "ChatHUD",
+      eventType: "keydown",
+    });
   }, [undoOverrides, redoOverrides]);
 
   useEffect(() => {
@@ -715,11 +723,19 @@ export function ChatHUD({
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMoreOpen(false);
     };
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onEsc);
+    const detachDoc = bindDocumentListener("mousedown", onDoc, undefined, {
+      component: "ChatHUD",
+      elementId: "document",
+      eventType: "mousedown",
+    });
+    const detachEsc = bindDocumentListener("keydown", onEsc, undefined, {
+      component: "ChatHUD",
+      elementId: "document",
+      eventType: "keydown",
+    });
     return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onEsc);
+      detachDoc();
+      detachEsc();
     };
   }, [moreOpen]);
 

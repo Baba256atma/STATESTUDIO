@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useMemo } from "react";
 
+/** Canonical Nexora UI theme preference (`night` | `day` | `auto`). E2:17 workspace appearance resolves through this store. */
 export type ThemeMode = "night" | "day" | "auto";
 
 export type ResolvedUiTheme = "night" | "day";
@@ -10,7 +11,7 @@ export const NEXORA_THEME_MODE_STORAGE_KEY = "nx-theme-mode";
 
 const LEGACY_UI_THEME_KEY = "nexora.ui_theme";
 
-export const DEFAULT_THEME_MODE: ThemeMode = "auto";
+export const DEFAULT_THEME_MODE: ThemeMode = "night";
 
 export function getSystemPrefersDark(): boolean {
   if (typeof window === "undefined") return false;

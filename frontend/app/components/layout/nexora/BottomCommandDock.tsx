@@ -2,9 +2,13 @@
 
 import React from "react";
 import { nx } from "../../ui/nexoraTheme";
+import { isExecutiveWorkspaceCleanPresentation } from "../../../lib/ui/executiveWorkspacePresentation";
 
 /** Executive command verbs invoked from the bottom dock (canonical contract). */
 export type ExecutiveCommandVerb = "ask" | "analyze" | "simulate" | "compare" | "inspect";
+
+const BOTTOM_COMMAND_DOCK_SSR_PLACEHOLDER = "Frame pressure, constraints, or the next best move…";
+const bottomCommandDockPlaceholderLogKeys = new Set<string>();
 
 type BottomCommandDockProps = {
   commandValue: string;
@@ -22,11 +26,32 @@ type BottomCommandDockProps = {
   analyzeReady?: boolean;
   onLoadScenario?: (() => void) | null;
   onAssessSources?: (() => void) | null;
+  /** E2:1 — hide dock chrome labels and secondary hints for executive workspace. */
+  compactChrome?: boolean;
 };
 
 export function BottomCommandDock(props: BottomCommandDockProps): React.ReactElement {
   const inputRef = React.useRef<HTMLInputElement | null>(null);
-  const visibleSuggestions = props.suggestions.slice(0, 3);
+  const [hydrated, setHydrated] = React.useState(false);
+  const compactChrome = props.compactChrome ?? isExecutiveWorkspaceCleanPresentation();
+  const visibleSuggestions = compactChrome && !props.expanded ? [] : props.suggestions.slice(0, 3);
+  const safePlaceholder = hydrated ? props.placeholder : BOTTOM_COMMAND_DOCK_SSR_PLACEHOLDER;
+
+  React.useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production" || !hydrated) return;
+    const key = `${BOTTOM_COMMAND_DOCK_SSR_PLACEHOLDER}::${props.placeholder}::${hydrated}`;
+    if (bottomCommandDockPlaceholderLogKeys.has(key)) return;
+    bottomCommandDockPlaceholderLogKeys.add(key);
+    console.info("[Nexora][Hydration][BottomCommandDockPlaceholderStable]", {
+      initialPlaceholder: BOTTOM_COMMAND_DOCK_SSR_PLACEHOLDER,
+      resolvedPlaceholder: props.placeholder,
+      hydrated,
+    });
+  }, [hydrated, props.placeholder]);
 
   React.useEffect(() => {
     const onFocus = () => {
@@ -44,33 +69,37 @@ export function BottomCommandDock(props: BottomCommandDockProps): React.ReactEle
         border: `1px solid ${nx.border}`,
         borderRadius: 12,
         background: nx.bgDeep,
-        padding: props.expanded ? "10px 12px" : "8px 12px",
+        padding: compactChrome ? "6px 10px" : props.expanded ? "10px 12px" : "8px 12px",
         display: "flex",
         flexDirection: "column",
-        gap: props.expanded ? 8 : 6,
+        gap: compactChrome ? 6 : props.expanded ? 8 : 6,
+        flex: compactChrome ? "1 1 0%" : undefined,
+        minWidth: compactChrome ? 0 : undefined,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: nx.lowMuted }}>
-          Command dock
+      {!compactChrome ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: nx.lowMuted }}>
+            Command dock
+          </div>
+          <button
+            type="button"
+            onClick={() => props.onExpandChange(!props.expanded)}
+            style={{
+              border: `1px solid ${nx.border}`,
+              borderRadius: 8,
+              background: "transparent",
+              color: nx.muted,
+              fontSize: 10,
+              fontWeight: 700,
+              cursor: "pointer",
+              padding: "2px 8px",
+            }}
+          >
+            {props.expanded ? "Compact" : "Expand"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => props.onExpandChange(!props.expanded)}
-          style={{
-            border: `1px solid ${nx.border}`,
-            borderRadius: 8,
-            background: "transparent",
-            color: nx.muted,
-            fontSize: 10,
-            fontWeight: 700,
-            cursor: "pointer",
-            padding: "2px 8px",
-          }}
-        >
-          {props.expanded ? "Compact" : "Expand"}
-        </button>
-      </div>
+      ) : null}
 
       <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
         <input
@@ -81,7 +110,7 @@ export function BottomCommandDock(props: BottomCommandDockProps): React.ReactEle
           onKeyDown={(event) => {
             if (event.key === "Enter") props.onSubmit();
           }}
-          placeholder={props.placeholder}
+          placeholder={safePlaceholder}
           aria-label="Bottom command dock input"
           style={{
             flex: "1 1 0",
@@ -116,8 +145,9 @@ export function BottomCommandDock(props: BottomCommandDockProps): React.ReactEle
         </button>
       </div>
 
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {visibleSuggestions.map((prompt) => (
+      {visibleSuggestions.length > 0 ? (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {visibleSuggestions.map((prompt) => (
           <button
             key={prompt}
             type="button"
@@ -135,8 +165,9 @@ export function BottomCommandDock(props: BottomCommandDockProps): React.ReactEle
           >
             {prompt}
           </button>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : null}
 
       {(props.onLoadScenario || props.onAssessSources) && props.expanded ? (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${nx.border}`, paddingTop: 6 }}>
@@ -179,11 +210,11 @@ export function BottomCommandDock(props: BottomCommandDockProps): React.ReactEle
         </div>
       ) : null}
 
-      {props.lastFeedback ? (
+      {props.lastFeedback && !compactChrome ? (
         <div style={{ fontSize: 11, color: nx.muted, lineHeight: 1.35 }}>{props.lastFeedback}</div>
       ) : null}
 
-      {props.expanded && props.lastCommandPreview ? (
+      {props.expanded && props.lastCommandPreview && !compactChrome ? (
         <div style={{ fontSize: 10, color: nx.lowMuted, borderTop: `1px solid ${nx.border}`, paddingTop: 6 }}>
           Recent: {props.lastCommandPreview}
         </div>

@@ -9,6 +9,7 @@ import type { TypeCExecutiveSummary } from "../../lib/typec/typeCExecutiveSummar
 import type { TypeCMultiAgentInsight } from "../../lib/typec/typeCMultiAgentContracts.ts";
 import type { TypeCPipelineEvent } from "../../lib/typec/typeCPipelineTracker.ts";
 import type { TypeCScenarioState } from "../../lib/typec/typeCScenarioTypes.ts";
+import { shouldExposeExecutiveDevSurfaces } from "../../lib/ui/executiveWorkspacePresentation";
 
 export type TypeCDevInspectorProps = {
   scenarioState: TypeCScenarioState;
@@ -70,7 +71,7 @@ export function TypeCDevInspector({
   multiAgentInsight = null,
   pipelineEvents,
 }: TypeCDevInspectorProps): React.ReactElement | null {
-  if (process.env.NODE_ENV === "production") return null;
+  if (process.env.NODE_ENV === "production" || !shouldExposeExecutiveDevSurfaces()) return null;
 
   const lastEvents = pipelineEvents.slice(-5).reverse();
 

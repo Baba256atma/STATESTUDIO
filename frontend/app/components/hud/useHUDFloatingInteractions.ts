@@ -1,6 +1,7 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LayoutMode } from "../../lib/contracts";
+import { bindWindowListener } from "../../lib/dom/domListenerLifecycle";
 import type { HUDDockSide } from "./hudTypes";
 
 type UseHUDFloatingInteractionsArgs = {
@@ -113,11 +114,17 @@ export function useHUDFloatingInteractions({
     const onUp = () => {
       isResizingRef.current = false;
     };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    const detachMove = bindWindowListener("mousemove", onMove, undefined, {
+      component: "useHUDFloatingInteractions",
+      eventType: "mousemove",
+    });
+    const detachUp = bindWindowListener("mouseup", onUp, undefined, {
+      component: "useHUDFloatingInteractions",
+      eventType: "mouseup",
+    });
     return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      detachMove();
+      detachUp();
     };
   }, [effectiveDockSide, maxWidth, minWidth, setWidthPxSafe]);
 
@@ -135,13 +142,22 @@ export function useHUDFloatingInteractions({
       dragPointerIdRef.current = null;
       setIsDragging(false);
     };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
+    const detachMove = bindWindowListener("pointermove", onMove as EventListener, undefined, {
+      component: "useHUDFloatingInteractions",
+      eventType: "pointermove",
+    });
+    const detachUp = bindWindowListener("pointerup", onUp as EventListener, undefined, {
+      component: "useHUDFloatingInteractions",
+      eventType: "pointerup",
+    });
+    const detachCancel = bindWindowListener("pointercancel", onUp as EventListener, undefined, {
+      component: "useHUDFloatingInteractions",
+      eventType: "pointercancel",
+    });
     return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
+      detachMove();
+      detachUp();
+      detachCancel();
     };
   }, [canFloatDrag, clampDragOffset, setDragOffset]);
 
@@ -151,10 +167,10 @@ export function useHUDFloatingInteractions({
       setDragOffset((prev) => clampDragOffset(prev));
     };
     onResize();
-    window.addEventListener("resize", onResize);
-    return () => {
-      window.removeEventListener("resize", onResize);
-    };
+    return bindWindowListener("resize", onResize, undefined, {
+      component: "useHUDFloatingInteractions",
+      eventType: "resize",
+    });
   }, [clampDragOffset, layoutMode, setDragOffset]);
 
   return {

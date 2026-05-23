@@ -1223,6 +1223,11 @@ export type SceneRendererProps = {
   decisionPathOverlay?: DecisionPathRendererState | null;
   /** Softer hover emphasis + throttled pointer updates (Settings → Motion low). */
   motionCalm?: boolean;
+  onObjectPositionChange?: (
+    objectId: string,
+    position: { x: number; y: number; z: number },
+    phase: "drag" | "move"
+  ) => void;
 };
 
 // --------------------
@@ -1245,6 +1250,7 @@ function SceneRendererComponent({
   propagationOverlay = null,
   decisionPathOverlay = null,
   motionCalm = false,
+  onObjectPositionChange,
 }: SceneRendererProps) {
   if (!sceneJson) return null;
 
@@ -2154,6 +2160,8 @@ function SceneRendererComponent({
                   decisionPathSourceId === String(o.name ?? "") ||
                   decisionPathSourceId === String(stableId))
               }
+              sceneScale={globalScale}
+              onObjectPositionChange={onObjectPositionChange}
             />
           );
         })}

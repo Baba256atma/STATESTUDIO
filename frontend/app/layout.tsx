@@ -30,7 +30,7 @@ export default function RootLayout({
           id="nexora-theme-preinit"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var k='nx-theme-mode';var m=localStorage.getItem(k);if(m!=='night'&&m!=='day'&&m!=='auto'){var o=localStorage.getItem('nexora.ui_theme');m=o==='night'||o==='day'?o:null;}if(m!=='night'&&m!=='day'&&m!=='auto')m='auto';var r=m==='auto'?window.matchMedia('(prefers-color-scheme: dark)').matches?'night':'day':m;document.documentElement.setAttribute('data-theme',r);}catch(e){try{var d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',d?'night':'day');}catch(_){document.documentElement.setAttribute('data-theme','night');}}})();`,
+            __html: `(function(){try{var k='nx-theme-mode';var m=localStorage.getItem(k);if(m!=='night'&&m!=='day'&&m!=='auto'){var o=localStorage.getItem('nexora.ui_theme');m=o==='night'||o==='day'?o:null;}if(m!=='night'&&m!=='day'&&m!=='auto')m='night';var r=m==='auto'?window.matchMedia('(prefers-color-scheme: dark)').matches?'night':'day':m;document.documentElement.setAttribute('data-theme',r);var lp=localStorage.getItem('nx-workspace-layout-preset');if(lp!=='executive'&&lp!=='analysis'&&lp!=='simulation')lp='executive';document.documentElement.setAttribute('data-nx-layout-preset',lp);}catch(e){document.documentElement.setAttribute('data-theme','night');document.documentElement.setAttribute('data-nx-layout-preset','executive');}})();`,
           }}
         />
         {children}

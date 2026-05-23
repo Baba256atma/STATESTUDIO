@@ -3,6 +3,7 @@
  */
 
 import type { NexoraAuditRecord } from "../audit/nexoraAuditContract.ts";
+import { bindWindowListener } from "../dom/domListenerLifecycle";
 import type { NexoraExecutionOutcome } from "../execution/nexoraExecutionOutcome.ts";
 import { NEXORA_EXECUTION_OUTCOME_RECORDED } from "../execution/nexoraExecutionOutcome.ts";
 import type { NexoraMode } from "../product/nexoraMode.ts";
@@ -332,14 +333,16 @@ export function mergeExecutionOutcomeIntoScenarioMemory(outcome: NexoraExecution
 
 /** Subscribe to B.20 custom events (idempotent merge into B.19 store). */
 export function installNexoraExecutionOutcomeBridge(): () => void {
-  if (typeof window === "undefined") return () => {};
+  if (typeof window === "undefined" || window == null) return () => {};
   const handler = (ev: Event) => {
     const detail = (ev as CustomEvent<NexoraExecutionOutcome>).detail;
     if (!detail?.runId) return;
     mergeExecutionOutcomeIntoScenarioMemory(detail);
   };
-  window.addEventListener(NEXORA_EXECUTION_OUTCOME_RECORDED, handler as EventListener);
-  return () => window.removeEventListener(NEXORA_EXECUTION_OUTCOME_RECORDED, handler as EventListener);
+  return bindWindowListener(NEXORA_EXECUTION_OUTCOME_RECORDED, handler as EventListener, undefined, {
+    component: "nexoraScenarioMemory",
+    eventType: NEXORA_EXECUTION_OUTCOME_RECORDED,
+  });
 }
 
 export type NexoraB18ResolveInput = {

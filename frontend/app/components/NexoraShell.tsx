@@ -38,13 +38,36 @@ import { normalizeStartDemoFromTopBar } from "../lib/actions/actionNormalizer";
 import { useNexoraRunbookGuidanceOptional } from "../lib/pilot/nexoraRunbookGuidanceContext";
 import { getNexoraProductMode } from "../lib/product/nexoraProductMode.ts";
 import { useAdaptiveGovernanceIntelligenceOptional } from "../lib/enterprise/governance";
+import {
+  isExecutiveWorkspaceCleanPresentation,
+  shouldShowExecutiveDemoSelector,
+  shouldShowExecutiveScenePanelDock,
+  shouldShowExecutiveObjectPanelDock,
+  shouldShowExecutiveStatusStrip,
+  shouldShowExecutiveRightAssistantPanel,
+  shouldShowExecutiveLeftCommandPanel,
+  shouldShowExecutiveStageAssistantOverlay,
+  shouldShowExecutiveScenarioSuggestionsPanel,
+  shouldShowExecutiveScenarioComparisonPanel,
+  shouldShowExecutiveCommandBar,
+} from "../lib/ui/executiveWorkspacePresentation";
+import {
+  EXECUTIVE_LEFT_COMMAND_COLLAPSED_PX,
+  EXECUTIVE_LEFT_COMMAND_WIDTH_PX,
+  EXECUTIVE_LEFT_NAV_WIDTH_PX,
+  EXECUTIVE_RIGHT_DOCK_WIDTH_PX,
+  EXECUTIVE_WORKSPACE_ZONE_IDS,
+} from "../lib/ui/executiveWorkspaceLayout";
+import { useExecutiveWorkspaceLayout } from "../lib/ui/useExecutiveWorkspaceLayout";
+import { ExecutiveLeftDockZone } from "./workspace/ExecutiveLeftDockZone";
+import { ObjectPanelShell } from "./workspace/ObjectPanelShell";
+import { ExecutiveAssistantPanelShell } from "./workspace/ExecutiveAssistantPanelShell";
+import { useHudPreferencesOptional } from "../lib/ui/useHudPreferences";
 
-/** Single source of truth: right rail width for every inspector / executive panel state. */
-const RIGHT_PANEL_WIDTH_PX = 430;
-
-/** Left command assistant column (mission-control chat / quick actions). */
-const LEFT_COMMAND_WIDTH_PX = 340;
-const LEFT_COMMAND_COLLAPSED_PX = 48;
+/** Right rail width — use EXECUTIVE_RIGHT_DOCK_WIDTH_PX from layout contracts. */
+const RIGHT_PANEL_WIDTH_PX = EXECUTIVE_RIGHT_DOCK_WIDTH_PX;
+const LEFT_COMMAND_WIDTH_PX = EXECUTIVE_LEFT_COMMAND_WIDTH_PX;
+const LEFT_COMMAND_COLLAPSED_PX = EXECUTIVE_LEFT_COMMAND_COLLAPSED_PX;
 
 type NexoraShellProps = {
   children: React.ReactNode;
@@ -393,6 +416,26 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const pilotOperatorChrome = useMemo(() => getNexoraProductMode() === "pilot", []);
   const runbookGuidance = useNexoraRunbookGuidanceOptional();
   const governanceIntel = useAdaptiveGovernanceIntelligenceOptional();
+  const executiveCleanPresentation = isExecutiveWorkspaceCleanPresentation();
+  const showExecutiveScenePanelDock = shouldShowExecutiveScenePanelDock();
+  const showExecutiveObjectPanelDock = shouldShowExecutiveObjectPanelDock();
+  const showExecutiveStatusStrip = shouldShowExecutiveStatusStrip();
+  const showExecutiveRightAssistantPanel = shouldShowExecutiveRightAssistantPanel();
+  const showExecutiveLeftCommandPanel = shouldShowExecutiveLeftCommandPanel();
+  const showExecutiveStageAssistantOverlay = shouldShowExecutiveStageAssistantOverlay();
+  const showExecutiveCommandBar = shouldShowExecutiveCommandBar();
+  const hudPreferences = useHudPreferencesOptional();
+  const executiveAssistantHudVisible =
+    showExecutiveRightAssistantPanel && (hudPreferences?.isPanelVisible("aiAssistant") ?? true);
+  const executiveScenarioHudVisible =
+    shouldShowExecutiveScenarioSuggestionsPanel() &&
+    (hudPreferences?.isPanelVisible("scenarioSuggestions") ?? true);
+  const executiveComparisonHudVisible =
+    shouldShowExecutiveScenarioComparisonPanel() &&
+    (hudPreferences?.isPanelVisible("scenarioComparison") ?? true);
+  const assistantRailSide = hudPreferences?.assistantRailSide ?? "right";
+  const showExecutiveAssistantOnLeft = executiveAssistantHudVisible && assistantRailSide === "left";
+  const showExecutiveAssistantOnRight = executiveAssistantHudVisible && assistantRailSide === "right";
   const investorDemo = useInvestorDemo();
   const handleStartInvestorDemoRouted = useCallback(() => {
     const handled = dispatchNexoraAction(normalizeStartDemoFromTopBar());
@@ -413,6 +456,19 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const [isInspectorOpen, setIsInspectorOpen] = useState(true);
   const [isAssistantDrawerOpen, setIsAssistantDrawerOpen] = useState(true);
   const [leftCommandOpen, setLeftCommandOpen] = useState(true);
+  const [scenePanelCollapsed, setScenePanelCollapsed] = useState(false);
+  const [objectPanelCollapsed, setObjectPanelCollapsed] = useState(false);
+  const [executiveAssistantCollapsed, setExecutiveAssistantCollapsed] = useState(false);
+  const workspaceLayout = useExecutiveWorkspaceLayout({
+    leftCommandOpen,
+    leftCommandVisible: showExecutiveLeftCommandPanel,
+    leftDockExpanded: showExecutiveScenePanelDock && !scenePanelCollapsed,
+    leftSceneDockVisible: showExecutiveScenePanelDock,
+    rightDockExpanded: showExecutiveObjectPanelDock && !objectPanelCollapsed,
+    rightObjectDockVisible: showExecutiveObjectPanelDock,
+    rightAssistantVisible: showExecutiveRightAssistantPanel && showExecutiveAssistantOnRight,
+    rightAssistantExpanded: showExecutiveRightAssistantPanel && showExecutiveAssistantOnRight && !executiveAssistantCollapsed,
+  });
   const [chatInput, setChatInput] = useState("");
   const [bottomCommandExpanded, setBottomCommandExpanded] = useState(true);
   const [objectAnalyzeReady, setObjectAnalyzeReady] = useState(false);
@@ -577,6 +633,42 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       new CustomEvent("nexora:left-command-open-changed", { detail: { open: leftCommandOpen } })
     );
   }, [leftCommandOpen]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("nexora:scene-panel-collapsed-changed", {
+        detail: { collapsed: scenePanelCollapsed },
+      })
+    );
+  }, [scenePanelCollapsed]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("nexora:object-panel-collapsed-changed", {
+        detail: { collapsed: objectPanelCollapsed },
+      })
+    );
+  }, [objectPanelCollapsed]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ collapsed?: boolean }>).detail;
+      if (typeof detail?.collapsed !== "boolean") return;
+      setExecutiveAssistantCollapsed(detail.collapsed);
+    };
+    window.addEventListener("nexora:executive-assistant-set-collapsed", handler as EventListener);
+    return () => window.removeEventListener("nexora:executive-assistant-set-collapsed", handler as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ collapsed?: boolean }>).detail;
+      if (typeof detail?.collapsed !== "boolean") return;
+      setExecutiveAssistantCollapsed((prev) => (prev === detail.collapsed ? prev : detail.collapsed!));
+    };
+    window.addEventListener("nexora:executive-assistant-collapsed-changed", handler as EventListener);
+    return () => window.removeEventListener("nexora:executive-assistant-collapsed-changed", handler as EventListener);
+  }, []);
 
   useEffect(() => {
     const onEligibility = (event: Event) => {
@@ -957,6 +1049,14 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const objectSelection = inspectorContext?.objectSelection ?? null;
   const selectedObjectId =
     typeof inspectorContext?.selectedObjectId === "string" ? inspectorContext.selectedObjectId : null;
+  const selectedObjectIdForPanel = selectedObjectId ?? focusedObjectId ?? null;
+  const selectedObjectLabelForPanel = useMemo(() => {
+    if (selectedObjectInfo?.label) return String(selectedObjectInfo.label);
+    if (selectedObjectInfo?.name) return String(selectedObjectInfo.name);
+    if (focusedObject?.label) return String(focusedObject.label);
+    if (focusedObject?.name) return String(focusedObject.name);
+    return null;
+  }, [focusedObject, selectedObjectInfo]);
 
   useEffect(() => {
     const shellSectionResolvedMessage = `Shell section ${resolvedActiveSection}`;
@@ -1317,6 +1417,17 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   }, [setInspectorSection]);
 
   React.useEffect(() => {
+    const onExecutiveCommandBarSnapshot = () => handleSaveSnapshot();
+    const onExecutiveCommandBarReplay = () => handleOpenReplay();
+    window.addEventListener("nexora:executive-command-bar-snapshot", onExecutiveCommandBarSnapshot as EventListener);
+    window.addEventListener("nexora:executive-command-bar-replay", onExecutiveCommandBarReplay as EventListener);
+    return () => {
+      window.removeEventListener("nexora:executive-command-bar-snapshot", onExecutiveCommandBarSnapshot as EventListener);
+      window.removeEventListener("nexora:executive-command-bar-replay", onExecutiveCommandBarReplay as EventListener);
+    };
+  }, [handleOpenReplay, handleSaveSnapshot]);
+
+  React.useEffect(() => {
     const onOpenRightPanel = (event: Event) => {
       const detail = (event as CustomEvent<{ tab?: string; view?: string | null; section?: string | null }>).detail;
       const requestedView =
@@ -1440,6 +1551,13 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           padding: 0,
         }}
       >
+        {showExecutiveCommandBar && (hudPreferences?.isPanelVisible("commandBar") ?? true) ? (
+          <div
+            id={EXECUTIVE_WORKSPACE_ZONE_IDS.executiveCommandBarHost}
+            data-nx="executive-command-bar-host"
+            style={{ flexShrink: 0, minHeight: 0 }}
+          />
+        ) : (
         <CommandHeader
           pilotOperatorChrome={pilotOperatorChrome}
           scenarioLabel={scenarioLabel}
@@ -1452,7 +1570,9 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           decisionHeadline={executiveNarrative.decisionHeadline}
           topDriverLabel={executiveNarrative.topDriverLabel}
           profileSelector={
-            pilotOperatorChrome ? null : <CustomerDemoSelector activeProfileId={activeProfileId} onChange={setActiveProfile} />
+            pilotOperatorChrome || !shouldShowExecutiveDemoSelector() ? null : (
+              <CustomerDemoSelector activeProfileId={activeProfileId} onChange={setActiveProfile} />
+            )
           }
           commandValue={chatInput}
           commandPlaceholder={commandPlaceholder}
@@ -1469,6 +1589,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           investorDemoActive={investorDemo.demo.active}
           commandBarMicroHint={pilotOperatorChrome ? null : (runbookGuidance?.hints.commandBar ?? null)}
         />
+        )}
         <MultiSourceAssessPopover
           open={multiSourcePopoverOpen}
           onClose={() => {
@@ -1495,6 +1616,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       {/* BODY: LEFT NAV + STAGE + RIGHT RAIL */}
       <div
         id="nexora-layout"
+        data-nx-zone="workspace"
         style={{
           flexGrow: 1,
           flexShrink: 1,
@@ -1511,12 +1633,13 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       >
         {/* LEFT NAV */}
         <aside
-          id="nexora-leftnav"
+          id={EXECUTIVE_WORKSPACE_ZONE_IDS.leftNav}
+          data-nx-zone="left-nav"
           style={{
-            width: 72,
+            width: EXECUTIVE_LEFT_NAV_WIDTH_PX,
             flexGrow: 0,
             flexShrink: 0,
-            flexBasis: "72px",
+            flexBasis: `${EXECUTIVE_LEFT_NAV_WIDTH_PX}px`,
             boxSizing: "border-box",
             display: "flex",
             flexDirection: "column",
@@ -1537,6 +1660,9 @@ export default function NexoraShell({ children }: NexoraShellProps) {
               textTransform: "uppercase",
               fontWeight: 700,
               textAlign: "left",
+              visibility: executiveCleanPresentation ? "hidden" : "visible",
+              height: executiveCleanPresentation ? 0 : undefined,
+              overflow: executiveCleanPresentation ? "hidden" : undefined,
             }}
           >
             Workspace
@@ -1614,13 +1740,22 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           </div>
         </aside>
 
+        {showExecutiveScenePanelDock ? (
+        <ExecutiveLeftDockZone
+          metrics={workspaceLayout}
+          scenePanelCollapsed={scenePanelCollapsed}
+          onToggleScenePanelCollapsed={() => setScenePanelCollapsed((value) => !value)}
+        />
+        ) : null}
+
+        {showExecutiveLeftCommandPanel ? (
         <aside
-          id="nexora-left-command-column"
+          id={EXECUTIVE_WORKSPACE_ZONE_IDS.leftCommand}
           style={{
             flexGrow: 0,
             flexShrink: 0,
-            flexBasis: leftCommandOpen ? LEFT_COMMAND_WIDTH_PX : LEFT_COMMAND_COLLAPSED_PX,
-            width: leftCommandOpen ? LEFT_COMMAND_WIDTH_PX : LEFT_COMMAND_COLLAPSED_PX,
+            flexBasis: leftCommandOpen ? workspaceLayout.leftCommandWidthPx : LEFT_COMMAND_COLLAPSED_PX,
+            width: leftCommandOpen ? workspaceLayout.leftCommandWidthPx : LEFT_COMMAND_COLLAPSED_PX,
             boxSizing: "border-box",
             display: "flex",
             flexDirection: "column",
@@ -1695,6 +1830,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
             </button>
           ) : null}
         </aside>
+        ) : null}
 
         {mode === "studio" ? (
           <aside
@@ -1792,14 +1928,43 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           </aside>
         ) : null}
 
+        {showExecutiveAssistantOnLeft ? (
+          <aside
+            id="nexora-executive-left-assistant-rail"
+            data-nx-zone="left-assistant-dock"
+            style={{
+              flexGrow: 0,
+              flexShrink: 0,
+              flexBasis: `${workspaceLayout.rightDockWidthPx}px`,
+              width: workspaceLayout.rightDockWidthPx,
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              borderRight: `1px solid ${nx.borderStrong}`,
+              background: nx.rightRailBg,
+              backdropFilter: "blur(12px)",
+              transition: "flex-basis 160ms ease, width 160ms ease",
+            }}
+          >
+            <ExecutiveAssistantPanelShell
+              collapsed={executiveAssistantCollapsed}
+              showScenarioHost={executiveScenarioHudVisible}
+              showComparisonHost={executiveComparisonHudVisible}
+              onToggleCollapsed={() => setExecutiveAssistantCollapsed((value) => !value)}
+            />
+          </aside>
+        ) : null}
+
         {/* CENTER STAGE */}
         <main
-          id="nexora-stage"
-          className="nx-executive-stage"
+          id={EXECUTIVE_WORKSPACE_ZONE_IDS.scene}
+          className="nx-executive-stage nx-executive-scene-zone"
+          data-nx-zone="scene"
           style={{
             flexGrow: 1,
             flexShrink: 1,
-            flexBasis: "auto",
+            flexBasis: 0,
             minWidth: 0,
             minHeight: 0,
             position: "relative",
@@ -1809,12 +1974,16 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           }}
         >
           <div
-            id="nexora-canvas-host"
+            id={EXECUTIVE_WORKSPACE_ZONE_IDS.sceneCanvasHost}
+            className="nx-executive-scene-canvas-host"
+            data-nx-zone="scene-canvas-host"
             style={{
               position: "absolute",
               inset: 0,
               minWidth: 0,
               minHeight: 0,
+              padding: "var(--nx-scene-zone-padding, 12px)",
+              boxSizing: "border-box",
             }}
           >
             {children}
@@ -1902,7 +2071,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
             }}
           />
 
-          {!leftCommandOpen ? (
+          {!leftCommandOpen && showExecutiveStageAssistantOverlay ? (
             <div
               id="nexora-stage-assistant"
               style={{
@@ -1962,20 +2131,43 @@ export default function NexoraShell({ children }: NexoraShellProps) {
 
         {/* RIGHT RAIL — fixed width; last column in layout row */}
         <aside
-          id="nexora-right-rail"
+          id={EXECUTIVE_WORKSPACE_ZONE_IDS.rightDock}
+          data-nx-zone="right-dock"
           style={{
             flexGrow: 0,
             flexShrink: 0,
-            flexBasis: `${RIGHT_PANEL_WIDTH_PX}px`,
+            flexBasis: `${workspaceLayout.rightDockWidthPx}px`,
+            width: workspaceLayout.rightDockWidthPx,
             height: "100%",
             display: "flex",
             flexDirection: "column",
             minHeight: 0,
-            borderLeft: `1px solid ${nx.borderStrong}`,
-            background: nx.rightRailBg,
-            backdropFilter: "blur(12px)",
+            borderLeft:
+              showExecutiveObjectPanelDock || showExecutiveAssistantOnRight
+                ? `1px solid ${nx.borderStrong}`
+                : "none",
+            background:
+              showExecutiveObjectPanelDock || showExecutiveAssistantOnRight ? nx.rightRailBg : "transparent",
+            backdropFilter:
+              showExecutiveObjectPanelDock || showExecutiveAssistantOnRight ? "blur(12px)" : undefined,
+            transition: "flex-basis 160ms ease, width 160ms ease",
           }}
         >
+          {showExecutiveAssistantOnRight ? (
+            <ExecutiveAssistantPanelShell
+              collapsed={executiveAssistantCollapsed}
+              showScenarioHost={executiveScenarioHudVisible}
+              showComparisonHost={executiveComparisonHudVisible}
+              onToggleCollapsed={() => setExecutiveAssistantCollapsed((value) => !value)}
+            />
+          ) : null}
+          <ObjectPanelShell
+            collapsed={objectPanelCollapsed}
+            headless={!showExecutiveObjectPanelDock}
+            onToggleCollapsed={() => setObjectPanelCollapsed((value) => !value)}
+            selectedObjectId={selectedObjectIdForPanel}
+            selectedObjectLabel={selectedObjectLabelForPanel}
+          >
           <div
             id="nexora-inspector"
             style={{
@@ -1999,7 +2191,8 @@ export default function NexoraShell({ children }: NexoraShellProps) {
               fontWeight: 700,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: isInspectorOpen ? 12 : 0 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: objectPanelCollapsed ? "space-between" : "flex-end", gap: 10, marginBottom: isInspectorOpen ? 12 : 0 }}>
+              {objectPanelCollapsed ? (
               <div style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {isInspectorOpen ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
@@ -2037,6 +2230,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                   <span style={{ fontSize: 13, fontWeight: 800, color: nx.muted }}>Insights</span>
                 )}
               </div>
+              ) : null}
               <button
                 type="button"
                 onClick={() => setIsInspectorOpen((v) => !v)}
@@ -2507,6 +2701,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
             />
           ) : null}
           </div>
+          </ObjectPanelShell>
         </aside>
       </div>
       </div>
@@ -2522,35 +2717,37 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           flexDirection: "column",
           alignItems: "stretch",
           justifyContent: "flex-start",
-          gap: 12,
-          padding: "6px 14px",
+          gap: executiveCleanPresentation ? 8 : 12,
+          padding: executiveCleanPresentation ? "4px 12px 6px" : "6px 14px",
           boxSizing: "border-box",
           borderTop: `1px solid ${nx.border}`,
           background: nx.bgDeep,
           backdropFilter: "blur(8px)",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "stretch",
-            gap: 10,
-            minWidth: 0,
-            flex: "1 1 0%",
-          }}
-        >
-          <NexoraStatusStripCard
-            label="System"
-            labelColor={nx.accentInk}
-            text={executiveNarrative.systemStateSummary}
-          />
-          <NexoraStatusStripCard
-            label="Risk"
-            labelColor={nx.warning}
-            text={executiveNarrative.keyRiskStatement}
-          />
-        </div>
+        {showExecutiveStatusStrip ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "stretch",
+              gap: 10,
+              minWidth: 0,
+              flex: "1 1 0%",
+            }}
+          >
+            <NexoraStatusStripCard
+              label="System"
+              labelColor={nx.accentInk}
+              text={executiveNarrative.systemStateSummary}
+            />
+            <NexoraStatusStripCard
+              label="Risk"
+              labelColor={nx.warning}
+              text={executiveNarrative.keyRiskStatement}
+            />
+          </div>
+        ) : null}
         <div
           style={{
             display: "flex",
@@ -2576,30 +2773,33 @@ export default function NexoraShell({ children }: NexoraShellProps) {
               : []
           }
           lastFeedback={stageChatAwaitingReply ? "Processing strategic request…" : null}
-          lastCommandPreview={chatInput.trim() || null}
+          lastCommandPreview={executiveCleanPresentation ? null : chatInput.trim() || null}
           expanded={bottomCommandExpanded}
           onExpandChange={setBottomCommandExpanded}
           analyzeReady={objectAnalyzeReady}
           onVerb={handleExecutiveCommandVerb}
           onLoadScenario={pilotOperatorChrome ? null : handleLoadDemo}
           onAssessSources={assessBusinessTextFromCommandBar}
+          compactChrome={executiveCleanPresentation}
         />
 
-        <div
-          id="nexora-replay-bar"
-          style={{
-            flex: "0 0 auto",
-            display: "flex",
-            alignItems: "center",
-            color: nx.muted,
-            fontSize: 11,
-            fontWeight: 600,
-            whiteSpace: "nowrap",
-            paddingLeft: 8,
-          }}
-        >
-          Timeline · Replay · Snapshots
-        </div>
+        {showExecutiveStatusStrip ? (
+          <div
+            id="nexora-replay-bar"
+            style={{
+              flex: "0 0 auto",
+              display: "flex",
+              alignItems: "center",
+              color: nx.muted,
+              fontSize: 11,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              paddingLeft: 8,
+            }}
+          >
+            Timeline · Replay · Snapshots
+          </div>
+        ) : null}
       </div>
 
       </div>

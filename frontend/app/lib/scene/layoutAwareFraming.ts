@@ -27,10 +27,17 @@ export function resolveLayoutAwareFrameSpec(params: {
   viewportWidth: number;
   viewportHeight: number;
   hudDockSide?: "left" | "right";
+  /** E2:2 optional normalized dock insets (0–0.3) from executiveWorkspaceLayout. */
+  leftDockInsetRatio?: number;
+  rightDockInsetRatio?: number;
 }): LayoutAwareFrameSpec {
   const height = Math.max(1, Number(params.viewportHeight) || 1);
-  const leftInset = params.hudDockSide === "left" ? 0.12 : 0.06;
-  const rightInset = params.hudDockSide === "right" ? 0.22 : 0.08;
+  const leftInset =
+    params.leftDockInsetRatio ??
+    (params.hudDockSide === "left" ? 0.12 : 0.06);
+  const rightInset =
+    params.rightDockInsetRatio ??
+    (params.hudDockSide === "right" ? 0.22 : 0.08);
   const topInset = clamp(72 / height, 0.06, 0.14);
   const bottomInset = clamp(28 / height, 0.03, 0.08);
   const horizontalBias = clamp((rightInset - leftInset) * 0.42, -0.08, 0.08);

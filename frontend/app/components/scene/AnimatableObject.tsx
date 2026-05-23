@@ -108,6 +108,12 @@ export type AnimatableObjectProps = {
   decisionPathRole?: DecisionPathNarrativeNodeRole;
   decisionPathVisualHints?: DecisionPathNodeVisualHints;
   isDecisionPathSource?: boolean;
+  sceneScale?: number;
+  onObjectPositionChange?: (
+    objectId: string,
+    position: { x: number; y: number; z: number },
+    phase: "drag" | "move"
+  ) => void;
 };
 
 export const AnimatableObject = React.memo(function AnimatableObject({
@@ -152,8 +158,17 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   decisionPathRole = "outside",
   decisionPathVisualHints,
   isDecisionPathSource = false,
+  sceneScale = 1,
+  onObjectPositionChange,
 }: AnimatableObjectProps) {
   const ref = useRef<THREE.Object3D>(null);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    y: number;
+    hasMoved: boolean;
+  } | null>(null);
+  const dragPlaneRef = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
+  const dragPointRef = useRef(new THREE.Vector3());
   const lastMaterialSignatureRef = useRef<string | null>(null);
   const stateVector = useStateVector();
   const setSelectedId = useSetSelectedId();
@@ -495,6 +510,61 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       return;
     }
     setSelectedId(stableIdWithName);
+  };
+
+  const resolveDragPosition = (event: any): { x: number; y: number; z: number } | null => {
+    const dragState = dragStateRef.current;
+    if (!dragState || !event.ray) return null;
+    const point = event.ray.intersectPlane(dragPlaneRef.current, dragPointRef.current);
+    if (!point) return null;
+    const parentScale = Number.isFinite(sceneScale) && sceneScale > 0 ? sceneScale : 1;
+    return {
+      x: point.x / parentScale,
+      y: dragState.y,
+      z: point.z / parentScale,
+    };
+  };
+
+  const handleObjectPointerDown = (event: any) => {
+    event.stopPropagation();
+    event.nativeEvent?.stopImmediatePropagation?.();
+    if (event.button != null && event.button !== 0) return;
+    setHovered(false);
+    setHoveredId?.(null);
+    if (selectedIdCtx !== stableIdWithName && selectedIdCtx !== stableId) {
+      setSelectedId(stableIdWithName);
+    }
+    const y = finalPosition[1] ?? 0;
+    dragStateRef.current = {
+      pointerId: event.pointerId ?? 0,
+      y,
+      hasMoved: false,
+    };
+    dragPlaneRef.current.set(new THREE.Vector3(0, 1, 0), -y * (Number.isFinite(sceneScale) && sceneScale > 0 ? sceneScale : 1));
+    event.target?.setPointerCapture?.(event.pointerId);
+  };
+
+  const handleObjectPointerMove = (event: any) => {
+    if (!dragStateRef.current) return;
+    event.stopPropagation();
+    event.nativeEvent?.stopImmediatePropagation?.();
+    const next = resolveDragPosition(event);
+    if (!next) return;
+    dragStateRef.current.hasMoved = true;
+    onObjectPositionChange?.(stableIdWithName, next, "drag");
+  };
+
+  const handleObjectPointerUp = (event: any) => {
+    const dragState = dragStateRef.current;
+    if (!dragState) return;
+    event.stopPropagation();
+    event.nativeEvent?.stopImmediatePropagation?.();
+    const next = resolveDragPosition(event);
+    dragStateRef.current = null;
+    event.target?.releasePointerCapture?.(event.pointerId);
+    if (next && dragState.hasMoved) {
+      onObjectPositionChange?.(stableIdWithName, next, "move");
+    }
   };
 
   const stopPointerOnly = (event: any) => {
@@ -1139,7 +1209,10 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     const meshProps = {
       castShadow: !!shadowsEnabled,
       receiveShadow: !!shadowsEnabled,
-      onPointerDown: stopPointerOnly,
+      onPointerDown: handleObjectPointerDown,
+      onPointerMove: handleObjectPointerMove,
+      onPointerUp: handleObjectPointerUp,
+      onPointerCancel: handleObjectPointerUp,
       onClick: handleSelect,
       onPointerOver: (event: any) => {
         event.stopPropagation();
@@ -1189,6 +1262,25 @@ export const AnimatableObject = React.memo(function AnimatableObject({
               transparent
               opacity={theme === "day" ? 0.1 : 0.06}
               wireframe
+            />
+          </mesh>
+        ) : null}
+        {isSelected ? (
+          <mesh
+            rotation={[Math.PI / 2, 0, 0]}
+            scale={[
+              (meshScale?.[0] ?? 1) * 1.34,
+              (meshScale?.[1] ?? 1) * 1.34,
+              (meshScale?.[2] ?? 1) * 1.34,
+            ]}
+          >
+            <torusGeometry args={[0.86, 0.035, 14, 48]} />
+            <meshStandardMaterial
+              color={tokens.design.colors.accent}
+              emissive={tokens.design.colors.accent}
+              emissiveIntensity={tokens.interaction.selectionGlow}
+              transparent
+              opacity={theme === "day" ? 0.34 : 0.46}
             />
           </mesh>
         ) : null}

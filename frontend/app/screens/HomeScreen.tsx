@@ -69,9 +69,50 @@ import { composeResolvedObjectDetails, type ResolvedObjectDetails } from "../lib
 import { resolveSceneObjectById } from "../lib/scene/resolveSceneObjectById";
 import type { UICommand } from "../lib/ui/uiCommands";
 import { useNexoraUiTheme } from "../lib/ui/nexoraUiTheme";
+import { useWorkspaceLayout } from "../lib/ui/useWorkspaceLayout";
+import { useHudPreferences } from "../lib/ui/useHudPreferences";
+import {
+  shouldExposeExecutiveDevSurfaces,
+  shouldShowExecutiveCenterHelperCopy,
+  shouldShowExecutiveOnboardingOverlays,
+  shouldShowExecutiveOperationalHud,
+  shouldShowExecutivePipelineStatusHud,
+  shouldShowExecutiveSceneOperationalStrip,
+  shouldShowExecutiveScenePanelDock,
+  shouldShowExecutiveObjectPanelDock,
+  shouldShowExecutiveStageSummaryCard,
+  shouldShowExecutiveRightAssistantPanel,
+  shouldShowExecutiveLeftCommandPanel,
+  shouldShowExecutiveScenarioSuggestionsPanel,
+  shouldShowExecutiveScenarioComparisonPanel,
+  shouldShowExecutiveCommandBar,
+  shouldShowExecutiveQuickActionsDock,
+} from "../lib/ui/executiveWorkspacePresentation";
+import { DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS } from "../lib/ui/executiveAssistantPanelTypes";
+import { buildExecutiveScenarioSuggestionsModel } from "../lib/ui/buildExecutiveScenarioSuggestionsModel";
+import { buildExecutiveScenarioComparisonModel } from "../lib/ui/buildExecutiveScenarioComparisonModel";
+import { buildExecutiveCommandBarModel } from "../lib/ui/buildExecutiveCommandBarModel";
+import { buildExecutiveStatusHudModel } from "../lib/ui/buildExecutiveStatusHudModel";
+import type { ExecutiveCommandBarActionId } from "../lib/ui/executiveCommandBarTypes";
+import {
+  buildExecutiveQuickActionsModel,
+  type ExecutiveQuickActionId,
+} from "../lib/ui/executiveQuickActionsTypes";
+import type { ScenarioSuggestion } from "../lib/ui/scenarioSuggestionTypes";
+import type { ScenarioComparisonOption } from "../lib/ui/scenarioComparisonTypes";
+import { resolveNexoraHudThemeMode } from "../lib/scene/nexoraHudTheme";
+import { buildObjectInfoHudModel } from "../lib/scene/objectInfoHudTypes";
+import { buildExecutiveTimelineHudModel } from "../lib/scene/executiveTimelineHudTypes";
 import { StrategicAlertOverlay } from "../components/StrategicAlertOverlay";
 import { ExecutiveSceneOperationalStrip } from "../components/executive/ExecutiveSceneOperationalStrip";
-import { executiveStageFrameStyle } from "../components/executive/executiveProductSurfaceStyles";
+import {
+  executiveDockInsetRatios,
+  resolveExecutiveWorkspaceLayoutMetrics,
+} from "../lib/ui/executiveWorkspaceLayout";
+import {
+  ExecutiveSceneCanvasShell,
+  ExecutiveSceneWorkspaceFrame,
+} from "../components/workspace/ExecutiveSceneWorkspaceFrame";
 import { TypeCDevInspector } from "../components/dev/TypeCDevInspector";
 import { TypeCAdaptiveGuidancePanel } from "../components/typec/TypeCAdaptiveGuidancePanel";
 import { TypeCAIPanel } from "../components/typec/TypeCAIPanel";
@@ -439,6 +480,68 @@ import {
 } from "../lib/domain/domainExperienceRegistry";
 import type { AddObjectMenuItem } from "../lib/domain/domainAddObjectAdapter.ts";
 import { applyDomainCatalogSelectionToScene } from "../lib/domain/domainCatalogSelection.ts";
+import { ExecutiveObjectCatalog } from "../components/catalog/ExecutiveObjectCatalog";
+import {
+  OBJECT_CATALOG_CLOSE_EVENT,
+  OBJECT_CATALOG_OPEN_EVENT,
+  requestCloseObjectCatalog,
+  requestOpenObjectCatalog,
+} from "../lib/objectCatalog/objectCatalogRuntime";
+import type { CatalogObjectDefinition } from "../lib/objectCatalog/objectCatalogTypes";
+import { insertCatalogObjectIntoScene } from "../lib/scenePlacement/scenePlacementRuntime";
+import {
+  applyObjectPlacementToScene,
+  deselectPlacedObject,
+  registerSceneObjectPlacementsFromScene,
+  selectPlacedObject,
+} from "../lib/modeling/objectPlacementRuntime";
+import {
+  createSceneRelationship,
+  deleteSceneRelationship,
+  registerRelationshipsFromScene,
+  selectRelationship,
+} from "../lib/modeling/relationshipRuntime";
+import {
+  deleteSceneObject,
+  duplicateSceneObject,
+  editSceneObject,
+  type EditableObjectPatch,
+} from "../lib/modeling/objectEditingRuntime";
+import {
+  createPropagationPath,
+  deletePropagationPath,
+  editPropagationPath,
+  registerPropagationPathsFromScene,
+  selectPropagationPath,
+  type PropagationPath,
+  type PropagationPathCreateRequest,
+  type PropagationPathPatch,
+} from "../lib/propagation/propagationAuthoringRuntime";
+import { focusObject } from "../lib/scene/sceneNavigationContract";
+import { RelationshipBuilder } from "../components/relationships/RelationshipBuilder";
+import { PropagationPathBuilder } from "../components/propagation/PropagationPathBuilder";
+import {
+  RELATIONSHIP_BUILDER_CLOSE_EVENT,
+  RELATIONSHIP_BUILDER_OPEN_EVENT,
+  requestCloseRelationshipBuilder,
+  requestOpenRelationshipBuilder,
+} from "../lib/relationships/relationshipRuntime";
+import type { NexoraRelationship, NexoraRelationshipDirection, NexoraRelationshipType } from "../lib/relationships/relationshipTypes";
+import { ExecutiveModelingWorkspace } from "../components/systemModeling/ExecutiveModelingWorkspace";
+import {
+  SYSTEM_MODELING_CLOSE_EVENT,
+  SYSTEM_MODELING_OPEN_EVENT,
+  generateSystemFromTemplate,
+  requestCloseSystemModelingWorkspace,
+  requestOpenSystemModelingWorkspace,
+} from "../lib/systemModeling/systemModelRuntime";
+import { requestSceneNavigationAction } from "../lib/scene/sceneNavigationContract";
+import { ExecutiveWorkspaceLoadDialog } from "../components/workspace/ExecutiveWorkspaceLoadDialog";
+import {
+  applySavedViewPreferences,
+  loadWorkspace,
+  saveWorkspace,
+} from "../lib/persistence/workspacePersistenceRuntime";
 import { buildDemoStrategicAnalysisPrompt, resolveDomainDemo } from "../lib/demo/domainDemoRegistry";
 import { executeNexoraAction } from "../lib/execution/actionExecutionLayer";
 import type { FragilityScanResponse } from "../types/fragilityScanner";
@@ -554,6 +657,10 @@ import { RightPanelHost } from "../components/right-panel/RightPanelHost";
 import { ChatPipelineQAPanel } from "../components/debug/ChatPipelineQAPanel";
 import { PrimaryDecisionStrip } from "../components/right-panel/PrimaryDecisionStrip";
 import { DEFAULT_LEFT_COMMANDS, LeftCommandAssistant } from "../components/assistant/LeftCommandAssistant";
+import { ExecutiveAssistantPanel } from "../components/assistant/ExecutiveAssistantPanel";
+import { ExecutiveScenarioSuggestionsPanel } from "../components/executive/ExecutiveScenarioSuggestionsPanel";
+import { ExecutiveScenarioComparisonPanel } from "../components/executive/ExecutiveScenarioComparisonPanel";
+import { ExecutiveCommandBar } from "../components/executive/ExecutiveCommandBar";
 import type {
   RightPanelState,
   RightPanelView,
@@ -1157,7 +1264,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   );
 
   const { nexoraMode } = useNexoraOperatorMode();
-  const { resolvedTheme } = useNexoraUiTheme();
+  const { resolvedTheme, setThemeMode } = useNexoraUiTheme();
+  const { contract: workspaceLayoutContract, setPreset: setWorkspaceLayoutPreset } = useWorkspaceLayout();
+  const { isPanelVisible, assistantRailSide } = useHudPreferences();
   const console = React.useMemo(
     () =>
       ({
@@ -1489,6 +1598,323 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [applySceneChangeSafe]
   );
+
+  const handleOpenExecutiveObjectCatalog = useCallback((source: string) => {
+    requestOpenObjectCatalog(source);
+    setObjectCatalogOpen(true);
+  }, []);
+
+  const handleCloseExecutiveObjectCatalog = useCallback(() => {
+    requestCloseObjectCatalog("catalog_ui");
+    setObjectCatalogOpen(false);
+  }, []);
+
+  const handleExecutiveCatalogObjectConfirm = useCallback(
+    (definition: CatalogObjectDefinition) => {
+      let createdId: string | null = null;
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        const result = insertCatalogObjectIntoScene({
+          currentScene: prev,
+          definition,
+        });
+        if (!result.success || !result.nextScene) return prev;
+        createdId = result.createdObjectId ?? null;
+        return result.nextScene;
+      }, "executive_object_catalog_insert");
+
+      if (createdId) {
+        selectedSetterRef.current(createdId);
+        handleSelectedChangeRef.current?.(createdId);
+        selectPlacedObject(createdId);
+        setFocusedId((prev) => prev ?? createdId);
+        focusObject(createdId, "panel");
+      }
+      setObjectCatalogOpen(false);
+      requestCloseObjectCatalog("catalog_confirm");
+    },
+    [applySceneChangeSafe, setFocusedId]
+  );
+
+  const handleSceneObjectPositionChange = useCallback(
+    (objectId: string, position: { x: number; y: number; z: number }, phase: "drag" | "move") => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        return applyObjectPlacementToScene(prev, objectId, position, phase);
+      }, phase === "drag" ? "executive_object_drag" : "executive_object_move", {
+        bypassDedupe: phase === "drag",
+      });
+    },
+    [applySceneChangeSafe]
+  );
+
+  const handleObjectEdit = useCallback(
+    (objectId: string, patch: EditableObjectPatch) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        return editSceneObject(prev, objectId, patch);
+      }, "executive_object_edit", { bypassDedupe: true });
+    },
+    [applySceneChangeSafe]
+  );
+
+  const handleDuplicateObject = useCallback(
+    (objectId: string) => {
+      let duplicatedId: string | null = null;
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        const result = duplicateSceneObject(prev, objectId);
+        duplicatedId = result.duplicatedObjectId;
+        return result.nextScene;
+      }, "executive_object_duplicate");
+      if (duplicatedId) {
+        selectedSetterRef.current(duplicatedId);
+        handleSelectedChangeRef.current?.(duplicatedId);
+        selectPlacedObject(duplicatedId);
+        setFocusedId(duplicatedId);
+        focusObject(duplicatedId, "panel");
+      }
+    },
+    [applySceneChangeSafe, setFocusedId]
+  );
+
+  const handleDeleteObject = useCallback(
+    (objectId: string) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        return deleteSceneObject(prev, objectId);
+      }, "executive_object_delete");
+      selectedSetterRef.current(null);
+      setSelectedObjectIdState((current) => (current === objectId ? null : current));
+      setSelectedObjectInfo(null);
+      setFocusedId((current) => (current === objectId ? null : current));
+      deselectPlacedObject();
+      selectRelationship(null);
+      setSelectedRelationshipId(null);
+      selectPropagationPath(null);
+      setSelectedPropagationPathId(null);
+    },
+    [applySceneChangeSafe, setFocusedId]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const onOpen = () => setObjectCatalogOpen(true);
+    const onClose = () => setObjectCatalogOpen(false);
+    window.addEventListener(OBJECT_CATALOG_OPEN_EVENT, onOpen);
+    window.addEventListener(OBJECT_CATALOG_CLOSE_EVENT, onClose);
+    return () => {
+      window.removeEventListener(OBJECT_CATALOG_OPEN_EVENT, onOpen);
+      window.removeEventListener(OBJECT_CATALOG_CLOSE_EVENT, onClose);
+    };
+  }, []);
+
+  const handleOpenExecutiveRelationshipBuilder = useCallback(
+    (source: string, sourceObjectId?: string | null) => {
+      const resolvedSourceId =
+        sourceObjectId?.trim() ||
+        String(selectedObjectIdState ?? focusedId ?? "").trim() ||
+        null;
+      setRelationshipBuilderSourceId(resolvedSourceId);
+      requestOpenRelationshipBuilder(source, resolvedSourceId);
+      setRelationshipBuilderOpen(true);
+    },
+    [focusedId, selectedObjectIdState]
+  );
+
+  const handleCloseExecutiveRelationshipBuilder = useCallback(() => {
+    requestCloseRelationshipBuilder("relationship_builder_ui");
+    setRelationshipBuilderOpen(false);
+    setRelationshipBuilderSourceId(null);
+  }, []);
+
+  const handleExecutiveRelationshipConfirm = useCallback(
+    (payload: {
+      sourceId: string;
+      targetId: string;
+      type: NexoraRelationshipType;
+      direction: NexoraRelationshipDirection;
+    }) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        const result = createSceneRelationship(prev, payload);
+        if (!result.success || !result.nextScene) return prev;
+        if (result.relationship) {
+          selectRelationship(result.relationship);
+          setSelectedRelationshipId(result.relationship.id);
+          selectPropagationPath(null);
+          setSelectedPropagationPathId(null);
+          selectedSetterRef.current(null);
+          setSelectedObjectIdState(null);
+          setSelectedObjectInfo(null);
+          setFocusedId(null);
+        }
+        return result.nextScene;
+      }, "executive_relationship_insert");
+      setRelationshipBuilderOpen(false);
+      setRelationshipBuilderSourceId(null);
+      requestCloseRelationshipBuilder("relationship_builder_confirm");
+    },
+    [applySceneChangeSafe, setFocusedId]
+  );
+
+  const handleRelationshipSelect = useCallback((relationship: NexoraRelationship) => {
+    selectRelationship(relationship);
+    setSelectedRelationshipId(relationship.id);
+    selectPropagationPath(null);
+    setSelectedPropagationPathId(null);
+    selectedSetterRef.current(null);
+    setSelectedObjectIdState(null);
+    setSelectedObjectInfo(null);
+    setFocusedId(null);
+  }, [setFocusedId]);
+
+  const handleDeleteSelectedRelationship = useCallback(
+    (relationshipId: string) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        return deleteSceneRelationship(prev, relationshipId);
+      }, "executive_relationship_delete");
+      setSelectedRelationshipId((current) => (current === relationshipId ? null : current));
+    },
+    [applySceneChangeSafe]
+  );
+
+  const handleOpenPropagationBuilder = useCallback((sourceObjectId?: string | null) => {
+    const sourceId = String(sourceObjectId ?? selectedObjectIdState ?? focusedId ?? "").trim() || null;
+    setPropagationBuilderSourceId(sourceId);
+    setPropagationBuilderErrors([]);
+    setPropagationBuilderOpen(true);
+  }, [focusedId, selectedObjectIdState]);
+
+  const handleClosePropagationBuilder = useCallback(() => {
+    setPropagationBuilderOpen(false);
+    setPropagationBuilderSourceId(null);
+    setPropagationBuilderErrors([]);
+  }, []);
+
+  const handlePropagationPathConfirm = useCallback(
+    (payload: PropagationPathCreateRequest) => {
+      let createdPath: PropagationPath | null = null;
+      let errors: string[] = [];
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        const result = createPropagationPath(prev, payload);
+        errors = result.errors;
+        createdPath = result.path;
+        return result.nextScene;
+      }, "executive_propagation_path_create");
+      if (errors.length) {
+        setPropagationBuilderErrors(errors);
+        return;
+      }
+      const nextCreatedPath = createdPath as PropagationPath | null;
+      if (nextCreatedPath) {
+        selectPropagationPath(nextCreatedPath);
+        setSelectedPropagationPathId(nextCreatedPath.id);
+        selectRelationship(null);
+        setSelectedRelationshipId(null);
+        selectedSetterRef.current(null);
+        setSelectedObjectIdState(null);
+        setSelectedObjectInfo(null);
+        setFocusedId(null);
+      }
+      handleClosePropagationBuilder();
+    },
+    [applySceneChangeSafe, handleClosePropagationBuilder, setFocusedId]
+  );
+
+  const handlePropagationPathSelect = useCallback((path: PropagationPath) => {
+    selectPropagationPath(path);
+    setSelectedPropagationPathId(path.id);
+    selectRelationship(null);
+    setSelectedRelationshipId(null);
+    selectedSetterRef.current(null);
+    setSelectedObjectIdState(null);
+    setSelectedObjectInfo(null);
+    setFocusedId(null);
+  }, [setFocusedId]);
+
+  const handleEditPropagationPath = useCallback(
+    (pathId: string, patch: PropagationPathPatch) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        return editPropagationPath(prev, pathId, patch);
+      }, "executive_propagation_path_edit", { bypassDedupe: true });
+    },
+    [applySceneChangeSafe]
+  );
+
+  const handleDeletePropagationPath = useCallback(
+    (pathId: string) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        return deletePropagationPath(prev, pathId);
+      }, "executive_propagation_path_delete");
+      setSelectedPropagationPathId((current) => (current === pathId ? null : current));
+      selectPropagationPath(null);
+    },
+    [applySceneChangeSafe]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const onOpen = (event: Event) => {
+      const detail = (event as CustomEvent<{ sourceObjectId?: string | null }>).detail;
+      setRelationshipBuilderSourceId(detail?.sourceObjectId?.trim() || null);
+      setRelationshipBuilderOpen(true);
+    };
+    const onClose = () => {
+      setRelationshipBuilderOpen(false);
+      setRelationshipBuilderSourceId(null);
+    };
+    window.addEventListener(RELATIONSHIP_BUILDER_OPEN_EVENT, onOpen);
+    window.addEventListener(RELATIONSHIP_BUILDER_CLOSE_EVENT, onClose);
+    return () => {
+      window.removeEventListener(RELATIONSHIP_BUILDER_OPEN_EVENT, onOpen);
+      window.removeEventListener(RELATIONSHIP_BUILDER_CLOSE_EVENT, onClose);
+    };
+  }, []);
+
+  const handleOpenExecutiveModelingWorkspace = useCallback((source: string) => {
+    requestOpenSystemModelingWorkspace(source);
+    setSystemModelingOpen(true);
+  }, []);
+
+  const handleCloseExecutiveModelingWorkspace = useCallback(() => {
+    requestCloseSystemModelingWorkspace("modeling_workspace_ui");
+    setSystemModelingOpen(false);
+  }, []);
+
+  const handleExecutiveSystemGenerate = useCallback(
+    (templateId: string) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        const result = generateSystemFromTemplate({
+          currentScene: prev,
+          templateId,
+        });
+        if (!result.success || !result.nextScene) return prev;
+        return result.nextScene;
+      }, "executive_system_template_generate");
+      setSystemModelingOpen(false);
+      requestCloseSystemModelingWorkspace("modeling_workspace_confirm");
+      requestSceneNavigationAction("fit_scene", "panel");
+    },
+    [applySceneChangeSafe]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const onOpen = () => setSystemModelingOpen(true);
+    const onClose = () => setSystemModelingOpen(false);
+    window.addEventListener(SYSTEM_MODELING_OPEN_EVENT, onOpen);
+    window.addEventListener(SYSTEM_MODELING_CLOSE_EVENT, onClose);
+    return () => {
+      window.removeEventListener(SYSTEM_MODELING_OPEN_EVENT, onOpen);
+      window.removeEventListener(SYSTEM_MODELING_CLOSE_EVENT, onClose);
+    };
+  }, []);
 
   const setSceneJsonForExecutionApply = useCallback(
     (next: SceneJson | null | ((prev: SceneJson | null) => SceneJson | null)) => {
@@ -2580,7 +3006,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   );
   const [isClientMounted, setIsClientMounted] = useState(false);
   const [leftCommandPanelOpen, setLeftCommandPanelOpen] = useState(true);
+  const [scenePanelCollapsed, setScenePanelCollapsed] = useState(false);
+  const [objectCatalogOpen, setObjectCatalogOpen] = useState(false);
+  const [relationshipBuilderOpen, setRelationshipBuilderOpen] = useState(false);
+  const [relationshipBuilderSourceId, setRelationshipBuilderSourceId] = useState<string | null>(null);
+  const [selectedRelationshipId, setSelectedRelationshipId] = useState<string | null>(null);
+  const [propagationBuilderOpen, setPropagationBuilderOpen] = useState(false);
+  const [propagationBuilderSourceId, setPropagationBuilderSourceId] = useState<string | null>(null);
+  const [propagationBuilderErrors, setPropagationBuilderErrors] = useState<string[]>([]);
+  const [selectedPropagationPathId, setSelectedPropagationPathId] = useState<string | null>(null);
+  const [systemModelingOpen, setSystemModelingOpen] = useState(false);
+  const [workspaceLoadOpen, setWorkspaceLoadOpen] = useState(false);
+  const [workspacePersistenceNotice, setWorkspacePersistenceNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!workspacePersistenceNotice) return undefined;
+    const timer = window.setTimeout(() => setWorkspacePersistenceNotice(null), 3200);
+    return () => window.clearTimeout(timer);
+  }, [workspacePersistenceNotice]);
+  const [objectPanelCollapsed, setObjectPanelCollapsed] = useState(false);
+  const [executiveAssistantCollapsed, setExecutiveAssistantCollapsed] = useState(false);
+  const [selectedExecutiveScenarioId, setSelectedExecutiveScenarioId] = useState<string | null>(null);
+  const [comparisonFocusScenarioIds, setComparisonFocusScenarioIds] = useState<string[]>([]);
   const [leftCommandPortalHost, setLeftCommandPortalHost] = useState<HTMLElement | null>(null);
+  const [executiveAssistantPortalHost, setExecutiveAssistantPortalHost] = useState<HTMLElement | null>(null);
+  const [executiveScenarioPortalHost, setExecutiveScenarioPortalHost] = useState<HTMLElement | null>(null);
+  const [executiveComparisonPortalHost, setExecutiveComparisonPortalHost] = useState<HTMLElement | null>(null);
+  const [executiveCommandBarPortalHost, setExecutiveCommandBarPortalHost] = useState<HTMLElement | null>(null);
   const [inspectorPortalHost, setInspectorPortalHost] = useState<HTMLElement | null>(null);
   const tracePanelFamilyAudit = useCallback(
     (
@@ -4658,6 +5109,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, []);
 
   useEffect(() => {
+    const onScenePanelCollapsedChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ collapsed?: boolean }>).detail;
+      const nextCollapsed = detail?.collapsed;
+      if (typeof nextCollapsed !== "boolean") return;
+      setScenePanelCollapsed((prev) => (prev === nextCollapsed ? prev : nextCollapsed));
+    };
+    window.addEventListener("nexora:scene-panel-collapsed-changed", onScenePanelCollapsedChanged as EventListener);
+    return () =>
+      window.removeEventListener("nexora:scene-panel-collapsed-changed", onScenePanelCollapsedChanged as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const onObjectPanelCollapsedChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ collapsed?: boolean }>).detail;
+      const nextCollapsed = detail?.collapsed;
+      if (typeof nextCollapsed !== "boolean") return;
+      setObjectPanelCollapsed((prev) => (prev === nextCollapsed ? prev : nextCollapsed));
+    };
+    window.addEventListener("nexora:object-panel-collapsed-changed", onObjectPanelCollapsedChanged as EventListener);
+    return () =>
+      window.removeEventListener("nexora:object-panel-collapsed-changed", onObjectPanelCollapsedChanged as EventListener);
+  }, []);
+
+  useEffect(() => {
     if (!isClientMounted) {
       setLeftCommandPortalHost(null);
       return;
@@ -4665,6 +5140,71 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const el = document.getElementById("nexora-left-command-host");
     setLeftCommandPortalHost(el instanceof HTMLElement ? el : null);
   }, [isClientMounted]);
+
+  useEffect(() => {
+    if (!isClientMounted) {
+      setExecutiveAssistantPortalHost(null);
+      return;
+    }
+    const el = document.getElementById("nexora-executive-assistant-host");
+    setExecutiveAssistantPortalHost(el instanceof HTMLElement ? el : null);
+  }, [isClientMounted, executiveAssistantCollapsed]);
+
+  useEffect(() => {
+    if (!isClientMounted) {
+      setExecutiveScenarioPortalHost(null);
+      return;
+    }
+    const el = document.getElementById("nexora-executive-scenario-host");
+    setExecutiveScenarioPortalHost(el instanceof HTMLElement ? el : null);
+  }, [isClientMounted, executiveAssistantCollapsed]);
+
+  useEffect(() => {
+    if (!isClientMounted) {
+      setExecutiveComparisonPortalHost(null);
+      return;
+    }
+    const el = document.getElementById("nexora-executive-comparison-host");
+    setExecutiveComparisonPortalHost(el instanceof HTMLElement ? el : null);
+  }, [isClientMounted, executiveAssistantCollapsed]);
+
+  useEffect(() => {
+    if (!isClientMounted) {
+      setExecutiveCommandBarPortalHost(null);
+      return;
+    }
+    const el = document.getElementById("nexora-executive-command-bar-host");
+    setExecutiveCommandBarPortalHost(el instanceof HTMLElement ? el : null);
+  }, [isClientMounted, executiveAssistantCollapsed]);
+
+  useEffect(() => {
+    const onCompareRequested = (event: Event) => {
+      const detail = (event as CustomEvent<{ selectedScenarioIds?: string[] }>).detail;
+      if (!Array.isArray(detail?.selectedScenarioIds) || detail.selectedScenarioIds.length === 0) return;
+      setComparisonFocusScenarioIds(detail.selectedScenarioIds);
+    };
+    window.addEventListener("nexora:executive-scenario-compare-requested", onCompareRequested as EventListener);
+    return () =>
+      window.removeEventListener("nexora:executive-scenario-compare-requested", onCompareRequested as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const onExecutiveAssistantCollapsedChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ collapsed?: boolean }>).detail;
+      const nextCollapsed = detail?.collapsed;
+      if (typeof nextCollapsed !== "boolean") return;
+      setExecutiveAssistantCollapsed((prev) => (prev === nextCollapsed ? prev : nextCollapsed));
+    };
+    window.addEventListener(
+      "nexora:executive-assistant-collapsed-changed",
+      onExecutiveAssistantCollapsedChanged as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        "nexora:executive-assistant-collapsed-changed",
+        onExecutiveAssistantCollapsedChanged as EventListener
+      );
+  }, []);
 
   useEffect(() => {
     try {
@@ -8238,17 +8778,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           }
           return;
         }
-        const currentHighlights = getHighlightedObjectIdsFromSelection(visibleObjectSelection);
-        if (focusedId || selectedObjectIdState || currentHighlights.length > 0) {
-          if (process.env.NODE_ENV !== "production") {
-            globalThis.console?.debug?.("[Nexora][SelectionGuardSkipped]", {
-              reason: "ignore_implicit_scene_clear",
-              focusedId: focusedId ?? null,
-              selectedObjectId: selectedObjectIdState ?? null,
-            });
-          }
-          return;
-        }
         const clearSig = buildSelectionSignature({
           focusedId: null,
           highlightedIds: [],
@@ -8264,6 +8793,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           type: "reset_focus",
           source: "scene",
         });
+        deselectPlacedObject();
+        selectRelationship(null);
+        setSelectedRelationshipId(null);
+        selectPropagationPath(null);
+        setSelectedPropagationPathId(null);
         clearFocusOwnership("Selection cleared.");
         return;
       }
@@ -8285,6 +8819,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         source: "scene",
         payload: { objectId: id },
       });
+      selectPlacedObject(id);
+      selectRelationship(null);
+      setSelectedRelationshipId(null);
+      selectPropagationPath(null);
+      setSelectedPropagationPathId(null);
       claimFocusOwnership({
         source: "user_click",
         objectId: id,
@@ -10133,6 +10672,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const handleLeftCommandPanelOpen = useCallback(() => {
     requestLeftCommandOpen(true);
   }, [requestLeftCommandOpen]);
+
+  const handleExecutiveAssistantPanelClose = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent("nexora:executive-assistant-set-collapsed", { detail: { collapsed: true } })
+    );
+  }, []);
 
   const handleLeftCommandRun = useCallback(
     (commandId: string) => {
@@ -13152,6 +13697,79 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     }
   }, [activeInspectorHostId, isClientMounted, rightPanelState.view]);
 
+  const showExecutiveRightAssistantPanel = shouldShowExecutiveRightAssistantPanel();
+  const showExecutiveLeftCommandPanel = shouldShowExecutiveLeftCommandPanel();
+  const executiveAssistantThemeMode = resolveNexoraHudThemeMode(resolvedTheme);
+  const executiveQuestionSuggestions = useMemo(() => {
+    const domainExamples = activeDomainExperience.experience.promptExamples ?? [];
+    const merged = [...domainExamples.slice(0, 2), ...DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS];
+    return [...new Set(merged.map((item) => item.trim()).filter(Boolean))].slice(0, 6);
+  }, [activeDomainExperience.experience.promptExamples]);
+  const executiveAssistantStatus = useMemo(
+    () => ({
+      phase: chatDelayedBusy ? ("processing" as const) : ("online" as const),
+      label: chatDelayedBusy ? "Analyzing" : "Online",
+    }),
+    [chatDelayedBusy]
+  );
+
+  const showExecutiveScenarioSuggestionsPanel = shouldShowExecutiveScenarioSuggestionsPanel();
+  const showExecutiveScenarioComparisonPanel = shouldShowExecutiveScenarioComparisonPanel();
+  const executiveScenarioSuggestionsModel = useMemo(
+    () =>
+      buildExecutiveScenarioSuggestionsModel(
+        buildCanonicalRecommendation(visibleResponseData ?? visibleSceneJson ?? null)
+      ),
+    [visibleResponseData, visibleSceneJson]
+  );
+  const executiveScenarioComparisonModel = useMemo(
+    () =>
+      buildExecutiveScenarioComparisonModel({
+        scenarios: executiveScenarioSuggestionsModel.scenarios,
+        selectedScenarioId: selectedExecutiveScenarioId,
+        focusScenarioIds: comparisonFocusScenarioIds,
+      }),
+    [
+      comparisonFocusScenarioIds,
+      executiveScenarioSuggestionsModel.scenarios,
+      selectedExecutiveScenarioId,
+    ]
+  );
+  const handleExecutiveScenarioSelect = useCallback((scenario: ScenarioSuggestion) => {
+    setSelectedExecutiveScenarioId((prev) => (prev === scenario.id ? null : scenario.id));
+  }, []);
+  const handleExecutiveComparisonSelect = useCallback((option: ScenarioComparisonOption) => {
+    setSelectedExecutiveScenarioId((prev) => (prev === option.id ? null : option.id));
+  }, []);
+  const handleExecutiveScenarioCompareRequest = useCallback((selectedScenarioIds: string[]) => {
+    setComparisonFocusScenarioIds(selectedScenarioIds);
+  }, []);
+  const handleExecutiveScenarioSimulateSelected = useCallback(
+    (option: ScenarioComparisonOption | null) => {
+      if (!option) return;
+      markUserStartedFlow("left_command_simulate");
+      dispatchCanonicalAction(
+        normalizeRunSimulation({ rawSource: "ExecutiveScenarioComparison:simulateSelected" })
+      );
+    },
+    [dispatchCanonicalAction, markUserStartedFlow]
+  );
+  const handleExecutiveScenarioExplainWhy = useCallback(
+    (option: ScenarioComparisonOption | null) => {
+      const target =
+        option ??
+        executiveScenarioComparisonModel.options.find(
+          (entry) => entry.id === executiveScenarioComparisonModel.summary.bestOptionId
+        ) ??
+        null;
+      if (!target) return;
+      setInput(
+        `Explain why ${target.title} is the best option, what tradeoffs remain, and what risks could emerge.`
+      );
+    },
+    [executiveScenarioComparisonModel.options, executiveScenarioComparisonModel.summary.bestOptionId]
+  );
+
   const leftCommandMessages = useMemo(
     () =>
       messages.map((m, idx) => ({
@@ -13180,7 +13798,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [executiveReasoningTransparency, lastAnalysisSummary]);
 
   const leftCommandPortalNode =
-    isClientMounted && leftCommandPortalHost ? (
+    showExecutiveLeftCommandPanel && isClientMounted && leftCommandPortalHost ? (
       createPortal(
         <div
           style={{
@@ -13203,6 +13821,67 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           />
         </div>,
         leftCommandPortalHost
+      )
+    ) : null;
+
+  const executiveAssistantPortalNode =
+    showExecutiveRightAssistantPanel &&
+    isPanelVisible("aiAssistant") &&
+    isClientMounted &&
+    executiveAssistantPortalHost ? (
+      createPortal(
+        <ExecutiveAssistantPanel
+          open={!executiveAssistantCollapsed}
+          messages={leftCommandMessages}
+          input={input}
+          loading={chatDelayedBusy}
+          activeContextSummary={leftCommandContextSummary}
+          questionSuggestions={executiveQuestionSuggestions}
+          assistantStatus={executiveAssistantStatus}
+          themeMode={executiveAssistantThemeMode}
+          onInputChange={setInput}
+          onSubmit={send}
+          onClose={handleExecutiveAssistantPanelClose}
+        />,
+        executiveAssistantPortalHost
+      )
+    ) : null;
+
+  const executiveScenarioPortalNode =
+    showExecutiveScenarioSuggestionsPanel &&
+    isPanelVisible("scenarioSuggestions") &&
+    isClientMounted &&
+    executiveScenarioPortalHost ? (
+      createPortal(
+        <ExecutiveScenarioSuggestionsPanel
+          open={!executiveAssistantCollapsed}
+          model={executiveScenarioSuggestionsModel}
+          selectedScenarioId={selectedExecutiveScenarioId}
+          themeMode={executiveAssistantThemeMode}
+          onSelectScenario={handleExecutiveScenarioSelect}
+          onCompareRequest={handleExecutiveScenarioCompareRequest}
+        />,
+        executiveScenarioPortalHost
+      )
+    ) : null;
+
+  const executiveScenarioComparisonPortalNode =
+    showExecutiveScenarioComparisonPanel &&
+    isPanelVisible("scenarioComparison") &&
+    isClientMounted &&
+    executiveComparisonPortalHost ? (
+      createPortal(
+        <ExecutiveScenarioComparisonPanel
+          open={!executiveAssistantCollapsed}
+          model={executiveScenarioComparisonModel}
+          selectedScenarioId={selectedExecutiveScenarioId}
+          themeMode={executiveAssistantThemeMode}
+          onSelectScenario={handleExecutiveComparisonSelect}
+          onSimulateSelected={handleExecutiveScenarioSimulateSelected}
+          onCompareDetails={handleExecutiveScenarioCompareRequest}
+          onExplainWhy={handleExecutiveScenarioExplainWhy}
+        />,
+        executiveComparisonPortalHost
       )
     ) : null;
 
@@ -13229,7 +13908,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const hasUserPrompt = messages.some(
     (m) => m.role === "user" && typeof m.text === "string" && m.text.trim().length > 0
   );
-  const showDomainPromptGuide = !!visibleSceneJson && isDomainDemoActive && !hasUserPrompt;
+  const showDomainPromptGuide =
+    shouldShowExecutiveOnboardingOverlays() &&
+    !!visibleSceneJson &&
+    isDomainDemoActive &&
+    !hasUserPrompt;
   const domainPromptSuggestions = activeDomainExperience.experience.promptExamples;
   const launchDomainActive = isLaunchDomain(activeDomainExperience.experience.domainId);
   const isRetailStoryScene =
@@ -13685,6 +14368,163 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   useEffect(() => {
     logReasoningTransparencyDiagnostics(executiveReasoningTransparencyResolved);
   }, [executiveReasoningTransparencyResolved]);
+
+  const showExecutiveCommandBar = shouldShowExecutiveCommandBar();
+  const selectedExecutiveScenarioTitle = useMemo(() => {
+    const selected = executiveScenarioSuggestionsModel.scenarios.find(
+      (scenario) => scenario.id === selectedExecutiveScenarioId
+    );
+    return selected?.title ?? executiveScenarioComparisonModel.summary.bestOptionTitle ?? null;
+  }, [
+    executiveScenarioComparisonModel.summary.bestOptionTitle,
+    executiveScenarioSuggestionsModel.scenarios,
+    selectedExecutiveScenarioId,
+  ]);
+  const executiveCommandBarModel = useMemo(
+    () =>
+      buildExecutiveCommandBarModel({
+        pipelineStatus: pipelineStatusUi,
+        selectedScenarioTitle: selectedExecutiveScenarioTitle,
+        domainLabel: activeDomainExperience.experience.label,
+        scenarioName: activeDomainExperience.experience.label,
+      }),
+    [
+      activeDomainExperience.experience.label,
+      pipelineStatusUi,
+      selectedExecutiveScenarioTitle,
+    ]
+  );
+  const selectedExecutiveScenarioConfidence = useMemo(() => {
+    const selected = executiveScenarioSuggestionsModel.scenarios.find(
+      (scenario) => scenario.id === selectedExecutiveScenarioId
+    );
+    return typeof selected?.confidence === "number" ? selected.confidence : null;
+  }, [executiveScenarioSuggestionsModel.scenarios, selectedExecutiveScenarioId]);
+  const executiveStatusHudModel = useMemo(
+    () =>
+      buildExecutiveStatusHudModel({
+        pipelineStatus: pipelineStatusUi,
+        selectedScenarioTitle: selectedExecutiveScenarioTitle,
+        domainLabel: activeDomainExperience.experience.label,
+        scenarioConfidence: selectedExecutiveScenarioConfidence,
+      }),
+    [
+      activeDomainExperience.experience.label,
+      pipelineStatusUi,
+      selectedExecutiveScenarioConfidence,
+      selectedExecutiveScenarioTitle,
+    ]
+  );
+  const handleExecutiveCommandBarAction = useCallback(
+    (actionId: ExecutiveCommandBarActionId) => {
+      if (actionId === "analyze") {
+        window.dispatchEvent(new CustomEvent("nexora:request-object-analyze"));
+        return;
+      }
+      if (actionId === "simulate") {
+        markUserStartedFlow("left_command_simulate");
+        dispatchCanonicalAction(
+          normalizeRunSimulation({ rawSource: "ExecutiveCommandBar:simulate" })
+        );
+        return;
+      }
+      if (actionId === "compare") {
+        const ids =
+          comparisonFocusScenarioIds.length >= 2
+            ? comparisonFocusScenarioIds
+            : executiveScenarioComparisonModel.options.slice(0, 2).map((option) => option.id);
+        window.dispatchEvent(
+          new CustomEvent("nexora:executive-scenario-compare-requested", {
+            detail: { selectedScenarioIds: ids },
+          })
+        );
+        return;
+      }
+      if (actionId === "snapshot") {
+        window.dispatchEvent(new CustomEvent("nexora:executive-command-bar-snapshot"));
+        return;
+      }
+      if (actionId === "replay") {
+        window.dispatchEvent(new CustomEvent("nexora:executive-command-bar-replay"));
+        return;
+      }
+      if (actionId === "save_workspace") {
+        const result = saveWorkspace({
+          sceneJson: stableVisibleSceneJson,
+        });
+        if (result.success) {
+          setWorkspacePersistenceNotice(
+            `Saved "${result.workspace?.name ?? "workspace"}" (${result.workspace?.objects.length ?? 0} objects).`
+          );
+        } else {
+          setWorkspacePersistenceNotice("Save failed. Workspace could not be validated.");
+        }
+        return;
+      }
+      if (actionId === "load_workspace") {
+        setWorkspaceLoadOpen(true);
+      }
+    },
+    [
+      comparisonFocusScenarioIds,
+      dispatchCanonicalAction,
+      executiveScenarioComparisonModel.options,
+      markUserStartedFlow,
+      stableVisibleSceneJson,
+    ]
+  );
+
+  const handleCloseWorkspaceLoadDialog = useCallback(() => {
+    setWorkspaceLoadOpen(false);
+  }, []);
+
+  const handleConfirmWorkspaceLoad = useCallback(
+    (workspaceId: string) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        const result = loadWorkspace(workspaceId, prev);
+        if (!result.success || !result.nextScene) return prev;
+
+        if (result.viewPreferences?.themeMode) {
+          setThemeMode(result.viewPreferences.themeMode);
+        }
+        if (result.viewPreferences?.layoutPreset) {
+          setWorkspaceLayoutPreset(result.viewPreferences.layoutPreset);
+        }
+        applySavedViewPreferences(result.viewPreferences);
+
+        selectedSetterRef.current(null);
+        handleSelectedChangeRef.current?.(null);
+        deselectPlacedObject();
+        selectRelationship(null);
+        setSelectedRelationshipId(null);
+        selectPropagationPath(null);
+        setSelectedPropagationPathId(null);
+        setFocusedId(null);
+
+        setWorkspacePersistenceNotice(
+          `Loaded "${result.workspace?.name ?? "workspace"}" (${result.workspace?.objects.length ?? 0} objects).`
+        );
+        return result.nextScene;
+      }, "executive_workspace_load");
+
+      setWorkspaceLoadOpen(false);
+      requestSceneNavigationAction("fit_scene", "panel");
+    },
+    [applySceneChangeSafe, setFocusedId, setThemeMode, setWorkspaceLayoutPreset]
+  );
+  const executiveCommandBarPortalNode =
+    showExecutiveCommandBar && isPanelVisible("commandBar") && isClientMounted && executiveCommandBarPortalHost ? (
+      createPortal(
+        <ExecutiveCommandBar
+          model={executiveCommandBarModel}
+          themeMode={executiveAssistantThemeMode}
+          onAction={handleExecutiveCommandBarAction}
+        />,
+        executiveCommandBarPortalHost
+      )
+    ) : null;
+
   const lastAuditSignatureRef = useRef<string | null>(null);
   const [auditHudEpoch, setAuditHudEpoch] = useState(0);
   const lastReplaySnapshotRef = useRef<NexoraReplaySnapshot | null>(null);
@@ -15109,10 +15949,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           ? nx.accentMuted
           : nx.muted;
 
-  const showPipelineStatusHud =
-    pipelineStatusUi.status === "processing" ||
-    pipelineStatusUi.status === "ready" ||
-    pipelineStatusUi.status === "error";
+  const showPipelineStatusHud = shouldShowExecutivePipelineStatusHud(pipelineStatusUi.status);
 
   const sceneContextOverlayLines = useMemo(() => {
     const rp =
@@ -15167,8 +16004,148 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       ids,
     });
   }, [stableSceneJsonDuringPanelValidation]);
+  useEffect(() => {
+    registerSceneObjectPlacementsFromScene(stableSceneJsonDuringPanelValidation);
+    registerRelationshipsFromScene(stableSceneJsonDuringPanelValidation);
+    registerPropagationPathsFromScene(stableSceneJsonDuringPanelValidation);
+  }, [stableSceneJsonDuringPanelValidation]);
+  const showExecutiveScenePanelDock = shouldShowExecutiveScenePanelDock();
+  const showExecutiveObjectPanelDock = shouldShowExecutiveObjectPanelDock();
+  const executiveSceneInfoHud = useMemo(() => {
+    if (showExecutiveScenePanelDock) return null;
+    return {
+      currentViewId: activeDomainExperience.experience.domainId,
+      currentViewLabel: activeDomainExperience.experience.label,
+      onAddObjectClick: () => handleOpenExecutiveObjectCatalog("scene_info_hud"),
+      onCreateSystemClick: () => handleOpenExecutiveModelingWorkspace("scene_info_hud"),
+    };
+  }, [
+    activeDomainExperience.experience.domainId,
+    activeDomainExperience.experience.label,
+    handleOpenExecutiveModelingWorkspace,
+    handleOpenExecutiveObjectCatalog,
+    showExecutiveScenePanelDock,
+  ]);
+  const executiveObjectInfoHud = useMemo(() => {
+    if (showExecutiveObjectPanelDock) return null;
+    const selectedId = selectedRelationshipId || selectedPropagationPathId ? null : (selectedObjectIdState ?? focusedId ?? null)?.trim() || null;
+    return buildObjectInfoHudModel({
+      selectedObjectId: selectedId,
+      selectedRelationshipId,
+      selectedPropagationPathId,
+      objectDetails: selectedId && selectedObjectInfo?.id === selectedId ? selectedObjectInfo : null,
+      executivePanelData:
+        selectedId && activeExecutiveObjectId === selectedId ? executiveObjectPanelData : null,
+      sceneJson: stableSceneJsonDuringPanelValidation,
+    });
+  }, [
+    activeExecutiveObjectId,
+    executiveObjectPanelData,
+    focusedId,
+    selectedObjectIdState,
+    selectedObjectInfo,
+    selectedRelationshipId,
+    selectedPropagationPathId,
+    showExecutiveObjectPanelDock,
+    stableSceneJsonDuringPanelValidation,
+  ]);
+  const relationshipBuilderCandidates = useMemo(() => {
+    const objects = stableSceneJsonDuringPanelValidation?.scene?.objects;
+    if (!Array.isArray(objects)) return [];
+    return objects
+      .map((object: { id?: string; label?: string; name?: string }) => {
+        const id = String(object?.id ?? "").trim();
+        if (!id) return null;
+        const label = String(object?.label ?? object?.name ?? id).trim() || id;
+        return { id, label };
+      })
+      .filter((item): item is { id: string; label: string } => Boolean(item));
+  }, [stableSceneJsonDuringPanelValidation]);
+  const handleObjectInfoCreateRelationship = useCallback(() => {
+    handleOpenExecutiveRelationshipBuilder("object_info_hud");
+  }, [handleOpenExecutiveRelationshipBuilder]);
+  const executiveTimelineHud = useMemo(() => {
+    if (showExecutiveScenePanelDock) return null;
+    const reco = buildCanonicalRecommendation(visibleResponseData ?? visibleSceneJson ?? null);
+    return buildExecutiveTimelineHudModel({
+      responseData: visibleResponseData,
+      canonicalRecommendation: reco,
+      decisionResult,
+    });
+  }, [decisionResult, showExecutiveScenePanelDock, visibleResponseData, visibleSceneJson]);
+  const showExecutiveQuickActionsDock = shouldShowExecutiveQuickActionsDock();
+  const hasExecutiveObjectSelection = Boolean(
+    String(selectedObjectIdState ?? focusedId ?? "").trim()
+  );
+  const executiveQuickActionsModel = useMemo(
+    () =>
+      buildExecutiveQuickActionsModel({
+        hasObjectSelection: hasExecutiveObjectSelection,
+        disabledActions: {
+          analyze: hasExecutiveObjectSelection && !objectAnalyzeReady,
+        },
+      }),
+    [hasExecutiveObjectSelection, objectAnalyzeReady]
+  );
+  const handleExecutiveQuickAction = useCallback(
+    (actionId: ExecutiveQuickActionId) => {
+      if (actionId === "analyze") {
+        if (hasExecutiveObjectSelection && objectAnalyzeReady) {
+          window.dispatchEvent(new CustomEvent("nexora:request-object-analyze"));
+          return;
+        }
+        if (!hasExecutiveObjectSelection) {
+          setInput("Analyze current system state and identify the highest-priority risks.");
+          window.dispatchEvent(new CustomEvent("nexora:focus-bottom-command-dock"));
+          return;
+        }
+        return;
+      }
+      handleExecutiveCommandBarAction(actionId);
+    },
+    [handleExecutiveCommandBarAction, hasExecutiveObjectSelection, objectAnalyzeReady]
+  );
+  const executiveQuickActionsDock = showExecutiveQuickActionsDock && isPanelVisible("quickActionsDock")
+    ? {
+        model: executiveQuickActionsModel,
+        themeMode: resolveNexoraHudThemeMode(resolvedTheme),
+        onAction: handleExecutiveQuickAction,
+      }
+    : null;
+  const executiveSceneLayoutInsets = useMemo(() => {
+    if (typeof window === "undefined") return undefined;
+    const metrics = resolveExecutiveWorkspaceLayoutMetrics(window.innerWidth, {
+      leftCommandOpen: leftCommandPanelOpen,
+      leftCommandVisible: showExecutiveLeftCommandPanel,
+      leftDockExpanded: showExecutiveScenePanelDock && !scenePanelCollapsed,
+      leftSceneDockVisible: showExecutiveScenePanelDock,
+      rightDockExpanded: showExecutiveObjectPanelDock && !objectPanelCollapsed,
+      rightObjectDockVisible: showExecutiveObjectPanelDock,
+      rightAssistantVisible:
+        showExecutiveRightAssistantPanel &&
+        !(assistantRailSide === "left" && isPanelVisible("aiAssistant")),
+      rightAssistantExpanded:
+        showExecutiveRightAssistantPanel &&
+        !(assistantRailSide === "left" && isPanelVisible("aiAssistant")) &&
+        !executiveAssistantCollapsed,
+      rightAssistantWidthPx: workspaceLayoutContract.rightRailWidthPx,
+    });
+    return executiveDockInsetRatios(metrics);
+  }, [
+    assistantRailSide,
+    executiveAssistantCollapsed,
+    leftCommandPanelOpen,
+    objectPanelCollapsed,
+    scenePanelCollapsed,
+    showExecutiveLeftCommandPanel,
+    showExecutiveObjectPanelDock,
+    showExecutiveRightAssistantPanel,
+    showExecutiveScenePanelDock,
+    workspaceLayoutContract.rightRailWidthPx,
+    isPanelVisible,
+  ]);
   const sceneNode = (
-    <div className="nx-executive-scene-host" style={{ ...executiveStageFrameStyle, zIndex: 0 }}>
+    <ExecutiveSceneWorkspaceFrame objectCount={countSceneObjects(stableSceneJsonDuringPanelValidation)}>
       {centerOverlay === "input" ? (
         <SourceControlPanel mode="center" onClose={() => setCenterOverlay(null)} />
       ) : null}
@@ -15192,35 +16169,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           pointerEvents: "none",
         }}
       >
-        <ExecutiveSceneOperationalStrip
-          operationalState={
-            pipelineStatusUi.status === "processing"
-              ? "Processing"
-              : pipelineStatusUi.status === "error"
-                ? "Attention required"
-                : "Operational"
-          }
-          primarySignal={sceneContextOverlayLines.line1}
-          secondarySignal={sceneContextOverlayLines.line2}
-          activeInsight={typeCExecutiveSummary?.headline ?? null}
-          objectCount={countSceneObjects(stableSceneJsonDuringPanelValidation)}
-          fragilityLabel={pipelineStatusUi.fragilityLevel}
-        />
+        {shouldShowExecutiveSceneOperationalStrip() ? (
+          <ExecutiveSceneOperationalStrip
+            operationalState={
+              pipelineStatusUi.status === "processing"
+                ? "Processing"
+                : pipelineStatusUi.status === "error"
+                  ? "Attention required"
+                  : "Operational"
+            }
+            primarySignal={sceneContextOverlayLines.line1}
+            secondarySignal={sceneContextOverlayLines.line2}
+            activeInsight={typeCExecutiveSummary?.headline ?? null}
+            objectCount={countSceneObjects(stableSceneJsonDuringPanelValidation)}
+            fragilityLabel={pipelineStatusUi.fragilityLevel}
+          />
+        ) : null}
       </div>
       {/* Three.js (Canvas always mounted for stable hooks) */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom:
-            centerComponent && !isLargeCenterWorkspaceComponent(centerComponent) ? "min(40%, 420px)" : 0,
-          zIndex: 0,
-          transition: "bottom 180ms ease",
-          contain: "layout size style",
-          overflow: "hidden",
-        }}
+      <ExecutiveSceneCanvasShell
+        bottomInset={
+          centerComponent && !isLargeCenterWorkspaceComponent(centerComponent) ? "min(40%, 420px)" : 0
+        }
       >
         <SceneCanvas
           prefs={prefs}
@@ -15229,7 +16199,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           camPos={camPos}
           starCount={starCount}
           isDraggingHUD={false}
-          hudDockSide={inspectorOpen ? "right" : undefined}
+          hudDockSide="right"
+          layoutDockInsets={executiveSceneLayoutInsets}
           storyAccent={retailDemoAccent}
           showAxes={showAxes}
           showGrid={showGrid}
@@ -15271,8 +16242,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           }}
           onOrbitEnd={() => setIsOrbiting(false)}
           onSelectedChange={handleSelectedChange}
+          onObjectPositionChange={handleSceneObjectPositionChange}
+          selectedRelationshipId={selectedRelationshipId}
+          onRelationshipSelect={handleRelationshipSelect}
+          selectedPropagationPathId={selectedPropagationPathId}
+          onPropagationPathSelect={handlePropagationPathSelect}
+          onCreateImpactPath={handleOpenPropagationBuilder}
+          sceneInfoHud={workspaceLayoutContract.hud.sceneInfoHud.visible ? executiveSceneInfoHud : undefined}
+          objectInfoHud={
+            workspaceLayoutContract.hud.objectInfoHud.visible && executiveObjectInfoHud
+              ? {
+                  model: executiveObjectInfoHud,
+                  sceneJson: stableSceneJsonDuringPanelValidation,
+                  onCreateRelationship: handleObjectInfoCreateRelationship,
+                  onDeleteRelationship: handleDeleteSelectedRelationship,
+                  onCreateImpactPath: handleOpenPropagationBuilder,
+                  onEditPropagationPath: handleEditPropagationPath,
+                  onDeletePropagationPath: handleDeletePropagationPath,
+                  onEditObject: handleObjectEdit,
+                  onDuplicateObject: handleDuplicateObject,
+                  onDeleteObject: handleDeleteObject,
+                }
+              : null
+          }
+          timelineHud={workspaceLayoutContract.hud.timelineHud.visible ? executiveTimelineHud : undefined}
+          quickActionsDock={executiveQuickActionsDock}
+          executiveStatusHud={
+            workspaceLayoutContract.hud.executiveStatusHud.visible && isPanelVisible("executiveStatusHud")
+              ? executiveStatusHudModel
+              : null
+          }
+          hudThemeMode={resolvedTheme}
+          sceneNavigationToolbar={!showExecutiveScenePanelDock}
+          cameraToolbar={!showExecutiveScenePanelDock}
         />
-      </div>
+      </ExecutiveSceneCanvasShell>
 
       {showPipelineStatusHud ? (
         <div
@@ -17296,7 +18300,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                   onOpenObject={handleOpenObject}
                 />
               ) : null}
-              {!investorDemo.demo.active && !isLargeCenterWorkspaceComponent(centerComponent) ? (
+              {!investorDemo.demo.active && !isLargeCenterWorkspaceComponent(centerComponent) && shouldShowExecutiveCenterHelperCopy() ? (
                 <>
                   <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4 }}>
                     Explore next
@@ -17336,7 +18340,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           Analyzing…
         </div>
       ) : null}
-      {typeCExecutiveSummary ? (
+      {typeCExecutiveSummary && shouldShowExecutiveStageSummaryCard() ? (
         <TypeCExecutiveSummaryCard
           placement="stage"
           summary={typeCExecutiveSummary}
@@ -17349,7 +18353,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           reasoningTransparency={executiveReasoningTransparencyResolved}
         />
       ) : null}
-    </div>
+    </ExecutiveSceneWorkspaceFrame>
   );
 
   // --- Render ---
@@ -17476,18 +18480,86 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}
     >
       {sceneNode}
-      <D3StatusHud
-        snapshot={d3MonitoringSnapshot}
-        changeSummary={d3OperationalChangeSummary}
-        propagationPreview={d3PropagationPreview}
-        riskImpactMap={d3OperationalRiskImpactMap}
-        alertEvaluation={d3OperationalAlerts}
-      />
+      {shouldShowExecutiveOperationalHud() ? (
+        <D3StatusHud
+          snapshot={d3MonitoringSnapshot}
+          changeSummary={d3OperationalChangeSummary}
+          propagationPreview={d3PropagationPreview}
+          riskImpactMap={d3OperationalRiskImpactMap}
+          alertEvaluation={d3OperationalAlerts}
+        />
+      ) : null}
+      {executiveCommandBarPortalNode}
       {leftCommandPortalNode}
+      {executiveAssistantPortalNode}
+      {executiveScenarioPortalNode}
+      {executiveScenarioComparisonPortalNode}
       {timelineInspectorNode}
       {alertOverlayNode}
       {investorDemoOverlayNode}
       {chatQAPanelNode}
+      <ExecutiveObjectCatalog
+        open={objectCatalogOpen}
+        themeMode={resolveNexoraHudThemeMode(resolvedTheme)}
+        onCancel={handleCloseExecutiveObjectCatalog}
+        onConfirm={handleExecutiveCatalogObjectConfirm}
+      />
+      <RelationshipBuilder
+        open={relationshipBuilderOpen}
+        sourceId={relationshipBuilderSourceId}
+        sourceLabel={executiveObjectInfoHud?.objectName ?? relationshipBuilderSourceId}
+        sceneJson={stableSceneJsonDuringPanelValidation}
+        candidates={relationshipBuilderCandidates}
+        themeMode={resolveNexoraHudThemeMode(resolvedTheme)}
+        onCancel={handleCloseExecutiveRelationshipBuilder}
+        onConfirm={handleExecutiveRelationshipConfirm}
+      />
+      <PropagationPathBuilder
+        open={propagationBuilderOpen}
+        sourceId={propagationBuilderSourceId}
+        sourceLabel={executiveObjectInfoHud?.objectName ?? propagationBuilderSourceId}
+        candidates={relationshipBuilderCandidates}
+        themeMode={resolveNexoraHudThemeMode(resolvedTheme)}
+        errors={propagationBuilderErrors}
+        onCancel={handleClosePropagationBuilder}
+        onConfirm={handlePropagationPathConfirm}
+      />
+      <ExecutiveModelingWorkspace
+        open={systemModelingOpen}
+        sceneJson={stableSceneJsonDuringPanelValidation}
+        themeMode={resolveNexoraHudThemeMode(resolvedTheme)}
+        onCancel={handleCloseExecutiveModelingWorkspace}
+        onGenerate={handleExecutiveSystemGenerate}
+      />
+      <ExecutiveWorkspaceLoadDialog
+        open={workspaceLoadOpen}
+        themeMode={resolveNexoraHudThemeMode(resolvedTheme)}
+        onCancel={handleCloseWorkspaceLoadDialog}
+        onConfirm={handleConfirmWorkspaceLoad}
+      />
+      {workspacePersistenceNotice ? (
+        <div
+          role="status"
+          data-nx="workspace-persistence-notice"
+          style={{
+            position: "fixed",
+            bottom: 20,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 460,
+            padding: "10px 14px",
+            borderRadius: 10,
+            border: "1px solid var(--nx-border-soft)",
+            background: "color-mix(in srgb, var(--nx-bg-panel) 92%, transparent)",
+            color: "var(--nx-text)",
+            fontSize: 12,
+            fontWeight: 700,
+            boxShadow: "0 10px 28px rgba(0,0,0,0.18)",
+          }}
+        >
+          {workspacePersistenceNotice}
+        </div>
+      ) : null}
       <TypeCScenarioDraftPanel
         key={`typec-scenario-drafts-${scenarioDrafts?.map((draft) => draft.id).join("|") || "empty"}`}
         drafts={scenarioDrafts}
@@ -17560,7 +18632,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         onCancel={cancelTypeCConnectionSuggestions}
         onApplySelected={applyTypeCConnectionSuggestions}
       />
-      {process.env.NODE_ENV !== "production" ? (
+      {shouldExposeExecutiveDevSurfaces() ? (
         <TypeCDevInspector
           scenarioState={typeCScenarioState}
           readiness={typeCDecisionReadiness}

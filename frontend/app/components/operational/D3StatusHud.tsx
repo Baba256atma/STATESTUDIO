@@ -2,6 +2,10 @@
 
 import React, { useMemo } from "react";
 import type { OperationalChangeSummary } from "../../lib/operational/changeDetectionTypes.ts";
+import {
+  isExecutiveWorkspaceCleanPresentation,
+  shouldExposeExecutiveDevSurfaces,
+} from "../../lib/ui/executiveWorkspacePresentation";
 import type { OperationalPropagationPreview } from "../../lib/operational/propagationPreviewTypes.ts";
 import type { OperationalRiskImpactMap } from "../../lib/operational/riskImpactTypes.ts";
 import {
@@ -131,7 +135,7 @@ export function D3StatusHud({
   riskImpactMap,
   alertEvaluation,
   className,
-}: D3StatusHudProps): React.JSX.Element {
+}: D3StatusHudProps): React.JSX.Element | null {
   const changeSection = useMemo(() => {
     if (changeSummary == null) return null;
     const tone = getOperationalChangeSummaryTone(changeSummary);
@@ -301,6 +305,10 @@ export function D3StatusHud({
       </div>
     );
   }, [alertEvaluation]);
+
+  if (isExecutiveWorkspaceCleanPresentation() && !shouldExposeExecutiveDevSurfaces()) {
+    return null;
+  }
 
   if (!isD3MonitoringSnapshotLive(snapshot)) {
     return (

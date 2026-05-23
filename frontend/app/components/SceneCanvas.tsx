@@ -5,16 +5,13 @@ import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 
-import { SceneRenderer } from "./SceneRenderer";
-import { DecisionPathOverlayLayer } from "./overlays/DecisionPathOverlayLayer";
 import { smoothValue } from "../lib/smooth";
 import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
-import { usePropagationBridge } from "../lib/simulation/usePropagationBridge";
-import { useSimulationOverlay } from "../lib/simulation/useSimulationOverlay";
 import type { ScenarioActionPropagationIntent } from "../lib/simulation/propagationTriggerTypes";
-import { mapDecisionPathResultToOverlay } from "../lib/simulation/decisionPathMapper";
 import type { WarRoomOverlayDetail, WarRoomOverlaySummary } from "../lib/warroom/warRoomTypes";
-import { useDecisionImpact } from "../lib/impact/useDecisionImpact";
+import { useSceneOverlayRuntime } from "../lib/overlay/useSceneOverlayRuntime";
+import { bindWindowListener } from "../lib/dom/domListenerLifecycle";
+import { SceneOverlayRenderer } from "./scene/overlay/SceneOverlayRenderer";
 import {
   isProjectedPointWithinSafeRegion,
   measureFrameDrift,
@@ -39,6 +36,27 @@ import {
   type SceneAtmosphereMode,
 } from "../lib/scene/nexoraSceneEnvironment";
 import type { ResolvedUiTheme } from "../lib/ui/nexoraUiTheme";
+import { SceneInfoHudOverlay } from "./scene/SceneInfoHudOverlay";
+import type { SceneInfoHudProps } from "./scene/SceneInfoHud";
+import { ObjectInfoHudOverlay } from "./scene/ObjectInfoHudOverlay";
+import type { ObjectInfoHudModel } from "../lib/scene/objectInfoHudTypes";
+import type { EditableObjectPatch } from "../lib/modeling/objectEditingRuntime";
+import type { PropagationPath, PropagationPathPatch } from "../lib/propagation/propagationAuthoringRuntime";
+import { ExecutiveTimelineHudOverlay } from "./scene/ExecutiveTimelineHudOverlay";
+import type { ExecutiveTimelineHudModel } from "../lib/scene/executiveTimelineHudTypes";
+import { ExecutiveQuickActionsDockOverlay } from "./scene/ExecutiveQuickActionsDockOverlay";
+import type { ExecutiveQuickActionsDockOverlayProps } from "./scene/ExecutiveQuickActionsDockOverlay";
+import { ExecutiveStatusHudOverlay } from "./scene/status/ExecutiveStatusHudOverlay";
+import type { ExecutiveStatusHudModel } from "./scene/status/ExecutiveStatusHud.types";
+import { ExecutiveSceneToolbarOverlay } from "./scene/navigation/ExecutiveSceneToolbarOverlay";
+import { SceneNavigationController } from "./scene/navigation/SceneNavigationController";
+import type { NexoraRelationship } from "../lib/relationships/relationshipTypes";
+import {
+  resolveNexoraHudThemeMode,
+  type NexoraHudThemeMode,
+} from "../lib/scene/nexoraHudTheme";
+import { logHudThemeModeResolved } from "../lib/ui/cameraToolbarInstrumentation";
+import { logWorkspaceSceneThemeUpdated } from "../lib/ui/workspaceAppearanceInstrumentation";
 import { nx } from "./ui/nexoraTheme";
 
 const CANVAS_STATIC_MODE = true;
@@ -61,6 +79,11 @@ type SceneCanvasProps = {
   cameraLockedByUser: boolean;
   isOrbiting: boolean;
   hudDockSide?: "left" | "right";
+  /** E2:2 executive dock-aware camera framing (optional). */
+  layoutDockInsets?: {
+    leftDockInsetRatio?: number;
+    rightDockInsetRatio?: number;
+  };
 
   sceneJson: any | null;
   storyAccent?: {
@@ -100,7 +123,43 @@ type SceneCanvasProps = {
   onOrbitStart: () => void;
   onOrbitEnd: () => void;
   onSelectedChange: (id: string | null) => void;
+  onObjectPositionChange?: (
+    objectId: string,
+    position: { x: number; y: number; z: number },
+    phase: "drag" | "move"
+  ) => void;
+  selectedRelationshipId?: string | null;
+  onRelationshipSelect?: (relationship: NexoraRelationship) => void;
+  selectedPropagationPathId?: string | null;
+  onPropagationPathSelect?: (path: PropagationPath) => void;
+  onCreateImpactPath?: (sourceObjectId?: string | null) => void;
   onSelectedScreenX?: (sx: number | null) => void;
+  /** E2:8 embedded executive scene HUD (Type-C). */
+  sceneInfoHud?: SceneInfoHudProps | null;
+  /** E2:9 embedded executive object intelligence HUD (Type-C). */
+  objectInfoHud?: {
+    model: ObjectInfoHudModel;
+    sceneJson: unknown;
+    onCreateRelationship?: () => void;
+    onDeleteRelationship?: (relationshipId: string) => void;
+    onCreateImpactPath?: (sourceObjectId?: string | null) => void;
+    onEditPropagationPath?: (pathId: string, patch: PropagationPathPatch) => void;
+    onDeletePropagationPath?: (pathId: string) => void;
+    onEditObject?: (objectId: string, patch: EditableObjectPatch) => void;
+    onDuplicateObject?: (objectId: string) => void;
+    onDeleteObject?: (objectId: string) => void;
+  } | null;
+  /** E2:10 embedded executive timeline HUD (Type-C). */
+  timelineHud?: ExecutiveTimelineHudModel | null;
+  /** E2:16 executive quick actions dock (Type-C). */
+  quickActionsDock?: Omit<ExecutiveQuickActionsDockOverlayProps, "stackAboveTimeline"> | null;
+  /** E2:22 executive status intelligence HUD (Type-C). */
+  executiveStatusHud?: ExecutiveStatusHudModel | null;
+  /** E2:21 scene-native executive navigation toolbar + shared HUD theme mode. */
+  hudThemeMode?: NexoraHudThemeMode;
+  sceneNavigationToolbar?: boolean;
+  /** @deprecated Use sceneNavigationToolbar */
+  cameraToolbar?: boolean;
 };
 
 const ORBIT_MOUSE_BUTTONS = {
@@ -377,6 +436,7 @@ function CameraIntelligence({
   cameraLockedByUser,
   isOrbiting,
   hudDockSide,
+  layoutDockInsets,
   controlsRef,
   localIsOrbitingRef,
   preserveCameraOnClearRef,
@@ -394,6 +454,10 @@ function CameraIntelligence({
   cameraLockedByUser: boolean;
   isOrbiting: boolean;
   hudDockSide?: "left" | "right";
+  layoutDockInsets?: {
+    leftDockInsetRatio?: number;
+    rightDockInsetRatio?: number;
+  };
   controlsRef?: React.MutableRefObject<any | null>;
   localIsOrbitingRef?: React.MutableRefObject<boolean>;
   preserveCameraOnClearRef?: React.MutableRefObject<boolean>;
@@ -512,6 +576,8 @@ function CameraIntelligence({
       viewportWidth: size.width,
       viewportHeight: size.height,
       hudDockSide,
+      leftDockInsetRatio: layoutDockInsets?.leftDockInsetRatio,
+      rightDockInsetRatio: layoutDockInsets?.rightDockInsetRatio,
     });
     const frame = computeCameraFrameFromBounds(bounds, {
       horizontalBias: frameSpec.horizontalBias,
@@ -655,6 +721,8 @@ function CameraIntelligence({
       viewportWidth: size.width,
       viewportHeight: size.height,
       hudDockSide,
+      leftDockInsetRatio: layoutDockInsets?.leftDockInsetRatio,
+      rightDockInsetRatio: layoutDockInsets?.rightDockInsetRatio,
     });
     const baselineCamPos = baselineCamPosRef.current;
     const baselineLookAt = baselineLookAtRef.current;
@@ -696,13 +764,15 @@ function CameraIntelligence({
     if (process.env.NODE_ENV !== "production") {
       console.log("[Nexora][Framing] assist applied", { focusedId, projected, safeRegion: frameSpec.safeRegion });
     }
-  }, [camera, cameraLockedByUser, controlsRef, focusMode, focusPinned, focusedId, hudDockSide, orbitControlsEnabled, overridesRef, preserveCameraOnClearRef, sceneJson, selectedObjectId, size.height, size.width]);
+  }, [camera, cameraLockedByUser, controlsRef, focusMode, focusPinned, focusedId, hudDockSide, layoutDockInsets, orbitControlsEnabled, overridesRef, preserveCameraOnClearRef, sceneJson, selectedObjectId, size.height, size.width]);
 
   const applyHudShift = (lookAt: THREE.Vector3, camPosV: THREE.Vector3) => {
     const frameSpec = resolveLayoutAwareFrameSpec({
       viewportWidth: size.width,
       viewportHeight: size.height,
       hudDockSide,
+      leftDockInsetRatio: layoutDockInsets?.leftDockInsetRatio,
+      rightDockInsetRatio: layoutDockInsets?.rightDockInsetRatio,
     });
     if (!hudDockSide) return;
     const shiftSign = hudDockSide === "left" ? 1 : -1;
@@ -915,15 +985,23 @@ function StaticSceneFramer({
   localIsOrbitingRef,
   isOrbiting,
   enabled,
+  reframeNonce = 0,
 }: {
   sceneJson: any | null;
   controlsRef: React.MutableRefObject<any | null>;
   localIsOrbitingRef: React.MutableRefObject<boolean>;
   isOrbiting: boolean;
   enabled: boolean;
+  reframeNonce?: number;
 }) {
   const { camera } = useThree();
   const lastAppliedSignatureRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (reframeNonce > 0) {
+      lastAppliedSignatureRef.current = null;
+    }
+  }, [reframeNonce]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -971,6 +1049,9 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     () => resolveNexoraSceneEnvironment(resolvedUi, atmosphere),
     [resolvedUi, atmosphere]
   );
+  useEffect(() => {
+    logWorkspaceSceneThemeUpdated(resolvedUi);
+  }, [resolvedUi]);
   const rendererTheme = useMemo(
     () => sceneRendererThemeFromUi(resolvedUi, atmosphere),
     [resolvedUi, atmosphere]
@@ -992,121 +1073,36 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     });
     return () => cancelAnimationFrame(id);
   }, [props.selectedObjectId, props.selectedSetterRef, selectedIdCtx]);
-  const {
-    propagationOverlay,
-    scenarioOverlayPackage,
-    propagationLoading,
-    propagationError,
-    propagationMode,
-  } = usePropagationBridge({
+  const sceneFragilityLevel = useMemo(() => {
+    const level =
+      props.sceneJson?.scene?.scanner_state_vector?.fragility_level ??
+      props.sceneJson?.state_vector?.fragility_level ??
+      props.sceneJson?.fragility_level;
+    return typeof level === "string" ? level : null;
+  }, [props.sceneJson]);
+
+  const overlayRuntime = useSceneOverlayRuntime({
     sceneJson: props.sceneJson,
     loops: props.loops,
     selectedObjectId: selectedIdCtx,
     scenarioTrigger: props.scenarioTrigger,
-    manualActionObjectId: props.manualPropagationSourceId,
+    manualPropagationSourceId: props.manualPropagationSourceId,
     propagationPayload: props.propagationPayload,
+    objectSelection: props.objectSelection,
+    fragilityLevel: sceneFragilityLevel,
     previewEnabled: true,
   });
-  const simulationOverlay = useSimulationOverlay(props.propagationPayload);
-  const mergedPropagationOverlay = useMemo(() => {
-    if (simulationOverlay.highlightedIds.length === 0 && simulationOverlay.links.length === 0) {
-      return propagationOverlay;
-    }
 
-    const baseNodes = propagationOverlay?.impacted_nodes ?? [];
-    const baseEdges = propagationOverlay?.impacted_edges ?? [];
-    const nodeMap = new Map(
-      baseNodes.map((node) => [node.object_id, node] as const)
-    );
-    simulationOverlay.highlightedIds.forEach((id, index) => {
-      const strength = Math.max(simulationOverlay.intensityMap[id] ?? 0.72, nodeMap.get(id)?.strength ?? 0);
-      nodeMap.set(id, {
-        object_id: id,
-        depth: nodeMap.get(id)?.depth ?? (index === 0 ? 0 : 1),
-        strength,
-        role: nodeMap.get(id)?.role ?? (index === 0 ? "source" : "impacted"),
-      });
-    });
-
-    const edgeMap = new Map(
-      baseEdges.map((edge) => [`${edge.from}:${edge.to}`, edge] as const)
-    );
-    simulationOverlay.links.forEach((link) => {
-      edgeMap.set(`${link.source}:${link.target}`, {
-        from: link.source,
-        to: link.target,
-        depth: 1,
-        strength: Math.max(0.15, Math.min(1, link.weight)),
-      });
-    });
-
-    return {
-      active: true,
-      source_object_id:
-        propagationOverlay?.source_object_id ??
-        simulationOverlay.links[0]?.source ??
-        simulationOverlay.highlightedIds[0] ??
-        null,
-      mode: propagationOverlay?.mode ?? "backend",
-      impacted_nodes: Array.from(nodeMap.values()),
-      impacted_edges: Array.from(edgeMap.values()),
-      meta: {
-        label: propagationOverlay?.meta?.label ?? "Simulation propagation",
-        timestamp: propagationOverlay?.meta?.timestamp ?? 0,
-        source_kind: propagationOverlay?.meta?.source_kind ?? "backend_payload",
-      },
-    };
-  }, [propagationOverlay, simulationOverlay.highlightedIds, simulationOverlay.intensityMap, simulationOverlay.links]);
-  const decisionPathOverlay = useMemo(
-    () => mapDecisionPathResultToOverlay(scenarioOverlayPackage.decisionPath ?? null),
-    [scenarioOverlayPackage.decisionPath]
-  );
-  const { selection: decisionImpactSelection } = useDecisionImpact({
-    propagation: mergedPropagationOverlay,
-    decisionPath: scenarioOverlayPackage.decisionPath ?? null,
-    strategicAdvice:
-      (props.propagationPayload as any)?.strategic_advice ??
-      props.sceneJson?.strategic_advice ??
-      props.sceneJson?.scene?.strategic_advice ??
-      null,
-    strategicCouncil:
-      (props.propagationPayload as any)?.strategic_council ??
-      props.sceneJson?.strategic_council ??
-      props.sceneJson?.scene?.strategic_council ??
-      null,
-    scenarioAction: scenarioOverlayPackage.sourceAction ?? props.scenarioTrigger ?? null,
-    sceneJson: props.sceneJson,
-    source: "scene_canvas",
-  });
-  const combinedObjectSelection = useMemo(() => {
-    const base = props.objectSelection ?? null;
-    if (!decisionImpactSelection) {
-      if (simulationOverlay.highlightedIds.length === 0) return base;
-      return {
-        ...base,
-        highlighted_objects: Array.from(
-          new Set([...(base?.highlighted_objects ?? []).map(String), ...simulationOverlay.highlightedIds.map(String)])
-        ),
-      };
-    }
-    return {
-      highlighted_objects: Array.from(
-        new Set([
-          ...(base?.highlighted_objects ?? []).map(String),
-          ...decisionImpactSelection.highlighted_objects.map(String),
-          ...simulationOverlay.highlightedIds.map(String),
-        ])
-      ),
-      risk_sources: Array.from(
-        new Set([...(base?.risk_sources ?? []).map(String), ...decisionImpactSelection.risk_sources.map(String)])
-      ),
-      risk_targets: Array.from(
-        new Set([...(base?.risk_targets ?? []).map(String), ...decisionImpactSelection.risk_targets.map(String)])
-      ),
-      dim_unrelated_objects:
-        decisionImpactSelection.dim_unrelated_objects || base?.dim_unrelated_objects === true,
-    };
-  }, [decisionImpactSelection, props.objectSelection, simulationOverlay.highlightedIds]);
+  const {
+    mergedPropagationOverlay,
+    decisionPathOverlay,
+    combinedObjectSelection,
+    scenarioOverlayPackage,
+    propagationLoading,
+    propagationError,
+    propagationMode,
+    simulationOverlay,
+  } = overlayRuntime;
 
   React.useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -1184,6 +1180,15 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   ]);
 
   const controlsRef = useRef<any>(null);
+  const [cameraReframeNonce, setCameraReframeNonce] = useState(0);
+  const hudThemeMode = props.hudThemeMode ?? resolveNexoraHudThemeMode(resolvedUi);
+  const requestStaticCameraReframe = useCallback(() => {
+    setCameraReframeNonce((value) => value + 1);
+  }, []);
+
+  useEffect(() => {
+    logHudThemeModeResolved({ mode: hudThemeMode });
+  }, [hudThemeMode]);
   const localIsOrbitingRef = useRef<boolean>(false);
   const preserveCameraOnClearRef = useRef<boolean>(false);
   const leftColumnLayoutPauseRef = useRef(false);
@@ -1325,9 +1330,17 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         sceneInvalidateRef.current?.();
       }, 180);
     };
-    window.addEventListener("nexora:left-command-open-changed", onLeftCommandOpenChanged as EventListener);
+    const detach = bindWindowListener(
+      "nexora:left-command-open-changed",
+      onLeftCommandOpenChanged as EventListener,
+      undefined,
+      {
+        component: "SceneCanvas",
+        eventType: "nexora:left-command-open-changed",
+      }
+    );
     return () => {
-      window.removeEventListener("nexora:left-command-open-changed", onLeftCommandOpenChanged as EventListener);
+      detach();
       if (leftColumnLayoutTimerRef.current != null) {
         window.clearTimeout(leftColumnLayoutTimerRef.current);
         leftColumnLayoutTimerRef.current = null;
@@ -1344,9 +1357,12 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         sceneInvalidateRef.current?.();
       });
     };
-    window.addEventListener("resize", onResize, { passive: true });
+    const detach = bindWindowListener("resize", onResize, { passive: true }, {
+      component: "SceneCanvas",
+      eventType: "resize",
+    });
     return () => {
-      window.removeEventListener("resize", onResize);
+      detach();
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
@@ -1359,14 +1375,16 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       props.selectedSetterRef?.current?.(null);
       props.onSelectedChange?.(null);
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return bindWindowListener("keydown", onKeyDown as EventListener, undefined, {
+      component: "SceneCanvas",
+      eventType: "keydown",
+    });
   }, [props.onSelectedChange, props.selectedIdRef, props.selectedSetterRef]);
 
   useEffect(() => {
     const isInsideHud = (t: EventTarget | null) => {
       const el = t as HTMLElement | null;
-      return !!(el && typeof (el as any).closest === "function" && el.closest('[data-hud="chat"]'));
+      return !!(el && typeof (el as any).closest === "function" && el.closest('[data-hud="chat"], [data-hud="scene-info"], [data-hud="object-info"], [data-hud="timeline"], [data-hud="camera-toolbar"], [data-hud="scene-navigation"], [data-hud="executive-status"], [data-hud="quick-actions"], [data-nx="scene-info-hud"], [data-nx="object-info-hud"], [data-nx="executive-timeline-hud"], [data-nx="executive-camera-toolbar"], [data-nx="executive-scene-toolbar"], [data-nx="executive-status-hud"], [data-nx="executive-quick-actions-dock"]'));
     };
 
     // Track pointer hover inside HUD so we can disable OrbitControls reliably.
@@ -1393,23 +1411,36 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       e.stopPropagation();
     };
 
-    window.addEventListener("pointerover", onPointerOverCapture, { capture: true });
-    window.addEventListener("pointerout", onPointerOutCapture, { capture: true });
-    window.addEventListener("wheel", stopIfHudCapture, { passive: true, capture: true });
-    window.addEventListener("touchmove", stopIfHudCapture, { passive: true, capture: true });
+    const meta = { component: "SceneCanvas", eventType: "hud-capture" } as const;
+    const detachOver = bindWindowListener("pointerover", onPointerOverCapture as EventListener, { capture: true }, {
+      ...meta,
+      eventType: "pointerover",
+    });
+    const detachOut = bindWindowListener("pointerout", onPointerOutCapture as EventListener, { capture: true }, {
+      ...meta,
+      eventType: "pointerout",
+    });
+    const detachWheel = bindWindowListener("wheel", stopIfHudCapture, { passive: true, capture: true }, {
+      ...meta,
+      eventType: "wheel",
+    });
+    const detachTouchMove = bindWindowListener("touchmove", stopIfHudCapture, { passive: true, capture: true }, {
+      ...meta,
+      eventType: "touchmove",
+    });
 
     return () => {
-      window.removeEventListener("pointerover", onPointerOverCapture, true as any);
-      window.removeEventListener("pointerout", onPointerOutCapture, true as any);
-      window.removeEventListener("wheel", stopIfHudCapture, true as any);
-      window.removeEventListener("touchmove", stopIfHudCapture, true as any);
+      detachOver();
+      detachOut();
+      detachWheel();
+      detachTouchMove();
     };
   }, []);
 
   useEffect(() => {
     const isInsideHud = (t: EventTarget | null) => {
       const el = t as HTMLElement | null;
-      return !!(el && typeof (el as any).closest === "function" && el.closest('[data-hud="chat"]'));
+      return !!(el && typeof (el as any).closest === "function" && el.closest('[data-hud="chat"], [data-hud="scene-info"], [data-hud="object-info"], [data-hud="timeline"], [data-hud="camera-toolbar"], [data-hud="scene-navigation"], [data-hud="executive-status"], [data-hud="quick-actions"], [data-nx="scene-info-hud"], [data-nx="object-info-hud"], [data-nx="executive-timeline-hud"], [data-nx="executive-camera-toolbar"], [data-nx="executive-scene-toolbar"], [data-nx="executive-status-hud"], [data-nx="executive-quick-actions-dock"]'));
     };
 
     const onTouchStartCapture = (e: TouchEvent) => {
@@ -1418,14 +1449,24 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
 
     const clear = () => setIsHudInteracting(false);
 
-    window.addEventListener("touchstart", onTouchStartCapture, { passive: true, capture: true });
-    window.addEventListener("touchend", clear, { passive: true, capture: true });
-    window.addEventListener("touchcancel", clear, { passive: true, capture: true });
+    const meta = { component: "SceneCanvas", eventType: "hud-touch-capture" } as const;
+    const detachStart = bindWindowListener("touchstart", onTouchStartCapture as EventListener, { passive: true, capture: true }, {
+      ...meta,
+      eventType: "touchstart",
+    });
+    const detachEnd = bindWindowListener("touchend", clear, { passive: true, capture: true }, {
+      ...meta,
+      eventType: "touchend",
+    });
+    const detachCancel = bindWindowListener("touchcancel", clear, { passive: true, capture: true }, {
+      ...meta,
+      eventType: "touchcancel",
+    });
 
     return () => {
-      window.removeEventListener("touchstart", onTouchStartCapture, true as any);
-      window.removeEventListener("touchend", clear as any, true as any);
-      window.removeEventListener("touchcancel", clear as any, true as any);
+      detachStart();
+      detachEnd();
+      detachCancel();
     };
   }, []);
 
@@ -1468,7 +1509,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         }
         return;
       }
-      if (props.selectedIdRef.current == null) {
+      if (props.selectedIdRef.current == null && !props.selectedRelationshipId && !props.selectedPropagationPathId) {
         props.onSelectedScreenX?.(null);
         return;
       }
@@ -1479,10 +1520,19 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       }
       preserveCameraOnClearRef.current = true;
       props.selectedSetterRef?.current?.(null);
+      props.onSelectedChange?.(null);
       props.onSelectedScreenX?.(null);
       props.onPointerMissed();
     },
-    [props.onPointerMissed, props.onSelectedScreenX, props.selectedIdRef, props.selectedSetterRef]
+    [
+      props.onPointerMissed,
+      props.onSelectedChange,
+      props.onSelectedScreenX,
+      props.selectedIdRef,
+      props.selectedPropagationPathId,
+      props.selectedRelationshipId,
+      props.selectedSetterRef,
+    ]
   );
 
   const handleOrbitStart = useCallback(() => {
@@ -1601,6 +1651,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
             cameraLockedByUser={props.cameraLockedByUser || isFixedCamera}
             isOrbiting={props.isOrbiting}
             hudDockSide={props.hudDockSide}
+            layoutDockInsets={props.layoutDockInsets}
             controlsRef={controlsRef}
             localIsOrbitingRef={localIsOrbitingRef}
             preserveCameraOnClearRef={preserveCameraOnClearRef}
@@ -1615,6 +1666,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
           localIsOrbitingRef={localIsOrbitingRef}
           isOrbiting={props.isOrbiting}
           enabled={CANVAS_STATIC_MODE}
+          reframeNonce={cameraReframeNonce}
         />
 
         {sceneEnv.showStars ? (
@@ -1659,29 +1711,37 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
             </group>
           ) : null}
 
-          {props.sceneJson && (
+          {props.sceneJson && sceneJsonForRenderer ? (
             <>
-              <DecisionPathOverlayLayer overlay={decisionPathOverlay}>
-                {(decisionPathRenderState) => (
-                  <SceneRenderer
-                    sceneJson={sceneJsonForRenderer}
-                    objectSelection={combinedObjectSelection ?? null}
-                    shadowsEnabled={shadowsEnabled}
-                    focusMode={props.focusMode}
-                    focusedId={props.focusedId}
-                    activeLoopId={props.effectiveActiveLoopId}
-                    theme={rendererTheme}
-                    motionCalm={props.motionCalm === true}
-                    getUxForObject={props.getUxForObject}
-                    objectUxById={props.objectUxById}
-                    loops={props.loops}
-                    showLoops={props.showLoops}
-                    showLoopLabels={props.showLoopLabels}
-                    propagationOverlay={mergedPropagationOverlay}
-                    decisionPathOverlay={decisionPathRenderState}
-                  />
-                )}
-              </DecisionPathOverlayLayer>
+              <SceneOverlayRenderer
+                sceneJson={sceneJsonForRenderer}
+                objects={sceneJsonForRenderer.scene?.objects ?? []}
+                themeId={hudThemeMode}
+                visibility={overlayRuntime.visibility}
+                propagationOverlay={mergedPropagationOverlay}
+                decisionPathOverlay={decisionPathOverlay}
+                decisionPathRenderInput={decisionPathOverlay}
+                objectSelection={combinedObjectSelection ?? null}
+                selectedObjectId={selectedIdCtx ?? props.selectedObjectId ?? null}
+                selectedRelationshipId={props.selectedRelationshipId ?? null}
+                selectedPropagationPathId={props.selectedPropagationPathId ?? null}
+                onRelationshipSelect={props.onRelationshipSelect}
+                onPropagationPathSelect={props.onPropagationPathSelect}
+                sceneRendererProps={{
+                  shadowsEnabled,
+                  focusMode: props.focusMode,
+                  focusedId: props.focusedId,
+                  activeLoopId: props.effectiveActiveLoopId,
+                  theme: rendererTheme,
+                  motionCalm: props.motionCalm === true,
+                  getUxForObject: props.getUxForObject,
+                  objectUxById: props.objectUxById,
+                  loops: props.loops,
+                  showLoops: props.showLoops,
+                  showLoopLabels: props.showLoopLabels,
+                  onObjectPositionChange: props.onObjectPositionChange,
+                }}
+              />
 
               <SetterRegistrar refSetter={props.selectedSetterRef} />
               <FullRegistrar
@@ -1693,8 +1753,50 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
                 onSelectedChange={props.onSelectedChange}
               />
             </>
-          )}
+          ) : null}
         </AnimatedScaleGroup>
+
+        {props.sceneInfoHud ? <SceneInfoHudOverlay {...props.sceneInfoHud} themeMode={hudThemeMode} /> : null}
+        {props.objectInfoHud ? (
+          <ObjectInfoHudOverlay
+            model={props.objectInfoHud.model}
+            sceneJson={props.objectInfoHud.sceneJson}
+            themeMode={hudThemeMode}
+            onCreateRelationship={props.objectInfoHud.onCreateRelationship}
+            onDeleteRelationship={props.objectInfoHud.onDeleteRelationship}
+            onCreateImpactPath={props.objectInfoHud.onCreateImpactPath}
+            onEditPropagationPath={props.objectInfoHud.onEditPropagationPath}
+            onDeletePropagationPath={props.objectInfoHud.onDeletePropagationPath}
+            onEditObject={props.objectInfoHud.onEditObject}
+            onDuplicateObject={props.objectInfoHud.onDuplicateObject}
+            onDeleteObject={props.objectInfoHud.onDeleteObject}
+          />
+        ) : null}
+        {props.timelineHud ? <ExecutiveTimelineHudOverlay model={props.timelineHud} themeMode={hudThemeMode} /> : null}
+        {props.quickActionsDock ? (
+          <ExecutiveQuickActionsDockOverlay
+            {...props.quickActionsDock}
+            stackAboveTimeline={Boolean(props.timelineHud)}
+          />
+        ) : null}
+        {props.executiveStatusHud ? (
+          <ExecutiveStatusHudOverlay model={props.executiveStatusHud} themeMode={hudThemeMode} />
+        ) : null}
+        {(props.sceneNavigationToolbar ?? props.cameraToolbar) ? (
+          <ExecutiveSceneToolbarOverlay
+            themeMode={hudThemeMode}
+            selectedObjectId={selectedIdCtx ?? props.selectedObjectId ?? null}
+            onCreateImpactPath={props.onCreateImpactPath}
+          />
+        ) : null}
+        {(props.sceneNavigationToolbar ?? props.cameraToolbar) ? (
+          <SceneNavigationController
+            controlsRef={controlsRef}
+            sceneJson={props.sceneJson}
+            selectedObjectId={selectedIdCtx ?? props.selectedObjectId ?? null}
+            onRequestStaticReframe={requestStaticCameraReframe}
+          />
+        ) : null}
       </Canvas>
     </div>
   );
