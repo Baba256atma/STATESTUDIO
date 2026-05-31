@@ -2,8 +2,13 @@ import type React from "react";
 
 import type { NexoraHudThemeTokens } from "../../../lib/scene/nexoraHudTheme";
 import { nexoraHudSectionLabelStyle, nexoraHudShellStyle } from "../../../lib/scene/nexoraHudTheme";
-import { sceneHudChipStyle } from "../../../lib/theme/sceneThemeTokens";
+import { resolveSceneNativeHudMetricStyle } from "../../../lib/hud/visual";
 import type { SceneThemeTokens } from "../../../lib/theme/sceneThemeTypes";
+import {
+  executiveStatusChipStyle as harmonizedStatusChipStyle,
+  resolveExecutiveStatusPresentation,
+  resolveExecutiveTypography,
+} from "../../../lib/workspace/harmonization";
 import type { ExecutiveStatusSeverity } from "./ExecutiveStatusHud.types";
 
 export function executiveStatusShellStyle(
@@ -11,36 +16,25 @@ export function executiveStatusShellStyle(
   severity: ExecutiveStatusSeverity,
   overrides?: React.CSSProperties
 ): React.CSSProperties {
-  const accent =
-    severity === "critical"
-      ? theme.critical
-      : severity === "warning"
-        ? theme.warning
-        : severity === "attention"
-          ? theme.accent
-          : theme.success;
-
-  return nexoraHudShellStyle(theme, {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-    padding: "10px 12px",
-    borderRadius: 14,
-    minWidth: 0,
-    boxShadow:
-      theme.mode === "night"
-        ? `0 0 0 1px color-mix(in srgb, ${accent} 18%, transparent), ${theme.panelGlow}`
-        : theme.shellShadow,
-    ...overrides,
-  });
+  return nexoraHudShellStyle(
+    theme,
+    {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8,
+      padding: "8px 10px",
+      borderRadius: 10,
+      minWidth: 0,
+      ...overrides,
+    },
+    { surface: "executiveStatusHud", edgeAnchor: "TOP_RIGHT", focused: severity !== "normal" }
+  );
 }
 
 export function executiveStatusHeadlineStyle(theme: NexoraHudThemeTokens): React.CSSProperties {
   return {
-    fontSize: 12,
+    ...resolveExecutiveTypography("body", theme.textPrimary),
     fontWeight: 700,
-    lineHeight: 1.35,
-    color: theme.textPrimary,
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -55,22 +49,11 @@ export function executiveStatusMetricLabelStyle(theme: NexoraHudThemeTokens): Re
 }
 
 export function executiveStatusMetricValueStyle(theme: NexoraHudThemeTokens): React.CSSProperties {
-  return {
-    fontSize: 18,
-    fontWeight: 900,
-    lineHeight: 1.1,
-    letterSpacing: "-0.02em",
-    color: theme.textPrimary,
-  };
+  return resolveSceneNativeHudMetricStyle(theme);
 }
 
 export function executiveStatusSublineStyle(theme: NexoraHudThemeTokens): React.CSSProperties {
-  return {
-    fontSize: 10,
-    fontWeight: 700,
-    lineHeight: 1.3,
-    color: theme.textSecondary,
-  };
+  return resolveExecutiveTypography("caption", theme.textSecondary);
 }
 
 export function executiveStatusChipStyle(
@@ -78,7 +61,18 @@ export function executiveStatusChipStyle(
   severity: ExecutiveStatusSeverity,
   active = false
 ): React.CSSProperties {
-  return sceneHudChipStyle(tokens, active || severity !== "normal");
+  const kind =
+    severity === "critical"
+      ? "critical"
+      : severity === "warning"
+        ? "warning"
+        : severity === "attention"
+          ? "monitoring"
+          : active
+            ? "active"
+            : "healthy";
+  const presentation = resolveExecutiveStatusPresentation(kind, tokens);
+  return harmonizedStatusChipStyle(presentation);
 }
 
 export function severityColor(theme: NexoraHudThemeTokens, severity: ExecutiveStatusSeverity): string {

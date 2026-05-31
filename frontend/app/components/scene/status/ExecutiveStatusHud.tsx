@@ -3,6 +3,12 @@
 import React from "react";
 
 import type { NexoraHudThemeMode } from "../../../lib/scene/nexoraHudTheme";
+import {
+  resolveAttentionHierarchyStyle,
+  resolveExecutiveConfidenceLabel,
+  resolveExecutiveFrsiDisplay,
+  shouldHideDuplicateInformation,
+} from "../../../lib/workspace/minimalism";
 import { resolveSceneThemeTokens } from "../../../lib/theme/sceneThemeTokens";
 import { useSceneHudTheme, useSceneThemeOptional } from "../../../lib/theme/useSceneTheme";
 import {
@@ -29,6 +35,7 @@ export type ExecutiveStatusHudProps = {
   model: ExecutiveStatusHudModel;
   themeMode?: NexoraHudThemeMode;
   panelSizeMode?: PanelSizeMode;
+  commandBarVisible?: boolean;
 };
 
 function StatusMetric(props: {
@@ -57,6 +64,40 @@ export function ExecutiveStatusHud(props: ExecutiveStatusHudProps): React.ReactE
   const tokens = sceneTheme?.tokens ?? resolveSceneThemeTokens(props.themeMode ?? "night");
   const { model } = props;
   const compact = props.panelSizeMode === "compact";
+  const commandBarVisible = props.commandBarVisible ?? true;
+  const headlineStyle = resolveAttentionHierarchyStyle("pipeline_headline");
+  const hideFrsi = shouldHideDuplicateInformation("frsi_score", {
+    surface: "status_hud",
+    commandBarVisible,
+    statusHudVisible: true,
+  });
+  const hideHealthMetrics = shouldHideDuplicateInformation("health", {
+    surface: "status_hud",
+    commandBarVisible,
+    statusHudVisible: true,
+  });
+  const hideReadiness = shouldHideDuplicateInformation("readiness", {
+    surface: "status_hud",
+    commandBarVisible,
+    statusHudVisible: true,
+  });
+  const hideConfidence = shouldHideDuplicateInformation("confidence", {
+    surface: "status_hud",
+    commandBarVisible,
+    statusHudVisible: true,
+  });
+  const hideScenarioChips = shouldHideDuplicateInformation("scenario_status", {
+    surface: "status_hud",
+    commandBarVisible,
+    statusHudVisible: true,
+  });
+  const visibleChips = model.chips.filter((chip) => {
+    if (hideScenarioChips && chip.id === "scenario") return false;
+    if (hideReadiness && chip.id === "readiness") return false;
+    if (hideConfidence && chip.id === "confidence") return false;
+    if (hideFrsi && chip.id === "risk") return false;
+    return true;
+  });
 
   React.useEffect(() => {
     if (mountedRef.current) return;
@@ -104,19 +145,28 @@ export function ExecutiveStatusHud(props: ExecutiveStatusHudProps): React.ReactE
       onPointerDown={(event) => event.stopPropagation()}
       onWheel={(event) => event.stopPropagation()}
     >
-      <div style={executiveStatusHeadlineStyle(theme)} title={model.headline}>
+      <div
+        style={{
+          ...executiveStatusHeadlineStyle(theme),
+          opacity: headlineStyle.opacityMultiplier,
+          fontWeight: headlineStyle.fontWeight,
+        }}
+        title={model.headline}
+      >
         {model.headline}
       </div>
 
       <div style={{ display: "flex", alignItems: "flex-end", gap: 10, minWidth: 0 }}>
-        <StatusMetric
-          label="FRSI"
-          value={model.frsiScore != null ? `${model.frsiScore}` : "—"}
-          subline={`${model.frsiTrendLabel} · ${model.riskPosture}`}
-          theme={theme}
-          accent={severityColor(theme, model.chips.find((chip) => chip.id === "risk")?.severity ?? "normal")}
-        />
-        {!compact ? (
+        {!hideFrsi ? (
+          <StatusMetric
+            label="FRSI"
+            value={resolveExecutiveFrsiDisplay(model.frsiScore)}
+            subline={`${model.frsiTrendLabel} · ${model.riskPosture}`}
+            theme={theme}
+            accent={severityColor(theme, model.chips.find((chip) => chip.id === "risk")?.severity ?? "normal")}
+          />
+        ) : null}
+        {!compact && !hideReadiness ? (
           <>
             <StatusMetric
               label="Readiness"
@@ -127,25 +177,31 @@ export function ExecutiveStatusHud(props: ExecutiveStatusHudProps): React.ReactE
                 model.chips.find((chip) => chip.id === "readiness")?.severity ?? "attention"
               )}
             />
-            <StatusMetric
-              label="Confidence"
-              value={model.confidenceDecision ?? "Unknown"}
-              subline={
-                model.confidenceScenario
-                  ? `Scenario ${model.confidenceScenario}`
-                  : model.confidenceAnalysis
-                    ? `Analysis ${model.confidenceAnalysis}`
-                    : null
-              }
-              theme={theme}
-            />
+            {!hideConfidence ? (
+              <StatusMetric
+                label="Confidence"
+                value={
+                  model.confidenceDecision
+                    ? model.confidenceDecision
+                    : resolveExecutiveConfidenceLabel(null).replace(/^Confidence /, "")
+                }
+                subline={
+                  model.confidenceScenario
+                    ? `Scenario ${model.confidenceScenario}`
+                    : model.confidenceAnalysis
+                      ? `Analysis ${model.confidenceAnalysis}`
+                      : null
+                }
+                theme={theme}
+              />
+            ) : null}
           </>
         ) : null}
       </div>
 
-      {!compact ? (
+      {!compact && visibleChips.length > 0 ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {model.chips.map((chip) => (
+          {visibleChips.map((chip) => (
             <span
               key={chip.id}
               style={executiveStatusChipStyle(tokens, chip.severity, chip.severity !== "normal")}
@@ -156,7 +212,12 @@ export function ExecutiveStatusHud(props: ExecutiveStatusHudProps): React.ReactE
         </div>
       ) : (
         <div style={executiveStatusSublineStyle(theme)}>
-          {model.healthLabel} · {model.confidenceDecision ? `Confidence ${model.confidenceDecision}` : "Confidence Unknown"}
+          {!hideHealthMetrics ? `${model.healthLabel} · ` : ""}
+          {!hideConfidence
+            ? model.confidenceDecision
+              ? `Confidence ${model.confidenceDecision}`
+              : resolveExecutiveConfidenceLabel(null)
+            : null}
         </div>
       )}
     </div>

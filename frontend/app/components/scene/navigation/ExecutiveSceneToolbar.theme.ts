@@ -7,15 +7,19 @@ export function sceneToolbarShellStyle(
   theme: NexoraHudThemeTokens,
   overrides?: React.CSSProperties
 ): React.CSSProperties {
-  return nexoraHudShellStyle(theme, {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 4,
-    padding: "5px 7px",
-    borderRadius: 999,
-    boxShadow: theme.mode === "night" ? theme.panelGlow : theme.shellShadow,
-    ...overrides,
-  });
+  return nexoraHudShellStyle(
+    theme,
+    {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 3,
+      padding: "4px 6px",
+      borderRadius: 999,
+      maxWidth: "min(420px, 92vw)",
+      ...overrides,
+    },
+    { surface: "sceneNavigationToolbar", edgeAnchor: "CENTER_FLOATING" }
+  );
 }
 
 export function sceneToolbarSegmentStyle(
@@ -44,23 +48,28 @@ export function sceneToolbarSegmentStyle(
   };
 }
 
-export function sceneToolbarActionStyle(theme: NexoraHudThemeTokens): React.CSSProperties {
+export function sceneToolbarActionStyle(
+  theme: NexoraHudThemeTokens,
+  withLabel = false
+): React.CSSProperties {
   return {
-    width: 30,
-    height: 30,
+    height: 28,
+    minWidth: withLabel ? 0 : 28,
+    padding: withLabel ? "0 10px" : 0,
     borderRadius: 999,
     border: `1px solid ${theme.buttonBorder}`,
     background: theme.buttonBackground,
     color: theme.buttonText,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: 700,
     lineHeight: 1,
     cursor: "pointer",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: 0,
+    gap: 5,
     flexShrink: 0,
+    whiteSpace: "nowrap",
   };
 }
 

@@ -6,7 +6,15 @@ import {
   resolveExecutiveWorkspaceLayoutMetrics,
   type ExecutiveWorkspaceLayoutMetrics,
 } from "./executiveWorkspaceLayout";
-import { useViewportWidthListener } from "../dom/useDomListener";
+import {
+  EXECUTIVE_HUD_SSR_VIEWPORT,
+  isExecutiveHudLayoutHydrated,
+  subscribeExecutiveHudLayoutHydration,
+} from "../layout/executiveHudHydrationRuntime";
+import {
+  buildViewportResizeSignature,
+  scheduleViewportResizeCommit,
+} from "../layout/viewportResizeRuntime";
 import {
   logExecutiveResponsiveWorkspaceApplied,
   logExecutiveWorkspaceLayoutInitialized,
@@ -28,11 +36,30 @@ export function useExecutiveWorkspaceLayout(
   options?: UseExecutiveWorkspaceLayoutOptions
 ): ExecutiveWorkspaceLayoutMetrics {
   const workspaceLayout = useWorkspaceLayoutOptional();
-  const [viewportWidth, setViewportWidth] = useState<number>(() =>
-    typeof window !== "undefined" ? window.innerWidth : 1440
-  );
+  const [viewportWidth, setViewportWidth] = useState<number>(EXECUTIVE_HUD_SSR_VIEWPORT.width);
 
-  useViewportWidthListener(setViewportWidth, "useExecutiveWorkspaceLayout");
+  useEffect(() => {
+    let lastSignature = buildViewportResizeSignature(EXECUTIVE_HUD_SSR_VIEWPORT.width);
+
+    const apply = () => {
+      const nextWidth = Math.round(window.innerWidth);
+      const nextSignature = buildViewportResizeSignature(nextWidth);
+      if (nextSignature === lastSignature) return;
+      lastSignature = nextSignature;
+      setViewportWidth((previousWidth) => {
+        const previousSignature = buildViewportResizeSignature(previousWidth);
+        return previousSignature === nextSignature ? previousWidth : nextWidth;
+      });
+    };
+
+    const unsubscribe = subscribeExecutiveHudLayoutHydration(apply);
+    if (isExecutiveHudLayoutHydrated()) apply();
+    const unsubscribeResize = scheduleViewportResizeCommit(apply);
+    return () => {
+      unsubscribe();
+      unsubscribeResize();
+    };
+  }, []);
 
   const metrics = useMemo(
     () =>

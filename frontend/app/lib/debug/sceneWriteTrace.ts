@@ -1,3 +1,7 @@
+import { recordDuplicateWritePrevented } from "./startupNoiseAudit";
+import { traceRuntimeSceneWrite } from "./runtimeLoopTrace";
+import { shouldProceedRuntimeWrite } from "../runtime/idleRuntimeWriteGuard";
+
 export type SceneWriteSource =
   | "chat"
   | "propagation"
@@ -12,16 +16,22 @@ type SceneWriteTraceInput = {
   source: SceneWriteSource;
   semanticSig: string;
   visualSig?: string;
+  writer?: string;
   context?: Record<string, unknown>;
 };
 
 const lastWriteSigRef = new Map<SceneWriteSource, string>();
 const duplicateCountBySig = new Map<string, number>();
-const lastDuplicateLogAtBySig = new Map<string, number>();
+const skippedLogKeys = new Set<string>();
 
-function resolveWriter(context?: Record<string, unknown>): string {
-  const writer = context?.writer ?? context?.reason ?? "system";
-  return typeof writer === "string" && writer.trim().length > 0 ? writer : "system";
+function resolveSceneWriteWriter(input: SceneWriteTraceInput, source: SceneWriteSource): string {
+  const candidate =
+    input.writer ??
+    input.context?.writer ??
+    input.context?.source ??
+    source ??
+    "unknown";
+  return typeof candidate === "string" && candidate.trim().length > 0 ? candidate : "unknown";
 }
 
 function classifySceneWriteSource(
@@ -55,35 +65,66 @@ export function getSceneWriteDuplicateSummary() {
     .slice(0, 10);
 }
 
+export function isDuplicateSceneWrite(input: SceneWriteTraceInput): boolean {
+  const source = classifySceneWriteSource(input.context, input.source);
+  return lastWriteSigRef.get(source) === input.semanticSig;
+}
+
 export function traceSceneWrite(input: SceneWriteTraceInput): boolean {
   const source = classifySceneWriteSource(input.context, input.source);
-  const prev = lastWriteSigRef.get(source);
-  if (prev === input.semanticSig) {
-    const writer = resolveWriter(input.context);
-    const key = `${source}::${writer}::${input.semanticSig}`;
-    const count = (duplicateCountBySig.get(key) ?? 0) + 1;
-    duplicateCountBySig.set(key, count);
-    const now = Date.now();
-    const lastAt = lastDuplicateLogAtBySig.get(key) ?? 0;
-    const shouldLog = count === 1 || count % 10 === 0 || now - lastAt > 2000;
-    if (shouldLog) {
-      lastDuplicateLogAtBySig.set(key, now);
-      globalThis.console?.warn?.("[Nexora][SceneWriteBlocked][Duplicate]", {
-        source,
-        writer,
-        count,
-        semanticSig: input.semanticSig,
-        visualSig: input.visualSig ?? null,
-        context: input.context ?? {},
-      });
-    }
+  const writer = resolveSceneWriteWriter(input, source);
+  if (isDuplicateSceneWrite(input)) {
+    recordDuplicateWritePrevented();
+    logSceneWriteSkipped({
+      source,
+      writer,
+      semanticSig: input.semanticSig,
+      reason: "duplicate_scene_signature",
+    });
     return false;
   }
+  if (!shouldProceedRuntimeWrite(`scene-write:${writer}`, input.semanticSig)) {
+    recordDuplicateWritePrevented();
+    logSceneWriteSkipped({
+      source,
+      writer,
+      semanticSig: input.semanticSig,
+      reason: "runtime_write_guard",
+    });
+    return false;
+  }
+  const previousSceneSignature = lastWriteSigRef.get(source) ?? null;
   lastWriteSigRef.set(source, input.semanticSig);
+  traceRuntimeSceneWrite({
+    writer,
+    reason: String(input.context?.reason ?? source),
+    sceneSignature: input.semanticSig,
+    previousSceneSignature,
+    duplicateAttempt: false,
+    detail: {
+      source,
+      visualSig: input.visualSig ?? null,
+      context: input.context ?? {},
+    },
+  });
   globalThis.console?.log?.("[Nexora][SceneWrite]", { ...input, source });
   return true;
 }
 
+function logSceneWriteSkipped(payload: {
+  source: SceneWriteSource;
+  writer: string;
+  semanticSig: string;
+  reason: string;
+}): void {
+  if (process.env.NODE_ENV === "production") return;
+  const key = `${payload.source}:${payload.writer}:${payload.reason}:${payload.semanticSig}`;
+  if (skippedLogKeys.has(key)) return;
+  skippedLogKeys.add(key);
+  globalThis.console?.debug?.("[Nexora][SceneWriteSkipped]", payload);
+}
+
 if (typeof window !== "undefined") {
-  (window as any).__NEXORA_SCENE_WRITE_DUPES__ = getSceneWriteDuplicateSummary;
+  (window as Window & { __NEXORA_SCENE_WRITE_DUPES__?: typeof getSceneWriteDuplicateSummary }).__NEXORA_SCENE_WRITE_DUPES__ =
+    getSceneWriteDuplicateSummary;
 }

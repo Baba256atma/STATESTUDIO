@@ -189,7 +189,6 @@ function MVPReadinessDashboardComponent(props: MVPReadinessDashboardProps): Reac
     const smokeTestSuite = runMVPSmokeTestSuite({
       organizationId,
       context: {
-        organizationId,
         ...runtimeInput,
         foundationSnapshotCount: props.foundation ? 1 : 0,
         operationalSnapshotCount: props.operational ? 1 : 0,

@@ -5,6 +5,11 @@ import {
   logPlacementValidated,
 } from "../objectCatalog/objectCatalogInstrumentation";
 import { registerSceneObjectPlacement } from "../modeling/objectPlacementRuntime";
+import {
+  evaluateCameraStability,
+  resolveExecutiveBaseObjectScale,
+  resolveSpacedCatalogPlacementPosition,
+} from "../scene/density";
 import type { CatalogObjectDefinition } from "../objectCatalog/objectCatalogTypes";
 import type { SceneJson, SceneObject, Vector3Tuple } from "../sceneTypes";
 import type {
@@ -92,6 +97,13 @@ export function resolveCatalogPlacementPosition(
     .map(objectPosition)
     .filter((pos): pos is Vector3Tuple => pos != null);
 
+  const spaced = resolveSpacedCatalogPlacementPosition(occupied, startIndex, {
+    objectCount: existingObjects.length + 1,
+  });
+  if (occupied.every((pos) => distance(pos, spaced.position) >= Math.min(minDistance, 1.02))) {
+    return { valid: true, position: spaced.position, reason: spaced.reason };
+  }
+
   for (let attempt = 0; attempt < 24; attempt += 1) {
     const position = buildOrbitCandidate(startIndex + attempt);
     const withinBounds = Math.hypot(position[0], position[2]) <= 8.5 && Math.abs(position[1]) <= 2.5;
@@ -132,7 +144,7 @@ export function createCatalogSceneObject(
     type: ROLE_TO_SCENE_TYPE[role] ?? CATEGORY_SHAPE[definition.category] ?? "box",
     role,
     position,
-    scale: role === "core" ? 1.05 : 0.92,
+    scale: resolveExecutiveBaseObjectScale({ role }),
     emphasis: Math.min(0.85, Math.max(0.2, definition.defaultSeverity ?? 0.4)),
     tags: ["catalog_object", definition.category, definition.id],
     semantic: {
@@ -199,6 +211,11 @@ export function insertCatalogObjectIntoScene(request: ScenePlacementRequest): Sc
     source: "catalog",
   });
   registerSceneObjectPlacement(object);
+  evaluateCameraStability({
+    trigger: "object_created",
+    previousObjectCount: objects.length,
+    nextObjectCount: objects.length + 1,
+  });
 
   return {
     success: true,

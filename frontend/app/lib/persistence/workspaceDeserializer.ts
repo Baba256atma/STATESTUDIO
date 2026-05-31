@@ -8,6 +8,11 @@ import type {
   SavedWorkspaceRelationship,
 } from "./workspacePersistenceTypes";
 import type { PropagationPath } from "../propagation/propagationAuthoringRuntime";
+import {
+  applyScenarioSnapshotToScene,
+  readScenarioWorkspaceState,
+  writeScenarioWorkspaceState,
+} from "../scenario/scenarioAuthoringRuntime";
 import { logWorkspaceDeserialized, logWorkspaceRestored } from "./workspacePersistenceInstrumentation";
 
 function isSceneJson(value: unknown): value is SceneJson {
@@ -108,7 +113,7 @@ export function deserializeWorkspaceToScene(
     relationshipCount: relationships.length,
   });
 
-  const nextScene: SceneJson = {
+  const restoredScene: SceneJson = {
     ...base,
     state_vector: base.state_vector ?? {},
     meta: {
@@ -127,6 +132,14 @@ export function deserializeWorkspaceToScene(
       loops: Array.isArray(base.scene.loops) ? base.scene.loops : [],
     },
   };
+  const scenarioState = saved.scenarios ?? readScenarioWorkspaceState(restoredScene);
+  const scenarioScene = writeScenarioWorkspaceState(restoredScene, scenarioState);
+  const activeScenario = scenarioState.scenarios.find(
+    (scenario) => scenario.id === scenarioState.activeScenarioId
+  );
+  const nextScene = activeScenario
+    ? applyScenarioSnapshotToScene(scenarioScene, activeScenario.snapshot)
+    : scenarioScene;
 
   logWorkspaceRestored({
     workspaceId: saved.id,

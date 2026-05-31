@@ -12,7 +12,10 @@ export type TimelineEventStatus = "completed" | "active" | "pending";
 export type TimelineEvent = {
   id: string;
   title: string;
+  /** Semantic labels such as "Now" or "T-4h" for placeholder story beats. */
   timestamp?: string;
+  /** Stable ISO timestamp for machine-generated events. */
+  timestampIso?: string;
   status: TimelineEventStatus;
 };
 
@@ -36,13 +39,17 @@ export type ExecutiveTimelineControlId =
   | "speed"
   | "snapshot";
 
-export const EXECUTIVE_TIMELINE_CONTROLS: readonly { id: ExecutiveTimelineControlId; label: string }[] = [
-  { id: "replay", label: "Replay" },
-  { id: "previous", label: "Previous" },
-  { id: "next", label: "Next" },
-  { id: "pause", label: "Pause" },
-  { id: "speed", label: "Speed" },
-  { id: "snapshot", label: "Snapshot" },
+export const EXECUTIVE_TIMELINE_CONTROLS: readonly {
+  id: ExecutiveTimelineControlId;
+  label: string;
+  icon: string;
+}[] = [
+  { id: "replay", label: "Replay", icon: "↺" },
+  { id: "previous", label: "Previous", icon: "◀" },
+  { id: "next", label: "Next", icon: "▶" },
+  { id: "pause", label: "Pause", icon: "⏸" },
+  { id: "speed", label: "Speed", icon: "⏩" },
+  { id: "snapshot", label: "Snapshot", icon: "◫" },
 ] as const;
 
 /** Default executive story when canonical timeline data is not yet available. */
@@ -61,18 +68,6 @@ export const EXECUTIVE_TIMELINE_SCENARIO_TRACKS: ExecutiveTimelineScenarioTrack[
   { id: "scenario_compare", label: "Comparison", status: "idle" },
 ];
 
-function formatTimelineTimestamp(value: number | undefined): string | undefined {
-  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(value));
-  } catch {
-    return undefined;
-  }
-}
-
 function mapDecisionEventsToTimelineEvents(events: DecisionTimelineEvent[]): TimelineEvent[] {
   if (!events.length) return EXECUTIVE_TIMELINE_PLACEHOLDER_EVENTS;
 
@@ -82,7 +77,7 @@ function mapDecisionEventsToTimelineEvents(events: DecisionTimelineEvent[]): Tim
   return trimmed.map((event, index) => ({
     id: event.id,
     title: event.title,
-    timestamp: formatTimelineTimestamp(event.timestamp),
+    timestampIso: new Date(event.timestamp).toISOString(),
     status: index < activeIndex ? "completed" : index === activeIndex ? "active" : "pending",
   }));
 }

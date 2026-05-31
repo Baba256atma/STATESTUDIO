@@ -28,6 +28,14 @@ import {
 } from "../lib/visual/scannerVisualPriorityPolicy";
 import { dedupeNexoraDevLog } from "../lib/debug/panelConsoleTraceDedupe";
 import {
+  auditExecutiveSceneReadability,
+} from "../lib/scene/executiveSceneReadabilityAudit";
+import {
+  resolveObjectNameDensityTier,
+  resolveObjectNameDensityProfile,
+  shouldRenderExecutiveObjectName,
+} from "../lib/scene/objectNameDensityProfile";
+import {
   type DomainLabelSeverity,
   resolveDomainAwareLabelTemplate,
   resolveDomainAwareObjectName,
@@ -43,10 +51,51 @@ import type {
 import { getThemeTokens } from "../lib/design/designTokens";
 import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
 import { CALM_FRAMING } from "../lib/scene/calmCameraFraming";
-import { AnimatableObject } from "./scene/AnimatableObject";
+import {
+  buildSceneObjectsRegistrySignature,
+  resolveStableObjectId,
+} from "../lib/scene/objectRegistryRuntime";
+import { setSceneRemountContext } from "../lib/scene/sceneRemountContext";
+import { SceneObjectInstances, type SceneObjectInstancePlan } from "./scene/SceneObjectInstances";
 import { LoopLinesAnimated } from "./scene/LoopLinesAnimated";
 const EMPTY_STRING_ARRAY: string[] = [];
+const EMPTY_SCENE_ANIMS: any[] = [];
+const EMPTY_SCENE_LOOPS: SceneLoop[] = [];
 const STATIC_VISUAL_FREEZE = true;
+
+function buildSceneObjectRenderSignature(object: SceneObject, index: number): string {
+  return JSON.stringify({
+    stableId: resolveStableObjectId(object, index),
+    id: object?.id ?? null,
+    name: object?.name ?? null,
+    label: object?.label ?? null,
+    type: object?.type ?? null,
+    position: object?.position ?? null,
+    pos: object?.pos ?? null,
+    transform: (object as any)?.transform ?? null,
+    color: object?.color ?? null,
+    scale: object?.scale ?? null,
+    emphasis: object?.emphasis ?? null,
+    material: object?.material ?? null,
+    tags: object?.tags ?? null,
+    role: object?.role ?? null,
+    canonical_name: object?.canonical_name ?? null,
+    display_label: object?.display_label ?? null,
+    category: object?.category ?? null,
+    domain: object?.domain ?? null,
+    risk_kind: object?.risk_kind ?? null,
+    scanner_highlighted: object?.scanner_highlighted ?? null,
+    scanner_severity: object?.scanner_severity ?? null,
+    scanner_emphasis: object?.scanner_emphasis ?? null,
+    scanner_focus: object?.scanner_focus ?? null,
+    ux: object?.ux ?? null,
+  });
+}
+
+function buildSceneObjectsRenderSignature(objects: SceneObject[]): string {
+  if (!Array.isArray(objects) || objects.length === 0) return "empty";
+  return objects.map((object, index) => buildSceneObjectRenderSignature(object, index)).join("|");
+}
 
 // --------------------
 // Geometry registry
@@ -1254,6 +1303,7 @@ function SceneRendererComponent({
 }: SceneRendererProps) {
   if (!sceneJson) return null;
 
+  const stableGlobalScale = useMemo(() => globalScale, [globalScale]);
   const chatOffset = useChatOffset();
   const selectedIdCtx = useSelectedId();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -1276,7 +1326,41 @@ function SceneRendererComponent({
     setHoveredId(id);
   }, []);
 
-  const objects = sceneJson.scene?.objects ?? [];
+  const rawObjects = sceneJson.scene?.objects ?? [];
+  const objectsRegistrySignature = useMemo(
+    () => buildSceneObjectsRegistrySignature(rawObjects),
+    [rawObjects]
+  );
+  const objectsRenderSignature = useMemo(
+    () => buildSceneObjectsRenderSignature(rawObjects),
+    [rawObjects]
+  );
+  const stableObjectCacheRef = useRef(
+    new Map<string, { signature: string; object: SceneObject }>()
+  );
+  const stableObjects = useMemo(() => {
+    if (!Array.isArray(rawObjects) || rawObjects.length === 0) return [];
+    const nextCache = new Map<string, { signature: string; object: SceneObject }>();
+    const normalized = rawObjects.map((object, index) => {
+      const stableId = resolveStableObjectId(object, index);
+      const signature = buildSceneObjectRenderSignature(object, index);
+      const cached = stableObjectCacheRef.current.get(stableId);
+      if (cached?.signature === signature) {
+        nextCache.set(stableId, cached);
+        return cached.object;
+      }
+      const next = { signature, object };
+      nextCache.set(stableId, next);
+      return object;
+    });
+    stableObjectCacheRef.current = nextCache;
+    return normalized;
+  }, [objectsRenderSignature]);
+  const stableObjectIds = useMemo(
+    () => stableObjects.map((object, index) => resolveStableObjectId(object, index)),
+    [objectsRegistrySignature, stableObjects]
+  );
+  const objects = stableObjects;
   const payload = sceneJson as any;
   const hasExplicitObjectSelection = !!objectSelection && typeof objectSelection === "object";
   const objectSelectionHighlightedIds = useMemo(
@@ -1345,6 +1429,33 @@ function SceneRendererComponent({
       signature: sceneRenderSignature.slice(0, 240),
     });
   }, [sceneRenderSignature]);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const objectCount = objects.length;
+    if (objectCount === 0) return;
+    const selectedObjectId = typeof selectedIdCtx === "string" ? selectedIdCtx : null;
+    const densityProfile = resolveObjectNameDensityProfile(objectCount);
+    let visibleNameCount = 0;
+    for (let index = 0; index < objectCount; index += 1) {
+      if (
+        shouldRenderExecutiveObjectName({
+          profile: densityProfile,
+          selected: selectedObjectId === String(objects[index]?.id ?? objects[index]?.name ?? ""),
+          focused: false,
+          index,
+        })
+      ) {
+        visibleNameCount += 1;
+      }
+    }
+    auditExecutiveSceneReadability({
+      objectCount,
+      visibleNameCount,
+      legacyTooltipCount: 0,
+      selectedObjectId,
+      densityTier: resolveObjectNameDensityTier(objectCount),
+    });
+  }, [objects, selectedIdCtx]);
   const objectSelectionRiskSourceIds = useMemo(() => readStringArrayField(objectSelection, "risk_sources"), [objectSelection]);
   const objectSelectionRiskTargetIds = useMemo(() => readStringArrayField(objectSelection, "risk_targets"), [objectSelection]);
   const payloadRiskSourceIds = useMemo(() => readStringArrayField(payload?.object_selection, "risk_sources"), [payload]);
@@ -1398,27 +1509,25 @@ function SceneRendererComponent({
         payload?.scene_json?.object_selection?.dim_unrelated_objects === true;
   const sceneObjectIds = useMemo(
     () =>
-      objects
-        .map((object, idx) => String(object?.id ?? object?.name ?? `${object?.type ?? "obj"}:${idx}`))
+      stableObjects
+        .map((object, idx) => resolveStableObjectId(object, idx))
         .filter(Boolean),
-    [objects]
+    [stableObjects]
   );
   const sceneObjectIdSet = useMemo(() => new Set(sceneObjectIds), [sceneObjectIds]);
-  const sceneIdentityMap = useMemo(() => buildSceneIdentityMap(objects), [objects]);
+  const sceneIdentityMap = useMemo(() => buildSceneIdentityMap(stableObjects), [stableObjects]);
   const focusIdentitySet = useMemo(() => {
     const identities = new Set<string>();
-    objects.forEach((object, idx) => {
-      const stableId = String(object?.id ?? `${object?.type ?? "obj"}:${idx}`);
-      const stableIdWithName = String(object?.id ?? object?.name ?? `${object?.type ?? "obj"}:${idx}`);
+    stableObjects.forEach((object, idx) => {
+      const stableId = resolveStableObjectId(object, idx);
       const objectId = typeof object?.id === "string" && object.id.length > 0 ? object.id : null;
       const objectName = typeof object?.name === "string" && object.name.length > 0 ? object.name : null;
       identities.add(stableId);
-      identities.add(stableIdWithName);
       if (objectId) identities.add(objectId);
       if (objectName) identities.add(objectName);
     });
     return identities;
-  }, [objects]);
+  }, [stableObjects]);
   const hasValidFocusedTarget = useMemo(
     () => typeof focusedId === "string" && focusedId.length > 0 && focusIdentitySet.has(focusedId),
     [focusIdentitySet, focusedId]
@@ -1569,7 +1678,7 @@ function SceneRendererComponent({
     () => resolveDecisionCenter(objects, resolvedPrimaryRenderId),
     [objects, resolvedPrimaryRenderId]
   );
-  const sceneCenter = useMemo(() => resolveSceneCenter(objects), [objects]);
+  const sceneCenter = useMemo(() => resolveSceneCenter(stableObjects), [stableObjects]);
   const affectedTargetIds = scannerPrimaryResolution.affectedTargetIds;
   const contextTargetIds = scannerPrimaryResolution.contextTargetIds;
   const scannerPrimaryRole = scannerPrimaryResolution.primaryRole;
@@ -1600,8 +1709,16 @@ function SceneRendererComponent({
   );
   // Strict calm camera rule: renderer-level camera bias only follows explicit selection.
   const cameraBiasTarget = cameraIntelligence.kind === "selected" ? cameraIntelligence.target : null;
-  const anims = ((sceneJson.scene?.animations ?? []) as any[]);
-  const loopList: SceneLoop[] = Array.isArray(loops) ? loops : (sceneJson as any)?.scene?.loops ?? [];
+  const rawSceneAnims = (sceneJson.scene?.animations ?? null) as any[] | null;
+  const anims = useMemo(
+    () => (Array.isArray(rawSceneAnims) ? rawSceneAnims : EMPTY_SCENE_ANIMS),
+    [rawSceneAnims]
+  );
+  const rawSceneLoops = (sceneJson as any)?.scene?.loops;
+  const loopList: SceneLoop[] = useMemo(
+    () => (Array.isArray(loops) ? loops : Array.isArray(rawSceneLoops) ? rawSceneLoops : EMPTY_SCENE_LOOPS),
+    [loops, rawSceneLoops]
+  );
   const activeLoopId: string | null =
     propActiveLoopId ??
     ((sceneJson as any)?.scene?.active_loop as string | undefined) ??
@@ -1623,6 +1740,20 @@ function SceneRendererComponent({
     });
     return relationMap;
   }, [loopList]);
+  const neighborIdsByStableId = useMemo(() => {
+    const result = new Map<string, string[]>();
+    stableObjects.forEach((object, idx) => {
+      const stableId = resolveStableObjectId(object, idx);
+      const neighbors = Array.from(
+        new Set([
+          ...Array.from(relatedObjectIdsById.get(stableId) ?? []),
+          ...Array.from(relatedObjectIdsById.get(String(object.name ?? "")) ?? []),
+        ])
+      );
+      result.set(stableId, neighbors);
+    });
+    return result;
+  }, [relatedObjectIdsById, stableObjects]);
   const hoveredInteractionRole = resolveInteractionRole({
     isScannerPrimary: !!hoveredId && hoveredId === resolvedPrimaryRenderId,
     causalityRole:
@@ -2066,6 +2197,164 @@ function SceneRendererComponent({
     g.position.y = cy * 0.6;
   }, [chatOffset?.x, chatOffset?.y]);
 
+  const sceneObjectInstancePlanSignature = useMemo(
+    () =>
+      JSON.stringify({
+        objectsRegistrySignature,
+        focusedId: focusedId ?? null,
+        focusMode: focusMode ?? null,
+        hasValidFocusedTarget,
+        theme: theme ?? null,
+        visualModeId,
+        globalScale: stableGlobalScale,
+        shadowsEnabled: !!shadowsEnabled,
+        motionCalm: !!motionCalm,
+        hoveredId,
+        hoveredInteractionRole,
+        scannerSceneActive,
+        scannerFragilityScore,
+        scannerPrimaryTargetId,
+        resolvedPrimaryRenderId,
+        resolvedLabelOwnerId,
+        scannerPrimaryRole,
+        scannerPrimaryLabelTitle,
+        scannerPrimaryLabelBody,
+        scannerTargetIds,
+        affectedTargetIds,
+        contextTargetIds,
+        resolvedRiskSourceIds,
+        resolvedRiskTargetIds,
+        scannerStoryReveal,
+        narrativeFocusStrength,
+        decisionPathSourceId,
+        effectivePropagationSourceId,
+        sceneObjectCount: stableObjects.length,
+      }),
+    [
+      affectedTargetIds,
+      contextTargetIds,
+      decisionPathSourceId,
+      effectivePropagationSourceId,
+      focusedId,
+      focusMode,
+      stableGlobalScale,
+      hasValidFocusedTarget,
+      hoveredId,
+      hoveredInteractionRole,
+      motionCalm,
+      narrativeFocusStrength,
+      objectsRegistrySignature,
+      resolvedLabelOwnerId,
+      resolvedPrimaryRenderId,
+      resolvedRiskSourceIds,
+      resolvedRiskTargetIds,
+      scannerFragilityScore,
+      scannerPrimaryLabelBody,
+      scannerPrimaryLabelTitle,
+      scannerPrimaryRole,
+      scannerPrimaryTargetId,
+      scannerSceneActive,
+      scannerStoryReveal,
+      scannerTargetIds,
+      shadowsEnabled,
+      stableObjects.length,
+      theme,
+      visualModeId,
+    ]
+  );
+
+  const sceneObjectInstancePlans = useMemo(() => {
+    const plans = new Map<string, SceneObjectInstancePlan>();
+    stableObjects.forEach((object, idx) => {
+      const stableId = resolveStableObjectId(object, idx);
+      const objectKey = String(object.id ?? object.name ?? stableId);
+      plans.set(stableId, {
+        shadowsEnabled: !!shadowsEnabled,
+        focusMode,
+        focusedId: focusedId ?? null,
+        hasValidFocusedTarget,
+        theme: theme ?? "night",
+        getUxForObject,
+        objectUxById,
+        globalScale: stableGlobalScale,
+        modeId: visualModeId,
+        scannerSceneActive,
+        scannerFragilityScore,
+        scannerPrimaryTargetId,
+        resolvedPrimaryRenderId,
+        labelOwnerId: resolvedLabelOwnerId,
+        decisionCenter,
+        scannerPrimaryRole,
+        scannerPrimaryLabelTitle,
+        scannerPrimaryLabelBody,
+        scannerTargetIds,
+        affectedTargetIds,
+        contextTargetIds,
+        riskSourceIds: resolvedRiskSourceIds,
+        riskTargetIds: resolvedRiskTargetIds,
+        scannerStoryReveal,
+        hoveredId,
+        hoveredInteractionRole,
+        setHoveredId: setHoveredIdThrottled,
+        motionCalm,
+        neighborIds: neighborIdsByStableId.get(stableId) ?? EMPTY_STRING_ARRAY,
+        attentionMemoryStrength: Math.max(
+          attentionMemoryStrengthById.get(stableId) ?? 0,
+          attentionMemoryStrengthById.get(String(object.id ?? "")) ?? 0,
+          attentionMemoryStrengthById.get(String(object.name ?? "")) ?? 0
+        ),
+        narrativeFocusStrength,
+        narrativeFocusRole: narrativeFocusRoleById(objectKey),
+        simulationStrength: Math.max(
+          effectivePropagationNodeStrengthById[String(object.id ?? "")] ?? 0,
+          effectivePropagationNodeStrengthById[String(object.name ?? "")] ?? 0,
+          effectivePropagationNodeStrengthById[String(stableId)] ?? 0
+        ),
+        isSimulationSource:
+          !!effectivePropagationSourceId &&
+          (effectivePropagationSourceId === String(object.id ?? "") ||
+            effectivePropagationSourceId === String(object.name ?? "") ||
+            effectivePropagationSourceId === String(stableId)),
+        decisionPathStrength: Math.max(
+          decisionPathNodeStrengthById[String(object.id ?? "")] ?? 0,
+          decisionPathNodeStrengthById[String(object.name ?? "")] ?? 0,
+          decisionPathNodeStrengthById[String(stableId)] ?? 0
+        ),
+        decisionPathRole:
+          decisionPathNodeRoleById[String(object.id ?? "")] ??
+          decisionPathNodeRoleById[String(object.name ?? "")] ??
+          decisionPathNodeRoleById[String(stableId)] ??
+          "outside",
+        decisionPathVisualHints:
+          decisionPathNodeVisualHintsById[String(object.id ?? "")] ??
+          decisionPathNodeVisualHintsById[String(object.name ?? "")] ??
+          decisionPathNodeVisualHintsById[String(stableId)],
+        isDecisionPathSource:
+          !!decisionPathSourceId &&
+          (decisionPathSourceId === String(object.id ?? "") ||
+            decisionPathSourceId === String(object.name ?? "") ||
+            decisionPathSourceId === String(stableId)),
+        sceneScale: stableGlobalScale,
+        sceneObjectCount: stableObjects.length,
+        onObjectPositionChange,
+      });
+    });
+    return plans;
+  }, [sceneObjectInstancePlanSignature, stableObjects]);
+
+  const sceneRemountContext = useMemo(
+    () => ({
+      parentSignature: `SceneRenderer:${stableObjects.length}`,
+      visibleObjectsSignature: objectsRegistrySignature,
+      selectedObjectId: typeof selectedIdCtx === "string" ? selectedIdCtx : null,
+      viewMode: visualModeId ?? null,
+    }),
+    [objectsRegistrySignature, selectedIdCtx, stableObjects.length, visualModeId]
+  );
+  useEffect(() => {
+    setSceneRemountContext(sceneRemountContext);
+  }, [sceneRemountContext]);
+
   return (
     <>
       <CameraLerper
@@ -2076,95 +2365,12 @@ function SceneRendererComponent({
       />
       <JsonLights sceneJson={sceneJson} shadowsEnabled={!!shadowsEnabled} />
       <group ref={parallaxGroup}>
-        {objects.map((o, idx) => {
-          const stableId = o.id ?? `${o.type ?? "obj"}:${idx}`;
-          return (
-            <AnimatableObject
-              key={stableId}
-              obj={o}
-              anim={animMap.get(o.id)}
-              index={idx}
-              shadowsEnabled={!!shadowsEnabled}
-              focusMode={focusMode}
-              focusedId={focusedId ?? null}
-              hasValidFocusedTarget={hasValidFocusedTarget}
-              theme={theme ?? "night"}
-              getUxForObject={getUxForObject}
-              objectUxById={objectUxById}
-              globalScale={globalScale}
-              modeId={visualModeId}
-              scannerSceneActive={scannerSceneActive}
-              scannerFragilityScore={scannerFragilityScore}
-              scannerPrimaryTargetId={scannerPrimaryTargetId}
-              resolvedPrimaryRenderId={resolvedPrimaryRenderId}
-              labelOwnerId={resolvedLabelOwnerId}
-              decisionCenter={decisionCenter}
-              scannerPrimaryRole={scannerPrimaryRole}
-              scannerPrimaryLabelTitle={scannerPrimaryLabelTitle}
-              scannerPrimaryLabelBody={scannerPrimaryLabelBody}
-              scannerTargetIds={scannerTargetIds}
-              affectedTargetIds={affectedTargetIds}
-              contextTargetIds={contextTargetIds}
-              riskSourceIds={resolvedRiskSourceIds}
-              riskTargetIds={resolvedRiskTargetIds}
-              scannerStoryReveal={scannerStoryReveal}
-              hoveredId={hoveredId}
-              hoveredInteractionRole={hoveredInteractionRole}
-              setHoveredId={setHoveredIdThrottled}
-              motionCalm={motionCalm}
-              neighborIds={Array.from(
-                new Set([
-                  ...Array.from(relatedObjectIdsById.get(stableId) ?? []),
-                  ...Array.from(relatedObjectIdsById.get(String(o.name ?? "")) ?? []),
-                ])
-              )}
-              attentionMemoryStrength={Math.max(
-                attentionMemoryStrengthById.get(stableId) ?? 0,
-                attentionMemoryStrengthById.get(String(o.id ?? "")) ?? 0,
-                attentionMemoryStrengthById.get(String(o.name ?? "")) ?? 0
-              )}
-              narrativeFocusStrength={narrativeFocusStrength}
-              narrativeFocusRole={narrativeFocusRoleById(
-                String(o.id ?? o.name ?? `${o.type ?? "obj"}:${idx}`)
-              )}
-              simulationStrength={Math.max(
-                effectivePropagationNodeStrengthById[String(o.id ?? "")] ?? 0,
-                effectivePropagationNodeStrengthById[String(o.name ?? "")] ?? 0,
-                effectivePropagationNodeStrengthById[String(stableId)] ?? 0
-              )}
-              isSimulationSource={
-                !!effectivePropagationSourceId &&
-                (effectivePropagationSourceId === String(o.id ?? "") ||
-                  effectivePropagationSourceId === String(o.name ?? "") ||
-                  effectivePropagationSourceId === String(stableId))
-              }
-              decisionPathStrength={Math.max(
-                decisionPathNodeStrengthById[String(o.id ?? "")] ?? 0,
-                decisionPathNodeStrengthById[String(o.name ?? "")] ?? 0,
-                decisionPathNodeStrengthById[String(stableId)] ?? 0
-              )}
-              decisionPathRole={
-                decisionPathNodeRoleById[String(o.id ?? "")] ??
-                decisionPathNodeRoleById[String(o.name ?? "")] ??
-                decisionPathNodeRoleById[String(stableId)] ??
-                "outside"
-              }
-              decisionPathVisualHints={
-                decisionPathNodeVisualHintsById[String(o.id ?? "")] ??
-                decisionPathNodeVisualHintsById[String(o.name ?? "")] ??
-                decisionPathNodeVisualHintsById[String(stableId)]
-              }
-              isDecisionPathSource={
-                !!decisionPathSourceId &&
-                (decisionPathSourceId === String(o.id ?? "") ||
-                  decisionPathSourceId === String(o.name ?? "") ||
-                  decisionPathSourceId === String(stableId))
-              }
-              sceneScale={globalScale}
-              onObjectPositionChange={onObjectPositionChange}
-            />
-          );
-        })}
+        <SceneObjectInstances
+          stableObjects={stableObjects}
+          stableObjectIds={stableObjectIds}
+          instancePlansById={sceneObjectInstancePlans}
+          animMap={animMap}
+        />
 
         <LoopLinesAnimated
           objects={objects}

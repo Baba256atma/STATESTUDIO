@@ -125,6 +125,7 @@ export type SceneApplyDiagnosticEventName =
   | "apply_committed"
   | "destructive_reset_blocked"
   | "duplicate_scene_write_skipped"
+  | "scene_write_skipped"
   | "semantic_signature_updated"
   | "bridge_connected";
 

@@ -1,6 +1,8 @@
 import { resolveSceneThemeTokens } from "../../lib/theme/sceneThemeTokens";
 import type { SceneThemeId } from "../../lib/theme/sceneThemeTypes";
-import type { NexoraRelationshipType } from "../../lib/relationships/relationshipTypes";
+import type { NexoraRelationship, NexoraRelationshipType } from "../../lib/relationships/relationshipTypes";
+import type { RelationshipRenderPlan } from "./executive/executiveRelationshipTypes";
+import { logRelationshipThemeAudit } from "./relationshipThemeAudit";
 
 export type RelationshipVisualTokens = {
   lineColor: string;
@@ -63,4 +65,46 @@ export function resolveRelationshipVisualTokens(
     lineWidth: variant === "thin" ? 0.7 : variant === "strong" ? 1.7 : 1.15,
     variant,
   };
+}
+
+/** Apply executive visual profile on top of base relationship tokens (E2:47). */
+export function applyExecutiveRelationshipVisualTokens(
+  base: RelationshipVisualTokens,
+  renderPlan?: RelationshipRenderPlan | null
+): RelationshipVisualTokens {
+  if (!renderPlan) return base;
+
+  const emphasisScale =
+    renderPlan.emphasis === "PRIMARY" ? 1 : renderPlan.emphasis === "SECONDARY" ? 0.88 : 0.72;
+
+  return {
+    ...base,
+    opacity: Math.max(0.12, Math.min(0.98, renderPlan.opacity * emphasisScale)),
+    lineWidth: Math.max(0.45, base.lineWidth * renderPlan.lineWidthMultiplier),
+    variant:
+      renderPlan.classification === "RISK"
+        ? "warning"
+        : renderPlan.emphasis === "BACKGROUND"
+          ? "thin"
+          : base.variant,
+  };
+}
+
+export function resolveExecutiveRelationshipLineTokens(input: {
+  themeId?: SceneThemeId;
+  relationship: NexoraRelationship;
+  renderPlan?: RelationshipRenderPlan | null;
+}): RelationshipVisualTokens {
+  const base = resolveRelationshipVisualTokens(input.themeId, input.relationship.type);
+  return applyExecutiveRelationshipVisualTokens(base, input.renderPlan);
+}
+
+if (process.env.NODE_ENV !== "production") {
+  logRelationshipThemeAudit({
+    definitionCount: 1,
+    definitionLocations: ["relationshipTheme.ts:applyExecutiveRelationshipVisualTokens"],
+    duplicateExports: false,
+    duplicateVisualProfiles: false,
+    duplicateThemeResolvers: false,
+  });
 }

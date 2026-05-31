@@ -22,6 +22,12 @@ import type { DecisionAutomationResult } from "../../lib/execution/decisionAutom
 import type { DecisionExecutionIntent } from "../../lib/execution/decisionExecutionIntent";
 import { buildDecisionTimeline } from "../../lib/governance/buildDecisionTimeline";
 import { buildDecisionTimelineView } from "../../lib/governance/buildDecisionTimelineView";
+import type { DecisionTimelineViewEvent } from "../../governance/decisionTimelineModel";
+import {
+  resolveExecutiveDashboardDecisionTrace,
+  buildExecutiveDecisionTraceInputSignature,
+  extractExecutiveDecisionTraceSignatureInput,
+} from "../../lib/decision/trace/executiveDecisionTraceRuntime";
 import { buildDecisionConfidenceCalibration } from "../../lib/decision/confidence/calibration/buildDecisionConfidenceCalibration";
 import { buildDecisionOutcomeAssessment } from "../../lib/decision/confidence/calibration/buildDecisionOutcomeAssessment";
 import { buildDecisionPatternIntelligence } from "../../lib/decision/patterns/buildDecisionPatternIntelligence";
@@ -331,18 +337,41 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       }),
     [canonicalRecommendation, props.decisionResult, props.responseData]
   );
+  const decisionTraceSignatureInput = React.useMemo(
+    () =>
+      extractExecutiveDecisionTraceSignatureInput({
+        responseData: props.responseData ?? null,
+        canonicalRecommendation,
+        memoryEntries,
+        sceneJson: props.sceneJson ?? null,
+        objectSelection: props.objectSelection ?? null,
+        activeMode: props.activeMode ?? null,
+      }),
+    [
+      canonicalRecommendation,
+      memoryEntries,
+      props.activeMode,
+      props.objectSelection,
+      props.responseData,
+      props.sceneJson,
+    ]
+  );
+  const decisionTraceInputSignature = React.useMemo(
+    () => buildExecutiveDecisionTraceInputSignature(decisionTraceSignatureInput),
+    [decisionTraceSignatureInput]
+  );
   const decisionTrace = React.useMemo(
     () =>
-      guardHeavyComputation("executive_dashboard_decision_trace", () =>
-        buildDecisionTimelineView(
-          buildDecisionTimeline({
-            responseData: props.responseData ?? null,
-            canonicalRecommendation,
-            memoryEntries,
-          })
-        ).slice(-3)
-      ),
-    [canonicalRecommendation, memoryEntries, props.responseData]
+      resolveExecutiveDashboardDecisionTrace({
+        signatureInput: decisionTraceSignatureInput,
+        responseData: props.responseData ?? null,
+        canonicalRecommendation,
+        memoryEntries,
+        sceneJson: props.sceneJson ?? null,
+        objectSelection: props.objectSelection ?? null,
+        activeMode: props.activeMode ?? null,
+      }),
+    [decisionTraceInputSignature]
   );
   const calibration = React.useMemo(
     () =>

@@ -4,7 +4,8 @@
 
 import type { ExecutiveObjectPanelData } from "../panels/executiveObjectPanelData";
 import type { ResolvedObjectDetails } from "./composeResolvedObjectDetails";
-import { summarizeObjectRelationships } from "../relationships/relationshipRuntime";
+import { summarizeObjectRelationships, readSceneRelationships } from "../relationships/relationshipRuntime";
+import { resolveRelationshipContext, type RelationshipContextSnapshot } from "../relationships/executive";
 import { getRelationshipTypeDefinition } from "../relationships/relationshipRegistry";
 import type { NexoraRelationship } from "../relationships/relationshipTypes";
 import type { SceneJson, Vector3Tuple } from "../sceneTypes";
@@ -58,6 +59,7 @@ export type ObjectInfoHudModel = {
   incomingRelationships?: string[];
   outgoingRelationships?: string[];
   relationshipCount?: number;
+  relationshipContext?: RelationshipContextSnapshot | null;
   position?: SceneObjectPlacement["position"] | null;
   editableObject?: EditableSceneObject | null;
 };
@@ -251,6 +253,13 @@ export function buildObjectInfoHudModel(input: BuildObjectInfoHudModelInput): Ob
     clipLines(details?.one_liner, 220);
 
   const relationshipSummary = summarizeObjectRelationships(input.sceneJson, selectedObjectId);
+  const labels = buildObjectLabelMap(input.sceneJson);
+  const relationships = readSceneRelationships(input.sceneJson);
+  const relationshipContext = resolveRelationshipContext({
+    objectId: selectedObjectId,
+    relationships,
+    objectLabels: labels,
+  });
   const position = resolveSelectedObjectPosition(input.sceneJson, selectedObjectId);
   const editableObject = readEditableSceneObject(input.sceneJson, selectedObjectId);
 
@@ -274,6 +283,7 @@ export function buildObjectInfoHudModel(input: BuildObjectInfoHudModelInput): Ob
     incomingRelationships: relationshipSummary.incoming,
     outgoingRelationships: relationshipSummary.outgoing,
     relationshipCount: relationshipSummary.count,
+    relationshipContext,
     position,
     editableObject,
   };

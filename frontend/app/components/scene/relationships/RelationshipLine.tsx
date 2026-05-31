@@ -5,10 +5,13 @@ import { Line } from "@react-three/drei";
 import * as THREE from "three";
 
 import { getObjPos } from "../sceneRenderUtils";
-import { getRelationshipTypeDefinition } from "../../../lib/relationships/relationshipRegistry";
 import { logRelationshipRendered } from "../../../lib/relationships/relationshipInstrumentation";
+import type { RelationshipRenderPlan } from "../../../lib/relationships/executive/executiveRelationshipTypes";
 import type { NexoraRelationship } from "../../../lib/relationships/relationshipTypes";
-import { resolveRelationshipVisualTokens } from "../../../lib/relationships/relationshipTheme";
+import {
+  resolveExecutiveRelationshipLineTokens,
+  resolveRelationshipVisualTokens,
+} from "../../../lib/relationships/relationshipTheme";
 import type { SceneThemeId } from "../../../lib/theme/sceneThemeTypes";
 import { RelationshipLabel } from "./RelationshipLabel";
 
@@ -16,7 +19,9 @@ export type RelationshipLineProps = {
   relationship: NexoraRelationship;
   objects: any[];
   themeId: SceneThemeId;
+  renderPlan?: RelationshipRenderPlan | null;
   showLabel?: boolean;
+  billboardLabels?: boolean;
   selected?: boolean;
   emphasized?: boolean;
   onSelect?: (relationship: NexoraRelationship) => void;
@@ -34,6 +39,16 @@ export const RelationshipLine = React.memo(function RelationshipLine(
   props: RelationshipLineProps
 ): React.ReactElement | null {
   const tokens = useMemo(
+    () =>
+      resolveExecutiveRelationshipLineTokens({
+        themeId: props.themeId,
+        relationship: props.relationship,
+        renderPlan: props.renderPlan,
+      }),
+    [props.relationship, props.renderPlan, props.themeId]
+  );
+
+  const baseTokens = useMemo(
     () => resolveRelationshipVisualTokens(props.themeId, props.relationship.type),
     [props.relationship.type, props.themeId]
   );
@@ -65,15 +80,28 @@ export const RelationshipLine = React.memo(function RelationshipLine(
       sourceId: props.relationship.sourceId,
       targetId: props.relationship.targetId,
       type: props.relationship.type,
+      emphasis: props.renderPlan?.emphasis,
+      classification: props.renderPlan?.classification,
     });
-  }, [props.relationship.id, props.relationship.sourceId, props.relationship.targetId, props.relationship.type]);
+  }, [
+    props.relationship.id,
+    props.relationship.sourceId,
+    props.relationship.targetId,
+    props.relationship.type,
+    props.renderPlan?.classification,
+    props.renderPlan?.emphasis,
+  ]);
 
   if (geometry.points.length < 2) return null;
 
-  const typeLabel =
-    getRelationshipTypeDefinition(props.relationship.type)?.label ?? props.relationship.type;
-  const visualOpacity = props.selected ? Math.min(1, tokens.opacity + 0.22) : props.emphasized ? Math.min(1, tokens.opacity + 0.1) : tokens.opacity;
-  const lineWidth = props.selected ? tokens.lineWidth + 0.9 : props.emphasized ? tokens.lineWidth + 0.35 : tokens.lineWidth;
+  const labelText = props.renderPlan?.executiveLabel ?? props.relationship.type;
+  const visualOpacity = props.selected
+    ? Math.min(0.98, tokens.opacity + 0.12)
+    : props.emphasized
+      ? tokens.opacity
+      : Math.max(0.14, tokens.opacity * 0.88);
+  const lineWidth = props.selected ? tokens.lineWidth + 0.55 : tokens.lineWidth;
+  const showGlow = props.renderPlan?.glow || props.selected;
   const handleSelect = (event: any) => {
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
@@ -81,14 +109,19 @@ export const RelationshipLine = React.memo(function RelationshipLine(
   };
 
   return (
-    <group data-nx-relationship-id={props.relationship.id} data-nx-relationship-type={props.relationship.type}>
-      {props.selected ? (
+    <group
+      data-nx-relationship-id={props.relationship.id}
+      data-nx-relationship-type={props.relationship.type}
+      data-nx-relationship-class={props.renderPlan?.classification}
+      data-nx-relationship-emphasis={props.renderPlan?.emphasis}
+    >
+      {showGlow ? (
         <Line
           points={geometry.points}
           color={tokens.lineColor}
           transparent
-          opacity={0.18}
-          lineWidth={lineWidth + 3}
+          opacity={props.selected ? 0.14 : 0.08}
+          lineWidth={lineWidth + 2.2}
         />
       ) : null}
       <Line
@@ -105,8 +138,8 @@ export const RelationshipLine = React.memo(function RelationshipLine(
           points={geometry.points.map(([x, y, z]) => [x, y + 0.035, z] as [number, number, number])}
           color={tokens.lineColor}
           transparent
-          opacity={Math.max(0.28, visualOpacity - 0.18)}
-          lineWidth={Math.max(0.6, lineWidth - 0.25)}
+          opacity={Math.max(0.18, visualOpacity - 0.22)}
+          lineWidth={Math.max(0.45, lineWidth - 0.2)}
           onClick={handleSelect}
           onPointerDown={(event: any) => event.stopPropagation()}
         />
@@ -122,12 +155,22 @@ export const RelationshipLine = React.memo(function RelationshipLine(
       />
       {geometry.arrow ? (
         <mesh position={geometry.arrow}>
-          <sphereGeometry args={[0.05, 10, 10]} />
-          <meshStandardMaterial color={tokens.arrowColor} transparent opacity={props.selected ? 1 : 0.85} />
+          <sphereGeometry args={[props.renderPlan?.emphasis === "PRIMARY" ? 0.055 : 0.045, 10, 10]} />
+          <meshStandardMaterial
+            color={tokens.arrowColor}
+            transparent
+            opacity={props.selected ? 0.95 : visualOpacity * 0.9}
+          />
         </mesh>
       ) : null}
       {props.showLabel !== false ? (
-        <RelationshipLabel position={geometry.mid} text={typeLabel} tokens={tokens} />
+        <RelationshipLabel
+          position={geometry.mid}
+          text={labelText}
+          tokens={baseTokens}
+          compact={props.renderPlan?.emphasis === "BACKGROUND"}
+          billboard={props.billboardLabels ?? false}
+        />
       ) : null}
     </group>
   );

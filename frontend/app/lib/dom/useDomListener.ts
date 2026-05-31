@@ -3,6 +3,10 @@
 import { useEffect, useLayoutEffect, type DependencyList, type RefObject } from "react";
 
 import {
+  buildViewportResizeSignature,
+  scheduleViewportResizeCommit,
+} from "../layout/viewportResizeRuntime";
+import {
   bindDocumentListener,
   bindWindowListener,
   attachDomListener,
@@ -56,9 +60,19 @@ export function useViewportWidthListener(
 ): void {
   useEffect(() => {
     if (typeof window === "undefined" || window == null) return undefined;
-    const meta: DomListenerMeta = { component, eventType: "resize" };
-    const onResize = () => onWidthChange(window.innerWidth);
-    onWidthChange(window.innerWidth);
-    return bindWindowListener("resize", onResize, { passive: true }, meta);
+    let lastSignature = buildViewportResizeSignature(window.innerWidth);
+
+    const commitWidth = (width: number) => {
+      const signature = buildViewportResizeSignature(width);
+      if (signature === lastSignature) return;
+      lastSignature = signature;
+      onWidthChange(width);
+    };
+
+    commitWidth(window.innerWidth);
+
+    return scheduleViewportResizeCommit(() => {
+      commitWidth(window.innerWidth);
+    });
   }, [component, onWidthChange, ...deps]);
 }

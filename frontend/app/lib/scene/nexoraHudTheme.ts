@@ -1,7 +1,13 @@
 import type React from "react";
 
 import { requestCameraToolbarAction as dispatchSceneNavigationLegacyAction } from "./sceneNavigationContract";
+import {
+  resolveSceneNativeHudSectionLabel,
+  resolveSceneNativeHudShell,
+  type SceneNativeHudShellInput,
+} from "../hud/visual/sceneNativeHudDesignSystem";
 import { resolveSceneThemeTokens, sceneHudShellStyle as themeHudShellStyle } from "../theme/sceneThemeTokens";
+import type { SceneHudThemeSurfaceId } from "../theme/sceneThemeTokens";
 import type { SceneThemeTokens } from "../theme/sceneThemeTypes";
 import type { ResolvedUiTheme } from "../ui/nexoraUiTheme";
 
@@ -73,8 +79,25 @@ export function resolveNexoraHudTheme(mode: NexoraHudThemeMode): NexoraHudThemeT
 
 export function nexoraHudShellStyle(
   theme: NexoraHudThemeTokens,
-  overrides?: React.CSSProperties
+  overrides?: React.CSSProperties,
+  shellInput?: Partial<Omit<SceneNativeHudShellInput, "themeMode">> & { surface?: SceneHudThemeSurfaceId }
 ): React.CSSProperties {
+  if (shellInput?.surface) {
+    return resolveSceneNativeHudShell(
+      theme,
+      {
+        surface: shellInput.surface,
+        themeMode: theme.mode,
+        depthLayer: shellInput.depthLayer,
+        transparencyMode: shellInput.transparencyMode,
+        edgeAnchor: shellInput.edgeAnchor,
+        focused: shellInput.focused,
+        collapsed: shellInput.collapsed,
+      },
+      overrides
+    );
+  }
+
   return themeHudShellStyle(
     {
       id: theme.mode,
@@ -111,13 +134,7 @@ export function nexoraHudShellStyle(
 }
 
 export function nexoraHudSectionLabelStyle(theme: NexoraHudThemeTokens): React.CSSProperties {
-  return {
-    fontSize: 9,
-    fontWeight: 800,
-    letterSpacing: "0.1em",
-    textTransform: "uppercase",
-    color: theme.label,
-  };
+  return resolveSceneNativeHudSectionLabel(theme, "sectionHeader");
 }
 
 export function nexoraHudIconButtonStyle(theme: NexoraHudThemeTokens): React.CSSProperties {

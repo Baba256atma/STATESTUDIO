@@ -22,7 +22,15 @@ function truncateLargeArrays<T>(value: T): T {
   return value;
 }
 
-export function guardHeavyComputation<T>(label: string, fn: () => T, thresholdMs = DEFAULT_THRESHOLD_MS): T {
+export function guardHeavyComputation<T>(
+  label: string,
+  fn: () => T,
+  thresholdMs = DEFAULT_THRESHOLD_MS,
+  options?: { fromCache?: boolean }
+): T {
+  if (options?.fromCache) {
+    return fn();
+  }
   const started = nowMs();
   const result = fn();
   const elapsed = nowMs() - started;

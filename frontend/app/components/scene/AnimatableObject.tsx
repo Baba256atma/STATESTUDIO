@@ -1,12 +1,23 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
 import { Html, Line, useCursor } from "@react-three/drei";
 
 import type { SceneObject } from "../../lib/sceneTypes";
 import { useStateVector, useSetSelectedId, useOverrides, useSelectedId } from "../SceneContext";
 import { clamp } from "../../lib/sizeCommands";
+import { normalizeExecutiveObjectScale } from "../../lib/scene/executiveSceneComposition";
+import {
+  resolveExecutiveFocusWorkspaceState,
+} from "../../lib/scene/density";
+import { resolveWorkspaceLabelState } from "../../lib/scene/workspaceLabelRenderingRuntime";
+import {
+  getWorkspaceViewMode,
+  getWorkspaceViewModeServerSnapshot,
+  subscribeWorkspaceViewMode,
+} from "../../lib/workspace/workspaceViewModeRuntime";
+import { resolveExecutiveLabelReduction } from "../../lib/workspace/minimalism";
 import {
   buildObjectVisualProfile,
   deriveObjectVisualRole,
@@ -30,7 +41,6 @@ import type {
   DecisionPathNodeVisualHints,
 } from "../overlays/DecisionPathOverlayLayer";
 import {
-  buildProfessionalObjectLabelName,
   compactScannerReason,
   computeAutoColor,
   geometryFor,
@@ -44,11 +54,38 @@ import {
   type ScannerStoryReveal,
 } from "./sceneRenderUtils";
 import { deriveAnimatableVisualState } from "./animatableObject/deriveAnimatableVisualState";
-import { buildAnimatableLabelState } from "./animatableObject/buildAnimatableLabelState";
 import { buildAnimatableMotionState } from "./animatableObject/buildAnimatableMotionState";
 import { getCalmSeverityVisual } from "../../lib/scene/calmSeverityVisuals";
 import { resolveSceneObjectIcon } from "../../lib/scene/objectIconMapping";
+import { resolveExecutiveObjectName } from "../../lib/scene/executiveObjectNamingRuntime";
+import {
+  executiveObjectNameLabelStyle,
+  resolveObjectNameRenderingProfile,
+} from "../../lib/scene/objectNameRenderingProfile";
+import { resolveExecutiveObjectSelectionHighlight } from "../../lib/scene/executiveObjectSelectionHighlight";
+import { shouldSuppressIdleDebugLog } from "../../lib/runtime/idleRuntimeStabilityGuard";
+import {
+  resolveStableObjectId,
+} from "../../lib/scene/objectRegistryRuntime";
+import {
+  traceObjectIdentityChanged,
+  traceObjectMount,
+  traceObjectUnmount,
+} from "../../lib/scene/objectMountDiagnostics";
+import { resolveObjectLabelPlacement } from "../../lib/scene/objectLabelPlacementRuntime";
+import { areAnimatableObjectPropsEqual } from "../../lib/scene/animatableObjectPropsEqual";
+import {
+  resolveObjectNameDensityProfile,
+  resolveObjectNameOpacity,
+  shouldRenderExecutiveObjectName,
+} from "../../lib/scene/objectNameDensityProfile";
 
+const DEFAULT_SCANNER_STORY_REVEAL = Object.freeze({
+  primary: 1,
+  edge: 1,
+  affected: 1,
+  context: 1,
+});
 const CALM_MODE = true;
 const STATIC_OBJECT_TRANSFORMS = true;
 
@@ -57,12 +94,50 @@ function roundMaterialScalar(value: number, decimals = 3): number {
   const f = 10 ** decimals;
   return Math.round(value * f) / f;
 }
-const NEXORA_OBJECT_BASE_SCALE = 0.62;
-const NEXORA_OBJECT_FOCUSED_SCALE = 0.66;
-const NEXORA_OBJECT_SELECTED_SCALE = 0.68;
+
+function roundScaleInput(value: number): number {
+  if (!Number.isFinite(value)) return 1;
+  return Math.round(value * 100) / 100;
+}
+
+function roundTransformValue(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.round(value * 100) / 100;
+}
+
+function roundTransformTuple(value: readonly number[] | undefined): [number, number, number] {
+  return [
+    roundTransformValue(value?.[0] ?? 0),
+    roundTransformValue(value?.[1] ?? 0),
+    roundTransformValue(value?.[2] ?? 0),
+  ];
+}
+
+function holdStableScaleInput(
+  ref: React.MutableRefObject<{ signature: string; value: number } | null>,
+  signature: string,
+  next: number,
+  threshold = 0.02
+): number {
+  const rounded = roundScaleInput(next);
+  const previous = ref.current;
+  if (!previous || previous.signature !== signature || Math.abs(rounded - previous.value) >= threshold) {
+    ref.current = { signature, value: rounded };
+    return rounded;
+  }
+  return previous.value;
+}
+
+const NEXORA_OBJECT_BASE_SCALE = 0.52;
+const NEXORA_OBJECT_FOCUSED_SCALE = 0.56;
+const NEXORA_OBJECT_SELECTED_SCALE = 0.58;
+const loggedFinalObjectScaleBuckets = new Map<string, number>();
+const loggedObjectMaterialSignatures = new Map<string, string>();
+const loggedObjectTransformSignatures = new Map<string, string>();
 
 export type AnimatableObjectProps = {
   obj: SceneObject;
+  renderId?: string;
   anim?: { type: "pulse" | "wobble" | "spin"; intensity: number };
   index: number;
   shadowsEnabled?: boolean;
@@ -109,6 +184,7 @@ export type AnimatableObjectProps = {
   decisionPathVisualHints?: DecisionPathNodeVisualHints;
   isDecisionPathSource?: boolean;
   sceneScale?: number;
+  sceneObjectCount?: number;
   onObjectPositionChange?: (
     objectId: string,
     position: { x: number; y: number; z: number },
@@ -118,6 +194,7 @@ export type AnimatableObjectProps = {
 
 export const AnimatableObject = React.memo(function AnimatableObject({
   obj,
+  renderId,
   anim,
   index,
   shadowsEnabled = false,
@@ -143,7 +220,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   contextTargetIds = [],
   riskSourceIds = [],
   riskTargetIds = [],
-  scannerStoryReveal = { primary: 1, edge: 1, affected: 1, context: 1 },
+  scannerStoryReveal = DEFAULT_SCANNER_STORY_REVEAL,
   hoveredId = null,
   hoveredInteractionRole = "neutral",
   setHoveredId,
@@ -159,6 +236,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   decisionPathVisualHints,
   isDecisionPathSource = false,
   sceneScale = 1,
+  sceneObjectCount = 1,
   onObjectPositionChange,
 }: AnimatableObjectProps) {
   const ref = useRef<THREE.Object3D>(null);
@@ -169,26 +247,47 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   } | null>(null);
   const dragPlaneRef = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
   const dragPointRef = useRef(new THREE.Vector3());
-  const lastMaterialSignatureRef = useRef<string | null>(null);
+  const stableExecutiveScaleInputRef = useRef<{ signature: string; value: number } | null>(null);
   const stateVector = useStateVector();
   const setSelectedId = useSetSelectedId();
   const tags = obj.tags ?? [];
-  const stableId = obj.id ?? `${obj.type ?? "obj"}:${index}`;
-  const objectLabelName = buildProfessionalObjectLabelName(obj, index, modeId);
-  const stableIdWithName = (obj as any).id ?? (obj as any).name ?? `${obj.type ?? "obj"}:${index}`;
+  const stableId = renderId ?? resolveStableObjectId(obj, index);
+  const stableIdWithName = stableId;
+  const stableObjectIdRef = useRef(stableId);
+  const executiveObjectName = useMemo(
+    () => resolveExecutiveObjectName({ object: obj, index, domainId: modeId }),
+    [index, modeId, obj]
+  );
   const overrides = useOverrides();
   const [hovered, setHovered] = useState(false);
   useCursor(hovered);
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production") {
-      console.debug("[Nexora][ObjectMounted]", { id: stableIdWithName });
-    }
+    const mountId = stableObjectIdRef.current;
+    traceObjectMount({
+      objectId: mountId,
+      reactKey: mountId,
+      source: "AnimatableObject",
+    });
     return () => {
-      if (process.env.NODE_ENV !== "production") {
-        console.debug("[Nexora][ObjectUnmounted]", { id: stableIdWithName });
-      }
+      traceObjectUnmount({
+        objectId: mountId,
+        reactKey: mountId,
+        source: "AnimatableObject",
+      });
     };
-  }, [stableIdWithName]);
+  }, []);
+  useEffect(() => {
+    const nextId = renderId ?? resolveStableObjectId(obj, index);
+    const previousId = stableObjectIdRef.current;
+    if (nextId === previousId) return;
+    traceObjectIdentityChanged({
+      objectId: nextId,
+      previousId,
+      nextId,
+      source: "AnimatableObject",
+    });
+    stableObjectIdRef.current = nextId;
+  }, [index, obj, renderId]);
 
   const visualContext = useMemo<VisualLanguageContext>(
     () => ({ theme: theme ?? "night", mode_id: modeId }),
@@ -244,9 +343,8 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const originalUniform =
     Array.isArray(transform.scale) && transform.scale.length > 0 ? Number(transform.scale[0]) || 1 : 1;
   const uxScale = typeof uxOverrides.scale === "number" ? clamp(uxOverrides.scale, 0.5, 2.0) : 1;
-  const finalUniform = clamp(originalUniform * (overrideScale ?? 1) * uxScale * (globalScale ?? 1), 0.15, 2.0);
+  const preExecutiveUniform = clamp(originalUniform * (overrideScale ?? 1) * uxScale * (globalScale ?? 1), 0.15, 2.0);
   const ambientPhase = useMemo(() => hashIdToUnit(String(stableIdWithName)) * Math.PI * 2, [stableIdWithName]);
-  const focusScaleMul = isFocused ? 1.13 : dimOthers ? 0.95 : 1.0;
   const shape = resolveGeometryKindForObject({
     obj,
     explicitShape: (obj as any).shape ?? ux?.shape,
@@ -259,7 +357,86 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const finalColorOverride = overrideEntry.color;
   const finalVisible = overrideEntry.visible ?? true;
   const selectedIdCtx = useSelectedId();
+  const workspaceViewMode = useSyncExternalStore(
+    subscribeWorkspaceViewMode,
+    getWorkspaceViewMode,
+    getWorkspaceViewModeServerSnapshot
+  );
   const isSelected = selectedIdCtx === stableIdWithName || selectedIdCtx === stableId;
+  const executiveFocus = useMemo(
+    () =>
+      resolveExecutiveFocusWorkspaceState({
+        objectId: stableIdWithName,
+        selectedObjectId: selectedIdCtx,
+        focusedObjectId: focusedId,
+        relatedObjectIds: neighborIds,
+      }),
+    [focusedId, neighborIds, selectedIdCtx, stableIdWithName]
+  );
+  const adaptiveLabel = useMemo(
+    () =>
+      resolveWorkspaceLabelState(workspaceViewMode, {
+        objectCount: sceneObjectCount,
+        selected: isSelected,
+        focused: isFocused,
+        forceMode: executiveFocus.labelModeOverride,
+      }),
+    [executiveFocus.labelModeOverride, isFocused, isSelected, sceneObjectCount, workspaceViewMode]
+  );
+  const labelReduction = useMemo(
+    () =>
+      resolveExecutiveLabelReduction({
+        objectCount: sceneObjectCount,
+        selected: isSelected,
+        focused: isFocused,
+        isCritical: isSelected || isFocused,
+        isHighRisk: Boolean(obj.scanner_severity && obj.scanner_severity !== "low"),
+        isConnected: neighborIds.length > 0,
+      }),
+    [isFocused, isSelected, neighborIds.length, obj.scanner_severity, sceneObjectCount]
+  );
+  const effectiveLabel = useMemo(
+    () => ({
+      showPrimary: adaptiveLabel.showPrimary && labelReduction.visible,
+      showSecondary: adaptiveLabel.showSecondary && labelReduction.showSecondary,
+      showIcon: adaptiveLabel.showIcon && labelReduction.showIcon,
+      opacity: adaptiveLabel.opacity * labelReduction.opacity,
+      fontSizePx: adaptiveLabel.fontSizePx,
+      maxLines: adaptiveLabel.maxLines,
+      billboard: adaptiveLabel.billboard,
+    }),
+    [adaptiveLabel, labelReduction]
+  );
+  const executiveScaleSignature = [
+    stableIdWithName,
+    isSelected ? 1 : 0,
+    sceneObjectCount,
+    roundScaleInput(globalScale ?? 1),
+    roundScaleInput(executiveFocus.scaleMultiplier),
+    roundScaleInput(typeof overrideScale === "number" ? overrideScale : 1),
+    roundScaleInput(uxScale),
+  ].join(":");
+  const executiveScaleInput = holdStableScaleInput(
+    stableExecutiveScaleInputRef,
+    executiveScaleSignature,
+    preExecutiveUniform * executiveFocus.scaleMultiplier,
+    Number.POSITIVE_INFINITY
+  );
+  const finalUniform = useMemo(
+    () =>
+      normalizeExecutiveObjectScale({
+        objectId: stableIdWithName,
+        scale: executiveScaleInput,
+        selected: isSelected,
+        objectCount: sceneObjectCount,
+      }),
+    [executiveScaleInput, isSelected, sceneObjectCount, stableIdWithName]
+  );
+  const focusScaleMul = isFocused
+    ? 1.08 * executiveFocus.scaleMultiplier
+    : dimOthers
+      ? 0.92 * executiveFocus.scaleMultiplier
+      : executiveFocus.scaleMultiplier;
 
   const scannerTargetIdSet = useMemo(
     () => new Set((Array.isArray(scannerTargetIds) ? scannerTargetIds : []).map((id) => String(id))),
@@ -412,7 +589,6 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     showCalmScannerConfirmation,
     scannerColor,
     scannerHierarchyRole,
-    scannerLabelTone,
     interactionRole,
     interactionProfile,
     isHovered,
@@ -641,6 +817,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   );
   const simulationAdjustedOpacity = clamp(narrativeAdjustedOpacity + simulationNodeStyle.opacityBoost, 0.08, 1);
   const memoryAdjustedOpacity = clamp(simulationAdjustedOpacity + materialPassiveAttention * 0.05, 0.08, 1);
+  const executiveAdjustedOpacity = clamp(memoryAdjustedOpacity * executiveFocus.opacity, 0.08, 1);
 
   const baseEmissiveIntensity = materialProps.emissiveIntensity ?? 0;
   const focusEmissiveBoost = isFocused
@@ -655,44 +832,20 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       ? Math.max(0.12, scannerEmphasis * 0.18)
       : 0;
 
-  const labelState = useMemo(
+  const selectionHighlight = useMemo(
     () =>
-      buildAnimatableLabelState({
-        scannerSceneActive,
-        isScannerPrimaryTarget,
-        isScannerLabelOwner,
-        scannerPrimaryLabelTitle,
-        scannerPrimaryLabelBody,
-        scannerPolicyLabelTitle: scannerPolicy.labelTitle,
-        scannerCausalityRole: scannerCausality.role,
-        scannerReason,
-        scannerFocused,
-        objectLabelName,
-        scannerFragilityScore,
-        scannerSeverity: obj.scanner_severity,
-        affectedCount: affectedTargetIds.length,
-        contextCount: contextTargetIds.length,
-        activeDomainId: modeId,
+      resolveExecutiveObjectSelectionHighlight({
+        selected: isSelected,
+        focused: isFocused,
+        theme: theme === "day" ? "day" : "night",
       }),
-    [
-      affectedTargetIds.length,
-      contextTargetIds.length,
-      isScannerLabelOwner,
-      isScannerPrimaryTarget,
-      modeId,
-      objectLabelName,
-      obj.scanner_severity,
-      scannerCausality.role,
-      scannerFocused,
-      scannerFragilityScore,
-      scannerPolicy.labelTitle,
-      scannerPrimaryLabelBody,
-      scannerPrimaryLabelTitle,
-      scannerReason,
-      scannerSceneActive,
-    ]
+    [isFocused, isSelected, theme]
   );
-  const { scannerLabelTitle, effectiveScannerReason, shouldShowPrimaryLabel } = labelState;
+  const nameDensityProfile = useMemo(
+    () => resolveObjectNameDensityProfile(sceneObjectCount),
+    [sceneObjectCount]
+  );
+
   const finalEmissiveIntensity =
     scannerPolicy.colorMode === "shadowed"
       ? 0
@@ -748,7 +901,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       ? Math.max(calmSeverityVisual.glowStrength, materialProps.emissiveIntensity ?? 0)
       : Math.max(warRoomAdjustedEmissiveIntensity, calmSeverityVisual.glowStrength);
 
-  const committedMeshOpacity = roundMaterialScalar(memoryAdjustedOpacity);
+  const committedMeshOpacity = roundMaterialScalar(executiveAdjustedOpacity);
   const committedMeshEmissiveIntensity = roundMaterialScalar(rawMeshEmissiveIntensity);
   const committedMeshEmissiveHex = isFocused
     ? "#ffffff"
@@ -784,8 +937,9 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     if (typeof window !== "undefined" && (window as any).__NEXORA_ALLOW_MATERIAL_WRITE__) {
       console.error("[Nexora][VIOLATION] Material attempted state write");
     }
-    if (lastMaterialSignatureRef.current === materialSignature) return;
-    lastMaterialSignatureRef.current = materialSignature;
+    if (loggedObjectMaterialSignatures.get(stableIdWithName) === materialSignature) return;
+    if (shouldSuppressIdleDebugLog(`[Nexora][ObjectMaterialChanged]:${stableIdWithName}:${materialSignature}`)) return;
+    loggedObjectMaterialSignatures.set(stableIdWithName, materialSignature);
     console.debug("[Nexora][ObjectMaterialChanged]", {
       objectId: stableIdWithName,
       materialSig: materialSignature,
@@ -1046,9 +1200,11 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     () =>
       JSON.stringify({
         id: stableIdWithName,
-        position: STATIC_OBJECT_TRANSFORMS ? staticPosition : finalPosition,
-        rotation: STATIC_OBJECT_TRANSFORMS ? staticRotation : finalRotation,
-        scale: STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform * effectiveScannerScaleMul * calmSelectionScale,
+        position: roundTransformTuple(STATIC_OBJECT_TRANSFORMS ? staticPosition : finalPosition),
+        rotation: roundTransformTuple(STATIC_OBJECT_TRANSFORMS ? staticRotation : finalRotation),
+        scale: roundTransformValue(
+          STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform * effectiveScannerScaleMul * calmSelectionScale
+        ),
       }),
     [
       calmScale,
@@ -1062,11 +1218,11 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       staticScale,
     ]
   );
-  const lastTransformSignatureRef = useRef<string | null>(null);
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
-    if (lastTransformSignatureRef.current === transformSignature) return;
-    lastTransformSignatureRef.current = transformSignature;
+    if (loggedObjectTransformSignatures.get(stableIdWithName) === transformSignature) return;
+    if (shouldSuppressIdleDebugLog(`[Nexora][ObjectTransformChanged]:${stableIdWithName}:${transformSignature}`)) return;
+    loggedObjectTransformSignatures.set(stableIdWithName, transformSignature);
     console.debug("[Nexora][ObjectTransformChanged]", {
       id: stableIdWithName,
       transformSignature,
@@ -1108,16 +1264,17 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     tokens.interaction.sceneObjectEmphasis,
   ]);
   const finalObjectScale = STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform * calmScale;
-  const lastFinalScaleRef = useRef<number | null>(null);
+  const roundedFinalObjectScale = Math.round(finalObjectScale * 100) / 100;
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
-    if (lastFinalScaleRef.current === finalObjectScale) return;
-    lastFinalScaleRef.current = finalObjectScale;
+    if (loggedFinalObjectScaleBuckets.get(stableIdWithName) === roundedFinalObjectScale) return;
+    if (shouldSuppressIdleDebugLog(`[Nexora][FinalObjectScale]:${stableIdWithName}:${roundedFinalObjectScale}`)) return;
+    loggedFinalObjectScaleBuckets.set(stableIdWithName, roundedFinalObjectScale);
     console.debug("[Nexora][FinalObjectScale]", {
       id: stableIdWithName,
-      scale: finalObjectScale,
+      scale: roundedFinalObjectScale,
     });
-  }, [finalObjectScale, stableIdWithName]);
+  }, [roundedFinalObjectScale, stableIdWithName]);
 
   let node: React.ReactNode = null;
   if (obj.type === "points_cloud" && pointsGeometry) {
@@ -1265,22 +1422,22 @@ export const AnimatableObject = React.memo(function AnimatableObject({
             />
           </mesh>
         ) : null}
-        {isSelected ? (
+        {selectionHighlight.showRing ? (
           <mesh
             rotation={[Math.PI / 2, 0, 0]}
             scale={[
-              (meshScale?.[0] ?? 1) * 1.34,
-              (meshScale?.[1] ?? 1) * 1.34,
-              (meshScale?.[2] ?? 1) * 1.34,
+              (meshScale?.[0] ?? 1) * selectionHighlight.ringScale,
+              (meshScale?.[1] ?? 1) * selectionHighlight.ringScale,
+              (meshScale?.[2] ?? 1) * selectionHighlight.ringScale,
             ]}
           >
             <torusGeometry args={[0.86, 0.035, 14, 48]} />
             <meshStandardMaterial
               color={tokens.design.colors.accent}
               emissive={tokens.design.colors.accent}
-              emissiveIntensity={tokens.interaction.selectionGlow}
+              emissiveIntensity={tokens.interaction.selectionGlow * selectionHighlight.outlineStrength}
               transparent
-              opacity={theme === "day" ? 0.34 : 0.46}
+              opacity={selectionHighlight.ringOpacity}
             />
           </mesh>
         ) : null}
@@ -1313,15 +1470,61 @@ export const AnimatableObject = React.memo(function AnimatableObject({
 
   const captionText = ((overrideEntry.caption ?? "") as string).trim();
   const showCaption = overrideEntry.showCaption === true;
-  const labelY = ((baseScale[1] ?? 1) * (STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform)) * effectiveScannerScaleMul * 0.6 + 0.24;
+  const objectScaleY =
+    (baseScale[1] ?? 1) * (STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform) * effectiveScannerScaleMul;
+  const labelY = objectScaleY * 0.6 + 0.24;
   const iconY = Math.max(0.1, labelY * 0.24);
-  const scannerLabelYOffset = isScannerLabelOwner ? 0.56 : 0.45;
+  const showExecutiveObjectName = shouldRenderExecutiveObjectName({
+    profile: nameDensityProfile,
+    selected: isSelected,
+    focused: isFocused,
+    index,
+  });
+  const executiveNameOpacity =
+    resolveObjectNameOpacity({
+      profile: nameDensityProfile,
+      selected: isSelected,
+      focused: isFocused,
+    }) * executiveFocus.opacity;
+  const executiveNameProfile = useMemo(
+    () =>
+      resolveObjectNameRenderingProfile({
+        selected: isSelected || isFocused,
+        fontSizePx: nameDensityProfile.fontSizePx,
+      }),
+    [isFocused, isSelected, nameDensityProfile.fontSizePx]
+  );
+  const executiveNamePlacement = useMemo(
+    () =>
+      resolveObjectLabelPlacement({
+        baseScaleY: objectScaleY,
+        objectScale: 1,
+        profile: executiveNameProfile,
+        index,
+        objectCount: sceneObjectCount,
+        relationshipDensity: neighborIds.length,
+      }),
+    [
+      executiveNameProfile,
+      index,
+      neighborIds.length,
+      objectScaleY,
+      sceneObjectCount,
+    ]
+  );
+  const executiveNameTheme = theme === "day" ? "day" : "night";
+  const executiveNameStyle = executiveObjectNameLabelStyle({
+    profile: executiveNameProfile,
+    theme: executiveNameTheme,
+    opacity: executiveNameOpacity,
+    selected: selectionHighlight.labelEmphasis,
+  });
 
   return (
     <group ref={ref} position={STATIC_OBJECT_TRANSFORMS ? staticPosition : finalPosition} visible={finalVisible}>
       {node}
-      {objectIcon ? (
-        <Html position={[0, iconY, 0]} center style={{ pointerEvents: "none" }}>
+      {objectIcon && effectiveLabel.showIcon ? (
+        <Html position={[0, iconY, 0]} center transform={effectiveLabel.billboard} style={{ pointerEvents: "none" }}>
           <div
             aria-hidden="true"
             style={{
@@ -1334,7 +1537,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
                 theme === "day"
                   ? "radial-gradient(circle, rgba(255,255,255,0.88), rgba(255,255,255,0.22) 62%, rgba(255,255,255,0) 74%)"
                   : "radial-gradient(circle, rgba(15,23,42,0.52), rgba(15,23,42,0.18) 62%, rgba(15,23,42,0) 74%)",
-              opacity: dimOthers ? 0.36 : 0.82,
+              opacity: (dimOthers ? 0.36 : 0.82) * executiveFocus.opacity * effectiveLabel.opacity,
               filter:
                 theme === "day"
                   ? "drop-shadow(0 0 5px rgba(15,23,42,0.28))"
@@ -1358,11 +1561,12 @@ export const AnimatableObject = React.memo(function AnimatableObject({
           </div>
         </Html>
       ) : null}
-      {showCaption && captionText.length > 0 && (
-        <Html position={[0, labelY, 0]} center style={{ pointerEvents: "none" }}>
+      {showCaption && captionText.length > 0 && effectiveLabel.showSecondary ? (
+        <Html position={[0, labelY, 0]} center transform={effectiveLabel.billboard} style={{ pointerEvents: "none" }}>
           <div
             style={{
-              fontSize: tokens.design.typography.sm,
+              fontSize: effectiveLabel.fontSizePx || tokens.design.typography.sm,
+              opacity: effectiveLabel.opacity,
               padding: `${tokens.design.spacing.xs}px ${tokens.design.spacing.sm}px`,
               background: tokens.theme === "day" ? "rgba(15,23,42,0.68)" : "rgba(0,0,0,0.55)",
               color: tokens.design.colors.textPrimary,
@@ -1373,68 +1577,19 @@ export const AnimatableObject = React.memo(function AnimatableObject({
             {captionText}
           </div>
         </Html>
-      )}
-      {shouldShowPrimaryLabel ? (
-        <Html position={[0, labelY + scannerLabelYOffset, 0]} center style={{ pointerEvents: "none" }}>
-          <div
-            style={{
-              display: "grid",
-              gap: 5,
-              minWidth: 140,
-              maxWidth: 200,
-              padding: "9px 11px",
-              borderRadius: tokens.design.radius.md,
-              border: `1px solid ${scannerLabelTone.borderColor}`,
-              background: scannerLabelTone.background,
-              boxShadow: scannerLabelTone.boxShadow,
-              color: tokens.design.colors.textPrimary,
-            }}
-          >
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                fontSize: 11,
-                fontWeight:
-                  calmSeverityVisual.labelWeight === "strong"
-                    ? 800
-                    : calmSeverityVisual.labelWeight === "medium"
-                      ? 700
-                      : 600,
-                letterSpacing: 0.1,
-                textTransform: "none",
-                color: scannerLabelTone.titleColor,
-              }}
-            >
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: 999,
-                  background: scannerLabelTone.dotColor,
-                  boxShadow: scannerLabelTone.dotGlow,
-                }}
-              />
-              {scannerLabelTitle}
-            </div>
-            {effectiveScannerReason ? (
-              <div
-                style={{
-                  fontSize: 10.5,
-                  lineHeight: 1.35,
-                  color: scannerLabelTone.bodyColor,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {effectiveScannerReason}
-              </div>
-            ) : null}
+      ) : null}
+      {showExecutiveObjectName ? (
+        <Html
+          position={[executiveNamePlacement.x, executiveNamePlacement.y, executiveNamePlacement.z]}
+          center
+          transform={effectiveLabel.billboard}
+          style={{ pointerEvents: "none" }}
+        >
+          <div aria-hidden="true" style={executiveNameStyle}>
+            {executiveObjectName}
           </div>
         </Html>
       ) : null}
     </group>
   );
-});
+}, areAnimatableObjectPropsEqual);

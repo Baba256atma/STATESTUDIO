@@ -15,8 +15,12 @@ import {
 import { resolveSceneThemeTokens, sceneHudControlButtonStyle } from "../../lib/theme/sceneThemeTokens";
 import type { SceneThemeTokens } from "../../lib/theme/sceneThemeTypes";
 import { useSceneHudTheme, useSceneThemeOptional } from "../../lib/theme/useSceneTheme";
-import { useViewportWidthListener } from "../../lib/dom/useDomListener";
 import { resolveExecutiveWorkspaceBreakpoint } from "../../lib/ui/executiveWorkspaceLayout";
+import {
+  EXECUTIVE_HUD_SSR_VIEWPORT,
+  isExecutiveHudLayoutHydrated,
+  subscribeExecutiveHudLayoutHydration,
+} from "../../lib/layout/executiveHudHydrationRuntime";
 import type { PanelSizeMode } from "../../lib/ui/workspaceLayoutTypes";
 import {
   logExecutiveTimelineEventFocused,
@@ -26,6 +30,7 @@ import {
   logExecutiveTimelineStateUpdated,
 } from "../../lib/ui/executiveTimelineHudInstrumentation";
 import { nx } from "../ui/nexoraTheme";
+import { resolveNexoraTimelineDisplayTime } from "../../lib/time/nexoraTimeFormat";
 
 export type ExecutiveTimelineHudProps = ExecutiveTimelineHudModel & {
   themeMode?: NexoraHudThemeMode;
@@ -56,9 +61,18 @@ export function ExecutiveTimelineHud(props: ExecutiveTimelineHudProps): React.Re
   const [focusedEventId, setFocusedEventId] = React.useState<string | null>(
     props.focusedEventId ?? props.events.find((event) => event.status === "active")?.id ?? null
   );
-  const [viewportWidth, setViewportWidth] = React.useState(() =>
-    typeof window !== "undefined" ? window.innerWidth : 1440
-  );
+  const [viewportWidth, setViewportWidth] = React.useState<number>(EXECUTIVE_HUD_SSR_VIEWPORT.width);
+
+  React.useEffect(() => {
+    const apply = () => setViewportWidth(window.innerWidth);
+    const unsubscribe = subscribeExecutiveHudLayoutHydration(apply);
+    if (isExecutiveHudLayoutHydrated()) apply();
+    window.addEventListener("resize", apply);
+    return () => {
+      unsubscribe();
+      window.removeEventListener("resize", apply);
+    };
+  }, []);
 
   const breakpoint = resolveExecutiveWorkspaceBreakpoint(viewportWidth);
   const panelSizeMode = props.panelSizeMode ?? "normal";
@@ -76,8 +90,6 @@ export function ExecutiveTimelineHud(props: ExecutiveTimelineHudProps): React.Re
     logExecutiveTimelineMounted();
   }, []);
 
-  useViewportWidthListener(setViewportWidth, "ExecutiveTimelineHud");
-
   React.useEffect(() => {
     setFocusedEventId(props.focusedEventId ?? props.events.find((event) => event.status === "active")?.id ?? null);
   }, [props.focusedEventId, props.events]);
@@ -90,6 +102,12 @@ export function ExecutiveTimelineHud(props: ExecutiveTimelineHudProps): React.Re
   }, [events.length, signature]);
 
   const focusedEvent = events.find((event) => event.id === focusedEventId) ?? events.find((e) => e.status === "active") ?? null;
+  const focusedEventTime = focusedEvent
+    ? resolveNexoraTimelineDisplayTime({
+        timestampIso: focusedEvent.timestampIso,
+        timestamp: focusedEvent.timestamp,
+      })
+    : "";
 
   const handleFocusEvent = React.useCallback((event: TimelineEvent) => {
     setFocusedEventId(event.id);
@@ -105,20 +123,24 @@ export function ExecutiveTimelineHud(props: ExecutiveTimelineHudProps): React.Re
       data-nx="executive-timeline-hud"
       data-hud="timeline"
       data-nx-theme={hudTheme.mode}
-      style={nexoraHudShellStyle(hudTheme, {
-        width: useExpandedLayout
-          ? compact
-            ? "min(94vw, 760px)"
-            : "min(92vw, 920px)"
-          : compact
-            ? "min(92vw, 640px)"
-            : "min(88vw, 760px)",
-        maxWidth: useExpandedLayout ? (compact ? "94vw" : 920) : compact ? "92vw" : 760,
-        color: nx.textSoft,
-        fontSize: 11,
-        lineHeight: 1.45,
-        overflow: "hidden",
-      })}
+      style={nexoraHudShellStyle(
+        hudTheme,
+        {
+          width: useExpandedLayout
+            ? compact
+              ? "min(94vw, 760px)"
+              : "min(92vw, 920px)"
+            : compact
+              ? "min(92vw, 640px)"
+              : "min(88vw, 760px)",
+          maxWidth: useExpandedLayout ? (compact ? "94vw" : 920) : compact ? "92vw" : 760,
+          color: nx.textSoft,
+          fontSize: 11,
+          lineHeight: 1.45,
+          overflow: "hidden",
+        },
+        { surface: "timelineHud", edgeAnchor: "BOTTOM_CENTER" }
+      )}
       onPointerDown={(event) => event.stopPropagation()}
       onWheel={(event) => event.stopPropagation()}
     >
@@ -136,7 +158,7 @@ export function ExecutiveTimelineHud(props: ExecutiveTimelineHudProps): React.Re
         {focusedEvent ? (
           <span style={{ color: nx.muted, fontSize: 10, fontWeight: 600 }}>
             {focusedEvent.title}
-            {focusedEvent.timestamp ? ` · ${focusedEvent.timestamp}` : ""}
+            {focusedEventTime ? ` · ${focusedEventTime}` : ""}
           </span>
         ) : null}
       </header>
@@ -153,11 +175,16 @@ export function ExecutiveTimelineHud(props: ExecutiveTimelineHudProps): React.Re
             WebkitOverflowScrolling: "touch",
           }}
         >
-          {events.map((event, index) => (
+          {events.map((event, index) => {
+            const eventTime = resolveNexoraTimelineDisplayTime({
+              timestampIso: event.timestampIso,
+              timestamp: event.timestamp,
+            });
+            return (
             <React.Fragment key={event.id}>
               <button
                 type="button"
-                title={`${event.title}${event.timestamp ? ` · ${event.timestamp}` : ""} · ${event.status}`}
+                title={`${event.title}${eventTime ? ` · ${eventTime}` : ""} · ${event.status}`}
                 aria-label={`${event.title}, ${event.status}`}
                 aria-pressed={focusedEventId === event.id}
                 onClick={() => handleFocusEvent(event)}
@@ -198,8 +225,8 @@ export function ExecutiveTimelineHud(props: ExecutiveTimelineHudProps): React.Re
                 >
                   {event.title}
                 </span>
-                {event.timestamp && !compact ? (
-                  <span style={{ color: nx.lowMuted, fontSize: 9 }}>{event.timestamp}</span>
+                {eventTime && !compact ? (
+                  <span style={{ color: nx.lowMuted, fontSize: 9 }}>{eventTime}</span>
                 ) : null}
               </button>
               {index < events.length - 1 ? (
@@ -216,7 +243,8 @@ export function ExecutiveTimelineHud(props: ExecutiveTimelineHudProps): React.Re
                 />
               ) : null}
             </React.Fragment>
-          ))}
+            );
+          })}
         </div>
 
         {focusedEvent ? (
@@ -235,8 +263,8 @@ export function ExecutiveTimelineHud(props: ExecutiveTimelineHudProps): React.Re
           >
             <strong style={{ color: nx.text }}>{focusedEvent.title}</strong>
             <span style={{ color: nx.lowMuted }}> · {focusedEvent.status}</span>
-            {focusedEvent.timestamp ? (
-              <span style={{ color: nx.lowMuted }}> · {focusedEvent.timestamp}</span>
+            {focusedEventTime ? (
+              <span style={{ color: nx.lowMuted }}> · {focusedEventTime}</span>
             ) : null}
           </div>
         ) : null}
@@ -255,6 +283,7 @@ export function ExecutiveTimelineHud(props: ExecutiveTimelineHudProps): React.Re
               key={control.id}
               type="button"
               disabled={control.id !== "replay"}
+              aria-label={control.label}
               title={
                 control.id === "replay"
                   ? "Replay — reserved for E2:11"
@@ -263,12 +292,18 @@ export function ExecutiveTimelineHud(props: ExecutiveTimelineHudProps): React.Re
               onClick={control.id === "replay" ? handleReplayPlaceholder : undefined}
               style={{
                 ...sceneHudControlButtonStyle(tokens),
+                width: 28,
+                height: 28,
+                padding: 0,
+                display: "grid",
+                placeItems: "center",
+                fontSize: 12,
                 ...(control.id === "replay"
                   ? { cursor: "pointer", opacity: 0.88, color: hudTheme.textPrimary }
                   : { opacity: 0.72, cursor: "not-allowed" }),
               }}
             >
-              {control.label}
+              <span aria-hidden>{control.icon}</span>
             </button>
           ))}
         </div>

@@ -18,60 +18,27 @@ type BuildAnimatableLabelStateInput = {
   activeDomainId?: string | null;
 };
 
+/** E2:58 — Legacy floating tooltip cards removed; Object Info owns detail surfaces. */
 export function buildAnimatableLabelState(input: BuildAnimatableLabelStateInput) {
-  const scannerRoleTitle =
-    (input.isScannerPrimaryTarget ? input.scannerPrimaryLabelTitle : null) ??
-    input.scannerPolicyLabelTitle ??
-    (input.isScannerLabelOwner
-      ? "Primary Risk Node"
-      : input.scannerCausalityRole === "affected"
-      ? "Affected Node"
-      : input.scannerCausalityRole === "related_context"
-      ? "Related Context"
-      : input.scannerFocused
-      ? "Scanner Focus"
-      : "Fragility Signal");
-
-  const scannerRoleBody =
-    (input.isScannerPrimaryTarget ? input.scannerPrimaryLabelBody : null) ??
-    (input.scannerCausalityRole === "affected"
-      ? "Downstream impact"
-      : input.scannerCausalityRole === "related_context"
-      ? "Related context"
-      : null) ??
-    input.scannerReason ??
-    (input.isScannerLabelOwner ? "Primary decision focus" : null);
-
   const intelligentScannerLabel = buildIntelligentScannerLabel({
     objectLabelName: input.objectLabelName,
-    scannerRoleTitle,
-    scannerRoleBody,
+    scannerRoleTitle: "Primary Risk Node",
+    scannerRoleBody: null,
     scannerCausalityRole: input.scannerCausalityRole,
     scannerFragilityScore: input.scannerFragilityScore,
     scannerSeverity: input.scannerSeverity,
-    isScannerPrimaryTarget: input.isScannerLabelOwner,
+    isScannerPrimaryTarget: false,
     affectedCount: input.affectedCount,
     contextCount: input.contextCount,
     activeDomainId: input.activeDomainId,
   });
 
-  const scannerLabelTitle = intelligentScannerLabel.title;
-  const effectiveScannerReason = intelligentScannerLabel.body;
-  const hasLabelContent =
-    !!(input.isScannerPrimaryTarget ? input.scannerPrimaryLabelTitle : null) ||
-    !!(input.isScannerPrimaryTarget ? input.scannerPrimaryLabelBody : null) ||
-    !!input.scannerReason ||
-    !!input.scannerPolicyLabelTitle ||
-    input.isScannerLabelOwner;
-  const shouldShowPrimaryLabel =
-    input.scannerSceneActive && input.isScannerLabelOwner && hasLabelContent;
-
   return {
-    scannerRoleTitle,
-    scannerRoleBody,
-    scannerLabelTitle,
-    effectiveScannerReason,
-    hasLabelContent,
-    shouldShowPrimaryLabel,
+    scannerRoleTitle: null,
+    scannerRoleBody: null,
+    scannerLabelTitle: intelligentScannerLabel.title,
+    effectiveScannerReason: null,
+    hasLabelContent: false,
+    shouldShowPrimaryLabel: false,
   };
 }

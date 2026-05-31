@@ -104,10 +104,11 @@ export function useHUDFloatingInteractions({
   );
 
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: Event) => {
+      const event = e as MouseEvent;
       if (!isResizingRef.current) return;
       const isHandleOnLeft = effectiveDockSide === "right";
-      const dx = isHandleOnLeft ? startXRef.current - e.clientX : e.clientX - startXRef.current;
+      const dx = isHandleOnLeft ? startXRef.current - event.clientX : event.clientX - startXRef.current;
       const next = Math.min(maxWidth, Math.max(minWidth, startWidthRef.current + dx));
       setWidthPxSafe(next);
     };

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   nexoraHudSectionLabelStyle,
@@ -8,6 +8,7 @@ import {
 } from "../../lib/scene/nexoraHudTheme";
 import { useSceneHudTheme } from "../../lib/theme/useSceneTheme";
 import { useViewportWidthListener } from "../../lib/dom/useDomListener";
+import { buildViewportResizeSignature } from "../../lib/layout/viewportResizeRuntime";
 import {
   logExecutiveCommandBarActionTriggered,
   logExecutiveCommandBarMounted,
@@ -26,19 +27,29 @@ import {
 import { ExecutiveViewModeControlResponsive } from "./ExecutiveViewModeControl";
 import { ExecutiveLayoutPresetControlResponsive } from "./ExecutiveLayoutPresetControl";
 import { ExecutiveHudSettingsMenu } from "./ExecutiveHudSettingsMenu";
+import { ExecutiveCommandBarOverflowMenu } from "./ExecutiveCommandBarOverflowMenu";
+import {
+  auditExecutiveMinimalism,
+  isTopBarActionOverflow,
+  isTopBarItemOverflow,
+  resolveExecutiveVisualWeight,
+  resolveTopBarPriority,
+} from "../../lib/workspace/minimalism";
+import {
+  executiveMotionTransition,
+  executiveStatusDotStyle,
+  resolveExecutiveStatusFromPriority,
+  resolveExecutiveVocabulary,
+} from "../../lib/workspace/harmonization";
+import { resolveSceneThemeTokens } from "../../lib/theme/sceneThemeTokens";
 
 export type ExecutiveCommandBarProps = {
   model: ExecutiveCommandBarModel;
   themeMode?: NexoraHudThemeMode;
   onAction?: (actionId: ExecutiveCommandBarActionId) => void;
+  statusHudVisible?: boolean;
+  quickActionsVisible?: boolean;
 };
-
-function priorityColor(priority: ExecutivePrioritySemantic, theme: ReturnType<typeof useSceneHudTheme>): string {
-  if (priority === "critical") return theme.critical;
-  if (priority === "warning") return theme.warning;
-  if (priority === "attention") return theme.accent;
-  return theme.success;
-}
 
 function StatusBlock(props: {
   title: string;
@@ -47,34 +58,28 @@ function StatusBlock(props: {
   tertiary?: string;
   priority: ExecutivePrioritySemantic;
   theme: ReturnType<typeof useSceneHudTheme>;
+  compact?: boolean;
+  visualWeight: ReturnType<typeof resolveExecutiveVisualWeight>;
 }): React.ReactElement {
-  const accent = priorityColor(props.priority, props.theme);
+  const tokens = resolveSceneThemeTokens(props.theme.mode);
+  const status = resolveExecutiveStatusFromPriority(props.priority, tokens);
   return (
     <div
       style={{
         minWidth: 0,
-        flex: "1 1 140px",
-        padding: "8px 10px",
-        borderRadius: 10,
-        border: `1px solid ${props.theme.controlBorder}`,
+        flex: props.compact ? "1 1 120px" : "1 1 140px",
+        padding: `${props.visualWeight.blockPaddingPx}px 10px`,
+        borderRadius: 9,
+        border: `${props.visualWeight.borderWidthPx}px solid ${props.theme.controlBorder}`,
         background: props.theme.controlBackground,
-        boxShadow: props.theme.mode === "night" ? `inset 0 0 0 1px ${accent}12` : undefined,
       }}
     >
-      <div style={{ ...nexoraHudSectionLabelStyle(props.theme), marginBottom: 4 }}>{props.title}</div>
+      <div style={{ ...nexoraHudSectionLabelStyle(props.theme), marginBottom: 4 }}>
+        {resolveExecutiveVocabulary(props.title)}
+      </div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-        <span
-          aria-hidden
-          style={{
-            width: 7,
-            height: 7,
-            borderRadius: "50%",
-            background: accent,
-            boxShadow: props.theme.mode === "night" ? `0 0 8px ${accent}66` : undefined,
-            flexShrink: 0,
-          }}
-        />
-        <div style={{ fontSize: 13, fontWeight: 800, color: props.theme.text, lineHeight: 1.2, minWidth: 0 }}>
+        <span aria-hidden style={executiveStatusDotStyle(status)} />
+        <div style={{ fontSize: props.compact ? 12 : 13, fontWeight: 800, color: props.theme.text, lineHeight: 1.2, minWidth: 0 }}>
           {props.primary}
         </div>
       </div>
@@ -82,21 +87,46 @@ function StatusBlock(props: {
         {props.secondary}
       </div>
       {props.tertiary ? (
-        <div style={{ marginTop: 2, fontSize: 10, fontWeight: 700, color: accent, lineHeight: 1.35 }}>{props.tertiary}</div>
+        <div style={{ marginTop: 2, fontSize: 10, fontWeight: 700, color: status.color, lineHeight: 1.35 }}>{props.tertiary}</div>
       ) : null}
     </div>
   );
 }
 
 export function ExecutiveCommandBar(props: ExecutiveCommandBarProps): React.ReactElement {
-  const { model, themeMode = "night", onAction } = props;
+  const { model, themeMode = "night", onAction, statusHudVisible = true, quickActionsVisible = false } = props;
   const mountedRef = useRef(false);
   const theme = useSceneHudTheme(themeMode);
+  const visualWeight = resolveExecutiveVisualWeight("PRIMARY", theme.mode);
   const [viewportWidth, setViewportWidth] = useState<number>(() =>
     typeof window !== "undefined" ? window.innerWidth : 1440
   );
 
   useViewportWidthListener(setViewportWidth, "ExecutiveCommandBar");
+
+  const viewportLayoutSignature = useMemo(
+    () => buildViewportResizeSignature(viewportWidth),
+    [viewportWidth]
+  );
+
+  const topBarPriority = resolveTopBarPriority({
+    viewportWidth,
+    commandBarVisible: true,
+    quickActionsVisible,
+    statusHudVisible,
+  });
+
+  useEffect(() => {
+    auditExecutiveMinimalism({
+      commandBarVisible: true,
+      statusHudVisible,
+      sceneInfoVisible: true,
+      objectInfoVisible: true,
+      timelineVisible: true,
+      quickActionsVisible,
+      viewportWidth,
+    });
+  }, [quickActionsVisible, statusHudVisible, viewportLayoutSignature, viewportWidth]);
 
   useEffect(() => {
     if (mountedRef.current) return;
@@ -116,6 +146,13 @@ export function ExecutiveCommandBar(props: ExecutiveCommandBarProps): React.Reac
   }, [model.decision.phase, model.frsi.score, model.readiness.phase, model.scenario.name]);
 
   const layoutMode = viewportWidth < 768 ? "mobile" : viewportWidth < 1100 ? "tablet" : "desktop";
+  const visibleActions = EXECUTIVE_COMMAND_BAR_ACTIONS.filter(
+    (action) => model.actions.includes(action.id) && !isTopBarActionOverflow(action.id, topBarPriority)
+  );
+  const overflowActions = EXECUTIVE_COMMAND_BAR_ACTIONS.filter(
+    (action) => model.actions.includes(action.id) && isTopBarActionOverflow(action.id, topBarPriority)
+  ).map((action) => action.id);
+  const showReadiness = !isTopBarItemOverflow("readiness", topBarPriority);
 
   const handleAction = (actionId: ExecutiveCommandBarActionId) => {
     logExecutiveCommandBarActionTriggered(actionId);
@@ -133,9 +170,10 @@ export function ExecutiveCommandBar(props: ExecutiveCommandBarProps): React.Reac
         flexShrink: 0,
         borderBottom: `1px solid ${theme.shellBorder}`,
         background: theme.shellBackground,
-        backdropFilter: "blur(14px)",
-        boxShadow: theme.shellShadow,
+        backdropFilter: `blur(${visualWeight.backdropBlurPx}px)`,
+        boxShadow: visualWeight.shellShadow,
         color: theme.text,
+        transition: executiveMotionTransition("panel"),
       }}
     >
       <div
@@ -174,6 +212,8 @@ export function ExecutiveCommandBar(props: ExecutiveCommandBarProps): React.Reac
             tertiary={model.frsi.trendLabel}
             priority={model.frsi.priority}
             theme={theme}
+            compact={topBarPriority.compactStatusBlocks}
+            visualWeight={visualWeight}
           />
           <StatusBlock
             title="Scenario"
@@ -181,6 +221,8 @@ export function ExecutiveCommandBar(props: ExecutiveCommandBarProps): React.Reac
             secondary={model.scenario.stateLabel}
             priority={model.scenario.priority}
             theme={theme}
+            compact={topBarPriority.compactStatusBlocks}
+            visualWeight={visualWeight}
           />
           <StatusBlock
             title="Decision"
@@ -188,14 +230,20 @@ export function ExecutiveCommandBar(props: ExecutiveCommandBarProps): React.Reac
             secondary="Executive decision state"
             priority={model.decision.priority}
             theme={theme}
+            compact={topBarPriority.compactStatusBlocks}
+            visualWeight={visualWeight}
           />
-          <StatusBlock
-            title="Readiness"
-            primary={model.readiness.label}
-            secondary="System readiness"
-            priority={model.readiness.priority}
-            theme={theme}
-          />
+          {showReadiness ? (
+            <StatusBlock
+              title="Readiness"
+              primary={model.readiness.label}
+              secondary="System readiness"
+              priority={model.readiness.priority}
+              theme={theme}
+              compact={topBarPriority.compactStatusBlocks}
+              visualWeight={visualWeight}
+            />
+          ) : null}
           </div>
           <div
             style={{
@@ -206,13 +254,18 @@ export function ExecutiveCommandBar(props: ExecutiveCommandBarProps): React.Reac
               flexShrink: 0,
             }}
           >
-            <ExecutiveHudSettingsMenu />
-            <ExecutiveLayoutPresetControlResponsive />
-            <ExecutiveViewModeControlResponsive />
+            {!isTopBarItemOverflow("hud_settings", topBarPriority) ? <ExecutiveHudSettingsMenu /> : null}
+            {!isTopBarItemOverflow("layout_preset", topBarPriority) ? <ExecutiveLayoutPresetControlResponsive /> : null}
+            {!isTopBarItemOverflow("view_mode", topBarPriority) ? <ExecutiveViewModeControlResponsive /> : null}
+            <ExecutiveCommandBarOverflowMenu
+              overflowItems={topBarPriority.overflowItems}
+              actionItems={overflowActions}
+              onAction={handleAction}
+            />
           </div>
         </div>
 
-        {model.miniInsight ? (
+        {topBarPriority.showMiniInsight && model.miniInsight ? (
           <div
             style={{
               fontSize: 10,
@@ -230,6 +283,7 @@ export function ExecutiveCommandBar(props: ExecutiveCommandBarProps): React.Reac
           </div>
         ) : null}
 
+        {topBarPriority.showInlineActions ? (
         <div
           style={{
             display: "flex",
@@ -238,16 +292,18 @@ export function ExecutiveCommandBar(props: ExecutiveCommandBarProps): React.Reac
             alignItems: "center",
           }}
         >
-          {EXECUTIVE_COMMAND_BAR_ACTIONS.map((action) => (
+          {visibleActions.map((action) => (
             <button
               key={action.id}
               type="button"
               onClick={() => handleAction(action.id)}
               title={action.label}
+              aria-label={action.label}
               style={{
+                width: 28,
                 height: 28,
-                padding: "0 10px",
-                borderRadius: 8,
+                padding: 0,
+                borderRadius: 7,
                 border: `1px solid ${theme.controlBorder}`,
                 background: theme.buttonBackground,
                 color: theme.buttonText,
@@ -257,10 +313,11 @@ export function ExecutiveCommandBar(props: ExecutiveCommandBarProps): React.Reac
                 letterSpacing: "0.02em",
               }}
             >
-              {action.label}
+              {action.label.slice(0, 1)}
             </button>
           ))}
         </div>
+        ) : null}
       </div>
     </div>
   );

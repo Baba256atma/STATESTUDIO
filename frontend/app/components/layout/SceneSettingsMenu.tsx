@@ -59,6 +59,8 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuPanelRef = useRef<HTMLDivElement>(null);
+  const navPopoverLayoutSignatureRef = useRef<string | null>(null);
+  const navPopoverLayoutFrameRef = useRef<number | null>(null);
   const [navPopoverLayout, setNavPopoverLayout] = useState<NavPopoverLayout | null>(null);
   const [inputCenterOpen, setInputCenterOpen] = useState(false);
 
@@ -85,11 +87,15 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
     }
     const topMargin = 8;
     const maxHeight = Math.max(160, Math.min(ar.bottom - topMargin, window.innerHeight - topMargin));
-    setNavPopoverLayout({
-      left,
-      bottom: window.innerHeight - ar.bottom,
-      maxHeight,
-    });
+    const nextLayout: NavPopoverLayout = {
+      left: Math.round(left),
+      bottom: Math.round(window.innerHeight - ar.bottom),
+      maxHeight: Math.round(maxHeight),
+    };
+    const nextSignature = `${nextLayout.left}:${nextLayout.bottom}:${nextLayout.maxHeight}`;
+    if (navPopoverLayoutSignatureRef.current === nextSignature) return;
+    navPopoverLayoutSignatureRef.current = nextSignature;
+    setNavPopoverLayout(nextLayout);
   }, [variant, open]);
 
   useLayoutEffect(() => {
@@ -99,10 +105,23 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
 
   useEffect(() => {
     if (!open || variant !== "navSettings") return;
-    const onResizeOrScroll = () => updateNavPopoverLayout();
+    const cancelPendingLayoutUpdate = () => {
+      if (navPopoverLayoutFrameRef.current == null) return;
+      window.cancelAnimationFrame(navPopoverLayoutFrameRef.current);
+      navPopoverLayoutFrameRef.current = null;
+    };
+    const scheduleNavPopoverLayoutUpdate = () => {
+      if (navPopoverLayoutFrameRef.current != null) return;
+      navPopoverLayoutFrameRef.current = window.requestAnimationFrame(() => {
+        navPopoverLayoutFrameRef.current = null;
+        updateNavPopoverLayout();
+      });
+    };
+    const onResizeOrScroll = () => scheduleNavPopoverLayoutUpdate();
     window.addEventListener("resize", onResizeOrScroll);
     window.addEventListener("scroll", onResizeOrScroll, true);
     return () => {
+      cancelPendingLayoutUpdate();
       window.removeEventListener("resize", onResizeOrScroll);
       window.removeEventListener("scroll", onResizeOrScroll, true);
     };

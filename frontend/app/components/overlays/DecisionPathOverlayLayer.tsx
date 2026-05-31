@@ -78,7 +78,7 @@ function traceDecisionPathOverlay(payload: {
   console.debug("[Nexora][DecisionPathOverlay]", payload);
 }
 
-function buildDecisionPathRendererState(
+export function buildDecisionPathRendererState(
   overlay: DecisionPathOverlayState | null | undefined
 ): DecisionPathRendererState {
   if (!overlay?.active) {
@@ -129,6 +129,18 @@ function buildDecisionPathRendererState(
   };
 }
 
+export function buildDecisionPathOverlaySignature(
+  overlay: DecisionPathOverlayState | null | undefined
+): string {
+  if (!overlay?.active) return "idle";
+  return JSON.stringify({
+    sourceId: overlay.sourceId ?? null,
+    nodeCount: overlay.nodes.length,
+    edgeCount: overlay.edges.length,
+    mode: overlay.mode ?? null,
+  });
+}
+
 export function DecisionPathOverlayLayer({
   overlay,
   children,
@@ -136,7 +148,11 @@ export function DecisionPathOverlayLayer({
   overlay: DecisionPathOverlayState | null;
   children: (state: DecisionPathRendererState) => React.ReactNode;
 }) {
-  const renderState = useMemo(() => buildDecisionPathRendererState(overlay), [overlay]);
+  const overlaySignature = buildDecisionPathOverlaySignature(overlay);
+  const renderState = useMemo(
+    () => buildDecisionPathRendererState(overlay),
+    [overlaySignature]
+  );
 
   useEffect(() => {
     if (!renderState.active) return;

@@ -184,12 +184,12 @@ export function ScenePanelShell(props: ScenePanelShellProps): React.ReactElement
                   </button>
                   <button
                     type="button"
-                    aria-label="Create System"
-                    title="Generate a system from an executive domain template"
+                    aria-label="Load Template"
+                    title="Load an executive domain template"
                     onClick={handleCreateSystem}
                     style={addObjectButtonStyle}
                   >
-                    Create System
+                    Load Template
                   </button>
                 </>
               ) : (

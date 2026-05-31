@@ -1,3 +1,5 @@
+import { bucketViewportWidth } from "../layout/hudLayoutSignature";
+
 /**
  * E2:2 — Executive workspace layout contracts.
  * Single source of truth for dock widths, scene margins, and responsive breakpoints.
@@ -186,9 +188,10 @@ export function executiveDockInsetRatios(metrics: ExecutiveWorkspaceLayoutMetric
 export function buildExecutiveWorkspaceLayoutSignature(metrics: ExecutiveWorkspaceLayoutMetrics): string {
   return [
     metrics.breakpoint,
-    metrics.viewportWidth,
+    bucketViewportWidth(Math.round(metrics.viewportWidth)),
     metrics.leftDockWidthPx,
     metrics.leftCommandWidthPx,
     metrics.rightDockWidthPx,
+    metrics.scenePaddingPx,
   ].join("|");
 }

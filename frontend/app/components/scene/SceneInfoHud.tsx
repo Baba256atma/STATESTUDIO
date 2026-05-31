@@ -5,17 +5,26 @@ import React from "react";
 import {
   SCENE_INFO_FRSI_LABELS,
   SCENE_INFO_FRSI_PLACEHOLDER,
-  SCENE_INFO_QUICK_ACTIONS,
-  SCENE_INFO_VIEW_OPTIONS,
   type SceneInfoFrsiMetrics,
 } from "../../lib/scene/sceneInfoHudTypes";
 import {
   SCENE_INFO_LAYER_KEYS,
+  SCENE_INFO_LAYER_ICONS,
   SCENE_INFO_LAYER_LABELS,
   setSceneInfoLayerVisibility,
   type SceneInfoLayerKey,
 } from "../../lib/scene/sceneInfoLayerVisibility";
+import {
+  markNoiseRemoved,
+  shouldSurfaceOwnInformation,
+} from "../../lib/workspace/minimalism";
 import { useSceneInfoLayerVisibility } from "../../lib/scene/useSceneInfoLayerVisibility";
+import { DEFAULT_SCENE_INFO_STATE } from "../../lib/scene/sceneInfoInitialState";
+import { traceSceneInfoHydration } from "../../lib/scene/sceneInfoHydrationContract";
+import {
+  hydrateSceneInfoCollapseState,
+  persistSceneInfoCollapsePreference,
+} from "../../lib/scene/sceneInfoPreferenceRuntime";
 import { useViewportWidthListener } from "../../lib/dom/useDomListener";
 import { resolveExecutiveWorkspaceBreakpoint } from "../../lib/ui/executiveWorkspaceLayout";
 import type { PanelSizeMode } from "../../lib/ui/workspaceLayoutTypes";
@@ -34,6 +43,9 @@ import { sceneHudChipStyle, sceneHudControlButtonStyle, resolveSceneThemeTokens 
 import type { SceneThemeTokens } from "../../lib/theme/sceneThemeTypes";
 import { useSceneHudTheme, useSceneThemeOptional } from "../../lib/theme/useSceneTheme";
 import { nx } from "../ui/nexoraTheme";
+import {
+  registerGovernedPanel,
+} from "../../lib/workspace/panelGovernanceRuntime";
 
 export type SceneInfoHudProps = {
   currentViewId?: string | null;
@@ -61,39 +73,31 @@ const metricRowStyle: React.CSSProperties = {
 const layerToggleStyle = (active: boolean, tokens: SceneThemeTokens): React.CSSProperties =>
   sceneHudChipStyle(tokens, active);
 
-const actionButtonStyle = (tokens: SceneThemeTokens): React.CSSProperties => ({
-  ...sceneHudControlButtonStyle(tokens),
-  flex: "1 1 45%",
-  minWidth: 0,
-  opacity: 0.72,
-  cursor: "not-allowed",
-});
-
-function resolveViewLabel(viewId: string | null | undefined, viewLabel: string | null | undefined): string {
-  if (viewLabel?.trim()) return viewLabel.trim();
-  const matched = SCENE_INFO_VIEW_OPTIONS.find((option) => option.id === viewId);
-  if (matched) return matched.label;
-  return SCENE_INFO_VIEW_OPTIONS[0]?.label ?? "Global View";
-}
-
 export function SceneInfoHud(props: SceneInfoHudProps): React.ReactElement {
   const mountedRef = React.useRef(false);
   const sceneTheme = useSceneThemeOptional();
   const hudTheme = useSceneHudTheme(props.themeMode ?? "night");
   const tokens = sceneTheme?.tokens ?? resolveSceneThemeTokens(props.themeMode ?? "night");
   const layerVisibility = useSceneInfoLayerVisibility();
-  const [viewportWidth, setViewportWidth] = React.useState(() =>
-    typeof window !== "undefined" ? window.innerWidth : 1440
-  );
-  const [collapsed, setCollapsed] = React.useState(false);
-  const [selectedViewId, setSelectedViewId] = React.useState(
-    () => props.currentViewId?.trim() || SCENE_INFO_VIEW_OPTIONS[0]?.id || "global"
-  );
+  const [viewportWidth, setViewportWidth] = React.useState(DEFAULT_SCENE_INFO_STATE.viewportWidth);
+  const [collapsed, setCollapsed] = React.useState(DEFAULT_SCENE_INFO_STATE.collapsed);
+  const [sceneInfoHydrated, setSceneInfoHydrated] = React.useState(false);
 
   const breakpoint = resolveExecutiveWorkspaceBreakpoint(viewportWidth);
   const isMobile = breakpoint === "mobile";
   const frsi = props.frsiMetrics ?? SCENE_INFO_FRSI_PLACEHOLDER;
-  const currentViewLabel = resolveViewLabel(selectedViewId, props.currentViewLabel);
+  const showFrsiBreakdown = shouldSurfaceOwnInformation("frsi_breakdown", { surface: "scene_info" });
+
+  React.useEffect(() => {
+    markNoiseRemoved("scene_info_disabled_actions", "scene_info");
+  }, []);
+
+  React.useEffect(() => {
+    const { collapsed: storedCollapsed } = hydrateSceneInfoCollapseState();
+    setCollapsed(storedCollapsed);
+    setSceneInfoHydrated(true);
+    traceSceneInfoHydration({ hydrated: true, source: "preference_restore" });
+  }, []);
 
   React.useEffect(() => {
     if (mountedRef.current) return;
@@ -101,26 +105,36 @@ export function SceneInfoHud(props: SceneInfoHudProps): React.ReactElement {
     logSceneInfoHudMounted();
   }, []);
 
-  React.useEffect(() => {
-    if (!props.currentViewId?.trim()) return;
-    setSelectedViewId(props.currentViewId.trim());
-  }, [props.currentViewId]);
-
   useViewportWidthListener(setViewportWidth, "SceneInfoHud");
 
   React.useEffect(() => {
+    if (!sceneInfoHydrated) return;
     if (!isMobile) return;
     setCollapsed(true);
-  }, [isMobile]);
+    persistSceneInfoCollapsePreference(true);
+  }, [isMobile, sceneInfoHydrated]);
+
+  React.useEffect(() => {
+    registerGovernedPanel({
+      panelId: "sceneInfoHud",
+      visible: true,
+      collapsed,
+      anchorZone: "top-left",
+      priority: 10,
+      title: "Scene Info",
+    });
+  }, [collapsed]);
 
   const handleToggleCollapsed = React.useCallback(() => {
     setCollapsed((value) => {
+      const next = !value;
+      persistSceneInfoCollapsePreference(next);
       if (value) {
         logSceneInfoHudExpanded();
       } else {
         logSceneInfoHudCollapsed();
       }
-      return !value;
+      return next;
     });
   }, []);
 
@@ -129,10 +143,6 @@ export function SceneInfoHud(props: SceneInfoHudProps): React.ReactElement {
     setSceneInfoLayerVisibility(key, nextVisible);
     logSceneLayerVisibilityChanged({ layer: key, visible: nextVisible });
   }, [layerVisibility]);
-
-  const handleViewChange = React.useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedViewId(event.target.value);
-  }, []);
 
   const panelSizeMode = props.panelSizeMode ?? "normal";
   const compactWidth =
@@ -161,18 +171,22 @@ export function SceneInfoHud(props: SceneInfoHudProps): React.ReactElement {
         data-hud="scene-info"
         data-nx-state="collapsed"
         style={{
-          ...nexoraHudShellStyle(hudTheme, {
-            width: 44,
-            maxWidth: 44,
-            padding: "8px 6px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 8,
-            fontSize: 11,
-            lineHeight: 1.4,
-            overflow: "hidden",
-          }),
+          ...nexoraHudShellStyle(
+            hudTheme,
+            {
+              width: 44,
+              maxWidth: 44,
+              padding: "8px 6px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 11,
+              lineHeight: 1.4,
+              overflow: "hidden",
+            },
+            { surface: "sceneInfoHud", collapsed: true }
+          ),
         }}
         onPointerDown={(event) => event.stopPropagation()}
       >
@@ -193,7 +207,7 @@ export function SceneInfoHud(props: SceneInfoHudProps): React.ReactElement {
             fontWeight: 700,
           }}
         >
-          ⟩
+          ▶
         </button>
         <span
           aria-hidden
@@ -217,13 +231,19 @@ export function SceneInfoHud(props: SceneInfoHudProps): React.ReactElement {
       data-nx="scene-info-hud"
       data-hud="scene-info"
       data-nx-state="expanded"
-      style={nexoraHudShellStyle(hudTheme, {
-        width: compactWidth,
-        maxWidth: "min(92vw, 260px)",
-        fontSize: 11,
-        lineHeight: 1.4,
-        overflow: "hidden",
-      })}
+      style={{
+        ...nexoraHudShellStyle(
+          hudTheme,
+          {
+            width: compactWidth,
+            maxWidth: "min(92vw, 260px)",
+            fontSize: 11,
+            lineHeight: 1.4,
+            overflow: "hidden",
+          },
+          { surface: "sceneInfoHud", edgeAnchor: "TOP_LEFT" }
+        ),
+      }}
       onPointerDown={(event) => event.stopPropagation()}
       onWheel={(event) => event.stopPropagation()}
     >
@@ -233,18 +253,15 @@ export function SceneInfoHud(props: SceneInfoHudProps): React.ReactElement {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 8,
-          padding: "9px 10px",
-          borderBottom: `1px solid ${hudTheme.panelBorder}`,
-          background: hudTheme.headerBackground,
+          padding: "7px 8px",
+          borderBottom: `1px solid color-mix(in srgb, ${hudTheme.panelBorder} 55%, transparent)`,
+          background: "transparent",
         }}
       >
         <span
           style={{
-            fontSize: 9,
-            fontWeight: 800,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: nx.text,
+            ...sectionLabelStyle(hudTheme),
+            marginBottom: 0,
           }}
         >
           Scene Info
@@ -267,46 +284,20 @@ export function SceneInfoHud(props: SceneInfoHudProps): React.ReactElement {
             lineHeight: 1,
           }}
         >
-          ⟨
+          ◀
         </button>
       </header>
 
       <div style={{ padding: "10px 10px 8px", display: "flex", flexDirection: "column", gap: 10 }}>
-        <section data-nx-section="current-view">
-          <div style={sectionLabelStyle(hudTheme)}>Current View</div>
-          <select
-            aria-label="Scene view"
-            value={selectedViewId}
-            onChange={handleViewChange}
-            style={{
-              width: "100%",
-              borderRadius: 8,
-              border: `1px solid ${nx.borderSoft}`,
-              background: "color-mix(in srgb, var(--nx-bg-control) 75%, transparent)",
-              color: nx.text,
-              fontSize: 11,
-              fontWeight: 600,
-              padding: "6px 8px",
-              outline: "none",
-            }}
-          >
-            {SCENE_INFO_VIEW_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <div style={{ marginTop: 4, fontSize: 10, color: nx.lowMuted }}>{currentViewLabel}</div>
-        </section>
-
+        {showFrsiBreakdown ? (
         <section data-nx-section="frsi">
           <div style={sectionLabelStyle(hudTheme)}>FRSI Breakdown</div>
           <div
             style={{
-              borderRadius: 9,
-              border: `1px solid ${nx.borderSoft}`,
-              background: "color-mix(in srgb, var(--nx-bg-control) 55%, transparent)",
-              padding: "6px 8px",
+              borderRadius: 6,
+              border: `1px solid color-mix(in srgb, ${nx.borderSoft} 65%, transparent)`,
+              background: "color-mix(in srgb, var(--nx-bg-control) 42%, transparent)",
+              padding: "5px 7px",
             }}
           >
             {(Object.keys(SCENE_INFO_FRSI_LABELS) as Array<keyof typeof SCENE_INFO_FRSI_LABELS>).map((key) => (
@@ -319,26 +310,39 @@ export function SceneInfoHud(props: SceneInfoHudProps): React.ReactElement {
             ))}
           </div>
         </section>
+        ) : null}
 
         <section data-nx-section="layers">
-          <div style={sectionLabelStyle(hudTheme)}>Layer Controls</div>
+          <div style={sectionLabelStyle(hudTheme)}>Layers</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
             {SCENE_INFO_LAYER_KEYS.map((key) => (
               <button
                 key={key}
                 type="button"
                 aria-pressed={layerVisibility[key]}
+                aria-label={SCENE_INFO_LAYER_LABELS[key]}
+                title={SCENE_INFO_LAYER_LABELS[key]}
                 onClick={() => handleLayerToggle(key)}
-                style={layerToggleStyle(layerVisibility[key], tokens)}
+                style={{
+                  ...layerToggleStyle(layerVisibility[key], tokens),
+                  minWidth: 28,
+                  width: 28,
+                  height: 28,
+                  padding: 0,
+                  display: "grid",
+                  placeItems: "center",
+                  fontSize: 12,
+                }}
               >
-                {SCENE_INFO_LAYER_LABELS[key]}
+                <span aria-hidden>{SCENE_INFO_LAYER_ICONS[key]}</span>
               </button>
             ))}
           </div>
         </section>
 
-        <section data-nx-section="quick-actions">
-          <div style={sectionLabelStyle(hudTheme)}>Quick Scene Actions</div>
+        {(props.onAddObjectClick || props.onCreateSystemClick) ? (
+        <section data-nx-section="scene-actions">
+          <div style={sectionLabelStyle(hudTheme)}>Scene Actions</div>
           {props.onAddObjectClick ? (
             <button
               type="button"
@@ -364,31 +368,14 @@ export function SceneInfoHud(props: SceneInfoHudProps): React.ReactElement {
               style={{
                 ...sceneHudControlButtonStyle(tokens),
                 width: "100%",
-                marginBottom: 6,
                 fontWeight: 700,
               }}
             >
               Create System
             </button>
           ) : null}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-            {SCENE_INFO_QUICK_ACTIONS.map((action) => (
-              <button
-                key={action.id}
-                type="button"
-                disabled
-                title={`${action.label} — reserved for E2:10`}
-                style={actionButtonStyle(tokens)}
-              >
-                {action.label}
-              </button>
-            ))}
-          </div>
-          {/* E2:10 scene actions */}
-          {/* E3 operational overlays */}
-          {/* D3 live data overlays */}
-          {/* simulation visualization */}
         </section>
+        ) : null}
       </div>
     </div>
   );

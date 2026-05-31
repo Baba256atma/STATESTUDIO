@@ -1,5 +1,15 @@
 import { z } from "zod";
 import { logPanelOnce } from "../debug/panelLogSignature";
+import { traceSalvageSkipped } from "../runtime/runtimeChurnDiagnostics";
+import { traceRuntimeContract } from "../debug/runtimeLoopTrace";
+import {
+  isMeaningfullyDifferentContract,
+  traceContractAlreadyStable,
+} from "./panelContractStability";
+import {
+  hasEmittedPanelContractSalvage,
+  queuePanelContractSalvageDiagnostic,
+} from "./panelContractDiagnosticsRuntime";
 
 const NullableString = z.string().nullable().optional().default(null);
 
@@ -398,8 +408,35 @@ const lastPanelValidationResultRef: { current: PanelSharedDataValidationResult |
 const lastValidTraceSignatureRef: { current: string | null } = { current: null };
 const MAX_PANEL_SALVAGE_PASSES = 1;
 const PANEL_VALIDATION_CACHE = new Map<string, PanelSharedDataValidationResult>();
+const PANEL_VALIDATION_CACHE_ORDER: string[] = [];
+const MAX_PANEL_VALIDATION_CACHE_SIZE = 50;
 const ACTIVE_PANEL_VALIDATION_SIGNATURES = new Set<string>();
 const SLICE_SALVAGE_CACHE = new Map<string, unknown>();
+
+function setPanelValidationCacheEntry(
+  key: string,
+  value: PanelSharedDataValidationResult
+): void {
+  if (PANEL_VALIDATION_CACHE.has(key)) {
+    const index = PANEL_VALIDATION_CACHE_ORDER.indexOf(key);
+    if (index >= 0) {
+      PANEL_VALIDATION_CACHE_ORDER.splice(index, 1);
+    }
+  }
+  PANEL_VALIDATION_CACHE.set(key, value);
+  PANEL_VALIDATION_CACHE_ORDER.push(key);
+  while (PANEL_VALIDATION_CACHE_ORDER.length > MAX_PANEL_VALIDATION_CACHE_SIZE) {
+    const evicted = PANEL_VALIDATION_CACHE_ORDER.shift();
+    if (evicted) {
+      PANEL_VALIDATION_CACHE.delete(evicted);
+    }
+  }
+}
+
+/** Canonical contract signature for salvage dedupe (excludes volatile runtime fields). */
+export function buildPanelContractSalvageSignature(input: unknown): string {
+  return buildPanelContractSignature(input);
+}
 export const EMPTY_PANEL_SHARED_DATA: PanelSharedData = Object.freeze(PanelSharedDataSchema.parse({})) as PanelSharedData;
 
 const NullableDashboardSchema = DashboardPanelDataSchema.nullable().optional().default(null);
@@ -790,6 +827,9 @@ function hasRenderableSimulationSlice(value: unknown) {
 const panelContractWeakeningSignatures = new Set<string>();
 const panelContractSliceNormalizedSignatures = new Set<string>();
 const panelContractSalvagedSignatures = new Set<string>();
+const salvagedOutputSignatures = new Set<string>();
+let lastSalvagedContractSignatureRef: string | null = null;
+let lastValidationCacheMissTraceSignature: string | null = null;
 
 function tracePanelContractWeakening(
   status: "family_weakened" | "family_preserved" | "salvage_too_thin",
@@ -1502,8 +1542,22 @@ function salvagePanelSharedData(
   return PanelSharedDataSchema.parse(salvaged);
 }
 
+function buildPreservedSlicesFromPanelData(data: PanelSharedData): Record<string, boolean> {
+  return {
+    dashboard: Boolean(data.dashboard ?? data.executiveSummary ?? data.decisionCockpit),
+    executiveSummary: Boolean(data.executiveSummary),
+    decisionCockpit: Boolean(data.decisionCockpit),
+    advice: Boolean(data.advice ?? data.strategicAdvice),
+    timeline: Boolean(data.timeline),
+    simulation: Boolean(data.simulation),
+    conflict: Boolean(data.conflict),
+    warRoom: Boolean(data.warRoom),
+  };
+}
+
 export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSharedDataValidationResult {
-  const rootSignature = buildPanelContractSignature(input);
+  const contractSignature = buildPanelContractSalvageSignature(input);
+  const rootSignature = contractSignature;
   const cached = PANEL_VALIDATION_CACHE.get(rootSignature);
   if (cached) {
     if (process.env.NODE_ENV !== "production") {
@@ -1516,6 +1570,18 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
       console.debug("[Nexora][PanelValidationHardBypass]", { signature: rootSignature });
     }
     return lastPanelValidationResultRef.current;
+  }
+  if (
+    contractSignature === lastSalvagedContractSignatureRef &&
+    lastPanelValidationResultRef.current
+  ) {
+    setPanelValidationCacheEntry(rootSignature, lastPanelValidationResultRef.current);
+    return lastPanelValidationResultRef.current;
+  }
+  if (panelContractSalvagedSignatures.has(contractSignature) && lastPanelValidationResultRef.current) {
+    const prior = lastPanelValidationResultRef.current;
+    setPanelValidationCacheEntry(rootSignature, prior);
+    return prior;
   }
   if (ACTIVE_PANEL_VALIDATION_SIGNATURES.has(rootSignature)) {
     if (process.env.NODE_ENV !== "production") {
@@ -1533,6 +1599,16 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
   ACTIVE_PANEL_VALIDATION_SIGNATURES.add(rootSignature);
   if (process.env.NODE_ENV !== "production") {
     console.debug("[Nexora][PanelValidationCacheMiss]", { signature: rootSignature });
+    if (lastValidationCacheMissTraceSignature !== rootSignature) {
+      lastValidationCacheMissTraceSignature = rootSignature;
+      traceRuntimeContract({
+        source: "validatePanelSharedDataWithDiagnostics",
+        action: "validation_cache_miss",
+        contractSignature: rootSignature,
+        previousContractSignature: lastPanelValidationSignatureRef.current,
+        detail: { phase: "cache_miss" },
+      });
+    }
   }
   try {
     const DEBUG_PANEL_TRACE = process.env.NODE_ENV !== "production";
@@ -1540,6 +1616,15 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
     const result = PanelSharedDataSchema.safeParse(normalized);
 
   if (!result.success) {
+    if (contractSignature === lastSalvagedContractSignatureRef && lastPanelValidationResultRef.current) {
+      setPanelValidationCacheEntry(rootSignature, lastPanelValidationResultRef.current);
+      return lastPanelValidationResultRef.current;
+    }
+    if (panelContractSalvagedSignatures.has(contractSignature) && lastPanelValidationResultRef.current) {
+      setPanelValidationCacheEntry(rootSignature, lastPanelValidationResultRef.current);
+      return lastPanelValidationResultRef.current;
+    }
+
     let salvageCount = 0;
     if (DEBUG_PANEL_TRACE) {
       const detailedIssues = result.error.issues.map((issue) => {
@@ -1579,6 +1664,22 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
     const issuePaths = result.error.issues.slice(0, 12).map((issue) => issue.path.join(".") || "(root)");
     const rejectedSlices = Array.from(issuesBySlice.keys());
     const contractDebugSignature = `fail:${result.error.issues.length}:${issuePaths.join("|")}:${rejectedSlices.sort().join(",")}`;
+    const salvagedOutputSignature = buildPanelSharedDataSignature(salvaged);
+    const alreadySalvagedOutput = salvagedOutputSignatures.has(salvagedOutputSignature);
+    const priorOutputSignature = lastPanelValidationResultRef.current
+      ? buildPanelSharedDataSignature(lastPanelValidationResultRef.current.data)
+      : null;
+
+    if (
+      priorOutputSignature &&
+      priorOutputSignature === salvagedOutputSignature &&
+      lastPanelValidationResultRef.current
+    ) {
+      panelContractSalvagedSignatures.add(contractSignature);
+      lastSalvagedContractSignatureRef = contractSignature;
+      setPanelValidationCacheEntry(rootSignature, lastPanelValidationResultRef.current);
+      return lastPanelValidationResultRef.current;
+    }
 
     if (DEBUG_PANEL_TRACE) {
       const payload = {
@@ -1616,11 +1717,64 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
           warRoom: describeSliceShape(salvaged.warRoom),
         },
       };
-      if (!panelContractSalvagedSignatures.has(rootSignature)) {
+      const priorPreservedSlices = lastPanelValidationResultRef.current
+        ? buildPreservedSlicesFromPanelData(lastPanelValidationResultRef.current.data)
+        : null;
+      const contractAlreadyStable = !isMeaningfullyDifferentContract({
+        contractSignature: rootSignature,
+        salvagedOutputSignature,
+        priorOutputSignature,
+        preservedSlices: payload.preservedSlices,
+        priorPreservedSlices: priorPreservedSlices ?? undefined,
+      });
+      if (contractAlreadyStable) {
+        traceContractAlreadyStable(rootSignature);
         panelContractSalvagedSignatures.add(rootSignature);
-        logPanelOnce("[Nexora][PanelContractSalvaged]", {
-          signature: rootSignature,
-          ...payload,
+        salvagedOutputSignatures.add(salvagedOutputSignature);
+        lastSalvagedContractSignatureRef = rootSignature;
+        const stableResult: PanelSharedDataValidationResult = {
+          data: lastPanelValidationResultRef.current?.data ?? salvaged,
+          contractFailed: true,
+          contractDebugSignature,
+          contractFailureDetail: {
+            issueCount: result.error.issues.length,
+            issuePaths,
+            rejectedSlices,
+          },
+        };
+        lastPanelValidationSignatureRef.current = rootSignature;
+        lastPanelValidationResultRef.current = stableResult;
+        setPanelValidationCacheEntry(rootSignature, stableResult);
+        return stableResult;
+      }
+      if (!panelContractSalvagedSignatures.has(rootSignature) && !alreadySalvagedOutput) {
+        const previousSalvagedContractSignature = lastSalvagedContractSignatureRef;
+        panelContractSalvagedSignatures.add(rootSignature);
+        salvagedOutputSignatures.add(salvagedOutputSignature);
+        lastSalvagedContractSignatureRef = rootSignature;
+        if (
+          !hasEmittedPanelContractSalvage(rootSignature) &&
+          isMeaningfullyDifferentContract({
+            contractSignature: rootSignature,
+            salvagedOutputSignature,
+            priorOutputSignature,
+            preservedSlices: payload.preservedSlices,
+            priorPreservedSlices: priorPreservedSlices ?? undefined,
+          })
+        ) {
+          queuePanelContractSalvageDiagnostic({
+            signature: rootSignature,
+            contractSignature: rootSignature,
+            payload,
+            previousContractSignature: previousSalvagedContractSignature,
+            repeatedSalvage: previousSalvagedContractSignature === rootSignature,
+          });
+        }
+      } else {
+        traceSalvageSkipped({
+          rootSignature,
+          salvagedOutputSignature,
+          unchanged: lastSalvagedContractSignatureRef === rootSignature,
         });
       }
       issuesBySlice.forEach((sliceIssues, slice) => {
@@ -1644,11 +1798,7 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
     const stableSignature = `fail:${contractDebugSignature}:${buildPanelSharedDataSignature(nextResult.data)}`;
     lastPanelValidationSignatureRef.current = rootSignature;
     lastPanelValidationResultRef.current = nextResult;
-    PANEL_VALIDATION_CACHE.set(rootSignature, nextResult);
-    if (PANEL_VALIDATION_CACHE.size > 50) {
-      PANEL_VALIDATION_CACHE.clear();
-      PANEL_VALIDATION_CACHE.set(rootSignature, nextResult);
-    }
+    setPanelValidationCacheEntry(rootSignature, nextResult);
     return nextResult;
   }
 
@@ -1709,11 +1859,7 @@ export function validatePanelSharedDataWithDiagnostics(input: unknown): PanelSha
   const stableSignature = `ok:${validatedSignature}`;
   lastPanelValidationSignatureRef.current = rootSignature;
   lastPanelValidationResultRef.current = nextResult;
-  PANEL_VALIDATION_CACHE.set(rootSignature, nextResult);
-  if (PANEL_VALIDATION_CACHE.size > 50) {
-    PANEL_VALIDATION_CACHE.clear();
-    PANEL_VALIDATION_CACHE.set(rootSignature, nextResult);
-  }
+  setPanelValidationCacheEntry(rootSignature, nextResult);
   return nextResult;
   } finally {
     ACTIVE_PANEL_VALIDATION_SIGNATURES.delete(rootSignature);

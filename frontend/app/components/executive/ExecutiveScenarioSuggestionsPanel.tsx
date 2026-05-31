@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   nexoraHudSectionLabelStyle,
@@ -19,15 +19,32 @@ import type {
   ScenarioSuggestion,
   ScenarioSuggestionStatus,
 } from "../../lib/ui/scenarioSuggestionTypes";
+import type {
+  ExecutiveScenario,
+  ExecutiveScenarioRecord,
+  ScenarioCreateRequest,
+} from "../../lib/scenario/scenarioAuthoringRuntime";
 import { nx } from "../ui/nexoraTheme";
+
+export type ScenarioWorkspacePanelModel = {
+  activeScenarioId: string;
+  comparisonTargets: string[];
+  scenarios: ExecutiveScenarioRecord[];
+};
 
 export type ExecutiveScenarioSuggestionsPanelProps = {
   open: boolean;
   model: ExecutiveScenarioSuggestionsModel;
   selectedScenarioId?: string | null;
+  scenarioWorkspace?: ScenarioWorkspacePanelModel | null;
   themeMode?: NexoraHudThemeMode;
   onSelectScenario?: (scenario: ScenarioSuggestion) => void;
   onCompareRequest?: (selectedScenarioIds: string[]) => void;
+  onCreateAuthoredScenario?: (request: ScenarioCreateRequest) => void;
+  onActivateAuthoredScenario?: (scenarioId: string) => void;
+  onDuplicateAuthoredScenario?: (scenarioId: string) => void;
+  onArchiveAuthoredScenario?: (scenarioId: string) => void;
+  onCompareAuthoredScenarios?: (scenarioIds: string[]) => void;
 };
 
 const CONTEXT_TABS = [
@@ -57,6 +74,17 @@ function resolveStatusColor(
 function formatImpact(value: number | undefined): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   return value > 0 ? `+${value}` : `${value}`;
+}
+
+function formatShortDate(value: string | undefined): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function scenarioTypeLabel(type: ExecutiveScenario["scenarioType"]): string {
+  return type.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function ScenarioSuggestionCard(props: {
@@ -176,17 +204,47 @@ export function ExecutiveScenarioSuggestionsPanel(
     open,
     model,
     selectedScenarioId = null,
+    scenarioWorkspace = null,
     themeMode = "night",
     onSelectScenario,
     onCompareRequest,
+    onCreateAuthoredScenario,
+    onActivateAuthoredScenario,
+    onDuplicateAuthoredScenario,
+    onArchiveAuthoredScenario,
+    onCompareAuthoredScenarios,
   } = props;
 
   const mountedRef = useRef(false);
   const theme = useSceneHudTheme(themeMode);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [scenarioName, setScenarioName] = useState("");
+  const [scenarioType, setScenarioType] = useState<ExecutiveScenario["scenarioType"]>("risk");
+  const [scenarioDescription, setScenarioDescription] = useState("");
+  const [compareDraftIds, setCompareDraftIds] = useState<string[]>([]);
   const selectedIds = useMemo(
     () => (selectedScenarioId ? [selectedScenarioId] : []),
     [selectedScenarioId]
   );
+  const authoredScenarios = useMemo(
+    () => scenarioWorkspace?.scenarios.filter((scenario) => scenario.status !== "archived") ?? [],
+    [scenarioWorkspace?.scenarios]
+  );
+  const activeAuthoredScenario = useMemo(
+    () =>
+      authoredScenarios.find((scenario) => scenario.id === scenarioWorkspace?.activeScenarioId) ??
+      authoredScenarios[0] ??
+      null,
+    [authoredScenarios, scenarioWorkspace?.activeScenarioId]
+  );
+
+  useEffect(() => {
+    if (!scenarioWorkspace) return;
+    const next = scenarioWorkspace.comparisonTargets.length
+      ? scenarioWorkspace.comparisonTargets
+      : authoredScenarios.slice(0, 2).map((scenario) => scenario.id);
+    setCompareDraftIds(next.slice(0, 2));
+  }, [authoredScenarios, scenarioWorkspace]);
 
   useEffect(() => {
     if (mountedRef.current) return;
@@ -218,6 +276,27 @@ export function ExecutiveScenarioSuggestionsPanel(
         })
       );
     }
+  };
+
+  const handleCreateAuthoredScenario = () => {
+    const name = scenarioName.trim();
+    if (!name) return;
+    onCreateAuthoredScenario?.({
+      name,
+      scenarioType,
+      description: scenarioDescription.trim() || undefined,
+    });
+    setScenarioName("");
+    setScenarioDescription("");
+    setScenarioType("risk");
+    setCreateOpen(false);
+  };
+
+  const handleToggleCompareTarget = (scenarioId: string) => {
+    setCompareDraftIds((current) => {
+      if (current.includes(scenarioId)) return current.filter((id) => id !== scenarioId);
+      return [...current, scenarioId].slice(-2);
+    });
   };
 
   if (!open) {
@@ -284,6 +363,247 @@ export function ExecutiveScenarioSuggestionsPanel(
           </button>
         ))}
       </div>
+
+      {scenarioWorkspace && activeAuthoredScenario ? (
+        <section
+          aria-label="Scenario workspace"
+          style={{
+            flexShrink: 0,
+            padding: "10px 12px",
+            borderBottom: `1px solid ${theme.shellBorder}`,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            background: theme.shellBackground,
+          }}
+        >
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <select
+              value={activeAuthoredScenario.id}
+              onChange={(event) => onActivateAuthoredScenario?.(event.target.value)}
+              aria-label="Active scenario"
+              style={{
+                flex: "1 1 auto",
+                minWidth: 0,
+                borderRadius: 10,
+                border: `1px solid ${theme.controlBorder}`,
+                background: theme.controlBackground,
+                color: theme.text,
+                padding: "8px 9px",
+                fontSize: 11,
+                fontWeight: 800,
+              }}
+            >
+              {authoredScenarios.map((scenario) => (
+                <option key={scenario.id} value={scenario.id}>
+                  {scenario.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => setCreateOpen((current) => !current)}
+              style={{
+                borderRadius: 10,
+                border: `1px solid ${theme.controlBorder}`,
+                background: nx.accentSoft,
+                color: nx.accent,
+                padding: "8px 10px",
+                fontSize: 10,
+                fontWeight: 900,
+                cursor: "pointer",
+              }}
+            >
+              Create
+            </button>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gap: 6,
+              fontSize: 9,
+              color: theme.textMuted,
+            }}
+          >
+            <span>
+              Type <strong style={{ color: theme.text }}>{scenarioTypeLabel(activeAuthoredScenario.scenarioType)}</strong>
+            </span>
+            <span>
+              Objects <strong style={{ color: theme.text }}>{activeAuthoredScenario.snapshot.objects.length}</strong>
+            </span>
+            <span>
+              Links <strong style={{ color: theme.text }}>{activeAuthoredScenario.snapshot.relationships.length}</strong>
+            </span>
+            <span>
+              Impacts <strong style={{ color: theme.text }}>{activeAuthoredScenario.snapshot.propagationPaths.length}</strong>
+            </span>
+            <span>
+              Created <strong style={{ color: theme.text }}>{formatShortDate(activeAuthoredScenario.createdAt)}</strong>
+            </span>
+            <span>
+              Modified <strong style={{ color: theme.text }}>{formatShortDate(activeAuthoredScenario.updatedAt)}</strong>
+            </span>
+          </div>
+
+          {createOpen ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              <input
+                value={scenarioName}
+                onChange={(event) => setScenarioName(event.target.value)}
+                placeholder="Supplier Delay +20%"
+                style={{
+                  borderRadius: 10,
+                  border: `1px solid ${theme.controlBorder}`,
+                  background: theme.controlBackground,
+                  color: theme.text,
+                  padding: "8px 9px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              />
+              <select
+                value={scenarioType}
+                onChange={(event) => setScenarioType(event.target.value as ExecutiveScenario["scenarioType"])}
+                style={{
+                  borderRadius: 10,
+                  border: `1px solid ${theme.controlBorder}`,
+                  background: theme.controlBackground,
+                  color: theme.text,
+                  padding: "8px 9px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
+                {(["risk", "growth", "financial", "operational", "project", "custom"] as const).map((type) => (
+                  <option key={type} value={type}>
+                    {scenarioTypeLabel(type)}
+                  </option>
+                ))}
+              </select>
+              <textarea
+                value={scenarioDescription}
+                onChange={(event) => setScenarioDescription(event.target.value)}
+                placeholder="Assumptions, risk, observation, or decision rationale"
+                rows={3}
+                style={{
+                  resize: "vertical",
+                  borderRadius: 10,
+                  border: `1px solid ${theme.controlBorder}`,
+                  background: theme.controlBackground,
+                  color: theme.text,
+                  padding: "8px 9px",
+                  fontSize: 11,
+                  lineHeight: 1.45,
+                }}
+              />
+              <button
+                type="button"
+                disabled={!scenarioName.trim()}
+                onClick={handleCreateAuthoredScenario}
+                style={{
+                  borderRadius: 10,
+                  border: `1px solid ${theme.controlBorder}`,
+                  background: scenarioName.trim() ? nx.accentSoft : theme.controlBackground,
+                  color: scenarioName.trim() ? nx.accent : theme.textMuted,
+                  padding: "8px 10px",
+                  fontSize: 10,
+                  fontWeight: 900,
+                  cursor: scenarioName.trim() ? "pointer" : "not-allowed",
+                }}
+              >
+                Create Scenario
+              </button>
+            </div>
+          ) : null}
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+            <button
+              type="button"
+              onClick={() => onDuplicateAuthoredScenario?.(activeAuthoredScenario.id)}
+              style={{
+                borderRadius: 10,
+                border: `1px solid ${theme.controlBorder}`,
+                background: theme.controlBackground,
+                color: theme.text,
+                padding: "8px 10px",
+                fontSize: 10,
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              Duplicate Scenario
+            </button>
+            <button
+              type="button"
+              onClick={() => onArchiveAuthoredScenario?.(activeAuthoredScenario.id)}
+              disabled={authoredScenarios.length <= 1}
+              style={{
+                borderRadius: 10,
+                border: `1px solid ${theme.controlBorder}`,
+                background: theme.controlBackground,
+                color: authoredScenarios.length > 1 ? theme.warning : theme.textMuted,
+                padding: "8px 10px",
+                fontSize: 10,
+                fontWeight: 800,
+                cursor: authoredScenarios.length > 1 ? "pointer" : "not-allowed",
+                opacity: authoredScenarios.length > 1 ? 1 : 0.6,
+              }}
+            >
+              Archive Scenario
+            </button>
+          </div>
+
+          {authoredScenarios.length >= 2 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ ...nexoraHudSectionLabelStyle(theme), fontSize: 9 }}>Compare Futures</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {authoredScenarios.map((scenario) => {
+                  const selected = compareDraftIds.includes(scenario.id);
+                  return (
+                    <button
+                      key={scenario.id}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => handleToggleCompareTarget(scenario.id)}
+                      style={{
+                        borderRadius: 999,
+                        border: `1px solid ${selected ? nx.accent : theme.controlBorder}`,
+                        background: selected ? nx.accentSoft : theme.controlBackground,
+                        color: selected ? nx.accent : theme.textMuted,
+                        padding: "5px 8px",
+                        fontSize: 9,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {scenario.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                disabled={compareDraftIds.length < 2}
+                onClick={() => onCompareAuthoredScenarios?.(compareDraftIds)}
+                style={{
+                  borderRadius: 10,
+                  border: `1px solid ${theme.controlBorder}`,
+                  background: compareDraftIds.length >= 2 ? nx.accentSoft : theme.controlBackground,
+                  color: compareDraftIds.length >= 2 ? nx.accent : theme.textMuted,
+                  padding: "8px 10px",
+                  fontSize: 10,
+                  fontWeight: 900,
+                  cursor: compareDraftIds.length >= 2 ? "pointer" : "not-allowed",
+                }}
+              >
+                Compare Selected Futures
+              </button>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       <div
         style={{

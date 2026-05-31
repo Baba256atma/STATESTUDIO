@@ -28,7 +28,7 @@ export function ExecutiveHudSettingsMenu(): React.ReactElement {
 
   useEffect(() => {
     if (!open) return undefined;
-    const onPointerDown = (event: MouseEvent) => {
+    const onPointerDown = (event: Event) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
     return bindWindowListener("mousedown", onPointerDown, undefined, {

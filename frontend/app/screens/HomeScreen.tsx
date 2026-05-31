@@ -59,6 +59,28 @@ import {
   saveProjectSnapshot,
   saveWorkspaceSnapshot,
 } from "../lib/workspace/workspacePersistence";
+import { evaluateWorkspaceReadiness, runTypeCMvpWorkspaceValidation } from "../lib/workspace/workspacePolishRuntime";
+import {
+  accumulateExecutiveOrientationSession,
+  deriveElevatedRiskCount,
+  dismissExecutiveWelcome,
+  hydrateExecutiveOrientationState,
+  recordExecutiveOrientationVisit,
+  resolveExecutiveOrientationExperience,
+  type ExecutiveOrientationSnapshot,
+} from "../lib/workspace/orientation";
+import {
+  getExecutiveOrientationHydrationSnapshot,
+  resolveExecutiveOrientationPanelVisible,
+  resolveExecutiveOrientationWelcomeVisible,
+  resolveOrientationWelcomeFromStorage,
+  traceExecutiveOrientationHydration,
+  traceExecutiveOrientationVisibility,
+} from "../lib/workspace/executiveOrientationVisibilityRuntime";
+import { resolveExecutiveHarmonizationSnapshot } from "../lib/workspace/harmonization";
+import { runE2CompletionAudit, type E2WorkspaceReadinessContext } from "../lib/workspace/readiness";
+import { SCENE_HUD_THEME_SURFACES } from "../lib/theme/sceneThemeTokens";
+import { logScenePanelRemoved } from "../lib/scene/sceneSurfaceGovernance";
 import { applyScannerResultToWorkspace, type ScannerResult } from "../lib/workspace/scannerContract";
 import { scanSystemToScannerResult, type ScannerInput } from "../lib/scanner/systemFragilityScanner";
 import {
@@ -73,8 +95,10 @@ import { useWorkspaceLayout } from "../lib/ui/useWorkspaceLayout";
 import { useHudPreferences } from "../lib/ui/useHudPreferences";
 import {
   shouldExposeExecutiveDevSurfaces,
+  isExecutiveWorkspaceCleanPresentation,
   shouldShowExecutiveCenterHelperCopy,
   shouldShowExecutiveOnboardingOverlays,
+  shouldShowExecutiveOrientationSurface,
   shouldShowExecutiveOperationalHud,
   shouldShowExecutivePipelineStatusHud,
   shouldShowExecutiveSceneOperationalStrip,
@@ -103,8 +127,15 @@ import type { ScenarioComparisonOption } from "../lib/ui/scenarioComparisonTypes
 import { resolveNexoraHudThemeMode } from "../lib/scene/nexoraHudTheme";
 import { buildObjectInfoHudModel } from "../lib/scene/objectInfoHudTypes";
 import { buildExecutiveTimelineHudModel } from "../lib/scene/executiveTimelineHudTypes";
+import {
+  logSceneOverlayAudit,
+  shouldRenderSceneOverlay,
+  type SceneOverlayGovernanceContext,
+} from "../lib/scene/sceneOverlayOwnershipAudit";
 import { StrategicAlertOverlay } from "../components/StrategicAlertOverlay";
 import { ExecutiveSceneOperationalStrip } from "../components/executive/ExecutiveSceneOperationalStrip";
+import { ExecutiveOrientationPanel } from "../components/executive/ExecutiveOrientationPanel";
+import { ExecutiveOrientationWelcome } from "../components/executive/ExecutiveOrientationWelcome";
 import {
   executiveDockInsetRatios,
   resolveExecutiveWorkspaceLayoutMetrics,
@@ -136,7 +167,7 @@ import {
   detectOperationalChanges,
   evaluateOperationalAlerts,
   logD3OperationalDiagnosticsDeduped,
-  runD3DevTimed,
+  runD3DevTimedWithSignature,
   toMonitoringSnapshotInput,
   type OperationalMonitoringSnapshot,
   type OperationalPipelineStatusBrief,
@@ -475,6 +506,14 @@ import {
   traceNexoraSelectionGuard,
 } from "../lib/selection/selectionSignature";
 import {
+  shouldCommitObjectSelection,
+  shouldCommitSelectedObjectId,
+} from "../lib/selection/selectionStateGuard";
+import {
+  buildVisibleUiStateSignature,
+} from "../lib/ui/visibleUiStateSignature";
+import { resolveNextVisibleUiState } from "../lib/ui/resolveNextVisibleUiState";
+import {
   resolveDomainExperience,
   type NexoraResolvedDomainExperience,
 } from "../lib/domain/domainExperienceRegistry";
@@ -517,12 +556,23 @@ import {
   type PropagationPathCreateRequest,
   type PropagationPathPatch,
 } from "../lib/propagation/propagationAuthoringRuntime";
+import {
+  activateExecutiveScenario,
+  archiveExecutiveScenario,
+  compareExecutiveScenarios,
+  createExecutiveScenario,
+  duplicateExecutiveScenario,
+  ensureScenarioWorkspaceInScene,
+  readScenarioWorkspaceState,
+  type ScenarioCreateRequest,
+} from "../lib/scenario/scenarioAuthoringRuntime";
 import { focusObject } from "../lib/scene/sceneNavigationContract";
 import { RelationshipBuilder } from "../components/relationships/RelationshipBuilder";
 import { PropagationPathBuilder } from "../components/propagation/PropagationPathBuilder";
 import {
   RELATIONSHIP_BUILDER_CLOSE_EVENT,
   RELATIONSHIP_BUILDER_OPEN_EVENT,
+  readSceneRelationships,
   requestCloseRelationshipBuilder,
   requestOpenRelationshipBuilder,
 } from "../lib/relationships/relationshipRuntime";
@@ -531,10 +581,13 @@ import { ExecutiveModelingWorkspace } from "../components/systemModeling/Executi
 import {
   SYSTEM_MODELING_CLOSE_EVENT,
   SYSTEM_MODELING_OPEN_EVENT,
-  generateSystemFromTemplate,
   requestCloseSystemModelingWorkspace,
   requestOpenSystemModelingWorkspace,
 } from "../lib/systemModeling/systemModelRuntime";
+import {
+  applyDomainTemplateToScene,
+  type DomainTemplateApplyMode,
+} from "../lib/templates/domainTemplateRuntime";
 import { requestSceneNavigationAction } from "../lib/scene/sceneNavigationContract";
 import { ExecutiveWorkspaceLoadDialog } from "../components/workspace/ExecutiveWorkspaceLoadDialog";
 import {
@@ -686,6 +739,7 @@ import {
 } from "../lib/panels/panelDataContract";
 import {
   createClosedRightPanelState,
+  createOpenRightPanelState,
   mapLegacyTabToRightPanelView,
   resolveChatPipelinePanelOpen,
   resolveRightPanelInspectorHostId,
@@ -701,6 +755,68 @@ import { emitDebugEvent } from "../lib/debug/debugEmit";
 import { registerPanelSelfDebugLink } from "../lib/debug/debugCorrelationBridge";
 import { getRecentDebugEvents } from "../lib/debug/debugEventStore";
 import { traceSceneWrite } from "../lib/debug/sceneWriteTrace";
+import {
+  tracePanelWriteSkippedNoOp,
+} from "../lib/runtime/runtimeChurnDiagnostics";
+import {
+  areRightPanelStatesEquivalent,
+} from "../lib/runtime/rightPanelWriteGuard";
+import { buildPanelStateSignatureFromState, shouldCommitPanelWrite } from "../lib/panels/panelStateSignature";
+import {
+  buildAuthorityStateSignature,
+  isDashboardAuthorityNoOp,
+  shouldCommitAuthorityState,
+} from "../lib/panels/authorityStateSignature";
+import {
+  evaluateSystemFallbackBootstrap,
+  markSystemFallbackBootstrapComplete,
+  markWorkspaceInitialized,
+} from "../lib/panels/systemFallbackBootstrapGuard";
+import {
+  recordPanelActivity,
+  traceAuthorityNoOpSkipped,
+  traceFallbackBootstrap,
+  traceFallbackRejectedStableState,
+  traceParityIgnoredFallbackSource,
+  getLastPanelActivitySource,
+  shouldIgnoreRecentSceneParitySource,
+} from "../lib/runtime/fallbackAuthorityDiagnostics";
+import { traceFallbackRequest } from "../lib/runtime/fallbackTraceRuntime";
+import {
+  evaluateIdleRuntimeStability,
+  isIdleRuntimeLocked,
+  shouldBlockAuthorityReconciliationWhileIdle,
+  shouldBlockFallbackWhileIdle,
+  shouldBlockParityRegenerationWhileIdle,
+} from "../lib/runtime/idleRuntimeStabilityGuard";
+import { devLogOnSignatureChange } from "../lib/runtime/diagnosticIdleGate";
+import { shouldProceedRuntimeWrite } from "../lib/runtime/idleRuntimeWriteGuard";
+import { recordRuntimeCycleEvent } from "../lib/runtime/runtimeCycleDetector";
+import { recordIdleRuntimePanelWrite } from "../lib/runtime/idleRuntimeWatchdog";
+import {
+  buildSceneParityStableSignature,
+  hasSceneParityIdMismatch,
+  isVisibleSceneBootstrapCatchUp,
+  markSceneParityStabilized,
+  shouldEmitSceneParityHomeScreenLog,
+  shouldEmitStableSceneParity,
+} from "../lib/runtime/sceneParityStartupGuard";
+import { markPanelStable, markSceneStable } from "../lib/runtime/startupPhase";
+import { recordParityRun } from "../lib/debug/startupNoiseAudit";
+import {
+  buildBusinessSceneParitySignature,
+  buildSceneParitySignature,
+  buildSceneVisibleSignature,
+} from "../lib/runtime/sceneParityRuntime";
+import { extractDecisionTracePanelWriteSignature } from "../lib/decision/trace/executiveDecisionTraceRuntime";
+import { tracePanelWriteSkippedTraceNoOp, traceParityIgnoredDiagnosticEvent } from "../lib/decision/trace/decisionTraceDiagnostics";
+import {
+  traceRuntimeDispatch,
+  traceRuntimeParity,
+  traceRuntimeRightPanel,
+  traceRuntimeSelection,
+  traceRuntimeWrite,
+} from "../lib/debug/runtimeLoopTrace";
 import { emitGuardRailAlerts, runGuardChecks } from "../lib/debug/debugGuardRails";
 import { useInvestorDemo, INVESTOR_DEMO_MAX_STEP } from "../components/demo/InvestorDemoContext";
 import { registerNexoraActionDispatch } from "../lib/actions/actionDispatchRegistry";
@@ -1148,6 +1264,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     useState<TypeCSandboxResult | null>(null);
   const [typeCSandboxLoading, setTypeCSandboxLoading] = useState(false);
   const [typeCSandboxError, setTypeCSandboxError] = useState<string | null>(null);
+  const [typeCSandboxVisible, setTypeCSandboxVisible] = useState(false);
+  const [pilotRunbookVisible, setPilotRunbookVisible] = useState(false);
   const [connectionSuggestions, setConnectionSuggestions] =
     useState<TypeCConnectionSuggestion[] | null>(null);
   const [scenarioDrafts, setScenarioDrafts] =
@@ -1327,6 +1445,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const getValidatedPanelSharedDataOnce = useCallback(
     (rawPanelSharedData: unknown, signature: string): PanelSharedDataValidationResult => {
       const cached = validatedPanelCacheRef.current;
+      if (cached.signature === signature && cached.result) {
+        return cached.result;
+      }
       if (process.env.NODE_ENV !== "production") {
         console.debug("[Nexora][PanelValidationSignatureCheck]", {
           previous: cached.signature,
@@ -1334,8 +1455,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           same: cached.signature === signature,
         });
       }
-      if (cached.signature === signature && cached.result) {
-        return cached.result;
+      if (
+        isIdleRuntimeLocked() &&
+        !shouldProceedRuntimeWrite("panel-validation", signature)
+      ) {
+        return (
+          cached.result ?? {
+            data: EMPTY_PANEL_SHARED_DATA,
+            contractFailed: false,
+            contractDebugSignature: `idle_noop:${signature}`,
+            contractFailureDetail: null,
+          }
+        );
       }
       if (process.env.NODE_ENV !== "production") {
         console.debug("[Nexora][PanelValidationActuallyRuns]", {
@@ -1365,6 +1496,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [sceneJson, setSceneJson] = useState<SceneJson | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [selectedObjectIdState, _setSelectedObjectIdState] = useState<string | null>(null);
+  const selectedObjectIdStateRef = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    selectedObjectIdStateRef.current = selectedObjectIdState;
+  }, [selectedObjectIdState]);
 
   const typeCLearningSignals = useMemo(
     () => deriveTypeCLearningSignals(typeCMemoryState),
@@ -1409,6 +1544,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [activeTypeCScenario, decisionRecommendation, sceneJson]
   );
   const canRunTypeCSandbox = Boolean(typeCSandboxRequest);
+
+  useEffect(() => {
+    const onOpenSandbox = () => setTypeCSandboxVisible(true);
+    window.addEventListener("nexora:advanced-tools-open-sandbox", onOpenSandbox);
+    return () => window.removeEventListener("nexora:advanced-tools-open-sandbox", onOpenSandbox);
+  }, []);
+
+  useEffect(() => {
+    const onOpenRunbook = () => setPilotRunbookVisible(true);
+    window.addEventListener("nexora:advanced-tools-open-runbook", onOpenRunbook);
+    return () => window.removeEventListener("nexora:advanced-tools-open-runbook", onOpenRunbook);
+  }, []);
+
+  useEffect(() => {
+    logScenePanelRemoved({
+      panelId: "pilotRunbook",
+      surfaceType: "TRAINING",
+      movedTo: "Tools / Runbook",
+      reason: "Training content is optional and must not occupy the operational scene.",
+    });
+    logScenePanelRemoved({
+      panelId: "sandbox",
+      surfaceType: "TOOL",
+      movedTo: "Tools / Sandbox",
+      reason: "Advanced tooling is launched on demand outside the default operational scene.",
+    });
+    logScenePanelRemoved({
+      panelId: "executiveSituationalAwareness",
+      surfaceType: "ASSISTANT",
+      movedTo: "Object Info / AI Assistant Context",
+      reason: "Duplicated situational fields are governed by canonical operational surfaces.",
+    });
+  }, []);
 
   // ======================================================
   // O5 Shell Composition: Controllers
@@ -1886,23 +2054,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     setSystemModelingOpen(false);
   }, []);
 
-  const handleExecutiveSystemGenerate = useCallback(
-    (templateId: string) => {
+  const handleExecutiveTemplateLoad = useCallback(
+    (templateId: string, mode: DomainTemplateApplyMode) => {
       applySceneChangeSafe((prev) => {
         if (!prev) return prev;
-        const result = generateSystemFromTemplate({
+        const result = applyDomainTemplateToScene({
           currentScene: prev,
           templateId,
+          mode,
         });
         if (!result.success || !result.nextScene) return prev;
         return result.nextScene;
-      }, "executive_system_template_generate");
+      }, mode === "import" ? "executive_domain_template_import" : "executive_domain_template_load");
       setSystemModelingOpen(false);
       requestCloseSystemModelingWorkspace("modeling_workspace_confirm");
       requestSceneNavigationAction("fit_scene", "panel");
     },
     [applySceneChangeSafe]
   );
+
+  const handleExecutiveTemplateSaved = useCallback((templateName: string) => {
+    setWorkspacePersistenceNotice(`Saved template "${templateName}".`);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -2404,15 +2577,42 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     return Boolean(getAnalyzeLockedObjectId());
   }
   // O3 shell: right panel state + write meta (`useRightPanelController` below). Routing stays deduped / anti-flash.
-  const [rightPanelState, _setRightPanelState] = useState<RightPanelState>(() => ({
-    ...createClosedRightPanelState(),
-    view: mapLegacyTabToRightPanelView(activeDomainExperience.experience.preferredRightPanelTab) ?? null,
-  }));
+  const [rightPanelState, _setRightPanelState] = useState<RightPanelState>(() => {
+    const initialView =
+      mapLegacyTabToRightPanelView(activeDomainExperience.experience.preferredRightPanelTab) ?? null;
+    if (initialView === "dashboard") {
+      return createOpenRightPanelState("dashboard", null);
+    }
+    return {
+      ...createClosedRightPanelState(),
+      view: initialView,
+    };
+  });
+  const rightPanelStateRef = useRef(rightPanelState);
+  useLayoutEffect(() => {
+    rightPanelStateRef.current = rightPanelState;
+    const state = rightPanelState;
+    if (state.view === "dashboard" && state.isOpen) {
+      markPanelStable();
+      markWorkspaceInitialized(
+        buildAuthorityStateSignature({
+          view: state.view,
+          panelId: state.view,
+          contextId: state.contextId ?? null,
+          selectedObjectId: null,
+          authoritySource: "system_fallback",
+          isOpen: true,
+        })
+      );
+    }
+  }, [rightPanelState]);
   const rightPanelWriteMetaRef = useRef<{
     writer: string;
     source: string | null;
     reason: string | null;
   } | null>(null);
+  const lastPanelWriteSourceRef = useRef<string | null>(null);
+  const dashboardBootstrapAttemptedRef = useRef(false);
   const stageRightPanelWriteMeta = useCallback(
     (meta: { writer: string; source?: string | null; reason?: string | null }) => {
       rightPanelWriteMetaRef.current = {
@@ -2425,29 +2625,59 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   );
   const setRightPanelState = useCallback(
     (action: React.SetStateAction<RightPanelState>) => {
-      _setRightPanelState((prev) => {
-        const next = typeof action === "function" ? (action as (p: RightPanelState) => RightPanelState)(prev) : action;
-        const pendingMeta = rightPanelWriteMetaRef.current;
-        const samePanelState =
-          prev.view === next.view &&
-          prev.isOpen === next.isOpen &&
-          (prev.contextId ?? null) === (next.contextId ?? null);
-        if (samePanelState) {
-          rightPanelWriteMetaRef.current = null;
-          return prev;
-        }
-        globalThis.console?.warn?.("[NEXORA_RIGHT_PANEL_WRITE]", {
-          writer: pendingMeta?.writer ?? "HomeScreen.setRightPanelState",
-          prevView: prev.view ?? null,
-          nextView: next.view ?? null,
-          contextId: next.contextId ?? null,
-          source: pendingMeta?.source ?? null,
-          reason: pendingMeta?.reason ?? null,
-        });
+      const prev = rightPanelStateRef.current;
+      const peekNext =
+        typeof action === "function" ? (action as (p: RightPanelState) => RightPanelState)(prev) : action;
+      const guardedNext = prev.view && !peekNext.view ? prev : peekNext;
+      if (!shouldCommitPanelWrite(prev, guardedNext)) {
         rightPanelWriteMetaRef.current = null;
-        if (prev.view && !next.view) {
-          return prev;
+        return;
+      }
+      _setRightPanelState((prevState) => {
+        const next =
+          typeof action === "function"
+            ? (action as (p: RightPanelState) => RightPanelState)(prevState)
+            : action;
+        if (prevState.view && !next.view) {
+          rightPanelWriteMetaRef.current = null;
+          return prevState;
         }
+        if (areRightPanelStatesEquivalent(prevState, next)) {
+          rightPanelWriteMetaRef.current = null;
+          return prevState;
+        }
+        const pendingMeta = rightPanelWriteMetaRef.current;
+        if (process.env.NODE_ENV !== "production") {
+          const panelSignature = buildPanelStateSignatureFromState(next);
+          traceRuntimeRightPanel({
+            caller: pendingMeta?.writer ?? "HomeScreen.setRightPanelState",
+            previousPanel: prevState.view ?? null,
+            nextPanel: next.view ?? null,
+            contextId: next.contextId ?? null,
+            signature: panelSignature,
+            previousSignature: buildPanelStateSignatureFromState(prevState),
+            dashboardToDashboard:
+              prevState.view === "dashboard" && next.view === "dashboard",
+            detail: {
+              source: pendingMeta?.source ?? null,
+              reason: pendingMeta?.reason ?? null,
+            },
+          });
+          recordIdleRuntimePanelWrite();
+          recordRuntimeCycleEvent("RightPanelWrite", {
+            signature: buildPanelStateSignatureFromState(next),
+            source: pendingMeta?.writer ?? "HomeScreen.setRightPanelState",
+          });
+          globalThis.console?.warn?.("[NEXORA_RIGHT_PANEL_WRITE]", {
+            writer: pendingMeta?.writer ?? "HomeScreen.setRightPanelState",
+            prevView: prevState.view ?? null,
+            nextView: next.view ?? null,
+            contextId: next.contextId ?? null,
+            source: pendingMeta?.source ?? null,
+            reason: pendingMeta?.reason ?? null,
+          });
+        }
+        rightPanelWriteMetaRef.current = null;
         return next;
       });
     },
@@ -2492,6 +2722,140 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     ) => {
       const normalizedSource = normalizePanelSource(meta.source);
       const normalizedReason = normalizePanelReason(meta.reason);
+      const prevSnapshot = rightPanelStateRef.current;
+      const peekNext =
+        typeof action === "function"
+          ? (action as (p: RightPanelState) => RightPanelState)(prevSnapshot)
+          : action;
+      const prevAuthority = {
+        view: prevSnapshot.view ?? null,
+        panelId: prevSnapshot.view ?? null,
+        contextId: prevSnapshot.contextId ?? null,
+        selectedObjectId: selectedObjectIdState ?? null,
+        authoritySource: normalizedSource,
+        isOpen: prevSnapshot.isOpen,
+      };
+      const nextAuthority = {
+        view: peekNext.view ?? null,
+        panelId: peekNext.view ?? null,
+        contextId: peekNext.contextId ?? null,
+        selectedObjectId: selectedObjectIdState ?? null,
+        authoritySource: normalizedSource,
+        isOpen: peekNext.isOpen,
+      };
+      const authoritySignature = buildAuthorityStateSignature(nextAuthority);
+
+      if (process.env.NODE_ENV !== "production") {
+        traceRuntimeRightPanel({
+          caller: meta.writer,
+          previousPanel: prevAuthority.view,
+          nextPanel: nextAuthority.view,
+          contextId: nextAuthority.contextId ?? null,
+          signature: authoritySignature,
+          previousSignature: buildAuthorityStateSignature(prevAuthority),
+          dashboardToDashboard:
+            prevAuthority.view === "dashboard" && nextAuthority.view === "dashboard",
+          detail: {
+            source: normalizedSource,
+            reason: normalizedReason,
+            phase: "authority_commit_attempt",
+          },
+        });
+      }
+
+      if (isDashboardAuthorityNoOp(prevAuthority, nextAuthority)) {
+        if (process.env.NODE_ENV !== "production") {
+          traceAuthorityNoOpSkipped({
+            signature: authoritySignature,
+            writer: meta.writer,
+            prevView: prevAuthority.view,
+            nextView: nextAuthority.view,
+            contextId: nextAuthority.contextId,
+          });
+        }
+        return;
+      }
+
+      if (!shouldCommitAuthorityState(prevAuthority, nextAuthority)) {
+        if (process.env.NODE_ENV !== "production") {
+          traceAuthorityNoOpSkipped({
+            signature: authoritySignature,
+            writer: meta.writer,
+            prevView: prevAuthority.view,
+            nextView: nextAuthority.view,
+            contextId: nextAuthority.contextId,
+          });
+        }
+        return;
+      }
+
+      if (normalizedSource === "system_fallback") {
+        if (process.env.NODE_ENV !== "production") {
+          traceFallbackRequest({
+            caller: meta.writer,
+            reason: normalizedReason,
+            requestedView: peekNext.view ?? null,
+            requestedPanel: peekNext.view ?? null,
+            selectedObjectId: selectedObjectIdState ?? null,
+            contextId: peekNext.contextId ?? null,
+            authoritySource: normalizedSource,
+          });
+        }
+        if (shouldBlockFallbackWhileIdle()) {
+          if (process.env.NODE_ENV !== "production") {
+            traceFallbackRejectedStableState({
+              signature: authoritySignature,
+              writer: meta.writer,
+              reason: "idle_runtime_lock",
+              view: peekNext.view ?? null,
+            });
+          }
+          return;
+        }
+        const bootstrapDecision = evaluateSystemFallbackBootstrap({
+          view: peekNext.view ?? null,
+          panelId: peekNext.view ?? null,
+          contextId: peekNext.contextId ?? null,
+          selectedObjectId: selectedObjectIdState ?? null,
+          isOpen: peekNext.isOpen,
+          reason: normalizedReason,
+        });
+        if (!bootstrapDecision.allow) {
+          if (process.env.NODE_ENV !== "production") {
+            traceFallbackRejectedStableState({
+              signature: authoritySignature,
+              writer: meta.writer,
+              rejectReason: bootstrapDecision.rejectReason ?? "workspace_initialized",
+              view: peekNext.view ?? null,
+            });
+          }
+          return;
+        }
+        recordPanelActivity("system_fallback", authoritySignature);
+      }
+
+      if (
+        shouldBlockAuthorityReconciliationWhileIdle() &&
+        normalizedSource === "system_fallback"
+      ) {
+        return;
+      }
+
+      if (!shouldCommitPanelWrite(prevSnapshot, peekNext)) {
+        if (process.env.NODE_ENV !== "production") {
+          traceAuthorityNoOpSkipped({
+            signature: buildPanelStateSignatureFromState(peekNext),
+            writer: meta.writer,
+            source: normalizedSource,
+            reason: normalizedReason,
+            prevView: prevSnapshot.view ?? null,
+            nextView: peekNext.view ?? null,
+            contextId: peekNext.contextId ?? null,
+          });
+        }
+        return;
+      }
+      lastPanelWriteSourceRef.current = normalizedSource;
       stageRightPanelWriteMeta({
         writer: meta.writer,
         source: normalizedSource,
@@ -2672,10 +3036,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             reason: normalizedReason,
           };
         }
+        if (areRightPanelStatesEquivalent(prev, resolvedNext)) {
+          return prev;
+        }
+        if (resolvedNext.view === "dashboard" && resolvedNext.isOpen) {
+          markWorkspaceInitialized(authoritySignature);
+          if (normalizedSource === "system_fallback") {
+            markSystemFallbackBootstrapComplete(String(normalizedReason));
+          }
+        }
         return resolvedNext;
       });
     },
-    [entryFlowState, getAnalyzeLockedObjectId, setRightPanelState, stageRightPanelWriteMeta, writeChatPipelineDebug]
+    [
+      entryFlowState,
+      getAnalyzeLockedObjectId,
+      selectedObjectIdState,
+      setRightPanelState,
+      stageRightPanelWriteMeta,
+      writeChatPipelineDebug,
+    ]
   );
 
   const lastAnalyzeRouteCommitSigRef = useRef<string | null>(null);
@@ -2771,15 +3151,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const prevCompareOpenForMetricRef = useRef(false);
   const lastDecisionRunIdForMetricRef = useRef<string | null>(null);
   const [objectSelection, _setObjectSelection] = useState<any | null>(null);
+  const objectSelectionRef = useRef<any | null>(null);
+  useLayoutEffect(() => {
+    objectSelectionRef.current = objectSelection;
+  }, [objectSelection]);
   const setObjectSelection = useCallback(
     (nextOrUpdater: any | null | ((prev: any | null) => any | null)) => {
-      _setObjectSelection((prev: any | null) => {
-        const next = typeof nextOrUpdater === "function" ? nextOrUpdater(prev) : nextOrUpdater;
-        const highlighted = getHighlightedObjectIdsFromSelection(next);
-        if (next == null || highlighted.length === 0) {
-          return prev;
+      const prev = objectSelectionRef.current;
+      const next = typeof nextOrUpdater === "function" ? nextOrUpdater(prev) : nextOrUpdater;
+      if (!shouldCommitObjectSelection(prev, next)) {
+        return;
+      }
+      _setObjectSelection((prevState: any | null) => {
+        const resolvedNext =
+          typeof nextOrUpdater === "function" ? nextOrUpdater(prevState) : nextOrUpdater;
+        if (!shouldCommitObjectSelection(prevState, resolvedNext)) {
+          return prevState;
         }
-        const semanticSig = JSON.stringify(next ?? null);
+        if (process.env.NODE_ENV !== "production") {
+          traceRuntimeSelection({
+            caller: "HomeScreen.setObjectSelection",
+            objectId: getHighlightedObjectIdsFromSelection(resolvedNext)[0] ?? null,
+            previousSelection: JSON.stringify(prevState ?? null),
+            nextSelection: JSON.stringify(resolvedNext ?? null),
+            sameSelectionReapply: false,
+          });
+        }
+        const highlighted = getHighlightedObjectIdsFromSelection(resolvedNext);
+        if (resolvedNext == null || highlighted.length === 0) {
+          return prevState;
+        }
+        const semanticSig = JSON.stringify(resolvedNext ?? null);
         const allowed = traceSceneWrite({
           source: "selection",
           semanticSig,
@@ -2792,19 +3194,40 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             blocked: !allowed,
           },
         });
-        return allowed ? next : prev;
+        return allowed ? resolvedNext : prevState;
       });
     },
     [writeChatPipelineDebug]
   );
   const setSelectedObjectIdState = useCallback(
     (nextOrUpdater: string | null | ((prev: string | null) => string | null)) => {
-      _setSelectedObjectIdState((prev) => {
-        const next = typeof nextOrUpdater === "function" ? nextOrUpdater(prev) : nextOrUpdater;
-        if (next == null) {
-          return prev;
+      const prev = selectedObjectIdStateRef.current;
+      const next = typeof nextOrUpdater === "function" ? nextOrUpdater(prev) : nextOrUpdater;
+      if (!shouldCommitSelectedObjectId(prev, next)) {
+        return;
+      }
+      if (next == null) {
+        return;
+      }
+      _setSelectedObjectIdState((prevState) => {
+        const resolvedNext =
+          typeof nextOrUpdater === "function" ? nextOrUpdater(prevState) : nextOrUpdater;
+        if (!shouldCommitSelectedObjectId(prevState, resolvedNext)) {
+          return prevState;
         }
-        const semanticSig = JSON.stringify({ selectedId: next ?? null });
+        if (resolvedNext == null) {
+          return prevState;
+        }
+        if (process.env.NODE_ENV !== "production") {
+          traceRuntimeSelection({
+            caller: "HomeScreen.setSelectedObjectIdState",
+            objectId: resolvedNext,
+            previousSelection: JSON.stringify({ selectedId: prevState ?? null }),
+            nextSelection: JSON.stringify({ selectedId: resolvedNext ?? null }),
+            sameSelectionReapply: false,
+          });
+        }
+        const semanticSig = JSON.stringify({ selectedId: resolvedNext ?? null });
         const allowed = traceSceneWrite({
           source: "selection",
           semanticSig,
@@ -2817,7 +3240,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             blocked: !allowed,
           },
         });
-        return allowed ? next : prev;
+        return allowed ? resolvedNext : prevState;
       });
     },
     [writeChatPipelineDebug]
@@ -3627,15 +4050,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         contextId: decision.nextState.contextId ?? null,
       });
       if (lastUpstreamPanelCommitSigRef.current === panelSig) {
-        emitRightPanelDiagnosticDev(
-          "panel_open_requested",
-          {
-            detail: "upstream_dedupe_same_sig",
-            signature: panelSig,
-            activePanelId: rightPanelState.view ?? null,
-          },
-          `upstream_sig:${panelSig}`
-        );
+        if (process.env.NODE_ENV !== "production") {
+          tracePanelWriteSkippedNoOp({
+            writer: "HomeScreen.applyPanelControllerRequest",
+            source: rawSource,
+            reason: "upstream_dedupe_same_sig",
+            prevView: rightPanelState.view ?? null,
+            nextView: decision.nextState.view ?? null,
+            contextId: decision.nextState.contextId ?? null,
+          });
+        }
         return;
       }
       if (
@@ -3643,20 +4067,97 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         (rightPanelState.contextId ?? null) === (decision.nextState.contextId ?? null) &&
         rightPanelState.isOpen === decision.nextState.isOpen
       ) {
-        emitRightPanelDiagnosticDev(
-          "panel_open_requested",
-          {
-            detail: "upstream_dedupe_same_state",
-            signature: panelSig,
-            normalizedView: decision.nextState.view ?? null,
+        if (process.env.NODE_ENV !== "production") {
+          tracePanelWriteSkippedNoOp({
+            writer: "HomeScreen.applyPanelControllerRequest",
+            source: rawSource,
+            reason: "upstream_dedupe_same_state",
+            prevView: rightPanelState.view ?? null,
+            nextView: decision.nextState.view ?? null,
             contextId: decision.nextState.contextId ?? null,
-            activePanelId: rightPanelState.view ?? null,
-          },
-          `upstream_state:${panelSig}`
-        );
+          });
+        }
         return;
       }
+      if (!shouldCommitPanelWrite(rightPanelState, decision.nextState)) {
+        if (process.env.NODE_ENV !== "production") {
+          tracePanelWriteSkippedNoOp({
+            writer: "HomeScreen.applyPanelControllerRequest",
+            source: rawSource,
+            reason: decision.reason,
+            prevView: rightPanelState.view ?? null,
+            nextView: decision.nextState.view ?? null,
+            contextId: decision.nextState.contextId ?? null,
+          });
+        }
+        rightPanelController.refs.lastPanelRequestSigRef.current = panelRequestDedupeKey;
+        return decision;
+      }
+      const normalizedControllerSource = normalizePanelSource(rawSource);
+      if (normalizedControllerSource === "system_fallback") {
+        if (shouldBlockFallbackWhileIdle()) {
+          rightPanelController.refs.lastPanelRequestSigRef.current = panelRequestDedupeKey;
+          return decision;
+        }
+        const bootstrapDecision = evaluateSystemFallbackBootstrap({
+          view: decision.nextState.view ?? null,
+          panelId: decision.nextState.view ?? null,
+          contextId: decision.nextState.contextId ?? null,
+          selectedObjectId: selectedObjectIdState ?? null,
+          isOpen: decision.nextState.isOpen,
+          reason: decision.reason,
+        });
+        if (!bootstrapDecision.allow) {
+          if (process.env.NODE_ENV !== "production") {
+            traceFallbackRejectedStableState({
+              writer: "HomeScreen.applyPanelControllerRequest",
+              rejectReason: bootstrapDecision.rejectReason ?? "workspace_initialized",
+              view: decision.nextState.view ?? null,
+              reason: decision.reason,
+            });
+          }
+          rightPanelController.refs.lastPanelRequestSigRef.current = panelRequestDedupeKey;
+          return decision;
+        }
+        if (process.env.NODE_ENV !== "production") {
+          traceFallbackRequest({
+            caller: "HomeScreen.applyPanelControllerRequest",
+            reason: decision.reason,
+            requestedView: decision.nextState.view ?? null,
+            requestedPanel: decision.nextState.view ?? null,
+            selectedObjectId: selectedObjectIdState ?? null,
+            contextId: decision.nextState.contextId ?? null,
+            authoritySource: normalizedControllerSource,
+          });
+        }
+      }
       lastUpstreamPanelCommitSigRef.current = panelSig;
+      rightPanelController.refs.lastPanelRequestSigRef.current = panelRequestDedupeKey;
+      if (process.env.NODE_ENV !== "production" && decision.nextState) {
+        traceRuntimeRightPanel({
+          caller: "HomeScreen.applyPanelControllerRequest",
+          previousPanel: rightPanelState.view ?? null,
+          nextPanel: decision.nextState.view ?? null,
+          contextId: decision.nextState.contextId ?? null,
+          signature: JSON.stringify({
+            view: decision.nextState.view ?? null,
+            contextId: decision.nextState.contextId ?? null,
+            isOpen: decision.nextState.isOpen,
+          }),
+          previousSignature: JSON.stringify({
+            view: rightPanelState.view ?? null,
+            contextId: rightPanelState.contextId ?? null,
+            isOpen: rightPanelState.isOpen,
+          }),
+          dashboardToDashboard:
+            rightPanelState.view === "dashboard" &&
+            decision.nextState.view === "dashboard",
+          detail: {
+            rawSource,
+            reason: decision.reason,
+          },
+        });
+      }
       commitRightPanelStateFromAuthority(
         (prev) => {
           const next = decision.nextState;
@@ -3680,14 +4181,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               source: "applyPanelControllerRequest",
             });
           }
-          if (
-            prev.view === next.view &&
-            prev.contextId === next.contextId &&
-            prev.isOpen === next.isOpen
-          ) {
-            return prev; // prevent unnecessary re-render loop
+          if (areRightPanelStatesEquivalent(prev, next)) {
+            return prev;
           }
-          rightPanelController.refs.lastPanelRequestSigRef.current = panelRequestDedupeKey;
           return next;
         },
         {
@@ -4051,6 +4547,63 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       ) {
         return;
       }
+      const normalizedAuthoritySource = normalizePanelSource(normalizedRequest.source);
+      if (normalizedAuthoritySource === "system_fallback") {
+        if (shouldBlockFallbackWhileIdle()) {
+          return;
+        }
+        const bootstrapDecision = evaluateSystemFallbackBootstrap({
+          view: normalizedView ?? null,
+          panelId: normalizedView ?? null,
+          contextId: normalizedRequest.contextId ?? null,
+          selectedObjectId: selectedObjectIdState ?? null,
+          isOpen: true,
+          reason: normalizedRequest.reason ?? "open",
+        });
+        if (!bootstrapDecision.allow) {
+          if (process.env.NODE_ENV !== "production") {
+            traceFallbackRejectedStableState({
+              writer: "HomeScreen.requestPanelAuthorityOpen",
+              rejectReason: bootstrapDecision.rejectReason ?? "workspace_initialized",
+              view: normalizedView ?? null,
+              reason: normalizedRequest.reason ?? "open",
+            });
+          }
+          rightPanelController.refs.lastOpenIntentRef.current = openIntentSig;
+          return;
+        }
+        if (process.env.NODE_ENV !== "production") {
+          traceFallbackRequest({
+            caller: "HomeScreen.requestPanelAuthorityOpen",
+            reason: normalizedRequest.reason ?? "open",
+            requestedView: normalizedView ?? null,
+            requestedPanel: normalizedView ?? null,
+            selectedObjectId: selectedObjectIdState ?? null,
+            contextId: normalizedRequest.contextId ?? null,
+            authoritySource: normalizedAuthoritySource,
+          });
+        }
+      }
+      const proposedPanelState: RightPanelState = {
+        ...rightPanelState,
+        isOpen: true,
+        view: normalizedView,
+        contextId: normalizedRequest.contextId ?? null,
+      };
+      if (!shouldCommitPanelWrite(rightPanelState, proposedPanelState)) {
+        rightPanelController.refs.lastOpenIntentRef.current = openIntentSig;
+        if (process.env.NODE_ENV !== "production") {
+          tracePanelWriteSkippedNoOp({
+            writer: "HomeScreen.requestPanelAuthorityOpen",
+            source: normalizedRequest.source,
+            reason: normalizedRequest.reason ?? "open",
+            prevView: rightPanelState.view ?? null,
+            nextView: normalizedView ?? null,
+            contextId: normalizedRequest.contextId ?? null,
+          });
+        }
+        return;
+      }
       rightPanelController.refs.lastOpenIntentRef.current = openIntentSig;
 
       emitRightPanelDiagnosticDev("panel_open_committed", {
@@ -4381,6 +4934,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   const dispatchCanonicalAction = useCallback(
     (action: CanonicalNexoraAction) => {
+      if (process.env.NODE_ENV !== "production") {
+        traceRuntimeDispatch({
+          source: "HomeScreen.dispatchCanonicalAction",
+          action: String(action.intent ?? action.actionId ?? "unknown"),
+          signature: JSON.stringify({
+            actionId: action.actionId,
+            intent: action.intent,
+            source: action.source,
+            view: rightPanelState.view ?? null,
+            contextId: rightPanelState.contextId ?? null,
+          }),
+          detail: { action },
+        });
+      }
       traceActionRouterReceived(action);
       traceActionRouterNormalized(action);
       const ctx: ActionRouterContext = {
@@ -5027,8 +5594,50 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     return () => window.removeEventListener("nexora:open-right-panel", onOpenRightPanel as EventListener);
   }, [dispatchCanonicalAction, logDeprecatedPanelPath, requestPanelAuthorityOpen]);
   useEffect(() => {
+    if (rightPanelState.isOpen && rightPanelState.view === "dashboard") {
+      markWorkspaceInitialized(
+        buildAuthorityStateSignature({
+          view: rightPanelState.view,
+          panelId: rightPanelState.view,
+          contextId: rightPanelState.contextId ?? null,
+          selectedObjectId: selectedObjectIdState ?? null,
+          authoritySource: "system_fallback",
+          isOpen: true,
+        })
+      );
+      return;
+    }
     if (rightPanelState.isOpen) return;
     if (rightPanelState.view !== "dashboard") return;
+    if (dashboardBootstrapAttemptedRef.current) return;
+    if (shouldBlockFallbackWhileIdle()) return;
+    const bootstrapDecision = evaluateSystemFallbackBootstrap({
+      view: "dashboard",
+      panelId: "dashboard",
+      contextId: rightPanelState.contextId ?? null,
+      selectedObjectId: selectedObjectIdState ?? null,
+      isOpen: false,
+      reason: "initial_executive_open",
+    });
+    if (!bootstrapDecision.allow) {
+      dashboardBootstrapAttemptedRef.current = true;
+      if (process.env.NODE_ENV !== "production") {
+        traceFallbackRejectedStableState({
+          writer: "HomeScreen.initial_executive_open",
+          rejectReason: bootstrapDecision.rejectReason ?? "workspace_initialized",
+          view: "dashboard",
+          reason: "initial_executive_open",
+        });
+      }
+      return;
+    }
+    dashboardBootstrapAttemptedRef.current = true;
+    if (process.env.NODE_ENV !== "production") {
+      traceFallbackBootstrap({
+        reason: "initial_executive_open",
+        view: "dashboard",
+      });
+    }
     requestPanelAuthorityOpen({
       view: "dashboard",
       family: "EXE",
@@ -5036,12 +5645,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       reason: "initial_executive_open",
       forceOpen: true,
     });
-  }, [requestPanelAuthorityOpen, rightPanelState.isOpen, rightPanelState.view]);
+  }, [
+    requestPanelAuthorityOpen,
+    rightPanelState.contextId,
+    rightPanelState.isOpen,
+    rightPanelState.view,
+    selectedObjectIdState,
+  ]);
 
   useEffect(() => {
     if (panelUserExplicitCloseRef.current) return;
     if (!rightPanelState.view) return;
     if (rightPanelState.isOpen) return;
+    if (shouldBlockFallbackWhileIdle()) return;
+    const bootstrapDecision = evaluateSystemFallbackBootstrap({
+      view: rightPanelState.view,
+      panelId: rightPanelState.view,
+      contextId: rightPanelState.contextId ?? null,
+      selectedObjectId: selectedObjectIdState ?? null,
+      isOpen: false,
+      reason: "panel_visibility_auto_reopen",
+    });
+    if (!bootstrapDecision.allow) {
+      return;
+    }
     applyPanelControllerRequest({
       requestedView: rightPanelState.view,
       source: "effect_auto",
@@ -5055,6 +5682,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     rightPanelState.contextId,
     rightPanelState.isOpen,
     rightPanelState.view,
+    selectedObjectIdState,
   ]);
 
   useEffect(() => {
@@ -5790,138 +6418,140 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     opponentModel: null,
     strategicPatterns: null,
   });
+  const submitActiveForVisibleUi = loading || chatRequestStatus === "submitting";
+  const projectedVisibleUiState = useMemo(
+    () =>
+      resolveNextVisibleUiState({
+        prev: visibleUiState,
+        sceneJson,
+        guardedResponseData,
+        objectSelection,
+        selectedObjectIdState,
+        focusedId,
+        conflicts,
+        memoryInsights,
+        riskPropagation,
+        strategicAdvice,
+        decisionCockpit,
+        opponentModel,
+        strategicPatterns,
+        submitActive: submitActiveForVisibleUi,
+      }),
+    [
+      chatRequestStatus,
+      conflicts,
+      decisionCockpit,
+      focusedId,
+      guardedResponseData,
+      loading,
+      memoryInsights,
+      objectSelection,
+      opponentModel,
+      riskPropagation,
+      sceneJson,
+      selectedObjectIdState,
+      strategicAdvice,
+      strategicPatterns,
+      submitActiveForVisibleUi,
+      visibleUiState,
+    ]
+  );
+  const visibleUiStateSignature = useMemo(
+    () => buildVisibleUiStateSignature(visibleUiState),
+    [visibleUiState]
+  );
+  const projectedVisibleUiStateSignature = useMemo(
+    () => buildVisibleUiStateSignature(projectedVisibleUiState),
+    [projectedVisibleUiState]
+  );
   useEffect(() => {
-    const submitActive = loading || chatRequestStatus === "submitting";
-    setVisibleUiState((prev) => {
-      const nextSceneJson = hasRenderableSceneForVisibleState(sceneJson)
-        ? sceneJson
-        : submitActive
-        ? prev.sceneJson
-        : sceneJson;
-      const nextResponseData = hasRenderableResponseForVisibleState(guardedResponseData)
-        ? guardedResponseData
-        : submitActive
-        ? prev.responseData
-        : guardedResponseData;
-      const nextObjectSelection = hasMeaningfulSelectionForVisibleState(objectSelection)
-        ? objectSelection
-        : submitActive
-        ? prev.objectSelection
-        : !hasMeaningfulSelectionForVisibleState(prev.objectSelection) &&
-            !hasMeaningfulSelectionForVisibleState(objectSelection)
-        ? prev.objectSelection
-        : objectSelection;
-      const nextSelectedObjectId =
-        typeof selectedObjectIdState === "string" && selectedObjectIdState.trim().length > 0
-          ? selectedObjectIdState
-          : submitActive
-          ? prev.selectedObjectId
-          : selectedObjectIdState ?? null;
-      const nextFocusedId =
-        typeof focusedId === "string" && focusedId.trim().length > 0
-          ? focusedId
-          : submitActive
-          ? prev.focusedId
-          : focusedId ?? null;
-      const rawConflicts = Array.isArray(conflicts) ? conflicts : [];
-      const nextConflicts =
-        rawConflicts.length > 0
-          ? conflicts
-          : submitActive
-          ? prev.conflicts
-          : prev.conflicts.length === 0
-          ? prev.conflicts
-          : rawConflicts;
-      const nextMemoryInsights =
-        asRecord(memoryInsights) ? memoryInsights : submitActive ? prev.memoryInsights : memoryInsights;
-      const nextRiskPropagation =
-        asRecord(riskPropagation) ? riskPropagation : submitActive ? prev.riskPropagation : riskPropagation;
-      const nextStrategicAdvice =
-        asRecord(strategicAdvice) ? strategicAdvice : submitActive ? prev.strategicAdvice : strategicAdvice;
-      const nextDecisionCockpit =
-        asRecord(decisionCockpit) ? decisionCockpit : submitActive ? prev.decisionCockpit : decisionCockpit;
-      const nextOpponentModel =
-        asRecord(opponentModel) ? opponentModel : submitActive ? prev.opponentModel : opponentModel;
-      const nextStrategicPatterns =
-        asRecord(strategicPatterns) ? strategicPatterns : submitActive ? prev.strategicPatterns : strategicPatterns;
-
-      const nextState = {
-        sceneJson: nextSceneJson,
-        responseData: nextResponseData,
-        objectSelection: nextObjectSelection,
-        selectedObjectId: nextSelectedObjectId,
-        focusedId: nextFocusedId,
-        conflicts: nextConflicts,
-        memoryInsights: nextMemoryInsights,
-        riskPropagation: nextRiskPropagation,
-        strategicAdvice: nextStrategicAdvice,
-        decisionCockpit: nextDecisionCockpit,
-        opponentModel: nextOpponentModel,
-        strategicPatterns: nextStrategicPatterns,
-      };
-
-      const unchanged =
-        prev.sceneJson === nextState.sceneJson &&
-        prev.responseData === nextState.responseData &&
-        prev.objectSelection === nextState.objectSelection &&
-        prev.selectedObjectId === nextState.selectedObjectId &&
-        prev.focusedId === nextState.focusedId &&
-        prev.conflicts === nextState.conflicts &&
-        prev.memoryInsights === nextState.memoryInsights &&
-        prev.riskPropagation === nextState.riskPropagation &&
-        prev.strategicAdvice === nextState.strategicAdvice &&
-        prev.decisionCockpit === nextState.decisionCockpit &&
-        prev.opponentModel === nextState.opponentModel &&
-        prev.strategicPatterns === nextState.strategicPatterns;
-
-      if (process.env.NODE_ENV !== "production") {
-        if (unchanged && submitActive) {
-          console.log("[Nexora][ChatSubmit][PreserveVisibleState]", {
-            hasResponseData: Boolean(prev.responseData),
-            hasSceneJson: Boolean(prev.sceneJson),
-            hasPanelData: Boolean(prev.responseData ?? prev.strategicAdvice ?? prev.riskPropagation),
-            selectedObjectId: prev.selectedObjectId ?? null,
-            panelView: rightPanelState.view ?? null,
-            preserved: true,
-          });
-        } else if (!unchanged) {
-          console.log("[Nexora][ChatSubmit][CommitNewVisibleState]", {
-            hasResponseData: Boolean(nextState.responseData),
-            hasSceneJson: Boolean(nextState.sceneJson),
-            hasPanelData: Boolean(nextState.responseData ?? nextState.strategicAdvice ?? nextState.riskPropagation),
-            selectedObjectId: nextState.selectedObjectId ?? null,
-            panelView: rightPanelState.view ?? null,
-            preserved: false,
-          });
-        } else if (!hasRenderableResponseForVisibleState(guardedResponseData) && !hasRenderableSceneForVisibleState(sceneJson)) {
-          console.log("[Nexora][ChatSubmit][RejectedTransientState]", {
-            hasResponseData: Boolean(guardedResponseData),
-            hasSceneJson: Boolean(sceneJson),
-            hasPanelData: Boolean(strategicAdvice ?? riskPropagation),
-            selectedObjectId: selectedObjectIdState ?? null,
-            panelView: rightPanelState.view ?? null,
-          });
-        }
+    if (projectedVisibleUiStateSignature === visibleUiStateSignature) {
+      return;
+    }
+    if (
+      !shouldProceedRuntimeWrite(
+        "visible-ui-state",
+        projectedVisibleUiStateSignature
+      )
+    ) {
+      return;
+    }
+    const authoritySceneIds = sceneObjectIds(sceneJson);
+    const currentVisibleSceneIds = sceneObjectIds(visibleUiState.sceneJson);
+    const projectedVisibleSceneIds = sceneObjectIds(projectedVisibleUiState.sceneJson);
+    const quietVisibleSceneSync =
+      isVisibleSceneBootstrapCatchUp(authoritySceneIds, currentVisibleSceneIds) &&
+      !hasSceneParityIdMismatch(authoritySceneIds, projectedVisibleSceneIds);
+    if (process.env.NODE_ENV !== "production") {
+      if (submitActiveForVisibleUi) {
+        console.log("[Nexora][ChatSubmit][CommitNewVisibleState]", {
+          hasResponseData: Boolean(projectedVisibleUiState.responseData),
+          hasSceneJson: Boolean(projectedVisibleUiState.sceneJson),
+          hasPanelData: Boolean(
+            projectedVisibleUiState.responseData ??
+              projectedVisibleUiState.strategicAdvice ??
+              projectedVisibleUiState.riskPropagation
+          ),
+          selectedObjectId: projectedVisibleUiState.selectedObjectId ?? null,
+          panelView: rightPanelState.view ?? null,
+          preserved: false,
+        });
+      } else if (
+        !hasRenderableResponseForVisibleState(guardedResponseData) &&
+        !hasRenderableSceneForVisibleState(sceneJson)
+      ) {
+        console.log("[Nexora][ChatSubmit][RejectedTransientState]", {
+          hasResponseData: Boolean(guardedResponseData),
+          hasSceneJson: Boolean(sceneJson),
+          hasPanelData: Boolean(strategicAdvice ?? riskPropagation),
+          selectedObjectId: selectedObjectIdState ?? null,
+          panelView: rightPanelState.view ?? null,
+        });
       }
-
-      return unchanged ? prev : nextState;
+      if (!quietVisibleSceneSync) {
+        traceRuntimeWrite({
+          source: "HomeScreen.setVisibleUiState",
+          action: "visible_ui_state_reconcile",
+          signature: projectedVisibleUiStateSignature,
+          previousSignature: visibleUiStateSignature,
+          nextSignature: projectedVisibleUiStateSignature,
+          detail: {
+            submitActive: submitActiveForVisibleUi,
+            objectSelectionChanged:
+              visibleUiState.objectSelection !== projectedVisibleUiState.objectSelection,
+            sceneJsonChanged: visibleUiState.sceneJson !== projectedVisibleUiState.sceneJson,
+            responseDataChanged:
+              visibleUiState.responseData !== projectedVisibleUiState.responseData,
+          },
+        });
+      }
+    }
+    setVisibleUiState({
+      sceneJson: (projectedVisibleUiState.sceneJson ?? null) as SceneJson | null,
+      responseData: projectedVisibleUiState.responseData,
+      objectSelection: projectedVisibleUiState.objectSelection,
+      selectedObjectId: projectedVisibleUiState.selectedObjectId,
+      focusedId: projectedVisibleUiState.focusedId,
+      conflicts: projectedVisibleUiState.conflicts,
+      memoryInsights: projectedVisibleUiState.memoryInsights,
+      riskPropagation: projectedVisibleUiState.riskPropagation,
+      strategicAdvice: projectedVisibleUiState.strategicAdvice,
+      decisionCockpit: projectedVisibleUiState.decisionCockpit,
+      opponentModel: projectedVisibleUiState.opponentModel,
+      strategicPatterns: projectedVisibleUiState.strategicPatterns,
     });
   }, [
-    chatRequestStatus,
-    conflicts,
-    decisionCockpit,
-    focusedId,
     guardedResponseData,
-    loading,
-    memoryInsights,
-    objectSelection,
-    opponentModel,
+    projectedVisibleUiState,
+    projectedVisibleUiStateSignature,
     rightPanelState.view,
-    riskPropagation,
     sceneJson,
     selectedObjectIdState,
     strategicAdvice,
-    strategicPatterns,
+    riskPropagation,
+    submitActiveForVisibleUi,
+    visibleUiState,
+    visibleUiStateSignature,
   ]);
   const visibleSceneJson = visibleUiState.sceneJson;
   const visibleResponseData = visibleUiState.responseData;
@@ -5938,37 +6568,191 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const visibleSceneObjects = Array.isArray(visibleSceneJson?.scene?.objects)
     ? visibleSceneJson.scene.objects
     : [];
+  const visibleSceneObjectCount = visibleSceneObjects.length;
+  const visibleSceneObjectIds = useMemo(
+    () => visibleSceneObjects.map((o: any) => o?.id ?? "unknown"),
+    [visibleSceneJson]
+  );
+  const sceneJsonIdsForParity = useMemo(() => sceneObjectIds(sceneJson), [sceneJson]);
+  const visibleSceneJsonIdsForParity = useMemo(() => sceneObjectIds(visibleSceneJson), [visibleSceneJson]);
+  const visibleSceneSignature = useMemo(
+    () => buildSceneVisibleSignature({ count: visibleSceneObjectCount, ids: visibleSceneObjectIds }),
+    [visibleSceneObjectCount, visibleSceneObjectIds]
+  );
+  const sceneParitySignature = useMemo(
+    () =>
+      buildBusinessSceneParitySignature({
+        sceneJsonIds: sceneJsonIdsForParity,
+        visibleSceneJsonIds: visibleSceneJsonIdsForParity,
+        selectedObjectId: selectedObjectIdState,
+        relationshipIds: [],
+        scenarioId: selectedExecutiveScenarioId,
+      }),
+    [sceneJsonIdsForParity, visibleSceneJsonIdsForParity, selectedObjectIdState, selectedExecutiveScenarioId]
+  );
+  const legacySceneParitySignature = useMemo(
+    () =>
+      buildSceneParitySignature({
+        sceneJsonCount: countSceneObjects(sceneJson),
+        visibleSceneJsonCount: countSceneObjects(visibleSceneJson),
+        sceneJsonIds: sceneObjectIds(sceneJson),
+        visibleSceneJsonIds: sceneObjectIds(visibleSceneJson),
+        rightPanelView: rightPanelState.view ?? null,
+        rightPanelContextId: rightPanelState.contextId ?? null,
+      }),
+    [sceneJson, visibleSceneJson, rightPanelState.view, rightPanelState.contextId]
+  );
+  const stableParitySignature = useMemo(
+    () =>
+      buildSceneParityStableSignature({
+        sceneCount: countSceneObjects(sceneJson),
+        visibleSceneCount: countSceneObjects(visibleSceneJson),
+        selectedObjectId: selectedObjectIdState ?? null,
+        relationshipCount: 0,
+        scenarioId: selectedExecutiveScenarioId ?? null,
+      }),
+    [sceneJson, visibleSceneJson, selectedObjectIdState, selectedExecutiveScenarioId]
+  );
+  useEffect(() => {
+    if (countSceneObjects(sceneJson) > 0 || countSceneObjects(visibleSceneJson) > 0) {
+      markSceneStable();
+    }
+    const sceneIds = sceneJsonIdsForParity;
+    const visibleIds = visibleSceneJsonIdsForParity;
+    if (sceneIds.length > 0 && !hasSceneParityIdMismatch(sceneIds, visibleIds)) {
+      markSceneParityStabilized();
+    }
+  }, [sceneJson, visibleSceneJson, sceneJsonIdsForParity, visibleSceneJsonIdsForParity]);
   const lastSceneParityVisibleTraceRef = useRef<string | null>(null);
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
     if (!visibleSceneJson) return;
-    const count = visibleSceneObjects.length;
-    const ids = visibleSceneObjects.map((o: any) => o?.id ?? "unknown");
-    const signature = JSON.stringify({ count, ids });
-    if (lastSceneParityVisibleTraceRef.current === signature) return;
-    lastSceneParityVisibleTraceRef.current = signature;
-    globalThis.console.log("[Nexora][SceneParity][VISIBLE]", {
-      count,
-      ids,
-      hasObjects: count > 0,
+    if (lastSceneParityVisibleTraceRef.current === visibleSceneSignature) {
+      return;
+    }
+    const sceneIds = sceneJsonIdsForParity;
+    const visibleIds = visibleSceneJsonIdsForParity;
+    if (isVisibleSceneBootstrapCatchUp(sceneIds, visibleIds)) {
+      lastSceneParityVisibleTraceRef.current = visibleSceneSignature;
+      return;
+    }
+    if (!shouldEmitStableSceneParity(stableParitySignature)) {
+      lastSceneParityVisibleTraceRef.current = visibleSceneSignature;
+      return;
+    }
+    if (!shouldProceedRuntimeWrite("scene-parity-visible", visibleSceneSignature)) {
+      return;
+    }
+    const previousVisibleSceneSignature = lastSceneParityVisibleTraceRef.current;
+    lastSceneParityVisibleTraceRef.current = visibleSceneSignature;
+    traceRuntimeParity({
+      source: "HomeScreen",
+      action: "SceneParity.VISIBLE",
+      reason: "visible_scene_signature_changed",
+      caller: "HomeScreen.useEffect.visibleSceneSignature",
+      previousSceneSignature: previousVisibleSceneSignature,
+      nextSceneSignature: visibleSceneSignature,
+      detail: {
+        count: visibleSceneObjectCount,
+        ids: visibleSceneObjectIds,
+      },
     });
-  }, [visibleSceneJson, visibleSceneObjects]);
+    recordRuntimeCycleEvent("SceneParity", {
+      signature: visibleSceneSignature,
+      source: "SceneParity.VISIBLE",
+    });
+    recordParityRun();
+    devLogOnSignatureChange("[Nexora][SceneParity][VISIBLE]", visibleSceneSignature, {
+      count: visibleSceneObjectCount,
+      ids: visibleSceneObjectIds,
+      hasObjects: visibleSceneObjectCount > 0,
+    }, "debug");
+  }, [
+    visibleSceneJson,
+    visibleSceneObjectCount,
+    visibleSceneObjectIds,
+    visibleSceneSignature,
+    stableParitySignature,
+    sceneJsonIdsForParity,
+    visibleSceneJsonIdsForParity,
+  ]);
   const lastSceneParityTraceRef = useRef<string | null>(null);
+  const lastLegacySceneParityTraceRef = useRef<string | null>(null);
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
-    const trace = {
-      sceneJsonCount: countSceneObjects(sceneJson),
-      visibleSceneJsonCount: countSceneObjects(visibleSceneJson),
-      sceneJsonIds: sceneObjectIds(sceneJson),
-      visibleSceneJsonIds: sceneObjectIds(visibleSceneJson),
-      rightPanelView: rightPanelState.view,
-      rightPanelContextId: rightPanelState.contextId ?? null,
-    };
-    const sig = JSON.stringify(trace);
-    if (lastSceneParityTraceRef.current === sig) return;
-    lastSceneParityTraceRef.current = sig;
-    globalThis.console.warn("[Nexora][SceneParity][HomeScreen]", trace);
-  }, [sceneJson, visibleSceneJson, rightPanelState.view, rightPanelState.contextId]);
+    const recentParitySource =
+      lastPanelWriteSourceRef.current ?? getLastPanelActivitySource();
+    if (
+      lastLegacySceneParityTraceRef.current !== legacySceneParitySignature &&
+      lastSceneParityTraceRef.current === sceneParitySignature
+    ) {
+      if (
+        shouldIgnoreRecentSceneParitySource(recentParitySource) ||
+        shouldBlockParityRegenerationWhileIdle()
+      ) {
+        traceParityIgnoredFallbackSource({
+          source: recentParitySource,
+          signature: legacySceneParitySignature,
+        });
+        lastLegacySceneParityTraceRef.current = legacySceneParitySignature;
+        return;
+      }
+      traceParityIgnoredDiagnosticEvent({
+        reason: "panel_layout_only_change",
+        signature: legacySceneParitySignature,
+      });
+    }
+    lastLegacySceneParityTraceRef.current = legacySceneParitySignature;
+
+    if (lastSceneParityTraceRef.current === sceneParitySignature) {
+      return;
+    }
+    const sceneIds = sceneJsonIdsForParity;
+    const visibleIds = visibleSceneJsonIdsForParity;
+    if (
+      !shouldEmitSceneParityHomeScreenLog({
+        businessSignature: sceneParitySignature,
+        sceneJsonIds: sceneIds,
+        visibleSceneJsonIds: visibleIds,
+      })
+    ) {
+      lastSceneParityTraceRef.current = sceneParitySignature;
+      return;
+    }
+    if (!shouldProceedRuntimeWrite("scene-parity-homescreen", sceneParitySignature)) {
+      return;
+    }
+    const previousBusinessParitySignature = lastSceneParityTraceRef.current;
+    lastSceneParityTraceRef.current = sceneParitySignature;
+    traceRuntimeParity({
+      source: "HomeScreen",
+      action: "SceneParity.HomeScreen",
+      reason: "business_scene_parity_signature_changed",
+      caller: "HomeScreen.useEffect.sceneParitySignature",
+      previousSceneSignature: previousBusinessParitySignature,
+      nextSceneSignature: sceneParitySignature,
+      detail: {
+        legacySceneParitySignature,
+        recentParitySource: recentParitySource ?? null,
+      },
+    });
+    recordRuntimeCycleEvent("SceneParity", {
+      signature: sceneParitySignature,
+      source: "SceneParity.HomeScreen",
+    });
+    recordParityRun();
+    devLogOnSignatureChange(
+      "[Nexora][SceneParity][HomeScreen]",
+      sceneParitySignature,
+      JSON.parse(sceneParitySignature),
+      "warn"
+    );
+  }, [
+    legacySceneParitySignature,
+    sceneJsonIdsForParity,
+    sceneParitySignature,
+    visibleSceneJsonIdsForParity,
+  ]);
   const hasVisibleSceneObjects = visibleSceneObjects.length > 0;
   const normalizedHealth = String(healthInfo ?? "").trim().toLowerCase();
   const isBackendHealthy =
@@ -5989,6 +6773,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       allowRealPanelData,
     });
   }
+  useEffect(() => {
+    evaluateIdleRuntimeStability({
+      dashboardActive: rightPanelState.view === "dashboard" && rightPanelState.isOpen,
+      authoritySignature: buildAuthorityStateSignature({
+        view: rightPanelState.view ?? null,
+        panelId: rightPanelState.view ?? null,
+        contextId: rightPanelState.contextId ?? null,
+        selectedObjectId: selectedObjectIdState ?? null,
+        authoritySource: lastPanelWriteSourceRef.current ?? "system_fallback",
+        isOpen: rightPanelState.isOpen,
+      }),
+      sceneSignature: sceneParitySignature,
+      selectedObjectId: selectedObjectIdState ?? null,
+      contractValid: allowRealPanelData,
+    });
+  }, [
+    allowRealPanelData,
+    rightPanelState.contextId,
+    rightPanelState.isOpen,
+    rightPanelState.view,
+    sceneParitySignature,
+    selectedObjectIdState,
+  ]);
   const allowDecisionPanels = true;
   const firstMeaningfulState: FirstMeaningfulState = useMemo(() => {
     const hasScene = hasVisibleSceneObjects;
@@ -6095,7 +6902,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const resetSig = JSON.stringify(resetTrace);
       if (lastSceneResetTraceSigRef.current !== resetSig) {
         lastSceneResetTraceSigRef.current = resetSig;
-        globalThis.console.warn("[Nexora][SceneParity][SceneResetCandidate]", resetTrace);
+        traceRuntimeParity({
+          source: "HomeScreen",
+          action: "SceneResetCandidate",
+          reason: "empty_state_reset",
+          caller: "HomeScreen.useEffect.isEmptyState",
+          previousSceneSignature: JSON.stringify({
+            prevCount: resetTrace.prevCount,
+            nextCount: resetTrace.nextCount,
+          }),
+          nextSceneSignature: resetSig,
+          detail: resetTrace,
+        });
+        devLogOnSignatureChange("[Nexora][SceneParity][SceneResetCandidate]", resetSig, resetTrace, "warn");
       }
     }
     commitRightPanelStateFromAuthority(
@@ -6201,19 +7020,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       lastStableSceneObjectsSignatureRef.current === stableSceneObjectsSignature &&
       lastStableSceneJsonRef.current
     ) {
-      if (process.env.NODE_ENV !== "production") {
-        const resetTrace = {
-          source: "visible_scene_fallback",
-          prevCount: countSceneObjects(visibleSceneJson),
-          nextCount: countSceneObjects(lastStableSceneJsonRef.current),
-          reason: "stable_signature_reuse",
-        };
-        const resetSig = JSON.stringify(resetTrace);
-        if (lastSceneResetTraceSigRef.current !== resetSig) {
-          lastSceneResetTraceSigRef.current = resetSig;
-          globalThis.console.warn("[Nexora][SceneParity][SceneResetCandidate]", resetTrace);
-        }
-      }
       return lastStableSceneJsonRef.current;
     }
     lastStableSceneObjectsSignatureRef.current = stableSceneObjectsSignature;
@@ -6946,13 +7752,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     commitRightPanelStateFromAuthority(
       (prev) => {
         if (prev.view !== "executive_object") return prev;
-        return {
+        const next = {
           ...prev,
-          view: "executive_object",
+          view: "executive_object" as const,
           contextId: nextContextId,
           isOpen: true,
-          timestamp: Date.now(),
         };
+        if (areRightPanelStatesEquivalent(prev, next)) return prev;
+        return { ...next, timestamp: Date.now() };
       },
       {
         writer: "HomeScreen.executive_object_context_sync",
@@ -12539,6 +13346,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     skippedReason: null,
   });
   const lastDecisionAssistantTelemetrySignatureRef = useRef<string | null>(null);
+  const lastDecisionTracePanelWriteSigRef = useRef<string | null>(null);
   const panelDataValidation = useMemo<PanelSharedDataValidationResult>(
     () => {
       const DEBUG_PANEL_TRACE = process.env.NODE_ENV !== "production";
@@ -12881,6 +13689,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         nexoraB8PanelContext,
       };
       const panelInputSignature = buildPanelContractSignature(nextPanelDataInput);
+      const decisionTracePanelSignature = extractDecisionTracePanelWriteSignature({
+        responseData: guardedResponseRecord,
+        canonicalRecommendation: canonicalRecommendationSource,
+        selectedObjectId: selectedObjectIdState,
+        scenarioId: selectedExecutiveScenarioId,
+      });
+      if (
+        lastDecisionTracePanelWriteSigRef.current === decisionTracePanelSignature &&
+        validatedPanelCacheRef.current.signature === panelInputSignature &&
+        validatedPanelCacheRef.current.result
+      ) {
+        tracePanelWriteSkippedTraceNoOp({
+          signature: decisionTracePanelSignature,
+          panelInputSignature,
+        });
+        return validatedPanelCacheRef.current.result;
+      }
+      lastDecisionTracePanelWriteSigRef.current = decisionTracePanelSignature;
       latestPanelInputSignatureRef.current = panelInputSignature;
       latestRawPanelSharedDataRef.current = nextPanelDataInput;
       const activeFamilyAudit = activePanelFamilyAuditRef.current;
@@ -13699,6 +14525,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   const showExecutiveRightAssistantPanel = shouldShowExecutiveRightAssistantPanel();
   const showExecutiveLeftCommandPanel = shouldShowExecutiveLeftCommandPanel();
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (!isClientMounted) return;
+    const report = runTypeCMvpWorkspaceValidation({
+      sceneJson: stableVisibleSceneJson,
+      assistantVisible: showExecutiveRightAssistantPanel,
+      scenarioVisible: shouldShowExecutiveScenarioSuggestionsPanel(),
+      commandBarVisible: shouldShowExecutiveCommandBar(),
+    });
+    const debugWindow = window as typeof window & {
+      __NEXORA_DEBUG__?: Record<string, unknown>;
+    };
+    debugWindow.__NEXORA_DEBUG__ = debugWindow.__NEXORA_DEBUG__ ?? {};
+    debugWindow.__NEXORA_DEBUG__.workspaceReadinessStatus = report.readiness;
+    debugWindow.__NEXORA_DEBUG__.workspaceValidationReport = report;
+  }, [isClientMounted, showExecutiveRightAssistantPanel, stableVisibleSceneJson]);
   const executiveAssistantThemeMode = resolveNexoraHudThemeMode(resolvedTheme);
   const executiveQuestionSuggestions = useMemo(() => {
     const domainExamples = activeDomainExperience.experience.promptExamples ?? [];
@@ -13715,6 +14557,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   const showExecutiveScenarioSuggestionsPanel = shouldShowExecutiveScenarioSuggestionsPanel();
   const showExecutiveScenarioComparisonPanel = shouldShowExecutiveScenarioComparisonPanel();
+  const scenarioWorkspaceState = useMemo(
+    () => (stableVisibleSceneJson ? readScenarioWorkspaceState(stableVisibleSceneJson) : null),
+    [stableVisibleSceneJson]
+  );
+  useEffect(() => {
+    if (!stableVisibleSceneJson) return;
+    const existing = (stableVisibleSceneJson.scene as Record<string, unknown>).scenarios;
+    if (existing && typeof existing === "object") return;
+    applySceneChangeSafe((prev) => {
+      if (!prev) return prev;
+      return ensureScenarioWorkspaceInScene(prev);
+    }, "executive_scenario_baseline");
+  }, [applySceneChangeSafe, stableVisibleSceneJson]);
   const executiveScenarioSuggestionsModel = useMemo(
     () =>
       buildExecutiveScenarioSuggestionsModel(
@@ -13744,6 +14599,74 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const handleExecutiveScenarioCompareRequest = useCallback((selectedScenarioIds: string[]) => {
     setComparisonFocusScenarioIds(selectedScenarioIds);
   }, []);
+  const clearScenarioScopedSelection = useCallback(() => {
+    selectedSetterRef.current(null);
+    handleSelectedChangeRef.current?.(null);
+    deselectPlacedObject();
+    selectRelationship(null);
+    setSelectedRelationshipId(null);
+    selectPropagationPath(null);
+    setSelectedPropagationPathId(null);
+    setSelectedObjectIdState(null);
+    setSelectedObjectInfo(null);
+    setFocusedId(null);
+  }, [setFocusedId]);
+  const handleCreateAuthoredScenario = useCallback(
+    (request: ScenarioCreateRequest) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        return createExecutiveScenario(prev, request).nextScene;
+      }, "executive_scenario_create");
+      clearScenarioScopedSelection();
+    },
+    [applySceneChangeSafe, clearScenarioScopedSelection]
+  );
+  const handleActivateAuthoredScenario = useCallback(
+    (scenarioId: string) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        return activateExecutiveScenario(prev, scenarioId).nextScene;
+      }, "executive_scenario_activate");
+      clearScenarioScopedSelection();
+      setSelectedExecutiveScenarioId(scenarioId);
+    },
+    [applySceneChangeSafe, clearScenarioScopedSelection]
+  );
+  const handleDuplicateAuthoredScenario = useCallback(
+    (scenarioId: string) => {
+      let duplicatedId: string | null = null;
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        const result = duplicateExecutiveScenario(prev, scenarioId);
+        duplicatedId = result.scenario?.id ?? null;
+        return result.nextScene;
+      }, "executive_scenario_duplicate");
+      clearScenarioScopedSelection();
+      if (duplicatedId) setSelectedExecutiveScenarioId(duplicatedId);
+    },
+    [applySceneChangeSafe, clearScenarioScopedSelection]
+  );
+  const handleArchiveAuthoredScenario = useCallback(
+    (scenarioId: string) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        return archiveExecutiveScenario(prev, scenarioId).nextScene;
+      }, "executive_scenario_archive");
+      clearScenarioScopedSelection();
+      setSelectedExecutiveScenarioId(null);
+    },
+    [applySceneChangeSafe, clearScenarioScopedSelection]
+  );
+  const handleCompareAuthoredScenarios = useCallback(
+    (scenarioIds: string[]) => {
+      applySceneChangeSafe((prev) => {
+        if (!prev) return prev;
+        return compareExecutiveScenarios(prev, scenarioIds);
+      }, "executive_scenario_compare", { bypassDedupe: true });
+      setComparisonFocusScenarioIds(scenarioIds);
+    },
+    [applySceneChangeSafe]
+  );
   const handleExecutiveScenarioSimulateSelected = useCallback(
     (option: ScenarioComparisonOption | null) => {
       if (!option) return;
@@ -13790,12 +14713,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   const leftCommandContextSummary = useMemo(() => {
     const s = (lastAnalysisSummary ?? "").trim();
+    const activeTemplate = (stableVisibleSceneJson?.meta?.activeDomainTemplate as { name?: unknown } | undefined)?.name;
+    const templateLine = typeof activeTemplate === "string" && activeTemplate.trim()
+      ? `Template: ${activeTemplate.trim()}. `
+      : "";
     const base = s.length > 160 ? `${s.slice(0, 159)}…` : s;
     const reflection = executiveReasoningTransparency.assistantLine;
-    if (!base) return reflection.length > 220 ? `${reflection.slice(0, 219)}…` : reflection;
-    const combined = `${base} Reasoning: ${reflection}`;
+    if (!base) {
+      const combinedReflection = `${templateLine}${reflection}`;
+      return combinedReflection.length > 220 ? `${combinedReflection.slice(0, 219)}…` : combinedReflection;
+    }
+    const combined = `${templateLine}${base} Reasoning: ${reflection}`;
     return combined.length > 260 ? `${combined.slice(0, 259)}…` : combined;
-  }, [executiveReasoningTransparency, lastAnalysisSummary]);
+  }, [executiveReasoningTransparency, lastAnalysisSummary, stableVisibleSceneJson?.meta?.activeDomainTemplate]);
 
   const leftCommandPortalNode =
     showExecutiveLeftCommandPanel && isClientMounted && leftCommandPortalHost ? (
@@ -13857,9 +14787,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           open={!executiveAssistantCollapsed}
           model={executiveScenarioSuggestionsModel}
           selectedScenarioId={selectedExecutiveScenarioId}
+          scenarioWorkspace={scenarioWorkspaceState}
           themeMode={executiveAssistantThemeMode}
           onSelectScenario={handleExecutiveScenarioSelect}
           onCompareRequest={handleExecutiveScenarioCompareRequest}
+          onCreateAuthoredScenario={handleCreateAuthoredScenario}
+          onActivateAuthoredScenario={handleActivateAuthoredScenario}
+          onDuplicateAuthoredScenario={handleDuplicateAuthoredScenario}
+          onArchiveAuthoredScenario={handleArchiveAuthoredScenario}
+          onCompareAuthoredScenarios={handleCompareAuthoredScenarios}
         />,
         executiveScenarioPortalHost
       )
@@ -14371,6 +15307,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   const showExecutiveCommandBar = shouldShowExecutiveCommandBar();
   const selectedExecutiveScenarioTitle = useMemo(() => {
+    const activeAuthoredScenario = scenarioWorkspaceState?.scenarios.find(
+      (scenario) => scenario.id === scenarioWorkspaceState.activeScenarioId
+    );
+    if (activeAuthoredScenario) return activeAuthoredScenario.name;
     const selected = executiveScenarioSuggestionsModel.scenarios.find(
       (scenario) => scenario.id === selectedExecutiveScenarioId
     );
@@ -14378,6 +15318,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [
     executiveScenarioComparisonModel.summary.bestOptionTitle,
     executiveScenarioSuggestionsModel.scenarios,
+    scenarioWorkspaceState,
     selectedExecutiveScenarioId,
   ]);
   const executiveCommandBarModel = useMemo(
@@ -14415,6 +15356,242 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       selectedExecutiveScenarioTitle,
     ]
   );
+  const [executiveOrientationSnapshot, setExecutiveOrientationSnapshot] = useState<ExecutiveOrientationSnapshot>(
+    () => getExecutiveOrientationHydrationSnapshot()
+  );
+  const [orientationHydrated, setOrientationHydrated] = useState(false);
+  const [executiveOrientationElapsedSeconds, setExecutiveOrientationElapsedSeconds] = useState(0);
+  useEffect(() => {
+    if (!shouldShowExecutiveOrientationSurface()) {
+      setOrientationHydrated(true);
+      traceExecutiveOrientationHydration({ hydrated: true, source: "surface_disabled" });
+      return;
+    }
+    hydrateExecutiveOrientationState();
+    const nextSnapshot = recordExecutiveOrientationVisit();
+    setExecutiveOrientationSnapshot(nextSnapshot);
+    setOrientationHydrated(true);
+    traceExecutiveOrientationHydration({ hydrated: true, source: "storage_hydrated" });
+    traceExecutiveOrientationVisibility({
+      serverVisible: false,
+      clientVisible: resolveOrientationWelcomeFromStorage(nextSnapshot),
+      storageVisible: resolveOrientationWelcomeFromStorage(nextSnapshot),
+      hydrated: true,
+    });
+  }, []);
+  useEffect(() => {
+    if (!shouldShowExecutiveOrientationSurface()) return;
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      setExecutiveOrientationElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => {
+      window.clearInterval(timer);
+      accumulateExecutiveOrientationSession(Math.floor((Date.now() - startedAt) / 1000));
+    };
+  }, []);
+  const executiveOrientationExperience = useMemo(() => {
+    if (!shouldShowExecutiveOrientationSurface()) return null;
+    const sceneForOrientation = stableVisibleSceneJson ?? visibleSceneJson;
+    const relationshipCount = sceneForOrientation ? readSceneRelationships(sceneForOrientation).length : 0;
+    const activeScenarioCount = Math.max(
+      executiveScenarioSuggestionsModel.scenarios.length,
+      selectedExecutiveScenarioTitle ? 1 : 0
+    );
+    const workspaceReadiness = evaluateWorkspaceReadiness({
+      sceneJson: sceneForOrientation,
+      assistantVisible: shouldShowExecutiveRightAssistantPanel(),
+      scenarioVisible: shouldShowExecutiveScenarioSuggestionsPanel(),
+      commandBarVisible: shouldShowExecutiveCommandBar(),
+    });
+    return resolveExecutiveOrientationExperience({
+      objectCount: countSceneObjects(sceneForOrientation),
+      relationshipCount,
+      elevatedRiskCount: deriveElevatedRiskCount({
+        fragilityLevel: pipelineStatusUi.fragilityLevel,
+        signalsCount: pipelineStatusUi.signalsCount,
+      }),
+      activeScenarioCount,
+      activeScenarioTitle: selectedExecutiveScenarioTitle,
+      operationalHealth: executiveStatusHudModel.healthLabel,
+      fragilityLevel: pipelineStatusUi.fragilityLevel,
+      pipelineStatus: pipelineStatusUi.status,
+      insightLine: pipelineStatusUi.insightLine,
+      decisionNextMove: pipelineStatusUi.decisionNextMove,
+      selectedObjectLabel: selectedObjectLabelForGettingStarted,
+      recommendedFocusLabel: traceSceneObjectIds[0] ?? null,
+      domainLabel: activeDomainExperience.experience.label,
+      workspaceReadiness,
+      elapsedSeconds: executiveOrientationElapsedSeconds,
+      themeMode: resolvedTheme === "day" ? "day" : "night",
+      orientation: executiveOrientationSnapshot,
+    });
+  }, [
+    activeDomainExperience.experience.label,
+    executiveOrientationElapsedSeconds,
+    executiveOrientationSnapshot,
+    executiveScenarioSuggestionsModel.scenarios,
+    executiveStatusHudModel.healthLabel,
+    pipelineStatusUi.decisionNextMove,
+    pipelineStatusUi.fragilityLevel,
+    pipelineStatusUi.insightLine,
+    pipelineStatusUi.signalsCount,
+    pipelineStatusUi.status,
+    resolvedTheme,
+    selectedExecutiveScenarioTitle,
+    selectedObjectLabelForGettingStarted,
+    stableVisibleSceneJson,
+    traceSceneObjectIds,
+    visibleSceneJson,
+  ]);
+  const showExecutiveOrientationWelcome = resolveExecutiveOrientationWelcomeVisible({
+    hydrated: orientationHydrated,
+    surfaceEnabled: shouldShowExecutiveOrientationSurface(),
+    welcomeShowWelcome: Boolean(executiveOrientationExperience?.welcome.showWelcome),
+    centerComponentActive: centerComponent != null,
+  });
+  const sceneOverlayGovernanceContext = useMemo((): SceneOverlayGovernanceContext => {
+    const cleanPresentation = isExecutiveWorkspaceCleanPresentation();
+    return {
+      cleanPresentation,
+      sceneInfoVisible: workspaceLayoutContract.hud.sceneInfoHud.visible,
+      objectInfoVisible: workspaceLayoutContract.hud.objectInfoHud.visible,
+      timelineVisible: workspaceLayoutContract.hud.timelineHud.visible,
+      toolbarVisible: !shouldShowExecutiveScenePanelDock(),
+      selectedObjectId: selectedObjectIdState ?? focusedId ?? null,
+      orientationElapsedSeconds: executiveOrientationElapsedSeconds,
+      orientationWelcomeVisible: showExecutiveOrientationWelcome,
+      pipelineStatus: pipelineStatusUi.status,
+      objectCount: countSceneObjects(stableVisibleSceneJson ?? visibleSceneJson),
+    };
+  }, [
+    executiveOrientationElapsedSeconds,
+    focusedId,
+    pipelineStatusUi.status,
+    selectedObjectIdState,
+    showExecutiveOrientationWelcome,
+    stableVisibleSceneJson,
+    visibleSceneJson,
+    workspaceLayoutContract.hud.objectInfoHud.visible,
+    workspaceLayoutContract.hud.sceneInfoHud.visible,
+    workspaceLayoutContract.hud.timelineHud.visible,
+  ]);
+  const showExecutiveOrientationPanel = resolveExecutiveOrientationPanelVisible({
+    hydrated: orientationHydrated,
+    surfaceEnabled: shouldShowExecutiveOrientationSurface(),
+    tier: executiveOrientationSnapshot.tier,
+    overlayAllowed: Boolean(executiveOrientationExperience) &&
+      shouldRenderSceneOverlay("executiveOrientationPanel", sceneOverlayGovernanceContext),
+  });
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    logSceneOverlayAudit(sceneOverlayGovernanceContext);
+  }, [sceneOverlayGovernanceContext]);
+  const handleExecutiveOrientationDismiss = useCallback(() => {
+    setExecutiveOrientationSnapshot(dismissExecutiveWelcome());
+    markUserStartedFlow("orientation_welcome_dismiss");
+  }, [markUserStartedFlow]);
+  const handleExecutiveQuickStartAction = useCallback(
+    (actionId: string) => {
+      handleExecutiveOrientationDismiss();
+      if (actionId === "analyze_risks") {
+        requestPanelAuthorityOpen({
+          view: "risk_flow",
+          family: "RSK",
+          source: "system",
+          contextId: selectedObjectIdState ?? focusedId ?? null,
+          reason: "executive_orientation_quick_start",
+        });
+        return;
+      }
+      if (actionId === "review_dependencies" || actionId === "inspect_network" || actionId === "select_object") {
+        handleGettingStartedOpenObjects();
+        return;
+      }
+      if (actionId === "create_scenario") {
+        handleOpenExecutiveModelingWorkspace("executive_orientation_quick_start");
+        return;
+      }
+      if (actionId === "compare_options") {
+        handleGettingStartedCompareOptions();
+        return;
+      }
+      if (actionId === "map_system") {
+        handleGettingStartedDescribeSystem();
+      }
+    },
+    [
+      focusedId,
+      handleExecutiveOrientationDismiss,
+      handleGettingStartedCompareOptions,
+      handleGettingStartedDescribeSystem,
+      handleGettingStartedOpenObjects,
+      handleOpenExecutiveModelingWorkspace,
+      requestPanelAuthorityOpen,
+      selectedObjectIdState,
+    ]
+  );
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const harmonization = resolveExecutiveHarmonizationSnapshot({
+      surfaces: [...SCENE_HUD_THEME_SURFACES],
+      themeMode: resolvedTheme === "day" ? "day" : "night",
+      commandBarVisible: shouldShowExecutiveCommandBar(),
+      statusHudVisible: Boolean(workspaceLayoutContract.hud.executiveStatusHud.visible),
+      sceneInfoVisible: workspaceLayoutContract.hud.sceneInfoHud.visible,
+      objectInfoVisible: workspaceLayoutContract.hud.objectInfoHud.visible,
+      timelineVisible: workspaceLayoutContract.hud.timelineHud.visible,
+      assistantVisible: shouldShowExecutiveRightAssistantPanel(),
+      quickActionsVisible: shouldShowExecutiveQuickActionsDock(),
+    });
+    const readinessContext: E2WorkspaceReadinessContext = {
+      themeMode: resolvedTheme === "day" ? "day" : "night",
+      objectCount: countSceneObjects(stableVisibleSceneJson ?? visibleSceneJson),
+      relationshipCount: stableVisibleSceneJson ? readSceneRelationships(stableVisibleSceneJson).length : 0,
+      sceneJsonPresent: Boolean(stableVisibleSceneJson ?? visibleSceneJson),
+      commandBarVisible: shouldShowExecutiveCommandBar(),
+      statusHudVisible: Boolean(workspaceLayoutContract.hud.executiveStatusHud.visible),
+      sceneInfoVisible: workspaceLayoutContract.hud.sceneInfoHud.visible,
+      objectInfoVisible: workspaceLayoutContract.hud.objectInfoHud.visible,
+      timelineVisible: workspaceLayoutContract.hud.timelineHud.visible,
+      assistantVisible: shouldShowExecutiveRightAssistantPanel(),
+      quickActionsVisible: shouldShowExecutiveQuickActionsDock(),
+      navigationToolbarVisible: !shouldShowExecutiveScenePanelDock(),
+      orientationEnabled: shouldShowExecutiveOrientationSurface(),
+      orientationExperience: executiveOrientationExperience,
+      harmonizationScore: harmonization.audit.score,
+      usesLegacyShellWithoutSurface: [],
+      layoutPreset: null,
+      viewportWidth: typeof window !== "undefined" ? window.innerWidth : 1440,
+      viewportHeight: typeof window !== "undefined" ? window.innerHeight : 900,
+      selectedObjectId: selectedObjectIdState ?? focusedId ?? null,
+      hasScenarioWorkspace: executiveScenarioSuggestionsModel.scenarios.length > 0,
+      hasAnalysis: Boolean(decisionResult),
+      workspaceReadiness: evaluateWorkspaceReadiness({
+        sceneJson: stableVisibleSceneJson ?? visibleSceneJson,
+        assistantVisible: shouldShowExecutiveRightAssistantPanel(),
+        scenarioVisible: shouldShowExecutiveScenarioSuggestionsPanel(),
+        commandBarVisible: shouldShowExecutiveCommandBar(),
+      }),
+      selectionStable: true,
+      cameraStable: !cameraLockedByUser,
+    };
+    runE2CompletionAudit(readinessContext);
+  }, [
+    cameraLockedByUser,
+    decisionResult,
+    executiveOrientationExperience,
+    executiveScenarioSuggestionsModel.scenarios.length,
+    focusedId,
+    resolvedTheme,
+    selectedObjectIdState,
+    stableVisibleSceneJson,
+    visibleSceneJson,
+    workspaceLayoutContract.hud.executiveStatusHud.visible,
+    workspaceLayoutContract.hud.objectInfoHud.visible,
+    workspaceLayoutContract.hud.sceneInfoHud.visible,
+    workspaceLayoutContract.hud.timelineHud.visible,
+  ]);
   const handleExecutiveCommandBarAction = useCallback(
     (actionId: ExecutiveCommandBarActionId) => {
       if (actionId === "analyze") {
@@ -14463,12 +15640,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       if (actionId === "load_workspace") {
         setWorkspaceLoadOpen(true);
+        return;
+      }
+      if (actionId === "load_template") {
+        handleOpenExecutiveModelingWorkspace("executive_command_bar");
       }
     },
     [
       comparisonFocusScenarioIds,
       dispatchCanonicalAction,
       executiveScenarioComparisonModel.options,
+      handleOpenExecutiveModelingWorkspace,
       markUserStartedFlow,
       stableVisibleSceneJson,
     ]
@@ -14520,6 +15702,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           model={executiveCommandBarModel}
           themeMode={executiveAssistantThemeMode}
           onAction={handleExecutiveCommandBarAction}
+          statusHudVisible={Boolean(executiveStatusHudModel)}
+          quickActionsVisible={shouldShowExecutiveQuickActionsDock() && isPanelVisible("quickActionsDock")}
         />,
         executiveCommandBarPortalHost
       )
@@ -15949,7 +17133,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           ? nx.accentMuted
           : nx.muted;
 
-  const showPipelineStatusHud = shouldShowExecutivePipelineStatusHud(pipelineStatusUi.status);
+  const showPipelineStatusHud =
+    shouldShowExecutivePipelineStatusHud(pipelineStatusUi.status) &&
+    shouldRenderSceneOverlay("pipelineStatusHud", sceneOverlayGovernanceContext);
 
   const sceneContextOverlayLines = useMemo(() => {
     const rp =
@@ -16169,7 +17355,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           pointerEvents: "none",
         }}
       >
-        {shouldShowExecutiveSceneOperationalStrip() ? (
+        {showExecutiveOrientationPanel && executiveOrientationExperience ? (
+          <ExecutiveOrientationPanel
+            experience={executiveOrientationExperience}
+            themeMode={resolvedTheme === "day" ? "day" : "night"}
+            onQuickStartSelect={handleExecutiveQuickStartAction}
+          />
+        ) : null}
+        {shouldShowExecutiveSceneOperationalStrip() &&
+        shouldRenderSceneOverlay("executiveSceneOperationalStrip", sceneOverlayGovernanceContext) ? (
           <ExecutiveSceneOperationalStrip
             operationalState={
               pipelineStatusUi.status === "processing"
@@ -16250,7 +17444,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           onCreateImpactPath={handleOpenPropagationBuilder}
           sceneInfoHud={workspaceLayoutContract.hud.sceneInfoHud.visible ? executiveSceneInfoHud : undefined}
           objectInfoHud={
-            workspaceLayoutContract.hud.objectInfoHud.visible && executiveObjectInfoHud
+            workspaceLayoutContract.hud.objectInfoHud.visible &&
+            executiveObjectInfoHud &&
+            shouldRenderSceneOverlay("objectInfoHud", sceneOverlayGovernanceContext)
               ? {
                   model: executiveObjectInfoHud,
                   sceneJson: stableSceneJsonDuringPanelValidation,
@@ -16268,7 +17464,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           timelineHud={workspaceLayoutContract.hud.timelineHud.visible ? executiveTimelineHud : undefined}
           quickActionsDock={executiveQuickActionsDock}
           executiveStatusHud={
-            workspaceLayoutContract.hud.executiveStatusHud.visible && isPanelVisible("executiveStatusHud")
+            workspaceLayoutContract.hud.executiveStatusHud.visible &&
+            isPanelVisible("executiveStatusHud") &&
+            shouldRenderSceneOverlay("executiveStatusHud", sceneOverlayGovernanceContext)
               ? executiveStatusHudModel
               : null
           }
@@ -17098,7 +18296,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
       <div aria-hidden style={sceneVignetteLayerStyle} />
 
-      <NexoraRunbookPanel currentStepId={runbookStepId} onRunDemo={runPilotDemoScenario} />
+      {pilotRunbookVisible ? (
+        <NexoraRunbookPanel
+          currentStepId={runbookStepId}
+          onRunDemo={runPilotDemoScenario}
+          onClose={() => setPilotRunbookVisible(false)}
+        />
+      ) : null}
 
       <RetailDemoOverlay
         visible={isRetailStoryScene}
@@ -17210,6 +18414,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {showExecutiveOrientationWelcome && executiveOrientationExperience ? (
+        <ExecutiveOrientationWelcome
+          welcome={executiveOrientationExperience.welcome}
+          themeMode={resolvedTheme === "day" ? "day" : "night"}
+          onDismiss={handleExecutiveOrientationDismiss}
+          onPrimaryAction={() =>
+            handleExecutiveQuickStartAction(
+              executiveOrientationExperience.quickStart[0]?.id ?? "review_dependencies"
+            )
+          }
+        />
       ) : null}
 
       {showDomainPromptGuide ? (
@@ -18340,7 +19557,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           Analyzing…
         </div>
       ) : null}
-      {typeCExecutiveSummary && shouldShowExecutiveStageSummaryCard() ? (
+      {typeCExecutiveSummary &&
+      shouldShowExecutiveStageSummaryCard() &&
+      shouldRenderSceneOverlay("typeCExecutiveSummaryCard", sceneOverlayGovernanceContext) ? (
         <TypeCExecutiveSummaryCard
           placement="stage"
           summary={typeCExecutiveSummary}
@@ -18358,8 +19577,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   // --- Render ---
   /** D3.14 — read-model: Nexora pipeline HUD + (dev) Type-C pipeline events → `deriveOperationalMonitoringSnapshot`. */
+  const d3PipelineStatusSignature = buildPipelineStatusSignature(pipelineStatusUi);
+  const d3MonitoringInputSignature = useMemo(
+    () =>
+      JSON.stringify({
+        pipeline: d3PipelineStatusSignature,
+        sceneObjects: stableSceneObjectsSignature,
+        readinessId: typeCDecisionReadiness?.id ?? null,
+        scenarioState: typeCScenarioState,
+        alerts: typeCAlerts,
+        executionState,
+        auditHudEpoch,
+      }),
+    [
+      auditHudEpoch,
+      d3PipelineStatusSignature,
+      executionState,
+      stableSceneObjectsSignature,
+      typeCAlerts,
+      typeCDecisionReadiness?.id,
+      typeCScenarioState,
+    ]
+  );
   const d3MonitoringSnapshot = useMemo(() => {
-    return runD3DevTimed("deriveOperationalMonitoringSnapshot", () => {
+    return runD3DevTimedWithSignature("deriveOperationalMonitoringSnapshot", d3MonitoringInputSignature, () => {
       const pipelineStatus: OperationalPipelineStatusBrief = {
         status: pipelineStatusUi.status,
         source: pipelineStatusUi.source,
@@ -18382,13 +19623,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       );
     });
   }, [
-    buildPipelineStatusSignature(pipelineStatusUi),
-    stableSceneObjectsSignature,
-    typeCDecisionReadiness?.id,
-    typeCScenarioState,
-    typeCAlerts,
-    executionState,
-    auditHudEpoch,
+    d3MonitoringInputSignature,
+    pipelineStatusUi.errorMessage,
+    pipelineStatusUi.fragilityLevel,
+    pipelineStatusUi.insightLine,
+    pipelineStatusUi.mappedObjectsCount,
+    pipelineStatusUi.signalsCount,
+    pipelineStatusUi.source,
+    pipelineStatusUi.status,
+    pipelineStatusUi.summary,
+    pipelineStatusUi.updatedAt,
   ]);
 
   const d3OperationalPrevProbe =
@@ -18424,21 +19668,53 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     });
   }, [d3MonitoringSnapshot, d3OperationalChangeSummary]);
 
+  const d3PropagationInputSignature = useMemo(
+    () =>
+      JSON.stringify({
+        monitoringId: d3MonitoringSnapshot.id,
+        monitoringUpdatedAt: d3MonitoringSnapshot.updatedAt,
+        changes: {
+          total: d3OperationalChangeSummary.totalChanges,
+          worsening: d3OperationalChangeSummary.worseningCount,
+          improving: d3OperationalChangeSummary.improvingCount,
+          stable: d3OperationalChangeSummary.stableCount,
+        },
+        sceneObjects: stableSceneObjectsSignature,
+      }),
+    [
+      d3MonitoringSnapshot.id,
+      d3MonitoringSnapshot.updatedAt,
+      d3OperationalChangeSummary.improvingCount,
+      d3OperationalChangeSummary.stableCount,
+      d3OperationalChangeSummary.totalChanges,
+      d3OperationalChangeSummary.worseningCount,
+      stableSceneObjectsSignature,
+    ]
+  );
   const d3PropagationPreview = useMemo(
     () =>
-      runD3DevTimed("deriveOperationalPropagationPreview", () =>
+      runD3DevTimedWithSignature("deriveOperationalPropagationPreview", d3PropagationInputSignature, () =>
         deriveOperationalPropagationPreview({
           monitoringSnapshot: d3MonitoringSnapshot,
           operationalChangeSummary: d3OperationalChangeSummary,
           sceneJson: stableVisibleSceneJson,
         })
       ),
-    [d3MonitoringSnapshot, d3OperationalChangeSummary, stableVisibleSceneJson]
+    [d3MonitoringSnapshot, d3OperationalChangeSummary, d3PropagationInputSignature, stableVisibleSceneJson]
   );
 
+  const d3RiskInputSignature = useMemo(
+    () =>
+      JSON.stringify({
+        propagation: d3PropagationInputSignature,
+        previewId: d3PropagationPreview.id,
+        sceneObjects: stableSceneObjectsSignature,
+      }),
+    [d3PropagationInputSignature, d3PropagationPreview.id, stableSceneObjectsSignature]
+  );
   const d3OperationalRiskImpactMap = useMemo(
     () =>
-      runD3DevTimed("deriveOperationalRiskImpactMap", () =>
+      runD3DevTimedWithSignature("deriveOperationalRiskImpactMap", d3RiskInputSignature, () =>
         deriveOperationalRiskImpactMap({
           monitoringSnapshot: d3MonitoringSnapshot,
           operationalChangeSummary: d3OperationalChangeSummary,
@@ -18446,12 +19722,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           sceneJson: stableVisibleSceneJson,
         })
       ),
-    [d3MonitoringSnapshot, d3OperationalChangeSummary, d3PropagationPreview, stableVisibleSceneJson]
+    [d3MonitoringSnapshot, d3OperationalChangeSummary, d3PropagationPreview, d3RiskInputSignature, stableVisibleSceneJson]
   );
 
+  const d3AlertsInputSignature = useMemo(
+    () =>
+      JSON.stringify({
+        risk: d3RiskInputSignature,
+        riskNodeCount: d3OperationalRiskImpactMap.nodes.length,
+        previewId: d3PropagationPreview.id,
+      }),
+    [d3OperationalRiskImpactMap.nodes.length, d3PropagationPreview.id, d3RiskInputSignature]
+  );
   const d3OperationalAlerts = useMemo(
     () =>
-      runD3DevTimed("evaluateOperationalAlerts", () =>
+      runD3DevTimedWithSignature("evaluateOperationalAlerts", d3AlertsInputSignature, () =>
         evaluateOperationalAlerts({
           monitoringSnapshot: d3MonitoringSnapshot,
           operationalChangeSummary: d3OperationalChangeSummary,
@@ -18460,7 +19745,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           rules: defaultOperationalAlertRules,
         })
       ),
-    [d3MonitoringSnapshot, d3OperationalChangeSummary, d3PropagationPreview, d3OperationalRiskImpactMap]
+    [d3MonitoringSnapshot, d3OperationalChangeSummary, d3PropagationPreview, d3OperationalRiskImpactMap, d3AlertsInputSignature]
   );
 
   useEffect(() => {
@@ -18529,7 +19814,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         sceneJson={stableSceneJsonDuringPanelValidation}
         themeMode={resolveNexoraHudThemeMode(resolvedTheme)}
         onCancel={handleCloseExecutiveModelingWorkspace}
-        onGenerate={handleExecutiveSystemGenerate}
+        onLoadTemplate={handleExecutiveTemplateLoad}
+        onTemplateSaved={handleExecutiveTemplateSaved}
       />
       <ExecutiveWorkspaceLoadDialog
         open={workspaceLoadOpen}
@@ -18594,17 +19880,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         onRun={handleRunTypeCMultiAgent}
         onClose={handleCloseTypeCMultiAgent}
       />
-      <TypeCSandboxPanel
-        result={typeCSandboxResult}
-        loading={typeCSandboxLoading}
-        error={typeCSandboxError}
-        canRun={canRunTypeCSandbox}
-        onRun={handleRunTypeCSandbox}
-        onClose={handleCloseTypeCSandbox}
-        onReview={handleReviewTypeCSandboxStrategy}
-        onCompare={handleCompareTypeCSandboxStrategy}
-        onPromote={handlePromoteTypeCSandboxStrategy}
-      />
+      {typeCSandboxVisible || typeCSandboxResult || typeCSandboxError ? (
+        <TypeCSandboxPanel
+          result={typeCSandboxResult}
+          loading={typeCSandboxLoading}
+          error={typeCSandboxError}
+          canRun={canRunTypeCSandbox}
+          onRun={handleRunTypeCSandbox}
+          onClose={() => {
+            handleCloseTypeCSandbox();
+            setTypeCSandboxVisible(false);
+          }}
+          onReview={handleReviewTypeCSandboxStrategy}
+          onCompare={handleCompareTypeCSandboxStrategy}
+          onPromote={handlePromoteTypeCSandboxStrategy}
+        />
+      ) : null}
       <TypeCExecutionPanel
         executionState={executionState}
         scenario={executionScenario}

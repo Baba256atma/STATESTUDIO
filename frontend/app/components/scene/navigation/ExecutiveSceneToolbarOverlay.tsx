@@ -1,17 +1,15 @@
 "use client";
 
 import React from "react";
-import { Html } from "@react-three/drei";
 
 import { resolveSceneNavigationToolbarPlacement } from "../../../lib/scene/sceneNavigationPlacement";
 import type { NexoraHudThemeMode } from "../../../lib/scene/nexoraHudTheme";
 import { useWorkspaceLayoutOptional } from "../../../lib/ui/useWorkspaceLayout";
+import { SceneHudOverlayRoot } from "../SceneHudOverlayRoot";
 import { ExecutiveSceneToolbar } from "./ExecutiveSceneToolbar";
 
 export type ExecutiveSceneToolbarOverlayProps = {
   themeMode?: NexoraHudThemeMode;
-  selectedObjectId?: string | null;
-  onCreateImpactPath?: (sourceObjectId?: string | null) => void;
 };
 
 /**
@@ -35,16 +33,9 @@ export function ExecutiveSceneToolbarOverlay(props: ExecutiveSceneToolbarOverlay
       };
 
   return (
-    <Html transform={false} fullscreen style={{ pointerEvents: "none" }}>
-      <div style={placementStyle}>
-        <ExecutiveSceneToolbar
-          themeMode={props.themeMode}
-          selectedObjectId={props.selectedObjectId}
-          density={density}
-          onCreateImpactPath={props.onCreateImpactPath}
-        />
-      </div>
-    </Html>
+    <SceneHudOverlayRoot panelId="sceneToolbar" style={placementStyle}>
+      <ExecutiveSceneToolbar themeMode={props.themeMode} density={density} />
+    </SceneHudOverlayRoot>
   );
 }
 

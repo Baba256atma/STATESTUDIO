@@ -1,8 +1,15 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useSyncExternalStore } from "react";
 
 import { readSceneRelationships } from "../../../lib/relationships/relationshipRuntime";
+import { resolveExecutiveRelationshipScenePlan } from "../../../lib/relationships/executive";
+import { resolveRelationshipViewProfile } from "../../../lib/scene/relationshipViewProfiles";
+import {
+  getWorkspaceViewMode,
+  getWorkspaceViewModeServerSnapshot,
+  subscribeWorkspaceViewMode,
+} from "../../../lib/workspace/workspaceViewModeRuntime";
 import type { NexoraRelationship } from "../../../lib/relationships/relationshipTypes";
 import type { SceneThemeId } from "../../../lib/theme/sceneThemeTypes";
 import { RelationshipLine } from "./RelationshipLine";
@@ -16,37 +23,57 @@ export type RelationshipRendererProps = {
   onRelationshipSelect?: (relationship: NexoraRelationship) => void;
 };
 
-/** E2:25 — Canonical scene relationship rendering layer (business entities, not mesh ownership). */
+/** E2:25 + E2:47 — Executive relationship rendering layer. */
 export const RelationshipRenderer = React.memo(function RelationshipRenderer(
   props: RelationshipRendererProps
 ): React.ReactElement | null {
+  const workspaceViewMode = useSyncExternalStore(
+    subscribeWorkspaceViewMode,
+    getWorkspaceViewMode,
+    getWorkspaceViewModeServerSnapshot
+  );
+  const relationshipViewProfile = useMemo(
+    () => resolveRelationshipViewProfile(workspaceViewMode),
+    [workspaceViewMode]
+  );
   const relationships = useMemo(() => readSceneRelationships(props.sceneJson), [props.sceneJson]);
+
+  const scenePlan = useMemo(
+    () =>
+      resolveExecutiveRelationshipScenePlan({
+        relationships,
+        selectedObjectId: props.selectedObjectId,
+        selectedRelationshipId: props.selectedRelationshipId,
+      }),
+    [relationships, props.selectedObjectId, props.selectedRelationshipId]
+  );
 
   if (relationships.length === 0) return null;
 
   return (
-    <group data-nx-layer="relationships">
-      {relationships.map((relationship) => (
-        <RelationshipLine
-          key={relationship.id}
-          relationship={relationship}
-          objects={props.objects}
-          themeId={props.themeId}
-          showLabel={
-            !props.selectedObjectId ||
-            relationship.sourceId === props.selectedObjectId ||
-            relationship.targetId === props.selectedObjectId ||
-            relationship.id === props.selectedRelationshipId
-          }
-          selected={relationship.id === props.selectedRelationshipId}
-          emphasized={
-            relationship.sourceId === props.selectedObjectId ||
-            relationship.targetId === props.selectedObjectId ||
-            relationship.id === props.selectedRelationshipId
-          }
-          onSelect={props.onRelationshipSelect}
-        />
-      ))}
+    <group
+      data-nx-layer="relationships"
+      data-nx-density={scenePlan.densityMode}
+      data-nx-view-mode={workspaceViewMode}
+    >
+      {relationships.map((relationship) => {
+        const renderPlan = scenePlan.plans[relationship.id];
+        if (renderPlan && !renderPlan.visible) return null;
+        return (
+          <RelationshipLine
+            key={relationship.id}
+            relationship={relationship}
+            objects={props.objects}
+            themeId={props.themeId}
+            renderPlan={renderPlan}
+            showLabel={renderPlan?.showLabel ?? relationshipViewProfile.showLabelDefault}
+            billboardLabels={relationshipViewProfile.depthCue}
+            selected={relationship.id === props.selectedRelationshipId}
+            emphasized={renderPlan?.emphasis !== "BACKGROUND"}
+            onSelect={props.onRelationshipSelect}
+          />
+        );
+      })}
     </group>
   );
 });

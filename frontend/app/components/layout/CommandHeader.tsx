@@ -34,6 +34,8 @@ type CommandHeaderProps = {
   onLoadDemo?: () => void;
   onSnapshot?: () => void;
   onReplay?: () => void;
+  onOpenSandbox?: (() => void) | null;
+  onOpenRunbook?: (() => void) | null;
   onStartInvestorDemo?: (() => void) | null;
   investorDemoActive?: boolean;
   commandBarMicroHint?: string | null;
@@ -64,6 +66,7 @@ export function CommandHeader(props: CommandHeaderProps) {
     props.activeModeLabel
   );
   const [hydrated, setHydrated] = React.useState(false);
+  const [toolsOpen, setToolsOpen] = React.useState(false);
   const hydrationTraceLoggedRef = React.useRef(false);
   const context = hydrated ? resolvedContextLabel : initialContextLabel;
 
@@ -260,9 +263,101 @@ export function CommandHeader(props: CommandHeaderProps) {
               [R] Replay
             </button>
           ) : null}
+
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={() => setToolsOpen((open) => !open)}
+              style={secondaryActionStyle}
+              aria-expanded={toolsOpen}
+              aria-haspopup="menu"
+              title="Advanced tools"
+            >
+              Tools
+            </button>
+            {toolsOpen ? (
+              <div
+                role="menu"
+                aria-label="Advanced tools"
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: 40,
+                  zIndex: 40,
+                  minWidth: 156,
+                  padding: 6,
+                  borderRadius: 10,
+                  border: `1px solid ${nx.border}`,
+                  background: nx.bgPanel,
+                  boxShadow: "0 14px 38px rgba(0,0,0,0.22)",
+                }}
+              >
+                <ToolMenuButton
+                  label="Runbook"
+                  onClick={() => {
+                    setToolsOpen(false);
+                    props.onOpenRunbook?.();
+                  }}
+                />
+                <ToolMenuButton
+                  label="Sandbox"
+                  onClick={() => {
+                    setToolsOpen(false);
+                    props.onOpenSandbox?.();
+                  }}
+                />
+                <ToolMenuButton
+                  label="Replay"
+                  onClick={() => {
+                    setToolsOpen(false);
+                    props.onReplay?.();
+                  }}
+                />
+                <ToolMenuButton
+                  label="Snapshot"
+                  onClick={() => {
+                    setToolsOpen(false);
+                    props.onSnapshot?.();
+                  }}
+                />
+                <ToolMenuButton
+                  label="Diagnostics"
+                  onClick={() => {
+                    setToolsOpen(false);
+                    window.dispatchEvent(new CustomEvent("nexora:devtools-toggle-self-debug"));
+                  }}
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function ToolMenuButton(props: { label: string; onClick: () => void }): React.ReactElement {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={props.onClick}
+      style={{
+        width: "100%",
+        display: "block",
+        textAlign: "left",
+        border: "none",
+        borderRadius: 7,
+        background: "transparent",
+        color: nx.textSoft,
+        padding: "7px 8px",
+        fontSize: 11,
+        fontWeight: 750,
+        cursor: "pointer",
+      }}
+    >
+      {props.label}
+    </button>
   );
 }
 

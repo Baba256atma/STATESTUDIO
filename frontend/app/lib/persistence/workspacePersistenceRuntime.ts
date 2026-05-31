@@ -1,4 +1,12 @@
 import { hydrateOverlayVisibilityFromStorage } from "../overlay/overlayRuntime";
+import { setWorkspaceViewMode } from "../workspace/workspaceViewModeRuntime";
+import { isWorkspaceViewMode } from "../workspace/workspaceViewModeTypes";
+import {
+  hydrateExecutiveFocusMode,
+  setExecutiveFocusModeEnabled,
+  setExecutiveFocusProfile,
+} from "../workspace/executiveFocusModeRuntime";
+import { isFocusModeProfileId } from "../workspace/focusModeProfiles";
 import type { OverlayRuntimeVisibility } from "../overlay/overlayContracts";
 import { persistHudPreferences } from "../ui/hudPreferencesStore";
 import { persistThemeMode } from "../ui/nexoraUiTheme";
@@ -217,6 +225,20 @@ export function applySavedViewPreferences(preferences: SavedWorkspaceViewPrefere
     } catch {
       // ignore
     }
+  }
+
+  if (isWorkspaceViewMode(preferences.workspaceViewMode)) {
+    setWorkspaceViewMode(preferences.workspaceViewMode, "persistence");
+  }
+
+  if (typeof preferences.focusModeEnabled === "boolean") {
+    setExecutiveFocusModeEnabled(preferences.focusModeEnabled, "persistence");
+  } else {
+    hydrateExecutiveFocusMode();
+  }
+
+  if (isFocusModeProfileId(preferences.focusProfile)) {
+    setExecutiveFocusProfile(preferences.focusProfile, "persistence");
   }
 }
 

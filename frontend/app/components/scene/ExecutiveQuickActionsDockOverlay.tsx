@@ -1,14 +1,15 @@
 "use client";
 
 import React from "react";
-import { Html } from "@react-three/drei";
 
 import type { NexoraHudThemeMode } from "../../lib/scene/nexoraHudTheme";
+import { useFocusHudPresentation } from "../../lib/workspace/useFocusHudPresentation";
 import { useWorkspaceLayout } from "../../lib/ui/useWorkspaceLayout";
 import {
   ExecutiveQuickActionsDock,
   type ExecutiveQuickActionsDockProps,
 } from "./ExecutiveQuickActionsDock";
+import { SceneHudOverlayRoot } from "./SceneHudOverlayRoot";
 
 export type ExecutiveQuickActionsDockOverlayProps = ExecutiveQuickActionsDockProps & {
   /** When true, dock sits above the timeline HUD stack. */
@@ -24,15 +25,20 @@ export function ExecutiveQuickActionsDockOverlay(
   const { stackAboveTimeline = false, ...dockProps } = props;
   const { hudStyle, getHudPlacement } = useWorkspaceLayout();
   const placement = getHudPlacement("quickActionsDock");
+  const focusHud = useFocusHudPresentation("quickActionsDock", placement.visible);
 
   if (!placement.visible) return <></>;
 
   return (
-    <Html transform={false} fullscreen style={{ pointerEvents: "none" }}>
-      <div style={hudStyle("quickActionsDock")}>
-        <ExecutiveQuickActionsDock {...dockProps} panelSizeMode={placement.sizeMode} />
-      </div>
-    </Html>
+    <SceneHudOverlayRoot
+      panelId="quickActionsDock"
+      style={{
+        ...hudStyle("quickActionsDock"),
+        ...focusHud.style,
+      }}
+    >
+      <ExecutiveQuickActionsDock {...dockProps} panelSizeMode={placement.sizeMode} />
+    </SceneHudOverlayRoot>
   );
 }
 

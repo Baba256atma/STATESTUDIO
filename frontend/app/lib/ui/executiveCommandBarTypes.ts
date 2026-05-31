@@ -58,6 +58,7 @@ export type ExecutiveCommandBarActionId =
   | "compare"
   | "snapshot"
   | "replay"
+  | "load_template"
   | "save_workspace"
   | "load_workspace";
 
@@ -96,10 +97,8 @@ export const EXECUTIVE_COMMAND_BAR_ACTIONS: readonly {
   label: string;
 }[] = [
   { id: "analyze", label: "Analyze" },
-  { id: "simulate", label: "Simulate" },
   { id: "compare", label: "Compare" },
-  { id: "snapshot", label: "Snapshot" },
-  { id: "replay", label: "Replay" },
+  { id: "load_template", label: "Template" },
   { id: "save_workspace", label: "Save" },
   { id: "load_workspace", label: "Load" },
 ] as const;

@@ -2,9 +2,12 @@ import { getOverlayRuntimeVisibility } from "../overlay/overlayRuntime";
 import { readSceneRelationships } from "../relationships/relationshipRuntime";
 import { readSystemBlueprint } from "../systemModeling/systemModelRuntime";
 import { readPropagationPaths } from "../propagation/propagationAuthoringRuntime";
+import { captureActiveScenarioSnapshot, readScenarioWorkspaceState } from "../scenario/scenarioAuthoringRuntime";
 import type { SceneJson, SceneObject, Vector3Tuple } from "../sceneTypes";
 import { vectorToPlacementPosition, type SceneObjectPlacement } from "../modeling/objectPlacementRuntime";
 import { readStoredHudPreferences } from "../ui/hudPreferencesStore";
+import { getWorkspaceViewMode } from "../workspace/workspaceViewModeRuntime";
+import { getExecutiveFocusModeSnapshot } from "../workspace/executiveFocusModeRuntime";
 import { readStoredThemeMode } from "../ui/nexoraUiTheme";
 import { readStoredWorkspaceLayoutPreset } from "../ui/workspaceLayoutStore";
 import type {
@@ -49,11 +52,15 @@ function objectCategory(object: SceneObject): string | undefined {
 }
 
 export function collectCurrentViewPreferences(): SavedWorkspaceViewPreferences {
+  const focus = getExecutiveFocusModeSnapshot();
   return {
     themeMode: readStoredThemeMode(),
     layoutPreset: readStoredWorkspaceLayoutPreset(),
     overlayVisibility: getOverlayRuntimeVisibility(),
     hudPreferences: readStoredHudPreferences(),
+    workspaceViewMode: getWorkspaceViewMode(),
+    focusModeEnabled: focus.enabled,
+    focusProfile: focus.profile,
   };
 }
 
@@ -110,11 +117,13 @@ export function resolveDefaultWorkspaceName(sceneJson: unknown): string {
 export function serializeWorkspace(request: SaveWorkspaceRequest): SerializedWorkspaceEnvelope | null {
   if (!isSceneJson(request.sceneJson)) return null;
 
+  const scenarioScene = captureActiveScenarioSnapshot(request.sceneJson);
   const now = new Date().toISOString();
-  const objects = sceneObjects(request.sceneJson).map(serializeWorkspaceObject).filter((item) => item.id);
-  const relationships = readSceneRelationships(request.sceneJson).map(serializeWorkspaceRelationship);
-  const propagationPaths = readPropagationPaths(request.sceneJson);
-  const blueprint = readSystemBlueprint(request.sceneJson);
+  const objects = sceneObjects(scenarioScene).map(serializeWorkspaceObject).filter((item) => item.id);
+  const relationships = readSceneRelationships(scenarioScene).map(serializeWorkspaceRelationship);
+  const propagationPaths = readPropagationPaths(scenarioScene);
+  const scenarios = readScenarioWorkspaceState(scenarioScene);
+  const blueprint = readSystemBlueprint(scenarioScene);
   const workspaceId = `ws_${Date.now().toString(36)}`;
   const name = (request.name ?? resolveDefaultWorkspaceName(request.sceneJson)).trim() || "Executive Workspace";
 
@@ -127,14 +136,18 @@ export function serializeWorkspace(request: SaveWorkspaceRequest): SerializedWor
     objects,
     relationships,
     propagationPaths,
+    scenarios,
     metadata: {
       source: "executive_workspace",
       templateId: blueprint?.templateId ?? null,
       templateName: blueprint?.templateName ?? null,
+      activeDomainTemplate: scenarioScene.meta?.activeDomainTemplate ?? null,
       systemBlueprint: blueprint ?? null,
       objectCount: objects.length,
       relationshipCount: relationships.length,
       propagationPathCount: propagationPaths.length,
+      scenarioCount: scenarios.scenarios.length,
+      activeScenarioId: scenarios.activeScenarioId,
     },
     viewPreferences: request.viewPreferences ?? collectCurrentViewPreferences(),
   };

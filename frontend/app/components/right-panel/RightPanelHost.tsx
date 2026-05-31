@@ -2,6 +2,9 @@
 
 import React from "react";
 
+import { traceRuntimeParity } from "../../lib/debug/runtimeLoopTrace";
+import { devLogOnSignatureChange } from "../../lib/runtime/diagnosticIdleGate";
+
 import ConflictMapPanel from "../panels/ConflictMapPanel";
 import FocusInsightCard from "../panels/FocusInsightCard";
 import RiskPropagationPanel from "../panels/RiskPropagationPanel";
@@ -1941,9 +1944,19 @@ export function RightPanelHost(props: RightPanelHostProps) {
           contextId: props.rightPanelState.contextId ?? null,
         };
         const sig = JSON.stringify(trace);
-        if (lastRightPanelObjectSourceTraceRef.current !== sig) {
+        const previousObjectSourceSig = lastRightPanelObjectSourceTraceRef.current;
+        if (previousObjectSourceSig !== sig) {
           lastRightPanelObjectSourceTraceRef.current = sig;
-          console.warn("[Nexora][SceneParity][RightPanelObjectSource]", trace);
+          traceRuntimeParity({
+            source: "RightPanelHost",
+            action: "SceneParity.RightPanelObjectSource",
+            reason: "object_source_trace_changed",
+            caller: "RightPanelHost.render",
+            previousSceneSignature: previousObjectSourceSig,
+            nextSceneSignature: sig,
+            detail: trace,
+          });
+          devLogOnSignatureChange("[Nexora][SceneParity][RightPanelObjectSource]", sig, trace, "warn");
         }
       }
       if (objectListForPanel.length === 0) {

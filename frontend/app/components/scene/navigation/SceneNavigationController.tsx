@@ -8,11 +8,21 @@ import {
   createCameraTransitionState,
   createPreserveOrientationFocusTarget,
   dollyCameraAlongView,
-  EXECUTIVE_CAMERA_DEFAULT,
   readCameraSnapshot,
   stepCameraTransition,
   type CameraTransitionState,
 } from "../../../lib/scene/sceneNavigationCamera";
+import {
+  resolveExecutiveDefaultCameraForMode,
+} from "../../../lib/workspace/workspaceModeTransitionRuntime";
+import { getWorkspaceViewMode } from "../../../lib/workspace/workspaceViewModeRuntime";
+import {
+  buildExecutiveSceneObjectSignature,
+  isValidExecutiveCameraFrame,
+  readExecutiveSceneObjects,
+  resolveExecutiveCameraPresetFrame,
+  type ExecutiveCameraPresetId,
+} from "../../../lib/scene/executiveCameraPresets";
 import {
   SCENE_NAVIGATION_ACTION_EVENT,
   SCENE_NAVIGATION_FOCUS_EVENT,
@@ -20,6 +30,8 @@ import {
   SCENE_NAVIGATION_PRESET_EVENT,
 } from "../../../lib/scene/sceneNavigationContract";
 import { bindWindowListener } from "../../../lib/dom/domListenerLifecycle";
+import { devLogOnSignatureChange } from "../../../lib/runtime/diagnosticIdleGate";
+import { evaluateCameraStability } from "../../../lib/scene/density";
 import { resolveSceneObjectHudPosition } from "../../../lib/scene/resolveSceneObjectHudPosition";
 import type {
   SceneNavigationActionId,
@@ -39,6 +51,7 @@ export type SceneNavigationControllerProps = {
   sceneJson: unknown;
   selectedObjectId?: string | null;
   onRequestStaticReframe: () => void;
+  onClearTemporaryFocus?: () => void;
   enabled?: boolean;
 };
 
@@ -60,15 +73,63 @@ export function SceneNavigationController(props: SceneNavigationControllerProps)
   const { camera } = useThree();
   const transitionRef = React.useRef<CameraTransitionState | null>(null);
   const navigationModeRef = React.useRef<SceneNavigationMode>("select");
+  const lastPresetSignatureRef = React.useRef<string | null>(null);
 
   const startTransition = React.useCallback(
-    (targetPosition: THREE.Vector3, targetLookAt: THREE.Vector3) => {
-      transitionRef.current = createCameraTransitionState(camera, props.controlsRef.current, {
-        position: targetPosition,
-        lookAt: targetLookAt,
-      });
+    (targetPosition: THREE.Vector3, targetLookAt: THREE.Vector3, durationMs = 420, fov?: number) => {
+      transitionRef.current = createCameraTransitionState(
+        camera,
+        props.controlsRef.current,
+        {
+          position: targetPosition,
+          lookAt: targetLookAt,
+          fov,
+        },
+        durationMs
+      );
     },
     [camera, props.controlsRef]
+  );
+
+  const applyPreset = React.useCallback(
+    (preset: ExecutiveCameraPresetId, source: string, durationMs = 520) => {
+      const mode = preset === "VIEW_2D" ? "2D" : preset === "VIEW_3D" ? "3D" : getWorkspaceViewMode();
+      const size =
+        typeof window !== "undefined"
+          ? { width: window.innerWidth, height: window.innerHeight }
+          : { width: 1440, height: 900 };
+      const frame = resolveExecutiveCameraPresetFrame({
+        preset,
+        mode,
+        sceneJson: props.sceneJson,
+        viewportWidth: size.width,
+        viewportHeight: size.height,
+      });
+      if (!isValidExecutiveCameraFrame(frame)) return;
+      const sceneSignature = buildExecutiveSceneObjectSignature(props.sceneJson);
+      const signature = JSON.stringify({
+        preset,
+        mode,
+        source,
+        sceneSignature,
+        position: frame.position.map((value) => Math.round(value * 1000) / 1000),
+        lookAt: frame.lookAt.map((value) => Math.round(value * 1000) / 1000),
+        fov: Math.round(frame.fov * 100) / 100,
+      });
+      if (lastPresetSignatureRef.current === signature) return;
+      lastPresetSignatureRef.current = signature;
+      startTransition(new THREE.Vector3(...frame.position), new THREE.Vector3(...frame.lookAt), durationMs, frame.fov);
+      devLogOnSignatureChange(`[E2:87][${preset === "FIT_SCENE" ? "FitScene" : preset === "GLOBAL_VIEW" ? "GlobalView" : preset === "VIEW_2D" ? "View2D" : "View3D"}]`, signature, {
+        preset,
+        mode,
+        source,
+        objectSignature: sceneSignature,
+        position: frame.position,
+        target: frame.lookAt,
+        fov: frame.fov,
+      });
+    },
+    [props.sceneJson, startTransition]
   );
 
   useFrame((_, delta) => {
@@ -87,6 +148,12 @@ export function SceneNavigationController(props: SceneNavigationControllerProps)
       if (!objectId) return;
       const anchor = resolveSceneObjectHudPosition(props.sceneJson, objectId);
       if (!anchor) return;
+      const objects = readExecutiveSceneObjects(props.sceneJson);
+      const stability = evaluateCameraStability({
+        trigger: "focus_object",
+        nextObjectCount: objects.length,
+      });
+      if (!stability.allowFocusTransition) return;
       logSceneNavigationCameraFocus({
         objectId,
         source: detail.source,
@@ -103,14 +170,20 @@ export function SceneNavigationController(props: SceneNavigationControllerProps)
         }
         return;
       }
-      const target = createPreserveOrientationFocusTarget(camera, props.controlsRef.current, anchor);
-      startTransition(target.position, target.lookAt);
+      const target = createPreserveOrientationFocusTarget(camera, props.controlsRef.current, anchor, {
+        maxDistanceDelta: stability.maxDistanceDelta,
+      });
+      startTransition(target.position, target.lookAt, stability.transitionDurationMs);
     };
 
     const handleAction = (event: Event) => {
       const detail = (event as CustomEvent<{ action?: SceneNavigationActionId; source?: string }>).detail;
       const action = detail?.action;
-      if (!action || action === "select_preset" || action === "fullscreen") return;
+      if (!action || action === "fullscreen") return;
+      if (action === "select_preset") {
+        props.onRequestStaticReframe();
+        return;
+      }
 
       logSceneNavigationToolbarAction({
         action,
@@ -129,7 +202,7 @@ export function SceneNavigationController(props: SceneNavigationControllerProps)
           source: detail?.source ?? "toolbar",
           camera: snapshotPayload(camera, props.controlsRef.current, props.selectedObjectId ?? null),
         });
-        props.onRequestStaticReframe();
+        applyPreset("FIT_SCENE", detail?.source ?? "toolbar");
         return;
       }
 
@@ -138,10 +211,18 @@ export function SceneNavigationController(props: SceneNavigationControllerProps)
           source: detail?.source ?? "toolbar",
           camera: snapshotPayload(camera, props.controlsRef.current, props.selectedObjectId ?? null),
         });
+        const defaultFrame = resolveExecutiveDefaultCameraForMode(getWorkspaceViewMode());
         startTransition(
-          new THREE.Vector3(...EXECUTIVE_CAMERA_DEFAULT.position),
-          new THREE.Vector3(...EXECUTIVE_CAMERA_DEFAULT.lookAt)
+          new THREE.Vector3(...defaultFrame.position),
+          new THREE.Vector3(...defaultFrame.lookAt),
+          520,
+          defaultFrame.fov
         );
+        devLogOnSignatureChange("[E2:87][Camera]", `reset:${getWorkspaceViewMode()}`, {
+          action: "reset_view",
+          mode: getWorkspaceViewMode(),
+          source: detail?.source ?? "toolbar",
+        });
         return;
       }
 
@@ -179,6 +260,10 @@ export function SceneNavigationController(props: SceneNavigationControllerProps)
         presetId,
         source: (event as CustomEvent<{ source?: string }>).detail?.source ?? "toolbar",
       });
+      if (presetId === "global") {
+        props.onClearTemporaryFocus?.();
+        applyPreset("GLOBAL_VIEW", (event as CustomEvent<{ source?: string }>).detail?.source ?? "toolbar", 560);
+      }
     };
 
     const handleLegacy = (event: Event) => {
@@ -232,9 +317,11 @@ export function SceneNavigationController(props: SceneNavigationControllerProps)
     camera,
     props.controlsRef,
     props.enabled,
+    props.onClearTemporaryFocus,
     props.onRequestStaticReframe,
     props.sceneJson,
     props.selectedObjectId,
+    applyPreset,
     startTransition,
   ]);
 

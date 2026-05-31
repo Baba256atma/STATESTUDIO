@@ -12,6 +12,7 @@ import {
 type NexoraRunbookPanelProps = {
   currentStepId: NexoraRunbookStepId;
   onRunDemo?: (() => void) | null;
+  onClose?: (() => void) | null;
 };
 
 export function NexoraRunbookPanel(props: NexoraRunbookPanelProps) {
@@ -30,7 +31,7 @@ export function NexoraRunbookPanel(props: NexoraRunbookPanelProps) {
         right: 14,
         bottom: 14,
         zIndex: 8,
-        width: collapsed ? 44 : 236,
+        width: collapsed ? (props.onClose ? 76 : 44) : 236,
         maxWidth: "min(236px, calc(100vw - 28px))",
         borderRadius: 12,
         border: `1px solid ${nx.borderSoft}`,
@@ -73,6 +74,25 @@ export function NexoraRunbookPanel(props: NexoraRunbookPanelProps) {
         >
           {collapsed ? "▶" : "◀"}
         </button>
+        {props.onClose ? (
+          <button
+            type="button"
+            onClick={() => props.onClose?.()}
+            title="Close runbook"
+            style={{
+              fontSize: 10,
+              fontWeight: 800,
+              padding: "2px 6px",
+              borderRadius: 6,
+              border: `1px solid ${nx.borderSoft}`,
+              background: "color-mix(in srgb, var(--nx-bg-deep) 70%, transparent)",
+              color: nx.muted,
+              cursor: "pointer",
+            }}
+          >
+            X
+          </button>
+        ) : null}
       </div>
       {collapsed ? null : (
         <>

@@ -1,4 +1,5 @@
 const globalPanelLogSet = new Set<string>();
+const permanentPanelLogSet = new Set<string>();
 
 export function logPanelOnce(
   label: string,
@@ -17,4 +18,18 @@ export function logPanelOnce(
   setTimeout(() => {
     globalPanelLogSet.delete(key);
   }, resolvedTtl);
+}
+
+export function logPanelOncePermanent(label: string, payload: Record<string, unknown>): void {
+  if (process.env.NODE_ENV === "production") return;
+  const signature = payload.signature ?? payload;
+  const key = JSON.stringify({ label, signature });
+  if (permanentPanelLogSet.has(key)) return;
+  permanentPanelLogSet.add(key);
+  console.warn(label, payload);
+}
+
+export function resetPanelLogSignatureForTests(): void {
+  globalPanelLogSet.clear();
+  permanentPanelLogSet.clear();
 }

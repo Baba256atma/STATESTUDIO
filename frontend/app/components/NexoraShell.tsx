@@ -1585,6 +1585,16 @@ export default function NexoraShell({ children }: NexoraShellProps) {
           onLoadDemo={pilotOperatorChrome ? undefined : handleLoadDemo}
           onSnapshot={pilotOperatorChrome ? undefined : handleSaveSnapshot}
           onReplay={pilotOperatorChrome ? undefined : handleOpenReplay}
+          onOpenSandbox={
+            pilotOperatorChrome
+              ? null
+              : () => window.dispatchEvent(new CustomEvent("nexora:advanced-tools-open-sandbox"))
+          }
+          onOpenRunbook={
+            pilotOperatorChrome
+              ? null
+              : () => window.dispatchEvent(new CustomEvent("nexora:advanced-tools-open-runbook"))
+          }
           onStartInvestorDemo={pilotOperatorChrome ? null : handleStartInvestorDemoRouted}
           investorDemoActive={investorDemo.demo.active}
           commandBarMicroHint={pilotOperatorChrome ? null : (runbookGuidance?.hints.commandBar ?? null)}

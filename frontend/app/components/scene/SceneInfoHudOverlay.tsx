@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
-import { Html } from "@react-three/drei";
 
 import { SceneInfoHud, type SceneInfoHudProps } from "./SceneInfoHud";
+import { SceneHudOverlayRoot } from "./SceneHudOverlayRoot";
 import type { NexoraHudThemeMode } from "../../lib/scene/nexoraHudTheme";
+import { persistSceneHudAnchorPreference, sceneHudDockStyle } from "../../lib/hud/sceneHudAnchorRuntime";
+import { useFocusHudPresentation } from "../../lib/workspace/useFocusHudPresentation";
 import { useWorkspaceLayout } from "../../lib/ui/useWorkspaceLayout";
 
 /**
@@ -14,17 +16,35 @@ export function SceneInfoHudOverlay(
   props: SceneInfoHudProps & { themeMode?: NexoraHudThemeMode }
 ): React.ReactElement {
   const { themeMode, ...hudProps } = props;
-  const { hudStyle, getHudPlacement } = useWorkspaceLayout();
+  const { getHudPlacement } = useWorkspaceLayout();
   const placement = getHudPlacement("sceneInfoHud");
+  const focusHud = useFocusHudPresentation("sceneInfoHud", placement.visible);
 
-  if (!placement.visible) return <></>;
+  React.useEffect(() => {
+    persistSceneHudAnchorPreference("sceneInfoHud", "TOP_LEFT");
+  }, []);
+
+  if (!placement.visible && !focusHud.preserveMount) return <></>;
 
   return (
-    <Html transform={false} fullscreen style={{ pointerEvents: "none" }}>
-      <div style={hudStyle("sceneInfoHud")}>
-        <SceneInfoHud {...hudProps} themeMode={themeMode} panelSizeMode={placement.sizeMode} />
-      </div>
-    </Html>
+    <SceneHudOverlayRoot
+      panelId="sceneInfoHud"
+      style={{
+        ...sceneHudDockStyle({
+          panelId: "sceneInfoHud",
+          anchor: "TOP_LEFT",
+          visible: focusHud.visible,
+          collapsed: placement.sizeMode === "compact",
+          maxWidth: placement.maxWidth,
+          zIndex: placement.zIndex,
+          transitionMs: 160,
+          visiblePanelCount: 3,
+        }),
+        ...focusHud.style,
+      }}
+    >
+      <SceneInfoHud {...hudProps} themeMode={themeMode} panelSizeMode={placement.sizeMode} />
+    </SceneHudOverlayRoot>
   );
 }
 

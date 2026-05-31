@@ -690,21 +690,22 @@ export function ChatHUD({
   const moreWrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+    const onKey = (e: Event) => {
+      const event = e as KeyboardEvent;
       const target = document.activeElement as HTMLElement | null;
       if (target) {
         const tag = target.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
       }
-      const z = e.key.toLowerCase() === "z";
-      const y = e.key.toLowerCase() === "y";
-      const mod = e.ctrlKey || e.metaKey;
+      const z = event.key.toLowerCase() === "z";
+      const y = event.key.toLowerCase() === "y";
+      const mod = event.ctrlKey || event.metaKey;
       if (!mod) return;
-      if (z && !e.shiftKey) {
-        e.preventDefault();
+      if (z && !event.shiftKey) {
+        event.preventDefault();
         undoOverrides();
-      } else if ((z && e.shiftKey) || (y && e.ctrlKey)) {
-        e.preventDefault();
+      } else if ((z && event.shiftKey) || (y && event.ctrlKey)) {
+        event.preventDefault();
         redoOverrides();
       }
     };
@@ -716,12 +717,14 @@ export function ChatHUD({
 
   useEffect(() => {
     if (!moreOpen) return;
-    const onDoc = (e: MouseEvent) => {
-      const t = e.target as Node | null;
+    const onDoc = (e: Event) => {
+      const event = e as MouseEvent;
+      const t = event.target as Node | null;
       if (moreWrapRef.current && t && !moreWrapRef.current.contains(t)) setMoreOpen(false);
     };
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMoreOpen(false);
+    const onEsc = (e: Event) => {
+      const event = e as KeyboardEvent;
+      if (event.key === "Escape") setMoreOpen(false);
     };
     const detachDoc = bindDocumentListener("mousedown", onDoc, undefined, {
       component: "ChatHUD",

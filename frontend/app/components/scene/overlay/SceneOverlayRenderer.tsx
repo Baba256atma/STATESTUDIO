@@ -2,8 +2,10 @@
 
 import React, { useMemo } from "react";
 
-import { DecisionPathOverlayLayer } from "../../overlays/DecisionPathOverlayLayer";
-import type { DecisionPathRendererState } from "../../overlays/DecisionPathOverlayLayer";
+import {
+  buildDecisionPathOverlaySignature,
+  buildDecisionPathRendererState,
+} from "../../overlays/DecisionPathOverlayLayer";
 import { SceneRenderer } from "../../SceneRenderer";
 import type { PropagationOverlayState } from "../../../lib/simulation/propagationTypes";
 import type { DecisionPathOverlayState } from "../../../lib/simulation/decisionPathOverlayTypes";
@@ -45,70 +47,85 @@ export type SceneOverlayRendererProps = {
 };
 
 /**
- * E2:23 — Centralized scene overlay stack.
- * Layer order: objects (SceneRenderer) → overlay interpretation lines → HUDs (outside this component).
+ * E2:23 / E2:68 — Scene objects render outside overlay render-props to keep AnimatableObject mounted.
  */
-export function SceneOverlayRenderer(props: SceneOverlayRendererProps): React.ReactElement {
+function SceneOverlayRendererComponent(props: SceneOverlayRendererProps): React.ReactElement {
   const themeTokens = useMemo(() => resolveOverlayThemeTokens(props.themeId), [props.themeId]);
   const visiblePropagation = props.visibility.propagation ? props.propagationOverlay : null;
+  const stableSceneJson = useMemo(
+    () => ({
+      ...props.sceneJson,
+      scene: {
+        ...(props.sceneJson?.scene ?? {}),
+        objects: props.objects,
+      },
+    }),
+    [props.objects, props.sceneJson]
+  );
+  const decisionPathSignature = useMemo(
+    () => buildDecisionPathOverlaySignature(props.decisionPathRenderInput),
+    [props.decisionPathRenderInput]
+  );
+  const decisionPathRenderState = useMemo(
+    () => buildDecisionPathRendererState(props.decisionPathRenderInput),
+    [decisionPathSignature]
+  );
 
   return (
-    <DecisionPathOverlayLayer overlay={props.decisionPathRenderInput}>
-      {(decisionPathRenderState: DecisionPathRendererState) => (
-        <>
-          <SceneRenderer
-            {...props.sceneRendererProps}
-            sceneJson={props.sceneJson}
-            objectSelection={props.objectSelection}
-            propagationOverlay={visiblePropagation}
-            decisionPathOverlay={props.visibility.scenario ? decisionPathRenderState : null}
-          />
-          <PropagationOverlay
-            objects={props.objects}
-            overlay={props.propagationOverlay}
-            visible={props.visibility.propagation}
-            themeTokens={themeTokens}
-          />
-          <AuthoredPropagationOverlay
-            sceneJson={props.sceneJson}
-            objects={props.objects}
-            visible={props.visibility.propagation}
-            themeTokens={themeTokens}
-            selectedPathId={props.selectedPropagationPathId}
-            onPropagationPathSelect={props.onPropagationPathSelect}
-          />
-          <RiskFlowOverlay
-            objects={props.objects}
-            visible={props.visibility.risk_flow}
-            themeTokens={themeTokens}
-            riskSources={props.objectSelection?.risk_sources}
-            riskTargets={props.objectSelection?.risk_targets}
-            propagation={props.propagationOverlay}
-          />
-          <ScenarioOverlay
-            objects={props.objects}
-            overlay={props.decisionPathOverlay}
-            visible={props.visibility.scenario}
-            themeTokens={themeTokens}
-          />
-          <DependencyOverlay
-            objects={props.objects}
-            sceneJson={props.sceneJson}
-            visible={props.visibility.dependency}
-            themeTokens={themeTokens}
-          />
-          <RelationshipRenderer
-            sceneJson={props.sceneJson}
-            objects={props.objects}
-            themeId={props.themeId}
-            selectedObjectId={props.selectedObjectId}
-            selectedRelationshipId={props.selectedRelationshipId}
-            onRelationshipSelect={props.onRelationshipSelect}
-          />
-        </>
-      )}
-    </DecisionPathOverlayLayer>
+    <>
+      <SceneRenderer
+        {...props.sceneRendererProps}
+        sceneJson={stableSceneJson}
+        objectSelection={props.objectSelection}
+        propagationOverlay={visiblePropagation}
+        decisionPathOverlay={props.visibility.scenario ? decisionPathRenderState : null}
+      />
+      <PropagationOverlay
+        objects={props.objects}
+        overlay={props.propagationOverlay}
+        visible={props.visibility.propagation}
+        themeTokens={themeTokens}
+      />
+      <AuthoredPropagationOverlay
+        sceneJson={props.sceneJson}
+        objects={props.objects}
+        visible={props.visibility.propagation}
+        themeTokens={themeTokens}
+        selectedPathId={props.selectedPropagationPathId}
+        onPropagationPathSelect={props.onPropagationPathSelect}
+      />
+      <RiskFlowOverlay
+        objects={props.objects}
+        visible={props.visibility.risk_flow}
+        themeTokens={themeTokens}
+        riskSources={props.objectSelection?.risk_sources}
+        riskTargets={props.objectSelection?.risk_targets}
+        propagation={props.propagationOverlay}
+      />
+      <ScenarioOverlay
+        objects={props.objects}
+        overlay={props.decisionPathOverlay}
+        visible={props.visibility.scenario}
+        themeTokens={themeTokens}
+      />
+      <DependencyOverlay
+        objects={props.objects}
+        sceneJson={props.sceneJson}
+        visible={props.visibility.dependency}
+        themeTokens={themeTokens}
+      />
+      <RelationshipRenderer
+        sceneJson={props.sceneJson}
+        objects={props.objects}
+        themeId={props.themeId}
+        selectedObjectId={props.selectedObjectId}
+        selectedRelationshipId={props.selectedRelationshipId}
+        onRelationshipSelect={props.onRelationshipSelect}
+      />
+    </>
   );
 }
+
+export const SceneOverlayRenderer = React.memo(SceneOverlayRendererComponent);
 
 export default SceneOverlayRenderer;

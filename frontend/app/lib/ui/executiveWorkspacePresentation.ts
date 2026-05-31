@@ -26,6 +26,12 @@ export function shouldShowExecutiveOnboardingOverlays(): boolean {
   return shouldExposeExecutiveDevSurfaces();
 }
 
+/** E2:48 — executive orientation surfaces (first 30 seconds) in clean Type-C mode. */
+export function shouldShowExecutiveOrientationSurface(): boolean {
+  if (!isExecutiveWorkspaceCleanPresentation()) return true;
+  return true;
+}
+
 export function shouldShowExecutiveSceneOperationalStrip(): boolean {
   if (!isExecutiveWorkspaceCleanPresentation()) return true;
   return shouldExposeExecutiveDevSurfaces();

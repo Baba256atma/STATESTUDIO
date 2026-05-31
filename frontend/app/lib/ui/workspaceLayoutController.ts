@@ -1,11 +1,16 @@
 import type React from "react";
 
+import { hudAnchorStyle, type ExecutiveAnchorZone, type HudPanelId } from "../hud/hudAnchoringRuntime";
+import { getTimelineVisibleRegion } from "../hud/timelineVisibleRegionRuntime";
+import { resolveExecutiveRightRailWidth } from "../layout/executiveRightRailLayoutRuntime";
+import { getExecutiveHudViewportHeight } from "../layout/executiveHudHydrationRuntime";
+import { normalizeHudLayoutNumber } from "../layout/hudLayoutSignature";
 import {
-  EXECUTIVE_RIGHT_ASSISTANT_WIDTH_PX,
   EXECUTIVE_SCENE_ZONE_PADDING_PX,
   resolveExecutiveWorkspaceBreakpoint,
   type ExecutiveWorkspaceBreakpoint,
 } from "./executiveWorkspaceLayout";
+import { resolveExecutiveTopBaseline, resolveExecutiveSideInset } from "../scene/executiveTopAlignmentRuntime";
 import {
   logWorkspaceLayoutPanelRepositioned,
   logWorkspaceLayoutPanelResized,
@@ -25,21 +30,14 @@ const LAYOUT_TRANSITION_MS = 180;
 function resolvePanelSizeMode(preset: WorkspaceLayoutPreset, panel: WorkspacePanelId): PanelSizeMode {
   if (preset === "executive") return "normal";
   if (preset === "analysis") {
-    if (panel === "timelineHud" || panel === "objectInfoHud" || panel === "scenarioSuggestions") return "expanded";
+    if (panel === "objectInfoHud" || panel === "scenarioSuggestions") return "expanded";
+    if (panel === "timelineHud") return "normal";
     return "normal";
   }
-  if (panel === "timelineHud" || panel === "scenarioComparison" || panel === "scenarioSuggestions") return "expanded";
+  if (panel === "scenarioComparison" || panel === "scenarioSuggestions") return "expanded";
+  if (panel === "timelineHud") return "normal";
   if (panel === "sceneInfoHud" || panel === "objectInfoHud") return "compact";
   return "normal";
-}
-
-function resolveRightRailWidth(preset: WorkspaceLayoutPreset, breakpoint: ExecutiveWorkspaceBreakpoint): number {
-  const base = EXECUTIVE_RIGHT_ASSISTANT_WIDTH_PX;
-  if (breakpoint === "mobile") return Math.min(base, 320);
-  if (breakpoint === "tablet") return Math.min(base + 20, 380);
-  if (preset === "analysis") return base + 48;
-  if (preset === "simulation") return base + 64;
-  return base;
 }
 
 function resolveRightRailStack(preset: WorkspaceLayoutPreset): WorkspaceRightRailStack {
@@ -72,28 +70,29 @@ function resolveRightRailStack(preset: WorkspaceLayoutPreset): WorkspaceRightRai
 
 function resolveHudPlacements(
   preset: WorkspaceLayoutPreset,
-  breakpoint: ExecutiveWorkspaceBreakpoint
+  breakpoint: ExecutiveWorkspaceBreakpoint,
+  viewportWidth: number
 ): WorkspaceLayoutContract["hud"] {
   const isMobile = breakpoint === "mobile";
   const isTablet = breakpoint === "tablet";
-  const timelineExpanded = preset !== "executive";
-  const timelineBottom = timelineExpanded ? (isMobile ? 10 : 12) : isMobile ? 10 : 14;
-  const timelineMaxWidth = timelineExpanded
-    ? isMobile
-      ? "98vw"
-      : isTablet
-        ? "94vw"
-        : "min(920px, 92vw)"
-    : isMobile
+  const timelineExpanded = false;
+  const timelineRegion = getTimelineVisibleRegion({
+    viewportWidth,
+    viewportHeight: getExecutiveHudViewportHeight(),
+  });
+  const timelineBottom = isMobile ? timelineRegion.bottomOffset : timelineRegion.bottomOffset;
+  const timelineMaxWidth = isMobile
       ? "96vw"
-      : "min(760px, 90vw)";
+      : isTablet
+        ? "min(860px, 92vw)"
+        : timelineRegion.maxWidth;
 
-  const sceneInfoTop = isMobile ? 8 : 12;
-  const sceneInfoLeft = isMobile ? 8 : 12;
+  const sceneInfoTop = resolveExecutiveTopBaseline(viewportWidth);
+  const sceneInfoLeft = resolveExecutiveSideInset(viewportWidth);
 
   const objectVisible = preset !== "simulation" || !isMobile;
-  const objectBottom = preset === "analysis" ? (isMobile ? 88 : 96) : isMobile ? 12 : 16;
-  const objectRight = isMobile ? 8 : preset === "analysis" ? 12 : 16;
+  const objectTop = sceneInfoTop;
+  const objectRight = sceneInfoLeft;
 
   const quickBottom = timelineExpanded
     ? isMobile
@@ -117,13 +116,12 @@ function resolveHudPlacements(
     },
     objectInfoHud: {
       visible: objectVisible,
-      anchor: preset === "analysis" && !isMobile ? "top-left" : "bottom-right",
-      top: preset === "analysis" && !isMobile ? sceneInfoTop + 168 : undefined,
-      left: preset === "analysis" && !isMobile ? sceneInfoLeft : undefined,
-      bottom: preset === "analysis" && !isMobile ? undefined : objectBottom,
-      right: preset === "analysis" && !isMobile ? undefined : objectRight,
+      anchor: "top-right",
+      top: objectTop,
+      right: objectRight,
       zIndex: 5,
       sizeMode: resolvePanelSizeMode(preset, "objectInfoHud"),
+      maxWidth: isMobile ? "min(280px, 58vw)" : "min(320px, 32vw)",
     },
     timelineHud: {
       visible: true,
@@ -162,7 +160,7 @@ export function resolveWorkspaceLayoutContract(
   viewportWidth: number
 ): WorkspaceLayoutContract {
   const breakpoint = resolveExecutiveWorkspaceBreakpoint(viewportWidth);
-  const hud = resolveHudPlacements(preset, breakpoint);
+  const hud = resolveHudPlacements(preset, breakpoint, viewportWidth);
   const rightRailStack = resolveRightRailStack(preset);
 
   return {
@@ -170,9 +168,9 @@ export function resolveWorkspaceLayoutContract(
     breakpoint,
     panelSizeMode: preset === "executive" ? "normal" : preset === "analysis" ? "expanded" : "compact",
     transitionMs: LAYOUT_TRANSITION_MS,
-    rightRailWidthPx: resolveRightRailWidth(preset, breakpoint),
+    rightRailWidthPx: resolveExecutiveRightRailWidth(preset, viewportWidth),
     scenePaddingPx: EXECUTIVE_SCENE_ZONE_PADDING_PX,
-    timelineExpanded: preset !== "executive",
+    timelineExpanded: false,
     sceneFocus: preset === "simulation" ? "simulation" : preset === "analysis" ? "analysis" : "balanced",
     rightRailStack,
     hud,
@@ -180,33 +178,113 @@ export function resolveWorkspaceLayoutContract(
 }
 
 export function workspaceHudPlacementStyle(
+  panelId: keyof WorkspaceLayoutContract["hud"],
   placement: WorkspaceHudPlacement,
   transitionMs: number
+): React.CSSProperties;
+export function workspaceHudPlacementStyle(
+  placement: WorkspaceHudPlacement,
+  transitionMs: number
+): React.CSSProperties;
+export function workspaceHudPlacementStyle(
+  panelOrPlacement: keyof WorkspaceLayoutContract["hud"] | WorkspaceHudPlacement,
+  placementOrTransitionMs: WorkspaceHudPlacement | number,
+  maybeTransitionMs?: number
 ): React.CSSProperties {
-  return {
-    position: "absolute",
-    top: placement.top,
-    left: placement.left,
-    right: placement.right,
-    bottom: placement.bottom,
-    transform: placement.transform,
+  const panelId =
+    typeof panelOrPlacement === "string"
+      ? panelOrPlacement
+      : ("sceneInfoHud" as keyof WorkspaceLayoutContract["hud"]);
+  const placement =
+    typeof panelOrPlacement === "string"
+      ? (placementOrTransitionMs as WorkspaceHudPlacement)
+      : panelOrPlacement;
+  const transitionMs =
+    typeof panelOrPlacement === "string"
+      ? (maybeTransitionMs ?? 0)
+      : (placementOrTransitionMs as number);
+  return hudAnchorStyle(panelId as HudPanelId, {
+    dockZone: placement.anchor as ExecutiveAnchorZone,
+    anchorPosition: {
+      top: placement.top,
+      left: placement.left,
+      right: placement.right,
+      bottom: placement.bottom,
+      transform: placement.transform,
+    },
+    visible: placement.visible,
+    collapsedState: placement.sizeMode === "compact",
+    reservedSpace: reservationForHudPanel(panelId, placement),
     maxWidth: placement.maxWidth,
     zIndex: placement.zIndex,
-    pointerEvents: "none",
-    opacity: placement.visible ? 1 : 0,
-    transition: `top ${transitionMs}ms ease, bottom ${transitionMs}ms ease, left ${transitionMs}ms ease, right ${transitionMs}ms ease, transform ${transitionMs}ms ease, opacity ${transitionMs}ms ease, max-width ${transitionMs}ms ease`,
-  };
+    transitionMs,
+    estimatedWidth: estimatedHudWidth(panelId, placement),
+    estimatedHeight: estimatedHudHeight(panelId, placement),
+  });
+}
+
+function reservationForHudPanel(
+  panelId: keyof WorkspaceLayoutContract["hud"],
+  placement: WorkspaceHudPlacement
+) {
+  if (!placement.visible) return undefined;
+  if (panelId === "sceneInfoHud") return { left: 260, top: 140 };
+  if (panelId === "objectInfoHud") return { right: 320, top: 240 };
+  if (panelId === "timelineHud") return { bottom: placement.sizeMode === "expanded" ? 180 : 120 };
+  if (panelId === "quickActionsDock") return { bottom: 64 };
+  if (panelId === "executiveStatusHud") return { right: 280, top: 110 };
+  return undefined;
+}
+
+function estimatedHudWidth(
+  panelId: keyof WorkspaceLayoutContract["hud"],
+  placement: WorkspaceHudPlacement
+): number {
+  if (panelId === "timelineHud") return placement.sizeMode === "expanded" ? 920 : 760;
+  if (panelId === "executiveStatusHud") return 280;
+  if (panelId === "sceneInfoHud") return placement.sizeMode === "compact" ? 220 : 260;
+  if (panelId === "objectInfoHud") return placement.sizeMode === "compact" ? 260 : 320;
+  return 360;
+}
+
+function estimatedHudHeight(
+  panelId: keyof WorkspaceLayoutContract["hud"],
+  placement: WorkspaceHudPlacement
+): number {
+  if (panelId === "timelineHud") return placement.sizeMode === "expanded" ? 180 : 120;
+  if (panelId === "objectInfoHud") return placement.sizeMode === "expanded" ? 420 : 300;
+  if (panelId === "sceneInfoHud") return 180;
+  if (panelId === "executiveStatusHud") return 120;
+  return 80;
 }
 
 export function buildWorkspaceLayoutSignature(contract: WorkspaceLayoutContract): string {
+  const hudSignature = (Object.keys(contract.hud) as Array<keyof WorkspaceLayoutContract["hud"]>)
+    .sort()
+    .map((panelId) => {
+      const placement = contract.hud[panelId];
+      return [
+        panelId,
+        placement.anchor,
+        normalizeHudLayoutNumber(placement.top),
+        normalizeHudLayoutNumber(placement.left),
+        normalizeHudLayoutNumber(placement.right),
+        normalizeHudLayoutNumber(placement.bottom),
+        placement.sizeMode,
+        placement.visible ? 1 : 0,
+        placement.maxWidth ?? "",
+        placement.zIndex ?? "",
+      ].join(":");
+    })
+    .join("|");
+
   return [
     contract.preset,
     contract.breakpoint,
     contract.rightRailWidthPx,
     contract.timelineExpanded,
-    contract.hud.sceneInfoHud.sizeMode,
-    contract.hud.timelineHud.maxWidth ?? "",
-  ].join("|");
+    hudSignature,
+  ].join("::");
 }
 
 let lastResponsiveSignature: string | null = null;
@@ -225,7 +303,16 @@ export function traceWorkspaceLayoutContract(contract: WorkspaceLayoutContract):
 
   (Object.keys(contract.hud) as Array<keyof WorkspaceLayoutContract["hud"]>).forEach((panelKey) => {
     const panel = contract.hud[panelKey];
-    const panelSig = `${panelKey}:${panel.anchor}:${panel.top ?? ""}:${panel.bottom ?? ""}:${panel.sizeMode}:${panel.visible}`;
+    const panelSig = [
+      panelKey,
+      panel.anchor,
+      normalizeHudLayoutNumber(panel.top),
+      normalizeHudLayoutNumber(panel.left),
+      normalizeHudLayoutNumber(panel.right),
+      normalizeHudLayoutNumber(panel.bottom),
+      panel.sizeMode,
+      panel.visible ? 1 : 0,
+    ].join(":");
     if (lastPanelPlacementSignature[panelKey] !== panelSig) {
       lastPanelPlacementSignature[panelKey] = panelSig;
       logWorkspaceLayoutPanelRepositioned({ panel: panelKey, preset: contract.preset, anchor: panel.anchor });

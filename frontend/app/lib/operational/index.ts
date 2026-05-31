@@ -43,7 +43,7 @@ export {
   summarizeOperationalState,
 } from "./d3Diagnostics.ts";
 export type { OperationalInstabilitySummary, OperationalStateSummary } from "./d3Diagnostics.ts";
-export { runD3DevTimed } from "./d3DevInstrumentation.ts";
+export { runD3DevTimed, runD3DevTimedWithSignature } from "./d3DevInstrumentation.ts";
 export type {
   OperationalRiskExposureLevel,
   OperationalRiskImpactMap,

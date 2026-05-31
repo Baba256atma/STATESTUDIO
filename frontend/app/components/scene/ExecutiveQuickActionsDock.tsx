@@ -8,6 +8,13 @@ import {
   type NexoraHudThemeTokens,
 } from "../../lib/scene/nexoraHudTheme";
 import { useSceneHudTheme } from "../../lib/theme/useSceneTheme";
+import { resolveSceneThemeTokens } from "../../lib/theme/sceneThemeTokens";
+import {
+  executiveMotionTransition,
+  resolveExecutiveControlButtonStyle,
+  resolveExecutiveIconGlyph,
+  resolveExecutiveVocabulary,
+} from "../../lib/workspace/harmonization";
 import {
   logExecutiveQuickActionAnalyzeRequested,
   logExecutiveQuickActionCompareRequested,
@@ -59,6 +66,15 @@ function QuickActionButton(props: {
 }): React.ReactElement {
   const { action, density, theme, onClick } = props;
   const showLabel = density === "expanded";
+  const tokens = resolveSceneThemeTokens(theme.mode);
+  const iconId =
+    action.id === "analyze"
+      ? "control_analyze"
+      : action.id === "simulate"
+        ? "control_simulate"
+        : action.id === "compare"
+          ? "control_compare"
+          : "control_snapshot";
   return (
     <button
       type="button"
@@ -67,6 +83,7 @@ function QuickActionButton(props: {
       aria-label={action.label}
       onClick={onClick}
       style={{
+        ...resolveExecutiveControlButtonStyle(tokens, action.disabled ? "disabled" : "default"),
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
@@ -75,22 +92,17 @@ function QuickActionButton(props: {
         height: 36,
         padding: showLabel ? "0 12px" : 0,
         borderRadius: 10,
-        border: `1px solid ${theme.controlBorder}`,
-        background: theme.buttonBackground,
-        color: theme.buttonText,
-        cursor: action.disabled ? "not-allowed" : "pointer",
-        opacity: action.disabled ? 0.55 : 1,
         fontSize: showLabel ? 10 : 14,
         fontWeight: 800,
-        letterSpacing: showLabel ? "0.04em" : undefined,
         lineHeight: 1,
         boxShadow: theme.mode === "night" ? theme.panelGlow : undefined,
+        transition: executiveMotionTransition("hover"),
       }}
     >
       <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>
-        {action.icon}
+        {resolveExecutiveIconGlyph(iconId, action.icon)}
       </span>
-      {showLabel ? <span>{action.label}</span> : null}
+      {showLabel ? <span>{resolveExecutiveVocabulary(action.label)}</span> : null}
     </button>
   );
 }
@@ -137,7 +149,8 @@ export function ExecutiveQuickActionsDock(props: ExecutiveQuickActionsDockProps)
           borderRadius: 14,
           padding: density === "minimal" ? "4px 6px" : "6px 8px",
           pointerEvents: "auto",
-        }),
+          transition: executiveMotionTransition("panel"),
+        }, { surface: "quickActionsDock", edgeAnchor: "BOTTOM_CENTER" }),
         display: "inline-flex",
         alignItems: "center",
         gap: 6,

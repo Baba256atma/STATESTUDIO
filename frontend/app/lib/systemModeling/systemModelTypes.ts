@@ -3,7 +3,7 @@
 import type { SceneJson } from "../sceneTypes";
 import type { NexoraRelationshipDirection, NexoraRelationshipType } from "../relationships/relationshipTypes";
 
-export type DomainTemplateCategoryId = "supply_chain" | "pmo" | "finance" | "operations";
+export type DomainTemplateCategoryId = "supply_chain" | "pmo" | "finance" | "operations" | "risk";
 
 export type TemplateRelationshipKind =
   | "supplies"
@@ -14,6 +14,7 @@ export type TemplateRelationshipKind =
   | "supports"
   | "influences"
   | "funds"
+  | "owns"
   | "reports_to";
 
 export type TemplateObjectDefinition = {
@@ -94,6 +95,7 @@ export const TEMPLATE_RELATIONSHIP_TO_NEXORA: Record<TemplateRelationshipKind, N
   supports: "supports",
   influences: "influences",
   funds: "supports",
+  owns: "owns",
   reports_to: "reports_to",
 };
 
@@ -106,4 +108,5 @@ export const DOMAIN_TEMPLATE_CATEGORIES: readonly {
   { id: "pmo", label: "PMO", description: "Portfolio and project governance" },
   { id: "finance", label: "Finance", description: "Financial system modeling" },
   { id: "operations", label: "Operations", description: "Operational visibility structures" },
+  { id: "risk", label: "Risk", description: "Enterprise risk modeling" },
 ] as const;

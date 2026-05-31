@@ -1,17 +1,21 @@
 import * as THREE from "three";
 
 import { CALM_FRAMING } from "./calmCameraFraming";
+import { EXECUTIVE_SCENE_COMPOSITION } from "./executiveSceneComposition";
 
 export type CameraTransitionTarget = {
   position: THREE.Vector3;
   lookAt: THREE.Vector3;
+  fov?: number;
 };
 
 export type CameraTransitionState = {
   fromPosition: THREE.Vector3;
   fromLookAt: THREE.Vector3;
+  fromFov: number | null;
   toPosition: THREE.Vector3;
   toLookAt: THREE.Vector3;
+  toFov: number | null;
   elapsedMs: number;
   durationMs: number;
 };
@@ -30,7 +34,8 @@ export function readCameraSnapshot(
 export function createPreserveOrientationFocusTarget(
   camera: THREE.Camera,
   controls: { target?: THREE.Vector3 } | null | undefined,
-  anchor: [number, number, number]
+  anchor: [number, number, number],
+  options?: { maxDistanceDelta?: number }
 ): CameraTransitionTarget {
   const currentTarget =
     controls?.target instanceof THREE.Vector3 ? controls.target.clone() : new THREE.Vector3(0, 0, 0);
@@ -39,7 +44,18 @@ export function createPreserveOrientationFocusTarget(
     offset.set(0, 2, 6);
   }
   const nextTarget = new THREE.Vector3(anchor[0], anchor[1], anchor[2]);
-  const nextPosition = nextTarget.clone().add(offset);
+  const currentDistance = offset.length();
+  const disciplinedDistance = Math.max(
+    EXECUTIVE_SCENE_COMPOSITION.minCameraDistance,
+    Math.min(EXECUTIVE_SCENE_COMPOSITION.maxCameraDistance, currentDistance * 0.985)
+  );
+  const maxDistanceDelta = Math.max(0.25, options?.maxDistanceDelta ?? 2.4);
+  const distanceDelta = disciplinedDistance - currentDistance;
+  const adjustedDistance =
+    Math.abs(distanceDelta) > maxDistanceDelta
+      ? currentDistance + Math.sign(distanceDelta) * maxDistanceDelta
+      : disciplinedDistance;
+  const nextPosition = nextTarget.clone().add(offset.normalize().multiplyScalar(adjustedDistance));
   return { position: nextPosition, lookAt: nextTarget };
 }
 
@@ -51,11 +67,14 @@ export function createCameraTransitionState(
 ): CameraTransitionState {
   const fromLookAt =
     controls?.target instanceof THREE.Vector3 ? controls.target.clone() : new THREE.Vector3(0, 0, 0);
+  const perspectiveCamera = camera as THREE.PerspectiveCamera;
   return {
     fromPosition: camera.position.clone(),
     fromLookAt,
+    fromFov: typeof perspectiveCamera.fov === "number" && Number.isFinite(perspectiveCamera.fov) ? perspectiveCamera.fov : null,
     toPosition: target.position.clone(),
     toLookAt: target.lookAt.clone(),
+    toFov: typeof target.fov === "number" && Number.isFinite(target.fov) ? target.fov : null,
     elapsedMs: 0,
     durationMs,
   };
@@ -71,8 +90,22 @@ export function stepCameraTransition(
   const t = state.durationMs <= 0 ? 1 : state.elapsedMs / state.durationMs;
   const eased = t * t * (3 - 2 * t);
 
+  if (
+    !Number.isFinite(state.toPosition.x) ||
+    !Number.isFinite(state.toPosition.y) ||
+    !Number.isFinite(state.toPosition.z) ||
+    !Number.isFinite(state.toLookAt.x) ||
+    !Number.isFinite(state.toLookAt.y) ||
+    !Number.isFinite(state.toLookAt.z)
+  ) {
+    return true;
+  }
+
   camera.position.lerpVectors(state.fromPosition, state.toPosition, eased);
   const nextLookAt = new THREE.Vector3().lerpVectors(state.fromLookAt, state.toLookAt, eased);
+  if (state.fromFov != null && state.toFov != null && camera instanceof THREE.PerspectiveCamera) {
+    camera.fov = THREE.MathUtils.lerp(state.fromFov, state.toFov, eased);
+  }
 
   if (controls?.target) {
     controls.target.copy(nextLookAt);
@@ -99,13 +132,18 @@ export function dollyCameraAlongView(
   }
   offset.normalize();
   const signedDelta = direction === "in" ? -delta : delta;
-  camera.position.addScaledVector(offset, signedDelta);
+  const currentDistance = camera.position.distanceTo(target);
+  const nextDistance = Math.max(
+    EXECUTIVE_SCENE_COMPOSITION.minCameraDistance,
+    Math.min(EXECUTIVE_SCENE_COMPOSITION.maxCameraDistance, currentDistance + signedDelta)
+  );
+  camera.position.copy(target).addScaledVector(offset, nextDistance);
   (camera as THREE.PerspectiveCamera | THREE.OrthographicCamera).updateProjectionMatrix();
   controls?.update?.();
 }
 
 export const EXECUTIVE_CAMERA_DEFAULT = {
-  position: [0, 6, 14] as [number, number, number],
+  position: [0, 8, 20] as [number, number, number],
   lookAt: [0, 0, 0] as [number, number, number],
 };
 

@@ -22,11 +22,13 @@ export type WorkspacePanelId =
 
 export type WorkspaceHudAnchor =
   | "top-left"
+  | "top-center"
   | "top-right"
+  | "left"
+  | "right"
   | "bottom-center"
   | "bottom-left"
-  | "bottom-right"
-  | "object-anchor";
+  | "bottom-right";
 
 export type WorkspaceHudPlacement = {
   visible: boolean;

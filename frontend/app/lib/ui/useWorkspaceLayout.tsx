@@ -8,8 +8,21 @@ import {
   traceWorkspaceLayoutContract,
   workspaceHudPlacementStyle,
 } from "./workspaceLayoutController";
-import { useViewportWidthListener } from "../dom/useDomListener";
 import type { WorkspaceLayoutContract } from "./workspaceLayoutTypes";
+import {
+  EXECUTIVE_HUD_SSR_VIEWPORT,
+  markExecutiveHudLayoutHydrated,
+  traceHUDClientLayout,
+  traceHUDSSRLayout,
+  traceResponsiveLayoutApplied,
+} from "../layout/executiveHudHydrationRuntime";
+import { bucketViewportWidth } from "../layout/hudLayoutSignature";
+import {
+  buildViewportResizeSignature,
+  scheduleViewportResizeCommit,
+} from "../layout/viewportResizeRuntime";
+import { recordHudLayoutWrite } from "../layout/hudLayoutLogGuard";
+import { startIdleRuntimeWatchdog } from "../runtime/idleRuntimeWatchdog";
 import { applyHudPreferencesToLayoutContract } from "./hudPreferencesController";
 import { useHudPreferencesOptional } from "./useHudPreferences";
 import {
@@ -17,6 +30,12 @@ import {
   logWorkspaceLayoutPresetChanged,
   logWorkspaceLayoutRestored,
 } from "./workspaceLayoutInstrumentation";
+import {
+  getHudLayoutSnapshot,
+  updateHudAnchor,
+  type ExecutiveAnchorZone,
+  type HudPanelId,
+} from "../hud/hudAnchoringRuntime";
 import {
   DEFAULT_WORKSPACE_LAYOUT_PRESET,
   persistWorkspaceLayoutPreset,
@@ -41,9 +60,7 @@ const WorkspaceLayoutContext = createContext<WorkspaceLayoutContextValue | null>
 
 export function WorkspaceLayoutProvider(props: { children: React.ReactNode }): React.ReactElement {
   const [preset, setPresetState] = useState<WorkspaceLayoutPreset>(DEFAULT_WORKSPACE_LAYOUT_PRESET);
-  const [viewportWidth, setViewportWidth] = useState<number>(() =>
-    typeof window !== "undefined" ? window.innerWidth : 1440
-  );
+  const [viewportWidth, setViewportWidth] = useState<number>(EXECUTIVE_HUD_SSR_VIEWPORT.width);
   const mountedRef = useRef(false);
   const hudPreferences = useHudPreferencesOptional();
 
@@ -60,7 +77,35 @@ export function WorkspaceLayoutProvider(props: { children: React.ReactNode }): R
     logWorkspaceLayoutMounted();
   }, []);
 
-  useViewportWidthListener(setViewportWidth, "WorkspaceLayoutProvider");
+  useEffect(() => {
+    traceHUDSSRLayout();
+    markExecutiveHudLayoutHydrated();
+    startIdleRuntimeWatchdog();
+    const width = Math.round(window.innerWidth);
+    setViewportWidth((previousWidth) => {
+      const previousSignature = buildViewportResizeSignature(previousWidth);
+      const nextSignature = buildViewportResizeSignature(width);
+      return previousSignature === nextSignature ? previousWidth : width;
+    });
+    traceHUDClientLayout(width);
+    traceResponsiveLayoutApplied(width);
+  }, []);
+
+  const viewportSignatureRef = useRef(buildViewportResizeSignature(EXECUTIVE_HUD_SSR_VIEWPORT.width));
+  const viewportBucketRef = useRef(bucketViewportWidth(EXECUTIVE_HUD_SSR_VIEWPORT.width));
+
+  useEffect(() => {
+    return scheduleViewportResizeCommit(() => {
+      const width = Math.round(window.innerWidth);
+      const nextSignature = buildViewportResizeSignature(width);
+      if (nextSignature === viewportSignatureRef.current) return;
+      viewportSignatureRef.current = nextSignature;
+      viewportBucketRef.current = bucketViewportWidth(width);
+      setViewportWidth(width);
+      recordHudLayoutWrite("resize");
+      traceResponsiveLayoutApplied(width);
+    });
+  }, []);
 
   const baseContract = useMemo(
     () => resolveWorkspaceLayoutContract(preset, viewportWidth),
@@ -75,8 +120,34 @@ export function WorkspaceLayoutProvider(props: { children: React.ReactNode }): R
     [baseContract, hudPreferences?.preferences]
   );
 
+  const lastHudLayoutSignatureRef = useRef<string | null>(null);
+
   useEffect(() => {
+    const layoutSignature = buildWorkspaceLayoutSignature(contract);
+    if (lastHudLayoutSignatureRef.current === layoutSignature) {
+      return;
+    }
+    lastHudLayoutSignatureRef.current = layoutSignature;
+    recordHudLayoutWrite("layout");
     traceWorkspaceLayoutContract(contract);
+    (Object.keys(contract.hud) as Array<keyof WorkspaceLayoutContract["hud"]>).forEach((panelId) => {
+      const placement = contract.hud[panelId];
+      updateHudAnchor(panelId as HudPanelId, {
+        dockZone: placement.anchor as ExecutiveAnchorZone,
+        anchorPosition: {
+          top: placement.top,
+          left: placement.left,
+          right: placement.right,
+          bottom: placement.bottom,
+          transform: placement.transform,
+        },
+        visible: placement.visible,
+        collapsedState: placement.sizeMode === "compact",
+        maxWidth: placement.maxWidth,
+        zIndex: placement.zIndex,
+      });
+    });
+    getHudLayoutSnapshot();
   }, [contract]);
 
   const setPreset = useCallback(
@@ -97,7 +168,7 @@ export function WorkspaceLayoutProvider(props: { children: React.ReactNode }): R
       settings,
       contract,
       setPreset,
-      hudStyle: (panel) => workspaceHudPlacementStyle(contract.hud[panel], contract.transitionMs),
+      hudStyle: (panel) => workspaceHudPlacementStyle(panel, contract.hud[panel], contract.transitionMs),
       getHudPlacement: (panel) => contract.hud[panel],
     };
   }, [contract, preset, setPreset]);

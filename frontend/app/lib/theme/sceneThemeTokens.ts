@@ -1,6 +1,10 @@
 import type React from "react";
 
 import { nx } from "../../components/ui/nexoraTheme";
+import {
+  resolveExecutiveChipButtonStyle,
+  resolveExecutiveControlButtonStyle,
+} from "../workspace/harmonization";
 import type { SceneThemeId, SceneThemeTokens } from "./sceneThemeTypes";
 
 /** Scene-native HUD surfaces adapted by the theme runtime. */
@@ -96,11 +100,11 @@ export function sceneHudShellStyle(
   overrides?: React.CSSProperties
 ): React.CSSProperties {
   return {
-    borderRadius: 12,
+    borderRadius: 10,
     border: `1px solid ${tokens.panelBorder}`,
     background: tokens.panelBackground,
-    backdropFilter: "blur(14px)",
-    boxShadow: tokens.panelShadow,
+    backdropFilter: "blur(12px)",
+    boxShadow: tokens.hudGlow,
     color: tokens.textPrimary,
     pointerEvents: "auto",
     ...overrides,
@@ -118,34 +122,9 @@ export function sceneHudSectionLabelStyle(tokens: SceneThemeTokens): React.CSSPr
 }
 
 export function sceneHudControlButtonStyle(tokens: SceneThemeTokens): React.CSSProperties {
-  return {
-    padding: "4px 7px",
-    borderRadius: 7,
-    border: `1px solid ${tokens.controlBorder}`,
-    background: tokens.controlBackground,
-    color: tokens.textSecondary,
-    fontSize: 9,
-    fontWeight: 700,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-    cursor: "pointer",
-    lineHeight: 1.2,
-  };
+  return resolveExecutiveControlButtonStyle(tokens);
 }
 
 export function sceneHudChipStyle(tokens: SceneThemeTokens, active: boolean): React.CSSProperties {
-  return {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 5,
-    padding: "3px 7px",
-    borderRadius: 999,
-    border: `1px solid ${active ? tokens.chipBorder : tokens.controlBorder}`,
-    background: active ? tokens.chipBackground : "transparent",
-    color: active ? tokens.textPrimary : tokens.textSecondary,
-    fontSize: 10,
-    fontWeight: 700,
-    cursor: "pointer",
-    lineHeight: 1.2,
-  };
+  return resolveExecutiveChipButtonStyle(tokens, "default", active);
 }

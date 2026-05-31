@@ -1,31 +1,25 @@
 import type React from "react";
 
 import type { WorkspaceLayoutContract } from "../ui/workspaceLayoutTypes";
-
-const STATUS_HUD_HEIGHT: Record<string, number> = {
-  compact: 112,
-  normal: 148,
-  expanded: 184,
-};
-
-const OBJECT_INFO_TOP_RIGHT_HEIGHT: Record<string, number> = {
-  compact: 120,
-  normal: 156,
-  expanded: 196,
-};
+import { resolveExecutiveTopBaseline, resolveExecutiveSideInset } from "./executiveTopAlignmentRuntime";
+import { getSceneHudRegistration } from "./sceneHudRegistry";
 
 /**
  * E2:22 — Upper-right executive status placement with scene HUD overlap avoidance.
  */
 export function resolveExecutiveStatusHudPlacement(contract: WorkspaceLayoutContract): React.CSSProperties {
-  const inset = contract.breakpoint === "mobile" ? 8 : 12;
-  let top = inset;
+  const viewportWidth =
+    contract.breakpoint === "mobile" ? 390 : contract.breakpoint === "tablet" ? 820 : 1440;
+  const inset = resolveExecutiveSideInset(viewportWidth);
+  let top = resolveExecutiveTopBaseline(viewportWidth);
   let right = inset;
 
   const objectInfo = contract.hud.objectInfoHud;
   if (objectInfo.visible && objectInfo.right != null && objectInfo.top != null && objectInfo.bottom == null) {
-    const objectHeight = OBJECT_INFO_TOP_RIGHT_HEIGHT[objectInfo.sizeMode] ?? 156;
-    top = Math.max(top, (objectInfo.top as number) + objectHeight + 8);
+    const objectEntry = getSceneHudRegistration("objectInfoHud");
+    const objectHeight =
+      objectInfo.sizeMode === "expanded" ? 320 : objectInfo.sizeMode === "compact" ? 180 : objectEntry.estimatedHeight;
+    top = resolveExecutiveTopBaseline(viewportWidth) + objectHeight + 8;
   }
 
   const sceneInfo = contract.hud.sceneInfoHud;

@@ -93,6 +93,8 @@ const LEGACY_CONSOLE_LABEL: Partial<
   dashboard_spam_blocked: { method: "warn", label: "[Nexora][DashboardOverrideBlocked]" },
 };
 
+import { shouldEmitRuntimeEvent } from "../../../lib/runtime/runtimeEventDeduper.ts";
+
 /**
  * O3:7 — dev-only right panel diagnostics (no state updates; safe for open/close hot paths).
  * Optional `dedupeKey` suppresses repeats with the same key for that `eventName`.
@@ -109,6 +111,10 @@ export function emitRightPanelDiagnosticDev(
       at: payload?.at ?? Date.now(),
     };
     const key = dedupeKey ?? JSON.stringify({ eventName, ...merged });
+    const frameKey = `${eventName}::${key}`;
+    if (!shouldEmitRuntimeEvent(frameKey)) {
+      return;
+    }
     if (rightPanelDiagnosticLastKeyByEvent.get(eventName) === key) {
       return;
     }

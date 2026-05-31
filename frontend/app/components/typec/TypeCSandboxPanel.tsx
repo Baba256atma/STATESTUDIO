@@ -27,15 +27,15 @@ const panelStyle = {
   overflowY: "auto",
   padding: 14,
   borderRadius: 12,
-  border: "1px solid rgba(45, 212, 191, 0.25)",
-  background: "linear-gradient(180deg, rgba(19, 78, 74, 0.94), rgba(2, 6, 23, 0.92))",
+  border: "1px solid var(--nx-border-soft)",
+  background: "color-mix(in srgb, var(--nx-bg-panel) 94%, transparent)",
   boxShadow: "0 18px 52px rgba(0, 0, 0, 0.34)",
-  color: "rgba(240, 253, 250, 0.94)",
+  color: "var(--nx-text)",
   backdropFilter: "blur(14px)",
 } as const;
 
 const labelStyle = {
-  color: "rgba(153, 246, 228, 0.82)",
+  color: "var(--nx-muted)",
   fontSize: 10,
   fontWeight: 850,
   textTransform: "uppercase",
@@ -51,16 +51,16 @@ const titleStyle = {
 
 const textStyle = {
   margin: "7px 0 0",
-  color: "rgba(204, 251, 241, 0.84)",
+  color: "var(--nx-text-soft)",
   fontSize: 12,
   lineHeight: 1.45,
 } as const;
 
 const buttonStyle = {
   borderRadius: 8,
-  border: "1px solid rgba(204, 251, 241, 0.24)",
-  background: "rgba(15, 23, 42, 0.54)",
-  color: "rgba(240, 253, 250, 0.92)",
+  border: "1px solid var(--nx-border)",
+  background: "var(--nx-bg-control)",
+  color: "var(--nx-text-soft)",
   cursor: "pointer",
   fontSize: 11,
   fontWeight: 750,
@@ -116,12 +116,12 @@ export function TypeCSandboxPanel({
               style={{
                 marginTop: 12,
                 paddingTop: 10,
-                borderTop: "1px solid rgba(153, 246, 228, 0.14)",
+                borderTop: "1px solid var(--nx-border-soft)",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                 <strong style={{ fontSize: 12 }}>{strategy.title}</strong>
-                <span style={{ color: "rgba(153, 246, 228, 0.88)", fontSize: 11 }}>
+                <span style={{ color: "var(--nx-accent-ink)", fontSize: 11 }}>
                   {bestId === strategy.id ? "Best · " : ""}
                   {Math.round(strategy.confidence * 100)}%
                 </span>
@@ -153,7 +153,7 @@ export function TypeCSandboxPanel({
         <p style={textStyle}>Sandbox clones the scene and explores futures. It cannot mutate the real system.</p>
       )}
 
-      {error ? <div style={{ ...textStyle, color: "rgba(254, 202, 202, 0.9)" }}>{error}</div> : null}
+      {error ? <div style={{ ...textStyle, color: "var(--nx-risk)" }}>{error}</div> : null}
 
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
         <button

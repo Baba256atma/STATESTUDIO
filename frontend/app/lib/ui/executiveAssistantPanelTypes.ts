@@ -1,8 +1,4 @@
 /** E2:12 — Executive AI Assistant panel contracts. */
-// D4 Executive reasoning explanations
-// D6 Simulation guidance
-// D7 Advisory intelligence
-// D8 Strategic memory
 
 export type ExecutiveAssistantStatusPhase = "online" | "standby" | "processing";
 

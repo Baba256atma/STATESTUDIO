@@ -11,6 +11,7 @@ import {
   buildOperationalRiskSignature,
   buildPropagationSignature,
 } from "./d3SignatureDeduplication.ts";
+import { devLogOnSignatureChange } from "../runtime/diagnosticIdleGate";
 
 export type OperationalStateSummary = Readonly<{
   monitoringSignature: string;
@@ -104,16 +105,14 @@ export function logD3OperationalDiagnosticsDeduped(input: Readonly<{
     propagationPreview: input.propagationPreview,
     alertEvaluation: input.alertEvaluation,
   });
-  if (typeof globalThis !== "undefined" && globalThis.console?.debug) {
-    globalThis.console.debug("[Nexora][D3]", {
-      composite: summary.compositeSignature.slice(0, 120),
-      instability: inst.flags,
-      counts: {
-        signals: input.monitoringSnapshot?.signals?.length ?? 0,
-        propagationNodes: input.propagationPreview?.propagationNodes?.length ?? 0,
-        riskNodes: input.operationalRiskImpactMap?.nodes?.length ?? 0,
-        alerts: input.alertEvaluation?.alerts?.length ?? 0,
-      },
-    });
-  }
+  devLogOnSignatureChange("[Nexora][D3]", summary.compositeSignature, {
+    composite: summary.compositeSignature.slice(0, 120),
+    instability: inst.flags,
+    counts: {
+      signals: input.monitoringSnapshot?.signals?.length ?? 0,
+      propagationNodes: input.propagationPreview?.propagationNodes?.length ?? 0,
+      riskNodes: input.operationalRiskImpactMap?.nodes?.length ?? 0,
+      alerts: input.alertEvaluation?.alerts?.length ?? 0,
+    },
+  });
 }

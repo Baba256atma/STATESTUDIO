@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
@@ -10,7 +10,7 @@ import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
 import type { ScenarioActionPropagationIntent } from "../lib/simulation/propagationTriggerTypes";
 import type { WarRoomOverlayDetail, WarRoomOverlaySummary } from "../lib/warroom/warRoomTypes";
 import { useSceneOverlayRuntime } from "../lib/overlay/useSceneOverlayRuntime";
-import { bindWindowListener } from "../lib/dom/domListenerLifecycle";
+import { bindWindowListener, logDomListenerStable } from "../lib/dom/domListenerLifecycle";
 import { SceneOverlayRenderer } from "./scene/overlay/SceneOverlayRenderer";
 import {
   isProjectedPointWithinSafeRegion,
@@ -22,6 +22,37 @@ import {
   clampLookAtDeltaToRadius,
   sceneRadiusFromBoundsSize,
 } from "../lib/scene/calmCameraFraming";
+import {
+  calculateExecutiveCameraDistance,
+  countSceneRelationships,
+  normalizeExecutiveObjectScale,
+} from "../lib/scene/executiveSceneComposition";
+import {
+  computeWorkspaceScaleMetrics,
+  evaluateCameraStability,
+  registerAutoFrameSignature,
+} from "../lib/scene/density";
+import { runSceneOccupancyAudit } from "../lib/scene/sceneOccupancyAudit";
+import { runExecutiveLayoutAudit } from "../lib/scene/executiveLayoutAuditRuntime";
+import { buildExecutiveLayoutAuditInputSignature } from "../lib/scene/executiveLayoutAuditSignature";
+import { resolveWorkspaceLayoutContract } from "../lib/ui/workspaceLayoutController";
+import { detectHudDrift, markHudDriftBaseline } from "../lib/hud/hudAnchoringRuntime";
+import {
+  markSceneHudDriftBaseline,
+  scheduleSceneHudDriftBaseline,
+  scheduleSceneHudDriftDetect,
+} from "../lib/scene/sceneHudDriftGuard";
+import { buildSceneActivityDriftSignature } from "../lib/runtime/sceneParityRuntime";
+import { updateIdleRuntimeSemanticSignature } from "../lib/runtime/idleRuntimeStabilityGuard";
+import {
+  buildSceneObjectsRegistrySignature,
+  syncSceneObjectRegistry,
+} from "../lib/scene/objectRegistryRuntime";
+import { buildSceneObjectSelectionSignature } from "../lib/scene/sceneObjectSelectionStable";
+import {
+  SCENE_SHELL_CLASS,
+  SCENE_WORLD_LAYER_CLASS,
+} from "../lib/scene/sceneLayerContract";
 import {
   useClearAllOverrides,
   useOverrides,
@@ -42,14 +73,44 @@ import { ObjectInfoHudOverlay } from "./scene/ObjectInfoHudOverlay";
 import type { ObjectInfoHudModel } from "../lib/scene/objectInfoHudTypes";
 import type { EditableObjectPatch } from "../lib/modeling/objectEditingRuntime";
 import type { PropagationPath, PropagationPathPatch } from "../lib/propagation/propagationAuthoringRuntime";
-import { ExecutiveTimelineHudOverlay } from "./scene/ExecutiveTimelineHudOverlay";
 import type { ExecutiveTimelineHudModel } from "../lib/scene/executiveTimelineHudTypes";
 import { ExecutiveQuickActionsDockOverlay } from "./scene/ExecutiveQuickActionsDockOverlay";
 import type { ExecutiveQuickActionsDockOverlayProps } from "./scene/ExecutiveQuickActionsDockOverlay";
+import { ExecutiveBottomWorkspaceOverlay } from "./scene/ExecutiveBottomWorkspaceOverlay";
 import { ExecutiveStatusHudOverlay } from "./scene/status/ExecutiveStatusHudOverlay";
 import type { ExecutiveStatusHudModel } from "./scene/status/ExecutiveStatusHud.types";
 import { ExecutiveSceneToolbarOverlay } from "./scene/navigation/ExecutiveSceneToolbarOverlay";
+import { ExecutiveFocusModeDocumentBridge } from "./scene/navigation/ExecutiveFocusModeDocumentBridge";
+import { SceneHudLayer } from "./scene/SceneHudLayer";
 import { SceneNavigationController } from "./scene/navigation/SceneNavigationController";
+import { SCENE_NAVIGATION_ACTION_EVENT } from "../lib/scene/sceneNavigationContract";
+import {
+  resolveExecutiveCameraFrameForMode,
+  resolveExecutiveDefaultCameraForMode,
+} from "../lib/workspace/workspaceModeTransitionRuntime";
+import {
+  buildExecutiveSceneObjectSignature,
+  isValidExecutiveCameraFrame,
+  resolveExecutiveCameraPresetFrame,
+} from "../lib/scene/executiveCameraPresets";
+import {
+  createCameraTransitionState,
+  stepCameraTransition,
+  type CameraTransitionState,
+} from "../lib/scene/sceneNavigationCamera";
+import { devLogOnSignatureChange } from "../lib/runtime/diagnosticIdleGate";
+import {
+  hydrateExecutiveFocusMode,
+} from "../lib/workspace/executiveFocusModeRuntime";
+import {
+  getWorkspaceViewMode,
+  getWorkspaceViewModeServerSnapshot,
+  hydrateWorkspaceViewMode,
+  subscribeWorkspaceViewMode,
+} from "../lib/workspace/workspaceViewModeRuntime";
+import type { WorkspaceViewMode } from "../lib/workspace/workspaceViewModeTypes";
+import { logCameraProfileForMode, validateWorkspaceModeActivation } from "../lib/workspace/workspaceModeValidation";
+import { resolveWorkspaceDensityProfile } from "../lib/scene/density/workspaceDensityModeProfiles";
 import type { NexoraRelationship } from "../lib/relationships/relationshipTypes";
 import {
   resolveNexoraHudThemeMode,
@@ -60,6 +121,26 @@ import { logWorkspaceSceneThemeUpdated } from "../lib/ui/workspaceAppearanceInst
 import { nx } from "./ui/nexoraTheme";
 
 const CANVAS_STATIC_MODE = true;
+
+function roundExecutiveScaleInput(value: number): number {
+  if (!Number.isFinite(value)) return 1;
+  return Math.round(value * 100) / 100;
+}
+
+function holdStableScaleInput(
+  ref: React.MutableRefObject<{ signature: string; value: number } | null>,
+  signature: string,
+  next: number,
+  threshold = 0.02
+): number {
+  const rounded = roundExecutiveScaleInput(next);
+  const previous = ref.current;
+  if (!previous || previous.signature !== signature || Math.abs(rounded - previous.value) >= threshold) {
+    ref.current = { signature, value: rounded };
+    return rounded;
+  }
+  return previous.value;
+}
 
 type SceneCanvasProps = {
   prefs: any;
@@ -162,12 +243,6 @@ type SceneCanvasProps = {
   cameraToolbar?: boolean;
 };
 
-const ORBIT_MOUSE_BUTTONS = {
-  LEFT: -1 as unknown as THREE.MOUSE,
-  MIDDLE: THREE.MOUSE.DOLLY,
-  RIGHT: THREE.MOUSE.ROTATE,
-};
-
 function SceneFogSync({ color, near, far }: { color: string; near: number; far: number }) {
   const { scene } = useThree();
   useEffect(() => {
@@ -186,12 +261,14 @@ function SceneDemandInvalidateDriver({
   sceneJson,
   isOrbiting,
   localIsOrbitingRef,
+  viewMode,
 }: {
   layoutPauseRef: React.MutableRefObject<boolean>;
   invalidateOutRef: React.MutableRefObject<(() => void) | null>;
   sceneJson: unknown;
   isOrbiting: boolean;
   localIsOrbitingRef: React.MutableRefObject<boolean>;
+  viewMode: WorkspaceViewMode;
 }) {
   const { invalidate } = useThree();
   const lastFrameTickSignatureRef = useRef<string | null>(null);
@@ -216,6 +293,16 @@ function SceneDemandInvalidateDriver({
     }
     invalidate();
   }, [sceneJson, invalidate]);
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") {
+      const signature = `view_mode_${viewMode}`;
+      if (lastFrameTickSignatureRef.current !== signature) {
+        lastFrameTickSignatureRef.current = signature;
+        console.debug("[Nexora][CanvasFrameTick]", { reason: "view_mode_changed", viewMode });
+      }
+    }
+    invalidate();
+  }, [invalidate, viewMode]);
   useEffect(() => {
     if (!isOrbiting && !localIsOrbitingRef.current) return;
     if (layoutPauseRef.current) return;
@@ -390,27 +477,36 @@ function computeSceneBounds(objects: any[]): Bounds3 | null {
 
 function computeCameraFrameFromBounds(
   bounds: Bounds3,
-  opts?: { horizontalBias?: number; verticalBias?: number; pullback?: number }
-): { position: [number, number, number]; lookAt: [number, number, number] } {
-  const [cx, cy, cz] = bounds.center;
-  const [sx, sy, sz] = bounds.size;
-  const radius = Math.max(2.8, Math.max(sx, sy, sz) * 0.9 * CALM_FRAMING.groupRadiusPadding);
-  const horizontalBias = Number.isFinite(opts?.horizontalBias) ? Number(opts?.horizontalBias) : 0.02;
-  const verticalBias = Number.isFinite(opts?.verticalBias) ? Number(opts?.verticalBias) : 0;
-  const pullback = Number.isFinite(opts?.pullback) ? Number(opts?.pullback) : 1;
-
-  const lookAt: [number, number, number] = [
-    cx - radius * horizontalBias,
-    cy + radius * verticalBias,
-    cz - radius * 0.06,
-  ];
-  const position: [number, number, number] = [
-    lookAt[0] + radius * 0.16,
-    lookAt[1] + radius * 0.72,
-    lookAt[2] + radius * 1.36 * pullback,
-  ];
-
-  return { position, lookAt };
+  opts?: {
+    horizontalBias?: number;
+    verticalBias?: number;
+    pullback?: number;
+    objectCount?: number;
+    relationshipCount?: number;
+    viewportWidth?: number;
+    viewportHeight?: number;
+    viewMode?: WorkspaceViewMode;
+  }
+): { position: [number, number, number]; lookAt: [number, number, number]; fov: number } {
+  const executiveDistance = calculateExecutiveCameraDistance({
+    objectCount: opts?.objectCount ?? 1,
+    relationshipCount: opts?.relationshipCount ?? 0,
+    boundsSize: bounds.size,
+    viewportWidth: opts?.viewportWidth,
+    viewportHeight: opts?.viewportHeight,
+  });
+  const radius = executiveDistance.distance;
+  const viewMode = opts?.viewMode ?? "2D";
+  return resolveExecutiveCameraFrameForMode(
+    viewMode,
+    { center: bounds.center, size: bounds.size },
+    radius,
+    {
+      horizontalBias: opts?.horizontalBias,
+      verticalBias: opts?.verticalBias,
+      pullback: opts?.pullback,
+    }
+  );
 }
 
 function sceneObjectsSignature(objects: any[]): string {
@@ -567,6 +663,17 @@ function CameraIntelligence({
     lastViewportRef.current = { width: size.width, height: size.height };
     if (layoutPauseRef?.current) return;
     if (!signature || signature === "empty") return;
+    const previousSignature = lastAutoFrameSigRef.current;
+    const stability = evaluateCameraStability({
+      trigger: "auto_frame",
+      nextObjectCount: objects.length,
+      signatureChanged: previousSignature !== signature,
+    });
+    if (!stability.allowFullReframe) {
+      lastAutoFrameSigRef.current = signature;
+      registerAutoFrameSignature(signature, objects.length);
+      return;
+    }
     if (lastAutoFrameSigRef.current === signature) return;
 
     const bounds = computeSceneBounds(objects);
@@ -583,6 +690,10 @@ function CameraIntelligence({
       horizontalBias: frameSpec.horizontalBias,
       verticalBias: frameSpec.verticalBias,
       pullback: frameSpec.pullback,
+      objectCount: objects.length,
+      relationshipCount: countSceneRelationships(sceneJson),
+      viewportWidth: size.width,
+      viewportHeight: size.height,
     });
 
     const frameKey = [
@@ -631,6 +742,7 @@ function CameraIntelligence({
     lastLayoutFrameKeyRef.current = frameKey;
 
     lastAutoFrameSigRef.current = signature;
+    registerAutoFrameSignature(signature, objects.length);
   }, [
     sceneJson,
     hudDockSide,
@@ -986,6 +1098,7 @@ function StaticSceneFramer({
   isOrbiting,
   enabled,
   reframeNonce = 0,
+  viewMode = "2D",
 }: {
   sceneJson: any | null;
   controlsRef: React.MutableRefObject<any | null>;
@@ -993,9 +1106,11 @@ function StaticSceneFramer({
   isOrbiting: boolean;
   enabled: boolean;
   reframeNonce?: number;
+  viewMode?: WorkspaceViewMode;
 }) {
-  const { camera } = useThree();
+  const { camera, invalidate, size } = useThree();
   const lastAppliedSignatureRef = useRef<string | null>(null);
+  const transitionRef = useRef<CameraTransitionState | null>(null);
 
   useEffect(() => {
     if (reframeNonce > 0) {
@@ -1004,40 +1119,111 @@ function StaticSceneFramer({
   }, [reframeNonce]);
 
   useEffect(() => {
-    if (!enabled) return;
-    if (!sceneJson?.scene?.objects || !Array.isArray(sceneJson.scene.objects)) return;
-    if (isOrbiting || localIsOrbitingRef.current) return;
-    const objects = sceneJson.scene.objects as any[];
-    const sceneSignature = sceneObjectsSignature(objects);
-    if (lastAppliedSignatureRef.current === sceneSignature) return;
-    const bounds = computeSceneBounds(objects);
-    if (!bounds) return;
+    lastAppliedSignatureRef.current = null;
+  }, [viewMode]);
 
-    const [cx, cy, cz] = bounds.center;
-    const size = Math.max(bounds.size[0], bounds.size[1], bounds.size[2], 1);
-    const distance = size * 1.8;
-    const position: [number, number, number] = [cx, cy + size * 0.5, cz + distance];
-    const lookAt: [number, number, number] = [cx, cy, cz];
+  useFrame((_, delta) => {
+    const transition = transitionRef.current;
+    if (!transition) return;
+    const finished = stepCameraTransition(camera, controlsRef.current, transition, delta * 1000);
+    invalidate();
+    if (finished) transitionRef.current = null;
+  });
 
-    camera.position.set(position[0], position[1], position[2]);
-    const controls = controlsRef.current;
-    if (controls?.target) {
-      controls.target.set(lookAt[0], lookAt[1], lookAt[2]);
-      controls.update();
-    } else {
-      camera.lookAt(lookAt[0], lookAt[1], lookAt[2]);
-    }
-    lastAppliedSignatureRef.current = sceneSignature;
-
-    if (process.env.NODE_ENV !== "production") {
-      console.debug("[Nexora][StaticCameraFrameApplied]", {
-        signature: sceneSignature,
-        position,
-        lookAt,
-        size,
+  useEffect(() => {
+    if (!enabled) {
+      devLogOnSignatureChange("[E2:87][Camera]", `static-disabled:${viewMode}`, {
+        activeMode: viewMode,
+        skipped: true,
+        reason: "static_framer_disabled",
       });
+      return;
     }
-  }, [camera, controlsRef, enabled, isOrbiting, localIsOrbitingRef, sceneJson]);
+    if (!sceneJson?.scene?.objects || !Array.isArray(sceneJson.scene.objects)) {
+      devLogOnSignatureChange("[E2:87][Camera]", `missing-objects:${viewMode}`, {
+        activeMode: viewMode,
+        skipped: true,
+        reason: "missing_scene_objects",
+      });
+      return;
+    }
+    if (isOrbiting || localIsOrbitingRef.current) {
+      devLogOnSignatureChange("[E2:87][Camera]", `orbit-active:${viewMode}`, {
+        activeMode: viewMode,
+        skipped: true,
+        reason: "orbit_active",
+      });
+      return;
+    }
+    const objects = sceneJson.scene.objects as any[];
+    const sceneSignature = buildExecutiveSceneObjectSignature(sceneJson);
+    const framingSignature = `${sceneSignature}|${viewMode}|${reframeNonce}`;
+    if (lastAppliedSignatureRef.current === framingSignature) {
+      devLogOnSignatureChange("[E2:87][Camera]", `unchanged:${viewMode}:${sceneSignature}`, {
+        activeMode: viewMode,
+        skipped: true,
+        reason: "unchanged_framing_signature",
+        framingSignature,
+      });
+      return;
+    }
+    const bounds = computeSceneBounds(objects);
+    if (!bounds) {
+      devLogOnSignatureChange("[E2:87][Camera]", `missing-bounds:${viewMode}:${sceneSignature}`, {
+        activeMode: viewMode,
+        skipped: true,
+        reason: "missing_scene_bounds",
+      });
+      return;
+    }
+
+    const frame = resolveExecutiveCameraPresetFrame({
+      preset: viewMode === "2D" ? "VIEW_2D" : "VIEW_3D",
+      mode: viewMode,
+      sceneJson,
+      viewportWidth: size.width,
+      viewportHeight: size.height,
+    });
+    if (!isValidExecutiveCameraFrame(frame)) return;
+    const position = frame.position;
+    const lookAt = frame.lookAt;
+
+    transitionRef.current = createCameraTransitionState(
+      camera,
+      controlsRef.current,
+      {
+        position: new THREE.Vector3(position[0], position[1], position[2]),
+        lookAt: new THREE.Vector3(lookAt[0], lookAt[1], lookAt[2]),
+        fov: frame.fov,
+      },
+      560
+    );
+    lastAppliedSignatureRef.current = framingSignature;
+    devLogOnSignatureChange(viewMode === "2D" ? "[E2:87][View2D]" : "[E2:87][View3D]", framingSignature, {
+      activeMode: viewMode,
+      cameraProfile: viewMode === "2D" ? "executive_2d_strategic" : "executive_3d_strategic",
+      position,
+      target: lookAt,
+      fov: frame.fov,
+    });
+    logCameraProfileForMode(viewMode);
+    validateWorkspaceModeActivation({
+      requestedMode: viewMode,
+      source: "static_scene_framer",
+      sceneSubscribed: true,
+      cameraApplied: true,
+    });
+    invalidate();
+
+    devLogOnSignatureChange("[E2:87][Camera]", framingSignature, {
+      signature: framingSignature,
+      viewMode,
+      position,
+      lookAt,
+      fov: frame.fov,
+      size: Math.max(bounds.size[0], bounds.size[1], bounds.size[2], 1),
+    });
+  }, [camera, controlsRef, enabled, invalidate, isOrbiting, localIsOrbitingRef, reframeNonce, sceneJson, size.height, size.width, viewMode]);
 
   return null;
 }
@@ -1180,15 +1366,134 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   ]);
 
   const controlsRef = useRef<any>(null);
+  const sceneShellRef = useRef<HTMLDivElement | null>(null);
+  const workspaceViewMode = useSyncExternalStore(
+    subscribeWorkspaceViewMode,
+    getWorkspaceViewMode,
+    getWorkspaceViewModeServerSnapshot
+  );
+  const executiveCameraDefaults = useMemo(
+    () => resolveExecutiveDefaultCameraForMode(workspaceViewMode),
+    [workspaceViewMode]
+  );
   const [cameraReframeNonce, setCameraReframeNonce] = useState(0);
   const hudThemeMode = props.hudThemeMode ?? resolveNexoraHudThemeMode(resolvedUi);
   const requestStaticCameraReframe = useCallback(() => {
+    markSceneHudDriftBaseline("camera-fit-scene", sceneShellRef.current);
     setCameraReframeNonce((value) => value + 1);
+    scheduleSceneHudDriftDetect("camera-fit-scene", sceneShellRef.current);
   }, []);
+
+  useEffect(() => {
+    hydrateWorkspaceViewMode();
+    hydrateExecutiveFocusMode();
+  }, []);
+
+  useEffect(() => {
+    setCameraReframeNonce((value) => value + 1);
+  }, [workspaceViewMode]);
 
   useEffect(() => {
     logHudThemeModeResolved({ mode: hudThemeMode });
   }, [hudThemeMode]);
+
+  useEffect(() => {
+    runSceneOccupancyAudit([
+      {
+        panelId: "sceneInfo",
+        owner: "Scene Info",
+        visible: Boolean(props.sceneInfoHud),
+        coverageEstimate: 8,
+      },
+      {
+        panelId: "objectInfo",
+        owner: "Object Info",
+        visible: Boolean(props.objectInfoHud),
+        coverageEstimate: 9,
+      },
+      {
+        panelId: "timeline",
+        owner: "Executive Bottom Workspace",
+        visible: Boolean(props.timelineHud),
+        coverageEstimate: 11,
+      },
+      {
+        panelId: "quickActions",
+        owner: "Executive Quick Actions",
+        visible: !props.timelineHud && Boolean(props.quickActionsDock),
+        coverageEstimate: 4,
+      },
+      {
+        panelId: "executiveStatus",
+        owner: "Executive Status HUD",
+        visible: Boolean(props.executiveStatusHud),
+        coverageEstimate: 5,
+      },
+      {
+        panelId: "sceneToolbar",
+        owner: "Scene Toolbar",
+        visible: Boolean(props.sceneNavigationToolbar ?? props.cameraToolbar),
+        coverageEstimate: 4,
+      },
+    ]);
+  }, [
+    props.cameraToolbar,
+    props.executiveStatusHud,
+    props.objectInfoHud,
+    props.quickActionsDock,
+    props.sceneInfoHud,
+    props.sceneNavigationToolbar,
+    props.timelineHud,
+  ]);
+
+  const layoutAuditSignature = useMemo(() => {
+    if (process.env.NODE_ENV === "production") return null;
+    const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 1440;
+    const contract = resolveWorkspaceLayoutContract("executive", viewportWidth);
+    return buildExecutiveLayoutAuditInputSignature({
+      contract,
+      selectedObjectId: props.objectInfoHud?.model.selectedObjectId?.trim() || null,
+      pipelineStatus: "ready",
+      visiblePanels: {
+        sceneInfoHud: Boolean(props.sceneInfoHud),
+        objectInfoHud: Boolean(props.objectInfoHud),
+        executiveStatusHud: Boolean(props.executiveStatusHud),
+        timelineHud: Boolean(props.timelineHud),
+        quickActionsDock: !props.timelineHud && Boolean(props.quickActionsDock),
+        executiveSceneToolbar: Boolean(props.sceneNavigationToolbar ?? props.cameraToolbar),
+      },
+    });
+  }, [
+    props.cameraToolbar,
+    props.executiveStatusHud,
+    props.objectInfoHud,
+    props.objectInfoHud?.model.selectedObjectId,
+    props.quickActionsDock,
+    props.sceneInfoHud,
+    props.sceneNavigationToolbar,
+    props.timelineHud,
+  ]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production" || !layoutAuditSignature) return;
+    const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 1440;
+    const contract = resolveWorkspaceLayoutContract("executive", viewportWidth);
+    runExecutiveLayoutAudit({
+      contract,
+      selectedObjectId: props.objectInfoHud?.model.selectedObjectId?.trim() || null,
+      pipelineStatus: "ready",
+      visiblePanels: {
+        sceneInfoHud: Boolean(props.sceneInfoHud),
+        objectInfoHud: Boolean(props.objectInfoHud),
+        executiveStatusHud: Boolean(props.executiveStatusHud),
+        timelineHud: Boolean(props.timelineHud),
+        quickActionsDock: !props.timelineHud && Boolean(props.quickActionsDock),
+        executiveSceneToolbar: Boolean(props.sceneNavigationToolbar ?? props.cameraToolbar),
+      },
+      root: sceneShellRef.current,
+    });
+  }, [layoutAuditSignature, props.objectInfoHud?.model.selectedObjectId]);
+
   const localIsOrbitingRef = useRef<boolean>(false);
   const preserveCameraOnClearRef = useRef<boolean>(false);
   const leftColumnLayoutPauseRef = useRef(false);
@@ -1201,17 +1506,53 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   const isHudInteractingRef = useRef(false);
   const lastOverlayDispatchKeyRef = useRef<string>("");
   const lastHighlightTraceSigRef = useRef<string>("");
+  const stableGlobalScaleInputRef = useRef<{ signature: string; value: number } | null>(null);
 
   // Camera mode values may come from UI as: "orbit" | "fixed" (new)
   // or legacy values: "auto" | "manual".
   const cameraMode = String(orbitMode);
   const isFixedCamera = cameraMode === "fixed";
   const orbitControlsEnabled = !isFixedCamera && !props.isDraggingHUD && !isHudInteracting;
+  const orbitMouseButtons = useMemo(
+    () =>
+      workspaceViewMode === "3D"
+        ? {
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN,
+          }
+        : {
+            LEFT: THREE.MOUSE.PAN,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN,
+          },
+    [workspaceViewMode]
+  );
 
-  // Global scale can easily make objects feel "too big". Keep a sane default and clamp the range.
-  const rawGlobalScale = typeof props.prefs?.globalScale === "number" ? props.prefs.globalScale : 0.65;
-  const globalScale = Math.min(1.6, Math.max(0.35, rawGlobalScale));
-  const resolvedGlobalScale = CANVAS_STATIC_MODE ? 1 : globalScale;
+  // Global scale can easily make objects feel too large for an executive overview.
+  const sceneObjectCountForScale = Array.isArray(props.sceneJson?.scene?.objects)
+    ? props.sceneJson.scene.objects.length
+    : 1;
+  const requestedGlobalScale = typeof props.prefs?.globalScale === "number" ? props.prefs.globalScale : 0.52;
+  const rawGlobalScale = holdStableScaleInput(
+    stableGlobalScaleInputRef,
+    `scene:${sceneObjectCountForScale}`,
+    requestedGlobalScale
+  );
+  const globalScale = useMemo(
+    () =>
+      normalizeExecutiveObjectScale({
+        objectId: "scene",
+        scale: rawGlobalScale,
+        objectCount: sceneObjectCountForScale,
+      }),
+    [rawGlobalScale, sceneObjectCountForScale]
+  );
+  const densityProfile = useMemo(
+    () => resolveWorkspaceDensityProfile(workspaceViewMode),
+    [workspaceViewMode]
+  );
+  const resolvedGlobalScale = CANVAS_STATIC_MODE ? densityProfile.scaleMultiplier : globalScale;
   const showGrid = typeof props.showGrid === "boolean" ? props.showGrid : !!props.prefs?.showGrid;
   const showAxes = typeof props.showAxes === "boolean" ? props.showAxes : !!props.prefs?.showAxes;
   const shadowsEnabled = !!props.prefs?.shadowsEnabled;
@@ -1225,6 +1566,18 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         : [],
     [props.sceneJson]
   );
+  const idleRuntimeSemanticSignature = useMemo(
+    () =>
+      JSON.stringify({
+        objectCount: sceneObjectIds.length,
+        objectIds: [...sceneObjectIds].sort(),
+        selectedObjectId: selectedIdCtx ?? props.selectedObjectId ?? null,
+      }),
+    [props.selectedObjectId, sceneObjectIds, selectedIdCtx]
+  );
+  useEffect(() => {
+    updateIdleRuntimeSemanticSignature(idleRuntimeSemanticSignature);
+  }, [idleRuntimeSemanticSignature]);
   const rawHighlightedObjectIds = Array.isArray(combinedObjectSelection?.highlighted_objects)
     ? combinedObjectSelection.highlighted_objects.map(String)
     : [];
@@ -1236,20 +1589,85 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     () => Array.from(new Set(rawHighlightedObjectIds)).sort(),
     [rawHighlightedObjectIdsSig]
   );
-  const sceneJsonForRenderer = useMemo(() => {
-    if (!props.sceneJson) return null;
-    return {
-      ...props.sceneJson,
-      meta: {
-        ...(props.sceneJson?.meta || {}),
-        cameraLockedByUser: isFixedCamera
-          ? true
-          : orbitMode === "manual"
-          ? props.cameraLockedByUser
-          : props.isOrbiting,
-      },
-    };
-  }, [isFixedCamera, orbitMode, props.cameraLockedByUser, props.isOrbiting, props.sceneJson]);
+  const sceneJsonObjectsSignature = useMemo(
+    () =>
+      buildSceneObjectsRegistrySignature(
+        Array.isArray(props.sceneJson?.scene?.objects) ? (props.sceneJson.scene.objects as any[]) : []
+      ),
+    [props.sceneJson]
+  );
+  const stableSceneJsonForRenderRef = useRef<{ signature: string; value: any | null }>({
+    signature: "uninitialized",
+    value: null,
+  });
+  const stableSceneJsonForRender = useMemo(() => {
+    if (props.sceneJson && stableSceneJsonForRenderRef.current.signature !== sceneJsonObjectsSignature) {
+      stableSceneJsonForRenderRef.current = {
+        signature: sceneJsonObjectsSignature,
+        value: props.sceneJson,
+      };
+    }
+    return stableSceneJsonForRenderRef.current.value;
+  }, [props.sceneJson, sceneJsonObjectsSignature]);
+  const objectSelectionSignature = buildSceneObjectSelectionSignature(combinedObjectSelection ?? null);
+  const stableObjectSelection = useMemo(
+    () => combinedObjectSelection ?? null,
+    [objectSelectionSignature]
+  );
+
+  const sceneJsonForRenderer = stableSceneJsonForRender;
+
+  const rawSceneObjects = sceneJsonForRenderer?.scene?.objects;
+  const overlayObjectsRegistrySignature = useMemo(
+    () => buildSceneObjectsRegistrySignature(Array.isArray(rawSceneObjects) ? rawSceneObjects : []),
+    [rawSceneObjects]
+  );
+  const overlaySceneObjects = useMemo(
+    () => syncSceneObjectRegistry(Array.isArray(rawSceneObjects) ? rawSceneObjects : []),
+    [overlayObjectsRegistrySignature, rawSceneObjects]
+  );
+
+  const sceneRendererProps = useMemo(
+    () => ({
+      shadowsEnabled,
+      focusMode: props.focusMode,
+      focusedId: props.focusedId,
+      activeLoopId: props.effectiveActiveLoopId,
+      theme: rendererTheme,
+      motionCalm: props.motionCalm === true,
+      getUxForObject: props.getUxForObject,
+      objectUxById: props.objectUxById,
+      globalScale,
+      loops: props.loops,
+      showLoops: props.showLoops,
+      showLoopLabels: props.showLoopLabels,
+      onObjectPositionChange: props.onObjectPositionChange,
+    }),
+    [
+      shadowsEnabled,
+      globalScale,
+      props.effectiveActiveLoopId,
+      props.focusMode,
+      props.focusedId,
+      props.getUxForObject,
+      props.loops,
+      props.motionCalm,
+      props.objectUxById,
+      props.onObjectPositionChange,
+      props.showLoopLabels,
+      props.showLoops,
+      rendererTheme,
+    ]
+  );
+
+  useEffect(() => {
+    const objects = Array.isArray(props.sceneJson?.scene?.objects) ? props.sceneJson.scene.objects : [];
+    computeWorkspaceScaleMetrics({
+      totalObjects: objects.length,
+      visibleObjects: objects.length,
+      relationships: countSceneRelationships(props.sceneJson),
+    });
+  }, [props.sceneJson]);
 
   useEffect(() => {
     const highlightedSet = new Set(highlightedObjectIds);
@@ -1302,6 +1720,56 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   useEffect(() => {
     isHudInteractingRef.current = isHudInteracting;
   }, [isHudInteracting]);
+
+  const sceneObjectCount = Array.isArray(props.sceneJson?.scene?.objects)
+    ? props.sceneJson.scene.objects.length
+    : 0;
+  const sceneActivitySignature = useMemo(
+    () =>
+      buildSceneActivityDriftSignature({
+        objectCount: sceneObjectCount,
+        selectedObjectId: props.selectedObjectId,
+        selectedRelationshipId: props.selectedRelationshipId,
+        selectedPropagationPathId: props.selectedPropagationPathId,
+      }),
+    [
+      sceneObjectCount,
+      props.selectedObjectId,
+      props.selectedRelationshipId,
+      props.selectedPropagationPathId,
+    ]
+  );
+  const lastSceneActivityDriftSigRef = useRef<string | null>(null);
+  const lastSceneActivityDriftAtRef = useRef(0);
+
+  useEffect(() => {
+    markHudDriftBaseline("scene-activity");
+    scheduleSceneHudDriftBaseline("scene-activity", sceneShellRef.current);
+  }, []);
+
+  useEffect(() => {
+    if (lastSceneActivityDriftSigRef.current === sceneActivitySignature) return;
+    lastSceneActivityDriftSigRef.current = sceneActivitySignature;
+    const now = Date.now();
+    if (now - lastSceneActivityDriftAtRef.current < 20_000) return;
+    lastSceneActivityDriftAtRef.current = now;
+    detectHudDrift("scene-activity");
+    scheduleSceneHudDriftDetect("scene-activity", sceneShellRef.current);
+  }, [sceneActivitySignature]);
+
+  useEffect(() => {
+    const onNavigationAction = (event: Event) => {
+      const detail = (event as CustomEvent<{ action?: string }>).detail;
+      const action = detail?.action?.trim() || "unknown";
+      const reason = `camera-${action}`;
+      markSceneHudDriftBaseline(reason, sceneShellRef.current);
+      scheduleSceneHudDriftDetect(reason, sceneShellRef.current);
+    };
+    return bindWindowListener(SCENE_NAVIGATION_ACTION_EVENT, onNavigationAction as EventListener, undefined, {
+      component: "SceneCanvas",
+      eventType: SCENE_NAVIGATION_ACTION_EVENT,
+    });
+  }, []);
 
   useEffect(() => {
     if (isFixedCamera) {
@@ -1367,24 +1835,38 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     };
   }, []);
 
+  const selectedIdRefForKeydown = useRef(props.selectedIdRef);
+  const selectedSetterRefForKeydown = useRef(props.selectedSetterRef);
+  const onSelectedChangeForKeydownRef = useRef(props.onSelectedChange);
+  useLayoutEffect(() => {
+    selectedIdRefForKeydown.current = props.selectedIdRef;
+    selectedSetterRefForKeydown.current = props.selectedSetterRef;
+    onSelectedChangeForKeydownRef.current = props.onSelectedChange;
+  }, [props.onSelectedChange, props.selectedIdRef, props.selectedSetterRef]);
+
+  const onSceneCanvasKeyDown = useCallback((event: Event) => {
+    const ev = event as KeyboardEvent;
+    if (ev.key !== "Escape") return;
+    // Clear selection via the ref wired by <SetterRegistrar />.
+    if (selectedIdRefForKeydown.current.current == null) return;
+    selectedSetterRefForKeydown.current?.current?.(null);
+    onSelectedChangeForKeydownRef.current?.(null);
+  }, []);
+
   useEffect(() => {
-    const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key !== "Escape") return;
-      // Clear selection via the ref wired by <SetterRegistrar />
-      if (props.selectedIdRef.current == null) return;
-      props.selectedSetterRef?.current?.(null);
-      props.onSelectedChange?.(null);
-    };
-    return bindWindowListener("keydown", onKeyDown as EventListener, undefined, {
+    const meta = {
       component: "SceneCanvas",
       eventType: "keydown",
-    });
-  }, [props.onSelectedChange, props.selectedIdRef, props.selectedSetterRef]);
+    };
+    const detach = bindWindowListener("keydown", onSceneCanvasKeyDown, undefined, meta);
+    logDomListenerStable(meta);
+    return detach;
+  }, [onSceneCanvasKeyDown]);
 
   useEffect(() => {
     const isInsideHud = (t: EventTarget | null) => {
       const el = t as HTMLElement | null;
-      return !!(el && typeof (el as any).closest === "function" && el.closest('[data-hud="chat"], [data-hud="scene-info"], [data-hud="object-info"], [data-hud="timeline"], [data-hud="camera-toolbar"], [data-hud="scene-navigation"], [data-hud="executive-status"], [data-hud="quick-actions"], [data-nx="scene-info-hud"], [data-nx="object-info-hud"], [data-nx="executive-timeline-hud"], [data-nx="executive-camera-toolbar"], [data-nx="executive-scene-toolbar"], [data-nx="executive-status-hud"], [data-nx="executive-quick-actions-dock"]'));
+      return !!(el && typeof (el as any).closest === "function" && el.closest('.scene-hud-layer, [data-hud="chat"], [data-hud="scene-info"], [data-hud="object-info"], [data-hud="timeline"], [data-hud="camera-toolbar"], [data-hud="scene-navigation"], [data-hud="executive-status"], [data-hud="quick-actions"], [data-nx="scene-info-hud"], [data-nx="object-info-hud"], [data-nx="executive-timeline-hud"], [data-nx="executive-camera-toolbar"], [data-nx="executive-scene-toolbar"], [data-nx="executive-status-hud"], [data-nx="executive-quick-actions-dock"]'));
     };
 
     // Track pointer hover inside HUD so we can disable OrbitControls reliably.
@@ -1440,7 +1922,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   useEffect(() => {
     const isInsideHud = (t: EventTarget | null) => {
       const el = t as HTMLElement | null;
-      return !!(el && typeof (el as any).closest === "function" && el.closest('[data-hud="chat"], [data-hud="scene-info"], [data-hud="object-info"], [data-hud="timeline"], [data-hud="camera-toolbar"], [data-hud="scene-navigation"], [data-hud="executive-status"], [data-hud="quick-actions"], [data-nx="scene-info-hud"], [data-nx="object-info-hud"], [data-nx="executive-timeline-hud"], [data-nx="executive-camera-toolbar"], [data-nx="executive-scene-toolbar"], [data-nx="executive-status-hud"], [data-nx="executive-quick-actions-dock"]'));
+      return !!(el && typeof (el as any).closest === "function" && el.closest('.scene-hud-layer, [data-hud="chat"], [data-hud="scene-info"], [data-hud="object-info"], [data-hud="timeline"], [data-hud="camera-toolbar"], [data-hud="scene-navigation"], [data-hud="executive-status"], [data-hud="quick-actions"], [data-nx="scene-info-hud"], [data-nx="object-info-hud"], [data-nx="executive-timeline-hud"], [data-nx="executive-camera-toolbar"], [data-nx="executive-scene-toolbar"], [data-nx="executive-status-hud"], [data-nx="executive-quick-actions-dock"]'));
     };
 
     const onTouchStartCapture = (e: TouchEvent) => {
@@ -1537,6 +2019,8 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
 
   const handleOrbitStart = useCallback(() => {
     if (isFixedCamera || localIsOrbitingRef.current) return;
+    markHudDriftBaseline("camera-orbit");
+    markSceneHudDriftBaseline("camera-orbit", sceneShellRef.current);
     localIsOrbitingRef.current = true;
     preserveCameraOnClearRef.current = true;
     props.onOrbitStart();
@@ -1553,6 +2037,8 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     localIsOrbitingRef.current = false;
     preserveCameraOnClearRef.current = true;
     props.onOrbitEnd();
+    detectHudDrift("camera-orbit");
+    scheduleSceneHudDriftDetect("camera-orbit", sceneShellRef.current);
     if (process.env.NODE_ENV !== "production") {
       console.log("[Nexora][SceneCanvas][FocusUpdate]", {
         kind: "orbit_end",
@@ -1561,8 +2047,18 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     }
   }, [isFixedCamera, props.onOrbitEnd]);
 
+  const clearTemporaryCameraFocus = useCallback(() => {
+    preserveCameraOnClearRef.current = true;
+    props.selectedSetterRef?.current?.(null);
+    props.onSelectedChange?.(null);
+    props.onSelectedScreenX?.(null);
+  }, [props.onSelectedChange, props.onSelectedScreenX, props.selectedSetterRef]);
+
   return (
     <div
+      ref={sceneShellRef}
+      className={SCENE_SHELL_CLASS}
+      data-nx-view-mode={workspaceViewMode}
       style={{
         position: "relative",
         width: "100%",
@@ -1614,13 +2110,14 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         </div>
       ) : null}
       <Canvas
+        className={SCENE_WORLD_LAYER_CLASS}
         frameloop="demand"
         dpr={[1, 1.5]}
         gl={{ antialias: false, powerPreference: "high-performance" }}
         shadows={shadowsEnabled}
         camera={{
-          position: CANVAS_STATIC_MODE ? [0, 6, 14] : props.camPos ?? [0, 0, 5],
-          fov: CANVAS_STATIC_MODE ? 45 : 50,
+          position: CANVAS_STATIC_MODE ? executiveCameraDefaults.position : props.camPos ?? executiveCameraDefaults.position,
+          fov: CANVAS_STATIC_MODE ? executiveCameraDefaults.fov : 48,
           near: 0.1,
           far: 250,
         }}
@@ -1635,6 +2132,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
           sceneJson={props.sceneJson}
           isOrbiting={props.isOrbiting}
           localIsOrbitingRef={localIsOrbitingRef}
+          viewMode={workspaceViewMode}
         />
         <color attach="background" args={[sceneEnv.clearColor]} />
         <SceneFogSync color={sceneEnv.fogColor} near={sceneEnv.fogNear} far={sceneEnv.fogFar} />
@@ -1667,6 +2165,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
           isOrbiting={props.isOrbiting}
           enabled={CANVAS_STATIC_MODE}
           reframeNonce={cameraReframeNonce}
+          viewMode={workspaceViewMode}
         />
 
         {sceneEnv.showStars ? (
@@ -1686,15 +2185,16 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
 
         <OrbitControls
           ref={controlsRef}
-          enabled={!CANVAS_STATIC_MODE && orbitControlsEnabled}
+          enabled={orbitControlsEnabled}
           enableZoom
-          enableRotate={!CANVAS_STATIC_MODE}
-          enablePan={false}
+          enableRotate={workspaceViewMode === "3D"}
+          enablePan
           enableDamping={false}
           autoRotate={false}
-          minDistance={1.5}
-          maxDistance={80}
-          mouseButtons={ORBIT_MOUSE_BUTTONS}
+          minDistance={8}
+          maxDistance={70}
+          mouseButtons={orbitMouseButtons}
+          screenSpacePanning={workspaceViewMode === "2D"}
           onStart={handleOrbitStart}
           onEnd={handleOrbitEnd}
         />
@@ -1711,36 +2211,23 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
             </group>
           ) : null}
 
-          {props.sceneJson && sceneJsonForRenderer ? (
+          {sceneJsonForRenderer ? (
             <>
               <SceneOverlayRenderer
                 sceneJson={sceneJsonForRenderer}
-                objects={sceneJsonForRenderer.scene?.objects ?? []}
+                objects={overlaySceneObjects}
                 themeId={hudThemeMode}
                 visibility={overlayRuntime.visibility}
                 propagationOverlay={mergedPropagationOverlay}
                 decisionPathOverlay={decisionPathOverlay}
                 decisionPathRenderInput={decisionPathOverlay}
-                objectSelection={combinedObjectSelection ?? null}
+                objectSelection={stableObjectSelection}
                 selectedObjectId={selectedIdCtx ?? props.selectedObjectId ?? null}
                 selectedRelationshipId={props.selectedRelationshipId ?? null}
                 selectedPropagationPathId={props.selectedPropagationPathId ?? null}
                 onRelationshipSelect={props.onRelationshipSelect}
                 onPropagationPathSelect={props.onPropagationPathSelect}
-                sceneRendererProps={{
-                  shadowsEnabled,
-                  focusMode: props.focusMode,
-                  focusedId: props.focusedId,
-                  activeLoopId: props.effectiveActiveLoopId,
-                  theme: rendererTheme,
-                  motionCalm: props.motionCalm === true,
-                  getUxForObject: props.getUxForObject,
-                  objectUxById: props.objectUxById,
-                  loops: props.loops,
-                  showLoops: props.showLoops,
-                  showLoopLabels: props.showLoopLabels,
-                  onObjectPositionChange: props.onObjectPositionChange,
-                }}
+                sceneRendererProps={sceneRendererProps}
               />
 
               <SetterRegistrar refSetter={props.selectedSetterRef} />
@@ -1756,6 +2243,18 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
           ) : null}
         </AnimatedScaleGroup>
 
+        {(props.sceneNavigationToolbar ?? props.cameraToolbar) ? (
+          <SceneNavigationController
+            controlsRef={controlsRef}
+            sceneJson={props.sceneJson}
+            selectedObjectId={selectedIdCtx ?? props.selectedObjectId ?? null}
+            onRequestStaticReframe={requestStaticCameraReframe}
+            onClearTemporaryFocus={clearTemporaryCameraFocus}
+          />
+        ) : null}
+      </Canvas>
+      <ExecutiveFocusModeDocumentBridge />
+      <SceneHudLayer>
         {props.sceneInfoHud ? <SceneInfoHudOverlay {...props.sceneInfoHud} themeMode={hudThemeMode} /> : null}
         {props.objectInfoHud ? (
           <ObjectInfoHudOverlay
@@ -1772,32 +2271,29 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
             onDeleteObject={props.objectInfoHud.onDeleteObject}
           />
         ) : null}
-        {props.timelineHud ? <ExecutiveTimelineHudOverlay model={props.timelineHud} themeMode={hudThemeMode} /> : null}
-        {props.quickActionsDock ? (
+        {props.timelineHud ? (
+          <ExecutiveBottomWorkspaceOverlay
+            timeline={props.timelineHud}
+            quickActions={props.quickActionsDock ? {
+              model: props.quickActionsDock.model,
+              onAction: props.quickActionsDock.onAction,
+            } : null}
+            themeMode={hudThemeMode}
+          />
+        ) : null}
+        {!props.timelineHud && props.quickActionsDock ? (
           <ExecutiveQuickActionsDockOverlay
             {...props.quickActionsDock}
-            stackAboveTimeline={Boolean(props.timelineHud)}
+            stackAboveTimeline={false}
           />
         ) : null}
         {props.executiveStatusHud ? (
           <ExecutiveStatusHudOverlay model={props.executiveStatusHud} themeMode={hudThemeMode} />
         ) : null}
         {(props.sceneNavigationToolbar ?? props.cameraToolbar) ? (
-          <ExecutiveSceneToolbarOverlay
-            themeMode={hudThemeMode}
-            selectedObjectId={selectedIdCtx ?? props.selectedObjectId ?? null}
-            onCreateImpactPath={props.onCreateImpactPath}
-          />
+          <ExecutiveSceneToolbarOverlay themeMode={hudThemeMode} />
         ) : null}
-        {(props.sceneNavigationToolbar ?? props.cameraToolbar) ? (
-          <SceneNavigationController
-            controlsRef={controlsRef}
-            sceneJson={props.sceneJson}
-            selectedObjectId={selectedIdCtx ?? props.selectedObjectId ?? null}
-            onRequestStaticReframe={requestStaticCameraReframe}
-          />
-        ) : null}
-      </Canvas>
+      </SceneHudLayer>
     </div>
   );
 }

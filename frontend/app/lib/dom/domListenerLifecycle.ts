@@ -1,30 +1,42 @@
+import { devLogOnSignatureChange, devLogOncePermanent } from "../runtime/diagnosticIdleGate";
+
 export type DomListenerMeta = {
   component: string;
   elementId?: string | null;
   eventType: string;
 };
 
-function devLog(event: string, payload?: Record<string, unknown>): void {
-  if (process.env.NODE_ENV === "production") return;
-  globalThis.console?.info?.(event, payload ?? {});
+function listenerSignature(meta: DomListenerMeta): string {
+  return `${meta.component}:${meta.elementId ?? "window"}:${meta.eventType}`;
 }
 
+const stableListenerLogKeys = new Set<string>();
+
 export function logDomListenerAttached(meta: DomListenerMeta): void {
-  devLog("[Nexora][DOM][ListenerAttached]", meta);
+  devLogOncePermanent("[Nexora][DOM][ListenerAttached]", listenerSignature(meta), meta, "info");
 }
 
 export function logDomListenerSkippedNull(meta: DomListenerMeta): void {
-  devLog("[Nexora][DOM][ListenerSkippedNull]", meta);
+  devLogOnSignatureChange("[Nexora][DOM][ListenerSkippedNull]", listenerSignature(meta), meta, "info");
 }
 
 export function logDomListenerRemoved(meta: DomListenerMeta): void {
-  devLog("[Nexora][DOM][ListenerRemoved]", meta);
+  devLogOncePermanent("[Nexora][DOM][ListenerRemoved]", listenerSignature(meta), meta, "info");
 }
+
+export function logDomListenerStable(meta: DomListenerMeta): void {
+  const key = listenerSignature(meta);
+  if (stableListenerLogKeys.has(key)) return;
+  stableListenerLogKeys.add(key);
+  devLogOncePermanent("[Nexora][DOMListenerStable]", key, meta, "info");
+}
+
+export type DomEventListener = (event: Event) => void;
 
 export function attachDomListener(
   target: EventTarget | null | undefined,
   type: string,
-  listener: EventListenerOrEventListenerObject,
+  listener: DomEventListener | EventListenerOrEventListenerObject,
   options?: boolean | AddEventListenerOptions,
   meta?: DomListenerMeta
 ): boolean {
@@ -40,7 +52,7 @@ export function attachDomListener(
 export function detachDomListener(
   target: EventTarget | null | undefined,
   type: string,
-  listener: EventListenerOrEventListenerObject,
+  listener: DomEventListener | EventListenerOrEventListenerObject,
   options?: boolean | EventListenerOptions,
   meta?: DomListenerMeta
 ): void {
@@ -51,7 +63,7 @@ export function detachDomListener(
 
 export function bindWindowListener(
   type: string,
-  listener: EventListenerOrEventListenerObject,
+  listener: DomEventListener,
   options?: boolean | AddEventListenerOptions,
   meta?: DomListenerMeta
 ): () => void {
@@ -65,7 +77,7 @@ export function bindWindowListener(
 
 export function bindDocumentListener(
   type: string,
-  listener: EventListenerOrEventListenerObject,
+  listener: DomEventListener,
   options?: boolean | AddEventListenerOptions,
   meta?: DomListenerMeta
 ): () => void {

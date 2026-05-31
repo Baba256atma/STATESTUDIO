@@ -10,6 +10,7 @@ import {
   priorityToSeverity,
   resolveOperationalHealthLabel,
 } from "./executiveStatusTypes";
+import { resolveExecutiveConfidenceLabel, resolveExecutiveEmptyState } from "../workspace/minimalism";
 
 function oneLineHeadline(value: string | null | undefined, fallback: string): string {
   const line = value?.replace(/\s+/g, " ").trim();
@@ -23,7 +24,7 @@ function buildHeadline(input: BuildExecutiveStatusHudModelInput, commandBarMiniI
       input.pipelineStatus.insightLine ??
       input.pipelineStatus.trustSummaryLine ??
       input.pipelineStatus.summary,
-    "Executive situational awareness initializing."
+    resolveExecutiveEmptyState("loading")
   );
 }
 
@@ -69,7 +70,7 @@ export function buildExecutiveStatusHudModel(input: BuildExecutiveStatusHudModel
     },
     {
       id: "confidence",
-      label: confidenceDecision ? `Confidence ${confidenceDecision}` : "Confidence Unknown",
+      label: confidenceDecision ? `Confidence ${confidenceDecision}` : resolveExecutiveConfidenceLabel(null),
       severity: confidenceDecision ? priorityToSeverity("normal") : "attention",
     },
     {
@@ -79,7 +80,7 @@ export function buildExecutiveStatusHudModel(input: BuildExecutiveStatusHudModel
     },
     {
       id: "scenario",
-      label: scenarioLabel ?? "Scenario Pending",
+      label: scenarioLabel ?? resolveExecutiveEmptyState("no_scenario"),
       severity: priorityToSeverity(commandBar.scenario.priority),
     },
   ];

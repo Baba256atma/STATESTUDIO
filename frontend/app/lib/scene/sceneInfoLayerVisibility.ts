@@ -25,6 +25,16 @@ export const SCENE_INFO_LAYER_LABELS: Record<SceneInfoLayerKey, string> = {
   events: "Events",
 };
 
+/** Compact icon-first labels for executive layer toggles (E2:45). */
+export const SCENE_INFO_LAYER_ICONS: Record<SceneInfoLayerKey, string> = {
+  suppliers: "⬡",
+  facilities: "▣",
+  inventory: "▤",
+  logistics: "⇄",
+  markets: "◉",
+  events: "◈",
+};
+
 const DEFAULT_SCENE_INFO_LAYER_VISIBILITY: SceneInfoLayerVisibility = {
   suppliers: true,
   facilities: true,
