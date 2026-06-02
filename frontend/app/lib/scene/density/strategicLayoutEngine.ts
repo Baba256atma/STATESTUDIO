@@ -1,6 +1,8 @@
 import type { StrategicLayoutMode } from "./executiveDensityTypes";
 import type { Vector3Tuple } from "../../sceneTypes";
 import { logStrategicLayoutApplied } from "./executiveDensityInstrumentation";
+import { resolveExecutiveClusterLayoutSpacing } from "../composition/executiveClusterDetectionRuntime";
+import { resolveExecutiveDensityCompression } from "../objectScaling/executiveDensityCompressionRuntime";
 
 export type StrategicLayoutInput = {
   mode: StrategicLayoutMode;
@@ -30,7 +32,15 @@ export function isStrategicLayoutModeSupported(mode: StrategicLayoutMode): boole
 
 /** Grid layout for executive readability at medium/high object counts. */
 export function resolveGridLayoutPosition(input: StrategicLayoutInput): Vector3Tuple {
-  const spacing = Math.max(0.95, input.spacing ?? 1.25);
+  const compression = resolveExecutiveDensityCompression({
+    objectCount: input.objectCount,
+  });
+  const clusterSpacing = resolveExecutiveClusterLayoutSpacing({
+    objectCount: input.objectCount,
+    clusterCount: input.objectCount <= 10 ? 1 : Math.max(1, Math.ceil(input.objectCount / 12)),
+    layoutSpacingMultiplier: compression.layoutSpacingMultiplier,
+  });
+  const spacing = Math.max(0.82, input.spacing ?? clusterSpacing);
   const columns = Math.max(3, Math.min(12, input.columns ?? Math.ceil(Math.sqrt(Math.max(1, input.objectCount)))));
   const row = Math.floor(input.index / columns);
   const col = input.index % columns;
@@ -43,7 +53,15 @@ export function resolveGridLayoutPosition(input: StrategicLayoutInput): Vector3T
 /** Network layout using golden-angle orbit for organic system topology. */
 export function resolveNetworkLayoutPosition(input: StrategicLayoutInput): Vector3Tuple {
   if (input.index <= 0) return [0, 0, 0];
-  const spacing = Math.max(0.9, input.spacing ?? 1.15);
+  const compression = resolveExecutiveDensityCompression({
+    objectCount: input.objectCount,
+  });
+  const clusterSpacing = resolveExecutiveClusterLayoutSpacing({
+    objectCount: input.objectCount,
+    clusterCount: input.objectCount <= 6 ? 1 : Math.max(1, Math.ceil(input.objectCount / 8)),
+    layoutSpacingMultiplier: compression.layoutSpacingMultiplier,
+  });
+  const spacing = Math.max(0.78, input.spacing ?? clusterSpacing);
   const radius = spacing * (1.15 + Math.floor((input.index - 1) / 10) * 0.55);
   const angle = (input.index - 1) * 2.399963229728653;
   const y = ((input.index - 1) % 4 - 1.5) * 0.16;

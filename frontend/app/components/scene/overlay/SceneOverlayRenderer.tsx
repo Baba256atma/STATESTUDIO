@@ -20,6 +20,14 @@ import { RelationshipRenderer } from "../relationships/RelationshipRenderer";
 import type { NexoraRelationship } from "../../../lib/relationships/relationshipTypes";
 import { AuthoredPropagationOverlay } from "./AuthoredPropagationOverlay";
 import type { PropagationPath } from "../../../lib/propagation/propagationAuthoringRuntime";
+import { TimelineEventOverlayLayer } from "./TimelineEventOverlayLayer";
+import type { SpatialTimeIntelligenceState } from "../../../lib/scene/timeline/spatialTimeIntelligenceTypes";
+import { ScenarioPlaybackPropagationLayer } from "./ScenarioPlaybackPropagationLayer";
+import type { ExecutiveScenarioPropagationView } from "../../../lib/scene/scenario/executiveScenarioPlaybackTypes";
+import { MultiScenarioUniverseOverlayLayer } from "./MultiScenarioUniverseOverlayLayer";
+import type { ExecutiveScenarioUniverseLayer, ScenarioUniverseLayoutMode } from "../../../lib/scene/scenario/executiveMultiScenarioUniverseTypes";
+import { CognitiveTwinLivingStateOverlayLayer } from "./CognitiveTwinLivingStateOverlayLayer";
+import type { CognitiveTwinTwinEntity } from "../../../lib/scene/twin/executiveCognitiveTwinTypes";
 
 export type SceneOverlayRendererProps = {
   sceneJson: any;
@@ -40,6 +48,14 @@ export type SceneOverlayRendererProps = {
   selectedPropagationPathId?: string | null;
   onRelationshipSelect?: (relationship: NexoraRelationship) => void;
   onPropagationPathSelect?: (path: PropagationPath) => void;
+  timelineSpatialState?: SpatialTimeIntelligenceState | null;
+  scenarioPropagationView?: ExecutiveScenarioPropagationView | null;
+  ghostScenarioLayers?: readonly ExecutiveScenarioUniverseLayer[];
+  activeComparisonScenarioId?: string | null;
+  comparisonLayoutMode?: ScenarioUniverseLayoutMode;
+  twinLivingEntities?: readonly CognitiveTwinTwinEntity[];
+  twinStressedRelationshipIds?: readonly string[];
+  viewMode?: "2D" | "3D" | string | null;
   sceneRendererProps: Omit<
     React.ComponentProps<typeof SceneRenderer>,
     "sceneJson" | "objectSelection" | "propagationOverlay" | "decisionPathOverlay"
@@ -120,7 +136,35 @@ function SceneOverlayRendererComponent(props: SceneOverlayRendererProps): React.
         themeId={props.themeId}
         selectedObjectId={props.selectedObjectId}
         selectedRelationshipId={props.selectedRelationshipId}
+        emphasizedRelationshipIds={props.twinStressedRelationshipIds}
         onRelationshipSelect={props.onRelationshipSelect}
+      />
+      <TimelineEventOverlayLayer
+        objects={props.objects}
+        anchors={props.timelineSpatialState?.anchors ?? []}
+        visibleAnchorIds={props.timelineSpatialState?.visibleAnchorIds ?? []}
+        selectedEventId={props.timelineSpatialState?.selectedEventId}
+        hoveredEventId={props.timelineSpatialState?.hoveredEventId}
+        viewMode={props.viewMode}
+        visible={Boolean(props.timelineSpatialState)}
+      />
+      <ScenarioPlaybackPropagationLayer
+        objects={props.objects}
+        view={props.scenarioPropagationView ?? null}
+        visible={Boolean(props.scenarioPropagationView)}
+        themeTokens={themeTokens}
+      />
+      <MultiScenarioUniverseOverlayLayer
+        objects={props.objects}
+        ghostLayers={props.ghostScenarioLayers ?? []}
+        activeScenarioId={props.activeComparisonScenarioId ?? null}
+        layoutMode={props.comparisonLayoutMode ?? "ghost"}
+        visible={(props.ghostScenarioLayers?.length ?? 0) > 0}
+      />
+      <CognitiveTwinLivingStateOverlayLayer
+        objects={props.objects}
+        livingEntities={props.twinLivingEntities ?? []}
+        visible={(props.twinLivingEntities?.length ?? 0) > 0}
       />
     </>
   );

@@ -25,6 +25,25 @@ let lastPropagationResolvedSignature: string | null = null;
 let lastPropagationSemanticSignature: string | null = null;
 let lastPropagationSemanticResolution: PropagationTriggerResolution | null = null;
 
+const emittedPropagationSemanticSkipLogs = new Set<string>();
+
+export function logPropagationSemanticSkipOnce(semanticSignature: string): void {
+  if (process.env.NODE_ENV === "production") return;
+  if (!semanticSignature || emittedPropagationSemanticSkipLogs.has(semanticSignature)) return;
+  emittedPropagationSemanticSkipLogs.add(semanticSignature);
+  console.debug("[Nexora][PropagationSkipped][DuplicateSemanticSignature]", {
+    semanticSig: semanticSignature,
+  });
+}
+
+export function resetPropagationTriggerDiagnosticsForTests(): void {
+  lastPropagationCandidatesSignature = null;
+  lastPropagationResolvedSignature = null;
+  lastPropagationSemanticSignature = null;
+  lastPropagationSemanticResolution = null;
+  emittedPropagationSemanticSkipLogs.clear();
+}
+
 function normalizeId(value: string | null | undefined): string | null {
   const next = String(value ?? "").trim();
   return next.length > 0 ? next : null;
@@ -84,11 +103,7 @@ export function resolvePropagationTrigger(
     semanticSignature === lastPropagationSemanticSignature &&
     lastPropagationSemanticResolution
   ) {
-    if (process.env.NODE_ENV !== "production") {
-      console.debug("[Nexora][PropagationSkipped][DuplicateSemanticSignature]", {
-        semanticSig: semanticSignature,
-      });
-    }
+    logPropagationSemanticSkipOnce(semanticSignature);
     return lastPropagationSemanticResolution;
   }
   const now = Number.isFinite(params.now) ? Number(params.now) : Date.now();

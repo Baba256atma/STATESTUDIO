@@ -2,6 +2,8 @@ import type {
   ExecutiveTimelineHudModel,
   TimelineEvent,
   TimelineEventStatus,
+  TimelineEventSeverity,
+  TimelineSpatialMarkerType,
 } from "../scene/executiveTimelineHudTypes";
 import {
   resolveTimelinePriority,
@@ -9,6 +11,10 @@ import {
   type TimelinePriorityCategory,
 } from "./timelinePriorityRuntime";
 import type { TimelineCompressionMode } from "./timelineCompressionRuntime";
+import {
+  resolveTimelineEventMarkerType,
+  resolveTimelineEventSeverity,
+} from "../scene/timeline/spatialTimeIntelligenceRuntime";
 
 export type TimelineOutcomeMarker =
   | "approved"
@@ -23,14 +29,18 @@ export type TimelineStoryItem = {
   timestamp?: string;
   timestampIso?: string;
   severity: TimelinePriorityCategory;
+  eventSeverity: TimelineEventSeverity;
   marker: TimelineOutcomeMarker;
   markerLabel: string;
+  markerType: TimelineSpatialMarkerType;
   scenarioLabel: string;
   cause: string;
   impact: string;
   action: string;
   outcome: string;
   status: TimelineEventStatus;
+  relatedObjectIds?: readonly string[];
+  narrativeSummary?: string;
 };
 
 const logKeys = new Set<string>();
@@ -127,14 +137,18 @@ function toStoryItem(event: TimelineEvent, model: ExecutiveTimelineHudModel): Ti
     timestamp: event.timestamp,
     timestampIso: event.timestampIso,
     severity,
+    eventSeverity: resolveTimelineEventSeverity(event),
     marker,
     markerLabel: timelineOutcomeMarkerLabel(marker),
+    markerType: resolveTimelineEventMarkerType(event),
     scenarioLabel: scenarioLabelForEvent(event, model),
     cause: narrative.cause,
     impact: narrative.impact,
     action: narrative.action,
     outcome: narrative.outcome,
     status: event.status,
+    relatedObjectIds: event.relatedObjectIds,
+    narrativeSummary: event.narrativeSummary ?? event.summary,
   };
 }
 

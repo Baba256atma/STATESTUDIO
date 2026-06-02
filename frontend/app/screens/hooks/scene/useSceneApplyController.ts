@@ -18,6 +18,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 import type { SceneJson } from "../../../lib/sceneTypes.ts";
 import {
   isDuplicateSceneWrite,
+  logSceneWriteSkippedOnce,
   traceSceneWrite,
   type SceneWriteSource,
 } from "../../../lib/debug/sceneWriteTrace.ts";
@@ -136,7 +137,6 @@ export function useSceneApplyController(input: UseSceneApplyControllerInput): Us
   const lastSceneWriteAtRefOwned = useRef<number | null>(null);
   const lastDuplicateJsonApplyLogSigRef = useRef<string | null>(null);
   const lastStableSceneWriteSignatureRef = useRef<string | null>(null);
-  const lastSceneWriteSkippedLogSigRef = useRef<string | null>(null);
 
   const emitSceneApplyDiagnostic = useCallback(
     (name: SceneApplyDiagnosticEventName, payload: SceneApplyDiagnosticPayload = {}) => {
@@ -213,11 +213,13 @@ export function useSceneApplyController(input: UseSceneApplyControllerInput): Us
         if (name === "scene_write_skipped") {
           const signature = String(payload.signature ?? payload.semanticSig ?? "");
           const reason = String(payload.skippedReason ?? "");
-          const logSig = `${reason}:${signature}`;
-          if (lastSceneWriteSkippedLogSigRef.current !== logSig) {
-            lastSceneWriteSkippedLogSigRef.current = logSig;
-            globalThis.console.debug("[Nexora][SceneWriteSkipped]", merged);
-          }
+          const source = String(payload.source ?? "system");
+          logSceneWriteSkippedOnce({
+            ...merged,
+            source,
+            semanticSig: signature,
+            reason,
+          });
           return;
         }
 
@@ -551,7 +553,6 @@ export function useSceneApplyController(input: UseSceneApplyControllerInput): Us
       lastSceneApplySigRefOwned.current = sig;
       lastStableSceneWriteSignatureRef.current = nextStableWriteSignature;
       lastDuplicateJsonApplyLogSigRef.current = null;
-      lastSceneWriteSkippedLogSigRef.current = null;
       if (process.env.NODE_ENV !== "production") {
         const bucket =
           source === "nexora_decision_assistant" ||

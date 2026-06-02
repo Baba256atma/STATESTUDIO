@@ -321,6 +321,26 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
               type="button"
               style={rowBtn}
               onClick={() => {
+                emitPrefsPatch({ showGrid: true, showAxes: true });
+                setOpen(false);
+              }}
+            >
+              ⊞ Scene grid (dev)
+            </button>
+            <button
+              type="button"
+              style={rowBtn}
+              onClick={() => {
+                emitPrefsPatch({ showObjectDebugLabels: true });
+                setOpen(false);
+              }}
+            >
+              🏷 Object debug labels
+            </button>
+            <button
+              type="button"
+              style={rowBtn}
+              onClick={() => {
                 if (process.env.NODE_ENV !== "production") {
                   globalThis.console?.debug?.("[Nexora][Settings] dev_tools_mounted");
                   globalThis.console?.debug?.("[Nexora][Settings] debug_toggle");

@@ -158,7 +158,7 @@ function buildStrongStrategicIntentCoherence(
     Boolean(input.resilienceForecastLine?.trim()) ||
     input.decisionSnapshot?.summary.resiliencePathway === "strengthening" ||
     input.decisionSnapshot?.summary.resiliencePathway === "forming" ||
-    input.decisionSnapshot?.summary.stabilizationFocus.length > 0;
+    (input.decisionSnapshot?.summary.stabilizationFocus?.length ?? 0) > 0;
   const orchestrationCoherent =
     input.decisionSnapshot?.summary.orchestrationState === "coordinated" ||
     input.decisionSnapshot?.summary.orchestrationState === "stabilized" ||

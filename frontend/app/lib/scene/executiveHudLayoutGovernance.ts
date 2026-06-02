@@ -12,7 +12,7 @@ export type ExecutiveHudZone =
 
 export const CANONICAL_HUD_ANCHORS: Readonly<Record<SceneHudPanelId, ExecutiveHudZone>> = Object.freeze({
   sceneInfoHud: "LEFT_TOP",
-  executiveSceneToolbar: "TOP_CENTER",
+  executiveSceneToolbar: "RIGHT_TOP",
   objectInfoHud: "RIGHT_TOP",
   executiveStatusHud: "RIGHT_TOP",
   timelineHud: "BOTTOM_CENTER",

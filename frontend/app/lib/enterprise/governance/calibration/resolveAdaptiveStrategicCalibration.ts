@@ -109,7 +109,7 @@ export function resolveAdaptiveStrategicCalibration(
     "Timeline reflects strategic evolution memory — recalibration, governance refinement, and decision maturity progression";
 
   const assistantCalibrationLine =
-    strategicCalibrationActive || calibrationPosture === "calibrating"
+    strategicCalibrationActive
       ? "Strategic calibration is available — discuss recalibration trends, operational correction quality, and decision evolution without judging executives."
       : "Adaptive strategic calibration is establishing — institutional decision refinement will synchronize with governance and coherence cognition.";
 

@@ -55,12 +55,12 @@ export const SCENE_HUD_REGISTRY: Readonly<Record<SceneHudPanelId, SceneHudRegist
   executiveSceneToolbar: {
     panelId: "executiveSceneToolbar",
     label: "Toolbar",
-    zone: "TOP_CENTER",
-    priority: 95,
+    zone: "RIGHT_TOP",
+    priority: 120,
     visibilityRule: "always",
     estimatedWidth: 360,
     estimatedHeight: 44,
-    layer: 6,
+    layer: 10,
   },
   objectInfoHud: {
     panelId: "objectInfoHud",

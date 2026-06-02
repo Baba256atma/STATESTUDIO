@@ -1,4 +1,5 @@
 import type { Vector3Tuple } from "../../sceneTypes";
+import { resolveExecutiveDensityCompression } from "../objectScaling/executiveDensityCompressionRuntime";
 import { evaluateExecutiveSceneDensity } from "./executiveSceneDensityRuntime";
 import { logExecutiveSpacingResolved } from "./executiveDensityInstrumentation";
 import {
@@ -28,10 +29,22 @@ export function resolveExecutiveSpacing(input: {
 }): ExecutiveSpacingSnapshot {
   const density = evaluateExecutiveSceneDensity(input);
   const tier = density.sceneDensity;
+  const boundsSpan = input.boundsSize
+    ? Math.max(input.boundsSize[0] ?? 0, input.boundsSize[1] ?? 0, input.boundsSize[2] ?? 0)
+    : 0;
+  const compression = resolveExecutiveDensityCompression({
+    objectCount: input.objectCount,
+    relationshipCount: input.relationshipCount,
+    boundsSpan,
+  });
   const minDistance =
-    tier === "sparse" ? 1.45 : tier === "moderate" ? 1.22 : tier === "dense" ? 1.02 : 0.88;
-  const orbitRadiusBase = density.recommendedSpacing + (tier === "critical" ? 0.35 : 0.15);
-  const labelClearance = tier === "sparse" ? 0.42 : tier === "moderate" ? 0.34 : 0.28;
+    (tier === "sparse" ? 1.45 : tier === "moderate" ? 1.22 : tier === "dense" ? 1.02 : 0.88) *
+    compression.layoutSpacingMultiplier;
+  const orbitRadiusBase =
+    (density.recommendedSpacing + (tier === "critical" ? 0.35 : 0.15)) * compression.layoutSpacingMultiplier;
+  const labelClearance =
+    (tier === "sparse" ? 0.42 : tier === "moderate" ? 0.34 : 0.28) *
+    (1 - compression.emptySpaceReduction * 0.35);
   const selectionHalo = tier === "sparse" ? 0.24 : 0.18;
 
   const snapshot = {

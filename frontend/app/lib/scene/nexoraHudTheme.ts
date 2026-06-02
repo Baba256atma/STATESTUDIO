@@ -4,8 +4,8 @@ import { requestCameraToolbarAction as dispatchSceneNavigationLegacyAction } fro
 import {
   resolveSceneNativeHudSectionLabel,
   resolveSceneNativeHudShell,
-  type SceneNativeHudShellInput,
 } from "../hud/visual/sceneNativeHudDesignSystem";
+import type { SceneNativeHudShellInput } from "../hud/visual/sceneNativeHudVisualTypes";
 import { resolveSceneThemeTokens, sceneHudShellStyle as themeHudShellStyle } from "../theme/sceneThemeTokens";
 import type { SceneHudThemeSurfaceId } from "../theme/sceneThemeTokens";
 import type { SceneThemeTokens } from "../theme/sceneThemeTypes";

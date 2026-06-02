@@ -151,8 +151,7 @@ function buildStrongTriDomainSynchronization(
     input.decisionSnapshot?.runtimeStatus === "recovering";
   const temporalAligned =
     input.temporalSnapshot?.runtimeStatus === "stable" ||
-    input.temporalSnapshot?.runtimeStatus === "recovering" ||
-    input.temporalSnapshot?.runtimeStatus === "adaptive";
+    input.temporalSnapshot?.runtimeStatus === "recovering";
 
   if (!foresightAligned || !decisionAligned || !temporalAligned) return null;
 

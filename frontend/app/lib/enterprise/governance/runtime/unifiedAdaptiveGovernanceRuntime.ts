@@ -37,7 +37,6 @@ export class UnifiedAdaptiveGovernanceRuntime {
       organizationId: input.organizationId,
       institutional: input.institutional ?? null,
       stack,
-      continuityPreserved: input.continuityPreserved,
       cognitionConverged: input.cognitionConverged,
       fragilityElevated: input.fragilityElevated,
     });

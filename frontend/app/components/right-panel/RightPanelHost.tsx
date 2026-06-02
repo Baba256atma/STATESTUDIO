@@ -60,10 +60,11 @@ import { buildPanelResolvedData } from "../../lib/panels/buildPanelResolvedData"
 import type { NexoraB18CompareResolved } from "../../lib/scenario/nexoraScenarioBuilder.ts";
 import type { PanelResolvedData, PanelSharedData } from "../../lib/panels/panelDataResolverTypes";
 import {
-  buildPanelContractSignature,
-  buildPanelSharedDataSignature,
-  type PanelSharedDataValidationResult,
+  buildPanelValidationCacheKey,
   validatePanelSharedDataWithDiagnostics,
+} from "../../lib/panels/validatePanelSharedDataWithDiagnostics";
+import {
+  buildPanelSharedDataSignature,
 } from "../../lib/panels/panelDataContract";
 import { getPanelCognitiveFlow } from "../../lib/ui/right-panel/panelCognitiveFlow";
 import { buildAdvicePanelPayload } from "./builders/buildAdvicePanelPayload";
@@ -600,13 +601,6 @@ export function RightPanelHost(props: RightPanelHostProps) {
   // --- STABILITY PATCH (prevent resolver churn + re-render loop) ---
   const stablePanelDataRef = React.useRef<PanelSharedData | null>(null);
   const stablePanelSignatureRef = React.useRef<string | null>(null);
-  const validatedPanelCacheRef = React.useRef<{
-    signature: string | null;
-    result: PanelSharedDataValidationResult | null;
-  }>({
-    signature: null,
-    result: null,
-  });
   const latestAggregatedPanelDataRef = React.useRef<PanelSharedData | null>(null);
 
   const stableAggregatedPanelData = React.useMemo(() => {
@@ -628,24 +622,15 @@ export function RightPanelHost(props: RightPanelHostProps) {
   }, [stableAggregatedPanelData]);
   const panelValidationSignature = React.useMemo(() => {
     try {
-      return buildPanelContractSignature(stableAggregatedPanelData);
+      return buildPanelValidationCacheKey(stableAggregatedPanelData);
     } catch {
       return "panel-signature:error";
     }
   }, [stableAggregatedPanelData]);
   const panelContractValidation = React.useMemo(() => {
-    const cached = validatedPanelCacheRef.current;
-    if (cached.signature === panelValidationSignature && cached.result) {
-      return cached.result;
-    }
     const sourceData = latestAggregatedPanelDataRef.current ?? stableAggregatedPanelData;
-    const result = validatePanelSharedDataWithDiagnostics(sourceData);
-    validatedPanelCacheRef.current = {
-      signature: panelValidationSignature,
-      result,
-    };
-    return result;
-  }, [panelValidationSignature]);
+    return validatePanelSharedDataWithDiagnostics(sourceData);
+  }, [panelValidationSignature, stableAggregatedPanelData]);
   const validatedPanelData = panelContractValidation.data;
 
   const lastHostPanelContractDebugSigRef = React.useRef<string | null>(null);

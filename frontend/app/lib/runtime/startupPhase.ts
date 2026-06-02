@@ -45,6 +45,14 @@ export function markStartupCompleted(): void {
   startupCompleted = true;
 }
 
+export function isSceneHydrationComplete(): boolean {
+  return hydrationComplete;
+}
+
+export function isSceneStable(): boolean {
+  return sceneStable;
+}
+
 export function resetStartupPhaseForTests(): void {
   startedAt = Date.now();
   startupCompleted = false;

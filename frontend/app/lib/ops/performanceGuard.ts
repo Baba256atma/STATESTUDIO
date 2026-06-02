@@ -22,11 +22,17 @@ function truncateLargeArrays<T>(value: T): T {
   return value;
 }
 
+const loggedPerformanceGuardSignatures = new Set<string>();
+
+export function resetPerformanceGuardForTests(): void {
+  loggedPerformanceGuardSignatures.clear();
+}
+
 export function guardHeavyComputation<T>(
   label: string,
   fn: () => T,
   thresholdMs = DEFAULT_THRESHOLD_MS,
-  options?: { fromCache?: boolean }
+  options?: { fromCache?: boolean; signature?: string }
 ): T {
   if (options?.fromCache) {
     return fn();
@@ -35,7 +41,12 @@ export function guardHeavyComputation<T>(
   const result = fn();
   const elapsed = nowMs() - started;
   if (elapsed > thresholdMs) {
-    console.warn(`[Nexora][PerformanceGuard] ${label} took ${elapsed.toFixed(1)}ms`);
+    const guardSignature = options?.signature ?? `${label}:slow`;
+    const guardKey = `${label}:${guardSignature}`;
+    if (!loggedPerformanceGuardSignatures.has(guardKey)) {
+      loggedPerformanceGuardSignatures.add(guardKey);
+      console.warn(`[Nexora][PerformanceGuard] ${label} took ${elapsed.toFixed(1)}ms`);
+    }
     return truncateLargeArrays(result);
   }
   return result;

@@ -112,7 +112,7 @@ export function resolveUnifiedAdaptiveGovernanceRuntime(
     "Timeline reflects living institutional strategic memory — governance evolution, operational coherence progression, executive stability continuity, and enterprise transformation evolution";
 
   const assistantUnifiedGovernanceLine =
-    unifiedGovernanceRuntimeActive || evolutionConvergencePosture === "converging"
+    unifiedGovernanceRuntimeActive
       ? "Unified adaptive governance is synchronized — discuss governance continuity, strategic coherence, executive stability, institutional adaptation, and long-term strategic evolution without autonomous governance authority."
       : "Unified adaptive governance runtime is establishing — institutional strategic evolution will converge as the governance stack deepens.";
 

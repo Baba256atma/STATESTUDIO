@@ -1,4 +1,5 @@
 import type { ObjectLabelPlacementInput } from "./objectLabelPlacementRuntime";
+import type { ObjectNameDensityProfile } from "./objectNameDensityProfile";
 
 export type ObjectLabelContextSignatureInput = {
   objectCount: number;

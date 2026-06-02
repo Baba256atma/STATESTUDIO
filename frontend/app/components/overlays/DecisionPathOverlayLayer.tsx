@@ -137,7 +137,7 @@ export function buildDecisionPathOverlaySignature(
     sourceId: overlay.sourceId ?? null,
     nodeCount: overlay.nodes.length,
     edgeCount: overlay.edges.length,
-    mode: overlay.mode ?? null,
+    mode: overlay.emphasisMode ?? null,
   });
 }
 

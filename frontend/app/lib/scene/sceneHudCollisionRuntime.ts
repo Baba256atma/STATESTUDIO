@@ -124,12 +124,13 @@ export function buildHudLayoutPanels(context: SceneHudLayoutContext): HudLayoutP
 
   if (context.visiblePanels.executiveSceneToolbar) {
     const entry = getSceneHudRegistration("executiveSceneToolbar");
+    const zone = enforceCanonicalAnchor("executiveSceneToolbar", entry.zone);
     panels.push({
       panelId: "executiveSceneToolbar",
-      zone: "TOP_CENTER",
+      zone,
       priority: entry.priority,
       visible: true,
-      rect: rectForZone(entry, context),
+      rect: rectForZone({ ...entry, zone }, context),
     });
   }
 
@@ -164,6 +165,19 @@ export function resolveSceneHudCollisions(
   });
 
   collisions.forEach(([a, b]) => {
+    if (a.panelId === "executiveSceneToolbar" || b.panelId === "executiveSceneToolbar") {
+      resolutions.set("executiveSceneToolbar", {
+        panelId: "executiveSceneToolbar",
+        action: "reposition",
+        stylePatch: {
+          opacity: 1,
+          pointerEvents: "none" as const,
+          zIndex: 1600,
+        },
+      });
+      return;
+    }
+
     const loser = a.priority <= b.priority ? a : b;
     const winner = a.priority <= b.priority ? b : a;
     let action: HudCollisionResolutionAction = "reposition";

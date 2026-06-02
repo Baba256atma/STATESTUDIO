@@ -4,6 +4,7 @@ export type SceneHudDriftPanelId =
   | "timelineHud"
   | "sceneToolbar"
   | "executiveStatusHud"
+  | "executiveWarRoomRibbon"
   | "quickActionsDock";
 
 export const HUD_DRIFT_PIXEL_TOLERANCE = 2;

@@ -7,15 +7,18 @@ export type CameraTransitionTarget = {
   position: THREE.Vector3;
   lookAt: THREE.Vector3;
   fov?: number;
+  zoom?: number;
 };
 
 export type CameraTransitionState = {
   fromPosition: THREE.Vector3;
   fromLookAt: THREE.Vector3;
   fromFov: number | null;
+  fromZoom: number | null;
   toPosition: THREE.Vector3;
   toLookAt: THREE.Vector3;
   toFov: number | null;
+  toZoom: number | null;
   elapsedMs: number;
   durationMs: number;
 };
@@ -68,13 +71,23 @@ export function createCameraTransitionState(
   const fromLookAt =
     controls?.target instanceof THREE.Vector3 ? controls.target.clone() : new THREE.Vector3(0, 0, 0);
   const perspectiveCamera = camera as THREE.PerspectiveCamera;
+  const orthographicCamera = camera as THREE.OrthographicCamera;
+  const fromZoom =
+    typeof orthographicCamera.zoom === "number" && Number.isFinite(orthographicCamera.zoom)
+      ? orthographicCamera.zoom
+      : null;
   return {
     fromPosition: camera.position.clone(),
     fromLookAt,
-    fromFov: typeof perspectiveCamera.fov === "number" && Number.isFinite(perspectiveCamera.fov) ? perspectiveCamera.fov : null,
+    fromFov:
+      typeof perspectiveCamera.fov === "number" && Number.isFinite(perspectiveCamera.fov)
+        ? perspectiveCamera.fov
+        : null,
+    fromZoom,
     toPosition: target.position.clone(),
     toLookAt: target.lookAt.clone(),
     toFov: typeof target.fov === "number" && Number.isFinite(target.fov) ? target.fov : null,
+    toZoom: typeof target.zoom === "number" && Number.isFinite(target.zoom) ? target.zoom : null,
     elapsedMs: 0,
     durationMs,
   };
@@ -105,6 +118,9 @@ export function stepCameraTransition(
   const nextLookAt = new THREE.Vector3().lerpVectors(state.fromLookAt, state.toLookAt, eased);
   if (state.fromFov != null && state.toFov != null && camera instanceof THREE.PerspectiveCamera) {
     camera.fov = THREE.MathUtils.lerp(state.fromFov, state.toFov, eased);
+  }
+  if (state.fromZoom != null && state.toZoom != null && camera instanceof THREE.OrthographicCamera) {
+    camera.zoom = THREE.MathUtils.lerp(state.fromZoom, state.toZoom, eased);
   }
 
   if (controls?.target) {

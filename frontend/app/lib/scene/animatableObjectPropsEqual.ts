@@ -84,6 +84,8 @@ export function areAnimatableObjectPropsEqual(
   if (prev.shadowsEnabled !== next.shadowsEnabled) return false;
   if (prev.motionCalm !== next.motionCalm) return false;
   if (prev.hoveredId !== next.hoveredId) return false;
+  if (prev.connectedToSelected !== next.connectedToSelected) return false;
+  if (prev.relationshipExplorationActive !== next.relationshipExplorationActive) return false;
   if (prev.hoveredInteractionRole !== next.hoveredInteractionRole) return false;
   if (prev.scannerSceneActive !== next.scannerSceneActive) return false;
   if (prev.scannerFragilityScore !== next.scannerFragilityScore) return false;

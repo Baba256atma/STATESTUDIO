@@ -19,7 +19,7 @@ export const DEFAULT_OBJECT_NAME_PROFILE: ObjectNameRenderingProfile = Object.fr
   placement: "below",
   offsetYMultiplier: 0.6,
   offsetYBase: 0.28,
-  fontSizePx: 10,
+  fontSizePx: 12,
   fontWeight: 700,
   letterSpacing: "0.02em",
   maxWidthPx: 128,

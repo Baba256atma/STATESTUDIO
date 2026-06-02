@@ -22,12 +22,13 @@ import type { DecisionAutomationResult } from "../../lib/execution/decisionAutom
 import type { DecisionExecutionIntent } from "../../lib/execution/decisionExecutionIntent";
 import { buildDecisionTimeline } from "../../lib/governance/buildDecisionTimeline";
 import { buildDecisionTimelineView } from "../../lib/governance/buildDecisionTimelineView";
-import type { DecisionTimelineViewEvent } from "../../governance/decisionTimelineModel";
+import type { DecisionTimelineViewEvent } from "../../lib/governance/decisionTimelineModel";
 import {
   resolveExecutiveDashboardDecisionTrace,
   buildExecutiveDecisionTraceInputSignature,
   extractExecutiveDecisionTraceSignatureInput,
 } from "../../lib/decision/trace/executiveDecisionTraceRuntime";
+import { getExecutiveDecisionTraceCache } from "../../lib/decision/trace/executiveDecisionTraceCache";
 import { buildDecisionConfidenceCalibration } from "../../lib/decision/confidence/calibration/buildDecisionConfidenceCalibration";
 import { buildDecisionOutcomeAssessment } from "../../lib/decision/confidence/calibration/buildDecisionOutcomeAssessment";
 import { buildDecisionPatternIntelligence } from "../../lib/decision/patterns/buildDecisionPatternIntelligence";
@@ -337,33 +338,41 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       }),
     [canonicalRecommendation, props.decisionResult, props.responseData]
   );
-  const decisionTraceSignatureInput = React.useMemo(
+  const decisionTraceInputSignature = React.useMemo(
     () =>
-      extractExecutiveDecisionTraceSignatureInput({
-        responseData: props.responseData ?? null,
-        canonicalRecommendation,
-        memoryEntries,
-        sceneJson: props.sceneJson ?? null,
-        objectSelection: props.objectSelection ?? null,
-        activeMode: props.activeMode ?? null,
-      }),
+      buildExecutiveDecisionTraceInputSignature(
+        extractExecutiveDecisionTraceSignatureInput({
+          responseData: props.responseData ?? null,
+          canonicalRecommendation,
+          memoryEntries,
+          sceneJson: props.sceneJson ?? null,
+          objectSelection: props.objectSelection ?? null,
+          activeMode: props.activeMode ?? null,
+        })
+      ),
     [
-      canonicalRecommendation,
-      memoryEntries,
+      canonicalRecommendation?.id,
+      canonicalRecommendation?.primary?.action,
+      canonicalRecommendation?.confidence?.score,
+      memoryEntries.map((entry) => entry.id).join("|"),
       props.activeMode,
-      props.objectSelection,
-      props.responseData,
-      props.sceneJson,
+      props.objectSelection?.selected_object_id,
+      (props.objectSelection?.highlighted_objects ?? []).join("|"),
+      props.responseData?.scenario_id,
+      props.responseData?.active_scenario_id,
+      props.responseData?.risk_level,
+      props.sceneJson?.scene?.objects?.map((object: { id?: string | null }) => object?.id ?? "").join("|"),
+      props.sceneJson?.scene?.fragility?.level,
+      props.sceneJson?.scene?.fragility?.score,
     ]
   );
-  const decisionTraceInputSignature = React.useMemo(
-    () => buildExecutiveDecisionTraceInputSignature(decisionTraceSignatureInput),
-    [decisionTraceSignatureInput]
-  );
-  const decisionTrace = React.useMemo(
-    () =>
-      resolveExecutiveDashboardDecisionTrace({
-        signatureInput: decisionTraceSignatureInput,
+  const decisionTrace = React.useMemo(() => {
+    const cached = getExecutiveDecisionTraceCache(decisionTraceInputSignature);
+    if (cached) {
+      return cached.traceResult;
+    }
+    return resolveExecutiveDashboardDecisionTrace({
+      signatureInput: extractExecutiveDecisionTraceSignatureInput({
         responseData: props.responseData ?? null,
         canonicalRecommendation,
         memoryEntries,
@@ -371,8 +380,14 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
         objectSelection: props.objectSelection ?? null,
         activeMode: props.activeMode ?? null,
       }),
-    [decisionTraceInputSignature]
-  );
+      responseData: props.responseData ?? null,
+      canonicalRecommendation,
+      memoryEntries,
+      sceneJson: props.sceneJson ?? null,
+      objectSelection: props.objectSelection ?? null,
+      activeMode: props.activeMode ?? null,
+    });
+  }, [decisionTraceInputSignature]);
   const calibration = React.useMemo(
     () =>
       buildDecisionConfidenceCalibration({

@@ -60,6 +60,8 @@ export function logRelationshipRendered(payload: {
   sourceId: string;
   targetId: string;
   type: string;
+  emphasis?: string;
+  classification?: string;
 }): void {
   devLogOnce(
     `relationship-rendered-${payload.relationshipId}`,

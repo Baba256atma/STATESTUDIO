@@ -462,7 +462,7 @@ export {
 export {
   selectEnterpriseTimeIntelligenceSnapshots,
   selectLatestEnterpriseTimeIntelligenceSnapshot,
-  selectOrganizationalEvolutionSummaries,
+  selectOrganizationalEvolutionSummaries as selectUnifiedOrganizationalEvolutionSummaries,
   selectUnifiedTemporalCognitionSignature,
   selectUnifiedTemporalCognitionState,
   selectUnifiedTemporalRuntimeStatus,

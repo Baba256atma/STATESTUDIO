@@ -20,6 +20,7 @@ export type RelationshipRendererProps = {
   themeId: SceneThemeId;
   selectedObjectId?: string | null;
   selectedRelationshipId?: string | null;
+  emphasizedRelationshipIds?: readonly string[];
   onRelationshipSelect?: (relationship: NexoraRelationship) => void;
 };
 
@@ -50,6 +51,8 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
 
   if (relationships.length === 0) return null;
 
+  const stressedIds = new Set(props.emphasizedRelationshipIds ?? []);
+
   return (
     <group
       data-nx-layer="relationships"
@@ -59,6 +62,7 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
       {relationships.map((relationship) => {
         const renderPlan = scenePlan.plans[relationship.id];
         if (renderPlan && !renderPlan.visible) return null;
+        const twinStressed = stressedIds.has(relationship.id);
         return (
           <RelationshipLine
             key={relationship.id}
@@ -69,7 +73,7 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
             showLabel={renderPlan?.showLabel ?? relationshipViewProfile.showLabelDefault}
             billboardLabels={relationshipViewProfile.depthCue}
             selected={relationship.id === props.selectedRelationshipId}
-            emphasized={renderPlan?.emphasis !== "BACKGROUND"}
+            emphasized={twinStressed || renderPlan?.emphasis !== "BACKGROUND"}
             onSelect={props.onRelationshipSelect}
           />
         );

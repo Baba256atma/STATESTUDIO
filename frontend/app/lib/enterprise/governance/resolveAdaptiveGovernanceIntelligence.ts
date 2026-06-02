@@ -108,7 +108,7 @@ export function resolveAdaptiveGovernanceIntelligence(
     "Timeline reflects governance evolution — strategic alignment, operational discipline, and resilience oversight maturation";
 
   const assistantGovernanceLine =
-    governanceOversightActive || oversightPosture === "synchronized"
+    governanceOversightActive
       ? "Governance cognition is available — discuss strategic alignment, operational discipline, and resilience governance without claiming executive replacement authority."
       : "Adaptive governance intelligence is establishing — oversight awareness will synchronize with institutional evolution cognition.";
 
@@ -201,8 +201,6 @@ export function resolveAdaptiveGovernanceIntelligence(
     strategicSelfAwarenessActive: false,
     autonomousExecutiveMetaCognition: null,
     cognitiveEvolutionPosture: "idle",
-    evolutionHeadline: "Institutional strategic reflection idle",
-    evolutionSubline: governanceSubline,
     strategicMaturityLine: "",
     resilienceEvolutionLine: "",
     organizationalLearningLine: "",

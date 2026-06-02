@@ -40,8 +40,10 @@ function selectionHighlightSignature(objectSelection: unknown): string {
 
 /** Stable visible-ui signature — ignores object identity churn when semantics match. */
 export function buildVisibleUiStateSignature(state: VisibleUiStateLike): string {
+  const sceneObjectIds = sortedSceneObjectIds(state.sceneJson);
   return JSON.stringify({
-    sceneObjectIds: sortedSceneObjectIds(state.sceneJson),
+    sceneObjectIds,
+    sceneObjectCount: sceneObjectIds.length,
     selectedObjectId: state.selectedObjectId ?? null,
     focusedId: state.focusedId ?? null,
     objectSelection: selectionHighlightSignature(state.objectSelection),

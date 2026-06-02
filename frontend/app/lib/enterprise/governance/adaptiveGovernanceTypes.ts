@@ -189,8 +189,6 @@ export type AdaptiveGovernanceIntelligenceSnapshot = {
   autonomousExecutiveMetaCognition: AutonomousExecutiveMetaCognitionLayerSnapshot | null;
   /** F10:3 — institutional strategic reflection + cognitive evolution */
   cognitiveEvolutionPosture: CognitiveEvolutionPosture;
-  evolutionHeadline: string;
-  evolutionSubline: string;
   strategicMaturityLine: string;
   resilienceEvolutionLine: string;
   organizationalLearningLine: string;

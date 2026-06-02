@@ -24,6 +24,8 @@ export type ScenePrefs = {
   overridePolicy?: "keep" | "match" | "clear";
   /** Reduces hover drift / scale emphasis on the 3D scene. */
   motionIntensity?: "low" | "normal";
+  /** Dev-only object scale/position labels on scene objects. */
+  showObjectDebugLabels?: boolean;
 };
 
 export type PersistedProject = {

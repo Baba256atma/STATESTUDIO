@@ -1,9 +1,12 @@
 import type { SceneJson } from "../sceneTypes";
 import {
-  applyExecutiveObjectScaleProfile,
   evaluateExecutiveSceneDensity,
   resolveSceneDensityTier,
 } from "./density";
+import type { ExecutiveCameraPresetId } from "./camera/executiveCameraPresetRegistry";
+import { resolveExecutiveDensityCompression } from "./objectScaling/executiveDensityCompressionRuntime";
+import { resolveExecutiveObjectScale } from "./objectScaling/executiveObjectScalingRuntime";
+import type { ExecutiveObjectImportanceTier } from "./objectScaling/executiveObjectScalingTypes";
 import { shouldSuppressIdleDebugLog } from "../runtime/idleRuntimeStabilityGuard";
 
 export interface ExecutiveSceneCompositionRules {
@@ -35,7 +38,7 @@ function roundScaleBucket(value: number): number {
 
 function clampScale(value: number): number {
   if (!Number.isFinite(value)) return 1;
-  return Math.max(0.15, Math.min(2, value));
+  return Math.max(0.25, Math.min(1.35, value));
 }
 
 function logExecutiveSceneComposition(tag: string, key: string, payload: unknown): void {
@@ -89,9 +92,9 @@ export function classifySceneDensity(input: {
 }
 
 export function preferredCoverageForDensity(density: SceneDensity): number {
-  if (density === "single") return 0.15;
-  if (density === "small") return 0.2;
-  if (density === "medium") return 0.3;
+  if (density === "single") return 0.24;
+  if (density === "small") return 0.28;
+  if (density === "medium") return 0.34;
   return 0.4;
 }
 
@@ -101,6 +104,7 @@ export function calculateExecutiveCameraDistance(input: {
   boundsSize?: [number, number, number] | null;
   viewportWidth?: number;
   viewportHeight?: number;
+  cameraPreset?: ExecutiveCameraPresetId | null;
   rules?: ExecutiveSceneCompositionRules;
 }): {
   density: SceneDensity;
@@ -130,13 +134,25 @@ export function calculateExecutiveCameraDistance(input: {
   const aspectPullback = viewportAspect < 1.2 ? 1.22 : viewportAspect > 1.9 ? 1.08 : 1.14;
   const profilePullback =
     densitySnapshot.cameraProfile === "overview"
-      ? 2.55
+      ? 2.05
       : densitySnapshot.cameraProfile === "balanced"
-        ? 2.2
+        ? 1.82
         : densitySnapshot.cameraProfile === "tactical"
-          ? 1.95
-          : 1.72;
-  const rawDistance = (boundsSpan / targetCoverage) * 0.34 * profilePullback * aspectPullback * rules.fitPadding;
+          ? 1.62
+          : 1.48;
+  const compression = resolveExecutiveDensityCompression({
+    objectCount: input.objectCount,
+    relationshipCount: input.relationshipCount,
+    boundsSpan,
+  });
+  const effectiveFitPadding = rules.fitPadding * compression.fitPaddingMultiplier;
+  const rawDistance =
+    (boundsSpan / targetCoverage) *
+    0.34 *
+    profilePullback *
+    aspectPullback *
+    effectiveFitPadding *
+    compression.cameraDistanceMultiplier;
   const distance = Math.max(rules.minCameraDistance, Math.min(rules.maxCameraDistance, rawDistance));
   const coverageEstimate = Math.min(0.5, Math.max(0.06, boundsSpan / Math.max(distance * 2.8, 1)));
 
@@ -145,8 +161,11 @@ export function calculateExecutiveCameraDistance(input: {
     relationshipCount: input.relationshipCount ?? 0,
     density,
     cameraProfile: densitySnapshot.cameraProfile,
+    cameraPreset: input.cameraPreset ?? null,
     distance: Number(distance.toFixed(2)),
     coverageEstimate: Number(coverageEstimate.toFixed(3)),
+    compressionSignature: compression.signature,
+    emptySpaceReduction: compression.emptySpaceReduction,
   });
 
   return { density, distance, coverageEstimate };
@@ -156,27 +175,55 @@ export function normalizeExecutiveObjectScale(input: {
   scale?: number | null;
   objectCount?: number;
   selected?: boolean;
+  focused?: boolean;
+  hovered?: boolean;
+  dimmed?: boolean;
+  importance?: ExecutiveObjectImportanceTier;
+  viewportWidth?: number;
+  viewportHeight?: number;
+  cameraPreset?: ExecutiveCameraPresetId | null;
   objectId?: string | null;
 }): number {
   const raw = clampScale(Number(input.scale ?? 1));
   const objectCount = Math.max(1, Math.floor(input.objectCount ?? 1));
   const selected = input.selected === true;
+  const focused = input.focused === true;
+  const hovered = input.hovered === true;
+  const dimmed = input.dimmed === true;
   const roundedRaw = roundScaleBucket(raw);
   const objectId = input.objectId?.trim() || "scene";
   const density = classifySceneDensity({ objectCount });
   const coverageEstimate = roundScaleBucket(preferredCoverageForDensity(density));
-  const cacheSignature = `${objectCount}|${selected ? 1 : 0}|${roundedRaw}`;
+  const cacheSignature = [
+    objectCount,
+    selected ? 1 : 0,
+    focused ? 1 : 0,
+    hovered ? 1 : 0,
+    dimmed ? 1 : 0,
+    input.importance ?? "supporting",
+    input.cameraPreset ?? "EXECUTIVE",
+    Math.round(Number(input.viewportWidth ?? 0)),
+    Math.round(Number(input.viewportHeight ?? 0)),
+    roundedRaw,
+  ].join("|");
   const cached = normalizedExecutiveScaleCache.get(cacheSignature);
   if (cached !== undefined) {
     return cached;
   }
 
-  const normalized = applyExecutiveObjectScaleProfile({
-    scale: roundedRaw,
-    selected,
-    objectId,
+  const normalized = resolveExecutiveObjectScale({
+    rawScale: roundedRaw,
     objectCount,
-  });
+    selected,
+    focused,
+    hovered,
+    dimmed,
+    importance: input.importance,
+    viewportWidth: input.viewportWidth,
+    viewportHeight: input.viewportHeight,
+    cameraPreset: input.cameraPreset,
+    objectId,
+  }).scale;
   const roundedNormalized = roundScaleBucket(clampScale(normalized));
 
   if (Math.abs(normalized - roundedRaw) > 0.001) {
@@ -185,6 +232,8 @@ export function normalizeExecutiveObjectScale(input: {
       objectCount,
       density,
       selected,
+      focused,
+      hovered,
       inputScale: roundedRaw,
       normalizedScale: roundedNormalized,
       coverageEstimate,

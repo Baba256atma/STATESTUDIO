@@ -60,4 +60,31 @@ describe("visibleUiStateSignature", () => {
     expect(areVisibleUiStateSignaturesEqual(prev, next)).toBe(true);
     expect(buildVisibleUiStateSignature(prev)).toBe(buildVisibleUiStateSignature(next));
   });
+
+  it("distinguishes full scene object lists from collapsed scene object lists", () => {
+    const base = {
+      responseData: null,
+      objectSelection: null,
+      selectedObjectId: null,
+      focusedId: null,
+      conflicts: [],
+      memoryInsights: null,
+      riskPropagation: null,
+      strategicAdvice: null,
+      decisionCockpit: null,
+      opponentModel: null,
+      strategicPatterns: null,
+    };
+    const fullScene = {
+      ...base,
+      sceneJson: { scene: { objects: [{ id: "b" }, { id: "a" }, { id: "c" }] } },
+    };
+    const collapsedScene = {
+      ...base,
+      sceneJson: { scene: { objects: [{ id: "a" }] } },
+    };
+
+    expect(buildVisibleUiStateSignature(fullScene)).toContain('"sceneObjectCount":3');
+    expect(areVisibleUiStateSignaturesEqual(fullScene, collapsedScene)).toBe(false);
+  });
 });

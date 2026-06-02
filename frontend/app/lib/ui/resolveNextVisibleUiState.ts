@@ -24,13 +24,35 @@ export type ResolveNextVisibleUiStateInput = {
   submitActive: boolean;
 };
 
+function countSceneObjects(sceneJson: SceneJson | null | unknown): number {
+  return Array.isArray((sceneJson as SceneJson | null)?.scene?.objects)
+    ? ((sceneJson as SceneJson).scene.objects as unknown[]).length
+    : 0;
+}
+
+export function preserveFullSceneObjects(
+  incomingScene: SceneJson | null,
+  previousVisibleScene: SceneJson | null
+): SceneJson | null {
+  const incomingCount = countSceneObjects(incomingScene);
+  const previousCount = countSceneObjects(previousVisibleScene);
+
+  if (incomingCount >= 2) return incomingScene;
+  if (incomingCount === 1 && previousCount > incomingCount) return previousVisibleScene;
+  return incomingScene;
+}
+
 export function resolveNextVisibleUiState(input: ResolveNextVisibleUiStateInput): VisibleUiStateLike {
   const { prev, submitActive } = input;
-  const nextSceneJson = hasRenderableSceneForVisibleState(input.sceneJson)
+  const candidateSceneJson = hasRenderableSceneForVisibleState(input.sceneJson)
     ? input.sceneJson
     : submitActive
-      ? prev.sceneJson
+      ? (prev.sceneJson as SceneJson | null)
       : input.sceneJson;
+  const nextSceneJson = preserveFullSceneObjects(
+    (candidateSceneJson ?? null) as SceneJson | null,
+    (prev.sceneJson ?? null) as SceneJson | null
+  );
   const nextResponseData = hasRenderableResponseForVisibleState(input.guardedResponseData)
     ? input.guardedResponseData
     : submitActive

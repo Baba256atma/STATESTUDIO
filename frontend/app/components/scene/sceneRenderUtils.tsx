@@ -71,6 +71,31 @@ export function geometryFor(type: GeometryKind) {
   }
 }
 
+export function geometryForExecutiveNormalized(input: {
+  renderKind: string;
+  args: number[];
+}) {
+  const kind = String(input.renderKind ?? "box").toLowerCase();
+  const args = input.args;
+  switch (kind) {
+    case "sphere":
+      return <sphereGeometry args={[args[0], args[1] ?? 32, args[2] ?? 32]} />;
+    case "box":
+      return <boxGeometry args={[args[0], args[1] ?? args[0], args[2] ?? args[0]]} />;
+    case "torus":
+    case "ring":
+      return <torusGeometry args={[args[0], args[1], args[2] ?? 20, args[3] ?? 60]} />;
+    case "cone":
+      return <coneGeometry args={[args[0], args[1], args[2] ?? 32]} />;
+    case "cylinder":
+      return <cylinderGeometry args={[args[0], args[1] ?? args[0], args[2], args[3] ?? 32]} />;
+    case "icosahedron":
+      return <icosahedronGeometry args={[args[0], args[1] ?? 0]} />;
+    default:
+      return <boxGeometry args={[args[0] ?? 1, args[1] ?? 1, args[2] ?? 1]} />;
+  }
+}
+
 export function computeAutoColor(tags: string[], sv: Record<string, number> | null) {
   if (!sv) return "#dddddd";
   const qualityRisk = clamp01(sv.quality_risk ?? 0.2);

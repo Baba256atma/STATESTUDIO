@@ -83,7 +83,6 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
       currentModeBefore: workspaceViewMode,
       source: "toolbar",
     });
-    if (workspaceViewMode === mode) return;
     logToolbarViewModeClick(mode);
     setWorkspaceViewMode(mode, "toolbar");
   }, [workspaceViewMode]);

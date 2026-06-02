@@ -63,7 +63,7 @@ export function detachDomListener(
 
 export function bindWindowListener(
   type: string,
-  listener: DomEventListener,
+  listener: DomEventListener | EventListenerOrEventListenerObject,
   options?: boolean | AddEventListenerOptions,
   meta?: DomListenerMeta
 ): () => void {
@@ -77,7 +77,7 @@ export function bindWindowListener(
 
 export function bindDocumentListener(
   type: string,
-  listener: DomEventListener,
+  listener: DomEventListener | EventListenerOrEventListenerObject,
   options?: boolean | AddEventListenerOptions,
   meta?: DomListenerMeta
 ): () => void {

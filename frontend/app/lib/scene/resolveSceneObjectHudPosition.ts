@@ -49,7 +49,7 @@ export function resolveSceneObjectHudPosition(
   const normalizedId = typeof objectId === "string" ? objectId.trim() : "";
   if (!normalizedId) return null;
 
-  const objects = getSceneObjects(sceneJson);
+  const objects = getSceneObjects(sceneJson as Parameters<typeof getSceneObjects>[0]);
   if (!objects.length) return null;
 
   if (BASELINE_POS[normalizedId]) {

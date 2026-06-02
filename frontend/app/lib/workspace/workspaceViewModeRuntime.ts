@@ -5,6 +5,9 @@ import {
   persistExecutiveNavigationPreference,
 } from "./executiveNavigationPersistence";
 import { applyRelationshipViewProfileForMode } from "../scene/relationshipViewProfiles";
+import {
+  logExecutiveViewportModeSwitch,
+} from "../scene/viewport/executiveViewportModeRuntime";
 import { resolveWorkspaceModeTransition } from "./workspaceModeTransitionRuntime";
 import {
   logCameraProfileForMode,
@@ -21,6 +24,7 @@ let snapshot: WorkspaceViewModeSnapshot = Object.freeze({
   lastCameraProfile: DEFAULT_WORKSPACE_VIEW_MODE,
   preferredViewMode: DEFAULT_WORKSPACE_VIEW_MODE,
 });
+let lastViewModeSource = "runtime";
 
 const listeners = new Set<() => void>();
 
@@ -41,7 +45,7 @@ function notify(): void {
   if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent(WORKSPACE_VIEW_MODE_EVENT, {
-        detail: { mode: snapshot.currentMode, snapshot },
+        detail: { mode: snapshot.currentMode, snapshot, source: lastViewModeSource },
       })
     );
   }
@@ -95,9 +99,21 @@ export function hydrateWorkspaceViewMode(): WorkspaceViewModeSnapshot {
 
 export function setWorkspaceViewMode(mode: WorkspaceViewMode, source = "runtime"): WorkspaceViewModeSnapshot {
   logViewModeRequested(mode, source);
-  if (snapshot.currentMode === mode) return snapshot;
+  lastViewModeSource = source;
+  if (snapshot.currentMode === mode) {
+    notify();
+    return snapshot;
+  }
   const from = snapshot.currentMode;
   const transition = resolveWorkspaceModeTransition({ from, to: mode });
+  const controlsPreserveCenter = null;
+  logExecutiveViewportModeSwitch({
+    from,
+    to: mode,
+    source,
+    operationalCenter: controlsPreserveCenter,
+    preserveSelection: transition.preserveSelection,
+  });
   applyRelationshipViewProfileForMode(mode);
   const next: WorkspaceViewModeSnapshot = {
     currentMode: mode,

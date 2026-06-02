@@ -66,7 +66,6 @@ export function requestCameraPreset(
   setSelectedCameraPresetId(presetId, source);
   logSceneNavigationPresetSelected({ presetId, source });
   dispatch(SCENE_NAVIGATION_PRESET_EVENT, { presetId, source });
-  requestSceneNavigationAction("select_preset", source);
 }
 
 /** Centralized object-centric focus routing for Scene, Timeline, Assistant, and panels. */

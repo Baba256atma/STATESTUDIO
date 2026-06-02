@@ -8,6 +8,16 @@ import type { SceneObject } from "../../lib/sceneTypes";
 import { useStateVector, useSetSelectedId, useOverrides, useSelectedId } from "../SceneContext";
 import { clamp } from "../../lib/sizeCommands";
 import { normalizeExecutiveObjectScale } from "../../lib/scene/executiveSceneComposition";
+import { isZoneLikeExecutiveObject } from "../../lib/scene/objectScaling/executiveTypeCScaleClamp";
+import {
+  geometryArgsFromBounds,
+  resolveExecutiveNormalizedGeometry,
+  type ExecutiveGeometryBounds,
+} from "../../lib/scene/geometry/executiveRawGeometryClamp";
+import {
+  deriveExecutiveObjectImportanceTier,
+  resolveExecutiveLabelScale,
+} from "../../lib/scene/objectScaling";
 import {
   resolveExecutiveFocusWorkspaceState,
 } from "../../lib/scene/density";
@@ -43,12 +53,11 @@ import type {
 import {
   compactScannerReason,
   computeAutoColor,
-  geometryFor,
+  geometryForExecutiveNormalized,
   hashIdToUnit,
   normalizeScannerLabelSeverity,
   severityToScannerColor,
   toPosTuple,
-  type GeometryKind,
   type InteractionRole,
   type NarrativeNodeRole,
   type ScannerStoryReveal,
@@ -63,6 +72,14 @@ import {
   resolveObjectNameRenderingProfile,
 } from "../../lib/scene/objectNameRenderingProfile";
 import { resolveExecutiveObjectSelectionHighlight } from "../../lib/scene/executiveObjectSelectionHighlight";
+import { resolveExecutiveHoverAffordance } from "../../lib/scene/interaction/executiveRelationshipExplorationRuntime";
+import {
+  focusExecutiveObjectFromInteraction,
+} from "../../lib/scene/interaction/executiveKeyboardNavigationRuntime";
+import {
+  logExecutiveInteractionSelection,
+} from "../../lib/scene/interaction/executiveInteractionDiagnostics";
+import { patchExecutiveInteractionState } from "../../lib/scene/interaction/executiveInteractionStateRuntime";
 import { shouldSuppressIdleDebugLog } from "../../lib/runtime/idleRuntimeStabilityGuard";
 import {
   resolveStableObjectId,
@@ -87,7 +104,91 @@ const DEFAULT_SCANNER_STORY_REVEAL = Object.freeze({
   context: 1,
 });
 const CALM_MODE = true;
-const STATIC_OBJECT_TRANSFORMS = true;
+const MAX_EXECUTIVE_RENDER_WIDTH = 1.8;
+const MAX_EXECUTIVE_RENDER_HEIGHT = 0.9;
+const MAX_EXECUTIVE_RENDER_DEPTH = 1.0;
+const MAX_EXECUTIVE_OVERVIEW_RENDER_WIDTH = 1.35;
+const MAX_EXECUTIVE_OVERVIEW_RENDER_HEIGHT = 0.65;
+const MAX_EXECUTIVE_OVERVIEW_RENDER_DEPTH = 0.75;
+const WIDE_EXECUTIVE_RENDER_SHAPES = new Set([
+  "area",
+  "bar",
+  "capsule",
+  "card",
+  "flow",
+  "panel",
+  "plane",
+  "rectangle",
+  "region",
+]);
+
+function isWideExecutiveRenderShape(shape?: string | null): boolean {
+  const key = String(shape ?? "").toLowerCase();
+  return WIDE_EXECUTIVE_RENDER_SHAPES.has(key);
+}
+
+function clampExecutiveRenderedScale(input: {
+  objectId: string;
+  shape?: string | null;
+  finalScale: number;
+  objectCount?: number;
+}): number {
+  const rawScale = Number.isFinite(input.finalScale) ? input.finalScale : 1;
+  const objectCount = input.objectCount ?? 1;
+  let maxScale = objectCount <= 1 ? 0.9 : objectCount >= 10 ? 0.72 : objectCount >= 8 ? 0.82 : 1.0;
+  if (isWideExecutiveRenderShape(input.shape)) {
+    maxScale = Math.min(maxScale, 0.62);
+  }
+  return Math.max(0.05, Math.min(rawScale, maxScale));
+}
+
+function shouldUseStaticObjectTransforms(input: {
+  executiveLayoutActive: boolean;
+  objectCount: number;
+  layoutPositionsAvailable: boolean;
+}): boolean {
+  if (input.executiveLayoutActive && input.layoutPositionsAvailable && input.objectCount >= 1) {
+    return false;
+  }
+  return true;
+}
+
+function readFiniteDimension(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function readExplicitExecutiveDimensions(object: unknown): Partial<ExecutiveGeometryBounds> | null {
+  const record = object as Record<string, any> | null;
+  if (!record) return null;
+  const candidates = [record.dimensions, record.size, record.geometry, record];
+  const dimensions: Partial<ExecutiveGeometryBounds> = {};
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const width = readFiniteDimension(candidate.width ?? candidate.w);
+    const height = readFiniteDimension(candidate.height ?? candidate.h);
+    const depth = readFiniteDimension(candidate.depth ?? candidate.d);
+    if (dimensions.width == null && width != null) dimensions.width = width;
+    if (dimensions.height == null && height != null) dimensions.height = height;
+    if (dimensions.depth == null && depth != null) dimensions.depth = depth;
+  }
+  return dimensions.width || dimensions.height || dimensions.depth ? dimensions : null;
+}
+
+function clampExecutiveRenderDimensions(
+  bounds: ExecutiveGeometryBounds,
+  objectCount?: number
+): ExecutiveGeometryBounds {
+  const overview = (objectCount ?? 1) >= 10;
+  const maxWidth = overview ? MAX_EXECUTIVE_OVERVIEW_RENDER_WIDTH : MAX_EXECUTIVE_RENDER_WIDTH;
+  const maxHeight = overview ? MAX_EXECUTIVE_OVERVIEW_RENDER_HEIGHT : MAX_EXECUTIVE_RENDER_HEIGHT;
+  const maxDepth = overview ? MAX_EXECUTIVE_OVERVIEW_RENDER_DEPTH : MAX_EXECUTIVE_RENDER_DEPTH;
+  return {
+    width: Math.max(0.08, Math.min(bounds.width, maxWidth)),
+    height: Math.max(0.08, Math.min(bounds.height, maxHeight)),
+    depth: Math.max(0.08, Math.min(bounds.depth, maxDepth)),
+  };
+}
 
 function roundMaterialScalar(value: number, decimals = 3): number {
   if (!Number.isFinite(value)) return 0;
@@ -128,12 +229,11 @@ function holdStableScaleInput(
   return previous.value;
 }
 
-const NEXORA_OBJECT_BASE_SCALE = 0.52;
-const NEXORA_OBJECT_FOCUSED_SCALE = 0.56;
-const NEXORA_OBJECT_SELECTED_SCALE = 0.58;
 const loggedFinalObjectScaleBuckets = new Map<string, number>();
 const loggedObjectMaterialSignatures = new Map<string, string>();
 const loggedObjectTransformSignatures = new Map<string, string>();
+const loggedObjectTransformModeSignatures = new Set<string>();
+const loggedObjectTransformAuditSignatures = new Set<string>();
 
 export type AnimatableObjectProps = {
   obj: SceneObject;
@@ -164,6 +264,7 @@ export type AnimatableObjectProps = {
   scannerPrimaryLabelTitle?: string | null;
   scannerPrimaryLabelBody?: string | null;
   scannerTargetIds?: string[];
+  dimUnrelatedObjects?: boolean;
   affectedTargetIds?: string[];
   contextTargetIds?: string[];
   riskSourceIds?: string[];
@@ -185,6 +286,12 @@ export type AnimatableObjectProps = {
   isDecisionPathSource?: boolean;
   sceneScale?: number;
   sceneObjectCount?: number;
+  showObjectDebugLabels?: boolean;
+  showExecutiveLayoutLabels?: boolean;
+  layoutPositions?: Record<string, [number, number, number]>;
+  layoutLabelOffsets?: Record<string, { y: number; opacity: number }>;
+  connectedToSelected?: boolean;
+  relationshipExplorationActive?: boolean;
   onObjectPositionChange?: (
     objectId: string,
     position: { x: number; y: number; z: number },
@@ -216,6 +323,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   scannerPrimaryLabelTitle = null,
   scannerPrimaryLabelBody = null,
   scannerTargetIds = [],
+  dimUnrelatedObjects = false,
   affectedTargetIds = [],
   contextTargetIds = [],
   riskSourceIds = [],
@@ -237,6 +345,12 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   isDecisionPathSource = false,
   sceneScale = 1,
   sceneObjectCount = 1,
+  showObjectDebugLabels = false,
+  showExecutiveLayoutLabels = false,
+  layoutPositions,
+  layoutLabelOffsets,
+  connectedToSelected = false,
+  relationshipExplorationActive = false,
   onObjectPositionChange,
 }: AnimatableObjectProps) {
   const ref = useRef<THREE.Object3D>(null);
@@ -260,7 +374,6 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   );
   const overrides = useOverrides();
   const [hovered, setHovered] = useState(false);
-  useCursor(hovered);
   useEffect(() => {
     const mountId = stableObjectIdRef.current;
     traceObjectMount({
@@ -343,7 +456,11 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const originalUniform =
     Array.isArray(transform.scale) && transform.scale.length > 0 ? Number(transform.scale[0]) || 1 : 1;
   const uxScale = typeof uxOverrides.scale === "number" ? clamp(uxOverrides.scale, 0.5, 2.0) : 1;
-  const preExecutiveUniform = clamp(originalUniform * (overrideScale ?? 1) * uxScale * (globalScale ?? 1), 0.15, 2.0);
+  const preExecutiveUniform = clamp(
+    originalUniform * (overrideScale ?? 1) * uxScale * (globalScale ?? 1),
+    0.25,
+    1.35
+  );
   const ambientPhase = useMemo(() => hashIdToUnit(String(stableIdWithName)) * Math.PI * 2, [stableIdWithName]);
   const shape = resolveGeometryKindForObject({
     obj,
@@ -352,7 +469,13 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     profile: visualProfile,
   });
 
-  const finalPosition = overrideEntry.position ?? transformPos ?? [0, 0, 0];
+  const layoutPosition =
+    layoutPositions?.[stableIdWithName] ??
+    layoutPositions?.[stableId] ??
+    (obj.id ? layoutPositions?.[String(obj.id)] : undefined) ??
+    (obj.name ? layoutPositions?.[String(obj.name)] : undefined);
+
+  const finalPosition = overrideEntry.position ?? layoutPosition ?? transformPos ?? [0, 0, 0];
   const finalRotation = overrideEntry.rotation ?? (transform as any).rot ?? [0, 0, 0];
   const finalColorOverride = overrideEntry.color;
   const finalVisible = overrideEntry.visible ?? true;
@@ -395,42 +518,27 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       }),
     [isFocused, isSelected, neighborIds.length, obj.scanner_severity, sceneObjectCount]
   );
+  const layoutLabelOffset =
+    layoutLabelOffsets?.[stableIdWithName] ??
+    layoutLabelOffsets?.[stableId] ??
+    (obj.id ? layoutLabelOffsets?.[String(obj.id)] : undefined) ??
+    { y: 0, opacity: 1 };
+  const forceExecutiveLayoutLabels =
+    showExecutiveLayoutLabels && sceneObjectCount >= 6 && sceneObjectCount <= 12;
   const effectiveLabel = useMemo(
     () => ({
-      showPrimary: adaptiveLabel.showPrimary && labelReduction.visible,
+      showPrimary: forceExecutiveLayoutLabels || (adaptiveLabel.showPrimary && labelReduction.visible),
       showSecondary: adaptiveLabel.showSecondary && labelReduction.showSecondary,
       showIcon: adaptiveLabel.showIcon && labelReduction.showIcon,
-      opacity: adaptiveLabel.opacity * labelReduction.opacity,
+      opacity:
+        adaptiveLabel.opacity *
+        labelReduction.opacity *
+        (forceExecutiveLayoutLabels ? layoutLabelOffset.opacity : 1),
       fontSizePx: adaptiveLabel.fontSizePx,
       maxLines: adaptiveLabel.maxLines,
       billboard: adaptiveLabel.billboard,
     }),
-    [adaptiveLabel, labelReduction]
-  );
-  const executiveScaleSignature = [
-    stableIdWithName,
-    isSelected ? 1 : 0,
-    sceneObjectCount,
-    roundScaleInput(globalScale ?? 1),
-    roundScaleInput(executiveFocus.scaleMultiplier),
-    roundScaleInput(typeof overrideScale === "number" ? overrideScale : 1),
-    roundScaleInput(uxScale),
-  ].join(":");
-  const executiveScaleInput = holdStableScaleInput(
-    stableExecutiveScaleInputRef,
-    executiveScaleSignature,
-    preExecutiveUniform * executiveFocus.scaleMultiplier,
-    Number.POSITIVE_INFINITY
-  );
-  const finalUniform = useMemo(
-    () =>
-      normalizeExecutiveObjectScale({
-        objectId: stableIdWithName,
-        scale: executiveScaleInput,
-        selected: isSelected,
-        objectCount: sceneObjectCount,
-      }),
-    [executiveScaleInput, isSelected, sceneObjectCount, stableIdWithName]
+    [adaptiveLabel, forceExecutiveLayoutLabels, labelReduction, layoutLabelOffset.opacity]
   );
   const focusScaleMul = isFocused
     ? 1.08 * executiveFocus.scaleMultiplier
@@ -442,7 +550,8 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     () => new Set((Array.isArray(scannerTargetIds) ? scannerTargetIds : []).map((id) => String(id))),
     [scannerTargetIds]
   );
-  const scannerDimRequested = scannerSceneActive && scannerTargetIdSet.size > 0;
+  const scannerDimRequested =
+    dimUnrelatedObjects === true && scannerSceneActive && scannerTargetIdSet.size > 0;
   const scannerReason = compactScannerReason(obj.scanner_reason);
   const isLowFragilityScan = scannerSceneActive && scannerFragilityScore <= 0.1;
   const isPinned = focusMode === "pinned" && isFocused;
@@ -604,6 +713,108 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     scannerHaloVisible,
   } = derivedVisualState;
 
+  const objectImportance = useMemo(
+    () =>
+      deriveExecutiveObjectImportanceTier({
+        scannerSeverity: obj.scanner_severity,
+        scannerHighlighted,
+        connectedToSelected,
+        isDecisionPathSource,
+        isSimulationSource,
+        role: visualRole,
+        selected: isSelected,
+        focused: isFocused,
+      }),
+    [
+      connectedToSelected,
+      isDecisionPathSource,
+      isFocused,
+      isSelected,
+      isSimulationSource,
+      obj.scanner_severity,
+      scannerHighlighted,
+      visualRole,
+    ]
+  );
+  const executiveScaleSignature = [
+    stableIdWithName,
+    isSelected ? 1 : 0,
+    isFocused ? 1 : 0,
+    hovered || isHovered ? 1 : 0,
+    dimOthers ? 1 : 0,
+    objectImportance,
+    sceneObjectCount,
+    roundScaleInput(globalScale ?? 1),
+    roundScaleInput(typeof overrideScale === "number" ? overrideScale : 1),
+    roundScaleInput(uxScale),
+  ].join(":");
+  const executiveScaleInput = holdStableScaleInput(
+    stableExecutiveScaleInputRef,
+    executiveScaleSignature,
+    preExecutiveUniform,
+    Number.POSITIVE_INFINITY
+  );
+  const finalUniform = useMemo(
+    () =>
+      normalizeExecutiveObjectScale({
+        objectId: stableIdWithName,
+        scale: executiveScaleInput,
+        selected: isSelected,
+        focused: isFocused,
+        hovered: hovered || isHovered,
+        dimmed: dimOthers,
+        importance: objectImportance,
+        objectCount: sceneObjectCount,
+      }),
+    [
+      dimOthers,
+      executiveScaleInput,
+      hovered,
+      isFocused,
+      isHovered,
+      isSelected,
+      objectImportance,
+      sceneObjectCount,
+      stableIdWithName,
+    ]
+  );
+  const nameDensityProfile = useMemo(
+    () => resolveObjectNameDensityProfile(sceneObjectCount),
+    [sceneObjectCount]
+  );
+  const executiveLabelScale = useMemo(
+    () =>
+      resolveExecutiveLabelScale({
+        objectCount: sceneObjectCount,
+        importance: objectImportance,
+        selected: isSelected,
+        focused: isFocused,
+        hovered: hovered || isHovered,
+        dimmed: dimOthers,
+        baseFontSizePx: nameDensityProfile.fontSizePx,
+        index,
+      }),
+    [
+      dimOthers,
+      hovered,
+      index,
+      isFocused,
+      isHovered,
+      isSelected,
+      nameDensityProfile.fontSizePx,
+      objectImportance,
+      sceneObjectCount,
+    ]
+  );
+  const executiveNameProfile = useMemo(
+    () =>
+      resolveObjectNameRenderingProfile({
+        selected: isSelected || isFocused,
+        fontSizePx: executiveLabelScale.fontSizePx,
+      }),
+    [executiveLabelScale.fontSizePx, isFocused, isSelected]
+  );
+
   /** Freeze story/hover/attention/neighbor ramps for material math so opacity/emissive don't oscillate every frame. */
   const materialStoryReveal = CALM_MODE ? 1 : nodeStoryReveal;
   const materialNeighborDim = CALM_MODE ? 1 : neighborDimFactor;
@@ -686,6 +897,18 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       return;
     }
     setSelectedId(stableIdWithName);
+    patchExecutiveInteractionState({ selectedObjectId: stableIdWithName });
+    logExecutiveInteractionSelection(`select:${stableIdWithName}`, {
+      objectId: stableIdWithName,
+      source: "click",
+    });
+  };
+
+  const handleDoubleClickFocus = (event: any) => {
+    event.stopPropagation();
+    event.nativeEvent?.stopImmediatePropagation?.();
+    setSelectedId(stableIdWithName);
+    focusExecutiveObjectFromInteraction(stableIdWithName, "scene");
   };
 
   const resolveDragPosition = (event: any): { x: number; y: number; z: number } | null => {
@@ -841,10 +1064,25 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       }),
     [isFocused, isSelected, theme]
   );
-  const nameDensityProfile = useMemo(
-    () => resolveObjectNameDensityProfile(sceneObjectCount),
-    [sceneObjectCount]
+  const hoverAffordance = useMemo(
+    () =>
+      resolveExecutiveHoverAffordance({
+        hovered: hovered || isHovered,
+        selected: isSelected,
+        focused: isFocused,
+        connectedToSelected,
+        relationshipExplorationActive,
+      }),
+    [
+      connectedToSelected,
+      hovered,
+      isFocused,
+      isHovered,
+      isSelected,
+      relationshipExplorationActive,
+    ]
   );
+  useCursor(hovered || hoverAffordance.showGlow || isSelected || isFocused);
 
   const finalEmissiveIntensity =
     scannerPolicy.colorMode === "shadowed"
@@ -874,10 +1112,10 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       ? effectiveEmissiveIntensity * (0.74 + materialStoryReveal * 0.26)
       : effectiveEmissiveIntensity;
   const storyPlusHoverEmissive = CALM_MODE
-    ? storyAdjustedEmissiveIntensity
+    ? storyAdjustedEmissiveIntensity + hoverAffordance.emissiveBoost
     : isHovered
       ? storyAdjustedEmissiveIntensity + interactionProfile.emissiveBoost
-      : storyAdjustedEmissiveIntensity;
+      : storyAdjustedEmissiveIntensity + hoverAffordance.emissiveBoost;
   const interactionAdjustedEmissiveIntensity = Math.max(0, storyPlusHoverEmissive * materialNeighborDim);
   const narrativeAdjustedEmissiveIntensity = interactionAdjustedEmissiveIntensity + narrativeNodeStyle.emissiveBoost;
   const simulationAdjustedEmissiveIntensity = narrativeAdjustedEmissiveIntensity + simulationNodeStyle.emissiveBoost;
@@ -1107,18 +1345,49 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     };
   }, [lineGeometry, pointsGeometry, tubeGeometry]);
 
-  const calmScale = isSelected
-    ? NEXORA_OBJECT_SELECTED_SCALE
-    : isFocused
-    ? NEXORA_OBJECT_FOCUSED_SCALE
-    : NEXORA_OBJECT_BASE_SCALE;
-  const calmSelectionScale = calmScale;
+  const calmScale = 1;
+  const calmSelectionScale = 1;
   const staticPosition = useMemo<[number, number, number]>(
     () => [finalPosition[0] ?? 0, finalPosition[1] ?? 0, finalPosition[2] ?? 0],
     [finalPosition]
   );
   const staticRotation = useMemo<[number, number, number]>(() => [0, 0, 0], []);
-  const staticScale = useMemo(() => calmScale, [calmScale]);
+  const zoneLikeObject = useMemo(() => isZoneLikeExecutiveObject(obj), [obj]);
+  const executiveGeometry = useMemo(() => {
+    const normalized = resolveExecutiveNormalizedGeometry({
+      type: shape,
+      zoneLike: zoneLikeObject,
+      transformScale: finalUniform,
+      selected: isSelected,
+    });
+    const explicitDimensions = readExplicitExecutiveDimensions(obj);
+    const unclampedDimensions: ExecutiveGeometryBounds = {
+      width: explicitDimensions?.width ?? normalized.dimensions.width,
+      height: explicitDimensions?.height ?? normalized.dimensions.height,
+      depth: explicitDimensions?.depth ?? normalized.dimensions.depth,
+    };
+    const dimensions = clampExecutiveRenderDimensions(unclampedDimensions, sceneObjectCount);
+    const { renderKind, args } = geometryArgsFromBounds(normalized.renderKind, dimensions);
+    const maxDimension = Math.max(dimensions.width, dimensions.height, dimensions.depth);
+    const finalWorldSize = Math.round(maxDimension * normalized.transformScale * 1000) / 1000;
+    return {
+      ...normalized,
+      renderKind,
+      args,
+      dimensions,
+      finalWorldSize,
+    };
+  }, [finalUniform, isSelected, obj, sceneObjectCount, shape, zoneLikeObject]);
+  const staticScale = useMemo(
+    () =>
+      clampExecutiveRenderedScale({
+        objectId: stableIdWithName,
+        shape,
+        finalScale: executiveGeometry.transformScale,
+        objectCount: sceneObjectCount,
+      }),
+    [executiveGeometry.transformScale, sceneObjectCount, shape, stableIdWithName]
+  );
   const motionState = useMemo(
     () =>
       buildAnimatableMotionState({
@@ -1196,26 +1465,127 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   );
   const { scannerScaleMul } = motionState;
   const effectiveScannerScaleMul = CALM_MODE ? 1 : scannerScaleMul;
+  const dynamicScale = useMemo(
+    () =>
+      clampExecutiveRenderedScale({
+        objectId: stableIdWithName,
+        shape,
+        finalScale: CALM_MODE
+          ? finalUniform * calmScale
+          : finalUniform * effectiveScannerScaleMul * calmSelectionScale * tokens.interaction.sceneObjectEmphasis,
+        objectCount: sceneObjectCount,
+      }),
+    [
+      calmScale,
+      calmSelectionScale,
+      effectiveScannerScaleMul,
+      finalUniform,
+      sceneObjectCount,
+      shape,
+      stableIdWithName,
+      tokens.interaction.sceneObjectEmphasis,
+    ]
+  );
+  const layoutPositionCount = useMemo(() => Object.keys(layoutPositions ?? {}).length, [layoutPositions]);
+  const layoutPositionsAvailable = Array.isArray(layoutPosition);
+  const executiveLayoutActive = layoutPositionCount > 0;
+  const useStaticObjectTransforms = useMemo(
+    () =>
+      shouldUseStaticObjectTransforms({
+        executiveLayoutActive,
+        objectCount: sceneObjectCount,
+        layoutPositionsAvailable,
+      }),
+    [executiveLayoutActive, layoutPositionsAvailable, sceneObjectCount]
+  );
+  const resolvedAppliedPosition = useMemo<[number, number, number]>(
+    () =>
+      useStaticObjectTransforms
+        ? staticPosition
+        : [finalPosition[0] ?? 0, finalPosition[1] ?? 0, finalPosition[2] ?? 0],
+    [finalPosition, staticPosition, useStaticObjectTransforms]
+  );
+  const resolvedAppliedRotation = useMemo<[number, number, number]>(
+    () =>
+      useStaticObjectTransforms
+        ? staticRotation
+        : [finalRotation?.[0] ?? 0, finalRotation?.[1] ?? 0, finalRotation?.[2] ?? 0],
+    [finalRotation, staticRotation, useStaticObjectTransforms]
+  );
+  const resolvedAppliedScale = useMemo(
+    () => (useStaticObjectTransforms ? staticScale : dynamicScale),
+    [dynamicScale, staticScale, useStaticObjectTransforms]
+  );
+  const resolvedAppliedGroupScale = useMemo<[number, number, number]>(
+    () =>
+      useStaticObjectTransforms
+        ? [resolvedAppliedScale, resolvedAppliedScale, resolvedAppliedScale]
+        : [
+            (baseScale[0] ?? 1) * resolvedAppliedScale,
+            (baseScale[1] ?? 1) * resolvedAppliedScale,
+            (baseScale[2] ?? 1) * resolvedAppliedScale,
+          ],
+    [baseScale, resolvedAppliedScale, useStaticObjectTransforms]
+  );
+  const objectTransformModeSignature = `${stableIdWithName}:${sceneObjectCount}:${
+    layoutPositionsAvailable ? "layout" : "raw"
+  }:${useStaticObjectTransforms ? "static" : "dynamic"}`;
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (useStaticObjectTransforms) return;
+    if (loggedObjectTransformModeSignatures.has(objectTransformModeSignature)) return;
+    loggedObjectTransformModeSignatures.add(objectTransformModeSignature);
+    console.debug("[Nexora][ObjectTransformMode]", {
+      mode: "dynamic_executive_layout",
+      objectCount: sceneObjectCount,
+      hasLayoutPosition: layoutPositionsAvailable,
+    });
+  }, [layoutPositionsAvailable, objectTransformModeSignature, sceneObjectCount, useStaticObjectTransforms]);
+  const objectTransformAuditSignature = useMemo(
+    () =>
+      JSON.stringify({
+        id: stableIdWithName,
+        layoutPosition: roundTransformTuple(layoutPosition),
+        finalPosition: roundTransformTuple(finalPosition),
+        staticPosition: roundTransformTuple(staticPosition),
+        appliedPosition: roundTransformTuple(resolvedAppliedPosition),
+      }),
+    [finalPosition, layoutPosition, resolvedAppliedPosition, stableIdWithName, staticPosition]
+  );
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (loggedObjectTransformAuditSignatures.has(objectTransformAuditSignature)) return;
+    loggedObjectTransformAuditSignatures.add(objectTransformAuditSignature);
+    console.debug("[Nexora][ObjectTransformAudit]", {
+      id: stableIdWithName,
+      layoutPosition: Array.isArray(layoutPosition) ? layoutPosition : null,
+      finalPosition,
+      staticPosition,
+      appliedPosition: resolvedAppliedPosition,
+    });
+  }, [
+    finalPosition,
+    layoutPosition,
+    objectTransformAuditSignature,
+    resolvedAppliedPosition,
+    stableIdWithName,
+    staticPosition,
+  ]);
   const transformSignature = useMemo(
     () =>
       JSON.stringify({
         id: stableIdWithName,
-        position: roundTransformTuple(STATIC_OBJECT_TRANSFORMS ? staticPosition : finalPosition),
-        rotation: roundTransformTuple(STATIC_OBJECT_TRANSFORMS ? staticRotation : finalRotation),
-        scale: roundTransformValue(
-          STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform * effectiveScannerScaleMul * calmSelectionScale
-        ),
+        position: roundTransformTuple(resolvedAppliedPosition),
+        rotation: roundTransformTuple(resolvedAppliedRotation),
+        scale: roundTransformValue(resolvedAppliedScale),
+        mode: useStaticObjectTransforms ? "static" : "dynamic_executive_layout",
       }),
     [
-      calmScale,
-      effectiveScannerScaleMul,
-      finalPosition,
-      finalRotation,
-      finalUniform,
+      resolvedAppliedPosition,
+      resolvedAppliedRotation,
+      resolvedAppliedScale,
       stableIdWithName,
-      staticPosition,
-      staticRotation,
-      staticScale,
+      useStaticObjectTransforms,
     ]
   );
   useEffect(() => {
@@ -1232,38 +1602,20 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   useEffect(() => {
     const mesh = ref.current;
     if (mesh) {
-      const appliedPosition = STATIC_OBJECT_TRANSFORMS ? staticPosition : finalPosition;
-      const appliedRotation = STATIC_OBJECT_TRANSFORMS ? staticRotation : finalRotation;
-      mesh.position.set(appliedPosition[0] ?? 0, appliedPosition[1] ?? 0, appliedPosition[2] ?? 0);
-      mesh.rotation.set(appliedRotation[0] ?? 0, appliedRotation[1] ?? 0, appliedRotation[2] ?? 0);
-      const resolvedScale = STATIC_OBJECT_TRANSFORMS
-        ? staticScale
-        : CALM_MODE
-        ? finalUniform * calmScale
-        : finalUniform * effectiveScannerScaleMul * calmSelectionScale * tokens.interaction.sceneObjectEmphasis;
-      if (STATIC_OBJECT_TRANSFORMS) {
-        mesh.scale.set(resolvedScale, resolvedScale, resolvedScale);
-      } else {
-        mesh.scale.set(
-          (baseScale[0] ?? 1) * resolvedScale,
-          (baseScale[1] ?? 1) * resolvedScale,
-          (baseScale[2] ?? 1) * resolvedScale
-        );
-      }
+      mesh.position.set(resolvedAppliedPosition[0] ?? 0, resolvedAppliedPosition[1] ?? 0, resolvedAppliedPosition[2] ?? 0);
+      mesh.rotation.set(resolvedAppliedRotation[0] ?? 0, resolvedAppliedRotation[1] ?? 0, resolvedAppliedRotation[2] ?? 0);
+      mesh.scale.set(
+        resolvedAppliedGroupScale[0] ?? 1,
+        resolvedAppliedGroupScale[1] ?? 1,
+        resolvedAppliedGroupScale[2] ?? 1
+      );
     }
   }, [
-    baseScale,
-    calmScale,
-    finalPosition,
-    finalRotation,
-    finalUniform,
-    effectiveScannerScaleMul,
-    staticPosition,
-    staticRotation,
-    staticScale,
-    tokens.interaction.sceneObjectEmphasis,
+    resolvedAppliedGroupScale,
+    resolvedAppliedPosition,
+    resolvedAppliedRotation,
   ]);
-  const finalObjectScale = STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform * calmScale;
+  const finalObjectScale = resolvedAppliedScale;
   const roundedFinalObjectScale = Math.round(finalObjectScale * 100) / 100;
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -1291,7 +1643,13 @@ export const AnimatableObject = React.memo(function AnimatableObject({
             setHovered(false);
           }}
         >
-          <sphereGeometry args={[1.25, 16, 16]} />
+          <sphereGeometry
+            args={[
+              executiveGeometry.args[0] ?? 0.8,
+              executiveGeometry.args[1] ?? 16,
+              executiveGeometry.args[2] ?? 16,
+            ]}
+          />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
 
@@ -1355,9 +1713,9 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       </group>
     );
   } else {
-    const geometryNode = geometryFor(shape as GeometryKind);
+    const geometryNode = geometryForExecutiveNormalized(executiveGeometry);
     // Static mode: scale is owned by AnimatableObject group transform only.
-    const meshScale = STATIC_OBJECT_TRANSFORMS
+    const meshScale = useStaticObjectTransforms
       ? [1, 1, 1]
       : Array.isArray(baseScale)
       ? (baseScale as any)
@@ -1371,14 +1729,17 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       onPointerUp: handleObjectPointerUp,
       onPointerCancel: handleObjectPointerUp,
       onClick: handleSelect,
+      onDoubleClick: handleDoubleClickFocus,
       onPointerOver: (event: any) => {
         event.stopPropagation();
         setHovered(true);
         setHoveredId?.(stableIdWithName);
+        patchExecutiveInteractionState({ hoveredObjectId: stableIdWithName });
       },
       onPointerOut: () => {
         setHovered(false);
         setHoveredId?.(null);
+        patchExecutiveInteractionState({ hoveredObjectId: null });
       },
       scale: meshScale,
     };
@@ -1461,7 +1822,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
             (meshScale?.[2] ?? 1) * 1.25,
           ]}
         >
-          {geometryFor(shape as GeometryKind)}
+          {geometryForExecutiveNormalized(executiveGeometry)}
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       </>
@@ -1470,43 +1831,47 @@ export const AnimatableObject = React.memo(function AnimatableObject({
 
   const captionText = ((overrideEntry.caption ?? "") as string).trim();
   const showCaption = overrideEntry.showCaption === true;
-  const objectScaleY =
-    (baseScale[1] ?? 1) * (STATIC_OBJECT_TRANSFORMS ? staticScale : finalUniform) * effectiveScannerScaleMul;
+  const objectScaleY = (baseScale[1] ?? 1) * resolvedAppliedScale * effectiveScannerScaleMul;
   const labelY = objectScaleY * 0.6 + 0.24;
   const iconY = Math.max(0.1, labelY * 0.24);
-  const showExecutiveObjectName = shouldRenderExecutiveObjectName({
-    profile: nameDensityProfile,
-    selected: isSelected,
-    focused: isFocused,
-    index,
-  });
+  const showExecutiveObjectName =
+    forceExecutiveLayoutLabels ||
+    shouldRenderExecutiveObjectName({
+      profile: nameDensityProfile,
+      objectCount: sceneObjectCount,
+      selected: isSelected,
+      focused: isFocused,
+      index,
+    });
   const executiveNameOpacity =
     resolveObjectNameOpacity({
       profile: nameDensityProfile,
+      objectCount: sceneObjectCount,
       selected: isSelected,
       focused: isFocused,
-    }) * executiveFocus.opacity;
-  const executiveNameProfile = useMemo(
-    () =>
-      resolveObjectNameRenderingProfile({
-        selected: isSelected || isFocused,
-        fontSizePx: nameDensityProfile.fontSizePx,
-      }),
-    [isFocused, isSelected, nameDensityProfile.fontSizePx]
-  );
+    }) *
+    executiveFocus.opacity *
+    executiveLabelScale.opacity *
+    (forceExecutiveLayoutLabels ? layoutLabelOffset.opacity : labelReduction.opacity);
   const executiveNamePlacement = useMemo(
-    () =>
-      resolveObjectLabelPlacement({
+    () => {
+      const placement = resolveObjectLabelPlacement({
         baseScaleY: objectScaleY,
         objectScale: 1,
         profile: executiveNameProfile,
         index,
         objectCount: sceneObjectCount,
         relationshipDensity: neighborIds.length,
-      }),
+      });
+      return {
+        ...placement,
+        y: placement.y + layoutLabelOffset.y,
+      };
+    },
     [
       executiveNameProfile,
       index,
+      layoutLabelOffset.y,
       neighborIds.length,
       objectScaleY,
       sceneObjectCount,
@@ -1521,7 +1886,13 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   });
 
   return (
-    <group ref={ref} position={STATIC_OBJECT_TRANSFORMS ? staticPosition : finalPosition} visible={finalVisible}>
+    <group
+      ref={ref}
+      position={resolvedAppliedPosition}
+      rotation={resolvedAppliedRotation}
+      scale={resolvedAppliedGroupScale}
+      visible={finalVisible}
+    >
       {node}
       {objectIcon && effectiveLabel.showIcon ? (
         <Html position={[0, iconY, 0]} center transform={effectiveLabel.billboard} style={{ pointerEvents: "none" }}>
@@ -1587,6 +1958,35 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         >
           <div aria-hidden="true" style={executiveNameStyle}>
             {executiveObjectName}
+          </div>
+        </Html>
+      ) : null}
+      {showObjectDebugLabels && process.env.NODE_ENV !== "production" ? (
+        <Html
+          position={[0, executiveNamePlacement.y - 0.45, 0]}
+          center
+          transform={effectiveLabel.billboard}
+          style={{ pointerEvents: "none" }}
+        >
+          <div
+            aria-hidden="true"
+            style={{
+              fontSize: 10,
+              lineHeight: 1.35,
+              padding: "4px 6px",
+              borderRadius: 4,
+              background: "rgba(15,23,42,0.82)",
+              color: "#e2e8f0",
+              whiteSpace: "nowrap",
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+            }}
+          >
+            <div>{executiveObjectName}</div>
+            <div>s:{staticScale.toFixed(2)}</div>
+            <div>
+              x:{staticPosition[0].toFixed(1)} y:{staticPosition[1].toFixed(0)} z:
+              {staticPosition[2].toFixed(1)}
+            </div>
           </div>
         </Html>
       ) : null}

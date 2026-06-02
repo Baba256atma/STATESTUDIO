@@ -75,7 +75,7 @@ export function resolveExecutiveDashboardDecisionTrace(
         })
       ).slice(-3),
     120,
-    { fromCache: false }
+    { fromCache: false, signature }
   );
 
   setExecutiveDecisionTraceCache(signature, traceResult);

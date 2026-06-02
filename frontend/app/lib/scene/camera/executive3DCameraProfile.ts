@@ -1,50 +1,43 @@
 import type { WorkspaceViewMode } from "../../workspace/workspaceViewModeTypes";
 import type { ExecutiveCameraBounds, ExecutiveCameraFrame } from "./executive2DCameraProfile";
+import {
+  buildExecutive3DCameraFrame,
+  computeExecutiveFramingRadius,
+} from "./executiveCameraFrameFormulas";
 
 export const EXECUTIVE_3D_CAMERA_PROFILE = Object.freeze({
   id: "executive_3d_strategic",
   fov: 42,
   horizontalBias: 0.02,
-  verticalBias: 0,
-  pullback: 1.12,
-  positionScale: Object.freeze({ x: 0.18, y: 0.64, z: 1.08 }),
-  minDistance: 9,
-  maxDistance: 46,
+  verticalBias: 0.03,
+  pullback: 1.04,
+  positionScale: Object.freeze({ x: 0.24, y: 0.82, z: 0.94 }),
+  minDistance: 7,
+  maxDistance: 52,
   orbitEnabled: true,
   projection: "perspective",
+  defaultTiltRadians: 0.68,
 });
 
 export function resolveExecutive3DCameraFrame(
   bounds: ExecutiveCameraBounds,
   radius: number,
-  opts?: { horizontalBias?: number; verticalBias?: number; pullback?: number }
+  opts?: {
+    horizontalBias?: number;
+    verticalBias?: number;
+    pullback?: number;
+    executiveTiltRadians?: number;
+  }
 ): ExecutiveCameraFrame {
-  const [cx, cy, cz] = bounds.center;
-  const horizontalBias = opts?.horizontalBias ?? EXECUTIVE_3D_CAMERA_PROFILE.horizontalBias;
-  const verticalBias = opts?.verticalBias ?? EXECUTIVE_3D_CAMERA_PROFILE.verticalBias;
-  const pullback = opts?.pullback ?? EXECUTIVE_3D_CAMERA_PROFILE.pullback;
-
-  const lookAt: [number, number, number] = [
-    cx - radius * horizontalBias,
-    cy + radius * verticalBias,
-    cz - radius * 0.06,
-  ];
-  const position: [number, number, number] = [
-    lookAt[0] + radius * EXECUTIVE_3D_CAMERA_PROFILE.positionScale.x,
-    lookAt[1] + radius * EXECUTIVE_3D_CAMERA_PROFILE.positionScale.y,
-    lookAt[2] + radius * EXECUTIVE_3D_CAMERA_PROFILE.positionScale.z * Math.max(1, pullback),
-  ];
-
-  return {
-    position,
-    lookAt,
-    fov: EXECUTIVE_3D_CAMERA_PROFILE.fov,
-  };
+  void opts;
+  const framingRadius = computeExecutiveFramingRadius(bounds);
+  const effectiveRadius = Math.max(radius, framingRadius);
+  return buildExecutive3DCameraFrame(bounds.center, effectiveRadius);
 }
 
 export function resolveExecutive3DDefaultCamera(): ExecutiveCameraFrame {
   return {
-    position: [0, 8, 20],
+    position: [6, 9, 14],
     lookAt: [0, 0, 0],
     fov: EXECUTIVE_3D_CAMERA_PROFILE.fov,
   };

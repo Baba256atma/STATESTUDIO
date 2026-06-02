@@ -112,7 +112,7 @@ export function resolveStrategicAlignmentIntegrity(
     "Timeline reflects institutional coherence memory — alignment evolution, governance consistency, and operational synchronization";
 
   const assistantCoherenceLine =
-    enterpriseCoherenceActive || coherencePosture === "synchronized"
+    enterpriseCoherenceActive
       ? "Strategic coherence is available — discuss alignment quality, operational consistency, and coordination fragmentation without rigid audit behavior."
       : "Enterprise coherence cognition is establishing — alignment integrity will synchronize with governance oversight awareness.";
 

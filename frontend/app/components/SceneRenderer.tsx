@@ -31,6 +31,13 @@ import {
   auditExecutiveSceneReadability,
 } from "../lib/scene/executiveSceneReadabilityAudit";
 import {
+  buildSceneObjectScaleAuditSignature,
+  logSceneObjectScaleAuditOnce,
+} from "../lib/scene/sceneObjectScaleAudit";
+import {
+  logRawGeometryAuditOnce,
+} from "../lib/scene/geometry/rawGeometryAudit";
+import {
   resolveObjectNameDensityTier,
   resolveObjectNameDensityProfile,
   shouldRenderExecutiveObjectName,
@@ -57,11 +64,16 @@ import {
 } from "../lib/scene/objectRegistryRuntime";
 import { setSceneRemountContext } from "../lib/scene/sceneRemountContext";
 import { SceneObjectInstances, type SceneObjectInstancePlan } from "./scene/SceneObjectInstances";
+import {
+  buildExecutiveRelationshipExploration,
+  readSceneRelationshipEdges,
+} from "../lib/scene/interaction/executiveRelationshipExplorationRuntime";
 import { LoopLinesAnimated } from "./scene/LoopLinesAnimated";
 const EMPTY_STRING_ARRAY: string[] = [];
 const EMPTY_SCENE_ANIMS: any[] = [];
 const EMPTY_SCENE_LOOPS: SceneLoop[] = [];
 const STATIC_VISUAL_FREEZE = true;
+const loggedRendererPositionAuditSignatures = new Set<string>();
 
 function buildSceneObjectRenderSignature(object: SceneObject, index: number): string {
   return JSON.stringify({
@@ -95,6 +107,21 @@ function buildSceneObjectRenderSignature(object: SceneObject, index: number): st
 function buildSceneObjectsRenderSignature(objects: SceneObject[]): string {
   if (!Array.isArray(objects) || objects.length === 0) return "empty";
   return objects.map((object, index) => buildSceneObjectRenderSignature(object, index)).join("|");
+}
+
+function readRendererAuditPosition(
+  object: SceneObject,
+  stableId: string,
+  layoutPositions?: Record<string, [number, number, number]>
+): [number, number, number] | null {
+  const raw =
+    layoutPositions?.[stableId] ??
+    (object.id ? layoutPositions?.[String(object.id)] : undefined) ??
+    (object.name ? layoutPositions?.[String(object.name)] : undefined) ??
+    (Array.isArray((object as any)?.transform?.pos) ? ((object as any).transform.pos as number[]) : undefined) ??
+    (Array.isArray((object as any)?.position) ? ((object as any).position as number[]) : undefined);
+  if (!Array.isArray(raw) || raw.length < 3) return null;
+  return [Number(raw[0]) || 0, Number(raw[1]) || 0, Number(raw[2]) || 0];
 }
 
 // --------------------
@@ -1268,6 +1295,10 @@ export type SceneRendererProps = {
   showLoopLabels?: boolean;
   activeLoopId?: string | null;
   globalScale?: number;
+  showObjectDebugLabels?: boolean;
+  showExecutiveLayoutLabels?: boolean;
+  layoutPositions?: Record<string, [number, number, number]>;
+  layoutLabelOffsets?: Record<string, { y: number; opacity: number }>;
   propagationOverlay?: PropagationOverlayState | null;
   decisionPathOverlay?: DecisionPathRendererState | null;
   /** Softer hover emphasis + throttled pointer updates (Settings → Motion low). */
@@ -1296,6 +1327,10 @@ function SceneRendererComponent({
   showLoopLabels = false,
   activeLoopId: propActiveLoopId,
   globalScale = 1,
+  showObjectDebugLabels = false,
+  showExecutiveLayoutLabels = false,
+  layoutPositions,
+  layoutLabelOffsets,
   propagationOverlay = null,
   decisionPathOverlay = null,
   motionCalm = false,
@@ -1456,6 +1491,16 @@ function SceneRendererComponent({
       densityTier: resolveObjectNameDensityTier(objectCount),
     });
   }, [objects, selectedIdCtx]);
+
+  const sceneScaleAuditSignatureRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production" || !sceneJson) return;
+    const signature = buildSceneObjectScaleAuditSignature(sceneJson);
+    if (sceneScaleAuditSignatureRef.current === signature) return;
+    sceneScaleAuditSignatureRef.current = signature;
+    logSceneObjectScaleAuditOnce(sceneJson);
+    logRawGeometryAuditOnce(sceneJson);
+  }, [sceneJson]);
   const objectSelectionRiskSourceIds = useMemo(() => readStringArrayField(objectSelection, "risk_sources"), [objectSelection]);
   const objectSelectionRiskTargetIds = useMemo(() => readStringArrayField(objectSelection, "risk_targets"), [objectSelection]);
   const payloadRiskSourceIds = useMemo(() => readStringArrayField(payload?.object_selection, "risk_sources"), [payload]);
@@ -1724,6 +1769,19 @@ function SceneRendererComponent({
     ((sceneJson as any)?.scene?.active_loop as string | undefined) ??
     ((sceneJson as any)?.scene?.activeLoopId as string | undefined) ??
     null;
+  const relationshipEdges = useMemo(() => readSceneRelationshipEdges(sceneJson), [sceneJson]);
+  const relationshipExploration = useMemo(
+    () =>
+      buildExecutiveRelationshipExploration({
+        selectedObjectId: selectedIdCtx,
+        relationships: relationshipEdges,
+      }),
+    [relationshipEdges, selectedIdCtx]
+  );
+  const connectedToSelectedSet = useMemo(
+    () => new Set(relationshipExploration.connectedObjectIds),
+    [relationshipExploration.connectedObjectIds]
+  );
   const relatedObjectIdsById = useMemo(() => {
     const relationMap = new Map<string, Set<string>>();
     loopList.forEach((loop) => {
@@ -1738,8 +1796,14 @@ function SceneRendererComponent({
         relationMap.get(to)?.add(from);
       });
     });
+    relationshipEdges.forEach(({ sourceId, targetId }) => {
+      if (!relationMap.has(sourceId)) relationMap.set(sourceId, new Set<string>());
+      if (!relationMap.has(targetId)) relationMap.set(targetId, new Set<string>());
+      relationMap.get(sourceId)?.add(targetId);
+      relationMap.get(targetId)?.add(sourceId);
+    });
     return relationMap;
-  }, [loopList]);
+  }, [loopList, relationshipEdges]);
   const neighborIdsByStableId = useMemo(() => {
     const result = new Map<string, string[]>();
     stableObjects.forEach((object, idx) => {
@@ -2220,6 +2284,7 @@ function SceneRendererComponent({
         scannerPrimaryLabelTitle,
         scannerPrimaryLabelBody,
         scannerTargetIds,
+        scannerDimRequested,
         affectedTargetIds,
         contextTargetIds,
         resolvedRiskSourceIds,
@@ -2229,6 +2294,12 @@ function SceneRendererComponent({
         decisionPathSourceId,
         effectivePropagationSourceId,
         sceneObjectCount: stableObjects.length,
+        selectedObjectId: selectedIdCtx ?? null,
+        relationshipExplorationActive: relationshipExploration.active,
+        showObjectDebugLabels,
+        showExecutiveLayoutLabels,
+        layoutPositions,
+        layoutLabelOffsets,
       }),
     [
       affectedTargetIds,
@@ -2244,6 +2315,7 @@ function SceneRendererComponent({
       motionCalm,
       narrativeFocusStrength,
       objectsRegistrySignature,
+      relationshipExploration.active,
       resolvedLabelOwnerId,
       resolvedPrimaryRenderId,
       resolvedRiskSourceIds,
@@ -2254,9 +2326,15 @@ function SceneRendererComponent({
       scannerPrimaryRole,
       scannerPrimaryTargetId,
       scannerSceneActive,
+      scannerDimRequested,
       scannerStoryReveal,
       scannerTargetIds,
+      selectedIdCtx,
       shadowsEnabled,
+      showExecutiveLayoutLabels,
+      showObjectDebugLabels,
+      layoutPositions,
+      layoutLabelOffsets,
       stableObjects.length,
       theme,
       visualModeId,
@@ -2288,6 +2366,7 @@ function SceneRendererComponent({
         scannerPrimaryLabelTitle,
         scannerPrimaryLabelBody,
         scannerTargetIds,
+        dimUnrelatedObjects: scannerDimRequested,
         affectedTargetIds,
         contextTargetIds,
         riskSourceIds: resolvedRiskSourceIds,
@@ -2336,7 +2415,18 @@ function SceneRendererComponent({
             decisionPathSourceId === String(stableId)),
         sceneScale: stableGlobalScale,
         sceneObjectCount: stableObjects.length,
+        connectedToSelected:
+          relationshipExploration.active &&
+          (selectedIdCtx === stableId ||
+            selectedIdCtx === objectKey ||
+            connectedToSelectedSet.has(stableId) ||
+            connectedToSelectedSet.has(objectKey)),
+        relationshipExplorationActive: relationshipExploration.active,
         onObjectPositionChange,
+        showObjectDebugLabels,
+        showExecutiveLayoutLabels,
+        layoutPositions,
+        layoutLabelOffsets,
       });
     });
     return plans;
@@ -2355,6 +2445,39 @@ function SceneRendererComponent({
     setSceneRemountContext(sceneRemountContext);
   }, [sceneRemountContext]);
 
+  const rendererPositionAuditRows = useMemo(
+    () =>
+      stableObjects.map((object, index) => {
+        const stableId = stableObjectIds[index] ?? resolveStableObjectId(object, index);
+        return {
+          id: stableId,
+          position: readRendererAuditPosition(object, stableId, layoutPositions),
+        };
+      }),
+    [layoutPositions, stableObjectIds, stableObjects]
+  );
+  const rendererPositionAuditSignature = useMemo(
+    () =>
+      JSON.stringify(
+        rendererPositionAuditRows.map((row) => ({
+          id: row.id,
+          position: row.position?.map((value) => Math.round(value * 1000) / 1000) ?? null,
+        }))
+      ),
+    [rendererPositionAuditRows]
+  );
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (loggedRendererPositionAuditSignatures.has(rendererPositionAuditSignature)) return;
+    loggedRendererPositionAuditSignatures.add(rendererPositionAuditSignature);
+    rendererPositionAuditRows.forEach((row) => {
+      console.debug("[Nexora][RendererPositionAudit]", {
+        id: row.id,
+        position: row.position,
+      });
+    });
+  }, [rendererPositionAuditRows, rendererPositionAuditSignature]);
+
   return (
     <>
       <CameraLerper
@@ -2370,6 +2493,10 @@ function SceneRendererComponent({
           stableObjectIds={stableObjectIds}
           instancePlansById={sceneObjectInstancePlans}
           animMap={animMap}
+          layoutPositions={layoutPositions}
+          layoutLabelOffsets={layoutLabelOffsets}
+          showObjectDebugLabels={showObjectDebugLabels}
+          showExecutiveLayoutLabels={showExecutiveLayoutLabels}
         />
 
         <LoopLinesAnimated

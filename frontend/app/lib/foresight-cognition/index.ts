@@ -437,7 +437,6 @@ export type {
   EnterpriseAnticipatorySnapshot,
   EnterpriseForesightPipelineResult,
   ExecutiveAnticipatoryIntelligence,
-  ForesightConfidenceLevel,
   ForesightRuntimeHealth,
   ForesightRuntimeStatus,
   ForesightSubsystemId,

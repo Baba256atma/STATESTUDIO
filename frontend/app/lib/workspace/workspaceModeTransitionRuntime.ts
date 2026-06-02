@@ -4,11 +4,12 @@ import {
   type ExecutiveCameraBounds,
   type ExecutiveCameraFrame,
 } from "../scene/camera/executive2DCameraProfile";
+import { resolveExecutive2DDefaultCamera } from "../scene/camera/executive2DCameraProfile";
 import {
   resolveExecutive3DCameraFrame,
   resolveExecutive3DDefaultCamera,
 } from "../scene/camera/executive3DCameraProfile";
-import { resolveExecutive2DDefaultCamera } from "../scene/camera/executive2DCameraProfile";
+import { logE91GlobalView } from "../scene/composition/executiveSceneFramingDiagnostics";
 
 export type WorkspaceModeTransitionInput = {
   from: WorkspaceViewMode;
@@ -32,7 +33,7 @@ export function resolveWorkspaceModeTransition(
   return {
     from: input.from,
     to: input.to,
-    durationMs: 420,
+    durationMs: 520,
     preserveSelection: true,
     preservePanels: true,
     preserveTimeline: true,
@@ -60,11 +61,12 @@ export function resolveExecutiveDefaultCameraForMode(mode: WorkspaceViewMode): E
 export function resolveExecutiveGlobalViewFrame(
   mode: WorkspaceViewMode,
   bounds: ExecutiveCameraBounds,
-  radius: number
+  radius: number,
+  diagnostics?: { sceneJson?: unknown; signature?: string }
 ): ExecutiveCameraFrame {
   const frame = resolveExecutiveCameraFrameForMode(mode, bounds, radius);
-  if (process.env.NODE_ENV !== "production") {
-    globalThis.console?.debug?.("[Nexora][GlobalView]", {
+  if (diagnostics?.signature) {
+    logE91GlobalView(diagnostics.signature, {
       mode,
       position: frame.position,
       lookAt: frame.lookAt,

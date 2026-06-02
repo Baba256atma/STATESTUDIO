@@ -34,9 +34,9 @@ function computeObjectNameDensityProfile(objectCount: number): ObjectNameDensity
       tier,
       showAllNames: true,
       showSelectedOnly: false,
-      minOpacity: 0.88,
+      minOpacity: 0.92,
       selectedOpacity: 1,
-      fontSizePx: 11,
+      fontSizePx: 13,
       declutterSpacing: 0,
     };
   }
@@ -45,9 +45,9 @@ function computeObjectNameDensityProfile(objectCount: number): ObjectNameDensity
       tier,
       showAllNames: true,
       showSelectedOnly: false,
-      minOpacity: 0.78,
+      minOpacity: 0.84,
       selectedOpacity: 1,
-      fontSizePx: 10,
+      fontSizePx: 12,
       declutterSpacing: 0.02,
     };
   }

@@ -111,7 +111,7 @@ export function resolveInstitutionalStrategicPressureGovernance(
     "Timeline reflects organizational stability memory — escalation stabilization, resilience continuity, and strategic composure evolution";
 
   const assistantStabilityLine =
-    executiveStabilityActive || pressurePosture === "stabilizing"
+    executiveStabilityActive
       ? "Executive stability cognition is available — discuss escalation governance, operational stabilization, and resilience continuity without executive stress monitoring."
       : "Strategic pressure governance is establishing — institutional operational steadiness will synchronize with the governance stack.";
 

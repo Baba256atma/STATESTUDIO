@@ -2,8 +2,8 @@
  * E2:72 — Stable business-input signature for executive dashboard decision trace.
  */
 
-import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes";
-import type { DecisionMemoryEntry } from "../decision/memory/decisionMemoryTypes";
+import type { CanonicalRecommendation } from "../recommendation/recommendationTypes";
+import type { DecisionMemoryEntry } from "../memory/decisionMemoryTypes";
 
 export type ExecutiveDecisionTraceSignatureInput = {
   scenarioId?: string | null;
@@ -115,7 +115,7 @@ export function extractExecutiveDecisionTraceSignatureInput(input: {
       asString(responseData?.active_scenario_id),
     decisionId:
       input.decisionId ??
-      asString(latestMemory?.decision_id) ??
+      asString(latestMemory?.id) ??
       asString((responseData?.decision_result as Record<string, unknown> | undefined)?.decision_id),
     selectedObjectId: selectedFromSelection,
     riskLevel: asString(fragility?.level) ?? asString(responseData?.risk_level),
@@ -129,7 +129,7 @@ export function extractExecutiveDecisionTraceSignatureInput(input: {
     activeMode: asString(input.activeMode),
     memoryEntryIds: memoryEntries
       .slice(0, 8)
-      .map((entry) => asString(entry.id) ?? asString(entry.decision_id))
+      .map((entry) => asString(entry.id))
       .filter((id): id is string => Boolean(id)),
   };
 }

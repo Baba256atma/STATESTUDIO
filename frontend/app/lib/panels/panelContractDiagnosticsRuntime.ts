@@ -4,7 +4,6 @@
  */
 
 import { traceRuntimeContract } from "../debug/runtimeLoopTrace";
-import { devLogOncePermanent } from "../runtime/diagnosticIdleGate";
 import { recordRuntimeCycleEvent } from "../runtime/runtimeCycleDetector";
 import { isIdleRuntimeLocked } from "../runtime/idleRuntimeStabilityGuard";
 import { shouldProceedRuntimeWrite } from "../runtime/idleRuntimeWriteGuard";
@@ -19,7 +18,7 @@ export type PanelContractSalvageDiagnosticPayload = {
   repeatedSalvage: boolean;
 };
 
-const emittedSalvageSignatures = new Set<string>();
+const emittedPanelSalvageSignatures = new Set<string>();
 const emittedContractDiagnosticKeys = new Set<string>();
 const pendingSalvageDiagnostics = new Map<string, PanelContractSalvageDiagnosticPayload>();
 let flushScheduled = false;
@@ -35,47 +34,26 @@ function shouldEmitContractDiagnostic(action: string, contractSignature: string)
   return true;
 }
 
-function stableJson(value: unknown): string {
-  if (value == null || typeof value !== "object") return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map((entry) => stableJson(entry)).join(",")}]`;
-  const record = value as Record<string, unknown>;
-  return `{${Object.keys(record)
-    .sort()
-    .map((key) => `${JSON.stringify(key)}:${stableJson(record[key])}`)
-    .join(",")}}`;
-}
-
-function buildSalvageDiagnosticKey(diagnostic: PanelContractSalvageDiagnosticPayload): string {
-  return stableJson({
-    contractSignature: diagnostic.contractSignature,
-    payload: diagnostic.payload,
-  });
-}
-
 export function hasEmittedPanelContractSalvage(signature: string): boolean {
-  return emittedSalvageSignatures.has(signature);
+  return emittedPanelSalvageSignatures.has(signature);
 }
 
 export function queuePanelContractSalvageDiagnostic(
   diagnostic: PanelContractSalvageDiagnosticPayload
 ): void {
   if (!isDev()) return;
-  const diagnosticKey = buildSalvageDiagnosticKey(diagnostic);
-  if (
-    emittedSalvageSignatures.has(diagnostic.signature) ||
-    emittedSalvageSignatures.has(diagnostic.contractSignature) ||
-    emittedSalvageSignatures.has(diagnosticKey)
-  ) {
+  const contractSignature = diagnostic.contractSignature;
+  if (emittedPanelSalvageSignatures.has(contractSignature)) {
     return;
   }
   if (
     isIdleRuntimeLocked() &&
-    !shouldProceedRuntimeWrite("panel-contract-salvage", diagnostic.contractSignature)
+    !shouldProceedRuntimeWrite("panel-contract-salvage", contractSignature)
   ) {
     return;
   }
-  if (pendingSalvageDiagnostics.has(diagnosticKey)) return;
-  pendingSalvageDiagnostics.set(diagnosticKey, diagnostic);
+  if (pendingSalvageDiagnostics.has(contractSignature)) return;
+  pendingSalvageDiagnostics.set(contractSignature, diagnostic);
   schedulePanelContractDiagnosticFlush();
 }
 
@@ -93,31 +71,26 @@ export function flushPanelContractDiagnostics(): void {
     pendingSalvageDiagnostics.clear();
     return;
   }
-  for (const [diagnosticKey, diagnostic] of pendingSalvageDiagnostics) {
-    const contractSignature = diagnostic.contractSignature;
-    if (
-      emittedSalvageSignatures.has(diagnostic.signature) ||
-      emittedSalvageSignatures.has(contractSignature) ||
-      emittedSalvageSignatures.has(diagnosticKey)
-    ) {
-      pendingSalvageDiagnostics.delete(diagnosticKey);
+  for (const [contractSignature, diagnostic] of pendingSalvageDiagnostics) {
+    if (emittedPanelSalvageSignatures.has(contractSignature)) {
+      pendingSalvageDiagnostics.delete(contractSignature);
       continue;
     }
-    emittedSalvageSignatures.add(diagnostic.signature);
-    emittedSalvageSignatures.add(contractSignature);
-    emittedSalvageSignatures.add(diagnosticKey);
-    pendingSalvageDiagnostics.delete(diagnosticKey);
+    emittedPanelSalvageSignatures.add(contractSignature);
+    pendingSalvageDiagnostics.delete(contractSignature);
     recordContractSalvageRun();
     recordRuntimeCycleEvent("PanelSalvage", {
       signature: contractSignature,
       source: "validatePanelSharedDataWithDiagnostics",
     });
-    devLogOncePermanent("[Nexora][PanelContractSalvaged]", diagnosticKey, {
-      signature: diagnosticKey,
-      rootSignature: diagnostic.signature,
-      contractSignature: diagnostic.contractSignature,
-      ...diagnostic.payload,
-    }, "warn");
+    if (isDev()) {
+      globalThis.console?.warn?.("[Nexora][PanelContractSalvaged]", {
+        signature: contractSignature,
+        rootSignature: diagnostic.signature,
+        contractSignature: diagnostic.contractSignature,
+        ...diagnostic.payload,
+      });
+    }
     if (shouldEmitContractDiagnostic("contract_salvaged", contractSignature)) {
       traceRuntimeContract({
         source: "validatePanelSharedDataWithDiagnostics",
@@ -137,8 +110,18 @@ export function flushPanelContractDiagnostics(): void {
   }
 }
 
+export function tracePanelContractDiagnosticOnce(
+  action: string,
+  contractSignature: string,
+  emit: () => void
+): void {
+  if (!isDev()) return;
+  if (!shouldEmitContractDiagnostic(action, contractSignature)) return;
+  emit();
+}
+
 export function resetPanelContractDiagnosticsForTests(): void {
-  emittedSalvageSignatures.clear();
+  emittedPanelSalvageSignatures.clear();
   emittedContractDiagnosticKeys.clear();
   pendingSalvageDiagnostics.clear();
   flushScheduled = false;

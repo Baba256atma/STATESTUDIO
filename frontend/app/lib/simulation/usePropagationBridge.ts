@@ -14,7 +14,7 @@ import {
 import { requestPropagationSimulation } from "./propagationClient";
 import { buildScenarioOverlayPackage, normalizeScenarioActionResponsePayload } from "./scenarioActionContract";
 import { requestScenarioAction } from "./scenarioActionClient";
-import { resolvePropagationTrigger } from "./resolvePropagationTrigger";
+import { resolvePropagationTrigger, logPropagationSemanticSkipOnce } from "./resolvePropagationTrigger";
 import type { PropagationOverlayState } from "./propagationTypes";
 import type { ScenarioActionPropagationIntent } from "./propagationTriggerTypes";
 import type { ScenarioActionResponsePayload, ScenarioOverlayPackage } from "./scenarioActionTypes";
@@ -238,11 +238,7 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
   useEffect(() => {
     if (!requestKey || !resolvedSourceId) return;
     if (lastPropagationSemanticSignatureRef.current === propagationSemanticSignature) {
-      if (process.env.NODE_ENV !== "production") {
-        console.debug("[Nexora][PropagationSkipped][DuplicateSemanticSignature]", {
-          semanticSig: propagationSemanticSignature,
-        });
-      }
+      logPropagationSemanticSkipOnce(propagationSemanticSignature);
       return;
     }
     const bridgeTargetIds =

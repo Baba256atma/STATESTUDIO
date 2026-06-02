@@ -14,7 +14,7 @@ export type WorkspaceDensityModeProfile = {
 const DENSITY_PROFILES: Readonly<Record<WorkspaceViewMode, WorkspaceDensityModeProfile>> = Object.freeze({
   "2D": {
     mode: "2D",
-    scaleMultiplier: 0.96,
+    scaleMultiplier: 1.04,
     spacingMultiplier: 1.08,
     labelMode: "CONDENSED",
     relationshipDensity: "FULL",
@@ -22,7 +22,7 @@ const DENSITY_PROFILES: Readonly<Record<WorkspaceViewMode, WorkspaceDensityModeP
   },
   "3D": {
     mode: "3D",
-    scaleMultiplier: 1,
+    scaleMultiplier: 1.08,
     spacingMultiplier: 1,
     labelMode: "FULL",
     relationshipDensity: "FOCUSED",

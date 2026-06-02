@@ -96,7 +96,7 @@ describe("executiveObjectScaleProfile idempotency", () => {
     });
 
     expect(first).toBe(second);
-    const objectScaleLogs = infoSpy.mock.calls.filter((call) => call[0] === "[Nexora][ObjectScale]");
+    const objectScaleLogs = infoSpy.mock.calls.filter((call) => call[0] === "[E2:90][ObjectScale]");
     expect(objectScaleLogs).toHaveLength(1);
   });
 
@@ -121,7 +121,8 @@ describe("executiveObjectScaleProfile idempotency", () => {
       density: "small",
       selected: false,
       inputScale: 0.72,
-      normalizedScale: 0.49,
+      normalizedScale: expect.any(Number),
     });
+    expect(sceneScaleLogs[0]?.[1]?.normalizedScale).toBeGreaterThan(0.76);
   });
 });

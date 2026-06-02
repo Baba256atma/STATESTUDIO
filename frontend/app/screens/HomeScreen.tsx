@@ -259,6 +259,36 @@ import {
 import { buildTypeCAdaptiveGuidance } from "../lib/typec/typeCAdaptiveGuidance";
 import type { TypeCScenarioSimulation } from "../lib/typec/typeCScenarioSimulation";
 import type { TypeCScenarioComparison } from "../lib/typec/typeCScenarioComparison";
+import { simulateTypeCScenario } from "../lib/typec/typeCScenarioSimulation";
+import {
+  clearExecutiveScenarioUniverse,
+  completeExecutiveScenarioComparison,
+  getExecutiveScenarioPlaybackState,
+  getExecutiveScenarioUniverseState,
+  loadExecutiveScenarioUniverse,
+  resolveActiveUniverseSimulation,
+  subscribeExecutiveScenarioUniverse,
+} from "../lib/scene/scenario";
+import {
+  dispatchExecutiveWarRoomCommand,
+  getExecutiveWarRoomState,
+  resolveExecutiveWarRoomCopilotPrompt,
+} from "../lib/scene/warroom";
+import type { ExecutiveWarRoomCommandId } from "../lib/scene/warroom";
+import {
+  getExecutiveCognitiveTwinState,
+} from "../lib/scene/twin";
+import {
+  getExecutiveAdvisorState,
+  resolveExecutiveAdvisorCopilotPrompt,
+} from "../lib/scene/advisor";
+import {
+  clearExecutiveIntelligence,
+  getExecutiveIntelligenceState,
+  refreshExecutiveIntelligence,
+  resolveExecutiveIntelligenceCopilotPrompt,
+} from "../lib/scene/integration";
+import { readExecutiveSceneObjects } from "../lib/scene/executiveCameraPresets";
 import type { TypeCDecisionRecommendation } from "../lib/typec/typeCDecisionRecommendation";
 import {
   buildTypeCExecutiveActions,
@@ -731,11 +761,14 @@ import {
   normalizeCanonicalWarRoomPanelData,
 } from "../lib/panels/panelSliceNormalizer";
 import {
-  buildPanelContractSignature,
-  buildPanelSharedDataSignature,
-  EMPTY_PANEL_SHARED_DATA,
+  buildPanelValidationCacheKey,
   validatePanelSharedDataWithDiagnostics,
   type PanelSharedDataValidationResult,
+} from "../lib/panels/validatePanelSharedDataWithDiagnostics";
+import { getPanelValidationCacheEntry } from "../lib/panels/panelValidationCache";
+import {
+  buildPanelSharedDataSignature,
+  EMPTY_PANEL_SHARED_DATA,
 } from "../lib/panels/panelDataContract";
 import {
   createClosedRightPanelState,
@@ -789,7 +822,7 @@ import {
   shouldBlockFallbackWhileIdle,
   shouldBlockParityRegenerationWhileIdle,
 } from "../lib/runtime/idleRuntimeStabilityGuard";
-import { devLogOnSignatureChange } from "../lib/runtime/diagnosticIdleGate";
+import { devLogOnSignatureChange, devLogOncePermanent } from "../lib/runtime/diagnosticIdleGate";
 import { shouldProceedRuntimeWrite } from "../lib/runtime/idleRuntimeWriteGuard";
 import { recordRuntimeCycleEvent } from "../lib/runtime/runtimeCycleDetector";
 import { recordIdleRuntimePanelWrite } from "../lib/runtime/idleRuntimeWatchdog";
@@ -801,7 +834,7 @@ import {
   shouldEmitSceneParityHomeScreenLog,
   shouldEmitStableSceneParity,
 } from "../lib/runtime/sceneParityStartupGuard";
-import { markPanelStable, markSceneStable } from "../lib/runtime/startupPhase";
+import { markPanelStable, markSceneStable, isSceneHydrationComplete } from "../lib/runtime/startupPhase";
 import { recordParityRun } from "../lib/debug/startupNoiseAudit";
 import {
   buildBusinessSceneParitySignature,
@@ -1435,50 +1468,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   /** O3:5 — wired after `requestPanelAuthorityOpen` / `requestPanelAuthorityClose` are defined (same tick as render). */
   const panelAuthorityOpenBridgeRef = useRef<RequestPanelAuthorityOpenFn | null>(null);
   const panelAuthorityCloseBridgeRef = useRef<((reason?: string) => void) | null>(null);
-  const validatedPanelCacheRef = useRef<{
-    signature: string | null;
-    result: PanelSharedDataValidationResult | null;
-  }>({
-    signature: null,
-    result: null,
-  });
   const getValidatedPanelSharedDataOnce = useCallback(
-    (rawPanelSharedData: unknown, signature: string): PanelSharedDataValidationResult => {
-      const cached = validatedPanelCacheRef.current;
-      if (cached.signature === signature && cached.result) {
-        return cached.result;
-      }
-      if (process.env.NODE_ENV !== "production") {
-        console.debug("[Nexora][PanelValidationSignatureCheck]", {
-          previous: cached.signature,
-          next: signature,
-          same: cached.signature === signature,
-        });
-      }
+    (rawPanelSharedData: unknown): PanelSharedDataValidationResult => {
+      const signature = buildPanelValidationCacheKey(rawPanelSharedData);
       if (
         isIdleRuntimeLocked() &&
         !shouldProceedRuntimeWrite("panel-validation", signature)
       ) {
-        return (
-          cached.result ?? {
-            data: EMPTY_PANEL_SHARED_DATA,
-            contractFailed: false,
-            contractDebugSignature: `idle_noop:${signature}`,
-            contractFailureDetail: null,
-          }
-        );
+        return {
+          data: EMPTY_PANEL_SHARED_DATA,
+          contractFailed: false,
+          contractDebugSignature: `idle_noop:${signature}`,
+          contractFailureDetail: null,
+        };
       }
-      if (process.env.NODE_ENV !== "production") {
-        console.debug("[Nexora][PanelValidationActuallyRuns]", {
-          signature,
-        });
-      }
-      const result = validatePanelSharedDataWithDiagnostics(rawPanelSharedData);
-      validatedPanelCacheRef.current = {
-        signature,
-        result,
-      };
-      return result;
+      return validatePanelSharedDataWithDiagnostics(rawPanelSharedData);
     },
     []
   );
@@ -6238,6 +6242,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const detail = (ev as CustomEvent<Partial<ScenePrefs>>).detail;
       if (!detail || typeof detail !== "object") return;
       setPrefs((prev) => ({ ...prev, ...detail }));
+      if (typeof detail.showGrid === "boolean") setShowGrid(detail.showGrid);
+      if (typeof detail.showAxes === "boolean") setShowAxes(detail.showAxes);
     };
     window.addEventListener("nexora:scene-prefs-patch", onPatch as EventListener);
     return () => window.removeEventListener("nexora:scene-prefs-patch", onPatch as EventListener);
@@ -6460,39 +6466,79 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     () => buildVisibleUiStateSignature(visibleUiState),
     [visibleUiState]
   );
-  const projectedVisibleUiStateSignature = useMemo(
-    () => buildVisibleUiStateSignature(projectedVisibleUiState),
-    [projectedVisibleUiState]
-  );
   useEffect(() => {
-    if (projectedVisibleUiStateSignature === visibleUiStateSignature) {
+    const authoritySceneIds = sceneObjectIds(sceneJson);
+    const currentVisibleSceneIds = sceneObjectIds(visibleUiState.sceneJson);
+    const projectedVisibleSceneIds = sceneObjectIds(projectedVisibleUiState.sceneJson);
+    const authorityCount = countSceneObjects(sceneJson);
+    const projectedCount = countSceneObjects(projectedVisibleUiState.sceneJson);
+    const currentVisibleCount = countSceneObjects(visibleUiState.sceneJson);
+    const wouldCollapseScene =
+      authorityCount > 1 &&
+      projectedCount === 1 &&
+      currentVisibleCount >= authorityCount;
+    const finalVisibleUiState = wouldCollapseScene
+      ? {
+          ...projectedVisibleUiState,
+          sceneJson: visibleUiState.sceneJson,
+        }
+      : projectedVisibleUiState;
+    const finalVisibleUiStateSignature = buildVisibleUiStateSignature(finalVisibleUiState);
+
+    if (finalVisibleUiStateSignature === visibleUiStateSignature) {
       return;
     }
     if (
       !shouldProceedRuntimeWrite(
         "visible-ui-state",
-        projectedVisibleUiStateSignature
+        finalVisibleUiStateSignature
       )
     ) {
       return;
     }
-    const authoritySceneIds = sceneObjectIds(sceneJson);
-    const currentVisibleSceneIds = sceneObjectIds(visibleUiState.sceneJson);
-    const projectedVisibleSceneIds = sceneObjectIds(projectedVisibleUiState.sceneJson);
+    const finalVisibleSceneIds = sceneObjectIds(finalVisibleUiState.sceneJson);
+    const finalVisibleCount = countSceneObjects(finalVisibleUiState.sceneJson);
+    const scenePreservationAction =
+      wouldCollapseScene
+        ? "blocked_scene_collapse"
+        : finalVisibleCount >= authorityCount && authorityCount > 1
+          ? "accepted_full_scene"
+          : finalVisibleUiState.sceneJson === visibleUiState.sceneJson &&
+              projectedVisibleUiState.sceneJson !== visibleUiState.sceneJson
+            ? "kept_previous_scene"
+            : "accepted_full_scene";
     const quietVisibleSceneSync =
       isVisibleSceneBootstrapCatchUp(authoritySceneIds, currentVisibleSceneIds) &&
-      !hasSceneParityIdMismatch(authoritySceneIds, projectedVisibleSceneIds);
+      !hasSceneParityIdMismatch(authoritySceneIds, finalVisibleSceneIds);
     if (process.env.NODE_ENV !== "production") {
+      const scenePreservationSignature = JSON.stringify({
+        authorityIds: authoritySceneIds.slice().sort(),
+        projectedIds: projectedVisibleSceneIds.slice().sort(),
+        finalIds: finalVisibleSceneIds.slice().sort(),
+        action: scenePreservationAction,
+      });
+      if (shouldProceedRuntimeWrite("visible-ui-scene-preservation", scenePreservationSignature)) {
+        console.log("[Nexora][VisibleUiScenePreservation]", {
+          authorityCount,
+          projectedCount,
+          previousVisibleCount: currentVisibleCount,
+          finalVisibleCount,
+          action: scenePreservationAction,
+          authorityIds: authoritySceneIds,
+          projectedIds: projectedVisibleSceneIds,
+          finalIds: finalVisibleSceneIds,
+        });
+      }
       if (submitActiveForVisibleUi) {
         console.log("[Nexora][ChatSubmit][CommitNewVisibleState]", {
-          hasResponseData: Boolean(projectedVisibleUiState.responseData),
-          hasSceneJson: Boolean(projectedVisibleUiState.sceneJson),
+          hasResponseData: Boolean(finalVisibleUiState.responseData),
+          hasSceneJson: Boolean(finalVisibleUiState.sceneJson),
           hasPanelData: Boolean(
-            projectedVisibleUiState.responseData ??
-              projectedVisibleUiState.strategicAdvice ??
-              projectedVisibleUiState.riskPropagation
+            finalVisibleUiState.responseData ??
+              finalVisibleUiState.strategicAdvice ??
+              finalVisibleUiState.riskPropagation
           ),
-          selectedObjectId: projectedVisibleUiState.selectedObjectId ?? null,
+          selectedObjectId: finalVisibleUiState.selectedObjectId ?? null,
           panelView: rightPanelState.view ?? null,
           preserved: false,
         });
@@ -6512,38 +6558,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         traceRuntimeWrite({
           source: "HomeScreen.setVisibleUiState",
           action: "visible_ui_state_reconcile",
-          signature: projectedVisibleUiStateSignature,
+          signature: finalVisibleUiStateSignature,
           previousSignature: visibleUiStateSignature,
-          nextSignature: projectedVisibleUiStateSignature,
+          nextSignature: finalVisibleUiStateSignature,
           detail: {
             submitActive: submitActiveForVisibleUi,
             objectSelectionChanged:
-              visibleUiState.objectSelection !== projectedVisibleUiState.objectSelection,
-            sceneJsonChanged: visibleUiState.sceneJson !== projectedVisibleUiState.sceneJson,
+              visibleUiState.objectSelection !== finalVisibleUiState.objectSelection,
+            sceneJsonChanged: visibleUiState.sceneJson !== finalVisibleUiState.sceneJson,
             responseDataChanged:
-              visibleUiState.responseData !== projectedVisibleUiState.responseData,
+              visibleUiState.responseData !== finalVisibleUiState.responseData,
           },
         });
       }
     }
     setVisibleUiState({
-      sceneJson: (projectedVisibleUiState.sceneJson ?? null) as SceneJson | null,
-      responseData: projectedVisibleUiState.responseData,
-      objectSelection: projectedVisibleUiState.objectSelection,
-      selectedObjectId: projectedVisibleUiState.selectedObjectId,
-      focusedId: projectedVisibleUiState.focusedId,
-      conflicts: projectedVisibleUiState.conflicts,
-      memoryInsights: projectedVisibleUiState.memoryInsights,
-      riskPropagation: projectedVisibleUiState.riskPropagation,
-      strategicAdvice: projectedVisibleUiState.strategicAdvice,
-      decisionCockpit: projectedVisibleUiState.decisionCockpit,
-      opponentModel: projectedVisibleUiState.opponentModel,
-      strategicPatterns: projectedVisibleUiState.strategicPatterns,
+      sceneJson: (finalVisibleUiState.sceneJson ?? null) as SceneJson | null,
+      responseData: finalVisibleUiState.responseData,
+      objectSelection: finalVisibleUiState.objectSelection,
+      selectedObjectId: finalVisibleUiState.selectedObjectId,
+      focusedId: finalVisibleUiState.focusedId,
+      conflicts: finalVisibleUiState.conflicts,
+      memoryInsights: finalVisibleUiState.memoryInsights,
+      riskPropagation: finalVisibleUiState.riskPropagation,
+      strategicAdvice: finalVisibleUiState.strategicAdvice,
+      decisionCockpit: finalVisibleUiState.decisionCockpit,
+      opponentModel: finalVisibleUiState.opponentModel,
+      strategicPatterns: finalVisibleUiState.strategicPatterns,
     });
   }, [
     guardedResponseData,
     projectedVisibleUiState,
-    projectedVisibleUiStateSignature,
     rightPanelState.view,
     sceneJson,
     selectedObjectIdState,
@@ -6565,8 +6610,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const visibleDecisionCockpit = visibleUiState.decisionCockpit;
   const visibleOpponentModel = visibleUiState.opponentModel;
   const visibleStrategicPatterns = visibleUiState.strategicPatterns;
-  const visibleSceneObjects = Array.isArray(visibleSceneJson?.scene?.objects)
-    ? visibleSceneJson.scene.objects
+  const authoritativeSceneObjectCount = countSceneObjects(sceneJson);
+  const visibleUiSceneObjectCount = countSceneObjects(visibleSceneJson);
+  const effectiveVisibleSceneJson =
+    authoritativeSceneObjectCount > 1 && visibleUiSceneObjectCount < authoritativeSceneObjectCount
+      ? sceneJson
+      : visibleSceneJson;
+  if (process.env.NODE_ENV !== "production" && authoritativeSceneObjectCount > 1 && visibleUiSceneObjectCount < authoritativeSceneObjectCount) {
+    console.debug("[Nexora][VisibleSceneBypass][FullSceneAuthority]", {
+      authorityCount: authoritativeSceneObjectCount,
+      visibleUiCount: visibleUiSceneObjectCount,
+      reason: "scene_authority_has_more_objects_than_visible_ui_state",
+    });
+  }
+  const visibleSceneObjects = Array.isArray(effectiveVisibleSceneJson?.scene?.objects)
+    ? effectiveVisibleSceneJson.scene.objects
     : [];
   const visibleSceneObjectCount = visibleSceneObjects.length;
   const visibleSceneObjectIds = useMemo(
@@ -6574,10 +6632,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [visibleSceneJson]
   );
   const sceneJsonIdsForParity = useMemo(() => sceneObjectIds(sceneJson), [sceneJson]);
-  const visibleSceneJsonIdsForParity = useMemo(() => sceneObjectIds(visibleSceneJson), [visibleSceneJson]);
+  const visibleSceneJsonIdsForParity = useMemo(
+    () => sceneObjectIds(effectiveVisibleSceneJson),
+    [effectiveVisibleSceneJson]
+  );
+  const relationshipIdsForParity = useMemo(
+    () => readSceneRelationships(sceneJson).map((relationship) => relationship.id).sort(),
+    [sceneJsonIdsForParity.join("|")]
+  );
+  const visibleSceneIdSignature = visibleSceneJsonIdsForParity.slice().sort().join("|");
   const visibleSceneSignature = useMemo(
-    () => buildSceneVisibleSignature({ count: visibleSceneObjectCount, ids: visibleSceneObjectIds }),
-    [visibleSceneObjectCount, visibleSceneObjectIds]
+    () =>
+      buildSceneVisibleSignature({
+        count: visibleSceneObjectCount,
+        ids: visibleSceneJsonIdsForParity,
+      }),
+    [visibleSceneObjectCount, visibleSceneIdSignature]
   );
   const sceneParitySignature = useMemo(
     () =>
@@ -6585,10 +6655,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         sceneJsonIds: sceneJsonIdsForParity,
         visibleSceneJsonIds: visibleSceneJsonIdsForParity,
         selectedObjectId: selectedObjectIdState,
-        relationshipIds: [],
+        relationshipIds: relationshipIdsForParity,
         scenarioId: selectedExecutiveScenarioId,
       }),
-    [sceneJsonIdsForParity, visibleSceneJsonIdsForParity, selectedObjectIdState, selectedExecutiveScenarioId]
+    [
+      relationshipIdsForParity.join("|"),
+      sceneJsonIdsForParity.join("|"),
+      selectedExecutiveScenarioId,
+      selectedObjectIdState,
+      visibleSceneJsonIdsForParity.join("|"),
+    ]
   );
   const legacySceneParitySignature = useMemo(
     () =>
@@ -6605,16 +6681,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const stableParitySignature = useMemo(
     () =>
       buildSceneParityStableSignature({
-        sceneCount: countSceneObjects(sceneJson),
-        visibleSceneCount: countSceneObjects(visibleSceneJson),
+        sceneCount: sceneJsonIdsForParity.length,
+        visibleSceneCount: visibleSceneJsonIdsForParity.length,
         selectedObjectId: selectedObjectIdState ?? null,
-        relationshipCount: 0,
+        relationshipCount: relationshipIdsForParity.length,
         scenarioId: selectedExecutiveScenarioId ?? null,
       }),
-    [sceneJson, visibleSceneJson, selectedObjectIdState, selectedExecutiveScenarioId]
+    [
+      relationshipIdsForParity.length,
+      sceneJsonIdsForParity.length,
+      selectedExecutiveScenarioId,
+      selectedObjectIdState,
+      visibleSceneJsonIdsForParity.length,
+    ]
   );
   useEffect(() => {
-    if (countSceneObjects(sceneJson) > 0 || countSceneObjects(visibleSceneJson) > 0) {
+    if (countSceneObjects(sceneJson) > 0 || countSceneObjects(effectiveVisibleSceneJson) > 0) {
       markSceneStable();
     }
     const sceneIds = sceneJsonIdsForParity;
@@ -6622,11 +6704,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     if (sceneIds.length > 0 && !hasSceneParityIdMismatch(sceneIds, visibleIds)) {
       markSceneParityStabilized();
     }
-  }, [sceneJson, visibleSceneJson, sceneJsonIdsForParity, visibleSceneJsonIdsForParity]);
+  }, [sceneJson, effectiveVisibleSceneJson, sceneJsonIdsForParity, visibleSceneJsonIdsForParity]);
   const lastSceneParityVisibleTraceRef = useRef<string | null>(null);
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
-    if (!visibleSceneJson) return;
+    if (!effectiveVisibleSceneJson) return;
     if (lastSceneParityVisibleTraceRef.current === visibleSceneSignature) {
       return;
     }
@@ -6662,20 +6744,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       source: "SceneParity.VISIBLE",
     });
     recordParityRun();
-    devLogOnSignatureChange("[Nexora][SceneParity][VISIBLE]", visibleSceneSignature, {
+    devLogOncePermanent("[Nexora][SceneParity][VISIBLE]", visibleSceneSignature, {
       count: visibleSceneObjectCount,
-      ids: visibleSceneObjectIds,
+      ids: visibleSceneJsonIdsForParity,
       hasObjects: visibleSceneObjectCount > 0,
     }, "debug");
-  }, [
-    visibleSceneJson,
-    visibleSceneObjectCount,
-    visibleSceneObjectIds,
-    visibleSceneSignature,
-    stableParitySignature,
-    sceneJsonIdsForParity,
-    visibleSceneJsonIdsForParity,
-  ]);
+  }, [visibleSceneSignature, stableParitySignature, effectiveVisibleSceneJson, visibleSceneObjectCount, visibleSceneJsonIdsForParity, sceneJsonIdsForParity]);
   const lastSceneParityTraceRef = useRef<string | null>(null);
   const lastLegacySceneParityTraceRef = useRef<string | null>(null);
   useEffect(() => {
@@ -6741,18 +6815,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       source: "SceneParity.HomeScreen",
     });
     recordParityRun();
-    devLogOnSignatureChange(
+    devLogOncePermanent(
       "[Nexora][SceneParity][HomeScreen]",
       sceneParitySignature,
       JSON.parse(sceneParitySignature),
       "warn"
     );
-  }, [
-    legacySceneParitySignature,
-    sceneJsonIdsForParity,
-    sceneParitySignature,
-    visibleSceneJsonIdsForParity,
-  ]);
+  }, [sceneParitySignature]);
   const hasVisibleSceneObjects = visibleSceneObjects.length > 0;
   const normalizedHealth = String(healthInfo ?? "").trim().toLowerCase();
   const isBackendHealthy =
@@ -6845,7 +6914,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const lastEmptyStatePanelEffectSigRef = useRef<string | null>(null);
   useEffect(() => {
     if (entryFlowState !== "objects_created") return;
-    const hasObjects = Array.isArray(visibleSceneJson?.scene?.objects) && visibleSceneJson.scene.objects.length > 0;
+    const hasObjects = Array.isArray(effectiveVisibleSceneJson?.scene?.objects) && effectiveVisibleSceneJson.scene.objects.length > 0;
     const explicitSelection = resolveExplicitSelectedObject({
       selectedObjectIdState,
       objectSelection,
@@ -6853,7 +6922,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     if (hasObjects && explicitSelection.hasExplicitSelection) {
       setEntryFlowState("ready_for_analysis");
     }
-  }, [entryFlowState, objectSelection, selectedObjectIdState, visibleSceneJson]);
+  }, [entryFlowState, objectSelection, selectedObjectIdState, effectiveVisibleSceneJson]);
   useEffect(() => {
     if (!isEmptyState) {
       lastEmptyStatePanelEffectSigRef.current = null;
@@ -6896,7 +6965,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const resetTrace = {
         source: "empty_state_reset",
         prevCount: countSceneObjects(sceneJson),
-        nextCount: countSceneObjects(visibleSceneJson),
+        nextCount: countSceneObjects(effectiveVisibleSceneJson),
         reason: "no_objects",
       };
       const resetSig = JSON.stringify(resetTrace);
@@ -6941,7 +7010,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         reason: "no_objects",
       }
     );
-  }, [commitRightPanelStateFromAuthority, isEmptyState, rightPanelState.view, sceneJson, visibleSceneJson]);
+  }, [commitRightPanelStateFromAuthority, isEmptyState, rightPanelState.view, sceneJson, effectiveVisibleSceneJson]);
   useEffect(() => {
     if (!isEmptyState) return;
     const id = requestAnimationFrame(() => {
@@ -6988,7 +7057,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   );
 
   const stableSceneObjectsSignature = useMemo(() => {
-    const sceneObjects = Array.isArray(visibleSceneJson?.scene?.objects) ? visibleSceneJson.scene.objects : [];
+    const sceneObjects = Array.isArray(effectiveVisibleSceneJson?.scene?.objects) ? effectiveVisibleSceneJson.scene.objects : [];
     const semanticObjects = sceneObjects
       .map((obj: unknown, idx: number) => {
         const o = asRecord(obj);
@@ -7011,11 +7080,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       })
       .sort((a, b) => a.id.localeCompare(b.id));
     return JSON.stringify(semanticObjects);
-  }, [visibleSceneJson]);
+  }, [effectiveVisibleSceneJson]);
   const lastStableSceneObjectsSignatureRef = useRef<string | null>(null);
-  const lastStableSceneJsonRef = useRef<typeof visibleSceneJson | null>(null);
+  const lastStableSceneJsonRef = useRef<typeof effectiveVisibleSceneJson | null>(null);
   const stableVisibleSceneJson = useMemo(() => {
-    if (!visibleSceneJson) return visibleSceneJson;
+    if (!effectiveVisibleSceneJson) return effectiveVisibleSceneJson;
     if (
       lastStableSceneObjectsSignatureRef.current === stableSceneObjectsSignature &&
       lastStableSceneJsonRef.current
@@ -7023,9 +7092,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       return lastStableSceneJsonRef.current;
     }
     lastStableSceneObjectsSignatureRef.current = stableSceneObjectsSignature;
-    lastStableSceneJsonRef.current = visibleSceneJson;
-    return visibleSceneJson;
-  }, [stableSceneObjectsSignature, visibleSceneJson]);
+    lastStableSceneJsonRef.current = effectiveVisibleSceneJson;
+    return effectiveVisibleSceneJson;
+  }, [stableSceneObjectsSignature, effectiveVisibleSceneJson]);
   useEffect(() => {
     if (!guardedResponseData) return;
     emitDecisionTrace({
@@ -13688,41 +13757,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         memoryEntries: decisionMemoryEntries,
         nexoraB8PanelContext,
       };
-      const panelInputSignature = buildPanelContractSignature(nextPanelDataInput);
+      const panelInputSignature = buildPanelValidationCacheKey(nextPanelDataInput);
       const decisionTracePanelSignature = extractDecisionTracePanelWriteSignature({
         responseData: guardedResponseRecord,
         canonicalRecommendation: canonicalRecommendationSource,
         selectedObjectId: selectedObjectIdState,
         scenarioId: selectedExecutiveScenarioId,
       });
-      if (
-        lastDecisionTracePanelWriteSigRef.current === decisionTracePanelSignature &&
-        validatedPanelCacheRef.current.signature === panelInputSignature &&
-        validatedPanelCacheRef.current.result
-      ) {
-        tracePanelWriteSkippedTraceNoOp({
-          signature: decisionTracePanelSignature,
-          panelInputSignature,
-        });
-        return validatedPanelCacheRef.current.result;
+      if (lastDecisionTracePanelWriteSigRef.current === decisionTracePanelSignature) {
+        const cachedValidation = getPanelValidationCacheEntry(panelInputSignature);
+        if (cachedValidation) {
+          tracePanelWriteSkippedTraceNoOp({
+            signature: decisionTracePanelSignature,
+            panelInputSignature,
+          });
+          return cachedValidation as PanelSharedDataValidationResult;
+        }
       }
       lastDecisionTracePanelWriteSigRef.current = decisionTracePanelSignature;
       latestPanelInputSignatureRef.current = panelInputSignature;
       latestRawPanelSharedDataRef.current = nextPanelDataInput;
       const activeFamilyAudit = activePanelFamilyAuditRef.current;
-      const cachedPanelValidation = validatedPanelCacheRef.current;
       const shouldDeferPanelValidation =
         interactionUiState.ingestion.status === "loading" || analyzeInFlightRef.current;
       const panelContract = shouldDeferPanelValidation
-        ? cachedPanelValidation.result ?? {
+        ? {
             data: EMPTY_PANEL_SHARED_DATA,
             contractFailed: false,
             contractDebugSignature: `deferred:${panelInputSignature}`,
             contractFailureDetail: null,
           }
-        : cachedPanelValidation.signature === panelInputSignature && cachedPanelValidation.result
-          ? cachedPanelValidation.result
-          : getValidatedPanelSharedDataOnce(nextPanelDataInput, panelInputSignature);
+        : getValidatedPanelSharedDataOnce(nextPanelDataInput);
       const nextPanelData = panelContract.data;
       const familyContractDiag = readPanelFamilyContractDiagnostics(
         activeFamilyAudit?.expectedFamily ?? null,
@@ -13852,7 +13917,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     if (!panelInputSignature || !rawPanelSharedData) return;
     const runId = lastAuditRecordRef.current?.runId ?? panelInputSignature;
     if (lastValidatedAnalyzeRunRef.current === runId) return;
-    if (validatedPanelCacheRef.current.signature === panelInputSignature && validatedPanelCacheRef.current.result) {
+    if (getPanelValidationCacheEntry(panelInputSignature)) {
       lastValidatedAnalyzeRunRef.current = runId;
       return;
     }
@@ -13860,11 +13925,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       console.debug("[Nexora][AnalyzeSceneApplyOnce]", { runId });
       console.debug("[Nexora][PanelValidationDeferred]", { runId, panelInputSignature });
     }
-    const result = getValidatedPanelSharedDataOnce(rawPanelSharedData, panelInputSignature);
-    validatedPanelCacheRef.current = {
-      signature: panelInputSignature,
-      result,
-    };
+    getValidatedPanelSharedDataOnce(rawPanelSharedData);
     lastValidatedAnalyzeRunRef.current = runId;
   }, [interactionUiState.ingestion.status, getValidatedPanelSharedDataOnce]);
   const stablePanelData = useMemo(() => {
@@ -17195,6 +17256,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     registerRelationshipsFromScene(stableSceneJsonDuringPanelValidation);
     registerPropagationPathsFromScene(stableSceneJsonDuringPanelValidation);
   }, [stableSceneJsonDuringPanelValidation]);
+
+  useEffect(() => {
+    if (!scenarioComparison || !scenarioComparisonDrafts?.length || !stableSceneJsonDuringPanelValidation) {
+      clearExecutiveScenarioUniverse();
+      return;
+    }
+    const simulations = scenarioComparisonDrafts.map((draft) =>
+      simulateTypeCScenario({
+        scenario: draft,
+        sceneJson: stableSceneJsonDuringPanelValidation,
+      })
+    );
+    const sceneObjectIds = readExecutiveSceneObjects(stableSceneJsonDuringPanelValidation).map((raw, index) => {
+      const object = raw as { id?: string; name?: string };
+      return String(object.id ?? object.name ?? `obj:${index}`).trim();
+    });
+    loadExecutiveScenarioUniverse({
+      comparison: scenarioComparison,
+      drafts: scenarioComparisonDrafts,
+      simulations,
+      sceneObjectIds,
+    });
+    completeExecutiveScenarioComparison();
+  }, [scenarioComparison, scenarioComparisonDrafts, stableSceneJsonDuringPanelValidation]);
+
+  useEffect(() => {
+    return subscribeExecutiveScenarioUniverse(() => {
+      const universeState = getExecutiveScenarioUniverseState();
+      if (!universeState?.comparisonActive) return;
+      const simulation = resolveActiveUniverseSimulation(universeState);
+      if (simulation) setActiveSimulation(simulation);
+      const draft = universeState.layers.find((layer) => layer.metadata.id === universeState.activeScenarioId)?.draft;
+      if (draft) setActiveTypeCScenario(draft);
+    });
+  }, []);
+
+  const handleScenarioLayerSelect = useCallback(
+    (scenarioId: string) => {
+      const universeState = getExecutiveScenarioUniverseState();
+      if (!universeState?.comparisonActive) return;
+      const simulation = resolveActiveUniverseSimulation({
+        ...universeState,
+        activeScenarioId: scenarioId,
+      });
+      if (simulation) setActiveSimulation(simulation);
+      const draft = universeState.layers.find((layer) => layer.metadata.id === scenarioId)?.draft;
+      if (draft) setActiveTypeCScenario(draft);
+    },
+    []
+  );
+
   const showExecutiveScenePanelDock = shouldShowExecutiveScenePanelDock();
   const showExecutiveObjectPanelDock = shouldShowExecutiveObjectPanelDock();
   const executiveSceneInfoHud = useMemo(() => {
@@ -17291,6 +17403,205 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [handleExecutiveCommandBarAction, hasExecutiveObjectSelection, objectAnalyzeReady]
   );
+
+  const executiveIntelligenceSceneObjectIds = useMemo(
+    () =>
+      readExecutiveSceneObjects(stableSceneJsonDuringPanelValidation)
+        .map((raw, index) => {
+          const object = raw as { id?: string; name?: string };
+          return String(object.id ?? object.name ?? `obj:${index}`).trim();
+        })
+        .sort(),
+    [stableSceneJsonDuringPanelValidation]
+  );
+  const executiveIntelligenceRelationshipCount = useMemo(
+    () => readSceneRelationships(stableSceneJsonDuringPanelValidation).length,
+    [stableSceneJsonDuringPanelValidation]
+  );
+  const executiveIntelligenceVisibleObjectCount = useMemo(
+    () => countSceneObjects(visibleSceneJson),
+    [visibleSceneJson]
+  );
+  const executiveIntelligenceSceneObjectIdsKey = useMemo(
+    () => executiveIntelligenceSceneObjectIds.join("|"),
+    [executiveIntelligenceSceneObjectIds]
+  );
+  const executiveIntelligenceVisibleSceneObjectIdsKey = useMemo(
+    () => visibleSceneJsonIdsForParity.join("|"),
+    [visibleSceneJsonIdsForParity]
+  );
+  const executiveIntelligenceSceneJson = useMemo(() => {
+    if (executiveIntelligenceSceneObjectIds.length > 0) {
+      return stableSceneJsonDuringPanelValidation;
+    }
+    if (visibleSceneJsonIdsForParity.length > 0) {
+      return visibleSceneJson;
+    }
+    return stableSceneJsonDuringPanelValidation;
+  }, [
+    executiveIntelligenceSceneObjectIdsKey,
+    executiveIntelligenceVisibleSceneObjectIdsKey,
+    stableSceneJsonDuringPanelValidation,
+    visibleSceneJson,
+  ]);
+  const executiveSceneReady = useMemo(
+    () =>
+      executiveIntelligenceSceneObjectIds.length > 0 ||
+      visibleSceneJsonIdsForParity.length > 0 ||
+      isSceneHydrationComplete(),
+    [
+      executiveIntelligenceSceneObjectIdsKey,
+      executiveIntelligenceVisibleSceneObjectIdsKey,
+    ]
+  );
+  const executiveIntelligenceInputSignature = useMemo(() => {
+    const playbackState = getExecutiveScenarioPlaybackState();
+    const scenarioUniverse = getExecutiveScenarioUniverseState();
+    return JSON.stringify({
+      sceneReady: executiveSceneReady,
+      sceneObjectIds: executiveIntelligenceSceneObjectIds,
+      selectedObjectId: selectedObjectIdState ?? focusedId ?? null,
+      scenarioId: activeSimulation?.scenarioId ?? null,
+      relationshipCount: executiveIntelligenceRelationshipCount,
+      activePlane: rightPanelState.view ?? null,
+      activeScenarioId:
+        selectedExecutiveScenarioId ??
+        scenarioUniverse?.activeScenarioId ??
+        null,
+      visibleObjectCount: executiveIntelligenceVisibleObjectCount,
+      alertSignature: typeCAlerts.map((alert) => `${alert.id}:${alert.acknowledged}`).join("|"),
+      timelineFocusedEventId: executiveTimelineHud?.focusedEventId ?? null,
+      timelineEventCount: executiveTimelineHud?.events.length ?? 0,
+      executionStatus: executionState?.status ?? null,
+      decisionScenarioId: decisionRecommendation?.recommendedScenarioId ?? null,
+      comparisonId: scenarioComparison?.id ?? null,
+      universeSignature: scenarioUniverse?.signature ?? null,
+      playbackSignature: playbackState.signature ?? null,
+      playbackStatus: playbackState.status,
+      playbackProgress: playbackState.propagationView?.completionPercent ?? null,
+      pipelineConfidence: pipelineStatusUi.confidenceScore ?? null,
+      pipelineRiskLabel: pipelineStatusUi.fragilityLevel ?? null,
+      domainLabel: activeDomainExperience.experience.label,
+      memoryEntryCount: typeCMemoryState?.entries?.length ?? 0,
+    });
+  }, [
+    activeDomainExperience.experience.label,
+    activeSimulation?.scenarioId,
+    decisionRecommendation?.recommendedScenarioId,
+    executiveIntelligenceRelationshipCount,
+    executiveIntelligenceSceneObjectIdsKey,
+    executiveIntelligenceVisibleObjectCount,
+    executiveSceneReady,
+    executiveTimelineHud?.events.length,
+    executiveTimelineHud?.focusedEventId,
+    executionState?.status,
+    focusedId,
+    pipelineStatusUi.confidenceScore,
+    pipelineStatusUi.fragilityLevel,
+    rightPanelState.view,
+    scenarioComparison?.id,
+    selectedExecutiveScenarioId,
+    selectedObjectIdState,
+    typeCAlerts,
+    typeCMemoryState?.entries?.length,
+  ]);
+  const lastExecutiveIntelligenceSignatureRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!executiveSceneReady) {
+      return;
+    }
+
+    if (lastExecutiveIntelligenceSignatureRef.current === executiveIntelligenceInputSignature) {
+      return;
+    }
+    lastExecutiveIntelligenceSignatureRef.current = executiveIntelligenceInputSignature;
+
+    if (
+      !executiveTimelineHud &&
+      !activeSimulation &&
+      !scenarioComparison &&
+      executiveIntelligenceVisibleObjectCount === 0 &&
+      executiveIntelligenceSceneObjectIds.length === 0
+    ) {
+      clearExecutiveIntelligence();
+      return;
+    }
+
+    refreshExecutiveIntelligence({
+      sceneJson: executiveIntelligenceSceneJson,
+      selectedObjectId: selectedObjectIdState ?? focusedId ?? null,
+      domainLabel: activeDomainExperience.experience.label,
+      domainId: activeDomainExperience.experience.domainId,
+      executiveTimelineHud,
+      activeSimulation,
+      activeScenarioTitle: activeTypeCScenario?.title ?? null,
+      scenarioComparison,
+      scenarioUniverse: getExecutiveScenarioUniverseState(),
+      playbackState: getExecutiveScenarioPlaybackState(),
+      alerts: typeCAlerts,
+      executionState,
+      decisionRecommendation,
+      memoryState: typeCMemoryState,
+      pipelineConfidence: pipelineStatusUi.confidenceScore ?? null,
+      pipelineRiskLabel: pipelineStatusUi.fragilityLevel ?? null,
+      sceneObjectCount: executiveIntelligenceVisibleObjectCount,
+      cameraPreset: "balanced",
+    });
+  }, [executiveIntelligenceInputSignature]);
+
+  const handleWarRoomCommand = useCallback(
+    (commandId: ExecutiveWarRoomCommandId) => {
+      dispatchExecutiveWarRoomCommand(commandId);
+      const copilotPrompt = resolveExecutiveWarRoomCopilotPrompt(getExecutiveWarRoomState());
+      if (commandId === "analyze_system") {
+        if (hasExecutiveObjectSelection && objectAnalyzeReady) {
+          window.dispatchEvent(new CustomEvent("nexora:request-object-analyze"));
+          return;
+        }
+        setInput("Analyze current system state and identify the highest-priority risks.");
+        window.dispatchEvent(new CustomEvent("nexora:focus-bottom-command-dock"));
+        return;
+      }
+      if (commandId === "compare_scenarios") {
+        handleExecutiveCommandBarAction("compare");
+        return;
+      }
+      if (commandId === "run_simulation") {
+        handleExecutiveCommandBarAction("simulate");
+        return;
+      }
+      if (commandId === "explain_situation") {
+        const intelligencePrompt = resolveExecutiveIntelligenceCopilotPrompt(getExecutiveIntelligenceState());
+        const advisorPrompt = resolveExecutiveAdvisorCopilotPrompt(getExecutiveAdvisorState());
+        setInput(
+          intelligencePrompt ??
+            advisorPrompt ??
+            (copilotPrompt
+              ? `Explain the current war room situation. ${copilotPrompt}`
+              : "Explain the current operational situation and the most important risks.")
+        );
+        window.dispatchEvent(new CustomEvent("nexora:focus-bottom-command-dock"));
+        return;
+      }
+      if (commandId === "strategic_recommendation") {
+        const advisorState = getExecutiveAdvisorState();
+        const topRecommendation = advisorState?.hud.topRecommendation;
+        const recommendationTitle =
+          topRecommendation?.title ?? getExecutiveWarRoomState()?.bestScenarioTitle;
+        setInput(
+          topRecommendation
+            ? `Explain the strategic recommendation "${topRecommendation.title}" with evidence and trade-offs. ${topRecommendation.reasoning}`
+            : recommendationTitle
+              ? `Explain why ${recommendationTitle} is the recommended strategic scenario and summarize trade-offs.`
+              : "What is the top strategic recommendation right now?"
+        );
+        window.dispatchEvent(new CustomEvent("nexora:focus-bottom-command-dock"));
+      }
+    },
+    [handleExecutiveCommandBarAction, hasExecutiveObjectSelection, objectAnalyzeReady]
+  );
+
   const executiveQuickActionsDock = showExecutiveQuickActionsDock && isPanelVisible("quickActionsDock")
     ? {
         model: executiveQuickActionsModel,
@@ -17398,6 +17709,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           storyAccent={retailDemoAccent}
           showAxes={showAxes}
           showGrid={showGrid}
+          showObjectDebugLabels={prefs.showObjectDebugLabels === true}
           showCameraHelper={showCameraHelper}
           focusPinned={focusPinned}
           focusMode={focusMode}
@@ -17462,6 +17774,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               : null
           }
           timelineHud={workspaceLayoutContract.hud.timelineHud.visible ? executiveTimelineHud : undefined}
+          scenarioSimulation={activeSimulation}
+          onScenarioLayerSelect={handleScenarioLayerSelect}
+          onWarRoomCommand={handleWarRoomCommand}
           quickActionsDock={executiveQuickActionsDock}
           executiveStatusHud={
             workspaceLayoutContract.hud.executiveStatusHud.visible &&

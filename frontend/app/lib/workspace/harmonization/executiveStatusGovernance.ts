@@ -1,6 +1,6 @@
 import type React from "react";
 
-import type { SceneThemeTokens } from "../../theme/sceneThemeTokens";
+import type { SceneThemeTokens } from "../../theme/sceneThemeTypes";
 import { logExecutiveStatusGovernance } from "./executiveHarmonizationInstrumentation";
 
 export type ExecutiveStatusKind =

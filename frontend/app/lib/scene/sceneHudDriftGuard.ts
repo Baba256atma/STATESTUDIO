@@ -36,6 +36,7 @@ const PANEL_SELECTORS: Readonly<Record<SceneHudDriftPanelId, string>> = Object.f
   timelineHud: '[data-scene-hud-panel="timelineHud"]',
   sceneToolbar: '[data-scene-hud-panel="sceneToolbar"]',
   executiveStatusHud: '[data-scene-hud-panel="executiveStatusHud"]',
+  executiveWarRoomRibbon: '[data-scene-hud-panel="executiveWarRoomRibbon"]',
   quickActionsDock: '[data-scene-hud-panel="quickActionsDock"]',
 });
 

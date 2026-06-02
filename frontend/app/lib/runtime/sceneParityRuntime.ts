@@ -40,7 +40,7 @@ export function buildSceneVisibleSignature(input: {
   count: number;
   ids: string[];
 }): string {
-  return JSON.stringify({ count: input.count, ids: input.ids });
+  return JSON.stringify({ count: input.count, ids: [...input.ids].sort() });
 }
 
 export type SceneResetCandidateTrace = {

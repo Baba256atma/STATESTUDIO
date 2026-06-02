@@ -111,17 +111,27 @@ export function traceSceneWrite(input: SceneWriteTraceInput): boolean {
   return true;
 }
 
+export function logSceneWriteSkippedOnce(payload: {
+  source: SceneWriteSource | string;
+  writer?: string;
+  semanticSig: string;
+  reason: string;
+  [key: string]: unknown;
+}): void {
+  if (process.env.NODE_ENV === "production") return;
+  const key = `${payload.source}:${payload.semanticSig}:${payload.reason}`;
+  if (skippedLogKeys.has(key)) return;
+  skippedLogKeys.add(key);
+  globalThis.console?.debug?.("[Nexora][SceneWriteSkipped]", payload);
+}
+
 function logSceneWriteSkipped(payload: {
   source: SceneWriteSource;
   writer: string;
   semanticSig: string;
   reason: string;
 }): void {
-  if (process.env.NODE_ENV === "production") return;
-  const key = `${payload.source}:${payload.writer}:${payload.reason}:${payload.semanticSig}`;
-  if (skippedLogKeys.has(key)) return;
-  skippedLogKeys.add(key);
-  globalThis.console?.debug?.("[Nexora][SceneWriteSkipped]", payload);
+  logSceneWriteSkippedOnce(payload);
 }
 
 if (typeof window !== "undefined") {
