@@ -11,15 +11,24 @@ import {
   classifyRelationRole,
   getInteractionProfile,
   getNarrativeEdgeStyle,
-  getObjPos,
+  getRuntimeObjPos,
   getRelationEmphasisStyle,
   getSimulationEdgeStyle,
   normalizeScannerLabelSeverity,
   type InteractionRole,
   type RelationRole,
+  type RuntimeObjectPositionContext,
   type ScannerStoryReveal,
   type SimulatedPathEdge,
 } from "./sceneRenderUtils";
+import { sanitizeThreeColor } from "../../lib/scene/threeColorSanitizer";
+import {
+  recordConnectionLineRebuild,
+  recordGeometryCreated,
+  recordGeometryDisposed,
+  recordMaterialCreated,
+  recordMaterialDisposed,
+} from "../../lib/diagnostics/connectionRuntimeStabilityAudit";
 
 const STATIC_EDGE_VISUALS = true;
 
@@ -55,6 +64,7 @@ export type LoopLinesAnimatedProps = {
   simulationSourceId?: string | null;
   simulationPathEdges?: SimulatedPathEdge[];
   decisionPathEdges?: DecisionPathRendererEdge[];
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
 };
 
 function buildLineSegmentsGeometry(edgeList: LoopEdge[], posMap: Map<string, [number, number, number]>) {
@@ -66,6 +76,7 @@ function buildLineSegmentsGeometry(edgeList: LoopEdge[], posMap: Map<string, [nu
     positions.push(...from, ...to);
   });
   if (positions.length === 0) return null;
+  recordGeometryCreated("loop-lines");
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   return geometry;
@@ -105,6 +116,7 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
   simulationSourceId = null,
   simulationPathEdges = [],
   decisionPathEdges = [],
+  runtimeObjectPositionContext,
 }: LoopLinesAnimatedProps) {
   void simulationSourceId;
   const tokens = useMemo(() => getThemeTokens(theme, modeId), [theme, modeId]);
@@ -202,11 +214,12 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
     const map = new Map<string, [number, number, number]>();
     objects.forEach((object: any, index: number) => {
       const id = String(object?.id ?? `obj_${index}`);
-      const position = getObjPos(id, objects);
+      const position = getRuntimeObjPos(id, objects, runtimeObjectPositionContext);
       map.set(id, [position.x, position.y, position.z]);
+      if (object?.name) map.set(String(object.name), [position.x, position.y, position.z]);
     });
     return map;
-  }, [objects]);
+  }, [objects, runtimeObjectPositionContext]);
 
   const edges = useMemo(() => {
     const all: LoopEdge[] = [];
@@ -277,32 +290,47 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
     };
   }, [affectedIds, contextIds, primaryId, safeActiveEdges, safeInactiveEdges, scannerSceneActive]);
 
-  const inactiveGeo = useMemo(() => buildLineSegmentsGeometry(safeInactiveEdges, posMap), [safeInactiveEdges, posMap]);
-  const activeGeo = useMemo(() => buildLineSegmentsGeometry(safeActiveEdges, posMap), [safeActiveEdges, posMap]);
+  const inactiveGeo = useMemo(() => {
+    recordConnectionLineRebuild("loop-lines");
+    return buildLineSegmentsGeometry(safeInactiveEdges, posMap);
+  }, [safeInactiveEdges, posMap]);
+  const activeGeo = useMemo(() => {
+    recordConnectionLineRebuild("loop-lines");
+    return buildLineSegmentsGeometry(safeActiveEdges, posMap);
+  }, [safeActiveEdges, posMap]);
 
   useEffect(() => () => {
     try {
       inactiveGeo?.dispose();
+      if (inactiveGeo) recordGeometryDisposed("loop-lines");
     } catch {}
   }, [inactiveGeo]);
 
   useEffect(() => () => {
     try {
       activeGeo?.dispose();
+      if (activeGeo) recordGeometryDisposed("loop-lines");
     } catch {}
   }, [activeGeo]);
 
-  const inactiveMat = useMemo(
-    () =>
-      new THREE.LineBasicMaterial({
-        color: inactiveProfile.color || tokens.design.colors.relationNeutral,
-        transparent: true,
-        opacity: safeActiveEdges.length > 0 ? inactiveProfile.opacity : Math.max(0.18, inactiveProfile.opacity),
-      }),
-    [inactiveProfile.color, inactiveProfile.opacity, safeActiveEdges.length, tokens.design.colors.relationNeutral]
-  );
+  const inactiveMat = useMemo(() => {
+    recordMaterialCreated("loop-lines-inactive");
+    return new THREE.LineBasicMaterial({
+      color: inactiveProfile.color || tokens.design.colors.relationNeutral,
+      transparent: true,
+      opacity: safeActiveEdges.length > 0 ? inactiveProfile.opacity : Math.max(0.18, inactiveProfile.opacity),
+    });
+  }, [inactiveProfile.color, inactiveProfile.opacity, safeActiveEdges.length, tokens.design.colors.relationNeutral]);
+
+  useEffect(() => {
+    return () => {
+      inactiveMat.dispose();
+      recordMaterialDisposed("loop-lines-inactive");
+    };
+  }, [inactiveMat]);
 
   const activeMaterials = useMemo(() => {
+    recordMaterialCreated("loop-lines-active");
     const leadProfile = resolveRelationVisualProfile({
       kind: safeActiveEdges[0]?.kind,
       polarity: safeActiveEdges[0]?.polarity,
@@ -317,6 +345,15 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
       new THREE.LineBasicMaterial({ color, transparent: true, opacity: baseOpacity }),
     ];
   }, [safeActiveEdges, activeWeightMean, modeId]);
+
+  useEffect(() => {
+    return () => {
+      activeMaterials.forEach((material) => {
+        material.dispose();
+      });
+      recordMaterialDisposed("loop-lines-active");
+    };
+  }, [activeMaterials]);
 
   const scannerInactiveGroups = useMemo(() => {
     if (!scannerSceneActive) return [] as Array<{
@@ -357,7 +394,9 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
       const simulationEdge = getCombinedSimulationEdge(edgeList);
       const simulationStyle = simulationEdge ? getSimulationEdgeStyle(simulationEdge.depth, simulationEdge.strength) : getSimulationEdgeStyle(3, 0);
       const interactionBoost = isHovered ? hoveredInteractionProfile.edgeBoost : 1;
-      const color = new THREE.Color(leadProfile.color || inactiveProfile.color || tokens.design.colors.relationNeutral);
+      const color = new THREE.Color(
+        sanitizeThreeColor(leadProfile.color || inactiveProfile.color || tokens.design.colors.relationNeutral)
+      );
       color.multiplyScalar(
         (0.88 + (style.colorMul - 0.88) * revealOpacity) *
           interactionBoost *
@@ -426,7 +465,9 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
       const simulationEdge = getCombinedSimulationEdge(edgeList);
       const simulationStyle = simulationEdge ? getSimulationEdgeStyle(simulationEdge.depth, simulationEdge.strength) : getSimulationEdgeStyle(3, 0);
       const interactionBoost = isHovered ? hoveredInteractionProfile.edgeBoost : 1;
-      const color = new THREE.Color(leadProfile.color || tokens.design.colors.relationNeutral);
+      const color = new THREE.Color(
+        sanitizeThreeColor(leadProfile.color || tokens.design.colors.relationNeutral)
+      );
       color.multiplyScalar(
         (0.9 + (style.colorMul - 0.9) * revealOpacity) *
           interactionBoost *

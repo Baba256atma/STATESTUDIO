@@ -3,6 +3,17 @@
 import React from "react";
 import * as THREE from "three";
 
+import {
+  resolveRuntimeObjectPositionFromContext,
+  type RuntimeObjectPositionContext,
+  type RuntimeObjectPositionResult,
+} from "../../lib/scene/runtimeObjectPosition";
+import { logConnectionRuntimeProviders } from "../../lib/scene/runtimeObjectPositionDevLog";
+
+export type { RuntimeObjectPositionContext, RuntimeObjectPositionResult };
+export { logConnectionRuntimeProviders } from "../../lib/scene/runtimeObjectPositionDevLog";
+export { resolveRuntimeObjectPositionFromContext } from "../../lib/scene/runtimeObjectPosition";
+
 import type { SceneObject } from "../../lib/sceneTypes";
 import { riskToColor, clamp01 } from "../../lib/colorUtils";
 import {
@@ -448,6 +459,60 @@ export function fallbackPosFromId(id: string): THREE.Vector3 {
   const angle = unit * Math.PI * 2;
   const radius = 2.2;
   return new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+}
+
+export function getRuntimeObjPos(
+  id: string,
+  objects: any[],
+  context?: RuntimeObjectPositionContext
+): THREE.Vector3 {
+  const resolved = resolveRuntimeObjectPositionFromContext(id, objects, context);
+  return new THREE.Vector3(resolved.position.x, resolved.position.y, resolved.position.z);
+}
+
+export function resolveRuntimeConnectionEndpoints(input: {
+  connectionId: string;
+  sourceObjectId: string;
+  targetObjectId: string;
+  objects: any[];
+  context?: RuntimeObjectPositionContext;
+  sourceYOffset?: number;
+  targetYOffset?: number;
+}): {
+  source: THREE.Vector3;
+  target: THREE.Vector3;
+  sourceProvider: RuntimeObjectPositionResult["provider"];
+  targetProvider: RuntimeObjectPositionResult["provider"];
+} {
+  const sourceResolved = resolveRuntimeObjectPositionFromContext(
+    input.sourceObjectId,
+    input.objects,
+    input.context
+  );
+  const targetResolved = resolveRuntimeObjectPositionFromContext(
+    input.targetObjectId,
+    input.objects,
+    input.context
+  );
+  logConnectionRuntimeProviders({
+    connectionId: input.connectionId,
+    sourceProvider: sourceResolved.provider,
+    targetProvider: targetResolved.provider,
+  });
+  return {
+    source: new THREE.Vector3(
+      sourceResolved.position.x,
+      sourceResolved.position.y + (input.sourceYOffset ?? 0),
+      sourceResolved.position.z
+    ),
+    target: new THREE.Vector3(
+      targetResolved.position.x,
+      targetResolved.position.y + (input.targetYOffset ?? 0),
+      targetResolved.position.z
+    ),
+    sourceProvider: sourceResolved.provider,
+    targetProvider: targetResolved.provider,
+  };
 }
 
 export function getObjPos(id: string, objects: any[]): THREE.Vector3 {

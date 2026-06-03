@@ -28,11 +28,13 @@ import { MultiScenarioUniverseOverlayLayer } from "./MultiScenarioUniverseOverla
 import type { ExecutiveScenarioUniverseLayer, ScenarioUniverseLayoutMode } from "../../../lib/scene/scenario/executiveMultiScenarioUniverseTypes";
 import { CognitiveTwinLivingStateOverlayLayer } from "./CognitiveTwinLivingStateOverlayLayer";
 import type { CognitiveTwinTwinEntity } from "../../../lib/scene/twin/executiveCognitiveTwinTypes";
+import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type SceneOverlayRendererProps = {
   sceneJson: any;
   objects: any[];
   themeId: SceneThemeId;
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
   visibility: OverlayRuntimeVisibility;
   propagationOverlay: PropagationOverlayState | null;
   decisionPathOverlay: DecisionPathOverlayState | null;
@@ -86,6 +88,7 @@ function SceneOverlayRendererComponent(props: SceneOverlayRendererProps): React.
     () => buildDecisionPathRendererState(props.decisionPathRenderInput),
     [decisionPathSignature]
   );
+  const runtimeObjectPositionContext = props.runtimeObjectPositionContext;
 
   return (
     <>
@@ -95,12 +98,14 @@ function SceneOverlayRendererComponent(props: SceneOverlayRendererProps): React.
         objectSelection={props.objectSelection}
         propagationOverlay={visiblePropagation}
         decisionPathOverlay={props.visibility.scenario ? decisionPathRenderState : null}
+        runtimeObjectPositionContext={runtimeObjectPositionContext}
       />
       <PropagationOverlay
         objects={props.objects}
         overlay={props.propagationOverlay}
         visible={props.visibility.propagation}
         themeTokens={themeTokens}
+        runtimeObjectPositionContext={runtimeObjectPositionContext}
       />
       <AuthoredPropagationOverlay
         sceneJson={props.sceneJson}
@@ -109,6 +114,7 @@ function SceneOverlayRendererComponent(props: SceneOverlayRendererProps): React.
         themeTokens={themeTokens}
         selectedPathId={props.selectedPropagationPathId}
         onPropagationPathSelect={props.onPropagationPathSelect}
+        runtimeObjectPositionContext={runtimeObjectPositionContext}
       />
       <RiskFlowOverlay
         objects={props.objects}
@@ -117,18 +123,21 @@ function SceneOverlayRendererComponent(props: SceneOverlayRendererProps): React.
         riskSources={props.objectSelection?.risk_sources}
         riskTargets={props.objectSelection?.risk_targets}
         propagation={props.propagationOverlay}
+        runtimeObjectPositionContext={runtimeObjectPositionContext}
       />
       <ScenarioOverlay
         objects={props.objects}
         overlay={props.decisionPathOverlay}
         visible={props.visibility.scenario}
         themeTokens={themeTokens}
+        runtimeObjectPositionContext={runtimeObjectPositionContext}
       />
       <DependencyOverlay
         objects={props.objects}
         sceneJson={props.sceneJson}
         visible={props.visibility.dependency}
         themeTokens={themeTokens}
+        runtimeObjectPositionContext={runtimeObjectPositionContext}
       />
       <RelationshipRenderer
         sceneJson={props.sceneJson}
@@ -138,6 +147,7 @@ function SceneOverlayRendererComponent(props: SceneOverlayRendererProps): React.
         selectedRelationshipId={props.selectedRelationshipId}
         emphasizedRelationshipIds={props.twinStressedRelationshipIds}
         onRelationshipSelect={props.onRelationshipSelect}
+        runtimeObjectPositionContext={runtimeObjectPositionContext}
       />
       <TimelineEventOverlayLayer
         objects={props.objects}
@@ -153,6 +163,7 @@ function SceneOverlayRendererComponent(props: SceneOverlayRendererProps): React.
         view={props.scenarioPropagationView ?? null}
         visible={Boolean(props.scenarioPropagationView)}
         themeTokens={themeTokens}
+        runtimeObjectPositionContext={runtimeObjectPositionContext}
       />
       <MultiScenarioUniverseOverlayLayer
         objects={props.objects}

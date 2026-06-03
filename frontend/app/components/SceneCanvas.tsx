@@ -18,6 +18,17 @@ import type { WarRoomOverlayDetail, WarRoomOverlaySummary } from "../lib/warroom
 import { useSceneOverlayRuntime } from "../lib/overlay/useSceneOverlayRuntime";
 import { bindWindowListener, logDomListenerStable } from "../lib/dom/domListenerLifecycle";
 import { SceneOverlayRenderer } from "./scene/overlay/SceneOverlayRenderer";
+import { ConnectionRuntimeAuditRunner } from "./scene/topology/ConnectionRuntimeAuditRunner";
+import { areSceneCanvasPropsEqual } from "../lib/scene/sceneCanvasPropsEqual";
+import { logSceneCanvasRenderSource } from "../lib/scene/sceneCanvasRenderSourceAudit";
+import type { ConnectionRuntimeAuditContext } from "../lib/scene/topology/connectionRuntimeAudit";
+import {
+  recordSceneCanvasRender,
+  recordTopologyRebuild,
+  recordConnectionLineRebuild,
+  recordObjectSelection,
+  scheduleConnectionRuntimeStabilitySummary,
+} from "../lib/diagnostics/connectionRuntimeStabilityAudit";
 import {
   isProjectedPointWithinSafeRegion,
   measureFrameDrift,
@@ -39,6 +50,16 @@ import {
   registerAutoFrameSignature,
 } from "../lib/scene/density";
 import { normalizeExecutiveObjectLayout } from "../lib/scene/composition/normalizeExecutiveObjectLayout";
+import {
+  ACTIVE_SCENE_TOPOLOGY_MODE,
+  bindTopologyToSceneObjects,
+  buildTopologyCameraSignature,
+  buildTopologyRuntimeLayoutPositions,
+  isValidScenePosition,
+  resolveEffectiveLayoutPositions,
+  resolveTopologyConnectionLines,
+} from "../lib/scene/topology";
+import { TopologyCameraAutoFrame } from "./scene/topology/TopologyCameraAutoFrame";
 import { runSceneOccupancyAudit } from "../lib/scene/sceneOccupancyAudit";
 import { runExecutiveLayoutAudit } from "../lib/scene/executiveLayoutAuditRuntime";
 import { buildExecutiveLayoutAuditInputSignature } from "../lib/scene/executiveLayoutAuditSignature";
@@ -49,7 +70,8 @@ import {
   scheduleSceneHudDriftBaseline,
   scheduleSceneHudDriftDetect,
 } from "../lib/scene/sceneHudDriftGuard";
-import { buildSceneActivityDriftSignature } from "../lib/runtime/sceneParityRuntime";
+import { buildSceneLayoutDriftSignature } from "../lib/runtime/sceneParityRuntime";
+import { markSelectionActivity } from "../lib/runtime/selectionBurstGuard";
 import { devLogOnSignatureChange } from "../lib/runtime/diagnosticIdleGate";
 import { updateIdleRuntimeSemanticSignature } from "../lib/runtime/idleRuntimeStabilityGuard";
 import {
@@ -244,7 +266,7 @@ function holdStableScaleInput(
   return previous.value;
 }
 
-type SceneCanvasProps = {
+export type SceneCanvasProps = {
   prefs: any;
   /** Resolved app chrome theme; drives scene clear color / fog / lights with atmosphere prefs. */
   resolvedUiTheme?: ResolvedUiTheme;
@@ -495,6 +517,11 @@ function FullRegistrar({
     selectedIdRefLocal.current = selectedId;
     if (lastSelectedIdRef.current === selectedId) return;
     lastSelectedIdRef.current = selectedId;
+    if (selectedId) {
+      markSelectionActivity();
+      recordObjectSelection(selectedId);
+      scheduleConnectionRuntimeStabilitySummary("after-object-selection");
+    }
     onSelectedChange(selectedId);
   }, [selectedId, onSelectedChange, selectedIdRefLocal]);
 
@@ -2327,6 +2354,12 @@ function StaticSceneFramer({
 }
 
 function SceneCanvasComponent(props: SceneCanvasProps) {
+  const prevRenderPropsRef = useRef<SceneCanvasProps | null>(null);
+  if (process.env.NODE_ENV !== "production" && prevRenderPropsRef.current) {
+    logSceneCanvasRenderSource(prevRenderPropsRef.current, props);
+  }
+  prevRenderPropsRef.current = props;
+
   const resolvedUi: ResolvedUiTheme = props.resolvedUiTheme ?? "night";
   const atmosphere: SceneAtmosphereMode = (props.prefs?.theme ?? "night") as SceneAtmosphereMode;
   const sceneEnv = useMemo(
@@ -3063,6 +3096,66 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     [props.sceneJson, renderVisibilityInput, sceneJsonObjectsSignature]
   );
 
+  const hasSceneObjects = renderObjects.length > 0;
+  const topologyMode = ACTIVE_SCENE_TOPOLOGY_MODE;
+  const topologyRuntimeEnabled = hasSceneObjects && topologyMode !== "off";
+
+  const sceneTopologyBinding = useMemo(() => {
+    const binding = bindTopologyToSceneObjects({
+      sceneObjects: renderObjects,
+      topologyMode: topologyRuntimeEnabled ? topologyMode : "off",
+    });
+    recordTopologyRebuild("topology-binding");
+    return binding;
+  }, [renderObjects, topologyMode, topologyRuntimeEnabled]);
+
+  const topologyRuntimeLayoutPositions = useMemo(() => {
+    const layoutPositionsResult = buildTopologyRuntimeLayoutPositions({
+      sceneObjects: renderObjects,
+      binding: sceneTopologyBinding,
+    });
+    recordTopologyRebuild("auto-layout");
+    return layoutPositionsResult;
+  }, [renderObjects, sceneTopologyBinding.bindings, sceneTopologyBinding.topologyEnabled, sceneTopologyBinding.diagnostics.idle]);
+
+  const topologyConnectionLines = useMemo(() => {
+    const lines = resolveTopologyConnectionLines({
+      connections: sceneTopologyBinding.connections,
+      runtimeLayoutPositions: topologyRuntimeLayoutPositions,
+      bindings: sceneTopologyBinding.bindings,
+      sceneObjects: renderObjects,
+      topologyEnabled: topologyRuntimeEnabled && sceneTopologyBinding.topologyEnabled,
+      sceneObjectCount: renderObjects.length,
+    });
+    recordConnectionLineRebuild("topology-connection-lines");
+    return lines;
+  }, [
+    sceneTopologyBinding.connections,
+    sceneTopologyBinding.bindings,
+    topologyRuntimeLayoutPositions,
+    renderObjects,
+    topologyRuntimeEnabled,
+    sceneTopologyBinding.topologyEnabled,
+    renderObjects.length,
+  ]);
+
+  const topologyCameraPositions = useMemo(
+    () => {
+      if (!topologyRuntimeEnabled) return [];
+      return sceneTopologyBinding.bindings
+        .map((binding) => binding.finalPosition)
+        .filter((position): position is { x: number; y: number; z: number } =>
+          isValidScenePosition(position)
+        );
+    },
+    [sceneTopologyBinding.bindings, topologyRuntimeEnabled]
+  );
+
+  const topologySignature = useMemo(
+    () => buildTopologyCameraSignature(sceneTopologyBinding.bindings),
+    [sceneTopologyBinding.bindings]
+  );
+
   const sceneJsonForRenderer = useMemo(() => {
     if (!props.sceneJson) return null;
     return {
@@ -3194,6 +3287,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   );
 
   const executiveObjectLayout = useMemo(() => {
+    if (topologyRuntimeEnabled) return null;
     if (renderObjects.length < 6) return null;
     const meta = props.sceneJson?.meta as Record<string, unknown> | undefined;
     return normalizeExecutiveObjectLayout(renderObjects, {
@@ -3207,14 +3301,46 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         (typeof meta?.scenePurpose === "string" && meta.scenePurpose) ||
         null,
     });
-  }, [overlayObjectsRegistrySignature, props.sceneJson?.meta, renderObjects, selectedIdCtx, props.selectedObjectId, workspaceViewMode]);
-  const layoutPositions = executiveObjectLayout?.positions;
+  }, [
+    overlayObjectsRegistrySignature,
+    props.sceneJson?.meta,
+    renderObjects,
+    topologyRuntimeEnabled,
+    selectedIdCtx,
+    props.selectedObjectId,
+    workspaceViewMode,
+  ]);
+  const executiveLayoutPositions = executiveObjectLayout?.positions;
+  const layoutPositions = useMemo(
+    () =>
+      resolveEffectiveLayoutPositions({
+        topologyEnabled: topologyRuntimeEnabled,
+        topologyLayoutPositions: topologyRuntimeLayoutPositions,
+        executiveLayoutPositions,
+      }),
+    [
+      executiveLayoutPositions,
+      topologyRuntimeEnabled,
+      topologyRuntimeLayoutPositions,
+    ]
+  );
   const layoutBoundsSignature = useMemo(() => {
     const entries = Object.entries(layoutPositions ?? {})
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([id, pos]) => `${id}:${pos.map((value) => Number(value).toFixed(2)).join(",")}`);
     return entries.join("|");
   }, [layoutPositions]);
+  const sceneCanvasRenderSignature = useMemo(
+    () =>
+      [
+        selectedIdCtx ?? "",
+        String(renderObjects.length),
+        topologyMode,
+        layoutBoundsSignature,
+      ].join("|"),
+    [selectedIdCtx, renderObjects.length, topologyMode, layoutBoundsSignature]
+  );
+  recordSceneCanvasRender(sceneCanvasRenderSignature);
   const viewportModeResolvedLogRef = useRef<string>("");
   const executiveSceneActive = Boolean(
     props.timelineHud ||
@@ -3303,6 +3429,13 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       showExecutiveLayoutLabels: Boolean(executiveObjectLayout),
       layoutPositions,
       layoutLabelOffsets: executiveObjectLayout?.labelOffsets,
+      topologyConnectionLines: topologyConnectionLines.lines,
+      topologyConnectionLinesVisible: topologyRuntimeEnabled,
+      topologyConnectionSelectedObjectId: selectedIdCtx ?? props.selectedObjectId ?? null,
+      runtimeObjectPositionContext: {
+        topologyRuntimeLayoutPositions: topologyRuntimeLayoutPositions,
+        layoutPositions,
+      },
       loops: props.loops,
       showLoops: props.showLoops,
       showLoopLabels: props.showLoopLabels,
@@ -3326,6 +3459,45 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       showObjectDebugLabels,
       executiveObjectLayout,
       layoutPositions,
+      topologyRuntimeEnabled,
+      topologyConnectionLines.lines,
+      topologyRuntimeLayoutPositions,
+      selectedIdCtx,
+      props.selectedObjectId,
+    ]
+  );
+
+  const connectionRuntimeAuditContext = useMemo<ConnectionRuntimeAuditContext>(
+    () => ({
+      topologyEnabled: topologyRuntimeEnabled && sceneTopologyBinding.topologyEnabled,
+      topologyLines: topologyConnectionLines.lines,
+      topologyConnectionLinesVisible: topologyRuntimeEnabled,
+      runtimeLayoutPositions: layoutPositions,
+      bindings: sceneTopologyBinding.bindings,
+      sceneObjects: renderObjects,
+      sceneJson: sceneJsonForRenderer ?? props.sceneJson,
+      overlayVisibility: overlayRuntime.visibility,
+      propagationOverlay: effectivePropagationOverlay,
+      decisionPathOverlay: decisionPathOverlay,
+      loops: props.loops,
+      showLoops: props.showLoops,
+      viewMode: workspaceViewMode,
+    }),
+    [
+      topologyRuntimeEnabled,
+      sceneTopologyBinding.topologyEnabled,
+      sceneTopologyBinding.bindings,
+      topologyConnectionLines.lines,
+      layoutPositions,
+      renderObjects,
+      sceneJsonForRenderer,
+      props.sceneJson,
+      overlayRuntime.visibility,
+      effectivePropagationOverlay,
+      decisionPathOverlay,
+      props.loops,
+      props.showLoops,
+      workspaceViewMode,
     ]
   );
 
@@ -3401,23 +3573,15 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   const sceneObjectCount = Array.isArray(props.sceneJson?.scene?.objects)
     ? props.sceneJson.scene.objects.length
     : 0;
-  const sceneActivitySignature = useMemo(
+  const sceneLayoutSignature = useMemo(
     () =>
-      buildSceneActivityDriftSignature({
+      buildSceneLayoutDriftSignature({
         objectCount: sceneObjectCount,
-        selectedObjectId: props.selectedObjectId,
-        selectedRelationshipId: props.selectedRelationshipId,
-        selectedPropagationPathId: props.selectedPropagationPathId,
       }),
-    [
-      sceneObjectCount,
-      props.selectedObjectId,
-      props.selectedRelationshipId,
-      props.selectedPropagationPathId,
-    ]
+    [sceneObjectCount]
   );
-  const lastSceneActivityDriftSigRef = useRef<string | null>(null);
-  const lastSceneActivityDriftAtRef = useRef(0);
+  const lastSceneLayoutDriftSigRef = useRef<string | null>(null);
+  const lastSceneLayoutDriftAtRef = useRef(0);
 
   useEffect(() => {
     markHudDriftBaseline("scene-activity");
@@ -3425,14 +3589,14 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   }, []);
 
   useEffect(() => {
-    if (lastSceneActivityDriftSigRef.current === sceneActivitySignature) return;
-    lastSceneActivityDriftSigRef.current = sceneActivitySignature;
+    if (lastSceneLayoutDriftSigRef.current === sceneLayoutSignature) return;
+    lastSceneLayoutDriftSigRef.current = sceneLayoutSignature;
     const now = Date.now();
-    if (now - lastSceneActivityDriftAtRef.current < 20_000) return;
-    lastSceneActivityDriftAtRef.current = now;
+    if (now - lastSceneLayoutDriftAtRef.current < 20_000) return;
+    lastSceneLayoutDriftAtRef.current = now;
     detectHudDrift("scene-activity");
     scheduleSceneHudDriftDetect("scene-activity", sceneShellRef.current);
-  }, [sceneActivitySignature]);
+  }, [sceneLayoutSignature]);
 
   useEffect(() => {
     const onNavigationAction = (event: Event) => {
@@ -3769,6 +3933,15 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       ref={sceneShellRef}
       className={SCENE_SHELL_CLASS}
       data-nx-view-mode={workspaceViewMode}
+      data-nx-topology-enabled={topologyRuntimeEnabled ? "true" : "false"}
+      data-nx-topology-type={sceneTopologyBinding.topologyType}
+      data-nx-topology-binding-count={sceneTopologyBinding.bindings.length}
+      data-nx-topology-connection-count={sceneTopologyBinding.connections.length}
+      data-nx-topology-valid-connection-count={topologyConnectionLines.diagnostics.validLineCount}
+      data-nx-topology-camera-signature={topologySignature}
+      data-nx-topology-position-count={
+        topologyRuntimeLayoutPositions ? Object.keys(topologyRuntimeLayoutPositions).length : 0
+      }
       style={{
         position: "relative",
         width: "100%",
@@ -3895,7 +4068,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
           controlsRef={controlsRef}
           localIsOrbitingRef={localIsOrbitingRef}
           isOrbiting={props.isOrbiting}
-          enabled={CANVAS_STATIC_MODE}
+          enabled={CANVAS_STATIC_MODE && !topologyRuntimeEnabled}
           reframeNonce={cameraReframeNonce}
           viewMode={effectiveViewportFrameMode}
           presetOverride={cameraPresetOverride}
@@ -3933,6 +4106,15 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
           onEnd={handleOrbitEnd}
         />
 
+        <TopologyCameraAutoFrame
+          enabled={topologyRuntimeEnabled}
+          positions={topologyCameraPositions}
+          topologySignature={topologySignature}
+          userCameraLocked={props.cameraLockedByUser || isFixedCamera}
+          controlsRef={controlsRef}
+          programmaticCameraUpdateRef={programmaticCameraUpdateRef}
+        />
+
         <AnimatedScaleGroup target={resolvedGlobalScale} staticMode={CANVAS_STATIC_MODE}>
           {showGrid || showAxes ? (
             <ExecutiveSceneGuides gridSpan={gridSpan} showGrid={showGrid} showAxes={showAxes} />
@@ -3948,10 +4130,18 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
 
           {sceneJsonForRenderer ? (
             <>
+              <ConnectionRuntimeAuditRunner
+                enabled={topologyRuntimeEnabled || renderObjects.length > 0}
+                context={connectionRuntimeAuditContext}
+              />
               <SceneOverlayRenderer
                 sceneJson={sceneJsonForRenderer}
                 objects={overlaySceneObjects}
                 themeId={hudThemeMode}
+                runtimeObjectPositionContext={{
+                  topologyRuntimeLayoutPositions: topologyRuntimeLayoutPositions,
+                  layoutPositions,
+                }}
                 visibility={overlayRuntime.visibility}
                 propagationOverlay={effectivePropagationOverlay}
                 decisionPathOverlay={decisionPathOverlay}
@@ -4091,4 +4281,4 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   );
 }
 
-export const SceneCanvas = React.memo(SceneCanvasComponent);
+export const SceneCanvas = React.memo(SceneCanvasComponent, areSceneCanvasPropsEqual);

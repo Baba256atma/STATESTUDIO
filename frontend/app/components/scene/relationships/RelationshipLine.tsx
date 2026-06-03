@@ -5,7 +5,7 @@ import { Line } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-import { getObjPos } from "../sceneRenderUtils";
+import { resolveRuntimeConnectionEndpoints, type RuntimeObjectPositionContext } from "../sceneRenderUtils";
 import { logRelationshipRendered } from "../../../lib/relationships/relationshipInstrumentation";
 import type { RelationshipRenderPlan } from "../../../lib/relationships/executive/executiveRelationshipTypes";
 import type { NexoraRelationship } from "../../../lib/relationships/relationshipTypes";
@@ -17,6 +17,7 @@ import { resolveExecutiveRelationshipGraphicsProfile } from "../../../lib/scene/
 import type { WorkspaceViewMode } from "../../../lib/workspace/workspaceViewModeTypes";
 import type { SceneThemeId } from "../../../lib/theme/sceneThemeTypes";
 import { RelationshipLabel } from "./RelationshipLabel";
+import { sanitizeThreeColor } from "../../../lib/scene/threeColorSanitizer";
 
 export type RelationshipLineProps = {
   relationship: NexoraRelationship;
@@ -30,6 +31,7 @@ export type RelationshipLineProps = {
   selected?: boolean;
   emphasized?: boolean;
   onSelect?: (relationship: NexoraRelationship) => void;
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
 };
 
 function midpoint(a: THREE.Vector3, b: THREE.Vector3): [number, number, number] {
@@ -96,15 +98,18 @@ export const RelationshipLine = React.memo(function RelationshipLine(
   );
   const lineOpacityMul = props.lineOpacityMul ?? relationshipGraphics.lineOpacityMul;
 
-  const tokens = useMemo(
-    () =>
-      resolveExecutiveRelationshipLineTokens({
-        themeId: props.themeId,
-        relationship: props.relationship,
-        renderPlan: props.renderPlan,
-      }),
-    [props.relationship, props.renderPlan, props.themeId]
-  );
+  const tokens = useMemo(() => {
+    const resolved = resolveExecutiveRelationshipLineTokens({
+      themeId: props.themeId,
+      relationship: props.relationship,
+      renderPlan: props.renderPlan,
+    });
+    return {
+      ...resolved,
+      lineColor: sanitizeThreeColor(resolved.lineColor),
+      arrowColor: sanitizeThreeColor(resolved.arrowColor),
+    };
+  }, [props.relationship, props.renderPlan, props.themeId]);
 
   const baseTokens = useMemo(
     () => resolveRelationshipVisualTokens(props.themeId, props.relationship.type),
@@ -112,9 +117,18 @@ export const RelationshipLine = React.memo(function RelationshipLine(
   );
 
   const geometry = useMemo(() => {
-    const from = getObjPos(props.relationship.sourceId, props.objects);
-    const to = getObjPos(props.relationship.targetId, props.objects);
     const yOffset = viewMode === "2D" ? 0.06 : 0.1;
+    const endpoints = resolveRuntimeConnectionEndpoints({
+      connectionId: props.relationship.id,
+      sourceObjectId: props.relationship.sourceId,
+      targetObjectId: props.relationship.targetId,
+      objects: props.objects,
+      context: props.runtimeObjectPositionContext,
+      sourceYOffset: yOffset,
+      targetYOffset: yOffset,
+    });
+    const from = endpoints.source;
+    const to = endpoints.target;
     const start: [number, number, number] = [from.x, from.y + yOffset, from.z];
     const end: [number, number, number] = [to.x, to.y + yOffset, to.z];
     const points: [number, number, number][] = [start, end];
@@ -134,7 +148,15 @@ export const RelationshipLine = React.memo(function RelationshipLine(
       arrow: [arrow.x, arrow.y + yOffset, arrow.z] as [number, number, number],
       arrowRotation: [arrowEuler.x, arrowEuler.y, arrowEuler.z] as [number, number, number],
     };
-  }, [props.objects, props.relationship.direction, props.relationship.sourceId, props.relationship.targetId, viewMode]);
+  }, [
+    props.objects,
+    props.relationship.direction,
+    props.relationship.id,
+    props.relationship.sourceId,
+    props.relationship.targetId,
+    props.runtimeObjectPositionContext,
+    viewMode,
+  ]);
 
   React.useEffect(() => {
     logRelationshipRendered({

@@ -5,12 +5,14 @@ import React, { useMemo } from "react";
 import type { ExecutiveScenarioPropagationView } from "../../../lib/scene/scenario/executiveScenarioPlaybackTypes";
 import { OverlayFlowLines, overlayThemeToFlowProps } from "./OverlayFlowLines";
 import type { OverlayThemeTokens } from "../../../lib/overlay/overlayTheme";
+import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type ScenarioPlaybackPropagationLayerProps = {
   objects: any[];
   view: ExecutiveScenarioPropagationView | null;
   visible: boolean;
   themeTokens: OverlayThemeTokens;
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
 };
 
 export const ScenarioPlaybackPropagationLayer = React.memo(function ScenarioPlaybackPropagationLayer(
@@ -41,6 +43,7 @@ export const ScenarioPlaybackPropagationLayer = React.memo(function ScenarioPlay
         edges={edges}
         animated
         yOffset={props.view.kind === "opportunity" ? 0.16 : 0.12}
+        runtimeObjectPositionContext={props.runtimeObjectPositionContext}
         {...flowProps}
       />
     </group>

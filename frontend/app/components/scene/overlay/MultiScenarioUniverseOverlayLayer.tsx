@@ -6,6 +6,7 @@ import { Html } from "@react-three/drei";
 
 import type { ExecutiveScenarioUniverseLayer } from "../../../lib/scene/scenario/executiveMultiScenarioUniverseTypes";
 import { getObjPos } from "../sceneRenderUtils";
+import { sanitizeThreeColor } from "../../../lib/scene/threeColorSanitizer";
 
 export type MultiScenarioUniverseOverlayLayerProps = {
   objects: any[];
@@ -40,15 +41,17 @@ function GhostScenarioMarker(props: {
     );
   }, [primaryId, props.objects, props.offset]);
 
+  const materialColor = sanitizeThreeColor(props.layer.colorToken);
+
   return (
     <group position={position.toArray()} data-nx-scenario-ghost={props.layer.metadata.id}>
       <mesh scale={props.active ? 0.1 : 0.07}>
         <octahedronGeometry args={[1, 0]} />
         <meshStandardMaterial
-          color={props.layer.colorToken}
+          color={materialColor}
           transparent
           opacity={props.active ? 0.72 : 0.38}
-          emissive={props.layer.colorToken}
+          emissive={materialColor}
           emissiveIntensity={0.22}
         />
       </mesh>

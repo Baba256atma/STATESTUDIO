@@ -6,7 +6,6 @@ import { traceRuntimeParity } from "../../lib/debug/runtimeLoopTrace";
 import { devLogOnSignatureChange } from "../../lib/runtime/diagnosticIdleGate";
 
 import ConflictMapPanel from "../panels/ConflictMapPanel";
-import FocusInsightCard from "../panels/FocusInsightCard";
 import RiskPropagationPanel from "../panels/RiskPropagationPanel";
 import { RiskExplanationPanel } from "../panels/RiskExplanationPanel";
 import DecisionReplayPanel from "../panels/DecisionReplayPanel";
@@ -14,7 +13,7 @@ import StrategicAdvicePanel from "../panels/StrategicAdvicePanel";
 import OpponentMovesPanel from "../panels/OpponentMovesPanel";
 import StrategicPatternsPanel from "../panels/StrategicPatternsPanel";
 import ExecutiveDashboardPanel from "../panels/ExecutiveDashboardPanel";
-import ExecutiveObjectPanel from "../panels/ExecutiveObjectPanel";
+import { ObjectPanelLazy } from "./ObjectPanelLazy";
 import { StrategicCommandPreview } from "../executive/StrategicCommandPreview";
 import { DecisionComparePanel } from "../executive/DecisionComparePanel";
 import { DecisionTimelinePanel } from "../executive/DecisionTimelinePanel";
@@ -628,9 +627,12 @@ export function RightPanelHost(props: RightPanelHostProps) {
     }
   }, [stableAggregatedPanelData]);
   const panelContractValidation = React.useMemo(() => {
+    if (!props.rightPanelState.isOpen) {
+      return validatePanelSharedDataWithDiagnostics(props.panelData);
+    }
     const sourceData = latestAggregatedPanelDataRef.current ?? stableAggregatedPanelData;
     return validatePanelSharedDataWithDiagnostics(sourceData);
-  }, [panelValidationSignature, stableAggregatedPanelData]);
+  }, [panelValidationSignature, props.panelData, props.rightPanelState.isOpen, stableAggregatedPanelData]);
   const validatedPanelData = panelContractValidation.data;
 
   const lastHostPanelContractDebugSigRef = React.useRef<string | null>(null);
@@ -1908,98 +1910,25 @@ export function RightPanelHost(props: RightPanelHostProps) {
       }
       return <ConflictMapPanel conflicts={safeConflict as React.ComponentProps<typeof ConflictMapPanel>["conflicts"]} />;
     }
-    case "executive_object": {
-      const execObjectId = String(
-        props.rightPanelState.contextId ?? props.activeExecutiveObjectId ?? props.selectedObjectId ?? ""
-      ).trim();
-      return (
-        <ExecutiveObjectPanel data={props.executiveObjectPanelData ?? null} selectedObjectId={execObjectId || null} />
-      );
-    }
+    case "executive_object":
     case "object":
     case "object_focus": {
-      const objectListForPanel = hasVisibleSceneObjects ? visibleSceneObjects : [];
-      if (process.env.NODE_ENV !== "production") {
-        const trace = {
-          objectListCount: objectListForPanel.length,
-          objectListIds: objectListForPanel.map((o) => String(o?.id ?? o?.name ?? "unknown")),
-          hasVisibleSceneObjects,
-          source: "visibleSceneObjects",
-          currentView: props.rightPanelState.view,
-          contextId: props.rightPanelState.contextId ?? null,
-        };
-        const sig = JSON.stringify(trace);
-        const previousObjectSourceSig = lastRightPanelObjectSourceTraceRef.current;
-        if (previousObjectSourceSig !== sig) {
-          lastRightPanelObjectSourceTraceRef.current = sig;
-          traceRuntimeParity({
-            source: "RightPanelHost",
-            action: "SceneParity.RightPanelObjectSource",
-            reason: "object_source_trace_changed",
-            caller: "RightPanelHost.render",
-            previousSceneSignature: previousObjectSourceSig,
-            nextSceneSignature: sig,
-            detail: trace,
-          });
-          devLogOnSignatureChange("[Nexora][SceneParity][RightPanelObjectSource]", sig, trace, "warn");
-        }
-      }
-      if (objectListForPanel.length === 0) {
-        return (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <RightPanelFallback
-              title="Objects"
-              message="No visible objects yet. Describe your system in chat to create the first model."
-            />
-            <DomainObjectCatalogPanel
-              domainId={props.domainCatalogDomainId ?? "general"}
-              onSelectObject={props.onAddDomainObject ?? undefined}
-            />
-          </div>
-        );
-      }
-      const focusObjectId = String(
-        props.activeExecutiveObjectId ?? props.selectedObjectId ?? props.focusedId ?? props.rightPanelState.contextId ?? ""
-      ).trim();
-      if (focusObjectId && !visibleSceneObjectIdSet.has(focusObjectId)) {
-        return (
-          <RightPanelFallback
-            title="Object Context"
-            message="Selected object is not visible in the current scene. Choose a visible object or describe your system again."
-          />
-        );
-      }
-      if (!focusObjectId) {
-        return (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <RightPanelFallback
-              title="Object Focus"
-              message="Select a visible object to inspect focus insight."
-            />
-            <DomainObjectCatalogPanel
-              domainId={props.domainCatalogDomainId ?? "general"}
-              onSelectObject={props.onAddDomainObject ?? undefined}
-            />
-          </div>
-        );
-      }
-      if (process.env.NODE_ENV !== "production") {
-        globalThis.console?.debug?.("[Nexora][FocusRender]", {
-          view: props.rightPanelState.view ?? null,
-          legacyTab: "object_focus",
-          componentName: "FocusInsightCard",
-          contextId: props.rightPanelState.contextId ?? null,
-          selectedObjectId: props.selectedObjectId ?? null,
-          focusedId: props.focusedId ?? null,
-        });
-      }
       return (
-        <FocusInsightCard
-          selectedObjectId={focusObjectId}
+        <ObjectPanelLazy
+          view={viewToRender}
+          contextId={props.rightPanelState.contextId ?? null}
+          selectedObjectId={props.selectedObjectId ?? null}
+          activeExecutiveObjectId={props.activeExecutiveObjectId ?? null}
+          focusedId={props.focusedId ?? null}
           selectedObjectLabel={props.selectedObjectLabel ?? null}
-          responseData={props.responseData ?? props.sceneJson ?? null}
-          sceneJson={props.sceneJson ?? null}
-          riskPropagation={props.riskPropagation ?? null}
+          executiveObjectPanelData={props.executiveObjectPanelData ?? null}
+          visibleSceneObjects={visibleSceneObjects}
+          hasVisibleSceneObjects={hasVisibleSceneObjects}
+          domainCatalogDomainId={props.domainCatalogDomainId}
+          sceneJson={props.sceneJson}
+          responseData={props.responseData}
+          riskPropagation={props.riskPropagation}
+          onAddDomainObject={props.onAddDomainObject ?? null}
         />
       );
     }

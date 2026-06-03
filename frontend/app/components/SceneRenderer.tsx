@@ -69,6 +69,8 @@ import {
   subscribeWorkspaceViewMode,
 } from "../lib/workspace/workspaceViewModeRuntime";
 import { SceneObjectInstances, type SceneObjectInstancePlan } from "./scene/SceneObjectInstances";
+import { TopologyConnectionLines } from "./scene/topology/TopologyConnectionLines";
+import type { SceneConnectionLine } from "../lib/scene/topology/topologyConnectionTypes";
 import {
   buildExecutiveRelationshipExploration,
   readSceneRelationshipEdges,
@@ -1332,6 +1334,10 @@ export type SceneRendererProps = {
     position: { x: number; y: number; z: number },
     phase: "drag" | "move"
   ) => void;
+  topologyConnectionLines?: SceneConnectionLine[];
+  topologyConnectionLinesVisible?: boolean;
+  topologyConnectionSelectedObjectId?: string | null;
+  runtimeObjectPositionContext?: import("./scene/sceneRenderUtils").RuntimeObjectPositionContext;
 };
 
 // --------------------
@@ -1359,6 +1365,10 @@ function SceneRendererComponent({
   decisionPathOverlay = null,
   motionCalm = false,
   onObjectPositionChange,
+  topologyConnectionLines = [],
+  topologyConnectionLinesVisible = false,
+  topologyConnectionSelectedObjectId = null,
+  runtimeObjectPositionContext,
 }: SceneRendererProps) {
   if (!sceneJson) return null;
 
@@ -2318,7 +2328,6 @@ function SceneRendererComponent({
         decisionPathSourceId,
         effectivePropagationSourceId,
         sceneObjectCount: stableObjects.length,
-        selectedObjectId: selectedIdCtx ?? null,
         relationshipExplorationActive: relationshipExploration.active,
         showObjectDebugLabels,
         showExecutiveLayoutLabels,
@@ -2353,7 +2362,6 @@ function SceneRendererComponent({
       scannerDimRequested,
       scannerStoryReveal,
       scannerTargetIds,
-      selectedIdCtx,
       shadowsEnabled,
       showExecutiveLayoutLabels,
       showObjectDebugLabels,
@@ -2439,13 +2447,6 @@ function SceneRendererComponent({
             decisionPathSourceId === String(stableId)),
         sceneScale: stableGlobalScale,
         sceneObjectCount: stableObjects.length,
-        connectedToSelected:
-          relationshipExploration.active &&
-          (selectedIdCtx === stableId ||
-            selectedIdCtx === objectKey ||
-            connectedToSelectedSet.has(stableId) ||
-            connectedToSelectedSet.has(objectKey)),
-        relationshipExplorationActive: relationshipExploration.active,
         onObjectPositionChange,
         showObjectDebugLabels,
         showExecutiveLayoutLabels,
@@ -2521,6 +2522,18 @@ function SceneRendererComponent({
           layoutLabelOffsets={layoutLabelOffsets}
           showObjectDebugLabels={showObjectDebugLabels}
           showExecutiveLayoutLabels={showExecutiveLayoutLabels}
+          selectedObjectId={selectedIdCtx ?? null}
+          connectedToSelectedIds={connectedToSelectedSet}
+          relationshipExplorationActive={relationshipExploration.active}
+        />
+
+        <TopologyConnectionLines
+          lines={topologyConnectionLines}
+          visible={topologyConnectionLinesVisible}
+          selectedObjectId={
+            topologyConnectionSelectedObjectId ??
+            (typeof selectedIdCtx === "string" ? selectedIdCtx : null)
+          }
         />
 
         <LoopLinesAnimated
@@ -2545,6 +2558,7 @@ function SceneRendererComponent({
           simulationSourceId={effectivePropagationSourceId}
           simulationPathEdges={effectivePropagationPathEdges}
           decisionPathEdges={decisionPathEdges}
+          runtimeObjectPositionContext={runtimeObjectPositionContext}
         />
       </group>
     </>

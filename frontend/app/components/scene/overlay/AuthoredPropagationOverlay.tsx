@@ -6,8 +6,13 @@ import * as THREE from "three";
 
 import { readPropagationPaths, type PropagationPath } from "../../../lib/propagation/propagationAuthoringRuntime";
 import type { OverlayThemeTokens } from "../../../lib/overlay/overlayTheme";
-import { getObjPos } from "../sceneRenderUtils";
+import { sanitizeThreeColor } from "../../../lib/scene/threeColorSanitizer";
+import {
+  resolveRuntimeConnectionEndpoints,
+  type RuntimeObjectPositionContext,
+} from "../sceneRenderUtils";
 import { RelationshipLabel } from "../relationships/RelationshipLabel";
+import { recordConnectionLineRebuild } from "../../../lib/diagnostics/connectionRuntimeStabilityAudit";
 
 export type AuthoredPropagationOverlayProps = {
   sceneJson: unknown;
@@ -16,6 +21,7 @@ export type AuthoredPropagationOverlayProps = {
   themeTokens: OverlayThemeTokens;
   selectedPathId?: string | null;
   onPropagationPathSelect?: (path: PropagationPath) => void;
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
 };
 
 function midpoint(a: THREE.Vector3, b: THREE.Vector3): [number, number, number] {
@@ -47,6 +53,7 @@ export const AuthoredPropagationOverlay = React.memo(function AuthoredPropagatio
           themeTokens={props.themeTokens}
           selected={path.id === props.selectedPathId}
           onSelect={props.onPropagationPathSelect}
+          runtimeObjectPositionContext={props.runtimeObjectPositionContext}
         />
       ))}
     </group>
@@ -59,22 +66,33 @@ function AuthoredPropagationPathLine(props: {
   themeTokens: OverlayThemeTokens;
   selected: boolean;
   onSelect?: (path: PropagationPath) => void;
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
 }): React.ReactElement | null {
   const geometry = useMemo(() => {
-    const from = getObjPos(props.path.sourceObjectId, props.objects);
-    const to = getObjPos(props.path.targetObjectId, props.objects);
+    recordConnectionLineRebuild("overlay-flow-lines");
     const yOffset = 0.18;
+    const endpoints = resolveRuntimeConnectionEndpoints({
+      connectionId: props.path.id,
+      sourceObjectId: props.path.sourceObjectId,
+      targetObjectId: props.path.targetObjectId,
+      objects: props.objects,
+      context: props.runtimeObjectPositionContext,
+      sourceYOffset: yOffset,
+      targetYOffset: yOffset,
+    });
+    const from = endpoints.source;
+    const to = endpoints.target;
     const points: [number, number, number][] = [
-      [from.x, from.y + yOffset, from.z],
-      [to.x, to.y + yOffset, to.z],
+      [from.x, from.y, from.z],
+      [to.x, to.y, to.z],
     ];
     const arrow = new THREE.Vector3().lerpVectors(from, to, 0.84);
     return {
       points,
       mid: midpoint(from, to),
-      arrow: [arrow.x, arrow.y + yOffset, arrow.z] as [number, number, number],
+      arrow: [arrow.x, arrow.y, arrow.z] as [number, number, number],
     };
-  }, [props.objects, props.path.sourceObjectId, props.path.targetObjectId]);
+  }, [props.objects, props.path.id, props.path.sourceObjectId, props.path.targetObjectId, props.runtimeObjectPositionContext]);
 
   const strength = Math.max(0, Math.min(100, props.path.strength));
   const opacity = props.selected ? 0.92 : 0.36 + (strength / 100) * 0.34;
@@ -85,12 +103,15 @@ function AuthoredPropagationPathLine(props: {
     props.onSelect?.(props.path);
   };
 
+  const propagationColor = sanitizeThreeColor(props.themeTokens.propagationColor);
+  const propagationGlow = sanitizeThreeColor(props.themeTokens.propagationGlow);
+
   return (
     <group data-nx-propagation-path-id={props.path.id} data-nx-propagation-type={props.path.propagationType}>
       {props.selected ? (
         <Line
           points={geometry.points}
-          color={props.themeTokens.propagationGlow}
+          color={propagationGlow}
           transparent
           opacity={0.2}
           lineWidth={lineWidth + 3.5}
@@ -98,7 +119,7 @@ function AuthoredPropagationPathLine(props: {
       ) : null}
       <Line
         points={geometry.points}
-        color={props.themeTokens.propagationColor}
+        color={propagationColor}
         transparent
         opacity={opacity}
         lineWidth={lineWidth}
@@ -107,7 +128,7 @@ function AuthoredPropagationPathLine(props: {
       />
       <Line
         points={geometry.points}
-        color={props.themeTokens.propagationColor}
+        color={propagationColor}
         transparent
         opacity={0}
         lineWidth={8}
@@ -116,7 +137,7 @@ function AuthoredPropagationPathLine(props: {
       />
       <mesh position={geometry.arrow}>
         <coneGeometry args={[0.055, 0.14, 12]} />
-        <meshStandardMaterial color={props.themeTokens.propagationGlow} transparent opacity={props.selected ? 0.95 : 0.72} />
+        <meshStandardMaterial color={propagationGlow} transparent opacity={props.selected ? 0.95 : 0.72} />
       </mesh>
       {props.selected ? (
         <RelationshipLabel

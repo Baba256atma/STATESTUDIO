@@ -1,11 +1,22 @@
 "use client";
 
-import React, { useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 
-import { getObjPos } from "../sceneRenderUtils";
+import {
+  getRuntimeObjPos,
+  logConnectionRuntimeProviders,
+  resolveRuntimeObjectPositionFromContext,
+  type RuntimeObjectPositionContext,
+} from "../sceneRenderUtils";
 import type { OverlayThemeTokens } from "../../../lib/overlay/overlayTheme";
+import { sanitizeThreeColor } from "../../../lib/scene/threeColorSanitizer";
+import {
+  recordConnectionLineRebuild,
+  recordGeometryCreated,
+  recordGeometryDisposed,
+} from "../../../lib/diagnostics/connectionRuntimeStabilityAudit";
 
 export type OverlayFlowLineEdge = {
   from: string;
@@ -23,20 +34,38 @@ export type OverlayFlowLinesProps = {
   pulseOpacity: number;
   yOffset?: number;
   animated?: boolean;
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
 };
 
 function buildLineGeometry(
   objects: any[],
   edges: OverlayFlowLineEdge[],
-  yOffset: number
+  yOffset: number,
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext
 ): THREE.BufferGeometry | null {
   const positions: number[] = [];
   edges.forEach((edge) => {
-    const from = getObjPos(edge.from, objects);
-    const to = getObjPos(edge.to, objects);
+    const sourceResolved = resolveRuntimeObjectPositionFromContext(
+      edge.from,
+      objects,
+      runtimeObjectPositionContext
+    );
+    const targetResolved = resolveRuntimeObjectPositionFromContext(
+      edge.to,
+      objects,
+      runtimeObjectPositionContext
+    );
+    logConnectionRuntimeProviders({
+      connectionId: `${edge.from}__to__${edge.to}`,
+      sourceProvider: sourceResolved.provider,
+      targetProvider: targetResolved.provider,
+    });
+    const from = getRuntimeObjPos(edge.from, objects, runtimeObjectPositionContext);
+    const to = getRuntimeObjPos(edge.to, objects, runtimeObjectPositionContext);
     positions.push(from.x, from.y + yOffset, from.z, to.x, to.y + yOffset, to.z);
   });
   if (positions.length === 0) return null;
+  recordGeometryCreated("overlay-flow-lines");
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   return geometry;
@@ -44,10 +73,23 @@ function buildLineGeometry(
 
 export const OverlayFlowLines = React.memo(function OverlayFlowLines(props: OverlayFlowLinesProps): React.ReactElement | null {
   const materialRef = useRef<THREE.LineBasicMaterial>(null);
-  const geometry = useMemo(
-    () => buildLineGeometry(props.objects, props.edges, props.yOffset ?? 0.08),
-    [props.edges, props.objects, props.yOffset]
-  );
+  const geometry = useMemo(() => {
+    recordConnectionLineRebuild("overlay-flow-lines");
+    return buildLineGeometry(
+      props.objects,
+      props.edges,
+      props.yOffset ?? 0.08,
+      props.runtimeObjectPositionContext
+    );
+  }, [props.edges, props.objects, props.runtimeObjectPositionContext, props.yOffset]);
+
+  useEffect(() => {
+    if (!geometry) return;
+    return () => {
+      geometry.dispose();
+      recordGeometryDisposed("overlay-flow-lines");
+    };
+  }, [geometry]);
 
   useFrame(({ clock }) => {
     if (!props.animated || !materialRef.current) return;
@@ -58,11 +100,13 @@ export const OverlayFlowLines = React.memo(function OverlayFlowLines(props: Over
 
   if (!geometry || props.edges.length === 0) return null;
 
+  const lineColor = sanitizeThreeColor(props.color);
+
   return (
     <lineSegments geometry={geometry}>
       <lineBasicMaterial
         ref={materialRef}
-        color={props.color}
+        color={lineColor}
         transparent
         opacity={props.baseOpacity}
         depthWrite={false}

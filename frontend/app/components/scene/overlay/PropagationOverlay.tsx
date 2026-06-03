@@ -7,12 +7,14 @@ import { propagationOverlayToEdges } from "../../../lib/overlay/mergePropagation
 import { logPropagationOverlayRendered } from "../../../lib/overlay/overlayInstrumentation";
 import type { OverlayThemeTokens } from "../../../lib/overlay/overlayTheme";
 import { OverlayFlowLines, overlayThemeToFlowProps } from "./OverlayFlowLines";
+import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type PropagationOverlayProps = {
   objects: any[];
   overlay: PropagationOverlayState | null | undefined;
   visible: boolean;
   themeTokens: OverlayThemeTokens;
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
 };
 
 export const PropagationOverlay = React.memo(function PropagationOverlay(
@@ -39,6 +41,7 @@ export const PropagationOverlay = React.memo(function PropagationOverlay(
         edges={edges}
         animated
         yOffset={0.1}
+        runtimeObjectPositionContext={props.runtimeObjectPositionContext}
         {...flowProps}
       />
     </group>

@@ -1,5 +1,10 @@
-import { recordRuntimeCycleEvent } from "../runtime/runtimeCycleDetector";
+import { recordHudDrift } from "../diagnostics/connectionRuntimeStabilityAudit";
+import {
+  isSelectionBurstActive,
+  shouldLogSelectionBurstHudDriftSkip,
+} from "../runtime/selectionBurstGuard";
 import { devLogOnSignatureChange } from "../runtime/diagnosticIdleGate";
+import { recordRuntimeCycleEvent } from "../runtime/runtimeCycleDetector";
 import { shouldProceedRuntimeWrite } from "../runtime/idleRuntimeWriteGuard";
 import { isIdleRuntimeLocked } from "../runtime/idleRuntimeStabilityGuard";
 import { isStartupPhase } from "../runtime/startupPhase";
@@ -136,6 +141,17 @@ export function scheduleSceneHudDriftBaseline(action: string, root?: ParentNode 
 
 export function detectSceneHudDrift(action: string, root?: ParentNode | null): SceneHudDriftReport[] {
   if (!isDev()) return [];
+  if (isSelectionBurstActive()) {
+    if (shouldLogSelectionBurstHudDriftSkip()) {
+      devLogOnSignatureChange(
+        "[Nexora][HudDriftSkipped]",
+        "selection-burst",
+        { reason: "selection-burst" },
+        "debug"
+      );
+    }
+    return [];
+  }
 
   const beforeStates = driftBaselines.get(action);
   const afterStates = readPanelLayoutStates(root);
@@ -229,6 +245,7 @@ export function detectSceneHudDrift(action: string, root?: ParentNode | null): S
         panelId,
         source: action,
       });
+      recordHudDrift(`${panelId}:${action}`);
       devLogOnSignatureChange("[Nexora][SceneHudDriftDetected]", driftSignature, report, "warn", {
         cooldownMs: SCENE_HUD_DRIFT_DEV_COOLDOWN_MS,
       });
@@ -246,6 +263,17 @@ export function detectSceneHudDrift(action: string, root?: ParentNode | null): S
 
 export function scheduleSceneHudDriftDetect(action: string, root?: ParentNode | null): void {
   scheduleAfterLayoutSettled(`${action}:detect`, () => {
+    if (isSelectionBurstActive()) {
+      if (shouldLogSelectionBurstHudDriftSkip()) {
+        devLogOnSignatureChange(
+          "[Nexora][HudDriftSkipped]",
+          "selection-burst",
+          { reason: "selection-burst" },
+          "debug"
+        );
+      }
+      return;
+    }
     detectSceneHudDrift(action, root ?? null);
   });
 }

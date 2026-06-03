@@ -1,5 +1,10 @@
 import type React from "react";
 
+import { recordHudDrift } from "../diagnostics/connectionRuntimeStabilityAudit";
+import {
+  isSelectionBurstActive,
+  shouldLogSelectionBurstHudDriftSkip,
+} from "../runtime/selectionBurstGuard";
 import { getExecutiveHudViewport } from "../layout/executiveHudHydrationRuntime";
 import { buildHudAnchorRegistrationSignature } from "../layout/hudLayoutSignature";
 import { emitHudLayoutLog, recordHudLayoutWrite } from "../layout/hudLayoutLogGuard";
@@ -371,6 +376,17 @@ export function markHudDriftBaseline(reason: string): void {
 }
 
 export function detectHudDrift(reason: string): void {
+  if (isSelectionBurstActive()) {
+    if (process.env.NODE_ENV !== "production" && shouldLogSelectionBurstHudDriftSkip()) {
+      devLogOnSignatureChange(
+        "[Nexora][HudDriftSkipped]",
+        "selection-burst",
+        { reason: "selection-burst" },
+        "debug"
+      );
+    }
+    return;
+  }
   const before = driftBaselines.get(reason);
   if (!before) {
     markHudDriftBaseline(reason);
@@ -411,6 +427,7 @@ export function detectHudDrift(reason: string): void {
   }
   lastHudAnchoringDriftEmittedAtRef.set(reason, now);
 
+  recordHudDrift(reason);
   devLogOnSignatureChange("[Nexora][HudDriftDetected]", driftSignature, { reason }, "warn", {
     cooldownMs: HUD_DRIFT_DEV_COOLDOWN_MS,
   });

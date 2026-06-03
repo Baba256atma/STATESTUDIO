@@ -5,12 +5,14 @@ import React, { useMemo } from "react";
 import type { OverlayThemeTokens } from "../../../lib/overlay/overlayTheme";
 import { collectDependencyOverlayEdges } from "../../../lib/relationships/relationshipRuntime";
 import { OverlayFlowLines, overlayThemeToFlowProps } from "./OverlayFlowLines";
+import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type DependencyOverlayProps = {
   objects: any[];
   sceneJson: unknown;
   visible: boolean;
   themeTokens: OverlayThemeTokens;
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
 };
 
 /** E2:23 foundation — renders object dependency edges without mutating scene contracts. */
@@ -25,7 +27,14 @@ export const DependencyOverlay = React.memo(function DependencyOverlay(
 
   return (
     <group data-nx-overlay="dependency">
-      <OverlayFlowLines objects={props.objects} edges={edges} animated={false} yOffset={0.06} {...flowProps} />
+      <OverlayFlowLines
+        objects={props.objects}
+        edges={edges}
+        animated={false}
+        yOffset={0.06}
+        runtimeObjectPositionContext={props.runtimeObjectPositionContext}
+        {...flowProps}
+      />
     </group>
   );
 });

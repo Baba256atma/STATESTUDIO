@@ -4,6 +4,7 @@ import React from "react";
 
 import type { SceneObject } from "../../lib/sceneTypes";
 import { AnimatableObject, type AnimatableObjectProps } from "./AnimatableObject";
+import { isSceneObjectSelected } from "../../lib/scene/selectedSceneObjectRuntime";
 
 export type SceneObjectInstancePlan = Omit<
   AnimatableObjectProps,
@@ -19,6 +20,9 @@ export type SceneObjectInstancesProps = {
   layoutLabelOffsets?: Record<string, { y: number; opacity: number }>;
   showObjectDebugLabels?: boolean;
   showExecutiveLayoutLabels?: boolean;
+  selectedObjectId?: string | null;
+  connectedToSelectedIds?: ReadonlySet<string>;
+  relationshipExplorationActive?: boolean;
 };
 
 const loggedLayoutPassThroughSignatures = new Set<string>();
@@ -71,6 +75,9 @@ function SceneObjectInstancesComponent({
   layoutLabelOffsets,
   showObjectDebugLabels,
   showExecutiveLayoutLabels,
+  selectedObjectId = null,
+  connectedToSelectedIds,
+  relationshipExplorationActive = false,
 }: SceneObjectInstancesProps): React.ReactElement {
   logLayoutPassThroughOnce({
     stableObjects,
@@ -86,6 +93,13 @@ function SceneObjectInstancesComponent({
         if (!stableId) return null;
         const plan = instancePlansById.get(stableId);
         if (!plan) return null;
+        const objectKey = String(object.id ?? object.name ?? stableId);
+        const isSelected = isSceneObjectSelected(selectedObjectId, stableId, objectKey);
+        const connectedToSelected =
+          relationshipExplorationActive &&
+          (isSelected ||
+            connectedToSelectedIds?.has(stableId) ||
+            connectedToSelectedIds?.has(objectKey) === true);
         return (
           <AnimatableObject
             key={stableId}
@@ -93,6 +107,9 @@ function SceneObjectInstancesComponent({
             index={index}
             anim={animMap.get(object.id)}
             {...plan}
+            isSelected={isSelected}
+            connectedToSelected={connectedToSelected}
+            relationshipExplorationActive={relationshipExplorationActive}
             layoutPositions={layoutPositions}
             layoutLabelOffsets={layoutLabelOffsets}
             showObjectDebugLabels={showObjectDebugLabels}
@@ -117,7 +134,10 @@ function sceneObjectInstancesPropsEqual(
     prev.layoutPositions === next.layoutPositions &&
     prev.layoutLabelOffsets === next.layoutLabelOffsets &&
     prev.showObjectDebugLabels === next.showObjectDebugLabels &&
-    prev.showExecutiveLayoutLabels === next.showExecutiveLayoutLabels
+    prev.showExecutiveLayoutLabels === next.showExecutiveLayoutLabels &&
+    prev.selectedObjectId === next.selectedObjectId &&
+    prev.connectedToSelectedIds === next.connectedToSelectedIds &&
+    prev.relationshipExplorationActive === next.relationshipExplorationActive
   );
 }
 

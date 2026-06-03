@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef, useDeferredValue } from "react";
 import { createPortal } from "react-dom";
 import { chatToBackendLifecycle } from "../lib/api/chatApi";
 import {
@@ -22,6 +22,7 @@ import type { KPIState } from "../lib/api";
 import { analyzeFull } from "../lib/api/analyzeApi";
 import { postStrategicAnalysisText } from "../lib/api/client";
 import { SceneCanvas } from "../components/SceneCanvas";
+import { recordRightPanelWrite } from "../lib/diagnostics/connectionRuntimeStabilityAudit";
 import SourceControlPanel from "../components/panels/SourceControlPanel";
 import type { HUDTabKey } from "../components/HUDShell";
 import { diffSnapshots } from "../lib/decision/decisionDiff";
@@ -793,7 +794,18 @@ import {
 } from "../lib/runtime/runtimeChurnDiagnostics";
 import {
   areRightPanelStatesEquivalent,
+  areRightPanelCommitSignaturesEqual,
+  buildRightPanelSignatureFromState,
+  logRightPanelWriteSkipped,
 } from "../lib/runtime/rightPanelWriteGuard";
+import { markSelectionActivity } from "../lib/runtime/selectionBurstGuard";
+import {
+  markPanelSelectionWrite,
+  markSelectionCascade,
+  scheduleDebouncedHeavySelection,
+  shouldAllowPanelSelectionWrite,
+  shouldAllowSelectionCascade,
+} from "../lib/runtime/renderBudgetGuard";
 import { buildPanelStateSignatureFromState, shouldCommitPanelWrite } from "../lib/panels/panelStateSignature";
 import {
   buildAuthorityStateSignature,
@@ -1199,6 +1211,21 @@ function shouldEmitStableNexoraTrace(kind: "b2" | "b5" | "b7", signature: string
   return true;
 }
 
+function isObjectSelectionPanelView(view: string | null | undefined): boolean {
+  return view === "object" || view === "executive_object" || view === "object_focus";
+}
+
+function shouldSkipObjectPanelWriteBudget(
+  view: string | null | undefined,
+  contextId: string | null | undefined,
+  now = Date.now()
+): boolean {
+  if (!isObjectSelectionPanelView(view)) return false;
+  const normalized = typeof contextId === "string" ? contextId.trim() : "";
+  if (!normalized) return false;
+  return !shouldAllowPanelSelectionWrite(normalized, now);
+}
+
 function loadPrefsFromStorage(): ScenePrefs | null {
   if (typeof window === "undefined") return null;
   try {
@@ -1500,6 +1527,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [sceneJson, setSceneJson] = useState<SceneJson | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [selectedObjectIdState, _setSelectedObjectIdState] = useState<string | null>(null);
+  const deferredSelectedObjectId = useDeferredValue(selectedObjectIdState);
   const selectedObjectIdStateRef = useRef<string | null>(null);
   useLayoutEffect(() => {
     selectedObjectIdStateRef.current = selectedObjectIdState;
@@ -2616,6 +2644,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     reason: string | null;
   } | null>(null);
   const lastPanelWriteSourceRef = useRef<string | null>(null);
+  const lastCommittedPanelSignatureRef = useRef<string | null>(null);
   const dashboardBootstrapAttemptedRef = useRef(false);
   const stageRightPanelWriteMeta = useCallback(
     (meta: { writer: string; source?: string | null; reason?: string | null }) => {
@@ -2633,7 +2662,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const peekNext =
         typeof action === "function" ? (action as (p: RightPanelState) => RightPanelState)(prev) : action;
       const guardedNext = prev.view && !peekNext.view ? prev : peekNext;
+      const pendingMetaPeek = rightPanelWriteMetaRef.current;
+      const peekCommitSignature = buildRightPanelSignatureFromState(guardedNext, {
+        source: pendingMetaPeek?.source ?? lastPanelWriteSourceRef.current,
+        selectedObjectId: selectedObjectIdStateRef.current ?? null,
+      });
+      if (
+        lastCommittedPanelSignatureRef.current === peekCommitSignature &&
+        areRightPanelCommitSignaturesEqual(prev, guardedNext, {
+          source: pendingMetaPeek?.source ?? lastPanelWriteSourceRef.current,
+          selectedObjectId: selectedObjectIdStateRef.current ?? null,
+        })
+      ) {
+        if (process.env.NODE_ENV !== "production") {
+          logRightPanelWriteSkipped("duplicate-signature", peekCommitSignature);
+        }
+        rightPanelWriteMetaRef.current = null;
+        return;
+      }
+      if (
+        shouldSkipObjectPanelWriteBudget(guardedNext.view, guardedNext.contextId) &&
+        guardedNext.isOpen
+      ) {
+        if (process.env.NODE_ENV !== "production") {
+          logRightPanelWriteSkipped("selection-budget", peekCommitSignature);
+        }
+        rightPanelWriteMetaRef.current = null;
+        return;
+      }
       if (!shouldCommitPanelWrite(prev, guardedNext)) {
+        if (process.env.NODE_ENV !== "production") {
+          logRightPanelWriteSkipped("duplicate-signature", peekCommitSignature);
+        }
         rightPanelWriteMetaRef.current = null;
         return;
       }
@@ -2646,11 +2706,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           rightPanelWriteMetaRef.current = null;
           return prevState;
         }
-        if (areRightPanelStatesEquivalent(prevState, next)) {
+        const pendingMeta = rightPanelWriteMetaRef.current;
+        const commitExtras = {
+          source: pendingMeta?.source ?? lastPanelWriteSourceRef.current,
+          selectedObjectId: selectedObjectIdStateRef.current ?? null,
+        };
+        const nextCommitSignature = buildRightPanelSignatureFromState(next, commitExtras);
+        if (
+          areRightPanelCommitSignaturesEqual(prevState, next, commitExtras) ||
+          lastCommittedPanelSignatureRef.current === nextCommitSignature
+        ) {
+          if (process.env.NODE_ENV !== "production") {
+            logRightPanelWriteSkipped("duplicate-signature", nextCommitSignature);
+          }
           rightPanelWriteMetaRef.current = null;
           return prevState;
         }
-        const pendingMeta = rightPanelWriteMetaRef.current;
+        if (areRightPanelStatesEquivalent(prevState, next)) {
+          if (process.env.NODE_ENV !== "production") {
+            logRightPanelWriteSkipped("duplicate-signature", nextCommitSignature);
+          }
+          rightPanelWriteMetaRef.current = null;
+          return prevState;
+        }
+        lastCommittedPanelSignatureRef.current = nextCommitSignature;
+        if (isObjectSelectionPanelView(next.view) && next.contextId?.trim()) {
+          markPanelSelectionWrite(next.contextId.trim());
+        }
         if (process.env.NODE_ENV !== "production") {
           const panelSignature = buildPanelStateSignatureFromState(next);
           traceRuntimeRightPanel({
@@ -2672,6 +2754,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             signature: buildPanelStateSignatureFromState(next),
             source: pendingMeta?.writer ?? "HomeScreen.setRightPanelState",
           });
+          recordRightPanelWrite(pendingMeta?.writer ?? "HomeScreen.setRightPanelState");
           globalThis.console?.warn?.("[NEXORA_RIGHT_PANEL_WRITE]", {
             writer: pendingMeta?.writer ?? "HomeScreen.setRightPanelState",
             prevView: prevState.view ?? null,
@@ -2856,6 +2939,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             nextView: peekNext.view ?? null,
             contextId: peekNext.contextId ?? null,
           });
+        }
+        return;
+      }
+      if (shouldSkipObjectPanelWriteBudget(peekNext.view, peekNext.contextId) && peekNext.isOpen) {
+        if (process.env.NODE_ENV !== "production") {
+          logRightPanelWriteSkipped("selection-budget", buildPanelStateSignatureFromState(peekNext));
         }
         return;
       }
@@ -4049,12 +4138,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           return;
         }
       }
-      const panelSig = JSON.stringify({
-        view: decision.nextState.view ?? null,
-        contextId: decision.nextState.contextId ?? null,
+      const panelSig = buildRightPanelSignatureFromState(decision.nextState, {
+        source: rawSource,
+        selectedObjectId: selectedObjectIdStateRef.current ?? nextContextId,
       });
       if (lastUpstreamPanelCommitSigRef.current === panelSig) {
         if (process.env.NODE_ENV !== "production") {
+          logRightPanelWriteSkipped("duplicate-signature", panelSig);
           tracePanelWriteSkippedNoOp({
             writer: "HomeScreen.applyPanelControllerRequest",
             source: rawSource,
@@ -4093,6 +4183,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             nextView: decision.nextState.view ?? null,
             contextId: decision.nextState.contextId ?? null,
           });
+        }
+        rightPanelController.refs.lastPanelRequestSigRef.current = panelRequestDedupeKey;
+        return decision;
+      }
+      if (
+        shouldSkipObjectPanelWriteBudget(decision.nextState.view, decision.nextState.contextId) &&
+        decision.nextState.isOpen
+      ) {
+        if (process.env.NODE_ENV !== "production") {
+          logRightPanelWriteSkipped("selection-budget", panelSig);
         }
         rightPanelController.refs.lastPanelRequestSigRef.current = panelRequestDedupeKey;
         return decision;
@@ -4550,6 +4650,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         (rightPanelState.contextId ?? null) === (normalizedRequest.contextId ?? null)
       ) {
         return;
+      }
+      if (normalizedRequest.source === "object_click") {
+        const writeContextId =
+          (typeof normalizedRequest.contextId === "string" ? normalizedRequest.contextId.trim() : "") ||
+          (typeof selectedObjectIdState === "string" ? selectedObjectIdState.trim() : "") ||
+          null;
+        if (writeContextId && shouldSkipObjectPanelWriteBudget(normalizedView, writeContextId, rapidNow)) {
+          if (process.env.NODE_ENV !== "production") {
+            logRightPanelWriteSkipped("selection-budget", writeContextId);
+          }
+          rightPanelController.refs.lastOpenIntentRef.current = openIntentSig;
+          return;
+        }
       }
       const normalizedAuthoritySource = normalizePanelSource(normalizedRequest.source);
       if (normalizedAuthoritySource === "system_fallback") {
@@ -7728,11 +7841,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       null
     );
   }, [selectedObjectIdState, visibleObjectSelection]);
+  const heavyExecutiveObjectId = useMemo(() => {
+    const deferred = String(deferredSelectedObjectId ?? "").trim();
+    if (deferred) return deferred;
+    return liveExecutiveObjectId;
+  }, [deferredSelectedObjectId, liveExecutiveObjectId]);
   const activeExecutiveObjectId = useMemo(() => {
-    return liveExecutiveObjectId || String(rightPanelState.contextId ?? "").trim() || null;
-  }, [liveExecutiveObjectId, rightPanelState.contextId]);
+    return heavyExecutiveObjectId || String(rightPanelState.contextId ?? "").trim() || null;
+  }, [heavyExecutiveObjectId, rightPanelState.contextId]);
   const executiveObjectPanelData = useMemo(() => {
-    if (!activeExecutiveObjectId) return null;
+    const objectPanelActive =
+      rightPanelState.isOpen &&
+      (rightPanelState.view === "executive_object" ||
+        rightPanelState.view === "object" ||
+        rightPanelState.view === "object_focus");
+    if (!objectPanelActive || !activeExecutiveObjectId) return null;
     const reco = buildCanonicalRecommendation(visibleResponseData ?? visibleSceneJson ?? null);
     return buildExecutiveObjectPanelData({
       objectId: activeExecutiveObjectId,
@@ -7743,7 +7866,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       canonicalRecommendation: reco,
     });
   }, [
-    liveExecutiveObjectId,
+    activeExecutiveObjectId,
+    rightPanelState.isOpen,
+    rightPanelState.view,
     visibleResponseData,
     visibleSceneJson,
     visibleRiskPropagation,
@@ -9678,6 +9803,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         return;
       }
       markUserStartedFlow("object_click");
+      markSelectionActivity();
 
       const clickSig = buildSelectionSignature({
         focusedId: id,
@@ -9686,15 +9812,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       });
       const prevClickSig = lastSelectionSignatureRef.current;
       traceNexoraSelectionGuard(clickSig, prevClickSig, "scene");
+      if (id === selectedObjectIdState) {
+        const objectPanelOpen =
+          rightPanelState.isOpen &&
+          (rightPanelState.contextId === id ||
+            rightPanelState.view === "object" ||
+            rightPanelState.view === "executive_object" ||
+            rightPanelState.view === "object_focus");
+        if (objectPanelOpen && clickSig === prevClickSig) {
+          if (process.env.NODE_ENV !== "production") {
+            devLogOnSignatureChange(
+              "[NEXORA_SELECTION_WRITE_SKIPPED]",
+              `${id}::same-object-same-intent`,
+              { reason: "same-object-same-intent", objectId: id },
+              "debug"
+            );
+          }
+          return;
+        }
+      }
       if (clickSig === prevClickSig) {
         return;
       }
       lastSelectionSignatureRef.current = clickSig;
-      dispatchInteraction({
-        type: "select_object",
-        source: "scene",
-        payload: { objectId: id },
-      });
+
+      const previousSelectedId = selectedObjectIdStateRef.current;
+      _setSelectedObjectIdState((prevState) => (prevState === id ? prevState : id));
+      selectedSetterRef.current?.(id);
       selectPlacedObject(id);
       selectRelationship(null);
       setSelectedRelationshipId(null);
@@ -9723,6 +9867,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       const nextInfo = resolveSelectedObjectDetails(id);
       setSelectedObjectInfo(nextInfo);
+
+      scheduleDebouncedHeavySelection(id, (finalId) => {
+        if (
+          !shouldAllowSelectionCascade({
+            selectedObjectId: finalId,
+            previousSelectedObjectId: previousSelectedId,
+          })
+        ) {
+          return;
+        }
+        markSelectionCascade({ selectedObjectId: finalId, reason: "object_click_heavy" });
+        recordInteractionIntent({
+          type: "select_object",
+          source: "scene",
+          payload: { objectId: finalId },
+        });
+        requestPanelAuthorityOpen({
+          source: "object_click",
+          family: "SCN",
+          view: "object",
+          contextId: finalId,
+          reason: "selection_budget_deferred",
+          forceOpen: true,
+        });
+      });
     },
     [
       focusPinned,
@@ -9730,7 +9899,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       flashSelectHighlight,
       applyPinToStore,
       clearFocusOwnership,
-      dispatchInteraction,
+      recordInteractionIntent,
+      requestPanelAuthorityOpen,
       resolveSelectedObjectDetails,
       markUserStartedFlow,
       selectionLocked,
@@ -9738,9 +9908,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       selectedObjectIdState,
       visibleObjectSelection,
       claimFocusOwnership,
-      updateSelectedObjectInfo,
       setFocusedId,
       setViewMode,
+      rightPanelState.contextId,
+      rightPanelState.isOpen,
+      rightPanelState.view,
     ]
   );
   useEffect(() => {
@@ -17362,6 +17534,55 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const handleObjectInfoCreateRelationship = useCallback(() => {
     handleOpenExecutiveRelationshipBuilder("object_info_hud");
   }, [handleOpenExecutiveRelationshipBuilder]);
+  const handleScenePointerMissed = useCallback(() => {
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Nexora][SceneInteraction] empty click ignored", {
+        action: "soft_deselect_without_camera_reset",
+      });
+    }
+    setViewMode("hidden");
+  }, [setViewMode]);
+  const handleSceneOrbitStart = useCallback(() => {
+    setIsOrbiting(true);
+    if (prefs.orbitMode === "manual") setCameraLockedByUser(true);
+  }, [prefs.orbitMode, setCameraLockedByUser]);
+  const handleSceneOrbitEnd = useCallback(() => {
+    setIsOrbiting(false);
+  }, []);
+  const sceneObjectInfoHudProps = useMemo(() => {
+    if (
+      !workspaceLayoutContract.hud.objectInfoHud.visible ||
+      !executiveObjectInfoHud ||
+      !shouldRenderSceneOverlay("objectInfoHud", sceneOverlayGovernanceContext)
+    ) {
+      return null;
+    }
+    return {
+      model: executiveObjectInfoHud,
+      sceneJson: stableSceneJsonDuringPanelValidation,
+      onCreateRelationship: handleObjectInfoCreateRelationship,
+      onDeleteRelationship: handleDeleteSelectedRelationship,
+      onCreateImpactPath: handleOpenPropagationBuilder,
+      onEditPropagationPath: handleEditPropagationPath,
+      onDeletePropagationPath: handleDeletePropagationPath,
+      onEditObject: handleObjectEdit,
+      onDuplicateObject: handleDuplicateObject,
+      onDeleteObject: handleDeleteObject,
+    };
+  }, [
+    executiveObjectInfoHud,
+    handleDeleteObject,
+    handleDeletePropagationPath,
+    handleDeleteSelectedRelationship,
+    handleDuplicateObject,
+    handleEditPropagationPath,
+    handleObjectEdit,
+    handleObjectInfoCreateRelationship,
+    handleOpenPropagationBuilder,
+    sceneOverlayGovernanceContext,
+    stableSceneJsonDuringPanelValidation,
+    workspaceLayoutContract.hud.objectInfoHud.visible,
+  ]);
   const executiveTimelineHud = useMemo(() => {
     if (showExecutiveScenePanelDock) return null;
     const reco = buildCanonicalRecommendation(visibleResponseData ?? visibleSceneJson ?? null);
@@ -17371,6 +17592,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       decisionResult,
     });
   }, [decisionResult, showExecutiveScenePanelDock, visibleResponseData, visibleSceneJson]);
+  const sceneInfoHudProp = useMemo(
+    () => (workspaceLayoutContract.hud.sceneInfoHud.visible ? executiveSceneInfoHud : undefined),
+    [executiveSceneInfoHud, workspaceLayoutContract.hud.sceneInfoHud.visible]
+  );
+  const timelineHudProp = useMemo(
+    () => (workspaceLayoutContract.hud.timelineHud.visible ? executiveTimelineHud : undefined),
+    [executiveTimelineHud, workspaceLayoutContract.hud.timelineHud.visible]
+  );
+  const executiveStatusHudProp = useMemo(() => {
+    if (!workspaceLayoutContract.hud.executiveStatusHud.visible) return null;
+    if (!isPanelVisible("executiveStatusHud")) return null;
+    if (!shouldRenderSceneOverlay("executiveStatusHud", sceneOverlayGovernanceContext)) return null;
+    return executiveStatusHudModel;
+  }, [
+    executiveStatusHudModel,
+    isPanelVisible,
+    sceneOverlayGovernanceContext,
+    workspaceLayoutContract.hud.executiveStatusHud.visible,
+  ]);
+  const sceneNavigationToolbarVisible = !showExecutiveScenePanelDock;
   const showExecutiveQuickActionsDock = shouldShowExecutiveQuickActionsDock();
   const hasExecutiveObjectSelection = Boolean(
     String(selectedObjectIdState ?? focusedId ?? "").trim()
@@ -17724,7 +17965,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           objectSelection={effectiveObjectSelection}
           getUxForObject={getUxForObject}
           objectUxById={objectUxById}
-          selectedObjectId={interactionUiState.selectedObjectId}
+          selectedObjectId={selectedObjectIdState}
           loops={visibleLoops}
           showLoops={showLoops}
           showLoopLabels={showLoopLabels}
@@ -17734,19 +17975,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           setOverrideRef={setOverrideRef}
           clearAllOverridesRef={clearAllOverridesRef}
           pruneOverridesRef={pruneOverridesRef}
-          onPointerMissed={() => {
-            if (process.env.NODE_ENV !== "production") {
-              console.log("[Nexora][SceneInteraction] empty click ignored", {
-                action: "soft_deselect_without_camera_reset",
-              });
-            }
-            setViewMode("hidden");
-          }}
-          onOrbitStart={() => {
-            setIsOrbiting(true);
-            if (prefs.orbitMode === "manual") setCameraLockedByUser(true);
-          }}
-          onOrbitEnd={() => setIsOrbiting(false)}
+          onPointerMissed={handleScenePointerMissed}
+          onOrbitStart={handleSceneOrbitStart}
+          onOrbitEnd={handleSceneOrbitEnd}
           onSelectedChange={handleSelectedChange}
           onObjectPositionChange={handleSceneObjectPositionChange}
           selectedRelationshipId={selectedRelationshipId}
@@ -17754,40 +17985,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           selectedPropagationPathId={selectedPropagationPathId}
           onPropagationPathSelect={handlePropagationPathSelect}
           onCreateImpactPath={handleOpenPropagationBuilder}
-          sceneInfoHud={workspaceLayoutContract.hud.sceneInfoHud.visible ? executiveSceneInfoHud : undefined}
-          objectInfoHud={
-            workspaceLayoutContract.hud.objectInfoHud.visible &&
-            executiveObjectInfoHud &&
-            shouldRenderSceneOverlay("objectInfoHud", sceneOverlayGovernanceContext)
-              ? {
-                  model: executiveObjectInfoHud,
-                  sceneJson: stableSceneJsonDuringPanelValidation,
-                  onCreateRelationship: handleObjectInfoCreateRelationship,
-                  onDeleteRelationship: handleDeleteSelectedRelationship,
-                  onCreateImpactPath: handleOpenPropagationBuilder,
-                  onEditPropagationPath: handleEditPropagationPath,
-                  onDeletePropagationPath: handleDeletePropagationPath,
-                  onEditObject: handleObjectEdit,
-                  onDuplicateObject: handleDuplicateObject,
-                  onDeleteObject: handleDeleteObject,
-                }
-              : null
-          }
-          timelineHud={workspaceLayoutContract.hud.timelineHud.visible ? executiveTimelineHud : undefined}
+          sceneInfoHud={sceneInfoHudProp}
+          objectInfoHud={sceneObjectInfoHudProps}
+          timelineHud={timelineHudProp}
           scenarioSimulation={activeSimulation}
           onScenarioLayerSelect={handleScenarioLayerSelect}
           onWarRoomCommand={handleWarRoomCommand}
           quickActionsDock={executiveQuickActionsDock}
-          executiveStatusHud={
-            workspaceLayoutContract.hud.executiveStatusHud.visible &&
-            isPanelVisible("executiveStatusHud") &&
-            shouldRenderSceneOverlay("executiveStatusHud", sceneOverlayGovernanceContext)
-              ? executiveStatusHudModel
-              : null
-          }
+          executiveStatusHud={executiveStatusHudProp}
           hudThemeMode={resolvedTheme}
-          sceneNavigationToolbar={!showExecutiveScenePanelDock}
-          cameraToolbar={!showExecutiveScenePanelDock}
+          sceneNavigationToolbar={sceneNavigationToolbarVisible}
+          cameraToolbar={sceneNavigationToolbarVisible}
         />
       </ExecutiveSceneCanvasShell>
 

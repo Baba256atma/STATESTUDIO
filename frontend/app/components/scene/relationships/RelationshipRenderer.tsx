@@ -14,6 +14,7 @@ import {
 import type { NexoraRelationship } from "../../../lib/relationships/relationshipTypes";
 import type { SceneThemeId } from "../../../lib/theme/sceneThemeTypes";
 import { RelationshipLine } from "./RelationshipLine";
+import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type RelationshipRendererProps = {
   sceneJson: unknown;
@@ -23,6 +24,7 @@ export type RelationshipRendererProps = {
   selectedRelationshipId?: string | null;
   emphasizedRelationshipIds?: readonly string[];
   onRelationshipSelect?: (relationship: NexoraRelationship) => void;
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
 };
 
 /** E2:25 + E2:47 — Executive relationship rendering layer. */
@@ -85,6 +87,7 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
             selected={relationship.id === props.selectedRelationshipId}
             emphasized={twinStressed || renderPlan?.emphasis !== "BACKGROUND"}
             onSelect={props.onRelationshipSelect}
+            runtimeObjectPositionContext={props.runtimeObjectPositionContext}
           />
         );
       })}

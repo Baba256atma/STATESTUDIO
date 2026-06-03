@@ -6,6 +6,7 @@ import type { PropagationOverlayState } from "../../../lib/simulation/propagatio
 import { logRiskFlowOverlayRendered } from "../../../lib/overlay/overlayInstrumentation";
 import type { OverlayThemeTokens } from "../../../lib/overlay/overlayTheme";
 import { OverlayFlowLines, overlayThemeToFlowProps } from "./OverlayFlowLines";
+import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type RiskFlowOverlayProps = {
   objects: any[];
@@ -14,6 +15,7 @@ export type RiskFlowOverlayProps = {
   riskSources?: string[] | null;
   riskTargets?: string[] | null;
   propagation?: PropagationOverlayState | null;
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
 };
 
 export const RiskFlowOverlay = React.memo(function RiskFlowOverlay(
@@ -54,7 +56,14 @@ export const RiskFlowOverlay = React.memo(function RiskFlowOverlay(
 
   return (
     <group data-nx-overlay="risk-flow">
-      <OverlayFlowLines objects={props.objects} edges={edges} animated yOffset={0.12} {...flowProps} />
+      <OverlayFlowLines
+        objects={props.objects}
+        edges={edges}
+        animated
+        yOffset={0.12}
+        runtimeObjectPositionContext={props.runtimeObjectPositionContext}
+        {...flowProps}
+      />
     </group>
   );
 });

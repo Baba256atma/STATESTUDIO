@@ -7,12 +7,14 @@ import { decisionPathOverlayToEdges } from "../../../lib/overlay/mergePropagatio
 import { logScenarioOverlayRendered } from "../../../lib/overlay/overlayInstrumentation";
 import type { OverlayThemeTokens } from "../../../lib/overlay/overlayTheme";
 import { OverlayFlowLines, overlayThemeToFlowProps } from "./OverlayFlowLines";
+import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type ScenarioOverlayProps = {
   objects: any[];
   overlay: DecisionPathOverlayState | null | undefined;
   visible: boolean;
   themeTokens: OverlayThemeTokens;
+  runtimeObjectPositionContext?: RuntimeObjectPositionContext;
 };
 
 export const ScenarioOverlay = React.memo(function ScenarioOverlay(
@@ -34,7 +36,14 @@ export const ScenarioOverlay = React.memo(function ScenarioOverlay(
 
   return (
     <group data-nx-overlay="scenario">
-      <OverlayFlowLines objects={props.objects} edges={edges} animated yOffset={0.14} {...flowProps} />
+      <OverlayFlowLines
+        objects={props.objects}
+        edges={edges}
+        animated
+        yOffset={0.14}
+        runtimeObjectPositionContext={props.runtimeObjectPositionContext}
+        {...flowProps}
+      />
     </group>
   );
 });

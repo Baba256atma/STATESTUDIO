@@ -76,3 +76,22 @@ export function buildSceneActivityDriftSignature(input: {
     selectedPropagationPathId: input.selectedPropagationPathId ?? null,
   });
 }
+
+/** Layout-only drift signature — excludes selection-only changes. */
+export function buildSceneLayoutDriftSignature(input: { objectCount: number }): string {
+  return JSON.stringify({
+    objectCount: input.objectCount,
+  });
+}
+
+export function buildSceneInteractionDriftSignature(input: {
+  selectedObjectId?: string | null;
+  selectedRelationshipId?: string | null;
+  selectedPropagationPathId?: string | null;
+}): string {
+  return JSON.stringify({
+    selectedObjectId: input.selectedObjectId ?? null,
+    selectedRelationshipId: input.selectedRelationshipId ?? null,
+    selectedPropagationPathId: input.selectedPropagationPathId ?? null,
+  });
+}

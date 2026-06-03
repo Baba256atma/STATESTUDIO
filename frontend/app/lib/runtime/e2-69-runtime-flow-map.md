@@ -26,3 +26,4 @@ PanelContractSalvaged
 3. **HUD drift** — `lastDriftSignatureRef` suppresses identical drift; baseline updates only when converged.
 4. **Scene parity** — silent return on unchanged signature (no diagnostic churn).
 5. **Cycle detector** — `runtimeCycleDetector.ts` emits `[Nexora][CycleDetected]` if sequence repeats 4+ times in 2s.
+6. **Selection hotfix** — `buildRightPanelSignature` dedupes duplicate panel commits; `selectionBurstGuard` suppresses HUD drift during 350ms selection bursts; `buildSceneLayoutDriftSignature` excludes selection-only changes from layout drift triggers.

@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { Html, Line, useCursor } from "@react-three/drei";
 
 import type { SceneObject } from "../../lib/sceneTypes";
-import { useStateVector, useSetSelectedId, useOverrides, useSelectedId } from "../SceneContext";
+import { useStateVector, useSetSelectedId, useOverrides } from "../SceneContext";
 import { clamp } from "../../lib/sizeCommands";
 import { normalizeExecutiveObjectScale } from "../../lib/scene/executiveSceneComposition";
 import { isZoneLikeExecutiveObject } from "../../lib/scene/objectScaling/executiveTypeCScaleClamp";
@@ -84,6 +84,7 @@ import {
   resolveObjectNameRenderingProfile,
 } from "../../lib/scene/objectNameRenderingProfile";
 import { resolveExecutiveObjectSelectionHighlight } from "../../lib/scene/executiveObjectSelectionHighlight";
+import { sanitizeThreeColor } from "../../lib/scene/threeColorSanitizer";
 import { resolveExecutiveHoverAffordance } from "../../lib/scene/interaction/executiveRelationshipExplorationRuntime";
 import {
   focusExecutiveObjectFromInteraction,
@@ -307,6 +308,7 @@ export type AnimatableObjectProps = {
   layoutPositions?: Record<string, [number, number, number]>;
   layoutLabelOffsets?: Record<string, { y: number; opacity: number }>;
   connectedToSelected?: boolean;
+  isSelected?: boolean;
   relationshipExplorationActive?: boolean;
   onObjectPositionChange?: (
     objectId: string,
@@ -366,6 +368,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   layoutPositions,
   layoutLabelOffsets,
   connectedToSelected = false,
+  isSelected = false,
   relationshipExplorationActive = false,
   onObjectPositionChange,
 }: AnimatableObjectProps) {
@@ -495,22 +498,20 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const finalRotation = overrideEntry.rotation ?? (transform as any).rot ?? [0, 0, 0];
   const finalColorOverride = overrideEntry.color;
   const finalVisible = overrideEntry.visible ?? true;
-  const selectedIdCtx = useSelectedId();
   const workspaceViewMode = useSyncExternalStore(
     subscribeWorkspaceViewMode,
     getWorkspaceViewMode,
     getWorkspaceViewModeServerSnapshot
   );
-  const isSelected = selectedIdCtx === stableIdWithName || selectedIdCtx === stableId;
   const executiveFocus = useMemo(
     () =>
       resolveExecutiveFocusWorkspaceState({
         objectId: stableIdWithName,
-        selectedObjectId: selectedIdCtx,
+        selectedObjectId: isSelected ? stableIdWithName : null,
         focusedObjectId: focusedId,
         relatedObjectIds: neighborIds,
       }),
-    [focusedId, neighborIds, selectedIdCtx, stableIdWithName]
+    [focusedId, isSelected, neighborIds, stableIdWithName]
   );
   const adaptiveLabel = useMemo(
     () =>
@@ -905,21 +906,21 @@ export const AnimatableObject = React.memo(function AnimatableObject({
 
   const color = useMemo(() => {
     const materialColor = material.color ?? ux?.base_color ?? "#cccccc";
-    if (materialColor !== "auto") return materialColor;
+    if (materialColor !== "auto") return sanitizeThreeColor(materialColor, "#cccccc");
     return computeAutoColor(tags, stateVector);
   }, [material.color, tags, stateVector, ux?.base_color]);
 
   const appliedColor = useMemo(() => {
-    const base = finalColorOverride ?? color;
+    const base = sanitizeThreeColor(finalColorOverride ?? color, "#cccccc");
     const resolved = new THREE.Color(base);
     if (visualRole === "risk") {
-      resolved.lerp(new THREE.Color(tokens.design.colors.pressure), 0.16);
+      resolved.lerp(new THREE.Color(sanitizeThreeColor(tokens.design.colors.pressure, "#ef4444")), 0.16);
     } else if (visualRole === "core") {
       resolved.multiplyScalar(theme === "day" ? 1.05 : 1.08);
     } else if (visualRole === "background") {
       resolved.multiplyScalar(theme === "day" ? 0.82 : 0.72);
     } else if (visualRole === "strategic") {
-      resolved.lerp(new THREE.Color(tokens.design.colors.strategic), 0.1);
+      resolved.lerp(new THREE.Color(sanitizeThreeColor(tokens.design.colors.strategic, "#8b5cf6")), 0.1);
     }
     if (
       scannerPolicy.colorMode === "scanner_primary" ||
@@ -976,7 +977,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     setHoveredId?.(null);
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
-    if (selectedIdCtx === stableIdWithName || selectedIdCtx === stableId) {
+    if (isSelected) {
       return;
     }
     setSelectedId(stableIdWithName);
@@ -1013,7 +1014,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     if (event.button != null && event.button !== 0) return;
     setHovered(false);
     setHoveredId?.(null);
-    if (selectedIdCtx !== stableIdWithName && selectedIdCtx !== stableId) {
+    if (!isSelected) {
       setSelectedId(stableIdWithName);
     }
     const y = finalPosition[1] ?? 0;
@@ -1860,8 +1861,8 @@ export const AnimatableObject = React.memo(function AnimatableObject({
           >
             <torusGeometry args={[0.88, 0.05, 14, 40]} />
             <meshStandardMaterial
-              color={scannerColor}
-              emissive={scannerColor}
+              color={sanitizeThreeColor(scannerColor)}
+              emissive={sanitizeThreeColor(scannerColor)}
               emissiveIntensity={scannerFocused ? 1.14 : 0.8}
               transparent
               opacity={scannerFocused ? 0.38 : 0.24}
@@ -1897,8 +1898,8 @@ export const AnimatableObject = React.memo(function AnimatableObject({
           >
             <torusGeometry args={[0.86, 0.035, 14, 48]} />
             <meshStandardMaterial
-              color={tokens.design.colors.accent}
-              emissive={tokens.design.colors.accent}
+              color={sanitizeThreeColor(tokens.design.colors.accent)}
+              emissive={sanitizeThreeColor(tokens.design.colors.accent)}
               emissiveIntensity={tokens.interaction.selectionGlow * selectionHighlight.outlineStrength}
               transparent
               opacity={selectionHighlight.ringOpacity}

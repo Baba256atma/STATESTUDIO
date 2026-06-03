@@ -1,4 +1,8 @@
 import { devLogOnSignatureChange, devLogOncePermanent } from "../runtime/diagnosticIdleGate";
+import {
+  recordListenerAdded,
+  recordListenerRemoved,
+} from "../diagnostics/connectionRuntimeStabilityAudit";
 
 export type DomListenerMeta = {
   component: string;
@@ -45,7 +49,10 @@ export function attachDomListener(
     return false;
   }
   target.addEventListener(type, listener, options);
-  if (meta) logDomListenerAttached(meta);
+  if (meta) {
+    recordListenerAdded(type, meta.component);
+    logDomListenerAttached(meta);
+  }
   return true;
 }
 
@@ -58,7 +65,10 @@ export function detachDomListener(
 ): void {
   if (!target) return;
   target.removeEventListener(type, listener, options);
-  if (meta) logDomListenerRemoved(meta);
+  if (meta) {
+    recordListenerRemoved(type, meta.component);
+    logDomListenerRemoved(meta);
+  }
 }
 
 export function bindWindowListener(
@@ -108,9 +118,15 @@ export function bindMediaQueryListener(
     return () => detachDomListener(mq, "change", listener as EventListener, undefined, meta);
   }
   mq.addListener(listener);
-  if (meta) logDomListenerAttached(meta);
+  if (meta) {
+    recordListenerAdded("change", meta.component);
+    logDomListenerAttached(meta);
+  }
   return () => {
     mq.removeListener(listener);
-    if (meta) logDomListenerRemoved(meta);
+    if (meta) {
+      recordListenerRemoved("change", meta.component);
+      logDomListenerRemoved(meta);
+    }
   };
 }
