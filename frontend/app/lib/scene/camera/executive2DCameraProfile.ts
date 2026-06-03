@@ -42,7 +42,7 @@ export function resolveExecutive2DCameraFrame(
   return resolveExecutive2DOrthographicFrame(bounds, 1440, 900, radius);
 }
 
-/** True orthographic strategic map framing — fits operational footprint without perspective shrink. */
+/** True orthographic strategic map framing — fits operational topology, not largest mesh. */
 export function resolveExecutive2DOrthographicFrame(
   bounds: ExecutiveCameraBounds,
   viewportWidth: number,
@@ -50,15 +50,16 @@ export function resolveExecutive2DOrthographicFrame(
   framingRadius?: number
 ): Executive2DOrthographicFrame {
   const [cx, cy, cz] = bounds.center;
-  const span = Math.max(bounds.size[0], bounds.size[2], 0.75);
-  const densityBoost = span <= 6 ? 0.72 : span <= 14 ? 0.82 : span <= 28 ? 0.9 : 1;
-  const orthoSize = Math.max(2.4, span * densityBoost * 0.56);
+  const groundSpan = Math.max(bounds.size[0], bounds.size[2], 0.75);
+  const densityBoost =
+    groundSpan <= 8 ? 0.88 : groundSpan <= 16 ? 0.94 : groundSpan <= 28 ? 1 : 1.06;
+  const orthoSize = Math.max(3.2, groundSpan * densityBoost * 0.54);
   const aspect = Math.max(0.75, viewportWidth / Math.max(1, viewportHeight));
   const fitZoom = Math.max(
-    8,
-    Math.min(160, ((Math.max(viewportHeight, 640) / 720) * 42) / orthoSize)
+    10,
+    Math.min(180, ((Math.max(viewportHeight, 640) / 720) * 48) / orthoSize)
   );
-  const radius = Math.max(framingRadius ?? computeExecutiveFramingRadius(bounds), span * 0.5);
+  const radius = Math.max(framingRadius ?? computeExecutiveFramingRadius(bounds, "2D"), groundSpan * 0.46);
   const topDown = buildExecutive2DCameraFrame([cx, cy, cz], radius);
 
   return {

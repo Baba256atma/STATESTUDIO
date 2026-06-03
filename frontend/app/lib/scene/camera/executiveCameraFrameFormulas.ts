@@ -21,12 +21,25 @@ export const EXECUTIVE_3D_CAMERA_OFFSET = Object.freeze({
   z: 1.15,
 });
 export const EXECUTIVE_FRAME_ALL_PADDING = 1.18;
+/** P4 — Tighter 3D framing so operational nodes occupy more viewport. */
+export const EXECUTIVE_3D_FRAME_PADDING = 1.1;
+/** P4 — Final radius multiplier for command-center proximity without clipping. */
+export const EXECUTIVE_3D_FRAMING_PULLBACK = 0.94;
 
-export function computeExecutiveFramingRadius(bounds: ExecutiveCameraBounds): number {
+export function computeExecutiveFramingRadius(
+  bounds: ExecutiveCameraBounds,
+  mode: WorkspaceViewMode = "3D"
+): number {
+  const padding = mode === "3D" ? EXECUTIVE_3D_FRAME_PADDING : EXECUTIVE_FRAME_ALL_PADDING;
   return (
     Math.max(bounds.size[0] / 2, bounds.size[1] / 2, bounds.size[2] / 2, 2.5) *
-    EXECUTIVE_FRAME_ALL_PADDING
+    padding
   );
+}
+
+export function applyExecutive3DFramingPullback(radius: number): number {
+  if (!Number.isFinite(radius)) return radius;
+  return radius * EXECUTIVE_3D_FRAMING_PULLBACK;
 }
 
 export function buildExecutive3DCameraFrame(

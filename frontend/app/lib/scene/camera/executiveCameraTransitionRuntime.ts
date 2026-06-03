@@ -116,3 +116,32 @@ export function shouldApplyExecutiveCameraTransition(
 export function resetExecutiveCameraTransitionGuardForTests(): void {
   lastAppliedTransitionSignature.clear();
 }
+
+export function applyExecutiveCameraFrameImmediate(
+  camera: THREE.Camera,
+  controls: { target?: THREE.Vector3; update?: () => void } | null | undefined,
+  frame: {
+    position: [number, number, number];
+    lookAt: [number, number, number];
+    operationalCenter: [number, number, number];
+    fov: number;
+    zoom: number;
+    projection: "perspective" | "orthographic";
+  }
+): void {
+  camera.position.set(frame.position[0], frame.position[1], frame.position[2]);
+  const target = new THREE.Vector3(frame.operationalCenter[0], frame.operationalCenter[1], frame.operationalCenter[2]);
+  if (controls?.target instanceof THREE.Vector3) {
+    controls.target.copy(target);
+    controls.update?.();
+  } else {
+    camera.lookAt(frame.lookAt[0], frame.lookAt[1], frame.lookAt[2]);
+  }
+  if (frame.projection === "orthographic" && camera instanceof THREE.OrthographicCamera) {
+    camera.zoom = frame.zoom;
+  }
+  if (frame.projection === "perspective" && camera instanceof THREE.PerspectiveCamera) {
+    camera.fov = frame.fov;
+  }
+  (camera as THREE.PerspectiveCamera | THREE.OrthographicCamera).updateProjectionMatrix();
+}

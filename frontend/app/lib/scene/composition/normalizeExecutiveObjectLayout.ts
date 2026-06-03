@@ -7,6 +7,15 @@ import type { Vector3Tuple } from "../../sceneTypes";
 import { computeScaleAwareSceneBounds, fitCameraToSceneObjects } from "../camera/fitCameraToSceneObjects";
 import type { ExecutiveCameraBounds } from "../camera/executive2DCameraProfile";
 import type { WorkspaceViewMode } from "../../workspace/workspaceViewModeTypes";
+import { assignExecutiveTemplatePositions } from "./executiveLayoutTemplateSlots";
+import type { ExecutiveLayoutTemplateId } from "./executiveLayoutTemplateTypes";
+import {
+  buildExecutiveLayoutObjectRoleProfiles,
+  collectExecutiveObjectSemanticTokens,
+  logExecutiveLayoutTemplateResolvedOnce,
+  resetExecutiveLayoutTemplateLogsForTests,
+  resolveExecutiveLayoutTemplate,
+} from "./resolveExecutiveLayoutTemplate";
 
 export const EXECUTIVE_LAYOUT_MIN_DISTANCE = 1.8;
 
@@ -23,11 +32,14 @@ export type NormalizeExecutiveObjectLayoutOptions = {
   viewportMode?: WorkspaceViewMode;
   viewportWidth?: number;
   viewportHeight?: number;
+  domainId?: string | null;
+  scenePurpose?: string | null;
 };
 
 export type ExecutiveLayoutNormalizedResult = {
   positions: Record<string, Vector3Tuple>;
   layoutPreset: string;
+  layoutTemplateId: ExecutiveLayoutTemplateId;
   bounds: ExecutiveCameraBounds;
   objectCount: number;
   visibleCount: number;
@@ -43,6 +55,7 @@ type LayoutObject = {
   label: string;
   role: ExecutiveObjectLayoutRole;
   rawPosition: Vector3Tuple;
+  tokens: string[];
 };
 
 const layoutCache = new Map<string, ExecutiveLayoutNormalizedResult>();
@@ -140,146 +153,6 @@ function countOverlaps(positions: Vector3Tuple[], minDistance: number): number {
   return overlaps;
 }
 
-function pushApart(positions: Vector3Tuple[], minDistance: number, iterations = 8): Vector3Tuple[] {
-  const next = positions.map((pos) => [...pos] as Vector3Tuple);
-  for (let pass = 0; pass < iterations; pass += 1) {
-    for (let i = 0; i < next.length; i += 1) {
-      for (let j = i + 1; j < next.length; j += 1) {
-        const dist = distance3(next[i], next[j]);
-        if (dist >= minDistance || dist <= 1e-6) continue;
-        const push = (minDistance - dist) / 2;
-        const dx = (next[j][0] - next[i][0]) / dist;
-        const dz = (next[j][2] - next[i][2]) / dist;
-        next[i][0] -= dx * push;
-        next[i][1] = 0;
-        next[i][2] -= dz * push;
-        next[j][0] += dx * push;
-        next[j][1] = 0;
-        next[j][2] += dz * push;
-      }
-    }
-  }
-  return next.map(([x, y, z]) => [Number(x.toFixed(3)), Number(y.toFixed(3)), Number(z.toFixed(3))]);
-}
-
-function roleSortWeight(role: ExecutiveObjectLayoutRole): number {
-  switch (role) {
-    case "center":
-      return 0;
-    case "flow":
-      return 1;
-    case "risk":
-      return 2;
-    case "outcome":
-      return 3;
-    default:
-      return 4;
-  }
-}
-
-function buildExecutiveSlotMap(count: number): Record<ExecutiveObjectLayoutRole, Vector3Tuple[]> {
-  if (count >= 6 && count <= 12) {
-    // Executive operational layout is ground-plane based:
-    // X = horizontal, Y = elevation, Z = depth.
-    // Base object placement must keep Y = 0.
-    return {
-      center: [[0, 0, 0]],
-      flow: [
-        [-4.2, 0, 2.4],
-        [-1.4, 0, 2.4],
-        [1.4, 0, 2.4],
-        [4.2, 0, 2.4],
-        [-4.2, 0, -2.4],
-        [-1.4, 0, -2.4],
-      ],
-      risk: [
-        [-2.8, 0, 0],
-        [0, 0, -0.8],
-        [2.8, 0, 0],
-      ],
-      outcome: [
-        [1.4, 0, -2.4],
-        [4.2, 0, -2.4],
-        [0, 0, -2.4],
-      ],
-      other: [
-        [-2.8, 0, -1.2],
-        [2.8, 0, -1.2],
-        [0, 0, 1.2],
-      ],
-    };
-  }
-
-  const cols = Math.max(3, Math.ceil(Math.sqrt(count)));
-  const spacing = EXECUTIVE_LAYOUT_MIN_DISTANCE + 0.2;
-  const gridSlots: Vector3Tuple[] = [];
-  for (let index = 0; index < count; index += 1) {
-    const col = index % cols;
-    const row = Math.floor(index / cols);
-    gridSlots.push([
-      (col - (cols - 1) / 2) * spacing,
-      0,
-      (row - Math.floor((count - 1) / cols) / 2) * spacing,
-    ]);
-  }
-  return {
-    center: [gridSlots[0] ?? [0, 0, 0]],
-    flow: gridSlots.slice(1),
-    risk: [],
-    outcome: [],
-    other: [],
-  };
-}
-
-function assignExecutivePositions(
-  objects: LayoutObject[],
-  minDistance: number
-): {
-  positions: Record<string, Vector3Tuple>;
-  preset: string;
-  slotPositions: Record<string, Vector3Tuple>;
-} {
-  const slots = buildExecutiveSlotMap(objects.length);
-  const slotCursor: Record<ExecutiveObjectLayoutRole, number> = {
-    center: 0,
-    flow: 0,
-    risk: 0,
-    outcome: 0,
-    other: 0,
-  };
-
-  const sorted = [...objects].sort((a, b) => {
-    const roleDelta = roleSortWeight(a.role) - roleSortWeight(b.role);
-    if (roleDelta !== 0) return roleDelta;
-    return a.rawPosition[0] - b.rawPosition[0];
-  });
-
-  const assigned: Vector3Tuple[] = [];
-  const idOrder: string[] = [];
-  const positions: Record<string, Vector3Tuple> = {};
-  const slotPositions: Record<string, Vector3Tuple> = {};
-
-  for (const object of sorted) {
-    const roleSlots = slots[object.role].length > 0 ? slots[object.role] : slots.other;
-    const slotIndex = Math.min(slotCursor[object.role], roleSlots.length - 1);
-    slotCursor[object.role] += 1;
-    const slot = roleSlots[slotIndex] ?? [0, 0, 0];
-    positions[object.id] = [...slot];
-    slotPositions[object.id] = [...slot];
-    assigned.push([...slot]);
-    idOrder.push(object.id);
-  }
-
-  const pushed = pushApart(assigned, minDistance);
-  idOrder.forEach((id, index) => {
-    positions[id] = pushed[index] ?? positions[id];
-  });
-
-  const preset =
-    objects.length >= 6 && objects.length <= 12 ? "executive_operational_map" : "executive_compact_grid";
-  return { positions, preset, slotPositions };
-}
-
 function buildLabelOffsets(
   objects: LayoutObject[],
   positions: Record<string, Vector3Tuple>
@@ -308,10 +181,12 @@ function buildLayoutSignature(objects: unknown[], options?: NormalizeExecutiveOb
     ids: objects.map((obj, index) => {
       const id = readObjectId(obj, index);
       const pos = readObjectPosition(obj);
-      return `${id}:${classifyExecutiveObjectLayoutRole(obj)}:${pos.map((v) => Math.round(v * 10) / 10).join(",")}`;
+      return `${id}:${classifyExecutiveObjectLayoutRole(obj)}:${collectExecutiveObjectSemanticTokens(obj, id).join("+")}:${pos.map((v) => Math.round(v * 10) / 10).join(",")}`;
     }),
     minDistance: options?.minDistance ?? EXECUTIVE_LAYOUT_MIN_DISTANCE,
     centerObjectId: options?.centerObjectId ?? null,
+    domainId: options?.domainId ?? null,
+    scenePurpose: options?.scenePurpose ?? null,
   });
 }
 
@@ -328,6 +203,7 @@ export function normalizeExecutiveObjectLayout(
     const empty: ExecutiveLayoutNormalizedResult = {
       positions: {},
       layoutPreset: "empty",
+      layoutTemplateId: "generic_executive",
       bounds: { center: [0, 0, 0], size: [4, 4, 4] },
       objectCount: 0,
       visibleCount: 0,
@@ -350,12 +226,38 @@ export function normalizeExecutiveObjectLayout(
       label: readObjectLabel(obj, id),
       role,
       rawPosition: readObjectPosition(obj),
+      tokens: collectExecutiveObjectSemanticTokens(obj, id),
     };
+  });
+
+  const roleProfiles = buildExecutiveLayoutObjectRoleProfiles(
+    objects,
+    classifyExecutiveObjectLayoutRole,
+    readObjectId,
+    readObjectLabel
+  );
+  const templateResolution = resolveExecutiveLayoutTemplate({
+    domainId: options?.domainId ?? null,
+    objectRoles: roleProfiles,
+    objectCount: objects.length,
+    scenePurpose: options?.scenePurpose ?? null,
+  });
+
+  logExecutiveLayoutTemplateResolvedOnce({
+    templateId: templateResolution.templateId,
+    domainId: templateResolution.domainId,
+    objectCount: objects.length,
+    roles: roleProfiles,
+    reason: templateResolution.reason,
   });
 
   const rawPositions = layoutObjects.map((obj) => obj.rawPosition);
   const overlapCountBefore = countOverlaps(rawPositions, minDistance);
-  const { positions, preset, slotPositions } = assignExecutivePositions(layoutObjects, minDistance);
+  const { positions, preset, slotPositions } = assignExecutiveTemplatePositions(
+    layoutObjects,
+    templateResolution.templateId,
+    minDistance
+  );
   const normalizedPositions = layoutObjects.map((obj) => positions[obj.id]);
   const overlapCountAfter = countOverlaps(normalizedPositions, minDistance);
 
@@ -382,6 +284,7 @@ export function normalizeExecutiveObjectLayout(
   const result: ExecutiveLayoutNormalizedResult = {
     positions,
     layoutPreset: preset,
+    layoutTemplateId: templateResolution.templateId,
     bounds,
     objectCount: objects.length,
     visibleCount: objects.length,
@@ -427,6 +330,7 @@ export function resetExecutiveObjectLayoutForTests(): void {
   layoutCache.clear();
   emittedLayoutSignatures.clear();
   emittedLayoutAuditSignatures.clear();
+  resetExecutiveLayoutTemplateLogsForTests();
 }
 
 export const EXECUTIVE_OPERATIONAL_LAYOUT_MIN_OBJECTS = 6;

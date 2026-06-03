@@ -1,9 +1,52 @@
 import type { WorkspaceViewMode } from "../../workspace/workspaceViewModeTypes";
 import { resolveWorkspaceModeTransition } from "../../workspace/workspaceModeTransitionRuntime";
+import { shouldSuppressIdleDebugLog } from "../../runtime/idleRuntimeStabilityGuard";
+import type { ExecutiveViewportCameraFrame } from "./executiveViewportModeTypes";
 import type { ExecutiveViewportModeConfig } from "./executiveViewportModeTypes";
 import { logE92CameraMode, logE92ModeSwitch } from "./executiveViewportDiagnostics";
 
 const modeConfigCache = new Map<WorkspaceViewMode, ExecutiveViewportModeConfig>();
+const logged2DRestoreSignatures = new Set<string>();
+
+export function buildExecutive2DRestoreSignature(input: {
+  sceneSignature: string;
+  layoutSignature?: string | null;
+}): string {
+  return `2d_restore:${input.sceneSignature}:${input.layoutSignature ?? "none"}`;
+}
+
+export function logExecutive2DRestoreOnce(input: {
+  sceneSignature: string;
+  layoutSignature?: string | null;
+  restoredFrame: ExecutiveViewportCameraFrame;
+}): void {
+  if (process.env.NODE_ENV === "production") return;
+  const signature = buildExecutive2DRestoreSignature({
+    sceneSignature: input.sceneSignature,
+    layoutSignature: input.layoutSignature,
+  });
+  if (logged2DRestoreSignatures.has(signature)) return;
+  if (shouldSuppressIdleDebugLog(`executive-2d-restore:${signature}`)) return;
+  logged2DRestoreSignatures.add(signature);
+  console.info("[Nexora][ModeSwitch2DRestore]", {
+    from: "3D",
+    to: "2D",
+    sceneSignature: input.sceneSignature,
+    layoutSignature: input.layoutSignature ?? null,
+    restoredFrame: {
+      position: input.restoredFrame.position,
+      lookAt: input.restoredFrame.lookAt,
+      zoom: input.restoredFrame.zoom,
+      orthoSize: input.restoredFrame.orthoSize,
+      operationalCenter: input.restoredFrame.operationalCenter,
+    },
+    reason: "canonical_2d_restore",
+  });
+}
+
+export function resetExecutive2DRestoreLogsForTests(): void {
+  logged2DRestoreSignatures.clear();
+}
 
 export function resolveExecutiveViewportModeConfig(
   viewMode: WorkspaceViewMode
@@ -42,7 +85,7 @@ export function resolveExecutiveViewportModeConfig(
           enableZoom: true,
           zoomToCursor: true,
           screenSpacePanning: false,
-          executiveTiltRadians: 0.68,
+          executiveTiltRadians: 0.58,
         };
 
   modeConfigCache.set(viewMode, config);
@@ -95,4 +138,5 @@ export function mapWorkspaceViewModeToFramingPreset(
 
 export function resetExecutiveViewportModeRuntimeForTests(): void {
   modeConfigCache.clear();
+  resetExecutive2DRestoreLogsForTests();
 }

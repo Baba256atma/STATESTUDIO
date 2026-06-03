@@ -10,6 +10,10 @@ import {
   TYPE_C_GOVERNANCE_ORG_ID,
   TYPE_C_MANAGER_DOMAIN_ID,
 } from "../lib/typec/typeCManagerWorkspaceRoute";
+import { armTypeCViewModeLock } from "../lib/typec/typeCViewModeLock";
+import { setWorkspaceViewMode, getWorkspaceViewMode } from "../lib/workspace/workspaceViewModeRuntime";
+
+armTypeCViewModeLock();
 
 function resolveTypeCWorkspaceDomain(): { domainId: string } | { error: string } {
   try {
@@ -35,6 +39,9 @@ export default function TypeCPage() {
       window.localStorage.setItem(TYPE_C_DOMAIN_STORAGE_KEY, TYPE_C_MANAGER_DOMAIN_ID);
     } catch {
       // Storage optional — workspace still loads with explicit domain id.
+    }
+    if (getWorkspaceViewMode() !== "3D") {
+      setWorkspaceViewMode("3D", "type_c_default_3d");
     }
     if (process.env.NODE_ENV !== "production") {
       console.info("[Nexora][TypeC][Route]", {

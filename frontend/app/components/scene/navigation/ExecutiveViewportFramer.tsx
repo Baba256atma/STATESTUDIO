@@ -7,6 +7,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import type { WorkspaceViewMode } from "../../../lib/workspace/workspaceViewModeTypes";
 import {
   buildExecutiveCameraTransitionSignature,
+  applyExecutiveCameraFrameImmediate,
   createExecutiveCameraTransitionState,
   shouldApplyExecutiveCameraTransition,
   stepExecutiveCameraTransition,
@@ -22,6 +23,8 @@ import {
 } from "../../../lib/scene/viewport/executiveViewportCameraRuntime";
 import { shouldUseExecutiveOperationalLayout } from "../../../lib/scene/composition/normalizeExecutiveObjectLayout";
 import {
+  buildExecutive2DRestoreSignature,
+  logExecutive2DRestoreOnce,
   logExecutiveViewportModeSwitch,
   mapWorkspaceViewModeToFramingPreset,
   resolveExecutiveViewportModeConfig,
@@ -293,6 +296,7 @@ export function ExecutiveViewportFramer(props: ExecutiveViewportFramerProps): nu
   const lastViewModeRef = useRef<WorkspaceViewMode>(props.viewMode);
   const lastExplicitOverrideNonceRef = useRef<number | null>(null);
   const lastInitialLayoutFrameModeRef = useRef<WorkspaceViewMode | null>(null);
+  const pending2DRestoreRef = useRef(false);
   const transitionRef = useRef<ReturnType<typeof createExecutiveCameraTransitionState> | null>(null);
 
   useEffect(() => {
@@ -304,20 +308,20 @@ export function ExecutiveViewportFramer(props: ExecutiveViewportFramerProps): nu
   useEffect(() => {
     if (lastViewModeRef.current === props.viewMode) return;
     const previousMode = lastViewModeRef.current;
-    const controlsTarget = props.controlsRef.current?.target;
-    const preserveCenter =
-      controlsTarget instanceof THREE.Vector3
-        ? ([controlsTarget.x, controlsTarget.y, controlsTarget.z] as [number, number, number])
-        : null;
+    if (previousMode === "3D" && props.viewMode === "2D") {
+      pending2DRestoreRef.current = true;
+      lastInitialLayoutFrameModeRef.current = null;
+      transitionRef.current = null;
+    }
     logExecutiveViewportModeSwitch({
       from: previousMode,
       to: props.viewMode,
       source: "viewport_framer",
-      operationalCenter: preserveCenter,
+      operationalCenter: null,
     });
     lastViewModeRef.current = props.viewMode;
     lastAppliedSignatureRef.current = null;
-  }, [props.controlsRef, props.viewMode]);
+  }, [props.viewMode]);
 
   useFrame((_, delta) => {
     const transition = transitionRef.current;
@@ -356,6 +360,7 @@ export function ExecutiveViewportFramer(props: ExecutiveViewportFramerProps): nu
     if (!explicitOverride && props.layoutBoundsSignature && !hasSettledLayout) return;
     if (
       !explicitOverride &&
+      !pending2DRestoreRef.current &&
       props.layoutBoundsSignature &&
       props.initialLayoutFrameAppliedRef?.current === props.layoutBoundsSignature &&
       lastInitialLayoutFrameModeRef.current === props.viewMode
@@ -368,17 +373,25 @@ export function ExecutiveViewportFramer(props: ExecutiveViewportFramerProps): nu
       });
       return;
     }
-    const framingSignature = `${sceneSignature}|layout:${layoutPositionCount}|${props.viewMode}|${props.reframeNonce ?? 0}|${props.presetOverride ?? "mode"}`;
+    const is2DRestore = props.viewMode === "2D" && pending2DRestoreRef.current;
+    const modeSwitchSignature = is2DRestore
+      ? buildExecutive2DRestoreSignature({
+          sceneSignature,
+          layoutSignature: props.layoutBoundsSignature,
+        })
+      : "";
+    const framingSignature = `${sceneSignature}|layout:${layoutPositionCount}|${props.viewMode}|${props.reframeNonce ?? 0}|${props.presetOverride ?? "mode"}|${modeSwitchSignature}`;
     if (lastAppliedSignatureRef.current === framingSignature) return;
 
     const isFitScene = props.presetOverride === "FIT_SCENE";
     const controlsTarget = props.controlsRef.current?.target;
     const preserveCenterFromControls =
-      !isFitScene &&
-      !useOperationalLayout &&
-      controlsTarget instanceof THREE.Vector3
-        ? ([controlsTarget.x, controlsTarget.y, controlsTarget.z] as [number, number, number])
-        : null;
+      props.viewMode === "2D" ||
+      isFitScene ||
+      useOperationalLayout ||
+      !(controlsTarget instanceof THREE.Vector3)
+        ? null
+        : ([controlsTarget.x, controlsTarget.y, controlsTarget.z] as [number, number, number]);
 
     const proposedCenter = resolveExecutiveViewportOperationalCenter({
       sceneJson: props.sceneJson,
@@ -396,7 +409,8 @@ export function ExecutiveViewportFramer(props: ExecutiveViewportFramerProps): nu
       viewMode: props.viewMode,
       viewportWidth: size.width,
       viewportHeight: size.height,
-      preserveCenter: isFitScene || useOperationalLayout ? null : blendedCenter,
+      preserveCenter:
+        props.viewMode === "2D" || isFitScene || useOperationalLayout ? null : blendedCenter,
       presetOverride: props.presetOverride ?? null,
       layoutPositions: props.layoutPositions,
     });
@@ -442,7 +456,7 @@ export function ExecutiveViewportFramer(props: ExecutiveViewportFramerProps): nu
       lastExplicitOverrideNonceRef.current = explicitOverrideNonce;
     }
 
-    if (!shouldApplyExecutiveCameraTransition("viewport-framer", transitionSignature)) {
+    if (!shouldApplyExecutiveCameraTransition("viewport-framer", transitionSignature) && !is2DRestore) {
       lastAppliedSignatureRef.current = framingSignature;
       return;
     }
@@ -460,17 +474,28 @@ export function ExecutiveViewportFramer(props: ExecutiveViewportFramerProps): nu
       });
     }
 
-    transitionRef.current = createExecutiveCameraTransitionState(
-      camera,
-      props.controlsRef.current,
-      {
-        position: new THREE.Vector3(...frame.position),
-        lookAt: new THREE.Vector3(...frame.lookAt),
-        fov: frame.projection === "perspective" ? frame.fov : undefined,
-        zoom: frame.projection === "orthographic" ? frame.zoom : undefined,
-      },
-      modeConfig.transitionDurationMs
-    );
+    markProgrammaticCameraUpdate(props.programmaticCameraUpdateRef);
+    if (is2DRestore) {
+      pending2DRestoreRef.current = false;
+      applyExecutiveCameraFrameImmediate(camera, props.controlsRef.current, frame);
+      logExecutive2DRestoreOnce({
+        sceneSignature,
+        layoutSignature: props.layoutBoundsSignature,
+        restoredFrame: frame,
+      });
+    } else {
+      transitionRef.current = createExecutiveCameraTransitionState(
+        camera,
+        props.controlsRef.current,
+        {
+          position: new THREE.Vector3(...frame.position),
+          lookAt: new THREE.Vector3(...frame.lookAt),
+          fov: frame.projection === "perspective" ? frame.fov : undefined,
+          zoom: frame.projection === "orthographic" ? frame.zoom : undefined,
+        },
+        modeConfig.transitionDurationMs
+      );
+    }
 
     const controls = props.controlsRef.current;
     if (controls?.target instanceof THREE.Vector3) {

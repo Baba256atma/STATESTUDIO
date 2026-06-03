@@ -16,6 +16,12 @@ import {
   logViewModeRequested,
   validateWorkspaceModeActivation,
 } from "./workspaceModeValidation";
+import {
+  isTypeCViewModeLocked,
+  logTypeCViewModeLockOnce,
+  normalizeWorkspaceViewModeForTypeC,
+  TYPE_C_LOCKED_VIEW_MODE,
+} from "../typec/typeCViewModeLock";
 
 const logKeys = new Set<string>();
 
@@ -82,6 +88,17 @@ export function subscribeWorkspaceViewMode(listener: () => void): () => void {
 
 export function hydrateWorkspaceViewMode(): WorkspaceViewModeSnapshot {
   const persisted = hydrateExecutiveNavigationPreference();
+  if (isTypeCViewModeLocked()) {
+    logTypeCViewModeLockOnce();
+    snapshot = Object.freeze({
+      currentMode: TYPE_C_LOCKED_VIEW_MODE,
+      lastCameraProfile: TYPE_C_LOCKED_VIEW_MODE,
+      preferredViewMode: TYPE_C_LOCKED_VIEW_MODE,
+    });
+    applyRelationshipViewProfileForMode(TYPE_C_LOCKED_VIEW_MODE);
+    devLog("[Nexora][ViewMode]", { mode: snapshot.currentMode, source: "hydrate:type_c_lock" });
+    return snapshot;
+  }
   snapshot = Object.freeze({
     currentMode: persisted.selectedMode,
     lastCameraProfile: persisted.lastCameraProfile,
@@ -98,6 +115,12 @@ export function hydrateWorkspaceViewMode(): WorkspaceViewModeSnapshot {
 }
 
 export function setWorkspaceViewMode(mode: WorkspaceViewMode, source = "runtime"): WorkspaceViewModeSnapshot {
+  const normalized = normalizeWorkspaceViewModeForTypeC({ mode, source });
+  mode = normalized.mode;
+  source = normalized.source;
+  if (normalized.blocked && snapshot.currentMode === mode) {
+    return snapshot;
+  }
   logViewModeRequested(mode, source);
   lastViewModeSource = source;
   if (snapshot.currentMode === mode) {
@@ -159,6 +182,10 @@ export function setWorkspaceViewMode(mode: WorkspaceViewMode, source = "runtime"
 }
 
 export function toggleWorkspaceViewMode(source = "runtime"): WorkspaceViewModeSnapshot {
+  if (isTypeCViewModeLocked()) {
+    logTypeCViewModeLockOnce();
+    return snapshot;
+  }
   const nextMode: WorkspaceViewMode = snapshot.currentMode === "2D" ? "3D" : "2D";
   return setWorkspaceViewMode(nextMode, source);
 }

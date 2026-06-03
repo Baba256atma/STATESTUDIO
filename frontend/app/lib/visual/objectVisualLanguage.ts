@@ -1,4 +1,6 @@
 import type { SceneObject } from "../sceneTypes";
+import type { ExecutiveObjectVisualCategory } from "../scene/graphics/executiveGraphicsProfile";
+import { deriveExecutiveObjectVisualCategory } from "../scene/graphics/executiveGraphicsProfile";
 
 export type ObjectVisualRole =
   | "core"
@@ -16,6 +18,7 @@ export type ObjectStateVisuals = {
 
 export type ObjectVisualProfile = {
   role: ObjectVisualRole;
+  category: ExecutiveObjectVisualCategory;
   shape_family: "stable" | "flow" | "tense" | "simple" | "strategic";
   color_family: "operational" | "pressure" | "strategic" | "muted";
   emphasis_level: "high" | "medium" | "low";
@@ -111,11 +114,46 @@ export function roleToHierarchyStyle(
   ctx: VisualLanguageContext
 ): ObjectStateVisuals {
   const analystBoost = ctx.mode_id === "analyst" ? 1.08 : 1;
-  if (role === "core") return { opacityMul: 1.02 * analystBoost, emissiveBoost: 0.1, scaleMul: 1.03, ambientMul: 0.65 };
-  if (role === "risk") return { opacityMul: 0.98, emissiveBoost: 0.2, scaleMul: 1.04, ambientMul: 0.78 };
-  if (role === "strategic") return { opacityMul: 1.0, emissiveBoost: 0.14, scaleMul: 1.02, ambientMul: 0.7 };
-  if (role === "background") return { opacityMul: 0.74, emissiveBoost: -0.02, scaleMul: 0.95, ambientMul: 1.08 };
-  return { opacityMul: 1.0, emissiveBoost: 0.0, scaleMul: 1.0, ambientMul: 1.0 };
+  if (role === "core") return { opacityMul: 1.0 * analystBoost, emissiveBoost: 0.08, scaleMul: 1.0, ambientMul: 0.62 };
+  if (role === "risk") return { opacityMul: 0.96, emissiveBoost: 0.14, scaleMul: 1.0, ambientMul: 0.74 };
+  if (role === "strategic") return { opacityMul: 0.98, emissiveBoost: 0.1, scaleMul: 1.0, ambientMul: 0.68 };
+  if (role === "background") return { opacityMul: 0.78, emissiveBoost: 0, scaleMul: 0.98, ambientMul: 1.02 };
+  return { opacityMul: 0.94, emissiveBoost: 0.04, scaleMul: 1.0, ambientMul: 0.92 };
+}
+
+function categoryToShapeFamily(category: ExecutiveObjectVisualCategory): ObjectVisualProfile["shape_family"] {
+  switch (category) {
+    case "process_risk":
+      return "tense";
+    case "decision_control":
+    case "core_operations":
+      return "stable";
+    case "finance_pressure":
+    case "constraint":
+      return "strategic";
+    case "customer_outcome":
+      return "simple";
+    case "flow":
+    default:
+      return "flow";
+  }
+}
+
+function categoryToColorFamily(category: ExecutiveObjectVisualCategory): ObjectVisualProfile["color_family"] {
+  switch (category) {
+    case "process_risk":
+    case "finance_pressure":
+      return "pressure";
+    case "decision_control":
+      return "strategic";
+    case "customer_outcome":
+    case "constraint":
+      return "muted";
+    case "core_operations":
+    case "flow":
+    default:
+      return "operational";
+  }
 }
 
 export function buildObjectVisualProfile(
@@ -124,20 +162,27 @@ export function buildObjectVisualProfile(
   ctx: VisualLanguageContext
 ): ObjectVisualProfile {
   const role = deriveObjectVisualRole(obj, tags, ctx);
+  const category = deriveExecutiveObjectVisualCategory({
+    label: (obj as any)?.label ?? (obj as any)?.name,
+    role: (obj as any)?.role,
+    tags,
+    semanticRole: (obj as any)?.semantic?.role,
+    semanticCategory: (obj as any)?.semantic?.category,
+    visualRole: role,
+  });
   const state_visuals = roleToHierarchyStyle(role, ctx);
-  if (role === "risk") {
-    return { role, shape_family: "tense", color_family: "pressure", emphasis_level: "high", state_visuals };
-  }
-  if (role === "core") {
-    return { role, shape_family: "stable", color_family: "operational", emphasis_level: "high", state_visuals };
-  }
-  if (role === "strategic") {
-    return { role, shape_family: "strategic", color_family: "strategic", emphasis_level: "medium", state_visuals };
-  }
-  if (role === "background") {
-    return { role, shape_family: "simple", color_family: "muted", emphasis_level: "low", state_visuals };
-  }
-  return { role, shape_family: "flow", color_family: "operational", emphasis_level: "medium", state_visuals };
+  const shape_family = categoryToShapeFamily(category);
+  const color_family = categoryToColorFamily(category);
+  const emphasis_level =
+    category === "core_operations" || category === "process_risk"
+      ? "high"
+      : category === "decision_control" || category === "finance_pressure"
+        ? "medium"
+        : role === "background"
+          ? "low"
+          : "medium";
+
+  return { role, category, shape_family, color_family, emphasis_level, state_visuals };
 }
 
 export function resolveGeometryKindForObject(params: {
@@ -152,11 +197,11 @@ export function resolveGeometryKindForObject(params: {
   if (GEOMETRY_SET.has(fallback)) return fallback;
 
   const profile = params.profile;
-  if (profile?.shape_family === "tense") return "icosahedron";
-  if (profile?.shape_family === "strategic") return "torus";
-  if (profile?.shape_family === "stable") return "sphere";
-  if (profile?.shape_family === "flow") return "cylinder";
-  if (profile?.shape_family === "simple") return "box";
+  if (profile?.category === "process_risk" || profile?.shape_family === "tense") return "icosahedron";
+  if (profile?.category === "decision_control" || profile?.shape_family === "strategic") return "torus";
+  if (profile?.category === "core_operations" || profile?.shape_family === "stable") return "sphere";
+  if (profile?.category === "flow" || profile?.shape_family === "flow") return "cylinder";
+  if (profile?.category === "customer_outcome" || profile?.shape_family === "simple") return "box";
 
   return "box";
 }

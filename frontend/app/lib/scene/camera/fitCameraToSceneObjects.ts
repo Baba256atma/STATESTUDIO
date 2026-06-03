@@ -2,12 +2,15 @@ import type { WorkspaceViewMode } from "../../workspace/workspaceViewModeTypes";
 import type { ExecutiveCameraBounds, ExecutiveCameraFrame } from "./executive2DCameraProfile";
 import { resolveExecutive2DOrthographicFrame } from "./executive2DCameraProfile";
 import {
+  applyExecutive3DFramingPullback,
   buildExecutive2DCameraFrame,
   buildExecutive3DCameraFrame,
   computeExecutiveFramingRadius,
   EXECUTIVE_2D_CAMERA_LIFT_MULTIPLIER,
   EXECUTIVE_3D_CAMERA_OFFSET,
 } from "./executiveCameraFrameFormulas";
+import { logExecutiveCameraProfileOnce } from "./executive3DCameraProfile";
+import { compute2DStrategicNetworkBounds } from "./executive2DStrategicMapRuntime.ts";
 import { resolveObjectVisualExtents } from "./objectVisualExtents";
 
 const loggedCameraAxisMappingSignatures = new Set<string>();
@@ -232,20 +235,32 @@ export function fitCameraToSceneObjects(input: {
   const useLayoutPositions = Boolean(
     input.layoutPositions && Object.keys(input.layoutPositions).length > 0
   );
-  const bounds = useLayoutPositions
-    ? computeLayoutPositionBounds(input.objects, input.layoutPositions as Record<string, [number, number, number]>)
-    : computeScaleAwareSceneBounds(input.objects, input.layoutPositions);
+  const bounds =
+    input.mode === "2D"
+      ? compute2DStrategicNetworkBounds(input.objects, input.layoutPositions)
+      : useLayoutPositions
+        ? computeLayoutPositionBounds(input.objects, input.layoutPositions as Record<string, [number, number, number]>)
+        : computeScaleAwareSceneBounds(input.objects, input.layoutPositions);
   const [cx, , cz] = bounds.center;
   const sceneCenter: [number, number, number] = [cx, 0, cz];
   const footprint = computeGroundPlaneFootprint(bounds);
   const groundPlaneSpan = Math.max(footprint.width, footprint.depth, footprint.dominantSpan);
   const executivePadding =
-    input.objects.length >= 10 ? 1.45 :
-    input.objects.length >= 8 ? 1.35 :
-    input.objects.length >= 4 ? 1.2 :
-    1.05;
+    input.mode === "2D"
+      ? input.objects.length >= 10
+        ? 1.22
+        : input.objects.length >= 6
+          ? 1.16
+          : 1.08
+      : input.objects.length >= 10
+        ? 1.3
+        : input.objects.length >= 8
+          ? 1.22
+          : input.objects.length >= 4
+            ? 1.1
+            : 1.0;
   const groundPlaneRadius = groundPlaneSpan * executivePadding;
-  const rawRadius = Math.max(computeExecutiveFramingRadius(bounds), groundPlaneRadius);
+  const rawRadius = Math.max(computeExecutiveFramingRadius(bounds, input.mode), groundPlaneRadius);
   const singleObjectMinRadius =
     input.objects.length <= 1
       ? input.mode === "2D"
@@ -258,11 +273,23 @@ export function fitCameraToSceneObjects(input: {
           )
       : 0;
   const multiObjectMinRadius =
-    input.objects.length >= 10 ? 7.5 :
-    input.objects.length >= 8 ? 6.8 :
-    input.objects.length >= 4 ? 5.8 :
-    0;
-  const radius = Math.max(rawRadius, singleObjectMinRadius, multiObjectMinRadius);
+    input.mode === "2D"
+      ? input.objects.length >= 10
+        ? 5.2
+        : input.objects.length >= 6
+          ? 4.6
+          : 0
+      : input.objects.length >= 10
+        ? 6.8
+        : input.objects.length >= 8
+          ? 6.2
+          : input.objects.length >= 4
+            ? 5.4
+            : 0;
+  let radius = Math.max(rawRadius, singleObjectMinRadius, multiObjectMinRadius);
+  if (input.mode === "3D") {
+    radius = applyExecutive3DFramingPullback(radius);
+  }
   logCameraAxisMappingOnce({
     objectCount: input.objects.length,
     mode: input.mode,
@@ -297,6 +324,16 @@ export function fitCameraToSceneObjects(input: {
   }
 
   const angled = buildExecutive3DCameraFrame(sceneCenter, radius);
+  logExecutiveCameraProfileOnce({
+    viewMode: "3D",
+    position: angled.position,
+    lookAt: angled.lookAt,
+    radius,
+    framingRadius: computeExecutiveFramingRadius(bounds, "3D"),
+    cameraOffset: EXECUTIVE_3D_CAMERA_OFFSET,
+    objectCount: input.objects.length,
+    reason: "fit_scene_objects",
+  });
   return {
     bounds,
     radius,

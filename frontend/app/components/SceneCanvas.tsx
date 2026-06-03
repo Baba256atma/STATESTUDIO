@@ -2652,8 +2652,9 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         objectId: "scene",
         scale: rawGlobalScale,
         objectCount: sceneObjectCountForScale,
+        viewMode: workspaceViewMode,
       }),
-    [rawGlobalScale, sceneObjectCountForScale]
+    [rawGlobalScale, sceneObjectCountForScale, workspaceViewMode]
   );
   const densityProfile = useMemo(
     () => resolveWorkspaceDensityProfile(workspaceViewMode),
@@ -3194,10 +3195,19 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
 
   const executiveObjectLayout = useMemo(() => {
     if (renderObjects.length < 6) return null;
+    const meta = props.sceneJson?.meta as Record<string, unknown> | undefined;
     return normalizeExecutiveObjectLayout(renderObjects, {
       viewportMode: workspaceViewMode,
+      domainId:
+        (typeof meta?.domainId === "string" && meta.domainId) ||
+        (typeof meta?.domain === "string" && meta.domain) ||
+        null,
+      scenePurpose:
+        (typeof meta?.demo_id === "string" && meta.demo_id) ||
+        (typeof meta?.scenePurpose === "string" && meta.scenePurpose) ||
+        null,
     });
-  }, [overlayObjectsRegistrySignature, renderObjects, selectedIdCtx, props.selectedObjectId, workspaceViewMode]);
+  }, [overlayObjectsRegistrySignature, props.sceneJson?.meta, renderObjects, selectedIdCtx, props.selectedObjectId, workspaceViewMode]);
   const layoutPositions = executiveObjectLayout?.positions;
   const layoutBoundsSignature = useMemo(() => {
     const entries = Object.entries(layoutPositions ?? {})

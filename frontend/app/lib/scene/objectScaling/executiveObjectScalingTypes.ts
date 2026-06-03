@@ -1,4 +1,6 @@
 import type { ExecutiveCameraPresetId } from "../camera/executiveCameraPresetRegistry";
+import type { ExecutiveObjectLayoutRole } from "../composition/normalizeExecutiveObjectLayout";
+import type { WorkspaceViewMode } from "../../workspace/workspaceViewModeTypes";
 
 /** E2:90 — Presentation scale tiers for executive readability. */
 export type ExecutivePresentationScaleTier = "tiny" | "small" | "medium" | "large" | "critical";
@@ -18,6 +20,9 @@ export type ExecutiveObjectScaleInput = {
   hovered?: boolean;
   dimmed?: boolean;
   objectId?: string | null;
+  viewMode?: WorkspaceViewMode;
+  role?: ExecutiveObjectLayoutRole | null;
+  zoneLike?: boolean;
 };
 
 export type ExecutiveObjectScaleResult = {
@@ -25,6 +30,9 @@ export type ExecutiveObjectScaleResult = {
   presentationTier: ExecutivePresentationScaleTier;
   importance: ExecutiveObjectImportanceTier;
   signature: string;
+  governanceReason?: string;
+  minScale?: number;
+  maxScale?: number;
 };
 
 export type ExecutiveLabelScaleInput = {

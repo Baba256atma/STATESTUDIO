@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 
@@ -63,6 +63,11 @@ import {
   resolveStableObjectId,
 } from "../lib/scene/objectRegistryRuntime";
 import { setSceneRemountContext } from "../lib/scene/sceneRemountContext";
+import {
+  getWorkspaceViewMode,
+  getWorkspaceViewModeServerSnapshot,
+  subscribeWorkspaceViewMode,
+} from "../lib/workspace/workspaceViewModeRuntime";
 import { SceneObjectInstances, type SceneObjectInstancePlan } from "./scene/SceneObjectInstances";
 import {
   buildExecutiveRelationshipExploration,
@@ -1189,14 +1194,33 @@ function getRelationEmphasisStyle(params: {
 // Lights
 // --------------------
 function JsonLights({ sceneJson, shadowsEnabled }: { sceneJson: SceneJson; shadowsEnabled: boolean }) {
+  const workspaceViewMode = useSyncExternalStore(
+    subscribeWorkspaceViewMode,
+    getWorkspaceViewMode,
+    getWorkspaceViewModeServerSnapshot
+  );
   // If lights are missing in JSON, fallback
   const lights = sceneJson.scene?.lights ?? [];
   if (lights.length === 0) {
+    if (workspaceViewMode === "2D") {
+      return (
+        <>
+          <ambientLight intensity={0.58} color="#eef2ff" />
+          <directionalLight position={[3, 9, 5]} intensity={0.52} color="#f8fafc" />
+        </>
+      );
+    }
     return (
       <>
-        <ambientLight intensity={0.55} />
-        <directionalLight position={[6, 10, 4]} intensity={0.9} castShadow={shadowsEnabled} />
-        <pointLight position={[0, 4, -3]} intensity={0.4} />
+        <ambientLight intensity={0.36} color="#cbd5e1" />
+        <directionalLight
+          position={[5, 8, 6]}
+          intensity={0.68}
+          color="#f1f5f9"
+          castShadow={shadowsEnabled}
+        />
+        <directionalLight position={[-4, 5, -3]} intensity={0.18} color="#94a3b8" />
+        <pointLight position={[0, 3.5, 2.5]} intensity={0.22} color="#e2e8f0" />
       </>
     );
   }

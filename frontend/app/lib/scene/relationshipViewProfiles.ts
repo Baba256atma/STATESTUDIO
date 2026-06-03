@@ -15,7 +15,7 @@ const PROFILES: Readonly<Record<WorkspaceViewMode, RelationshipViewProfile>> = O
   "2D": {
     mode: "2D",
     densityMode: "FULL",
-    lineOpacity: 0.92,
+    lineOpacity: 1.12,
     showLabelDefault: true,
     depthCue: false,
     clarityFirst: true,
@@ -23,7 +23,7 @@ const PROFILES: Readonly<Record<WorkspaceViewMode, RelationshipViewProfile>> = O
   "3D": {
     mode: "3D",
     densityMode: "FOCUSED",
-    lineOpacity: 0.84,
+    lineOpacity: 0.96,
     showLabelDefault: true,
     depthCue: true,
     clarityFirst: false,

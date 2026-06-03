@@ -14,19 +14,19 @@ export type RelationshipVisualTokens = {
 };
 
 const TYPE_OPACITY: Partial<Record<NexoraRelationshipType, number>> = {
-  risk: 0.82,
-  blocks: 0.82,
-  ownership: 0.78,
-  flow: 0.72,
-  influences: 0.72,
-  dependency: 0.68,
-  information: 0.54,
-  resource: 0.66,
-  supplies: 0.66,
-  reports_to: 0.62,
-  supports: 0.6,
-  owns: 0.58,
-  custom: 0.55,
+  risk: 0.76,
+  blocks: 0.76,
+  ownership: 0.72,
+  flow: 0.68,
+  influences: 0.66,
+  dependency: 0.62,
+  information: 0.5,
+  resource: 0.6,
+  supplies: 0.6,
+  reports_to: 0.56,
+  supports: 0.54,
+  owns: 0.52,
+  custom: 0.5,
 };
 
 export function resolveRelationshipVisualTokens(

@@ -27,7 +27,10 @@ export function resolveExecutiveLabelReduction(input: ExecutiveLabelReductionInp
   let visible = adaptive.showPrimary;
   let opacity = adaptive.opacity;
 
-  if (adaptive.mode === "MINIMAL" && priorityRank >= 5) {
+  if (input.viewMode === "2D" && input.objectCount >= 6 && input.objectCount <= 12) {
+    visible = true;
+    opacity = Math.max(opacity, 0.88);
+  } else if (adaptive.mode === "MINIMAL" && priorityRank >= 5) {
     visible = false;
     opacity = 0;
   } else if (adaptive.mode === "CONDENSED" && priorityRank >= 4 && !input.selected && !input.focused) {

@@ -27,6 +27,18 @@ import {
   getWorkspaceViewModeServerSnapshot,
   subscribeWorkspaceViewMode,
 } from "../../lib/workspace/workspaceViewModeRuntime";
+import { classifyExecutiveObjectLayoutRole } from "../../lib/scene/composition/normalizeExecutiveObjectLayout";
+import {
+  deriveExecutiveObjectVisualCategory,
+  resolveExecutiveGraphicsViewProfile,
+  resolveExecutiveObjectMaterialPreset,
+  resolveExecutiveVisualHierarchyTier,
+} from "../../lib/scene/graphics/executiveGraphicsProfile";
+import {
+  clampExecutiveObjectFootprintScale,
+  flattenExecutive2DGroupScale,
+  resolveExecutiveViewModeScaleLimits,
+} from "../../lib/scene/objectScaling/executiveObjectScaleGovernance";
 import { resolveExecutiveLabelReduction } from "../../lib/workspace/minimalism";
 import {
   buildObjectVisualProfile,
@@ -131,15 +143,19 @@ function clampExecutiveRenderedScale(input: {
   objectId: string;
   shape?: string | null;
   finalScale: number;
-  objectCount?: number;
+  viewMode?: ReturnType<typeof getWorkspaceViewMode>;
+  selected?: boolean;
+  focused?: boolean;
 }): number {
   const rawScale = Number.isFinite(input.finalScale) ? input.finalScale : 1;
-  const objectCount = input.objectCount ?? 1;
-  let maxScale = objectCount <= 1 ? 0.9 : objectCount >= 10 ? 0.72 : objectCount >= 8 ? 0.82 : 1.0;
+  const limits = resolveExecutiveViewModeScaleLimits(input.viewMode ?? "3D");
+  const selectedOrFocused = input.selected === true || input.focused === true;
+  const maxScale = selectedOrFocused ? limits.selectedMaxScale : limits.maxScale;
+  let capped = Math.max(limits.minScale, Math.min(rawScale, maxScale));
   if (isWideExecutiveRenderShape(input.shape)) {
-    maxScale = Math.min(maxScale, 0.62);
+    capped = Math.min(capped, maxScale * (input.viewMode === "2D" ? 0.72 : 0.85));
   }
-  return Math.max(0.05, Math.min(rawScale, maxScale));
+  return capped;
 }
 
 function shouldUseStaticObjectTransforms(input: {
@@ -515,8 +531,9 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         isCritical: isSelected || isFocused,
         isHighRisk: Boolean(obj.scanner_severity && obj.scanner_severity !== "low"),
         isConnected: neighborIds.length > 0,
+        viewMode: workspaceViewMode,
       }),
-    [isFocused, isSelected, neighborIds.length, obj.scanner_severity, sceneObjectCount]
+    [isFocused, isSelected, neighborIds.length, obj.scanner_severity, sceneObjectCount, workspaceViewMode]
   );
   const layoutLabelOffset =
     layoutLabelOffsets?.[stableIdWithName] ??
@@ -744,6 +761,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     dimOthers ? 1 : 0,
     objectImportance,
     sceneObjectCount,
+    workspaceViewMode,
     roundScaleInput(globalScale ?? 1),
     roundScaleInput(typeof overrideScale === "number" ? overrideScale : 1),
     roundScaleInput(uxScale),
@@ -754,30 +772,40 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     preExecutiveUniform,
     Number.POSITIVE_INFINITY
   );
-  const finalUniform = useMemo(
-    () =>
-      normalizeExecutiveObjectScale({
-        objectId: stableIdWithName,
-        scale: executiveScaleInput,
-        selected: isSelected,
-        focused: isFocused,
-        hovered: hovered || isHovered,
-        dimmed: dimOthers,
-        importance: objectImportance,
-        objectCount: sceneObjectCount,
-      }),
-    [
-      dimOthers,
-      executiveScaleInput,
-      hovered,
-      isFocused,
-      isHovered,
-      isSelected,
-      objectImportance,
-      sceneObjectCount,
-      stableIdWithName,
-    ]
-  );
+  const layoutRole = useMemo(() => classifyExecutiveObjectLayoutRole(obj), [obj]);
+  const zoneLikeObject = useMemo(() => isZoneLikeExecutiveObject(obj), [obj]);
+  const finalUniform = useMemo(() => {
+    const normalized = normalizeExecutiveObjectScale({
+      objectId: stableIdWithName,
+      scale: executiveScaleInput,
+      selected: isSelected,
+      focused: isFocused,
+      hovered: hovered || isHovered,
+      dimmed: dimOthers,
+      importance: objectImportance,
+      objectCount: sceneObjectCount,
+      viewMode: workspaceViewMode,
+      role: layoutRole,
+      zoneLike: zoneLikeObject,
+    });
+    return clampExecutiveObjectFootprintScale({
+      transformScale: normalized,
+      viewMode: workspaceViewMode,
+    });
+  }, [
+    dimOthers,
+    executiveScaleInput,
+    hovered,
+    isFocused,
+    isHovered,
+    isSelected,
+    layoutRole,
+    objectImportance,
+    sceneObjectCount,
+    stableIdWithName,
+    workspaceViewMode,
+    zoneLikeObject,
+  ]);
   const nameDensityProfile = useMemo(
     () => resolveObjectNameDensityProfile(sceneObjectCount),
     [sceneObjectCount]
@@ -806,13 +834,68 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       sceneObjectCount,
     ]
   );
+  const executiveGraphicsPreset = useMemo(() => {
+    const category =
+      visualProfile.category ??
+      deriveExecutiveObjectVisualCategory({
+        label: obj.label ?? obj.name,
+        role: (obj as any)?.role,
+        tags,
+        semanticRole: (obj as any)?.semantic?.role,
+        semanticCategory: (obj as any)?.semantic?.category,
+        visualRole,
+      });
+    const hierarchyTier = resolveExecutiveVisualHierarchyTier({
+      selected: isSelected,
+      focused: isFocused,
+      scenarioActive: isSimulationSource || isDecisionPathSource,
+      visualRole,
+      category,
+    });
+    return resolveExecutiveObjectMaterialPreset({
+      category,
+      viewMode: workspaceViewMode,
+      hierarchyTier,
+    });
+  }, [
+    isDecisionPathSource,
+    isFocused,
+    isSelected,
+    isSimulationSource,
+    obj,
+    tags,
+    visualProfile.category,
+    visualRole,
+    workspaceViewMode,
+  ]);
+  const executiveViewGraphics = useMemo(
+    () => resolveExecutiveGraphicsViewProfile(workspaceViewMode),
+    [workspaceViewMode]
+  );
   const executiveNameProfile = useMemo(
-    () =>
-      resolveObjectNameRenderingProfile({
+    () => {
+      const base = resolveObjectNameRenderingProfile({
         selected: isSelected || isFocused,
         fontSizePx: executiveLabelScale.fontSizePx,
-      }),
-    [executiveLabelScale.fontSizePx, isFocused, isSelected]
+      });
+      return {
+        ...base,
+        fontWeight: Math.round(Math.min(900, base.fontWeight * executiveGraphicsPreset.labelWeight)),
+        fontSizePx: Math.round(
+          base.fontSizePx *
+            executiveViewGraphics.labelContrast *
+            (workspaceViewMode === "2D" ? 0.98 : 1)
+        ),
+      };
+    },
+    [
+      executiveGraphicsPreset.labelWeight,
+      executiveLabelScale.fontSizePx,
+      executiveViewGraphics.labelContrast,
+      isFocused,
+      isSelected,
+      workspaceViewMode,
+    ]
   );
 
   /** Freeze story/hover/attention/neighbor ramps for material math so opacity/emissive don't oscillate every frame. */
@@ -974,10 +1057,12 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const materialProps = useMemo(
     () => ({
       color: appliedColor,
+      metalness: executiveGraphicsPreset.metalness,
+      roughness: executiveGraphicsPreset.roughness,
       transparent: true,
       opacity: (() => {
         const uxOpacity = typeof uxOverrides.opacity === "number" ? clamp(uxOverrides.opacity, 0.1, 1) : 1;
-        const baseOpacity = material.opacity ?? 0.9;
+        const baseOpacity = (material.opacity ?? 0.9) * executiveGraphicsPreset.opacityMul;
         const adjusted = baseOpacity * uxOpacity * hierarchyStyle.opacityMul;
         if (scannerBackgroundDimmed) {
           const softShadowFloor = theme === "day" ? 0.58 : 0.5;
@@ -987,10 +1072,14 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         return theme === "day" ? Math.min(adjusted, 0.3) : Math.min(adjusted, 0.24);
       })(),
       emissive: material.emissive,
-      emissiveIntensity: material.emissiveIntensity,
+      emissiveIntensity: (material.emissiveIntensity ?? 0) + executiveGraphicsPreset.emissiveBoost,
     }),
     [
       appliedColor,
+      executiveGraphicsPreset.emissiveBoost,
+      executiveGraphicsPreset.metalness,
+      executiveGraphicsPreset.opacityMul,
+      executiveGraphicsPreset.roughness,
       genericFocusDimmed,
       hierarchyStyle.opacityMul,
       isFocusActive,
@@ -1352,7 +1441,6 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     [finalPosition]
   );
   const staticRotation = useMemo<[number, number, number]>(() => [0, 0, 0], []);
-  const zoneLikeObject = useMemo(() => isZoneLikeExecutiveObject(obj), [obj]);
   const executiveGeometry = useMemo(() => {
     const normalized = resolveExecutiveNormalizedGeometry({
       type: shape,
@@ -1384,9 +1472,18 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         objectId: stableIdWithName,
         shape,
         finalScale: executiveGeometry.transformScale,
-        objectCount: sceneObjectCount,
+        viewMode: workspaceViewMode,
+        selected: isSelected,
+        focused: isFocused,
       }),
-    [executiveGeometry.transformScale, sceneObjectCount, shape, stableIdWithName]
+    [
+      executiveGeometry.transformScale,
+      isFocused,
+      isSelected,
+      shape,
+      stableIdWithName,
+      workspaceViewMode,
+    ]
   );
   const motionState = useMemo(
     () =>
@@ -1473,17 +1570,21 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         finalScale: CALM_MODE
           ? finalUniform * calmScale
           : finalUniform * effectiveScannerScaleMul * calmSelectionScale * tokens.interaction.sceneObjectEmphasis,
-        objectCount: sceneObjectCount,
+        viewMode: workspaceViewMode,
+        selected: isSelected,
+        focused: isFocused,
       }),
     [
       calmScale,
       calmSelectionScale,
       effectiveScannerScaleMul,
       finalUniform,
-      sceneObjectCount,
+      isFocused,
+      isSelected,
       shape,
       stableIdWithName,
       tokens.interaction.sceneObjectEmphasis,
+      workspaceViewMode,
     ]
   );
   const layoutPositionCount = useMemo(() => Object.keys(layoutPositions ?? {}).length, [layoutPositions]);
@@ -1516,17 +1617,19 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     () => (useStaticObjectTransforms ? staticScale : dynamicScale),
     [dynamicScale, staticScale, useStaticObjectTransforms]
   );
-  const resolvedAppliedGroupScale = useMemo<[number, number, number]>(
-    () =>
-      useStaticObjectTransforms
-        ? [resolvedAppliedScale, resolvedAppliedScale, resolvedAppliedScale]
-        : [
-            (baseScale[0] ?? 1) * resolvedAppliedScale,
-            (baseScale[1] ?? 1) * resolvedAppliedScale,
-            (baseScale[2] ?? 1) * resolvedAppliedScale,
-          ],
-    [baseScale, resolvedAppliedScale, useStaticObjectTransforms]
-  );
+  const resolvedAppliedGroupScale = useMemo<[number, number, number]>(() => {
+    if (workspaceViewMode === "2D" && useStaticObjectTransforms) {
+      return flattenExecutive2DGroupScale(resolvedAppliedScale);
+    }
+    if (useStaticObjectTransforms) {
+      return [resolvedAppliedScale, resolvedAppliedScale, resolvedAppliedScale];
+    }
+    return [
+      (baseScale[0] ?? 1) * resolvedAppliedScale,
+      (baseScale[1] ?? 1) * resolvedAppliedScale,
+      (baseScale[2] ?? 1) * resolvedAppliedScale,
+    ];
+  }, [baseScale, resolvedAppliedScale, useStaticObjectTransforms, workspaceViewMode]);
   const objectTransformModeSignature = `${stableIdWithName}:${sceneObjectCount}:${
     layoutPositionsAvailable ? "layout" : "raw"
   }:${useStaticObjectTransforms ? "static" : "dynamic"}`;
@@ -1802,6 +1905,27 @@ export const AnimatableObject = React.memo(function AnimatableObject({
             />
           </mesh>
         ) : null}
+        {!selectionHighlight.showRing && executiveGraphicsPreset.borderOpacity > 0.06 ? (
+          <mesh
+            rotation={[Math.PI / 2, 0, 0]}
+            scale={[
+              (meshScale?.[0] ?? 1) * 1.02,
+              (meshScale?.[1] ?? 1) * 1.02,
+              (meshScale?.[2] ?? 1) * 1.02,
+            ]}
+          >
+            <torusGeometry args={[0.9, 0.016, 12, 36]} />
+            <meshStandardMaterial
+              color={executiveGraphicsPreset.accentHex}
+              emissive={executiveGraphicsPreset.accentHex}
+              emissiveIntensity={workspaceViewMode === "3D" ? 0.28 : 0.18}
+              metalness={0.35}
+              roughness={0.45}
+              transparent
+              opacity={executiveGraphicsPreset.borderOpacity}
+            />
+          </mesh>
+        ) : null}
 
         <mesh {...(meshProps as any)}>
           {geometryNode}
@@ -1810,6 +1934,8 @@ export const AnimatableObject = React.memo(function AnimatableObject({
             color={appliedColor}
             emissive={committedMeshEmissiveHex}
             emissiveIntensity={committedMeshEmissiveIntensity}
+            metalness={executiveGraphicsPreset.metalness}
+            roughness={executiveGraphicsPreset.roughness}
             transparent
             opacity={committedMeshOpacity}
           />

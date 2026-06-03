@@ -37,6 +37,7 @@ import {
 import { logToolbarViewModeClick } from "../../../lib/workspace/workspaceModeValidation";
 import type { WorkspaceViewMode } from "../../../lib/workspace/workspaceViewModeTypes";
 import { devLogOnSignatureChange } from "../../../lib/runtime/diagnosticIdleGate";
+import { shouldHideTypeCViewModeToggle } from "../../../lib/typec/typeCViewModeLock";
 import { useSceneHudTheme } from "../../../lib/theme/useSceneTheme";
 import { logSceneNavigationToolbarMounted } from "../../../lib/ui/sceneNavigationInstrumentation";
 import { sceneToolbarDividerStyle, sceneToolbarShellStyle } from "./ExecutiveSceneToolbar.theme";
@@ -102,6 +103,8 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
     }
   }, []);
 
+  const showViewModeToggle = !shouldHideTypeCViewModeToggle();
+
   return (
     <div
       data-nx="executive-scene-toolbar"
@@ -109,25 +112,28 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
       data-nx-theme={theme.mode}
       data-nx-view-mode={workspaceViewMode}
       data-nx-focus-mode={focusMode.enabled ? "active" : "inactive"}
+      data-nx-typec-view-lock={showViewModeToggle ? "off" : "3d"}
       style={executiveToolbarShellStyle(theme, sceneToolbarShellStyle(theme))}
       onPointerDown={(event) => event.stopPropagation()}
       onWheel={(event) => event.stopPropagation()}
     >
-      {(["2D", "3D"] as const).map((mode) => (
-        <button
-          key={mode}
-          type="button"
-          aria-label={`${mode} workspace view`}
-          aria-pressed={workspaceViewMode === mode}
-          title={mode === "2D" ? "Strategic 2D View" : "Immersive 3D View"}
-          onClick={() => handleViewMode(mode)}
-          style={executiveToolbarSegmentStyle(workspaceViewMode === mode, theme)}
-        >
-          {mode}
-        </button>
-      ))}
+      {showViewModeToggle
+        ? (["2D", "3D"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              aria-label={`${mode} workspace view`}
+              aria-pressed={workspaceViewMode === mode}
+              title={mode === "2D" ? "Strategic 2D View" : "Immersive 3D View"}
+              onClick={() => handleViewMode(mode)}
+              style={executiveToolbarSegmentStyle(workspaceViewMode === mode, theme)}
+            >
+              {mode}
+            </button>
+          ))
+        : null}
 
-      <span aria-hidden style={sceneToolbarDividerStyle(theme)} />
+      {showViewModeToggle ? <span aria-hidden style={sceneToolbarDividerStyle(theme)} /> : null}
 
       {EXECUTIVE_TOOLBAR_ACTIONS.map((action) => {
         const active = action.id === "focus_mode" && focusMode.enabled;

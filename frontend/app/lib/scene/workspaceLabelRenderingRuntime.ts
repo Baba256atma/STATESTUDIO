@@ -18,10 +18,10 @@ export type WorkspaceLabelProfile = {
 const LABEL_PROFILES: Readonly<Record<WorkspaceViewMode, WorkspaceLabelProfile>> = Object.freeze({
   "2D": {
     mode: "2D",
-    forceMode: "CONDENSED",
+    forceMode: "FULL",
     billboard: false,
-    minFontSizePx: 10,
-    maxFontSizePx: 12,
+    minFontSizePx: 11,
+    maxFontSizePx: 13,
     flatLabels: true,
   },
   "3D": {
@@ -57,7 +57,7 @@ export function resolveWorkspaceLabelState(
     ...base,
     showPrimary: base.showPrimary || input.selected === true || input.focused === true,
     fontSizePx,
-    opacity: Math.max(base.opacity, input.selected ? 0.95 : profile.mode === "2D" ? 0.82 : 0.74),
+    opacity: Math.max(base.opacity, input.selected ? 0.95 : profile.mode === "2D" ? 0.9 : 0.74),
     billboard: profile.billboard,
     flatLabels: profile.flatLabels,
   };

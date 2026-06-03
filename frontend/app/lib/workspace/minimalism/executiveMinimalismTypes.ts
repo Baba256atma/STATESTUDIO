@@ -102,6 +102,7 @@ export type ExecutiveLabelReductionInput = {
   isConnected?: boolean;
   viewportWidth?: number;
   cameraDistance?: number;
+  viewMode?: "2D" | "3D";
 };
 
 export type ExecutiveLabelReductionState = {

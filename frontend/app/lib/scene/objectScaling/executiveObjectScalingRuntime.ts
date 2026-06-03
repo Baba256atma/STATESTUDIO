@@ -6,6 +6,7 @@ import type {
   ExecutivePresentationScaleTier,
 } from "./executiveObjectScalingTypes";
 import { logExecutiveObjectScaleDiagnostic } from "./executiveScalingDiagnostics";
+import { applyExecutiveObjectScaleGovernance, resetExecutiveObjectScaleGovernanceForTests } from "./executiveObjectScaleGovernance";
 
 const PRESENTATION_TIER_SCALE: Readonly<Record<ExecutivePresentationScaleTier, number>> = Object.freeze({
   tiny: 0.76,
@@ -149,6 +150,9 @@ function buildExecutiveObjectScaleSignature(input: ExecutiveObjectScaleInput): s
     input.cameraPreset ?? "EXECUTIVE",
     Math.round(Number(input.viewportWidth ?? 0)),
     Math.round(Number(input.viewportHeight ?? 0)),
+    input.viewMode ?? "3D",
+    input.role ?? "other",
+    input.zoneLike ? 1 : 0,
   ].join("|");
 }
 
@@ -177,13 +181,37 @@ export function resolveExecutiveObjectScale(input: ExecutiveObjectScaleInput): E
   if (input.dimmed) scale *= DIMMED_SCALE_MULTIPLIER;
 
   scale = Math.max(resolveMinimumReadableObjectScale(objectCount), clampScale(scale));
-  const roundedScale = roundScaleBucket(scale);
+  let roundedScale = roundScaleBucket(scale);
+  let governanceReason: string | undefined;
+  let minScale: number | undefined;
+  let maxScale: number | undefined;
+
+  const viewMode = input.viewMode ?? "3D";
+  const governed = applyExecutiveObjectScaleGovernance({
+    objectId: input.objectId,
+    rawScale,
+    baseScale: roundedScale,
+    objectCount,
+    viewMode,
+    role: input.role,
+    importance,
+    selected: input.selected,
+    focused: input.focused,
+    zoneLike: input.zoneLike,
+  });
+  roundedScale = governed.scale;
+  governanceReason = governed.reason;
+  minScale = governed.minScale;
+  maxScale = governed.maxScale;
 
   const result: ExecutiveObjectScaleResult = {
     scale: roundedScale,
     presentationTier,
     importance,
     signature,
+    governanceReason,
+    minScale,
+    maxScale,
   };
 
   scaleResultCache.set(signature, result);
@@ -206,4 +234,5 @@ export function resolveExecutiveObjectScale(input: ExecutiveObjectScaleInput): E
 
 export function resetExecutiveObjectScalingForTests(): void {
   scaleResultCache.clear();
+  resetExecutiveObjectScaleGovernanceForTests();
 }

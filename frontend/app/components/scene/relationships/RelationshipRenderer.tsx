@@ -5,6 +5,7 @@ import React, { useMemo, useSyncExternalStore } from "react";
 import { readSceneRelationships } from "../../../lib/relationships/relationshipRuntime";
 import { resolveExecutiveRelationshipScenePlan } from "../../../lib/relationships/executive";
 import { resolveRelationshipViewProfile } from "../../../lib/scene/relationshipViewProfiles";
+import { logExecutiveGraphicsProfileOnce } from "../../../lib/scene/graphics/executiveGraphicsProfile";
 import {
   getWorkspaceViewMode,
   getWorkspaceViewModeServerSnapshot,
@@ -49,6 +50,13 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
     [relationships, props.selectedObjectId, props.selectedRelationshipId]
   );
 
+  React.useEffect(() => {
+    logExecutiveGraphicsProfileOnce({
+      viewMode: workspaceViewMode,
+      objectCount: props.objects.length,
+    });
+  }, [props.objects.length, workspaceViewMode]);
+
   if (relationships.length === 0) return null;
 
   const stressedIds = new Set(props.emphasizedRelationshipIds ?? []);
@@ -69,6 +77,8 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
             relationship={relationship}
             objects={props.objects}
             themeId={props.themeId}
+            viewMode={workspaceViewMode}
+            lineOpacityMul={relationshipViewProfile.lineOpacity}
             renderPlan={renderPlan}
             showLabel={renderPlan?.showLabel ?? relationshipViewProfile.showLabelDefault}
             billboardLabels={relationshipViewProfile.depthCue}

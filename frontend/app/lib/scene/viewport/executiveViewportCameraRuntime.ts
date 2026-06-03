@@ -52,6 +52,8 @@ export function resolveExecutiveViewportCameraFrame(input: {
   layoutPositions?: Record<string, [number, number, number]>;
 }): ExecutiveViewportCameraFrame | null {
   const preset = input.presetOverride ?? mapWorkspaceViewModeToFramingPreset(input.viewMode);
+  const canonical2D = input.viewMode === "2D";
+  const preserveCenter = canonical2D ? null : input.preserveCenter;
   const objects = readExecutiveSceneObjects(input.sceneJson);
   const hasLayoutPositions = Boolean(input.layoutPositions && Object.keys(input.layoutPositions).length > 0);
   const useOperationalLayout =
@@ -99,7 +101,7 @@ export function resolveExecutiveViewportCameraFrame(input: {
   });
   if (!framing) return null;
 
-  const operationalCenter = input.preserveCenter ?? framing.bounds.center;
+  const operationalCenter = preserveCenter ?? framing.bounds.center;
   const bounds: ExecutiveCameraBounds = {
     center: operationalCenter,
     size: framing.bounds.size,
@@ -125,7 +127,7 @@ export function resolveExecutiveViewportCameraFrame(input: {
     horizontalBias: 0.02,
     verticalBias: 0.03,
     pullback: 1.04,
-    executiveTiltRadians: 0.68,
+    executiveTiltRadians: 0.58,
   });
 
   return {

@@ -99,4 +99,30 @@ describe("E2:92 executive viewport modes", () => {
     expect(perspectiveFrame?.projection).toBe("perspective");
     expect(mapFrame!.zoom).toBeGreaterThan(perspectiveFrame!.zoom);
   });
+
+  it("ignores preserveCenter when resolving canonical 2D frames", () => {
+    const sceneJson = buildScene([
+      { id: "a", position: [0, 0, 0] },
+      { id: "b", position: [14, 0, 0] },
+    ]);
+    const canonical = resolveExecutiveViewportCameraFrame({
+      sceneJson,
+      viewMode: "2D",
+      viewportWidth: 1440,
+      viewportHeight: 900,
+    });
+    const leaked = resolveExecutiveViewportCameraFrame({
+      sceneJson,
+      viewMode: "2D",
+      viewportWidth: 1440,
+      viewportHeight: 900,
+      preserveCenter: [99, 0, 99],
+    });
+    expect(canonical).not.toBeNull();
+    expect(leaked).not.toBeNull();
+    expect(leaked!.position).toEqual(canonical!.position);
+    expect(leaked!.lookAt).toEqual(canonical!.lookAt);
+    expect(leaked!.zoom).toEqual(canonical!.zoom);
+    expect(leaked!.operationalCenter).toEqual(canonical!.operationalCenter);
+  });
 });

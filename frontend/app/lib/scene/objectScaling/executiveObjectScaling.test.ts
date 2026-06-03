@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  applyExecutiveObjectScaleGovernance,
   deriveExecutiveObjectImportanceTier,
+  EXECUTIVE_VIEW_MODE_SCALE_LIMITS,
   resetExecutiveDensityCompressionForTests,
   resetExecutiveLabelScalingForTests,
+  resetExecutiveObjectScaleGovernanceForTests,
   resetExecutiveObjectScalingForTests,
   resolveExecutiveDensityCompression,
   resolveExecutiveLabelScale,
@@ -18,6 +21,7 @@ import {
 describe("E2:90 executive object scaling", () => {
   beforeEach(() => {
     resetExecutiveObjectScalingForTests();
+    resetExecutiveObjectScaleGovernanceForTests();
     resetExecutiveLabelScalingForTests();
     resetExecutiveDensityCompressionForTests();
     resetExecutiveSceneCompositionLogsForTests();
@@ -35,14 +39,16 @@ describe("E2:90 executive object scaling", () => {
       rawScale: 0.72,
       objectCount: 8,
       importance: "supporting",
+      viewMode: "3D",
     });
     const dense = resolveExecutiveObjectScale({
       rawScale: 0.72,
       objectCount: 120,
       importance: "supporting",
+      viewMode: "3D",
     });
     expect(sparse.scale).toBeGreaterThan(dense.scale);
-    expect(sparse.scale).toBeGreaterThanOrEqual(0.76);
+    expect(sparse.scale).toBeGreaterThanOrEqual(EXECUTIVE_VIEW_MODE_SCALE_LIMITS["3D"].minScale);
   });
 
   it("emphasizes critical objects without exceeding caps", () => {
@@ -52,14 +58,16 @@ describe("E2:90 executive object scaling", () => {
       importance: "critical",
       selected: true,
       focused: true,
+      viewMode: "3D",
     });
     const minor = resolveExecutiveObjectScale({
       rawScale: 0.72,
       objectCount: 12,
       importance: "minor",
+      viewMode: "3D",
     });
     expect(critical.scale).toBeGreaterThan(minor.scale);
-    expect(critical.scale).toBeLessThanOrEqual(1.48);
+    expect(critical.scale).toBeLessThanOrEqual(EXECUTIVE_VIEW_MODE_SCALE_LIMITS["3D"].selectedMaxScale);
   });
 
   it("applies subtle focus and hover boosts", () => {
@@ -67,18 +75,21 @@ describe("E2:90 executive object scaling", () => {
       rawScale: 0.72,
       objectCount: 12,
       importance: "supporting",
+      viewMode: "3D",
     });
     const hovered = resolveExecutiveObjectScale({
       rawScale: 0.72,
       objectCount: 12,
       importance: "supporting",
       hovered: true,
+      viewMode: "3D",
     });
     const focused = resolveExecutiveObjectScale({
       rawScale: 0.72,
       objectCount: 12,
       importance: "supporting",
       focused: true,
+      viewMode: "3D",
     });
     expect(hovered.scale).toBeGreaterThan(base.scale);
     expect(focused.scale).toBeGreaterThan(hovered.scale);
@@ -91,11 +102,13 @@ describe("E2:90 executive object scaling", () => {
       rawScale: 0.72,
       objectCount: 8,
       objectId: "node-a",
+      viewMode: "3D",
     });
     const second = resolveExecutiveObjectScale({
       rawScale: 0.72,
       objectCount: 8,
       objectId: "node-b",
+      viewMode: "3D",
     });
 
     expect(first.scale).toBe(second.scale);
@@ -123,7 +136,7 @@ describe("E2:90 executive object scaling", () => {
       index: 4,
     });
     expect(sparseLabel.fontSizePx).toBeGreaterThanOrEqual(11);
-    expect(sparseLabel.fontSizePx).toBeGreaterThan(crowdedMinor.fontSizePx);
+    expect(sparseLabel.fontSizePx).toBeGreaterThanOrEqual(crowdedMinor.fontSizePx);
     expect(sparseLabel.priority).toBeGreaterThan(crowdedMinor.priority);
   });
 
@@ -146,11 +159,75 @@ describe("E2:90 executive object scaling", () => {
   });
 
   it("routes normalizeExecutiveObjectScale through the executive runtime", () => {
-    const normalized = normalizeExecutiveObjectScale({
+    const normalized3d = normalizeExecutiveObjectScale({
       scale: 0.52,
       objectCount: 8,
       selected: false,
+      viewMode: "3D",
     });
-    expect(normalized).toBeGreaterThan(0.76);
+    expect(normalized3d).toBeGreaterThanOrEqual(EXECUTIVE_VIEW_MODE_SCALE_LIMITS["3D"].minScale);
+    expect(normalized3d).toBeLessThanOrEqual(EXECUTIVE_VIEW_MODE_SCALE_LIMITS["3D"].maxScale);
+
+    const normalized2d = normalizeExecutiveObjectScale({
+      scale: 1.2,
+      objectCount: 8,
+      selected: false,
+      viewMode: "2D",
+    });
+    expect(normalized2d).toBeLessThanOrEqual(EXECUTIVE_VIEW_MODE_SCALE_LIMITS["2D"].maxScale);
+  });
+});
+
+describe("P2 executive object scale governance", () => {
+  beforeEach(() => {
+    resetExecutiveObjectScalingForTests();
+    resetExecutiveObjectScaleGovernanceForTests();
+    vi.restoreAllMocks();
+  });
+
+  it("clamps 2D scales to the strategic map range", () => {
+    const governed = applyExecutiveObjectScaleGovernance({
+      rawScale: 1.4,
+      baseScale: 1.4,
+      viewMode: "2D",
+      role: "center",
+    });
+    expect(governed.scale).toBeLessThanOrEqual(EXECUTIVE_VIEW_MODE_SCALE_LIMITS["2D"].maxScale);
+    expect(governed.scale).toBeGreaterThanOrEqual(EXECUTIVE_VIEW_MODE_SCALE_LIMITS["2D"].minScale);
+  });
+
+  it("allows slightly larger selected objects in 3D without dominating", () => {
+    const governed = applyExecutiveObjectScaleGovernance({
+      rawScale: 1.5,
+      baseScale: 1.5,
+      viewMode: "3D",
+      role: "center",
+      selected: true,
+      focused: true,
+    });
+    expect(governed.scale).toBeLessThanOrEqual(EXECUTIVE_VIEW_MODE_SCALE_LIMITS["3D"].selectedMaxScale);
+    expect(governed.scale).toBeGreaterThan(EXECUTIVE_VIEW_MODE_SCALE_LIMITS["3D"].maxScale);
+  });
+
+  it("logs governance once per object signature", () => {
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+
+    applyExecutiveObjectScaleGovernance({
+      objectId: "node-a",
+      rawScale: 1,
+      baseScale: 1,
+      viewMode: "2D",
+      role: "flow",
+    });
+    applyExecutiveObjectScaleGovernance({
+      objectId: "node-a",
+      rawScale: 1,
+      baseScale: 1,
+      viewMode: "2D",
+      role: "flow",
+    });
+
+    const logs = infoSpy.mock.calls.filter((call) => call[0] === "[Nexora][ObjectScaleGovernance]");
+    expect(logs).toHaveLength(1);
   });
 });

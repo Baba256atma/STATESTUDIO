@@ -7,6 +7,8 @@ import type { ExecutiveCameraPresetId } from "./camera/executiveCameraPresetRegi
 import { resolveExecutiveDensityCompression } from "./objectScaling/executiveDensityCompressionRuntime";
 import { resolveExecutiveObjectScale } from "./objectScaling/executiveObjectScalingRuntime";
 import type { ExecutiveObjectImportanceTier } from "./objectScaling/executiveObjectScalingTypes";
+import type { ExecutiveObjectLayoutRole } from "./composition/normalizeExecutiveObjectLayout";
+import type { WorkspaceViewMode } from "../workspace/workspaceViewModeTypes";
 import { shouldSuppressIdleDebugLog } from "../runtime/idleRuntimeStabilityGuard";
 
 export interface ExecutiveSceneCompositionRules {
@@ -183,6 +185,9 @@ export function normalizeExecutiveObjectScale(input: {
   viewportHeight?: number;
   cameraPreset?: ExecutiveCameraPresetId | null;
   objectId?: string | null;
+  viewMode?: WorkspaceViewMode;
+  role?: ExecutiveObjectLayoutRole | null;
+  zoneLike?: boolean;
 }): number {
   const raw = clampScale(Number(input.scale ?? 1));
   const objectCount = Math.max(1, Math.floor(input.objectCount ?? 1));
@@ -204,6 +209,9 @@ export function normalizeExecutiveObjectScale(input: {
     input.cameraPreset ?? "EXECUTIVE",
     Math.round(Number(input.viewportWidth ?? 0)),
     Math.round(Number(input.viewportHeight ?? 0)),
+    input.viewMode ?? "3D",
+    input.role ?? "other",
+    input.zoneLike ? 1 : 0,
     roundedRaw,
   ].join("|");
   const cached = normalizedExecutiveScaleCache.get(cacheSignature);
@@ -223,6 +231,9 @@ export function normalizeExecutiveObjectScale(input: {
     viewportHeight: input.viewportHeight,
     cameraPreset: input.cameraPreset,
     objectId,
+    viewMode: input.viewMode,
+    role: input.role,
+    zoneLike: input.zoneLike,
   }).scale;
   const roundedNormalized = roundScaleBucket(clampScale(normalized));
 
