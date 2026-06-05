@@ -1,6 +1,11 @@
 /** E2:56 — Timeline + bottom command dock safe zone reservation. */
 
 import { emitHudLayoutZoneLog } from "../layout/hudLayoutLogGuard";
+import {
+  recordLayoutThrottleAudit,
+  stableLayoutSignature,
+} from "../layout/layoutThrottleAuditRuntime";
+import { devLogThrottled } from "../runtime/diagnosticThrottle.ts";
 import type { SceneHudPanelId } from "./sceneHudRegistry";
 import { getSceneHudRegistration } from "./sceneHudRegistry";
 
@@ -27,7 +32,40 @@ const TIMELINE_HEIGHT_BY_MODE: Record<NonNullable<TimelineSafeZoneContext["timel
   full: 320,
 };
 
+let lastTimelineSafeZoneSignature: string | null = null;
+let lastTimelineSafeZone: TimelineSafeZone | null = null;
+
 export function resolveTimelineSafeZone(context: TimelineSafeZoneContext): TimelineSafeZone {
+  const contextSignature = stableLayoutSignature({
+    viewportWidth: context.viewportWidth,
+    viewportHeight: context.viewportHeight,
+    timelineVisible: context.timelineVisible,
+    quickActionsVisible: context.quickActionsVisible,
+    timelineExpanded: context.timelineExpanded,
+    timelineHeightMode: context.timelineHeightMode ?? null,
+  });
+  if (lastTimelineSafeZone && lastTimelineSafeZoneSignature === contextSignature) {
+    recordLayoutThrottleAudit({
+      area: "timelineLayout",
+      source: "resolveTimelineSafeZone",
+      previousSignature: lastTimelineSafeZoneSignature,
+      nextSignature: contextSignature,
+      prevented: true,
+      detail: { reason: "timeline safe-zone context unchanged" },
+    });
+    devLogThrottled({
+      key: `timeline-safe-zone:${contextSignature}`,
+      label: "[NEXORA_TIMELINE_LAYOUT_STABILITY_REPORT]",
+      scope: "sceneRenderSource",
+      intervalMs: 15000,
+      payload: {
+        source: "resolveTimelineSafeZone",
+        signature: contextSignature,
+        recalculationPrevented: true,
+      },
+    });
+    return lastTimelineSafeZone;
+  }
   const isMobile = context.viewportWidth < 768;
   const timelineEntry = getSceneHudRegistration("timelineHud");
   const quickEntry = getSceneHudRegistration("quickActionsDock");
@@ -56,6 +94,15 @@ export function resolveTimelineSafeZone(context: TimelineSafeZoneContext): Timel
     viewportWidth: context.viewportWidth,
   });
 
+  recordLayoutThrottleAudit({
+    area: "timelineLayout",
+    source: "resolveTimelineSafeZone",
+    previousSignature: lastTimelineSafeZoneSignature,
+    nextSignature: contextSignature,
+    prevented: false,
+  });
+  lastTimelineSafeZoneSignature = contextSignature;
+  lastTimelineSafeZone = zone;
   return zone;
 }
 
@@ -66,4 +113,6 @@ export function logTimelineSafeZone(payload: Record<string, unknown>): void {
 
 export function resetTimelineSafeZoneLogsForTests(): void {
   // guarded by hudLayoutLogGuard reset
+  lastTimelineSafeZoneSignature = null;
+  lastTimelineSafeZone = null;
 }

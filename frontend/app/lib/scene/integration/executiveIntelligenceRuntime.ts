@@ -4,6 +4,7 @@
 
 import { readExecutiveSceneObjects } from "../camera/executiveCameraPresetRegistry";
 import { readSceneRelationships } from "../../relationships/relationshipRuntime";
+import { devLogThrottled } from "../../runtime/diagnosticThrottle.ts";
 import {
   clearExecutiveAdvisor,
   getExecutiveAdvisorState,
@@ -24,6 +25,8 @@ import {
   logE2100AcceptanceGateFailed,
   logE2100AcceptanceGatePassed,
   logE2100MVPReady,
+  logNexoraAcceptanceGateCache,
+  logNexoraAcceptanceGateAudit,
   logE2100ReadinessStarted,
   logE2100ValidationCompleted,
 } from "./executiveIntelligenceDiagnostics.ts";
@@ -49,13 +52,58 @@ function clamp01(value: number): number {
   return Math.max(0, Math.min(1, Number(value.toFixed(3))));
 }
 
+function safeSignaturePart(value: unknown, fallback = "none", maxLength = 320): string {
+  const text = value == null ? fallback : String(value);
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength)}…#${text.length}`;
+}
+
+function buildBoundedAlertSignature(alerts: BuildExecutiveIntelligenceRefreshInput["alerts"]): {
+  signature: string;
+  guardActivated: boolean;
+  originalLength: number;
+} {
+  const entries = alerts ?? [];
+  let originalLength = 0;
+  const parts = entries.slice(0, 80).map((alert) => {
+    const id = String(alert?.id ?? "");
+    originalLength += id.length + 8;
+    return `${safeSignaturePart(id, "alert", 160)}:${Boolean(alert?.acknowledged)}`;
+  });
+  const signature = parts.join("|").slice(0, 2048) || "none";
+  return {
+    signature,
+    guardActivated: entries.length > 80 || originalLength > 2048 || parts.join("|").length > signature.length,
+    originalLength,
+  };
+}
+
 let lastBuiltInputSignature: string | null = null;
 let lastBuiltState: ExecutiveIntelligenceState | null = null;
+const stableAcceptanceSignatureCache = new Set<string>();
+let executiveIntelligenceCascadeDepth = 0;
 
 /** Input-only signature — excludes cascade output store signatures to prevent refresh loops. */
 export function buildExecutiveIntelligenceInputSignature(input: BuildExecutiveIntelligenceRefreshInput): string {
   const timeline = input.executiveTimelineHud;
   const playback = input.playbackState ?? getExecutiveScenarioPlaybackState();
+  const alertSignature = buildBoundedAlertSignature(input.alerts);
+  if (alertSignature.guardActivated) {
+    devLogThrottled({
+      key: `advisor-signature-guard:intelligence:${alertSignature.originalLength}:${alertSignature.signature.length}`,
+      label: "[NEXORA_ADVISOR_SIGNATURE_GUARD]",
+      scope: "runtimeAudit",
+      intervalMs: 2000,
+      payload: {
+        owner: "ExecutiveIntelligenceRuntime",
+        originalLength: alertSignature.originalLength,
+        truncatedLength: alertSignature.signature.length,
+        guardActivated: true,
+        alertCount: input.alerts?.length ?? 0,
+        recommendationCount: 0,
+      },
+    });
+  }
   const sceneObjectIds = readExecutiveSceneObjects(input.sceneJson)
     .map((raw, index) => {
       const object = raw as { id?: string; name?: string };
@@ -78,8 +126,7 @@ export function buildExecutiveIntelligenceInputSignature(input: BuildExecutiveIn
     playbackProgress: playback.propagationView?.completionPercent ?? null,
     decisionScenarioId: input.decisionRecommendation?.recommendedScenarioId ?? null,
     executionStatus: input.executionState?.status ?? null,
-    alertSignature:
-      (input.alerts ?? []).map((alert) => `${alert.id}:${alert.acknowledged}`).join("|") || "none",
+    alertSignature: alertSignature.signature,
     timelineFocusedEventId: timeline?.focusedEventId ?? null,
     timelineEventCount: timeline?.events.length ?? 0,
     pipelineConfidence: input.pipelineConfidence ?? null,
@@ -109,6 +156,8 @@ export function isExecutiveIntelligenceSceneReady(input: BuildExecutiveIntellige
 export function resetExecutiveIntelligenceRuntimeCacheForTests(): void {
   lastBuiltInputSignature = null;
   lastBuiltState = null;
+  stableAcceptanceSignatureCache.clear();
+  executiveIntelligenceCascadeDepth = 0;
 }
 
 function buildSceneContext(sceneJson: unknown) {
@@ -143,6 +192,37 @@ function buildSceneContext(sceneJson: unknown) {
 }
 
 export function refreshExecutiveIntelligenceCascade(input: BuildExecutiveIntelligenceRefreshInput): void {
+  if (executiveIntelligenceCascadeDepth > 0) {
+    devLogThrottled({
+      key: `advisor-reentrancy-block:cascade:${executiveIntelligenceCascadeDepth}:${input.selectedObjectId ?? "none"}`,
+      label: "[NEXORA_ADVISOR_REENTRANCY_BLOCK]",
+      scope: "runtimeAudit",
+      intervalMs: 1000,
+      payload: {
+        source: "refreshExecutiveIntelligenceCascade",
+        target: "refreshExecutiveAdvisor",
+        depth: executiveIntelligenceCascadeDepth,
+        cycleDetected: true,
+        selectedObjectId: input.selectedObjectId ?? null,
+      },
+    });
+    return;
+  }
+  executiveIntelligenceCascadeDepth += 1;
+  devLogThrottled({
+    key: `advisor-refresh-graph:start:${input.selectedObjectId ?? "none"}:${executiveIntelligenceCascadeDepth}`,
+    label: "[NEXORA_ADVISOR_REFRESH_GRAPH]",
+    scope: "runtimeAudit",
+    intervalMs: 1000,
+    payload: {
+      source: "refreshExecutiveIntelligence",
+      target: "refreshExecutiveIntelligenceCascade",
+      depth: executiveIntelligenceCascadeDepth,
+      cycleDetected: false,
+      selectedObjectId: input.selectedObjectId ?? null,
+    },
+  });
+  try {
   const { sceneObjectIds, sceneObjectMeta, relationships } = buildSceneContext(input.sceneJson);
   const playbackState = input.playbackState ?? getExecutiveScenarioPlaybackState();
   const timelineEvents = input.executiveTimelineHud?.events ?? [];
@@ -196,7 +276,33 @@ export function refreshExecutiveIntelligenceCascade(input: BuildExecutiveIntelli
     cognitiveTwin: getExecutiveCognitiveTwinState(),
   };
 
+  devLogThrottled({
+    key: `advisor-refresh-graph:warroom:${input.selectedObjectId ?? "none"}:${executiveIntelligenceCascadeDepth}`,
+    label: "[NEXORA_ADVISOR_REFRESH_GRAPH]",
+    scope: "runtimeAudit",
+    intervalMs: 1000,
+    payload: {
+      source: "refreshExecutiveIntelligenceCascade",
+      target: "refreshExecutiveWarRoom:first-pass",
+      depth: executiveIntelligenceCascadeDepth,
+      cycleDetected: false,
+      selectedObjectId: input.selectedObjectId ?? null,
+    },
+  });
   refreshExecutiveWarRoom(sharedWarRoomInput);
+  devLogThrottled({
+    key: `advisor-refresh-graph:advisor:${input.selectedObjectId ?? "none"}:${executiveIntelligenceCascadeDepth}`,
+    label: "[NEXORA_ADVISOR_REFRESH_GRAPH]",
+    scope: "runtimeAudit",
+    intervalMs: 1000,
+    payload: {
+      source: "refreshExecutiveIntelligenceCascade",
+      target: "refreshExecutiveAdvisor",
+      depth: executiveIntelligenceCascadeDepth,
+      cycleDetected: false,
+      selectedObjectId: input.selectedObjectId ?? null,
+    },
+  });
   refreshExecutiveAdvisor({
     cognitiveTwin: getExecutiveCognitiveTwinState(),
     warRoom: getExecutiveWarRoomState(),
@@ -213,11 +319,27 @@ export function refreshExecutiveIntelligenceCascade(input: BuildExecutiveIntelli
     domainLabel: input.domainLabel ?? null,
     pipelineConfidence: input.pipelineConfidence ?? null,
   });
+  devLogThrottled({
+    key: `advisor-refresh-graph:warroom-second:${input.selectedObjectId ?? "none"}:${executiveIntelligenceCascadeDepth}`,
+    label: "[NEXORA_ADVISOR_REFRESH_GRAPH]",
+    scope: "runtimeAudit",
+    intervalMs: 1000,
+    payload: {
+      source: "refreshExecutiveAdvisor",
+      target: "refreshExecutiveWarRoom:advisor-sync",
+      depth: executiveIntelligenceCascadeDepth,
+      cycleDetected: false,
+      selectedObjectId: input.selectedObjectId ?? null,
+    },
+  });
   refreshExecutiveWarRoom({
     ...sharedWarRoomInput,
     cognitiveTwin: getExecutiveCognitiveTwinState(),
     executiveAdvisor: getExecutiveAdvisorState(),
   });
+  } finally {
+    executiveIntelligenceCascadeDepth = Math.max(0, executiveIntelligenceCascadeDepth - 1);
+  }
 }
 
 function buildAcceptanceGates(
@@ -395,13 +517,51 @@ export function buildExecutiveIntelligenceState(
   } else if (sceneReady) {
     const blockers = acceptanceGates.flatMap((gate) => gate.blockers);
     if (blockers.length) {
-      logE2100AcceptanceGateFailed(blockers, {
-        inputSignature,
-        blockers: blockers.slice(0, 4),
-      }, {
-        sceneReady: true,
-        inputSignature,
+      const acceptanceSceneObjectIds = readExecutiveSceneObjects(input.sceneJson)
+        .map((raw, index) => {
+          const object = raw as { id?: string; name?: string };
+          return String(object.id ?? object.name ?? `obj:${index}`).trim();
+        })
+        .filter(Boolean);
+      const stableAcceptanceSignature = JSON.stringify({
+        blockers: blockers.map(String).sort(),
+        sceneObjectIds: acceptanceSceneObjectIds.sort(),
+        selectedObjectId: input.selectedObjectId ?? null,
+        domainId: input.domainId ?? input.domainLabel ?? null,
+        sceneObjectCount,
       });
+      if (stableAcceptanceSignatureCache.has(stableAcceptanceSignature)) {
+        logNexoraAcceptanceGateCache({
+          reusedEvaluation: true,
+          evaluationSkipped: true,
+          signature: stableAcceptanceSignature,
+        });
+      } else {
+        stableAcceptanceSignatureCache.add(stableAcceptanceSignature);
+        logNexoraAcceptanceGateCache({
+          reusedEvaluation: false,
+          evaluationSkipped: false,
+          signature: stableAcceptanceSignature,
+        });
+        logE2100AcceptanceGateFailed(blockers, {
+          inputSignature,
+          blockers: blockers.slice(0, 4),
+        }, {
+          sceneReady: true,
+          inputSignature,
+        });
+        logNexoraAcceptanceGateAudit({
+          inputSignature,
+          acceptanceGates,
+          sourceAction: "buildExecutiveIntelligenceState",
+          sourceObjectId: input.selectedObjectId ?? null,
+          sceneId: input.domainId ?? input.domainLabel ?? null,
+          sceneObjectCount,
+          validationFailedCount: validations.filter((entry) => !entry.passed).length,
+          runtimeHealthFailedCount: health.failedCount,
+          storeWillNotify: true,
+        });
+      }
     }
   }
 

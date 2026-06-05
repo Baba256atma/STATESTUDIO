@@ -11,7 +11,10 @@ import {
   type RuntimeObjectPositionContext,
 } from "../sceneRenderUtils";
 import type { OverlayThemeTokens } from "../../../lib/overlay/overlayTheme";
-import { sanitizeThreeColor } from "../../../lib/scene/threeColorSanitizer";
+import {
+  NEXORA_THREE_COLOR_TOKENS,
+  sanitizeThreeColor,
+} from "../../../lib/scene/threeColorSanitizer";
 import {
   recordConnectionLineRebuild,
   recordGeometryCreated,
@@ -71,6 +74,24 @@ function buildLineGeometry(
   return geometry;
 }
 
+const OVERLAY_FLOW_COLOR_FALLBACK = "#93c5fd";
+
+function resolveOverlayFlowThreeColor(input: unknown, fallback = OVERLAY_FLOW_COLOR_FALLBACK): string {
+  if (typeof input !== "string") return fallback;
+  const value = input.trim();
+  if (!value) return fallback;
+
+  if (value.includes("color-mix(")) {
+    const tokenMatch = value.match(/var\((--nx-[^)]+)\)/);
+    const tokenValue = tokenMatch ? NEXORA_THREE_COLOR_TOKENS[`var(${tokenMatch[1]})`] : null;
+    return tokenValue ?? fallback;
+  }
+
+  if (value === "transparent") return fallback;
+
+  return sanitizeThreeColor(value, fallback);
+}
+
 export const OverlayFlowLines = React.memo(function OverlayFlowLines(props: OverlayFlowLinesProps): React.ReactElement | null {
   const materialRef = useRef<THREE.LineBasicMaterial>(null);
   const geometry = useMemo(() => {
@@ -90,6 +111,7 @@ export const OverlayFlowLines = React.memo(function OverlayFlowLines(props: Over
       recordGeometryDisposed("overlay-flow-lines");
     };
   }, [geometry]);
+  const lineColor = useMemo(() => resolveOverlayFlowThreeColor(props.color), [props.color]);
 
   useFrame(({ clock }) => {
     if (!props.animated || !materialRef.current) return;
@@ -99,8 +121,6 @@ export const OverlayFlowLines = React.memo(function OverlayFlowLines(props: Over
   });
 
   if (!geometry || props.edges.length === 0) return null;
-
-  const lineColor = sanitizeThreeColor(props.color);
 
   return (
     <lineSegments geometry={geometry}>

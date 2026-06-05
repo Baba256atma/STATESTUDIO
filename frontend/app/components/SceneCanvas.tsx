@@ -73,6 +73,18 @@ import {
 import { buildSceneLayoutDriftSignature } from "../lib/runtime/sceneParityRuntime";
 import { markSelectionActivity } from "../lib/runtime/selectionBurstGuard";
 import { devLogOnSignatureChange } from "../lib/runtime/diagnosticIdleGate";
+import { devDiagnosticLog } from "../lib/runtime/diagnosticSwitch";
+import { devLogThrottled } from "../lib/runtime/diagnosticThrottle";
+import {
+  buildHudPayloadSignature,
+  buildPropagationPayloadSignature,
+  logPayloadReferenceStability,
+  logSceneCanvasPayloadImpact,
+} from "../lib/runtime/payloadStabilityAudit";
+import {
+  dockInsetsSignature,
+  recordLayoutThrottleAudit,
+} from "../lib/layout/layoutThrottleAuditRuntime";
 import { updateIdleRuntimeSemanticSignature } from "../lib/runtime/idleRuntimeStabilityGuard";
 import {
   buildSceneObjectsRegistrySignature,
@@ -101,6 +113,7 @@ import { SceneInfoHudOverlay } from "./scene/SceneInfoHudOverlay";
 import type { SceneInfoHudProps } from "./scene/SceneInfoHud";
 import { ObjectInfoHudOverlay } from "./scene/ObjectInfoHudOverlay";
 import type { ObjectInfoHudModel } from "../lib/scene/objectInfoHudTypes";
+import type { WorkspaceHudPlacement } from "../lib/ui/workspaceLayoutTypes";
 import type { EditableObjectPatch } from "../lib/modeling/objectEditingRuntime";
 import type { PropagationPath, PropagationPathPatch } from "../lib/propagation/propagationAuthoringRuntime";
 import type { ExecutiveTimelineHudModel } from "../lib/scene/executiveTimelineHudTypes";
@@ -346,6 +359,7 @@ export type SceneCanvasProps = {
   objectInfoHud?: {
     model: ObjectInfoHudModel;
     sceneJson: unknown;
+    placement: WorkspaceHudPlacement;
     onCreateRelationship?: () => void;
     onDeleteRelationship?: (relationshipId: string) => void;
     onCreateImpactPath?: (sourceObjectId?: string | null) => void;
@@ -409,7 +423,7 @@ function SceneDemandInvalidateDriver({
       const signature = "initial_layout_invalidate";
       if (lastFrameTickSignatureRef.current !== signature) {
         lastFrameTickSignatureRef.current = signature;
-        console.debug("[Nexora][CanvasFrameTick]", { reason: "initial_layout_invalidate" });
+        devDiagnosticLog("canvasFrameTick", "[Nexora][CanvasFrameTick]", { reason: "initial_layout_invalidate" });
       }
     }
     invalidate();
@@ -419,7 +433,7 @@ function SceneDemandInvalidateDriver({
       const signature = "scene_payload_changed";
       if (lastFrameTickSignatureRef.current !== signature) {
         lastFrameTickSignatureRef.current = signature;
-        console.debug("[Nexora][CanvasFrameTick]", { reason: "scene_payload_changed" });
+        devDiagnosticLog("canvasFrameTick", "[Nexora][CanvasFrameTick]", { reason: "scene_payload_changed" });
       }
     }
     invalidate();
@@ -429,7 +443,7 @@ function SceneDemandInvalidateDriver({
       const signature = `view_mode_${viewMode}`;
       if (lastFrameTickSignatureRef.current !== signature) {
         lastFrameTickSignatureRef.current = signature;
-        console.debug("[Nexora][CanvasFrameTick]", { reason: "view_mode_changed", viewMode });
+        devDiagnosticLog("canvasFrameTick", "[Nexora][CanvasFrameTick]", { reason: "view_mode_changed", viewMode });
       }
     }
     invalidate();
@@ -441,7 +455,7 @@ function SceneDemandInvalidateDriver({
       const signature = "orbit_interaction";
       if (lastFrameTickSignatureRef.current !== signature) {
         lastFrameTickSignatureRef.current = signature;
-        console.debug("[Nexora][CanvasFrameTick]", { reason: "orbit_interaction" });
+        devDiagnosticLog("canvasFrameTick", "[Nexora][CanvasFrameTick]", { reason: "orbit_interaction" });
       }
     }
     invalidate();
@@ -1113,6 +1127,9 @@ function CameraIntelligence({
   layoutResumeNonce?: number;
 }) {
   const { camera, size } = useThree();
+  const layoutDockInsetSignature = dockInsetsSignature(layoutDockInsets);
+  const leftDockInsetRatio = layoutDockInsets?.leftDockInsetRatio;
+  const rightDockInsetRatio = layoutDockInsets?.rightDockInsetRatio;
   const focusTargetRef = useRef<THREE.Vector3>(new THREE.Vector3());
   const desiredCamPosRef = useRef<THREE.Vector3>(
     new THREE.Vector3(camPos[0], camPos[1], camPos[2])
@@ -1267,8 +1284,8 @@ function CameraIntelligence({
       viewportWidth: size.width,
       viewportHeight: size.height,
       hudDockSide,
-      leftDockInsetRatio: layoutDockInsets?.leftDockInsetRatio,
-      rightDockInsetRatio: layoutDockInsets?.rightDockInsetRatio,
+      leftDockInsetRatio,
+      rightDockInsetRatio,
     });
     const rawViewMode = getWorkspaceViewMode();
     const objectCount = objects.length;
@@ -1281,7 +1298,7 @@ function CameraIntelligence({
     const viewportModeSignature = `${rawViewMode}:${resolvedFramingViewMode}:${objectCount}:${viewportModeReason}:CameraIntelligence`;
     if (process.env.NODE_ENV !== "production" && viewportModeResolvedLogRef.current !== viewportModeSignature) {
       viewportModeResolvedLogRef.current = viewportModeSignature;
-      console.debug("[Nexora][ViewportModeResolved]", {
+      devDiagnosticLog("sceneViewport", "[Nexora][ViewportModeResolved]", {
         rawViewMode,
         resolvedFramingViewMode,
         objectCount,
@@ -1374,7 +1391,7 @@ function CameraIntelligence({
     const autoCameraSuspended = applyNow < suspendAutoCameraUntilRef.current;
     if (!cameraLockedByUser && !(localIsOrbitingRef?.current || isOrbiting) && !autoCameraSuspended) {
       if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][SceneInteraction] layout-aware frame region updated", frameSpec);
+        devDiagnosticLog("sceneInteraction", "[Nexora][SceneInteraction] layout-aware frame region updated", frameSpec, "info");
       }
       markProgrammaticCameraUpdate(programmaticCameraUpdateRef);
       camera.position.set(frame.position[0], frame.position[1], frame.position[2]);
@@ -1437,6 +1454,7 @@ function CameraIntelligence({
     mountedAtMs,
     _layoutResumeNonce,
     userExplicitlySelected2D,
+    layoutDockInsetSignature,
   ]);
 
   useEffect(() => {
@@ -1557,8 +1575,8 @@ function CameraIntelligence({
       viewportWidth: size.width,
       viewportHeight: size.height,
       hudDockSide,
-      leftDockInsetRatio: layoutDockInsets?.leftDockInsetRatio,
-      rightDockInsetRatio: layoutDockInsets?.rightDockInsetRatio,
+      leftDockInsetRatio,
+      rightDockInsetRatio,
     });
     const baselineCamPos = baselineCamPosRef.current;
     const baselineLookAt = baselineLookAtRef.current;
@@ -1600,22 +1618,22 @@ function CameraIntelligence({
     desiredCameraWriterRef.current = "FocusMode";
     suspendAutoCameraUntilRef.current = performance.now() + 380;
     lastCameraAssistKeyRef.current = assistKey;
-    globalThis.console?.debug?.("[Nexora][CalmCameraMove]", {
+    devDiagnosticLog("cameraMotion", "[Nexora][CalmCameraMove]", {
       selectedObjectId: stableSelectedId,
       signature: cameraFocusSignature,
     });
     if (process.env.NODE_ENV !== "production") {
-      console.log("[Nexora][Framing] assist applied", { focusedId, projected, safeRegion: frameSpec.safeRegion });
+      devDiagnosticLog("cameraMotion", "[Nexora][Framing] assist applied", { focusedId, projected, safeRegion: frameSpec.safeRegion }, "info");
     }
-  }, [camera, cameraAuthorityRef, cameraLockedByUser, controlsRef, focusMode, focusPinned, focusedId, hudDockSide, layoutBoundsSignature, layoutDockInsets, layoutPositions, orbitControlsEnabled, overridesRef, preserveCameraOnClearRef, sceneJson, selectedObjectId, size.height, size.width, visualBoundsOptions]);
+  }, [camera, cameraAuthorityRef, cameraLockedByUser, controlsRef, focusMode, focusPinned, focusedId, hudDockSide, layoutBoundsSignature, layoutDockInsetSignature, layoutPositions, orbitControlsEnabled, overridesRef, preserveCameraOnClearRef, sceneJson, selectedObjectId, size.height, size.width, visualBoundsOptions]);
 
   const applyHudShift = (lookAt: THREE.Vector3, camPosV: THREE.Vector3) => {
     const frameSpec = resolveLayoutAwareFrameSpec({
       viewportWidth: size.width,
       viewportHeight: size.height,
       hudDockSide,
-      leftDockInsetRatio: layoutDockInsets?.leftDockInsetRatio,
-      rightDockInsetRatio: layoutDockInsets?.rightDockInsetRatio,
+      leftDockInsetRatio,
+      rightDockInsetRatio,
     });
     if (!hudDockSide) return;
     const shiftSign = hudDockSide === "left" ? 1 : -1;
@@ -2355,8 +2373,162 @@ function StaticSceneFramer({
 
 function SceneCanvasComponent(props: SceneCanvasProps) {
   const prevRenderPropsRef = useRef<SceneCanvasProps | null>(null);
+  const focusRenderAuditRef = useRef<{
+    renderCount: number;
+    focusedId: string | null;
+  }>({
+    renderCount: 0,
+    focusedId: props.focusedId ?? null,
+  });
+  focusRenderAuditRef.current.renderCount += 1;
   if (process.env.NODE_ENV !== "production" && prevRenderPropsRef.current) {
     logSceneCanvasRenderSource(prevRenderPropsRef.current, props);
+    const prevFocusedId = prevRenderPropsRef.current.focusedId ?? null;
+    const nextFocusedId = props.focusedId ?? null;
+    if (prevFocusedId !== nextFocusedId) {
+      const renderCountBefore = Math.max(0, focusRenderAuditRef.current.renderCount - 1);
+      const renderCountAfter = focusRenderAuditRef.current.renderCount;
+      devLogThrottled({
+        key: `${prevFocusedId ?? "none"}:${nextFocusedId ?? "none"}:${renderCountAfter}`,
+        label: "[NEXORA_FOCUS_RENDER_IMPACT]",
+        scope: "selectionIsolation",
+        intervalMs: 1000,
+        payload: {
+          file: "frontend/app/components/SceneCanvas.tsx",
+          focusChanged: true,
+          previousFocusedId: prevFocusedId,
+          nextFocusedId,
+          beforeFocusChange: {
+            SceneCanvasRenders: renderCountBefore,
+            focusedId: prevFocusedId,
+          },
+          afterFocusChange: {
+            SceneCanvasRenders: renderCountAfter,
+            focusedId: nextFocusedId,
+          },
+          measuredRenderDelta: 1,
+          SceneCanvasRenders: true,
+          SceneRendererRenders: true,
+          SceneOverlayRendererRenders: true,
+          ObjectInfoHudRenders: Boolean(props.objectInfoHud),
+          RelationshipRendererRenders: "indirect via SceneOverlayRenderer; no focusedId prop",
+          RightPanelHostRenders: "external sibling; see RightPanelHost focusedId prop diff",
+        },
+      });
+      devLogThrottled({
+        key: `${prevFocusedId ?? "none"}:${nextFocusedId ?? "none"}:propagation`,
+        label: "[NEXORA_FOCUS_PROPAGATION_AUDIT]",
+        scope: "selectionIsolation",
+        intervalMs: 1000,
+        payload: {
+          file: "frontend/app/components/SceneCanvas.tsx",
+          previousFocusedId: prevFocusedId,
+          nextFocusedId,
+          paths: [
+            {
+              consumer: "SceneCanvas",
+              directConsumer: "SceneCanvas.focusedId prop",
+              indirectConsumer: null,
+              derivedConsumer: null,
+              classification: "DIRECT",
+            },
+            {
+              consumer: "CameraIntelligence",
+              directConsumer: "focusedId prop",
+              indirectConsumer: "camera framing effects",
+              derivedConsumer: "focusObjectId camera context",
+              classification: "DIRECT",
+            },
+            {
+              consumer: "SceneOverlayRenderer",
+              directConsumer: "sceneRendererProps.focusedId",
+              indirectConsumer: "SceneRenderer",
+              derivedConsumer: "scene object instance plans",
+              classification: "DIRECT",
+            },
+            {
+              consumer: "SceneRenderer",
+              directConsumer: "focusedId prop",
+              indirectConsumer: "SceneObjectInstances/AnimatableObject",
+              derivedConsumer: "focus highlight, scanner fallback, density profile",
+              classification: "DIRECT",
+            },
+            {
+              consumer: "ObjectInfoHudOverlay",
+              directConsumer: null,
+              indirectConsumer: "objectInfoHud model may track selected/focused fallback from HomeScreen",
+              derivedConsumer: "HUD selected object model",
+              classification: "DERIVED",
+            },
+            {
+              consumer: "RelationshipRenderer",
+              directConsumer: null,
+              indirectConsumer: "parent SceneOverlayRenderer render",
+              derivedConsumer: "selectedObjectId only",
+              classification: "UNNECESSARY",
+            },
+          ],
+        },
+      });
+      devLogThrottled({
+        key: `${prevFocusedId ?? "none"}:${nextFocusedId ?? "none"}:prop-stability`,
+        label: "[NEXORA_FOCUS_PROP_STABILITY_REPORT]",
+        scope: "selectionIsolation",
+        intervalMs: 1000,
+        payload: {
+          file: "frontend/app/components/SceneCanvas.tsx",
+          changedFocusProps: [
+            {
+              propName: "focusedId",
+              primitiveOrObject: "primitive",
+              memoizedOrRecreated: "primitive",
+              stableOrUnstableReference: "stable primitive value; changed by value",
+            },
+            {
+              propName: "sceneRendererProps",
+              primitiveOrObject: "object",
+              memoizedOrRecreated: "memoized object recreated when focusedId changes",
+              stableOrUnstableReference: "unstable on focus change by design",
+            },
+            {
+              propName: "focusObjectId camera context",
+              primitiveOrObject: "primitive",
+              memoizedOrRecreated: "derived inside camera context",
+              stableOrUnstableReference: "changes when focusedId changes",
+            },
+          ],
+        },
+      });
+    }
+  }
+  if (process.env.NODE_ENV !== "production") {
+    const payloadEntries = logPayloadReferenceStability({
+      owner: "SceneCanvas",
+      renderCount: focusRenderAuditRef.current.renderCount,
+      consumer: "SceneCanvas",
+      payloads: {
+        sceneJson: props.sceneJson,
+        propagationPayload: props.propagationPayload,
+        timelineHud: props.timelineHud,
+        quickActionsDock: props.quickActionsDock,
+        resolvedUiTheme: props.resolvedUiTheme,
+        hudThemeMode: props.hudThemeMode,
+        loops: props.loops,
+        effectiveActiveLoopId: props.effectiveActiveLoopId,
+        executiveSceneLayoutInsets: props.layoutDockInsets,
+      },
+      signatureBuilders: {
+        propagationPayload: buildPropagationPayloadSignature,
+        timelineHud: buildHudPayloadSignature,
+      },
+    });
+    logSceneCanvasPayloadImpact({
+      renderCount: focusRenderAuditRef.current.renderCount,
+      entries: payloadEntries,
+      propAliases: {
+        executiveSceneLayoutInsets: "layoutDockInsets",
+      },
+    });
   }
   prevRenderPropsRef.current = props;
 
@@ -3365,7 +3537,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     const signature = `${workspaceViewMode}:${effectiveViewportFrameMode}:${renderObjects.length}:${reason}`;
     if (viewportModeResolvedLogRef.current === signature) return;
     viewportModeResolvedLogRef.current = signature;
-    console.debug("[Nexora][ViewportModeResolved]", {
+    devDiagnosticLog("sceneViewport", "[Nexora][ViewportModeResolved]", {
       rawViewMode: workspaceViewMode,
       resolvedFramingViewMode: effectiveViewportFrameMode,
       objectCount: renderObjects.length,
@@ -3659,10 +3831,37 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
 
   useEffect(() => {
     let raf = 0;
+    let pendingSignature: string | null = null;
+    let lastInvalidatedSignature: string | null = null;
     const onResize = () => {
+      const nextSignature =
+        typeof window === "undefined"
+          ? "ssr"
+          : `${Math.round(window.innerWidth)}x${Math.round(window.innerHeight)}:${window.devicePixelRatio ?? 1}`;
+      if (nextSignature === pendingSignature || nextSignature === lastInvalidatedSignature) {
+        recordLayoutThrottleAudit({
+          area: "resize",
+          source: "SceneCanvas.resize",
+          previousSignature: lastInvalidatedSignature,
+          nextSignature,
+          prevented: true,
+          detail: { reason: "viewport signature unchanged" },
+        });
+        return;
+      }
+      pendingSignature = nextSignature;
       if (raf) cancelAnimationFrame(raf);
       raf = window.requestAnimationFrame(() => {
         raf = 0;
+        lastInvalidatedSignature = pendingSignature;
+        recordLayoutThrottleAudit({
+          area: "resize",
+          source: "SceneCanvas.resize",
+          previousSignature: null,
+          nextSignature: pendingSignature ?? "unknown",
+          prevented: false,
+        });
+        pendingSignature = null;
         sceneInvalidateRef.current?.();
       });
     };
@@ -3840,7 +4039,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       if ((e as any)?.button !== 0) return;
       if (localIsOrbitingRef.current || isHudInteractingRef.current) {
         if (process.env.NODE_ENV !== "production") {
-          console.log("[Nexora][SceneInteraction] empty click ignored", {
+          devDiagnosticLog("sceneInteraction", "[Nexora][SceneInteraction] empty click ignored", {
             orbiting: localIsOrbitingRef.current,
             hudInteracting: isHudInteractingRef.current,
           });
@@ -3852,7 +4051,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         return;
       }
       if (process.env.NODE_ENV !== "production") {
-        console.log("[Nexora][SceneInteraction] empty click ignored", {
+        devDiagnosticLog("sceneInteraction", "[Nexora][SceneInteraction] empty click ignored", {
           action: "soft_deselect_without_reframe",
         });
       }
@@ -4097,7 +4296,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
           sceneJson={sceneJsonForRenderer}
           viewMode={workspaceViewMode}
           enabled={orbitControlsEnabled}
-          isInteracting={props.isOrbiting || localIsOrbitingRef.current}
+          isInteracting={localIsOrbitingRef.current}
           programmaticCameraUpdateRef={programmaticCameraUpdateRef}
           cameraAuthorityRef={cameraAuthorityRef}
           layoutSignature={layoutBoundsSignature}
@@ -4199,6 +4398,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
           <ObjectInfoHudOverlay
             model={props.objectInfoHud.model}
             sceneJson={props.objectInfoHud.sceneJson}
+            placement={props.objectInfoHud.placement}
             themeMode={hudThemeMode}
             onCreateRelationship={props.objectInfoHud.onCreateRelationship}
             onDeleteRelationship={props.objectInfoHud.onDeleteRelationship}

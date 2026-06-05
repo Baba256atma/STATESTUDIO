@@ -288,3 +288,48 @@ export function buildObjectInfoHudModel(input: BuildObjectInfoHudModelInput): Ob
     editableObject,
   };
 }
+
+function signaturePart(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "number") return Number.isFinite(value) ? String(Math.round(value * 1000) / 1000) : "";
+  if (typeof value === "string" || typeof value === "boolean") return String(value);
+  return JSON.stringify(value);
+}
+
+function listSignature(values: string[] | null | undefined): string {
+  return Array.isArray(values) ? values.map((value) => String(value ?? "").trim()).filter(Boolean).join(",") : "";
+}
+
+export function buildObjectInfoHudSignature(model: ObjectInfoHudModel | null | undefined): string {
+  if (!model) return "objectInfoHud:null";
+  const position = model.position
+    ? [
+        signaturePart(model.position.x),
+        signaturePart(model.position.y),
+        signaturePart(model.position.z),
+      ].join(",")
+    : "";
+  return [
+    `selected:${model.selectedObjectId ?? ""}`,
+    `relationship:${model.selectedRelationshipId ?? ""}`,
+    `relationshipDetail:${model.relationshipDetails?.id ?? ""}`,
+    `propagation:${model.selectedPropagationPathId ?? ""}`,
+    `propagationDetail:${model.propagationDetails?.id ?? ""}`,
+    `name:${model.objectName ?? ""}`,
+    `type:${model.objectType ?? ""}`,
+    `status:${model.statusLabel ?? ""}`,
+    `tone:${model.statusTone ?? ""}`,
+    `risk:${model.riskLevel ?? ""}`,
+    `health:${model.healthLabel ?? ""}`,
+    `reliability:${model.reliabilityLabel ?? ""}`,
+    `frsi:${signaturePart(model.frsiScore)}`,
+    `confidence:${signaturePart(model.confidence)}`,
+    `summary:${model.executiveSummary ?? ""}`,
+    `signals:${listSignature(model.signals)}`,
+    `incoming:${listSignature(model.incomingRelationships)}`,
+    `outgoing:${listSignature(model.outgoingRelationships)}`,
+    `relationships:${signaturePart(model.relationshipCount)}`,
+    `position:${position}`,
+    `editable:${model.editableObject?.id ?? ""}:${model.editableObject?.name ?? ""}:${model.editableObject?.category ?? ""}`,
+  ].join("|");
+}

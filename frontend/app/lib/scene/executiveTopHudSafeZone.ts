@@ -1,6 +1,11 @@
 /** E2:57 — Shared safe zone for the executive top HUD command row. */
 
 import { emitHudLayoutZoneLog } from "../layout/hudLayoutLogGuard";
+import {
+  recordLayoutThrottleAudit,
+  stableLayoutSignature,
+} from "../layout/layoutThrottleAuditRuntime";
+import { devLogThrottled } from "../runtime/diagnosticThrottle.ts";
 import { getSceneHudRegistration } from "./sceneHudRegistry";
 import {
   resolveExecutiveSideInset,
@@ -28,7 +33,39 @@ export type ExecutiveTopHudSafeZoneContext = {
   objectInfoWidth?: number;
 };
 
+let lastTopSafeZoneSignature: string | null = null;
+let lastTopSafeZone: ExecutiveTopHudSafeZone | null = null;
+
 export function resolveExecutiveTopHudSafeZone(context: ExecutiveTopHudSafeZoneContext): ExecutiveTopHudSafeZone {
+  const contextSignature = stableLayoutSignature({
+    viewportWidth: context.viewportWidth,
+    sceneInfoVisible: context.sceneInfoVisible,
+    objectInfoVisible: context.objectInfoVisible,
+    sceneInfoWidth: context.sceneInfoWidth ?? null,
+    objectInfoWidth: context.objectInfoWidth ?? null,
+  });
+  if (lastTopSafeZone && lastTopSafeZoneSignature === contextSignature) {
+    recordLayoutThrottleAudit({
+      area: "safeZone",
+      source: "resolveExecutiveTopHudSafeZone",
+      previousSignature: lastTopSafeZoneSignature,
+      nextSignature: contextSignature,
+      prevented: true,
+      detail: { reason: "safe-zone context unchanged" },
+    });
+    devLogThrottled({
+      key: `top-safe-zone:${contextSignature}`,
+      label: "[NEXORA_SAFEZONE_STABILITY_REPORT]",
+      scope: "sceneRenderSource",
+      intervalMs: 15000,
+      payload: {
+        source: "resolveExecutiveTopHudSafeZone",
+        signature: contextSignature,
+        recalculationPrevented: true,
+      },
+    });
+    return lastTopSafeZone;
+  }
   const { viewportWidth: vpW } = context;
   const placement = resolveUnifiedTopRowPlacement(vpW);
   const sceneEntry = getSceneHudRegistration("sceneInfoHud");
@@ -68,6 +105,15 @@ export function resolveExecutiveTopHudSafeZone(context: ExecutiveTopHudSafeZoneC
     viewportWidth: vpW,
   });
 
+  recordLayoutThrottleAudit({
+    area: "safeZone",
+    source: "resolveExecutiveTopHudSafeZone",
+    previousSignature: lastTopSafeZoneSignature,
+    nextSignature: contextSignature,
+    prevented: false,
+  });
+  lastTopSafeZoneSignature = contextSignature;
+  lastTopSafeZone = zone;
   return zone;
 }
 
@@ -83,6 +129,8 @@ export function logSafeZone(payload: Record<string, unknown>): void {
 
 export function resetExecutiveTopHudSafeZoneLogsForTests(): void {
   // guarded by hudLayoutLogGuard reset
+  lastTopSafeZoneSignature = null;
+  lastTopSafeZone = null;
 }
 
 /** Convenience for layout modules that only need the shared top value. */

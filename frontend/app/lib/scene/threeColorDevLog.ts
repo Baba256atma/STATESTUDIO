@@ -16,6 +16,10 @@ export function logThreeColorBrake(value: string): void {
   globalThis.console?.warn?.(`[ThreeColor][Brake] ${signature}`);
 }
 
+export function getThreeColorBrakeCount(): number {
+  return loggedBrakeSignatures.size;
+}
+
 export function resetThreeColorBrakeLogsForTests(): void {
   loggedBrakeSignatures.clear();
 }

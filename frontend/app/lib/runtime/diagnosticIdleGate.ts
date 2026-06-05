@@ -1,16 +1,15 @@
+import { installDiagnosticConsoleHelper, isDiagnosticEnabled } from "./diagnosticSwitch.ts";
+
 type DiagnosticLogLevel = "debug" | "info" | "warn" | "error";
 
 type SignatureGateOptions = {
   cooldownMs?: number;
+  scope?: string;
 };
 
 const lastSignatureByLabel = new Map<string, string>();
 const lastEmittedAtByLabel = new Map<string, number>();
 const permanentKeys = new Set<string>();
-
-function isDev(): boolean {
-  return typeof process === "undefined" || process.env.NODE_ENV !== "production";
-}
 
 export function stableDiagnosticSignature(value: unknown): string {
   if (value == null || typeof value !== "object") return JSON.stringify(value);
@@ -27,7 +26,8 @@ export function shouldEmitDiagnosticOnSignatureChange(
   signature: string,
   options?: SignatureGateOptions
 ): boolean {
-  if (!isDev()) return false;
+  if (!isDiagnosticEnabled(options?.scope)) return false;
+  installDiagnosticConsoleHelper();
   const previousSignature = lastSignatureByLabel.get(label);
   if (previousSignature === signature) return false;
 
@@ -43,7 +43,8 @@ export function shouldEmitDiagnosticOnSignatureChange(
 }
 
 export function shouldEmitDiagnosticOncePermanent(label: string, signature: string): boolean {
-  if (!isDev()) return false;
+  if (!isDiagnosticEnabled()) return false;
+  installDiagnosticConsoleHelper();
   const key = `${label}:${signature}`;
   if (permanentKeys.has(key)) return false;
   permanentKeys.add(key);

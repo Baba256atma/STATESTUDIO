@@ -2,16 +2,22 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { devLogThrottled, resetDiagnosticThrottleForTests } from "./diagnosticThrottle.ts";
+import { resetDiagnosticSwitchForTests } from "./diagnosticSwitch.ts";
 
 test.beforeEach(() => {
+  resetDiagnosticSwitchForTests();
   resetDiagnosticThrottleForTests();
 });
 
+test.afterEach(() => {
+  resetDiagnosticSwitchForTests();
+});
+
 test("devLogThrottled emits once per interval for identical payload", () => {
-  const warnings: unknown[] = [];
-  const originalWarn = globalThis.console.warn;
-  globalThis.console.warn = (...args: unknown[]) => {
-    warnings.push(args[0]);
+  const infos: unknown[] = [];
+  const originalInfo = globalThis.console.info;
+  globalThis.console.info = (...args: unknown[]) => {
+    infos.push(args[0]);
   };
   try {
     devLogThrottled({
@@ -26,8 +32,8 @@ test("devLogThrottled emits once per interval for identical payload", () => {
       payload: { blocker: "x" },
       intervalMs: 5000,
     });
-    assert.equal(warnings.length, 1);
+    assert.equal(infos.filter((label) => label === "[TestThrottle]").length, 1);
   } finally {
-    globalThis.console.warn = originalWarn;
+    globalThis.console.info = originalInfo;
   }
 });

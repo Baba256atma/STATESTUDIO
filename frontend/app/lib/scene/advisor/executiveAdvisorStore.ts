@@ -3,6 +3,12 @@
  */
 
 import { buildExecutiveAdvisorState } from "./executiveAdvisorRuntime.ts";
+import {
+  buildSafeExecutiveAdvisorInputSignature,
+  logAdvisorAlertAccumulation,
+  logAdvisorSignatureAudit,
+  logAdvisorSignatureGuard,
+} from "./executiveAdvisorSignatureSafety.ts";
 import type {
   BuildExecutiveAdvisorInput,
   ExecutiveAdvisorRecommendationStatus,
@@ -13,6 +19,7 @@ type AdvisorListener = () => void;
 
 let state: ExecutiveAdvisorState | null = null;
 let lastInputSignature: string | null = null;
+let lastAlertCount = 0;
 const recommendationStatus = new Map<string, ExecutiveAdvisorRecommendationStatus>();
 const listeners = new Set<AdvisorListener>();
 
@@ -21,15 +28,30 @@ function notify(): void {
 }
 
 function inputSignature(input: BuildExecutiveAdvisorInput): string {
-  return [
-    input.cognitiveTwin?.signature ?? "none",
-    input.warRoom?.signature ?? "none",
-    input.activeSimulation?.scenarioId ?? "none",
-    input.scenarioComparison?.id ?? "none",
-    input.decisionRecommendation?.recommendedScenarioId ?? "none",
-    input.selectedObjectId ?? "none",
-    (input.alerts ?? []).map((alert) => `${alert.id}:${alert.acknowledged}`).join("|") || "none",
-  ].join("::");
+  const result = buildSafeExecutiveAdvisorInputSignature(input);
+  logAdvisorSignatureAudit({
+    signatureLength: result.truncatedLength,
+    alertCount: result.alertCount,
+    recommendationCount: state?.recommendations.length ?? 0,
+    selectedObjectId: input.selectedObjectId ?? null,
+    dependencyCounts: {
+      timelineEvents: input.timelineEvents?.length ?? 0,
+      cognitiveTwinBranches: input.cognitiveTwin?.futureBranches.length ?? 0,
+      warRoomAlerts: input.warRoom?.alerts.length ?? 0,
+      warRoomRecommendations: input.warRoom?.recommendations.length ?? 0,
+      scenarioRows: input.scenarioComparison?.rows.length ?? 0,
+      memoryEntries: input.memoryState?.entries.length ?? 0,
+    },
+    guardActivated: result.guardActivated,
+  });
+  logAdvisorSignatureGuard({
+    originalLength: result.originalLengthEstimate,
+    truncatedLength: result.truncatedLength,
+    guardActivated: result.guardActivated,
+    alertCount: result.alertCount,
+    recommendationCount: state?.recommendations.length ?? 0,
+  });
+  return result.signature;
 }
 
 function applyRecommendationStatuses(next: ExecutiveAdvisorState): ExecutiveAdvisorState {
@@ -66,6 +88,16 @@ export function refreshExecutiveAdvisor(input: BuildExecutiveAdvisorInput): Exec
     clearExecutiveAdvisor();
     return null;
   }
+  const nextAlertCount = input.alerts?.length ?? 0;
+  const alertDelta = nextAlertCount - lastAlertCount;
+  logAdvisorAlertAccumulation({
+    previousCount: lastAlertCount,
+    nextCount: nextAlertCount,
+    delta: alertDelta,
+    abnormalGrowth: alertDelta > 20 || nextAlertCount > 250,
+    selectedObjectId: input.selectedObjectId ?? null,
+  });
+  lastAlertCount = nextAlertCount;
   const nextSignature = inputSignature(input);
   if (state && lastInputSignature === nextSignature) return state;
   lastInputSignature = nextSignature;
@@ -89,12 +121,14 @@ export function clearExecutiveAdvisor(): void {
   if (!state) return;
   state = null;
   lastInputSignature = null;
+  lastAlertCount = 0;
   notify();
 }
 
 export function resetExecutiveAdvisorForTests(): void {
   state = null;
   lastInputSignature = null;
+  lastAlertCount = 0;
   recommendationStatus.clear();
   listeners.clear();
 }

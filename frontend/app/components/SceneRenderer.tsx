@@ -76,6 +76,7 @@ import {
   readSceneRelationshipEdges,
 } from "../lib/scene/interaction/executiveRelationshipExplorationRuntime";
 import { LoopLinesAnimated } from "./scene/LoopLinesAnimated";
+import { logPayloadReferenceStability } from "../lib/runtime/payloadStabilityAudit";
 const EMPTY_STRING_ARRAY: string[] = [];
 const EMPTY_SCENE_ANIMS: any[] = [];
 const EMPTY_SCENE_LOOPS: SceneLoop[] = [];
@@ -1371,6 +1372,24 @@ function SceneRendererComponent({
   runtimeObjectPositionContext,
 }: SceneRendererProps) {
   if (!sceneJson) return null;
+
+  const payloadRenderCountRef = useRef(0);
+  payloadRenderCountRef.current += 1;
+  if (process.env.NODE_ENV !== "production") {
+    logPayloadReferenceStability({
+      owner: "SceneRenderer",
+      renderCount: payloadRenderCountRef.current,
+      consumer: "SceneRenderer",
+      payloads: {
+        sceneJson,
+        loops,
+        effectiveActiveLoopId: propActiveLoopId,
+        resolvedUiTheme: theme,
+        hudThemeMode: theme,
+        propagationPayload: propagationOverlay,
+      },
+    });
+  }
 
   const stableGlobalScale = useMemo(() => globalScale, [globalScale]);
   const chatOffset = useChatOffset();

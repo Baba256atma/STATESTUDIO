@@ -10,6 +10,10 @@ import {
   logE299StrategicQuestionGenerated,
 } from "./executiveAdvisorDiagnostics.ts";
 import {
+  buildSafeExecutiveAdvisorStateSignature,
+  logAdvisorSignatureGuard,
+} from "./executiveAdvisorSignatureSafety.ts";
+import {
   buildAdvisorEvidence,
   detectAdvisorObservations,
   derivePreferenceSignals,
@@ -295,16 +299,19 @@ function buildCopilot(
   };
 }
 
-function buildSignature(input: BuildExecutiveAdvisorInput): string {
-  return [
-    input.cognitiveTwin?.signature ?? "none",
-    input.warRoom?.signature ?? "none",
-    input.activeSimulation?.scenarioId ?? "none",
-    input.scenarioComparison?.id ?? "none",
-    input.decisionRecommendation?.recommendedScenarioId ?? "none",
-    input.selectedObjectId ?? "none",
-    (input.alerts ?? []).map((alert) => `${alert.id}:${alert.acknowledged}`).join("|") || "none",
-  ].join("::");
+function buildSignature(
+  input: BuildExecutiveAdvisorInput,
+  recommendations: readonly ExecutiveAdvisorRecommendation[]
+): string {
+  const result = buildSafeExecutiveAdvisorStateSignature(input, recommendations);
+  logAdvisorSignatureGuard({
+    originalLength: result.originalLengthEstimate,
+    truncatedLength: result.truncatedLength,
+    guardActivated: result.guardActivated,
+    alertCount: input.alerts?.length ?? 0,
+    recommendationCount: recommendations.length,
+  });
+  return result.signature;
 }
 
 export function buildExecutiveAdvisorState(input: BuildExecutiveAdvisorInput): ExecutiveAdvisorState {
@@ -328,7 +335,7 @@ export function buildExecutiveAdvisorState(input: BuildExecutiveAdvisorInput): E
   const brief = buildBrief(input, observations, recommendations);
   const hud = buildHud(brief, observations, questions, recommendations, scenarioEvaluations, overallConfidence);
   const copilot = buildCopilot(input, brief, observations, recommendations, scenarioEvaluations);
-  const signature = buildSignature(input);
+  const signature = buildSignature(input, recommendations);
 
   const state: ExecutiveAdvisorState = {
     signature,

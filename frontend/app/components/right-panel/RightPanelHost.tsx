@@ -4,6 +4,8 @@ import React from "react";
 
 import { traceRuntimeParity } from "../../lib/debug/runtimeLoopTrace";
 import { devLogOnSignatureChange } from "../../lib/runtime/diagnosticIdleGate";
+import { devLogThrottled } from "../../lib/runtime/diagnosticThrottle.ts";
+import { isDiagnosticEnabled } from "../../lib/runtime/diagnosticSwitch.ts";
 
 import ConflictMapPanel from "../panels/ConflictMapPanel";
 import RiskPropagationPanel from "../panels/RiskPropagationPanel";
@@ -226,6 +228,331 @@ type RightPanelHostProps = {
 
 type PanelDataReadiness = "empty" | "partial" | "full";
 
+type RightPanelHostPropChangeType =
+  | "primitive-change"
+  | "function-identity-change"
+  | "object-identity-change"
+  | "array-identity-change"
+  | "signature-change";
+
+type RightPanelHostPropChange = {
+  propName: string;
+  changeType: RightPanelHostPropChangeType;
+  prevSignature: string;
+  nextSignature: string;
+  shouldCauseRender: boolean;
+};
+
+export type RightPanelHostPropDiff = {
+  changedPropNames: string[];
+  propChanges: RightPanelHostPropChange[];
+};
+
+const RIGHT_PANEL_CALLBACK_PROPS = new Set<string>([
+  "onSceneUpdateFromTimeline",
+  "onSimulateDecision",
+  "onRunContextualSimulation",
+  "onCompareOptions",
+  "onRunContextualCompare",
+  "onOpenWarRoom",
+  "onOpenContextualWarRoom",
+  "onOpenRiskFlow",
+  "onOpenWhyThis",
+  "onCloseWarRoom",
+  "onOpenStrategicCommand",
+  "onOpenStrategicCommandFull",
+  "onOpenTimeline",
+  "onOpenDashboard",
+  "onOpenMemory",
+  "onOpenDecisionLifecycle",
+  "onOpenStrategicLearning",
+  "onOpenMetaDecision",
+  "onOpenCognitiveStyle",
+  "onOpenTeamDecision",
+  "onOpenCollaborationIntelligence",
+  "onOpenDecisionCouncil",
+  "onOpenOrgMemory",
+  "onOpenDecisionPolicy",
+  "onOpenDecisionGovernance",
+  "onOpenExecutiveApproval",
+  "onOpenDecisionTimeline",
+  "onOpenConfidenceCalibration",
+  "onOpenOutcomeFeedback",
+  "onOpenPatternIntelligence",
+  "onOpenObject",
+  "onOpenScenarioTree",
+  "onOpenCenterComponent",
+  "onOpenObjectInspectionCenter",
+  "onOpenPanelView",
+  "onPreviewDecision",
+  "onSaveScenario",
+  "onApplyDecisionSafe",
+  "resolveObjectLabel",
+  "onAddDomainObject",
+]);
+
+const RIGHT_PANEL_MEANINGFUL_PROPS = new Set<string>([
+  "rightPanelState",
+  "panelData",
+  "backendBase",
+  "episodeId",
+  "sceneJson",
+  "responseData",
+  "activeMode",
+  "conflicts",
+  "objectSelection",
+  "memoryInsights",
+  "decisionMemoryEntries",
+  "riskPropagation",
+  "strategicAdvice",
+  "strategicCouncil",
+  "decisionImpact",
+  "decisionCockpit",
+  "opponentModel",
+  "strategicPatterns",
+  "selectedObjectId",
+  "activeExecutiveObjectId",
+  "selectedObjectLabel",
+  "executiveObjectPanelData",
+  "demoProfile",
+  "decisionResult",
+  "decisionLoading",
+  "decisionStatus",
+  "decisionError",
+  "firstMeaningfulState",
+  "allowRealPanelData",
+  "isSystemUnhealthy",
+  "visibleSceneObjects",
+  "hasVisibleSceneObjects",
+  "domainCatalogDomainId",
+  "activeExecutiveView",
+  "guidedPromptDebug",
+  "panelFamilyAuditDebug",
+  "metaCognition",
+  "reasoningTransparency",
+  "warRoom",
+]);
+
+const rightPanelHostRenderTimestamps: number[] = [];
+
+function recordRightPanelHostRenderCountLast10s(): number {
+  const now = Date.now();
+  rightPanelHostRenderTimestamps.push(now);
+  const cutoff = now - 10_000;
+  while (rightPanelHostRenderTimestamps.length > 0 && rightPanelHostRenderTimestamps[0] < cutoff) {
+    rightPanelHostRenderTimestamps.shift();
+  }
+  return rightPanelHostRenderTimestamps.length;
+}
+
+function stableValueSignature(value: unknown, depth = 0): string {
+  if (value == null) return String(value);
+  const type = typeof value;
+  if (type === "string" || type === "number" || type === "boolean" || type === "bigint") {
+    return JSON.stringify(value);
+  }
+  if (type === "function") return "function";
+  if (type !== "object") return type;
+  if (depth >= 3) {
+    if (Array.isArray(value)) return `array:${value.length}`;
+    return `object:${Object.keys(value as Record<string, unknown>).sort().slice(0, 12).join(",")}`;
+  }
+  if (Array.isArray(value)) {
+    return `array:${value.length}:[${value.slice(0, 12).map((entry) => stableValueSignature(entry, depth + 1)).join("|")}]`;
+  }
+  const record = value as Record<string, unknown>;
+  return `object:{${Object.keys(record)
+    .sort()
+    .slice(0, 24)
+    .map((key) => `${key}:${stableValueSignature(record[key], depth + 1)}`)
+    .join("|")}}`;
+}
+
+function valueChangeType(prev: unknown, next: unknown): RightPanelHostPropChangeType {
+  if (typeof prev === "function" || typeof next === "function") return "function-identity-change";
+  if (Array.isArray(prev) || Array.isArray(next)) return "array-identity-change";
+  if (
+    prev &&
+    next &&
+    typeof prev === "object" &&
+    typeof next === "object" &&
+    stableValueSignature(prev) !== stableValueSignature(next)
+  ) {
+    return "signature-change";
+  }
+  if ((prev && typeof prev === "object") || (next && typeof next === "object")) return "object-identity-change";
+  return "primitive-change";
+}
+
+function rightPanelStateSignature(state: RightPanelState): string {
+  return [
+    state.view ?? "none",
+    state.contextId ?? "none",
+    state.isOpen ? "open" : "closed",
+  ].join("::");
+}
+
+function panelDataSignature(panelData: PanelSharedData | null | undefined): string {
+  if (!panelData) return "panel:null";
+  try {
+    return buildPanelSharedDataSignature(panelData);
+  } catch {
+    return stableValueSignature(panelData);
+  }
+}
+
+function visibleObjectIdsSignature(objects: SceneObject[] | null | undefined): string {
+  if (!Array.isArray(objects)) return "objects:null";
+  return `objects:${objects.length}:${objects.map((obj) => String(obj?.id ?? "").trim()).filter(Boolean).join(",")}`;
+}
+
+function warRoomSignature(warRoom: WarRoomController | null | undefined): string {
+  if (!warRoom) return "warRoom:null";
+  return stableValueSignature({
+    isOpen: (warRoom as unknown as Record<string, unknown>).isOpen ?? null,
+    intelligence: warRoom.intelligence ?? null,
+  });
+}
+
+export function buildRightPanelHostSignature(input: RightPanelHostProps): string {
+  const view = input.rightPanelState.view ?? null;
+  const contextId = input.rightPanelState.contextId ?? null;
+  const activeObjectId = contextId ?? input.activeExecutiveObjectId ?? input.selectedObjectId ?? null;
+  const base = [
+    `view:${view ?? "none"}`,
+    `context:${contextId ?? "none"}`,
+    `open:${input.rightPanelState.isOpen ? "1" : "0"}`,
+    `activeExecutiveView:${input.activeExecutiveView ?? "none"}`,
+    `decision:${input.decisionStatus ?? "idle"}:${input.decisionLoading ? "1" : "0"}:${input.decisionError ?? "none"}`,
+    `system:${input.isSystemUnhealthy ? "1" : "0"}`,
+    `allowReal:${input.allowRealPanelData === false ? "0" : "1"}`,
+  ];
+
+  if (!input.rightPanelState.isOpen) {
+    return [...base, "closed-shell"].join("|");
+  }
+
+  if (view === "object" || view === "object_focus" || view === "executive_object") {
+    return [
+      ...base,
+      `object:${activeObjectId ?? "none"}`,
+      `label:${input.selectedObjectLabel ?? "none"}`,
+      `objectSelection:${stableValueSignature(input.objectSelection)}`,
+      `executiveObject:${stableValueSignature(input.executiveObjectPanelData)}`,
+      `sceneObjects:${visibleObjectIdsSignature(input.visibleSceneObjects)}`,
+    ].join("|");
+  }
+
+  if (view === "war_room") {
+    return [
+      ...base,
+      `panel:${panelDataSignature(input.panelData)}`,
+      `warRoom:${warRoomSignature(input.warRoom)}`,
+      `strategicCouncil:${stableValueSignature(input.strategicCouncil)}`,
+    ].join("|");
+  }
+
+  if (
+    view === "simulate" ||
+    view === "compare" ||
+    view === "timeline" ||
+    view === "decision_timeline" ||
+    view === "scenario_tree" ||
+    view === "confidence_calibration" ||
+    view === "outcome_feedback" ||
+    view === "pattern_intelligence"
+  ) {
+    return [
+      ...base,
+      `panel:${panelDataSignature(input.panelData)}`,
+      `scenario:${stableValueSignature(input.decisionResult ?? input.responseData)}`,
+      `decisionImpact:${stableValueSignature(input.decisionImpact)}`,
+      `memory:${stableValueSignature(input.decisionMemoryEntries)}`,
+    ].join("|");
+  }
+
+  if (view === "risk" || view === "fragility" || view === "explanation") {
+    return [
+      ...base,
+      `panel:${panelDataSignature(input.panelData)}`,
+      `risk:${stableValueSignature(input.riskPropagation)}`,
+      `scene:${stableValueSignature((input.sceneJson as Record<string, unknown> | null | undefined)?.risk_propagation ?? null)}`,
+    ].join("|");
+  }
+
+  if (view === "advice" || view === "conflict" || view === "memory" || view === "replay") {
+    return [
+      ...base,
+      `panel:${panelDataSignature(input.panelData)}`,
+      `response:${stableValueSignature(input.responseData)}`,
+      `advice:${stableValueSignature(input.strategicAdvice)}`,
+      `conflicts:${stableValueSignature(input.conflicts)}`,
+      `memory:${stableValueSignature(input.memoryInsights ?? input.decisionMemoryEntries)}`,
+    ].join("|");
+  }
+
+  return [
+    ...base,
+    `panel:${panelDataSignature(input.panelData)}`,
+    `response:${stableValueSignature(input.responseData)}`,
+    `dashboard:${stableValueSignature(input.decisionCockpit ?? input.firstMeaningfulState)}`,
+    `meta:${stableValueSignature(input.metaCognition)}`,
+    `reasoning:${stableValueSignature(input.reasoningTransparency)}`,
+  ].join("|");
+}
+
+export function diffRightPanelHostProps(
+  prevProps: RightPanelHostProps | null | undefined,
+  nextProps: RightPanelHostProps
+): RightPanelHostPropDiff {
+  if (!prevProps) {
+    return {
+      changedPropNames: ["__initial_render__"],
+      propChanges: [
+        {
+          propName: "__initial_render__",
+          changeType: "primitive-change",
+          prevSignature: "none",
+          nextSignature: buildRightPanelHostSignature(nextProps),
+          shouldCauseRender: true,
+        },
+      ],
+    };
+  }
+  const keys = new Set([...Object.keys(prevProps), ...Object.keys(nextProps)]);
+  const propChanges: RightPanelHostPropChange[] = [];
+  for (const propName of Array.from(keys).sort()) {
+    const prevValue = (prevProps as unknown as Record<string, unknown>)[propName];
+    const nextValue = (nextProps as unknown as Record<string, unknown>)[propName];
+    if (Object.is(prevValue, nextValue)) continue;
+    const prevSignature =
+      propName === "rightPanelState"
+        ? rightPanelStateSignature(prevValue as RightPanelState)
+        : propName === "panelData"
+          ? panelDataSignature(prevValue as PanelSharedData)
+          : stableValueSignature(prevValue);
+    const nextSignature =
+      propName === "rightPanelState"
+        ? rightPanelStateSignature(nextValue as RightPanelState)
+        : propName === "panelData"
+          ? panelDataSignature(nextValue as PanelSharedData)
+          : stableValueSignature(nextValue);
+    const shouldCauseRender =
+      RIGHT_PANEL_MEANINGFUL_PROPS.has(propName) && prevSignature !== nextSignature;
+    propChanges.push({
+      propName,
+      changeType: valueChangeType(prevValue, nextValue),
+      prevSignature,
+      nextSignature,
+      shouldCauseRender,
+    });
+  }
+  return {
+    changedPropNames: propChanges.map((change) => change.propName),
+    propChanges,
+  };
+}
+
 function traceViewSync(detail: {
   label:
     | "[Nexora][ViewSync] host_render"
@@ -402,7 +729,90 @@ function ExecutivePanelSkeletonBody() {
   );
 }
 
-export function RightPanelHost(props: RightPanelHostProps) {
+function RightPanelHostInner(props: RightPanelHostProps) {
+  const renderCountRef = React.useRef(0);
+  renderCountRef.current += 1;
+  const previousPropsRef = React.useRef<RightPanelHostProps | null>(null);
+  const renderDiff = diffRightPanelHostProps(previousPropsRef.current, props);
+  const rightPanelHostRenderCountLast10s =
+    process.env.NODE_ENV === "production" ? 0 : recordRightPanelHostRenderCountLast10s();
+  const callbacksChanged = renderDiff.propChanges.some((change) => RIGHT_PANEL_CALLBACK_PROPS.has(change.propName));
+  const rightPanelStateChange = renderDiff.propChanges.find((change) => change.propName === "rightPanelState");
+  const parentRenderOnly =
+    renderDiff.changedPropNames.length > 0 && renderDiff.propChanges.every((change) => !change.shouldCauseRender);
+  devLogThrottled({
+    key: `${props.rightPanelState.view ?? "none"}:${props.rightPanelState.contextId ?? "none"}:${props.rightPanelState.isOpen}:${props.selectedObjectId ?? "none"}:${props.activeExecutiveObjectId ?? "none"}`,
+    label: "[NEXORA_PANEL_RENDER_TRACE]",
+    scope: "panel",
+    intervalMs: 1000,
+    payload: {
+      stepName: "RightPanelHost render",
+      file: "frontend/app/components/right-panel/RightPanelHost.tsx",
+      stateWritten: "none",
+      reason: "React render from rightPanelState/panel data/selection props.",
+      renderImpact: "Right panel payload resolution and active panel render.",
+      shouldBeImmediate: props.rightPanelState.view !== "object" && props.rightPanelState.view !== "executive_object",
+      shouldBeDeferred: props.rightPanelState.view === "object" || props.rightPanelState.view === "executive_object",
+      shouldBeSkippedIfSameObject: true,
+      selectedObjectIdChanged: false,
+      focusedIdChanged: false,
+      objectInfoHudChanged: false,
+      rightPanelChanged: true,
+      objectPanelDataBuilt: Boolean(props.executiveObjectPanelData),
+      executiveDataBuilt: Boolean(props.executiveObjectPanelData),
+      renderCountDelta: 1,
+      renderCount: renderCountRef.current,
+      view: props.rightPanelState.view ?? null,
+      contextId: props.rightPanelState.contextId ?? null,
+      isOpen: props.rightPanelState.isOpen,
+      selectedObjectId: props.selectedObjectId ?? null,
+      activeExecutiveObjectId: props.activeExecutiveObjectId ?? null,
+      rightPanelHostRenderCountLast10s,
+    },
+  });
+  devLogThrottled({
+    key: `${props.rightPanelState.view ?? "none"}:${props.rightPanelState.contextId ?? "none"}:${props.rightPanelState.isOpen}:${renderDiff.changedPropNames.join(",") || "none"}`,
+    label: "[NEXORA_RIGHT_PANEL_RENDER_CAUSE]",
+    scope: "panel",
+    intervalMs: 1000,
+    payload: {
+      renderIndex: renderCountRef.current,
+      changedProps: renderDiff.propChanges,
+      changedPropNames: renderDiff.changedPropNames,
+      rightPanelViewChanged:
+        rightPanelStateChange?.prevSignature.split("::")[0] !== rightPanelStateChange?.nextSignature.split("::")[0],
+      contextIdChanged:
+        rightPanelStateChange?.prevSignature.split("::")[1] !== rightPanelStateChange?.nextSignature.split("::")[1],
+      selectedObjectIdChanged: renderDiff.propChanges.some((change) => change.propName === "selectedObjectId"),
+      panelDataChanged: renderDiff.propChanges.some((change) => change.propName === "panelData"),
+      panelPayloadChanged: renderDiff.propChanges.some((change) =>
+        [
+          "responseData",
+          "sceneJson",
+          "strategicAdvice",
+          "riskPropagation",
+          "conflicts",
+          "decisionResult",
+          "memoryInsights",
+          "decisionCockpit",
+          "executiveObjectPanelData",
+        ].includes(change.propName)
+      ),
+      activePanelChanged: renderDiff.propChanges.some((change) =>
+        change.propName === "rightPanelState" || change.propName === "activeExecutiveView"
+      ),
+      callbacksChanged,
+      parentRenderOnly,
+      stateWritten: "none",
+      reason: parentRenderOnly
+        ? "parent-render-only: prop identities changed without meaningful signature change"
+        : "meaningful RightPanelHost prop signature changed",
+      rightPanelHostRenderCountLast10s,
+    },
+  });
+  React.useEffect(() => {
+    previousPropsRef.current = props;
+  });
   const DEBUG_PANEL_TRACE = false;
   const allowReal = props.allowRealPanelData ?? true;
   const visibleSceneObjects = props.visibleSceneObjects ?? [];
@@ -429,6 +839,42 @@ export function RightPanelHost(props: RightPanelHostProps) {
   const viewToRender = isValidRightPanelView(requestedView)
     ? requestedView
     : previousValidViewRef.current ?? "workspace";
+  const shouldBuildAdvicePayload =
+    viewToRender === "advice" ||
+    viewToRender === "timeline" ||
+    viewToRender === "decision_timeline" ||
+    viewToRender === "dashboard" ||
+    viewToRender === "strategic_command" ||
+    viewToRender === "war_room";
+  const shouldBuildConflictPayload =
+    viewToRender === "conflict" ||
+    viewToRender === "dashboard" ||
+    viewToRender === "strategic_command";
+  const shouldBuildTimelinePayload =
+    viewToRender === "timeline" ||
+    viewToRender === "decision_timeline" ||
+    viewToRender === "confidence_calibration" ||
+    viewToRender === "outcome_feedback" ||
+    viewToRender === "pattern_intelligence" ||
+    viewToRender === "scenario_tree";
+  const shouldBuildDashboardPayload =
+    viewToRender === "dashboard" ||
+    viewToRender === "strategic_command" ||
+    viewToRender === "decision_lifecycle" ||
+    viewToRender === "strategic_learning" ||
+    viewToRender === "meta_decision" ||
+    viewToRender === "cognitive_style" ||
+    viewToRender === "team_decision" ||
+    viewToRender === "org_memory" ||
+    viewToRender === "decision_governance" ||
+    viewToRender === "decision_policy" ||
+    viewToRender === "executive_approval" ||
+    viewToRender === "decision_council" ||
+    viewToRender === "collaboration_intelligence" ||
+    viewToRender === "kpi";
+  const shouldBuildWarRoomPayload = viewToRender === "war_room";
+  const shouldBuildRiskPayload =
+    viewToRender === "risk" || viewToRender === "fragility" || viewToRender === "explanation";
   const lastAnalyzeRouteTraceSigRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -815,6 +1261,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
     bestResolvedPanelData ??
     null;
   const effectiveAdvicePayload = React.useMemo(() => {
+    if (!shouldBuildAdvicePayload) return null;
     const { payload, sourceFlags } = buildAdvicePanelPayload({
       currentView: viewToRender,
       resolvedPanelData,
@@ -832,6 +1279,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
     return payload;
   }, [
     viewToRender,
+    shouldBuildAdvicePayload,
     resolvedPanelData,
     effectivePanelData.advice,
     effectivePanelData.strategicAdvice,
@@ -840,6 +1288,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
     sceneStrategicAdvice,
   ]);
   const effectiveConflictPayload = React.useMemo(() => {
+    if (!shouldBuildConflictPayload) return null;
     const { payload, sourceFlags } = buildConflictPanelPayload({
       currentView: viewToRender,
       resolvedPanelData,
@@ -850,8 +1299,9 @@ export function RightPanelHost(props: RightPanelHostProps) {
     });
     logConflictPayloadSource(viewToRender, sourceFlags);
     return payload;
-  }, [viewToRender, resolvedPanelData, effectivePanelData.conflict, responseConflict, responseConflicts, props.conflicts]);
+  }, [viewToRender, shouldBuildConflictPayload, resolvedPanelData, effectivePanelData.conflict, responseConflict, responseConflicts, props.conflicts]);
   const effectiveTimelinePayload = React.useMemo(() => {
+    if (!shouldBuildTimelinePayload) return null;
     const { payload, sourceFlags } = buildTimelinePanelPayload({
       currentView: viewToRender,
       resolvedPanelData,
@@ -870,6 +1320,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
     return payload;
   }, [
     viewToRender,
+    shouldBuildTimelinePayload,
     resolvedPanelData,
     effectivePanelData.timeline,
     responseTimelineImpact,
@@ -878,6 +1329,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
     effectiveAdvicePayload,
   ]);
   const effectiveDashboardPayload = React.useMemo(() => {
+    if (!shouldBuildDashboardPayload) return null;
     const { payload, sourceFlags } = buildDashboardPanelPayload({
       currentView: viewToRender,
       resolvedPanelData,
@@ -903,6 +1355,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
     return payload;
   }, [
     viewToRender,
+    shouldBuildDashboardPayload,
     resolvedPanelData,
     effectivePanelData.dashboard,
     effectivePanelData.decisionCockpit,
@@ -918,6 +1371,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
     props.conflicts,
   ]);
   const effectiveWarRoomPayload = React.useMemo(() => {
+    if (!shouldBuildWarRoomPayload) return null;
     const { payload, sourceFlags } = buildWarRoomPanelPayload({
       currentView: viewToRender,
       resolvedPanelData,
@@ -940,6 +1394,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
     return payload;
   }, [
     viewToRender,
+    shouldBuildWarRoomPayload,
     resolvedPanelData,
     effectivePanelData.warRoom,
     effectivePanelData.strategicCouncil,
@@ -952,6 +1407,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
     dashboardRecommendation,
   ]);
   const effectiveRiskPayload = React.useMemo(() => {
+    if (!shouldBuildRiskPayload) return null;
     const resolvedRecord = asLooseRecord(bestResolvedPanelData);
     const payload =
       (viewToRender === "fragility"
@@ -963,6 +1419,7 @@ export function RightPanelHost(props: RightPanelHostProps) {
     return payload;
   }, [
     bestResolvedPanelData,
+    shouldBuildRiskPayload,
     effectivePanelData.fragility,
     effectivePanelData.risk,
     viewToRender,
@@ -2699,3 +3156,48 @@ function extractPanelActions(panelData: PanelSharedData, responseData: unknown):
   }
   return out.slice(0, 3);
 }
+
+function areRightPanelHostPropsEqual(prevProps: RightPanelHostProps, nextProps: RightPanelHostProps): boolean {
+  const prevSignature = buildRightPanelHostSignature(prevProps);
+  const nextSignature = buildRightPanelHostSignature(nextProps);
+  const equal = prevSignature === nextSignature;
+  if (process.env.NODE_ENV !== "production" && isDiagnosticEnabled("panel")) {
+    const diff = diffRightPanelHostProps(prevProps, nextProps);
+    const parentRenderOnly =
+      diff.changedPropNames.length > 0 && diff.propChanges.every((change) => !change.shouldCauseRender);
+    devLogThrottled({
+      key: `memo:${nextProps.rightPanelState.view ?? "none"}:${nextProps.rightPanelState.contextId ?? "none"}:${equal ? "blocked" : "render"}`,
+      label: "[NEXORA_RIGHT_PANEL_RENDER_CAUSE]",
+      scope: "panel",
+      intervalMs: 1000,
+      payload: {
+        renderIndex: "memo-comparator",
+        changedProps: diff.propChanges,
+        changedPropNames: diff.changedPropNames,
+        rightPanelViewChanged: prevProps.rightPanelState.view !== nextProps.rightPanelState.view,
+        contextIdChanged: prevProps.rightPanelState.contextId !== nextProps.rightPanelState.contextId,
+        selectedObjectIdChanged: prevProps.selectedObjectId !== nextProps.selectedObjectId,
+        panelDataChanged: panelDataSignature(prevProps.panelData) !== panelDataSignature(nextProps.panelData),
+        panelPayloadChanged:
+          stableValueSignature(prevProps.responseData) !== stableValueSignature(nextProps.responseData) ||
+          stableValueSignature(prevProps.sceneJson) !== stableValueSignature(nextProps.sceneJson) ||
+          stableValueSignature(prevProps.executiveObjectPanelData) !== stableValueSignature(nextProps.executiveObjectPanelData),
+        activePanelChanged:
+          prevProps.rightPanelState.view !== nextProps.rightPanelState.view ||
+          prevProps.activeExecutiveView !== nextProps.activeExecutiveView,
+        callbacksChanged: diff.propChanges.some((change) => RIGHT_PANEL_CALLBACK_PROPS.has(change.propName)),
+        parentRenderOnly,
+        stateWritten: "none",
+        reason: equal
+          ? "memo-comparator-blocked-parent-render"
+          : "memo-comparator-allowed-meaningful-signature-change",
+        prevSignature,
+        nextSignature,
+      },
+    });
+  }
+  return equal;
+}
+
+export const RightPanelHost = React.memo(RightPanelHostInner, areRightPanelHostPropsEqual);
+RightPanelHost.displayName = "RightPanelHost";

@@ -13,6 +13,11 @@ import { devLogOnSignatureChange } from "../runtime/diagnosticIdleGate";
 import { shouldProceedRuntimeWrite } from "../runtime/idleRuntimeWriteGuard";
 import { isIdleRuntimeLocked } from "../runtime/idleRuntimeStabilityGuard";
 import { isStartupPhase } from "../runtime/startupPhase";
+import {
+  recordLayoutThrottleAudit,
+  stableLayoutSignature,
+} from "../layout/layoutThrottleAuditRuntime";
+import { devLogThrottled } from "../runtime/diagnosticThrottle";
 
 export type ExecutiveAnchorZone =
   | "top-left"
@@ -100,6 +105,10 @@ const driftBaselines = new Map<string, string>();
 const devLogKeys = new Set<string>();
 const sceneActivityHudDriftLogged = { value: false };
 const HUD_DRIFT_DEV_COOLDOWN_MS = 20_000;
+const lastViewportClampByPanel = new Map<string, {
+  signature: string;
+  position: HudAnchorPosition;
+}>();
 
 function isDev(): boolean {
   return process.env.NODE_ENV !== "production";
@@ -262,6 +271,39 @@ export function clampHudToViewport(
   const margin = options?.margin ?? 12;
   const estimatedWidth = options?.estimatedWidth ?? 300;
   const estimatedHeight = options?.estimatedHeight ?? 180;
+  const clampSignature = stableLayoutSignature({
+    panelId,
+    position,
+    width,
+    height,
+    margin,
+    estimatedWidth,
+    estimatedHeight,
+  });
+  const previous = lastViewportClampByPanel.get(panelId);
+  if (previous?.signature === clampSignature) {
+    recordLayoutThrottleAudit({
+      area: "safeZone",
+      source: "clampHudToViewport",
+      previousSignature: previous.signature,
+      nextSignature: clampSignature,
+      prevented: true,
+      detail: { panelId, reason: "viewport clamp input unchanged" },
+    });
+    devLogThrottled({
+      key: `viewport-clamp:${panelId}:${clampSignature}`,
+      label: "[NEXORA_SAFEZONE_STABILITY_REPORT]",
+      scope: "sceneRenderSource",
+      intervalMs: 15000,
+      payload: {
+        source: "clampHudToViewport",
+        panelId,
+        signature: clampSignature,
+        recalculationPrevented: true,
+      },
+    });
+    return previous.position;
+  }
   const next: HudAnchorPosition = { ...position };
   let clamped = false;
 
@@ -289,6 +331,15 @@ export function clampHudToViewport(
   if (clamped) {
     devLog("[Nexora][HudViewportClamp]", { panelId, from: position, to: next }, `${panelId}:${JSON.stringify(next)}`);
   }
+  recordLayoutThrottleAudit({
+    area: "safeZone",
+    source: "clampHudToViewport",
+    previousSignature: previous?.signature ?? null,
+    nextSignature: clampSignature,
+    prevented: false,
+    detail: { panelId, clamped },
+  });
+  lastViewportClampByPanel.set(panelId, { signature: clampSignature, position: next });
   return next;
 }
 
@@ -444,5 +495,6 @@ export function resetHudAnchoringRuntimeForTests(): void {
   devLogKeys.clear();
   lastHudAnchoringDriftSignatureRef.clear();
   lastHudAnchoringDriftEmittedAtRef.clear();
+  lastViewportClampByPanel.clear();
   sceneActivityHudDriftLogged.value = false;
 }

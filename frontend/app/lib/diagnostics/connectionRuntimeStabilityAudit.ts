@@ -3,12 +3,14 @@
  * AUDIT-REMOVE: delete after stability investigation completes.
  */
 
+import { installDiagnosticConsoleHelper, isDiagnosticEnabled } from "../runtime/diagnosticSwitch.ts";
+
 const WINDOW_MS = 10_000;
 
 type TimedStamp = { ts: number };
 
-function isDev(): boolean {
-  return typeof process === "undefined" || process.env.NODE_ENV !== "production";
+function isAuditEnabled(): boolean {
+  return isDiagnosticEnabled("runtimeAudit");
 }
 
 function pushTimed(events: TimedStamp[]): void {
@@ -59,56 +61,56 @@ let listenerAddedCount = 0;
 let listenerRemovedCount = 0;
 
 export function recordSceneCanvasRender(signature?: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   renderCount += 1;
   pushTimed(renderEvents);
   if (signature) lastRenderSignature = signature;
 }
 
 export function recordTopologyRebuild(reason: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   void reason;
   topologyRebuildCount += 1;
   pushTimed(topologyRebuildEvents);
 }
 
 export function recordConnectionLineRebuild(reason: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   void reason;
   connectionLineRebuildCount += 1;
   pushTimed(connectionLineRebuildEvents);
 }
 
 export function recordGeometryCreated(type: string, id?: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   void type;
   void id;
   geometryCreatedCount += 1;
 }
 
 export function recordGeometryDisposed(type: string, id?: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   void type;
   void id;
   geometryDisposedCount += 1;
 }
 
 export function recordMaterialCreated(type: string, id?: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   void type;
   void id;
   materialCreatedCount += 1;
 }
 
 export function recordMaterialDisposed(type: string, id?: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   void type;
   void id;
   materialDisposedCount += 1;
 }
 
 export function recordObjectSelection(objectId: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   void objectId;
   objectSelectionCount += 1;
   pushTimed(objectSelectionEvents);
@@ -119,28 +121,28 @@ export function recordObjectSelection(objectId: string): void {
 }
 
 export function recordRightPanelWrite(source: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   void source;
   rightPanelWriteCount += 1;
   pushTimed(rightPanelWriteEvents);
 }
 
 export function recordHudDrift(reason: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   void reason;
   hudDriftCount += 1;
   pushTimed(hudDriftEvents);
 }
 
 export function recordListenerAdded(type: string, source: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   void type;
   void source;
   listenerAddedCount += 1;
 }
 
 export function recordListenerRemoved(type: string, source: string): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   void type;
   void source;
   listenerRemovedCount += 1;
@@ -263,7 +265,8 @@ function hasNewlyRaisedThreshold(summary: ConnectionRuntimeStabilitySummary): bo
 }
 
 export function emitConnectionRuntimeStabilitySummary(reason: string): ConnectionRuntimeStabilitySummary | null {
-  if (!isDev()) return null;
+  if (!isAuditEnabled()) return null;
+  installDiagnosticConsoleHelper();
   const summary = buildConnectionRuntimeStabilitySummary(reason);
   const signature = JSON.stringify({
     reason: summary.reason,
@@ -324,7 +327,7 @@ export function resetConnectionRuntimeStabilityAuditForTests(): void {
 }
 
 export function scheduleConnectionRuntimeStabilitySummary(reason: string, delayMs = 1000): void {
-  if (!isDev()) return;
+  if (!isAuditEnabled()) return;
   globalThis.setTimeout?.(() => {
     emitConnectionRuntimeStabilitySummary(reason);
   }, delayMs);
