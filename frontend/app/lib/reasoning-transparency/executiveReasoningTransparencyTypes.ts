@@ -1,5 +1,5 @@
-import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes";
-import type { ExecutiveMetaCognitionSnapshot } from "../meta-cognition/executiveMetaCognitionTypes";
+import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes.ts";
+import type { ExecutiveMetaCognitionSnapshot } from "../meta-cognition/executiveMetaCognitionTypes.ts";
 
 export type ExecutiveReasoningAssumption = {
   id: string;

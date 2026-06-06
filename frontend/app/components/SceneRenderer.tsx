@@ -1335,6 +1335,7 @@ export type SceneRendererProps = {
     position: { x: number; y: number; z: number },
     phase: "drag" | "move"
   ) => void;
+  onObjectUserClick?: (objectId: string, eventId: string) => void;
   topologyConnectionLines?: SceneConnectionLine[];
   topologyConnectionLinesVisible?: boolean;
   topologyConnectionSelectedObjectId?: string | null;
@@ -1366,6 +1367,7 @@ function SceneRendererComponent({
   decisionPathOverlay = null,
   motionCalm = false,
   onObjectPositionChange,
+  onObjectUserClick,
   topologyConnectionLines = [],
   topologyConnectionLinesVisible = false,
   topologyConnectionSelectedObjectId = null,
@@ -2467,6 +2469,7 @@ function SceneRendererComponent({
         sceneScale: stableGlobalScale,
         sceneObjectCount: stableObjects.length,
         onObjectPositionChange,
+        onObjectUserClick,
         showObjectDebugLabels,
         showExecutiveLayoutLabels,
         layoutPositions,

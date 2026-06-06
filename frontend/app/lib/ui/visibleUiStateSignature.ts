@@ -65,3 +65,46 @@ export function areVisibleUiStateSignaturesEqual(a: VisibleUiStateLike, b: Visib
 export function shouldCommitVisibleUiState(prev: VisibleUiStateLike, next: VisibleUiStateLike): boolean {
   return !areVisibleUiStateSignaturesEqual(prev, next);
 }
+
+/** Scene topology semantics only — excludes selection and right-panel context. */
+export function buildVisibleUiSceneTopologySignature(state: VisibleUiStateLike): string {
+  const sceneObjectIds = sortedSceneObjectIds(state.sceneJson);
+  return JSON.stringify({
+    sceneObjectIds,
+    sceneObjectCount: sceneObjectIds.length,
+    conflictsLength: Array.isArray(state.conflicts) ? state.conflicts.length : 0,
+    hasResponseData: Boolean(state.responseData),
+    hasMemoryInsights: Boolean(state.memoryInsights),
+    hasRiskPropagation: Boolean(state.riskPropagation),
+    hasStrategicAdvice: Boolean(state.strategicAdvice),
+    hasDecisionCockpit: Boolean(state.decisionCockpit),
+    hasOpponentModel: Boolean(state.opponentModel),
+    hasStrategicPatterns: Boolean(state.strategicPatterns),
+  });
+}
+
+export function isVisibleUiSelectionOnlyChange(
+  prev: VisibleUiStateLike,
+  next: VisibleUiStateLike
+): boolean {
+  if (buildVisibleUiSceneTopologySignature(prev) !== buildVisibleUiSceneTopologySignature(next)) {
+    return false;
+  }
+  return (
+    (prev.selectedObjectId ?? null) !== (next.selectedObjectId ?? null) ||
+    (prev.focusedId ?? null) !== (next.focusedId ?? null) ||
+    selectionHighlightSignature(prev.objectSelection) !== selectionHighlightSignature(next.objectSelection)
+  );
+}
+
+/** Material visible payload — excludes selection, focus, and highlight churn. */
+export function buildVisibleUiMaterialWriteSignature(state: VisibleUiStateLike): string {
+  return buildVisibleUiSceneTopologySignature(state);
+}
+
+export function shouldSkipVisibleUiMaterialReconcileWrite(
+  prev: VisibleUiStateLike,
+  next: VisibleUiStateLike
+): boolean {
+  return buildVisibleUiMaterialWriteSignature(prev) === buildVisibleUiMaterialWriteSignature(next);
+}

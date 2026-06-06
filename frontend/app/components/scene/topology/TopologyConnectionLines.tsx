@@ -9,11 +9,9 @@ import {
   resolveTopologyLineVisualState,
   type TopologyLineVisualState,
 } from "../../../lib/scene/topology/topologyConnectionHighlight";
+import { buildTopologyConnectionGeometrySignature } from "../../../lib/scene/topology/connectionGeometrySignature";
+import { resolveStableTopologyLineGeometries } from "../../../lib/scene/topology/connectionGeometryRuntime";
 import { logTopologyLineResolved } from "../../../lib/scene/topology/topologyRuntimePositionDevLog";
-import {
-  recordGeometryCreated,
-  recordGeometryDisposed,
-} from "../../../lib/diagnostics/connectionRuntimeStabilityAudit";
 
 export type TopologyConnectionLinesProps = {
   lines: SceneConnectionLine[];
@@ -29,54 +27,13 @@ const TOPOLOGY_LINE_COLORS = {
 const TOPOLOGY_LINE_DIM_OPACITY = 0.28;
 const TOPOLOGY_LINE_ACTIVE_OPACITY = 0.72;
 
-type RenderedTopologyLine = SceneConnectionLine & {
-  visualState: TopologyLineVisualState;
-};
-
-function buildSingleLineGeometry(line: SceneConnectionLine): THREE.BufferGeometry {
-  recordGeometryCreated("topology-connection-line", line.id);
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute(
-      [
-        line.sourcePosition.x,
-        line.sourcePosition.y,
-        line.sourcePosition.z,
-        line.targetPosition.x,
-        line.targetPosition.y,
-        line.targetPosition.z,
-      ],
-      3
-    )
-  );
-  return geometry;
-}
-
 const TopologyConnectionLineSegment = React.memo(function TopologyConnectionLineSegment({
-  line,
+  geometry,
   visualState,
 }: {
-  line: SceneConnectionLine;
+  geometry: THREE.BufferGeometry;
   visualState: TopologyLineVisualState;
 }): React.ReactElement {
-  const geometry = useMemo(() => buildSingleLineGeometry(line), [
-    line.id,
-    line.sourcePosition.x,
-    line.sourcePosition.y,
-    line.sourcePosition.z,
-    line.targetPosition.x,
-    line.targetPosition.y,
-    line.targetPosition.z,
-  ]);
-
-  useEffect(() => {
-    return () => {
-      geometry.dispose();
-      recordGeometryDisposed("topology-connection-line", line.id);
-    };
-  }, [geometry, line.id]);
-
   const isActive = visualState === "active";
 
   return (
@@ -101,10 +58,26 @@ function TopologyConnectionLinesComponent({
     return lines.filter((line) => line.valid);
   }, [lines, visible]);
 
+  const connectionGeometrySignature = useMemo(
+    () => buildTopologyConnectionGeometrySignature(geometryLines),
+    [geometryLines]
+  );
+
+  const lineGeometries = useMemo(
+    () =>
+      resolveStableTopologyLineGeometries({
+        lines: geometryLines,
+        signature: connectionGeometrySignature,
+        selectedObjectId,
+        reason: visible ? "topology-lines-visible" : "topology-lines-hidden",
+      }),
+    [connectionGeometrySignature, geometryLines, visible]
+  );
+
   const renderedLines = useMemo(() => {
-    if (!visible) return [] as RenderedTopologyLine[];
+    if (!visible) return [] as Array<{ line: SceneConnectionLine; visualState: TopologyLineVisualState }>;
     return geometryLines.map((line) => ({
-      ...line,
+      line,
       visualState: resolveTopologyLineVisualState({
         line,
         selectedObjectId,
@@ -116,7 +89,7 @@ function TopologyConnectionLinesComponent({
     () =>
       renderedLines
         .map(
-          (line) =>
+          ({ line }) =>
             `${line.id}:${line.sourcePosition.x.toFixed(3)},${line.sourcePosition.y.toFixed(3)},${line.sourcePosition.z.toFixed(3)}:${line.targetPosition.x.toFixed(3)},${line.targetPosition.y.toFixed(3)},${line.targetPosition.z.toFixed(3)}`
         )
         .join("|"),
@@ -135,7 +108,7 @@ function TopologyConnectionLinesComponent({
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
     if (!visible || renderedLines.length === 0) return;
-    for (const line of renderedLines) {
+    for (const { line } of renderedLines) {
       logTopologyLineResolved(
         JSON.stringify({
           sourceId: line.sourceId,
@@ -153,13 +126,17 @@ function TopologyConnectionLinesComponent({
 
   return (
     <group>
-      {renderedLines.map((line) => (
-        <TopologyConnectionLineSegment
-          key={line.id}
-          line={line}
-          visualState={line.visualState}
-        />
-      ))}
+      {renderedLines.map(({ line, visualState }) => {
+        const geometry = lineGeometries.get(line.id);
+        if (!geometry) return null;
+        return (
+          <TopologyConnectionLineSegment
+            key={line.id}
+            geometry={geometry}
+            visualState={visualState}
+          />
+        );
+      })}
     </group>
   );
 }

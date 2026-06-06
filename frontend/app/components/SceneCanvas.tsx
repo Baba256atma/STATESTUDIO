@@ -25,9 +25,7 @@ import type { ConnectionRuntimeAuditContext } from "../lib/scene/topology/connec
 import {
   recordSceneCanvasRender,
   recordTopologyRebuild,
-  recordConnectionLineRebuild,
   recordObjectSelection,
-  scheduleConnectionRuntimeStabilitySummary,
 } from "../lib/diagnostics/connectionRuntimeStabilityAudit";
 import {
   isProjectedPointWithinSafeRegion,
@@ -59,6 +57,11 @@ import {
   resolveEffectiveLayoutPositions,
   resolveTopologyConnectionLines,
 } from "../lib/scene/topology";
+import {
+  buildConnectionEndpointsSignature,
+  buildRuntimeLayoutPositionsSignature,
+  buildTopologyConnectionGeometrySignature,
+} from "../lib/scene/topology/connectionGeometrySignature";
 import { TopologyCameraAutoFrame } from "./scene/topology/TopologyCameraAutoFrame";
 import { runSceneOccupancyAudit } from "../lib/scene/sceneOccupancyAudit";
 import { runExecutiveLayoutAudit } from "../lib/scene/executiveLayoutAuditRuntime";
@@ -342,6 +345,8 @@ export type SceneCanvasProps = {
   onOrbitStart: () => void;
   onOrbitEnd: () => void;
   onSelectedChange: (id: string | null) => void;
+  onObjectUserClick?: (objectId: string, eventId: string) => void;
+  sceneSelectionEchoGuardRef?: React.MutableRefObject<string | null | undefined>;
   onObjectPositionChange?: (
     objectId: string,
     position: { x: number; y: number; z: number },
@@ -512,6 +517,7 @@ function FullRegistrar({
   clearAllOverridesRefLocal,
   pruneOverridesRefLocal,
   onSelectedChange,
+  sceneSelectionEchoGuardRef,
 }: {
   selectedIdRefLocal: React.MutableRefObject<string | null>;
   overridesRefLocal: React.MutableRefObject<Record<string, any>>;
@@ -519,6 +525,7 @@ function FullRegistrar({
   clearAllOverridesRefLocal: React.MutableRefObject<() => void>;
   pruneOverridesRefLocal: React.MutableRefObject<(ids: string[]) => void>;
   onSelectedChange: (id: string | null) => void;
+  sceneSelectionEchoGuardRef?: React.MutableRefObject<string | null | undefined>;
 }) {
   const selectedId = useSelectedId();
   const overrides = useOverrides();
@@ -529,15 +536,15 @@ function FullRegistrar({
 
   useEffect(() => {
     selectedIdRefLocal.current = selectedId;
+    if (sceneSelectionEchoGuardRef?.current === selectedId) return;
     if (lastSelectedIdRef.current === selectedId) return;
     lastSelectedIdRef.current = selectedId;
     if (selectedId) {
       markSelectionActivity();
       recordObjectSelection(selectedId);
-      scheduleConnectionRuntimeStabilitySummary("after-object-selection");
     }
     onSelectedChange(selectedId);
-  }, [selectedId, onSelectedChange, selectedIdRefLocal]);
+  }, [selectedId, onSelectedChange, sceneSelectionEchoGuardRef, selectedIdRefLocal]);
 
   useEffect(() => {
     overridesRefLocal.current = overrides;
@@ -3250,17 +3257,11 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   const renderVisibilityInput = useMemo(
     () => ({
       focusMode: props.focusMode,
-      selectedObjectId: selectedIdCtx ?? props.selectedObjectId ?? null,
+      selectedObjectId: null,
       executiveFocusModeEnabled: executiveFocusSnapshot.enabled,
       focusPinned: props.focusPinned,
     }),
-    [
-      executiveFocusSnapshot.enabled,
-      props.focusMode,
-      props.focusPinned,
-      props.selectedObjectId,
-      selectedIdCtx,
-    ]
+    [executiveFocusSnapshot.enabled, props.focusMode, props.focusPinned]
   );
 
   const renderObjects = useMemo(
@@ -3272,26 +3273,63 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   const topologyMode = ACTIVE_SCENE_TOPOLOGY_MODE;
   const topologyRuntimeEnabled = hasSceneObjects && topologyMode !== "off";
 
+  const topologyBindingInputSignature = useMemo(
+    () => `${sceneJsonObjectsSignature}|${topologyMode}|${topologyRuntimeEnabled ? "on" : "off"}`,
+    [sceneJsonObjectsSignature, topologyMode, topologyRuntimeEnabled]
+  );
+  const stableTopologyBindingRef = useRef<{
+    signature: string;
+    binding: ReturnType<typeof bindTopologyToSceneObjects>;
+  } | null>(null);
+
   const sceneTopologyBinding = useMemo(() => {
     const binding = bindTopologyToSceneObjects({
       sceneObjects: renderObjects,
       topologyMode: topologyRuntimeEnabled ? topologyMode : "off",
     });
+    const signature = `${topologyBindingInputSignature}|${buildConnectionEndpointsSignature(binding.connections)}|${
+      binding.topologyEnabled ? "enabled" : "disabled"
+    }`;
+    const cached = stableTopologyBindingRef.current;
+    if (cached && cached.signature === signature) {
+      return cached.binding;
+    }
     recordTopologyRebuild("topology-binding");
+    stableTopologyBindingRef.current = { signature, binding };
     return binding;
-  }, [renderObjects, topologyMode, topologyRuntimeEnabled]);
+  }, [renderObjects, topologyBindingInputSignature, topologyMode, topologyRuntimeEnabled]);
+
+  const stableTopologyLayoutRef = useRef<{
+    signature: string;
+    positions: ReturnType<typeof buildTopologyRuntimeLayoutPositions>;
+  } | null>(null);
 
   const topologyRuntimeLayoutPositions = useMemo(() => {
     const layoutPositionsResult = buildTopologyRuntimeLayoutPositions({
       sceneObjects: renderObjects,
       binding: sceneTopologyBinding,
     });
+    const signature = `${topologyBindingInputSignature}|${buildRuntimeLayoutPositionsSignature(layoutPositionsResult)}`;
+    const cached = stableTopologyLayoutRef.current;
+    if (cached && cached.signature === signature) {
+      return cached.positions;
+    }
     recordTopologyRebuild("auto-layout");
+    stableTopologyLayoutRef.current = { signature, positions: layoutPositionsResult };
     return layoutPositionsResult;
-  }, [renderObjects, sceneTopologyBinding.bindings, sceneTopologyBinding.topologyEnabled, sceneTopologyBinding.diagnostics.idle]);
+  }, [
+    renderObjects,
+    sceneTopologyBinding,
+    topologyBindingInputSignature,
+  ]);
+
+  const stableTopologyConnectionLinesRef = useRef<{
+    signature: string;
+    lines: ReturnType<typeof resolveTopologyConnectionLines>;
+  } | null>(null);
 
   const topologyConnectionLines = useMemo(() => {
-    const lines = resolveTopologyConnectionLines({
+    const resolution = resolveTopologyConnectionLines({
       connections: sceneTopologyBinding.connections,
       runtimeLayoutPositions: topologyRuntimeLayoutPositions,
       bindings: sceneTopologyBinding.bindings,
@@ -3299,16 +3337,21 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       topologyEnabled: topologyRuntimeEnabled && sceneTopologyBinding.topologyEnabled,
       sceneObjectCount: renderObjects.length,
     });
-    recordConnectionLineRebuild("topology-connection-lines");
-    return lines;
+    const signature = buildTopologyConnectionGeometrySignature(resolution.lines);
+    const cached = stableTopologyConnectionLinesRef.current;
+    if (cached && cached.signature === signature) {
+      return cached.lines;
+    }
+    stableTopologyConnectionLinesRef.current = { signature, lines: resolution };
+    return resolution;
   }, [
+    renderObjects.length,
     sceneTopologyBinding.connections,
     sceneTopologyBinding.bindings,
+    sceneTopologyBinding.topologyEnabled,
+    topologyRuntimeEnabled,
     topologyRuntimeLayoutPositions,
     renderObjects,
-    topologyRuntimeEnabled,
-    sceneTopologyBinding.topologyEnabled,
-    renderObjects.length,
   ]);
 
   const topologyCameraPositions = useMemo(
@@ -3339,10 +3382,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     };
   }, [props.sceneJson, renderObjects, sceneJsonObjectsSignature]);
 
-  const overlayObjectsRegistrySignature = useMemo(
-    () => buildSceneObjectsRegistrySignature(renderObjects),
-    [renderObjects]
-  );
+  const overlayObjectsRegistrySignature = sceneJsonObjectsSignature;
   const overlaySceneObjects = useMemo(
     () => syncSceneObjectRegistry(renderObjects),
     [overlayObjectsRegistrySignature, renderObjects]
@@ -3512,7 +3552,12 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       ].join("|"),
     [selectedIdCtx, renderObjects.length, topologyMode, layoutBoundsSignature]
   );
-  recordSceneCanvasRender(sceneCanvasRenderSignature);
+  const lastRecordedSceneCanvasSignatureRef = useRef("");
+  useEffect(() => {
+    if (lastRecordedSceneCanvasSignatureRef.current === sceneCanvasRenderSignature) return;
+    lastRecordedSceneCanvasSignatureRef.current = sceneCanvasRenderSignature;
+    recordSceneCanvasRender(sceneCanvasRenderSignature);
+  }, [sceneCanvasRenderSignature]);
   const viewportModeResolvedLogRef = useRef<string>("");
   const executiveSceneActive = Boolean(
     props.timelineHud ||
@@ -3612,6 +3657,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       showLoops: props.showLoops,
       showLoopLabels: props.showLoopLabels,
       onObjectPositionChange: props.onObjectPositionChange,
+      onObjectUserClick: props.onObjectUserClick,
     }),
     [
       shadowsEnabled,
@@ -3625,6 +3671,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       props.motionCalm,
       props.objectUxById,
       props.onObjectPositionChange,
+      props.onObjectUserClick,
       props.showLoopLabels,
       props.showLoops,
       rendererTheme,
@@ -4370,6 +4417,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
                 clearAllOverridesRefLocal={props.clearAllOverridesRef}
                 pruneOverridesRefLocal={props.pruneOverridesRef}
                 onSelectedChange={props.onSelectedChange}
+                sceneSelectionEchoGuardRef={props.sceneSelectionEchoGuardRef}
               />
             </>
           ) : null}

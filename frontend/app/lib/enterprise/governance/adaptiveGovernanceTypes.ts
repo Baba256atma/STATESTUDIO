@@ -1,5 +1,8 @@
 /** F9:1 — Adaptive governance intelligence + strategic oversight cognition types. */
 
+export const ADAPTIVE_GOVERNANCE_INTELLIGENCE_SYNC_EVENT =
+  "nexora:adaptive-governance-intelligence-sync" as const;
+
 import type {
   AdaptiveStrategicCalibrationSnapshot,
   CalibrationPosture,
@@ -236,6 +239,3 @@ export type AdaptiveGovernanceIntelligenceSnapshot = {
   enterpriseCognitiveRuntimeComplete: boolean;
   autonomousInstitutionalIntelligence: AutonomousInstitutionalIntelligenceRuntimeSnapshot | null;
 };
-
-export const ADAPTIVE_GOVERNANCE_INTELLIGENCE_SYNC_EVENT =
-  "nexora:adaptive-governance-intelligence-sync" as const;

@@ -1,16 +1,12 @@
-import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes";
+import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes.ts";
 import type {
   ExecutiveMetaCognitionSnapshot,
   ExecutiveMetaCognitionAssumption,
-} from "../meta-cognition/executiveMetaCognitionTypes";
+} from "../meta-cognition/executiveMetaCognitionTypes.ts";
 import type {
   ExecutiveReasoningAssumption,
   StrategicAssumptionAwareness,
-} from "./executiveReasoningTransparencyTypes";
-
-function text(value: unknown): string {
-  return String(value ?? "").trim();
-}
+} from "./executiveReasoningTransparencyTypes.ts";
 
 function mapSource(
   source: ExecutiveMetaCognitionAssumption["source"]

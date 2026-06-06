@@ -1,6 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import { logNexoraPanelMount, logNexoraRenderCount } from "../../lib/debug/nexoraFeedbackLoopDiagnostics";
+import { devLogThrottled } from "../../lib/runtime/diagnosticThrottle";
 import { nx, softCardStyle } from "../ui/nexoraTheme";
 import type { ExecutiveObjectPanelData } from "../../lib/panels/executiveObjectPanelData";
 import { fallbackExecutiveData } from "../../lib/panels/executiveObjectPanelData";
@@ -49,7 +51,31 @@ function riskBadgeStyle(level: ExecutiveObjectPanelData["riskLevel"]): React.CSS
 }
 
 export default function ExecutiveObjectPanel({ data, selectedObjectId }: Props) {
+  const renderCountRef = useRef(0);
+  renderCountRef.current += 1;
   const oid = String(selectedObjectId ?? "").trim();
+  useEffect(() => {
+    logNexoraPanelMount({
+      source: "ExecutiveObjectPanel",
+      objectId: oid || null,
+      view: "executive_object",
+      contextId: oid || null,
+    });
+  }, [oid]);
+  useEffect(() => {
+    devLogThrottled({
+      key: `exec-obj-panel:${oid || "none"}`,
+      label: "[NEXORA_RENDER_COUNT]",
+      scope: "panel",
+      intervalMs: 1000,
+      payload: {
+        component: "ExecutiveObjectPanel",
+        renderCount: renderCountRef.current,
+        objectId: oid || null,
+      },
+    });
+    logNexoraRenderCount("ExecutiveObjectPanel", renderCountRef.current, { objectId: oid || null });
+  }, [oid]);
 
   const merged: ExecutiveObjectPanelData | null = oid
     ? {

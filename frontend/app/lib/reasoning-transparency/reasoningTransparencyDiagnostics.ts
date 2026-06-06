@@ -1,4 +1,4 @@
-import type { ExecutiveReasoningTransparency } from "./executiveReasoningTransparencyTypes";
+import type { ExecutiveReasoningTransparency } from "./executiveReasoningTransparencyTypes.ts";
 
 const emitted = new Set<string>();
 

@@ -1,6 +1,6 @@
-export { buildStrategicAssumptionAwareness } from "./buildStrategicAssumptionAwareness";
-export { buildExecutiveReasoningTransparency } from "./buildExecutiveReasoningTransparency";
-export { logReasoningTransparencyDiagnostics } from "./reasoningTransparencyDiagnostics";
+export { buildStrategicAssumptionAwareness } from "./buildStrategicAssumptionAwareness.ts";
+export { buildExecutiveReasoningTransparency } from "./buildExecutiveReasoningTransparency.ts";
+export { logReasoningTransparencyDiagnostics } from "./reasoningTransparencyDiagnostics.ts";
 export type {
   BuildExecutiveReasoningTransparencyInput,
   ExecutiveConfidenceFactor,
@@ -9,4 +9,4 @@ export type {
   ExecutiveReasoningTradeoff,
   ExecutiveUncertaintySource,
   StrategicAssumptionAwareness,
-} from "./executiveReasoningTransparencyTypes";
+} from "./executiveReasoningTransparencyTypes.ts";

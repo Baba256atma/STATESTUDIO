@@ -105,6 +105,11 @@ import {
 import { resolveObjectLabelPlacement } from "../../lib/scene/objectLabelPlacementRuntime";
 import { areAnimatableObjectPropsEqual } from "../../lib/scene/animatableObjectPropsEqual";
 import {
+  buildObjectClickEventId,
+  isNearestRaycastHit,
+  logObjectClickDiagnostic,
+} from "../../lib/selection/nexoraObjectClickTransaction";
+import {
   resolveObjectNameDensityProfile,
   resolveObjectNameOpacity,
   shouldRenderExecutiveObjectName,
@@ -315,6 +320,7 @@ export type AnimatableObjectProps = {
     position: { x: number; y: number; z: number },
     phase: "drag" | "move"
   ) => void;
+  onObjectUserClick?: (objectId: string, eventId: string) => void;
 };
 
 export const AnimatableObject = React.memo(function AnimatableObject({
@@ -371,6 +377,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   isSelected = false,
   relationshipExplorationActive = false,
   onObjectPositionChange,
+  onObjectUserClick,
 }: AnimatableObjectProps) {
   const ref = useRef<THREE.Object3D>(null);
   const dragStateRef = useRef<{
@@ -972,15 +979,41 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     visualRole,
   ]);
 
+  const commitUserObjectClick = (event: any, source: "click" | "double_click") => {
+    if (!isNearestRaycastHit(event)) {
+      logObjectClickDiagnostic("[NEXORA_OBJECT_CLICK_REJECTED_SECOND_HIT]", {
+        objectId: stableIdWithName,
+        reason: "not_nearest_raycast_hit",
+        source,
+      });
+      return false;
+    }
+    const eventId =
+      source === "double_click"
+        ? `${buildObjectClickEventId(event)}:dbl`
+        : buildObjectClickEventId(event);
+    if (onObjectUserClick) {
+      onObjectUserClick(stableIdWithName, eventId);
+      return true;
+    }
+    if (isSelected) {
+      return false;
+    }
+    setSelectedId(stableIdWithName);
+    return true;
+  };
+
   const handleSelect = (event: any) => {
     setHovered(false);
     setHoveredId?.(null);
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
-    if (isSelected) {
+    if (isSelected && onObjectUserClick) {
       return;
     }
-    setSelectedId(stableIdWithName);
+    if (!commitUserObjectClick(event, "click")) {
+      return;
+    }
     patchExecutiveInteractionState({ selectedObjectId: stableIdWithName });
     logExecutiveInteractionSelection(`select:${stableIdWithName}`, {
       objectId: stableIdWithName,
@@ -991,7 +1024,9 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const handleDoubleClickFocus = (event: any) => {
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
-    setSelectedId(stableIdWithName);
+    if (!commitUserObjectClick(event, "double_click")) {
+      return;
+    }
     focusExecutiveObjectFromInteraction(stableIdWithName, "scene");
   };
 
@@ -1014,9 +1049,6 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     if (event.button != null && event.button !== 0) return;
     setHovered(false);
     setHoveredId?.(null);
-    if (!isSelected) {
-      setSelectedId(stableIdWithName);
-    }
     const y = finalPosition[1] ?? 0;
     dragStateRef.current = {
       pointerId: event.pointerId ?? 0,

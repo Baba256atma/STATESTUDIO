@@ -1,12 +1,12 @@
 import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes";
-import { buildStrategicAssumptionAwareness } from "./buildStrategicAssumptionAwareness";
+import { buildStrategicAssumptionAwareness } from "./buildStrategicAssumptionAwareness.ts";
 import type {
   BuildExecutiveReasoningTransparencyInput,
   ExecutiveConfidenceFactor,
   ExecutiveReasoningTransparency,
   ExecutiveReasoningTradeoff,
   ExecutiveUncertaintySource,
-} from "./executiveReasoningTransparencyTypes";
+} from "./executiveReasoningTransparencyTypes.ts";
 
 function text(value: unknown): string {
   return String(value ?? "").trim();

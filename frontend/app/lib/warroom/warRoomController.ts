@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { requestComparison } from "../compare/compareClient";
 import type { CompareResult } from "../compare/compareTypes";
@@ -130,7 +130,7 @@ export function useWarRoomController(params: UseWarRoomControllerParams): WarRoo
     scenarios: {},
     activePropagation: null,
     activeDecisionPath: null,
-    focusTargetId: selectedObjectId,
+    focusTargetId: null,
     mode: "idle",
     compare: {
       active: false,
@@ -168,46 +168,135 @@ export function useWarRoomController(params: UseWarRoomControllerParams): WarRoo
   const [evolutionLoading, setEvolutionLoading] = useState(false);
   const [lastActionId, setLastActionId] = useState<string | null>(null);
   const [lastRunAt, setLastRunAt] = useState<number | null>(null);
-  const lastPrefilledIdRef = useRef<string | null>(selectedObjectId);
+  const composerSelectedObjectId = normalizeId(draft.selectedObjectId);
+  const effectiveSelectedObjectId = useMemo(
+    () => selectedObjectId ?? composerSelectedObjectId,
+    [composerSelectedObjectId, selectedObjectId]
+  );
+  const lastSelectionSyncLogKeyRef = useRef<string | null>(null);
+  const focusTargetIdRef = useRef<string | null>(null);
+  const lastSyncedFocusTargetIdRef = useRef<string | null>(null);
+  const lastFocusSyncLogKeyRef = useRef<string | null>(null);
+  const pendingFocusSyncObjectIdRef = useRef<string | null | undefined>(undefined);
+  const focusSyncRafRef = useRef<number | null>(null);
   const savedScenarioRecordIdsRef = useRef<Set<string>>(new Set());
   const savedComparisonRecordIdsRef = useRef<Set<string>>(new Set());
   const savedStrategyRecordIdsRef = useRef<Set<string>>(new Set());
 
+  const setPropagationState = useCallback((next: PropagationState | null) => {
+    setState((current) =>
+      current.activePropagation === next ? current : { ...current, activePropagation: next }
+    );
+  }, []);
+
+  const setDecisionPathState = useCallback((next: DecisionPathState | null) => {
+    setState((current) =>
+      current.activeDecisionPath === next ? current : { ...current, activeDecisionPath: next }
+    );
+  }, []);
+
+  const setFocusTarget = useCallback((targetId: string | null) => {
+    const nextFocusTargetId = normalizeId(targetId);
+    setState((current) => {
+      if (current.focusTargetId === nextFocusTargetId) {
+        return current;
+      }
+      focusTargetIdRef.current = nextFocusTargetId;
+      return {
+        ...current,
+        focusTargetId: nextFocusTargetId,
+      };
+    });
+  }, []);
+
   const rendererBridge = useMemo(
     () =>
       createRendererBridge({
-        setPropagationState: (next) =>
-          setState((current) => ({
-            ...current,
-            activePropagation: next,
-          })),
-        setDecisionPathState: (next) =>
-          setState((current) => ({
-            ...current,
-            activeDecisionPath: next,
-          })),
-        setFocusTarget: (targetId) =>
-          setState((current) => ({
-            ...current,
-            focusTargetId: normalizeId(targetId),
-          })),
+        setPropagationState,
+        setDecisionPathState,
+        setFocusTarget,
       }),
-    []
+    [setDecisionPathState, setFocusTarget, setPropagationState]
   );
 
+  const logFocusSyncSkipped = useCallback((focusTargetId: string | null) => {
+    if (process.env.NODE_ENV === "production") return;
+    const logKey = `skip:${focusTargetId ?? "null"}`;
+    if (lastFocusSyncLogKeyRef.current === logKey) return;
+    lastFocusSyncLogKeyRef.current = logKey;
+    console.debug("[Nexora][WarRoom][FocusSyncSkipped]", {
+      focusTargetId,
+    });
+  }, []);
+
+  const syncFocusTargetFromSelection = useCallback(
+    (nextSelectedObjectId: string | null) => {
+      const nextFocusTargetId = normalizeId(nextSelectedObjectId);
+      const currentFocusTargetId = focusTargetIdRef.current;
+
+      if (nextFocusTargetId == null) {
+        if (currentFocusTargetId == null) {
+          logFocusSyncSkipped(null);
+          return;
+        }
+      } else {
+        if (nextFocusTargetId === currentFocusTargetId) {
+          logFocusSyncSkipped(nextFocusTargetId);
+          return;
+        }
+        if (nextFocusTargetId === lastSyncedFocusTargetIdRef.current) {
+          logFocusSyncSkipped(nextFocusTargetId);
+          return;
+        }
+      }
+
+      lastFocusSyncLogKeyRef.current = null;
+      setFocusTarget(nextFocusTargetId);
+      lastSyncedFocusTargetIdRef.current = nextFocusTargetId;
+    },
+    [logFocusSyncSkipped, setFocusTarget]
+  );
+
+  useLayoutEffect(() => {
+    focusTargetIdRef.current = normalizeId(state.focusTargetId);
+  }, [state.focusTargetId]);
+
   useEffect(() => {
-    if (!selectedObjectId) return;
-    const currentDraftId = normalizeId(draft.selectedObjectId);
-    const shouldPrefill =
-      !currentDraftId ||
-      currentDraftId === lastPrefilledIdRef.current ||
-      (!scenarioTrigger && draft.actionKind === null);
-    if (shouldPrefill) {
-      setSelectedObject(selectedObjectId);
-      lastPrefilledIdRef.current = selectedObjectId;
+    if (selectedObjectId == null || selectedObjectId === composerSelectedObjectId) {
+      return;
     }
-    rendererBridge.setFocusTarget(selectedObjectId);
-  }, [draft.actionKind, draft.selectedObjectId, rendererBridge, scenarioTrigger, selectedObjectId, setSelectedObject]);
+    if (process.env.NODE_ENV !== "production") {
+      const logKey = `echo-blocked:${selectedObjectId}`;
+      if (lastSelectionSyncLogKeyRef.current !== logKey) {
+        lastSelectionSyncLogKeyRef.current = logKey;
+        console.debug("[WarRoom][SelectionSync][EchoBlocked]", {
+          objectId: selectedObjectId,
+        });
+      }
+    }
+  }, [composerSelectedObjectId, selectedObjectId]);
+
+  useEffect(() => {
+    const stableSelectedObjectId = normalizeId(selectedObjectId);
+    pendingFocusSyncObjectIdRef.current = stableSelectedObjectId;
+    if (focusSyncRafRef.current != null) {
+      cancelAnimationFrame(focusSyncRafRef.current);
+    }
+    focusSyncRafRef.current = requestAnimationFrame(() => {
+      focusSyncRafRef.current = null;
+      const pendingId = pendingFocusSyncObjectIdRef.current ?? null;
+      if (pendingId !== normalizeId(selectedObjectId)) {
+        return;
+      }
+      syncFocusTargetFromSelection(pendingId);
+    });
+    return () => {
+      if (focusSyncRafRef.current != null) {
+        cancelAnimationFrame(focusSyncRafRef.current);
+        focusSyncRafRef.current = null;
+      }
+    };
+  }, [selectedObjectId, syncFocusTargetFromSelection]);
 
   const chatScenario = useMemo(
     () => buildScenarioFromChatPayload({ payload: params.responseData, selectedObjectId }),
@@ -217,7 +306,14 @@ export function useWarRoomController(params: UseWarRoomControllerParams): WarRoo
     () => buildScenarioFromScanner({ sceneJson: params.sceneJson ?? null, payload: params.responseData }),
     [params.responseData, params.sceneJson]
   );
-  const draftScenario = useMemo(() => buildScenarioFromDraft(draft), [draft]);
+  const draftScenario = useMemo(
+    () =>
+      buildScenarioFromDraft({
+        ...draft,
+        selectedObjectId: effectiveSelectedObjectId,
+      }),
+    [draft, effectiveSelectedObjectId]
+  );
 
   useEffect(() => {
     setState((current) => {
@@ -265,9 +361,9 @@ export function useWarRoomController(params: UseWarRoomControllerParams): WarRoo
 
   const updateFocus = useCallback(
     (targetId: string | null) => {
-      rendererBridge.setFocusTarget(targetId);
+      setFocusTarget(targetId);
     },
-    [rendererBridge]
+    [setFocusTarget]
   );
 
   const runScenario = useCallback(

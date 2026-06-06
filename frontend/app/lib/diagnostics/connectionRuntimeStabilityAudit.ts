@@ -6,10 +6,12 @@
 import { installDiagnosticConsoleHelper, isDiagnosticEnabled } from "../runtime/diagnosticSwitch.ts";
 
 const WINDOW_MS = 10_000;
+const AUDIT_LOG_MIN_INTERVAL_MS = 30_000;
 
 type TimedStamp = { ts: number };
 
 function isAuditEnabled(): boolean {
+  if (process.env.NODE_ENV === "production") return false;
   return isDiagnosticEnabled("runtimeAudit");
 }
 
@@ -34,6 +36,7 @@ function readMemoryUsedMB(): number | null {
 
 let renderCount = 0;
 let lastRenderSignature: string | undefined;
+let lastRecordedRenderSignatureForCount = "";
 const renderEvents: TimedStamp[] = [];
 
 let topologyRebuildCount = 0;
@@ -62,6 +65,13 @@ let listenerRemovedCount = 0;
 
 export function recordSceneCanvasRender(signature?: string): void {
   if (!isAuditEnabled()) return;
+  const sig = signature ?? "";
+  if (sig && sig === lastRecordedRenderSignatureForCount) {
+    return;
+  }
+  if (sig) {
+    lastRecordedRenderSignatureForCount = sig;
+  }
   renderCount += 1;
   pushTimed(renderEvents);
   if (signature) lastRenderSignature = signature;
@@ -236,10 +246,20 @@ export function buildConnectionRuntimeStabilitySummary(reason: string): Connecti
 
 let lastSummarySignature = "";
 let lastAuditEmitAt = 0;
-let lastThresholdFlagsSnapshot = "";
 
-function readThresholdFlags(summary: ConnectionRuntimeStabilitySummary): string {
+function buildAuditLogSignature(summary: ConnectionRuntimeStabilitySummary): string {
   return JSON.stringify({
+    renderCountLast10s: summary.renderCountLast10s,
+    topologyRebuildCountLast10s: summary.topologyRebuildCountLast10s,
+    connectionLineRebuildCountLast10s: summary.connectionLineRebuildCountLast10s,
+    rightPanelWriteCountLast10s: summary.rightPanelWriteCountLast10s,
+    hudDriftCountLast10s: summary.hudDriftCountLast10s,
+    geometryLiveEstimate: summary.geometryLiveEstimate,
+    materialLiveEstimate: summary.materialLiveEstimate,
+    objectSelectionCount: summary.objectSelectionCount,
+    rightPanelWriteCount: summary.rightPanelWriteCount,
+    listenerLiveEstimate: summary.listenerLiveEstimate,
+    lastRenderSignature: summary.lastRenderSignature,
     possibleRenderLoop: summary.possibleRenderLoop,
     possibleTopologyStorm: summary.possibleTopologyStorm,
     possibleConnectionStorm: summary.possibleConnectionStorm,
@@ -251,58 +271,60 @@ function readThresholdFlags(summary: ConnectionRuntimeStabilitySummary): string 
   });
 }
 
-function hasNewlyRaisedThreshold(summary: ConnectionRuntimeStabilitySummary): boolean {
-  const nextFlags = readThresholdFlags(summary);
-  if (!lastThresholdFlagsSnapshot) {
-    lastThresholdFlagsSnapshot = nextFlags;
-    return Object.values(JSON.parse(nextFlags) as Record<string, boolean>).some(Boolean);
-  }
-  const prev = JSON.parse(lastThresholdFlagsSnapshot) as Record<string, boolean>;
-  const next = JSON.parse(nextFlags) as Record<string, boolean>;
-  const newlyRaised = Object.keys(next).some((key) => next[key] === true && prev[key] !== true);
-  lastThresholdFlagsSnapshot = nextFlags;
-  return newlyRaised;
-}
-
 export function emitConnectionRuntimeStabilitySummary(reason: string): ConnectionRuntimeStabilitySummary | null {
   if (!isAuditEnabled()) return null;
   installDiagnosticConsoleHelper();
   const summary = buildConnectionRuntimeStabilitySummary(reason);
-  const signature = JSON.stringify({
-    reason: summary.reason,
-    renderCount: summary.renderCount,
-    topologyRebuildCount: summary.topologyRebuildCount,
-    connectionLineRebuildCount: summary.connectionLineRebuildCount,
-    geometryLiveEstimate: summary.geometryLiveEstimate,
-    materialLiveEstimate: summary.materialLiveEstimate,
-    objectSelectionCount: summary.objectSelectionCount,
-    rightPanelWriteCount: summary.rightPanelWriteCount,
-    hudDriftCount: summary.hudDriftCount,
-    flags: {
-      possibleRenderLoop: summary.possibleRenderLoop,
-      possibleTopologyStorm: summary.possibleTopologyStorm,
-      possibleConnectionStorm: summary.possibleConnectionStorm,
-      possibleGeometryLeak: summary.possibleGeometryLeak,
-      possibleMaterialLeak: summary.possibleMaterialLeak,
-      possiblePanelWriteStorm: summary.possiblePanelWriteStorm,
-      possibleHudDriftStorm: summary.possibleHudDriftStorm,
-      possibleListenerLeak: summary.possibleListenerLeak,
-    },
-  });
+  const signature = buildAuditLogSignature(summary);
   const now = Date.now();
-  const thresholdRaised = hasNewlyRaisedThreshold(summary);
-  if (!thresholdRaised && now - lastAuditEmitAt < 2000) {
+
+  if (signature === lastSummarySignature) {
     return summary;
   }
+  if (now - lastAuditEmitAt < AUDIT_LOG_MIN_INTERVAL_MS) {
+    return summary;
+  }
+
   lastSummarySignature = signature;
   lastAuditEmitAt = now;
   globalThis.console?.warn?.("[NEXORA_RUNTIME_STABILITY_AUDIT]", summary);
   return summary;
 }
 
+let scheduledAuditTimer: ReturnType<typeof setTimeout> | null = null;
+let scheduledAuditReason: string | null = null;
+let auditScheduleGeneration = 0;
+
+export function cancelScheduledConnectionRuntimeStabilitySummary(): void {
+  if (scheduledAuditTimer != null) {
+    globalThis.clearTimeout?.(scheduledAuditTimer);
+    scheduledAuditTimer = null;
+  }
+  scheduledAuditReason = null;
+}
+
+export function scheduleConnectionRuntimeStabilitySummary(reason: string, delayMs = 1000): void {
+  if (!isAuditEnabled()) return;
+  if (scheduledAuditTimer != null) {
+    globalThis.clearTimeout?.(scheduledAuditTimer);
+    scheduledAuditTimer = null;
+  }
+  scheduledAuditReason = reason;
+  const generation = ++auditScheduleGeneration;
+  scheduledAuditTimer = globalThis.setTimeout?.(() => {
+    scheduledAuditTimer = null;
+    if (generation !== auditScheduleGeneration) return;
+    emitConnectionRuntimeStabilitySummary(scheduledAuditReason ?? reason);
+    scheduledAuditReason = null;
+  }, delayMs) as ReturnType<typeof setTimeout> | null;
+}
+
 export function resetConnectionRuntimeStabilityAuditForTests(): void {
+  cancelScheduledConnectionRuntimeStabilitySummary();
+  auditScheduleGeneration = 0;
   renderCount = 0;
   lastRenderSignature = undefined;
+  lastRecordedRenderSignatureForCount = "";
   renderEvents.length = 0;
   topologyRebuildCount = 0;
   topologyRebuildEvents.length = 0;
@@ -323,12 +345,4 @@ export function resetConnectionRuntimeStabilityAuditForTests(): void {
   listenerRemovedCount = 0;
   lastSummarySignature = "";
   lastAuditEmitAt = 0;
-  lastThresholdFlagsSnapshot = "";
-}
-
-export function scheduleConnectionRuntimeStabilitySummary(reason: string, delayMs = 1000): void {
-  if (!isAuditEnabled()) return;
-  globalThis.setTimeout?.(() => {
-    emitConnectionRuntimeStabilitySummary(reason);
-  }, delayMs);
 }

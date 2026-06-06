@@ -23,12 +23,13 @@ import {
 } from "./sceneRenderUtils";
 import { sanitizeThreeColor } from "../../lib/scene/threeColorSanitizer";
 import {
-  recordConnectionLineRebuild,
   recordGeometryCreated,
   recordGeometryDisposed,
   recordMaterialCreated,
   recordMaterialDisposed,
 } from "../../lib/diagnostics/connectionRuntimeStabilityAudit";
+import { buildLoopEdgesGeometrySignature } from "../../lib/scene/topology/connectionGeometrySignature";
+import { resolveStableLoopLineGeometry } from "../../lib/scene/topology/connectionGeometryRuntime";
 
 const STATIC_EDGE_VISUALS = true;
 
@@ -221,6 +222,15 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
     return map;
   }, [objects, runtimeObjectPositionContext]);
 
+  const positionSignature = useMemo(
+    () =>
+      Array.from(posMap.entries())
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([id, tuple]) => `${id}:${tuple[0].toFixed(3)},${tuple[1].toFixed(3)},${tuple[2].toFixed(3)}`)
+        .join("|"),
+    [posMap]
+  );
+
   const edges = useMemo(() => {
     const all: LoopEdge[] = [];
     loops.forEach((loop, loopIndex) => {
@@ -290,28 +300,43 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
     };
   }, [affectedIds, contextIds, primaryId, safeActiveEdges, safeInactiveEdges, scannerSceneActive]);
 
-  const inactiveGeo = useMemo(() => {
-    recordConnectionLineRebuild("loop-lines");
-    return buildLineSegmentsGeometry(safeInactiveEdges, posMap);
-  }, [safeInactiveEdges, posMap]);
-  const activeGeo = useMemo(() => {
-    recordConnectionLineRebuild("loop-lines");
-    return buildLineSegmentsGeometry(safeActiveEdges, posMap);
-  }, [safeActiveEdges, posMap]);
+  const inactiveGeometrySignature = useMemo(
+    () =>
+      buildLoopEdgesGeometrySignature({
+        edges: safeInactiveEdges,
+        positionSignature,
+      }),
+    [positionSignature, safeInactiveEdges]
+  );
+  const activeGeometrySignature = useMemo(
+    () =>
+      buildLoopEdgesGeometrySignature({
+        edges: safeActiveEdges,
+        positionSignature,
+      }),
+    [positionSignature, safeActiveEdges]
+  );
 
-  useEffect(() => () => {
-    try {
-      inactiveGeo?.dispose();
-      if (inactiveGeo) recordGeometryDisposed("loop-lines");
-    } catch {}
-  }, [inactiveGeo]);
-
-  useEffect(() => () => {
-    try {
-      activeGeo?.dispose();
-      if (activeGeo) recordGeometryDisposed("loop-lines");
-    } catch {}
-  }, [activeGeo]);
+  const inactiveGeo = useMemo(
+    () =>
+      resolveStableLoopLineGeometry({
+        cacheKey: "loop-lines-inactive",
+        signature: inactiveGeometrySignature,
+        reason: "loop-lines-inactive",
+        build: () => buildLineSegmentsGeometry(safeInactiveEdges, posMap),
+      }),
+    [inactiveGeometrySignature, posMap, safeInactiveEdges]
+  );
+  const activeGeo = useMemo(
+    () =>
+      resolveStableLoopLineGeometry({
+        cacheKey: "loop-lines-active",
+        signature: activeGeometrySignature,
+        reason: "loop-lines-active",
+        build: () => buildLineSegmentsGeometry(safeActiveEdges, posMap),
+      }),
+    [activeGeometrySignature, posMap, safeActiveEdges]
+  );
 
   const inactiveMat = useMemo(() => {
     recordMaterialCreated("loop-lines-inactive");

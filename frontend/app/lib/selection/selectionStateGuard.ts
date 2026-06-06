@@ -23,14 +23,21 @@ export function buildObjectSelectionSignature(selection: unknown): string {
   const record = selection as {
     focused_object?: string | null;
     highlighted_objects?: unknown;
+    dim_unrelated_objects?: boolean;
   };
   const highlighted = Array.isArray(record.highlighted_objects)
     ? record.highlighted_objects.filter((id): id is string => typeof id === "string")
     : [];
-  return buildSelectionSignature({
-    focusedId: typeof record.focused_object === "string" ? record.focused_object : null,
-    highlightedIds: highlighted,
-    source: "system",
+  const dimUnrelated = record.dim_unrelated_objects === true;
+  return JSON.stringify({
+    ...JSON.parse(
+      buildSelectionSignature({
+        focusedId: typeof record.focused_object === "string" ? record.focused_object : null,
+        highlightedIds: highlighted,
+        source: "system",
+      })
+    ),
+    d: dimUnrelated,
   });
 }
 

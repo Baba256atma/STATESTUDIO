@@ -62,7 +62,7 @@ function ObjectPanelLazyComponent(props: ObjectPanelLazyProps): React.ReactEleme
       .filter(Boolean)
   );
   const focusObjectId = String(
-    props.activeExecutiveObjectId ?? props.selectedObjectId ?? props.focusedId ?? props.contextId ?? ""
+    props.contextId ?? props.selectedObjectId ?? props.activeExecutiveObjectId ?? props.focusedId ?? ""
   ).trim();
 
   if (focusObjectId && !visibleIds.has(focusObjectId)) {

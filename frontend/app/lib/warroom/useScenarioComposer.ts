@@ -83,11 +83,18 @@ export function useScenarioComposer(initialSelectedObjectId: string | null = nul
   }, []);
 
   const setSelectedObject = useCallback((nextId: string | null) => {
-    setDraft((current) => ({
-      ...current,
-      selectedObjectId: normalizeId(nextId),
-      isDirty: current.isDirty || !!normalizeId(nextId),
-    }));
+    const normalizedNextId = normalizeId(nextId);
+    setDraft((current) => {
+      const currentId = normalizeId(current.selectedObjectId);
+      if (currentId === normalizedNextId) {
+        return current;
+      }
+      return {
+        ...current,
+        selectedObjectId: normalizedNextId,
+        isDirty: normalizedNextId != null ? true : current.isDirty,
+      };
+    });
   }, []);
 
   const setActionKind = useCallback((nextKind: WarRoomActionKind | null) => {

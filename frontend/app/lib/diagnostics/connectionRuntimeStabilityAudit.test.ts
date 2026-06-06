@@ -43,12 +43,39 @@ test("emitConnectionRuntimeStabilitySummary dedupes identical snapshots", () => 
   try {
     recordSceneCanvasRender("scene-b");
     emitConnectionRuntimeStabilitySummary("first");
-    emitConnectionRuntimeStabilitySummary("first");
+    emitConnectionRuntimeStabilitySummary("second");
     assert.equal(warnings.length, 1);
     assert.equal(warnings[0], "[NEXORA_RUNTIME_STABILITY_AUDIT]");
   } finally {
     globalThis.console.warn = originalWarn;
   }
+});
+
+test("emitConnectionRuntimeStabilitySummary throttles changed snapshots within 30s", () => {
+  const warnings: unknown[] = [];
+  const originalWarn = globalThis.console.warn;
+  globalThis.console.warn = (...args: unknown[]) => {
+    warnings.push(args[0]);
+  };
+
+  try {
+    recordSceneCanvasRender("scene-c");
+    emitConnectionRuntimeStabilitySummary("first");
+    recordSceneCanvasRender("scene-d");
+    emitConnectionRuntimeStabilitySummary("second");
+    assert.equal(warnings.length, 1);
+  } finally {
+    globalThis.console.warn = originalWarn;
+  }
+});
+
+test("recordSceneCanvasRender dedupes identical render signatures", () => {
+  recordSceneCanvasRender("scene-same");
+  recordSceneCanvasRender("scene-same");
+  recordSceneCanvasRender("scene-same");
+  const summary = buildConnectionRuntimeStabilitySummary("dedupe-render");
+  assert.equal(summary.renderCount, 1);
+  assert.equal(summary.renderCountLast10s, 1);
 });
 
 test("threshold flags classify storms", () => {

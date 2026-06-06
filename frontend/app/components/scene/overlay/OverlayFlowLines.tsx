@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 
@@ -15,11 +15,9 @@ import {
   NEXORA_THREE_COLOR_TOKENS,
   sanitizeThreeColor,
 } from "../../../lib/scene/threeColorSanitizer";
-import {
-  recordConnectionLineRebuild,
-  recordGeometryCreated,
-  recordGeometryDisposed,
-} from "../../../lib/diagnostics/connectionRuntimeStabilityAudit";
+import { recordGeometryCreated } from "../../../lib/diagnostics/connectionRuntimeStabilityAudit";
+import { buildOverlayFlowGeometrySignature } from "../../../lib/scene/topology/connectionGeometrySignature";
+import { resolveStableOverlayFlowGeometry } from "../../../lib/scene/topology/connectionGeometryRuntime";
 
 export type OverlayFlowLineEdge = {
   from: string;
@@ -92,25 +90,38 @@ function resolveOverlayFlowThreeColor(input: unknown, fallback = OVERLAY_FLOW_CO
   return sanitizeThreeColor(value, fallback);
 }
 
+function extractObjectIds(objects: any[]): string[] {
+  return objects
+    .map((object, index) => String(object?.id ?? object?.name ?? `obj_${index}`).trim())
+    .filter(Boolean)
+    .sort();
+}
+
 export const OverlayFlowLines = React.memo(function OverlayFlowLines(props: OverlayFlowLinesProps): React.ReactElement | null {
   const materialRef = useRef<THREE.LineBasicMaterial>(null);
-  const geometry = useMemo(() => {
-    recordConnectionLineRebuild("overlay-flow-lines");
-    return buildLineGeometry(
-      props.objects,
-      props.edges,
-      props.yOffset ?? 0.08,
-      props.runtimeObjectPositionContext
-    );
-  }, [props.edges, props.objects, props.runtimeObjectPositionContext, props.yOffset]);
+  const yOffset = props.yOffset ?? 0.08;
+  const objectIds = useMemo(() => extractObjectIds(props.objects), [props.objects]);
+  const connectionGeometrySignature = useMemo(
+    () =>
+      buildOverlayFlowGeometrySignature({
+        edges: props.edges,
+        objectIds,
+        yOffset,
+      }),
+    [objectIds, props.edges, yOffset]
+  );
 
-  useEffect(() => {
-    if (!geometry) return;
-    return () => {
-      geometry.dispose();
-      recordGeometryDisposed("overlay-flow-lines");
-    };
-  }, [geometry]);
+  const geometry = useMemo(
+    () =>
+      resolveStableOverlayFlowGeometry({
+        signature: connectionGeometrySignature,
+        reason: "overlay-flow-lines",
+        build: () =>
+          buildLineGeometry(props.objects, props.edges, yOffset, props.runtimeObjectPositionContext),
+      }),
+    [connectionGeometrySignature, props.edges, props.objects, props.runtimeObjectPositionContext, yOffset]
+  );
+
   const lineColor = useMemo(() => resolveOverlayFlowThreeColor(props.color), [props.color]);
 
   useFrame(({ clock }) => {

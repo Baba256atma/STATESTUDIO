@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildExecutiveMetaCognitionSnapshot } from "../meta-cognition/buildExecutiveMetaCognitionSnapshot";
-import { buildExecutiveReasoningTransparency } from "./buildExecutiveReasoningTransparency";
+import { buildExecutiveMetaCognitionSnapshot } from "../meta-cognition/buildExecutiveMetaCognitionSnapshot.ts";
+import { buildExecutiveReasoningTransparency } from "./buildExecutiveReasoningTransparency.ts";
 
 test("buildExecutiveReasoningTransparency produces stable executive contract", () => {
   const meta = buildExecutiveMetaCognitionSnapshot({
