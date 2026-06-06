@@ -1,5 +1,10 @@
 /**
- * E2:10 — Scene-native executive timeline HUD contracts.
+ * ARCHITECTURE CONTRACT:
+ * Scene-native executive timeline HUD contracts. Canonical MVP timeline state,
+ * event phases, routing, and brake helpers live in
+ * ../timeline/timelineArchitectureContract.
+ * The HUD may visualize events; it must not own storage, engines, MRP tabs, or
+ * standalone timeline routing.
  */
 
 import type { DecisionExecutionResult } from "../executive/decisionExecutionTypes";

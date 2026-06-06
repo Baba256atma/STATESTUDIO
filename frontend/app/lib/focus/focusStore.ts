@@ -1,5 +1,11 @@
 import { create } from "zustand";
 
+/**
+ * ARCHITECTURE NOTE:
+ * Focus state is a camera/focus convenience store, not the Object Panel
+ * selection authority. The MVP selected-object source of truth remains
+ * HomeScreen.selectedObjectIdState; see docs/nexora-object-panel-architecture.md.
+ */
 export type FocusMode = "all" | "selected" | "pinned";
 
 export type FocusState = {

@@ -1,5 +1,12 @@
 # Nexora Data Ingestion Layer
 
+> Architecture note:
+>
+> Source Management is now frozen in `docs/nexora-source-management-architecture.md`.
+> This document remains an ingestion-layer design reference. Source navigation,
+> source lifecycle, source health visibility, and Dashboard context ownership are
+> governed by the Source Management contract.
+
 ## Goal
 
 Create a single ingestion boundary that accepts `pdf`, `csv`, `api`, and `url` inputs and emits one deterministic contract:

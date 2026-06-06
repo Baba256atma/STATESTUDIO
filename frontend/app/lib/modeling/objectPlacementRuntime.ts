@@ -1,5 +1,12 @@
 import type { SceneJson, SceneObject, Vector3Tuple } from "../sceneTypes";
 
+/**
+ * ARCHITECTURE NOTE:
+ * Object placement runtime may mirror the selected object for drag/placement
+ * diagnostics, but it is not the canonical Object Panel selection store.
+ * Direct object creation or mutation must not originate from Object Panel actions.
+ * See docs/nexora-object-panel-architecture.md.
+ */
 export type SceneObjectPlacement = {
   id: string;
   objectType: string;

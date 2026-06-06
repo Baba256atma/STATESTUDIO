@@ -17,7 +17,9 @@ export type ExecutiveLeftDockZoneProps = {
 };
 
 /**
- * E2:2 left dock zone — hosts E2:3 Scene Panel shell.
+ * ARCHITECTURE CONTRACT:
+ * Left dock zone hosts the canonical scene-native Scene Panel. This is not
+ * Left Navigation and not Main Right Panel. See docs/nexora-scene-panel-architecture.md.
  */
 export function ExecutiveLeftDockZone(props: ExecutiveLeftDockZoneProps): React.ReactElement {
   const widthPx = props.metrics.leftDockWidthPx;

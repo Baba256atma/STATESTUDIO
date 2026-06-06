@@ -1,5 +1,12 @@
 # Nexora Action Routing
 
+> Deprecated legacy routing model.
+>
+> This document describes the pre-freeze command/processing split. The frozen
+> MVP contract is `docs/nexora-canonical-panel-architecture.md`. Future routing
+> must send Scene, Object, Risk, Scenario, War Room, and Timeline actions through
+> Dashboard modes while keeping Assistant isolated.
+
 ## 1. Core Rule
 
 All actions must be classified before routing:

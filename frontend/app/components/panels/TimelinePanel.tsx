@@ -21,6 +21,14 @@ type TimelinePanelProps = {
   onSceneUpdate?: (payload: any) => void;
 };
 
+/**
+ * DEPRECATED ARCHITECTURE:
+ * This panel-style timeline/simulation surface is compatibility-only. The
+ * canonical MVP Timeline is scene-native in the bottom Three.js workspace, and
+ * timeline requests must route through Dashboard Context before activating the
+ * scene timeline. Do not use this as a new Timeline architecture owner.
+ * See docs/nexora-timeline-architecture.md.
+ */
 function inferTimelineDomain(result: any): "business" | "politics" | "strategy" | "generic" {
   const text = JSON.stringify(result ?? {}).toLowerCase();
 

@@ -1,3 +1,9 @@
+/**
+ * OBJECT PANEL SELECTION CONTRACT:
+ * Explicit selected object id resolves from the single MVP authority
+ * (`HomeScreen.selectedObjectIdState`). The broader objectSelection payload is a
+ * compatibility mirror for highlights/details, not a competing object store.
+ */
 export type ExplicitSelectedObjectInput = {
   selectedObjectIdState?: string | null;
   objectSelection?: unknown;

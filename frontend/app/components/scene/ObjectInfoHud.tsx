@@ -37,6 +37,13 @@ import {
 import { resolveExecutiveEmptyState } from "../../lib/workspace/minimalism";
 import { logObjectActionMoved } from "../../lib/scene/navigation/sceneToolbarActionRegistry";
 
+/**
+ * DEPRECATED ARCHITECTURE MIRROR:
+ * ObjectInfoHud can display scene-native object/relationship details, but the
+ * canonical MVP Object Panel contract lives in ObjectPanelShell and
+ * docs/nexora-object-panel-architecture.md. This HUD must not become a second
+ * selected-object authority or a Main Right Panel surface.
+ */
 export type ObjectInfoHudProps = ObjectInfoHudModel & {
   themeMode?: NexoraHudThemeMode;
   panelSizeMode?: PanelSizeMode;

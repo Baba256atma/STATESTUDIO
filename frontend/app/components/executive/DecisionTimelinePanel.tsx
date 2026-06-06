@@ -39,6 +39,14 @@ type DecisionTimelinePanelProps = {
   reasoningTransparency?: ExecutiveReasoningTransparency | null;
 };
 
+/**
+ * DEPRECATED ARCHITECTURE:
+ * DecisionTimelinePanel is a legacy executive/right-panel decision story
+ * renderer. The canonical MVP Timeline remains scene-native and bottom-scene
+ * attached; decision timeline data may feed it but must not create a third MRP
+ * tab or standalone timeline page.
+ * See docs/nexora-timeline-architecture.md.
+ */
 function toneToMetricTone(
   direction?: "up" | "down" | "neutral"
 ): "positive" | "negative" | "neutral" {

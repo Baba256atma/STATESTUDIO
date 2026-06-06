@@ -1,5 +1,12 @@
 import { EXECUTIVE_TIMELINE_VISIBLE_REGION } from "../hud/timelineVisibleRegionRuntime";
+import { normalizeTimelineState, resolveTimelineState } from "../timeline/timelineArchitectureContract";
 
+/**
+ * ARCHITECTURE CONTRACT:
+ * This runtime persists scene-native Timeline presentation state only. It must
+ * not become a timeline event store, simulation engine, MRP tab owner, or page
+ * router. See docs/nexora-timeline-architecture.md.
+ */
 export type ExecutiveTimelineCollapseState = "collapsed" | "compact" | "expanded";
 export type ExecutiveBottomWorkspaceSurface = "timeline" | "decision-context" | "quick-navigation";
 export type ExecutiveBottomWorkspaceHeightMode = ExecutiveTimelineCollapseState | "full";
@@ -79,6 +86,14 @@ export function hydrateBottomWorkspaceState(): ExecutiveBottomWorkspaceState {
 export function setBottomWorkspaceState(
   patch: Partial<ExecutiveBottomWorkspaceState>
 ): ExecutiveBottomWorkspaceState {
+  if (patch.heightMode != null) {
+    normalizeTimelineState(
+      resolveTimelineState({
+        heightMode: patch.heightMode,
+        collapsed: patch.heightMode === "collapsed",
+      })
+    );
+  }
   bottomWorkspaceState = {
     ...bottomWorkspaceState,
     ...patch,

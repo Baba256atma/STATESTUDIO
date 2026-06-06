@@ -1,8 +1,10 @@
 import type { RightPanelView } from "../../../lib/ui/right-panel/rightPanelTypes.ts";
 
 /**
- * Canonical view + legacy tab mapping for panel authority routing (O3:5).
+ * Deprecated compatibility view + legacy tab mapping for panel authority routing (O3:5).
  * Extracted from `HomeScreen.requestPanelAuthorityOpen` — keep behavior identical when changing call sites.
+ * New MRP work must use MainRightPanelTab + DashboardContext from
+ * `frontend/app/lib/ui/mainRightPanelContract.ts`.
  */
 export function normalizeRawAuthorityPanelView(rawView: string): {
   view: RightPanelView;

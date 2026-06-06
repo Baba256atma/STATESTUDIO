@@ -56,6 +56,12 @@ import type { DecisionAutomationResult } from "../../lib/execution/decisionAutom
 import type { DecisionExecutionIntent } from "../../lib/execution/decisionExecutionIntent";
 import { RightPanelFallback } from "./RightPanelFallback";
 import { isValidRightPanelView } from "../../lib/ui/right-panel/rightPanelRouter";
+import {
+  logMainRightPanelRuntime,
+  resolveMainRightPanelRuntimeView,
+  warnDashboardRedirect,
+  warnLegacySurfaceBlocked,
+} from "../../lib/ui/mainRightPanelRuntimeEnforcement";
 import type { FirstMeaningfulState } from "../../screens/homeScreenResponseReaders";
 import { buildPanelResolvedData } from "../../lib/panels/buildPanelResolvedData";
 import type { NexoraB18CompareResolved } from "../../lib/scenario/nexoraScenarioBuilder.ts";
@@ -98,6 +104,18 @@ import type { RiskPanelData } from "../../lib/panels/panelDataContract";
 import type { ExecutiveMetaCognitionSnapshot } from "../../lib/meta-cognition";
 import type { ExecutiveReasoningTransparency } from "../../lib/reasoning-transparency";
 import { ExecutiveReasoningTransparencyCard } from "../executive/ExecutiveReasoningTransparencyCard";
+
+/**
+ * ARCHITECTURE CONTRACT:
+ * RightPanelHost is a legacy compatibility renderer for historical right-panel
+ * views. The canonical Main Right Panel has exactly two tabs: Dashboard and
+ * Assistant. New Risk/Scenario/Sources/War Room/Timeline work must route as
+ * Dashboard contexts, not new tabs or routed MRP pages.
+ */
+function widenRuntimeRightPanelView(view: "dashboard"): RightPanelView {
+  return view;
+}
+
 const logConflictPayloadSource = (..._args: any[]) => {};
 const logPanelDataUnderfed = (..._args: any[]) => {};
 const logPanelFallback = (..._args: any[]) => {};
@@ -828,17 +846,42 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     [visibleSceneObjects]
   );
   const lastRightPanelObjectSourceTraceRef = React.useRef<string | null>(null);
-  const previousValidViewRef = React.useRef<RightPanelView>("workspace");
+  const previousValidViewRef = React.useRef<RightPanelView>("dashboard");
   const requestedView = props.rightPanelState.view;
   React.useEffect(() => {
-    if (isValidRightPanelView(requestedView)) {
+    if (isValidRightPanelView(requestedView) && requestedView === "dashboard") {
       previousValidViewRef.current = requestedView;
     }
   }, [requestedView]);
   /** Keep rendering the last valid panel during transient invalid transitions. */
-  const viewToRender = isValidRightPanelView(requestedView)
+  const requestedViewToRender = isValidRightPanelView(requestedView)
     ? requestedView
-    : previousValidViewRef.current ?? "workspace";
+    : previousValidViewRef.current ?? "dashboard";
+  const mrpRuntimeRoute = resolveMainRightPanelRuntimeView({
+    requestedView: requestedViewToRender,
+    reason: "RightPanelHost.viewToRender",
+  });
+  const viewToRender = widenRuntimeRightPanelView(mrpRuntimeRoute.runtimeView);
+  React.useEffect(() => {
+    logMainRightPanelRuntime({ owner: "RightPanelHost", runtimeView: viewToRender });
+    if (!mrpRuntimeRoute.redirected) return;
+    warnLegacySurfaceBlocked(mrpRuntimeRoute.requestedView, {
+      owner: "RightPanelHost",
+      requestedView: mrpRuntimeRoute.requestedView,
+      contextId: props.rightPanelState.contextId ?? null,
+    });
+    warnDashboardRedirect(mrpRuntimeRoute.requestedView, {
+      owner: "RightPanelHost",
+      dashboardContext: mrpRuntimeRoute.dashboardContext,
+      contextId: props.rightPanelState.contextId ?? null,
+    });
+  }, [
+    mrpRuntimeRoute.dashboardContext,
+    mrpRuntimeRoute.redirected,
+    mrpRuntimeRoute.requestedView,
+    props.rightPanelState.contextId,
+    viewToRender,
+  ]);
   const shouldBuildAdvicePayload =
     viewToRender === "advice" ||
     viewToRender === "timeline" ||

@@ -4,6 +4,12 @@ import { bucketViewportWidth } from "../layout/hudLayoutSignature";
  * E2:2 — Executive workspace layout contracts.
  * Single source of truth for dock widths, scene margins, and responsive breakpoints.
  * Reused by E2:3+ (Scene Panel), E2:4+ (Object/Dashboard/Chat docks).
+ *
+ * Frozen MVP panel contract:
+ * - Left Navigation is permanent executive context navigation.
+ * - Center Workspace is the always-active Three.js scene.
+ * - Main Right Panel exposes Dashboard and Assistant only.
+ * See docs/nexora-canonical-panel-architecture.md.
  */
 
 /** Primary left navigation rail (section switcher). */

@@ -1,6 +1,13 @@
 import type { NexoraComponentPanelId } from "../actions/actionTypes";
 import type { RightPanelView } from "../ui/right-panel/rightPanelTypes";
 
+/**
+ * ARCHITECTURE CONTRACT:
+ * Deprecated legacy intent destination registry. The frozen MVP contract routes
+ * Scene/Object/Risk/Scenario/War Room/Timeline through Dashboard modes rather
+ * than separate right-panel or center execution destinations. Assistant remains
+ * isolated. See docs/nexora-canonical-panel-architecture.md.
+ */
 export type NexoraIntent =
   | "open_calibration"
   | "open_dashboard"

@@ -10,6 +10,15 @@ import {
   resolveRightPanelAction as resolvePanelActionIntent,
 } from "./panelActionRouter";
 
+/**
+ * ARCHITECTURE CONTRACT:
+ * This router is a deprecated compatibility layer for legacy right-panel tabs.
+ * New MVP routing must use Dashboard modes for Scene/Object/Risk/Scenario/
+ * War Room/Timeline actions and keep Assistant isolated.
+ * The cross-panel route authority is ../routing/nexoraRoutingContract.ts.
+ * See docs/nexora-canonical-panel-architecture.md and
+ * docs/nexora-routing-governance.md.
+ */
 const EXECUTIVE_DASHBOARD_TAB = "executive_dashboard";
 const CANONICAL_RIGHT_PANEL_VIEW_SET = new Set<string>(CANONICAL_RIGHT_PANEL_VIEWS);
 const PROTECTED_VIEWS = new Set<RightPanelView>([
@@ -20,6 +29,11 @@ const PROTECTED_VIEWS = new Set<RightPanelView>([
   "compare",
 ]);
 
+/**
+ * @deprecated Legacy left-nav group keys. Use NexoraLeftNavMode from
+ * ../nexoraLeftNavContract for canonical MVP navigation. These keys are kept
+ * only so old payloads can be normalized without creating new MRP tabs.
+ */
 export const RIGHT_PANEL_LEFT_NAV_KEYS = [
   "scene_group",
   "strategy_group",

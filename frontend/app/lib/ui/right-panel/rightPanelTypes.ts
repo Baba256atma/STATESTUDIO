@@ -1,3 +1,12 @@
+/**
+ * ARCHITECTURE CONTRACT:
+ * The frozen Nexora MVP Main Right Panel has exactly two canonical tabs:
+ * Dashboard and Assistant. The view names below are legacy compatibility
+ * routes retained until behavior is migrated through Dashboard modes.
+ * Use MainRightPanelTab and DashboardContext from ../mainRightPanelContract
+ * for new MVP architecture.
+ * See docs/nexora-canonical-panel-architecture.md.
+ */
 export const CANONICAL_RIGHT_PANEL_VIEWS = [
   "strategic_command",
   "dashboard",
@@ -12,14 +21,20 @@ export const CANONICAL_RIGHT_PANEL_VIEWS = [
   "decision_governance",
   "decision_policy",
   "executive_approval",
-  /** Object-scoped executive read (Type-C): insight / risk / action — not the global dashboard. */
+  /**
+   * Deprecated object-scoped compatibility route.
+   * Canonical Object Panel is scene-native and must not become an MRP tab.
+   */
   "executive_object",
   "explanation",
   "risk",
   "fragility",
   "object",
+  /** Deprecated object focus compatibility route; route future object actions through Dashboard Context. */
   "object_focus",
+  /** Deprecated Timeline compatibility route. Canonical Timeline is scene-native, not an MRP tab. */
   "timeline",
+  /** Deprecated decision-timeline compatibility route; route future requests through Dashboard Context. */
   "decision_timeline",
   "confidence_calibration",
   "outcome_feedback",

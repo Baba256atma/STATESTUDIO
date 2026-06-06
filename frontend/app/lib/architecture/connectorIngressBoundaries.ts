@@ -13,6 +13,12 @@ export type ConnectorIngressBoundaryRule =
   | "derive_overlays_from_contracts"
   | "do_not_bypass_canonical_pipeline";
 
+/**
+ * ARCHITECTURE CONTRACT:
+ * Source Management owns source metadata and health. Connector ingress may only
+ * normalize upstream evidence for operational modeling; it must never mutate
+ * the scene directly.
+ */
 export type ConnectorIngressEnvelope = {
   version: "connector-ingress-v1";
   connectorId: string;

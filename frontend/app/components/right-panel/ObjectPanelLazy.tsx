@@ -10,6 +10,13 @@ import type { ExecutiveObjectPanelData } from "../../lib/panels/executiveObjectP
 import type { AddObjectMenuItem } from "../../lib/domain/domainAddObjectAdapter";
 import type { RightPanelView } from "../../lib/ui/right-panel/rightPanelTypes";
 
+/**
+ * DEPRECATED ARCHITECTURE:
+ * `object`, `object_focus`, and `executive_object` are legacy right-panel
+ * compatibility views. The canonical MVP Object Panel is scene-native on the
+ * right side of the Three.js scene and must not become an MRP tab.
+ * See docs/nexora-object-panel-architecture.md.
+ */
 export type ObjectPanelLazyProps = {
   view: RightPanelView;
   contextId?: string | null;

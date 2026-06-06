@@ -53,6 +53,7 @@ import {
   logTimelineExpand,
   resolveTimelineCompression,
 } from "../../lib/timeline/timelineCompressionRuntime";
+import { resolveTimelineState } from "../../lib/timeline/timelineArchitectureContract";
 import { useHydratedTimelineDisplayTime } from "../../lib/time/useHydratedTimelineDisplayTime";
 import { SceneHudOverlayRoot } from "./SceneHudOverlayRoot";
 
@@ -93,6 +94,13 @@ function nextMode(mode: ExecutiveBottomWorkspaceHeightMode): ExecutiveBottomWork
   return "collapsed";
 }
 
+/**
+ * ARCHITECTURE CONTRACT:
+ * Timeline is a scene-native bottom runtime component. It is not a Left Nav
+ * page, Main Right Panel tab, modal, or separate route. Left Nav Timeline mode
+ * should activate Dashboard context `timeline`, which in turn activates this
+ * scene timeline surface. See docs/nexora-timeline-architecture.md.
+ */
 export function ExecutiveBottomWorkspaceOverlay(
   props: ExecutiveBottomWorkspaceOverlayProps
 ): React.ReactElement {
@@ -123,6 +131,11 @@ export function ExecutiveBottomWorkspaceOverlay(
   const height = heightForBottomWorkspaceMode(state.heightMode);
   const compact = state.heightMode !== "expanded" && state.heightMode !== "full";
   const timelineRegion = getTimelineVisibleRegion();
+  const timelineState = resolveTimelineState({
+    visible: placement.visible,
+    collapsed: state.heightMode === "collapsed",
+    heightMode: state.heightMode,
+  });
 
   React.useEffect(() => {
     const hydrated = hydrateBottomWorkspaceState();
@@ -177,6 +190,7 @@ export function ExecutiveBottomWorkspaceOverlay(
         <div
           data-nx="executive-bottom-workspace"
           data-hud="timeline"
+          data-nx-timeline-state={timelineState}
           data-nx-mode={state.heightMode}
           data-nx-theme={theme.mode}
           style={{

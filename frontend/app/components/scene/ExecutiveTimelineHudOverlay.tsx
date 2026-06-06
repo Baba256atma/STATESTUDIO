@@ -14,7 +14,10 @@ export type ExecutiveTimelineHudOverlayProps = {
 };
 
 /**
- * E2:10 — Bottom-center scene-native executive timeline HUD.
+ * ARCHITECTURE CONTRACT:
+ * Bottom-center scene-native Timeline HUD. Timeline is not a Main Right Panel
+ * tab, Left Nav page, modal, or separate route.
+ * See docs/nexora-timeline-architecture.md.
  */
 export function ExecutiveTimelineHudOverlay(props: ExecutiveTimelineHudOverlayProps): React.ReactElement {
   const { hudStyle, getHudPlacement } = useWorkspaceLayout();

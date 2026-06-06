@@ -1,5 +1,13 @@
 # Nexora Panel System
 
+> Deprecated legacy architecture.
+>
+> This document describes the pre-freeze panel model. The frozen MVP contract is
+> `docs/nexora-canonical-panel-architecture.md`. Future development must follow
+> that contract: permanent Left Navigation, always-active Three.js scene, Scene
+> Panel, selection-scoped Object Panel, scene-native Timeline, and Main Right
+> Panel with exactly Dashboard and Assistant tabs.
+
 ## 1. Core Rule
 
 - Right Panel = Intent / Navigation / Lightweight Guidance.

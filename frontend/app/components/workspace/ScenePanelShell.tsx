@@ -6,6 +6,10 @@ import { nx } from "../ui/nexoraTheme";
 import { requestOpenObjectCatalog } from "../../lib/objectCatalog/objectCatalogRuntime";
 import { requestOpenSystemModelingWorkspace } from "../../lib/systemModeling/systemModelRuntime";
 import {
+  normalizeScenePanelState,
+  SCENE_PANEL_CONTRACT,
+} from "../../lib/scene/scenePanelContract";
+import {
   logAddObjectPlaceholderClicked,
   logScenePanelCollapsed,
   logScenePanelExpanded,
@@ -19,6 +23,14 @@ export type ScenePanelShellProps = {
   onCreateSystemClick?: () => void;
 };
 
+/**
+ * ARCHITECTURE CONTRACT:
+ * Scene Panel is scene-scoped, left of scene, collapsible body with header
+ * always visible. It may open the catalog for object insertion; it must not
+ * become a dashboard, object panel, assistant surface, left-nav menu, or
+ * alternate workspace. Canonical details live in
+ * docs/nexora-scene-panel-architecture.md.
+ */
 const PLACEHOLDER_SECTIONS = ["Workspace", "Objects", "Signals", "Actions"] as const;
 
 const headerStyle: React.CSSProperties = {
@@ -53,6 +65,8 @@ const sectionBodyStyle: React.CSSProperties = {
 
 export function ScenePanelShell(props: ScenePanelShellProps): React.ReactElement {
   const mountedRef = React.useRef(false);
+  const scenePanelState = normalizeScenePanelState(props.collapsed, { warn: false });
+  const collapsed = scenePanelState === "collapsed";
 
   React.useEffect(() => {
     if (mountedRef.current) return;
@@ -61,17 +75,17 @@ export function ScenePanelShell(props: ScenePanelShellProps): React.ReactElement
   }, []);
 
   const handleToggle = React.useCallback(() => {
-    if (props.collapsed) {
+    if (collapsed) {
       logScenePanelExpanded();
     } else {
       logScenePanelCollapsed();
     }
     props.onToggleCollapsed();
-  }, [props.collapsed, props.onToggleCollapsed]);
+  }, [collapsed, props.onToggleCollapsed]);
 
   const handleAddObject = React.useCallback(() => {
     logAddObjectPlaceholderClicked();
-    requestOpenObjectCatalog("scene_panel");
+    requestOpenObjectCatalog(SCENE_PANEL_CONTRACT.objectCatalogEntrySource);
     props.onAddObjectClick?.();
   }, [props.onAddObjectClick]);
 
@@ -80,7 +94,7 @@ export function ScenePanelShell(props: ScenePanelShellProps): React.ReactElement
     props.onCreateSystemClick?.();
   }, [props.onCreateSystemClick]);
 
-  if (props.collapsed) {
+  if (collapsed) {
     return (
       <div
         id="nexora-scene-panel-shell"

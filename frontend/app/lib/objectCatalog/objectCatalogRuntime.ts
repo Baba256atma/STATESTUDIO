@@ -13,6 +13,11 @@ import type {
   CatalogObjectDefinition,
   CatalogSearchResult,
 } from "./objectCatalogTypes";
+import {
+  normalizeObjectCatalogEntrySource,
+  normalizeObjectCatalogState,
+  type ObjectCatalogEntrySource,
+} from "../scene/scenePanelContract";
 
 export const OBJECT_CATALOG_OPEN_EVENT = "nexora:object-catalog-open";
 export const OBJECT_CATALOG_CLOSE_EVENT = "nexora:object-catalog-close";
@@ -48,16 +53,22 @@ export function resolveCatalogObjectPreview(
   };
 }
 
-export function requestOpenObjectCatalog(source: string): void {
-  if (typeof window === "undefined") return;
-  logObjectCatalogOpened(source);
-  window.dispatchEvent(new CustomEvent(OBJECT_CATALOG_OPEN_EVENT, { detail: { source } }));
+export function requestOpenObjectCatalog(source: ObjectCatalogEntrySource | string): void {
+  const normalizedSource = normalizeObjectCatalogEntrySource(source);
+  normalizeObjectCatalogState("open", { warn: false });
+  if (typeof window === "undefined") {
+    normalizeObjectCatalogState("unavailable");
+    return;
+  }
+  logObjectCatalogOpened(normalizedSource);
+  window.dispatchEvent(new CustomEvent(OBJECT_CATALOG_OPEN_EVENT, { detail: { source: normalizedSource } }));
 }
 
-export function requestCloseObjectCatalog(source: string): void {
+export function requestCloseObjectCatalog(source: ObjectCatalogEntrySource | string): void {
+  const normalizedSource = normalizeObjectCatalogEntrySource(source, { warn: false });
   if (typeof window === "undefined") return;
-  logObjectCatalogClosed(source);
-  window.dispatchEvent(new CustomEvent(OBJECT_CATALOG_CLOSE_EVENT, { detail: { source } }));
+  logObjectCatalogClosed(normalizedSource);
+  window.dispatchEvent(new CustomEvent(OBJECT_CATALOG_CLOSE_EVENT, { detail: { source: normalizedSource } }));
 }
 
 export {

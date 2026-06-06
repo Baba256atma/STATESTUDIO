@@ -3,6 +3,7 @@
 import React from "react";
 
 import { EXECUTIVE_WORKSPACE_ZONE_IDS } from "../../lib/ui/executiveWorkspaceLayout";
+import { resolveObjectPanelState } from "../../lib/object-panel/objectPanelContract";
 import {
   logObjectPanelCollapsed,
   logObjectPanelExpanded,
@@ -21,6 +22,14 @@ export type ObjectPanelShellProps = {
   children?: React.ReactNode;
 };
 
+/**
+ * ARCHITECTURE CONTRACT:
+ * Object Panel is the scene-native, right-side selected-object surface.
+ * It is not Left Nav, Main Right Panel, a modal, or a global dashboard.
+ * Selection remains single-object and route requests flow through Dashboard
+ * Context instead of creating extra MRP tabs.
+ * See docs/nexora-object-panel-architecture.md.
+ */
 const PLACEHOLDER_SECTIONS = ["Summary", "Signals", "Risk", "Actions"] as const;
 
 const headerStyle: React.CSSProperties = {
@@ -75,6 +84,10 @@ export function ObjectPanelShell(props: ObjectPanelShellProps): React.ReactEleme
   const selectedObjectId = props.selectedObjectId?.trim() || null;
   const selectedObjectLabel = props.selectedObjectLabel?.trim() || null;
   const hasSelection = Boolean(selectedObjectId || selectedObjectLabel);
+  const objectPanelState = resolveObjectPanelState({
+    visible: !props.headless,
+    selectedObjectId,
+  });
 
   React.useEffect(() => {
     if (mountedRef.current) return;
@@ -101,6 +114,7 @@ export function ObjectPanelShell(props: ObjectPanelShellProps): React.ReactEleme
         id={EXECUTIVE_WORKSPACE_ZONE_IDS.objectPanelShell}
         data-nx="object-panel-shell"
         data-nx-state="headless"
+        data-nx-object-panel-state="hidden"
         aria-hidden
         style={{
           position: "absolute",
@@ -128,6 +142,7 @@ export function ObjectPanelShell(props: ObjectPanelShellProps): React.ReactEleme
         id={EXECUTIVE_WORKSPACE_ZONE_IDS.objectPanelShell}
         data-nx="object-panel-shell"
         data-nx-state="collapsed"
+        data-nx-object-panel-state={objectPanelState}
         style={{
           display: "flex",
           flexDirection: "column",
@@ -177,6 +192,7 @@ export function ObjectPanelShell(props: ObjectPanelShellProps): React.ReactEleme
       id={EXECUTIVE_WORKSPACE_ZONE_IDS.objectPanelShell}
       data-nx="object-panel-shell"
       data-nx-state="expanded"
+      data-nx-object-panel-state={objectPanelState}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -266,9 +282,7 @@ export function ObjectPanelShell(props: ObjectPanelShellProps): React.ReactEleme
             </section>
           ))}
         </div>
-        {/* E2:9 will add Dashboard / Chat tabs. */}
-        {/* E2:10 will enrich Dashboard content. */}
-        {/* E2:11 will move chatbot into the Chat tab. */}
+        {/* Deprecated E2 object-shell tab plan: Dashboard / Assistant now belong to Main Right Panel. */}
 
         <div
           id={EXECUTIVE_WORKSPACE_ZONE_IDS.objectPanelHost}

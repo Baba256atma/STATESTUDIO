@@ -20,6 +20,12 @@ export type ExecutiveAssistantPanelShellProps = {
   children?: React.ReactNode;
 };
 
+/**
+ * ARCHITECTURE CONTRACT:
+ * Assistant is the isolated MRP tab for AI interaction. Dashboard context
+ * changes must not remount or reset this shell; Assistant must not become
+ * source, scenario, risk, or timeline management UI.
+ */
 function toggleButtonStyle(theme: ReturnType<typeof useSceneHudTheme>): React.CSSProperties {
   return {
     flexShrink: 0,

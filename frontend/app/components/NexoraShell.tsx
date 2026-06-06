@@ -25,10 +25,21 @@ import { CustomerDemoSelector } from "./demo/CustomerDemoSelector";
 import { StrategicAssistantDrawer } from "./assistant/StrategicAssistantDrawer";
 import {
   resolveRightPanelRailRoute,
-  type RightPanelLeftNavKey,
   type RightPanelRailTab,
 } from "../lib/ui/right-panel/rightPanelRouter";
 import type { RightPanelView } from "../lib/ui/right-panel/rightPanelTypes";
+import {
+  logMainRightPanelRuntime,
+  resolveMainRightPanelRuntimeView,
+  warnDashboardRedirect,
+  warnLegacySurfaceBlocked,
+} from "../lib/ui/mainRightPanelRuntimeEnforcement";
+import {
+  CANONICAL_NEXORA_LEFT_NAV_ITEMS,
+  getNexoraLeftNavItem,
+  resolveNexoraLeftNavMode,
+  type NexoraLeftNavMode,
+} from "../lib/ui/nexoraLeftNavContract";
 import { emitDebugEvent } from "../lib/debug/debugEmit";
 import { getRecentDebugEvents } from "../lib/debug/debugEventStore";
 import { emitGuardRailAlerts, runGuardChecks } from "../lib/debug/debugGuardRails";
@@ -73,7 +84,7 @@ type NexoraShellProps = {
   children: React.ReactNode;
 };
 
-type LeftNavGroupKey = RightPanelLeftNavKey;
+type LeftNavGroupKey = NexoraLeftNavMode;
 type InspectorEventTab = RightPanelRailTab;
 type InspectorSectionChangedDetail = {
   section: ActiveSectionKey;
@@ -83,6 +94,9 @@ type InspectorSectionChangedDetail = {
 type ActiveSectionKey =
   | "scene"
   | "objects"
+  | "sources"
+  | "scenario"
+  | "settings"
   | "kpi"
   | "risk"
   | "loops"
@@ -113,23 +127,18 @@ const RISK_RAIL_TAB_TO_VIEW: Record<"explanation" | "conflict" | "risk_flow" | "
   fragility: "fragility",
 };
 
-const LEFT_NAV_ITEMS: Array<{
-  key: LeftNavGroupKey;
-  label: string;
-  short: string;
-  title: string;
-}> = [
-  { key: "scene_group", label: "Scene", short: "SCN", title: "Scene Intelligence" },
-  { key: "strategy_group", label: "Simulation", short: "SIM", title: "Simulation And War Room" },
-  { key: "risk_group", label: "Risk", short: "RSK", title: "Risk" },
-  { key: "workflow_group", label: "Workflows", short: "WRK", title: "Workflows And Collaboration" },
-  { key: "executive_group", label: "Executive", short: "EXE", title: "Executive Dashboard" },
-];
-
+/**
+ * ARCHITECTURE CONTRACT:
+ * Left Navigation is the permanent executive mode switcher only. It must show
+ * exactly the seven canonical modes and must not create extra Main Right Panel
+ * tabs. Mode changes update Dashboard context; Assistant remains isolated.
+ */
 function groupForSection(section: ActiveSectionKey): LeftNavGroupKey {
-  if (section === "input") return "scene_group";
-  if (section === "scene" || section === "objects" || section === "focus") return "scene_group";
-  if (section === "timeline" || section === "advice" || section === "war_room") return "strategy_group";
+  if (section === "sources" || section === "input") return "sources";
+  if (section === "scenario" || section === "advice") return "scenario";
+  if (section === "timeline") return "timeline";
+  if (section === "war_room") return "war_room";
+  if (section === "settings") return "settings";
   if (
     section === "risk" ||
     section === "fragility" ||
@@ -137,20 +146,9 @@ function groupForSection(section: ActiveSectionKey): LeftNavGroupKey {
     section === "risk_flow" ||
     section === "explanation"
   ) {
-    return "risk_group";
+    return "risk";
   }
-  if (
-    section === "replay" ||
-    section === "memory" ||
-    section === "patterns" ||
-    section === "opponent" ||
-    section === "workspace" ||
-    section === "collaboration"
-  ) {
-    return "workflow_group";
-  }
-  if (section === "executive") return "executive_group";
-  return "scene_group";
+  return "dashboard";
 }
 
 function getRequestedViewForEventTab(eventTab: InspectorEventTab | null | undefined): RightPanelView {
@@ -169,12 +167,27 @@ function getRequestedViewForEventTab(eventTab: InspectorEventTab | null | undefi
 }
 
 function getRequestedViewForLeftNav(key: LeftNavGroupKey): RightPanelView {
-  if (key === "scene_group") return "workspace";
-  if (key === "strategy_group") return "simulate";
-  if (key === "risk_group") return "risk";
-  if (key === "workflow_group") return "memory";
-  if (key === "executive_group") return "dashboard";
-  return "workspace";
+  return getNexoraLeftNavItem(key).defaultPanelTarget;
+}
+
+function getSectionForLeftNavMode(mode: LeftNavGroupKey): ActiveSectionKey {
+  switch (resolveNexoraLeftNavMode(mode)) {
+    case "sources":
+      return "sources";
+    case "scenario":
+      return "scenario";
+    case "risk":
+      return "risk_flow";
+    case "war_room":
+      return "war_room";
+    case "timeline":
+      return "timeline";
+    case "settings":
+      return "settings";
+    case "dashboard":
+    default:
+      return "executive";
+  }
 }
 
 function panelFamilyForView(view: RightPanelView | null | undefined): "EXE" | "SCN" | "SIM" | "RSK" {
@@ -235,23 +248,27 @@ const INSPECTOR_GROUPS: Record<
     tabs: Array<{ key: ActiveSectionKey; label: string; eventTab?: InspectorEventTab }>;
   }
 > = {
-  scene_group: {
-    label: "Scene",
+  sources: {
+    label: "Sources",
+    tabs: [{ key: "sources", label: "Sources", eventTab: "executive_dashboard" }],
+  },
+  dashboard: {
+    label: "Dashboard",
     tabs: [
+      { key: "executive", label: "Dashboard", eventTab: "executive_dashboard" },
       { key: "scene", label: "Scene", eventTab: "scene" },
       { key: "objects", label: "Objects", eventTab: "object" },
       { key: "focus", label: "Focus", eventTab: "object_focus" },
     ],
   },
-  strategy_group: {
-    label: "Simulation",
+  scenario: {
+    label: "Scenario",
     tabs: [
-      { key: "war_room", label: "War Room", eventTab: "war_room" },
-      { key: "timeline", label: "Timeline", eventTab: "timeline" },
+      { key: "scenario", label: "Scenario", eventTab: "executive_dashboard" },
       { key: "advice", label: "Advice", eventTab: "strategic_advice" },
     ],
   },
-  risk_group: {
+  risk: {
     label: "Risk",
     tabs: [
       { key: "explanation", label: "Explanation", eventTab: "explanation" },
@@ -260,22 +277,21 @@ const INSPECTOR_GROUPS: Record<
       { key: "fragility", label: "Fragility", eventTab: "fragility_scan" },
     ],
   },
-  workflow_group: {
-    label: "Workflows",
-    tabs: [
-      { key: "replay", label: "Replay", eventTab: "replay" },
-      { key: "memory", label: "Memory", eventTab: "memory_insights" },
-      { key: "patterns", label: "Patterns", eventTab: "strategic_patterns" },
-      { key: "opponent", label: "Opponent", eventTab: "opponent_moves" },
-      { key: "collaboration", label: "Collab", eventTab: "collaboration" },
-      { key: "workspace", label: "Workspace", eventTab: "workspace" },
-    ],
+  war_room: {
+    label: "War Room",
+    tabs: [{ key: "war_room", label: "War Room", eventTab: "executive_dashboard" }],
   },
-  executive_group: {
-    label: "Executive",
-    tabs: [{ key: "executive", label: "Dashboard", eventTab: "executive_dashboard" }],
+  timeline: {
+    label: "Timeline",
+    tabs: [{ key: "timeline", label: "Timeline", eventTab: "executive_dashboard" }],
+  },
+  settings: {
+    label: "Settings",
+    tabs: [{ key: "settings", label: "Settings", eventTab: "executive_dashboard" }],
   },
 };
+
+const MRP_ALLOWED_INSPECTOR_TABS = new Set<InspectorEventTab | undefined>(["executive_dashboard"]);
 
 function prettyObjectName(id: string) {
   return String(id || "")
@@ -456,6 +472,12 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const [isInspectorOpen, setIsInspectorOpen] = useState(true);
   const [isAssistantDrawerOpen, setIsAssistantDrawerOpen] = useState(true);
   const [leftCommandOpen, setLeftCommandOpen] = useState(true);
+  /**
+   * WORKSPACE STATE CONTRACT:
+   * Shell collapse booleans are presentation mirrors for NexoraWorkspaceState.
+   * They must not become independent route, selection, Dashboard Context, or MRP
+   * tab ownership. See docs/nexora-workspace-state-management.md.
+   */
   const [scenePanelCollapsed, setScenePanelCollapsed] = useState(false);
   const [objectPanelCollapsed, setObjectPanelCollapsed] = useState(false);
   const [executiveAssistantCollapsed, setExecutiveAssistantCollapsed] = useState(false);
@@ -801,7 +823,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const sharedCoreEngine = inspectorContext?.sharedCoreEngine ?? null;
   const visibleNavGroupSet = useMemo(() => {
     const raw = Array.isArray(domainExperience?.visibleNavGroups) ? domainExperience.visibleNavGroups : [];
-    return new Set(raw.map((value: string) => String(value)));
+    return new Set(raw.map((value: string) => resolveNexoraLeftNavMode(value, { warn: false })));
   }, [domainExperience]);
   const visibleSectionSet = useMemo(() => {
     const raw = Array.isArray(domainExperience?.visibleSections) ? domainExperience.visibleSections : [];
@@ -815,8 +837,8 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const finalRightPanelView: RightPanelView = upstreamRightPanelView ?? localRightPanelView ?? "workspace";
   const navItems = useMemo(
     () =>
-      LEFT_NAV_ITEMS.filter(
-        (item) => visibleNavGroupSet.size === 0 || visibleNavGroupSet.has(item.key)
+      CANONICAL_NEXORA_LEFT_NAV_ITEMS.filter(
+        (item) => visibleNavGroupSet.size === 0 || visibleNavGroupSet.has(item.id)
       ),
     [visibleNavGroupSet]
   );
@@ -899,6 +921,9 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     const map: Record<typeof activeSection, string> = {
       scene: "Scene",
       objects: "Objects",
+      sources: "Sources",
+      scenario: "Scenario",
+      settings: "Settings",
       kpi: "KPI",
       risk: "Risk",
       fragility: "Fragility",
@@ -929,6 +954,12 @@ export default function NexoraShell({ children }: NexoraShellProps) {
         return "Review the current operating picture and scene-level business condition.";
       case "objects":
         return "Inspect the entities carrying pressure, leverage, or strategic relevance.";
+      case "sources":
+        return "Manage source context for the executive dashboard without running ingestion actions from the nav.";
+      case "scenario":
+        return "Frame scenario design, comparison, and simulation setup inside Dashboard context.";
+      case "settings":
+        return "Adjust workspace preferences through the controlled settings context.";
       case "kpi":
         return "Track the business indicators that define current system health.";
       case "risk":
@@ -1120,7 +1151,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       return false;
     });
     return {
-      ...(base ?? INSPECTOR_GROUPS.scene_group),
+      ...(base ?? INSPECTOR_GROUPS.dashboard),
       tabs: filteredTabs.length > 0 ? filteredTabs : base?.tabs ?? [],
     };
   }, [
@@ -1128,7 +1159,13 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     visibleSectionSet,
     resolvedActiveSection,
   ]);
-  const activeSubTabs = useMemo(() => activeGroupConfig?.tabs ?? [], [activeGroupConfig]);
+  const activeSubTabs = useMemo(
+    () => (activeGroupConfig?.tabs ?? []).filter((tab) => MRP_ALLOWED_INSPECTOR_TABS.has(tab.eventTab)),
+    [activeGroupConfig]
+  );
+  useEffect(() => {
+    logMainRightPanelRuntime({ owner: "NexoraShell", visibleInspectorTabs: activeSubTabs.map((tab) => tab.label) });
+  }, [activeSubTabs]);
   const visibleSections = useMemo(
     () => Array.from(visibleSectionSet.values()),
     [visibleSectionSet]
@@ -1284,31 +1321,52 @@ export default function NexoraShell({ children }: NexoraShellProps) {
       getRequestedViewForEventTab(eventTab) ??
       getRequestedViewForLeftNav(groupForSection(section));
     if (nextView) {
-      const isUserShellDashboard = nextView === "dashboard";
+      const runtimeRoute = resolveMainRightPanelRuntimeView({
+        requestedView: nextView,
+        reason: "NexoraShell.setInspectorSection",
+      });
+      if (runtimeRoute.redirected) {
+        warnLegacySurfaceBlocked(nextView, {
+          owner: "NexoraShell.setInspectorSection",
+          section: explicitSection,
+          eventTab: eventTab ?? null,
+        });
+        warnDashboardRedirect(nextView, {
+          owner: "NexoraShell.setInspectorSection",
+          dashboardContext: runtimeRoute.dashboardContext,
+        });
+      }
+      const leftNavItem = leftNavKey ? getNexoraLeftNavItem(leftNavKey) : null;
+      const isUserShellDashboard = runtimeRoute.runtimeView === "dashboard";
       const openReason =
-        leftNavKey === "scene_group" && nextView === "workspace"
-          ? "scn_auto_scene_open"
+        leftNavItem && isUserShellDashboard
+          ? `left_nav_${leftNavItem.dashboardContext}`
           : isUserShellDashboard
             ? "dashboard_click"
             : "shell_nav_intent";
       const panelOpenSource = leftNavKey ? "left_nav" : isUserShellDashboard ? "manual_user_nav" : "sub_button";
       globalThis.console?.debug?.("[Nexora][RightPanelWriter]", {
         writer: "NexoraShell.setInspectorSection",
-        nextView,
+        nextView: runtimeRoute.runtimeView,
+        requestedView: nextView,
         contextId: null,
         reason: openReason,
       });
       window.dispatchEvent(
         new CustomEvent("nexora:open-right-panel", {
           detail: {
-            family: panelFamilyForView(nextView),
-            view: nextView,
+            family: "EXE",
+            view: runtimeRoute.runtimeView,
             tab: eventTab ?? null,
             leftNav: leftNavKey ?? null,
+            leftNavMode: leftNavItem?.id ?? null,
+            dashboardContext: leftNavItem?.dashboardContext ?? runtimeRoute.dashboardContext,
+            routePolicy: leftNavItem?.routePolicy ?? null,
             section: explicitSection,
             source: panelOpenSource,
             forceOpen: true,
             reason: openReason,
+            legacyRequestedView: nextView,
           },
         })
       );
@@ -1692,20 +1750,19 @@ export default function NexoraShell({ children }: NexoraShellProps) {
             }}
           >
             {navItems.map((item) => {
-              const isActive = activeNavGroup === item.key;
+              const isActive = activeNavGroup === item.id;
               return (
                 <button
-                  key={item.key}
+                  key={item.id}
                   type="button"
-                  title={item.title}
-                  aria-label={item.title}
+                  title={item.description}
+                  aria-label={item.description}
                   onClick={() => {
-                    const requestedView = getRequestedViewForLeftNav(item.key);
-                    const nextSection = getSectionForView(requestedView) ?? activeSection;
-                    if (item.key === "scene_group") {
-                      explicitScnIntentRef.current = "scene";
-                    }
-                    setInspectorSection(nextSection, undefined, requestedView, item.key);
+                    const mode = resolveNexoraLeftNavMode(item.id);
+                    const requestedView = getRequestedViewForLeftNav(mode);
+                    const nextSection = getSectionForLeftNavMode(mode);
+                    explicitScnIntentRef.current = null;
+                    setInspectorSection(nextSection, undefined, requestedView, mode);
                   }}
                   style={{
                     height: 54,
@@ -1727,7 +1784,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
                   aria-pressed={isActive}
                 >
                   <span style={{ fontSize: 10, letterSpacing: "0.12em", lineHeight: 1, textTransform: "uppercase", color: isActive ? nx.navShortActive : nx.lowMuted }}>
-                    {item.short}
+                    {item.label}
                   </span>
                   <span style={{ fontSize: 12, lineHeight: 1.2, textAlign: "left" }}>{item.label}</span>
                 </button>

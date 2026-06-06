@@ -117,6 +117,22 @@ import {
   shouldShowExecutiveQuickActionsDock,
 } from "../lib/ui/executiveWorkspacePresentation";
 import { DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS } from "../lib/ui/executiveAssistantPanelTypes";
+import {
+  mapLegacyPanelRouteToDashboardContext,
+  normalizeMainRightPanelTab,
+  warnUnauthorizedMainRightPanelTab,
+} from "../lib/ui/mainRightPanelContract";
+import {
+  resolveMainRightPanelRuntimeView,
+  warnDashboardRedirect,
+  warnLegacySurfaceBlocked,
+} from "../lib/ui/mainRightPanelRuntimeEnforcement";
+import {
+  resolveNexoraRouteRequest,
+  warnLegacyRouteDetected,
+  warnUnauthorizedRoutingMrpTab,
+} from "../lib/routing/nexoraRoutingContract";
+import { getNexoraLeftNavItem, resolveNexoraLeftNavMode } from "../lib/ui/nexoraLeftNavContract";
 import { buildExecutiveScenarioSuggestionsModel } from "../lib/ui/buildExecutiveScenarioSuggestionsModel";
 import { buildExecutiveScenarioComparisonModel } from "../lib/ui/buildExecutiveScenarioComparisonModel";
 import { buildExecutiveCommandBarModel } from "../lib/ui/buildExecutiveCommandBarModel";
@@ -1746,6 +1762,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     phase: "pending",
   });
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  /**
+   * WORKSPACE STATE CONTRACT:
+   * This state is the current MVP selectedObjectId authority for
+   * NexoraWorkspaceState. Focus stores, placement runtime state, and
+   * right-panel legacy context ids may mirror it, but must not become competing
+   * selected-object sources.
+   * See docs/nexora-workspace-state-management.md.
+   */
   const [selectedObjectIdState, _setSelectedObjectIdState] = useState<string | null>(null);
   const deferredSelectedObjectId = useDeferredValue(selectedObjectIdState);
   const selectedObjectIdStateRef = useRef<string | null>(null);
@@ -2135,6 +2159,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const handleExecutiveCatalogObjectConfirm = useCallback(
     (definition: CatalogObjectDefinition) => {
       let createdId: string | null = null;
+      // Architecture: object insertion is allowed only after Object Catalog selection.
+      // Scene Panel opens the catalog; it must not directly mutate scene objects.
       applySceneChangeSafe((prev) => {
         if (!prev) return prev;
         const result = insertCatalogObjectIntoScene({
@@ -3031,7 +3057,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   function isAnalyzeLockActive(): boolean {
     return Boolean(getAnalyzeLockedObjectId());
   }
-  // O3 shell: right panel state + write meta (`useRightPanelController` below). Routing stays deduped / anti-flash.
+  // WORKSPACE STATE CONTRACT:
+  // Legacy rightPanelState is a compatibility mirror for panel authority writes.
+  // Canonical MVP coordination state is NexoraWorkspaceState:
+  // frontend/app/lib/workspace/nexoraWorkspaceStateContract.ts.
+  // No new Dashboard Context or MRP tab state should be introduced here.
   const [rightPanelState, _setRightPanelState] = useState<RightPanelState>(() => {
     const initialView =
       mapLegacyTabToRightPanelView(activeDomainExperience.experience.preferredRightPanelTab) ?? null;
@@ -4342,6 +4372,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       source: string,
       options?: { requestSeq?: number; dimUnrelated?: boolean }
     ): number => {
+      // Canonical flow: scene object click -> selectedObjectIdState -> Object Panel -> optional Dashboard Context.
+      // This must not create a Main Right Panel tab or execute object engines directly.
       const requestSeq =
         typeof options?.requestSeq === "number" && options.requestSeq > 0
           ? options.requestSeq
@@ -4695,6 +4727,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   );
   const [isClientMounted, setIsClientMounted] = useState(false);
   const [leftCommandPanelOpen, setLeftCommandPanelOpen] = useState(true);
+  // WORKSPACE STATE CONTRACT:
+  // These panel booleans are current UI mirrors for canonical scenePanelState
+  // and objectCatalogState. They must not reset scene data, MRP state, or create
+  // cross-panel synchronization loops.
   const [scenePanelCollapsed, setScenePanelCollapsed] = useState(false);
   const [objectCatalogOpen, setObjectCatalogOpen] = useState(false);
   const [relationshipBuilderOpen, setRelationshipBuilderOpen] = useState(false);
@@ -5902,6 +5938,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
       }
 
+      const mrpRuntimeRoute = resolveMainRightPanelRuntimeView({
+        requestedView: normalizedRequest.view as RightPanelView,
+        reason: normalizedRequest.reason ?? "requestPanelAuthorityOpen",
+      });
+      if (mrpRuntimeRoute.redirected) {
+        warnLegacySurfaceBlocked(normalizedRequest.view, {
+          owner: "HomeScreen.requestPanelAuthorityOpen",
+          source: normalizedRequest.source,
+          reason: normalizedRequest.reason ?? null,
+          dashboardContext: mrpRuntimeRoute.dashboardContext,
+        });
+        warnDashboardRedirect(normalizedRequest.view, {
+          owner: "HomeScreen.requestPanelAuthorityOpen",
+          source: normalizedRequest.source,
+          dashboardContext: mrpRuntimeRoute.dashboardContext,
+        });
+        normalizedRequest = {
+          ...normalizedRequest,
+          family: "EXE",
+          view: mrpRuntimeRoute.runtimeView,
+          reason: `${normalizedRequest.reason ?? "open"}:mrp_dashboard_redirect:${mrpRuntimeRoute.dashboardContext}`,
+        };
+      }
+
       const rawView = String(normalizedRequest.view ?? "").trim().toLowerCase();
       if (!rawView) return;
       lastPanelAuthorityReasonRef.current = normalizedRequest.reason ?? null;
@@ -6512,6 +6572,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         return;
       }
       if (result.execution === "open_center_timeline") {
+        // DEPRECATED ROUTE:
+        // Timeline requests must move through Dashboard Context `timeline` and
+        // activate the scene-native bottom Timeline. Center component opening is
+        // retained as a compatibility path only.
         openCenterComponent("timeline");
         traceActionRouterExecuted(action, { execution: result.execution, outcome: "center_timeline_opened" });
         return;
@@ -7091,12 +7155,73 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       if (!requestedView && !detail?.tab && !detail?.leftNav && !detail?.section) {
         return;
       }
+      const rawEventSource = detail?.source;
+      const isLeftNavRequest = rawEventSource === "left_nav" || Boolean(detail?.leftNav);
+      if (isLeftNavRequest) {
+        const leftNavMode = resolveNexoraLeftNavMode(
+          detail?.leftNav ?? detail?.section ?? detail?.tab ?? detail?.view ?? null
+        );
+        const leftNavItem = getNexoraLeftNavItem(leftNavMode);
+        const routeResolution = resolveNexoraRouteRequest({
+          source: "left_nav",
+          target: leftNavItem.dashboardContext === "timeline" ? "timeline" : "dashboard",
+          dashboardContext: leftNavItem.dashboardContext,
+          reason: detail?.reason ?? `left_nav_${leftNavItem.dashboardContext}`,
+          legacyRoute: requestedView ?? detail?.tab ?? detail?.section ?? undefined,
+        });
+        logDeprecatedPanelPath("left_nav_canonicalized", {
+          requestedView: requestedView ?? null,
+          leftNav: detail?.leftNav ?? null,
+          mode: leftNavMode,
+          dashboardContext: routeResolution.dashboardContext,
+          sceneTimelineActive: routeResolution.sceneTimelineActive,
+        });
+        requestPanelAuthorityOpen({
+          view: leftNavItem.defaultPanelTarget,
+          family: "EXE",
+          source: "left_nav",
+          contextId: detail?.contextId ?? null,
+          reason: detail?.reason ?? `left_nav_${leftNavItem.dashboardContext}`,
+          forceOpen: detail?.forceOpen === false ? false : true,
+        });
+        return;
+      }
       if (requestedView) {
+        const requestedMrpTab = normalizeMainRightPanelTab((detail as any)?.mrpTab ?? "dashboard", {
+          warn: false,
+        });
+        if (requestedMrpTab !== "dashboard") {
+          warnUnauthorizedRoutingMrpTab((detail as any)?.mrpTab);
+          return;
+        }
+        const dashboardContext = (detail as any)?.dashboardContext
+          ? String((detail as any).dashboardContext)
+          : mapLegacyPanelRouteToDashboardContext(requestedView, { warn: true });
+        if ((detail as any)?.mrpTab && requestedMrpTab !== (detail as any).mrpTab) {
+          warnUnauthorizedMainRightPanelTab((detail as any).mrpTab);
+        }
+        const routeResolution = resolveNexoraRouteRequest({
+          source:
+            rawEventSource === "scene"
+              ? "scene_panel"
+              : rawEventSource === "object_click"
+                ? "object_panel"
+                : rawEventSource === "chat"
+                  ? "assistant"
+                  : "system",
+          target: dashboardContext === "timeline" ? "timeline" : "dashboard",
+          dashboardContext: dashboardContext as any,
+          objectId: detail?.contextId ?? undefined,
+          legacyRoute: requestedView,
+          reason: detail?.reason ?? "nexora_open_right_panel_event",
+        });
+        warnLegacyRouteDetected(requestedView, routeResolution.dashboardContext);
         logDeprecatedPanelPath("legacy_event_open", {
           view: detail?.view ?? null,
           source: detail?.source ?? null,
+          dashboardContext: routeResolution.dashboardContext,
+          sceneTimelineActive: routeResolution.sceneTimelineActive,
         });
-        const rawEventSource = detail?.source;
         const resolvedAuthoritySource: NexoraPanelAuthoritySource =
           rawEventSource === "left_nav" ||
           rawEventSource === "manual_user_nav" ||
@@ -17297,6 +17422,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     });
   }, [rightPanelState.contextId, routeIntentToPanel]);
   const handleRightPanelOpenTimeline = useCallback(() => {
+    // DEPRECATED ROUTE:
+    // Future Timeline requests should route Dashboard Context -> scene Timeline,
+    // never a new MRP tab or standalone page.
     migrateLegacyButtonToIntent(
       "Open Timeline",
       "normalizeOpenCenterTimeline",
@@ -17412,6 +17540,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     });
   }, [openComponentPanelFromAction]);
   const handleRightPanelOpenDecisionTimeline = useCallback(() => {
+    // DEPRECATED ROUTE:
+    // Decision timeline requests may feed scene Timeline context, but must not
+    // create a third Main Right Panel tab.
     requestPanelAuthorityOpen({
       view: "decision_timeline",
       family: "SIM",

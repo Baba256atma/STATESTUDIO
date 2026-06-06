@@ -1,5 +1,11 @@
 import type { CanonicalRightPanelView } from "./rightPanelTypes";
 
+/**
+ * ARCHITECTURE CONTRACT:
+ * This registry contains deprecated compatibility views. The frozen MVP Main
+ * Right Panel is Dashboard + Assistant only; legacy entries must not be used as
+ * new canonical tabs. See docs/nexora-canonical-panel-architecture.md.
+ */
 export type RightPanelRegistryEntry = {
   label: string;
   hostRenderKey: string;
@@ -143,6 +149,8 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     isProtectedView: false,
     overridePolicy: "normal",
   },
+  // Deprecated compatibility route. Canonical Object Panel is scene-native;
+  // future object actions should route through Dashboard Context.
   executive_object: {
     label: "Executive Object",
     hostRenderKey: "executive_object",
@@ -183,6 +191,7 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     isProtectedView: false,
     overridePolicy: "normal",
   },
+  // Deprecated compatibility route. Do not use as the Object Panel authority.
   object: {
     label: "Objects",
     hostRenderKey: "object",
@@ -193,6 +202,7 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     isProtectedView: false,
     overridePolicy: "normal",
   },
+  // Deprecated compatibility route. Do not create an MRP tab for object selection.
   object_focus: {
     label: "Object Focus",
     hostRenderKey: "object",
@@ -203,6 +213,7 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     isProtectedView: false,
     overridePolicy: "normal",
   },
+  // Deprecated compatibility route. Canonical Timeline is scene-native in the bottom Three.js workspace.
   timeline: {
     label: "Timeline",
     hostRenderKey: "timeline",
@@ -213,6 +224,7 @@ export const RIGHT_PANEL_REGISTRY: Record<CanonicalRightPanelView, RightPanelReg
     isProtectedView: true,
     overridePolicy: "protected",
   },
+  // Deprecated compatibility route. Decision timelines may feed scene Timeline but must not become an MRP tab.
   decision_timeline: {
     label: "Decision Timeline",
     hostRenderKey: "decision_timeline",

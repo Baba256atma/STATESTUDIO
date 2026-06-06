@@ -20,6 +20,13 @@ const CENTER_CLOSE_AFTER_ANALYSIS_MS = 250;
 
 export type SourceControlPanelMode = "center" | "panel";
 
+/**
+ * ARCHITECTURE CONTRACT:
+ * This is a legacy decision-intake/analyze surface, not canonical Source
+ * Management. Source registration, configuration, monitoring, health, and
+ * metadata visibility belong to the Sources dashboard context defined in
+ * lib/source-management/sourceManagementContract.ts.
+ */
 export type SourceControlPanelProps = {
   mode?: SourceControlPanelMode;
   onClose?: (() => void) | null;

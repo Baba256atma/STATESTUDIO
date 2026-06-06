@@ -53,6 +53,7 @@ export type SceneInfoHudProps = {
   frsiMetrics?: SceneInfoFrsiMetrics;
   themeMode?: NexoraHudThemeMode;
   panelSizeMode?: PanelSizeMode;
+  /** @deprecated Canonical object catalog entry is ScenePanelShell -> Add Object/Open Catalog. */
   onAddObjectClick?: () => void;
   onCreateSystemClick?: () => void;
 };

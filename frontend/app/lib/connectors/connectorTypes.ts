@@ -4,7 +4,14 @@ export type ConnectorStatus = "idle" | "configured" | "running" | "success" | "f
 
 export type ConnectorCapability = "read" | "write" | "poll" | "push" | "upload" | "transform";
 
-/** Immutable connector catalog entry (D3.1 foundation). */
+/**
+ * Immutable connector catalog entry (D3.1 foundation).
+ *
+ * ARCHITECTURE CONTRACT:
+ * Connectors are lower-level ingress mechanisms. Canonical source registration,
+ * lifecycle, health, and dashboard routing live in
+ * ../source-management/sourceManagementContract.ts.
+ */
 export type ConnectorDefinition = Readonly<{
   id: string;
   label: string;
