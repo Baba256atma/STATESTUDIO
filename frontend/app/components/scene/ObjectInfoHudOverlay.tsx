@@ -16,8 +16,9 @@ import {
   logObjectHudUpdated,
   logObjectSelected,
 } from "../../lib/ui/objectInfoHudInstrumentation";
-import { persistSceneHudAnchorPreference, sceneHudDockStyle } from "../../lib/hud/sceneHudAnchorRuntime";
+import { persistSceneHudAnchorPreference } from "../../lib/hud/sceneHudAnchorRuntime";
 import { useFocusHudPresentation } from "../../lib/workspace/useFocusHudPresentation";
+import { SCENE_HUD_ZONE_HOSTED_OVERLAY_STYLE } from "../../lib/scene/sceneHudZoneContract";
 import { ObjectInfoHud } from "./ObjectInfoHud";
 import { SceneHudOverlayRoot } from "./SceneHudOverlayRoot";
 import { devLogThrottled } from "../../lib/runtime/diagnosticThrottle.ts";
@@ -36,6 +37,19 @@ export type ObjectInfoHudOverlayProps = {
   onDuplicateObject?: (objectId: string) => void;
   onDeleteObject?: (objectId: string) => void;
 };
+
+const loggedObjectPanelVisibility = new Set<string>();
+
+function logObjectPanelVisibilityRestored(objectId: string | null): void {
+  if (process.env.NODE_ENV === "production") return;
+  const key = objectId ?? "none";
+  if (loggedObjectPanelVisibility.has(key)) return;
+  loggedObjectPanelVisibility.add(key);
+  globalThis.console?.debug?.("[Nexora][ObjectPanelVisibilityRestored]", {
+    objectId,
+    zone: "scene-object-panel-zone",
+  });
+}
 
 function objectInfoHudPlacementSignature(placement: WorkspaceHudPlacement | null | undefined): string {
   if (!placement) return "placement:null";
@@ -111,8 +125,11 @@ function ObjectInfoHudOverlayInner(props: ObjectInfoHudOverlayProps): React.Reac
   const renderCountRef = React.useRef(0);
   renderCountRef.current += 1;
   const placement = props.placement;
-  const focusHud = useFocusHudPresentation("objectInfoHud", placement.visible);
+  const focusHud = useFocusHudPresentation("objectInfoHud", true);
   const selectedObjectId = props.model.selectedObjectId?.trim() || null;
+  const hasObjectSelection = Boolean(selectedObjectId);
+  const hasRelationshipDetail = Boolean(props.model.relationshipDetails);
+  const hasPropagationDetail = Boolean(props.model.propagationDetails);
   const propsDiff = diffObjectInfoHudOverlayProps(previousPropsRef.current, props);
   const hudSignatureChanged = propsDiff.changedPropNames.includes("model");
   const visibilityChanged =
@@ -120,7 +137,7 @@ function ObjectInfoHudOverlayInner(props: ObjectInfoHudOverlayProps): React.Reac
   const layoutStoreChanged = propsDiff.changedPropNames.includes("placement");
   const parentRenderOnly = propsDiff.changedPropNames.length === 0;
   devLogThrottled({
-    key: `${selectedObjectId ?? "none"}:${props.model.relationshipDetails?.id ?? "none"}:${props.model.propagationDetails?.id ?? "none"}:${placement.visible}:${placement.sizeMode}`,
+    key: `${selectedObjectId ?? "none"}:${props.model.relationshipDetails?.id ?? "none"}:${props.model.propagationDetails?.id ?? "none"}:${placement.sizeMode}`,
     label: "[NEXORA_OBJECT_INFO_HUD_TRACE]",
     scope: "scene",
     intervalMs: 1000,
@@ -137,7 +154,7 @@ function ObjectInfoHudOverlayInner(props: ObjectInfoHudOverlayProps): React.Reac
       layoutStoreChanged,
       parentRenderOnly,
       shouldRender: !parentRenderOnly,
-      renderImpact: "Scene-native object HUD render.",
+      renderImpact: "Scene-native object info HUD render.",
       shouldBeImmediate: true,
       shouldBeDeferred: false,
       shouldBeSkippedIfSameObject: true,
@@ -150,7 +167,7 @@ function ObjectInfoHudOverlayInner(props: ObjectInfoHudOverlayProps): React.Reac
       renderCountDelta: 1,
       renderCount: renderCountRef.current,
       selectedObjectId,
-      visible: placement.visible,
+      visible: true,
       sizeMode: placement.sizeMode,
     },
   });
@@ -176,19 +193,20 @@ function ObjectInfoHudOverlayInner(props: ObjectInfoHudOverlayProps): React.Reac
       logObjectDeselected();
     } else if (selectedObjectId && !previousId) {
       logObjectSelected({ objectId: selectedObjectId });
+      logObjectPanelVisibilityRestored(selectedObjectId);
     } else if (selectedObjectId && previousId && selectedObjectId !== previousId) {
       logObjectHudUpdated({ objectId: selectedObjectId });
+      logObjectPanelVisibilityRestored(selectedObjectId);
     }
 
     lastObjectIdRef.current = selectedObjectId;
   }, [selectedObjectId]);
 
-  if (!placement.visible && !focusHud.preserveMount) return <></>;
-
-  const hasObjectSelection = Boolean(selectedObjectId);
-  const hasRelationshipDetail = Boolean(props.model.relationshipDetails);
-  const hasPropagationDetail = Boolean(props.model.propagationDetails);
   if (!hasObjectSelection && !hasRelationshipDetail && !hasPropagationDetail) {
+    return <></>;
+  }
+
+  if (!focusHud.visible) {
     return <></>;
   }
 
@@ -196,16 +214,7 @@ function ObjectInfoHudOverlayInner(props: ObjectInfoHudOverlayProps): React.Reac
     <SceneHudOverlayRoot
       panelId="objectInfoHud"
       style={{
-        ...sceneHudDockStyle({
-          panelId: "objectInfoHud",
-          anchor: "TOP_RIGHT",
-          visible: focusHud.visible,
-          collapsed: placement.sizeMode === "compact",
-          maxWidth: placement.maxWidth,
-          zIndex: placement.zIndex,
-          transitionMs: 160,
-          visiblePanelCount: 3,
-        }),
+        ...SCENE_HUD_ZONE_HOSTED_OVERLAY_STYLE,
         ...focusHud.style,
       }}
     >
@@ -271,7 +280,7 @@ function areObjectInfoHudOverlayPropsEqual(
 }
 
 function ObjectInfoHudOverlayOuter(props: ObjectInfoHudOverlayProps): React.ReactElement {
-  if (!props.placement.visible || !hasRenderableHudSelection(props.model)) {
+  if (!hasRenderableHudSelection(props.model)) {
     return <></>;
   }
   return <ObjectInfoHudOverlayInner {...props} />;

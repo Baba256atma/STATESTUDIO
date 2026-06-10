@@ -57,6 +57,14 @@ export const DEFAULT_EXECUTIVE_ASSISTANT_ACTION_CARDS: ExecutiveAssistantActionC
   },
 ];
 
+export const MRP_CHAT_FIRST_QUESTION_SUGGESTIONS: readonly string[] = [
+  "Where is margin pressure constraining delivery?",
+  "What should leadership stabilize first?",
+  "Which bottleneck breaks customer commitments next?",
+  "What scenario should I compare?",
+  "Explain the current decision state.",
+];
+
 export const DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS: readonly string[] = [
   "Why is risk increasing?",
   "Which object causes fragility?",

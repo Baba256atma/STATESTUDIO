@@ -1,6 +1,9 @@
 export function isExplicitUserSelectionSource(source: string): boolean {
-  if (source === "object_click" || source === "investor_demo") return true;
-  return source.startsWith("interaction_controller:");
+  if (source === "object_click" || source.startsWith("object_click:")) return true;
+  if (source === "SceneCanvas.onPointerMissed" || source.startsWith("SceneCanvas.onPointerMissed:")) return true;
+  if (source === "user_click" || source.startsWith("user_click:")) return true;
+  if (source === "investor_demo") return true;
+  return false;
 }
 
 export function shouldBlockAutomaticSelectionWrite(input: {

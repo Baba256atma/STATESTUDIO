@@ -86,6 +86,7 @@ const SCENE_CANVAS_PROP_CONTRACT: Record<string, {
   getUxForObject: { classification: "D.heavy-stabilized", shouldCauseSceneRender: false },
   objectUxById: { classification: "B.selection-visual", shouldCauseSceneRender: true },
   selectedObjectId: { classification: "B.selection-visual", shouldCauseSceneRender: true },
+  selectedId: { classification: "B.selection-visual", shouldCauseSceneRender: true },
   loops: { classification: "A.scene-critical", shouldCauseSceneRender: true },
   showLoops: { classification: "A.scene-critical", shouldCauseSceneRender: true },
   showLoopLabels: { classification: "C.ui-only", shouldCauseSceneRender: false },
@@ -190,6 +191,7 @@ function classifyRenderImpact(changedProps: readonly string[]) {
     [
       "focusedId",
       "selectedObjectId",
+      "selectedId",
       "objectSelection",
       "focusPinned",
       "focusMode",
@@ -232,7 +234,7 @@ function classifySceneCanvasRender(prev: SceneCanvasProps, next: SceneCanvasProp
   if (prev.sceneJson == null && next.sceneJson != null) return "BOOTSTRAP_RENDER";
   if (
     changedProps.some((propName) =>
-      ["selectedObjectId", "focusedId", "objectSelection", "selectedRelationshipId", "selectedPropagationPathId"].includes(
+      ["selectedObjectId", "selectedId", "focusedId", "objectSelection", "selectedRelationshipId", "selectedPropagationPathId"].includes(
         String(propName)
       )
     )
@@ -283,6 +285,7 @@ function propEntries(prev: SceneCanvasProps, next: SceneCanvasProps): PropEntry[
     ["getUxForObject", prev.getUxForObject, next.getUxForObject],
     ["objectUxById", prev.objectUxById, next.objectUxById],
     ["selectedObjectId", prev.selectedObjectId, next.selectedObjectId],
+    ["selectedId", prev.selectedId, next.selectedId],
     ["loops", prev.loops, next.loops],
     ["showLoops", prev.showLoops, next.showLoops],
     ["showLoopLabels", prev.showLoopLabels, next.showLoopLabels],

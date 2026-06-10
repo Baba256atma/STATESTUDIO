@@ -60,7 +60,7 @@ export type SceneOverlayRendererProps = {
   viewMode?: "2D" | "3D" | string | null;
   sceneRendererProps: Omit<
     React.ComponentProps<typeof SceneRenderer>,
-    "sceneJson" | "objectSelection" | "propagationOverlay" | "decisionPathOverlay"
+    "sceneJson" | "objectSelection" | "propagationOverlay" | "decisionPathOverlay" | "selectedObjectId"
   >;
 };
 
@@ -96,6 +96,7 @@ function SceneOverlayRendererComponent(props: SceneOverlayRendererProps): React.
         {...props.sceneRendererProps}
         sceneJson={stableSceneJson}
         objectSelection={props.objectSelection}
+        selectedObjectId={props.selectedObjectId ?? null}
         propagationOverlay={visiblePropagation}
         decisionPathOverlay={props.visibility.scenario ? decisionPathRenderState : null}
         runtimeObjectPositionContext={runtimeObjectPositionContext}

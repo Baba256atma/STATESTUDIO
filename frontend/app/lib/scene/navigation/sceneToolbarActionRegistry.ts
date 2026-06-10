@@ -1,11 +1,10 @@
 import type { SceneNavigationActionId } from "../sceneNavigationTypes";
 
-/** E2:53 — Canonical executive toolbar actions (four only). */
+/** E2:53 — Canonical executive toolbar actions (navigation-only). */
 export type ExecutiveToolbarAction =
   | "toggle_view_mode"
   | "global_view"
-  | "fit_scene"
-  | "focus_mode";
+  | "fit_scene";
 
 /** @deprecated Use ExecutiveToolbarAction */
 export type SceneToolbarActionId = ExecutiveToolbarAction;
@@ -25,7 +24,6 @@ export type SceneToolbarVisibleAction = ExecutiveToolbarVisibleAction;
 export const EXECUTIVE_TOOLBAR_ACTIONS: readonly ExecutiveToolbarVisibleAction[] = Object.freeze([
   { id: "global_view", label: "Global View", icon: "◉" },
   { id: "fit_scene", label: "Fit Scene", icon: "⊞", navigationAction: "fit_scene" },
-  { id: "focus_mode", label: "Focus Mode", icon: "◎" },
 ]);
 
 /** @deprecated Use EXECUTIVE_TOOLBAR_ACTIONS */
@@ -74,6 +72,7 @@ export function logSceneToolbarSimplified(): void {
   });
   devLog("[Nexora][ToolbarFinalized]", {
     actions: ["toggle_view_mode", ...EXECUTIVE_TOOLBAR_ACTIONS.map((action) => action.id)],
+    objectPanelActions: ["focus_object"],
   });
 }
 

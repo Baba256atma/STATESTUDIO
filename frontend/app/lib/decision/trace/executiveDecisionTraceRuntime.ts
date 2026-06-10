@@ -8,6 +8,9 @@ import type { DecisionTimelineViewEvent } from "../../governance/decisionTimelin
 import type { CanonicalRecommendation } from "../recommendation/recommendationTypes";
 import type { DecisionMemoryEntry } from "../memory/decisionMemoryTypes";
 import { guardHeavyComputation } from "../../ops/performanceGuard";
+import { reportDashboardTrace } from "../../dashboard/dashboardPerformanceMetrics.ts";
+import { recordDashboardTraceComputeFrequency } from "../../dashboard/dashboardPerformanceRegression.ts";
+import { DASHBOARD_PERFORMANCE_BUDGETS } from "../../dashboard/dashboardPerformanceBudget.ts";
 import {
   getExecutiveDecisionTraceCache,
   setExecutiveDecisionTraceCache,
@@ -55,6 +58,14 @@ export function resolveExecutiveDashboardDecisionTrace(
   const cached = getExecutiveDecisionTraceCache(signature);
   if (cached) {
     traceDecisionTraceCached({ signature, computedAt: cached.computedAt });
+    reportDashboardTrace({
+      phase: "cache_hit",
+      signature,
+      durationMs: 0,
+      fromCache: true,
+      withinBudget: true,
+      budgetMs: DASHBOARD_PERFORMANCE_BUDGETS.dashboardTraceMs,
+    });
     return cached.traceResult;
   }
 
@@ -64,6 +75,10 @@ export function resolveExecutiveDashboardDecisionTrace(
     ((input.responseData?.canonical_recommendation as CanonicalRecommendation | null | undefined) ?? null);
 
   traceDecisionTraceComputed({ signature });
+  recordDashboardTraceComputeFrequency({ signature, phase: "compute_start" });
+
+  const started =
+    typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
   const traceResult = guardHeavyComputation(
     "executive_dashboard_decision_trace",
     () =>
@@ -74,9 +89,22 @@ export function resolveExecutiveDashboardDecisionTrace(
           memoryEntries,
         })
       ).slice(-3),
-    120,
+    DASHBOARD_PERFORMANCE_BUDGETS.performanceGuardWarnMs,
     { fromCache: false, signature }
   );
+  const durationMs =
+    (typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now()) -
+    started;
+
+  reportDashboardTrace({
+    phase: "compute_complete",
+    signature,
+    durationMs,
+    fromCache: false,
+    withinBudget: durationMs <= DASHBOARD_PERFORMANCE_BUDGETS.dashboardTraceMs,
+    budgetMs: DASHBOARD_PERFORMANCE_BUDGETS.dashboardTraceMs,
+    eventCount: traceResult.length,
+  });
 
   setExecutiveDecisionTraceCache(signature, traceResult);
   return traceResult;

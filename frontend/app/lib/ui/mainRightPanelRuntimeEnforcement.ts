@@ -81,6 +81,15 @@ export function warnLegacySurfaceBlocked(surface: unknown, detail: Record<string
     redirectedTo: "dashboard",
     ...detail,
   });
+  void import("../architecture/nexoraArchitectureFreezeRuntime.ts").then(({ reportDeprecatedSurface }) => {
+    reportDeprecatedSurface({
+      surface: surfaceKey,
+      contractId: "mrp.dashboard_assistant_only",
+      redirectedTo: "dashboard",
+      source: typeof detail.owner === "string" ? detail.owner : "warnLegacySurfaceBlocked",
+      detail,
+    });
+  });
 }
 
 export function warnDashboardRedirect(from: unknown, detail: Record<string, unknown> = {}): void {

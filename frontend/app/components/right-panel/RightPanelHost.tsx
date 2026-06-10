@@ -3,6 +3,7 @@
 import React from "react";
 
 import { traceRuntimeParity } from "../../lib/debug/runtimeLoopTrace";
+import { traceMrp10Runtime, logMrp10RuntimeRenderChain } from "../../lib/dashboard/dashboardHomeReturnPath/dashboardHomeRuntimeTrace";
 import { devLogOnSignatureChange } from "../../lib/runtime/diagnosticIdleGate";
 import { devLogThrottled } from "../../lib/runtime/diagnosticThrottle.ts";
 import { isDiagnosticEnabled } from "../../lib/runtime/diagnosticSwitch.ts";
@@ -15,6 +16,10 @@ import StrategicAdvicePanel from "../panels/StrategicAdvicePanel";
 import OpponentMovesPanel from "../panels/OpponentMovesPanel";
 import StrategicPatternsPanel from "../panels/StrategicPatternsPanel";
 import ExecutiveDashboardPanel from "../panels/ExecutiveDashboardPanel";
+import { DashboardRuntimeContainer } from "../dashboard/DashboardRuntimeContainer";
+import { ExecutiveSummarySurface } from "../dashboard/surfaces/ExecutiveSummarySurface";
+import type { DashboardContext } from "../../lib/ui/mainRightPanelContract";
+import type { NormalizedDashboardContext } from "../../lib/dashboard/dashboardContextTypes";
 import { ObjectPanelLazy } from "./ObjectPanelLazy";
 import { StrategicCommandPreview } from "../executive/StrategicCommandPreview";
 import { DecisionComparePanel } from "../executive/DecisionComparePanel";
@@ -149,6 +154,8 @@ function stabilizePanelPayload<T>(
 
 type RightPanelHostProps = {
   rightPanelState: RightPanelState;
+  dashboardContext?: DashboardContext;
+  normalizedDashboardContext?: NormalizedDashboardContext | null;
   panelData: PanelSharedData;
   backendBase: string;
   episodeId: string | null;
@@ -311,6 +318,8 @@ const RIGHT_PANEL_CALLBACK_PROPS = new Set<string>([
 
 const RIGHT_PANEL_MEANINGFUL_PROPS = new Set<string>([
   "rightPanelState",
+  "dashboardContext",
+  "normalizedDashboardContext",
   "panelData",
   "backendBase",
   "episodeId",
@@ -438,6 +447,8 @@ export function buildRightPanelHostSignature(input: RightPanelHostProps): string
   const activeObjectId = contextId ?? input.activeExecutiveObjectId ?? input.selectedObjectId ?? null;
   const base = [
     `view:${view ?? "none"}`,
+    `dashboardContext:${input.dashboardContext ?? "overview"}`,
+    `normalizedContext:${input.normalizedDashboardContext?.id ?? "none"}`,
     `context:${contextId ?? "none"}`,
     `open:${input.rightPanelState.isOpen ? "1" : "0"}`,
     `activeExecutiveView:${input.activeExecutiveView ?? "none"}`,
@@ -751,6 +762,23 @@ function RightPanelHostInner(props: RightPanelHostProps) {
   const renderCountRef = React.useRef(0);
   renderCountRef.current += 1;
   const previousPropsRef = React.useRef<RightPanelHostProps | null>(null);
+
+  React.useEffect(() => {
+    traceMrp10Runtime("RightPanelHost legacy mounted", {
+      activeTab: "dashboard",
+      dashboardContext: props.dashboardContext ?? undefined,
+      selectedObjectId: props.selectedObjectId ?? null,
+      rendering: "RightPanelHost",
+      view: props.rightPanelState?.view ?? null,
+      isOpen: props.rightPanelState?.isOpen ?? null,
+    });
+    logMrp10RuntimeRenderChain({
+      activeTab: "dashboard",
+      dashboardContext: props.dashboardContext ?? undefined,
+      selectedObjectId: props.selectedObjectId ?? null,
+      rendering: "RightPanelHost",
+    });
+  }, [props.rightPanelState?.view, props.rightPanelState?.isOpen, props.dashboardContext, props.selectedObjectId]);
   const renderDiff = diffRightPanelHostProps(previousPropsRef.current, props);
   const rightPanelHostRenderCountLast10s =
     process.env.NODE_ENV === "production" ? 0 : recordRightPanelHostRenderCountLast10s();
@@ -2597,76 +2625,34 @@ function RightPanelHostInner(props: RightPanelHostProps) {
           onSuggestedAction={() => props.onOpenCenterComponent?.("simulation")}
         />
       );
-    case "dashboard":
-      if (!allowReal) {
-        return (
-          <ExecutiveDashboardPanel
-            sceneJson={undefined}
-            responseData={undefined}
-            decisionCockpit={undefined}
-            canonicalRecommendation={null}
-            decisionResult={undefined}
-            firstMeaningfulState={props.firstMeaningfulState ?? null}
-            mode="empty"
-            isSystemUnhealthy={props.isSystemUnhealthy === true}
-          />
-        );
-      }
-      return (
-        <ExecutiveDashboardPanel
-          sceneJson={props.sceneJson ?? undefined}
-          responseData={effectiveDashboardPayload}
-          activeMode={props.activeMode}
-          conflicts={Array.isArray(effectiveConflictPayload) ? effectiveConflictPayload : props.conflicts ?? undefined}
-          objectSelection={props.objectSelection ?? undefined}
-          riskPropagation={props.riskPropagation ?? undefined}
-          decisionMemoryEntries={props.decisionMemoryEntries ?? undefined}
-          strategicAdvice={effectiveAdvicePayload ?? undefined}
-          strategicCouncil={props.strategicCouncil ?? undefined}
-          decisionImpact={props.decisionImpact ?? undefined}
-          decisionCockpit={(effectivePanelData.decisionCockpit ?? props.decisionCockpit) ?? undefined}
-          canonicalRecommendation={dashboardRecommendation}
-          selectedObjectLabel={props.selectedObjectLabel}
-          resolveObjectLabel={props.resolveObjectLabel ?? null}
-          demoProfile={props.demoProfile ?? undefined}
-          decisionResult={props.decisionResult ?? undefined}
-          decisionLoading={props.decisionLoading ?? false}
-          decisionStatus={props.decisionStatus ?? "idle"}
-          decisionError={props.decisionError ?? null}
-          firstMeaningfulState={props.firstMeaningfulState ?? null}
-          mode="normal"
-          isSystemUnhealthy={props.isSystemUnhealthy === true}
-          activeExecutiveView={props.activeExecutiveView ?? "dashboard"}
-          nexoraB8PanelContext={effectivePanelData.nexoraB8PanelContext ?? null}
-          onSimulateDecision={handleContextualSimulationAction}
-          onCompareOptions={handleContextualCompareAction}
-          onOpenWarRoom={handleContextualWarRoomAction}
-          onOpenStrategicCommand={props.onOpenStrategicCommand ?? null}
-          onOpenStrategicCommandFull={props.onOpenStrategicCommandFull ?? null}
-          onOpenTimeline={props.onOpenTimeline ?? null}
-          onOpenScenarioTree={props.onOpenScenarioTree ?? null}
-          onOpenMemory={props.onOpenMemory ?? null}
-          onOpenDecisionLifecycle={props.onOpenDecisionLifecycle ?? null}
-          onOpenStrategicLearning={props.onOpenStrategicLearning ?? null}
-          onOpenMetaDecision={props.onOpenMetaDecision ?? null}
-          onOpenCognitiveStyle={props.onOpenCognitiveStyle ?? null}
-          onOpenTeamDecision={props.onOpenTeamDecision ?? null}
-          onOpenCollaborationIntelligence={props.onOpenCollaborationIntelligence ?? null}
-          onOpenDecisionCouncil={props.onOpenDecisionCouncil ?? null}
-          onOpenOrgMemory={props.onOpenOrgMemory ?? null}
-          onOpenDecisionPolicy={props.onOpenDecisionPolicy ?? null}
-          onOpenDecisionGovernance={props.onOpenDecisionGovernance ?? null}
-          onOpenExecutiveApproval={props.onOpenExecutiveApproval ?? null}
-          onOpenDecisionTimeline={handleContextualWhyThisAction}
-          onOpenConfidenceCalibration={props.onOpenConfidenceCalibration ?? null}
-          onOpenOutcomeFeedback={props.onOpenOutcomeFeedback ?? null}
-          onOpenPatternIntelligence={props.onOpenPatternIntelligence ?? null}
-          onPreviewDecision={props.onPreviewDecision ?? null}
-          onSaveScenario={props.onSaveScenario ?? null}
-          onApplyDecisionSafe={props.onApplyDecisionSafe ?? null}
-          nexoraB18Simulate={null}
+    case "dashboard": {
+      const dashboardContext = props.dashboardContext ?? "overview";
+      const executiveSummaryContent = (
+        <ExecutiveSummarySurface
+          dashboardContext={dashboardContext}
+          normalizedContext={props.normalizedDashboardContext ?? null}
+          selectedObjectId={props.selectedObjectId ?? props.activeExecutiveObjectId ?? null}
+          selectedObjectLabel={props.selectedObjectLabel ?? null}
+          timelineActive={
+            dashboardContext === "timeline" || props.normalizedDashboardContext?.source === "timeline"
+          }
         />
       );
+      return (
+        <DashboardRuntimeContainer
+          dashboardContext={dashboardContext}
+          normalizedContext={props.normalizedDashboardContext ?? null}
+          source="RightPanelHost.dashboard"
+          executiveSummaryContent={executiveSummaryContent}
+          selectedObjectId={props.selectedObjectId ?? props.activeExecutiveObjectId ?? null}
+          selectedObjectLabel={props.selectedObjectLabel ?? null}
+          objectsInScene={props.visibleSceneObjects?.length}
+          timelineActive={
+            dashboardContext === "timeline" || props.normalizedDashboardContext?.source === "timeline"
+          }
+        />
+      );
+    }
     case "compare":
       if (props.onOpenCenterComponent) {
         return (

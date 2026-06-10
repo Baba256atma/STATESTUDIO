@@ -25,7 +25,15 @@ import {
 import { useSceneHudTheme } from "../../lib/theme/useSceneTheme";
 import { nx } from "../ui/nexoraTheme";
 
+import { AssistantChatHeader } from "../main-right-panel/assistant/AssistantChatHeader";
+import { AssistantConversationArea } from "../main-right-panel/assistant/AssistantConversationArea";
+import { AssistantMessageInput } from "../main-right-panel/assistant/AssistantMessageInput";
+
+export type ExecutiveAssistantPanelLayout = "default" | "chat-first";
+
 export type ExecutiveAssistantPanelProps = {
+  layout?: ExecutiveAssistantPanelLayout;
+  contextLabel?: string | null;
   open: boolean;
   messages: LeftCommandAssistantMessage[];
   input: string;
@@ -58,6 +66,8 @@ function resolveStatusIndicatorColor(
 
 export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): React.ReactElement {
   const {
+    layout = "default",
+    contextLabel,
     open,
     messages,
     input,
@@ -77,7 +87,6 @@ export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): Re
   const theme = useSceneHudTheme(themeMode);
   const displayMessages = useMemo(() => dedupeConsecutiveAssistantMessages(messages), [messages]);
   const statusColor = resolveStatusIndicatorColor(assistantStatus.phase, theme);
-
   useEffect(() => {
     if (mountedRef.current) return;
     mountedRef.current = true;
@@ -101,11 +110,6 @@ export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): Re
   }, [displayMessages.length, loading, open]);
 
   const handleQuestionClick = (question: string) => {
-    logExecutiveAssistantSuggestionSelected({
-      kind: "question",
-      id: question,
-      label: question,
-    });
     if (onQuestionSelect) {
       onQuestionSelect(question);
       return;
@@ -113,8 +117,51 @@ export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): Re
     onInputChange(question);
   };
 
+  const handleCollapse = () => {
+    onClose();
+    emitExecutiveAssistantCollapsed();
+  };
+
   if (!open) {
     return <div aria-hidden style={{ display: "none" }} />;
+  }
+
+  if (layout === "chat-first") {
+    return (
+      <div
+        data-hud="executive-assistant-panel"
+        data-nx="executive-assistant-chat-first"
+        style={{
+          height: "100%",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+          minWidth: 0,
+          background: theme.shellBackground,
+          color: theme.text,
+        }}
+      >
+        <AssistantChatHeader
+          status={assistantStatus}
+          contextLabel={contextLabel ?? "Executive workspace"}
+          themeMode={themeMode}
+          onCollapse={handleCollapse}
+        />
+        <AssistantConversationArea
+          messages={displayMessages}
+          loading={loading}
+          themeMode={themeMode}
+        />
+        <AssistantMessageInput
+          value={input}
+          loading={loading}
+          themeMode={themeMode}
+          onChange={onInputChange}
+          onSubmit={onSubmit}
+        />
+      </div>
+    );
   }
 
   return (

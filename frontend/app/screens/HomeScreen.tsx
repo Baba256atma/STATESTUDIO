@@ -81,6 +81,7 @@ import {
   traceExecutiveOrientationHydration,
   traceExecutiveOrientationVisibility,
 } from "../lib/workspace/executiveOrientationVisibilityRuntime";
+import { toggleExecutiveFocusMode } from "../lib/workspace/executiveFocusModeRuntime";
 import { resolveExecutiveHarmonizationSnapshot } from "../lib/workspace/harmonization";
 import { runE2CompletionAudit, type E2WorkspaceReadinessContext } from "../lib/workspace/readiness";
 import { SCENE_HUD_THEME_SURFACES } from "../lib/theme/sceneThemeTokens";
@@ -116,12 +117,23 @@ import {
   shouldShowExecutiveCommandBar,
   shouldShowExecutiveQuickActionsDock,
 } from "../lib/ui/executiveWorkspacePresentation";
-import { DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS } from "../lib/ui/executiveAssistantPanelTypes";
+import {
+  applyVisibleMrpRightRailPresentation,
+  shouldUseVisibleMrpRightRailHost,
+  VISIBLE_MRP_RIGHT_RAIL_HOST_ID,
+} from "../lib/ui/mainRightPanelVisibleHostRuntime";
+import {
+  DEFAULT_EXECUTIVE_ASSISTANT_ACTION_CARDS,
+  DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS,
+  MRP_CHAT_FIRST_QUESTION_SUGGESTIONS,
+} from "../lib/ui/executiveAssistantPanelTypes";
 import {
   mapLegacyPanelRouteToDashboardContext,
   normalizeMainRightPanelTab,
   warnUnauthorizedMainRightPanelTab,
 } from "../lib/ui/mainRightPanelContract";
+import { MainRightPanelShell } from "../components/main-right-panel/MainRightPanelShell";
+import { LegacyDashboardHostMountTrace } from "../components/main-right-panel/LegacyDashboardHostMountTrace";
 import {
   resolveMainRightPanelRuntimeView,
   warnDashboardRedirect,
@@ -133,6 +145,69 @@ import {
   warnUnauthorizedRoutingMrpTab,
 } from "../lib/routing/nexoraRoutingContract";
 import { getNexoraLeftNavItem, resolveNexoraLeftNavMode } from "../lib/ui/nexoraLeftNavContract";
+import {
+  commitDashboardContextUpdate,
+  commitDashboardRouteResolution,
+  getCanonicalDashboardContext,
+  routeDashboardContextFromObjectSelection,
+  seedWorkspaceStateFromPreferredTab,
+  useNexoraWorkspaceState,
+  buildDashboardHomeReturnAction,
+} from "../lib/dashboard";
+import {
+  buildDashboardModeActionFromRoute,
+  routeObjectPanelActionRequest,
+} from "../lib/object-panel/objectPanelActionRouterRuntime";
+import {
+  ASSISTANT_DASHBOARD_ACTION_EVENT,
+  type AssistantExecutiveActionPayload,
+  warnAssistantBridgeBrake,
+} from "../lib/assistant-bridge/assistantDashboardBridgeContract";
+import {
+  emitAssistantActionCardLaunchAck,
+} from "../lib/assistant-bridge/assistantActionCardContract";
+import {
+  publishDashboardExecutiveContextSummary,
+  type DashboardContextRouteType,
+  type WorkspaceCompletionStatus,
+} from "../lib/assistant-bridge/assistantContextSyncContract";
+import { routeAssistantExecutiveActionRequest } from "../lib/assistant-bridge/assistantDashboardBridgeRuntime";
+import {
+  OBJECT_PANEL_ACTION_EVENT,
+  shouldRouteExecutiveActionToDashboard,
+  type ObjectPanelActionPayload,
+  type ObjectPanelActionRequestInput,
+  warnObjectActionRouterBrake,
+} from "../lib/object-panel/objectPanelActionRouterContract";
+import { resolveFocusModeContext } from "../lib/dashboard/focus/focusModeContract";
+import { resolveAnalyzeModeContext } from "../lib/dashboard/analyze/analyzeModeContract";
+import { resolveCompareModeContext } from "../lib/dashboard/compare/compareModeContract";
+import { resolveScenarioModeContext } from "../lib/dashboard/scenario/scenarioModeContract";
+import { resolveWarRoomModeContext } from "../lib/dashboard/warRoom/warRoomModeContract";
+import {
+  commitExecutiveWorkspaceTransition,
+  getExecutiveWorkspaceTransitionStatus,
+  requestPassiveWorkspacePause,
+  requestPassiveWorkspaceResume,
+} from "../lib/dashboard/executiveWorkspaceTransitionControllerRuntime";
+import {
+  commitExecutiveWorkspaceBackNavigation,
+  getWorkspaceNavigationSummary,
+  recordForwardNavigationAfterCommit,
+  requestExecutiveWorkspaceBackNavigation,
+} from "../lib/dashboard/executiveWorkspaceNavigationHistoryRuntime";
+import { discoverExecutiveWorkspace } from "../lib/dashboard/executiveWorkspaceRegistryRuntime";
+import { getWorkspaceLifecycleSnapshot } from "../lib/dashboard/executiveWorkspaceLifecycleRuntime";
+import { resolveWorkspaceIdFromDashboardMode } from "../lib/dashboard/executiveWorkspaceLifecycleContract";
+import type { ExecutiveWorkspaceId } from "../lib/dashboard/executiveWorkspaceRegistryContract";
+import {
+  mapWorkspaceLaunchSourceToRouteType,
+  requestWorkspaceLaunch,
+} from "../lib/dashboard/workspaceLauncher/workspaceLauncherRuntime";
+import type { WorkspaceLaunchRequestResult } from "../lib/dashboard/workspaceLauncher/workspaceLauncherContract";
+import type { WorkspaceRecommendationContext } from "../lib/workspaces/workspaceRecommendationContract";
+import type { WorkspaceRecentsContextInput } from "../lib/workspaces/workspaceRecentsContract";
+import type { WorkspaceRecentReturnKind } from "../lib/workspaces/workspaceRecentsContract";
 import { buildExecutiveScenarioSuggestionsModel } from "../lib/ui/buildExecutiveScenarioSuggestionsModel";
 import { buildExecutiveScenarioComparisonModel } from "../lib/ui/buildExecutiveScenarioComparisonModel";
 import { buildExecutiveCommandBarModel } from "../lib/ui/buildExecutiveCommandBarModel";
@@ -560,9 +635,28 @@ import {
   traceNexoraSelectionGuard,
 } from "../lib/selection/selectionSignature";
 import {
+  USER_SELECTION_LOCK_TTL_MS,
+  isUserSelectionLockActive,
   normalizeSelectedObjectId,
+  deriveObjectSelectionFromSelectedId,
   shouldCommitObjectSelection,
   shouldCommitSelectedObjectId,
+  shouldBlockAutomaticSelectionOverride,
+  shouldFocusOwnershipMirrorOnly,
+  logVisualSelectionAuthorityRejected,
+  resolveCanonicalSceneVisualSelection,
+  resolveCanonicalVisualSelection,
+  isAutomaticSelectionSource,
+  isSceneSelectionEchoSource,
+  isSceneSelectionUserIntentSource,
+  isCanonicalObjectSelectionClearSource,
+  shouldBlockNonCanonicalSelectionWrite,
+  logNonCanonicalSelectionWriterBlocked,
+  logFocusOwnershipSelectionWriteBlocked,
+  logStaleDebouncedSelectionSkipped,
+  OBJECT_CLICK_TRANSACTION_DEDUPE_MS,
+  type SceneSelectionChangeOptions,
+  type UserSelectionLock,
 } from "../lib/selection/selectionStateGuard";
 import {
   isExplicitUserSelectionSource,
@@ -572,9 +666,16 @@ import {
 } from "../lib/selection/nexoraSelectionBootstrap";
 import {
   buildObjectClickEventId,
+  getPointerSelectionGate,
   logObjectClickDiagnostic,
+  parseClickEventId,
+  shouldBlockPointerMissAfterObjectClick,
   type ObjectClickEventRef,
 } from "../lib/selection/nexoraObjectClickTransaction";
+import {
+  reportObjectSelection,
+  reportSelectionResolved,
+} from "../lib/selection/objectSelectionRuntimeContract";
 import {
   logNexoraPanelRequest,
   logNexoraPanelSelectionWrite,
@@ -847,6 +948,7 @@ import {
   scheduleDebouncedHeavySelection,
   shouldAllowPanelSelectionWrite,
   shouldAllowSelectionCascade,
+  cancelDebouncedHeavySelection,
 } from "../lib/runtime/renderBudgetGuard";
 import { buildPanelStateSignatureFromState, shouldCommitPanelWrite } from "../lib/panels/panelStateSignature";
 import {
@@ -1773,6 +1875,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [selectedObjectIdState, _setSelectedObjectIdState] = useState<string | null>(null);
   const deferredSelectedObjectId = useDeferredValue(selectedObjectIdState);
   const selectedObjectIdStateRef = useRef<string | null>(null);
+  const userSelectionLockRef = useRef<UserSelectionLock | null>(null);
   useLayoutEffect(() => {
     selectedObjectIdStateRef.current = selectedObjectIdState;
   }, [selectedObjectIdState]);
@@ -2234,7 +2337,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         return deleteSceneObject(prev, objectId);
       }, "executive_object_delete");
       selectedSetterRef.current(null);
-      setSelectedObjectIdState((current) => (current === objectId ? null : current));
+      if (selectedObjectIdStateRef.current === objectId) {
+        clearCanonicalObjectSelectionRef.current("executive_object_delete");
+      }
       setSelectedObjectInfo(null);
       setFocusedId((current) => (current === objectId ? null : current));
       deselectPlacedObject();
@@ -2294,7 +2399,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           selectPropagationPath(null);
           setSelectedPropagationPathId(null);
           selectedSetterRef.current(null);
-          setSelectedObjectIdState(null);
+          clearCanonicalObjectSelectionRef.current("executive_relationship_insert");
           setSelectedObjectInfo(null);
           setFocusedId(null);
         }
@@ -2313,7 +2418,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     selectPropagationPath(null);
     setSelectedPropagationPathId(null);
     selectedSetterRef.current(null);
-    setSelectedObjectIdState(null);
+    clearCanonicalObjectSelectionRef.current("relationship_select");
     setSelectedObjectInfo(null);
     setFocusedId(null);
   }, [setFocusedId]);
@@ -2371,7 +2476,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         selectRelationship(null);
         setSelectedRelationshipId(null);
         selectedSetterRef.current(null);
-        setSelectedObjectIdState(null);
+        clearCanonicalObjectSelectionRef.current("propagation_path_select");
         setSelectedObjectInfo(null);
         setFocusedId(null);
       }
@@ -2386,7 +2491,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     selectRelationship(null);
     setSelectedRelationshipId(null);
     selectedSetterRef.current(null);
-    setSelectedObjectIdState(null);
+    clearCanonicalObjectSelectionRef.current("relationship_select");
     setSelectedObjectInfo(null);
     setFocusedId(null);
   }, [setFocusedId]);
@@ -3061,7 +3166,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   // Legacy rightPanelState is a compatibility mirror for panel authority writes.
   // Canonical MVP coordination state is NexoraWorkspaceState:
   // frontend/app/lib/workspace/nexoraWorkspaceStateContract.ts.
-  // No new Dashboard Context or MRP tab state should be introduced here.
+  const { state: nexoraWorkspaceState, dispatch: dispatchNexoraWorkspaceState } = useNexoraWorkspaceState(
+    seedWorkspaceStateFromPreferredTab(activeDomainExperience.experience.preferredRightPanelTab)
+  );
+  const nexoraWorkspaceStateRef = useRef(nexoraWorkspaceState);
+  nexoraWorkspaceStateRef.current = nexoraWorkspaceState;
+  const dispatchNexoraWorkspaceStateRef = useRef(dispatchNexoraWorkspaceState);
+  dispatchNexoraWorkspaceStateRef.current = dispatchNexoraWorkspaceState;
   const [rightPanelState, _setRightPanelState] = useState<RightPanelState>(() => {
     const initialView =
       mapLegacyTabToRightPanelView(activeDomainExperience.experience.preferredRightPanelTab) ?? null;
@@ -3119,6 +3230,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     issuedAt: 0,
     handledAt: 0,
   });
+  const latestUserObjectClickRef = useRef<{
+    objectId: string;
+    clickEventId: string;
+    timestamp: number;
+  } | null>(null);
+  const clearCanonicalObjectSelectionRef = useRef<(source: string) => number>(() => 0);
+  const latestObjectClickPanelCommitRef = useRef<{
+    objectId: string;
+    clickEventId: string;
+    requestId: number;
+    dashboardContextCommitted: boolean;
+    panelAuthorityCommitted: boolean;
+  } | null>(null);
+  const lastAcceptedObjectClickRef = useRef<{
+    objectId: string;
+    eventId: string | null;
+    acceptedAt: number;
+  } | null>(null);
   const rightPanelAuthoritySelectionAuditRef = useRef<{
     clickId: string | null;
     requestCount: number;
@@ -4224,10 +4353,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     logNexoraSelectionSource({ source, action: "user_intent_marked" });
   }, []);
   const setObjectSelection = useCallback(
-    (nextOrUpdater: any | null | ((prev: any | null) => any | null)) => {
+    (_nextOrUpdater: any | null | ((prev: any | null) => any | null)) => {
       const prev = objectSelectionRef.current;
-      const next = typeof nextOrUpdater === "function" ? nextOrUpdater(prev) : nextOrUpdater;
+      const canonicalSelectedId = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
+      const next = deriveObjectSelectionFromSelectedId({
+        selectedId: canonicalSelectedId,
+        sceneJson,
+      });
       if (!shouldCommitObjectSelection(prev, next)) {
+        if (process.env.NODE_ENV !== "production") {
+          devLogThrottled({
+            key: `object-selection-mirror-noop:setter:${canonicalSelectedId ?? "null"}`,
+            label: "[Nexora][ObjectSelectionMirrorNoOp]",
+            scope: "selectionIsolation",
+            severity: "debug",
+            intervalMs: 1000,
+            payload: {
+              selectedObjectIdState: canonicalSelectedId,
+              highlightedIds: getHighlightedObjectIdsFromSelection(prev),
+              source: "setObjectSelection",
+            },
+          });
+        }
         return;
       }
       const highlighted = getHighlightedObjectIdsFromSelection(next);
@@ -4246,80 +4393,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         });
         return;
       }
-      _setObjectSelection((prevState: any | null) => {
-        const resolvedNext =
-          typeof nextOrUpdater === "function" ? nextOrUpdater(prevState) : nextOrUpdater;
-        if (!shouldCommitObjectSelection(prevState, resolvedNext)) {
-          return prevState;
-        }
-        const highlighted = getHighlightedObjectIdsFromSelection(resolvedNext);
-        if (resolvedNext == null || highlighted.length === 0) {
-          return prevState;
-        }
-        objectSelectionRef.current = resolvedNext;
-        logSelectionWriteSource("setObjectSelection", highlighted[0] ?? null);
-        if (process.env.NODE_ENV !== "production") {
-          traceRuntimeSelection({
-            caller: "HomeScreen.setObjectSelection",
-            objectId: highlighted[0] ?? null,
-            previousSelection: JSON.stringify(prevState ?? null),
-            nextSelection: JSON.stringify(resolvedNext ?? null),
-            sameSelectionReapply: false,
-          });
-        }
-        return resolvedNext;
-      });
+      objectSelectionRef.current = next;
+      _setObjectSelection(next);
+      logSelectionWriteSource("setObjectSelection", highlighted[0] ?? null);
+      if (process.env.NODE_ENV !== "production") {
+        traceRuntimeSelection({
+          caller: "HomeScreen.setObjectSelection",
+          objectId: highlighted[0] ?? null,
+          previousSelection: JSON.stringify(prev ?? null),
+          nextSelection: JSON.stringify(next ?? null),
+          sameSelectionReapply: false,
+        });
+      }
     },
-    [logSelectionWriteSource]
+    [logSelectionWriteSource, sceneJson]
   );
   const setSelectedObjectIdState = useCallback(
     (nextOrUpdater: string | null | ((prev: string | null) => string | null)) => {
       const prev = selectedObjectIdStateRef.current;
       const next = typeof nextOrUpdater === "function" ? nextOrUpdater(prev) : nextOrUpdater;
-      if (!shouldCommitSelectedObjectId(prev, next)) {
-        return;
-      }
-      if (next == null) {
-        return;
-      }
-      if (
-        shouldBlockAutomaticSelectionWrite({
-          selectionUserIntent: selectionUserIntentRef.current,
-          executiveInteraction: hasExecutiveInteractionRef.current,
-          hasMaterialSelection: true,
-        })
-      ) {
-        logNexoraSelectionBootstrap({
-          writer: "setSelectedObjectIdState",
-          objectId: next,
-          reason: "blocked_bootstrap_selection",
-        });
-        return;
-      }
-      _setSelectedObjectIdState((prevState) => {
-        const resolvedNext =
-          typeof nextOrUpdater === "function" ? nextOrUpdater(prevState) : nextOrUpdater;
-        if (!shouldCommitSelectedObjectId(prevState, resolvedNext)) {
-          return prevState;
-        }
-        if (resolvedNext == null) {
-          return prevState;
-        }
-        selectedObjectIdStateRef.current = resolvedNext;
-        logSelectionWriteSource("setSelectedObjectIdState", resolvedNext);
-        if (process.env.NODE_ENV !== "production") {
-          traceRuntimeSelection({
-            caller: "HomeScreen.setSelectedObjectIdState",
-            objectId: resolvedNext,
-            previousSelection: JSON.stringify({ selectedId: prevState ?? null }),
-            nextSelection: JSON.stringify({ selectedId: resolvedNext ?? null }),
-            sameSelectionReapply: false,
-          });
-        }
-        return resolvedNext;
+      logNonCanonicalSelectionWriterBlocked({
+        writer: "setSelectedObjectIdState",
+        attemptedObjectId: normalizeSelectedObjectId(next),
+        currentSelectedId: normalizeSelectedObjectId(prev),
+        source: "direct_setSelectedObjectIdState",
       });
     },
-    [logSelectionWriteSource]
+    []
   );
   const isStaleSelectionRequest = useCallback(
     (input: {
@@ -4366,6 +4466,66 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     }
     return normalizedId === currentId && normalizedId === highlightId;
   }, []);
+  const getActiveUserSelectionLock = useCallback((now = Date.now()): UserSelectionLock | null => {
+    const lock = userSelectionLockRef.current;
+    if (!isUserSelectionLockActive(lock, now)) {
+      if (lock && now - lock.startedAt > USER_SELECTION_LOCK_TTL_MS) {
+        userSelectionLockRef.current = null;
+      }
+      return null;
+    }
+    return lock;
+  }, []);
+  const logSelectionLockBlock = useCallback(
+    (input: { source: string; attemptedObjectId: string | null; lockedObjectId: string; clickEventId?: string | null }) => {
+      if (process.env.NODE_ENV === "production") return;
+      const source = input.source;
+      const label =
+        source === "focus_ownership"
+          ? "[Nexora][SelectionOwnershipLock]"
+          : source === "focus_ownership_clear"
+            ? "[Nexora][SelectionClearBlocked]"
+            : source === "SceneCanvas.onPointerMissed" || source === "scene_pointer_miss" || source === "scene_clear"
+              ? "[Nexora][PointerMissGuard]"
+              : "[Nexora][SelectionOverrideBlocked]";
+      devLogThrottled({
+        key: `${label}:${source}:${input.lockedObjectId}:${input.attemptedObjectId ?? "null"}:${input.clickEventId ?? "none"}`,
+        label,
+        scope: "selectionIsolation",
+        severity: source === "focus_ownership_clear" || input.attemptedObjectId == null ? "warn" : "debug",
+        intervalMs: 500,
+        payload: {
+          blockedSource: source,
+          lockedObjectId: input.lockedObjectId,
+          attemptedObjectId: input.attemptedObjectId,
+          clickEventId: input.clickEventId ?? null,
+        },
+      });
+    },
+    []
+  );
+  const shouldBlockSelectionOverrideForUserLock = useCallback(
+    (input: { nextObjectId: string | null; source: string; now?: number }): boolean => {
+      const lock = getActiveUserSelectionLock(input.now ?? Date.now());
+      if (!lock) return false;
+      const blocked = shouldBlockAutomaticSelectionOverride({
+        lockedObjectId: lock.objectId,
+        nextObjectId: input.nextObjectId,
+        source: input.source,
+        now: input.now,
+      });
+      if (blocked) {
+        logSelectionLockBlock({
+          source: input.source,
+          attemptedObjectId: normalizeSelectedObjectId(input.nextObjectId),
+          lockedObjectId: lock.objectId,
+          clickEventId: lock.clickEventId,
+        });
+      }
+      return blocked;
+    },
+    [getActiveUserSelectionLock, logSelectionLockBlock]
+  );
   const commitObjectSelection = useCallback(
     (
       nextObjectId: string | null,
@@ -4392,8 +4552,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         return requestSeq;
       }
       const normalizedIncomingId = normalizeSelectedObjectId(nextObjectId);
+      const currentCanonicalId = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
+      if (source === "focus_ownership" || source === "focus_ownership_clear") {
+        logFocusOwnershipSelectionWriteBlocked({
+          attemptedObjectId: normalizedIncomingId,
+          currentSelectedId: currentCanonicalId,
+          source,
+        });
+        return requestSeq;
+      }
+      if (shouldBlockNonCanonicalSelectionWrite({ source, nextObjectId: normalizedIncomingId })) {
+        logNonCanonicalSelectionWriterBlocked({
+          writer: `commitObjectSelection:${source}`,
+          attemptedObjectId: normalizedIncomingId,
+          currentSelectedId: currentCanonicalId,
+          source,
+        });
+        return requestSeq;
+      }
+      if (normalizedIncomingId == null && isCanonicalObjectSelectionClearSource(source)) {
+        userSelectionLockRef.current = null;
+      }
       if (isExplicitUserSelectionSource(source) && normalizedIncomingId != null) {
         markSelectionUserIntent(source);
+      }
+      if (
+        normalizedIncomingId != null &&
+        shouldBlockSelectionOverrideForUserLock({
+          nextObjectId: normalizedIncomingId,
+          source,
+        })
+      ) {
+        return requestSeq;
       }
       if (
         normalizedIncomingId != null &&
@@ -4414,9 +4604,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       if (isObjectSelectionFullyApplied(normalizedIncomingId)) {
         if (process.env.NODE_ENV !== "production") {
-          console.debug("[ObjectSelection][SkippedDuplicate]", {
-            objectId: normalizedIncomingId,
-            source,
+          devLogThrottled({
+            key: `commitObjectSelection:${source}:${normalizedIncomingId ?? "null"}:fully-applied`,
+            label: "[Nexora][SelectionNoOp]",
+            scope: "selectionIsolation",
+            severity: "debug",
+            intervalMs: 1000,
+            payload: {
+              objectId: normalizedIncomingId,
+              source,
+              reason: "selection_already_applied",
+            },
           });
         }
         return requestSeq;
@@ -4458,6 +4656,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             });
           }
         }
+        if (process.env.NODE_ENV !== "production") {
+          devLogThrottled({
+            key: `visual-selection-applied:${source}:null:${prevId ?? "none"}`,
+            label: "[Nexora][VisualSelectionApplied]",
+            scope: "selectionIsolation",
+            severity: "debug",
+            intervalMs: 500,
+            payload: {
+              selectedId: null,
+              highlightedIds: [],
+              source,
+              priorObjectId: prevId ?? null,
+            },
+          });
+        }
         return requestSeq;
       }
 
@@ -4468,20 +4681,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
       const prevId = selectedObjectIdStateRef.current;
       const prevSelection = objectSelectionRef.current;
-      const dimUnrelated =
-        options?.dimUnrelated ?? (prevSelection as { dim_unrelated_objects?: boolean } | null)?.dim_unrelated_objects ?? false;
-      const nextSelection = {
-        ...(prevSelection && typeof prevSelection === "object" ? prevSelection : {}),
-        highlighted_objects: [normalizedId],
-        dim_unrelated_objects: dimUnrelated,
-      };
+      const nextSelection = deriveObjectSelectionFromSelectedId({
+        selectedId: normalizedId,
+        sceneJson,
+      });
       const idNoOp = !shouldCommitSelectedObjectId(prevId, normalizedId);
       const selectionNoOp = !shouldCommitObjectSelection(prevSelection, nextSelection);
       if (idNoOp && selectionNoOp) {
         if (process.env.NODE_ENV !== "production") {
-          console.debug("[ObjectSelection][SkippedDuplicate]", {
-            objectId: normalizedId,
-            source,
+          devLogThrottled({
+            key: `commitObjectSelection:${source}:${normalizedId}:duplicate`,
+            label: "[Nexora][SelectionNoOp]",
+            scope: "selectionIsolation",
+            severity: "debug",
+            intervalMs: 1000,
+            payload: {
+              objectId: normalizedId,
+              source,
+              reason: "duplicate_selection_write",
+            },
           });
         }
         return requestSeq;
@@ -4493,6 +4711,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           nextObjectId: normalizedId,
           source,
         });
+        if (prevId != null && prevId !== normalizedId) {
+          devLogThrottled({
+            key: `visual-selection-swap:${prevId}:${normalizedId}:${source}`,
+            label: "[Nexora][VisualSelectionSwap]",
+            scope: "selectionIsolation",
+            severity: "info",
+            intervalMs: 500,
+            payload: {
+              previousSelectedId: prevId,
+              nextSelectedId: normalizedId,
+              clearedPrevious: true,
+              source,
+            },
+          });
+        }
       }
       lastObjectSelectionTransactionRef.current = {
         objectId: normalizedId,
@@ -4503,6 +4736,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       if (!idNoOp) {
         selectedObjectIdStateRef.current = normalizedId;
         _setSelectedObjectIdState(normalizedId);
+        if (source === "object_click" && process.env.NODE_ENV !== "production") {
+          const latestUserObjectClick = latestUserObjectClickRef.current;
+          logObjectClickDiagnostic("[Nexora][ObjectClickCanonicalSelectionCommitted]", {
+            objectId: normalizedId,
+            previousSelectedId: prevId ?? null,
+            nextSelectedId: normalizedId,
+            clickEventId: latestUserObjectClick?.objectId === normalizedId ? latestUserObjectClick.clickEventId : null,
+          });
+        }
         logNexoraSelectionWrite({
           source,
           objectId: normalizedId,
@@ -4522,6 +4764,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       if (!selectionNoOp) {
         objectSelectionRef.current = nextSelection;
         _setObjectSelection(nextSelection);
+        if (source === "object_click" && process.env.NODE_ENV !== "production") {
+          const latestUserObjectClick = latestUserObjectClickRef.current;
+          logObjectClickDiagnostic("[Nexora][ObjectClickVisualSelectionApplied]", {
+            objectId: normalizedId,
+            previousSelectedId: prevId ?? null,
+            nextSelectedId: normalizedId,
+            clickEventId: latestUserObjectClick?.objectId === normalizedId ? latestUserObjectClick.clickEventId : null,
+          });
+        }
         logNexoraSelectionWrite({
           source,
           objectId: normalizedId,
@@ -4538,9 +4789,68 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           });
         }
       }
+      if (!idNoOp || !selectionNoOp) {
+        reportSelectionResolved({
+          objectId: normalizedId,
+          priorObjectId: prevId ?? null,
+          source,
+          phase: "selection_commit",
+        });
+        reportObjectSelection({
+          objectId: normalizedId,
+          priorObjectId: prevId ?? null,
+          source,
+          phase: "scene_highlight",
+        });
+        if (process.env.NODE_ENV !== "production") {
+          devLogThrottled({
+            key: `visual-selection-applied:${source}:${normalizedId}`,
+            label: "[Nexora][VisualSelectionApplied]",
+            scope: "selectionIsolation",
+            severity: "debug",
+            intervalMs: 500,
+            payload: {
+              selectedId: normalizedId,
+              highlightedIds: [normalizedId],
+              source,
+              priorObjectId: prevId ?? null,
+            },
+          });
+        }
+      }
       return requestSeq;
     },
-    [isObjectSelectionFullyApplied, isStaleSelectionRequest, logSelectionWriteSource, markSelectionUserIntent]
+    [
+      isObjectSelectionFullyApplied,
+      isStaleSelectionRequest,
+      logSelectionWriteSource,
+      markSelectionUserIntent,
+      sceneJson,
+      shouldBlockSelectionOverrideForUserLock,
+    ]
+  );
+  const clearCanonicalObjectSelection = useCallback(
+    (source: string): number => {
+      cancelDebouncedHeavySelection();
+      if (isCanonicalObjectSelectionClearSource(source)) {
+        userSelectionLockRef.current = null;
+      }
+      return commitObjectSelection(null, source);
+    },
+    [commitObjectSelection]
+  );
+  clearCanonicalObjectSelectionRef.current = clearCanonicalObjectSelection;
+  const commitCanonicalObjectSelection = useCallback(
+    (nextObjectId: string, source: "object_click", eventId: string): number => {
+      cancelDebouncedHeavySelection();
+      latestUserObjectClickRef.current = {
+        objectId: normalizeSelectedObjectId(nextObjectId) ?? nextObjectId,
+        clickEventId: eventId,
+        timestamp: Date.now(),
+      };
+      return commitObjectSelection(nextObjectId, source);
+    },
+    [commitObjectSelection]
   );
   const inspectorOpen = rightPanelState.isOpen;
   const highlightedObjectIds = useMemo(() => {
@@ -4726,6 +5036,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     []
   );
   const [isClientMounted, setIsClientMounted] = useState(false);
+  const useVisibleMrpRightRailHost = shouldUseVisibleMrpRightRailHost();
   const [leftCommandPanelOpen, setLeftCommandPanelOpen] = useState(true);
   // WORKSPACE STATE CONTRACT:
   // These panel booleans are current UI mirrors for canonical scenePanelState
@@ -4758,6 +5069,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [executiveComparisonPortalHost, setExecutiveComparisonPortalHost] = useState<HTMLElement | null>(null);
   const [executiveCommandBarPortalHost, setExecutiveCommandBarPortalHost] = useState<HTMLElement | null>(null);
   const [inspectorPortalHost, setInspectorPortalHost] = useState<HTMLElement | null>(null);
+  const [visibleMrpPortalHost, setVisibleMrpPortalHost] = useState<HTMLElement | null>(null);
   const tracePanelFamilyAudit = useCallback(
     (
       label:
@@ -5006,6 +5318,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const { closeRightPanel, openRightPanel } = rightPanelController.callbacks;
   const applyPanelControllerRequest = useCallback(
     (request: PanelRequestIntent & { source: PanelOpenSource; rawSource?: string | null }) => {
+      if (request.source === "object_click") {
+        const nextContextId =
+          typeof request.contextId === "string" ? request.contextId.trim() : request.contextId ?? null;
+        const canonicalSelectedId = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
+        if (nextContextId && canonicalSelectedId && nextContextId !== canonicalSelectedId) {
+          logVisualSelectionAuthorityRejected({
+            attemptedObjectId: nextContextId,
+            canonicalSelectedId,
+            source: request.rawSource ?? request.source,
+          });
+          return;
+        }
+        const panelCommit = latestObjectClickPanelCommitRef.current;
+        if (
+          panelCommit &&
+          panelCommit.panelAuthorityCommitted &&
+          nextContextId &&
+          panelCommit.objectId === nextContextId
+        ) {
+          if (process.env.NODE_ENV !== "production") {
+            logObjectClickDiagnostic("[Nexora][ObjectClickPanelWriteSkipped]", {
+              objectId: panelCommit.objectId,
+              requestId: panelCommit.requestId,
+              source: request.rawSource ?? request.source,
+              reason: "panel_authority_already_committed_for_click",
+            });
+          }
+          return;
+        }
+      }
       const panelRequestDedupeKey = JSON.stringify({
         rv: request.requestedView ?? null,
         cid: request.contextId ?? null,
@@ -5768,6 +6110,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           typeof normalizedRequest.contextId === "string"
             ? normalizedRequest.contextId.trim()
             : normalizedRequest.contextId ?? null;
+        const canonicalSelectedId = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
+        if (
+          normalizedObjectContext &&
+          canonicalSelectedId &&
+          normalizedObjectContext !== canonicalSelectedId
+        ) {
+          logVisualSelectionAuthorityRejected({
+            attemptedObjectId: normalizedObjectContext,
+            canonicalSelectedId,
+            source: "requestPanelAuthorityOpen",
+          });
+          return;
+        }
         const latestClickObjectId = latestObjectClickRequestRef.current.objectId;
         if (
           normalizedObjectContext &&
@@ -5812,6 +6167,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                 latestRequestId: latestObjectClick.requestId,
                 reason: "stale-object-click-context",
               },
+            });
+          }
+          return;
+        }
+        const panelCommit = latestObjectClickPanelCommitRef.current;
+        if (
+          panelCommit &&
+          requestId > 0 &&
+          panelCommit.requestId === requestId &&
+          panelCommit.objectId === normalizedObjectContext &&
+          panelCommit.panelAuthorityCommitted
+        ) {
+          if (process.env.NODE_ENV !== "production") {
+            logObjectClickDiagnostic("[Nexora][SelectionPanelWriteNoOp]", {
+              objectId: normalizedObjectContext,
+              previousSelectedId: selectedObjectIdStateRef.current ?? null,
+              nextSelectedId: selectedObjectIdStateRef.current ?? null,
+              clickEventId: panelCommit.clickEventId,
+              requestId,
+              source: "requestPanelAuthorityOpen",
+              reason: "object_click_panel_authority_already_committed",
             });
           }
           return;
@@ -5953,6 +6329,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           owner: "HomeScreen.requestPanelAuthorityOpen",
           source: normalizedRequest.source,
           dashboardContext: mrpRuntimeRoute.dashboardContext,
+        });
+        commitDashboardContextUpdate(dispatchNexoraWorkspaceStateRef.current, {
+          dashboardContext: mrpRuntimeRoute.dashboardContext,
+          source: "legacy_redirect",
+          reason: normalizedRequest.reason ?? "mrp_dashboard_redirect",
+          priorContext: nexoraWorkspaceStateRef.current.dashboardContext,
         });
         normalizedRequest = {
           ...normalizedRequest,
@@ -6337,6 +6719,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         legacyTab: normalized.legacyTab,
         preserveIfSameContext: shouldForceOpen ? false : undefined,
       });
+      if (normalizedRequest.source === "object_click") {
+        const normalizedObjectContext =
+          typeof normalizedRequest.contextId === "string" ? normalizedRequest.contextId.trim() : null;
+        const requestId = normalizedRequest.objectClickRequestId ?? 0;
+        const panelCommit = latestObjectClickPanelCommitRef.current;
+        if (
+          panelCommit &&
+          requestId > 0 &&
+          panelCommit.requestId === requestId &&
+          panelCommit.objectId === normalizedObjectContext
+        ) {
+          panelCommit.panelAuthorityCommitted = true;
+        }
+      }
       if (normalizedRequest.source === "chat") {
         const hintText = (() => {
           switch (normalized.view) {
@@ -7176,6 +7572,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           dashboardContext: routeResolution.dashboardContext,
           sceneTimelineActive: routeResolution.sceneTimelineActive,
         });
+        commitDashboardRouteResolution(dispatchNexoraWorkspaceStateRef.current, routeResolution, {
+          source: "left_nav",
+          priorContext: nexoraWorkspaceStateRef.current.dashboardContext,
+        });
         requestPanelAuthorityOpen({
           view: leftNavItem.defaultPanelTarget,
           family: "EXE",
@@ -7221,6 +7621,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           source: detail?.source ?? null,
           dashboardContext: routeResolution.dashboardContext,
           sceneTimelineActive: routeResolution.sceneTimelineActive,
+        });
+        commitDashboardRouteResolution(dispatchNexoraWorkspaceStateRef.current, routeResolution, {
+          source:
+            rawEventSource === "scene"
+              ? "scene_panel"
+              : rawEventSource === "object_click"
+                ? "object_panel"
+                : rawEventSource === "chat"
+                  ? "assistant"
+                  : "system",
+          priorContext: nexoraWorkspaceStateRef.current.dashboardContext,
         });
         const resolvedAuthoritySource: NexoraPanelAuthoritySource =
           rawEventSource === "left_nav" ||
@@ -7431,12 +7842,53 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   useEffect(() => {
     if (!isClientMounted) {
+      setVisibleMrpPortalHost(null);
+      return;
+    }
+    if (!useVisibleMrpRightRailHost) {
+      setVisibleMrpPortalHost(null);
+      return;
+    }
+    const resolveHost = () => {
+      const el = document.getElementById(VISIBLE_MRP_RIGHT_RAIL_HOST_ID);
+      setVisibleMrpPortalHost(el instanceof HTMLElement ? el : null);
+    };
+    resolveHost();
+    const timer = window.setTimeout(resolveHost, 0);
+    return () => window.clearTimeout(timer);
+  }, [isClientMounted, useVisibleMrpRightRailHost, nexoraWorkspaceState.activeMRPTab]);
+
+  useEffect(() => {
+    if (!isClientMounted || !useVisibleMrpRightRailHost) return;
+    const runTrace = () => {
+      applyVisibleMrpRightRailPresentation({
+        activeTab: nexoraWorkspaceState.activeMRPTab,
+        dashboardMode: nexoraWorkspaceState.dashboardMode,
+      });
+    };
+    runTrace();
+    const raf = window.requestAnimationFrame(runTrace);
+    const timer = window.setTimeout(runTrace, 400);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
+    };
+  }, [
+    isClientMounted,
+    useVisibleMrpRightRailHost,
+    nexoraWorkspaceState.activeMRPTab,
+    nexoraWorkspaceState.dashboardMode,
+    visibleMrpPortalHost,
+  ]);
+
+  useEffect(() => {
+    if (!isClientMounted) {
       setExecutiveAssistantPortalHost(null);
       return;
     }
     const el = document.getElementById("nexora-executive-assistant-host");
     setExecutiveAssistantPortalHost(el instanceof HTMLElement ? el : null);
-  }, [isClientMounted, executiveAssistantCollapsed]);
+  }, [isClientMounted, executiveAssistantCollapsed, visibleMrpPortalHost, nexoraWorkspaceState.activeMRPTab]);
 
   useEffect(() => {
     if (!isClientMounted) {
@@ -7445,7 +7897,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     }
     const el = document.getElementById("nexora-executive-scenario-host");
     setExecutiveScenarioPortalHost(el instanceof HTMLElement ? el : null);
-  }, [isClientMounted, executiveAssistantCollapsed]);
+  }, [isClientMounted, executiveAssistantCollapsed, visibleMrpPortalHost, nexoraWorkspaceState.activeMRPTab]);
 
   useEffect(() => {
     if (!isClientMounted) {
@@ -7454,7 +7906,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     }
     const el = document.getElementById("nexora-executive-comparison-host");
     setExecutiveComparisonPortalHost(el instanceof HTMLElement ? el : null);
-  }, [isClientMounted, executiveAssistantCollapsed]);
+  }, [isClientMounted, executiveAssistantCollapsed, visibleMrpPortalHost, nexoraWorkspaceState.activeMRPTab]);
 
   useEffect(() => {
     if (!isClientMounted) {
@@ -8502,6 +8954,75 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const visibleObjectSelection = visibleUiState.objectSelection;
   const visibleSelectedObjectId = visibleUiState.selectedObjectId;
   const visibleFocusedId = visibleUiState.focusedId;
+  const canonicalSceneVisualSelectedId = useMemo(
+    () => selectedObjectIdState ?? null,
+    [selectedObjectIdState]
+  );
+  const canonicalVisualSelection = useMemo(
+    () => resolveCanonicalVisualSelection(selectedObjectIdState),
+    [selectedObjectIdState]
+  );
+  const visualSelectionSignature = useMemo(
+    () => JSON.stringify(canonicalVisualSelection),
+    [canonicalVisualSelection]
+  );
+  const visualSelectionVersionRef = useRef(0);
+  const visualSelectionSignatureRef = useRef(visualSelectionSignature);
+  useEffect(() => {
+    if (visualSelectionSignatureRef.current !== visualSelectionSignature) {
+      visualSelectionSignatureRef.current = visualSelectionSignature;
+      visualSelectionVersionRef.current += 1;
+    }
+    if (process.env.NODE_ENV !== "production") {
+      devLogThrottled({
+        key: `global-selection-visual-resolve:${visualSelectionSignature}`,
+        label: "[Nexora][GlobalSelectionVisualResolve]",
+        scope: "selectionIsolation",
+        severity: "debug",
+        intervalMs: 500,
+        payload: {
+          selectedId: canonicalVisualSelection.selectedId,
+          highlightedIds: canonicalVisualSelection.highlightedIds,
+          version: visualSelectionVersionRef.current,
+        },
+      });
+    }
+  }, [canonicalVisualSelection, visualSelectionSignature]);
+  const canonicalObjectSelection = useMemo(
+    () =>
+      deriveObjectSelectionFromSelectedId({
+        selectedId: canonicalVisualSelection.selectedId,
+        sceneJson,
+      }),
+    [canonicalVisualSelection.selectedId, sceneJson]
+  );
+  useEffect(() => {
+    const currentSelection = objectSelectionRef.current;
+    const nextSelection = canonicalObjectSelection;
+    if (!shouldCommitObjectSelection(currentSelection, nextSelection)) {
+      if (process.env.NODE_ENV !== "production") {
+        devLogThrottled({
+          key: `object-selection-mirror-noop:effect:${canonicalVisualSelection.selectedId ?? "null"}`,
+          label: "[Nexora][ObjectSelectionMirrorNoOp]",
+          scope: "selectionIsolation",
+          severity: "debug",
+          intervalMs: 1000,
+          payload: {
+            selectedObjectIdState: canonicalVisualSelection.selectedId,
+            highlightedIds: getHighlightedObjectIdsFromSelection(currentSelection),
+            source: "selectedObjectIdState",
+          },
+        });
+      }
+      return;
+    }
+    objectSelectionRef.current = nextSelection;
+    _setObjectSelection(nextSelection);
+  }, [canonicalObjectSelection, canonicalVisualSelection.selectedId]);
+  const canonicalVisualFocusedId =
+    canonicalVisualSelection.selectedId && visibleFocusedId === canonicalVisualSelection.selectedId
+      ? canonicalVisualSelection.selectedId
+      : null;
   const visibleConflicts = visibleUiState.conflicts;
   const visibleMemoryInsights = visibleUiState.memoryInsights;
   const visibleRiskPropagation = visibleUiState.riskPropagation;
@@ -9670,6 +10191,192 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     (id: string) => resolveSceneObjectLabel(id) ?? objectProfiles[id]?.label ?? instanceLabelMap[id] ?? id,
     [instanceLabelMap, objectProfiles, resolveSceneObjectLabel]
   );
+  const resolveObjectLabelRef = useRef(resolveObjectLabel);
+  resolveObjectLabelRef.current = resolveObjectLabel;
+  const contextSyncTrailRef = useRef<{
+    lastWorkspaceType: import("../lib/dashboard/dashboardModeRuntimeContract").DashboardMode | null;
+    lastRouteType: DashboardContextRouteType | null;
+  }>({ lastWorkspaceType: null, lastRouteType: null });
+  const publishDashboardContextSummaryRef = useRef<
+    (input: {
+      completionStatus: WorkspaceCompletionStatus;
+      routeType: DashboardContextRouteType;
+      dashboardMode?: import("../lib/dashboard/dashboardModeRuntimeContract").DashboardMode;
+      force?: boolean;
+    }) => void
+  >(() => {});
+  publishDashboardContextSummaryRef.current = (input) => {
+    const state = nexoraWorkspaceStateRef.current;
+    const selectedId =
+      typeof selectedObjectIdStateRef.current === "string"
+        ? selectedObjectIdStateRef.current.trim()
+        : "";
+    const lifecycleSnapshot = getWorkspaceLifecycleSnapshot();
+    const navigationSummary = getWorkspaceNavigationSummary();
+    const summary = publishDashboardExecutiveContextSummary(
+      {
+        dashboardMode: input.dashboardMode ?? state.dashboardMode,
+        dashboardRouteObjectId: state.dashboardRouteObjectId,
+        dashboardRouteObjectName: state.dashboardRouteObjectName,
+        selectedObjectId: selectedId || null,
+        selectedObjectName: selectedId ? resolveObjectLabelRef.current(selectedId) : null,
+        completionStatus: input.completionStatus,
+        routeType: input.routeType,
+        lastWorkspaceType: contextSyncTrailRef.current.lastWorkspaceType,
+        lastRouteType: contextSyncTrailRef.current.lastRouteType,
+        lifecycleState: lifecycleSnapshot?.currentState ?? null,
+        previousLifecycleState: lifecycleSnapshot?.previousState ?? null,
+        lifecycleTransitionTimestamp: lifecycleSnapshot?.lastTransitionTimestamp ?? null,
+        navigationPreviousWorkspaceId: navigationSummary.previousWorkspaceId,
+        navigationRecentPath: navigationSummary.recentPath,
+      },
+      { force: input.force }
+    );
+    if (summary) {
+      contextSyncTrailRef.current = {
+        lastWorkspaceType: summary.workspaceType,
+        lastRouteType: summary.routeType,
+      };
+    }
+  };
+  const executeApprovedWorkspaceLaunchRef = useRef<
+    (
+      launch: WorkspaceLaunchRequestResult,
+      options: {
+        routeType?: DashboardContextRouteType;
+        completionStatus?: WorkspaceCompletionStatus;
+      }
+    ) => boolean
+  >(() => false);
+  executeApprovedWorkspaceLaunchRef.current = (launch, options = {}) => {
+    if (!launch.approved || !launch.dashboardMode) {
+      return false;
+    }
+    const dispatch = dispatchNexoraWorkspaceStateRef.current;
+    if (!dispatch) {
+      warnObjectActionRouterBrake("Missing dashboard runtime.", {});
+      return false;
+    }
+    dispatch({
+      type: "setDashboardMode",
+      mode: launch.dashboardMode,
+      routeObject: launch.routeObject ?? undefined,
+    });
+    const workspaceId = launch.workspaceId ?? resolveWorkspaceIdFromDashboardMode(launch.dashboardMode);
+    if (workspaceId) {
+      const commitResult = commitExecutiveWorkspaceTransition(workspaceId);
+      if (commitResult.approved) {
+        recordForwardNavigationAfterCommit({
+          originWorkspaceId: commitResult.previousWorkspaceId,
+          targetWorkspaceId: workspaceId,
+        });
+      }
+    }
+    publishDashboardContextSummaryRef.current({
+      completionStatus:
+        options.completionStatus ??
+        (launch.dashboardMode !== "overview" ? "active" : "opened"),
+      routeType: options.routeType ?? mapWorkspaceLaunchSourceToRouteType(launch.source),
+      dashboardMode: launch.dashboardMode,
+    });
+    return true;
+  };
+  const applyObjectPanelRouteRef = useRef<
+    (
+      input: ObjectPanelActionRequestInput,
+      options?: {
+        routeType?: DashboardContextRouteType;
+        completionStatus?: WorkspaceCompletionStatus;
+      }
+    ) => boolean
+  >(() => false);
+  applyObjectPanelRouteRef.current = (input, options = {}) => {
+    const dispatch = dispatchNexoraWorkspaceStateRef.current;
+    if (!dispatch) {
+      warnObjectActionRouterBrake("Missing dashboard runtime.", {});
+      return false;
+    }
+    const objectId = typeof input.objectId === "string" ? input.objectId.trim() : "";
+    const objectName =
+      (typeof input.objectName === "string" && input.objectName.trim()) ||
+      (objectId ? resolveObjectLabelRef.current(objectId) : "") ||
+      objectId;
+    const routeResult = routeObjectPanelActionRequest({
+      ...input,
+      objectId,
+      objectName,
+    });
+    const dashboardAction = buildDashboardModeActionFromRoute(routeResult);
+    if (!dashboardAction) {
+      return false;
+    }
+    return executeApprovedWorkspaceLaunchRef.current(
+      Object.freeze({
+        approved: true,
+        workspaceId: resolveWorkspaceIdFromDashboardMode(dashboardAction.mode),
+        dashboardMode: dashboardAction.mode,
+        objectPanelAction: null,
+        routeObject: dashboardAction.routeObject,
+        source: "object_panel" as const,
+        reason: "object_panel_to_dashboard_mode",
+      }),
+      {
+        routeType: options.routeType ?? "object_panel",
+        completionStatus:
+          options.completionStatus ??
+          (dashboardAction.mode !== "overview" ? "active" : "opened"),
+      }
+    );
+  };
+  const applyAssistantDashboardActionRef = useRef<(input: AssistantExecutiveActionPayload) => boolean>(
+    () => false
+  );
+  applyAssistantDashboardActionRef.current = (payload) => {
+    const dispatch = dispatchNexoraWorkspaceStateRef.current;
+    if (!dispatch) {
+      warnAssistantBridgeBrake("Missing dashboard runtime.", { action: payload.action });
+      emitAssistantActionCardLaunchAck({
+        success: false,
+        action: payload.action,
+        objectId: payload.objectId,
+        message: "Workspace unavailable.",
+        reason: "missing_dashboard_runtime",
+      });
+      return false;
+    }
+    const routeResult = routeAssistantExecutiveActionRequest({
+      action: payload.action,
+      objectId: payload.objectId,
+      objectName: payload.objectName,
+      timestamp: payload.timestamp,
+      requestId: payload.requestId,
+    });
+    if (!routeResult.success || !routeResult.objectPanelInput) {
+      emitAssistantActionCardLaunchAck({
+        success: false,
+        action: payload.action,
+        objectId: payload.objectId,
+        message:
+          routeResult.reason === "missing_object"
+            ? "Object not available."
+            : "Workspace unavailable.",
+        reason: routeResult.reason,
+      });
+      return false;
+    }
+    const executed = applyObjectPanelRouteRef.current(routeResult.objectPanelInput, {
+      routeType: "assistant_bridge",
+      completionStatus: "active",
+    });
+    emitAssistantActionCardLaunchAck({
+      success: executed,
+      action: payload.action,
+      objectId: payload.objectId,
+      message: executed ? "Workspace launch accepted by Dashboard." : "Workspace unavailable.",
+      reason: executed ? "dashboard_executed" : "dashboard_execution_failed",
+    });
+    return executed;
+  };
   const liveExecutiveObjectId = useMemo(() => {
     const focusedFromSelection =
       typeof (visibleObjectSelection as { focusedId?: unknown } | null | undefined)?.focusedId === "string"
@@ -9716,6 +10423,140 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     visibleRiskPropagation,
     resolveObjectLabel,
   ]);
+  const dashboardFocusObjectData = useMemo(() => {
+    const objectId =
+      nexoraWorkspaceState.dashboardRouteObjectId?.trim() ||
+      selectedObjectIdState?.trim() ||
+      null;
+    if (!objectId) return null;
+    const reco = buildCanonicalRecommendation(visibleResponseData ?? visibleSceneJson ?? null);
+    return buildExecutiveObjectPanelData({
+      objectId,
+      objectName:
+        nexoraWorkspaceState.dashboardRouteObjectName?.trim() || resolveObjectLabel(objectId),
+      responseData: visibleResponseData,
+      sceneJson: visibleSceneJson,
+      riskPropagation: visibleRiskPropagation,
+      canonicalRecommendation: reco,
+    });
+  }, [
+    nexoraWorkspaceState.dashboardRouteObjectId,
+    nexoraWorkspaceState.dashboardRouteObjectName,
+    selectedObjectIdState,
+    visibleResponseData,
+    visibleSceneJson,
+    visibleRiskPropagation,
+    resolveObjectLabel,
+  ]);
+  const dashboardModeForContext = nexoraWorkspaceState.dashboardMode;
+  const focusModeContext = useMemo(
+    () =>
+      dashboardModeForContext === "focus"
+        ? resolveFocusModeContext({
+            selectedObjectId: selectedObjectIdState,
+            routeObjectId: nexoraWorkspaceState.dashboardRouteObjectId,
+            routeObjectName: nexoraWorkspaceState.dashboardRouteObjectName,
+            panelData: dashboardFocusObjectData,
+          }).context
+        : null,
+    [
+      dashboardModeForContext,
+      selectedObjectIdState,
+      nexoraWorkspaceState.dashboardRouteObjectId,
+      nexoraWorkspaceState.dashboardRouteObjectName,
+      dashboardFocusObjectData,
+    ]
+  );
+  const analyzeModeContext = useMemo(
+    () =>
+      dashboardModeForContext === "analyze"
+        ? resolveAnalyzeModeContext({
+            selectedObjectId: selectedObjectIdState,
+            routeObjectId: nexoraWorkspaceState.dashboardRouteObjectId,
+            routeObjectName: nexoraWorkspaceState.dashboardRouteObjectName,
+            panelData: dashboardFocusObjectData,
+          }).context
+        : null,
+    [
+      dashboardModeForContext,
+      selectedObjectIdState,
+      nexoraWorkspaceState.dashboardRouteObjectId,
+      nexoraWorkspaceState.dashboardRouteObjectName,
+      dashboardFocusObjectData,
+    ]
+  );
+  const compareModeContext = useMemo(
+    () =>
+      dashboardModeForContext === "compare"
+        ? resolveCompareModeContext({
+            selectedObjectId: selectedObjectIdState,
+            routeObjectId: nexoraWorkspaceState.dashboardRouteObjectId,
+            routeObjectName: nexoraWorkspaceState.dashboardRouteObjectName,
+            panelData: dashboardFocusObjectData,
+          }).context
+        : null,
+    [
+      dashboardModeForContext,
+      selectedObjectIdState,
+      nexoraWorkspaceState.dashboardRouteObjectId,
+      nexoraWorkspaceState.dashboardRouteObjectName,
+      dashboardFocusObjectData,
+    ]
+  );
+  const scenarioModeContext = useMemo(
+    () =>
+      dashboardModeForContext === "scenario"
+        ? resolveScenarioModeContext({
+            selectedObjectId: selectedObjectIdState,
+            routeObjectId: nexoraWorkspaceState.dashboardRouteObjectId,
+            routeObjectName: nexoraWorkspaceState.dashboardRouteObjectName,
+            panelData: dashboardFocusObjectData,
+          }).context
+        : null,
+    [
+      dashboardModeForContext,
+      selectedObjectIdState,
+      nexoraWorkspaceState.dashboardRouteObjectId,
+      nexoraWorkspaceState.dashboardRouteObjectName,
+      dashboardFocusObjectData,
+    ]
+  );
+  const warRoomModeContext = useMemo(
+    () =>
+      dashboardModeForContext === "war_room"
+        ? resolveWarRoomModeContext({
+            selectedObjectId: selectedObjectIdState,
+            routeObjectId: nexoraWorkspaceState.dashboardRouteObjectId,
+            routeObjectName: nexoraWorkspaceState.dashboardRouteObjectName,
+            panelData: dashboardFocusObjectData,
+          }).context
+        : null,
+    [
+      dashboardModeForContext,
+      selectedObjectIdState,
+      nexoraWorkspaceState.dashboardRouteObjectId,
+      nexoraWorkspaceState.dashboardRouteObjectName,
+      dashboardFocusObjectData,
+    ]
+  );
+  const assistantActionCardContext = useMemo(
+    () =>
+      Object.freeze({
+        selectedObjectId: selectedObjectIdState?.trim() || null,
+        selectedObjectName:
+          (selectedObjectIdState?.trim()
+            ? resolveObjectLabel(selectedObjectIdState)
+            : null) || null,
+        dashboardMode: nexoraWorkspaceState.dashboardMode,
+        dashboardRouteObjectId: nexoraWorkspaceState.dashboardRouteObjectId,
+      }),
+    [
+      selectedObjectIdState,
+      nexoraWorkspaceState.dashboardMode,
+      nexoraWorkspaceState.dashboardRouteObjectId,
+      resolveObjectLabel,
+    ]
+  );
   const lastExecutiveObjectSyncSigRef = useRef<string | null>(null);
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -10076,6 +10917,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
     ) => {
       const sceneForOverrides = options?.sceneReplacement ?? sceneJson;
+      const visualSelectionVersionAtStart = visualSelectionVersionRef.current;
       const normalizedReaction = normalizeReactionForScene(reaction, sceneForOverrides);
       const isAnalyzeSystemReaction = /analyze[_\s-]*system|analyze the current system/i.test(
         `${normalizedReaction.reason ?? ""} ${normalizedReaction.fallbackHighlightText ?? ""}`
@@ -10124,10 +10966,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           return String(o?.id ?? o?.name ?? `obj_${idx}`);
         })
         .filter(Boolean);
-      const currentHighlightedIds = getHighlightedObjectIdsFromSelection(visibleObjectSelection);
       const hasStableSceneSelection =
-        currentHighlightedIds.length > 0 ||
-        (typeof focusedId === "string" && focusedId.length > 0) ||
         (typeof selectedObjectIdState === "string" && selectedObjectIdState.length > 0);
       const globalSceneAnalyzeMode = isAnalyzeSystemReaction && !hasStableSceneSelection;
       if (process.env.NODE_ENV !== "production" && isAnalyzeSystemReaction) {
@@ -10138,17 +10977,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       let effectiveHighlighted = nextHighlightedFromNormalize;
       if (!hasExplicitHighlightPayload && hasStableSceneSelection) {
-        if (currentHighlightedIds.length > 0) {
-          effectiveHighlighted = currentHighlightedIds;
-        } else if (typeof focusedId === "string" && focusedId.length > 0) {
-          effectiveHighlighted = [focusedId];
-        } else if (typeof selectedObjectIdState === "string" && selectedObjectIdState.length > 0) {
+        if (typeof selectedObjectIdState === "string" && selectedObjectIdState.length > 0) {
           effectiveHighlighted = [selectedObjectIdState];
         }
       }
       let effectivePrimaryId: string | null = hasExplicitHighlightPayload
         ? normalizedReaction.primaryObjectId ?? effectiveHighlighted[0] ?? null
-        : (focusedId ?? selectedObjectIdState ?? effectiveHighlighted[0] ?? null);
+        : (selectedObjectIdState ?? effectiveHighlighted[0] ?? null);
       if (globalSceneAnalyzeMode) {
         effectiveHighlighted = [];
         effectivePrimaryId = null;
@@ -10329,6 +11164,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
 
       const guardChannel = selectionGuardSourceFromReaction(reaction.source);
+      if (
+        visualSelectionVersionAtStart !== visualSelectionVersionRef.current &&
+        effectivePrimaryId != null &&
+        effectivePrimaryId !== selectedObjectIdStateRef.current
+      ) {
+        if (process.env.NODE_ENV !== "production") {
+          devLogThrottled({
+            key: `stale-visual-effect-blocked:${effectivePrimaryId}:${selectedObjectIdStateRef.current ?? "null"}:${reaction.source ?? "unknown"}`,
+            label: "[Nexora][StaleVisualSelectionEffectSkipped]",
+            scope: "selectionIsolation",
+            severity: "warn",
+            intervalMs: 500,
+            payload: {
+              attemptedObjectId: effectivePrimaryId,
+              currentSelectedId: selectedObjectIdStateRef.current ?? null,
+              source: reaction.source ?? "applyUnifiedSceneReaction",
+              startedVersion: visualSelectionVersionAtStart,
+              currentVersion: visualSelectionVersionRef.current,
+            },
+          });
+        }
+        return;
+      }
       const selectionSig = buildSelectionSignature({
         focusedId: effectivePrimaryId,
         highlightedIds: effectiveHighlighted,
@@ -10437,9 +11295,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
       if (!isAnalyzeSystemReaction && hasExplicitHighlightPayload && primaryHighlightedId) {
         updateSelectedObjectInfo(primaryHighlightedId);
-        if (selectedObjectChanged) {
-          setSelectedObjectIdState(primaryHighlightedId);
-        }
       }
 
       if (!isAnalyzeSystemReaction && hasExplicitHighlightPayload && normalizedReaction.allowFocusMutation) {
@@ -10838,10 +11693,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const sel = typeof snap.selectedObjectId === "string" && snap.selectedObjectId.trim() ? snap.selectedObjectId.trim() : null;
       if (sel) {
         selectedSetterRef.current(sel);
-        setSelectedObjectIdState(sel);
+        logNonCanonicalSelectionWriterBlocked({
+          writer: "snapshot_restore",
+          attemptedObjectId: sel,
+          currentSelectedId: normalizeSelectedObjectId(selectedObjectIdStateRef.current),
+          source: "snapshot_restore",
+        });
       } else {
         selectedSetterRef.current(null);
-        setSelectedObjectIdState(null);
+        clearCanonicalObjectSelectionRef.current("empty_canvas_click");
       }
 
       queueMicrotask(() => {
@@ -10983,7 +11843,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const selectedSetterRef = useRef<(id: string | null) => void>(() => {});
   const sceneSelectionEchoGuardRef = useRef<string | null | undefined>(undefined);
   const lastObjectSelectionEventRef = useRef<ObjectClickEventRef | null>(null);
-  const activeObjectClickTransactionRef = useRef<{ eventId: string; objectId: string } | null>(null);
+  const activeObjectClickTransactionRef = useRef<{
+    eventId: string;
+    objectId: string;
+    startedAt: number;
+  } | null>(null);
   const syncSceneContextSelection = useCallback((id: string | null) => {
     sceneSelectionEchoGuardRef.current = id;
     selectedSetterRef.current?.(id);
@@ -11006,8 +11870,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
 
       const now = Date.now();
+      const activeTx = activeObjectClickTransactionRef.current;
+      if (
+        activeTx &&
+        activeTx.objectId !== normalizedId &&
+        now - activeTx.startedAt < 180
+      ) {
+        if (process.env.NODE_ENV !== "production") {
+          logObjectClickDiagnostic("[Nexora][HomeScreenMultiObjectClickRejected]", {
+            acceptedObjectId: activeTx.objectId,
+            rejectedObjectId: normalizedId,
+            eventId,
+            activeEventId: activeTx.eventId,
+            elapsedMs: now - activeTx.startedAt,
+          });
+        }
+        return false;
+      }
+
       const last = lastObjectSelectionEventRef.current;
-      const active = activeObjectClickTransactionRef.current;
+      const previousSelectedId = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
 
       if (last?.eventId === eventId) {
         if (last.objectId === normalizedId) {
@@ -11027,23 +11909,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         return false;
       }
 
-      const pointerKey = eventId.split(":")[0] ?? eventId;
-      const lastPointerKey = last?.eventId.split(":")[0] ?? null;
+      latestUserObjectClickRef.current = {
+        objectId: normalizedId,
+        clickEventId: eventId,
+        timestamp: now,
+      };
+      const previousLock = userSelectionLockRef.current;
+      userSelectionLockRef.current = {
+        objectId: normalizedId,
+        clickEventId: eventId,
+        startedAt: now,
+      };
       if (
-        active != null ||
-        (last != null &&
-          now - last.timestamp < 120 &&
-          lastPointerKey === pointerKey &&
-          last.objectId !== normalizedId)
+        previousLock &&
+        previousLock.objectId !== normalizedId &&
+        isUserSelectionLockActive(previousLock, now)
       ) {
-        logObjectClickDiagnostic("[NEXORA_OBJECT_CLICK_REJECTED_SECOND_HIT]", {
+        logObjectClickDiagnostic("[Nexora][SelectionLockReplacedByUserClick]", {
+          previousLockedObjectId: previousLock.objectId,
+          nextLockedObjectId: normalizedId,
+          source: "object_click",
           eventId,
-          objectId: normalizedId,
-          priorObjectId: last?.objectId ?? active?.objectId ?? null,
-          reason: active != null ? "transaction_in_flight" : "rapid_pointer_multi_hit",
         });
-        return false;
       }
+      logObjectClickDiagnostic("[Nexora][ObjectClickTransactionStart]", {
+        objectId: normalizedId,
+        previousSelectedId,
+        nextSelectedId: normalizedId,
+        clickEventId: eventId,
+      });
+      logObjectClickDiagnostic("[Nexora][SelectionTransactionStart]", {
+        eventId,
+        objectId: normalizedId,
+        priorObjectId: last?.objectId ?? previousSelectedId,
+        lockTtlMs: USER_SELECTION_LOCK_TTL_MS,
+      });
 
       if (isObjectSelectionFullyApplied(normalizedId)) {
         logObjectClickDiagnostic("[NEXORA_OBJECT_CLICK_DEDUPED]", {
@@ -11060,11 +11960,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         priorObjectId: last?.objectId ?? null,
       });
 
-      activeObjectClickTransactionRef.current = { eventId, objectId: normalizedId };
+      activeObjectClickTransactionRef.current = { eventId, objectId: normalizedId, startedAt: now };
       lastObjectSelectionEventRef.current = { eventId, objectId: normalizedId, timestamp: now };
 
       markSelectionUserIntent("object_click");
-      const requestSeq = commitObjectSelection(normalizedId, "object_click");
+      const requestSeq = commitCanonicalObjectSelection(normalizedId, "object_click", eventId);
+      if (normalizeSelectedObjectId(selectedObjectIdStateRef.current) !== normalizedId) {
+        const repairPreviousSelectedId = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
+        const repairedObjectSelection = deriveObjectSelectionFromSelectedId({
+          selectedId: normalizedId,
+          sceneJson,
+        });
+        selectedObjectIdStateRef.current = normalizedId;
+        _setSelectedObjectIdState(normalizedId);
+        objectSelectionRef.current = repairedObjectSelection;
+        _setObjectSelection(repairedObjectSelection);
+        logObjectClickDiagnostic("[Nexora][ObjectClickCanonicalSelectionCommitted]", {
+          objectId: normalizedId,
+          previousSelectedId: repairPreviousSelectedId,
+          nextSelectedId: normalizedId,
+          clickEventId: eventId,
+          repairedOrdering: true,
+        });
+        logObjectClickDiagnostic("[Nexora][ObjectClickVisualSelectionApplied]", {
+          objectId: normalizedId,
+          previousSelectedId: repairPreviousSelectedId,
+          nextSelectedId: normalizedId,
+          clickEventId: eventId,
+          repairedOrdering: true,
+        });
+      }
+      logObjectClickDiagnostic("[Nexora][SelectionTransactionCommit]", {
+        eventId,
+        objectId: normalizedId,
+        requestSeq,
+      });
       selectionRequestSeqRef.current = requestSeq;
       latestObjectClickIdRef.current = normalizedId;
       latestObjectClickSeqRef.current = requestSeq;
@@ -11075,25 +12005,90 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         issuedAt: now,
         handledAt: now,
       };
+      latestObjectClickPanelCommitRef.current = {
+        objectId: normalizedId,
+        clickEventId: eventId,
+        requestId: requestSeq,
+        dashboardContextCommitted: false,
+        panelAuthorityCommitted: false,
+      };
       syncSceneContextSelection(normalizedId);
+      const panelCommit = latestObjectClickPanelCommitRef.current;
+      if (
+        panelCommit &&
+        panelCommit.objectId === normalizedId &&
+        panelCommit.clickEventId === eventId &&
+        panelCommit.dashboardContextCommitted
+      ) {
+        if (process.env.NODE_ENV !== "production") {
+          logObjectClickDiagnostic("[Nexora][ObjectClickPanelWriteSkipped]", {
+            objectId: normalizedId,
+            previousSelectedId,
+            nextSelectedId: selectedObjectIdStateRef.current ?? null,
+            clickEventId: eventId,
+            reason: "dashboard_context_already_committed",
+          });
+        }
+      } else {
+        routeDashboardContextFromObjectSelection(dispatchNexoraWorkspaceStateRef.current, {
+          objectId: normalizedId,
+          reason: `object_click:${eventId}`,
+          priorContext: nexoraWorkspaceStateRef.current.dashboardContext,
+        });
+        if (panelCommit && panelCommit.objectId === normalizedId && panelCommit.clickEventId === eventId) {
+          panelCommit.dashboardContextCommitted = true;
+        }
+        if (process.env.NODE_ENV !== "production") {
+          logObjectClickDiagnostic("[Nexora][ObjectClickPanelContextCommitted]", {
+            objectId: normalizedId,
+            previousSelectedId,
+            nextSelectedId: selectedObjectIdStateRef.current ?? null,
+            clickEventId: eventId,
+          });
+        }
+      }
 
-      queueMicrotask(() => {
+      window.setTimeout(() => {
         if (activeObjectClickTransactionRef.current?.eventId === eventId) {
           activeObjectClickTransactionRef.current = null;
         }
-      });
+      }, 180);
 
+      reportSelectionResolved({
+        objectId: normalizedId,
+        priorObjectId: last?.objectId ?? null,
+        source: "object_click",
+        phase: "object_resolution",
+        eventId,
+      });
       logObjectClickDiagnostic("[NEXORA_OBJECT_CLICK_COMMITTED]", {
         eventId,
         objectId: normalizedId,
         requestSeq,
       });
+      logObjectClickDiagnostic("[Nexora][ObjectClickSingleTargetCommit]", {
+        objectId: normalizedId,
+        clickEventId: eventId,
+        requestSeq,
+        previousSelectedId,
+      });
+      logObjectClickDiagnostic("[Nexora][SelectionTransactionComplete]", {
+        eventId,
+        objectId: normalizedId,
+        requestSeq,
+      });
+      logObjectClickDiagnostic("[Nexora][ObjectClickTransactionComplete]", {
+        objectId: normalizedId,
+        previousSelectedId,
+        nextSelectedId: selectedObjectIdStateRef.current ?? null,
+        clickEventId: eventId,
+      });
       return true;
     },
-    [commitObjectSelection, isObjectSelectionFullyApplied, markSelectionUserIntent, syncSceneContextSelection]
+    [commitCanonicalObjectSelection, commitObjectSelection, isObjectSelectionFullyApplied, markSelectionUserIntent, sceneJson, syncSceneContextSelection]
   );
   const handleSelectedChangeRef = useRef<
-    (id: string | null, options?: { eventId?: string }) => void
+    (id: string | null, options?: SceneSelectionChangeOptions) => void
   >(() => {});
   const selectedIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -11103,7 +12098,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     console.log("[Nexora][AnalyzeSelectionLock][PreventedClear]", {
       objectId: lockedAnalyzeObjectId,
     });
-    setSelectedObjectIdState(lockedAnalyzeObjectId);
+    selectedObjectIdStateRef.current = lockedAnalyzeObjectId;
+    _setSelectedObjectIdState(lockedAnalyzeObjectId);
     selectedSetterRef.current?.(lockedAnalyzeObjectId);
     updateSelectedObjectInfo(lockedAnalyzeObjectId);
     writeChatPipelineDebug({
@@ -11184,17 +12180,40 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         lastDispatchedInteractionIntentRef.current = intent;
       }
       const prev = interactionUiStateRef.current;
-      const next = resolveInteraction(prev, intent);
+      let next = resolveInteraction(prev, intent);
       if (next === prev) return prev;
+      if (
+        next.selectedObjectId !== prev.selectedObjectId &&
+        intent.source !== "scene" &&
+        shouldBlockSelectionOverrideForUserLock({
+          nextObjectId: next.selectedObjectId,
+          source: `interaction_controller:${intent.source}`,
+        })
+      ) {
+        next = {
+          ...next,
+          selectedObjectId: prev.selectedObjectId,
+          scene: {
+            ...next.scene,
+            highlightedObjectId: prev.scene.highlightedObjectId,
+          },
+        };
+      }
       interactionUiStateRef.current = next;
       setInteractionUiState(next);
 
       if (next.selectedObjectId !== prev.selectedObjectId) {
-        selectedSetterRef.current?.(next.selectedObjectId);
+        const canonicalId = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
+        selectedSetterRef.current?.(canonicalId);
         if (intent.source !== "scene") {
-          commitObjectSelection(next.selectedObjectId, `interaction_controller:${intent.source}`);
+          logNonCanonicalSelectionWriterBlocked({
+            writer: "HomeScreen.dispatchInteraction",
+            attemptedObjectId: normalizeSelectedObjectId(next.selectedObjectId),
+            currentSelectedId: canonicalId,
+            source: `interaction_controller:${intent.source}`,
+          });
         }
-        setSelectedObjectInfo(next.selectedObjectId ? resolveSelectedObjectDetails(next.selectedObjectId) : null);
+        setSelectedObjectInfo(canonicalId ? resolveSelectedObjectDetails(canonicalId) : null);
       }
       if (next.scene.highlightedObjectId !== prev.scene.highlightedObjectId) {
         setFocusedId((current) => (current === next.scene.highlightedObjectId ? current : next.scene.highlightedObjectId));
@@ -11282,6 +12301,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       requestPanelAuthorityOpen,
       resolveSelectedObjectDetails,
       rightPanelState.view,
+      shouldBlockSelectionOverrideForUserLock,
     ]
   );
   useEffect(() => {
@@ -11810,12 +12830,113 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, []);
 
   const handleSelectedChange = useCallback(
-    (id: string | null, options?: { eventId?: string }) => {
+    (id: string | null, options?: SceneSelectionChangeOptions) => {
+      const changeSource = options?.source;
+      if (id != null) {
+        if (changeSource !== "pointer_object_click") {
+          if (process.env.NODE_ENV !== "production") {
+            logObjectClickDiagnostic("[Nexora][SceneSelectionEchoIgnored]", {
+              objectId: id,
+              source: changeSource ?? "untagged",
+            });
+          }
+          return;
+        }
+        const normalizedIncomingId = normalizeSelectedObjectId(id);
+        const clickEventId = options?.eventId ?? null;
+        const now = Date.now();
+        if (normalizedIncomingId && clickEventId) {
+          const pointerGate = getPointerSelectionGate();
+          if (
+            pointerGate &&
+            pointerGate.clickEventId === clickEventId &&
+            pointerGate.acceptedObjectId !== normalizedIncomingId
+          ) {
+            const { pointerId, timeStamp } = parseClickEventId(clickEventId);
+            if (process.env.NODE_ENV !== "production") {
+              logObjectClickDiagnostic("[Nexora][MultiHitObjectClickBlocked]", {
+                acceptedObjectId: pointerGate.acceptedObjectId,
+                blockedObjectId: normalizedIncomingId,
+                pointerId,
+                timeStamp,
+              });
+            }
+            return;
+          }
+        }
+        const lastAccepted = lastAcceptedObjectClickRef.current;
+        if (
+          normalizedIncomingId &&
+          lastAccepted &&
+          lastAccepted.objectId === normalizedIncomingId &&
+          (clickEventId == null || lastAccepted.eventId === clickEventId) &&
+          now - lastAccepted.acceptedAt <= OBJECT_CLICK_TRANSACTION_DEDUPE_MS
+        ) {
+          if (process.env.NODE_ENV !== "production") {
+            logObjectClickDiagnostic("[Nexora][DuplicateObjectClickSkipped]", {
+              objectId: normalizedIncomingId,
+              eventId: clickEventId,
+              priorAcceptedAt: lastAccepted.acceptedAt,
+              elapsedMs: now - lastAccepted.acceptedAt,
+            });
+          }
+          return;
+        }
+        if (normalizedIncomingId) {
+          lastAcceptedObjectClickRef.current = {
+            objectId: normalizedIncomingId,
+            eventId: clickEventId,
+            acceptedAt: now,
+          };
+        }
+      } else if (isSceneSelectionEchoSource(changeSource) || !isSceneSelectionUserIntentSource(changeSource)) {
+        if (process.env.NODE_ENV !== "production") {
+          logObjectClickDiagnostic("[Nexora][SceneSelectionEchoIgnored]", {
+            objectId: null,
+            source: changeSource ?? "untagged",
+          });
+        }
+        return;
+      }
       if (selectionLocked && selectedObjectIdState) {
         if (!id || selectedObjectIdState !== id) return;
       }
       if (!id) {
-        if (Date.now() <= passiveDeselectGuardUntilRef.current) {
+        if (changeSource === "empty_canvas_click" && shouldBlockPointerMissAfterObjectClick()) {
+          const gate = getPointerSelectionGate();
+          if (process.env.NODE_ENV !== "production") {
+            logObjectClickDiagnostic("[Nexora][PointerMissAfterObjectClickBlocked]", {
+              acceptedObjectId: gate?.acceptedObjectId ?? null,
+              pointerId: gate?.pointerId ?? null,
+              timeStamp: gate?.timeStamp ?? null,
+              elapsedMs: gate ? Date.now() - gate.acceptedAt : null,
+            });
+          }
+          return;
+        }
+        const activeUserSelectionLock = getActiveUserSelectionLock();
+        if (
+          changeSource !== "empty_canvas_click" &&
+          activeUserSelectionLock &&
+          shouldBlockAutomaticSelectionOverride({
+            lockedObjectId: activeUserSelectionLock.objectId,
+            nextObjectId: null,
+            source: "SceneCanvas.onPointerMissed",
+          })
+        ) {
+          logSelectionLockBlock({
+            source: "SceneCanvas.onPointerMissed",
+            attemptedObjectId: null,
+            lockedObjectId: activeUserSelectionLock.objectId,
+            clickEventId: activeUserSelectionLock.clickEventId,
+          });
+          syncSceneContextSelection(activeUserSelectionLock.objectId);
+          return;
+        }
+        if (
+          changeSource !== "empty_canvas_click" &&
+          Date.now() <= passiveDeselectGuardUntilRef.current
+        ) {
           if (process.env.NODE_ENV !== "production") {
             globalThis.console?.debug?.("[Nexora][SelectionGuardSkipped]", {
               reason: "ignore_passive_deselect_after_analyze",
@@ -11837,6 +12958,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           return;
         }
         lastSelectionSignatureRef.current = clearSig;
+        const previousSelectedObjectId = selectedObjectIdStateRef.current;
+        clearCanonicalObjectSelectionRef.current(changeSource === "keyboard_clear" ? "keyboard_clear" : "empty_canvas_click");
+        syncSceneContextSelection(null);
         dispatchInteraction({
           type: "reset_focus",
           source: "scene",
@@ -11846,7 +12970,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         setSelectedRelationshipId(null);
         selectPropagationPath(null);
         setSelectedPropagationPathId(null);
+        if (!focusPinned || focusedId === previousSelectedObjectId) {
+          setFocusedId(null);
+        }
         clearFocusOwnership("Selection cleared.");
+        if (process.env.NODE_ENV !== "production") {
+          devLogThrottled({
+            key: `global-selection-visual-clear:${previousSelectedObjectId ?? "none"}`,
+            label: "[Nexora][GlobalSelectionVisualClear]",
+            scope: "selectionIsolation",
+            severity: "info",
+            intervalMs: 500,
+            payload: {
+              previousSelectedObjectId: previousSelectedObjectId ?? null,
+              selectedObjectIdState: null,
+              highlightedIds: [],
+              relationshipSelectionCleared: true,
+              propagationPathSelectionCleared: true,
+            },
+          });
+        }
         return;
       }
       const clickSig = buildSelectionSignature({
@@ -12549,6 +13692,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       });
 
       scheduleDebouncedHeavySelection(id, (finalId) => {
+        const canonicalAtRun = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
+        const scheduledId = normalizeSelectedObjectId(finalId);
+        if (scheduledId && canonicalAtRun !== scheduledId) {
+          logStaleDebouncedSelectionSkipped({
+            scheduledObjectId: finalId,
+            canonicalSelectedId: canonicalAtRun,
+            source: "scheduleDebouncedHeavySelection",
+          });
+          return;
+        }
         if (
           isStaleObjectClickRequest({
             requestId: objectClickRequestId,
@@ -12780,6 +13933,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       commitObjectSelection,
       commitObjectSelectionFromUserClick,
       emitObjectClickRenderGuard,
+      getActiveUserSelectionLock,
       isObjectSelectionFullyApplied,
       isStaleObjectClickRequest,
       flashSelectHighlight,
@@ -12792,10 +13946,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       selectionLocked,
       focusedId,
       selectedObjectIdState,
+      logSelectionLockBlock,
       visibleObjectSelection,
       claimFocusOwnership,
       setFocusedId,
       setViewMode,
+      syncSceneContextSelection,
       rightPanelState.contextId,
       rightPanelState.isOpen,
       rightPanelState.view,
@@ -13637,11 +14793,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     handleSelectedChangeRef.current = handleSelectedChange;
   }, [handleSelectedChange]);
   const handleObjectUserClick = useCallback((objectId: string, eventId: string) => {
-    handleSelectedChangeRef.current?.(objectId, { eventId });
+    handleSelectedChangeRef.current?.(objectId, {
+      eventId,
+      source: "pointer_object_click",
+    });
   }, []);
-  const handleSceneSelectedChange = useCallback((id: string | null) => {
-    handleSelectedChangeRef.current?.(id);
-  }, []);
+  const handleSceneSelectedChange = useCallback(
+    (id: string | null, options?: SceneSelectionChangeOptions) => {
+      handleSelectedChangeRef.current?.(id, options);
+    },
+    []
+  );
 
   // O1 Extraction Boundary: Persistence controller
   useEffect(() => {
@@ -14439,7 +15601,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       ...(w.__NEXORA_QA_FIXTURES__ ?? {}),
       clearExplicitSelection: () => {
         selectedSetterRef.current?.(null);
-        setSelectedObjectIdState(null);
+        clearCanonicalObjectSelectionRef.current("qa_fixture_clear");
         setSelectedObjectInfo(null);
       },
       restoreExplicitSelection: () => {
@@ -14574,6 +15736,45 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [sendText, selectedObjectIdState, focusedId, objectSelection]);
 
   useEffect(() => {
+    const onObjectPanelAction = (event: Event) => {
+      const detail = (event as CustomEvent<ObjectPanelActionPayload>).detail;
+      applyObjectPanelRouteRef.current({
+        action: detail?.action,
+        objectId: detail?.objectId,
+        objectName: detail?.objectName,
+        timestamp: detail?.timestamp,
+      });
+    };
+    window.addEventListener(OBJECT_PANEL_ACTION_EVENT, onObjectPanelAction as EventListener);
+    return () => window.removeEventListener(OBJECT_PANEL_ACTION_EVENT, onObjectPanelAction as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const onAssistantDashboardAction = (event: Event) => {
+      const detail = (event as CustomEvent<AssistantExecutiveActionPayload>).detail;
+      if (!detail || detail.source !== "assistant") {
+        warnAssistantBridgeBrake("Invalid bridge contract.", { detail: detail ?? null });
+        return;
+      }
+      const objectId =
+        detail.objectId?.trim() ||
+        (typeof selectedObjectIdStateRef.current === "string" && selectedObjectIdStateRef.current.trim()) ||
+        "";
+      applyAssistantDashboardActionRef.current({
+        ...detail,
+        objectId,
+        objectName:
+          detail.objectName?.trim() ||
+          (objectId ? resolveObjectLabelRef.current(objectId) : "") ||
+          objectId,
+      });
+    };
+    window.addEventListener(ASSISTANT_DASHBOARD_ACTION_EVENT, onAssistantDashboardAction as EventListener);
+    return () =>
+      window.removeEventListener(ASSISTANT_DASHBOARD_ACTION_EVENT, onAssistantDashboardAction as EventListener);
+  }, []);
+
+  useEffect(() => {
     const onExecutiveObjectAction = (
       event: Event
     ) => {
@@ -14582,48 +15783,84 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const objectIdFromEvent = String(detail?.objectId ?? "").trim();
       const routeContextId =
         objectIdFromEvent ||
+        (typeof selectedObjectIdStateRef.current === "string" && selectedObjectIdStateRef.current.trim()) ||
         activeExecutiveObjectId ||
-        (typeof selectedObjectIdState === "string" && selectedObjectIdState.trim()) ||
-        (typeof focusedId === "string" && focusedId.trim()) ||
         null;
+
+      if (shouldRouteExecutiveActionToDashboard(action)) {
+        if (!routeContextId) return;
+        applyObjectPanelRouteRef.current({
+          action,
+          objectId: routeContextId,
+        });
+        return;
+      }
+
       if (!routeContextId) return;
-      if (action === "war_room") {
+
+      const openSimPanel = (view: string, reason: string) => {
         requestPanelAuthorityOpen({
-          view: "war_room",
+          view,
           family: "SIM",
           source: "sub_button",
-          reason: "executive_object_action",
+          reason,
           contextId: routeContextId,
           forceOpen: true,
         });
-        return;
-      }
-      if (action === "compare_options") {
+      };
+
+      const openRskPanel = (view: string, reason: string) => {
         requestPanelAuthorityOpen({
-          view: "compare",
-          family: "SIM",
+          view,
+          family: "RSK",
           source: "sub_button",
-          reason: "executive_object_action",
+          reason,
           contextId: routeContextId,
           forceOpen: true,
         });
-        return;
-      }
-      if (action === "next_move") {
-        requestPanelAuthorityOpen({
-          view: "advice",
-          family: "SIM",
-          source: "sub_button",
-          reason: "executive_object_action",
-          contextId: routeContextId,
-          forceOpen: true,
-        });
+      };
+
+      switch (action) {
+        case "explain_object":
+        case "next_move":
+          openSimPanel("advice", "executive_object_action");
+          return;
+        case "show_dependencies":
+          openSimPanel("object", "executive_object_action_dependencies");
+          return;
+        case "show_risks":
+          openRskPanel("risk_flow", "executive_object_action_risks");
+          return;
+        case "run_scenario":
+          dispatchCanonicalAction(
+            normalizeRunSimulation({ rawSource: "ExecutiveObjectPanel:simulate" })
+          );
+          return;
+        case "compare_scenarios":
+        case "compare_options":
+          openSimPanel("compare", "executive_object_action");
+          return;
+        case "open_war_room":
+        case "war_room":
+          openSimPanel("war_room", "executive_object_action");
+          return;
+        case "open_timeline":
+          openSimPanel("decision_timeline", "executive_object_action_timeline");
+          return;
+        case "open_decision_analysis":
+          openSimPanel("advice", "executive_object_action_decision_analysis");
+          return;
+        case "open_strategic_comparison":
+          openSimPanel("compare", "executive_object_action_strategic_comparison");
+          return;
+        default:
+          break;
       }
     };
     window.addEventListener("nexora:executive-object-action", onExecutiveObjectAction as EventListener);
     return () =>
       window.removeEventListener("nexora:executive-object-action", onExecutiveObjectAction as EventListener);
-  }, [activeExecutiveObjectId, focusedId, requestPanelAuthorityOpen, selectedObjectIdState]);
+  }, [activeExecutiveObjectId, dispatchCanonicalAction, requestPanelAuthorityOpen]);
 
   const send = useCallback(() => {
     void sendText(input);
@@ -14646,6 +15883,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       new CustomEvent("nexora:executive-assistant-set-collapsed", { detail: { collapsed: true } })
     );
   }, []);
+
+  const handleExecutiveAssistantQuestionSelect = useCallback(
+    (question: string) => {
+      const trimmed = question.trim();
+      if (!trimmed) return;
+      setInput(trimmed);
+      void sendText(trimmed);
+    },
+    [sendText]
+  );
+
+  const handleAssistantRecommendedActionSelect = useCallback(
+    (action: { label: string; hint?: string; commandId?: string }) => {
+      const prompt = action.hint ? `${action.label} — ${action.hint}` : action.label;
+      setInput(prompt);
+      void sendText(prompt);
+    },
+    [sendText]
+  );
 
   const handleLeftCommandRun = useCallback(
     (commandId: string) => {
@@ -14905,9 +16161,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setFocusMode(b.focusMode ?? "all");
       setPinnedSafe(!!b.focusPinned, b.focusedId ?? null);
 
-      setSelectedObjectIdState(b.selectedObjectId ?? null);
-      if (b.selectedObjectId) selectedSetterRef.current?.(b.selectedObjectId);
-      else selectedSetterRef.current?.(null);
+      if (b.selectedObjectId) {
+        logNonCanonicalSelectionWriterBlocked({
+          writer: "backup_restore",
+          attemptedObjectId: b.selectedObjectId,
+          currentSelectedId: normalizeSelectedObjectId(selectedObjectIdStateRef.current),
+          source: "backup_restore",
+        });
+        selectedSetterRef.current?.(b.selectedObjectId);
+      } else {
+        selectedSetterRef.current?.(null);
+        clearCanonicalObjectSelectionRef.current("empty_canvas_click");
+      }
 
       // overrides refs + ux
       overridesRef.current = b.overrides ?? {};
@@ -14991,7 +16256,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     applyPinToStore(false, null);
     setFocusedId(null);
     selectedSetterRef.current(null);
-    setSelectedObjectIdState(null);
+    clearCanonicalObjectSelectionRef.current("relationship_select");
     setSelectedObjectInfo(null);
     clearFocusOwnership("Focus cleared explicitly.");
   }, [applyPinToStore, clearFocusOwnership, setFocusedId]);
@@ -15307,7 +16572,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     setFocusMode("all");
     setFocusedId(null);
     selectedSetterRef.current(null);
-    setSelectedObjectIdState(null);
+    clearCanonicalObjectSelectionRef.current("relationship_select");
     setSelectedObjectInfo(null);
     clearFocusOwnership("Demo profile framing does not own hard focus.");
     setNoSceneUpdate(false);
@@ -15636,6 +16901,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         ? resolvedFocusOwnership.objectId
         : null;
     const nextTargetInScene = nextTargetId ? sceneFocusIdSet.has(nextTargetId) : false;
+    const latestUserObjectClick = latestUserObjectClickRef.current;
+    const focusOwnershipMirrorOnly = shouldFocusOwnershipMirrorOnly({
+      selectedObjectIdState: selectedObjectIdStateRef.current,
+      latestUserObjectClick,
+      userSelectionLock: userSelectionLockRef.current,
+    });
+    const logFocusOwnershipMirrorOnly = (mirrorContext: Record<string, unknown>) => {
+      if (process.env.NODE_ENV === "production") return;
+      logObjectClickDiagnostic("[Nexora][FocusOwnershipMirrorOnly]", {
+        focusTargetId: nextTargetId,
+        canonicalSelectedId: normalizeSelectedObjectId(selectedObjectIdStateRef.current),
+        clickEventId: latestUserObjectClick?.clickEventId ?? null,
+        lockedObjectId: userSelectionLockRef.current?.objectId ?? null,
+        ...mirrorContext,
+      });
+    };
+    const mirrorFocusToCanonicalSelection = () => {
+      const canonicalId = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
+      if (canonicalId) {
+        if (focusedId !== canonicalId) {
+          setFocusedId(canonicalId);
+        }
+        syncSceneContextSelection(canonicalId);
+        return;
+      }
+      if (focusedId) {
+        setFocusedId(null);
+      }
+    };
     if (resolvedFocusOwnership.source === "none") {
       const shouldClearStaleFocus =
         focusOwnership.source !== "none" || !!activeProfile || narrativeOverrideIdsRef.current.length > 0;
@@ -15650,20 +16944,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         return;
       }
       if (shouldClearStaleFocus && (focusedId || selectedObjectIdState)) {
-        setFocusedId(null);
-        selectedSetterRef.current(null);
-        if (selectedObjectIdStateRef.current != null) {
-          commitObjectSelection(null, "focus_ownership_clear");
+        mirrorFocusToCanonicalSelection();
+        if (!normalizeSelectedObjectId(selectedObjectIdStateRef.current)) {
+          setFocusedId(null);
+          selectedSetterRef.current(null);
+          setSelectedObjectInfo(null);
+          clearFocusOwnership("No valid focus owner remains.");
         }
-        setSelectedObjectInfo(null);
-        clearFocusOwnership("No valid focus owner remains.");
-        if (process.env.NODE_ENV !== "production" && activeProfile?.initial_focus_object_ids?.length) {
-          console.log("[Nexora][FocusOwnership] demo hint ignored for hard focus", {
-            profile: activeProfile.id,
-            hintIds: activeProfile.initial_focus_object_ids,
-          });
-        }
+        logFocusOwnershipMirrorOnly({ reason: "focus_ownership_clear_blocked" });
+        return;
       }
+      return;
+    }
+    if (focusOwnershipMirrorOnly) {
+      mirrorFocusToCanonicalSelection();
+      logFocusOwnershipMirrorOnly({
+        reason: "focus_ownership_write_blocked",
+        resolvedSource: resolvedFocusOwnership.source,
+      });
       return;
     }
     if (nextTargetId && !nextTargetInScene) {
@@ -15703,49 +17001,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setFocusedId(nextTargetId);
     }
     if (nextTargetId && selectedObjectIdState !== nextTargetId) {
-      if (
-        shouldBlockAutomaticSelectionWrite({
-          selectionUserIntent: selectionUserIntentRef.current,
-          executiveInteraction: hasExecutiveInteractionRef.current,
-          source: "focus_ownership",
-          hasMaterialSelection: true,
-        })
-      ) {
-        logNexoraSelectionBootstrap({
-          writer: "focus_ownership",
-          objectId: nextTargetId,
-          reason: "blocked_until_user_selection_intent",
-        });
-        return;
-      }
-      const latestSelection = latestSelectionRequestRef.current;
-      if (
-        latestSelection.source === "object_click" &&
-        normalizeSelectedObjectId(latestSelection.objectId) ===
-          normalizeSelectedObjectId(selectedObjectIdStateRef.current)
-      ) {
-        return;
-      }
-      const focusOwnershipSelectionSeq = selectionRequestSeqRef.current;
-      selectedSetterRef.current(nextTargetId);
-      window.setTimeout(() => {
-        if (
-          isStaleSelectionRequest({
-            requestSeq: focusOwnershipSelectionSeq,
-            objectId: nextTargetId,
-            stage: "focus_ownership",
-          })
-        ) {
-          return;
-        }
-        if (normalizeSelectedObjectId(nextTargetId) === normalizeSelectedObjectId(selectedObjectIdStateRef.current)) {
-          return;
-        }
-        commitObjectSelection(nextTargetId, "focus_ownership", {
-          requestSeq: focusOwnershipSelectionSeq,
-        });
-        updateSelectedObjectInfo(nextTargetId);
-      }, 0);
+      logFocusOwnershipSelectionWriteBlocked({
+        attemptedObjectId: nextTargetId,
+        currentSelectedId: normalizeSelectedObjectId(selectedObjectIdStateRef.current),
+        source: resolvedFocusOwnership.source,
+      });
+      mirrorFocusToCanonicalSelection();
     }
   }, [
     activeProfile != null,
@@ -15762,6 +17023,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     sceneFocusIdSetSig,
     selectedObjectIdState,
     setFocusedId,
+    shouldBlockSelectionOverrideForUserLock,
+    syncSceneContextSelection,
     tracePostSuccessContextDecision,
     updateSelectedObjectInfo,
   ]);
@@ -17629,6 +18892,212 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     handleOpenDashboard();
   }, [handleOpenDashboard, handleOpenObject, selectedObjectIdState, warRoom]);
 
+  const handleWorkspaceLaunch = useCallback(
+    (workspaceId: ExecutiveWorkspaceId) => {
+      const objectId =
+        String(liveExecutiveObjectId ?? "").trim() ||
+        String(nexoraWorkspaceState.dashboardRouteObjectId ?? "").trim();
+      const objectName =
+        selectedObjectLabelForWarRoom?.trim() ||
+        String(nexoraWorkspaceState.dashboardRouteObjectName ?? "").trim() ||
+        objectId;
+      const launch = requestWorkspaceLaunch({
+        source: "workspace_launcher",
+        workspaceId,
+        objectId,
+        objectName,
+      });
+      if (!launch.approved) {
+        return;
+      }
+      executeApprovedWorkspaceLaunchRef.current(launch, {
+        routeType: "dashboard_direct",
+        completionStatus: "active",
+      });
+    },
+    [
+      liveExecutiveObjectId,
+      nexoraWorkspaceState.dashboardRouteObjectId,
+      nexoraWorkspaceState.dashboardRouteObjectName,
+      selectedObjectLabelForWarRoom,
+    ]
+  );
+
+  const handleReturnToDashboardHome = useCallback(() => {
+    const dispatch = dispatchNexoraWorkspaceStateRef.current;
+    if (!dispatch) return;
+
+    const objectId =
+      String(liveExecutiveObjectId ?? "").trim() ||
+      String(nexoraWorkspaceState.dashboardRouteObjectId ?? "").trim();
+    const objectName =
+      selectedObjectLabelForWarRoom?.trim() ||
+      String(nexoraWorkspaceState.dashboardRouteObjectName ?? "").trim() ||
+      objectId;
+
+    dispatch(
+      buildDashboardHomeReturnAction({
+        objectId: objectId || null,
+        objectName: objectName || null,
+      })
+    );
+
+    publishDashboardContextSummaryRef.current({
+      completionStatus: "opened",
+      routeType: "dashboard_direct",
+      dashboardMode: "overview",
+      force: true,
+    });
+  }, [
+    liveExecutiveObjectId,
+    nexoraWorkspaceState.dashboardRouteObjectId,
+    nexoraWorkspaceState.dashboardRouteObjectName,
+    selectedObjectLabelForWarRoom,
+  ]);
+
+  const handleRecentReturn = useCallback(
+    (input: { workspaceId: ExecutiveWorkspaceId; returnKind: WorkspaceRecentReturnKind }) => {
+      const objectId =
+        String(liveExecutiveObjectId ?? "").trim() ||
+        String(nexoraWorkspaceState.dashboardRouteObjectId ?? "").trim();
+      const objectName =
+        selectedObjectLabelForWarRoom?.trim() ||
+        String(nexoraWorkspaceState.dashboardRouteObjectName ?? "").trim() ||
+        objectId;
+      const dispatch = dispatchNexoraWorkspaceStateRef.current;
+      if (!dispatch) return;
+
+      if (input.returnKind === "back_via_history") {
+        const back = requestExecutiveWorkspaceBackNavigation();
+        if (!back.approved || back.targetWorkspaceId !== input.workspaceId) {
+          return;
+        }
+        const commit = commitExecutiveWorkspaceBackNavigation(input.workspaceId);
+        if (!commit.committed) {
+          return;
+        }
+        const entry = discoverExecutiveWorkspace({ by: "id", id: input.workspaceId });
+        if (!entry?.dashboardMode) {
+          return;
+        }
+        dispatch({
+          type: "setDashboardMode",
+          mode: entry.dashboardMode,
+          routeObject: objectId ? { objectId, objectName } : undefined,
+        });
+        publishDashboardContextSummaryRef.current({
+          completionStatus: "active",
+          routeType: "dashboard_direct",
+          dashboardMode: entry.dashboardMode,
+        });
+        return;
+      }
+
+      const launch = requestWorkspaceLaunch({
+        source: "dashboard_control",
+        workspaceId: input.workspaceId,
+        objectId,
+        objectName,
+      });
+      if (!launch.approved) {
+        return;
+      }
+      executeApprovedWorkspaceLaunchRef.current(launch, {
+        routeType: "dashboard_direct",
+        completionStatus: "active",
+      });
+    },
+    [
+      liveExecutiveObjectId,
+      nexoraWorkspaceState.dashboardRouteObjectId,
+      nexoraWorkspaceState.dashboardRouteObjectName,
+      selectedObjectLabelForWarRoom,
+    ]
+  );
+
+  const workspaceRecommendationContext = useMemo((): WorkspaceRecommendationContext => {
+    const hasRisk = Boolean(visibleRiskPropagation);
+    const hasConflicts = Array.isArray(visibleConflicts) && visibleConflicts.length > 0;
+    return {
+      selectedObjectId: liveExecutiveObjectId,
+      selectedObjectLabel: selectedObjectLabelForWarRoom,
+      activeWorkspaceId: resolveWorkspaceIdFromDashboardMode(nexoraWorkspaceState.dashboardMode),
+      objectSignal: hasRisk ? "risk" : liveExecutiveObjectId ? "general" : null,
+      objectImpact: hasRisk ? "high" : null,
+      scenarioConflict: hasConflicts,
+      systemSignals: hasRisk ? (["risk_elevated"] as const) : undefined,
+      dashboardContext: nexoraWorkspaceState.dashboardContext,
+    };
+  }, [
+    liveExecutiveObjectId,
+    selectedObjectLabelForWarRoom,
+    nexoraWorkspaceState.dashboardMode,
+    nexoraWorkspaceState.dashboardContext,
+    visibleRiskPropagation,
+    visibleConflicts,
+  ]);
+
+  const workspaceRecentsContext = useMemo((): WorkspaceRecentsContextInput => {
+    return {
+      selectedObjectId: liveExecutiveObjectId,
+      selectedObjectLabel: selectedObjectLabelForWarRoom,
+      activeWorkspaceId: resolveWorkspaceIdFromDashboardMode(nexoraWorkspaceState.dashboardMode),
+    };
+  }, [
+    liveExecutiveObjectId,
+    selectedObjectLabelForWarRoom,
+    nexoraWorkspaceState.dashboardMode,
+  ]);
+
+  const handleMainRightPanelTabChange = useCallback(
+    (tab: unknown) => {
+      const nextTab = normalizeMainRightPanelTab(tab);
+      if (tab != null && nextTab !== tab) {
+        warnUnauthorizedMainRightPanelTab(tab);
+      }
+      const currentTab = nexoraWorkspaceStateRef.current.activeMRPTab;
+      if (nextTab === currentTab) return;
+      if (currentTab === "dashboard" && nextTab === "assistant") {
+        requestPassiveWorkspacePause();
+        publishDashboardContextSummaryRef.current({
+          completionStatus: "returned_passive",
+          routeType: "return_passive",
+          force: true,
+        });
+      }
+      if (currentTab === "assistant" && nextTab === "dashboard") {
+        requestPassiveWorkspaceResume();
+      }
+      dispatchNexoraWorkspaceStateRef.current({ type: "setMRPTab", tab: nextTab });
+    },
+    []
+  );
+
+  const leftCommandContextSummary = useMemo(() => {
+    const s = (lastAnalysisSummary ?? "").trim();
+    const activeTemplate = (stableVisibleSceneJson?.meta?.activeDomainTemplate as { name?: unknown } | undefined)?.name;
+    const templateLine = typeof activeTemplate === "string" && activeTemplate.trim()
+      ? `Template: ${activeTemplate.trim()}. `
+      : "";
+    const base = s.length > 160 ? `${s.slice(0, 159)}…` : s;
+    const reflection = executiveReasoningTransparency.assistantLine;
+    if (!base) {
+      const combinedReflection = `${templateLine}${reflection}`;
+      return combinedReflection.length > 220 ? `${combinedReflection.slice(0, 219)}…` : combinedReflection;
+    }
+    const combined = `${templateLine}${base} Reasoning: ${reflection}`;
+    return combined.length > 260 ? `${combined.slice(0, 259)}…` : combined;
+  }, [executiveReasoningTransparency, lastAnalysisSummary, stableVisibleSceneJson?.meta?.activeDomainTemplate]);
+
+  const executiveQuestionSuggestions = useMemo(() => {
+    if (useVisibleMrpRightRailHost) {
+      return [...MRP_CHAT_FIRST_QUESTION_SUGGESTIONS];
+    }
+    const domainExamples = activeDomainExperience.experience.promptExamples ?? [];
+    const merged = [...domainExamples.slice(0, 2), ...DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS];
+    return [...new Set(merged.map((item) => item.trim()).filter(Boolean))].slice(0, 6);
+  }, [activeDomainExperience.experience.promptExamples, useVisibleMrpRightRailHost]);
+
   const panelContent = (
     <div
       style={{
@@ -17644,9 +19113,44 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     >
       {allowDecisionPanels ? <PrimaryDecisionStrip panelData={stablePanelData} isEmptyState={isEmptyState} /> : null}
       <div style={{ flex: 1, minHeight: 0, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {allowDecisionPanels ? (
+        <MainRightPanelShell
+          activeTab={nexoraWorkspaceState.activeMRPTab}
+          dashboardMode={nexoraWorkspaceState.dashboardMode}
+          dashboardRouteObjectId={nexoraWorkspaceState.dashboardRouteObjectId}
+          dashboardRouteObjectName={nexoraWorkspaceState.dashboardRouteObjectName}
+          focusContext={focusModeContext}
+          analyzeContext={analyzeModeContext}
+          compareContext={compareModeContext}
+          scenarioContext={scenarioModeContext}
+          warRoomContext={warRoomModeContext}
+          assistantActionCardContext={assistantActionCardContext}
+          onTabChange={handleMainRightPanelTabChange}
+          onWorkspaceLaunch={handleWorkspaceLaunch}
+          launcherSelectedObjectId={liveExecutiveObjectId}
+          launcherSelectedObjectLabel={selectedObjectLabelForWarRoom}
+          launcherSelectedObjectType={dashboardFocusObjectData?.objectType ?? null}
+          launcherSelectedObjectStatus={dashboardFocusObjectData?.status ?? null}
+          recommendationContext={workspaceRecommendationContext}
+          recentsContext={workspaceRecentsContext}
+          onRecentReturn={handleRecentReturn}
+          onReturnToDashboardHome={handleReturnToDashboardHome}
+          useIntegratedAssistantStack={useVisibleMrpRightRailHost}
+          showAssistantScenarioHost={shouldShowExecutiveScenarioSuggestionsPanel()}
+          showAssistantComparisonHost={shouldShowExecutiveScenarioComparisonPanel()}
+          assistantContextSummary={leftCommandContextSummary}
+          assistantQuestionSuggestions={executiveQuestionSuggestions}
+          assistantQuestionsLoading={chatDelayedBusy}
+          onAssistantQuestionSelect={handleExecutiveAssistantQuestionSelect}
+          assistantRecommendedActions={DEFAULT_EXECUTIVE_ASSISTANT_ACTION_CARDS}
+          onAssistantActionSelect={handleAssistantRecommendedActionSelect}
+          assistantThemeMode={resolveNexoraHudThemeMode(resolvedTheme)}
+          legacyDashboardHost={
+            allowDecisionPanels ? (
+        <LegacyDashboardHostMountTrace>
         <RightPanelHost
       rightPanelState={rightPanelState}
+      dashboardContext={nexoraWorkspaceState.dashboardContext}
+      normalizedDashboardContext={getCanonicalDashboardContext()}
       panelData={panelDataForResolver}
       backendBase={BACKEND_BASE}
       episodeId={episodeId}
@@ -17654,7 +19158,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       responseData={visibleResponseData ?? undefined}
       activeMode={activeMode}
       conflicts={visibleConflicts ?? undefined}
-      objectSelection={visibleObjectSelection ?? undefined}
+      objectSelection={canonicalObjectSelection ?? undefined}
       memoryInsights={visibleMemoryInsights ?? undefined}
       decisionMemoryEntries={decisionMemoryEntries}
       riskPropagation={visibleRiskPropagation ?? undefined}
@@ -17664,11 +19168,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       decisionCockpit={visibleDecisionCockpit ?? undefined}
       opponentModel={visibleOpponentModel ?? undefined}
       strategicPatterns={visibleStrategicPatterns ?? undefined}
-      selectedObjectId={selectedObjectIdState ?? visibleSelectedObjectId ?? null}
+      selectedObjectId={canonicalVisualSelection.selectedId}
       activeExecutiveObjectId={liveExecutiveObjectId}
       selectedObjectLabel={selectedObjectLabelForWarRoom}
       executiveObjectPanelData={executiveObjectPanelData}
-      focusedId={visibleFocusedId ?? null}
+      focusedId={canonicalVisualFocusedId}
       resolveObjectLabel={resolveSceneObjectLabel}
       demoProfile={activeProfile ?? undefined}
       decisionResult={decisionResult ?? undefined}
@@ -17723,7 +19227,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       onCloseWarRoom={handleRightPanelCloseWarRoom}
       onOpenCenterComponent={handleOpenCenterExecutionSurface}
         />
-        ) : (
+        </LegacyDashboardHostMountTrace>
+            ) : (
           <div
             style={{
               ...softCardStyle,
@@ -17735,7 +19240,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           >
             No analysis yet. Start by describing your system.
           </div>
-        )}
+            )
+          }
+        />
       </div>
     </div>
   );
@@ -17808,11 +19315,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     debugWindow.__NEXORA_DEBUG__.workspaceValidationReport = report;
   }, [isClientMounted, showExecutiveRightAssistantPanel, stableVisibleSceneJson]);
   const executiveAssistantThemeMode = resolveNexoraHudThemeMode(resolvedTheme);
-  const executiveQuestionSuggestions = useMemo(() => {
-    const domainExamples = activeDomainExperience.experience.promptExamples ?? [];
-    const merged = [...domainExamples.slice(0, 2), ...DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS];
-    return [...new Set(merged.map((item) => item.trim()).filter(Boolean))].slice(0, 6);
-  }, [activeDomainExperience.experience.promptExamples]);
   const executiveAssistantStatus = useMemo(
     () => ({
       phase: chatDelayedBusy ? ("processing" as const) : ("online" as const),
@@ -17867,13 +19369,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, []);
   const clearScenarioScopedSelection = useCallback(() => {
     selectedSetterRef.current(null);
-    handleSelectedChangeRef.current?.(null);
     deselectPlacedObject();
     selectRelationship(null);
     setSelectedRelationshipId(null);
     selectPropagationPath(null);
     setSelectedPropagationPathId(null);
-    setSelectedObjectIdState(null);
+    clearCanonicalObjectSelectionRef.current("empty_canvas_click");
     setSelectedObjectInfo(null);
     setFocusedId(null);
   }, [setFocusedId]);
@@ -17977,22 +19478,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [messages]
   );
 
-  const leftCommandContextSummary = useMemo(() => {
-    const s = (lastAnalysisSummary ?? "").trim();
-    const activeTemplate = (stableVisibleSceneJson?.meta?.activeDomainTemplate as { name?: unknown } | undefined)?.name;
-    const templateLine = typeof activeTemplate === "string" && activeTemplate.trim()
-      ? `Template: ${activeTemplate.trim()}. `
-      : "";
-    const base = s.length > 160 ? `${s.slice(0, 159)}…` : s;
-    const reflection = executiveReasoningTransparency.assistantLine;
-    if (!base) {
-      const combinedReflection = `${templateLine}${reflection}`;
-      return combinedReflection.length > 220 ? `${combinedReflection.slice(0, 219)}…` : combinedReflection;
-    }
-    const combined = `${templateLine}${base} Reasoning: ${reflection}`;
-    return combined.length > 260 ? `${combined.slice(0, 259)}…` : combined;
-  }, [executiveReasoningTransparency, lastAnalysisSummary, stableVisibleSceneJson?.meta?.activeDomainTemplate]);
-
   const leftCommandPortalNode =
     showExecutiveLeftCommandPanel && isClientMounted && leftCommandPortalHost ? (
       createPortal(
@@ -18027,17 +19512,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     executiveAssistantPortalHost ? (
       createPortal(
         <ExecutiveAssistantPanel
+          layout={useVisibleMrpRightRailHost ? "chat-first" : "default"}
+          contextLabel="Executive workspace"
           open={!executiveAssistantCollapsed}
           messages={leftCommandMessages}
           input={input}
           loading={chatDelayedBusy}
-          activeContextSummary={leftCommandContextSummary}
+          activeContextSummary={useVisibleMrpRightRailHost ? null : leftCommandContextSummary}
           questionSuggestions={executiveQuestionSuggestions}
           assistantStatus={executiveAssistantStatus}
           themeMode={executiveAssistantThemeMode}
           onInputChange={setInput}
           onSubmit={send}
           onClose={handleExecutiveAssistantPanelClose}
+          onQuestionSelect={handleExecutiveAssistantQuestionSelect}
         />,
         executiveAssistantPortalHost
       )
@@ -18087,9 +19575,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       )
     ) : null;
 
+  const mrpPortalHost = useVisibleMrpRightRailHost ? visibleMrpPortalHost : inspectorPortalHost;
+
   const timelineInspectorNode =
-    isClientMounted && inspectorPortalHost && panelContent
-      ? createPortal(panelContent, inspectorPortalHost)
+    isClientMounted && mrpPortalHost && panelContent
+      ? createPortal(panelContent, mrpPortalHost)
       : null;
   const alertOverlayNode = alert ? (
     <StrategicAlertOverlay
@@ -19403,7 +20893,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
       const selected =
         focusInScene ?? (highlightsInScene.length > 0 ? highlightsInScene[0] ?? null : null);
-      setSelectedObjectIdState(selected);
+      if (selected) {
+        logNonCanonicalSelectionWriterBlocked({
+          writer: "replay_restore",
+          attemptedObjectId: selected,
+          currentSelectedId: normalizeSelectedObjectId(selectedObjectIdStateRef.current),
+          source: "replay_restore",
+        });
+      }
 
       const reason =
         typeof snap.trust.summary === "string" && snap.trust.summary.trim()
@@ -20529,7 +22026,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const selectedObjectInfoHudId =
     selectedRelationshipId || selectedPropagationPathId
       ? null
-      : (selectedObjectIdState ?? focusedId ?? null)?.trim() || null;
+      : normalizeSelectedObjectId(selectedObjectIdState);
   const lastExecutiveObjectInfoHudRef = useRef<{
     signature: string;
     model: ReturnType<typeof buildObjectInfoHudModel>;
@@ -20588,7 +22085,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [
     activeExecutiveObjectId,
     executiveObjectPanelData,
-    selectedObjectInfoHudId,
+    selectedObjectIdState,
     selectedObjectInfo,
     selectedRelationshipId,
     selectedPropagationPathId,
@@ -20630,15 +22127,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     props: NonNullable<React.ComponentProps<typeof SceneCanvas>["objectInfoHud"]>;
   } | null>(null);
   const sceneObjectInfoHudProps = useMemo(() => {
-    if (
-      !workspaceLayoutContract.hud.objectInfoHud.visible ||
-      !executiveObjectInfoHud ||
-      !shouldRenderSceneOverlay("objectInfoHud", sceneOverlayGovernanceContext)
-    ) {
+    const selectedId = normalizeSelectedObjectId(selectedObjectIdState);
+    if (!selectedId) {
       return null;
     }
+    if (!executiveObjectInfoHud) {
+      return null;
+    }
+
     const hudSignature = buildObjectInfoHudSignature(executiveObjectInfoHud);
-    const placement = workspaceLayoutContract.hud.objectInfoHud;
+    const placement = {
+      ...workspaceLayoutContract.hud.objectInfoHud,
+      visible: true,
+    };
     const placementSignature = [
       placement.visible ? "visible" : "hidden",
       placement.sizeMode,
@@ -20651,11 +22152,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       placement.maxWidth ?? "",
       placement.zIndex ?? "",
     ].join("|");
-    const propsSignature = [
-      hudSignature,
-      placementSignature,
-      shouldRenderSceneOverlay("objectInfoHud", sceneOverlayGovernanceContext) ? "render" : "skip",
-    ].join("::");
+    const propsSignature = `${hudSignature}::${placementSignature}`;
     const previous = lastSceneObjectInfoHudPropsRef.current;
     if (previous?.signature === propsSignature) {
       return previous.props;
@@ -20715,10 +22212,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     handleObjectEdit,
     handleObjectInfoCreateRelationship,
     handleSceneOpenPropagationBuilder,
-    sceneOverlayGovernanceContext,
+    selectedObjectIdState,
     stableSceneJsonDuringPanelValidation,
     workspaceLayoutContract.hud.objectInfoHud,
-    workspaceLayoutContract.hud.objectInfoHud.visible,
   ]);
   const executiveTimelineHud = useMemo(() => {
     if (showExecutiveScenePanelDock) return null;
@@ -20732,6 +22228,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const sceneInfoHudProp = useMemo(
     () => (workspaceLayoutContract.hud.sceneInfoHud.visible ? executiveSceneInfoHud : undefined),
     [executiveSceneInfoHud, workspaceLayoutContract.hud.sceneInfoHud.visible]
+  );
+  const sceneHudZoneContext = useMemo(
+    () => ({
+      mainRightPanelWidth: workspaceLayoutContract.rightRailWidthPx,
+      mainRightPanelVisible: workspaceLayoutContract.rightRailWidthPx > 0,
+    }),
+    [workspaceLayoutContract.rightRailWidthPx]
   );
   const rawTimelineHudProp = useMemo(
     () => (workspaceLayoutContract.hud.timelineHud.visible ? executiveTimelineHud : undefined),
@@ -21552,7 +23055,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           showCameraHelper={showCameraHelper}
           focusPinned={focusPinned}
           focusMode={focusMode}
-          focusedId={visibleFocusedId}
+          focusedId={canonicalVisualFocusedId}
           effectiveActiveLoopId={effectiveActiveLoopId}
           cameraLockedByUser={cameraLockedByUser}
           isOrbiting={isOrbiting}
@@ -21560,10 +23063,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           propagationPayload={stablePropagationPayload}
           scenarioTrigger={warRoom.scenarioTrigger}
           onScenarioOverlayChange={handleWarRoomOverlayChange}
-          objectSelection={effectiveObjectSelection}
+          objectSelection={canonicalObjectSelection}
           getUxForObject={getUxForObject}
           objectUxById={objectUxById}
-          selectedObjectId={selectedObjectIdState}
+          selectedObjectId={canonicalSceneVisualSelectedId}
+          selectedId={canonicalSceneVisualSelectedId}
           loops={stableVisibleLoops}
           showLoops={showLoops}
           showLoopLabels={showLoopLabels}
@@ -21587,6 +23091,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           onCreateImpactPath={handleSceneOpenPropagationBuilder}
           sceneInfoHud={sceneInfoHudProp}
           objectInfoHud={sceneObjectInfoHudProps}
+          sceneHudZoneContext={sceneHudZoneContext}
           timelineHud={timelineHudProp}
           scenarioSimulation={activeSimulation}
           onScenarioLayerSelect={handleScenarioLayerSelect}

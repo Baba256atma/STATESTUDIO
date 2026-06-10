@@ -1,0 +1,175 @@
+"use client";
+
+import type React from "react";
+
+import type { AnalyzeWorkspaceContextView } from "../../../lib/dashboard/analyze/analyzeModeContract";
+import { nx, softCardStyle } from "../../ui/nexoraTheme";
+
+export type AnalyzeWorkspaceShellProps = {
+  context: AnalyzeWorkspaceContextView | null;
+};
+
+function headerMetric(label: string, value: string): React.ReactElement {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <div
+        style={{
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          color: nx.lowMuted,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ marginTop: 4, fontSize: 13, fontWeight: 700, color: nx.text, lineHeight: 1.2 }}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function moduleRow(module: AnalyzeWorkspaceContextView["modules"][number]): React.ReactElement {
+  return (
+    <div
+      key={module.id}
+      data-nx-analyze-module={module.id}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+        padding: "10px 12px",
+        borderRadius: 8,
+        border: `1px solid ${nx.borderSoft}`,
+        background: "rgba(2,6,23,0.24)",
+      }}
+    >
+      <span style={{ color: nx.textSoft, fontSize: 12, fontWeight: 650 }}>{module.label}</span>
+      <span
+        style={{
+          flexShrink: 0,
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          color: nx.lowMuted,
+        }}
+      >
+        coming soon
+      </span>
+    </div>
+  );
+}
+
+export function AnalyzeWorkspaceShell(props: AnalyzeWorkspaceShellProps): React.ReactElement {
+  const context = props.context;
+
+  if (!context) {
+    return (
+      <div
+        data-nx="analyze-workspace-shell"
+        data-nx-analyze-state="empty"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          padding: "16px 14px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            padding: "14px 16px",
+            borderRadius: 12,
+            border: `1px solid ${nx.border}`,
+            background: nx.bgElevated,
+            color: nx.muted,
+            fontSize: 13,
+            lineHeight: 1.45,
+            textAlign: "center",
+          }}
+        >
+          No active object selected.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-nx="analyze-workspace-shell"
+      data-nx-analyze-state="active"
+      data-nx-analyze-object-id={context.objectId}
+      data-nx-analyze-status={context.analysisStatus}
+      style={{
+        flex: 1,
+        minHeight: 0,
+        minWidth: 0,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "auto",
+      }}
+    >
+      <header
+        style={{
+          flexShrink: 0,
+          padding: "14px 14px 12px",
+          borderBottom: `1px solid ${nx.borderSoft}`,
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+        }}
+      >
+        <div
+          style={{
+            color: nx.lowMuted,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          Analysis Workspace
+        </div>
+      </header>
+
+      <section style={{ flexShrink: 0, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ ...softCardStyle, padding: 12 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 12,
+            }}
+          >
+            {headerMetric("Object", context.objectName)}
+            {headerMetric("Status", context.analysisStatusLabel)}
+          </div>
+        </div>
+
+        <div style={{ ...softCardStyle, padding: 12 }}>
+          <div
+            style={{
+              fontSize: 9,
+              fontWeight: 800,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: nx.lowMuted,
+              marginBottom: 10,
+            }}
+          >
+            Analysis Modules
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {context.modules.map((entry) => moduleRow(entry))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default AnalyzeWorkspaceShell;

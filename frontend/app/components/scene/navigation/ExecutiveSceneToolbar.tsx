@@ -57,11 +57,6 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
     getWorkspaceViewMode,
     getWorkspaceViewModeServerSnapshot
   );
-  const focusMode = useSyncExternalStore(
-    subscribeExecutiveFocusMode,
-    getExecutiveFocusModeSnapshot,
-    getExecutiveFocusModeServerSnapshot
-  );
 
   useEffect(() => {
     if (mountedRef.current) return;
@@ -76,7 +71,14 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
     REMOVED_SCENE_TOOLBAR_ACTIONS.forEach((action) => {
       logSceneToolbarActionRemoved(action, "removed_from_toolbar_e2_53");
     });
+    logSceneToolbarActionRemoved("focus_mode", "restored_to_topbar_zone_scene_hud_contract");
   }, []);
+
+  const focusModeActive = useSyncExternalStore(
+    subscribeExecutiveFocusMode,
+    () => getExecutiveFocusModeSnapshot().enabled,
+    () => getExecutiveFocusModeServerSnapshot().enabled
+  );
 
   const handleViewMode = useCallback((mode: WorkspaceViewMode) => {
     devLogOnSignatureChange(mode === "2D" ? "[E2:87][View2D]" : "[E2:87][View3D]", `${workspaceViewMode}->${mode}`, {
@@ -89,10 +91,6 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
   }, [workspaceViewMode]);
 
   const handleToolbarAction = useCallback((actionId: (typeof EXECUTIVE_TOOLBAR_ACTIONS)[number]["id"]) => {
-    if (actionId === "focus_mode") {
-      toggleExecutiveFocusMode("toolbar");
-      return;
-    }
     if (actionId === "global_view") {
       requestCameraPreset("global", "toolbar");
       return;
@@ -103,6 +101,10 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
     }
   }, []);
 
+  const handleFocusMode = useCallback(() => {
+    toggleExecutiveFocusMode("toolbar");
+  }, []);
+
   const showViewModeToggle = !shouldHideTypeCViewModeToggle();
 
   return (
@@ -111,7 +113,6 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
       data-hud="scene-navigation"
       data-nx-theme={theme.mode}
       data-nx-view-mode={workspaceViewMode}
-      data-nx-focus-mode={focusMode.enabled ? "active" : "inactive"}
       data-nx-typec-view-lock={showViewModeToggle ? "off" : "3d"}
       style={executiveToolbarShellStyle(theme, sceneToolbarShellStyle(theme))}
       onPointerDown={(event) => event.stopPropagation()}
@@ -135,23 +136,33 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
 
       {showViewModeToggle ? <span aria-hidden style={sceneToolbarDividerStyle(theme)} /> : null}
 
-      {EXECUTIVE_TOOLBAR_ACTIONS.map((action) => {
-        const active = action.id === "focus_mode" && focusMode.enabled;
-        return (
-          <button
-            key={action.id}
-            type="button"
-            aria-label={action.label}
-            aria-pressed={active}
-            title={action.label}
-            onClick={() => handleToolbarAction(action.id)}
-            style={executiveToolbarActionStyle(theme, active)}
-          >
-            <span aria-hidden>{action.icon}</span>
-            {showLabels ? <span style={executiveToolbarLabelStyle()}>{action.label}</span> : null}
-          </button>
-        );
-      })}
+      {EXECUTIVE_TOOLBAR_ACTIONS.map((action) => (
+        <button
+          key={action.id}
+          type="button"
+          aria-label={action.label}
+          title={action.label}
+          onClick={() => handleToolbarAction(action.id)}
+          style={executiveToolbarActionStyle(theme, false)}
+        >
+          <span aria-hidden>{action.icon}</span>
+          {showLabels ? <span style={executiveToolbarLabelStyle()}>{action.label}</span> : null}
+        </button>
+      ))}
+
+      <span aria-hidden style={sceneToolbarDividerStyle(theme)} />
+
+      <button
+        type="button"
+        aria-label="Focus Mode"
+        aria-pressed={focusModeActive}
+        title="Focus Mode"
+        onClick={handleFocusMode}
+        style={executiveToolbarActionStyle(theme, focusModeActive)}
+      >
+        <span aria-hidden>◎</span>
+        {showLabels ? <span style={executiveToolbarLabelStyle()}>Focus</span> : null}
+      </button>
     </div>
   );
 }

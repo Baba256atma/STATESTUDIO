@@ -14,7 +14,7 @@ export function resolveExecutiveObjectSelectionHighlight(input: {
   focused: boolean;
   theme?: "day" | "night";
 }): ExecutiveObjectSelectionHighlight {
-  const active = input.selected || input.focused;
+  const active = input.selected;
   const highlight: ExecutiveObjectSelectionHighlight = {
     showRing: input.selected,
     ringScale: input.selected ? 1.34 : 1,
@@ -24,7 +24,7 @@ export function resolveExecutiveObjectSelectionHighlight(input: {
     labelEmphasis: active,
   };
 
-  if (active) {
+  if (input.selected || input.focused) {
     logSelectionHighlight({
       selected: input.selected,
       focused: input.focused,

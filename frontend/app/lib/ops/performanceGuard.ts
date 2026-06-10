@@ -24,6 +24,20 @@ function truncateLargeArrays<T>(value: T): T {
 
 const loggedPerformanceGuardSignatures = new Set<string>();
 
+function reportDashboardTraceFromGuard(label: string, elapsed: number, signature?: string): void {
+  if (label !== "executive_dashboard_decision_trace") return;
+  if (process.env.NODE_ENV === "production") return;
+  void import("../dashboard/dashboardPerformanceMetrics.ts").then(({ reportDashboardTrace }) => {
+    reportDashboardTrace({
+      phase: "performance_guard",
+      signature: signature ?? label,
+      durationMs: elapsed,
+      fromCache: false,
+      source: "PerformanceGuard",
+    });
+  });
+}
+
 export function resetPerformanceGuardForTests(): void {
   loggedPerformanceGuardSignatures.clear();
 }
@@ -46,6 +60,7 @@ export function guardHeavyComputation<T>(
     if (!loggedPerformanceGuardSignatures.has(guardKey)) {
       loggedPerformanceGuardSignatures.add(guardKey);
       console.warn(`[Nexora][PerformanceGuard] ${label} took ${elapsed.toFixed(1)}ms`);
+      reportDashboardTraceFromGuard(label, elapsed, options?.signature);
     }
     return truncateLargeArrays(result);
   }

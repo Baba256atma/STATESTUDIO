@@ -18,7 +18,7 @@ export const EXECUTIVE_HUD_SSR_LAYOUT = Object.freeze({
   toolbarMaxWidth: "min(360px, 832px)",
   timelineBottom: 112,
   timelineMaxWidth: "min(88vw, 860px)",
-  rightRailWidth: 360,
+  rightRailWidth: 400,
 });
 
 export type ExecutiveHudSSRLayout = typeof EXECUTIVE_HUD_SSR_LAYOUT;

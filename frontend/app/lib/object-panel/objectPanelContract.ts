@@ -20,7 +20,14 @@ export type ObjectPanelAction =
   | "analyze_object"
   | "show_risks"
   | "open_timeline"
-  | "explain_object";
+  | "explain_object"
+  | "focus_object"
+  | "show_dependencies"
+  | "run_scenario"
+  | "compare_scenarios"
+  | "open_war_room"
+  | "open_decision_analysis"
+  | "open_strategic_comparison";
 
 export type ObjectSelectionAuthority = "HomeScreen.selectedObjectIdState";
 
@@ -48,6 +55,13 @@ export const OBJECT_PANEL_CONTRACT = Object.freeze({
     "show_risks",
     "open_timeline",
     "explain_object",
+    "focus_object",
+    "show_dependencies",
+    "run_scenario",
+    "compare_scenarios",
+    "open_war_room",
+    "open_decision_analysis",
+    "open_strategic_comparison",
   ] as const satisfies readonly ObjectPanelAction[],
   actionDashboardContexts: {
     view_details: "overview",
@@ -55,6 +69,13 @@ export const OBJECT_PANEL_CONTRACT = Object.freeze({
     show_risks: "risk",
     open_timeline: "timeline",
     explain_object: "overview",
+    focus_object: "overview",
+    show_dependencies: "overview",
+    run_scenario: "overview",
+    compare_scenarios: "overview",
+    open_war_room: "overview",
+    open_decision_analysis: "overview",
+    open_strategic_comparison: "overview",
   } as const satisfies Record<ObjectPanelAction, DashboardContext>,
 });
 
@@ -130,5 +151,13 @@ export function warnMultipleSelectionStoresDetected(
   warnObjectPanelBrake("[ObjectPanel][Brake] Multiple selection stores detected.", {
     authority,
     competingStores,
+  });
+  void import("../architecture/nexoraArchitectureFreezeRuntime.ts").then(({ validateDuplicateOwnership }) => {
+    validateDuplicateOwnership({
+      domain: "selection",
+      canonicalOwner: authority,
+      competingOwners: competingStores,
+      source: "warnMultipleSelectionStoresDetected",
+    });
   });
 }

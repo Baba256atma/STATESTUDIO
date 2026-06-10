@@ -7,8 +7,9 @@ import type {
 } from "../../lib/scene/executiveTimelineHudTypes";
 import type { NexoraHudThemeMode } from "../../lib/scene/nexoraHudTheme";
 import { nexoraHudShellStyle } from "../../lib/scene/nexoraHudTheme";
-import { persistSceneHudAnchorPreference, sceneHudDockStyle } from "../../lib/hud/sceneHudAnchorRuntime";
+import { persistSceneHudAnchorPreference } from "../../lib/hud/sceneHudAnchorRuntime";
 import { getTimelineVisibleRegion } from "../../lib/hud/timelineVisibleRegionRuntime";
+import { SCENE_HUD_ZONE_HOSTED_OVERLAY_STYLE } from "../../lib/scene/sceneHudZoneContract";
 import { useSceneHudTheme } from "../../lib/theme/useSceneTheme";
 import { useFocusHudPresentation } from "../../lib/workspace/useFocusHudPresentation";
 import { useWorkspaceLayout } from "../../lib/ui/useWorkspaceLayout";
@@ -131,6 +132,12 @@ export function ExecutiveBottomWorkspaceOverlay(
   const height = heightForBottomWorkspaceMode(state.heightMode);
   const compact = state.heightMode !== "expanded" && state.heightMode !== "full";
   const timelineRegion = getTimelineVisibleRegion();
+  const activeEventIndex = Math.max(
+    0,
+    storyItems.findIndex((event) => event.id === activeEvent?.id)
+  );
+  const [localPlaying, setLocalPlaying] = React.useState(false);
+  const playbackActive = props.playback?.status === "playing" || localPlaying;
   const timelineState = resolveTimelineState({
     visible: placement.visible,
     collapsed: state.heightMode === "collapsed",
@@ -168,23 +175,56 @@ export function ExecutiveBottomWorkspaceOverlay(
     });
   }, [height, props.timeline.events.length, state.activeSurface, state.heightMode, timelineRegion.bottomOffset]);
 
+  const selectStoryIndex = React.useCallback(
+    (nextIndex: number) => {
+      const clamped = Math.max(0, Math.min(storyItems.length - 1, nextIndex));
+      const event = storyItems[clamped];
+      if (!event) return;
+      const next = selectBottomWorkspaceTimelineEvent(event.id);
+      setState({ ...next });
+      props.onEventSelect?.(event.id, event);
+    },
+    [props, storyItems]
+  );
+
+  const handleTransportPrevious = React.useCallback(() => {
+    if (props.onPlaybackPrevious) {
+      props.onPlaybackPrevious();
+      return;
+    }
+    selectStoryIndex(activeEventIndex - 1);
+  }, [activeEventIndex, props, selectStoryIndex]);
+
+  const handleTransportNext = React.useCallback(() => {
+    if (props.onPlaybackNext) {
+      props.onPlaybackNext();
+      return;
+    }
+    selectStoryIndex(activeEventIndex + 1);
+  }, [activeEventIndex, props, selectStoryIndex]);
+
+  const handleTransportPlayPause = React.useCallback(() => {
+    if (props.playback?.sequence) {
+      if (playbackActive) {
+        props.onPlaybackPause?.();
+      } else {
+        props.onPlaybackPlay?.();
+      }
+      return;
+    }
+    setLocalPlaying((value) => !value);
+  }, [playbackActive, props]);
+
   if (!placement.visible && !focusHud.preserveMount) return <></>;
 
   return (
     <SceneHudOverlayRoot
       panelId="timelineHud"
       style={{
-        ...sceneHudDockStyle({
-          panelId: "timelineHud",
-          anchor: "BOTTOM_CENTER",
-          visible: focusHud.visible,
-          collapsed: state.heightMode === "collapsed",
-          maxWidth: timelineRegion.maxWidth,
-          zIndex: placement.zIndex,
-          transitionMs: 160,
-          visiblePanelCount: 3,
-        }),
+        ...SCENE_HUD_ZONE_HOSTED_OVERLAY_STYLE,
+        overflow: "hidden",
         ...focusHud.style,
+        opacity: focusHud.visible ? 1 : 0,
       }}
     >
         <div
@@ -200,8 +240,10 @@ export function ExecutiveBottomWorkspaceOverlay(
                 width: state.heightMode === "expanded" ? "min(90vw, 940px)" : timelineRegion.maxWidth,
                 height,
                 maxHeight: state.heightMode === "full" ? "42vh" : height,
-                padding: state.heightMode === "collapsed" ? "4px 8px" : "6px 8px",
+                padding: 0,
                 overflow: "hidden",
+                border: `1px solid color-mix(in srgb, ${theme.accent} 24%, ${theme.panelBorder})`,
+                boxShadow: "0 12px 40px rgba(2,6,23,0.42)",
               },
               {
                 surface: "timelineHud",
@@ -209,15 +251,45 @@ export function ExecutiveBottomWorkspaceOverlay(
                 collapsed: state.heightMode === "collapsed",
               }
             ),
-            display: "grid",
-            gridTemplateColumns: state.heightMode === "collapsed" ? "1fr auto" : compression.showDetails ? "minmax(0, 1fr) minmax(180px, 230px) auto" : "minmax(0, 1fr) auto",
-            gap: 8,
-            alignItems: "stretch",
+            display: "flex",
+            flexDirection: "column",
             pointerEvents: "auto",
           }}
           onPointerDown={(event) => event.stopPropagation()}
           onWheel={(event) => event.stopPropagation()}
         >
+          <TimelineSceneTransportBar
+            theme={theme}
+            activeIndex={activeEventIndex}
+            totalSteps={Math.max(storyItems.length, 1)}
+            isPlaying={playbackActive}
+            headline={activeEvent?.headline ?? storySummary}
+            onPrevious={handleTransportPrevious}
+            onNext={handleTransportNext}
+            onPlayPause={handleTransportPlayPause}
+            onToggleHeight={() => {
+              const to = nextMode(state.heightMode);
+              logTimelineExpand({ from: state.heightMode, to });
+              setState({ ...toggleBottomWorkspace() });
+            }}
+            heightMode={state.heightMode}
+          />
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: "grid",
+              gridTemplateColumns:
+                state.heightMode === "collapsed"
+                  ? "1fr"
+                  : compression.showDetails
+                    ? "minmax(0, 1fr) minmax(180px, 230px) auto"
+                    : "minmax(0, 1fr) auto",
+              gap: 8,
+              alignItems: "stretch",
+              padding: state.heightMode === "collapsed" ? "0 8px 6px" : "6px 8px 8px",
+            }}
+          >
           <section style={{ minWidth: 0, display: "grid", gap: 6 }}>
             {props.scenarioUniverse?.comparisonActive ? (
               <ScenarioComparisonControlStrip
@@ -257,31 +329,20 @@ export function ExecutiveBottomWorkspaceOverlay(
             ) : null}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                <span style={{ color: theme.label, fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                  Decision Story
-                </span>
-                {activeEvent ? (
-                  <span style={{ color: theme.textSecondary, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {activeEventTime ? `[${activeEventTime}] ` : ""}
-                    {state.heightMode === "collapsed"
-                      ? storySummary
-                      : props.spatialSummary?.summary ?? activeEvent.headline}
-                  </span>
+                {state.heightMode !== "collapsed" ? (
+                  <>
+                    <span style={{ color: theme.label, fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                      Decision Story
+                    </span>
+                    {activeEvent ? (
+                      <span style={{ color: theme.textSecondary, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {activeEventTime ? `[${activeEventTime}] ` : ""}
+                        {props.spatialSummary?.summary ?? activeEvent.headline}
+                      </span>
+                    ) : null}
+                  </>
                 ) : null}
               </div>
-              <button
-                type="button"
-                title={`Switch to ${nextMode(state.heightMode)} mode`}
-                aria-label="Toggle bottom workspace"
-                onClick={() => {
-                  const to = nextMode(state.heightMode);
-                  logTimelineExpand({ from: state.heightMode, to });
-                  setState({ ...toggleBottomWorkspace() });
-                }}
-                style={modeButtonStyle(theme)}
-              >
-                {state.heightMode === "collapsed" ? "▲" : state.heightMode === "compact" ? "▲" : "▼"}
-              </button>
             </div>
 
             {state.heightMode !== "collapsed" ? (
@@ -381,9 +442,122 @@ export function ExecutiveBottomWorkspaceOverlay(
               </button>
             ))}
           </section>
+          </div>
         </div>
     </SceneHudOverlayRoot>
   );
+}
+
+function TimelineSceneTransportBar(props: {
+  theme: ReturnType<typeof useSceneHudTheme>;
+  activeIndex: number;
+  totalSteps: number;
+  isPlaying: boolean;
+  headline: string;
+  heightMode: ExecutiveBottomWorkspaceHeightMode;
+  onPrevious: () => void;
+  onNext: () => void;
+  onPlayPause: () => void;
+  onToggleHeight: () => void;
+}): React.ReactElement {
+  const stepLabel = `${Math.min(props.activeIndex + 1, props.totalSteps)} / ${props.totalSteps}`;
+  return (
+    <div
+      data-nx="timeline-scene-transport"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "auto 1fr auto auto",
+        gap: 10,
+        alignItems: "center",
+        padding: "8px 10px",
+        borderBottom: `1px solid color-mix(in srgb, ${props.theme.controlBorder} 70%, transparent)`,
+        background: "color-mix(in srgb, var(--nx-bg-deep) 72%, transparent)",
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div style={{ color: props.theme.label, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          Timeline
+        </div>
+        <div
+          style={{
+            color: props.theme.textSecondary,
+            fontSize: 11,
+            fontWeight: 650,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            maxWidth: "min(42vw, 320px)",
+          }}
+        >
+          {props.headline}
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
+        <button type="button" aria-label="Previous step" title="Previous" onClick={props.onPrevious} style={timelineTransportButtonStyle(props.theme)}>
+          ◀ Prev
+        </button>
+        <button
+          type="button"
+          aria-label={props.isPlaying ? "Pause timeline" : "Play timeline"}
+          title={props.isPlaying ? "Pause" : "Play"}
+          onClick={props.onPlayPause}
+          style={timelineTransportButtonStyle(props.theme, true)}
+        >
+          {props.isPlaying ? "⏸ Pause" : "▶ Play"}
+        </button>
+        <button type="button" aria-label="Next step" title="Next" onClick={props.onNext} style={timelineTransportButtonStyle(props.theme)}>
+          Next ▶
+        </button>
+      </div>
+      <div
+        aria-label="Timeline step counter"
+        style={{
+          minWidth: 52,
+          textAlign: "center",
+          fontSize: 12,
+          fontWeight: 800,
+          color: props.theme.textPrimary,
+          fontVariantNumeric: "tabular-nums",
+          padding: "6px 8px",
+          borderRadius: 8,
+          border: `1px solid ${props.theme.controlBorder}`,
+          background: "color-mix(in srgb, var(--nx-bg-control) 55%, transparent)",
+        }}
+      >
+        {stepLabel}
+      </div>
+      <button
+        type="button"
+        aria-label="Toggle timeline height"
+        title={`Switch timeline height (${props.heightMode})`}
+        onClick={props.onToggleHeight}
+        style={timelineTransportButtonStyle(props.theme)}
+      >
+        {props.heightMode === "collapsed" ? "▲" : "▼"}
+      </button>
+    </div>
+  );
+}
+
+function timelineTransportButtonStyle(
+  theme: ReturnType<typeof useSceneHudTheme>,
+  primary = false
+): React.CSSProperties {
+  return {
+    minHeight: 34,
+    padding: "0 10px",
+    borderRadius: 8,
+    border: primary ? `1px solid color-mix(in srgb, ${theme.accent} 42%, ${theme.buttonBorder})` : `1px solid ${theme.buttonBorder}`,
+    background: primary
+      ? "color-mix(in srgb, var(--nx-accent-soft) 34%, transparent)"
+      : theme.buttonBackground,
+    color: theme.buttonText,
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.02em",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  };
 }
 
 function DecisionStoryCard(props: {

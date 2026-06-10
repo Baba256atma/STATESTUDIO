@@ -56,122 +56,6 @@
       },
       "mode": "business",
       "text": "[object Object]",
-      "ts": "2026-04-26T18:57:01.114573+00:00"
-    },
-    {
-      "actions_summary": [],
-      "allowed_objects": [
-        "obj_risk_zone",
-        "obj_inventory",
-        "obj_delivery",
-        "obj_quality",
-        "obj_cost",
-        "obj_throughput",
-        "obj_cashflow",
-        "obj_customer",
-        "obj_process",
-        "type_inventory",
-        "type_delivery",
-        "type_risk",
-        "type_quality",
-        "type_cost",
-        "type_throughput"
-      ],
-      "episode_id": "bfe3d5dd-e291-4435-bce3-fd1df9bba2be",
-      "focused_object_id": "obj_risk_zone",
-      "fragility": {
-        "drivers": {
-          "inventory_pressure": 0.5,
-          "loop_risk": 0.0,
-          "quality_risk": 0.5,
-          "time_pressure": 0.5,
-          "volatility": 0.0
-        },
-        "level": "medium",
-        "reasons": [
-          {
-            "code": "inventory_pressure",
-            "message": "Inventory looks stressed (low buffer).",
-            "weight": 0.5
-          },
-          {
-            "code": "time_pressure",
-            "message": "Delivery schedule is under pressure (delay risk).",
-            "weight": 0.5
-          },
-          {
-            "code": "quality_risk",
-            "message": "Risk exposure is elevated (quality/incident risk).",
-            "weight": 0.5
-          }
-        ],
-        "score": 0.42000000000000004
-      },
-      "kpi": {
-        "delivery": 0.5,
-        "inventory": 0.5,
-        "risk": 0.5
-      },
-      "mode": "business",
-      "text": "[object Object]",
-      "ts": "2026-04-26T19:00:38.010587+00:00"
-    },
-    {
-      "actions_summary": [],
-      "allowed_objects": [
-        "obj_risk_zone",
-        "obj_inventory",
-        "obj_delivery",
-        "obj_quality",
-        "obj_cost",
-        "obj_throughput",
-        "obj_cashflow",
-        "obj_customer",
-        "obj_process",
-        "type_inventory",
-        "type_delivery",
-        "type_risk",
-        "type_quality",
-        "type_cost",
-        "type_throughput"
-      ],
-      "episode_id": "bfe3d5dd-e291-4435-bce3-fd1df9bba2be",
-      "focused_object_id": "obj_risk_zone",
-      "fragility": {
-        "drivers": {
-          "inventory_pressure": 0.5,
-          "loop_risk": 0.0,
-          "quality_risk": 0.5,
-          "time_pressure": 0.5,
-          "volatility": 0.0
-        },
-        "level": "medium",
-        "reasons": [
-          {
-            "code": "inventory_pressure",
-            "message": "Inventory looks stressed (low buffer).",
-            "weight": 0.5
-          },
-          {
-            "code": "time_pressure",
-            "message": "Delivery schedule is under pressure (delay risk).",
-            "weight": 0.5
-          },
-          {
-            "code": "quality_risk",
-            "message": "Risk exposure is elevated (quality/incident risk).",
-            "weight": 0.5
-          }
-        ],
-        "score": 0.42000000000000004
-      },
-      "kpi": {
-        "delivery": 0.5,
-        "inventory": 0.5,
-        "risk": 0.5
-      },
-      "mode": "business",
-      "text": "[object Object]",
       "ts": "2026-04-26T19:06:00.853402+00:00"
     },
     {
@@ -12383,8 +12267,124 @@
       "mode": "business",
       "text": "Clarify governance implications of the current state",
       "ts": "2026-05-19T20:25:46.848036+00:00"
+    },
+    {
+      "actions_summary": [],
+      "allowed_objects": [
+        "obj_risk_zone",
+        "obj_inventory",
+        "obj_delivery",
+        "obj_quality",
+        "obj_cost",
+        "obj_throughput",
+        "obj_cashflow",
+        "obj_customer",
+        "obj_process",
+        "type_inventory",
+        "type_delivery",
+        "type_risk",
+        "type_quality",
+        "type_cost",
+        "type_throughput"
+      ],
+      "episode_id": "8272a425-295f-48ad-9a79-26557b08c4f8",
+      "focused_object_id": "obj_risk_zone",
+      "fragility": {
+        "drivers": {
+          "inventory_pressure": 0.5,
+          "loop_risk": 0.0,
+          "quality_risk": 0.5,
+          "time_pressure": 0.5,
+          "volatility": 0.0
+        },
+        "level": "medium",
+        "reasons": [
+          {
+            "code": "inventory_pressure",
+            "message": "Inventory looks stressed (low buffer).",
+            "weight": 0.5
+          },
+          {
+            "code": "time_pressure",
+            "message": "Delivery schedule is under pressure (delay risk).",
+            "weight": 0.5
+          },
+          {
+            "code": "quality_risk",
+            "message": "Risk exposure is elevated (quality/incident risk).",
+            "weight": 0.5
+          }
+        ],
+        "score": 0.42000000000000004
+      },
+      "kpi": {
+        "delivery": 0.5,
+        "inventory": 0.5,
+        "risk": 0.5
+      },
+      "mode": "business",
+      "text": "Analyze the current system.",
+      "ts": "2026-06-07T00:59:00.921708+00:00"
+    },
+    {
+      "actions_summary": [],
+      "allowed_objects": [
+        "obj_risk_zone",
+        "obj_inventory",
+        "obj_delivery",
+        "obj_quality",
+        "obj_cost",
+        "obj_throughput",
+        "obj_cashflow",
+        "obj_customer",
+        "obj_process",
+        "type_inventory",
+        "type_delivery",
+        "type_risk",
+        "type_quality",
+        "type_cost",
+        "type_throughput"
+      ],
+      "episode_id": "8272a425-295f-48ad-9a79-26557b08c4f8",
+      "focused_object_id": "obj_risk_zone",
+      "fragility": {
+        "drivers": {
+          "inventory_pressure": 0.5,
+          "loop_risk": 0.0,
+          "quality_risk": 0.5,
+          "time_pressure": 0.5,
+          "volatility": 0.0
+        },
+        "level": "medium",
+        "reasons": [
+          {
+            "code": "inventory_pressure",
+            "message": "Inventory looks stressed (low buffer).",
+            "weight": 0.5
+          },
+          {
+            "code": "time_pressure",
+            "message": "Delivery schedule is under pressure (delay risk).",
+            "weight": 0.5
+          },
+          {
+            "code": "quality_risk",
+            "message": "Risk exposure is elevated (quality/incident risk).",
+            "weight": 0.5
+          }
+        ],
+        "score": 0.42000000000000004
+      },
+      "kpi": {
+        "delivery": 0.5,
+        "inventory": 0.5,
+        "risk": 0.5
+      },
+      "mode": "business",
+      "text": "Analyze the current system.",
+      "ts": "2026-06-07T00:59:02.929670+00:00"
     }
   ],
-  "updated_at": "2026-05-19T20:25:46.849093+00:00",
+  "updated_at": "2026-06-07T00:59:02.930838+00:00",
   "user_id": "dev-x6mfhhk4"
 }

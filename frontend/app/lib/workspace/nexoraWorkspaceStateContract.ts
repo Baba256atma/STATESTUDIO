@@ -1,9 +1,13 @@
 import {
-  normalizeDashboardContext,
   normalizeMainRightPanelTab,
   type DashboardContext,
   type MainRightPanelTab,
 } from "../ui/mainRightPanelContract";
+import {
+  DEFAULT_DASHBOARD_MODE,
+  type DashboardMode,
+} from "../dashboard/dashboardModeRuntimeContract.ts";
+import { syncDashboardModeAndContext } from "../dashboard/dashboardModeLegacyBridge.ts";
 import {
   DEFAULT_NEXORA_LEFT_NAV_MODE,
   getNexoraLeftNavItem,
@@ -29,7 +33,13 @@ import {
 export interface NexoraWorkspaceState {
   activeLeftNavMode: NexoraLeftNavMode;
   activeMRPTab: MainRightPanelTab;
+  /** MRP:1:2 — canonical dashboard mode authority. */
+  dashboardMode: DashboardMode;
+  /** Legacy compatibility mirror — derived from dashboardMode on writes. */
   dashboardContext: DashboardContext;
+  /** MRP:2:1 — last object panel route target for dashboard placeholder. */
+  dashboardRouteObjectId: string | null;
+  dashboardRouteObjectName: string | null;
   scenePanelState: ScenePanelState;
   objectPanelState: ObjectPanelState;
   selectedObjectId: string | null;
@@ -40,7 +50,10 @@ export interface NexoraWorkspaceState {
 export const DEFAULT_NEXORA_WORKSPACE_STATE: NexoraWorkspaceState = Object.freeze({
   activeLeftNavMode: DEFAULT_NEXORA_LEFT_NAV_MODE,
   activeMRPTab: "dashboard",
+  dashboardMode: DEFAULT_DASHBOARD_MODE,
   dashboardContext: "overview",
+  dashboardRouteObjectId: null,
+  dashboardRouteObjectName: null,
   scenePanelState: "expanded",
   objectPanelState: "empty",
   selectedObjectId: null,
@@ -51,6 +64,7 @@ export const DEFAULT_NEXORA_WORKSPACE_STATE: NexoraWorkspaceState = Object.freez
 export type NexoraWorkspaceAction =
   | { type: "setLeftNavMode"; mode: unknown }
   | { type: "setMRPTab"; tab: unknown }
+  | { type: "setDashboardMode"; mode: unknown; routeObject?: { objectId?: unknown; objectName?: unknown } | null }
   | { type: "setDashboardContext"; context: unknown }
   | { type: "setScenePanelState"; state: unknown }
   | { type: "selectObject"; objectId: unknown; dashboardContext?: unknown }
@@ -88,10 +102,17 @@ export function createDefaultNexoraWorkspaceState(): NexoraWorkspaceState {
 
 export function normalizeNexoraWorkspaceState(value: Partial<NexoraWorkspaceState> | null | undefined): NexoraWorkspaceState {
   const selectedObjectId = normalizeSelectedObjectIdForWorkspace(value?.selectedObjectId);
+  const synced = syncDashboardModeAndContext({
+    dashboardMode: value?.dashboardMode,
+    dashboardContext: value?.dashboardContext ?? DEFAULT_DASHBOARD_MODE,
+  });
   return {
     activeLeftNavMode: resolveNexoraLeftNavMode(value?.activeLeftNavMode, { warn: false }),
     activeMRPTab: normalizeMainRightPanelTab(value?.activeMRPTab ?? "dashboard", { warn: false }),
-    dashboardContext: normalizeDashboardContext(value?.dashboardContext ?? "overview", { warn: false }),
+    dashboardMode: synced.dashboardMode,
+    dashboardContext: synced.dashboardContext,
+    dashboardRouteObjectId: null,
+    dashboardRouteObjectName: null,
     scenePanelState: normalizeScenePanelState(value?.scenePanelState ?? "expanded", { warn: false }),
     objectPanelState: normalizeObjectPanelState(
       value?.objectPanelState ?? resolveObjectPanelState({ selectedObjectId })
@@ -110,11 +131,15 @@ export function reduceNexoraWorkspaceState(
     case "setLeftNavMode": {
       const activeLeftNavMode = resolveNexoraLeftNavMode(action.mode);
       const item = getNexoraLeftNavItem(activeLeftNavMode);
+      const synced = syncDashboardModeAndContext({ dashboardContext: item.dashboardContext });
       return {
         ...state,
         activeLeftNavMode,
         activeMRPTab: "dashboard",
-        dashboardContext: item.dashboardContext,
+        dashboardMode: synced.dashboardMode,
+        dashboardContext: synced.dashboardContext,
+        dashboardRouteObjectId: null,
+        dashboardRouteObjectName: null,
         timelineState: item.dashboardContext === "timeline" ? "expanded" : state.timelineState,
       };
     }
@@ -125,12 +150,44 @@ export function reduceNexoraWorkspaceState(
         activeMRPTab,
       };
     }
-    case "setDashboardContext":
+    case "setDashboardMode": {
+      const synced = syncDashboardModeAndContext({ dashboardMode: action.mode });
+      const routeObjectId =
+        typeof action.routeObject?.objectId === "string" ? action.routeObject.objectId.trim() : "";
+      const routeObjectName =
+        typeof action.routeObject?.objectName === "string"
+          ? action.routeObject.objectName.trim()
+          : routeObjectId;
+      const nextRouteObjectId = routeObjectId || null;
+      const nextRouteObjectName = nextRouteObjectId ? routeObjectName || nextRouteObjectId : null;
+      if (
+        state.activeMRPTab === "dashboard" &&
+        state.dashboardMode === synced.dashboardMode &&
+        state.dashboardRouteObjectId === nextRouteObjectId &&
+        state.dashboardRouteObjectName === nextRouteObjectName
+      ) {
+        return state;
+      }
       return {
         ...state,
         activeMRPTab: "dashboard",
-        dashboardContext: normalizeDashboardContext(action.context),
+        dashboardMode: synced.dashboardMode,
+        dashboardContext: synced.dashboardContext,
+        dashboardRouteObjectId: nextRouteObjectId,
+        dashboardRouteObjectName: nextRouteObjectName,
       };
+    }
+    case "setDashboardContext": {
+      const synced = syncDashboardModeAndContext({ dashboardContext: action.context });
+      return {
+        ...state,
+        activeMRPTab: "dashboard",
+        dashboardMode: synced.dashboardMode,
+        dashboardContext: synced.dashboardContext,
+        dashboardRouteObjectId: null,
+        dashboardRouteObjectName: null,
+      };
+    }
     case "setScenePanelState":
       return {
         ...state,
@@ -138,15 +195,16 @@ export function reduceNexoraWorkspaceState(
       };
     case "selectObject": {
       const selectedObjectId = normalizeSelectedObjectIdForWorkspace(action.objectId);
-      const nextDashboardContext =
+      const nextSynced =
         action.dashboardContext == null
-          ? state.dashboardContext
-          : normalizeDashboardContext(action.dashboardContext);
+          ? { dashboardMode: state.dashboardMode, dashboardContext: state.dashboardContext }
+          : syncDashboardModeAndContext({ dashboardContext: action.dashboardContext });
       return {
         ...state,
         selectedObjectId,
         objectPanelState: resolveObjectPanelState({ selectedObjectId }),
-        dashboardContext: nextDashboardContext,
+        dashboardMode: nextSynced.dashboardMode,
+        dashboardContext: nextSynced.dashboardContext,
       };
     }
     case "clearSelection":
@@ -159,10 +217,15 @@ export function reduceNexoraWorkspaceState(
       const timelineState = normalizeTimelineState(
         typeof action.state === "string" ? action.state : null
       );
+      const timelineSynced =
+        action.activateContext === false
+          ? { dashboardMode: state.dashboardMode, dashboardContext: state.dashboardContext }
+          : syncDashboardModeAndContext({ dashboardContext: "timeline" });
       return {
         ...state,
         activeMRPTab: action.activateContext === false ? state.activeMRPTab : "dashboard",
-        dashboardContext: action.activateContext === false ? state.dashboardContext : "timeline",
+        dashboardMode: timelineSynced.dashboardMode,
+        dashboardContext: timelineSynced.dashboardContext,
         timelineState,
       };
     }

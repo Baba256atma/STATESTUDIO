@@ -6,7 +6,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 
 import type { SceneJson, SceneObject, SceneLoop } from "../lib/sceneTypes";
 import { riskToColor, clamp01 } from "../lib/colorUtils";
-import { useStateVector, useSetSelectedId, useOverrides, useSelectedId, useChatOffset } from "./SceneContext";
+import { useStateVector, useSetSelectedId, useOverrides, useChatOffset } from "./SceneContext";
 import { clamp } from "../lib/sizeCommands";
 import {
   buildObjectVisualProfile,
@@ -76,6 +76,7 @@ import {
   readSceneRelationshipEdges,
 } from "../lib/scene/interaction/executiveRelationshipExplorationRuntime";
 import { LoopLinesAnimated } from "./scene/LoopLinesAnimated";
+import { logVisualSelectionAuthorityRejected, normalizeSelectedObjectId } from "../lib/selection/selectionStateGuard";
 import { logPayloadReferenceStability } from "../lib/runtime/payloadStabilityAudit";
 const EMPTY_STRING_ARRAY: string[] = [];
 const EMPTY_SCENE_ANIMS: any[] = [];
@@ -1311,6 +1312,7 @@ export type SceneRendererProps = {
     risk_targets?: string[];
     dim_unrelated_objects?: boolean;
   } | null;
+  selectedObjectId?: string | null;
   shadowsEnabled?: boolean;
   focusMode?: "all" | "selected" | "pinned";
   focusedId?: string | null;
@@ -1348,6 +1350,7 @@ export type SceneRendererProps = {
 function SceneRendererComponent({
   sceneJson,
   objectSelection,
+  selectedObjectId,
   shadowsEnabled,
   focusMode,
   focusedId,
@@ -1395,7 +1398,7 @@ function SceneRendererComponent({
 
   const stableGlobalScale = useMemo(() => globalScale, [globalScale]);
   const chatOffset = useChatOffset();
-  const selectedIdCtx = useSelectedId();
+  const canonicalSelectedObjectId = normalizeSelectedObjectId(selectedObjectId);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const lastCommittedHoverRef = useRef<string | null>(null);
   const lastHoverTickRef = useRef(0);
@@ -1453,44 +1456,22 @@ function SceneRendererComponent({
   const objects = stableObjects;
   const payload = sceneJson as any;
   const hasExplicitObjectSelection = !!objectSelection && typeof objectSelection === "object";
-  const objectSelectionHighlightedIds = useMemo(
-    () => readStringArrayField(objectSelection, "highlighted_objects"),
-    [objectSelection]
-  );
-  const payloadHighlightedIds = useMemo(
-    () => readStringArrayField(payload?.object_selection, "highlighted_objects"),
-    [payload]
-  );
-  const payloadSceneHighlightedIds = useMemo(
-    () => readStringArrayField(payload?.scene_json?.object_selection, "highlighted_objects"),
-    [payload]
-  );
-  const payloadContextHighlightedIds = useMemo(
-    () => readStringArrayField(payload?.context?.object_selection, "highlighted_objects"),
-    [payload]
-  );
   const highlightedIds = useMemo(
-    () =>
-      hasExplicitObjectSelection
-        ? objectSelectionHighlightedIds
-        : objectSelectionHighlightedIds.length > 0
-        ? objectSelectionHighlightedIds
-        : payloadHighlightedIds.length > 0
-        ? payloadHighlightedIds
-        : payloadSceneHighlightedIds.length > 0
-        ? payloadSceneHighlightedIds
-        : payloadContextHighlightedIds,
-    [
-      hasExplicitObjectSelection,
-      objectSelectionHighlightedIds,
-      payloadContextHighlightedIds,
-      payloadHighlightedIds,
-      payloadSceneHighlightedIds,
-    ]
+    () => (canonicalSelectedObjectId ? [canonicalSelectedObjectId] : []),
+    [canonicalSelectedObjectId]
   );
-  const highlightedObjectId = highlightedIds[0] ?? null;
+  const highlightedObjectId = canonicalSelectedObjectId;
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const staleVisualId = highlightedIds.find((id) => id !== canonicalSelectedObjectId);
+    if (!staleVisualId) return;
+    logVisualSelectionAuthorityRejected({
+      attemptedObjectId: staleVisualId,
+      canonicalSelectedId: canonicalSelectedObjectId ?? null,
+      source: "SceneRenderer.highlightedIds",
+    });
+  }, [canonicalSelectedObjectId, highlightedIds]);
   const sceneRenderSignature = useMemo(() => {
-    const selectedObjectId = typeof selectedIdCtx === "string" ? selectedIdCtx : null;
     const semanticObjects = objects
       .map((object, idx) => {
         const stableId = String(object?.id ?? object?.name ?? `${object?.type ?? "obj"}:${idx}`);
@@ -1500,16 +1481,16 @@ function SceneRendererComponent({
           severity: String((object as { severity?: unknown; scanner_severity?: unknown })?.severity ?? (object as { scanner_severity?: unknown })?.scanner_severity ?? ""),
           state: String((object as { state?: unknown; status?: unknown })?.state ?? (object as { status?: unknown })?.status ?? ""),
           role: String((object as { role?: unknown })?.role ?? semantic?.role ?? ""),
-          selected: stableId === selectedObjectId,
+          selected: stableId === canonicalSelectedObjectId,
         };
       })
       .sort((a, b) => a.id.localeCompare(b.id));
     return JSON.stringify({
       objects: semanticObjects,
-      selectedObjectId,
+      selectedObjectId: canonicalSelectedObjectId,
       highlightedObjectId,
     });
-  }, [highlightedObjectId, objects, selectedIdCtx]);
+  }, [canonicalSelectedObjectId, highlightedObjectId, objects]);
   const lastSceneRenderSignatureRef = useRef<string | null>(null);
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -1523,14 +1504,13 @@ function SceneRendererComponent({
     if (process.env.NODE_ENV === "production") return;
     const objectCount = objects.length;
     if (objectCount === 0) return;
-    const selectedObjectId = typeof selectedIdCtx === "string" ? selectedIdCtx : null;
     const densityProfile = resolveObjectNameDensityProfile(objectCount);
     let visibleNameCount = 0;
     for (let index = 0; index < objectCount; index += 1) {
       if (
         shouldRenderExecutiveObjectName({
           profile: densityProfile,
-          selected: selectedObjectId === String(objects[index]?.id ?? objects[index]?.name ?? ""),
+          selected: canonicalSelectedObjectId === String(objects[index]?.id ?? objects[index]?.name ?? ""),
           focused: false,
           index,
         })
@@ -1542,10 +1522,10 @@ function SceneRendererComponent({
       objectCount,
       visibleNameCount,
       legacyTooltipCount: 0,
-      selectedObjectId,
+      selectedObjectId: canonicalSelectedObjectId,
       densityTier: resolveObjectNameDensityTier(objectCount),
     });
-  }, [objects, selectedIdCtx]);
+  }, [canonicalSelectedObjectId, objects]);
 
   const sceneScaleAuditSignatureRef = useRef<string | null>(null);
   useEffect(() => {
@@ -1634,7 +1614,7 @@ function SceneRendererComponent({
   );
   const visualCandidateIds = useMemo(() => {
     const ordered = [
-      ...highlightedIds,
+      ...(canonicalSelectedObjectId ? [canonicalSelectedObjectId] : []),
       ...objectSelectionRiskSourceIds,
       ...objectSelectionRiskTargetIds,
       ...payloadRiskSourceIds,
@@ -1642,13 +1622,9 @@ function SceneRendererComponent({
       ...payloadSceneRiskSourceIds,
       ...payloadSceneRiskTargetIds,
     ];
-    if (ordered.length === 0 && typeof focusedId === "string" && focusedId.length > 0) {
-      ordered.push(focusedId);
-    }
     return Array.from(new Set(ordered));
   }, [
-    focusedId,
-    highlightedIds,
+    canonicalSelectedObjectId,
     objectSelectionRiskSourceIds,
     objectSelectionRiskTargetIds,
     payloadRiskSourceIds,
@@ -1675,13 +1651,7 @@ function SceneRendererComponent({
   }, [objects, sceneIdentityMap, sceneObjectIdSet, visualCandidateIds]);
   const scannerTargetIds = scannerTargetResolution.resolvedIds;
   const scannerSceneActive = scannerTargetIds.length > 0;
-  const shouldAllowFocusedIdPrimaryFallback =
-    !scannerSceneActive &&
-    highlightedIds.length === 0 &&
-    resolvedRiskSourceIds.length === 0 &&
-    resolvedRiskTargetIds.length === 0;
-
-  const primaryResolverFocusedId = shouldAllowFocusedIdPrimaryFallback ? focusedId : null;
+  const primaryResolverFocusedId = null;
   const scannerFragilityScore = clamp01(
     typeof (sceneJson as any)?.scene?.scanner_state_vector?.fragility_score === "number"
       ? (sceneJson as any).scene.scanner_state_vector.fragility_score
@@ -1692,7 +1662,7 @@ function SceneRendererComponent({
   const scannerPrimaryResolution = useMemo(
     () =>
       resolveScannerPrimaryTarget({
-        highlightedIds,
+        highlightedIds: canonicalSelectedObjectId ? [canonicalSelectedObjectId] : [],
         resolvedRiskSourceIds,
         resolvedRiskTargetIds,
         scannerTargetIds,
@@ -1701,7 +1671,7 @@ function SceneRendererComponent({
       }),
     [
       primaryResolverFocusedId,
-      highlightedIds,
+      canonicalSelectedObjectId,
       resolvedRiskSourceIds,
       resolvedRiskTargetIds,
       scannerTargetIds,
@@ -1798,14 +1768,14 @@ function SceneRendererComponent({
     () =>
       resolveCameraIntelligenceTarget({
         hoveredId,
-        selectedId: typeof selectedIdCtx === "string" ? selectedIdCtx : null,
+        selectedId: canonicalSelectedObjectId,
         resolvedPrimaryRenderId,
         decisionCenter,
         sceneCenter,
         objects,
         roleById,
       }),
-    [decisionCenter, hoveredId, objects, resolvedPrimaryRenderId, roleById, sceneCenter, selectedIdCtx]
+    [canonicalSelectedObjectId, decisionCenter, hoveredId, objects, resolvedPrimaryRenderId, roleById, sceneCenter]
   );
   // Strict calm camera rule: renderer-level camera bias only follows explicit selection.
   const cameraBiasTarget = cameraIntelligence.kind === "selected" ? cameraIntelligence.target : null;
@@ -1828,14 +1798,10 @@ function SceneRendererComponent({
   const relationshipExploration = useMemo(
     () =>
       buildExecutiveRelationshipExploration({
-        selectedObjectId: selectedIdCtx,
+        selectedObjectId: canonicalSelectedObjectId,
         relationships: relationshipEdges,
       }),
-    [relationshipEdges, selectedIdCtx]
-  );
-  const connectedToSelectedSet = useMemo(
-    () => new Set(relationshipExploration.connectedObjectIds),
-    [relationshipExploration.connectedObjectIds]
+    [canonicalSelectedObjectId, relationshipEdges]
   );
   const relatedObjectIdsById = useMemo(() => {
     const relationMap = new Map<string, Set<string>>();
@@ -1882,7 +1848,7 @@ function SceneRendererComponent({
         ? "related_context"
         : "neutral",
   });
-  const selectedSemanticId = typeof selectedIdCtx === "string" ? selectedIdCtx : null;
+  const selectedSemanticId = canonicalSelectedObjectId;
   const attentionMemoryRef = useRef<Map<string, AttentionMemoryEntry>>(new Map());
   const [attentionMemoryNow, setAttentionMemoryNow] = useState(() => Date.now());
   useEffect(() => {
@@ -2240,7 +2206,7 @@ function SceneRendererComponent({
     if (scannerTargetIds.length > 0 && !scannerTargetResolution.usedFallback) return;
 
     traceHighlightFlow("scene_canvas", {
-      highlightedIds: objectSelectionHighlightedIds,
+      highlightedIds,
       riskSourceIds: [
         ...objectSelectionRiskSourceIds,
         ...payloadRiskSourceIds,
@@ -2267,7 +2233,7 @@ function SceneRendererComponent({
     });
   }, [
     focusedId,
-    objectSelectionHighlightedIds,
+    highlightedIds,
     objectSelectionRiskSourceIds,
     objectSelectionRiskTargetIds,
     payloadRiskSourceIds,
@@ -2483,10 +2449,10 @@ function SceneRendererComponent({
     () => ({
       parentSignature: `SceneRenderer:${stableObjects.length}`,
       visibleObjectsSignature: objectsRegistrySignature,
-      selectedObjectId: typeof selectedIdCtx === "string" ? selectedIdCtx : null,
+      selectedObjectId: canonicalSelectedObjectId,
       viewMode: visualModeId ?? null,
     }),
-    [objectsRegistrySignature, selectedIdCtx, stableObjects.length, visualModeId]
+    [canonicalSelectedObjectId, objectsRegistrySignature, stableObjects.length, visualModeId]
   );
   useEffect(() => {
     setSceneRemountContext(sceneRemountContext);
@@ -2544,9 +2510,7 @@ function SceneRendererComponent({
           layoutLabelOffsets={layoutLabelOffsets}
           showObjectDebugLabels={showObjectDebugLabels}
           showExecutiveLayoutLabels={showExecutiveLayoutLabels}
-          selectedObjectId={selectedIdCtx ?? null}
-          connectedToSelectedIds={connectedToSelectedSet}
-          relationshipExplorationActive={relationshipExploration.active}
+          selectedObjectId={canonicalSelectedObjectId}
         />
 
         <TopologyConnectionLines
@@ -2554,7 +2518,7 @@ function SceneRendererComponent({
           visible={topologyConnectionLinesVisible}
           selectedObjectId={
             topologyConnectionSelectedObjectId ??
-            (typeof selectedIdCtx === "string" ? selectedIdCtx : null)
+            canonicalSelectedObjectId
           }
         />
 

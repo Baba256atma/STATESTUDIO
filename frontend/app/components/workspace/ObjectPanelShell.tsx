@@ -30,7 +30,6 @@ export type ObjectPanelShellProps = {
  * Context instead of creating extra MRP tabs.
  * See docs/nexora-object-panel-architecture.md.
  */
-const PLACEHOLDER_SECTIONS = ["Summary", "Signals", "Risk", "Actions"] as const;
 
 const headerStyle: React.CSSProperties = {
   flexShrink: 0,
@@ -213,7 +212,7 @@ export function ObjectPanelShell(props: ObjectPanelShellProps): React.ReactEleme
               color: nx.lowMuted,
             }}
           >
-            Object Intelligence
+            Object Actions
           </div>
         </div>
         <button
@@ -260,29 +259,6 @@ export function ObjectPanelShell(props: ObjectPanelShellProps): React.ReactEleme
             )}
           </div>
         </div>
-
-        <div
-          data-nx="object-panel-placeholders"
-          style={{
-            flexShrink: 0,
-            maxHeight: 132,
-            overflowY: "auto",
-            padding: "0 10px 8px",
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 8,
-          }}
-        >
-          {PLACEHOLDER_SECTIONS.map((section) => (
-            <section key={section} data-nx-section={section.toLowerCase()}>
-              <div style={sectionTitleStyle}>{section}</div>
-              <div style={sectionBodyStyle}>
-                <span>Reserved for {section.toLowerCase()}.</span>
-              </div>
-            </section>
-          ))}
-        </div>
-        {/* Deprecated E2 object-shell tab plan: Dashboard / Assistant now belong to Main Right Panel. */}
 
         <div
           id={EXECUTIVE_WORKSPACE_ZONE_IDS.objectPanelHost}

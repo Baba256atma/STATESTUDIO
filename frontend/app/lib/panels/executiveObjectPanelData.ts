@@ -3,6 +3,12 @@ import type { CanonicalRecommendation } from "../decision/recommendation/recomme
 export type ExecutiveObjectPanelData = {
   objectId: string;
   objectName?: string;
+  objectType?: string;
+  status?: string;
+  connectionCount?: number;
+  dependencyCount?: number;
+  scenarioCount?: number;
+  lastUpdated?: string;
   insight: string;
   riskLevel: "low" | "medium" | "high" | "critical" | "unknown";
   affectedObjects?: string[];
@@ -11,6 +17,12 @@ export type ExecutiveObjectPanelData = {
 };
 
 export const fallbackExecutiveData: Omit<ExecutiveObjectPanelData, "objectId" | "objectName"> = {
+  objectType: "Object",
+  status: "Active",
+  connectionCount: 0,
+  dependencyCount: 0,
+  scenarioCount: 0,
+  lastUpdated: "Runtime",
   insight: "No strong signal detected yet.",
   riskLevel: "unknown",
   affectedObjects: [],
@@ -176,8 +188,43 @@ export function buildExecutiveObjectPanelData(input: {
 
   const affected = collectAffectedIds({ reco, risk, objectId });
 
+  const sceneObject = (() => {
+    const objects = (input.sceneJson as { scene?: { objects?: unknown[] } } | null | undefined)?.scene?.objects;
+    if (!Array.isArray(objects)) return null;
+    return (
+      objects.find((entry) => {
+        if (!entry || typeof entry !== "object") return false;
+        const id = String((entry as { id?: unknown; name?: unknown }).id ?? (entry as { id?: unknown; name?: unknown }).name ?? "").trim();
+        return id === objectId;
+      }) as { type?: unknown; label?: unknown; name?: unknown; status?: unknown } | undefined
+    ) ?? null;
+  })();
+
+  const relationshipCount = (() => {
+    const relationships = (input.sceneJson as { scene?: { relationships?: unknown[] } } | null | undefined)?.scene
+      ?.relationships;
+    if (!Array.isArray(relationships)) return affected.length;
+    return relationships.filter((relationship) => {
+      const record = relationship as { source_id?: unknown; target_id?: unknown; from?: unknown; to?: unknown };
+      const sourceId = String(record.source_id ?? record.from ?? "").trim();
+      const targetId = String(record.target_id ?? record.to ?? "").trim();
+      return sourceId === objectId || targetId === objectId;
+    }).length;
+  })();
+
   return {
     ...base,
+    objectType: sceneObject?.type != null ? String(sceneObject.type) : base.objectType,
+    status:
+      sceneObject?.status != null
+        ? String(sceneObject.status)
+        : reco?.primary?.action
+          ? "Monitoring"
+          : "Active",
+    connectionCount: relationshipCount,
+    dependencyCount: affected.length,
+    scenarioCount: reco?.primary?.target_ids?.length ?? 0,
+    lastUpdated: "Runtime",
     insight: insight || fallbackExecutiveData.insight,
     riskLevel: normalizeRiskLevel(typeof riskLevelRaw === "string" ? riskLevelRaw : null),
     affectedObjects: affected.length > 0 ? affected : fallbackExecutiveData.affectedObjects,

@@ -36,6 +36,14 @@ import {
 } from "../../lib/workspace/panelGovernanceRuntime";
 import { resolveExecutiveEmptyState } from "../../lib/workspace/minimalism";
 import { logObjectActionMoved } from "../../lib/scene/navigation/sceneToolbarActionRegistry";
+import ExecutiveActionPanel from "../panels/ExecutiveActionPanel";
+import type { ExecutiveActionPanelModel } from "../../lib/object-panel/executiveActionPanelContract";
+import {
+  getExecutiveFocusModeServerSnapshot,
+  getExecutiveFocusModeSnapshot,
+  subscribeExecutiveFocusMode,
+} from "../../lib/workspace/executiveFocusModeRuntime";
+import { SceneActionDock } from "./SceneActionDock";
 
 /**
  * DEPRECATED ARCHITECTURE MIRROR:
@@ -147,6 +155,11 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
     [props, disclosureView]
   );
   const [collapsed, setCollapsed] = React.useState(DEFAULT_OBJECT_INFO_STATE.collapsed);
+  const focusModeActive = React.useSyncExternalStore(
+    subscribeExecutiveFocusMode,
+    () => getExecutiveFocusModeSnapshot().enabled,
+    () => getExecutiveFocusModeServerSnapshot().enabled
+  );
 
   React.useEffect(() => {
     setCollapsed(hydrateObjectInfoCollapseState());
@@ -425,63 +438,13 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
 
   if (collapsed) {
     return (
-      <div
-        data-nx="object-info-hud"
-        data-hud="object-info"
-        data-nx-state="collapsed"
-        data-nx-object-id={props.selectedObjectId}
-        data-nx-theme={hudTheme.mode}
-        style={nexoraHudShellStyle(
-          hudTheme,
-          {
-            width: 44,
-            maxWidth: 44,
-            padding: "8px 6px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 8,
-            fontSize: 11,
-            lineHeight: 1.4,
-            overflow: "hidden",
-          },
-          { surface: "objectInfoHud", collapsed: true }
-        )}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <button
-          type="button"
-          aria-label="Expand object info"
-          title="Expand object info"
-          onClick={toggleCollapsed}
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            border: `1px solid ${hudTheme.buttonBorder}`,
-            background: hudTheme.buttonBackground,
-            color: hudTheme.buttonText,
-            cursor: "pointer",
-            fontSize: 12,
-            fontWeight: 800,
-          }}
-        >
-          ◀
-        </button>
-        <span
-          aria-hidden
-          style={{
-            writingMode: "vertical-rl",
-            fontSize: 9,
-            fontWeight: 800,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: hudTheme.label,
-          }}
-        >
-          Object
-        </span>
-      </div>
+      <SceneActionDock
+        objectId={props.selectedObjectId}
+        objectName={layout.header.name}
+        theme={hudTheme}
+        focusModeActive={focusModeActive}
+        onExpandPanel={toggleCollapsed}
+      />
     );
   }
 
@@ -499,11 +462,9 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
       <ExecutiveObjectInfoCard
         layout={layout}
         theme={hudTheme}
-        disclosureView={disclosureView}
         selectedObjectId={props.selectedObjectId}
         onCreateImpactPath={props.onCreateImpactPath}
         onCollapse={toggleCollapsed}
-        onDisclosureViewChange={setDisclosureView}
       />
     </div>
   );
@@ -514,64 +475,53 @@ export default ObjectInfoHud;
 function ExecutiveObjectInfoCard(props: {
   layout: ExecutiveObjectInfoLayout;
   theme: NexoraHudThemeTokens;
-  disclosureView: ObjectInfoDisclosureView;
   selectedObjectId: string;
   onCreateImpactPath?: (sourceObjectId?: string | null) => void;
   onCollapse: () => void;
-  onDisclosureViewChange: (view: ObjectInfoDisclosureView) => void;
 }): React.ReactElement {
-  const { layout, theme, disclosureView } = props;
-  const showSecondary = disclosureView !== "summary";
-  const showContext = disclosureView === "detailed";
-  const showAdvanced = disclosureView === "detailed";
-
-  const cycleDisclosure = React.useCallback(() => {
-    const next: ObjectInfoDisclosureView =
-      disclosureView === "standard" ? "detailed" : disclosureView === "detailed" ? "summary" : "standard";
-    props.onDisclosureViewChange(next);
-  }, [disclosureView, props.onDisclosureViewChange]);
+  const { layout } = props;
+  const focusModeActive = React.useSyncExternalStore(
+    subscribeExecutiveFocusMode,
+    () => getExecutiveFocusModeSnapshot().enabled,
+    () => getExecutiveFocusModeServerSnapshot().enabled
+  );
+  const panelModel: ExecutiveActionPanelModel = {
+    objectId: layout.header.objectId,
+    objectName: layout.header.name,
+    objectType: layout.header.type,
+    status: layout.primary.health,
+    riskLevel: layout.primary.riskLevel,
+    connections: layout.context.connected,
+    dependencies: layout.context.criticalLinks,
+    scenarios: layout.secondary.signals.length,
+    lastUpdated: "Runtime",
+  };
 
   return (
     <>
       <header
         style={{
           display: "flex",
-          alignItems: "flex-start",
+          alignItems: "center",
           justifyContent: "space-between",
           gap: 8,
           padding: "7px 8px",
-          borderBottom: `1px solid color-mix(in srgb, ${theme.panelBorder} 55%, transparent)`,
+          borderBottom: `1px solid color-mix(in srgb, ${props.theme.panelBorder} 55%, transparent)`,
         }}
       >
-        <div style={{ minWidth: 0 }}>
-          <div style={{ ...sectionLabelStyle(theme), marginBottom: 2 }}>Object Info</div>
-          <div
-            style={{
-              color: theme.textPrimary,
-              fontSize: 12,
-              fontWeight: 800,
-              lineHeight: 1.2,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {layout.header.name}
-          </div>
-          <div style={{ color: theme.textSecondary, fontSize: 10, marginTop: 2 }}>{layout.header.type}</div>
-        </div>
+        <div style={{ ...sectionLabelStyle(props.theme), marginBottom: 0 }}>Object Panel</div>
         <button
           type="button"
-          aria-label="Collapse object info"
-          title="Collapse object info"
+          aria-label="Collapse object panel"
+          title="Collapse object panel"
           onClick={props.onCollapse}
           style={{
             width: 24,
             height: 24,
             borderRadius: 7,
-            border: `1px solid ${theme.controlBorder}`,
+            border: `1px solid ${props.theme.controlBorder}`,
             background: "transparent",
-            color: theme.textSecondary,
+            color: props.theme.textSecondary,
             cursor: "pointer",
             fontSize: 11,
             fontWeight: 700,
@@ -582,281 +532,35 @@ function ExecutiveObjectInfoCard(props: {
           ◀
         </button>
       </header>
-
-      <div style={{ padding: "8px 8px 6px", display: "flex", flexDirection: "column", gap: 6 }}>
-        <section data-nx-section="primary-metrics">
-          <CompactMetricRow
-            theme={theme}
-            items={[
-              { label: "Health", value: layout.primary.health },
-              { label: "Risk", value: layout.primary.riskLevel },
-              { label: "FRSI", value: layout.primary.frsi },
-              { label: "Ready", value: layout.primary.readiness },
-            ]}
-          />
-        </section>
-
-        {showSecondary ? (
-          <>
-            <section data-nx-section="summary">
-              <div style={sectionLabelStyle(theme)}>Summary</div>
-              <div
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 10,
-                  lineHeight: 1.35,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                }}
-              >
-                {layout.secondary.summary}
-              </div>
-            </section>
-
-            {layout.secondary.criticalLinks > 0 ? (
-              <section data-nx-section="dependencies">
-                <div style={sectionLabelStyle(theme)}>Dependencies</div>
-                <div style={{ color: theme.textPrimary, fontSize: 10, fontWeight: 700 }}>
-                  Critical Links: {layout.secondary.criticalLinks}
-                </div>
-              </section>
-            ) : null}
-
-            {layout.secondary.signals.length > 0 ? (
-              <section data-nx-section="signals">
-                <div style={sectionLabelStyle(theme)}>Signals</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  {layout.secondary.signals.map((signal) => (
-                    <span key={signal} style={compactTagStyle(theme)}>
-                      {signal}
-                    </span>
-                  ))}
-                  {layout.secondary.signalOverflow > 0 ? (
-                    <span style={{ ...compactTagStyle(theme), color: theme.textSecondary }}>
-                      +{layout.secondary.signalOverflow} more
-                    </span>
-                  ) : null}
-                </div>
-              </section>
-            ) : null}
-          </>
-        ) : null}
-
-        {showContext ? (
-          <section data-nx-section="relationships">
-            <div style={sectionLabelStyle(theme)}>Relationships</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
-              <CompactStat label="Connected" value={String(layout.context.connected)} theme={theme} />
-              <CompactStat label="Critical Links" value={String(layout.context.criticalLinks)} theme={theme} />
-            </div>
-          </section>
-        ) : null}
-
-        {showAdvanced ? (
-          <section data-nx-section="advanced">
-            <div style={sectionLabelStyle(theme)}>Extended Analysis</div>
-            <div style={{ display: "grid", gap: 3 }}>
-              {layout.advanced.mostCriticalDependency ? (
-                <AdvancedLine label="Critical Dep." value={layout.advanced.mostCriticalDependency} theme={theme} />
-              ) : null}
-              {layout.advanced.mostInfluentialConnection ? (
-                <AdvancedLine label="Influence" value={layout.advanced.mostInfluentialConnection} theme={theme} />
-              ) : null}
-              {layout.advanced.highestRiskRelationship ? (
-                <AdvancedLine label="Risk Link" value={layout.advanced.highestRiskRelationship} theme={theme} />
-              ) : null}
-            </div>
-          </section>
-        ) : null}
-
-        <section data-nx-section="actions">
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-            <div style={sectionLabelStyle(theme)}>Controls</div>
+      <div style={{ padding: "8px 8px 10px", overflowY: "auto", maxHeight: "min(72vh, 520px)" }}>
+        <ExecutiveActionPanel model={panelModel} focusModeActive={focusModeActive} />
+        {props.onCreateImpactPath ? (
+          <div style={{ marginTop: 8 }}>
             <button
               type="button"
-              aria-label="Toggle detail level"
-              title={`View: ${disclosureView}`}
-              onClick={cycleDisclosure}
+              aria-label="Create Impact Path"
+              title="Create impact path from selected object"
+              onClick={() => props.onCreateImpactPath?.(props.selectedObjectId ?? null)}
               style={{
-                border: "none",
-                background: "transparent",
-                color: theme.textSecondary,
-                fontSize: 9,
-                fontWeight: 700,
+                width: "100%",
+                minHeight: 30,
+                borderRadius: 8,
+                border: `1px solid ${props.theme.buttonBorder}`,
+                background: props.theme.buttonBackground,
+                color: props.theme.buttonText,
+                fontSize: 10,
+                fontWeight: 800,
                 letterSpacing: "0.04em",
                 textTransform: "uppercase",
                 cursor: "pointer",
-                padding: 0,
               }}
             >
-              {disclosureView === "detailed" ? "Less" : "More"}
+              Create Impact Path
             </button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4 }}>
-            {layout.actions.map((action) => {
-              const isImpact = action.id === "create_impact";
-              const enabled = isImpact ? Boolean(props.onCreateImpactPath) : action.enabled;
-              return (
-                <button
-                  key={action.id}
-                  type="button"
-                  disabled={!enabled}
-                  aria-label={isImpact ? "Create Impact Path" : action.label}
-                  title={
-                    isImpact
-                      ? props.onCreateImpactPath
-                        ? "Create impact path from selected object"
-                        : "Select an object first"
-                      : `${action.label} reserved for executive workflow`
-                  }
-                  onClick={
-                    isImpact && enabled
-                      ? () => props.onCreateImpactPath?.(props.selectedObjectId ?? null)
-                      : undefined
-                  }
-                  style={compactControlButtonStyle(theme, enabled, isImpact)}
-                >
-                  {isImpact ? "Impact" : action.label}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        ) : null}
       </div>
     </>
-  );
-}
-
-function compactTagStyle(theme: NexoraHudThemeTokens): React.CSSProperties {
-  return {
-    fontSize: 9,
-    fontWeight: 700,
-    lineHeight: 1.2,
-    color: theme.textSecondary,
-    borderRadius: 999,
-    border: `1px solid color-mix(in srgb, ${theme.controlBorder} 65%, transparent)`,
-    padding: "2px 6px",
-    background: "color-mix(in srgb, var(--nx-bg-control) 42%, transparent)",
-    maxWidth: 88,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  };
-}
-
-function compactControlButtonStyle(
-  theme: NexoraHudThemeTokens,
-  enabled: boolean,
-  primary = false
-): React.CSSProperties {
-  return {
-    minWidth: 0,
-    padding: "4px 4px",
-    borderRadius: 7,
-    border: `1px solid ${theme.buttonBorder}`,
-    background: primary && enabled ? theme.buttonBackground : theme.controlBackground,
-    color: enabled ? theme.buttonText : theme.textSecondary,
-    fontSize: 9,
-    fontWeight: 800,
-    letterSpacing: "0.03em",
-    textTransform: "uppercase",
-    cursor: enabled ? "pointer" : "not-allowed",
-    opacity: enabled ? 1 : 0.62,
-  };
-}
-
-function CompactMetricRow(props: {
-  theme: NexoraHudThemeTokens;
-  items: Array<{ label: string; value: string }>;
-}): React.ReactElement {
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${props.items.length}, minmax(0, 1fr))`,
-        gap: 4,
-        borderRadius: 6,
-        border: `1px solid color-mix(in srgb, ${props.theme.controlBorder} 65%, transparent)`,
-        background: "color-mix(in srgb, var(--nx-bg-control) 42%, transparent)",
-        padding: "4px 6px",
-      }}
-    >
-      {props.items.map((item) => (
-        <div key={item.label} style={{ minWidth: 0, textAlign: "center" }}>
-          <div
-            style={{
-              color: props.theme.textSecondary,
-              fontSize: 8,
-              fontWeight: 700,
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {item.label}
-          </div>
-          <div
-            style={{
-              color: props.theme.textPrimary,
-              fontSize: 10,
-              fontWeight: 800,
-              marginTop: 1,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              textTransform: "capitalize",
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {item.value}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function CompactStat(props: { label: string; value: string; theme: NexoraHudThemeTokens }): React.ReactElement {
-  return (
-    <div style={{ minWidth: 0 }}>
-      <div style={{ color: props.theme.textSecondary, fontSize: 9, fontWeight: 700 }}>{props.label}</div>
-      <div style={{ color: props.theme.textPrimary, fontSize: 10, fontWeight: 800, marginTop: 1 }}>{props.value}</div>
-    </div>
-  );
-}
-
-function AdvancedLine(props: { label: string; value: string; theme: NexoraHudThemeTokens }): React.ReactElement {
-  return (
-    <div style={{ minWidth: 0 }}>
-      <div
-        style={{
-          color: props.theme.textSecondary,
-          fontSize: 8,
-          fontWeight: 700,
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
-        }}
-      >
-        {props.label}
-      </div>
-      <div
-        style={{
-          color: props.theme.textPrimary,
-          fontSize: 10,
-          lineHeight: 1.3,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {props.value}
-      </div>
-    </div>
   );
 }
 

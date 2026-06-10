@@ -3,6 +3,9 @@
  * Explicit selected object id resolves from the single MVP authority
  * (`HomeScreen.selectedObjectIdState`). The broader objectSelection payload is a
  * compatibility mirror for highlights/details, not a competing object store.
+ *
+ * Runtime enforcement: `objectSelectionRuntimeContract.ts`
+ * Click pipeline: AnimatableObject → commitObjectSelectionFromUserClick → commitObjectSelection
  */
 export type ExplicitSelectedObjectInput = {
   selectedObjectIdState?: string | null;

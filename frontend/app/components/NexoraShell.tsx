@@ -40,6 +40,17 @@ import {
   resolveNexoraLeftNavMode,
   type NexoraLeftNavMode,
 } from "../lib/ui/nexoraLeftNavContract";
+import type { NexoraResolvedDomainExperience } from "../lib/domain/domainExperienceRegistry";
+import {
+  reportLeftNavCanonical,
+  reportLeftNavHydrationCheck,
+  reportLeftNavHydrationMismatch,
+  resolveCanonicalLeftNavHydrationState,
+  resolveCanonicalLeftNavSnapshotFromView,
+  resolveLeftNavModeForSection,
+  resolveSectionForRightPanelView,
+  type CanonicalActiveSectionKey,
+} from "../lib/ui/leftNavCanonicalHydration";
 import { emitDebugEvent } from "../lib/debug/debugEmit";
 import { getRecentDebugEvents } from "../lib/debug/debugEventStore";
 import { emitGuardRailAlerts, runGuardChecks } from "../lib/debug/debugGuardRails";
@@ -62,6 +73,7 @@ import {
   shouldShowExecutiveScenarioComparisonPanel,
   shouldShowExecutiveCommandBar,
 } from "../lib/ui/executiveWorkspacePresentation";
+import { shouldUseVisibleMrpRightRailHost } from "../lib/ui/mainRightPanelVisibleHostRuntime";
 import {
   EXECUTIVE_LEFT_COMMAND_COLLAPSED_PX,
   EXECUTIVE_LEFT_COMMAND_WIDTH_PX,
@@ -82,6 +94,7 @@ const LEFT_COMMAND_COLLAPSED_PX = EXECUTIVE_LEFT_COMMAND_COLLAPSED_PX;
 
 type NexoraShellProps = {
   children: React.ReactNode;
+  canonicalDomainExperience?: NexoraResolvedDomainExperience;
 };
 
 type LeftNavGroupKey = NexoraLeftNavMode;
@@ -134,21 +147,7 @@ const RISK_RAIL_TAB_TO_VIEW: Record<"explanation" | "conflict" | "risk_flow" | "
  * tabs. Mode changes update Dashboard context; Assistant remains isolated.
  */
 function groupForSection(section: ActiveSectionKey): LeftNavGroupKey {
-  if (section === "sources" || section === "input") return "sources";
-  if (section === "scenario" || section === "advice") return "scenario";
-  if (section === "timeline") return "timeline";
-  if (section === "war_room") return "war_room";
-  if (section === "settings") return "settings";
-  if (
-    section === "risk" ||
-    section === "fragility" ||
-    section === "conflict" ||
-    section === "risk_flow" ||
-    section === "explanation"
-  ) {
-    return "risk";
-  }
-  return "dashboard";
+  return resolveLeftNavModeForSection(section as CanonicalActiveSectionKey);
 }
 
 function getRequestedViewForEventTab(eventTab: InspectorEventTab | null | undefined): RightPanelView {
@@ -201,27 +200,7 @@ function panelFamilyForView(view: RightPanelView | null | undefined): "EXE" | "S
 }
 
 function getSectionForView(view: RightPanelView | null): ActiveSectionKey | null {
-  if (!view) return null;
-  if (view === "input") return "input";
-  if (view === "workspace") return "scene";
-  if (view === "object") return "focus";
-  if (view === "risk") return "risk_flow";
-  if (view === "fragility") return "fragility";
-  if (view === "explanation") return "explanation";
-  if (view === "conflict") return "conflict";
-  if (view === "memory") return "memory";
-  if (view === "replay") return "replay";
-  if (view === "patterns") return "patterns";
-  if (view === "opponent") return "opponent";
-  if (view === "collaboration") return "collaboration";
-  if (view === "dashboard" || view === "executive_object") return "executive";
-  if (view === "war_room") return "war_room";
-  if (view === "advice") return "advice";
-  if (view === "timeline" || view === "decision_timeline" || view === "confidence_calibration" || view === "outcome_feedback" || view === "pattern_intelligence" || view === "scenario_tree") {
-    return "timeline";
-  }
-  if (view === "simulate" || view === "compare") return "timeline";
-  return null;
+  return resolveSectionForRightPanelView(view) as ActiveSectionKey | null;
 }
 
 function isScnPanelView(view: RightPanelView | null | undefined): boolean {
@@ -428,7 +407,7 @@ function NexoraStatusStripCard(props: { label: string; labelColor: string; text:
   );
 }
 
-export default function NexoraShell({ children }: NexoraShellProps) {
+export default function NexoraShell({ children, canonicalDomainExperience }: NexoraShellProps) {
   const pilotOperatorChrome = useMemo(() => getNexoraProductMode() === "pilot", []);
   const runbookGuidance = useNexoraRunbookGuidanceOptional();
   const governanceIntel = useAdaptiveGovernanceIntelligenceOptional();
@@ -437,6 +416,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const showExecutiveObjectPanelDock = shouldShowExecutiveObjectPanelDock();
   const showExecutiveStatusStrip = shouldShowExecutiveStatusStrip();
   const showExecutiveRightAssistantPanel = shouldShowExecutiveRightAssistantPanel();
+  const useVisibleMrpRightRailHost = shouldUseVisibleMrpRightRailHost();
   const showExecutiveLeftCommandPanel = shouldShowExecutiveLeftCommandPanel();
   const showExecutiveStageAssistantOverlay = shouldShowExecutiveStageAssistantOverlay();
   const showExecutiveCommandBar = shouldShowExecutiveCommandBar();
@@ -520,7 +500,31 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   const [stageChatDelayedBusy, setStageChatDelayedBusy] = useState(false);
   const stageChatBusyTimerRef = useRef<number | null>(null);
 
-  const [inspectorContext, setInspectorContext] = useState<any>(null);
+  const canonicalLeftNavSeedRef = useRef(
+    resolveCanonicalLeftNavHydrationState({
+      preferredRightPanelTab: canonicalDomainExperience?.experience.preferredRightPanelTab ?? null,
+      shellMode: "dashboard",
+    })
+  );
+  const leftNavHydrationCompleteRef = useRef(false);
+  const leftNavHydrationPreserveActiveSectionRef = useRef(false);
+  const upstreamViewBaselineRef = useRef<RightPanelView | null>(canonicalLeftNavSeedRef.current.rightPanelView);
+
+  const [inspectorContext, setInspectorContext] = useState<any>(() => {
+    const seed = canonicalLeftNavSeedRef.current;
+    if (!canonicalDomainExperience) {
+      return seed.rightPanelView ? { rightPanelView: seed.rightPanelView } : null;
+    }
+    return {
+      rightPanelView: seed.rightPanelView,
+      domainExperience: {
+        domainId: canonicalDomainExperience.experience.domainId,
+        label: canonicalDomainExperience.experience.label,
+        visibleNavGroups: canonicalDomainExperience.experience.visibleNavGroups,
+        visibleSections: canonicalDomainExperience.experience.visibleSections,
+      },
+    };
+  });
   useEffect(() => {
     const onInspectorContext = (event: Event) => {
       const detail = (event as CustomEvent<any>).detail;
@@ -809,7 +813,10 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     return () => window.removeEventListener("nexora:chat-result", onChatResult as EventListener);
   }, []);
 
-  const [activeSection, setActiveSection] = useState<ActiveSectionKey>(mode === "studio" ? "objects" : "executive");
+  const [activeSection, setActiveSection] = useState<ActiveSectionKey>(() => {
+    if (mode === "studio") return "objects";
+    return canonicalLeftNavSeedRef.current.activeSection as ActiveSectionKey;
+  });
   const explicitScnIntentRef = useRef<"scene" | "objects" | "focus" | null>(null);
   const lastShellSectionIntentSigRef = useRef<string | null>(null);
   const domainExperience = inspectorContext?.domainExperience ?? inspectorContext?.domainSelection ?? null;
@@ -851,6 +858,9 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     [upstreamRightPanelView, activeSection]
   );
   const resolvedActiveSection = useMemo(() => {
+    if (leftNavHydrationPreserveActiveSectionRef.current) {
+      return activeSection;
+    }
     if (scnResolvedSection) {
       return scnResolvedSection;
     }
@@ -1304,6 +1314,7 @@ export default function NexoraShell({ children }: NexoraShellProps) {
     requestedView?: RightPanelView | null,
     leftNavKey?: LeftNavGroupKey | null
   ) => {
+    leftNavHydrationPreserveActiveSectionRef.current = false;
     const explicitSection = section;
     if (section !== activeSection) {
       setActiveSection(section);
@@ -1397,6 +1408,44 @@ export default function NexoraShell({ children }: NexoraShellProps) {
   }, [activeSection]);
 
   useEffect(() => {
+    if (!leftNavHydrationCompleteRef.current) {
+      leftNavHydrationCompleteRef.current = true;
+      const seed = canonicalLeftNavSeedRef.current;
+      const runtimeSnapshot = resolveCanonicalLeftNavSnapshotFromView(
+        upstreamRightPanelView,
+        seed.activeSection
+      );
+      const matched = seed.signature === runtimeSnapshot.signature;
+      reportLeftNavHydrationCheck({
+        seedSignature: seed.signature,
+        runtimeSignature: runtimeSnapshot.signature,
+        seed,
+        runtime: runtimeSnapshot,
+        matched,
+      });
+      if (matched) {
+        reportLeftNavCanonical({
+          activeSection: seed.activeSection,
+          activeNavMode: seed.activeNavMode,
+          rightPanelView: seed.rightPanelView,
+          source: "NexoraShell.hydration",
+        });
+      } else {
+        leftNavHydrationPreserveActiveSectionRef.current = true;
+        reportLeftNavHydrationMismatch({
+          seed,
+          runtime: runtimeSnapshot,
+          preserved: seed,
+          source: "NexoraShell.hydration",
+        });
+      }
+      upstreamViewBaselineRef.current = upstreamRightPanelView;
+      return;
+    }
+
+    if (upstreamRightPanelView === upstreamViewBaselineRef.current) return;
+    upstreamViewBaselineRef.current = upstreamRightPanelView;
+
     if (!upstreamMappedSection) return;
     if (
       isScnPanelView(upstreamRightPanelView) &&
@@ -2220,7 +2269,24 @@ export default function NexoraShell({ children }: NexoraShellProps) {
             transition: "flex-basis 160ms ease, width 160ms ease",
           }}
         >
-          {showExecutiveAssistantOnRight ? (
+          {useVisibleMrpRightRailHost ? (
+            <div
+              id={EXECUTIVE_WORKSPACE_ZONE_IDS.visibleMrpHost}
+              data-nx="visible-mrp-host"
+              style={{
+                flex: "1 1 auto",
+                minHeight: 0,
+                minWidth: 0,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                background: nx.rightRailBg,
+                borderLeft: `1px solid ${nx.borderStrong}`,
+              }}
+            />
+          ) : null}
+          {showExecutiveAssistantOnRight && !useVisibleMrpRightRailHost ? (
             <ExecutiveAssistantPanelShell
               collapsed={executiveAssistantCollapsed}
               showScenarioHost={executiveScenarioHudVisible}

@@ -76,8 +76,8 @@ function SceneObjectInstancesComponent({
   showObjectDebugLabels,
   showExecutiveLayoutLabels,
   selectedObjectId = null,
-  connectedToSelectedIds,
-  relationshipExplorationActive = false,
+  connectedToSelectedIds: _connectedToSelectedIds,
+  relationshipExplorationActive: _relationshipExplorationActive = false,
 }: SceneObjectInstancesProps): React.ReactElement {
   logLayoutPassThroughOnce({
     stableObjects,
@@ -94,12 +94,7 @@ function SceneObjectInstancesComponent({
         const plan = instancePlansById.get(stableId);
         if (!plan) return null;
         const objectKey = String(object.id ?? object.name ?? stableId);
-        const isSelected = isSceneObjectSelected(selectedObjectId, stableId, objectKey);
-        const connectedToSelected =
-          relationshipExplorationActive &&
-          (isSelected ||
-            connectedToSelectedIds?.has(stableId) ||
-            connectedToSelectedIds?.has(objectKey) === true);
+        const isCanonicalSelected = isSceneObjectSelected(selectedObjectId, stableId, objectKey);
         return (
           <AnimatableObject
             key={stableId}
@@ -107,9 +102,10 @@ function SceneObjectInstancesComponent({
             index={index}
             anim={animMap.get(object.id)}
             {...plan}
-            isSelected={isSelected}
-            connectedToSelected={connectedToSelected}
-            relationshipExplorationActive={relationshipExplorationActive}
+            isSelected={isCanonicalSelected}
+            canonicalSelectedId={selectedObjectId ?? null}
+            connectedToSelected={false}
+            relationshipExplorationActive={false}
             layoutPositions={layoutPositions}
             layoutLabelOffsets={layoutLabelOffsets}
             showObjectDebugLabels={showObjectDebugLabels}

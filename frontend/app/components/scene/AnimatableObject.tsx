@@ -106,14 +106,28 @@ import { resolveObjectLabelPlacement } from "../../lib/scene/objectLabelPlacemen
 import { areAnimatableObjectPropsEqual } from "../../lib/scene/animatableObjectPropsEqual";
 import {
   buildObjectClickEventId,
-  isNearestRaycastHit,
+  isNearestSelectableObjectHit,
   logObjectClickDiagnostic,
+  resolveObjectSelectionHitProxyScale,
+  tryAcceptPointerObjectSelection,
 } from "../../lib/selection/nexoraObjectClickTransaction";
+import {
+  reportDuplicateSelectionOwner,
+  reportObjectSelection,
+  reportSelectionMiss,
+} from "../../lib/selection/objectSelectionRuntimeContract";
+import {
+  logVisualSelectionAuthorityRejected,
+  CANONICAL_VISUAL_SELECTION_SOURCE,
+  logVisualSelectionLayerAudit,
+} from "../../lib/selection/selectionStateGuard";
 import {
   resolveObjectNameDensityProfile,
   resolveObjectNameOpacity,
   shouldRenderExecutiveObjectName,
 } from "../../lib/scene/objectNameDensityProfile";
+
+const disableMeshRaycast = () => null;
 
 const DEFAULT_SCANNER_STORY_REVEAL = Object.freeze({
   primary: 1,
@@ -256,6 +270,7 @@ const loggedObjectMaterialSignatures = new Map<string, string>();
 const loggedObjectTransformSignatures = new Map<string, string>();
 const loggedObjectTransformModeSignatures = new Set<string>();
 const loggedObjectTransformAuditSignatures = new Set<string>();
+const loggedStaleRingVisualBlocks = new Set<string>();
 
 export type AnimatableObjectProps = {
   obj: SceneObject;
@@ -314,6 +329,9 @@ export type AnimatableObjectProps = {
   layoutLabelOffsets?: Record<string, { y: number; opacity: number }>;
   connectedToSelected?: boolean;
   isSelected?: boolean;
+  canonicalSelectedId?: string | null;
+  /** @deprecated use canonicalSelectedId */
+  canonicalSelectedObjectId?: string | null;
   relationshipExplorationActive?: boolean;
   onObjectPositionChange?: (
     objectId: string,
@@ -375,6 +393,8 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   layoutLabelOffsets,
   connectedToSelected = false,
   isSelected = false,
+  canonicalSelectedId = null,
+  canonicalSelectedObjectId = null,
   relationshipExplorationActive = false,
   onObjectPositionChange,
   onObjectUserClick,
@@ -415,6 +435,11 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       });
     };
   }, []);
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.userData.objectId = stableIdWithName;
+    }
+  }, [stableIdWithName]);
   useEffect(() => {
     const nextId = renderId ?? resolveStableObjectId(obj, index);
     const previousId = stableObjectIdRef.current;
@@ -458,6 +483,39 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     typeof focusedId === "string" &&
     focusedId.length > 0;
   const isFocused = isFocusActive && (focusedId === stableIdWithName || focusedId === stableId);
+  const selectedVisual = isSelected === true;
+  const selectedVisualActive = selectedVisual;
+  const resolvedCanonicalSelectedId =
+    typeof canonicalSelectedId === "string" && canonicalSelectedId.trim().length > 0
+      ? canonicalSelectedId.trim()
+      : typeof canonicalSelectedObjectId === "string" && canonicalSelectedObjectId.trim().length > 0
+        ? canonicalSelectedObjectId.trim()
+        : null;
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (!isFocused || selectedVisual) return;
+    if (resolvedCanonicalSelectedId === stableIdWithName) return;
+    const key = `${focusedId ?? "none"}:${stableIdWithName}`;
+    if (loggedStaleRingVisualBlocks.has(key)) return;
+    loggedStaleRingVisualBlocks.add(key);
+    logVisualSelectionAuthorityRejected({
+      attemptedObjectId: stableIdWithName,
+      canonicalSelectedId: resolvedCanonicalSelectedId,
+      source: "focusedId",
+    });
+  }, [focusedId, isFocused, resolvedCanonicalSelectedId, stableIdWithName, selectedVisual]);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    logVisualSelectionLayerAudit({
+      objectId: stableIdWithName,
+      selectedVisual,
+      selectedId: resolvedCanonicalSelectedId,
+      ringSource: selectedVisual ? CANONICAL_VISUAL_SELECTION_SOURCE : "none",
+      labelSource: selectedVisual ? CANONICAL_VISUAL_SELECTION_SOURCE : "none",
+      boldSource: selectedVisual ? CANONICAL_VISUAL_SELECTION_SOURCE : "none",
+      glowSource: selectedVisual ? CANONICAL_VISUAL_SELECTION_SOURCE : "none",
+    });
+  }, [resolvedCanonicalSelectedId, selectedVisual, stableIdWithName]);
   const dimOthers = isFocusActive && !isFocused;
   const genericFocusDimmed = dimOthers;
   const defaultPos: [number, number, number] = [index * 1.8 - 1.8, 0, 0];
@@ -510,38 +568,46 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     getWorkspaceViewMode,
     getWorkspaceViewModeServerSnapshot
   );
+  const selectionHitProxyScale = useMemo(
+    () =>
+      resolveObjectSelectionHitProxyScale({
+        sceneObjectCount,
+        workspaceViewMode,
+      }),
+    [sceneObjectCount, workspaceViewMode]
+  );
   const executiveFocus = useMemo(
     () =>
       resolveExecutiveFocusWorkspaceState({
         objectId: stableIdWithName,
-        selectedObjectId: isSelected ? stableIdWithName : null,
+        selectedObjectId: selectedVisual ? stableIdWithName : null,
         focusedObjectId: focusedId,
         relatedObjectIds: neighborIds,
       }),
-    [focusedId, isSelected, neighborIds, stableIdWithName]
+    [focusedId, neighborIds, stableIdWithName, selectedVisual]
   );
   const adaptiveLabel = useMemo(
     () =>
       resolveWorkspaceLabelState(workspaceViewMode, {
         objectCount: sceneObjectCount,
-        selected: isSelected,
-        focused: isFocused,
+        selected: selectedVisualActive,
+        focused: false,
         forceMode: executiveFocus.labelModeOverride,
       }),
-    [executiveFocus.labelModeOverride, isFocused, isSelected, sceneObjectCount, workspaceViewMode]
+    [executiveFocus.labelModeOverride, sceneObjectCount, selectedVisualActive, workspaceViewMode]
   );
   const labelReduction = useMemo(
     () =>
       resolveExecutiveLabelReduction({
         objectCount: sceneObjectCount,
-        selected: isSelected,
-        focused: isFocused,
-        isCritical: isSelected || isFocused,
+        selected: selectedVisualActive,
+        focused: false,
+        isCritical: selectedVisualActive,
         isHighRisk: Boolean(obj.scanner_severity && obj.scanner_severity !== "low"),
         isConnected: neighborIds.length > 0,
         viewMode: workspaceViewMode,
       }),
-    [isFocused, isSelected, neighborIds.length, obj.scanner_severity, sceneObjectCount, workspaceViewMode]
+    [neighborIds.length, obj.scanner_severity, sceneObjectCount, selectedVisualActive, workspaceViewMode]
   );
   const layoutLabelOffset =
     layoutLabelOffsets?.[stableIdWithName] ??
@@ -619,7 +685,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         scannerSceneActive,
         causalRole: scannerCausality.role,
         isFocused,
-        isSelected,
+        isSelected: selectedVisual,
         isPinned,
         dimUnrelatedObjects: scannerDimRequested,
         scannerFragilityScore,
@@ -668,7 +734,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         scannerPolicy,
         scannerCausalityRole: scannerCausality.role,
         isFocused,
-        isSelected,
+        isSelected: selectedVisual,
         isPinned,
         isLowFragilityScan,
         scannerEmphasis,
@@ -743,27 +809,25 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       deriveExecutiveObjectImportanceTier({
         scannerSeverity: obj.scanner_severity,
         scannerHighlighted,
-        connectedToSelected,
+        connectedToSelected: false,
         isDecisionPathSource,
         isSimulationSource,
         role: visualRole,
-        selected: isSelected,
-        focused: isFocused,
+        selected: selectedVisualActive,
+        focused: false,
       }),
     [
-      connectedToSelected,
       isDecisionPathSource,
-      isFocused,
-      isSelected,
       isSimulationSource,
       obj.scanner_severity,
       scannerHighlighted,
+      selectedVisualActive,
       visualRole,
     ]
   );
   const executiveScaleSignature = [
     stableIdWithName,
-    isSelected ? 1 : 0,
+    selectedVisual ? 1 : 0,
     isFocused ? 1 : 0,
     hovered || isHovered ? 1 : 0,
     dimOthers ? 1 : 0,
@@ -786,8 +850,8 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     const normalized = normalizeExecutiveObjectScale({
       objectId: stableIdWithName,
       scale: executiveScaleInput,
-      selected: isSelected,
-      focused: isFocused,
+      selected: selectedVisualActive,
+      focused: false,
       hovered: hovered || isHovered,
       dimmed: dimOthers,
       importance: objectImportance,
@@ -804,12 +868,11 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     dimOthers,
     executiveScaleInput,
     hovered,
-    isFocused,
     isHovered,
-    isSelected,
     layoutRole,
     objectImportance,
     sceneObjectCount,
+    selectedVisualActive,
     stableIdWithName,
     workspaceViewMode,
     zoneLikeObject,
@@ -823,8 +886,8 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       resolveExecutiveLabelScale({
         objectCount: sceneObjectCount,
         importance: objectImportance,
-        selected: isSelected,
-        focused: isFocused,
+        selected: selectedVisualActive,
+        focused: false,
         hovered: hovered || isHovered,
         dimmed: dimOthers,
         baseFontSizePx: nameDensityProfile.fontSizePx,
@@ -834,12 +897,11 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       dimOthers,
       hovered,
       index,
-      isFocused,
       isHovered,
-      isSelected,
       nameDensityProfile.fontSizePx,
       objectImportance,
       sceneObjectCount,
+      selectedVisualActive,
     ]
   );
   const executiveGraphicsPreset = useMemo(() => {
@@ -854,8 +916,8 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         visualRole,
       });
     const hierarchyTier = resolveExecutiveVisualHierarchyTier({
-      selected: isSelected,
-      focused: isFocused,
+      selected: selectedVisualActive,
+      focused: false,
       scenarioActive: isSimulationSource || isDecisionPathSource,
       visualRole,
       category,
@@ -867,10 +929,9 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     });
   }, [
     isDecisionPathSource,
-    isFocused,
-    isSelected,
     isSimulationSource,
     obj,
+    selectedVisualActive,
     tags,
     visualProfile.category,
     visualRole,
@@ -883,7 +944,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const executiveNameProfile = useMemo(
     () => {
       const base = resolveObjectNameRenderingProfile({
-        selected: isSelected || isFocused,
+        selected: selectedVisualActive,
         fontSizePx: executiveLabelScale.fontSizePx,
       });
       return {
@@ -900,8 +961,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       executiveGraphicsPreset.labelWeight,
       executiveLabelScale.fontSizePx,
       executiveViewGraphics.labelContrast,
-      isFocused,
-      isSelected,
+      selectedVisualActive,
       workspaceViewMode,
     ]
   );
@@ -980,25 +1040,67 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   ]);
 
   const commitUserObjectClick = (event: any, source: "click" | "double_click") => {
-    if (!isNearestRaycastHit(event)) {
+    if (!isNearestSelectableObjectHit(event, stableIdWithName)) {
+      reportSelectionMiss({
+        objectId: stableIdWithName,
+        source: "AnimatableObject",
+        phase: "hit_detection",
+        eventId: buildObjectClickEventId(event),
+        reason: "not_nearest_selectable_object_hit",
+        intersectionCount: event.intersections?.length ?? 0,
+      });
       logObjectClickDiagnostic("[NEXORA_OBJECT_CLICK_REJECTED_SECOND_HIT]", {
         objectId: stableIdWithName,
-        reason: "not_nearest_raycast_hit",
+        reason: "not_nearest_selectable_object_hit",
         source,
       });
       return false;
     }
+    const gateResult = tryAcceptPointerObjectSelection(stableIdWithName, event);
+    if (!gateResult.accepted) {
+      if (gateResult.reason !== "duplicate_same_object") {
+        logObjectClickDiagnostic("[NEXORA_OBJECT_CLICK_REJECTED_SECOND_HIT]", {
+          objectId: stableIdWithName,
+          reason: gateResult.reason,
+          source,
+          clickEventId: gateResult.clickEventId,
+        });
+      }
+      return false;
+    }
     const eventId =
       source === "double_click"
-        ? `${buildObjectClickEventId(event)}:dbl`
-        : buildObjectClickEventId(event);
+        ? `${gateResult.clickEventId}:dbl`
+        : gateResult.clickEventId;
+    reportObjectSelection({
+      objectId: stableIdWithName,
+      source: "AnimatableObject",
+      phase: "hit_detection",
+      eventId,
+      intersectionCount: event.intersections?.length ?? 0,
+      hitProxyScale: selectionHitProxyScale,
+      sceneObjectCount,
+    });
     if (onObjectUserClick) {
+      logObjectClickDiagnostic("[Nexora][ObjectPointerAccepted]", {
+        objectId: stableIdWithName,
+        clickEventId: eventId,
+        source,
+        intersectionCount: event.intersections?.length ?? 0,
+      });
       onObjectUserClick(stableIdWithName, eventId);
       return true;
     }
-    if (isSelected) {
+    if (selectedVisual) {
       return false;
     }
+    reportDuplicateSelectionOwner({
+      objectId: stableIdWithName,
+      source: "AnimatableObject.setSelectedId_fallback",
+      competingOwner: "SceneContext.selectedId",
+      phase: "selection_commit",
+      eventId,
+    });
     setSelectedId(stableIdWithName);
     return true;
   };
@@ -1008,9 +1110,6 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     setHoveredId?.(null);
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
-    if (isSelected && onObjectUserClick) {
-      return;
-    }
     if (!commitUserObjectClick(event, "click")) {
       return;
     }
@@ -1082,11 +1181,6 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     }
   };
 
-  const stopPointerOnly = (event: any) => {
-    event.stopPropagation();
-    event.nativeEvent?.stopImmediatePropagation?.();
-  };
-
   const materialProps = useMemo(
     () => ({
       color: appliedColor,
@@ -1128,7 +1222,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const baseOpacity = materialProps.opacity ?? 0.9;
   const focusedOpacity = typeof uxOverrides.opacity === "number" ? clamp(uxOverrides.opacity, 0.1, 1) : 1.0;
   const hoveredOpacity =
-    !CALM_MODE && isHovered && !isFocused && !isSelected
+    !CALM_MODE && isHovered && !isFocused && !selectedVisual
       ? Math.min(1, baseOpacity + tokens.interaction.hoverOpacityBoost + interactionProfile.opacityBoost)
       : baseOpacity;
   const scannerOpacity = showCalmScannerConfirmation
@@ -1143,7 +1237,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       ? Math.max(baseOpacity * Math.min(scannerPolicy.opacityMultiplier, 0.88), theme === "day" ? 0.56 : 0.5)
       : visualState.isHighlighted
       ? Math.max(scannerOpacity, 0.72)
-      : visualState.isFocused || visualState.isSelected || visualState.isPinned
+      : visualState.isSelected || visualState.isPinned
       ? Math.max(focusedOpacity, 0.92)
       : scannerBackgroundDimmed
       ? baseOpacity
@@ -1180,31 +1274,25 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const selectionHighlight = useMemo(
     () =>
       resolveExecutiveObjectSelectionHighlight({
-        selected: isSelected,
-        focused: isFocused,
+        selected: selectedVisual,
+        focused: false,
         theme: theme === "day" ? "day" : "night",
       }),
-    [isFocused, isSelected, theme]
+    [theme, selectedVisual]
   );
+  const showFocusWireframe = false;
   const hoverAffordance = useMemo(
     () =>
       resolveExecutiveHoverAffordance({
         hovered: hovered || isHovered,
-        selected: isSelected,
-        focused: isFocused,
-        connectedToSelected,
-        relationshipExplorationActive,
+        selected: selectedVisual,
+        focused: false,
+        connectedToSelected: false,
+        relationshipExplorationActive: false,
       }),
-    [
-      connectedToSelected,
-      hovered,
-      isFocused,
-      isHovered,
-      isSelected,
-      relationshipExplorationActive,
-    ]
+    [hovered, isHovered, selectedVisual]
   );
-  useCursor(hovered || hoverAffordance.showGlow || isSelected || isFocused);
+  useCursor(hovered || hoverAffordance.showGlow || selectedVisual);
 
   const finalEmissiveIntensity =
     scannerPolicy.colorMode === "shadowed"
@@ -1216,9 +1304,11 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       : genericFocusDimmed
       ? 0
       : Math.max(focusEmissiveBoost, scannerGlowBoost);
-  const selectedBoost = isSelected ? Math.max(tokens.interaction.selectionGlow, baseEmissiveIntensity) : baseEmissiveIntensity;
+  const selectedBoost = selectedVisual
+    ? Math.max(tokens.interaction.selectionGlow, baseEmissiveIntensity)
+    : baseEmissiveIntensity;
   const hoveredBoost =
-    !CALM_MODE && hovered && !isSelected && !isFocused
+    !CALM_MODE && hovered && !selectedVisual && !isFocused
       ? Math.max(baseEmissiveIntensity + tokens.interaction.hoverIntensity, baseEmissiveIntensity)
       : baseEmissiveIntensity;
   const effectiveEmissiveIntensity =
@@ -1251,21 +1341,13 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         : 1;
   const warRoomAdjustedEmissiveIntensity = memoryAdjustedEmissiveIntensity * warRoomEmissiveMul;
 
-  const rawMeshEmissiveIntensity = isFocused
-    ? Math.max(
-        calmSeverityVisual.glowStrength,
-        (materialProps.emissiveIntensity ?? 0) +
-          calmSeverityVisual.outlineStrength * (theme === "day" ? 0.35 : 0.55)
-      )
-    : isSelected
-      ? Math.max(calmSeverityVisual.glowStrength, materialProps.emissiveIntensity ?? 0)
-      : Math.max(warRoomAdjustedEmissiveIntensity, calmSeverityVisual.glowStrength);
+  const rawMeshEmissiveIntensity = selectedVisual
+    ? Math.max(calmSeverityVisual.glowStrength, materialProps.emissiveIntensity ?? 0)
+    : Math.max(warRoomAdjustedEmissiveIntensity, calmSeverityVisual.glowStrength);
 
   const committedMeshOpacity = roundMaterialScalar(executiveAdjustedOpacity);
   const committedMeshEmissiveIntensity = roundMaterialScalar(rawMeshEmissiveIntensity);
-  const committedMeshEmissiveHex = isFocused
-    ? "#ffffff"
-    : isSelected
+  const committedMeshEmissiveHex = selectedVisual
       ? "#ffffff"
       : scannerHighlighted
         ? scannerColor
@@ -1341,7 +1423,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         scannerSceneActive,
         causalRole: scannerCausality.role,
         isFocused,
-        isSelected,
+        isSelected: selectedVisual,
         isPinned,
         dimUnrelatedObjects: scannerDimRequested,
         scannerFragilityScore,
@@ -1479,7 +1561,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       type: shape,
       zoneLike: zoneLikeObject,
       transformScale: finalUniform,
-      selected: isSelected,
+      selected: selectedVisual,
     });
     const explicitDimensions = readExplicitExecutiveDimensions(obj);
     const unclampedDimensions: ExecutiveGeometryBounds = {
@@ -1498,7 +1580,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       dimensions,
       finalWorldSize,
     };
-  }, [finalUniform, isSelected, obj, sceneObjectCount, shape, zoneLikeObject]);
+  }, [finalUniform, obj, sceneObjectCount, shape, selectedVisual, zoneLikeObject]);
   const staticScale = useMemo(
     () =>
       clampExecutiveRenderedScale({
@@ -1506,13 +1588,12 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         shape,
         finalScale: executiveGeometry.transformScale,
         viewMode: workspaceViewMode,
-        selected: isSelected,
-        focused: isFocused,
+        selected: selectedVisualActive,
+        focused: false,
       }),
     [
       executiveGeometry.transformScale,
-      isFocused,
-      isSelected,
+      selectedVisualActive,
       shape,
       stableIdWithName,
       workspaceViewMode,
@@ -1523,7 +1604,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       buildAnimatableMotionState({
         objType: obj.type,
         hierarchyAmbientMul: hierarchyStyle.ambientMul,
-        hierarchyScaleMul: isFocused || isSelected ? 1 : hierarchyStyle.scaleMul,
+        hierarchyScaleMul: selectedVisualActive ? 1 : hierarchyStyle.scaleMul,
         roleMotionProfile,
         roleLayoutProfile,
         scannerBackgroundDimmed,
@@ -1540,7 +1621,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         simulationNodeStyle,
         passiveAttentionMemoryStrength,
         interactionRole,
-        isSelected,
+        isSelected: selectedVisual,
         isHovered,
         isSimulationSource,
         isDecisionPathSource,
@@ -1549,7 +1630,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         decisionCenter,
         finalPosition,
         focusScaleMul,
-        isFocused,
+        isFocused: false,
         scannerHighlighted,
         scannerFocused,
         isLowFragilityScan,
@@ -1604,16 +1685,15 @@ export const AnimatableObject = React.memo(function AnimatableObject({
           ? finalUniform * calmScale
           : finalUniform * effectiveScannerScaleMul * calmSelectionScale * tokens.interaction.sceneObjectEmphasis,
         viewMode: workspaceViewMode,
-        selected: isSelected,
-        focused: isFocused,
+        selected: selectedVisualActive,
+        focused: false,
       }),
     [
       calmScale,
       calmSelectionScale,
       effectiveScannerScaleMul,
       finalUniform,
-      isFocused,
-      isSelected,
+      selectedVisualActive,
       shape,
       stableIdWithName,
       tokens.interaction.sceneObjectEmphasis,
@@ -1764,24 +1844,38 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     });
   }, [roundedFinalObjectScale, stableIdWithName]);
 
+  const selectionHitProps = {
+    onPointerDown: handleObjectPointerDown,
+    onPointerMove: handleObjectPointerMove,
+    onPointerUp: handleObjectPointerUp,
+    onPointerCancel: handleObjectPointerUp,
+    onClick: handleSelect,
+    onDoubleClick: handleDoubleClickFocus,
+    onPointerOver: (event: any) => {
+      event.stopPropagation();
+      event.nativeEvent?.stopImmediatePropagation?.();
+      setHovered(true);
+      setHoveredId?.(stableIdWithName);
+      patchExecutiveInteractionState({ hoveredObjectId: stableIdWithName });
+    },
+    onPointerOut: () => {
+      setHovered(false);
+      setHoveredId?.(null);
+      patchExecutiveInteractionState({ hoveredObjectId: null });
+    },
+  };
+
   let node: React.ReactNode = null;
   if (obj.type === "points_cloud" && pointsGeometry) {
     node = (
       <group>
         <mesh
-          onPointerDown={stopPointerOnly}
-          onClick={handleSelect}
-          onPointerOver={(event) => {
-            event.stopPropagation();
-            setHovered(true);
-          }}
-          onPointerOut={() => {
-            setHovered(false);
-          }}
+          userData={{ objectId: stableIdWithName, selectableHit: true }}
+          {...selectionHitProps}
         >
           <sphereGeometry
             args={[
-              executiveGeometry.args[0] ?? 0.8,
+              (executiveGeometry.args[0] ?? 0.8) * selectionHitProxyScale,
               executiveGeometry.args[1] ?? 16,
               executiveGeometry.args[2] ?? 16,
             ]}
@@ -1789,18 +1883,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
 
-        <points
-          geometry={pointsGeometry}
-          onPointerDown={stopPointerOnly}
-          onClick={handleSelect}
-          onPointerOver={(event) => {
-            event.stopPropagation();
-            setHovered(true);
-          }}
-          onPointerOut={() => {
-            setHovered(false);
-          }}
-        >
+        <points geometry={pointsGeometry} raycast={disableMeshRaycast}>
           <pointsMaterial
             color={appliedColor}
             size={((obj as any).material?.size as number | undefined) ?? 0.03}
@@ -1814,37 +1897,31 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   } else if (obj.type === "line_path" && lineGeometry) {
     node = (
       <group>
-        {tubeGeometry && (
-          <mesh
-            geometry={tubeGeometry}
-            onPointerDown={stopPointerOnly}
-            onClick={handleSelect}
-            onPointerOver={(event: any) => {
-              event.stopPropagation();
-              setHovered(true);
-            }}
-            onPointerOut={() => {
-              setHovered(false);
-            }}
-          >
-            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-          </mesh>
-        )}
+        {tubeGeometry ? (
+          <>
+            <mesh geometry={tubeGeometry} raycast={disableMeshRaycast}>
+              <meshStandardMaterial
+                color={appliedColor}
+                transparent
+                opacity={materialProps.opacity ?? 0.9}
+              />
+            </mesh>
+            <mesh
+              geometry={tubeGeometry}
+              userData={{ objectId: stableIdWithName, selectableHit: true }}
+              {...selectionHitProps}
+            >
+              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            </mesh>
+          </>
+        ) : null}
 
         <Line
           points={(pathData ?? []) as any}
           transparent
           opacity={materialProps.opacity ?? 0.9}
           color={appliedColor}
-          onPointerDown={stopPointerOnly}
-          onClick={handleSelect}
-          onPointerOver={(event: any) => {
-            event.stopPropagation();
-            setHovered(true);
-          }}
-          onPointerOut={() => {
-            setHovered(false);
-          }}
+          raycast={disableMeshRaycast}
         />
       </group>
     );
@@ -1857,33 +1934,11 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       ? (baseScale as any)
       : [baseScale ?? 1, baseScale ?? 1, baseScale ?? 1];
 
-    const meshProps = {
-      castShadow: !!shadowsEnabled,
-      receiveShadow: !!shadowsEnabled,
-      onPointerDown: handleObjectPointerDown,
-      onPointerMove: handleObjectPointerMove,
-      onPointerUp: handleObjectPointerUp,
-      onPointerCancel: handleObjectPointerUp,
-      onClick: handleSelect,
-      onDoubleClick: handleDoubleClickFocus,
-      onPointerOver: (event: any) => {
-        event.stopPropagation();
-        setHovered(true);
-        setHoveredId?.(stableIdWithName);
-        patchExecutiveInteractionState({ hoveredObjectId: stableIdWithName });
-      },
-      onPointerOut: () => {
-        setHovered(false);
-        setHoveredId?.(null);
-        patchExecutiveInteractionState({ hoveredObjectId: null });
-      },
-      scale: meshScale,
-    };
-
     node = (
       <>
         {scannerHaloVisible ? (
           <mesh
+            raycast={disableMeshRaycast}
             rotation={[Math.PI / 2, 0, 0]}
             scale={[
               (meshScale?.[0] ?? 1) * (scannerFocused ? 1.72 : 1.58),
@@ -1901,9 +1956,9 @@ export const AnimatableObject = React.memo(function AnimatableObject({
             />
           </mesh>
         ) : null}
-        {isFocused ? (
+        {showFocusWireframe ? (
           <mesh
-            {...(meshProps as any)}
+            raycast={disableMeshRaycast}
             scale={[
               (meshScale?.[0] ?? 1) * 1.03,
               (meshScale?.[1] ?? 1) * 1.03,
@@ -1921,6 +1976,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         ) : null}
         {selectionHighlight.showRing ? (
           <mesh
+            raycast={disableMeshRaycast}
             rotation={[Math.PI / 2, 0, 0]}
             scale={[
               (meshScale?.[0] ?? 1) * selectionHighlight.ringScale,
@@ -1940,6 +1996,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         ) : null}
         {!selectionHighlight.showRing && executiveGraphicsPreset.borderOpacity > 0.06 ? (
           <mesh
+            raycast={disableMeshRaycast}
             rotation={[Math.PI / 2, 0, 0]}
             scale={[
               (meshScale?.[0] ?? 1) * 1.02,
@@ -1960,7 +2017,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
           </mesh>
         ) : null}
 
-        <mesh {...(meshProps as any)}>
+        <mesh raycast={disableMeshRaycast} castShadow={!!shadowsEnabled} receiveShadow={!!shadowsEnabled} scale={meshScale}>
           {geometryNode}
           <meshStandardMaterial
             {...materialProps}
@@ -1974,11 +2031,12 @@ export const AnimatableObject = React.memo(function AnimatableObject({
           />
         </mesh>
         <mesh
-          {...(meshProps as any)}
+          {...selectionHitProps}
+          userData={{ objectId: stableIdWithName, selectableHit: true }}
           scale={[
-            (meshScale?.[0] ?? 1) * 1.25,
-            (meshScale?.[1] ?? 1) * 1.25,
-            (meshScale?.[2] ?? 1) * 1.25,
+            (meshScale?.[0] ?? 1) * selectionHitProxyScale,
+            (meshScale?.[1] ?? 1) * selectionHitProxyScale,
+            (meshScale?.[2] ?? 1) * selectionHitProxyScale,
           ]}
         >
           {geometryForExecutiveNormalized(executiveGeometry)}
@@ -1998,16 +2056,16 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     shouldRenderExecutiveObjectName({
       profile: nameDensityProfile,
       objectCount: sceneObjectCount,
-      selected: isSelected,
-      focused: isFocused,
+      selected: selectedVisualActive,
+      focused: false,
       index,
     });
   const executiveNameOpacity =
     resolveObjectNameOpacity({
       profile: nameDensityProfile,
       objectCount: sceneObjectCount,
-      selected: isSelected,
-      focused: isFocused,
+      selected: selectedVisualActive,
+      focused: false,
     }) *
     executiveFocus.opacity *
     executiveLabelScale.opacity *
@@ -2072,7 +2130,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
                 theme === "day"
                   ? "drop-shadow(0 0 5px rgba(15,23,42,0.28))"
                   : "drop-shadow(0 0 7px rgba(125,211,252,0.34))",
-              transform: isFocused || isSelected ? "scale(1.08)" : "scale(1)",
+              transform: selectedVisualActive ? "scale(1.08)" : "scale(1)",
               transition: "opacity 180ms ease, transform 180ms ease",
               userSelect: "none",
             }}

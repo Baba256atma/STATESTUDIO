@@ -29,6 +29,9 @@ import { WorkspaceLayoutProvider } from "../../lib/ui/useWorkspaceLayout";
 import { HudPreferencesProvider } from "../../lib/ui/useHudPreferences";
 import { SceneThemeProvider } from "../../lib/theme/useSceneTheme";
 import { shouldExposeExecutiveDevSurfaces } from "../../lib/ui/executiveWorkspacePresentation";
+import { initializeNexoraArchitectureFreeze } from "../../lib/architecture/nexoraArchitectureFreezeRuntime";
+import { emitPhase2RuntimeCertification } from "../../lib/architecture/nexoraPhase2RuntimeCertification";
+import { emitPhase3DashboardCertification } from "../../lib/architecture/nexoraPhase3DashboardCertification";
 
 export type NexoraManagerWorkspaceShellProps = {
   domainId: string;
@@ -65,6 +68,12 @@ export function NexoraManagerWorkspaceShell(props: NexoraManagerWorkspaceShellPr
     setThemeModeState(stored);
     setPrefersDark(getSystemPrefersDark());
     logWorkspaceAppearancePreferenceRestored(stored, resolveThemeMode(stored, getSystemPrefersDark()));
+  }, []);
+
+  React.useEffect(() => {
+    initializeNexoraArchitectureFreeze();
+    emitPhase2RuntimeCertification();
+    emitPhase3DashboardCertification();
   }, []);
 
   const resolvedTheme: ResolvedUiTheme = React.useMemo(
@@ -136,7 +145,7 @@ export function NexoraManagerWorkspaceShell(props: NexoraManagerWorkspaceShellPr
                     organizationId={organizationId}
                   >
                     <NexoraOSShell>
-                      <NexoraShell>
+                      <NexoraShell canonicalDomainExperience={resolvedSelection}>
                         <HomeScreen domainExperience={resolvedSelection} />
                       </NexoraShell>
                     </NexoraOSShell>

@@ -114,7 +114,7 @@ export function buildAnimatableMotionState(input: BuildAnimatableMotionStateInpu
       ? input.scannerScaleMultiplier + 0.18 + input.scannerEmphasis * 0.18 * input.roleMotionProfile.scaleAuthority
       : input.scannerRank === "secondary"
       ? input.scannerScaleMultiplier + 0.02 + input.scannerEmphasis * 0.04 * input.roleMotionProfile.scaleAuthority
-      : input.visualState.isFocused || input.visualState.isSelected || input.visualState.isPinned
+      : input.visualState.isSelected || input.visualState.isPinned
       ? 1.04
       : 1;
 

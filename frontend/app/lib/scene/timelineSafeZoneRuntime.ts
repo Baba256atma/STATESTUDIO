@@ -8,6 +8,7 @@ import {
 import { devLogThrottled } from "../runtime/diagnosticThrottle.ts";
 import type { SceneHudPanelId } from "./sceneHudRegistry";
 import { getSceneHudRegistration } from "./sceneHudRegistry";
+import { SCENE_LAYOUT_METRICS } from "./sceneLayoutContract";
 
 export type TimelineSafeZone = {
   bottomOffset: number;
@@ -77,7 +78,10 @@ export function resolveTimelineSafeZone(context: TimelineSafeZoneContext): Timel
         : timelineEntry.estimatedHeight;
   const quickHeight = context.quickActionsVisible ? quickEntry.estimatedHeight + 12 : 0;
   const reservedHeight = (context.timelineVisible ? timelineHeight : 0) + quickHeight;
-  const bottomOffset = Math.max(isMobile ? 72 : 96, reservedHeight + (isMobile ? 12 : 16));
+  const bottomOffset = Math.max(
+    isMobile ? 72 : SCENE_LAYOUT_METRICS.chatInputClearance,
+    reservedHeight + SCENE_LAYOUT_METRICS.bottomHudPadding
+  );
 
   const zone: TimelineSafeZone = {
     bottomOffset,

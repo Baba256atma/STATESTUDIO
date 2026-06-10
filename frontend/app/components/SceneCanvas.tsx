@@ -27,6 +27,22 @@ import {
   recordTopologyRebuild,
   recordObjectSelection,
 } from "../lib/diagnostics/connectionRuntimeStabilityAudit";
+import { reportSelectionMiss } from "../lib/selection/objectSelectionRuntimeContract";
+import type { SceneSelectionChangeOptions } from "../lib/selection/selectionStateGuard";
+import { normalizeSelectedObjectId } from "../lib/selection/selectionStateGuard";
+import {
+  logObjectClickDiagnostic,
+  parseClickEventId,
+} from "../lib/selection/nexoraObjectClickTransaction";
+
+const SCENE_CANVAS_POINTER_SELECTION_GATE_MS = 180;
+
+type ActivePointerSelection = {
+  pointerId: number | null;
+  startedAt: number;
+  acceptedObjectId: string | null;
+  consumed: boolean;
+};
 import {
   isProjectedPointWithinSafeRegion,
   measureFrameDrift,
@@ -128,6 +144,8 @@ import type { ExecutiveStatusHudModel } from "./scene/status/ExecutiveStatusHud.
 import { ExecutiveSceneToolbarOverlay } from "./scene/navigation/ExecutiveSceneToolbarOverlay";
 import { ExecutiveFocusModeDocumentBridge } from "./scene/navigation/ExecutiveFocusModeDocumentBridge";
 import { SceneHudLayer } from "./scene/SceneHudLayer";
+import { SceneHudZoneLayout, SceneHudZone, SCENE_HUD_ZONE_IDS } from "./scene/SceneHudZoneLayout";
+import type { SceneHudZoneContractContext } from "../lib/scene/sceneHudZoneContract";
 import { SceneNavigationController } from "./scene/navigation/SceneNavigationController";
 import { SCENE_NAVIGATION_ACTION_EVENT } from "../lib/scene/sceneNavigationContract";
 import {
@@ -325,6 +343,8 @@ export type SceneCanvasProps = {
   getUxForObject: (id: string) => { shape?: string; base_color?: string; opacity?: number; scale?: number } | null;
   objectUxById?: Record<string, { opacity?: number; scale?: number }>;
   selectedObjectId?: string | null;
+  /** Canonical visual selection id — sole authority for ring/bold/label/glow. */
+  selectedId?: string | null;
 
   loops: any[];
   showLoops: boolean;
@@ -344,9 +364,14 @@ export type SceneCanvasProps = {
   onPointerMissed: () => void;
   onOrbitStart: () => void;
   onOrbitEnd: () => void;
-  onSelectedChange: (id: string | null) => void;
+  onSelectedChange: (id: string | null, options?: SceneSelectionChangeOptions) => void;
   onObjectUserClick?: (objectId: string, eventId: string) => void;
   sceneSelectionEchoGuardRef?: React.MutableRefObject<string | null | undefined>;
+  pointerSelectionGateRef?: React.MutableRefObject<{
+    clickEventId: string;
+    acceptedObjectId: string;
+    acceptedAt: number;
+  } | null>;
   onObjectPositionChange?: (
     objectId: string,
     position: { x: number; y: number; z: number },
@@ -391,6 +416,11 @@ export type SceneCanvasProps = {
   sceneNavigationToolbar?: boolean;
   /** @deprecated Use sceneNavigationToolbar */
   cameraToolbar?: boolean;
+  /** Scene HUD zone layout — reserves Object Panel left of Main Right Panel. */
+  sceneHudZoneContext?: Pick<
+    SceneHudZoneContractContext,
+    "mainRightPanelWidth" | "mainRightPanelVisible"
+  >;
 };
 
 function SceneFogSync({ color, near, far }: { color: string; near: number; far: number }) {
@@ -516,16 +546,12 @@ function FullRegistrar({
   setOverrideRefLocal,
   clearAllOverridesRefLocal,
   pruneOverridesRefLocal,
-  onSelectedChange,
-  sceneSelectionEchoGuardRef,
 }: {
   selectedIdRefLocal: React.MutableRefObject<string | null>;
   overridesRefLocal: React.MutableRefObject<Record<string, any>>;
   setOverrideRefLocal: React.MutableRefObject<(id: string, patch: any) => void>;
   clearAllOverridesRefLocal: React.MutableRefObject<() => void>;
   pruneOverridesRefLocal: React.MutableRefObject<(ids: string[]) => void>;
-  onSelectedChange: (id: string | null) => void;
-  sceneSelectionEchoGuardRef?: React.MutableRefObject<string | null | undefined>;
 }) {
   const selectedId = useSelectedId();
   const overrides = useOverrides();
@@ -536,15 +562,13 @@ function FullRegistrar({
 
   useEffect(() => {
     selectedIdRefLocal.current = selectedId;
-    if (sceneSelectionEchoGuardRef?.current === selectedId) return;
     if (lastSelectedIdRef.current === selectedId) return;
     lastSelectedIdRef.current = selectedId;
     if (selectedId) {
       markSelectionActivity();
       recordObjectSelection(selectedId);
     }
-    onSelectedChange(selectedId);
-  }, [selectedId, onSelectedChange, sceneSelectionEchoGuardRef, selectedIdRefLocal]);
+  }, [selectedId, selectedIdRefLocal]);
 
   useEffect(() => {
     overridesRefLocal.current = overrides;
@@ -2554,21 +2578,48 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   );
   const orbitMode = props.prefs?.orbitMode ?? "auto";
   const selectedIdCtx = useSelectedId();
+  const canonicalSelectedObjectId = normalizeSelectedObjectId(
+    props.selectedId ?? props.selectedObjectId
+  );
+  const canonicalCanvasObjectSelection = useMemo(
+    () =>
+      canonicalSelectedObjectId
+        ? {
+            highlighted_objects: [canonicalSelectedObjectId],
+            dim_unrelated_objects: false,
+          }
+        : null,
+    [canonicalSelectedObjectId]
+  );
   const lastHighlightedRef = useRef<string | null>(null);
   useEffect(() => {
-    const nextSelectedId = typeof props.selectedObjectId === "string" ? props.selectedObjectId.trim() : "";
+    const nextSelectedId = normalizeSelectedObjectId(props.selectedId ?? props.selectedObjectId) ?? "";
     if (!nextSelectedId) {
       lastHighlightedRef.current = null;
+      if (selectedIdCtx != null) {
+        props.selectedSetterRef.current?.(null);
+      }
       return;
     }
     if (selectedIdCtx === nextSelectedId) return;
     if (lastHighlightedRef.current === nextSelectedId) return;
+    const echoGuard = props.sceneSelectionEchoGuardRef?.current;
+    if (echoGuard === nextSelectedId) {
+      lastHighlightedRef.current = nextSelectedId;
+      if (process.env.NODE_ENV !== "production") {
+        logObjectClickDiagnostic("[Nexora][SceneSelectionEchoIgnored]", {
+          objectId: nextSelectedId,
+          source: "prop_sync",
+        });
+      }
+      return;
+    }
     lastHighlightedRef.current = nextSelectedId;
     const id = requestAnimationFrame(() => {
       props.selectedSetterRef.current?.(nextSelectedId);
     });
     return () => cancelAnimationFrame(id);
-  }, [props.selectedObjectId, props.selectedSetterRef, selectedIdCtx]);
+  }, [props.sceneSelectionEchoGuardRef, props.selectedId, props.selectedObjectId, props.selectedSetterRef, selectedIdCtx]);
   const sceneFragilityLevel = useMemo(() => {
     const level =
       props.sceneJson?.scene?.scanner_state_vector?.fragility_level ??
@@ -2580,11 +2631,11 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   const overlayRuntime = useSceneOverlayRuntime({
     sceneJson: props.sceneJson,
     loops: props.loops,
-    selectedObjectId: selectedIdCtx,
+    selectedObjectId: canonicalSelectedObjectId,
     scenarioTrigger: props.scenarioTrigger,
     manualPropagationSourceId: props.manualPropagationSourceId,
     propagationPayload: props.propagationPayload,
-    objectSelection: props.objectSelection,
+    objectSelection: canonicalCanvasObjectSelection,
     fragilityLevel: sceneFragilityLevel,
     previewEnabled: true,
   });
@@ -2838,6 +2889,8 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   const tmpWorld = useMemo(() => new THREE.Vector3(), []);
   const [isHudInteracting, setIsHudInteracting] = useState(false);
   const isHudInteractingRef = useRef(false);
+  const activePointerSelectionRef = useRef<ActivePointerSelection | null>(null);
+  const pointerSelectionResetTimerRef = useRef<number | null>(null);
   const lastOverlayDispatchKeyRef = useRef<string>("");
   const lastHighlightTraceSigRef = useRef<string>("");
   const stableGlobalScaleInputRef = useRef<{ signature: string; value: number } | null>(null);
@@ -2903,23 +2956,30 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       JSON.stringify({
         objectCount: sceneObjectIds.length,
         objectIds: [...sceneObjectIds].sort(),
-        selectedObjectId: selectedIdCtx ?? props.selectedObjectId ?? null,
+        selectedObjectId: canonicalSelectedObjectId,
       }),
-    [props.selectedObjectId, sceneObjectIds, selectedIdCtx]
+    [canonicalSelectedObjectId, sceneObjectIds]
   );
   useEffect(() => {
     updateIdleRuntimeSemanticSignature(idleRuntimeSemanticSignature);
   }, [idleRuntimeSemanticSignature]);
-  const rawHighlightedObjectIds = Array.isArray(combinedObjectSelection?.highlighted_objects)
-    ? combinedObjectSelection.highlighted_objects.map(String)
-    : [];
-  const rawHighlightedObjectIdsSig = useMemo(
-    () => JSON.stringify(rawHighlightedObjectIds),
-    [rawHighlightedObjectIds]
+  const canonicalCombinedObjectSelection = useMemo(() => {
+    if (!canonicalSelectedObjectId) return null;
+    return {
+      highlighted_objects: [canonicalSelectedObjectId],
+      risk_sources: [] as string[],
+      risk_targets: [] as string[],
+      dim_unrelated_objects: false,
+    };
+  }, [canonicalSelectedObjectId]);
+  const objectSelectionSignature = buildSceneObjectSelectionSignature(canonicalCombinedObjectSelection ?? null);
+  const stableObjectSelection = useMemo(
+    () => canonicalCombinedObjectSelection ?? null,
+    [objectSelectionSignature]
   );
   const highlightedObjectIds = useMemo(
-    () => Array.from(new Set(rawHighlightedObjectIds)).sort(),
-    [rawHighlightedObjectIdsSig]
+    () => (canonicalSelectedObjectId ? [canonicalSelectedObjectId] : []),
+    [canonicalSelectedObjectId]
   );
   const sceneJsonObjectsSignature = useMemo(
     () =>
@@ -2928,12 +2988,6 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       ),
     [props.sceneJson]
   );
-  const objectSelectionSignature = buildSceneObjectSelectionSignature(combinedObjectSelection ?? null);
-  const stableObjectSelection = useMemo(
-    () => combinedObjectSelection ?? null,
-    [objectSelectionSignature]
-  );
-
   const timelineSpatialInteraction = useSyncExternalStore(
     subscribeTimelineSpatialInteraction,
     getTimelineSpatialInteractionState,
@@ -3210,7 +3264,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     Boolean(mergedPropagationOverlay?.active);
   const renderObjectSelection = useMemo(
     () =>
-      sanitizeExecutiveObjectSelectionForRender(stableTwinMergedObjectSelection, {
+      sanitizeExecutiveObjectSelectionForRender(canonicalCanvasObjectSelection, {
         objectCount: sceneObjectCountForVisibility,
         focusMode: props.focusMode,
         focusPinned: props.focusPinned,
@@ -3223,7 +3277,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       props.focusMode,
       props.focusPinned,
       sceneObjectCountForVisibility,
-      twinMergedSelectionSignature,
+      canonicalCanvasObjectSelection,
     ]
   );
   const renderObjectSelectionSignature = buildSceneObjectSelectionSignature(renderObjectSelection ?? null);
@@ -3257,11 +3311,11 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   const renderVisibilityInput = useMemo(
     () => ({
       focusMode: props.focusMode,
-      selectedObjectId: null,
+      selectedObjectId: canonicalSelectedObjectId,
       executiveFocusModeEnabled: executiveFocusSnapshot.enabled,
       focusPinned: props.focusPinned,
     }),
-    [executiveFocusSnapshot.enabled, props.focusMode, props.focusPinned]
+    [canonicalSelectedObjectId, executiveFocusSnapshot.enabled, props.focusMode, props.focusPinned]
   );
 
   const renderObjects = useMemo(
@@ -3400,9 +3454,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       : sceneJsonObjectIds.filter(
           (id) =>
             id === props.focusedId ||
-            id === renderVisibilityInput.selectedObjectId ||
-            (Array.isArray(stableRenderObjectSelection?.highlighted_objects) &&
-              stableRenderObjectSelection.highlighted_objects.map(String).includes(id))
+            id === renderVisibilityInput.selectedObjectId
         );
     const activeFilters = detectSceneObjectPipelineFilters({
       sceneJsonCount: sceneJsonObjectIds.length,
@@ -3414,9 +3466,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       focusMode: props.focusMode,
       selectedObjectId: renderVisibilityInput.selectedObjectId,
       scenarioId: props.scenarioSimulation?.scenarioId ?? null,
-      objectSelectionHighlightCount: Array.isArray(stableRenderObjectSelection?.highlighted_objects)
-        ? stableRenderObjectSelection.highlighted_objects.length
-        : 0,
+      objectSelectionHighlightCount: canonicalSelectedObjectId ? 1 : 0,
     });
     const snapshot = {
       sceneJsonObjectIds,
@@ -3464,7 +3514,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
 
   const executiveCameraContext = useMemo<ExecutiveCameraContextInput>(
     () => ({
-      selectedObjectId: selectedIdCtx ?? props.selectedObjectId ?? null,
+      selectedObjectId: canonicalSelectedObjectId,
       focusedObjectId: props.focusedId ?? null,
       objectPanelOpen: Boolean(props.objectInfoHud?.model.selectedObjectId),
       simulationRunning:
@@ -3489,9 +3539,8 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       props.focusedId,
       props.objectInfoHud?.model.selectedObjectId,
       props.scenarioTrigger,
-      props.selectedObjectId,
+      canonicalSelectedObjectId,
       propagationMode,
-      selectedIdCtx,
       simulationOverlay.highlightedIds.length,
       simulationOverlay.links.length,
       workspaceViewMode,
@@ -3518,8 +3567,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     props.sceneJson?.meta,
     renderObjects,
     topologyRuntimeEnabled,
-    selectedIdCtx,
-    props.selectedObjectId,
+    canonicalSelectedObjectId,
     workspaceViewMode,
   ]);
   const executiveLayoutPositions = executiveObjectLayout?.positions;
@@ -3545,12 +3593,12 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   const sceneCanvasRenderSignature = useMemo(
     () =>
       [
-        selectedIdCtx ?? "",
+        canonicalSelectedObjectId ?? "",
         String(renderObjects.length),
         topologyMode,
         layoutBoundsSignature,
       ].join("|"),
-    [selectedIdCtx, renderObjects.length, topologyMode, layoutBoundsSignature]
+    [canonicalSelectedObjectId, renderObjects.length, topologyMode, layoutBoundsSignature]
   );
   const lastRecordedSceneCanvasSignatureRef = useRef("");
   useEffect(() => {
@@ -3631,6 +3679,56 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     [globalScale, layoutPositions, props.getUxForObject, props.objectUxById]
   );
 
+  const clearActivePointerSelection = useCallback(() => {
+    activePointerSelectionRef.current = null;
+    if (pointerSelectionResetTimerRef.current != null) {
+      window.clearTimeout(pointerSelectionResetTimerRef.current);
+      pointerSelectionResetTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleActivePointerSelectionReset = useCallback(() => {
+    if (pointerSelectionResetTimerRef.current != null) {
+      window.clearTimeout(pointerSelectionResetTimerRef.current);
+    }
+    pointerSelectionResetTimerRef.current = window.setTimeout(() => {
+      pointerSelectionResetTimerRef.current = null;
+      activePointerSelectionRef.current = null;
+    }, SCENE_CANVAS_POINTER_SELECTION_GATE_MS);
+  }, []);
+
+  useEffect(() => () => clearActivePointerSelection(), [clearActivePointerSelection]);
+
+  const handleGatedObjectUserClick = useCallback(
+    (objectId: string, eventId: string) => {
+      const normalizedId = objectId.trim();
+      if (!normalizedId || !props.onObjectUserClick) return;
+
+      const active = activePointerSelectionRef.current;
+      if (active?.consumed) {
+        if (process.env.NODE_ENV !== "production") {
+          logObjectClickDiagnostic("[Nexora][SceneCanvasMultiObjectClickBlocked]", {
+            acceptedObjectId: active.acceptedObjectId,
+            blockedObjectId: normalizedId,
+            pointerId: active.pointerId,
+          });
+        }
+        return;
+      }
+
+      const { pointerId } = parseClickEventId(eventId);
+      activePointerSelectionRef.current = {
+        pointerId: Number.isFinite(pointerId) ? pointerId : null,
+        startedAt: performance.now(),
+        acceptedObjectId: normalizedId,
+        consumed: true,
+      };
+      scheduleActivePointerSelectionReset();
+      props.onObjectUserClick(normalizedId, eventId);
+    },
+    [props.onObjectUserClick, scheduleActivePointerSelectionReset]
+  );
+
   const sceneRendererProps = useMemo(
     () => ({
       shadowsEnabled,
@@ -3648,7 +3746,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       layoutLabelOffsets: executiveObjectLayout?.labelOffsets,
       topologyConnectionLines: topologyConnectionLines.lines,
       topologyConnectionLinesVisible: topologyRuntimeEnabled,
-      topologyConnectionSelectedObjectId: selectedIdCtx ?? props.selectedObjectId ?? null,
+      topologyConnectionSelectedObjectId: canonicalSelectedObjectId,
       runtimeObjectPositionContext: {
         topologyRuntimeLayoutPositions: topologyRuntimeLayoutPositions,
         layoutPositions,
@@ -3657,7 +3755,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       showLoops: props.showLoops,
       showLoopLabels: props.showLoopLabels,
       onObjectPositionChange: props.onObjectPositionChange,
-      onObjectUserClick: props.onObjectUserClick,
+      onObjectUserClick: handleGatedObjectUserClick,
     }),
     [
       shadowsEnabled,
@@ -3671,7 +3769,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       props.motionCalm,
       props.objectUxById,
       props.onObjectPositionChange,
-      props.onObjectUserClick,
+      handleGatedObjectUserClick,
       props.showLoopLabels,
       props.showLoops,
       rendererTheme,
@@ -3681,8 +3779,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       topologyRuntimeEnabled,
       topologyConnectionLines.lines,
       topologyRuntimeLayoutPositions,
-      selectedIdCtx,
-      props.selectedObjectId,
+      canonicalSelectedObjectId,
     ]
   );
 
@@ -3738,24 +3835,17 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   }, [props.sceneJson, renderObjects.length]);
 
   useEffect(() => {
-    const highlightedSet = new Set(highlightedObjectIds);
-    const protectedIds = Array.from(
-      new Set([
-        ...highlightedObjectIds,
-        ...(props.focusedId ? [String(props.focusedId)] : []),
-        ...(selectedIdCtx ? [String(selectedIdCtx)] : []),
-      ])
-    );
+    const protectedIds = canonicalSelectedObjectId ? [canonicalSelectedObjectId] : [];
     const dimmedIds =
       combinedObjectSelection?.dim_unrelated_objects === true
-        ? sceneObjectIds.filter((id) => !highlightedSet.has(id) && id !== props.focusedId && id !== selectedIdCtx).slice(0, 6)
+        ? sceneObjectIds.filter((id) => id !== canonicalSelectedObjectId).slice(0, 6)
         : [];
 
     const traceSig = JSON.stringify({
       highlightedObjectIds,
       dimUnrelatedObjects: combinedObjectSelection?.dim_unrelated_objects === true,
       focusedId: props.focusedId ?? null,
-      selectedObjectId: selectedIdCtx ?? null,
+      selectedObjectId: canonicalSelectedObjectId,
       pinnedId: props.focusPinned ? props.focusedId ?? null : null,
       focusMode: props.focusMode,
       protectedIds,
@@ -3768,7 +3858,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       highlightedObjectIds,
       dimUnrelatedObjects: combinedObjectSelection?.dim_unrelated_objects === true,
       focusedId: props.focusedId ?? null,
-      selectedObjectId: selectedIdCtx ?? null,
+      selectedObjectId: canonicalSelectedObjectId,
       pinnedId: props.focusPinned ? props.focusedId ?? null : null,
       focusMode: props.focusMode,
       sceneObjectIds: sceneObjectIds.slice(0, 12),
@@ -3781,8 +3871,8 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     props.focusPinned,
     props.focusedId,
     combinedObjectSelection,
+    canonicalSelectedObjectId,
     sceneObjectIds,
-    selectedIdCtx,
   ]);
 
   useEffect(() => {
@@ -3936,7 +4026,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       clearSelection: () => {
         if (selectedIdRefForKeydown.current.current == null) return;
         selectedSetterRefForKeydown.current?.current?.(null);
-        onSelectedChangeForKeydownRef.current?.(null);
+        onSelectedChangeForKeydownRef.current?.(null, { source: "keyboard_clear" });
         preserveCameraOnClearRef.current = true;
       },
     });
@@ -3948,7 +4038,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     if (ev.key !== "Escape") return;
     if (selectedIdRefForKeydown.current.current == null) return;
     selectedSetterRefForKeydown.current?.current?.(null);
-    onSelectedChangeForKeydownRef.current?.(null);
+    onSelectedChangeForKeydownRef.current?.(null, { source: "keyboard_clear" });
     patchExecutiveInteractionState({
       selectedObjectId: null,
       focusedObjectId: null,
@@ -4081,10 +4171,27 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     e.preventDefault();
   }, []);
 
+  const handleCanvasPointerUp = useCallback(
+    (e: any) => {
+      if (e.button != null && e.button !== 0) return;
+      scheduleActivePointerSelectionReset();
+    },
+    [scheduleActivePointerSelectionReset]
+  );
+
+  const handleCanvasPointerCancel = useCallback(() => {
+    scheduleActivePointerSelectionReset();
+  }, [scheduleActivePointerSelectionReset]);
+
   const handlePointerMissed = useCallback(
     (e: any) => {
       if ((e as any)?.button !== 0) return;
       if (localIsOrbitingRef.current || isHudInteractingRef.current) {
+        reportSelectionMiss({
+          source: "SceneCanvas.onPointerMissed",
+          phase: "hit_detection",
+          reason: localIsOrbitingRef.current ? "orbit_in_progress" : "hud_interaction_active",
+        });
         if (process.env.NODE_ENV !== "production") {
           devDiagnosticLog("sceneInteraction", "[Nexora][SceneInteraction] empty click ignored", {
             orbiting: localIsOrbitingRef.current,
@@ -4097,6 +4204,26 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         props.onSelectedScreenX?.(null);
         return;
       }
+      const activePointerSelection = activePointerSelectionRef.current;
+      if (
+        activePointerSelection?.consumed &&
+        performance.now() - activePointerSelection.startedAt < SCENE_CANVAS_POINTER_SELECTION_GATE_MS
+      ) {
+        if (process.env.NODE_ENV !== "production") {
+          logObjectClickDiagnostic("[Nexora][SceneCanvasPointerMissBlockedAfterObjectClick]", {
+            acceptedObjectId: activePointerSelection.acceptedObjectId,
+            pointerId: activePointerSelection.pointerId,
+            elapsedMs: performance.now() - activePointerSelection.startedAt,
+          });
+        }
+        return;
+      }
+      reportSelectionMiss({
+        source: "SceneCanvas.onPointerMissed",
+        phase: "deselect",
+        reason: "empty_canvas_click",
+        priorObjectId: props.selectedIdRef.current ?? null,
+      });
       if (process.env.NODE_ENV !== "production") {
         devDiagnosticLog("sceneInteraction", "[Nexora][SceneInteraction] empty click ignored", {
           action: "soft_deselect_without_reframe",
@@ -4104,7 +4231,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       }
       preserveCameraOnClearRef.current = true;
       props.selectedSetterRef?.current?.(null);
-      props.onSelectedChange?.(null);
+      props.onSelectedChange?.(null, { source: "empty_canvas_click" });
       props.onSelectedScreenX?.(null);
       props.onPointerMissed();
     },
@@ -4170,7 +4297,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   const clearTemporaryCameraFocus = useCallback(() => {
     preserveCameraOnClearRef.current = true;
     props.selectedSetterRef?.current?.(null);
-    props.onSelectedChange?.(null);
+    props.onSelectedChange?.(null, { source: "keyboard_clear" });
     props.onSelectedScreenX?.(null);
   }, [props.onSelectedChange, props.onSelectedScreenX, props.selectedSetterRef]);
 
@@ -4252,6 +4379,8 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
         }}
         style={{ width: "100%", height: "100%", display: "block" }}
         onPointerDown={handleCanvasPointerDown}
+        onPointerUp={handleCanvasPointerUp}
+        onPointerCancel={handleCanvasPointerCancel}
         onContextMenu={handleCanvasContextMenu}
         onPointerMissed={handlePointerMissed}
       >
@@ -4268,7 +4397,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
 
         {!CANVAS_STATIC_MODE && (
           <CameraIntelligence
-            selectedObjectId={selectedIdCtx ?? null}
+            selectedObjectId={canonicalSelectedObjectId}
             focusPinned={props.focusPinned}
             focusMode={props.focusMode}
             focusedId={props.focusedId}
@@ -4393,7 +4522,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
                 decisionPathOverlay={decisionPathOverlay}
                 decisionPathRenderInput={decisionPathOverlay}
                 objectSelection={stableRenderObjectSelection}
-                selectedObjectId={selectedIdCtx ?? props.selectedObjectId ?? null}
+                selectedObjectId={canonicalSelectedObjectId}
                 selectedRelationshipId={props.selectedRelationshipId ?? null}
                 selectedPropagationPathId={props.selectedPropagationPathId ?? null}
                 onRelationshipSelect={props.onRelationshipSelect}
@@ -4416,8 +4545,6 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
                 setOverrideRefLocal={props.setOverrideRef}
                 clearAllOverridesRefLocal={props.clearAllOverridesRef}
                 pruneOverridesRefLocal={props.pruneOverridesRef}
-                onSelectedChange={props.onSelectedChange}
-                sceneSelectionEchoGuardRef={props.sceneSelectionEchoGuardRef}
               />
             </>
           ) : null}
@@ -4428,7 +4555,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
             controlsRef={controlsRef}
             sceneJson={sceneJsonForRenderer}
             layoutPositions={layoutPositions}
-            selectedObjectId={selectedIdCtx ?? props.selectedObjectId ?? null}
+            selectedObjectId={canonicalSelectedObjectId}
             cameraContext={executiveCameraContext}
             cameraAuthorityRef={cameraAuthorityRef}
             programmaticCameraUpdateRef={programmaticCameraUpdateRef}
@@ -4441,69 +4568,95 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
       </Canvas>
       <ExecutiveFocusModeDocumentBridge />
       <SceneHudLayer>
-        {props.sceneInfoHud ? <SceneInfoHudOverlay {...props.sceneInfoHud} themeMode={hudThemeMode} /> : null}
-        {props.objectInfoHud ? (
-          <ObjectInfoHudOverlay
-            model={props.objectInfoHud.model}
-            sceneJson={props.objectInfoHud.sceneJson}
-            placement={props.objectInfoHud.placement}
-            themeMode={hudThemeMode}
-            onCreateRelationship={props.objectInfoHud.onCreateRelationship}
-            onDeleteRelationship={props.objectInfoHud.onDeleteRelationship}
-            onCreateImpactPath={props.objectInfoHud.onCreateImpactPath}
-            onEditPropagationPath={props.objectInfoHud.onEditPropagationPath}
-            onDeletePropagationPath={props.objectInfoHud.onDeletePropagationPath}
-            onEditObject={props.objectInfoHud.onEditObject}
-            onDuplicateObject={props.objectInfoHud.onDuplicateObject}
-            onDeleteObject={props.objectInfoHud.onDeleteObject}
-          />
-        ) : null}
-        {props.timelineHud ? (
-          <ExecutiveBottomWorkspaceOverlay
-            timeline={props.timelineHud}
-            spatialSummary={scenarioPlaybackState.propagationView ? {
-              eventId: scenarioPlaybackState.propagationView.stepId,
-              title: scenarioPlaybackState.propagationView.stepTitle,
-              timestampLabel: scenarioPlaybackState.propagationView.progressLabel,
-              affectedObjectLabel: scenarioPlaybackState.propagationView.focusObjectId,
-              severity: scenarioPlaybackState.propagationView.severity,
-              summary: scenarioPlaybackState.propagationView.activeSummary,
-              markerType: scenarioPlaybackState.propagationView.kind === "opportunity"
-                ? "operational"
-                : scenarioPlaybackState.propagationView.kind === "risk"
-                  ? "risk"
-                  : scenarioPlaybackState.propagationView.kind === "decision"
-                    ? "decision"
-                    : "operational",
-            } : timelineSpatialState?.activeSummary ?? null}
-            onEventSelect={handleTimelineEventSelect}
-            onEventHover={handleTimelineEventHover}
-            onEventFocusMode={handleTimelineEventFocusMode}
-            playback={scenarioPlaybackState}
-            playbackCompletion={scenarioPlaybackState.completionSummary}
-            onPlaybackPlay={() => playExecutiveScenarioPlayback()}
-            onPlaybackPause={() => pauseExecutiveScenarioPlayback()}
-            onPlaybackRestart={() => restartExecutiveScenarioPlayback()}
-            onPlaybackPrevious={() => previousExecutiveScenarioPlaybackStep()}
-            onPlaybackNext={() => nextExecutiveScenarioPlaybackStep()}
-            onPlaybackSpeedChange={(speed) => setExecutiveScenarioPlaybackSpeed(speed)}
-            scenarioUniverse={scenarioUniverseState?.comparisonActive ? scenarioUniverseState : null}
-            comparisonDashboard={scenarioComparisonDashboard}
-            onScenarioLayerSelect={handleScenarioLayerSelect}
-            onScenarioLayerVisibility={(scenarioId, visible) => setScenarioLayerVisibility(scenarioId, visible)}
-            onScenarioLayerIsolate={(scenarioId) => isolateScenarioLayer(scenarioId)}
-            onComparisonLayoutMode={(mode) => setScenarioUniverseLayoutMode(mode)}
-            onComparisonMode={(mode) => setScenarioComparisonMode(mode)}
-            warRoomHud={executiveWarRoomState?.active ? executiveWarRoomState.hud : null}
-            advisorHud={executiveAdvisorState?.active ? executiveAdvisorState.hud : null}
-            commandCenterHud={executiveIntelligenceState?.active ? executiveIntelligenceState.hud : null}
-            quickActions={props.quickActionsDock ? {
-              model: props.quickActionsDock.model,
-              onAction: props.quickActionsDock.onAction,
-            } : null}
-            themeMode={hudThemeMode}
-          />
-        ) : null}
+        <SceneHudZoneLayout
+          context={{
+            scenePanelVisible: Boolean(props.sceneInfoHud),
+            timelineVisible: Boolean(props.timelineHud),
+            topBarVisible: Boolean(props.sceneNavigationToolbar ?? props.cameraToolbar),
+            timelineHeightMode: "compact",
+            objectPanelExpanded: false,
+            mainRightPanelWidth: props.sceneHudZoneContext?.mainRightPanelWidth,
+            mainRightPanelVisible: props.sceneHudZoneContext?.mainRightPanelVisible,
+          }}
+        >
+          <SceneHudZone zone={SCENE_HUD_ZONE_IDS.scenePanel} visible={Boolean(props.sceneInfoHud)}>
+            {props.sceneInfoHud ? <SceneInfoHudOverlay {...props.sceneInfoHud} themeMode={hudThemeMode} /> : null}
+          </SceneHudZone>
+          <SceneHudZone zone={SCENE_HUD_ZONE_IDS.objectPanel}>
+            {props.objectInfoHud ? (
+              <ObjectInfoHudOverlay
+                model={props.objectInfoHud.model}
+                sceneJson={props.objectInfoHud.sceneJson}
+                placement={props.objectInfoHud.placement}
+                themeMode={hudThemeMode}
+                onCreateRelationship={props.objectInfoHud.onCreateRelationship}
+                onDeleteRelationship={props.objectInfoHud.onDeleteRelationship}
+                onCreateImpactPath={props.objectInfoHud.onCreateImpactPath}
+                onEditPropagationPath={props.objectInfoHud.onEditPropagationPath}
+                onDeletePropagationPath={props.objectInfoHud.onDeletePropagationPath}
+                onEditObject={props.objectInfoHud.onEditObject}
+                onDuplicateObject={props.objectInfoHud.onDuplicateObject}
+                onDeleteObject={props.objectInfoHud.onDeleteObject}
+              />
+            ) : null}
+          </SceneHudZone>
+          <SceneHudZone zone={SCENE_HUD_ZONE_IDS.timeline} visible={Boolean(props.timelineHud)}>
+            {props.timelineHud ? (
+              <ExecutiveBottomWorkspaceOverlay
+                timeline={props.timelineHud}
+                spatialSummary={scenarioPlaybackState.propagationView ? {
+                  eventId: scenarioPlaybackState.propagationView.stepId,
+                  title: scenarioPlaybackState.propagationView.stepTitle,
+                  timestampLabel: scenarioPlaybackState.propagationView.progressLabel,
+                  affectedObjectLabel: scenarioPlaybackState.propagationView.focusObjectId,
+                  severity: scenarioPlaybackState.propagationView.severity,
+                  summary: scenarioPlaybackState.propagationView.activeSummary,
+                  markerType: scenarioPlaybackState.propagationView.kind === "opportunity"
+                    ? "operational"
+                    : scenarioPlaybackState.propagationView.kind === "risk"
+                      ? "risk"
+                      : scenarioPlaybackState.propagationView.kind === "decision"
+                        ? "decision"
+                        : "operational",
+                } : timelineSpatialState?.activeSummary ?? null}
+                onEventSelect={handleTimelineEventSelect}
+                onEventHover={handleTimelineEventHover}
+                onEventFocusMode={handleTimelineEventFocusMode}
+                playback={scenarioPlaybackState}
+                playbackCompletion={scenarioPlaybackState.completionSummary}
+                onPlaybackPlay={() => playExecutiveScenarioPlayback()}
+                onPlaybackPause={() => pauseExecutiveScenarioPlayback()}
+                onPlaybackRestart={() => restartExecutiveScenarioPlayback()}
+                onPlaybackPrevious={() => previousExecutiveScenarioPlaybackStep()}
+                onPlaybackNext={() => nextExecutiveScenarioPlaybackStep()}
+                onPlaybackSpeedChange={(speed) => setExecutiveScenarioPlaybackSpeed(speed)}
+                scenarioUniverse={scenarioUniverseState?.comparisonActive ? scenarioUniverseState : null}
+                comparisonDashboard={scenarioComparisonDashboard}
+                onScenarioLayerSelect={handleScenarioLayerSelect}
+                onScenarioLayerVisibility={(scenarioId, visible) => setScenarioLayerVisibility(scenarioId, visible)}
+                onScenarioLayerIsolate={(scenarioId) => isolateScenarioLayer(scenarioId)}
+                onComparisonLayoutMode={(mode) => setScenarioUniverseLayoutMode(mode)}
+                onComparisonMode={(mode) => setScenarioComparisonMode(mode)}
+                warRoomHud={executiveWarRoomState?.active ? executiveWarRoomState.hud : null}
+                advisorHud={executiveAdvisorState?.active ? executiveAdvisorState.hud : null}
+                commandCenterHud={executiveIntelligenceState?.active ? executiveIntelligenceState.hud : null}
+                quickActions={props.quickActionsDock ? {
+                  model: props.quickActionsDock.model,
+                  onAction: props.quickActionsDock.onAction,
+                } : null}
+                themeMode={hudThemeMode}
+              />
+            ) : null}
+          </SceneHudZone>
+          <SceneHudZone
+            zone={SCENE_HUD_ZONE_IDS.topBar}
+            visible={Boolean(props.sceneNavigationToolbar ?? props.cameraToolbar)}
+          >
+            {(props.sceneNavigationToolbar ?? props.cameraToolbar) ? (
+              <ExecutiveSceneToolbarOverlay themeMode={hudThemeMode} />
+            ) : null}
+          </SceneHudZone>
+        </SceneHudZoneLayout>
         {!props.timelineHud && props.quickActionsDock ? (
           <ExecutiveQuickActionsDockOverlay
             {...props.quickActionsDock}
@@ -4520,9 +4673,6 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
             onCommand={handleWarRoomCommand}
             onFocusModeChange={handleWarRoomFocusMode}
           />
-        ) : null}
-        {(props.sceneNavigationToolbar ?? props.cameraToolbar) ? (
-          <ExecutiveSceneToolbarOverlay themeMode={hudThemeMode} />
         ) : null}
       </SceneHudLayer>
     </div>

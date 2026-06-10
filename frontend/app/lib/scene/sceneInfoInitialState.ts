@@ -11,6 +11,6 @@ export const DEFAULT_SCENE_INFO_STATE: HudPanelInitialState = Object.freeze({
 });
 
 export const DEFAULT_OBJECT_INFO_STATE: HudPanelInitialState = Object.freeze({
-  collapsed: false,
+  collapsed: true,
   viewportWidth: 1440,
 });

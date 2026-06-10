@@ -211,6 +211,17 @@ export function warnLegacyRouteDetected(route: unknown, mappedContext?: Dashboar
     legacyRoute: route ?? null,
     mappedDashboardContext: mappedContext ?? null,
   });
+  void import("../architecture/nexoraArchitectureFreezeRuntime.ts").then(({ reportDeprecatedSurface }) => {
+    reportDeprecatedSurface({
+      surface: route,
+      contractId: "routing.dashboard_context_only",
+      redirectedTo: mappedContext ?? "dashboard_context",
+      source: "warnLegacyRouteDetected",
+      detail: {
+        mappedDashboardContext: mappedContext ?? null,
+      },
+    });
+  });
 }
 
 export function warnDashboardContextResolutionFailed(value: unknown): void {

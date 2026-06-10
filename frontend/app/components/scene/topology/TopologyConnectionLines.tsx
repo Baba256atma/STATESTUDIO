@@ -19,6 +19,8 @@ export type TopologyConnectionLinesProps = {
   selectedObjectId?: string | null;
 };
 
+const disableMeshRaycast = () => null;
+
 const TOPOLOGY_LINE_COLORS = {
   dim: "#64748b",
   active: "#e5e7eb",
@@ -37,7 +39,7 @@ const TopologyConnectionLineSegment = React.memo(function TopologyConnectionLine
   const isActive = visualState === "active";
 
   return (
-    <lineSegments geometry={geometry}>
+    <lineSegments geometry={geometry} raycast={disableMeshRaycast}>
       <lineBasicMaterial
         color={TOPOLOGY_LINE_COLORS[visualState]}
         transparent

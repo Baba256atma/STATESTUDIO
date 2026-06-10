@@ -16,7 +16,6 @@ const APPROVED_ACTIONS = new Set<ExecutiveToolbarAction>([
   "toggle_view_mode",
   "global_view",
   "fit_scene",
-  "focus_mode",
 ]);
 
 const logKeys = new Set<string>();
@@ -60,7 +59,7 @@ export function evaluateExecutiveNavigationActionProposal(
 export function logExecutiveToolbarFinalized(): void {
   devLog("[Nexora][ToolbarFinalized]", {
     actions: Array.from(APPROVED_ACTIONS),
-    policy: "four_executive_actions_only",
+    policy: "three_executive_navigation_actions_only",
   });
 }
 

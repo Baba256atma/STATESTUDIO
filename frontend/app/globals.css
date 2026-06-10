@@ -538,3 +538,26 @@ html[data-theme="day"] .nexora-secondary-cta:hover {
     padding: 8px;
   }
 }
+
+/* MRP:11:2:3 — Executive assistant support panel scrollbars */
+.nx-assistant-panel-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.34) transparent;
+}
+
+.nx-assistant-panel-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nx-assistant-panel-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nx-assistant-panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.34);
+  border-radius: 999px;
+}
+
+.nx-assistant-panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.52);
+}

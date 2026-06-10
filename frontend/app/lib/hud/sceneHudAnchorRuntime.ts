@@ -11,6 +11,7 @@ import { enforceCanonicalAnchor, hudZoneToDockZone } from "../scene/executiveHud
 import { resolveSceneHudPanelStyle, type SceneHudLayoutContext } from "../scene/sceneHudCollisionRuntime";
 import { getSceneHudRegistration, type SceneHudPanelId as RegistrySceneHudPanelId } from "../scene/sceneHudRegistry";
 import { resolveTimelineSafeZone } from "../scene/timelineSafeZoneRuntime";
+import { resolveSceneHudZoneContract } from "../scene/sceneHudZoneContract";
 import {
   isTopRowHudPanel,
   resolveExecutiveSideInset,
@@ -94,7 +95,27 @@ function offsetsForPanel(panelId: SceneHudPanelIdLegacy): Partial<HudViewportOff
       quickActionsVisible: false,
       timelineExpanded: false,
     });
-    return { bottom: zone.bottomOffset };
+    const layoutZone = resolveSceneHudZoneContract({
+      viewportWidth: vp.width,
+      viewportHeight: vp.height,
+      timelineVisible: true,
+    }).timelineZone;
+    return { bottom: layoutZone.bottom ?? zone.bottomOffset };
+  }
+  if (panelId === "objectInfoHud") {
+    const actionZone = resolveSceneHudZoneContract({
+      viewportWidth: vp.width,
+      viewportHeight: vp.height,
+    }).objectPanelZone;
+    return { top: actionZone.top, right: side };
+  }
+  if (panelId === "sceneInfoHud") {
+    const sceneZone = resolveSceneHudZoneContract({
+      viewportWidth: vp.width,
+      viewportHeight: vp.height,
+      scenePanelVisible: true,
+    }).scenePanelZone;
+    return { top: sceneZone.top, left: side };
   }
   if (panelId === "executiveStatusHud") {
     return { top, right: side };
@@ -254,9 +275,24 @@ export function sceneHudDockStyle(input: {
         ? topSafeZone.objectInfoMaxWidth
         : undefined;
 
+  const hudZoneContract = resolveSceneHudZoneContract({
+    viewportWidth: vp.width,
+    viewportHeight: vp.height,
+    scenePanelVisible: layoutContext.visiblePanels.sceneInfoHud ?? false,
+    timelineVisible: layoutContext.visiblePanels.timelineHud ?? false,
+    objectPanelExpanded: input.panelId === "objectInfoHud" ? !registration.collapsed : false,
+  });
+
   return {
     ...positionStyle,
-    top: isTopRow ? unifiedTop : stackedTop ?? positionStyle.top,
+    top:
+      input.panelId === "objectInfoHud"
+        ? hudZoneContract.objectPanelZone.top
+        : input.panelId === "sceneInfoHud"
+          ? hudZoneContract.scenePanelZone.top
+          : isTopRow
+            ? unifiedTop
+            : stackedTop ?? positionStyle.top,
     ...(topRowMaxWidth ? { maxWidth: topRowMaxWidth } : null),
     ...sanitizedCollision,
   };

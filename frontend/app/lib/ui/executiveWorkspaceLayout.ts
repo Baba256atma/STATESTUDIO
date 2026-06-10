@@ -28,7 +28,7 @@ export const EXECUTIVE_RIGHT_DOCK_WIDTH_PX = 430;
 export const EXECUTIVE_RIGHT_DOCK_COLLAPSED_PX = 48;
 
 /** E2:12 — Executive AI assistant panel on right rail. */
-export const EXECUTIVE_RIGHT_ASSISTANT_WIDTH_PX = 360;
+export const EXECUTIVE_RIGHT_ASSISTANT_WIDTH_PX = 400;
 export const EXECUTIVE_RIGHT_ASSISTANT_COLLAPSED_PX = 56;
 
 /** Left command assistant column (chat — not the Scene Panel). */
@@ -73,6 +73,8 @@ export const EXECUTIVE_WORKSPACE_ZONE_IDS = {
   objectPanelShell: "nexora-object-panel-shell",
   objectPanelHost: "nexora-object-panel-host",
   rightPanelRoot: "nexora-right-panel-root",
+  /** MRP:10:12 — visible Type-C right rail host (not headless ObjectPanelShell). */
+  visibleMrpHost: "nexora-visible-mrp-host",
   executiveAssistantShell: "nexora-executive-assistant-shell",
   executiveAssistantHost: "nexora-executive-assistant-host",
   executiveScenarioHost: "nexora-executive-scenario-host",
