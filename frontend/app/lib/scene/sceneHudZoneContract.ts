@@ -110,6 +110,8 @@ let lastZoneSignature: string | null = null;
 let lastZoneContract: SceneHudZoneContract | null = null;
 const loggedZoneSignatures = new Set<string>();
 const loggedHudZoneSignatures = new Set<string>();
+const loggedHudZoneBrakeSignatures = new Set<string>();
+const loggedHudZoneBrakeDebounceSignatures = new Set<string>();
 
 function zoneRect(
   top: number,
@@ -424,11 +426,29 @@ function logHudZoneDiagnostics(contract: SceneHudZoneContract): void {
     sceneWidth: contract.sceneWidth,
     objectPanelLeft: contract.objectPanelZone.left,
   };
+  const brakeSignature = stableLayoutSignature({
+    objectPanelRight: payload.objectPanelRight,
+    objectPanelWidth: payload.objectPanelWidth,
+    mrpWidth: payload.mrpWidth,
+    sceneWidth: payload.sceneWidth,
+    overlapDetected: payload.overlapDetected,
+  });
+  const shouldLogBrake = payload.overlapDetected && !loggedHudZoneBrakeSignatures.has(brakeSignature);
+  const debounceTraceSignature = `${brakeSignature}:${shouldLogBrake ? "logged" : "suppressed"}`;
+  if (!loggedHudZoneBrakeDebounceSignatures.has(debounceTraceSignature)) {
+    loggedHudZoneBrakeDebounceSignatures.add(debounceTraceSignature);
+    globalThis.console?.debug?.("[NexoraHUDZoneDebounce]", {
+      signature: brakeSignature,
+      logged: shouldLogBrake,
+    });
+  }
   const signature = stableLayoutSignature(payload);
-  if (loggedHudZoneSignatures.has(signature)) return;
-  loggedHudZoneSignatures.add(signature);
-  globalThis.console?.debug?.("[Nexora][HUDZone]", payload);
-  if (payload.overlapDetected) {
+  if (!loggedHudZoneSignatures.has(signature)) {
+    loggedHudZoneSignatures.add(signature);
+    globalThis.console?.debug?.("[Nexora][HUDZone]", payload);
+  }
+  if (shouldLogBrake) {
+    loggedHudZoneBrakeSignatures.add(brakeSignature);
     globalThis.console?.warn?.("[Nexora][HUDZoneBrake]", payload);
   }
 }
@@ -473,4 +493,6 @@ export function resetSceneHudZoneContractForTests(): void {
   lastZoneContract = null;
   loggedZoneSignatures.clear();
   loggedHudZoneSignatures.clear();
+  loggedHudZoneBrakeSignatures.clear();
+  loggedHudZoneBrakeDebounceSignatures.clear();
 }

@@ -1,13 +1,10 @@
 /**
- * MRP:11:2:2 — Assistant support panel dock contract.
+ * MRP:11:2:2 / MRP:11:2:5 — Assistant support panel dock compatibility contract.
  */
 
-export type AssistantPanelDockId =
-  | "suggestions"
-  | "guidance"
-  | "scenario"
-  | "decision"
-  | "actions";
+import type { AssistantSupportAccordionPanelId } from "./assistantSupportAccordionContract.ts";
+
+export type AssistantPanelDockId = AssistantSupportAccordionPanelId;
 
 export type AssistantPanelVisibility = Readonly<{
   suggestions: boolean;
@@ -21,10 +18,10 @@ export type AssistantPanelDockAction = "expand" | "collapse";
 
 export const DEFAULT_ASSISTANT_PANEL_VISIBILITY: AssistantPanelVisibility = Object.freeze({
   suggestions: true,
-  guidance: true,
-  scenario: true,
-  decision: true,
-  actions: true,
+  guidance: false,
+  scenario: false,
+  decision: false,
+  actions: false,
 });
 
 export const ASSISTANT_PANEL_DOCK_STORAGE_KEY = "nexora:assistant-panel-dock-visibility" as const;

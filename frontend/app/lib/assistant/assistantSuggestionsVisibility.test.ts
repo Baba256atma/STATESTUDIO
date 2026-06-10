@@ -6,7 +6,6 @@ import {
   resolveAssistantSuggestionsToggleAction,
   resolveAssistantSuggestionsTooltip,
 } from "./assistantSuggestionsVisibilityContract.ts";
-import { ASSISTANT_PANEL_DOCK_STORAGE_KEY } from "./assistantPanelDockContract.ts";
 import {
   getAssistantSuggestionsVisible,
   resetAssistantSuggestionsVisibilityForTests,
@@ -16,23 +15,6 @@ import {
 
 describe("assistant suggestions visibility", () => {
   beforeEach(() => {
-    if (typeof globalThis.sessionStorage === "undefined") {
-      const store = new Map<string, string>();
-      (globalThis as typeof globalThis & { sessionStorage: Storage }).sessionStorage = {
-        getItem: (key: string) => store.get(key) ?? null,
-        setItem: (key: string, value: string) => {
-          store.set(key, value);
-        },
-        removeItem: (key: string) => {
-          store.delete(key);
-        },
-        clear: () => store.clear(),
-        key: (index: number) => [...store.keys()][index] ?? null,
-        get length() {
-          return store.size;
-        },
-      } as Storage;
-    }
     resetAssistantSuggestionsVisibilityForTests(DEFAULT_ASSISTANT_SUGGESTIONS_VISIBLE);
   });
 
@@ -53,13 +35,9 @@ describe("assistant suggestions visibility", () => {
     assert.equal(resolveAssistantSuggestionsToggleAction(false), "expand");
   });
 
-  it("Test 4 — persists in sessionStorage across navigation", () => {
+  it("Test 4 — collapsed state remains in runtime across navigation-like reads", () => {
     setAssistantSuggestionsVisible(false);
     assert.equal(getAssistantSuggestionsVisible(), false);
-    const raw = globalThis.sessionStorage?.getItem(ASSISTANT_PANEL_DOCK_STORAGE_KEY);
-    assert.ok(raw);
-    const parsed = JSON.parse(raw!) as { suggestions: boolean };
-    assert.equal(parsed.suggestions, false);
   });
 
   it("Test 5 — collapsed state preserved after object context change simulation", () => {

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { afterEach, beforeEach, describe, it } from "node:test";
+import { beforeEach, describe, it } from "node:test";
 
 import {
   ASSISTANT_PANEL_DOCK_DEFINITIONS,
@@ -11,73 +11,91 @@ import {
   collapseAssistantPanel,
   expandAssistantPanel,
   getAssistantPanelVisibility,
+  isAssistantPanelVisible,
   resetAssistantPanelVisibilityForTests,
   setAssistantPanelVisible,
   toggleAssistantPanelVisible,
 } from "./assistantPanelDockRuntime.ts";
+import {
+  collapseAllAssistantSupportAccordionPanels,
+  getAssistantSupportAccordionState,
+  openAssistantSupportAccordionPanel,
+} from "./assistantSupportAccordionRuntime.ts";
 
-describe("assistantPanelDockRuntime", () => {
+describe("assistant support accordion runtime", () => {
   beforeEach(() => {
-    if (typeof globalThis.sessionStorage === "undefined") {
-      const store = new Map<string, string>();
-      (globalThis as typeof globalThis & { sessionStorage: Storage }).sessionStorage = {
-        getItem: (key: string) => store.get(key) ?? null,
-        setItem: (key: string, value: string) => {
-          store.set(key, value);
-        },
-        removeItem: (key: string) => {
-          store.delete(key);
-        },
-        clear: () => store.clear(),
-        key: (index: number) => [...store.keys()][index] ?? null,
-        get length() {
-          return store.size;
-        },
-      } as Storage;
-    }
     resetAssistantPanelVisibilityForTests();
   });
 
-  afterEach(() => {
-    resetAssistantPanelVisibilityForTests();
-  });
-
-  it("Test 1 — collapse suggestions leaves only suggestions hidden", () => {
+  it("Test 1 — fresh assistant open expands suggested questions only", () => {
+    assert.deepEqual(getAssistantSupportAccordionState(), { openPanelId: "suggestions" });
     assert.deepEqual(getAssistantPanelVisibility(), DEFAULT_ASSISTANT_PANEL_VISIBILITY);
-    collapseAssistantPanel("suggestions");
-    assert.equal(getAssistantPanelVisibility().suggestions, false);
-    assert.equal(getAssistantPanelVisibility().guidance, true);
-    assert.equal(getAssistantPanelVisibility().scenario, true);
-    assert.equal(getAssistantPanelVisibility().decision, true);
-    assert.equal(getAssistantPanelVisibility().actions, true);
   });
 
-  it("Test 2 — expand suggestions restores panel", () => {
-    collapseAssistantPanel("suggestions");
+  it("getSnapshot compatibility visibility returns a stable reference between updates", () => {
+    const firstSnapshot = getAssistantPanelVisibility();
+    const secondSnapshot = getAssistantPanelVisibility();
+    assert.equal(firstSnapshot, secondSnapshot);
+
+    openAssistantSupportAccordionPanel("scenario");
+    const scenarioSnapshot = getAssistantPanelVisibility();
+    assert.notEqual(scenarioSnapshot, firstSnapshot);
+    assert.equal(getAssistantPanelVisibility(), scenarioSnapshot);
+  });
+
+  it("Test 2 — opening scenario collapses suggested questions", () => {
+    openAssistantSupportAccordionPanel("scenario");
+    assert.equal(isAssistantPanelVisible("scenario"), true);
+    assert.equal(isAssistantPanelVisible("suggestions"), false);
+  });
+
+  it("Test 3 — opening decision collapses scenario", () => {
+    openAssistantSupportAccordionPanel("scenario");
+    openAssistantSupportAccordionPanel("decision");
+    assert.equal(isAssistantPanelVisible("decision"), true);
+    assert.equal(isAssistantPanelVisible("scenario"), false);
+  });
+
+  it("Test 4 — collapsing the current panel leaves all panels collapsed", () => {
+    openAssistantSupportAccordionPanel("decision");
+    collapseAssistantPanel("decision");
+    assert.equal(getAssistantSupportAccordionState().openPanelId, null);
+    assert.deepEqual(getAssistantPanelVisibility(), {
+      suggestions: false,
+      guidance: false,
+      scenario: false,
+      decision: false,
+      actions: false,
+    });
+  });
+
+  it("Test 5 — icon dock restore opens requested panel and collapses all others", () => {
+    collapseAllAssistantSupportAccordionPanels();
     expandAssistantPanel("suggestions");
-    assert.equal(getAssistantPanelVisibility().suggestions, true);
+    assert.equal(isAssistantPanelVisible("suggestions"), true);
+    assert.equal(isAssistantPanelVisible("guidance"), false);
+    assert.equal(isAssistantPanelVisible("scenario"), false);
+    assert.equal(isAssistantPanelVisible("decision"), false);
+    assert.equal(isAssistantPanelVisible("actions"), false);
   });
 
-  it("Test 3 — collapse scenario does not affect other panels", () => {
-    collapseAssistantPanel("scenario");
-    assert.equal(getAssistantPanelVisibility().scenario, false);
-    assert.equal(getAssistantPanelVisibility().suggestions, true);
-    assert.equal(getAssistantPanelVisibility().decision, true);
+  it("compatibility setters cannot create conflicting booleans", () => {
+    setAssistantPanelVisible("guidance", true);
+    setAssistantPanelVisible("actions", true);
+    assert.deepEqual(getAssistantPanelVisibility(), {
+      suggestions: false,
+      guidance: false,
+      scenario: false,
+      decision: false,
+      actions: true,
+    });
   });
 
-  it("Test 4 — panel visibility persists in sessionStorage", () => {
-    collapseAssistantPanel("guidance");
-    const raw = globalThis.sessionStorage?.getItem("nexora:assistant-panel-dock-visibility");
-    assert.ok(raw);
-    const parsed = JSON.parse(raw!) as { guidance: boolean };
-    assert.equal(parsed.guidance, false);
-  });
-
-  it("Test 5 — toggle is idempotent per panel", () => {
-    assert.equal(toggleAssistantPanelVisible("actions"), false);
-    assert.equal(toggleAssistantPanelVisible("actions"), true);
-    assert.equal(setAssistantPanelVisible("actions", true), true);
-    assert.equal(setAssistantPanelVisible("actions", true), true);
+  it("toggle opens a closed panel and collapses an open panel", () => {
+    assert.equal(toggleAssistantPanelVisible("scenario"), true);
+    assert.equal(getAssistantSupportAccordionState().openPanelId, "scenario");
+    assert.equal(toggleAssistantPanelVisible("scenario"), false);
+    assert.equal(getAssistantSupportAccordionState().openPanelId, null);
   });
 
   it("contract resolves dock actions and icons", () => {

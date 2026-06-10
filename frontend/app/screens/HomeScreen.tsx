@@ -130,6 +130,7 @@ import {
 import {
   mapLegacyPanelRouteToDashboardContext,
   normalizeMainRightPanelTab,
+  type DashboardContext,
   warnUnauthorizedMainRightPanelTab,
 } from "../lib/ui/mainRightPanelContract";
 import { MainRightPanelShell } from "../components/main-right-panel/MainRightPanelShell";
@@ -165,7 +166,15 @@ import {
 } from "../lib/assistant-bridge/assistantDashboardBridgeContract";
 import {
   emitAssistantActionCardLaunchAck,
+  launchAssistantActionCard,
+  type AssistantActionCardId,
+  type AssistantActionCardModel,
 } from "../lib/assistant-bridge/assistantActionCardContract";
+import {
+  buildAssistantIntelligenceCards,
+  traceAssistantIntelligenceCards,
+} from "../lib/assistant/assistantIntelligenceCardsRuntime";
+import type { AssistantIntelligenceCardModel } from "../lib/assistant/assistantIntelligenceCardsContract";
 import {
   publishDashboardExecutiveContextSummary,
   type DashboardContextRouteType,
@@ -982,6 +991,7 @@ import { devLogOnSignatureChange, devLogOncePermanent } from "../lib/runtime/dia
 import { devDiagnosticLog } from "../lib/runtime/diagnosticSwitch";
 import { devLogThrottled } from "../lib/runtime/diagnosticThrottle";
 import { getThreeColorBrakeCount } from "../lib/scene/threeColorDevLog";
+import { shouldSuppressLegacyDashboardHost } from "../lib/dashboard/dashboardHomeReturnPath/dashboardHomeRuntimeTrace";
 import { getAcceptanceGateFailedDiagnosticCount } from "../lib/scene/integration/executiveIntelligenceDiagnostics";
 import {
   buildHudPayloadSignature,
@@ -1132,6 +1142,42 @@ const LEGACY_RIGHT_PANEL_TABS = [
   "workspace",
   "input",
 ] as const;
+
+function resolveAssistantActionCardIdFromIntelligence(
+  card: AssistantIntelligenceCardModel
+): AssistantActionCardId | null {
+  switch (card.action.bridgeAction) {
+    case "FOCUS_OBJECT":
+      return "focus";
+    case "OPEN_ANALYZE":
+      return "analyze";
+    case "OPEN_COMPARE":
+      return "compare";
+    case "OPEN_SCENARIO":
+      return "scenario";
+    case "OPEN_WARROOM":
+      return "war_room";
+    default:
+      return null;
+  }
+}
+
+function buildAssistantActionCardFromIntelligence(
+  card: AssistantIntelligenceCardModel
+): AssistantActionCardModel | null {
+  if (!card.action.bridgeAction) return null;
+  const id = resolveAssistantActionCardIdFromIntelligence(card);
+  if (!id) return null;
+  return Object.freeze({
+    id,
+    title: card.title,
+    description: card.detail || card.summary,
+    action: card.action.bridgeAction,
+    launchLabel: card.action.label,
+    status: "available",
+    confidenceLabel: card.badge,
+  });
+}
 
 function isAnalyzeLikeUserText(text: string): boolean {
   const t = text.trim().toLowerCase();
@@ -3243,6 +3289,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     dashboardContextCommitted: boolean;
     panelAuthorityCommitted: boolean;
   } | null>(null);
+  const lastObjectClickRightPanelWriteGuardRef = useRef<{
+    signature: string;
+    at: number;
+  } | null>(null);
+  const lastObjectClickRedirectGuardRef = useRef<{
+    signature: string;
+    at: number;
+  } | null>(null);
   const lastAcceptedObjectClickRef = useRef<{
     objectId: string;
     eventId: string | null;
@@ -3295,6 +3349,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   } | null>(null);
   const lastPanelWriteSourceRef = useRef<string | null>(null);
   const lastCommittedPanelSignatureRef = useRef<string | null>(null);
+  const traceNexoraLoopGuard = useCallback(
+    (input: {
+      source: string | null;
+      action: "write_skipped" | "write_applied";
+      reason: "same_state" | "changed_object" | "changed_mode" | "redirect_debounced";
+      signature: string;
+      prevView?: string | null;
+      nextView?: string | null;
+      prevContextId?: string | null;
+      nextContextId?: string | null;
+      dashboardContext?: DashboardContext | null;
+    }) => {
+      if (process.env.NODE_ENV === "production") return;
+      globalThis.console?.warn?.("[NexoraLoopGuard]", {
+        source: input.source,
+        action: input.action,
+        reason: input.reason,
+        signature: input.signature,
+        prevView: input.prevView ?? null,
+        nextView: input.nextView ?? null,
+        prevContextId: input.prevContextId ?? null,
+        nextContextId: input.nextContextId ?? null,
+        dashboardContext: input.dashboardContext ?? null,
+      });
+    },
+    []
+  );
   const dashboardBootstrapAttemptedRef = useRef(false);
   const stageRightPanelWriteMeta = useCallback(
     (meta: { writer: string; source?: string | null; reason?: string | null }) => {
@@ -3629,6 +3710,54 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         source: pendingMetaPeek?.source ?? lastPanelWriteSourceRef.current,
         selectedObjectId: selectedObjectIdStateRef.current ?? null,
       });
+      const pendingSource = pendingMetaPeek?.source ?? lastPanelWriteSourceRef.current;
+      const isObjectClickPanelWrite =
+        pendingSource === "object_click" ||
+        String(pendingSource ?? "").includes("object_click");
+      if (
+        isObjectClickPanelWrite &&
+        prev.view === guardedNext.view &&
+        (prev.contextId ?? null) === (guardedNext.contextId ?? null) &&
+        prev.isOpen === guardedNext.isOpen
+      ) {
+        const dashboardContext = nexoraWorkspaceStateRef.current.dashboardContext;
+        const loopGuardSignature = JSON.stringify({
+          prevView: prev.view ?? null,
+          nextView: guardedNext.view ?? null,
+          prevContextId: prev.contextId ?? null,
+          nextContextId: guardedNext.contextId ?? null,
+          source: "object_click",
+          dashboardContext,
+        });
+        lastObjectClickRightPanelWriteGuardRef.current = {
+          signature: loopGuardSignature,
+          at: Date.now(),
+        };
+        if (process.env.NODE_ENV !== "production") {
+          globalThis.console?.warn?.("[NEXORA_RIGHT_PANEL_WRITE_SKIPPED]", {
+            reason: "same_state_object_click",
+            signature: loopGuardSignature,
+          });
+          globalThis.console?.debug?.("[NexoraDashboardRenderGuard]", {
+            action: "skipped",
+            reason: "same_dashboard_state",
+            signature: loopGuardSignature,
+          });
+          traceNexoraLoopGuard({
+            source: "object_click",
+            action: "write_skipped",
+            reason: "same_state",
+            signature: loopGuardSignature,
+            prevView: prev.view ?? null,
+            nextView: guardedNext.view ?? null,
+            prevContextId: prev.contextId ?? null,
+            nextContextId: guardedNext.contextId ?? null,
+            dashboardContext,
+          });
+        }
+        rightPanelWriteMetaRef.current = null;
+        return;
+      }
       if (
         lastCommittedPanelSignatureRef.current === peekCommitSignature &&
         areRightPanelCommitSignaturesEqual(prev, guardedNext, {
@@ -3854,7 +3983,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         return next;
       });
     },
-    [recordRightPanelAuthorityAudit]
+    [recordRightPanelAuthorityAudit, traceNexoraLoopGuard]
   );
   const getRightPanelSnapshotForController = useCallback(
     () => ({
@@ -6319,23 +6448,116 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         reason: normalizedRequest.reason ?? "requestPanelAuthorityOpen",
       });
       if (mrpRuntimeRoute.redirected) {
-        warnLegacySurfaceBlocked(normalizedRequest.view, {
-          owner: "HomeScreen.requestPanelAuthorityOpen",
+        const currentDashboardContext = nexoraWorkspaceStateRef.current.dashboardContext;
+        const nextContextId =
+          typeof normalizedRequest.contextId === "string"
+            ? normalizedRequest.contextId.trim() || null
+            : normalizedRequest.contextId ?? null;
+        const redirectSignature = JSON.stringify({
+          prevView: rightPanelStateRef.current.view ?? null,
+          nextView: mrpRuntimeRoute.runtimeView,
+          prevContextId: rightPanelStateRef.current.contextId ?? null,
+          nextContextId,
           source: normalizedRequest.source,
-          reason: normalizedRequest.reason ?? null,
           dashboardContext: mrpRuntimeRoute.dashboardContext,
         });
-        warnDashboardRedirect(normalizedRequest.view, {
-          owner: "HomeScreen.requestPanelAuthorityOpen",
-          source: normalizedRequest.source,
-          dashboardContext: mrpRuntimeRoute.dashboardContext,
-        });
-        commitDashboardContextUpdate(dispatchNexoraWorkspaceStateRef.current, {
-          dashboardContext: mrpRuntimeRoute.dashboardContext,
-          source: "legacy_redirect",
-          reason: normalizedRequest.reason ?? "mrp_dashboard_redirect",
-          priorContext: nexoraWorkspaceStateRef.current.dashboardContext,
-        });
+        const isSameStateObjectClickRedirect =
+          normalizedRequest.source === "object_click" &&
+          rightPanelStateRef.current.view === mrpRuntimeRoute.runtimeView &&
+          (rightPanelStateRef.current.contextId ?? null) === nextContextId &&
+          rightPanelStateRef.current.isOpen === true &&
+          currentDashboardContext === mrpRuntimeRoute.dashboardContext;
+        if (isSameStateObjectClickRedirect) {
+          lastObjectClickRedirectGuardRef.current = {
+            signature: redirectSignature,
+            at: Date.now(),
+          };
+          if (process.env.NODE_ENV !== "production") {
+            globalThis.console?.warn?.("[NEXORA_RIGHT_PANEL_WRITE_SKIPPED]", {
+              reason: "same_state_object_click",
+              signature: redirectSignature,
+            });
+            globalThis.console?.debug?.("[NexoraDashboardRenderGuard]", {
+              action: "skipped",
+              reason: "same_dashboard_state",
+              signature: redirectSignature,
+            });
+            traceNexoraLoopGuard({
+              source: "object_click",
+              action: "write_skipped",
+              reason: "same_state",
+              signature: redirectSignature,
+              prevView: rightPanelStateRef.current.view ?? null,
+              nextView: mrpRuntimeRoute.runtimeView,
+              prevContextId: rightPanelStateRef.current.contextId ?? null,
+              nextContextId,
+              dashboardContext: mrpRuntimeRoute.dashboardContext,
+            });
+          }
+          rightPanelController.refs.lastOpenIntentRef.current = JSON.stringify({
+            view: mrpRuntimeRoute.runtimeView,
+            contextId: nextContextId,
+          });
+          return;
+        }
+        const previousRedirect = lastObjectClickRedirectGuardRef.current;
+        const suppressRepeatedObjectClickRedirectLog =
+          normalizedRequest.source === "object_click" &&
+          previousRedirect?.signature === redirectSignature &&
+          Date.now() - previousRedirect.at < 250;
+        lastObjectClickRedirectGuardRef.current = {
+          signature: redirectSignature,
+          at: Date.now(),
+        };
+        if (process.env.NODE_ENV !== "production") {
+          traceNexoraLoopGuard({
+            source: normalizedRequest.source,
+            action: "write_applied",
+            reason:
+              (rightPanelStateRef.current.contextId ?? null) !== nextContextId
+                ? "changed_object"
+                : "changed_mode",
+            signature: redirectSignature,
+            prevView: rightPanelStateRef.current.view ?? null,
+            nextView: mrpRuntimeRoute.runtimeView,
+            prevContextId: rightPanelStateRef.current.contextId ?? null,
+            nextContextId,
+            dashboardContext: mrpRuntimeRoute.dashboardContext,
+          });
+        }
+        if (!suppressRepeatedObjectClickRedirectLog) {
+          warnLegacySurfaceBlocked(normalizedRequest.view, {
+            owner: "HomeScreen.requestPanelAuthorityOpen",
+            source: normalizedRequest.source,
+            reason: normalizedRequest.reason ?? null,
+            dashboardContext: mrpRuntimeRoute.dashboardContext,
+          });
+          warnDashboardRedirect(normalizedRequest.view, {
+            owner: "HomeScreen.requestPanelAuthorityOpen",
+            source: normalizedRequest.source,
+            dashboardContext: mrpRuntimeRoute.dashboardContext,
+          });
+        } else if (process.env.NODE_ENV !== "production") {
+          traceNexoraLoopGuard({
+            source: normalizedRequest.source,
+            action: "write_skipped",
+            reason: "redirect_debounced",
+            signature: redirectSignature,
+            prevView: rightPanelStateRef.current.view ?? null,
+            nextView: mrpRuntimeRoute.runtimeView,
+            prevContextId: rightPanelStateRef.current.contextId ?? null,
+            nextContextId,
+            dashboardContext: mrpRuntimeRoute.dashboardContext,
+          });
+        }
+        if (currentDashboardContext !== mrpRuntimeRoute.dashboardContext) {
+          commitDashboardContextUpdate(dispatchNexoraWorkspaceStateRef.current, {
+            dashboardContext: mrpRuntimeRoute.dashboardContext,
+            source: "legacy_redirect",
+            reason: normalizedRequest.reason ?? "mrp_dashboard_redirect",
+            priorContext: currentDashboardContext,
+          });
+        }
         normalizedRequest = {
           ...normalizedRequest,
           family: "EXE",
@@ -6802,6 +7024,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       rightPanelState.view,
       selectedObjectIdState,
       traceAnalyzeObjectRoute,
+      traceNexoraLoopGuard,
       writeChatPipelineDebug,
       rightPanelController.refs,
     ]
@@ -12030,21 +12253,72 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           });
         }
       } else {
-        routeDashboardContextFromObjectSelection(dispatchNexoraWorkspaceStateRef.current, {
+        const currentDashboardContext = nexoraWorkspaceStateRef.current.dashboardContext;
+        const contextSignature = JSON.stringify({
+          prevView: rightPanelStateRef.current.view ?? null,
+          nextView: rightPanelStateRef.current.view ?? null,
+          prevContextId: rightPanelStateRef.current.contextId ?? null,
+          nextContextId: rightPanelStateRef.current.contextId ?? null,
+          source: "object_click",
+          dashboardContext: currentDashboardContext,
           objectId: normalizedId,
-          reason: `object_click:${eventId}`,
-          priorContext: nexoraWorkspaceStateRef.current.dashboardContext,
         });
-        if (panelCommit && panelCommit.objectId === normalizedId && panelCommit.clickEventId === eventId) {
-          panelCommit.dashboardContextCommitted = true;
-        }
-        if (process.env.NODE_ENV !== "production") {
-          logObjectClickDiagnostic("[Nexora][ObjectClickPanelContextCommitted]", {
+        const sameObjectDashboardContextNoOp =
+          previousSelectedId === normalizedId && currentDashboardContext === "sources";
+        if (sameObjectDashboardContextNoOp) {
+          if (process.env.NODE_ENV !== "production") {
+            globalThis.console?.warn?.("[NEXORA_RIGHT_PANEL_WRITE_SKIPPED]", {
+              reason: "same_state_object_click",
+              signature: contextSignature,
+            });
+            globalThis.console?.debug?.("[NexoraDashboardRenderGuard]", {
+              action: "skipped",
+              reason: "same_dashboard_state",
+              signature: contextSignature,
+            });
+            traceNexoraLoopGuard({
+              source: "object_click",
+              action: "write_skipped",
+              reason: "same_state",
+              signature: contextSignature,
+              prevView: rightPanelStateRef.current.view ?? null,
+              nextView: rightPanelStateRef.current.view ?? null,
+              prevContextId: rightPanelStateRef.current.contextId ?? null,
+              nextContextId: rightPanelStateRef.current.contextId ?? null,
+              dashboardContext: currentDashboardContext,
+            });
+          }
+          if (panelCommit && panelCommit.objectId === normalizedId && panelCommit.clickEventId === eventId) {
+            panelCommit.dashboardContextCommitted = true;
+          }
+        } else {
+          routeDashboardContextFromObjectSelection(dispatchNexoraWorkspaceStateRef.current, {
             objectId: normalizedId,
-            previousSelectedId,
-            nextSelectedId: selectedObjectIdStateRef.current ?? null,
-            clickEventId: eventId,
+            reason: `object_click:${eventId}`,
+            priorContext: currentDashboardContext,
           });
+          if (panelCommit && panelCommit.objectId === normalizedId && panelCommit.clickEventId === eventId) {
+            panelCommit.dashboardContextCommitted = true;
+          }
+          if (process.env.NODE_ENV !== "production") {
+            traceNexoraLoopGuard({
+              source: "object_click",
+              action: "write_applied",
+              reason: previousSelectedId === normalizedId ? "changed_mode" : "changed_object",
+              signature: contextSignature,
+              prevView: rightPanelStateRef.current.view ?? null,
+              nextView: rightPanelStateRef.current.view ?? null,
+              prevContextId: rightPanelStateRef.current.contextId ?? null,
+              nextContextId: rightPanelStateRef.current.contextId ?? null,
+              dashboardContext: currentDashboardContext,
+            });
+            logObjectClickDiagnostic("[Nexora][ObjectClickPanelContextCommitted]", {
+              objectId: normalizedId,
+              previousSelectedId,
+              nextSelectedId: selectedObjectIdStateRef.current ?? null,
+              clickEventId: eventId,
+            });
+          }
         }
       }
 
@@ -13952,6 +14226,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setFocusedId,
       setViewMode,
       syncSceneContextSelection,
+      traceNexoraLoopGuard,
       rightPanelState.contextId,
       rightPanelState.isOpen,
       rightPanelState.view,
@@ -19097,6 +19372,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const merged = [...domainExamples.slice(0, 2), ...DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS];
     return [...new Set(merged.map((item) => item.trim()).filter(Boolean))].slice(0, 6);
   }, [activeDomainExperience.experience.promptExamples, useVisibleMrpRightRailHost]);
+  const shouldRenderLegacyDashboardHost =
+    allowDecisionPanels &&
+    !shouldSuppressLegacyDashboardHost(nexoraWorkspaceState.dashboardMode);
 
   const panelContent = (
     <div
@@ -19145,7 +19423,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           onAssistantActionSelect={handleAssistantRecommendedActionSelect}
           assistantThemeMode={resolveNexoraHudThemeMode(resolvedTheme)}
           legacyDashboardHost={
-            allowDecisionPanels ? (
+            shouldRenderLegacyDashboardHost ? (
         <LegacyDashboardHostMountTrace>
         <RightPanelHost
       rightPanelState={rightPanelState}
@@ -19228,19 +19506,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       onOpenCenterComponent={handleOpenCenterExecutionSurface}
         />
         </LegacyDashboardHostMountTrace>
-            ) : (
-          <div
-            style={{
-              ...softCardStyle,
-              margin: 12,
-              padding: 12,
-              color: nx.muted,
-              fontSize: 12,
-            }}
-          >
-            No analysis yet. Start by describing your system.
-          </div>
-            )
+            ) : null
           }
         />
       </div>
@@ -19356,6 +19622,126 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       comparisonFocusScenarioIds,
       executiveScenarioSuggestionsModel.scenarios,
       selectedExecutiveScenarioId,
+    ]
+  );
+  const assistantIntelligenceActiveScenarioName = useMemo(() => {
+    const selectedScenario =
+      executiveScenarioSuggestionsModel.scenarios.find(
+        (scenario) => scenario.id === selectedExecutiveScenarioId
+      ) ?? null;
+    return (
+      selectedScenario?.title?.trim() ||
+      activeTypeCScenario?.title?.trim() ||
+      selectedExecutiveScenarioId ||
+      scenarioWorkspaceState?.activeScenarioId ||
+      null
+    );
+  }, [
+    activeTypeCScenario?.title,
+    executiveScenarioSuggestionsModel.scenarios,
+    scenarioWorkspaceState?.activeScenarioId,
+    selectedExecutiveScenarioId,
+  ]);
+  const assistantIntelligenceCardsInput = useMemo(
+    () =>
+      Object.freeze({
+        selectedObjectId: liveExecutiveObjectId,
+        selectedObjectName: selectedObjectLabelForWarRoom,
+        selectedObjectType: dashboardFocusObjectData?.objectType ?? null,
+        selectedObjectStatus: dashboardFocusObjectData?.status ?? null,
+        activeScenarioId:
+          selectedExecutiveScenarioId ?? scenarioWorkspaceState?.activeScenarioId ?? null,
+        activeScenarioName: assistantIntelligenceActiveScenarioName,
+        dashboardMode: nexoraWorkspaceState.dashboardMode,
+        decisionContextSummary:
+          decisionRecommendation?.nextAction?.trim() ||
+          decisionRecommendation?.reasoning?.trim() ||
+          null,
+        assistantContextSummary: leftCommandContextSummary,
+        workspaceContextLabel: workspaceRecommendationContext.activeWorkspaceId,
+        activeWorkspaceId: workspaceRecommendationContext.activeWorkspaceId,
+        dashboardContext: workspaceRecommendationContext.dashboardContext,
+        hasRiskSignal: workspaceRecommendationContext.objectSignal === "risk",
+        hasScenarioConflict: workspaceRecommendationContext.scenarioConflict === true,
+        objectImpact: workspaceRecommendationContext.objectImpact ?? null,
+      }),
+    [
+      assistantIntelligenceActiveScenarioName,
+      dashboardFocusObjectData?.objectType,
+      dashboardFocusObjectData?.status,
+      decisionRecommendation?.nextAction,
+      decisionRecommendation?.reasoning,
+      leftCommandContextSummary,
+      liveExecutiveObjectId,
+      nexoraWorkspaceState.dashboardMode,
+      scenarioWorkspaceState?.activeScenarioId,
+      selectedExecutiveScenarioId,
+      selectedObjectLabelForWarRoom,
+      workspaceRecommendationContext.activeWorkspaceId,
+      workspaceRecommendationContext.dashboardContext,
+      workspaceRecommendationContext.objectImpact,
+      workspaceRecommendationContext.objectSignal,
+      workspaceRecommendationContext.scenarioConflict,
+    ]
+  );
+  const assistantIntelligenceCards = useMemo(
+    () => buildAssistantIntelligenceCards(assistantIntelligenceCardsInput),
+    [assistantIntelligenceCardsInput]
+  );
+  useEffect(() => {
+    traceAssistantIntelligenceCards(assistantIntelligenceCardsInput, assistantIntelligenceCards);
+  }, [assistantIntelligenceCards, assistantIntelligenceCardsInput]);
+  const handleAssistantIntelligenceCardAction = useCallback(
+    (card: AssistantIntelligenceCardModel) => {
+      const prompt = card.action.prompt?.trim();
+      if (card.action.id === "explain") {
+        handleExecutiveAssistantQuestionSelect(prompt || card.summary);
+        return;
+      }
+
+      if (card.action.id === "open_dashboard") {
+        handleMainRightPanelTabChange("dashboard");
+        return;
+      }
+
+      const actionCard = buildAssistantActionCardFromIntelligence(card);
+      if (!actionCard) {
+        if (prompt) handleExecutiveAssistantQuestionSelect(prompt);
+        return;
+      }
+
+      const result = launchAssistantActionCard({
+        card: actionCard,
+        context: assistantActionCardContext,
+        requestId: `intelligence:${card.id}:${Date.now()}`,
+      });
+
+      if (result.success) return;
+
+      if (card.action.id === "simulate") {
+        const objectId =
+          assistantActionCardContext.dashboardRouteObjectId ??
+          assistantActionCardContext.selectedObjectId ??
+          null;
+        const objectName =
+          assistantActionCardContext.selectedObjectName ?? objectId ?? undefined;
+        dispatchNexoraWorkspaceStateRef.current({
+          type: "setDashboardMode",
+          mode: "scenario",
+          routeObject: objectId ? { objectId, objectName } : undefined,
+        });
+        return;
+      }
+
+      if (prompt) {
+        handleExecutiveAssistantQuestionSelect(prompt);
+      }
+    },
+    [
+      assistantActionCardContext,
+      dispatchNexoraWorkspaceStateRef,
+      handleExecutiveAssistantQuestionSelect,
+      handleMainRightPanelTabChange,
     ]
   );
   const handleExecutiveScenarioSelect = useCallback((scenario: ScenarioSuggestion) => {
@@ -19520,12 +19906,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           loading={chatDelayedBusy}
           activeContextSummary={useVisibleMrpRightRailHost ? null : leftCommandContextSummary}
           questionSuggestions={executiveQuestionSuggestions}
+          intelligenceCards={useVisibleMrpRightRailHost ? assistantIntelligenceCards : []}
           assistantStatus={executiveAssistantStatus}
           themeMode={executiveAssistantThemeMode}
           onInputChange={setInput}
           onSubmit={send}
           onClose={handleExecutiveAssistantPanelClose}
           onQuestionSelect={handleExecutiveAssistantQuestionSelect}
+          onIntelligenceCardAction={handleAssistantIntelligenceCardAction}
         />,
         executiveAssistantPortalHost
       )

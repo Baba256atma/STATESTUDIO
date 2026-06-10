@@ -28,7 +28,7 @@ export function AssistantSupportPanelDock(
 ): React.ReactElement {
   const theme = useSceneHudTheme(props.themeMode);
 
-  const hasSuggestions = Boolean(props.questionSuggestions?.length);
+  const hasSuggestions = Boolean(props.questionsLoading || props.questionSuggestions?.length);
   const hasGuidance = Boolean(props.guidanceText?.trim());
   const hasActions = Boolean(props.recommendedActions?.length);
 
@@ -150,6 +150,7 @@ export function resolveAssistantSupportPanelDockAvailablePanels(
   props: Pick<
     AssistantSupportPanelDockProps,
     | "questionSuggestions"
+    | "questionsLoading"
     | "guidanceText"
     | "showScenarioHost"
     | "showComparisonHost"
@@ -157,7 +158,7 @@ export function resolveAssistantSupportPanelDockAvailablePanels(
   >
 ): AssistantPanelDockId[] {
   const panels: AssistantPanelDockId[] = [];
-  if (props.questionSuggestions?.length) panels.push("suggestions");
+  if (props.questionsLoading || props.questionSuggestions?.length) panels.push("suggestions");
   if (props.guidanceText?.trim()) panels.push("guidance");
   if (props.showScenarioHost) panels.push("scenario");
   if (props.showComparisonHost) panels.push("decision");

@@ -7,7 +7,10 @@ import {
   resolveAssistantPanelExpandTooltip,
   type AssistantPanelDockId,
 } from "../../../lib/assistant/assistantPanelDockContract";
-import { useAssistantPanelDockControls, useAssistantPanelVisibility } from "../../../lib/assistant/useAssistantPanelDock";
+import {
+  useAssistantPanelDockControls,
+  useAssistantSupportAccordionOpenPanelId,
+} from "../../../lib/assistant/useAssistantPanelDock";
 import { useSceneHudTheme } from "../../../lib/theme/useSceneTheme";
 import type { NexoraHudThemeMode } from "../../../lib/scene/nexoraHudTheme";
 
@@ -20,10 +23,10 @@ export type AssistantPanelIconDockProps = Readonly<{
 
 export function AssistantPanelIconDock(props: AssistantPanelIconDockProps): React.ReactElement {
   const theme = useSceneHudTheme(props.themeMode);
-  const visibility = useAssistantPanelVisibility();
+  const openPanelId = useAssistantSupportAccordionOpenPanelId();
   const { expandPanel } = useAssistantPanelDockControls();
 
-  const collapsedPanels = props.availablePanels.filter((panelId) => !visibility[panelId]);
+  const collapsedPanels = props.availablePanels.filter((panelId) => panelId !== openPanelId);
 
   if (!collapsedPanels.length) {
     return <></>;

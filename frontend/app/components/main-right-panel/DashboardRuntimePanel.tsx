@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { AnalyzeWorkspaceShell } from "../dashboard/analyze/AnalyzeWorkspaceShell";
 import { CompareWorkspaceShell } from "../dashboard/compare/CompareWorkspaceShell";
@@ -57,6 +57,9 @@ export type DashboardRuntimePanelProps = {
 };
 
 export function DashboardRuntimePanel(props: DashboardRuntimePanelProps): React.ReactElement {
+  const mountLoggedRef = useRef(false);
+  const lastRuntimeTraceSignatureRef = useRef<string | null>(null);
+  const lastSuppressedLegacyHostSignatureRef = useRef<string | null>(null);
   const runtime = resolveDashboardRuntimeState({ dashboardMode: props.mode });
   const isHomeMode = runtime.mode === "overview";
   const isFocusMode = runtime.mode === "focus";
@@ -69,51 +72,101 @@ export function DashboardRuntimePanel(props: DashboardRuntimePanelProps): React.
   const selectedObjectId = props.selectedObjectId ?? props.routeObjectId ?? null;
   const selectedObjectLabel = props.selectedObjectLabel ?? props.routeObjectName ?? null;
 
-  const overviewProps = {
-    activeWorkspaceId: props.activeWorkspaceId ?? null,
-    selectedObjectId,
-    selectedObjectLabel,
-    selectedObjectType: props.selectedObjectType ?? null,
-    selectedObjectStatus: props.selectedObjectStatus ?? null,
-    onWorkspaceLaunch: props.onWorkspaceLaunch,
-    recommendationContext: props.recommendationContext,
-    recentsContext: props.recentsContext,
-    onRecentReturn: props.onRecentReturn,
-  };
+  const overviewProps = useMemo(
+    () => ({
+      activeWorkspaceId: props.activeWorkspaceId ?? null,
+      selectedObjectId,
+      selectedObjectLabel,
+      selectedObjectType: props.selectedObjectType ?? null,
+      selectedObjectStatus: props.selectedObjectStatus ?? null,
+      onWorkspaceLaunch: props.onWorkspaceLaunch,
+      recommendationContext: props.recommendationContext,
+      recentsContext: props.recentsContext,
+      onRecentReturn: props.onRecentReturn,
+    }),
+    [
+      props.activeWorkspaceId,
+      selectedObjectId,
+      selectedObjectLabel,
+      props.selectedObjectType,
+      props.selectedObjectStatus,
+      props.onWorkspaceLaunch,
+      props.recommendationContext,
+      props.recentsContext,
+      props.onRecentReturn,
+    ]
+  );
 
   const suppressLegacyHost = shouldSuppressLegacyDashboardHost(runtime.mode);
+  const rendering = isHomeMode
+    ? "ExecutiveDashboardHomeSurface"
+    : isDedicatedMode
+      ? "DedicatedDashboardModeHeader"
+      : "DashboardRuntimePanel";
 
   useEffect(() => {
+    if (mountLoggedRef.current) return;
+    mountLoggedRef.current = true;
     traceMrp10Runtime("DashboardRuntimePanel mounted", {
       activeTab: "dashboard",
       dashboardMode: runtime.mode,
-      rendering: isHomeMode
-        ? "ExecutiveDashboardHomeSurface"
-        : isDedicatedMode
-          ? "DedicatedDashboardModeHeader"
-          : "DashboardRuntimePanel",
+      rendering,
       mode: runtime.mode,
       isHomeMode,
       isDedicatedMode,
       suppressLegacyHost,
       hasLegacyHost: Boolean(props.legacyHost),
     });
+    if (process.env.NODE_ENV !== "production") {
+        globalThis.console?.info?.("[NexoraDashboardMountStable]", {
+        component: "DashboardRuntimePanel",
+        mountCount: 1,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const runtimeTraceSignature = JSON.stringify({
+      activeTab: "dashboard",
+      dashboardMode: runtime.mode,
+      routeObjectId: props.routeObjectId ?? null,
+      rendering,
+      suppressLegacyHost,
+    });
+    if (lastRuntimeTraceSignatureRef.current === runtimeTraceSignature) {
+      if (process.env.NODE_ENV !== "production") {
+        globalThis.console?.debug?.("[NexoraDashboardRenderGuard]", {
+          action: "skipped",
+          reason: "same_dashboard_state",
+          signature: runtimeTraceSignature,
+        });
+      }
+      return;
+    }
+    lastRuntimeTraceSignatureRef.current = runtimeTraceSignature;
     logMrp10RuntimeRenderChain({
       activeTab: "dashboard",
       dashboardMode: runtime.mode,
-      rendering: isHomeMode
-        ? "ExecutiveDashboardHomeSurface"
-        : isDedicatedMode
-          ? "DedicatedDashboardModeHeader"
-          : "DashboardRuntimePanel",
+      selectedObjectId: props.routeObjectId ?? null,
+      rendering,
     });
-    if (suppressLegacyHost && props.legacyHost) {
+    const suppressedLegacyHostSignature = JSON.stringify({
+      dashboardMode: runtime.mode,
+      rendering,
+      suppressLegacyHost,
+    });
+    if (
+      suppressLegacyHost &&
+      props.legacyHost &&
+      lastSuppressedLegacyHostSignatureRef.current !== suppressedLegacyHostSignature
+    ) {
+      lastSuppressedLegacyHostSignatureRef.current = suppressedLegacyHostSignature;
       traceMrp10Runtime("legacyDashboardHost suppressed", {
         dashboardMode: runtime.mode,
-        rendering: isHomeMode ? "ExecutiveDashboardHomeSurface" : "DedicatedDashboardModeHeader",
+        rendering,
       });
     }
-  }, [runtime.mode, isHomeMode, isDedicatedMode, suppressLegacyHost, props.legacyHost]);
+  }, [runtime.mode, props.routeObjectId, rendering, suppressLegacyHost, props.legacyHost]);
 
   return (
     <div

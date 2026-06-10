@@ -80,22 +80,36 @@ function resolveActiveWorkspaceIdFromMode(mode: DashboardMode): ExecutiveWorkspa
 function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.ReactElement {
   const activeTab = props.activeTab;
   const previousTabRef = React.useRef<MainRightPanelTab>(activeTab);
+  const mountLoggedRef = React.useRef(false);
+  const lastRuntimeTraceSignatureRef = React.useRef<string | null>(null);
   const isDedicatedDashboardMode = props.dashboardMode !== "overview";
 
   React.useEffect(() => {
-    logMainRightPanelRuntime({ owner: "MainRightPanelShell", activeTab, dashboardMode: props.dashboardMode });
+    if (mountLoggedRef.current) return;
+    mountLoggedRef.current = true;
     traceMrp10Runtime("MainRightPanelShell mounted", {
       activeTab,
       dashboardMode: props.dashboardMode,
       rendering: activeTab === "dashboard" ? "DashboardRuntimePanel" : "MainRightPanelAssistantPlaceholder",
       isDedicatedDashboardMode,
     });
+  }, []);
+
+  React.useEffect(() => {
+    const runtimeTraceSignature = JSON.stringify({
+      activeTab,
+      dashboardMode: props.dashboardMode,
+      rendering: activeTab === "dashboard" ? "DashboardRuntimePanel" : "MainRightPanelAssistantPlaceholder",
+    });
+    if (lastRuntimeTraceSignatureRef.current === runtimeTraceSignature) return;
+    lastRuntimeTraceSignatureRef.current = runtimeTraceSignature;
+    logMainRightPanelRuntime({ owner: "MainRightPanelShell", activeTab, dashboardMode: props.dashboardMode });
     logMrp10RuntimeRenderChain({
       activeTab,
       dashboardMode: props.dashboardMode,
       rendering: activeTab === "dashboard" ? "DashboardRuntimePanel" : "MainRightPanelAssistantPlaceholder",
     });
-  }, [activeTab, props.dashboardMode, isDedicatedDashboardMode]);
+  }, [activeTab, props.dashboardMode]);
 
   React.useEffect(() => {
     const previousTab = previousTabRef.current;
@@ -122,6 +136,13 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
     },
     [activeTab, props.onTabChange]
   );
+
+  const activeWorkspaceId = React.useMemo(
+    () => resolveActiveWorkspaceIdFromMode(props.dashboardMode),
+    [props.dashboardMode]
+  );
+  const selectedObjectId = props.launcherSelectedObjectId ?? props.dashboardRouteObjectId;
+  const selectedObjectLabel = props.launcherSelectedObjectLabel ?? props.dashboardRouteObjectName;
 
   return (
     <div
@@ -210,9 +231,9 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
           scenarioContext={props.scenarioContext}
           warRoomContext={props.warRoomContext}
           legacyHost={props.legacyDashboardHost}
-          activeWorkspaceId={resolveActiveWorkspaceIdFromMode(props.dashboardMode)}
-          selectedObjectId={props.launcherSelectedObjectId ?? props.dashboardRouteObjectId}
-          selectedObjectLabel={props.launcherSelectedObjectLabel ?? props.dashboardRouteObjectName}
+          activeWorkspaceId={activeWorkspaceId}
+          selectedObjectId={selectedObjectId}
+          selectedObjectLabel={selectedObjectLabel}
           selectedObjectType={props.launcherSelectedObjectType ?? null}
           selectedObjectStatus={props.launcherSelectedObjectStatus ?? null}
           onWorkspaceLaunch={props.onWorkspaceLaunch}

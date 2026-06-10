@@ -25,8 +25,10 @@ import {
 import { useSceneHudTheme } from "../../lib/theme/useSceneTheme";
 import { nx } from "../ui/nexoraTheme";
 
+import type { AssistantIntelligenceCardModel } from "../../lib/assistant/assistantIntelligenceCardsContract";
 import { AssistantChatHeader } from "../main-right-panel/assistant/AssistantChatHeader";
 import { AssistantConversationArea } from "../main-right-panel/assistant/AssistantConversationArea";
+import { AssistantIntelligenceCardsSurface } from "../main-right-panel/assistant/AssistantIntelligenceCardsSurface";
 import { AssistantMessageInput } from "../main-right-panel/assistant/AssistantMessageInput";
 
 export type ExecutiveAssistantPanelLayout = "default" | "chat-first";
@@ -40,12 +42,14 @@ export type ExecutiveAssistantPanelProps = {
   loading?: boolean;
   activeContextSummary?: string | null;
   questionSuggestions?: readonly string[];
+  intelligenceCards?: readonly AssistantIntelligenceCardModel[];
   assistantStatus?: ExecutiveAssistantStatus;
   themeMode?: NexoraHudThemeMode;
   onInputChange: (value: string) => void;
   onSubmit: () => void;
   onClose: () => void;
   onQuestionSelect?: (question: string) => void;
+  onIntelligenceCardAction?: (card: AssistantIntelligenceCardModel) => void;
 };
 
 function emitExecutiveAssistantCollapsed(): void {
@@ -74,12 +78,14 @@ export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): Re
     loading = false,
     activeContextSummary,
     questionSuggestions = DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS,
+    intelligenceCards = [],
     assistantStatus = DEFAULT_EXECUTIVE_ASSISTANT_STATUS,
     themeMode = "night",
     onInputChange,
     onSubmit,
     onClose,
     onQuestionSelect,
+    onIntelligenceCardAction,
   } = props;
 
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -147,6 +153,11 @@ export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): Re
           contextLabel={contextLabel ?? "Executive workspace"}
           themeMode={themeMode}
           onCollapse={handleCollapse}
+        />
+        <AssistantIntelligenceCardsSurface
+          cards={intelligenceCards}
+          themeMode={themeMode}
+          onAction={onIntelligenceCardAction}
         />
         <AssistantConversationArea
           messages={displayMessages}

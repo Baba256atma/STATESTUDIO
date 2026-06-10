@@ -4,6 +4,7 @@ import { useCallback, useSyncExternalStore } from "react";
 
 import type { AssistantPanelDockId } from "./assistantPanelDockContract";
 import { DEFAULT_ASSISTANT_PANEL_VISIBILITY } from "./assistantPanelDockContract";
+import { DEFAULT_ASSISTANT_SUPPORT_ACCORDION_STATE } from "./assistantSupportAccordionContract";
 import {
   collapseAssistantPanel,
   expandAssistantPanel,
@@ -11,6 +12,26 @@ import {
   subscribeAssistantPanelVisibility,
   toggleAssistantPanelVisible,
 } from "./assistantPanelDockRuntime";
+import {
+  getAssistantSupportAccordionState,
+  subscribeAssistantSupportAccordion,
+} from "./assistantSupportAccordionRuntime";
+
+export function useAssistantSupportAccordionState(): ReturnType<
+  typeof getAssistantSupportAccordionState
+> {
+  return useSyncExternalStore(
+    subscribeAssistantSupportAccordion,
+    getAssistantSupportAccordionState,
+    () => DEFAULT_ASSISTANT_SUPPORT_ACCORDION_STATE
+  );
+}
+
+export function useAssistantSupportAccordionOpenPanelId(): ReturnType<
+  typeof getAssistantSupportAccordionState
+>["openPanelId"] {
+  return useAssistantSupportAccordionState().openPanelId;
+}
 
 export function useAssistantPanelVisibility(): ReturnType<typeof getAssistantPanelVisibility> {
   return useSyncExternalStore(
@@ -21,8 +42,7 @@ export function useAssistantPanelVisibility(): ReturnType<typeof getAssistantPan
 }
 
 export function useAssistantPanelVisible(panelId: AssistantPanelDockId): boolean {
-  const visibility = useAssistantPanelVisibility();
-  return visibility[panelId];
+  return useAssistantSupportAccordionOpenPanelId() === panelId;
 }
 
 export function useAssistantPanelDockControls(): Readonly<{

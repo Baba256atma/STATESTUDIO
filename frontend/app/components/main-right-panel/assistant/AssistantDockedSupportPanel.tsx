@@ -47,7 +47,7 @@ export function AssistantDockedSupportPanel(
         flexDirection: "column",
         minHeight: 0,
         overflow: "hidden",
-        borderTop: visible ? `1px solid ${theme.shellBorder}` : "1px solid transparent",
+        borderTop: visible ? `1px solid ${theme.shellBorder}` : "0 solid transparent",
         background: theme.shellBackground,
         transition: `opacity ${ASSISTANT_PANEL_COLLAPSE_MS}ms ease`,
       }}
