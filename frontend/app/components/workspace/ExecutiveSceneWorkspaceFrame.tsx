@@ -3,6 +3,7 @@
 import type React from "react";
 import { useEffect } from "react";
 
+import { traceSceneFrameRadius } from "../../lib/scene/sceneFrameRadiusContract";
 import { logExecutiveSceneZoneReady } from "../../lib/ui/executiveWorkspaceInstrumentation";
 import { executiveSceneHostStyle, executiveSceneCanvasShellStyle } from "../executive/executiveProductSurfaceStyles";
 
@@ -18,6 +19,7 @@ export type ExecutiveSceneWorkspaceFrameProps = {
  */
 export function ExecutiveSceneWorkspaceFrame(props: ExecutiveSceneWorkspaceFrameProps): React.ReactElement {
   useEffect(() => {
+    traceSceneFrameRadius();
     logExecutiveSceneZoneReady({
       objectCount: props.objectCount ?? 0,
       viewportWidth: typeof window !== "undefined" ? window.innerWidth : 0,

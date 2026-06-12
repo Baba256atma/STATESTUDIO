@@ -36,6 +36,21 @@ import {
 } from "../../lib/workspace/panelGovernanceRuntime";
 import { resolveExecutiveEmptyState } from "../../lib/workspace/minimalism";
 import { logObjectActionMoved } from "../../lib/scene/navigation/sceneToolbarActionRegistry";
+import {
+  HUD_PANEL_BODY_PADDING_STYLE,
+  HUD_PANEL_HEADER_PADDING_STYLE,
+  HUD_PANEL_SAFE_TEXT_STYLE,
+  HUD_PANEL_SCROLL_BODY_STYLE,
+  HUD_PANEL_STICKY_DETAIL_HEADER_STYLE,
+  HUD_PANEL_STICKY_HEADER_STYLE,
+  HUD_PANEL_STICKY_SHELL_STYLE,
+  HUD_PANEL_TRUNCATE_TEXT_STYLE,
+  OBJECT_PANEL_EXPANDED_WIDTH,
+  OBJECT_PANEL_WIDTH,
+  traceHudPanelStickyHeader,
+} from "../../lib/hud/hudPanelDesignContract";
+import { formatObjectPanelTitle, traceObjectPanelTitleIdentity } from "../../lib/object-panel/objectPanelTitleContract";
+import { buildObjectPanelExecutiveViewModel } from "../../lib/object-panel/objectPanelExecutiveViewModel";
 import ExecutiveActionPanel from "../panels/ExecutiveActionPanel";
 import type { ExecutiveActionPanelModel } from "../../lib/object-panel/executiveActionPanelContract";
 import {
@@ -44,6 +59,7 @@ import {
   subscribeExecutiveFocusMode,
 } from "../../lib/workspace/executiveFocusModeRuntime";
 import { SceneActionDock } from "./SceneActionDock";
+import { HudPanelToggleButton } from "../hud/HudPanelToggleButton";
 
 /**
  * DEPRECATED ARCHITECTURE MIRROR:
@@ -124,26 +140,26 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
   const width =
     panelSizeMode === "expanded"
       ? compact
-        ? 300
-        : 340
+        ? 324
+        : 364
       : panelSizeMode === "compact"
         ? compact
-          ? 240
-          : 280
+          ? 264
+          : 304
         : compact
-          ? 280
-          : 320;
+          ? 304
+          : OBJECT_PANEL_EXPANDED_WIDTH;
 
   useViewportWidthListener(setViewportWidth, "ObjectInfoHud");
 
   const shellStyle = nexoraHudShellStyle(
     hudTheme,
     {
-      width,
-      maxWidth: breakpoint === "mobile" ? "calc(100vw - 24px)" : "min(34vw, 340px)",
+      ...HUD_PANEL_STICKY_SHELL_STYLE,
+      width: "100%",
+      maxWidth: "100%",
       fontSize: 11,
       lineHeight: 1.45,
-      overflow: "hidden",
     },
     { surface: "objectInfoHud", edgeAnchor: "TOP_RIGHT" }
   );
@@ -182,12 +198,22 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
     });
   }, [collapsed, props.propagationDetails, props.relationshipDetails, props.selectedObjectId]);
 
+  const previousCollapsedRef = React.useRef<boolean | null>(null);
+
+  React.useEffect(() => {
+    if (previousCollapsedRef.current === collapsed) return;
+    previousCollapsedRef.current = collapsed;
+    persistObjectInfoCollapsePreference(collapsed);
+  }, [collapsed]);
+
+  React.useEffect(() => {
+    if (collapsed) return;
+    if (!props.selectedObjectId && !props.relationshipDetails && !props.propagationDetails) return;
+    traceHudPanelStickyHeader({ panel: "object" });
+  }, [collapsed, props.propagationDetails, props.relationshipDetails, props.selectedObjectId]);
+
   const toggleCollapsed = React.useCallback(() => {
-    setCollapsed((value) => {
-      const next = !value;
-      persistObjectInfoCollapsePreference(next);
-      return next;
-    });
+    setCollapsed((value) => !value);
   }, []);
 
   React.useEffect(() => {
@@ -209,12 +235,10 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
       >
         <header
           style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 8,
-            padding: "10px 10px 8px",
+            ...HUD_PANEL_STICKY_DETAIL_HEADER_STYLE,
+            ...HUD_PANEL_HEADER_PADDING_STYLE,
             borderBottom: `1px solid ${nx.borderSoft}`,
+            background: hudTheme.panelBackground,
           }}
         >
           <div style={{ minWidth: 0 }}>
@@ -227,7 +251,7 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
             </div>
           </div>
         </header>
-        <div style={{ padding: "9px 10px 10px", display: "flex", flexDirection: "column", gap: 9 }}>
+        <div data-nx="object-panel-scroll-body" style={HUD_PANEL_SCROLL_BODY_STYLE}>
           <section>
             <div style={sectionLabelStyle(hudTheme)}>Connection</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
@@ -320,12 +344,10 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
       >
         <header
           style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 8,
-            padding: "10px 10px 8px",
+            ...HUD_PANEL_STICKY_DETAIL_HEADER_STYLE,
+            ...HUD_PANEL_HEADER_PADDING_STYLE,
             borderBottom: `1px solid ${nx.borderSoft}`,
+            background: hudTheme.panelBackground,
           }}
         >
           <div style={{ minWidth: 0 }}>
@@ -338,7 +360,7 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
             </div>
           </div>
         </header>
-        <div style={{ padding: "9px 10px 10px", display: "flex", flexDirection: "column", gap: 9 }}>
+        <div data-nx="object-panel-scroll-body" style={HUD_PANEL_SCROLL_BODY_STYLE}>
           <section>
             <div style={sectionLabelStyle(hudTheme)}>Impact Path</div>
             <div style={{ ...cardStyle(hudTheme), display: "grid", gap: 7 }}>
@@ -419,14 +441,14 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
         style={nexoraHudShellStyle(
           hudTheme,
           {
-            width: panelSizeMode === "expanded" ? (compact ? 220 : 248) : panelSizeMode === "compact" ? (compact ? 168 : 184) : compact ? 196 : 220,
-            padding: "10px 12px",
+            width: panelSizeMode === "expanded" ? (compact ? OBJECT_PANEL_WIDTH : OBJECT_PANEL_EXPANDED_WIDTH) : panelSizeMode === "compact" ? (compact ? 192 : 208) : compact ? 220 : OBJECT_PANEL_WIDTH,
+            ...HUD_PANEL_BODY_PADDING_STYLE,
           },
           { surface: "objectInfoHud" }
         )}
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <div style={{ ...sectionLabelStyle(hudTheme), marginBottom: 4 }}>Object Info</div>
+        <div style={{ ...sectionLabelStyle(hudTheme), marginBottom: 4 }}>{formatObjectPanelTitle(null)}</div>
         <div style={{ color: nx.muted, fontSize: 11 }}>{resolveExecutiveEmptyState("no_selection")}</div>
       </div>
     );
@@ -497,43 +519,43 @@ function ExecutiveObjectInfoCard(props: {
     lastUpdated: "Runtime",
   };
 
+  React.useEffect(() => {
+    traceObjectPanelTitleIdentity(layout.header.name);
+  }, [layout.header.name]);
+
   return (
     <>
       <header
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          padding: "7px 8px",
+          ...HUD_PANEL_STICKY_HEADER_STYLE,
+          ...HUD_PANEL_HEADER_PADDING_STYLE,
           borderBottom: `1px solid color-mix(in srgb, ${props.theme.panelBorder} 55%, transparent)`,
+          background: props.theme.panelBackground,
         }}
       >
-        <div style={{ ...sectionLabelStyle(props.theme), marginBottom: 0 }}>Object Panel</div>
-        <button
-          type="button"
-          aria-label="Collapse object panel"
-          title="Collapse object panel"
-          onClick={props.onCollapse}
+        <div
           style={{
-            width: 24,
-            height: 24,
-            borderRadius: 7,
-            border: `1px solid ${props.theme.controlBorder}`,
-            background: "transparent",
-            color: props.theme.textSecondary,
-            cursor: "pointer",
-            fontSize: 11,
-            fontWeight: 700,
-            lineHeight: 1,
-            flexShrink: 0,
+            ...sectionLabelStyle(props.theme),
+            ...HUD_PANEL_SAFE_TEXT_STYLE,
+            ...HUD_PANEL_TRUNCATE_TEXT_STYLE,
+            marginBottom: 0,
+            flex: 1,
           }}
         >
-          ◀
-        </button>
+          {formatObjectPanelTitle(layout.header.name)}
+        </div>
+        <HudPanelToggleButton panelId="object" expanded onClick={props.onCollapse} />
       </header>
-      <div style={{ padding: "8px 8px 10px", overflowY: "auto", maxHeight: "min(72vh, 520px)" }}>
-        <ExecutiveActionPanel model={panelModel} focusModeActive={focusModeActive} />
+      <div data-nx="object-panel-scroll-body" style={HUD_PANEL_SCROLL_BODY_STYLE}>
+        <ExecutiveActionPanel
+          model={panelModel}
+          focusModeActive={focusModeActive}
+          view={buildObjectPanelExecutiveViewModel({
+            model: panelModel,
+            executiveSummary: layout.secondary.summary,
+            extraInsights: layout.secondary.signals,
+          })}
+        />
         {props.onCreateImpactPath ? (
           <div style={{ marginTop: 8 }}>
             <button

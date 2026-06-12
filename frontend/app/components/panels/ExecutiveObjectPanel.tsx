@@ -12,6 +12,7 @@ import {
   subscribeExecutiveFocusMode,
 } from "../../lib/workspace/executiveFocusModeRuntime";
 import ExecutiveActionPanel from "./ExecutiveActionPanel";
+import { buildObjectPanelExecutiveViewModel } from "../../lib/object-panel/objectPanelExecutiveViewModel";
 import { nx, softCardStyle } from "../ui/nexoraTheme";
 
 type Props = {
@@ -83,5 +84,12 @@ export default function ExecutiveObjectPanel({ data, selectedObjectId }: Props) 
     );
   }
 
-  return <ExecutiveActionPanel model={buildPanelModel(merged)} focusModeActive={focusModeActive} />;
+  const panelModel = buildPanelModel(merged);
+  return (
+    <ExecutiveActionPanel
+      model={panelModel}
+      focusModeActive={focusModeActive}
+      view={buildObjectPanelExecutiveViewModel({ data: merged, model: panelModel })}
+    />
+  );
 }

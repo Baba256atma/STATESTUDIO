@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 import {
   resolveAssistantMessageInputFieldStyle,
@@ -21,6 +21,15 @@ export type AssistantMessageInputProps = Readonly<{
 export function AssistantMessageInput(props: AssistantMessageInputProps): React.ReactElement {
   const theme = useSceneHudTheme(props.themeMode);
   const disabled = props.loading || !props.value.trim();
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const onFocusAssistantInput = () => {
+      inputRef.current?.focus();
+    };
+    window.addEventListener("nexora:focus-assistant-input", onFocusAssistantInput);
+    return () => window.removeEventListener("nexora:focus-assistant-input", onFocusAssistantInput);
+  }, []);
 
   return (
     <div
@@ -28,6 +37,7 @@ export function AssistantMessageInput(props: AssistantMessageInputProps): React.
       style={resolveAssistantMessageInputShellStyle(theme)}
     >
       <textarea
+        ref={inputRef}
         value={props.value}
         onChange={(event) => props.onChange(event.target.value)}
         onKeyDown={(event) => {

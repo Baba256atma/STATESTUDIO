@@ -15,6 +15,7 @@ import {
   shouldShowExecutiveScenarioComparisonPanel,
   shouldShowExecutiveCommandBar,
   shouldShowExecutiveQuickActionsDock,
+  shouldShowExecutiveBottomCommandDock,
 } from "./executiveWorkspacePresentation";
 
 function createStorage(): Storage {
@@ -86,6 +87,7 @@ describe("executiveWorkspacePresentation", () => {
     expect(shouldShowExecutiveScenarioComparisonPanel()).toBe(true);
     expect(shouldShowExecutiveCommandBar()).toBe(true);
     expect(shouldShowExecutiveQuickActionsDock()).toBe(true);
+    expect(shouldShowExecutiveBottomCommandDock()).toBe(false);
     expect(shouldShowExecutiveLeftCommandPanel()).toBe(false);
     expect(shouldShowExecutiveStageAssistantOverlay()).toBe(false);
     window.localStorage.setItem(EXECUTIVE_DEV_SURFACES_STORAGE_KEY, "1");

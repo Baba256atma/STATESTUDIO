@@ -1,66 +1,66 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 
 import {
   ASSISTANT_PANEL_DOCK_DEFINITIONS,
   resolveAssistantPanelExpandTooltip,
-  type AssistantPanelDockId,
 } from "../../../lib/assistant/assistantPanelDockContract";
+import { ASSISTANT_SUPPORT_ACCORDION_PANEL_ORDER } from "../../../lib/assistant/assistantSupportAccordionContract";
 import {
   useAssistantPanelDockControls,
   useAssistantSupportAccordionOpenPanelId,
 } from "../../../lib/assistant/useAssistantPanelDock";
+import { traceMrp127AssistantSupportDockMounted } from "../../../lib/assistant/mrp127RuntimeDiagnostics";
 import { useSceneHudTheme } from "../../../lib/theme/useSceneTheme";
 import type { NexoraHudThemeMode } from "../../../lib/scene/nexoraHudTheme";
+import { nx } from "../../ui/nexoraTheme";
 
-const PANEL_COLLAPSE_MS = 200;
-
-export type AssistantPanelIconDockProps = Readonly<{
-  availablePanels: readonly AssistantPanelDockId[];
+export type AssistantSupportIconDockProps = Readonly<{
   themeMode?: NexoraHudThemeMode;
 }>;
 
-export function AssistantPanelIconDock(props: AssistantPanelIconDockProps): React.ReactElement {
+/** MRP:12:7 — Executive utility icon dock (right rail of Assistant workspace). */
+export function AssistantSupportIconDock(props: AssistantSupportIconDockProps): React.ReactElement {
   const theme = useSceneHudTheme(props.themeMode);
   const openPanelId = useAssistantSupportAccordionOpenPanelId();
-  const { expandPanel } = useAssistantPanelDockControls();
+  const { togglePanel } = useAssistantPanelDockControls();
 
-  const collapsedPanels = props.availablePanels.filter((panelId) => panelId !== openPanelId);
-
-  if (!collapsedPanels.length) {
-    return <></>;
-  }
+  useEffect(() => {
+    traceMrp127AssistantSupportDockMounted();
+  }, []);
 
   return (
     <div
-      data-nx="assistant-panel-icon-dock"
+      data-nx="assistant-support-icon-dock"
       style={{
         flexShrink: 0,
         display: "flex",
         flexDirection: "column",
-        alignItems: "flex-end",
+        alignItems: "center",
         justifyContent: "flex-end",
         gap: 4,
         padding: "4px 6px",
       }}
     >
-      {collapsedPanels.map((panelId) => {
+      {ASSISTANT_SUPPORT_ACCORDION_PANEL_ORDER.map((panelId) => {
         const definition = ASSISTANT_PANEL_DOCK_DEFINITIONS[panelId];
+        const selected = openPanelId === panelId;
         return (
           <button
             key={panelId}
             type="button"
-            data-nx="assistant-panel-icon-dock-button"
+            data-nx="assistant-support-icon-dock-button"
             data-nx-panel={panelId}
+            aria-pressed={selected}
             aria-label={resolveAssistantPanelExpandTooltip(panelId)}
             title={resolveAssistantPanelExpandTooltip(panelId)}
-            onClick={() => expandPanel(panelId)}
+            onClick={() => togglePanel(panelId)}
             style={{
               width: 28,
               height: 28,
               borderRadius: 8,
-              border: `1px solid ${theme.controlBorder}`,
+              border: selected ? `1px solid ${nx.accent}` : `1px solid ${theme.controlBorder}`,
               background: theme.controlBackground,
               color: theme.text,
               cursor: "pointer",
@@ -69,7 +69,7 @@ export function AssistantPanelIconDock(props: AssistantPanelIconDockProps): Reac
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              transition: `opacity ${PANEL_COLLAPSE_MS}ms ease, transform ${PANEL_COLLAPSE_MS}ms ease`,
+              boxShadow: selected ? `0 0 0 1px ${nx.accentSoft}` : undefined,
             }}
           >
             {definition.icon}
@@ -80,4 +80,4 @@ export function AssistantPanelIconDock(props: AssistantPanelIconDockProps): Reac
   );
 }
 
-export default AssistantPanelIconDock;
+export default AssistantSupportIconDock;

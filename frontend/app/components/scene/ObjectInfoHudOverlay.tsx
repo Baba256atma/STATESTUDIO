@@ -19,6 +19,7 @@ import {
 import { persistSceneHudAnchorPreference } from "../../lib/hud/sceneHudAnchorRuntime";
 import { useFocusHudPresentation } from "../../lib/workspace/useFocusHudPresentation";
 import { SCENE_HUD_ZONE_HOSTED_OVERLAY_STYLE } from "../../lib/scene/sceneHudZoneContract";
+import { traceSceneHudPanelScroll } from "../../lib/hud/sceneHudTopAlignmentContract";
 import { ObjectInfoHud } from "./ObjectInfoHud";
 import { SceneHudOverlayRoot } from "./SceneHudOverlayRoot";
 import { devLogThrottled } from "../../lib/runtime/diagnosticThrottle.ts";
@@ -174,6 +175,10 @@ function ObjectInfoHudOverlayInner(props: ObjectInfoHudOverlayProps): React.Reac
   React.useEffect(() => {
     previousPropsRef.current = props;
   });
+
+  React.useEffect(() => {
+    traceSceneHudPanelScroll("object");
+  }, []);
 
   React.useEffect(() => {
     persistSceneHudAnchorPreference("objectInfoHud", "TOP_RIGHT");

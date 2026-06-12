@@ -54,7 +54,7 @@ describe("executiveFocusModeRuntime", () => {
     expect(getExecutiveFocusModeSnapshot()).toBe(before);
   });
 
-  it("hides scene info and timeline in ANALYSIS focus profile", () => {
+  it("preserves scene panel and hides object and timeline in ANALYSIS focus profile", () => {
     const sceneInfo = resolveFocusHudVisibility({
       focusEnabled: true,
       profileId: "ANALYSIS",
@@ -67,7 +67,26 @@ describe("executiveFocusModeRuntime", () => {
       panelId: "objectInfoHud",
       layoutVisible: true,
     });
-    expect(sceneInfo.visible).toBe(false);
-    expect(objectInfo.visible).toBe(true);
+    const timeline = resolveFocusHudVisibility({
+      focusEnabled: true,
+      profileId: "ANALYSIS",
+      panelId: "timelineHud",
+      layoutVisible: true,
+    });
+    expect(sceneInfo.visible).toBe(true);
+    expect(objectInfo.visible).toBe(false);
+    expect(timeline.visible).toBe(false);
+  });
+
+  it("preserves scene panel across all focus profiles", () => {
+    for (const profileId of ["MINIMAL", "ANALYSIS", "PRESENTATION"] as const) {
+      const sceneInfo = resolveFocusHudVisibility({
+        focusEnabled: true,
+        profileId,
+        panelId: "sceneInfoHud",
+        layoutVisible: true,
+      });
+      expect(sceneInfo.visible).toBe(true);
+    }
   });
 });

@@ -24,6 +24,21 @@ import { MAIN_RIGHT_PANEL_TABS } from "../../lib/ui/mainRightPanelContract";
 import { logMainRightPanelRuntime } from "../../lib/ui/mainRightPanelRuntimeEnforcement";
 import { traceMrp10Runtime, logMrp10RuntimeRenderChain } from "../../lib/dashboard/dashboardHomeReturnPath/dashboardHomeRuntimeTrace";
 import { nx } from "../ui/nexoraTheme";
+import {
+  traceMrpCleanHeader,
+  traceMrpCollapseControlMounted,
+  traceMrpCollapseControlRelocatedToHeader,
+  traceMrpDuplicateCollapseControlsRemoved,
+  traceMrpTabRenameDashboardToInsight,
+  traceMrpTabsMounted,
+} from "../../lib/ui/mrpShellDiagnostics";
+import { mrpTabButtonStyle, traceNexoraMRPTabs } from "../../lib/ui/mainRightPanelDesignTokens";
+import {
+  mrpHeaderCollapseButtonStyle,
+  mrpHeaderShellStyle,
+  mrpHeaderTabRowStyle,
+  traceNexoraMRPHeader,
+} from "../../lib/ui/mainRightPanelHeaderContract";
 import { DashboardRuntimePanel } from "./DashboardRuntimePanel";
 import { MainRightPanelAssistantPlaceholder } from "./MainRightPanelAssistantPlaceholder";
 import { MrpChatFirstAssistantSurface } from "./MrpChatFirstAssistantSurface";
@@ -60,16 +75,21 @@ export type MainRightPanelShellProps = {
   showAssistantScenarioHost?: boolean;
   showAssistantComparisonHost?: boolean;
   assistantContextSummary?: string | null;
+  assistantGovernanceSummary?: string | null;
+  assistantAnalyticsSummary?: string | null;
   assistantQuestionSuggestions?: readonly string[];
   assistantQuestionsLoading?: boolean;
   onAssistantQuestionSelect?: (question: string) => void;
   assistantRecommendedActions?: readonly ExecutiveAssistantActionCard[];
   onAssistantActionSelect?: (action: ExecutiveAssistantActionCard) => void;
   assistantThemeMode?: "day" | "night";
+  /** MRP:12:2 — collapsed rail preserves tab + dashboard mode in parent state. */
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 };
 
 const TAB_LABELS: Record<MainRightPanelTab, string> = {
-  dashboard: "Dashboard",
+  dashboard: "Insight",
   assistant: "Assistant",
 };
 
@@ -77,23 +97,43 @@ function resolveActiveWorkspaceIdFromMode(mode: DashboardMode): ExecutiveWorkspa
   return resolveWorkspaceIdFromDashboardMode(mode);
 }
 
+const collapseButtonStyle: React.CSSProperties = mrpHeaderCollapseButtonStyle({
+  border: nx.border,
+  background: nx.btnSecondaryBg,
+  color: nx.textSoft,
+});
+
 function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.ReactElement {
   const activeTab = props.activeTab;
+  const collapsed = props.collapsed === true;
   const previousTabRef = React.useRef<MainRightPanelTab>(activeTab);
-  const mountLoggedRef = React.useRef(false);
   const lastRuntimeTraceSignatureRef = React.useRef<string | null>(null);
   const isDedicatedDashboardMode = props.dashboardMode !== "overview";
 
   React.useEffect(() => {
-    if (mountLoggedRef.current) return;
-    mountLoggedRef.current = true;
-    traceMrp10Runtime("MainRightPanelShell mounted", {
-      activeTab,
-      dashboardMode: props.dashboardMode,
-      rendering: activeTab === "dashboard" ? "DashboardRuntimePanel" : "MainRightPanelAssistantPlaceholder",
-      isDedicatedDashboardMode,
-    });
+    traceMrpCleanHeader();
+    traceMrpTabsMounted();
+    traceMrpTabRenameDashboardToInsight();
+    traceMrpCollapseControlRelocatedToHeader();
+    traceMrpDuplicateCollapseControlsRemoved();
+    traceMrpCollapseControlMounted();
+    traceNexoraMRPTabs();
+    traceNexoraMRPHeader();
+    traceMrp10Runtime("MainRightPanelShell mounted");
   }, []);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(
+      new CustomEvent("nexora:executive-assistant-collapsed-changed", {
+        detail: { collapsed },
+      })
+    );
+  }, [collapsed]);
+
+  const handleToggleCollapse = React.useCallback(() => {
+    props.onToggleCollapse?.();
+  }, [props.onToggleCollapse]);
 
   React.useEffect(() => {
     const runtimeTraceSignature = JSON.stringify({
@@ -143,70 +183,8 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
   );
   const selectedObjectId = props.launcherSelectedObjectId ?? props.dashboardRouteObjectId;
   const selectedObjectLabel = props.launcherSelectedObjectLabel ?? props.dashboardRouteObjectName;
-
-  return (
-    <div
-      id="nexora-main-right-panel-shell"
-      data-nx="main-right-panel-shell"
-      data-nx-mrp-tab={activeTab}
-      data-nx-dashboard-mode={props.dashboardMode}
-      style={{
-        flex: 1,
-        minHeight: 0,
-        minWidth: 0,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        role="tablist"
-        aria-label="Main right panel"
-        style={{
-          flexShrink: 0,
-          display: "flex",
-          gap: 8,
-          padding: "10px 12px 0",
-          borderBottom: `1px solid ${nx.borderSoft}`,
-        }}
-      >
-        {MAIN_RIGHT_PANEL_TABS.map((tab) => {
-          const selected = activeTab === tab;
-          const showModeHint = tab === "dashboard" && selected && isDedicatedDashboardMode;
-          return (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              aria-controls={`nexora-mrp-panel-${tab}`}
-              id={`nexora-mrp-tab-${tab}`}
-              onClick={() => handleTabClick(tab)}
-              title={
-                showModeHint
-                  ? `${TAB_LABELS[tab]} — ${dashboardModeLabel(props.dashboardMode)} mode active. Use Dashboard Home to return.`
-                  : TAB_LABELS[tab]
-              }
-              style={{
-                height: 32,
-                padding: "0 12px",
-                borderRadius: 999,
-                border: selected ? `1px solid ${nx.navTileActiveBorder}` : `1px solid ${nx.border}`,
-                background: selected ? nx.navTileActiveBg : nx.bgControl,
-                color: selected ? nx.text : nx.muted,
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              {showModeHint
-                ? `${TAB_LABELS[tab]} · ${dashboardModeLabel(props.dashboardMode)}`
-                : TAB_LABELS[tab]}
-            </button>
-          );
-        })}
-      </div>
-
+  const panelBody = (
+    <>
       <div
         id="nexora-mrp-panel-dashboard"
         role="tabpanel"
@@ -262,17 +240,143 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
           <MrpChatFirstAssistantSurface
             questionSuggestions={props.assistantQuestionSuggestions}
             questionsLoading={props.assistantQuestionsLoading}
-            guidanceText={props.assistantContextSummary}
+            insightText={props.assistantContextSummary}
+            governanceText={props.assistantGovernanceSummary}
+            analyticsText={props.assistantAnalyticsSummary}
             showScenarioHost={props.showAssistantScenarioHost}
-            showComparisonHost={props.showAssistantComparisonHost}
+            showAnalyticsHost={props.showAssistantComparisonHost}
             recommendedActions={props.assistantRecommendedActions}
             themeMode={props.assistantThemeMode}
             onQuestionSelect={props.onAssistantQuestionSelect}
+            onWorkspaceLaunch={props.onWorkspaceLaunch}
             onActionSelect={props.onAssistantActionSelect}
           />
         ) : (
           <MainRightPanelAssistantPlaceholder actionCardContext={props.assistantActionCardContext} />
         )}
+      </div>
+    </>
+  );
+
+  return (
+    <div
+      id="nexora-main-right-panel-shell"
+      data-nx="main-right-panel-shell"
+      data-nx-mrp-state={collapsed ? "collapsed" : "expanded"}
+      data-nx-mrp-tab={activeTab}
+      data-nx-dashboard-mode={props.dashboardMode}
+      style={{
+        flex: 1,
+        minHeight: 0,
+        minWidth: 0,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        background: collapsed ? nx.workspacePanelBg : undefined,
+      }}
+    >
+      {collapsed ? (
+        <header
+          style={{
+            flexShrink: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 6px",
+            width: "100%",
+          }}
+        >
+          <button
+            type="button"
+            aria-label="Expand main right panel"
+            title="Expand main right panel"
+            onClick={handleToggleCollapse}
+            style={collapseButtonStyle}
+          >
+            ⟨
+          </button>
+          <span
+            aria-hidden
+            style={{
+              writingMode: "vertical-rl",
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: nx.lowMuted,
+            }}
+          >
+            {TAB_LABELS[activeTab]}
+          </span>
+        </header>
+      ) : (
+        <div
+          role="tablist"
+          aria-label="Main right panel"
+          style={mrpHeaderShellStyle(nx.borderSoft)}
+        >
+          <div style={mrpHeaderTabRowStyle()}>
+            {MAIN_RIGHT_PANEL_TABS.map((tab) => {
+              const selected = activeTab === tab;
+              const showModeHint = tab === "dashboard" && selected && isDedicatedDashboardMode;
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  aria-controls={`nexora-mrp-panel-${tab}`}
+                  id={`nexora-mrp-tab-${tab}`}
+                  onClick={() => handleTabClick(tab)}
+                  title={
+                    showModeHint
+                      ? `${TAB_LABELS[tab]} — ${dashboardModeLabel(props.dashboardMode)} mode active. Use Insight Home to return.`
+                      : TAB_LABELS[tab]
+                  }
+                  style={mrpTabButtonStyle({
+                    selected,
+                    navTileActiveBorder: nx.navTileActiveBorder,
+                    navTileActiveBg: nx.navTileActiveBg,
+                    border: nx.border,
+                    bgControl: nx.bgControl,
+                    text: nx.text,
+                    muted: nx.muted,
+                  })}
+                >
+                  {showModeHint
+                    ? `${TAB_LABELS[tab]} · ${dashboardModeLabel(props.dashboardMode)}`
+                    : TAB_LABELS[tab]}
+                </button>
+              );
+            })}
+          </div>
+          {props.onToggleCollapse ? (
+            <button
+              type="button"
+              aria-label="Collapse main right panel"
+              title="Collapse main right panel"
+              onClick={handleToggleCollapse}
+              style={collapseButtonStyle}
+            >
+              ›
+            </button>
+          ) : null}
+        </div>
+      )}
+
+      <div
+        aria-hidden={collapsed}
+        style={{
+          flex: collapsed ? 0 : 1,
+          minHeight: collapsed ? 0 : undefined,
+          minWidth: 0,
+          display: collapsed ? "none" : "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        {panelBody}
       </div>
     </div>
   );

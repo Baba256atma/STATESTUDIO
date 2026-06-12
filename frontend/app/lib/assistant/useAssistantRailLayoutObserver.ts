@@ -2,11 +2,12 @@
 
 import { useEffect } from "react";
 
+import { bindWindowListener } from "../dom/domListenerLifecycle";
 import {
   measureAssistantRailLayout,
   publishAssistantRailLayoutMeasurement,
   traceAssistantRailLayout,
-} from "../../lib/assistant/assistantRailWidthRuntime";
+} from "../assistant/assistantRailWidthRuntime";
 
 /** Observes assistant rail geometry and emits dev trace metrics. */
 export function useAssistantRailLayoutObserver(active: boolean): void {
@@ -35,11 +36,14 @@ export function useAssistantRailLayoutObserver(active: boolean): void {
     };
 
     schedule();
-    window.addEventListener("resize", schedule);
+    const unbindResize = bindWindowListener("resize", schedule, undefined, {
+      component: "AssistantRailLayoutObserver",
+      eventType: "resize",
+    });
 
     return () => {
       window.cancelAnimationFrame(frame);
-      window.removeEventListener("resize", schedule);
+      unbindResize();
     };
   }, [active]);
 }

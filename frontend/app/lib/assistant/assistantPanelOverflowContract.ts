@@ -1,5 +1,5 @@
 /**
- * MRP:11:2:3 — Assistant support panel overflow contract.
+ * MRP:12:7 — Assistant support panel overflow contract.
  */
 
 import type { AssistantPanelDockId } from "./assistantPanelDockContract";
@@ -15,11 +15,12 @@ export type AssistantPanelOverflowTrace = Readonly<{
 export const ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL: Readonly<
   Record<AssistantPanelDockId, AssistantPanelOverflowSizeTier>
 > = Object.freeze({
-  suggestions: "compact",
-  guidance: "medium",
+  insight: "medium",
   scenario: "medium",
-  decision: "medium",
+  analytics: "medium",
+  governance: "medium",
   actions: "small",
+  questions: "medium",
 });
 
 export function detectAssistantPanelOverflow(scrollHeight: number, clientHeight: number): boolean {

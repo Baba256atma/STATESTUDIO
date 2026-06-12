@@ -85,6 +85,7 @@ import { toggleExecutiveFocusMode } from "../lib/workspace/executiveFocusModeRun
 import { resolveExecutiveHarmonizationSnapshot } from "../lib/workspace/harmonization";
 import { runE2CompletionAudit, type E2WorkspaceReadinessContext } from "../lib/workspace/readiness";
 import { SCENE_HUD_THEME_SURFACES } from "../lib/theme/sceneThemeTokens";
+import { resolveSceneRuntimeSummary } from "../lib/scene/sceneRuntimeSummary";
 import { logScenePanelRemoved } from "../lib/scene/sceneSurfaceGovernance";
 import { applyScannerResultToWorkspace, type ScannerResult } from "../lib/workspace/scannerContract";
 import { scanSystemToScannerResult, type ScannerInput } from "../lib/scanner/systemFragilityScanner";
@@ -116,6 +117,7 @@ import {
   shouldShowExecutiveScenarioComparisonPanel,
   shouldShowExecutiveCommandBar,
   shouldShowExecutiveQuickActionsDock,
+  shouldShowExecutiveBottomCommandDock,
 } from "../lib/ui/executiveWorkspacePresentation";
 import {
   applyVisibleMrpRightRailPresentation,
@@ -891,7 +893,6 @@ import { guardHeavyComputation } from "../lib/ops/performanceGuard";
 import { StrategicCommandFull } from "../components/executive/StrategicCommandFull";
 import { RightPanelHost } from "../components/right-panel/RightPanelHost";
 import { ChatPipelineQAPanel } from "../components/debug/ChatPipelineQAPanel";
-import { PrimaryDecisionStrip } from "../components/right-panel/PrimaryDecisionStrip";
 import { DEFAULT_LEFT_COMMANDS, LeftCommandAssistant } from "../components/assistant/LeftCommandAssistant";
 import { ExecutiveAssistantPanel } from "../components/assistant/ExecutiveAssistantPanel";
 import { ExecutiveScenarioSuggestionsPanel } from "../components/executive/ExecutiveScenarioSuggestionsPanel";
@@ -959,6 +960,13 @@ import {
   shouldAllowSelectionCascade,
   cancelDebouncedHeavySelection,
 } from "../lib/runtime/renderBudgetGuard";
+import {
+  absorbObjectClickLegacyRedirect,
+  evaluateObjectClickPanelIntent,
+  isObjectClickPanelIntentApplied,
+  markObjectClickPanelIntentApplied,
+  skipObjectClickPanelIntent,
+} from "../lib/hud/objectClickPanelDedupRuntime";
 import { buildPanelStateSignatureFromState, shouldCommitPanelWrite } from "../lib/panels/panelStateSignature";
 import {
   buildAuthorityStateSignature,
@@ -1814,7 +1822,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const { nexoraMode } = useNexoraOperatorMode();
   const { resolvedTheme, setThemeMode } = useNexoraUiTheme();
   const { contract: workspaceLayoutContract, setPreset: setWorkspaceLayoutPreset } = useWorkspaceLayout();
-  const { isPanelVisible, assistantRailSide } = useHudPreferences();
+  const { isPanelVisible, assistantRailSide, setPanelVisibility, setPanelSize } = useHudPreferences();
   const console = React.useMemo(
     () =>
       ({
@@ -6321,6 +6329,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           }
           return;
         }
+        const objectClickEventId = panelCommit?.clickEventId ?? "";
+        if (
+          normalizedObjectContext &&
+          objectClickEventId &&
+          isObjectClickPanelIntentApplied({
+            objectId: normalizedObjectContext,
+            clickEventId: objectClickEventId,
+          })
+        ) {
+          absorbObjectClickLegacyRedirect({
+            objectId: normalizedObjectContext,
+            clickEventId: objectClickEventId,
+          });
+          if (panelCommit) {
+            panelCommit.panelAuthorityCommitted = true;
+          }
+          return;
+        }
         if (
           rightPanelState.isOpen === true &&
           rightPanelState.view === "object" &&
@@ -6453,6 +6479,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           typeof normalizedRequest.contextId === "string"
             ? normalizedRequest.contextId.trim() || null
             : normalizedRequest.contextId ?? null;
+        if (normalizedRequest.source === "object_click") {
+          const redirectObjectId =
+            nextContextId ?? latestObjectClickRequestRef.current.objectId ?? "";
+          const redirectEventId = latestObjectClickPanelCommitRef.current?.clickEventId ?? "";
+          if (
+            redirectObjectId &&
+            redirectEventId &&
+            isObjectClickPanelIntentApplied({
+              objectId: redirectObjectId,
+              clickEventId: redirectEventId,
+            })
+          ) {
+            absorbObjectClickLegacyRedirect({
+              objectId: redirectObjectId,
+              clickEventId: redirectEventId,
+            });
+            const redirectPanelCommit = latestObjectClickPanelCommitRef.current;
+            if (redirectPanelCommit) {
+              redirectPanelCommit.panelAuthorityCommitted = true;
+            }
+            rightPanelController.refs.lastOpenIntentRef.current = JSON.stringify({
+              view: mrpRuntimeRoute.runtimeView,
+              contextId: nextContextId,
+            });
+            return;
+          }
+        }
         const redirectSignature = JSON.stringify({
           prevView: rightPanelStateRef.current.view ?? null,
           nextView: mrpRuntimeRoute.runtimeView,
@@ -12237,7 +12290,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       };
       syncSceneContextSelection(normalizedId);
       const panelCommit = latestObjectClickPanelCommitRef.current;
-      if (
+      const objectClickDedup = evaluateObjectClickPanelIntent({
+        objectId: normalizedId,
+        clickEventId: eventId,
+        previousObjectId: previousSelectedId,
+      });
+      if (objectClickDedup.decision.action === "skip") {
+        skipObjectClickPanelIntent({
+          intent: objectClickDedup.intent,
+          reason: objectClickDedup.decision.reason,
+        });
+        if (panelCommit && panelCommit.objectId === normalizedId && panelCommit.clickEventId === eventId) {
+          panelCommit.dashboardContextCommitted = true;
+          panelCommit.panelAuthorityCommitted = true;
+        }
+      } else if (
         panelCommit &&
         panelCommit.objectId === normalizedId &&
         panelCommit.clickEventId === eventId &&
@@ -12251,6 +12318,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             clickEventId: eventId,
             reason: "dashboard_context_already_committed",
           });
+        }
+        if (!panelCommit.panelAuthorityCommitted) {
+          markObjectClickPanelIntentApplied({
+            intent: objectClickDedup.intent,
+            clickEventId: eventId,
+            reason:
+              objectClickDedup.decision.reason === "changed_object"
+                ? "changed_object"
+                : "changed_mode",
+          });
+          panelCommit.panelAuthorityCommitted = true;
         }
       } else {
         const currentDashboardContext = nexoraWorkspaceStateRef.current.dashboardContext;
@@ -12290,7 +12368,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           }
           if (panelCommit && panelCommit.objectId === normalizedId && panelCommit.clickEventId === eventId) {
             panelCommit.dashboardContextCommitted = true;
+            panelCommit.panelAuthorityCommitted = true;
           }
+          skipObjectClickPanelIntent({
+            intent: objectClickDedup.intent,
+            reason: "same_object_reclick",
+          });
         } else {
           routeDashboardContextFromObjectSelection(dispatchNexoraWorkspaceStateRef.current, {
             objectId: normalizedId,
@@ -12299,7 +12382,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           });
           if (panelCommit && panelCommit.objectId === normalizedId && panelCommit.clickEventId === eventId) {
             panelCommit.dashboardContextCommitted = true;
+            panelCommit.panelAuthorityCommitted = true;
           }
+          markObjectClickPanelIntentApplied({
+            intent: objectClickDedup.intent,
+            clickEventId: eventId,
+            reason:
+              objectClickDedup.decision.reason === "changed_object"
+                ? "changed_object"
+                : "changed_mode",
+          });
           if (process.env.NODE_ENV !== "production") {
             traceNexoraLoopGuard({
               source: "object_click",
@@ -14189,6 +14281,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           action: "deferred_open",
           writer: "HomeScreen.scheduleDebouncedHeavySelection",
         });
+        const deferredPanelCommit = latestObjectClickPanelCommitRef.current;
+        const deferredClickEventId = deferredPanelCommit?.clickEventId ?? "";
+        if (
+          deferredClickEventId &&
+          (deferredPanelCommit?.panelAuthorityCommitted === true ||
+            isObjectClickPanelIntentApplied({
+              objectId: finalId,
+              clickEventId: deferredClickEventId,
+            }))
+        ) {
+          const deferredDedup = evaluateObjectClickPanelIntent({
+            objectId: finalId,
+            clickEventId: deferredClickEventId,
+            previousObjectId: previousSelectedId,
+          });
+          if (deferredDedup.decision.action === "skip") {
+            skipObjectClickPanelIntent({
+              intent: deferredDedup.intent,
+              reason: deferredDedup.decision.reason,
+            });
+          }
+          absorbObjectClickLegacyRedirect({
+            objectId: finalId,
+            clickEventId: deferredClickEventId,
+          });
+          return;
+        }
         markPanelSelectionWrite(finalId);
         requestPanelAuthorityOpen({
           source: "object_click",
@@ -19348,6 +19467,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     []
   );
 
+  useEffect(() => {
+    const onFocusAssistantChat = (event: Event) => {
+      const detail = (event as CustomEvent<{ text?: string }>).detail ?? {};
+      if (useVisibleMrpRightRailHost) {
+        handleMainRightPanelTabChange("assistant");
+      }
+      setExecutiveAssistantCollapsed(false);
+      if (typeof detail.text === "string" && detail.text.trim()) {
+        setInput(detail.text);
+      }
+      window.dispatchEvent(new CustomEvent("nexora:focus-assistant-input"));
+    };
+    const onLegacyFocusBottomDock = () => {
+      window.dispatchEvent(new CustomEvent("nexora:focus-assistant-chat"));
+    };
+    window.addEventListener("nexora:focus-assistant-chat", onFocusAssistantChat as EventListener);
+    if (!shouldShowExecutiveBottomCommandDock()) {
+      window.addEventListener("nexora:focus-bottom-command-dock", onLegacyFocusBottomDock as EventListener);
+    }
+    return () => {
+      window.removeEventListener("nexora:focus-assistant-chat", onFocusAssistantChat as EventListener);
+      window.removeEventListener("nexora:focus-bottom-command-dock", onLegacyFocusBottomDock as EventListener);
+    };
+  }, [handleMainRightPanelTabChange]);
+
   const leftCommandContextSummary = useMemo(() => {
     const s = (lastAnalysisSummary ?? "").trim();
     const activeTemplate = (stableVisibleSceneJson?.meta?.activeDomainTemplate as { name?: unknown } | undefined)?.name;
@@ -19376,6 +19520,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     allowDecisionPanels &&
     !shouldSuppressLegacyDashboardHost(nexoraWorkspaceState.dashboardMode);
 
+  const handleMainRightPanelToggleCollapse = useCallback(() => {
+    setExecutiveAssistantCollapsed((previous) => !previous);
+  }, []);
+
   const panelContent = (
     <div
       style={{
@@ -19389,10 +19537,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         boxSizing: "border-box",
       }}
     >
-      {allowDecisionPanels ? <PrimaryDecisionStrip panelData={stablePanelData} isEmptyState={isEmptyState} /> : null}
       <div style={{ flex: 1, minHeight: 0, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <MainRightPanelShell
           activeTab={nexoraWorkspaceState.activeMRPTab}
+          collapsed={executiveAssistantCollapsed}
+          onToggleCollapse={handleMainRightPanelToggleCollapse}
           dashboardMode={nexoraWorkspaceState.dashboardMode}
           dashboardRouteObjectId={nexoraWorkspaceState.dashboardRouteObjectId}
           dashboardRouteObjectName={nexoraWorkspaceState.dashboardRouteObjectName}
@@ -19416,6 +19565,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           showAssistantScenarioHost={shouldShowExecutiveScenarioSuggestionsPanel()}
           showAssistantComparisonHost={shouldShowExecutiveScenarioComparisonPanel()}
           assistantContextSummary={leftCommandContextSummary}
+          assistantGovernanceSummary={executiveReasoningTransparency.assistantLine}
+          assistantAnalyticsSummary={
+            (lastAnalysisSummary ?? "").trim().length
+              ? (lastAnalysisSummary ?? "").trim().slice(0, 220)
+              : null
+          }
           assistantQuestionSuggestions={executiveQuestionSuggestions}
           assistantQuestionsLoading={chatDelayedBusy}
           onAssistantQuestionSelect={handleExecutiveAssistantQuestionSelect}
@@ -22396,19 +22551,62 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   const showExecutiveScenePanelDock = shouldShowExecutiveScenePanelDock();
   const showExecutiveObjectPanelDock = shouldShowExecutiveObjectPanelDock();
+
+  const handleScenePanelOpenTimeline = useCallback(() => {
+    setPanelVisibility("timelineHud", "visible");
+    setPanelSize("timelineHud", "expanded");
+  }, [setPanelSize, setPanelVisibility]);
+
+  const handleScenePanelOpenWarRoom = useCallback(() => {
+    const contextId = selectedExecutiveScenarioId ?? focusedId ?? null;
+    openSimPanel("war_room", "scene_panel_open_war_room", contextId);
+  }, [focusedId, openSimPanel, selectedExecutiveScenarioId]);
+
+  const executiveSceneRuntimeSummary = useMemo(
+    () =>
+      resolveSceneRuntimeSummary({
+        sceneJson: stableSceneJsonDuringPanelValidation,
+        sceneTitle: activeDomainExperience.experience.label,
+        activeScenarioTitle:
+          activeTypeCScenario?.title?.trim() ||
+          assistantIntelligenceActiveScenarioName ||
+          selectedExecutiveScenarioId,
+        runtimeStatus: sceneBootstrapComplete ? "ready" : "loading",
+        warningCount: typeCAlerts.filter((alert) => !alert.acknowledged).length,
+        recommendationCount: executiveScenarioSuggestionsModel.scenarios.length,
+        lastUpdateAt: Date.now(),
+      }),
+    [
+      activeDomainExperience.experience.label,
+      activeTypeCScenario?.title,
+      assistantIntelligenceActiveScenarioName,
+      executiveScenarioSuggestionsModel.scenarios.length,
+      sceneBootstrapComplete,
+      selectedExecutiveScenarioId,
+      stableSceneJsonDuringPanelValidation,
+      typeCAlerts,
+    ]
+  );
+
   const executiveSceneInfoHud = useMemo(() => {
     if (showExecutiveScenePanelDock) return null;
     return {
+      sceneSummary: executiveSceneRuntimeSummary,
       currentViewId: activeDomainExperience.experience.domainId,
       currentViewLabel: activeDomainExperience.experience.label,
       onAddObjectClick: () => handleOpenExecutiveObjectCatalog("scene_info_hud"),
       onCreateSystemClick: () => handleOpenExecutiveModelingWorkspace("scene_info_hud"),
+      onOpenTimelineClick: handleScenePanelOpenTimeline,
+      onOpenWarRoomClick: handleScenePanelOpenWarRoom,
     };
   }, [
     activeDomainExperience.experience.domainId,
     activeDomainExperience.experience.label,
+    executiveSceneRuntimeSummary,
     handleOpenExecutiveModelingWorkspace,
     handleOpenExecutiveObjectCatalog,
+    handleScenePanelOpenTimeline,
+    handleScenePanelOpenWarRoom,
     showExecutiveScenePanelDock,
   ]);
   const selectedObjectInfoHudId =
@@ -22719,7 +22917,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
         if (!hasExecutiveObjectSelection) {
           setInput("Analyze current system state and identify the highest-priority risks.");
-          window.dispatchEvent(new CustomEvent("nexora:focus-bottom-command-dock"));
+          window.dispatchEvent(
+            new CustomEvent("nexora:focus-assistant-chat", {
+              detail: { text: "Analyze current system state and identify the highest-priority risks." },
+            })
+          );
           return;
         }
         return;
@@ -22968,7 +23170,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           return;
         }
         setInput("Analyze current system state and identify the highest-priority risks.");
-        window.dispatchEvent(new CustomEvent("nexora:focus-bottom-command-dock"));
+        window.dispatchEvent(
+          new CustomEvent("nexora:focus-assistant-chat", {
+            detail: { text: "Analyze current system state and identify the highest-priority risks." },
+          })
+        );
         return;
       }
       if (commandId === "compare_scenarios") {
@@ -22982,14 +23188,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       if (commandId === "explain_situation") {
         const intelligencePrompt = resolveExecutiveIntelligenceCopilotPrompt(getExecutiveIntelligenceState());
         const advisorPrompt = resolveExecutiveAdvisorCopilotPrompt(getExecutiveAdvisorState());
-        setInput(
+        const prompt =
           intelligencePrompt ??
-            advisorPrompt ??
-            (copilotPrompt
-              ? `Explain the current war room situation. ${copilotPrompt}`
-              : "Explain the current operational situation and the most important risks.")
-        );
-        window.dispatchEvent(new CustomEvent("nexora:focus-bottom-command-dock"));
+          advisorPrompt ??
+          (copilotPrompt
+            ? `Explain the current war room situation. ${copilotPrompt}`
+            : "Explain the current operational situation and the most important risks.");
+        setInput(prompt);
+        window.dispatchEvent(new CustomEvent("nexora:focus-assistant-chat", { detail: { text: prompt } }));
         return;
       }
       if (commandId === "strategic_recommendation") {
@@ -22997,14 +23203,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         const topRecommendation = advisorState?.hud.topRecommendation;
         const recommendationTitle =
           topRecommendation?.title ?? getExecutiveWarRoomState()?.bestScenarioTitle;
-        setInput(
-          topRecommendation
-            ? `Explain the strategic recommendation "${topRecommendation.title}" with evidence and trade-offs. ${topRecommendation.reasoning}`
-            : recommendationTitle
-              ? `Explain why ${recommendationTitle} is the recommended strategic scenario and summarize trade-offs.`
-              : "What is the top strategic recommendation right now?"
-        );
-        window.dispatchEvent(new CustomEvent("nexora:focus-bottom-command-dock"));
+        const prompt = topRecommendation
+          ? `Explain the strategic recommendation "${topRecommendation.title}" with evidence and trade-offs. ${topRecommendation.reasoning}`
+          : recommendationTitle
+            ? `Explain why ${recommendationTitle} is the recommended strategic scenario and summarize trade-offs.`
+            : "What is the top strategic recommendation right now?";
+        setInput(prompt);
+        window.dispatchEvent(new CustomEvent("nexora:focus-assistant-chat", { detail: { text: prompt } }));
       }
     },
     [handleExecutiveCommandBarAction, hasExecutiveObjectSelection, objectAnalyzeReady]

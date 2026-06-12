@@ -51,6 +51,11 @@ import {
   resolveSectionForRightPanelView,
   type CanonicalActiveSectionKey,
 } from "../lib/ui/leftNavCanonicalHydration";
+import {
+  leftNavPrimaryButtonStyle,
+  resolveLeftNavInteractiveButtonCount,
+  traceNexoraLeftNavStyle,
+} from "../lib/ui/leftNavDesignTokens";
 import { emitDebugEvent } from "../lib/debug/debugEmit";
 import { getRecentDebugEvents } from "../lib/debug/debugEventStore";
 import { emitGuardRailAlerts, runGuardChecks } from "../lib/debug/debugGuardRails";
@@ -72,6 +77,7 @@ import {
   shouldShowExecutiveScenarioSuggestionsPanel,
   shouldShowExecutiveScenarioComparisonPanel,
   shouldShowExecutiveCommandBar,
+  shouldShowExecutiveBottomCommandDock,
 } from "../lib/ui/executiveWorkspacePresentation";
 import { shouldUseVisibleMrpRightRailHost } from "../lib/ui/mainRightPanelVisibleHostRuntime";
 import {
@@ -420,6 +426,8 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
   const showExecutiveLeftCommandPanel = shouldShowExecutiveLeftCommandPanel();
   const showExecutiveStageAssistantOverlay = shouldShowExecutiveStageAssistantOverlay();
   const showExecutiveCommandBar = shouldShowExecutiveCommandBar();
+  const showBottomCommandDock = shouldShowExecutiveBottomCommandDock();
+  const showStatusStripFooter = showExecutiveStatusStrip || showBottomCommandDock;
   const hudPreferences = useHudPreferencesOptional();
   const executiveAssistantHudVisible =
     showExecutiveRightAssistantPanel && (hudPreferences?.isPanelVisible("aiAssistant") ?? true);
@@ -546,7 +554,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
 
   const handleExecutiveCommandVerb = useCallback((verb: ExecutiveCommandVerb) => {
     if (verb === "ask") {
-      window.dispatchEvent(new CustomEvent("nexora:focus-bottom-command-dock"));
+      window.dispatchEvent(new CustomEvent("nexora:focus-assistant-chat"));
       return;
     }
     if (verb === "analyze") {
@@ -849,6 +857,11 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
       ),
     [visibleNavGroupSet]
   );
+  useEffect(() => {
+    traceNexoraLeftNavStyle({
+      buttonCount: resolveLeftNavInteractiveButtonCount(navItems.length),
+    });
+  }, [navItems.length]);
   const upstreamMappedSection = useMemo(
     () => getSectionForView(upstreamRightPanelView),
     [upstreamRightPanelView]
@@ -1813,23 +1826,16 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
                     explicitScnIntentRef.current = null;
                     setInspectorSection(nextSection, undefined, requestedView, mode);
                   }}
-                  style={{
-                    height: 54,
-                    borderRadius: 12,
-                    border: isActive ? `1px solid ${nx.navTileActiveBorder}` : `1px solid ${nx.border}`,
-                    background: isActive ? nx.navTileActiveBg : nx.navTileInactiveBg,
-                    color: isActive ? nx.text : nx.muted,
-                    cursor: "pointer",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    boxShadow: isActive ? nx.navTileActiveShadow : "none",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    alignItems: "flex-start",
-                    gap: 3,
-                    padding: "0 8px",
-                  }}
+                  style={leftNavPrimaryButtonStyle({
+                    active: isActive,
+                    navTileActiveBorder: nx.navTileActiveBorder,
+                    navTileActiveBg: nx.navTileActiveBg,
+                    navTileInactiveBg: nx.navTileInactiveBg,
+                    navTileActiveShadow: nx.navTileActiveShadow,
+                    border: nx.border,
+                    text: nx.text,
+                    muted: nx.muted,
+                  })}
                   aria-pressed={isActive}
                 >
                   <span style={{ fontSize: 10, letterSpacing: "0.12em", lineHeight: 1, textTransform: "uppercase", color: isActive ? nx.navShortActive : nx.lowMuted }}>
@@ -2839,6 +2845,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
       </div>
       </div>
 
+      {showStatusStripFooter ? (
       <div
         id="nexora-status-strip"
         style={{
@@ -2881,6 +2888,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
             />
           </div>
         ) : null}
+        {showBottomCommandDock ? (
         <div
           style={{
             display: "flex",
@@ -2934,8 +2942,10 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
           </div>
         ) : null}
       </div>
+        ) : null}
 
       </div>
+      ) : null}
     </div>
   );
 }

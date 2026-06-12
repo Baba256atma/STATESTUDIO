@@ -10,6 +10,7 @@ import { ExecutiveSceneToolbar } from "./ExecutiveSceneToolbar";
 
 export type ExecutiveSceneToolbarOverlayProps = {
   themeMode?: NexoraHudThemeMode;
+  sceneControlsRelocated?: boolean;
 };
 
 /**
@@ -32,7 +33,11 @@ export function ExecutiveSceneToolbarOverlay(props: ExecutiveSceneToolbarOverlay
         justifyContent: "center",
       }}
     >
-      <ExecutiveSceneToolbar themeMode={props.themeMode} density={density} />
+      <ExecutiveSceneToolbar
+        themeMode={props.themeMode}
+        density={density}
+        sceneControlsRelocated={props.sceneControlsRelocated}
+      />
     </SceneHudOverlayRoot>
   );
 }

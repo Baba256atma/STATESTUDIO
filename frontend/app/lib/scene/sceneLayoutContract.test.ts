@@ -29,6 +29,6 @@ describe("sceneLayoutContract", () => {
       viewportHeight: 900,
       timelineVisible: true,
     });
-    expect(layout.timelineZone.bottom).toBeGreaterThanOrEqual(SCENE_HUD_ZONE_METRICS.chatInputClearance);
+    expect(layout.timelineZone.bottom).toBe(4);
   });
 });

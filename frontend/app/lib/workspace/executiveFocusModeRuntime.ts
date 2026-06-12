@@ -1,4 +1,5 @@
 import { isFocusModeProfileId, type FocusModeProfileId } from "./focusModeProfiles";
+import { traceNexoraFocusContract } from "./nexoraFocusContract";
 import {
   hydrateExecutiveNavigationPreference,
   persistExecutiveNavigationPreference,
@@ -85,6 +86,13 @@ export function setExecutiveFocusModeEnabled(enabled: boolean, source = "runtime
   const next = resolveExecutiveFocusSnapshot(enabled, snapshot.profile);
   commit(next, { focusModeEnabled: enabled, focusProfile: snapshot.profile });
   devLog("[Nexora][FocusMode]", { enabled, profile: snapshot.profile, source, action: enabled ? "enter" : "exit" });
+  if (enabled) {
+    traceNexoraFocusContract({
+      scenePanelPreserved: true,
+      objectPanelHidden: true,
+      timelineHidden: true,
+    });
+  }
   return snapshot;
 }
 

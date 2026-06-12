@@ -24,6 +24,11 @@ function devLog(label: string, payload: Record<string, unknown>): void {
   globalThis.console?.debug?.(label, payload);
 }
 
+/** Scene Panel is permanent scene control authority — never hidden by focus mode. */
+export function isScenePanelPreservedInFocus(panelId: FocusHudPanelId): boolean {
+  return panelId === "sceneInfoHud";
+}
+
 export function resolveFocusHudVisibility(input: {
   focusEnabled: boolean;
   profileId: FocusModeProfileId;
@@ -31,7 +36,10 @@ export function resolveFocusHudVisibility(input: {
   layoutVisible: boolean;
 }): FocusHudPresentation {
   const profile = FOCUS_MODE_PROFILES[input.profileId] ?? FOCUS_MODE_PROFILES[DEFAULT_FOCUS_MODE_PROFILE];
-  const focusAllows = !input.focusEnabled || profile.panels[input.panelId] === true;
+  const focusAllows =
+    !input.focusEnabled ||
+    isScenePanelPreservedInFocus(input.panelId) ||
+    profile.panels[input.panelId] === true;
   const visible = input.layoutVisible && focusAllows;
 
   devLog("[Nexora][HudVisibility]", {

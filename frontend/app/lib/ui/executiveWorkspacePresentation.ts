@@ -97,7 +97,7 @@ export function shouldShowExecutiveStageAssistantOverlay(): boolean {
   return shouldShowExecutiveLeftCommandPanel();
 }
 
-/** E2:13 — scenario suggestions surface below Nexora AI assistant. */
+/** E2:13 — scenario suggestions surface below Nexora assistant. */
 export function shouldShowExecutiveScenarioSuggestionsPanel(): boolean {
   return shouldShowExecutiveRightAssistantPanel();
 }
@@ -110,6 +110,13 @@ export function shouldShowExecutiveScenarioComparisonPanel(): boolean {
 /** E2:15 — executive top command bar status surface in clean Type-C mode. */
 export function shouldShowExecutiveCommandBar(): boolean {
   return shouldShowExecutiveRightAssistantPanel();
+}
+
+/** MRP:12:6 — global footer command dock (legacy duplicate chat). Hidden when MRP Assistant owns conversation. */
+export function shouldShowExecutiveBottomCommandDock(): boolean {
+  if (shouldShowExecutiveRightAssistantPanel()) return false;
+  if (shouldShowExecutiveLeftCommandPanel()) return false;
+  return true;
 }
 
 /** E2:16 — scene-native executive quick actions dock. */

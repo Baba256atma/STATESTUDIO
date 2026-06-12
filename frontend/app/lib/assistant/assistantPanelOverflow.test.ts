@@ -21,10 +21,10 @@ describe("assistantPanelOverflow", () => {
     resetAssistantPanelOverflowForTests();
   });
 
-  it("Test 1 — long Guidance content triggers overflow detection", () => {
+  it("Test 1 — long Insight content triggers overflow detection", () => {
     assert.equal(detectAssistantPanelOverflow(320, 192), true);
-    assert.equal(ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL.guidance, "medium");
-    assert.equal(resolveAssistantPanelMaxHeightPx("guidance"), ASSISTANT_PANEL_OVERFLOW_MAX_HEIGHT_PX.medium);
+    assert.equal(ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL.insight, "medium");
+    assert.equal(resolveAssistantPanelMaxHeightPx("insight"), ASSISTANT_PANEL_OVERFLOW_MAX_HEIGHT_PX.medium);
   });
 
   it("Test 2 — long Scenario content triggers overflow detection", () => {
@@ -32,18 +32,18 @@ describe("assistantPanelOverflow", () => {
     assert.equal(ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL.scenario, "medium");
   });
 
-  it("Test 3 — Guidance scroll container is independently bounded", () => {
-    const guidanceStyle = resolveAssistantPanelScrollContainerStyle({
-      panelId: "guidance",
+  it("Test 3 — Insight scroll container is independently bounded", () => {
+    const insightStyle = resolveAssistantPanelScrollContainerStyle({
+      panelId: "insight",
       visible: true,
     });
     const actionsStyle = resolveAssistantPanelScrollContainerStyle({
       panelId: "actions",
       visible: true,
     });
-    assert.equal(guidanceStyle.overflowY, "auto");
-    assert.equal(guidanceStyle.overscrollBehavior, "contain");
-    assert.notEqual(guidanceStyle.maxHeight, actionsStyle.maxHeight);
+    assert.equal(insightStyle.overflowY, "auto");
+    assert.equal(insightStyle.overscrollBehavior, "contain");
+    assert.notEqual(insightStyle.maxHeight, actionsStyle.maxHeight);
   });
 
   it("Test 4 — Scenario scroll container is independently bounded", () => {
@@ -57,7 +57,7 @@ describe("assistantPanelOverflow", () => {
 
   it("Test 5 — collapsed panel hides scrollbar surface", () => {
     const style = resolveAssistantPanelScrollContainerStyle({
-      panelId: "guidance",
+      panelId: "insight",
       visible: false,
     });
     assert.equal(style.maxHeight, 0);
@@ -65,8 +65,8 @@ describe("assistantPanelOverflow", () => {
     assert.equal(style.pointerEvents, "none");
   });
 
-  it("Test 6 — suggestions tier is compact", () => {
-    assert.equal(resolveAssistantPanelMaxHeightPx("suggestions"), 128);
+  it("Test 6 — governance tier is medium", () => {
+    assert.equal(resolveAssistantPanelMaxHeightPx("governance"), 192);
   });
 
   it("Test 7 — actions tier is small", () => {
@@ -79,15 +79,15 @@ describe("assistantPanelOverflow", () => {
 
   it("Test 9 — overflow trace format", () => {
     assert.match(
-      resolveAssistantPanelOverflowTrace({ panel: "decision", overflow: false }),
-      /panel=decision\noverflow=false/
+      resolveAssistantPanelOverflowTrace({ panel: "analytics", overflow: false }),
+      /panel=analytics\noverflow=false/
     );
-    setAssistantPanelOverflow("decision", false);
-    setAssistantPanelOverflow("decision", false);
+    setAssistantPanelOverflow("analytics", false);
+    setAssistantPanelOverflow("analytics", false);
   });
 
   it("Test 10 — scroll containers use overscroll containment", () => {
-    for (const panelId of ["suggestions", "guidance", "scenario", "decision", "actions"] as const) {
+    for (const panelId of ["insight", "scenario", "analytics", "governance", "actions", "questions"] as const) {
       const style = resolveAssistantPanelScrollContainerStyle({ panelId, visible: true });
       assert.equal(style.overscrollBehavior, "contain");
       assert.equal(style.overflowX, "hidden");

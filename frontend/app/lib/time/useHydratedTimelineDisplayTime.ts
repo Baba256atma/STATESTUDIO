@@ -3,18 +3,21 @@
 import { useEffect, useState } from "react";
 
 import { resolveNexoraTimelineDisplayTime } from "./nexoraTimeFormat";
+import { resolveHydrationSafeTimelineTime } from "./timelineHydrationSafeTimeContract";
 
 export type HydratedTimelineDisplayTimeInput = {
   timestampIso?: string | null;
   timestamp?: string | null;
 };
 
-/** SSR-safe display: semantic labels only until mount; ISO times formatted after hydration. */
+/** SSR-safe display: semantic labels only until mount; ISO times deferred until hydration. */
 export function getStableTimelineDisplayTimeForRender(
   input: HydratedTimelineDisplayTimeInput
 ): string {
-  if (input.timestampIso) return "";
-  return input.timestamp?.trim() ?? "";
+  return resolveHydrationSafeTimelineTime({
+    eventTime: input.timestampIso ?? input.timestamp ?? null,
+    hydrated: false,
+  });
 }
 
 export function useHydratedTimelineDisplayTime(

@@ -4,8 +4,19 @@ import React, { useEffect } from "react";
 
 import { EXECUTIVE_WORKSPACE_ZONE_IDS } from "../../lib/ui/executiveWorkspaceLayout";
 import { useAssistantRailLayoutObserver } from "../../lib/assistant/useAssistantRailLayoutObserver";
-import { traceAssistantRuntimeFreezeValidation } from "../../lib/assistant/assistantRuntimeFreezeContract";
+import {
+  publishAssistantStabilityGateResult,
+  traceAssistantStabilityGate,
+} from "../../lib/assistant/assistantStabilityGateRuntime";
+import type { ExecutiveWorkspaceId } from "../../lib/dashboard/executiveWorkspaceRegistryContract";
 import type { ExecutiveAssistantActionCard } from "../../lib/ui/executiveAssistantPanelTypes";
+import { traceAssistantRuntimeFreezeValidation } from "../../lib/assistant/assistantRuntimeFreezeContract";
+import {
+  auditAssistantAuthority,
+  traceAssistantAuthorityAssistantChatActive,
+  traceAssistantAuthorityFooterChatRemoved,
+  traceAssistantAuthoritySingleAuthority,
+} from "../../lib/ui/assistantAuthorityDiagnostics";
 import { useSceneHudTheme } from "../../lib/theme/useSceneTheme";
 import type { NexoraHudThemeMode } from "../../lib/scene/nexoraHudTheme";
 import { AssistantSupportAccordion } from "./assistant/AssistantSupportAccordion";
@@ -13,17 +24,20 @@ import { AssistantSupportAccordion } from "./assistant/AssistantSupportAccordion
 export type MrpChatFirstAssistantSurfaceProps = Readonly<{
   questionSuggestions?: readonly string[];
   questionsLoading?: boolean;
-  guidanceText?: string | null;
+  insightText?: string | null;
+  governanceText?: string | null;
+  analyticsText?: string | null;
   showScenarioHost?: boolean;
-  showComparisonHost?: boolean;
+  showAnalyticsHost?: boolean;
   recommendedActions?: readonly ExecutiveAssistantActionCard[];
   themeMode?: NexoraHudThemeMode;
   onQuestionSelect?: (question: string) => void;
+  onWorkspaceLaunch?: (workspaceId: ExecutiveWorkspaceId) => void;
   onActionSelect?: (action: ExecutiveAssistantActionCard) => void;
 }>;
 
 /**
- * MRP:11:2:2 — Chat-first assistant tab with per-panel dock collapse + icon restore.
+ * MRP:12:7 — Chat-first assistant tab with executive support dock + command dock footer.
  */
 export function MrpChatFirstAssistantSurface(props: MrpChatFirstAssistantSurfaceProps): React.ReactElement {
   const theme = useSceneHudTheme(props.themeMode);
@@ -31,6 +45,15 @@ export function MrpChatFirstAssistantSurface(props: MrpChatFirstAssistantSurface
 
   useEffect(() => {
     traceAssistantRuntimeFreezeValidation();
+    const gate = traceAssistantStabilityGate();
+    publishAssistantStabilityGateResult(gate);
+    traceAssistantAuthorityFooterChatRemoved();
+    traceAssistantAuthorityAssistantChatActive();
+    traceAssistantAuthoritySingleAuthority();
+    auditAssistantAuthority({
+      footerChatMounted: Boolean(document.getElementById("nexora-bottom-command-dock")),
+      assistantChatMounted: Boolean(document.getElementById("nexora-executive-assistant-host")),
+    });
   }, []);
 
   return (
@@ -49,12 +72,15 @@ export function MrpChatFirstAssistantSurface(props: MrpChatFirstAssistantSurface
       <AssistantSupportAccordion
         questionSuggestions={props.questionSuggestions}
         questionsLoading={props.questionsLoading}
-        guidanceText={props.guidanceText}
+        insightText={props.insightText}
+        governanceText={props.governanceText}
+        analyticsText={props.analyticsText}
         showScenarioHost={props.showScenarioHost}
-        showComparisonHost={props.showComparisonHost}
+        showAnalyticsHost={props.showAnalyticsHost}
         recommendedActions={props.recommendedActions}
         themeMode={props.themeMode}
         onQuestionSelect={props.onQuestionSelect}
+        onWorkspaceLaunch={props.onWorkspaceLaunch}
         onActionSelect={props.onActionSelect}
       >
         <div

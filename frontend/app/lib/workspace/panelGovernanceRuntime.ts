@@ -31,6 +31,24 @@ type StoredPanelGovernanceValue =
     };
 const records = new Map<GovernedPanelId, PanelGovernanceRecord>();
 const logKeys = new Set<string>();
+const listeners = new Set<() => void>();
+
+function notifyPanelGovernanceListenersDeferred(): void {
+  if (typeof queueMicrotask === "function") {
+    queueMicrotask(() => notifyPanelGovernanceListeners());
+    return;
+  }
+  setTimeout(() => notifyPanelGovernanceListeners(), 0);
+}
+
+export function subscribePanelGovernance(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function notifyPanelGovernanceListeners(): void {
+  for (const listener of listeners) listener();
+}
 
 function isDev(): boolean {
   return process.env.NODE_ENV !== "production";
@@ -99,6 +117,9 @@ export function registerGovernedPanel(record: PanelGovernanceRecord): PanelGover
   const previous = records.get(record.panelId);
   const next = { ...record };
   records.set(record.panelId, next);
+  if (previous?.collapsed !== next.collapsed) {
+    notifyPanelGovernanceListenersDeferred();
+  }
   devLog("[Nexora][PanelGovernance]", {
     panelId: next.panelId,
     title: next.title,
@@ -116,11 +137,16 @@ export function getPanelCollapseState(panelId: GovernedPanelId): PanelCollapseSt
 }
 
 export function setPanelCollapseState(panelId: GovernedPanelId, state: PanelCollapseState): PanelCollapseState {
+  const previousStored = readStoredCollapse(panelId);
+  if (previousStored === state) {
+    return state;
+  }
   persistCollapse(panelId, state);
   const previous = records.get(panelId);
   if (previous) {
     records.set(panelId, { ...previous, collapsed: state === "collapsed" });
   }
+  notifyPanelGovernanceListenersDeferred();
   devLog(state === "collapsed" ? "[Nexora][PanelCollapsed]" : "[Nexora][PanelExpanded]", {
     panelId,
     collapsed: state === "collapsed",
@@ -155,4 +181,5 @@ export function getPanelGovernanceSnapshot(): ReadonlyArray<PanelGovernanceRecor
 export function resetPanelGovernanceRuntimeForTests(): void {
   records.clear();
   logKeys.clear();
+  listeners.clear();
 }

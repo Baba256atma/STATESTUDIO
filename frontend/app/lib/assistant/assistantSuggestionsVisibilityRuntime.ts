@@ -1,48 +1,53 @@
 /**
- * MRP:11:2:2 — Back-compat bridge for suggestions visibility (delegates to panel dock).
+ * MRP:12:7 — Footer suggestions visibility (decoupled from support dock).
  */
 
 import { ASSISTANT_SUGGESTIONS_VISIBILITY_STORAGE_KEY } from "./assistantSuggestionsVisibilityContract.ts";
-import {
-  collapseAssistantPanel,
-  expandAssistantPanel,
-  getAssistantPanelVisibility,
-  isAssistantPanelVisible,
-  resetAssistantPanelVisibilityForTests,
-  setAssistantPanelVisible,
-  subscribeAssistantPanelVisibility,
-} from "./assistantPanelDockRuntime.ts";
+
+const listeners = new Set<() => void>();
+
+let suggestionsVisible = true;
+
+function notifyListeners(): void {
+  for (const listener of listeners) listener();
+}
 
 export function getAssistantSuggestionsVisible(): boolean {
-  return isAssistantPanelVisible("suggestions");
+  return suggestionsVisible;
 }
 
 export function setAssistantSuggestionsVisible(visible: boolean): boolean {
-  return setAssistantPanelVisible("suggestions", visible);
+  if (suggestionsVisible === visible) return suggestionsVisible;
+  suggestionsVisible = visible;
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(ASSISTANT_SUGGESTIONS_VISIBILITY_STORAGE_KEY, visible ? "1" : "0");
+    } catch {
+      // ignore storage failures
+    }
+  }
+  notifyListeners();
+  return suggestionsVisible;
 }
 
 export function toggleAssistantSuggestionsVisible(): boolean {
-  return setAssistantPanelVisible("suggestions", !getAssistantSuggestionsVisible());
+  return setAssistantSuggestionsVisible(!getAssistantSuggestionsVisible());
+}
+
+export function resetAssistantSuggestionsVisibilityForTests(visible = true): void {
+  suggestionsVisible = visible;
+  notifyListeners();
 }
 
 export function subscribeAssistantSuggestionsVisibility(listener: () => void): () => void {
-  return subscribeAssistantPanelVisibility(listener);
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 
-export function resetAssistantSuggestionsVisibilityForTests(visible: boolean): void {
-  resetAssistantPanelVisibilityForTests({
-    ...getAssistantPanelVisibility(),
-    suggestions: visible,
-  });
+export function collapseAssistantSuggestions(): void {
+  setAssistantSuggestionsVisible(false);
 }
 
-export function collapseAssistantSuggestionsForTests(): void {
-  collapseAssistantPanel("suggestions");
+export function expandAssistantSuggestions(): void {
+  setAssistantSuggestionsVisible(true);
 }
-
-export function expandAssistantSuggestionsForTests(): void {
-  expandAssistantPanel("suggestions");
-}
-
-/** @deprecated Legacy storage key — migrated on panel dock hydrate. */
-export { ASSISTANT_SUGGESTIONS_VISIBILITY_STORAGE_KEY };

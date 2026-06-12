@@ -32,6 +32,7 @@ import { shouldExposeExecutiveDevSurfaces } from "../../lib/ui/executiveWorkspac
 import { initializeNexoraArchitectureFreeze } from "../../lib/architecture/nexoraArchitectureFreezeRuntime";
 import { emitPhase2RuntimeCertification } from "../../lib/architecture/nexoraPhase2RuntimeCertification";
 import { emitPhase3DashboardCertification } from "../../lib/architecture/nexoraPhase3DashboardCertification";
+import { ExecutiveFooterBar } from "../layout/ExecutiveFooterBar";
 
 export type NexoraManagerWorkspaceShellProps = {
   domainId: string;
@@ -158,6 +159,7 @@ export function NexoraManagerWorkspaceShell(props: NexoraManagerWorkspaceShellPr
             </SceneThemeProvider>
           </NexoraUiThemeProvider>
         </div>
+        <ExecutiveFooterBar />
         {showDevWidgets ? (
           <>
             <NexoraDevTasksWidget workspaceDomainId={resolvedSelection.experience.domainId} />

@@ -10,6 +10,23 @@ import {
   SCENE_PANEL_CONTRACT,
 } from "../../lib/scene/scenePanelContract";
 import {
+  HUD_PANEL_BODY_SCROLL_STYLE,
+  HUD_PANEL_HEADER_PADDING_STYLE,
+  HUD_PANEL_SCROLL_BODY_STYLE,
+  HUD_PANEL_STICKY_HEADER_STYLE,
+  HUD_PANEL_STICKY_SHELL_STYLE,
+  traceHudPanelStickyHeader,
+} from "../../lib/hud/hudPanelDesignContract";
+import {
+  SCENE_PANEL_EXPANDED_HEIGHT_RATIO,
+  SCENE_PANEL_HEADER_STYLE,
+  SCENE_PANEL_MINIMIZED_SHELL_STYLE,
+  SCENE_PANEL_TOP_INSET_PX,
+  SCENE_PANEL_WIDTH,
+  traceScenePanelLayout,
+  toScenePanelHeightMode,
+} from "../../lib/scene/scenePanelWidthContract";
+import {
   logAddObjectPlaceholderClicked,
   logScenePanelCollapsed,
   logScenePanelExpanded,
@@ -34,12 +51,8 @@ export type ScenePanelShellProps = {
 const PLACEHOLDER_SECTIONS = ["Workspace", "Objects", "Signals", "Actions"] as const;
 
 const headerStyle: React.CSSProperties = {
-  flexShrink: 0,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 8,
-  padding: "12px 10px",
+  ...SCENE_PANEL_HEADER_STYLE,
+  ...HUD_PANEL_HEADER_PADDING_STYLE,
   borderBottom: `1px solid ${nx.border}`,
   background: nx.bgDeep,
 };
@@ -61,12 +74,22 @@ const sectionBodyStyle: React.CSSProperties = {
   color: nx.muted,
   fontSize: 11,
   lineHeight: 1.45,
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
+};
+
+const shellStyle: React.CSSProperties = {
+  ...HUD_PANEL_STICKY_SHELL_STYLE,
+  width: SCENE_PANEL_WIDTH,
+  maxWidth: SCENE_PANEL_WIDTH,
+  minWidth: SCENE_PANEL_WIDTH,
+  background: nx.workspacePanelBg,
 };
 
 export function ScenePanelShell(props: ScenePanelShellProps): React.ReactElement {
   const mountedRef = React.useRef(false);
   const scenePanelState = normalizeScenePanelState(props.collapsed, { warn: false });
-  const collapsed = scenePanelState === "collapsed";
+  const minimized = scenePanelState === "collapsed";
 
   React.useEffect(() => {
     if (mountedRef.current) return;
@@ -74,14 +97,29 @@ export function ScenePanelShell(props: ScenePanelShellProps): React.ReactElement
     logScenePanelShellMounted();
   }, []);
 
+  React.useEffect(() => {
+    if (minimized) return;
+    traceHudPanelStickyHeader({ panel: "scene" });
+  }, [minimized]);
+
+  React.useEffect(() => {
+    traceScenePanelLayout({
+      top: SCENE_PANEL_TOP_INSET_PX,
+      width: SCENE_PANEL_WIDTH,
+      heightMode: toScenePanelHeightMode(minimized),
+      heightRatio: SCENE_PANEL_EXPANDED_HEIGHT_RATIO,
+      bodyVisible: !minimized,
+    });
+  }, [minimized]);
+
   const handleToggle = React.useCallback(() => {
-    if (collapsed) {
+    if (minimized) {
       logScenePanelExpanded();
     } else {
       logScenePanelCollapsed();
     }
     props.onToggleCollapsed();
-  }, [collapsed, props.onToggleCollapsed]);
+  }, [minimized, props.onToggleCollapsed]);
 
   const handleAddObject = React.useCallback(() => {
     logAddObjectPlaceholderClicked();
@@ -94,125 +132,77 @@ export function ScenePanelShell(props: ScenePanelShellProps): React.ReactElement
     props.onCreateSystemClick?.();
   }, [props.onCreateSystemClick]);
 
-  if (collapsed) {
-    return (
-      <div
-        id="nexora-scene-panel-shell"
-        data-nx="scene-panel-shell"
-        data-nx-state="collapsed"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100%",
-          minHeight: 0,
-          background: nx.workspacePanelBg,
-        }}
-      >
-        <header style={{ ...headerStyle, flexDirection: "column", padding: "10px 6px", gap: 10 }}>
-          <button
-            type="button"
-            aria-label="Expand scene panel"
-            title="Expand scene panel"
-            onClick={handleToggle}
-            style={toggleButtonStyle}
-          >
-            ⟨
-          </button>
-          <span
-            aria-hidden
-            style={{
-              writingMode: "vertical-rl",
-              transform: "rotate(180deg)",
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: nx.lowMuted,
-            }}
-          >
-            Scene
-          </span>
-        </header>
-      </div>
-    );
-  }
-
   return (
     <div
       id="nexora-scene-panel-shell"
       data-nx="scene-panel-shell"
-      data-nx-state="expanded"
+      data-nx-state={minimized ? "collapsed" : "expanded"}
       style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        minHeight: 0,
-        background: nx.workspacePanelBg,
-        boxShadow: nx.workspaceShadow,
+        ...shellStyle,
+        ...(minimized ? SCENE_PANEL_MINIMIZED_SHELL_STYLE : { boxShadow: nx.workspaceShadow, overflow: "hidden" }),
       }}
     >
-      <header style={headerStyle}>
-        <div style={{ minWidth: 0 }}>
+      <header
+        style={{
+          ...headerStyle,
+          borderBottom: minimized ? undefined : headerStyle.borderBottom,
+        }}
+      >
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: nx.lowMuted }}>
-            Scene Control
+            Scene
           </div>
         </div>
         <button
           type="button"
-          aria-label="Collapse scene panel"
-          title="Collapse scene panel"
+          aria-label={minimized ? "Expand scene panel" : "Minimize scene panel"}
+          title={minimized ? "Expand scene panel" : "Minimize scene panel"}
           onClick={handleToggle}
           style={toggleButtonStyle}
         >
-          ⟩
+          {minimized ? "▲" : "▼"}
         </button>
       </header>
 
-      <div
-        data-nx="scene-panel-body"
-        style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: "auto",
-          padding: "10px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-        }}
-      >
-        {PLACEHOLDER_SECTIONS.map((section) => (
-          <section key={section} data-nx-section={section.toLowerCase()}>
-            <div style={sectionTitleStyle}>{section}</div>
-            <div style={sectionBodyStyle}>
-              {section === "Actions" ? (
-                <>
-                  <p style={{ margin: "0 0 8px" }}>Scene-level actions will appear here.</p>
-                  <button
-                    type="button"
-                    aria-label="Add Object"
-                    title="Add Object from executive catalog"
-                    onClick={handleAddObject}
-                    style={{ ...addObjectButtonStyle, marginBottom: 8 }}
-                  >
-                    [+] Add Object
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Load Template"
-                    title="Load an executive domain template"
-                    onClick={handleCreateSystem}
-                    style={addObjectButtonStyle}
-                  >
-                    Load Template
-                  </button>
-                </>
-              ) : (
-                <span>Reserved for {section.toLowerCase()} controls.</span>
-              )}
-            </div>
-          </section>
-        ))}
-      </div>
+      {!minimized ? (
+        <div
+          data-nx="scene-panel-body"
+          style={HUD_PANEL_SCROLL_BODY_STYLE}
+        >
+          {PLACEHOLDER_SECTIONS.map((section) => (
+            <section key={section} data-nx-section={section.toLowerCase()}>
+              <div style={sectionTitleStyle}>{section}</div>
+              <div style={sectionBodyStyle}>
+                {section === "Actions" ? (
+                  <>
+                    <p style={{ margin: "0 0 8px" }}>Scene-level actions will appear here.</p>
+                    <button
+                      type="button"
+                      aria-label="Add Object"
+                      title="Add Object from executive catalog"
+                      onClick={handleAddObject}
+                      style={{ ...addObjectButtonStyle, marginBottom: 8 }}
+                    >
+                      [+] Add Object
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Load Template"
+                      title="Load an executive domain template"
+                      onClick={handleCreateSystem}
+                      style={addObjectButtonStyle}
+                    >
+                      Load Template
+                    </button>
+                  </>
+                ) : (
+                  <span>Reserved for {section.toLowerCase()} controls.</span>
+                )}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

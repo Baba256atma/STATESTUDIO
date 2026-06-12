@@ -42,25 +42,6 @@ const headerStyle: React.CSSProperties = {
   background: nx.bgDeep,
 };
 
-const sectionTitleStyle: React.CSSProperties = {
-  fontSize: 9,
-  fontWeight: 800,
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  color: nx.lowMuted,
-  marginBottom: 6,
-};
-
-const sectionBodyStyle: React.CSSProperties = {
-  borderRadius: 10,
-  border: `1px solid ${nx.borderSoft}`,
-  background: nx.bgControl,
-  padding: "8px 10px",
-  color: nx.muted,
-  fontSize: 11,
-  lineHeight: 1.45,
-};
-
 const toggleButtonStyle: React.CSSProperties = {
   flexShrink: 0,
   width: 28,
@@ -205,15 +186,30 @@ export function ObjectPanelShell(props: ObjectPanelShellProps): React.ReactEleme
         <div style={{ minWidth: 0 }}>
           <div
             style={{
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: 800,
-              letterSpacing: "0.08em",
+              letterSpacing: "0.1em",
               textTransform: "uppercase",
               color: nx.lowMuted,
             }}
           >
-            Object Actions
+            Executive Object
           </div>
+          {hasSelection ? (
+            <div
+              style={{
+                marginTop: 4,
+                fontSize: 12,
+                fontWeight: 700,
+                color: nx.textStrong,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {selectedObjectLabel ?? selectedObjectId}
+            </div>
+          ) : null}
         </div>
         <button
           type="button"
@@ -237,30 +233,6 @@ export function ObjectPanelShell(props: ObjectPanelShellProps): React.ReactEleme
         }}
       >
         <div
-          data-nx="object-selection-state"
-          style={{
-            flexShrink: 0,
-            padding: "10px 10px 0",
-          }}
-        >
-          <div style={sectionTitleStyle}>Selection</div>
-          <div style={{ ...sectionBodyStyle, marginBottom: 8 }}>
-            {hasSelection ? (
-              <>
-                <div style={{ color: nx.textStrong, fontWeight: 700, fontSize: 12 }}>
-                  {selectedObjectLabel ?? selectedObjectId}
-                </div>
-                {selectedObjectLabel && selectedObjectId ? (
-                  <div style={{ marginTop: 4, fontSize: 10, color: nx.lowMuted }}>{selectedObjectId}</div>
-                ) : null}
-              </>
-            ) : (
-              <span>No object selected</span>
-            )}
-          </div>
-        </div>
-
-        <div
           id={EXECUTIVE_WORKSPACE_ZONE_IDS.objectPanelHost}
           data-nx="object-panel-host"
           style={{
@@ -269,7 +241,9 @@ export function ObjectPanelShell(props: ObjectPanelShellProps): React.ReactEleme
             minWidth: 0,
             display: "flex",
             flexDirection: "column",
-            overflow: "hidden",
+            overflowY: "auto",
+            overflowX: "hidden",
+            padding: "8px 8px 10px",
             borderTop: `1px solid ${nx.borderSoft}`,
           }}
         >

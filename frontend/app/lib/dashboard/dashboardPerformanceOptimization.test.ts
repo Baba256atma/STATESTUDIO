@@ -7,6 +7,7 @@ import {
   resetDashboardPerformanceMetricsForTests,
 } from "./dashboardPerformanceMetrics.ts";
 import {
+  recordDashboardAccordionUpdateFrequency,
   recordDashboardRoutingFrequency,
   recordDashboardTraceComputeFrequency,
   resetDashboardPerformanceRegressionForTests,
@@ -129,6 +130,25 @@ test("trace compute frequency guard warns without crashing", () => {
   try {
     for (let index = 0; index < DASHBOARD_PERFORMANCE_BUDGETS.traceStormMaxPerWindow + 2; index += 1) {
       recordDashboardTraceComputeFrequency({ index });
+    }
+    assert.ok(warnings.includes("[Nexora][DashboardPerformance]"));
+  } finally {
+    globalThis.console.info = originalInfo;
+  }
+});
+
+test("accordion update frequency guard warns without crashing", () => {
+  const warnings: string[] = [];
+  const originalInfo = globalThis.console.info;
+  globalThis.console.info = (...args: unknown[]) => {
+    if (typeof args[0] === "string") warnings.push(args[0]);
+  };
+  try {
+    for (let index = 0; index < DASHBOARD_PERFORMANCE_BUDGETS.accordionUpdateStormMaxPerWindow + 2; index += 1) {
+      recordDashboardAccordionUpdateFrequency({
+        source: "dashboardAccordionRuntime.test",
+        updateCount: index,
+      });
     }
     assert.ok(warnings.includes("[Nexora][DashboardPerformance]"));
   } finally {

@@ -15,11 +15,11 @@ export type TimelineVisibleRegion = {
 
 export const EXECUTIVE_TIMELINE_VISIBLE_REGION: Readonly<TimelineVisibleRegion> = Object.freeze({
   anchor: "BOTTOM_CENTER",
-  bottomOffset: 104,
-  compactHeight: 72,
-  expandedHeight: 220,
-  fullHeight: 320,
-  maxWidth: "min(88vw, 860px)",
+  bottomOffset: 4,
+  compactHeight: 80,
+  expandedHeight: 300,
+  fullHeight: 300,
+  maxWidth: "100%",
 });
 
 const logKeys = new Set<string>();
@@ -48,7 +48,7 @@ export function getTimelineVisibleRegion(input?: {
   const region: TimelineVisibleRegion = {
     ...EXECUTIVE_TIMELINE_VISIBLE_REGION,
     bottomOffset: safeZone.bottomOffset,
-    maxWidth: safeZone.maxWidth,
+    maxWidth: "100%",
   };
   log(region);
   return region;

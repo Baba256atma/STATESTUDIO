@@ -5,6 +5,18 @@
 import { DASHBOARD_PERFORMANCE_BUDGETS } from "./dashboardPerformanceBudget.ts";
 import { reportDashboardPerformance } from "./dashboardPerformanceMetrics.ts";
 
+export type DashboardPerformanceRegressionDetail = Readonly<Record<string, unknown>>;
+
+export type DashboardAccordionUpdateFrequencyDetail = Readonly<{
+  signature?: string;
+  source?: string;
+  updateCount?: number;
+  timestamp?: number;
+  action?: string;
+  contextSignature?: string;
+  expandedCount?: number;
+}>;
+
 type FrequencyWindow = {
   timestamps: number[];
 };
@@ -60,7 +72,9 @@ export function recordDashboardTraceComputeFrequency(detail?: Readonly<Record<st
   );
 }
 
-export function recordDashboardAccordionUpdateFrequency(detail?: Readonly<Record<string, unknown>>): void {
+export function recordDashboardAccordionUpdateFrequency(
+  detail?: DashboardAccordionUpdateFrequencyDetail | DashboardPerformanceRegressionDetail
+): void {
   recordFrequency(
     accordionUpdateWindow,
     DASHBOARD_PERFORMANCE_BUDGETS.accordionUpdateStormWindowMs,

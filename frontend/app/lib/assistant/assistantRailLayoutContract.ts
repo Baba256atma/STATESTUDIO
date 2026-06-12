@@ -135,10 +135,11 @@ export function resolveAssistantRailLayoutTraceLog(trace: AssistantRailLayoutTra
 
 export function isAssistantSupportPanelId(value: string): value is AssistantPanelDockId {
   return (
-    value === "suggestions" ||
-    value === "guidance" ||
+    value === "insight" ||
     value === "scenario" ||
-    value === "decision" ||
-    value === "actions"
+    value === "analytics" ||
+    value === "governance" ||
+    value === "actions" ||
+    value === "questions"
   );
 }

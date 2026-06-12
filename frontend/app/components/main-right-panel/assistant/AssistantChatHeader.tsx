@@ -1,16 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 
 import type { ExecutiveAssistantStatus } from "../../../lib/ui/executiveAssistantPanelTypes";
 import { ASSISTANT_READING_COMFORT_TOKENS } from "../../../lib/assistant/assistantReadingComfortTokens";
+import { ASSISTANT_SURFACE_TITLE, assistantSurfaceTitleStyle } from "../../../lib/ui/assistantBrandingContract";
+import {
+  traceAssistantBrandingTitle,
+  traceLegacyAssistantTitleRemoved,
+} from "../../../lib/ui/assistantBrandingDiagnostics";
 import { useSceneHudTheme } from "../../../lib/theme/useSceneTheme";
 import type { NexoraHudThemeMode } from "../../../lib/scene/nexoraHudTheme";
 export type AssistantChatHeaderProps = Readonly<{
   status: ExecutiveAssistantStatus;
   contextLabel?: string | null;
   themeMode?: NexoraHudThemeMode;
-  onCollapse?: () => void;
 }>;
 
 function statusColor(
@@ -25,6 +29,11 @@ function statusColor(
 export function AssistantChatHeader(props: AssistantChatHeaderProps): React.ReactElement {
   const theme = useSceneHudTheme(props.themeMode);
   const indicator = statusColor(props.status.phase, theme);
+
+  useEffect(() => {
+    traceAssistantBrandingTitle();
+    traceLegacyAssistantTitleRemoved();
+  }, []);
 
   return (
     <header
@@ -43,14 +52,11 @@ export function AssistantChatHeader(props: AssistantChatHeaderProps): React.Reac
       <div style={{ minWidth: 0 }}>
         <div
           style={{
-            fontSize: 10,
-            fontWeight: 800,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
+            ...assistantSurfaceTitleStyle,
             color: theme.text,
           }}
         >
-          Nexora AI
+          {ASSISTANT_SURFACE_TITLE}
         </div>
         <div
           style={{
@@ -90,30 +96,6 @@ export function AssistantChatHeader(props: AssistantChatHeaderProps): React.Reac
             </>
           ) : null}
         </div>
-      </div>
-      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 6 }}>
-        {props.onCollapse ? (
-          <button
-            type="button"
-            onClick={props.onCollapse}
-            title="Collapse assistant"
-            aria-label="Collapse assistant"
-            style={{
-              flexShrink: 0,
-              width: 26,
-              height: 26,
-              borderRadius: 8,
-              border: `1px solid ${theme.controlBorder}`,
-              background: theme.controlBackground,
-              color: theme.textMuted,
-              cursor: "pointer",
-              fontSize: 13,
-              lineHeight: 1,
-            }}
-          >
-            ⟩
-          </button>
-        ) : null}
       </div>
     </header>
   );

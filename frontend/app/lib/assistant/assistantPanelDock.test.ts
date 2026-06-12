@@ -27,8 +27,8 @@ describe("assistant support accordion runtime", () => {
     resetAssistantPanelVisibilityForTests();
   });
 
-  it("Test 1 — fresh assistant open expands suggested questions only", () => {
-    assert.deepEqual(getAssistantSupportAccordionState(), { openPanelId: "suggestions" });
+  it("Test 1 — fresh assistant open has no support panel expanded", () => {
+    assert.deepEqual(getAssistantSupportAccordionState(), { openPanelId: null });
     assert.deepEqual(getAssistantPanelVisibility(), DEFAULT_ASSISTANT_PANEL_VISIBILITY);
   });
 
@@ -43,51 +43,67 @@ describe("assistant support accordion runtime", () => {
     assert.equal(getAssistantPanelVisibility(), scenarioSnapshot);
   });
 
-  it("Test 2 — opening scenario collapses suggested questions", () => {
+  it("Test 2 — opening scenario collapses insight", () => {
+    openAssistantSupportAccordionPanel("insight");
     openAssistantSupportAccordionPanel("scenario");
     assert.equal(isAssistantPanelVisible("scenario"), true);
-    assert.equal(isAssistantPanelVisible("suggestions"), false);
+    assert.equal(isAssistantPanelVisible("insight"), false);
   });
 
-  it("Test 3 — opening decision collapses scenario", () => {
+  it("Test 3 — opening analytics collapses scenario", () => {
     openAssistantSupportAccordionPanel("scenario");
-    openAssistantSupportAccordionPanel("decision");
-    assert.equal(isAssistantPanelVisible("decision"), true);
+    openAssistantSupportAccordionPanel("analytics");
+    assert.equal(isAssistantPanelVisible("analytics"), true);
     assert.equal(isAssistantPanelVisible("scenario"), false);
   });
 
   it("Test 4 — collapsing the current panel leaves all panels collapsed", () => {
-    openAssistantSupportAccordionPanel("decision");
-    collapseAssistantPanel("decision");
+    openAssistantSupportAccordionPanel("analytics");
+    collapseAssistantPanel("analytics");
     assert.equal(getAssistantSupportAccordionState().openPanelId, null);
     assert.deepEqual(getAssistantPanelVisibility(), {
-      suggestions: false,
-      guidance: false,
+      insight: false,
       scenario: false,
-      decision: false,
+      analytics: false,
+      governance: false,
       actions: false,
+      questions: false,
     });
   });
 
   it("Test 5 — icon dock restore opens requested panel and collapses all others", () => {
     collapseAllAssistantSupportAccordionPanels();
-    expandAssistantPanel("suggestions");
-    assert.equal(isAssistantPanelVisible("suggestions"), true);
-    assert.equal(isAssistantPanelVisible("guidance"), false);
+    expandAssistantPanel("governance");
+    assert.equal(isAssistantPanelVisible("governance"), true);
+    assert.equal(isAssistantPanelVisible("insight"), false);
     assert.equal(isAssistantPanelVisible("scenario"), false);
-    assert.equal(isAssistantPanelVisible("decision"), false);
+    assert.equal(isAssistantPanelVisible("analytics"), false);
     assert.equal(isAssistantPanelVisible("actions"), false);
+    assert.equal(isAssistantPanelVisible("questions"), false);
+  });
+
+  it("Test 6 — opening questions collapses other panels", () => {
+    openAssistantSupportAccordionPanel("insight");
+    openAssistantSupportAccordionPanel("questions");
+    assert.equal(isAssistantPanelVisible("questions"), true);
+    assert.equal(isAssistantPanelVisible("insight"), false);
+  });
+
+  it("contract resolves questions dock icon and label", () => {
+    assert.equal(ASSISTANT_PANEL_DOCK_DEFINITIONS.questions.icon, "❓");
+    assert.match(resolveAssistantPanelExpandTooltip("questions"), /Executive Questions/);
   });
 
   it("compatibility setters cannot create conflicting booleans", () => {
-    setAssistantPanelVisible("guidance", true);
+    setAssistantPanelVisible("insight", true);
     setAssistantPanelVisible("actions", true);
     assert.deepEqual(getAssistantPanelVisibility(), {
-      suggestions: false,
-      guidance: false,
+      insight: false,
       scenario: false,
-      decision: false,
+      analytics: false,
+      governance: false,
       actions: true,
+      questions: false,
     });
   });
 
@@ -101,8 +117,8 @@ describe("assistant support accordion runtime", () => {
   it("contract resolves dock actions and icons", () => {
     assert.equal(resolveAssistantPanelDockAction(true), "collapse");
     assert.equal(resolveAssistantPanelDockAction(false), "expand");
-    assert.equal(ASSISTANT_PANEL_DOCK_DEFINITIONS.suggestions.icon, "💡");
-    assert.equal(ASSISTANT_PANEL_DOCK_DEFINITIONS.scenario.icon, "📊");
-    assert.match(resolveAssistantPanelExpandTooltip("suggestions"), /Suggested Questions/);
+    assert.equal(ASSISTANT_PANEL_DOCK_DEFINITIONS.insight.icon, "💡");
+    assert.equal(ASSISTANT_PANEL_DOCK_DEFINITIONS.scenario.icon, "📘");
+    assert.match(resolveAssistantPanelExpandTooltip("insight"), /Insight/);
   });
 });

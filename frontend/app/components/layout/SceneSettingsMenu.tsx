@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import { createPortal } from "react-dom";
 import type { ScenePrefs } from "../../screens/homeScreenUtils";
 import { useNexoraUiTheme } from "../../lib/ui/nexoraUiTheme";
+import { leftNavUtilityButtonStyle } from "../../lib/ui/leftNavDesignTokens";
 import { nx } from "../ui/nexoraTheme";
 
 const NAV_POPOVER_WIDTH = 240;
@@ -195,35 +196,27 @@ export function SceneSettingsMenu(props: SceneSettingsMenuProps = {}) {
         }
       : null;
 
-  const navSettingsTriggerStyle: React.CSSProperties = {
-    width: 44,
-    height: 44,
-    padding: 0,
-    borderRadius: 12,
-    border: open ? `1px solid ${nx.navTileActiveBorder}` : `1px solid ${nx.border}`,
-    background: open ? nx.navTileActiveBg : nx.bgPanelSoft,
-    color: open ? nx.text : nx.lowMuted,
-    boxShadow: open ? nx.navTileActiveShadow : "none",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
+  const navSettingsTriggerStyle: React.CSSProperties = leftNavUtilityButtonStyle({
+    active: open,
+    navTileActiveBorder: nx.navTileActiveBorder,
+    navTileActiveBg: nx.navTileActiveBg,
+    navTileActiveShadow: nx.navTileActiveShadow,
+    border: nx.border,
+    bgPanelSoft: nx.bgPanelSoft,
+    text: nx.text,
+    lowMuted: nx.lowMuted,
+  });
 
-  const navInputTriggerStyle: React.CSSProperties = {
-    width: 44,
-    height: 44,
-    padding: 0,
-    borderRadius: 12,
-    border: inputCenterOpen ? `1px solid ${nx.navTileActiveBorder}` : `1px solid ${nx.border}`,
-    background: inputCenterOpen ? nx.navTileActiveBg : nx.bgPanelSoft,
-    color: inputCenterOpen ? nx.text : nx.lowMuted,
-    boxShadow: inputCenterOpen ? nx.navTileActiveShadow : "none",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
+  const navInputTriggerStyle: React.CSSProperties = leftNavUtilityButtonStyle({
+    active: inputCenterOpen,
+    navTileActiveBorder: nx.navTileActiveBorder,
+    navTileActiveBg: nx.navTileActiveBg,
+    navTileActiveShadow: nx.navTileActiveShadow,
+    border: nx.border,
+    bgPanelSoft: nx.bgPanelSoft,
+    text: nx.text,
+    lowMuted: nx.lowMuted,
+  });
 
   const headerTriggerStyle: React.CSSProperties = {
     height: 36,

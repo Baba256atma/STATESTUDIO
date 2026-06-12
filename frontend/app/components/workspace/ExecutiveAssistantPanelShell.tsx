@@ -114,7 +114,7 @@ export function ExecutiveAssistantPanelShell(
         >
           <span
             aria-hidden
-            title="Nexora AI online"
+            title="Nexora online"
             style={{
               width: 8,
               height: 8,
@@ -125,8 +125,8 @@ export function ExecutiveAssistantPanelShell(
           />
           <button
             type="button"
-            aria-label="Expand Nexora AI assistant"
-            title="Expand Nexora AI assistant"
+            aria-label="Expand Nexora assistant"
+            title="Expand Nexora assistant"
             onClick={handleToggle}
             style={toggleButtonStyle(theme)}
           >

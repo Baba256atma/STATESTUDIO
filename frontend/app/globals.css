@@ -487,6 +487,7 @@ html[data-theme="day"] .nexora-secondary-cta:hover {
   --nx-left-dock-expanded-width: 280px;
   --nx-right-dock-width: 430px;
   --nx-scene-zone-padding: 12px;
+  --nx-scene-frame-radius: 5px;
   --nx-scene-canvas-bg: rgba(2, 6, 23, 0.18);
   --nx-scene-canvas-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
 }
@@ -503,7 +504,7 @@ html[data-theme="day"] .nexora-secondary-cta:hover {
 }
 
 .nx-executive-scene-canvas-shell canvas {
-  border-radius: 14px;
+  border-radius: var(--nx-scene-frame-radius);
 }
 
 #nexora-left-scene-dock[data-nx-zone="left-dock"] {

@@ -1,5 +1,7 @@
 import type React from "react";
 
+import { resolveSceneFrameBorderRadius } from "../../lib/scene/sceneFrameRadiusContract";
+
 export const executiveStageFrameStyle: React.CSSProperties = {
   position: "relative",
   width: "100%",
@@ -11,6 +13,8 @@ export const executiveSceneHostStyle: React.CSSProperties = {
   ...executiveStageFrameStyle,
   boxSizing: "border-box",
   isolation: "isolate",
+  overflow: "hidden",
+  borderRadius: resolveSceneFrameBorderRadius(),
 };
 
 export function executiveSceneCanvasShellStyle(bottomInset: number | string = 0): React.CSSProperties {
@@ -22,7 +26,7 @@ export function executiveSceneCanvasShellStyle(bottomInset: number | string = 0)
     transition: "bottom 180ms ease",
     contain: "layout size style",
     overflow: "hidden",
-    borderRadius: 14,
+    borderRadius: resolveSceneFrameBorderRadius(),
     boxShadow: "var(--nx-scene-canvas-shadow, inset 0 0 0 1px rgba(148, 163, 184, 0.08))",
     background: "var(--nx-scene-canvas-bg, rgba(2, 6, 23, 0.18))",
   };

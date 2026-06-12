@@ -1,5 +1,18 @@
 import { EXECUTIVE_TIMELINE_VISIBLE_REGION } from "../hud/timelineVisibleRegionRuntime";
+import {
+  resolveTimelineDisplayHeight,
+  toTimelineDisplayState,
+} from "../hud/timelineWidthContract.ts";
 import { normalizeTimelineState, resolveTimelineState } from "../timeline/timelineArchitectureContract";
+import {
+  traceMrp1210TimelineCollapsed,
+  traceMrp1210TimelineExpanded,
+  resetMrp1210RuntimeDiagnosticsForTests,
+} from "../hud/mrp1210RuntimeDiagnostics.ts";
+import {
+  traceTimelineDisplayState,
+  resetTimeline131RuntimeDiagnosticsForTests,
+} from "../hud/timeline131RuntimeDiagnostics.ts";
 
 /**
  * ARCHITECTURE CONTRACT:
@@ -29,14 +42,46 @@ export const EXECUTIVE_TIMELINE_VISIBLE_ZONE = Object.freeze({
 
 const DEFAULT_BOTTOM_WORKSPACE_STATE: ExecutiveBottomWorkspaceState = Object.freeze({
   collapsed: false,
-  expanded: false,
+  expanded: true,
   activeSurface: "timeline",
   selectedTimelineEvent: null,
-  heightMode: "compact",
+  heightMode: "expanded",
 });
 
 let bottomWorkspaceState: ExecutiveBottomWorkspaceState = { ...DEFAULT_BOTTOM_WORKSPACE_STATE };
 const logKeys = new Set<string>();
+const listeners = new Set<() => void>();
+
+function notifyListeners(): void {
+  for (const listener of listeners) listener();
+}
+
+export function subscribeBottomWorkspaceState(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function isTimelineVisuallyExpanded(mode: ExecutiveBottomWorkspaceHeightMode): boolean {
+  return toTimelineDisplayState(mode) === "expanded";
+}
+
+export function normalizeBottomWorkspaceHeightMode(
+  mode: ExecutiveBottomWorkspaceHeightMode | undefined
+): ExecutiveBottomWorkspaceHeightMode {
+  if (mode === "collapsed" || mode === "compact") return "compact";
+  if (mode === "expanded" || mode === "full") return "expanded";
+  return "expanded";
+}
+
+function traceTimelinePresentationMode(mode: ExecutiveBottomWorkspaceHeightMode): void {
+  const displayState = toTimelineDisplayState(mode);
+  traceTimelineDisplayState(displayState);
+  if (displayState === "compact") {
+    traceMrp1210TimelineCollapsed();
+    return;
+  }
+  traceMrp1210TimelineExpanded();
+}
 
 function isDev(): boolean {
   return process.env.NODE_ENV !== "production";
@@ -75,7 +120,14 @@ export function hydrateBottomWorkspaceState(): ExecutiveBottomWorkspaceState {
       activeSurface: isBottomWorkspaceSurface(parsed.activeSurface) ? parsed.activeSurface : "timeline",
       selectedTimelineEvent:
         typeof parsed.selectedTimelineEvent === "string" ? parsed.selectedTimelineEvent : null,
-      heightMode: isBottomWorkspaceHeightMode(parsed.heightMode) ? parsed.heightMode : "compact",
+      heightMode: normalizeBottomWorkspaceHeightMode(
+        isBottomWorkspaceHeightMode(parsed.heightMode) ? parsed.heightMode : "expanded"
+      ),
+    };
+    bottomWorkspaceState = {
+      ...bottomWorkspaceState,
+      collapsed: bottomWorkspaceState.heightMode === "compact",
+      expanded: isTimelineVisuallyExpanded(bottomWorkspaceState.heightMode),
     };
   } catch {
     bottomWorkspaceState = { ...DEFAULT_BOTTOM_WORKSPACE_STATE };
@@ -86,11 +138,12 @@ export function hydrateBottomWorkspaceState(): ExecutiveBottomWorkspaceState {
 export function setBottomWorkspaceState(
   patch: Partial<ExecutiveBottomWorkspaceState>
 ): ExecutiveBottomWorkspaceState {
+  const previousHeightMode = bottomWorkspaceState.heightMode;
   if (patch.heightMode != null) {
     normalizeTimelineState(
       resolveTimelineState({
         heightMode: patch.heightMode,
-        collapsed: patch.heightMode === "collapsed",
+        collapsed: patch.heightMode === "compact" || patch.heightMode === "collapsed",
       })
     );
   }
@@ -98,7 +151,19 @@ export function setBottomWorkspaceState(
     ...bottomWorkspaceState,
     ...patch,
   };
+  if (patch.heightMode != null) {
+    bottomWorkspaceState = {
+      ...bottomWorkspaceState,
+      heightMode: normalizeBottomWorkspaceHeightMode(patch.heightMode),
+      collapsed: bottomWorkspaceState.heightMode === "compact",
+      expanded: isTimelineVisuallyExpanded(bottomWorkspaceState.heightMode),
+    };
+  }
   persistState(bottomWorkspaceState);
+  if (patch.heightMode != null && previousHeightMode !== bottomWorkspaceState.heightMode) {
+    traceTimelinePresentationMode(bottomWorkspaceState.heightMode);
+  }
+  notifyListeners();
   logBottomWorkspaceMetrics({
     mode: bottomWorkspaceState.heightMode,
     height: heightForBottomWorkspaceMode(bottomWorkspaceState.heightMode),
@@ -109,14 +174,11 @@ export function setBottomWorkspaceState(
 }
 
 export function toggleBottomWorkspace(): ExecutiveBottomWorkspaceState {
+  const displayState = toTimelineDisplayState(bottomWorkspaceState.heightMode);
   const nextMode: ExecutiveBottomWorkspaceHeightMode =
-    bottomWorkspaceState.heightMode === "collapsed"
-      ? "compact"
-      : bottomWorkspaceState.heightMode === "compact"
-        ? "expanded"
-        : "collapsed";
+    displayState === "compact" ? "expanded" : "compact";
   return setBottomWorkspaceState({
-    collapsed: nextMode === "collapsed",
+    collapsed: nextMode === "compact",
     expanded: nextMode === "expanded",
     heightMode: nextMode,
   });
@@ -133,10 +195,7 @@ export function selectBottomWorkspaceTimelineEvent(eventId: string | null): Exec
 }
 
 export function heightForBottomWorkspaceMode(mode: ExecutiveBottomWorkspaceHeightMode): number {
-  if (mode === "collapsed") return 32;
-  if (mode === "compact") return EXECUTIVE_TIMELINE_VISIBLE_ZONE.compactHeight;
-  if (mode === "expanded") return EXECUTIVE_TIMELINE_VISIBLE_ZONE.expandedHeight;
-  return EXECUTIVE_TIMELINE_VISIBLE_ZONE.fullHeight;
+  return resolveTimelineDisplayHeight(toTimelineDisplayState(mode));
 }
 
 export function logTimelineVisibleZone(payload: { bottomOffset: number; height: number; mode: ExecutiveBottomWorkspaceHeightMode }): void {
@@ -166,4 +225,6 @@ function isBottomWorkspaceHeightMode(value: unknown): value is ExecutiveBottomWo
 export function resetExecutiveBottomWorkspaceForTests(): void {
   bottomWorkspaceState = { ...DEFAULT_BOTTOM_WORKSPACE_STATE };
   logKeys.clear();
+  resetMrp1210RuntimeDiagnosticsForTests();
+  resetTimeline131RuntimeDiagnosticsForTests();
 }

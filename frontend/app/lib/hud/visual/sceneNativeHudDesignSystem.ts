@@ -9,13 +9,14 @@ import { resolveExecutiveTransparency } from "./executiveTransparencyRuntime";
 import { applyHudEdgeIntegrationStyle } from "./hudEdgeIntegrationRuntime";
 import { resolveSceneHudDepth } from "./sceneHudDepthRuntime";
 import { resolveSceneHudSpatialAlignment } from "./sceneHudSpatialAlignmentRuntime";
-import type {
-  SceneHudEdgeAnchor,
-  SceneNativeHudDesignSnapshot,
-  SceneNativeHudShellInput,
-} from "./sceneNativeHudVisualTypes";
+import type { SceneHudEdgeAnchor, SceneNativeHudDesignSnapshot, SceneNativeHudShellInput } from "./sceneNativeHudVisualTypes";
 import { logSceneNativeHudVisualSystem } from "./sceneNativeHudVisualInstrumentation";
 import { resolveSceneHudTypography } from "./sceneHudTypographyRuntime";
+import {
+  HUD_PANEL_BORDER_WIDTH,
+  HUD_PANEL_RADIUS,
+  isSceneNativeHudPanelSurface,
+} from "../hudPanelDesignContract.ts";
 
 const SURFACE_GLASS: Partial<Record<SceneHudThemeSurfaceId, SceneNativeHudDesignSnapshot["panelGlassLevel"]>> = {
   sceneInfoHud: "instrument",
@@ -58,12 +59,16 @@ function resolveDesignSnapshot(
         ? { borderWeight: 0.75, cornerRadius: 10, shadow: "ambient" as const, glow: "subtle" as const, blur: transparency.blurPx + 2 }
         : { borderWeight: 1, cornerRadius: 9, shadow: "elevated" as const, glow: "accent" as const, blur: transparency.blurPx + 4 };
 
+  const unifiedPanel = isSceneNativeHudPanelSurface(surface);
+
   return {
     panelGlassLevel: glassLevel,
     panelTransparency: transparency.surfaceOpacity,
     panelBlur: glassProfile.blur,
-    panelBorderWeight: visualWeight.borderWidthPx * glassProfile.borderWeight,
-    panelCornerRadius: glassProfile.cornerRadius,
+    panelBorderWeight: unifiedPanel
+      ? HUD_PANEL_BORDER_WIDTH
+      : visualWeight.borderWidthPx * glassProfile.borderWeight,
+    panelCornerRadius: unifiedPanel ? HUD_PANEL_RADIUS : glassProfile.cornerRadius,
     panelShadowProfile: glassProfile.shadow,
     panelGlowProfile: glassProfile.glow,
   };
@@ -128,7 +133,8 @@ export function resolveSceneNativeHudShell(
     focused: input.focused,
     collapsed: input.collapsed,
   });
-  const edgeStyle = applyHudEdgeIntegrationStyle(edgeAnchor, theme.mode);
+  const unifiedPanel = isSceneNativeHudPanelSurface(input.surface);
+  const edgeStyle = unifiedPanel ? {} : applyHudEdgeIntegrationStyle(edgeAnchor, theme.mode);
 
   const shadow = shadowForProfile(design.panelShadowProfile, theme.mode);
   const glow = glowForProfile(design.panelGlowProfile, theme.mode);
@@ -140,6 +146,14 @@ export function resolveSceneNativeHudShell(
 
   return {
     borderRadius: design.panelCornerRadius,
+    ...(unifiedPanel
+      ? {
+          borderTopLeftRadius: HUD_PANEL_RADIUS,
+          borderTopRightRadius: HUD_PANEL_RADIUS,
+          borderBottomLeftRadius: HUD_PANEL_RADIUS,
+          borderBottomRightRadius: HUD_PANEL_RADIUS,
+        }
+      : {}),
     border: `${design.panelBorderWeight}px solid color-mix(in srgb, ${tokens.panelBorder} 72%, transparent)`,
     background: backgroundMix,
     backdropFilter: `blur(${design.panelBlur}px) saturate(120%)`,
@@ -149,6 +163,8 @@ export function resolveSceneNativeHudShell(
     pointerEvents: "auto",
     opacity: depth.opacityMultiplier,
     zIndex: depth.zIndex,
+    overflowX: "hidden",
+    minWidth: 0,
     maxWidth: alignment.preserveSceneCenter ? `min(${Math.round(alignment.maxWidthRatio * 100)}vw, 100%)` : undefined,
     ...edgeStyle,
     ...overrides,

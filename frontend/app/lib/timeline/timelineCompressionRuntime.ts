@@ -23,11 +23,7 @@ export function resolveTimelineCompression(
   heightMode: ExecutiveBottomWorkspaceHeightMode
 ): TimelineCompressionState {
   const mode: TimelineCompressionMode =
-    heightMode === "expanded" || heightMode === "full"
-      ? "EXPANDED"
-      : heightMode === "collapsed"
-        ? "COMPACT"
-        : "COMPACT";
+    heightMode === "expanded" || heightMode === "full" ? "EXPANDED" : "COMPACT";
 
   const state: TimelineCompressionState = {
     mode,

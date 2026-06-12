@@ -5,6 +5,9 @@ import {
   setPanelCollapseState,
 } from "../workspace/panelGovernanceRuntime";
 import {
+  traceScenePanelCollapseWrite,
+} from "./scenePanelStateRuntime";
+import {
   traceSceneInfoPreference,
   traceSceneInfoCollapsed,
 } from "./sceneInfoHydrationContract";
@@ -27,8 +30,18 @@ export function loadSceneInfoCollapsePreference(): boolean {
   return collapsed;
 }
 
-export function persistSceneInfoCollapsePreference(collapsed: boolean): void {
-  setPanelCollapseState("sceneInfoHud", collapsed ? "collapsed" : "expanded");
+export function persistSceneInfoCollapsePreference(
+  collapsed: boolean,
+  source: "event" | "effect" = "effect"
+): void {
+  const nextState = collapsed ? "collapsed" : "expanded";
+  const previousState = getPanelCollapseState("sceneInfoHud");
+  if (previousState === nextState) {
+    traceScenePanelCollapseWrite({ collapsed, source, skipped: true });
+    return;
+  }
+  setPanelCollapseState("sceneInfoHud", nextState);
+  traceScenePanelCollapseWrite({ collapsed, source });
   traceSceneInfoPreference({ collapsed, source: "persist_scene_info" });
 }
 

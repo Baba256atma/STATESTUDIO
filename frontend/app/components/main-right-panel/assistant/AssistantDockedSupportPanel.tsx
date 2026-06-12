@@ -18,7 +18,6 @@ import { AssistantPanelScrollContainer } from "./AssistantPanelScrollContainer";
 
 export type AssistantDockedSupportPanelProps = Readonly<{
   panelId: AssistantPanelDockId;
-  available?: boolean;
   themeMode?: NexoraHudThemeMode;
   children: React.ReactNode;
 }>;
@@ -31,10 +30,6 @@ export function AssistantDockedSupportPanel(
   const { collapsePanel } = useAssistantPanelDockControls();
   const definition = ASSISTANT_PANEL_DOCK_DEFINITIONS[props.panelId];
 
-  if (props.available === false) {
-    return <></>;
-  }
-
   return (
     <section
       data-nx="assistant-docked-support-panel"
@@ -43,51 +38,49 @@ export function AssistantDockedSupportPanel(
       aria-hidden={!visible}
       style={{
         flexShrink: 0,
-        display: "flex",
+        display: visible ? "flex" : "none",
         flexDirection: "column",
         minHeight: 0,
         overflow: "hidden",
-        borderTop: visible ? `1px solid ${theme.shellBorder}` : "0 solid transparent",
+        borderTop: `1px solid ${theme.shellBorder}`,
         background: theme.shellBackground,
         transition: `opacity ${ASSISTANT_PANEL_COLLAPSE_MS}ms ease`,
       }}
     >
-      {visible ? (
-        <header
-          data-nx="assistant-docked-support-panel-header"
+      <header
+        data-nx="assistant-docked-support-panel-header"
+        style={{
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          padding: "6px 10px",
+          borderBottom: `1px solid ${theme.shellBorder}`,
+        }}
+      >
+        <div
           style={{
-            flexShrink: 0,
+            minWidth: 0,
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-            padding: "6px 10px",
-            borderBottom: `1px solid ${theme.shellBorder}`,
+            gap: 6,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: theme.text,
           }}
         >
-          <div
-            style={{
-              minWidth: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: theme.text,
-            }}
-          >
-            <span aria-hidden>{definition.icon}</span>
-            <span>{definition.label}</span>
-          </div>
-          <AssistantPanelCollapseButton
-            panelId={props.panelId}
-            themeMode={props.themeMode}
-            onCollapse={() => collapsePanel(props.panelId)}
-          />
-        </header>
-      ) : null}
+          <span aria-hidden>{definition.icon}</span>
+          <span>{definition.label}</span>
+        </div>
+        <AssistantPanelCollapseButton
+          panelId={props.panelId}
+          themeMode={props.themeMode}
+          onCollapse={() => collapsePanel(props.panelId)}
+        />
+      </header>
 
       <AssistantPanelScrollContainer panelId={props.panelId} visible={visible}>
         {props.children}

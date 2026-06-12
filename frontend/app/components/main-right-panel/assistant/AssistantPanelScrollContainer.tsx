@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 
 import type { AssistantPanelDockId } from "../../../lib/assistant/assistantPanelDockContract";
 import { observeAssistantPanelOverflow } from "../../../lib/assistant/assistantPanelOverflowRuntime";
@@ -8,6 +8,7 @@ import {
   ASSISTANT_PANEL_SCROLL_CONTAINER_CLASS,
   resolveAssistantPanelScrollContainerStyle,
 } from "../../../lib/assistant/assistantPanelOverflowTokens";
+
 export type AssistantPanelScrollContainerProps = Readonly<{
   panelId: AssistantPanelDockId;
   visible: boolean;
@@ -17,19 +18,30 @@ export type AssistantPanelScrollContainerProps = Readonly<{
 export function AssistantPanelScrollContainer(
   props: AssistantPanelScrollContainerProps
 ): React.ReactElement {
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const cleanupRef = useRef<(() => void) | undefined>(undefined);
+
+  const attachOverflowObserver = useCallback(
+    (node: HTMLDivElement | null) => {
+      cleanupRef.current?.();
+      cleanupRef.current = observeAssistantPanelOverflow({
+        panelId: props.panelId,
+        element: node,
+        visible: props.visible && node !== null,
+      });
+    },
+    [props.panelId, props.visible]
+  );
 
   useEffect(() => {
-    return observeAssistantPanelOverflow({
-      panelId: props.panelId,
-      element: scrollRef.current,
-      visible: props.visible,
-    });
-  }, [props.panelId, props.visible]);
+    return () => {
+      cleanupRef.current?.();
+      cleanupRef.current = undefined;
+    };
+  }, []);
 
   return (
     <div
-      ref={scrollRef}
+      ref={attachOverflowObserver}
       className={ASSISTANT_PANEL_SCROLL_CONTAINER_CLASS}
       data-nx="assistant-panel-scroll-container"
       data-nx-panel={props.panelId}

@@ -30,6 +30,11 @@ import { AssistantChatHeader } from "../main-right-panel/assistant/AssistantChat
 import { AssistantConversationArea } from "../main-right-panel/assistant/AssistantConversationArea";
 import { AssistantIntelligenceCardsSurface } from "../main-right-panel/assistant/AssistantIntelligenceCardsSurface";
 import { AssistantMessageInput } from "../main-right-panel/assistant/AssistantMessageInput";
+import { ASSISTANT_SURFACE_TITLE, assistantSurfaceTitleStyle } from "../../lib/ui/assistantBrandingContract";
+import {
+  traceAssistantBrandingTitle,
+  traceLegacyAssistantTitleRemoved,
+} from "../../lib/ui/assistantBrandingDiagnostics";
 
 export type ExecutiveAssistantPanelLayout = "default" | "chat-first";
 
@@ -51,13 +56,6 @@ export type ExecutiveAssistantPanelProps = {
   onQuestionSelect?: (question: string) => void;
   onIntelligenceCardAction?: (card: AssistantIntelligenceCardModel) => void;
 };
-
-function emitExecutiveAssistantCollapsed(): void {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent("nexora:executive-assistant-set-collapsed", { detail: { collapsed: true } })
-  );
-}
 
 function resolveStatusIndicatorColor(
   phase: ExecutiveAssistantStatus["phase"],
@@ -83,7 +81,6 @@ export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): Re
     themeMode = "night",
     onInputChange,
     onSubmit,
-    onClose,
     onQuestionSelect,
     onIntelligenceCardAction,
   } = props;
@@ -97,6 +94,8 @@ export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): Re
     if (mountedRef.current) return;
     mountedRef.current = true;
     logExecutiveAssistantMounted();
+    traceAssistantBrandingTitle();
+    traceLegacyAssistantTitleRemoved();
   }, []);
 
   useEffect(() => {
@@ -123,11 +122,6 @@ export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): Re
     onInputChange(question);
   };
 
-  const handleCollapse = () => {
-    onClose();
-    emitExecutiveAssistantCollapsed();
-  };
-
   if (!open) {
     return <div aria-hidden style={{ display: "none" }} />;
   }
@@ -152,7 +146,6 @@ export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): Re
           status={assistantStatus}
           contextLabel={contextLabel ?? "Executive workspace"}
           themeMode={themeMode}
-          onCollapse={handleCollapse}
         />
         <AssistantIntelligenceCardsSurface
           cards={intelligenceCards}
@@ -206,14 +199,11 @@ export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): Re
         <div style={{ minWidth: 0 }}>
           <div
             style={{
-              fontSize: 11,
-              fontWeight: 800,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
+              ...assistantSurfaceTitleStyle,
               color: theme.text,
             }}
           >
-            NEXORA AI
+            {ASSISTANT_SURFACE_TITLE}
           </div>
           <div
             style={{
@@ -239,29 +229,6 @@ export function ExecutiveAssistantPanel(props: ExecutiveAssistantPanelProps): Re
             <span>{assistantStatus.label}</span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            onClose();
-            emitExecutiveAssistantCollapsed();
-          }}
-          title="Collapse Nexora AI assistant"
-          aria-label="Collapse Nexora AI assistant"
-          style={{
-            flexShrink: 0,
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            border: `1px solid ${theme.controlBorder}`,
-            background: theme.controlBackground,
-            color: theme.textMuted,
-            cursor: "pointer",
-            fontSize: 14,
-            lineHeight: 1,
-          }}
-        >
-          ⟩
-        </button>
       </header>
 
       {activeContextSummary ? (

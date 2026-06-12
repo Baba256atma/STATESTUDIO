@@ -5,11 +5,48 @@ import type React from "react";
 import { stableLayoutSignature } from "../layout/layoutThrottleAuditRuntime";
 import { getExecutiveHudViewport } from "../layout/executiveHudHydrationRuntime";
 import { EXECUTIVE_SCENE_HUD_GRID } from "./executiveSceneHudGrid";
-import {
-  resolveExecutiveSideInset,
-  resolveExecutiveTopBaseline,
-} from "./executiveTopAlignmentRuntime";
 import { resolveExecutiveTopHudSafeZone } from "./executiveTopHudSafeZone";
+import {
+  OBJECT_PANEL_TOP,
+  resolveSceneHudEdgeInset,
+  SCENE_PANEL_TOP,
+  traceSceneHudInsets,
+} from "./sceneHudInsetContract.ts";
+import { resolveObjectPanelSafeZoneContract } from "../hud/objectPanelSafeZoneContract.ts";
+import { resolveTimelineZoneContract, TIMELINE_Z_INDEX } from "../hud/timelineZoneContract.ts";
+import {
+  resolveTimelineDisplayHeight,
+  timelineLayoutTransitionStyle,
+  toTimelineDisplayState,
+} from "../hud/timelineWidthContract.ts";
+import {
+  isTimelineBottomAnchorValid,
+  resolveTimelineAnchorState,
+  resolveTimelineBottomAnchoredTop,
+  TIMELINE_BOTTOM_INSET_PX,
+  traceTimelineBottomAnchor,
+  traceTimelineBottomAnchorViolation,
+} from "../hud/timelineBottomAnchorContract.ts";
+import {
+  resolveSceneHudTopAlignment,
+  traceSceneHudTopAlign,
+} from "../hud/sceneHudTopAlignmentContract.ts";
+import {
+  resolveScenePanelFixedWidth,
+  resolveScenePanelZoneHeight,
+  resolveScenePanelZoneMaxWidth,
+  resolveScenePanelZoneWidth,
+  SCENE_PANEL_MINIMIZED_HEIGHT,
+  SCENE_PANEL_WIDTH,
+  traceScenePanelLayout,
+  toScenePanelHeightMode,
+} from "./scenePanelWidthContract.ts";
+import {
+  OBJECT_PANEL_EXPANDED_WIDTH,
+  OBJECT_PANEL_WIDTH,
+  traceHudPanelDesign,
+} from "../hud/hudPanelDesignContract.ts";
+import { HUD_RUNTIME_FREEZE_V1 } from "../hud/hudRuntimeFreezeContract.ts";
 
 export type SceneHudZoneId =
   | "scene-topbar-zone"
@@ -75,15 +112,18 @@ export type SceneHudZoneContractContext = {
   timelineHeightMode?: SceneHudTimelineHeightMode;
   /** Object panel width mode only — does not resize or move timeline. */
   objectPanelExpanded?: boolean;
+  /** Scene panel collapse — controls zone height only (header-only vs half-height). */
+  scenePanelCollapsed?: boolean;
 };
 
 export const SCENE_HUD_ZONE_METRICS = Object.freeze({
   topBarHeight: 44,
   zoneGap: 8,
-  scenePanelWidth: 248,
-  scenePanelCompactWidth: 56,
-  objectPanelCompactWidth: 248,
-  objectPanelExpandedWidth: 320,
+  scenePanelWidth: SCENE_PANEL_WIDTH,
+  scenePanelCompactWidth: SCENE_PANEL_WIDTH,
+  scenePanelTopInset: SCENE_PANEL_TOP,
+  objectPanelCompactWidth: OBJECT_PANEL_WIDTH,
+  objectPanelExpandedWidth: OBJECT_PANEL_EXPANDED_WIDTH,
   objectPanelRailWidth: 56,
   timelineTransportHeight: 52,
   timelineBodyHeight: 64,
@@ -95,15 +135,11 @@ export const SCENE_HUD_ZONE_METRICS = Object.freeze({
   mrpSafeGap: 16,
 });
 
-const TIMELINE_BODY_HEIGHT_BY_MODE: Record<SceneHudTimelineHeightMode, number> = {
-  collapsed: SCENE_HUD_ZONE_METRICS.timelineCollapsedBodyHeight,
-  compact: SCENE_HUD_ZONE_METRICS.timelineBodyHeight,
-  expanded: SCENE_HUD_ZONE_METRICS.timelineExpandedBodyHeight,
-  full: SCENE_HUD_ZONE_METRICS.timelineExpandedBodyHeight,
-};
+function resolveTimelineHeight(mode: SceneHudTimelineHeightMode): number {
+  return resolveTimelineDisplayHeight(toTimelineDisplayState(mode));
+}
 
 /** Fixed side reservations — timeline never reacts to object selection toggles. */
-const FIXED_SCENE_PANEL_SLOT_WIDTH = SCENE_HUD_ZONE_METRICS.scenePanelWidth;
 const FIXED_OBJECT_PANEL_SLOT_WIDTH = SCENE_HUD_ZONE_METRICS.objectPanelCompactWidth;
 
 let lastZoneSignature: string | null = null;
@@ -144,12 +180,6 @@ function rectsOverlap(a: SceneHudZoneRect, b: SceneHudZoneRect): boolean {
   return a.left < bRight && aRight > b.left && a.top < bBottom && aBottom > b.top;
 }
 
-function resolveTimelineHeight(mode: SceneHudTimelineHeightMode): number {
-  return (
-    SCENE_HUD_ZONE_METRICS.timelineTransportHeight + TIMELINE_BODY_HEIGHT_BY_MODE[mode]
-  );
-}
-
 function resolveLayoutDimensions(context: SceneHudZoneContractContext): {
   viewportWidth: number;
   viewportHeight: number;
@@ -181,6 +211,7 @@ export function resolveSceneHudZoneContract(
   const mrpVisible = context.mainRightPanelVisible !== false && mrpWidth > 0;
   const usingViewportFallback =
     !context.sceneWidth || context.sceneWidth <= 0 || context.sceneWidth >= viewportWidth - 1;
+  const topBarVisible = context.topBarVisible ?? true;
 
   const signature = stableLayoutSignature({
     layoutWidth,
@@ -189,9 +220,10 @@ export function resolveSceneHudZoneContract(
     viewportHeight,
     scenePanelVisible: context.scenePanelVisible ?? true,
     timelineVisible: context.timelineVisible ?? true,
-    topBarVisible: context.topBarVisible ?? true,
+    topBarVisible,
     timelineHeightMode,
     objectPanelExpanded: context.objectPanelExpanded ?? false,
+    scenePanelCollapsed: context.scenePanelCollapsed ?? false,
     mrpWidth,
     mrpVisible,
   });
@@ -200,16 +232,17 @@ export function resolveSceneHudZoneContract(
     return lastZoneContract;
   }
 
-  const topBaseline = resolveExecutiveTopBaseline(layoutWidth);
-  const sideInset = resolveExecutiveSideInset(layoutWidth);
+  const sideInset = resolveSceneHudEdgeInset();
   const topSafeZone = resolveExecutiveTopHudSafeZone({
     viewportWidth: layoutWidth,
     sceneInfoVisible: true,
     objectInfoVisible: true,
   });
 
+  const topAlignment = resolveSceneHudTopAlignment({ layoutWidth });
   const topBarHeight = SCENE_HUD_ZONE_METRICS.topBarHeight;
-  const topBarTop = topBaseline;
+  const topBarTop = topAlignment.SCENE_MENU_BAR_TOP_Y;
+  const sideTop = OBJECT_PANEL_TOP;
   const centerLaneWidth = Math.max(
     180,
     topSafeZone.rightLaneStart - topSafeZone.leftLaneEnd
@@ -218,13 +251,29 @@ export function resolveSceneHudZoneContract(
   const topBarLeft = (layoutWidth - topBarWidth) / 2;
 
   const timelineHeight = resolveTimelineHeight(timelineHeightMode);
-  const bottomOffset = Math.max(
-    isMobile ? 72 : SCENE_HUD_ZONE_METRICS.chatInputClearance,
-    timelineHeight + SCENE_HUD_ZONE_METRICS.bottomHudPadding
-  );
-  const timelineTop = layoutHeight - bottomOffset - timelineHeight;
+  const timelineBottomInset = TIMELINE_BOTTOM_INSET_PX;
+  const timelineTop = resolveTimelineBottomAnchoredTop({
+    layoutHeight,
+    timelineHeight,
+    bottomInset: timelineBottomInset,
+  });
+  const anchorState = resolveTimelineAnchorState(timelineHeightMode);
+  traceTimelineBottomAnchor({
+    anchorState,
+    layoutHeight,
+    timelineHeight,
+  });
+  if (
+    !isTimelineBottomAnchorValid({
+      layoutHeight,
+      timelineTop,
+      timelineHeight,
+      bottomInset: timelineBottomInset,
+    })
+  ) {
+    traceTimelineBottomAnchorViolation("bottom_anchor_violation");
+  }
 
-  const sideTop = topBarTop + topBarHeight + SCENE_HUD_ZONE_METRICS.zoneGap;
   let sideMaxHeight = timelineTop - sideTop - SCENE_HUD_ZONE_METRICS.zoneGap;
 
   const objectPanelExpanded = context.objectPanelExpanded ?? false;
@@ -237,19 +286,45 @@ export function resolveSceneHudZoneContract(
     clamped = true;
   }
 
-  const scenePanelWidth = compactSidePanels
-    ? SCENE_HUD_ZONE_METRICS.scenePanelCompactWidth
-    : FIXED_SCENE_PANEL_SLOT_WIDTH;
+  const scenePanelCollapsed = context.scenePanelCollapsed ?? false;
+  const scenePanelTop = SCENE_PANEL_TOP;
+  const scenePanelWidth = resolveScenePanelFixedWidth();
+  const scenePanelMaxWidth = resolveScenePanelZoneMaxWidth();
+  const scenePanelHeight = resolveScenePanelZoneHeight({
+    timelineTop,
+    minimized: scenePanelCollapsed,
+    zoneGap: SCENE_HUD_ZONE_METRICS.zoneGap,
+  });
+  traceScenePanelLayout({
+    top: scenePanelTop,
+    width: scenePanelWidth,
+    heightMode: toScenePanelHeightMode(scenePanelCollapsed),
+    bodyVisible: !scenePanelCollapsed,
+  });
   const objectPanelWidth = objectPanelExpanded
     ? SCENE_HUD_ZONE_METRICS.objectPanelExpandedWidth
     : FIXED_OBJECT_PANEL_SLOT_WIDTH;
 
   const scenePanelLeft = sideInset;
-  const objectPanelRight = sideInset;
-  const objectPanelLeft = Math.max(
-    scenePanelLeft + scenePanelWidth + SCENE_HUD_ZONE_METRICS.zoneGap,
-    layoutWidth - objectPanelRight - objectPanelWidth
-  );
+
+  const objectPanelSafeZone = resolveObjectPanelSafeZoneContract({
+    viewportWidth,
+    layoutWidth,
+    layoutHeight,
+    sideInset,
+    sideTop,
+    sideMaxHeight,
+    scenePanelLeft,
+    scenePanelWidth,
+    objectPanelWidthRequested: objectPanelWidth,
+    mrpWidth,
+    mrpVisible,
+    usingViewportFallback,
+    isMobile,
+    objectPanelExpanded,
+  });
+
+  const objectPanelZone = objectPanelSafeZone.objectPanelZone;
 
   const topBarZone = zoneRect(
     topBarTop,
@@ -262,51 +337,48 @@ export function resolveSceneHudZoneContract(
   );
 
   const scenePanelZone = zoneRect(
-    sideTop,
+    scenePanelTop,
     scenePanelLeft,
     scenePanelWidth,
-    sideMaxHeight,
+    scenePanelHeight,
     layoutWidth,
     layoutHeight,
-    isMobile ? "min(220px, 46vw)" : `min(${scenePanelWidth}px, 28vw)`
+    isMobile ? `min(${scenePanelWidth}px, 46vw)` : scenePanelMaxWidth
   );
 
-  const objectPanelZone = zoneRect(
-    sideTop,
-    objectPanelLeft,
-    objectPanelWidth,
-    sideMaxHeight,
-    layoutWidth,
-    layoutHeight,
-    isMobile ? "min(280px, 58vw)" : `min(${objectPanelWidth}px, 32vw)`
-  );
-
-  const timelineHorizontalGap = SCENE_HUD_ZONE_METRICS.zoneGap * 3;
-  const timelineReservedSideWidth =
-    FIXED_SCENE_PANEL_SLOT_WIDTH + FIXED_OBJECT_PANEL_SLOT_WIDTH + timelineHorizontalGap;
-  let timelineWidth = Math.max(
-    240,
-    layoutWidth - sideInset * 2 - timelineReservedSideWidth
-  );
-  if (timelineWidth > layoutWidth - sideInset * 2) {
-    timelineWidth = layoutWidth - sideInset * 2;
+  if (objectPanelSafeZone.clamped) {
     clamped = true;
   }
-  const timelineLeft = (layoutWidth - timelineWidth) / 2;
 
-  const timelineZone = zoneRect(
-    timelineTop,
-    timelineLeft,
-    timelineWidth,
-    timelineHeight,
+  const timelineSafeZone = resolveTimelineZoneContract({
+    viewportWidth,
     layoutWidth,
     layoutHeight,
-    isMobile ? "calc(100% - 24px)" : `min(${Math.floor(timelineWidth)}px, 88%)`
-  );
+    sideInset,
+    timelineTop,
+    timelineHeight,
+    timelineBottomOffset: timelineBottomInset,
+    scenePanelLeft,
+    scenePanelWidth,
+    objectPanelLeft: objectPanelZone.left,
+    objectPanelWidth: objectPanelZone.width,
+    objectPanelBandWidth: FIXED_OBJECT_PANEL_SLOT_WIDTH,
+    mrpWidth,
+    mrpVisible,
+    usingViewportFallback,
+    isMobile,
+  });
+
+  const timelineZone = timelineSafeZone.timelineZone;
+
+  if (timelineSafeZone.clamped) {
+    clamped = true;
+  }
 
   let overlapDetected =
-    rectsOverlap(topBarZone, objectPanelZone) ||
-    rectsOverlap(topBarZone, scenePanelZone) ||
+    (topBarVisible && rectsOverlap(topBarZone, objectPanelZone)) ||
+    (topBarVisible && rectsOverlap(topBarZone, scenePanelZone)) ||
+    timelineSafeZone.overlapDetected ||
     rectsOverlap(timelineZone, objectPanelZone) ||
     rectsOverlap(timelineZone, scenePanelZone) ||
     rectsOverlap(objectPanelZone, scenePanelZone);
@@ -315,21 +387,26 @@ export function resolveSceneHudZoneContract(
     objectPanelZone.left + objectPanelZone.width > layoutWidth - sideInset + 0.5 ||
     objectPanelZone.left < 0;
   const mrpOverlapDetected =
-    mrpVisible &&
-    (usingViewportFallback || objectPanelOverflowsScene);
+    objectPanelSafeZone.overlapDetected ||
+    (mrpVisible && usingViewportFallback && objectPanelOverflowsScene);
 
   if (overlapDetected) {
     clamped = true;
     const reducedSideHeight = Math.max(96, timelineTop - sideTop - SCENE_HUD_ZONE_METRICS.zoneGap);
-    if (reducedSideHeight < scenePanelZone.height) {
-      scenePanelZone.height = reducedSideHeight;
-      scenePanelZone.maxHeight = `${Math.floor(reducedSideHeight)}px`;
+    if (reducedSideHeight < objectPanelZone.height) {
       objectPanelZone.height = reducedSideHeight;
       objectPanelZone.maxHeight = `${Math.floor(reducedSideHeight)}px`;
     }
+    if (reducedSideHeight < scenePanelZone.height && scenePanelZone.height > SCENE_PANEL_MINIMIZED_HEIGHT) {
+      scenePanelZone.height = Math.max(
+        SCENE_PANEL_MINIMIZED_HEIGHT,
+        Math.min(scenePanelZone.height, reducedSideHeight)
+      );
+      scenePanelZone.maxHeight = `${Math.floor(scenePanelZone.height)}px`;
+    }
     overlapDetected =
-      rectsOverlap(topBarZone, objectPanelZone) ||
-      rectsOverlap(topBarZone, scenePanelZone) ||
+      (topBarVisible && rectsOverlap(topBarZone, objectPanelZone)) ||
+      (topBarVisible && rectsOverlap(topBarZone, scenePanelZone)) ||
       rectsOverlap(timelineZone, objectPanelZone) ||
       rectsOverlap(timelineZone, scenePanelZone);
   }
@@ -347,13 +424,19 @@ export function resolveSceneHudZoneContract(
     mrpOverlapDetected,
     clamped,
     compactSidePanels,
-    objectPanelRight: objectPanelZone.right,
-    objectPanelWidth: objectPanelZone.width,
+    objectPanelRight: objectPanelSafeZone.objectPanelRight,
+    objectPanelWidth: objectPanelSafeZone.objectPanelWidth,
     mrpWidth,
   };
 
   lastZoneSignature = signature;
   lastZoneContract = contract;
+  traceSceneHudTopAlign(contract);
+  traceSceneHudInsets(contract);
+  traceHudPanelDesign({
+    scenePanelWidth: scenePanelZone.width,
+    objectPanelWidth: objectPanelZone.width,
+  });
   return contract;
 }
 
@@ -388,10 +471,10 @@ export function zoneShellStyle(
   return {
     position: "absolute",
     top: isTimeline ? undefined : rect.top,
-    bottom: isTimeline ? rect.bottom : undefined,
-    left: isTopBar || isTimeline ? "50%" : isObjectPanel ? undefined : rect.left,
-    right: isObjectPanel ? rect.right : undefined,
-    transform: isTopBar || isTimeline ? "translateX(-50%)" : undefined,
+    bottom: isTimeline ? TIMELINE_BOTTOM_INSET_PX : undefined,
+    left: isTopBar ? "50%" : isObjectPanel ? undefined : rect.left,
+    right: isObjectPanel || isTimeline ? rect.right : undefined,
+    transform: isTopBar ? "translateX(-50%)" : undefined,
     width: rect.width,
     maxWidth: rect.maxWidth,
     height: isTimeline || isTopBar || isScenePanel || isObjectPanel ? rect.height : undefined,
@@ -400,7 +483,8 @@ export function zoneShellStyle(
     flexDirection: "column",
     overflow: "hidden",
     pointerEvents: "none",
-    zIndex: isTopBar ? 1600 : isObjectPanel ? 6 : isTimeline ? 4 : 5,
+    zIndex: isTopBar ? 1600 : isObjectPanel ? 6 : isTimeline ? TIMELINE_Z_INDEX : 5,
+    ...(isTimeline ? timelineLayoutTransitionStyle() : null),
   };
 }
 
@@ -412,7 +496,9 @@ export const SCENE_HUD_ZONE_HOSTED_OVERLAY_STYLE: React.CSSProperties = Object.f
   height: "100%",
   maxHeight: "100%",
   minHeight: 0,
-  overflow: "auto",
+  minWidth: 0,
+  overflowY: "auto",
+  overflowX: "hidden",
   pointerEvents: "auto",
 });
 
@@ -434,6 +520,10 @@ function logHudZoneDiagnostics(contract: SceneHudZoneContract): void {
     overlapDetected: payload.overlapDetected,
   });
   const shouldLogBrake = payload.overlapDetected && !loggedHudZoneBrakeSignatures.has(brakeSignature);
+  const verySmallWidth =
+    contract.viewportWidth <
+    HUD_RUNTIME_FREEZE_V1.frozenBehaviors.hudDebounceStrategy.verySmallWidthThresholdPx;
+  const brakeIsDiagnosticOnly = verySmallWidth && contract.clamped;
   const debounceTraceSignature = `${brakeSignature}:${shouldLogBrake ? "logged" : "suppressed"}`;
   if (!loggedHudZoneBrakeDebounceSignatures.has(debounceTraceSignature)) {
     loggedHudZoneBrakeDebounceSignatures.add(debounceTraceSignature);
@@ -449,7 +539,15 @@ function logHudZoneDiagnostics(contract: SceneHudZoneContract): void {
   }
   if (shouldLogBrake) {
     loggedHudZoneBrakeSignatures.add(brakeSignature);
-    globalThis.console?.warn?.("[Nexora][HUDZoneBrake]", payload);
+    if (brakeIsDiagnosticOnly) {
+      globalThis.console?.debug?.("[Nexora][HUDZoneBrake]", {
+        ...payload,
+        diagnosticOnly: true,
+        reason: "very_small_width_clamped_layout",
+      });
+    } else {
+      globalThis.console?.warn?.("[Nexora][HUDZoneBrake]", payload);
+    }
   }
 }
 
@@ -488,6 +586,8 @@ export function logSceneHudZoneContract(contract: SceneHudZoneContract): void {
   });
 }
 
+import { resetSceneHudInsetContractForTests } from "./sceneHudInsetContract.ts";
+
 export function resetSceneHudZoneContractForTests(): void {
   lastZoneSignature = null;
   lastZoneContract = null;
@@ -495,4 +595,5 @@ export function resetSceneHudZoneContractForTests(): void {
   loggedHudZoneSignatures.clear();
   loggedHudZoneBrakeSignatures.clear();
   loggedHudZoneBrakeDebounceSignatures.clear();
+  resetSceneHudInsetContractForTests();
 }

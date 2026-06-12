@@ -84,6 +84,6 @@ export function resetAssistantPanelVisibilityForTests(
   resetAssistantSupportAccordionForTests({
     openPanelId: state
       ? resolveAssistantAccordionOpenPanelFromVisibility(state)
-      : "suggestions",
+      : null,
   });
 }

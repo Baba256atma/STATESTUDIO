@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useSyncExternalStore } from "react";
 
 import type {
   ExecutiveTimelineHudModel,
@@ -9,7 +9,27 @@ import type { NexoraHudThemeMode } from "../../lib/scene/nexoraHudTheme";
 import { nexoraHudShellStyle } from "../../lib/scene/nexoraHudTheme";
 import { persistSceneHudAnchorPreference } from "../../lib/hud/sceneHudAnchorRuntime";
 import { getTimelineVisibleRegion } from "../../lib/hud/timelineVisibleRegionRuntime";
+import {
+  commitTimelineHeightSnapshot,
+  timelineDisplayStateFromHeightMode,
+  timelineLayoutTransitionStyle,
+} from "../../lib/hud/timelineWidthContract";
 import { SCENE_HUD_ZONE_HOSTED_OVERLAY_STYLE } from "../../lib/scene/sceneHudZoneContract";
+import {
+  HUD_PANEL_BODY_SCROLL_STYLE,
+  HUD_PANEL_STICKY_SHELL_STYLE,
+  HUD_PANEL_SUBPANEL_GAP,
+} from "../../lib/hud/hudPanelDesignContract";
+import { HudPanelToggleButton } from "../hud/HudPanelToggleButton";
+import {
+  TIMELINE_PANEL_WIDTH_RATIO,
+  TIMELINE_TRANSPORT_CONTROL_STYLE,
+  TIMELINE_TRANSPORT_COUNT_STYLE,
+  TIMELINE_TRANSPORT_HEADER_STYLE,
+  TIMELINE_TRANSPORT_SUMMARY_STYLE,
+  TIMELINE_TRANSPORT_TITLE_STYLE,
+  traceTimelinePolish,
+} from "../../lib/hud/timelinePanelPolishContract";
 import { useSceneHudTheme } from "../../lib/theme/useSceneTheme";
 import { useFocusHudPresentation } from "../../lib/workspace/useFocusHudPresentation";
 import { useWorkspaceLayout } from "../../lib/ui/useWorkspaceLayout";
@@ -25,6 +45,7 @@ import {
   logBottomWorkspaceMetrics,
   selectBottomWorkspaceSurface,
   selectBottomWorkspaceTimelineEvent,
+  subscribeBottomWorkspaceState,
   toggleBottomWorkspace,
   type ExecutiveBottomWorkspaceHeightMode,
 } from "../../lib/workspace/executiveBottomWorkspace";
@@ -56,6 +77,7 @@ import {
 } from "../../lib/timeline/timelineCompressionRuntime";
 import { resolveTimelineState } from "../../lib/timeline/timelineArchitectureContract";
 import { useHydratedTimelineDisplayTime } from "../../lib/time/useHydratedTimelineDisplayTime";
+import { resolveHydrationSafeTimelineTime, TIMELINE_EMPTY_TIME_LABEL } from "../../lib/time/timelineHydrationSafeTimeContract";
 import { SceneHudOverlayRoot } from "./SceneHudOverlayRoot";
 
 export type ExecutiveBottomWorkspaceOverlayProps = {
@@ -89,10 +111,8 @@ export type ExecutiveBottomWorkspaceOverlayProps = {
   themeMode?: NexoraHudThemeMode;
 };
 
-function nextMode(mode: ExecutiveBottomWorkspaceHeightMode): ExecutiveBottomWorkspaceHeightMode {
-  if (mode === "collapsed") return "compact";
-  if (mode === "compact") return "expanded";
-  return "collapsed";
+function isTimelineCompactMode(mode: ExecutiveBottomWorkspaceHeightMode): boolean {
+  return timelineDisplayStateFromHeightMode(mode) === "compact";
 }
 
 /**
@@ -109,7 +129,13 @@ export function ExecutiveBottomWorkspaceOverlay(
   const placement = getHudPlacement("timelineHud");
   const focusHud = useFocusHudPresentation("timelineHud", placement.visible);
   const theme = useSceneHudTheme(props.themeMode ?? "night");
-  const [state, setState] = React.useState(() => getBottomWorkspaceState());
+  const state = useSyncExternalStore(
+    subscribeBottomWorkspaceState,
+    getBottomWorkspaceState,
+    getBottomWorkspaceState
+  );
+  const timelineDisplayState = timelineDisplayStateFromHeightMode(state.heightMode);
+  const compact = timelineDisplayState === "compact";
   const compression = React.useMemo(
     () => resolveTimelineCompression(state.heightMode),
     [state.heightMode]
@@ -128,9 +154,24 @@ export function ExecutiveBottomWorkspaceOverlay(
     timestampIso: activeEvent?.timestampIso,
     timestamp: activeEvent?.timestamp,
   });
+  const [isTimelineHydrated, setIsTimelineHydrated] = React.useState(false);
+  useEffect(() => {
+    setIsTimelineHydrated(true);
+  }, []);
+  const contextTimeLabel = resolveHydrationSafeTimelineTime({
+    eventTime:
+      props.spatialSummary?.timestampLabel ??
+      activeEvent?.timestampIso ??
+      activeEvent?.timestamp ??
+      null,
+    fallbackTime: activeEventTime,
+    hydrated: isTimelineHydrated,
+  });
   const storySummary = getTimelineStorySummary(storyItems);
   const height = heightForBottomWorkspaceMode(state.heightMode);
-  const compact = state.heightMode !== "expanded" && state.heightMode !== "full";
+  React.useEffect(() => {
+    commitTimelineHeightSnapshot(timelineDisplayState, height);
+  }, [height, timelineDisplayState]);
   const timelineRegion = getTimelineVisibleRegion();
   const activeEventIndex = Math.max(
     0,
@@ -140,13 +181,13 @@ export function ExecutiveBottomWorkspaceOverlay(
   const playbackActive = props.playback?.status === "playing" || localPlaying;
   const timelineState = resolveTimelineState({
     visible: placement.visible,
-    collapsed: state.heightMode === "collapsed",
+    collapsed: compact,
     heightMode: state.heightMode,
   });
+  const layoutTransition = timelineLayoutTransitionStyle();
 
   React.useEffect(() => {
-    const hydrated = hydrateBottomWorkspaceState();
-    setState({ ...hydrated });
+    hydrateBottomWorkspaceState();
   }, []);
 
   React.useEffect(() => {
@@ -165,23 +206,23 @@ export function ExecutiveBottomWorkspaceOverlay(
       height,
       mode: state.heightMode,
     });
+    traceTimelinePolish({ bottomAnchored: true, widthRatio: TIMELINE_PANEL_WIDTH_RATIO });
     registerGovernedPanel({
       panelId: "timelineHud",
       visible: true,
-      collapsed: state.heightMode === "collapsed",
+      collapsed: compact,
       anchorZone: "bottom-center",
       priority: 30,
       title: "Executive Bottom Workspace",
     });
-  }, [height, props.timeline.events.length, state.activeSurface, state.heightMode, timelineRegion.bottomOffset]);
+  }, [compact, height, props.timeline.events.length, state.activeSurface, state.heightMode, timelineRegion.bottomOffset]);
 
   const selectStoryIndex = React.useCallback(
     (nextIndex: number) => {
       const clamped = Math.max(0, Math.min(storyItems.length - 1, nextIndex));
       const event = storyItems[clamped];
       if (!event) return;
-      const next = selectBottomWorkspaceTimelineEvent(event.id);
-      setState({ ...next });
+      selectBottomWorkspaceTimelineEvent(event.id);
       props.onEventSelect?.(event.id, event);
     },
     [props, storyItems]
@@ -231,28 +272,26 @@ export function ExecutiveBottomWorkspaceOverlay(
           data-nx="executive-bottom-workspace"
           data-hud="timeline"
           data-nx-timeline-state={timelineState}
+          data-nx-timeline-display={timelineDisplayState}
           data-nx-mode={state.heightMode}
           data-nx-theme={theme.mode}
           style={{
             ...nexoraHudShellStyle(
               theme,
               {
-                width: state.heightMode === "expanded" ? "min(90vw, 940px)" : timelineRegion.maxWidth,
+                ...HUD_PANEL_STICKY_SHELL_STYLE,
+                width: "100%",
                 height,
-                maxHeight: state.heightMode === "full" ? "42vh" : height,
+                maxHeight: height,
                 padding: 0,
-                overflow: "hidden",
-                border: `1px solid color-mix(in srgb, ${theme.accent} 24%, ${theme.panelBorder})`,
-                boxShadow: "0 12px 40px rgba(2,6,23,0.42)",
               },
               {
                 surface: "timelineHud",
                 edgeAnchor: "BOTTOM_CENTER",
-                collapsed: state.heightMode === "collapsed",
+                collapsed: compact,
               }
             ),
-            display: "flex",
-            flexDirection: "column",
+            ...layoutTransition,
             pointerEvents: "auto",
           }}
           onPointerDown={(event) => event.stopPropagation()}
@@ -268,26 +307,32 @@ export function ExecutiveBottomWorkspaceOverlay(
             onNext={handleTransportNext}
             onPlayPause={handleTransportPlayPause}
             onToggleHeight={() => {
-              const to = nextMode(state.heightMode);
-              logTimelineExpand({ from: state.heightMode, to });
-              setState({ ...toggleBottomWorkspace() });
+              logTimelineExpand({
+                from: state.heightMode,
+                to: compact ? "expanded" : "compact",
+              });
+              toggleBottomWorkspace();
             }}
-            heightMode={state.heightMode}
+            compact={compact}
           />
+          {compact ? null : (
           <div
+            data-nx="timeline-scroll-body"
             style={{
+              ...HUD_PANEL_BODY_SCROLL_STYLE,
               flex: 1,
               minHeight: 0,
+            }}
+          >
+          <div
+            style={{
               display: "grid",
-              gridTemplateColumns:
-                state.heightMode === "collapsed"
-                  ? "1fr"
-                  : compression.showDetails
-                    ? "minmax(0, 1fr) minmax(180px, 230px) auto"
-                    : "minmax(0, 1fr) auto",
-              gap: 8,
+              gridTemplateColumns: compression.showDetails
+                ? "minmax(0, 1fr) minmax(180px, 230px) auto"
+                : "minmax(0, 1fr) auto",
+              gap: HUD_PANEL_SUBPANEL_GAP,
               alignItems: "stretch",
-              padding: state.heightMode === "collapsed" ? "0 8px 6px" : "6px 8px 8px",
+              minWidth: 0,
             }}
           >
           <section style={{ minWidth: 0, display: "grid", gap: 6 }}>
@@ -304,16 +349,17 @@ export function ExecutiveBottomWorkspaceOverlay(
                 onComparisonMode={props.onComparisonMode}
               />
             ) : null}
-            {props.commandCenterHud && state.heightMode !== "collapsed" ? (
+            {props.commandCenterHud ? (
               <ExecutiveCommandCenterReadinessStrip hud={props.commandCenterHud} theme={theme} compact={compact} />
             ) : null}
-            {props.advisorHud && state.heightMode !== "collapsed" ? (
+            {props.advisorHud ? (
               <ExecutiveAdvisorFeedStrip hud={props.advisorHud} theme={theme} compact={compact} />
             ) : null}
-            {props.warRoomHud && state.heightMode !== "collapsed" ? (
+            {props.warRoomHud ? (
               <WarRoomEventFeedStrip hud={props.warRoomHud} theme={theme} compact={compact} />
             ) : null}
             {props.playback?.sequence ? (
+              <div data-nx-section="timeline-playback">
               <PlaybackControlStrip
                 playback={props.playback}
                 completion={props.playbackCompletion ?? props.playback.completionSummary}
@@ -326,34 +372,33 @@ export function ExecutiveBottomWorkspaceOverlay(
                 onNext={props.onPlaybackNext}
                 onSpeedChange={props.onPlaybackSpeedChange}
               />
+              </div>
             ) : null}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <div data-nx-section="timeline-story" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                {state.heightMode !== "collapsed" ? (
-                  <>
+                <>
                     <span style={{ color: theme.label, fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                      Decision Story
+                      Events · Story
                     </span>
                     {activeEvent ? (
                       <span style={{ color: theme.textSecondary, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {activeEventTime ? `[${activeEventTime}] ` : ""}
+                        {contextTimeLabel !== TIMELINE_EMPTY_TIME_LABEL ? `[${contextTimeLabel}] ` : ""}
                         {props.spatialSummary?.summary ?? activeEvent.headline}
                       </span>
                     ) : null}
-                  </>
-                ) : null}
+                </>
               </div>
             </div>
 
-            {state.heightMode !== "collapsed" ? (
               <div
+                data-nx-section="timeline-events"
                 style={{
                   display: "flex",
-                  alignItems: "center",
+                  flexWrap: "wrap",
+                  alignItems: "stretch",
                   gap: 6,
-                  overflowX: "auto",
-                  paddingBottom: 2,
-                  WebkitOverflowScrolling: "touch",
+                  overflowX: "hidden",
+                  minWidth: 0,
                 }}
               >
                 {storyItems.map((event) => {
@@ -366,24 +411,22 @@ export function ExecutiveBottomWorkspaceOverlay(
                       compact={compact}
                       showDetails={compression.showDetails}
                       theme={theme}
+                      hydrated={isTimelineHydrated}
                       onClick={() => {
-                        const next = selectBottomWorkspaceTimelineEvent(event.id);
-                        setState({ ...next });
+                        selectBottomWorkspaceTimelineEvent(event.id);
                         props.onEventSelect?.(event.id, event);
                       }}
                       onHover={(hovered) => {
                         props.onEventHover?.(hovered ? event.id : null, hovered ? event : null);
                       }}
                       onDoubleClick={() => {
-                        const next = selectBottomWorkspaceTimelineEvent(event.id);
-                        setState({ ...next });
+                        selectBottomWorkspaceTimelineEvent(event.id);
                         props.onEventFocusMode?.(event.id, event);
                       }}
                     />
                   );
                 })}
               </div>
-            ) : null}
           </section>
 
           {compression.showDetails ? (
@@ -393,7 +436,7 @@ export function ExecutiveBottomWorkspaceOverlay(
               </div>
               <ContextRow
                 label="Time"
-                value={props.spatialSummary?.timestampLabel ?? activeEventTime ?? "Recent"}
+                value={contextTimeLabel}
                 theme={theme}
               />
               <ContextRow
@@ -412,7 +455,10 @@ export function ExecutiveBottomWorkspaceOverlay(
             </section>
           ) : null}
 
-          <section style={{ display: "flex", alignItems: "center", gap: 5, justifyContent: "flex-end", flexWrap: "wrap" }}>
+          <section
+            data-nx-section="timeline-controls"
+            style={{ display: "flex", alignItems: "center", gap: 5, justifyContent: "flex-end", flexWrap: "wrap" }}
+          >
             {props.quickActions?.model.actions.slice(0, 4).map((action) => (
               <button
                 key={action.id}
@@ -421,13 +467,12 @@ export function ExecutiveBottomWorkspaceOverlay(
                 title={action.hint}
                 aria-label={action.label}
                 onClick={() => {
-                  const next = selectBottomWorkspaceSurface("quick-navigation");
-                  setState({ ...next });
+                  selectBottomWorkspaceSurface("quick-navigation");
                   props.quickActions?.onAction?.(action.id);
                 }}
                 style={{
-                  width: state.heightMode === "collapsed" ? 30 : 34,
-                  height: state.heightMode === "collapsed" ? 30 : 34,
+                  width: 34,
+                  height: 34,
                   borderRadius: 8,
                   border: `1px solid ${theme.buttonBorder}`,
                   background: theme.buttonBackground,
@@ -443,6 +488,8 @@ export function ExecutiveBottomWorkspaceOverlay(
             ))}
           </section>
           </div>
+          </div>
+          )}
         </div>
     </SceneHudOverlayRoot>
   );
@@ -454,7 +501,7 @@ function TimelineSceneTransportBar(props: {
   totalSteps: number;
   isPlaying: boolean;
   headline: string;
-  heightMode: ExecutiveBottomWorkspaceHeightMode;
+  compact: boolean;
   onPrevious: () => void;
   onNext: () => void;
   onPlayPause: () => void;
@@ -465,28 +512,28 @@ function TimelineSceneTransportBar(props: {
     <div
       data-nx="timeline-scene-transport"
       style={{
+        ...TIMELINE_TRANSPORT_HEADER_STYLE,
         display: "grid",
-        gridTemplateColumns: "auto 1fr auto auto",
-        gap: 10,
-        alignItems: "center",
-        padding: "8px 10px",
-        borderBottom: `1px solid color-mix(in srgb, ${props.theme.controlBorder} 70%, transparent)`,
-        background: "color-mix(in srgb, var(--nx-bg-deep) 72%, transparent)",
+        gridTemplateColumns: props.compact
+          ? "minmax(0, 1fr) auto auto auto auto"
+          : "minmax(0, 1fr) auto auto auto auto",
+        gap: HUD_PANEL_SUBPANEL_GAP,
+        borderBottom: props.compact
+          ? undefined
+          : `1px solid color-mix(in srgb, ${props.theme.controlBorder} 70%, transparent)`,
+        background: props.theme.panelBackground,
+        color: props.theme.textPrimary,
       }}
     >
       <div style={{ minWidth: 0 }}>
-        <div style={{ color: props.theme.label, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+        <div style={{ ...TIMELINE_TRANSPORT_TITLE_STYLE, color: props.theme.label }}>
           Timeline
         </div>
         <div
           style={{
+            ...TIMELINE_TRANSPORT_SUMMARY_STYLE,
             color: props.theme.textSecondary,
-            fontSize: 11,
-            fontWeight: 650,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            maxWidth: "min(42vw, 320px)",
+            maxWidth: "100%",
           }}
         >
           {props.headline}
@@ -496,6 +543,7 @@ function TimelineSceneTransportBar(props: {
         <button type="button" aria-label="Previous step" title="Previous" onClick={props.onPrevious} style={timelineTransportButtonStyle(props.theme)}>
           ◀ Prev
         </button>
+        {props.compact ? null : (
         <button
           type="button"
           aria-label={props.isPlaying ? "Pause timeline" : "Play timeline"}
@@ -505,6 +553,7 @@ function TimelineSceneTransportBar(props: {
         >
           {props.isPlaying ? "⏸ Pause" : "▶ Play"}
         </button>
+        )}
         <button type="button" aria-label="Next step" title="Next" onClick={props.onNext} style={timelineTransportButtonStyle(props.theme)}>
           Next ▶
         </button>
@@ -512,29 +561,19 @@ function TimelineSceneTransportBar(props: {
       <div
         aria-label="Timeline step counter"
         style={{
-          minWidth: 52,
-          textAlign: "center",
-          fontSize: 12,
-          fontWeight: 800,
+          ...TIMELINE_TRANSPORT_COUNT_STYLE,
           color: props.theme.textPrimary,
-          fontVariantNumeric: "tabular-nums",
-          padding: "6px 8px",
-          borderRadius: 8,
           border: `1px solid ${props.theme.controlBorder}`,
           background: "color-mix(in srgb, var(--nx-bg-control) 55%, transparent)",
         }}
       >
         {stepLabel}
       </div>
-      <button
-        type="button"
-        aria-label="Toggle timeline height"
-        title={`Switch timeline height (${props.heightMode})`}
+      <HudPanelToggleButton
+        panelId="timeline"
+        expanded={!props.compact}
         onClick={props.onToggleHeight}
-        style={timelineTransportButtonStyle(props.theme)}
-      >
-        {props.heightMode === "collapsed" ? "▲" : "▼"}
-      </button>
+      />
     </div>
   );
 }
@@ -544,19 +583,12 @@ function timelineTransportButtonStyle(
   primary = false
 ): React.CSSProperties {
   return {
-    minHeight: 34,
-    padding: "0 10px",
-    borderRadius: 8,
-    border: primary ? `1px solid color-mix(in srgb, ${theme.accent} 42%, ${theme.buttonBorder})` : `1px solid ${theme.buttonBorder}`,
+    ...TIMELINE_TRANSPORT_CONTROL_STYLE,
+    border: `1px solid ${primary ? theme.accent : theme.controlBorder}`,
     background: primary
-      ? "color-mix(in srgb, var(--nx-accent-soft) 34%, transparent)"
-      : theme.buttonBackground,
-    color: theme.buttonText,
-    fontSize: 11,
-    fontWeight: 800,
-    letterSpacing: "0.02em",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
+      ? "color-mix(in srgb, var(--nx-accent) 16%, var(--nx-bg-control))"
+      : "color-mix(in srgb, var(--nx-bg-control) 55%, transparent)",
+    color: primary ? theme.textPrimary : theme.textSecondary,
   };
 }
 
@@ -566,14 +598,20 @@ function DecisionStoryCard(props: {
   compact: boolean;
   showDetails: boolean;
   theme: ReturnType<typeof useSceneHudTheme>;
+  hydrated: boolean;
   onClick: () => void;
   onHover?: (hovered: boolean) => void;
   onDoubleClick?: () => void;
 }): React.ReactElement {
   const marker = timelineOutcomeMarkerGlyph(props.item.marker);
-  const displayTime = useHydratedTimelineDisplayTime({
+  const formattedTime = useHydratedTimelineDisplayTime({
     timestampIso: props.item.timestampIso,
     timestamp: props.item.timestamp,
+  });
+  const displayTime = resolveHydrationSafeTimelineTime({
+    eventTime: props.item.timestampIso ?? props.item.timestamp ?? null,
+    fallbackTime: formattedTime,
+    hydrated: props.hydrated,
   });
   return (
     <button
@@ -605,7 +643,7 @@ function DecisionStoryCard(props: {
           {props.item.markerLabel}
         </span>
         <span style={{ color: props.theme.textSecondary, fontSize: 9, whiteSpace: "nowrap" }}>
-          {displayTime || props.item.scenarioLabel}
+          {displayTime !== TIMELINE_EMPTY_TIME_LABEL ? displayTime : props.item.scenarioLabel}
         </span>
       </div>
       <div

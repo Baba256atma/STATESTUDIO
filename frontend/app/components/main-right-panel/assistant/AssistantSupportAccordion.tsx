@@ -1,50 +1,36 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 
 import type { ExecutiveAssistantActionCard } from "../../../lib/ui/executiveAssistantPanelTypes";
+import type { ExecutiveWorkspaceId } from "../../../lib/dashboard/executiveWorkspaceRegistryContract";
 import type { NexoraHudThemeMode } from "../../../lib/scene/nexoraHudTheme";
-import { AssistantPanelIconDock } from "./AssistantPanelIconDock";
-import {
-  AssistantSupportPanelDock,
-  resolveAssistantSupportPanelDockAvailablePanels,
-} from "./AssistantSupportPanelDock";
+import { AssistantFooterActions } from "./AssistantFooterActions";
+import { AssistantSupportIconDock } from "./AssistantSupportIconDock";
+import { AssistantSupportPanelDock } from "./AssistantSupportPanelDock";
+import { useAssistantSupportAccordionOpenPanelId } from "../../../lib/assistant/useAssistantPanelDock";
 
 export type AssistantSupportAccordionProps = Readonly<{
   children?: React.ReactNode;
   questionSuggestions?: readonly string[];
   questionsLoading?: boolean;
-  guidanceText?: string | null;
+  insightText?: string | null;
+  governanceText?: string | null;
+  analyticsText?: string | null;
   showScenarioHost?: boolean;
-  showComparisonHost?: boolean;
+  showAnalyticsHost?: boolean;
   recommendedActions?: readonly ExecutiveAssistantActionCard[];
   themeMode?: NexoraHudThemeMode;
   onQuestionSelect?: (question: string) => void;
+  onWorkspaceLaunch?: (workspaceId: ExecutiveWorkspaceId) => void;
   onActionSelect?: (action: ExecutiveAssistantActionCard) => void;
 }>;
 
+/** MRP:12:8 — Chat-first assistant shell with support dock + command dock footer. */
 export function AssistantSupportAccordion(
   props: AssistantSupportAccordionProps
 ): React.ReactElement {
-  const availablePanels = useMemo(
-    () =>
-      resolveAssistantSupportPanelDockAvailablePanels({
-        questionSuggestions: props.questionSuggestions,
-        questionsLoading: props.questionsLoading,
-        guidanceText: props.guidanceText,
-        showScenarioHost: props.showScenarioHost,
-        showComparisonHost: props.showComparisonHost,
-        recommendedActions: props.recommendedActions,
-      }),
-    [
-      props.questionSuggestions,
-      props.questionsLoading,
-      props.guidanceText,
-      props.showScenarioHost,
-      props.showComparisonHost,
-      props.recommendedActions,
-    ]
-  );
+  const openPanelId = useAssistantSupportAccordionOpenPanelId();
 
   return (
     <div
@@ -54,8 +40,7 @@ export function AssistantSupportAccordion(
         minWidth: 0,
         minHeight: 0,
         display: "flex",
-        flexDirection: "row",
-        alignItems: "stretch",
+        flexDirection: "column",
         overflow: "hidden",
       }}
     >
@@ -65,24 +50,44 @@ export function AssistantSupportAccordion(
           minWidth: 0,
           minHeight: 0,
           display: "flex",
-          flexDirection: "column",
+          flexDirection: "row",
+          alignItems: "stretch",
           overflow: "hidden",
         }}
       >
-        {props.children}
-        <AssistantSupportPanelDock
-          questionSuggestions={props.questionSuggestions}
-          questionsLoading={props.questionsLoading}
-          guidanceText={props.guidanceText}
-          showScenarioHost={props.showScenarioHost}
-          showComparisonHost={props.showComparisonHost}
-          recommendedActions={props.recommendedActions}
-          themeMode={props.themeMode}
-          onQuestionSelect={props.onQuestionSelect}
-          onActionSelect={props.onActionSelect}
-        />
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          {props.children}
+          {openPanelId ? (
+            <AssistantSupportPanelDock
+              insightText={props.insightText}
+              governanceText={props.governanceText}
+              analyticsText={props.analyticsText}
+              showScenarioHost={props.showScenarioHost}
+              showAnalyticsHost={props.showAnalyticsHost}
+              recommendedActions={props.recommendedActions}
+              questionSuggestions={props.questionSuggestions}
+              questionsLoading={props.questionsLoading}
+              themeMode={props.themeMode}
+              onActionSelect={props.onActionSelect}
+              onQuestionSelect={props.onQuestionSelect}
+            />
+          ) : null}
+        </div>
+        <AssistantSupportIconDock themeMode={props.themeMode} />
       </div>
-      <AssistantPanelIconDock availablePanels={availablePanels} themeMode={props.themeMode} />
+      <AssistantFooterActions
+        themeMode={props.themeMode}
+        onWorkspaceLaunch={props.onWorkspaceLaunch}
+      />
     </div>
   );
 }

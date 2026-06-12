@@ -162,12 +162,17 @@ function mapDecisionEventsToTimelineEvents(events: DecisionTimelineEvent[]): Tim
   const trimmed = events.slice(-8);
   const activeIndex = Math.max(0, trimmed.length - 1);
 
-  return trimmed.map((event, index) => ({
+  return trimmed.map((event, index) => {
+    const timestampIso =
+      typeof event.timestamp === "number" && Number.isFinite(event.timestamp)
+        ? new Date(event.timestamp).toISOString()
+        : undefined;
+    return {
     id: event.id,
     title: event.title,
     summary: event.summary,
     narrativeSummary: event.summary,
-    timestampIso: new Date(event.timestamp).toISOString(),
+    timestampIso,
     status: index < activeIndex ? "completed" : index === activeIndex ? "active" : "pending",
     relatedObjectIds: event.related_ids ?? [],
     decisionId: event.id,
@@ -188,7 +193,8 @@ function mapDecisionEventsToTimelineEvents(events: DecisionTimelineEvent[]): Tim
             objectIds: event.related_ids,
           }
         : null,
-  }));
+  };
+  });
 }
 
 export type BuildExecutiveTimelineHudModelInput = {

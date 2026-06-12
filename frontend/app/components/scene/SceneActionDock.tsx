@@ -2,8 +2,10 @@
 
 import React from "react";
 
+import { formatObjectPanelTitle } from "../../lib/object-panel/objectPanelTitleContract";
 import { emitExecutiveObjectPanelAction } from "../../lib/object-panel/executiveActionPanelContract";
 import { emitObjectPanelActionRequest } from "../../lib/object-panel/objectPanelActionRouterContract";
+import { HudPanelToggleButton } from "../hud/HudPanelToggleButton";
 import type { NexoraHudThemeTokens } from "../../lib/scene/nexoraHudTheme";
 import { nexoraHudShellStyle } from "../../lib/scene/nexoraHudTheme";
 import { SCENE_HUD_ZONE_METRICS } from "../../lib/scene/sceneHudZoneContract";
@@ -101,52 +103,27 @@ export function SceneActionDock(props: Props): React.ReactElement {
           marginBottom: 8,
         }}
       >
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div
             style={{
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: 800,
-              letterSpacing: "0.1em",
+              letterSpacing: "0.06em",
               textTransform: "uppercase",
               color: props.theme.label,
-            }}
-          >
-            Object Panel
-          </div>
-          <div
-            style={{
-              marginTop: 2,
-              fontSize: 12,
-              fontWeight: 800,
-              color: props.theme.textPrimary,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
           >
-            {props.objectName}
+            {formatObjectPanelTitle(props.objectName)}
           </div>
         </div>
-        <button
-          type="button"
-          aria-label="Expand object panel"
-          title="Expand object panel"
-          onClick={props.onExpandPanel}
-          style={{
-            flexShrink: 0,
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            border: `1px solid ${props.theme.buttonBorder}`,
-            background: props.theme.buttonBackground,
-            color: props.theme.buttonText,
-            cursor: "pointer",
-            fontSize: 11,
-            fontWeight: 800,
-          }}
-        >
-          ⛶
-        </button>
+        <HudPanelToggleButton
+          panelId="object"
+          expanded={false}
+          onClick={() => props.onExpandPanel?.()}
+        />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 6 }}>
         {DOCK_ACTIONS.map((entry) => {

@@ -10,6 +10,12 @@ import {
   type AssistantSupportAccordionTraceAction,
 } from "./assistantSupportAccordionContract.ts";
 import type { AssistantPanelVisibility } from "./assistantPanelDockContract.ts";
+import {
+  traceMrp127AccordionContractPassed,
+  traceMrp127SupportPanelOpened,
+  traceMrp127SupportPanelSwitched,
+} from "./mrp127RuntimeDiagnostics.ts";
+import { traceMrp128SingleOpenContractPassed } from "./mrp128RuntimeDiagnostics.ts";
 
 const listeners = new Set<() => void>();
 
@@ -42,11 +48,12 @@ export function deriveAssistantPanelVisibilityFromAccordion(
   state: AssistantSupportAccordionState = assistantAccordionState
 ): AssistantPanelVisibility {
   return {
-    suggestions: state.openPanelId === "suggestions",
-    guidance: state.openPanelId === "guidance",
+    insight: state.openPanelId === "insight",
     scenario: state.openPanelId === "scenario",
-    decision: state.openPanelId === "decision",
+    analytics: state.openPanelId === "analytics",
+    governance: state.openPanelId === "governance",
     actions: state.openPanelId === "actions",
+    questions: state.openPanelId === "questions",
   };
 }
 
@@ -104,7 +111,14 @@ export function openAssistantSupportAccordionPanel(
     currentOpenPanelId && currentOpenPanelId !== panelId
       ? `switch_from_${currentOpenPanelId}`
       : "open";
+  if (currentOpenPanelId && currentOpenPanelId !== panelId) {
+    traceMrp127SupportPanelSwitched(currentOpenPanelId, panelId);
+  } else if (!currentOpenPanelId || currentOpenPanelId !== panelId) {
+    traceMrp127SupportPanelOpened(panelId);
+  }
   commitAssistantSupportAccordionState(panelId, action);
+  traceMrp127AccordionContractPassed(assistantAccordionState.openPanelId ? 1 : 0);
+  traceMrp128SingleOpenContractPassed(assistantAccordionState.openPanelId ? 1 : 0);
   return panelId;
 }
 

@@ -25,7 +25,7 @@ export const FOCUS_MODE_PROFILES: Readonly<Record<FocusModeProfileId, FocusModeP
     id: "MINIMAL",
     label: "Minimal",
     panels: {
-      sceneInfoHud: false,
+      sceneInfoHud: true,
       objectInfoHud: false,
       timelineHud: false,
       quickActionsDock: false,
@@ -39,8 +39,8 @@ export const FOCUS_MODE_PROFILES: Readonly<Record<FocusModeProfileId, FocusModeP
     id: "ANALYSIS",
     label: "Analysis",
     panels: {
-      sceneInfoHud: false,
-      objectInfoHud: true,
+      sceneInfoHud: true,
+      objectInfoHud: false,
       timelineHud: false,
       quickActionsDock: false,
       executiveStatusHud: false,
@@ -53,8 +53,8 @@ export const FOCUS_MODE_PROFILES: Readonly<Record<FocusModeProfileId, FocusModeP
     id: "PRESENTATION",
     label: "Presentation",
     panels: {
-      sceneInfoHud: false,
-      objectInfoHud: true,
+      sceneInfoHud: true,
+      objectInfoHud: false,
       timelineHud: false,
       quickActionsDock: true,
       executiveStatusHud: true,

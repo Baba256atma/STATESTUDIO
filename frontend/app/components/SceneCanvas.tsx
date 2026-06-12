@@ -139,6 +139,11 @@ import type { ExecutiveTimelineHudModel } from "../lib/scene/executiveTimelineHu
 import { ExecutiveQuickActionsDockOverlay } from "./scene/ExecutiveQuickActionsDockOverlay";
 import type { ExecutiveQuickActionsDockOverlayProps } from "./scene/ExecutiveQuickActionsDockOverlay";
 import { ExecutiveBottomWorkspaceOverlay } from "./scene/ExecutiveBottomWorkspaceOverlay";
+import {
+  getBottomWorkspaceState,
+  hydrateBottomWorkspaceState,
+  subscribeBottomWorkspaceState,
+} from "../lib/workspace/executiveBottomWorkspace";
 import { ExecutiveStatusHudOverlay } from "./scene/status/ExecutiveStatusHudOverlay";
 import type { ExecutiveStatusHudModel } from "./scene/status/ExecutiveStatusHud.types";
 import { ExecutiveSceneToolbarOverlay } from "./scene/navigation/ExecutiveSceneToolbarOverlay";
@@ -275,6 +280,7 @@ import {
   type NexoraHudThemeMode,
 } from "../lib/scene/nexoraHudTheme";
 import { logHudThemeModeResolved } from "../lib/ui/cameraToolbarInstrumentation";
+import { shouldHideTypeCViewModeToggle } from "../lib/typec/typeCViewModeLock";
 import { logWorkspaceSceneThemeUpdated } from "../lib/ui/workspaceAppearanceInstrumentation";
 import { nx } from "./ui/nexoraTheme";
 
@@ -2744,6 +2750,19 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
   const [cameraReframeNonce, setCameraReframeNonce] = useState(0);
   const [cameraPresetOverride, setCameraPresetOverride] = useState<"GLOBAL" | "FIT_SCENE" | null>(null);
   const hudThemeMode = props.hudThemeMode ?? resolveNexoraHudThemeMode(resolvedUi);
+  const toolbarEnabled = Boolean(props.sceneNavigationToolbar ?? props.cameraToolbar);
+  const sceneControlsInPanel = Boolean(props.sceneInfoHud);
+  const floatingSceneTopBarVisible =
+    toolbarEnabled && !(sceneControlsInPanel && shouldHideTypeCViewModeToggle());
+  const bottomWorkspaceState = useSyncExternalStore(
+    subscribeBottomWorkspaceState,
+    getBottomWorkspaceState,
+    getBottomWorkspaceState
+  );
+  const timelineHeightMode =
+    bottomWorkspaceState.heightMode === "expanded" || bottomWorkspaceState.heightMode === "full"
+      ? "expanded"
+      : "compact";
   const explicitWorkspaceViewModeRef = useRef<WorkspaceViewMode | null>(null);
   const requestStaticCameraReframe = useCallback(() => {
     markSceneHudDriftBaseline("camera-fit-scene", sceneShellRef.current);
@@ -4572,8 +4591,8 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
           context={{
             scenePanelVisible: Boolean(props.sceneInfoHud),
             timelineVisible: Boolean(props.timelineHud),
-            topBarVisible: Boolean(props.sceneNavigationToolbar ?? props.cameraToolbar),
-            timelineHeightMode: "compact",
+            topBarVisible: floatingSceneTopBarVisible,
+            timelineHeightMode,
             objectPanelExpanded: false,
             mainRightPanelWidth: props.sceneHudZoneContext?.mainRightPanelWidth,
             mainRightPanelVisible: props.sceneHudZoneContext?.mainRightPanelVisible,
@@ -4650,10 +4669,13 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
           </SceneHudZone>
           <SceneHudZone
             zone={SCENE_HUD_ZONE_IDS.topBar}
-            visible={Boolean(props.sceneNavigationToolbar ?? props.cameraToolbar)}
+            visible={floatingSceneTopBarVisible}
           >
-            {(props.sceneNavigationToolbar ?? props.cameraToolbar) ? (
-              <ExecutiveSceneToolbarOverlay themeMode={hudThemeMode} />
+            {floatingSceneTopBarVisible ? (
+              <ExecutiveSceneToolbarOverlay
+                themeMode={hudThemeMode}
+                sceneControlsRelocated={sceneControlsInPanel}
+              />
             ) : null}
           </SceneHudZone>
         </SceneHudZoneLayout>

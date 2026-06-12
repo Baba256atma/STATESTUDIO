@@ -4,37 +4,36 @@ import React from "react";
 
 import { EXECUTIVE_WORKSPACE_ZONE_IDS } from "../../../lib/ui/executiveWorkspaceLayout";
 import type { ExecutiveAssistantActionCard } from "../../../lib/ui/executiveAssistantPanelTypes";
-import type { AssistantPanelDockId } from "../../../lib/assistant/assistantPanelDockContract";
 import { resolveAssistantSupportContentStyle } from "../../../lib/assistant/assistantReadingComfortTokens";
 import { useSceneHudTheme } from "../../../lib/theme/useSceneTheme";
 import type { NexoraHudThemeMode } from "../../../lib/scene/nexoraHudTheme";
 import { AssistantDockedSupportPanel } from "./AssistantDockedSupportPanel";
-import { AssistantSuggestedQuestionsStrip } from "./AssistantSuggestedQuestionsStrip";
+import { AssistantExecutiveQuestionsPanel } from "./AssistantExecutiveQuestionsPanel";
 
 export type AssistantSupportPanelDockProps = Readonly<{
+  insightText?: string | null;
+  governanceText?: string | null;
+  analyticsText?: string | null;
+  showScenarioHost?: boolean;
+  showAnalyticsHost?: boolean;
+  recommendedActions?: readonly ExecutiveAssistantActionCard[];
   questionSuggestions?: readonly string[];
   questionsLoading?: boolean;
-  guidanceText?: string | null;
-  showScenarioHost?: boolean;
-  showComparisonHost?: boolean;
-  recommendedActions?: readonly ExecutiveAssistantActionCard[];
   themeMode?: NexoraHudThemeMode;
-  onQuestionSelect?: (question: string) => void;
   onActionSelect?: (action: ExecutiveAssistantActionCard) => void;
+  onQuestionSelect?: (question: string) => void;
 }>;
 
-export function AssistantSupportPanelDock(
-  props: AssistantSupportPanelDockProps
-): React.ReactElement {
+function SupportEmptyState(props: { text: string; theme: ReturnType<typeof useSceneHudTheme> }): React.ReactElement {
+  return (
+    <div style={{ ...resolveAssistantSupportContentStyle(props.theme), color: props.theme.textMuted }}>
+      {props.text}
+    </div>
+  );
+}
+
+export function AssistantSupportPanelDock(props: AssistantSupportPanelDockProps): React.ReactElement {
   const theme = useSceneHudTheme(props.themeMode);
-
-  const hasSuggestions = Boolean(props.questionsLoading || props.questionSuggestions?.length);
-  const hasGuidance = Boolean(props.guidanceText?.trim());
-  const hasActions = Boolean(props.recommendedActions?.length);
-
-  const handleQuestionSelect = (question: string) => {
-    props.onQuestionSelect?.(question);
-  };
 
   return (
     <div
@@ -44,70 +43,59 @@ export function AssistantSupportPanelDock(
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
-        maxHeight: "42%",
+        maxHeight: "38%",
         overflow: "hidden",
       }}
     >
-      <AssistantDockedSupportPanel
-        panelId="suggestions"
-        available={hasSuggestions}
-        themeMode={props.themeMode}
-      >
-        <AssistantSuggestedQuestionsStrip
-          questions={props.questionSuggestions ?? []}
-          loading={props.questionsLoading}
-          themeMode={props.themeMode}
-          onQuestionSelect={handleQuestionSelect}
-        />
+      <AssistantDockedSupportPanel panelId="insight" themeMode={props.themeMode}>
+        {props.insightText?.trim() ? (
+          <div data-nx="assistant-support-insight" style={resolveAssistantSupportContentStyle(theme)}>
+            {props.insightText}
+          </div>
+        ) : (
+          <SupportEmptyState theme={theme} text="No executive observations yet." />
+        )}
       </AssistantDockedSupportPanel>
 
-      <AssistantDockedSupportPanel
-        panelId="guidance"
-        available={hasGuidance}
-        themeMode={props.themeMode}
-      >
-        <div data-nx="assistant-support-guidance" style={resolveAssistantSupportContentStyle(theme)}>
-          {props.guidanceText}
-        </div>
+      <AssistantDockedSupportPanel panelId="scenario" themeMode={props.themeMode}>
+        {props.showScenarioHost ? (
+          <div
+            id={EXECUTIVE_WORKSPACE_ZONE_IDS.executiveScenarioHost}
+            data-nx="executive-scenario-host"
+            style={{ minHeight: 0, display: "flex", flexDirection: "column" }}
+          />
+        ) : (
+          <SupportEmptyState theme={theme} text="Scenario suggestions will appear here when available." />
+        )}
       </AssistantDockedSupportPanel>
 
-      <AssistantDockedSupportPanel
-        panelId="scenario"
-        available={props.showScenarioHost}
-        themeMode={props.themeMode}
-      >
-        <div
-          id={EXECUTIVE_WORKSPACE_ZONE_IDS.executiveScenarioHost}
-          data-nx="executive-scenario-host"
-          style={{
-            minHeight: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        />
+      <AssistantDockedSupportPanel panelId="analytics" themeMode={props.themeMode}>
+        {props.showAnalyticsHost ? (
+          <div
+            id={EXECUTIVE_WORKSPACE_ZONE_IDS.executiveComparisonHost}
+            data-nx="executive-comparison-host"
+            style={{ minHeight: 0, display: "flex", flexDirection: "column" }}
+          />
+        ) : props.analyticsText?.trim() ? (
+          <div data-nx="assistant-support-analytics" style={resolveAssistantSupportContentStyle(theme)}>
+            {props.analyticsText}
+          </div>
+        ) : (
+          <SupportEmptyState theme={theme} text="Analytics signals will appear here when available." />
+        )}
       </AssistantDockedSupportPanel>
 
-      <AssistantDockedSupportPanel
-        panelId="decision"
-        available={props.showComparisonHost}
-        themeMode={props.themeMode}
-      >
-        <div
-          id={EXECUTIVE_WORKSPACE_ZONE_IDS.executiveComparisonHost}
-          data-nx="executive-comparison-host"
-          style={{
-            minHeight: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        />
+      <AssistantDockedSupportPanel panelId="governance" themeMode={props.themeMode}>
+        {props.governanceText?.trim() ? (
+          <div data-nx="assistant-support-governance" style={resolveAssistantSupportContentStyle(theme)}>
+            {props.governanceText}
+          </div>
+        ) : (
+          <SupportEmptyState theme={theme} text="Governance guidance will appear here when available." />
+        )}
       </AssistantDockedSupportPanel>
 
-      <AssistantDockedSupportPanel
-        panelId="actions"
-        available={hasActions}
-        themeMode={props.themeMode}
-      >
+      <AssistantDockedSupportPanel panelId="actions" themeMode={props.themeMode}>
         <div
           data-nx="assistant-support-actions"
           style={{
@@ -117,53 +105,46 @@ export function AssistantSupportPanelDock(
             gap: 8,
           }}
         >
-          {props.recommendedActions?.map((action) => (
-            <button
-              key={action.id}
-              type="button"
-              disabled={action.disabled}
-              onClick={() => props.onActionSelect?.(action)}
-              style={{
-                textAlign: "left",
-                padding: "8px 10px",
-                borderRadius: 10,
-                border: `1px solid ${theme.controlBorder}`,
-                background: theme.controlBackground,
-                color: theme.text,
-                cursor: action.disabled ? "not-allowed" : "pointer",
-                opacity: action.disabled ? 0.6 : 1,
-              }}
-            >
-              <div style={{ fontSize: 11, fontWeight: 700 }}>{action.label}</div>
-              {action.hint ? (
-                <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 2 }}>{action.hint}</div>
-              ) : null}
-            </button>
-          ))}
+          {props.recommendedActions?.length ? (
+            props.recommendedActions.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                disabled={action.disabled}
+                onClick={() => props.onActionSelect?.(action)}
+                style={{
+                  textAlign: "left",
+                  padding: "8px 10px",
+                  borderRadius: 10,
+                  border: `1px solid ${theme.controlBorder}`,
+                  background: theme.controlBackground,
+                  color: theme.text,
+                  cursor: action.disabled ? "not-allowed" : "pointer",
+                  opacity: action.disabled ? 0.6 : 1,
+                }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 700 }}>{action.label}</div>
+                {action.hint ? (
+                  <div style={{ fontSize: 10, color: theme.textMuted, marginTop: 2 }}>{action.hint}</div>
+                ) : null}
+              </button>
+            ))
+          ) : (
+            <SupportEmptyState theme={theme} text="Recommended actions will appear here when available." />
+          )}
         </div>
+      </AssistantDockedSupportPanel>
+
+      <AssistantDockedSupportPanel panelId="questions" themeMode={props.themeMode}>
+        <AssistantExecutiveQuestionsPanel
+          questions={props.questionSuggestions ?? []}
+          loading={props.questionsLoading}
+          themeMode={props.themeMode}
+          onQuestionSelect={props.onQuestionSelect}
+        />
       </AssistantDockedSupportPanel>
     </div>
   );
-}
-
-export function resolveAssistantSupportPanelDockAvailablePanels(
-  props: Pick<
-    AssistantSupportPanelDockProps,
-    | "questionSuggestions"
-    | "questionsLoading"
-    | "guidanceText"
-    | "showScenarioHost"
-    | "showComparisonHost"
-    | "recommendedActions"
-  >
-): AssistantPanelDockId[] {
-  const panels: AssistantPanelDockId[] = [];
-  if (props.questionsLoading || props.questionSuggestions?.length) panels.push("suggestions");
-  if (props.guidanceText?.trim()) panels.push("guidance");
-  if (props.showScenarioHost) panels.push("scenario");
-  if (props.showComparisonHost) panels.push("decision");
-  if (props.recommendedActions?.length) panels.push("actions");
-  return panels;
 }
 
 export default AssistantSupportPanelDock;

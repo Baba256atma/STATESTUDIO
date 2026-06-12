@@ -45,6 +45,8 @@ import { sceneToolbarDividerStyle, sceneToolbarShellStyle } from "./ExecutiveSce
 export type ExecutiveSceneToolbarProps = {
   themeMode?: NexoraHudThemeMode;
   density?: "desktop" | "tablet" | "mobile";
+  /** When true, Global View / Fit Scene / Focus render in Scene Panel instead. */
+  sceneControlsRelocated?: boolean;
 };
 
 export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.ReactElement {
@@ -106,6 +108,11 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
   }, []);
 
   const showViewModeToggle = !shouldHideTypeCViewModeToggle();
+  const sceneControlsRelocated = props.sceneControlsRelocated ?? false;
+
+  if (sceneControlsRelocated && !showViewModeToggle) {
+    return <></>;
+  }
 
   return (
     <div
@@ -136,7 +143,7 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
 
       {showViewModeToggle ? <span aria-hidden style={sceneToolbarDividerStyle(theme)} /> : null}
 
-      {EXECUTIVE_TOOLBAR_ACTIONS.map((action) => (
+      {sceneControlsRelocated ? null : EXECUTIVE_TOOLBAR_ACTIONS.map((action) => (
         <button
           key={action.id}
           type="button"
@@ -150,6 +157,8 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
         </button>
       ))}
 
+      {sceneControlsRelocated ? null : (
+        <>
       <span aria-hidden style={sceneToolbarDividerStyle(theme)} />
 
       <button
@@ -163,6 +172,8 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
         <span aria-hidden>◎</span>
         {showLabels ? <span style={executiveToolbarLabelStyle()}>Focus</span> : null}
       </button>
+        </>
+      )}
     </div>
   );
 }

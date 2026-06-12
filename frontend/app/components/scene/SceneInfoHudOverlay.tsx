@@ -6,6 +6,8 @@ import { SceneInfoHud, type SceneInfoHudProps } from "./SceneInfoHud";
 import { SceneHudOverlayRoot } from "./SceneHudOverlayRoot";
 import type { NexoraHudThemeMode } from "../../lib/scene/nexoraHudTheme";
 import { SCENE_HUD_ZONE_HOSTED_OVERLAY_STYLE } from "../../lib/scene/sceneHudZoneContract";
+import { traceSceneHudPanelScroll } from "../../lib/hud/sceneHudTopAlignmentContract";
+import { traceNexoraScenePanelRole } from "../../lib/scene/scenePanelPurposeContract";
 import { useFocusHudPresentation } from "../../lib/workspace/useFocusHudPresentation";
 import { useWorkspaceLayout } from "../../lib/ui/useWorkspaceLayout";
 
@@ -19,6 +21,11 @@ export function SceneInfoHudOverlay(
   const { getHudPlacement } = useWorkspaceLayout();
   const placement = getHudPlacement("sceneInfoHud");
   const focusHud = useFocusHudPresentation("sceneInfoHud", placement.visible);
+
+  React.useEffect(() => {
+    traceSceneHudPanelScroll("scene");
+    traceNexoraScenePanelRole();
+  }, []);
 
   if (!placement.visible && !focusHud.preserveMount) return <></>;
 
