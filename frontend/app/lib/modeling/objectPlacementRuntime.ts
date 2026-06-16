@@ -227,6 +227,23 @@ export function applyObjectPlacementToScene(
   };
 }
 
+export function resetObjectPlacementsToGlobalLayout(
+  sceneJson: SceneJson | null,
+  layoutPositions?: Record<string, [number, number, number]>
+): void {
+  if (!sceneJson?.scene || !Array.isArray(sceneJson.scene.objects)) return;
+  sceneJson.scene.objects.forEach((object, index) => {
+    const id = String(object.id ?? "").trim();
+    if (!id) return;
+    const layoutPosition =
+      layoutPositions?.[id] ??
+      (object.name != null ? layoutPositions?.[String(object.name)] : undefined);
+    const fallback: Vector3Tuple = [index * 1.8 - 1.8, 0, 0];
+    const target = layoutPosition ?? fallback;
+    movePlacedObject(id, vectorToPlacementPosition(target), "move");
+  });
+}
+
 export function getObjectPlacementRuntimeSnapshot(): ObjectPlacementRuntimeSnapshot {
   return {
     selectedObjectId,

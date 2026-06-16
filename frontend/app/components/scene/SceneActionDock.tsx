@@ -3,26 +3,17 @@
 import React from "react";
 
 import { formatObjectPanelTitle } from "../../lib/object-panel/objectPanelTitleContract";
-import { emitExecutiveObjectPanelAction } from "../../lib/object-panel/executiveActionPanelContract";
 import { emitObjectPanelActionRequest } from "../../lib/object-panel/objectPanelActionRouterContract";
+import {
+  SCENE_ACTION_DOCK_HEADER_ACTIONS,
+  type SceneActionDockHeaderAction,
+} from "../../lib/object-panel/objectPanelHeaderScenarioHotfixContract";
 import { HudPanelToggleButton } from "../hud/HudPanelToggleButton";
 import type { NexoraHudThemeTokens } from "../../lib/scene/nexoraHudTheme";
 import { nexoraHudShellStyle } from "../../lib/scene/nexoraHudTheme";
 import { SCENE_HUD_ZONE_METRICS } from "../../lib/scene/sceneHudZoneContract";
 
-export type SceneActionDockActionId = "object" | "focus" | "explain" | "scenario";
-
-const DOCK_ACTIONS: ReadonlyArray<{
-  id: SceneActionDockActionId;
-  label: string;
-  actionId?: string;
-  dashboardAction?: "focus" | "scenario";
-}> = Object.freeze([
-  { id: "object", label: "Object" },
-  { id: "focus", label: "Focus", dashboardAction: "focus" },
-  { id: "explain", label: "Explain", actionId: "explain_object" },
-  { id: "scenario", label: "Scenario", dashboardAction: "scenario" },
-]);
+export type SceneActionDockActionId = SceneActionDockHeaderAction["id"];
 
 type Props = {
   objectId: string;
@@ -59,7 +50,7 @@ function dockButtonStyle(
 export function SceneActionDock(props: Props): React.ReactElement {
   const objectId = props.objectId.trim();
 
-  const handleAction = (entry: (typeof DOCK_ACTIONS)[number]) => {
+  const handleAction = (entry: SceneActionDockHeaderAction) => {
     if (entry.id === "object") {
       props.onExpandPanel?.();
       return;
@@ -70,10 +61,6 @@ export function SceneActionDock(props: Props): React.ReactElement {
         objectId,
         objectName: props.objectName,
       });
-      return;
-    }
-    if (entry.actionId) {
-      emitExecutiveObjectPanelAction(entry.actionId, objectId);
     }
   };
 
@@ -81,6 +68,7 @@ export function SceneActionDock(props: Props): React.ReactElement {
     <div
       data-nx="scene-action-dock"
       data-nx-object-id={objectId}
+      data-object-panel-header-scenario-removed="true"
       style={nexoraHudShellStyle(
         props.theme,
         {
@@ -125,8 +113,14 @@ export function SceneActionDock(props: Props): React.ReactElement {
           onClick={() => props.onExpandPanel?.()}
         />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 6 }}>
-        {DOCK_ACTIONS.map((entry) => {
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${SCENE_ACTION_DOCK_HEADER_ACTIONS.length}, minmax(0, 1fr))`,
+          gap: 6,
+        }}
+      >
+        {SCENE_ACTION_DOCK_HEADER_ACTIONS.map((entry) => {
           const active = entry.id === "focus" && props.focusModeActive;
           return (
             <button

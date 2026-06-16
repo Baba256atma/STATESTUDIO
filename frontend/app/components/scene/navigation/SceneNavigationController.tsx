@@ -35,6 +35,13 @@ import {
   shouldApplyExecutiveCameraTransition,
   stepExecutiveCameraTransition,
 } from "../../../lib/scene/camera/executiveCameraTransitionRuntime";
+import {
+  bumpGlobalResetGeneration,
+  logGlobalResetNoopAlreadyGlobal,
+  resolveCanonicalGlobalLayoutPositions,
+  sceneObjectsNeedGlobalReset,
+  shouldApplyGlobalResetTransition,
+} from "../../../lib/scene/navigation/globalSceneResetRuntime.ts";
 import { logExecutiveCameraTransition } from "../../../lib/scene/camera/executiveCameraDiagnostics";
 import {
   SCENE_NAVIGATION_ACTION_EVENT,
@@ -76,6 +83,7 @@ export type SceneNavigationControllerProps = {
   layoutSignature?: string | null;
   mountedAtMs?: number;
   onRequestStaticReframe: () => void;
+  onRequestGlobalSceneReset?: () => void;
   onClearTemporaryFocus?: () => void;
   enabled?: boolean;
 };
@@ -287,6 +295,7 @@ export function SceneNavigationController(props: SceneNavigationControllerProps)
         focusObjectId?: string | null;
         channel?: string;
         overrideAuthority?: boolean;
+        globalResetGeneration?: number;
       }
     ) => {
       const normalizedPreset = normalizeExecutiveCameraPresetId(preset);
@@ -333,7 +342,11 @@ export function SceneNavigationController(props: SceneNavigationControllerProps)
         fov: frame.fov,
       });
       const channel = options?.channel ?? "executive-preset";
-      if (!shouldApplyExecutiveCameraTransition(channel, signature)) {
+      if (
+        !shouldApplyExecutiveCameraTransition(channel, signature, {
+          globalResetGeneration: options?.globalResetGeneration,
+        })
+      ) {
         return false;
       }
       if (
@@ -665,18 +678,54 @@ export function SceneNavigationController(props: SceneNavigationControllerProps)
     };
 
     const handlePreset = (event: Event) => {
-      const presetId = (event as CustomEvent<{ presetId?: string }>).detail?.presetId;
+      const detail = (event as CustomEvent<{ presetId?: string; source?: string; resetGeneration?: number }>).detail;
+      const presetId = detail?.presetId;
       if (!presetId) return;
+      const source = detail?.source ?? "toolbar";
       logSceneNavigationPresetSelected({
         presetId,
-        source: (event as CustomEvent<{ source?: string }>).detail?.source ?? "toolbar",
+        source,
       });
       if (presetId === "global") {
         props.onClearTemporaryFocus?.();
+        const resetGeneration = detail.resetGeneration ?? bumpGlobalResetGeneration();
+        const canonicalDefaults = resolveCanonicalGlobalLayoutPositions(
+          props.sceneJson,
+        );
+        const resetContext = {
+          currentLayoutPositions: props.layoutPositions,
+        };
+        const needsReset = sceneObjectsNeedGlobalReset(
+          props.sceneJson,
+          canonicalDefaults,
+          resetContext
+        );
+        if (!needsReset) {
+          logGlobalResetNoopAlreadyGlobal({
+            resetGeneration,
+            source,
+          });
+          return;
+        }
+        if (
+          !shouldApplyGlobalResetTransition({
+            resetGeneration,
+            needsReset,
+          })
+        ) {
+          return;
+        }
+        props.onRequestGlobalSceneReset?.();
+        applyExecutivePreset("GLOBAL", source, {
+          channel: "toolbar-preset:global",
+          overrideAuthority: true,
+          globalResetGeneration: resetGeneration,
+        });
+        return;
       }
       if (!isCameraPresetId(presetId)) return;
       const mappedPreset = mapToolbarPresetToExecutivePreset(presetId);
-      applyExecutivePreset(mappedPreset, (event as CustomEvent<{ source?: string }>).detail?.source ?? "toolbar", {
+      applyExecutivePreset(mappedPreset, source, {
         channel: `toolbar-preset:${presetId}`,
         overrideAuthority: true,
       });
@@ -736,6 +785,7 @@ export function SceneNavigationController(props: SceneNavigationControllerProps)
     props.enabled,
     props.onClearTemporaryFocus,
     props.onRequestStaticReframe,
+    props.onRequestGlobalSceneReset,
     props.sceneJson,
     props.selectedObjectId,
   ]);

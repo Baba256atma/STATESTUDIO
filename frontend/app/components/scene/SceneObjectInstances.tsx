@@ -3,6 +3,18 @@
 import React from "react";
 
 import type { SceneObject } from "../../lib/sceneTypes";
+import type { SvieObjectHealthVisualStyle } from "../../lib/scene/svie/svieHealthVisualizationContract.ts";
+import type { SvieObjectRiskHotspotVisualStyle } from "../../lib/scene/svie/svieRiskHotspotVisualizationContract.ts";
+import type { SvieCauseChainNodeVisualStyle } from "../../lib/scene/svie/svieCauseChainVisualizationContract.ts";
+import type { SvieRecommendationNodeVisualStyle } from "../../lib/scene/svie/svieRecommendationVisualizationContract.ts";
+import type { SvieConfidenceNodeVisualStyle } from "../../lib/scene/svie/svieConfidenceVisualizationContract.ts";
+import type { SvieExecutiveStoryNodeVisualStyle } from "../../lib/scene/svie/svieExecutiveStoryLayerContract.ts";
+import type { SvieFutureStateNodeVisualStyle } from "../../lib/scene/svie/svieFutureStateVisualizationContract.ts";
+import type { SvieScenarioDeltaNodeVisualStyle } from "../../lib/scene/svie/svieScenarioDeltaVisualizationContract.ts";
+import type { SvieScenarioImpactChainNodeVisualStyle } from "../../lib/scene/svie/svieScenarioImpactChainContract.ts";
+import type { SvieScenarioComparisonNodeVisualStyle } from "../../lib/scene/svie/svieScenarioComparisonLayerContract.ts";
+import type { SvieScenarioConfidenceNodeVisualStyle } from "../../lib/scene/svie/svieScenarioConfidenceLayerContract.ts";
+import type { SvieExecutiveFutureStoryNodeVisualStyle } from "../../lib/scene/svie/svieExecutiveFutureStoryLayerContract.ts";
 import { AnimatableObject, type AnimatableObjectProps } from "./AnimatableObject";
 import { isSceneObjectSelected } from "../../lib/scene/selectedSceneObjectRuntime";
 
@@ -23,6 +35,18 @@ export type SceneObjectInstancesProps = {
   selectedObjectId?: string | null;
   connectedToSelectedIds?: ReadonlySet<string>;
   relationshipExplorationActive?: boolean;
+  svieHealthVisualByObjectId?: Readonly<Record<string, SvieObjectHealthVisualStyle>>;
+  svieRiskHotspotVisualByObjectId?: Readonly<Record<string, SvieObjectRiskHotspotVisualStyle>>;
+  svieCauseChainNodeVisualByObjectId?: Readonly<Record<string, SvieCauseChainNodeVisualStyle>>;
+  svieRecommendationNodeVisualByObjectId?: Readonly<Record<string, SvieRecommendationNodeVisualStyle>>;
+  svieConfidenceNodeVisualByObjectId?: Readonly<Record<string, SvieConfidenceNodeVisualStyle>>;
+  svieExecutiveStoryNodeVisualByObjectId?: Readonly<Record<string, SvieExecutiveStoryNodeVisualStyle>>;
+  svieFutureStateNodeVisualByObjectId?: Readonly<Record<string, SvieFutureStateNodeVisualStyle>>;
+  svieScenarioDeltaNodeVisualByObjectId?: Readonly<Record<string, SvieScenarioDeltaNodeVisualStyle>>;
+  svieScenarioImpactNodeVisualByObjectId?: Readonly<Record<string, SvieScenarioImpactChainNodeVisualStyle>>;
+  svieScenarioComparisonNodeVisualByObjectId?: Readonly<Record<string, SvieScenarioComparisonNodeVisualStyle>>;
+  svieScenarioConfidenceNodeVisualByObjectId?: Readonly<Record<string, SvieScenarioConfidenceNodeVisualStyle>>;
+  svieExecutiveFutureStoryNodeVisualByObjectId?: Readonly<Record<string, SvieExecutiveFutureStoryNodeVisualStyle>>;
 };
 
 const loggedLayoutPassThroughSignatures = new Set<string>();
@@ -78,6 +102,18 @@ function SceneObjectInstancesComponent({
   selectedObjectId = null,
   connectedToSelectedIds: _connectedToSelectedIds,
   relationshipExplorationActive: _relationshipExplorationActive = false,
+  svieHealthVisualByObjectId,
+  svieRiskHotspotVisualByObjectId,
+  svieCauseChainNodeVisualByObjectId,
+  svieRecommendationNodeVisualByObjectId,
+  svieConfidenceNodeVisualByObjectId,
+  svieExecutiveStoryNodeVisualByObjectId,
+  svieFutureStateNodeVisualByObjectId,
+  svieScenarioDeltaNodeVisualByObjectId,
+  svieScenarioImpactNodeVisualByObjectId,
+  svieScenarioComparisonNodeVisualByObjectId,
+  svieScenarioConfidenceNodeVisualByObjectId,
+  svieExecutiveFutureStoryNodeVisualByObjectId,
 }: SceneObjectInstancesProps): React.ReactElement {
   logLayoutPassThroughOnce({
     stableObjects,
@@ -111,6 +147,50 @@ function SceneObjectInstancesComponent({
             showObjectDebugLabels={showObjectDebugLabels}
             showExecutiveLayoutLabels={showExecutiveLayoutLabels}
             renderId={stableId}
+            svieHealthVisual={svieHealthVisualByObjectId?.[stableId] ?? svieHealthVisualByObjectId?.[objectKey]}
+            svieRiskHotspotVisual={
+              svieRiskHotspotVisualByObjectId?.[stableId] ?? svieRiskHotspotVisualByObjectId?.[objectKey]
+            }
+            svieCauseChainNodeVisual={
+              svieCauseChainNodeVisualByObjectId?.[stableId] ??
+              svieCauseChainNodeVisualByObjectId?.[objectKey]
+            }
+            svieRecommendationNodeVisual={
+              svieRecommendationNodeVisualByObjectId?.[stableId] ??
+              svieRecommendationNodeVisualByObjectId?.[objectKey]
+            }
+            svieConfidenceNodeVisual={
+              svieConfidenceNodeVisualByObjectId?.[stableId] ??
+              svieConfidenceNodeVisualByObjectId?.[objectKey]
+            }
+            svieExecutiveStoryNodeVisual={
+              svieExecutiveStoryNodeVisualByObjectId?.[stableId] ??
+              svieExecutiveStoryNodeVisualByObjectId?.[objectKey]
+            }
+            svieFutureStateNodeVisual={
+              svieFutureStateNodeVisualByObjectId?.[stableId] ??
+              svieFutureStateNodeVisualByObjectId?.[objectKey]
+            }
+            svieScenarioDeltaNodeVisual={
+              svieScenarioDeltaNodeVisualByObjectId?.[stableId] ??
+              svieScenarioDeltaNodeVisualByObjectId?.[objectKey]
+            }
+            svieScenarioImpactNodeVisual={
+              svieScenarioImpactNodeVisualByObjectId?.[stableId] ??
+              svieScenarioImpactNodeVisualByObjectId?.[objectKey]
+            }
+            svieScenarioComparisonNodeVisual={
+              svieScenarioComparisonNodeVisualByObjectId?.[stableId] ??
+              svieScenarioComparisonNodeVisualByObjectId?.[objectKey]
+            }
+            svieScenarioConfidenceNodeVisual={
+              svieScenarioConfidenceNodeVisualByObjectId?.[stableId] ??
+              svieScenarioConfidenceNodeVisualByObjectId?.[objectKey]
+            }
+            svieExecutiveFutureStoryNodeVisual={
+              svieExecutiveFutureStoryNodeVisualByObjectId?.[stableId] ??
+              svieExecutiveFutureStoryNodeVisualByObjectId?.[objectKey]
+            }
           />
         );
       })}
@@ -133,7 +213,19 @@ function sceneObjectInstancesPropsEqual(
     prev.showExecutiveLayoutLabels === next.showExecutiveLayoutLabels &&
     prev.selectedObjectId === next.selectedObjectId &&
     prev.connectedToSelectedIds === next.connectedToSelectedIds &&
-    prev.relationshipExplorationActive === next.relationshipExplorationActive
+    prev.relationshipExplorationActive === next.relationshipExplorationActive &&
+    prev.svieHealthVisualByObjectId === next.svieHealthVisualByObjectId &&
+    prev.svieRiskHotspotVisualByObjectId === next.svieRiskHotspotVisualByObjectId &&
+    prev.svieCauseChainNodeVisualByObjectId === next.svieCauseChainNodeVisualByObjectId &&
+    prev.svieRecommendationNodeVisualByObjectId === next.svieRecommendationNodeVisualByObjectId &&
+    prev.svieConfidenceNodeVisualByObjectId === next.svieConfidenceNodeVisualByObjectId &&
+    prev.svieExecutiveStoryNodeVisualByObjectId === next.svieExecutiveStoryNodeVisualByObjectId &&
+    prev.svieFutureStateNodeVisualByObjectId === next.svieFutureStateNodeVisualByObjectId &&
+    prev.svieScenarioDeltaNodeVisualByObjectId === next.svieScenarioDeltaNodeVisualByObjectId &&
+    prev.svieScenarioImpactNodeVisualByObjectId === next.svieScenarioImpactNodeVisualByObjectId &&
+    prev.svieScenarioComparisonNodeVisualByObjectId === next.svieScenarioComparisonNodeVisualByObjectId &&
+    prev.svieScenarioConfidenceNodeVisualByObjectId === next.svieScenarioConfidenceNodeVisualByObjectId &&
+    prev.svieExecutiveFutureStoryNodeVisualByObjectId === next.svieExecutiveFutureStoryNodeVisualByObjectId
   );
 }
 

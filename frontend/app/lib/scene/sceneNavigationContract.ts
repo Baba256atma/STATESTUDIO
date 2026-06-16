@@ -12,6 +12,7 @@ import {
   logSceneNavigationPresetSelected,
   logSceneNavigationToolbarAction,
 } from "../ui/sceneNavigationInstrumentation";
+import { bumpGlobalResetGeneration } from "./navigation/globalSceneResetRuntime.ts";
 import {
   getSelectedCameraPresetId,
   setSceneNavigationMode,
@@ -66,6 +67,15 @@ export function requestCameraPreset(
   setSelectedCameraPresetId(presetId, source);
   logSceneNavigationPresetSelected({ presetId, source });
   dispatch(SCENE_NAVIGATION_PRESET_EVENT, { presetId, source });
+}
+
+/** Global panel reset — bumps generation so repeated clicks re-evaluate object positions. */
+export function requestGlobalSceneReset(source: SceneNavigationSource = "panel"): void {
+  const resetGeneration = bumpGlobalResetGeneration();
+  logSceneNavigationCameraReset({ source });
+  setSelectedCameraPresetId("global", source);
+  logSceneNavigationPresetSelected({ presetId: "global", source });
+  dispatch(SCENE_NAVIGATION_PRESET_EVENT, { presetId: "global", source, resetGeneration });
 }
 
 /** Centralized object-centric focus routing for Scene, Timeline, Assistant, and panels. */

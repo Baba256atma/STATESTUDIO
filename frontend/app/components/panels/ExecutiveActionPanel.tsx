@@ -39,6 +39,7 @@ const ACTION_ICONS: Readonly<Record<ObjectPanelDashboardAction, string>> = Objec
   compare: "⇄",
   scenario: "◇",
   war_room: "⚑",
+  advisory: "✦",
 });
 
 function ActionsSection(props: {
@@ -65,7 +66,7 @@ function ActionsSection(props: {
           gap: 8,
         }}
       >
-        {OBJECT_PANEL_DASHBOARD_ACTIONS.map((entry) => {
+        {OBJECT_PANEL_DASHBOARD_ACTIONS.filter((entry) => entry !== "advisory").map((entry) => {
           const isFocus = entry === "focus";
           const active = isFocus && props.focusModeActive;
           const label = objectPanelDashboardActionLabel(entry);

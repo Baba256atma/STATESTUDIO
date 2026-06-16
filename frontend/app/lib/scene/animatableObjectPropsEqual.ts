@@ -128,5 +128,165 @@ export function areAnimatableObjectPropsEqual(
   }
 
   if (prev.anim !== next.anim) return false;
+
+  const prevSvie = prev.svieHealthVisual;
+  const nextSvie = next.svieHealthVisual;
+  if (prevSvie !== nextSvie) {
+    if (!prevSvie || !nextSvie) return false;
+    if (
+      prevSvie.healthLevel !== nextSvie.healthLevel ||
+      prevSvie.glowColor !== nextSvie.glowColor ||
+      prevSvie.emissiveColor !== nextSvie.emissiveColor
+    ) {
+      return false;
+    }
+  }
+
+  const prevRisk = prev.svieRiskHotspotVisual;
+  const nextRisk = next.svieRiskHotspotVisual;
+  if (prevRisk !== nextRisk) {
+    if (!prevRisk || !nextRisk) return false;
+    if (
+      prevRisk.effectiveLevel !== nextRisk.effectiveLevel ||
+      prevRisk.showOverlay !== nextRisk.showOverlay ||
+      prevRisk.pulseEnabled !== nextRisk.pulseEnabled ||
+      prevRisk.haloEnabled !== nextRisk.haloEnabled ||
+      prevRisk.executiveAttentionTier !== nextRisk.executiveAttentionTier ||
+      prevRisk.executivePulseEnabled !== nextRisk.executivePulseEnabled
+    ) {
+      return false;
+    }
+  }
+
+  const prevChain = prev.svieCauseChainNodeVisual;
+  const nextChain = next.svieCauseChainNodeVisual;
+  if (prevChain !== nextChain) {
+    if (!prevChain || !nextChain) return false;
+    if (
+      prevChain.stepIndex !== nextChain.stepIndex ||
+      prevChain.glowIntensity !== nextChain.glowIntensity ||
+      prevChain.sequentialGlowPhase !== nextChain.sequentialGlowPhase
+    ) {
+      return false;
+    }
+  }
+
+  const prevRecommendation = prev.svieRecommendationNodeVisual;
+  const nextRecommendation = next.svieRecommendationNodeVisual;
+  if (prevRecommendation !== nextRecommendation) {
+    if (!prevRecommendation || !nextRecommendation) return false;
+    if (
+      prevRecommendation.tier !== nextRecommendation.tier ||
+      prevRecommendation.glowIntensity !== nextRecommendation.glowIntensity ||
+      prevRecommendation.ringScale !== nextRecommendation.ringScale
+    ) {
+      return false;
+    }
+  }
+
+  const prevConfidence = prev.svieConfidenceNodeVisual;
+  const nextConfidence = next.svieConfidenceNodeVisual;
+  if (prevConfidence !== nextConfidence) {
+    if (!prevConfidence || !nextConfidence) return false;
+    if (
+      prevConfidence.tier !== nextConfidence.tier ||
+      prevConfidence.pulseMode !== nextConfidence.pulseMode ||
+      prevConfidence.glowIntensity !== nextConfidence.glowIntensity
+    ) {
+      return false;
+    }
+  }
+
+  const prevStory = prev.svieExecutiveStoryNodeVisual;
+  const nextStory = next.svieExecutiveStoryNodeVisual;
+  if (prevStory !== nextStory) {
+    if (!prevStory || !nextStory) return false;
+    if (
+      prevStory.role !== nextStory.role ||
+      prevStory.glowIntensity !== nextStory.glowIntensity ||
+      prevStory.storyIndex !== nextStory.storyIndex
+    ) {
+      return false;
+    }
+  }
+
+  const prevFutureState = prev.svieFutureStateNodeVisual;
+  const nextFutureState = next.svieFutureStateNodeVisual;
+  if (prevFutureState !== nextFutureState) {
+    if (!prevFutureState || !nextFutureState) return false;
+    if (
+      prevFutureState.futureLevel !== nextFutureState.futureLevel ||
+      prevFutureState.glowIntensity !== nextFutureState.glowIntensity ||
+      prevFutureState.radiusMultiplier !== nextFutureState.radiusMultiplier
+    ) {
+      return false;
+    }
+  }
+
+  const prevScenarioDelta = prev.svieScenarioDeltaNodeVisual;
+  const nextScenarioDelta = next.svieScenarioDeltaNodeVisual;
+  if (prevScenarioDelta !== nextScenarioDelta) {
+    if (!prevScenarioDelta || !nextScenarioDelta) return false;
+    if (
+      prevScenarioDelta.direction !== nextScenarioDelta.direction ||
+      prevScenarioDelta.glowIntensity !== nextScenarioDelta.glowIntensity ||
+      prevScenarioDelta.radiusMultiplier !== nextScenarioDelta.radiusMultiplier
+    ) {
+      return false;
+    }
+  }
+
+  const prevScenarioImpact = prev.svieScenarioImpactNodeVisual;
+  const nextScenarioImpact = next.svieScenarioImpactNodeVisual;
+  if (prevScenarioImpact !== nextScenarioImpact) {
+    if (!prevScenarioImpact || !nextScenarioImpact) return false;
+    if (
+      prevScenarioImpact.stepIndex !== nextScenarioImpact.stepIndex ||
+      prevScenarioImpact.glowIntensity !== nextScenarioImpact.glowIntensity ||
+      prevScenarioImpact.sequentialGlowPhase !== nextScenarioImpact.sequentialGlowPhase
+    ) {
+      return false;
+    }
+  }
+
+  const prevScenarioComparison = prev.svieScenarioComparisonNodeVisual;
+  const nextScenarioComparison = next.svieScenarioComparisonNodeVisual;
+  if (prevScenarioComparison !== nextScenarioComparison) {
+    if (!prevScenarioComparison || !nextScenarioComparison) return false;
+    if (
+      prevScenarioComparison.role !== nextScenarioComparison.role ||
+      prevScenarioComparison.glowIntensity !== nextScenarioComparison.glowIntensity ||
+      prevScenarioComparison.radiusMultiplier !== nextScenarioComparison.radiusMultiplier
+    ) {
+      return false;
+    }
+  }
+
+  const prevScenarioConfidence = prev.svieScenarioConfidenceNodeVisual;
+  const nextScenarioConfidence = next.svieScenarioConfidenceNodeVisual;
+  if (prevScenarioConfidence !== nextScenarioConfidence) {
+    if (!prevScenarioConfidence || !nextScenarioConfidence) return false;
+    if (
+      prevScenarioConfidence.tier !== nextScenarioConfidence.tier ||
+      prevScenarioConfidence.pulseMode !== nextScenarioConfidence.pulseMode ||
+      prevScenarioConfidence.glowIntensity !== nextScenarioConfidence.glowIntensity
+    ) {
+      return false;
+    }
+  }
+
+  const prevExecutiveFutureStory = prev.svieExecutiveFutureStoryNodeVisual;
+  const nextExecutiveFutureStory = next.svieExecutiveFutureStoryNodeVisual;
+  if (prevExecutiveFutureStory !== nextExecutiveFutureStory) {
+    if (!prevExecutiveFutureStory || !nextExecutiveFutureStory) return false;
+    if (
+      prevExecutiveFutureStory.role !== nextExecutiveFutureStory.role ||
+      prevExecutiveFutureStory.glowIntensity !== nextExecutiveFutureStory.glowIntensity ||
+      prevExecutiveFutureStory.storyIndex !== nextExecutiveFutureStory.storyIndex
+    ) {
+      return false;
+    }
+  }
+
   return true;
 }

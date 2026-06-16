@@ -3,11 +3,14 @@ export type MainRightPanelTab = "dashboard" | "assistant";
 export type DashboardContext =
   | "overview"
   | "sources"
+  | "compare"
   | "scenario"
   | "risk"
   | "war_room"
   | "timeline"
-  | "settings";
+  | "settings"
+  | "advisory"
+  | "governance";
 
 export type MainRightPanelRoute = Readonly<{
   tab: MainRightPanelTab;
@@ -23,11 +26,14 @@ export const MAIN_RIGHT_PANEL_TABS: readonly MainRightPanelTab[] = Object.freeze
 export const DASHBOARD_CONTEXTS: readonly DashboardContext[] = Object.freeze([
   "overview",
   "sources",
+  "compare",
   "scenario",
   "risk",
   "war_room",
   "timeline",
   "settings",
+  "advisory",
+  "governance",
 ]);
 
 const DASHBOARD_CONTEXT_SET = new Set<string>(DASHBOARD_CONTEXTS);
@@ -40,11 +46,11 @@ const LEGACY_PANEL_ROUTE_TO_DASHBOARD_CONTEXT: Readonly<Record<string, Dashboard
   source: "sources",
   input: "sources",
   live_operations: "sources",
+  compare: "compare",
   scenario: "scenario",
   scenario_tree: "scenario",
   simulate: "scenario",
   simulation: "scenario",
-  compare: "scenario",
   risk: "risk",
   risk_view: "risk",
   rsk: "risk",
@@ -61,6 +67,16 @@ const LEGACY_PANEL_ROUTE_TO_DASHBOARD_CONTEXT: Readonly<Record<string, Dashboard
   settings: "settings",
   controls: "settings",
   ctrl: "settings",
+  advice: "advisory",
+  strategic_advice: "advisory",
+  recommendation: "advisory",
+  recommendations: "advisory",
+  open_decision_analysis: "advisory",
+  explain_object: "advisory",
+  next_move: "advisory",
+  governance: "governance",
+  policy: "governance",
+  approval: "governance",
   operational_topology: "overview",
   ops: "overview",
   exe: "overview",

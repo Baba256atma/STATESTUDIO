@@ -78,6 +78,24 @@ import {
 import { LoopLinesAnimated } from "./scene/LoopLinesAnimated";
 import { logVisualSelectionAuthorityRejected, normalizeSelectedObjectId } from "../lib/selection/selectionStateGuard";
 import { logPayloadReferenceStability } from "../lib/runtime/payloadStabilityAudit";
+import { syncSvieHealthVisualization } from "../lib/scene/svie/svieHealthVisualizationRuntime.ts";
+import { syncSvieRiskHotspotVisualization } from "../lib/scene/svie/svieRiskHotspotVisualizationRuntime.ts";
+import { syncSvieExecutiveRiskAttention } from "../lib/scene/svie/svieExecutiveRiskAttentionRuntime.ts";
+import { applyExecutiveAttentionVisualGuidance } from "../lib/scene/svie/svieExecutiveRiskAttentionVisualizationResolver.ts";
+import { syncSvieCauseChainVisualization } from "../lib/scene/svie/svieCauseChainVisualizationRuntime.ts";
+import { syncSvieRecommendationVisualization } from "../lib/scene/svie/svieRecommendationVisualizationRuntime.ts";
+import { syncSvieConfidenceVisualization } from "../lib/scene/svie/svieConfidenceVisualizationRuntime.ts";
+import { syncSvieExecutiveStoryLayer } from "../lib/scene/svie/svieExecutiveStoryLayerRuntime.ts";
+import { syncFutureStateOverlay } from "../lib/scene/svie/svieFutureStateVisualizationRuntime.ts";
+import { syncScenarioDeltaOverlay } from "../lib/scene/svie/svieScenarioDeltaVisualizationRuntime.ts";
+import { syncScenarioImpactVisualization } from "../lib/scene/svie/svieScenarioImpactVisualizationRuntime.ts";
+import { syncScenarioComparisonLayer } from "../lib/scene/svie/svieScenarioComparisonLayerRuntime.ts";
+import { syncScenarioConfidenceLayer } from "../lib/scene/svie/svieScenarioConfidenceLayerRuntime.ts";
+import { syncExecutiveFutureStoryLayer } from "../lib/scene/svie/svieExecutiveFutureStoryLayerRuntime.ts";
+import { SvieCauseChainOverlay } from "./scene/SvieCauseChainOverlay";
+import { SvieExecutiveStoryOverlay } from "./scene/SvieExecutiveStoryOverlay";
+import { SvieScenarioImpactChainOverlay } from "./scene/SvieScenarioImpactChainOverlay";
+import { SvieExecutiveFutureStoryOverlay } from "./scene/SvieExecutiveFutureStoryOverlay";
 const EMPTY_STRING_ARRAY: string[] = [];
 const EMPTY_SCENE_ANIMS: any[] = [];
 const EMPTY_SCENE_LOOPS: SceneLoop[] = [];
@@ -1454,6 +1472,66 @@ function SceneRendererComponent({
     [objectsRegistrySignature, stableObjects]
   );
   const objects = stableObjects;
+  const svieHealthVisualization = useMemo(
+    () =>
+      syncSvieHealthVisualization({
+        sceneJson,
+        selectedObjectId: canonicalSelectedObjectId,
+      }),
+    [sceneJson, objectsRegistrySignature, canonicalSelectedObjectId]
+  );
+  const svieRiskHotspotVisualization = useMemo(
+    () => syncSvieRiskHotspotVisualization({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
+  const svieExecutiveRiskAttention = useMemo(
+    () => syncSvieExecutiveRiskAttention({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
+  const svieRiskHotspotVisualByObjectId = useMemo(
+    () => applyExecutiveAttentionVisualGuidance(svieRiskHotspotVisualization, svieExecutiveRiskAttention),
+    [svieRiskHotspotVisualization, svieExecutiveRiskAttention]
+  );
+  const svieCauseChainVisualization = useMemo(
+    () => syncSvieCauseChainVisualization({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
+  const svieRecommendationVisualization = useMemo(
+    () => syncSvieRecommendationVisualization({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
+  const svieConfidenceVisualization = useMemo(
+    () => syncSvieConfidenceVisualization({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
+  const svieExecutiveStoryLayer = useMemo(
+    () => syncSvieExecutiveStoryLayer({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
+  const svieFutureStateOverlay = useMemo(
+    () => syncFutureStateOverlay({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
+  const svieScenarioDeltaOverlay = useMemo(
+    () => syncScenarioDeltaOverlay({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
+  const svieScenarioImpactVisualization = useMemo(
+    () => syncScenarioImpactVisualization({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
+  const svieScenarioComparisonLayer = useMemo(
+    () => syncScenarioComparisonLayer({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
+  const svieScenarioConfidenceLayer = useMemo(
+    () => syncScenarioConfidenceLayer({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
+  const svieExecutiveFutureStoryLayer = useMemo(
+    () => syncExecutiveFutureStoryLayer({ sceneJson }),
+    [sceneJson, objectsRegistrySignature]
+  );
   const payload = sceneJson as any;
   const hasExplicitObjectSelection = !!objectSelection && typeof objectSelection === "object";
   const highlightedIds = useMemo(
@@ -2511,6 +2589,42 @@ function SceneRendererComponent({
           showObjectDebugLabels={showObjectDebugLabels}
           showExecutiveLayoutLabels={showExecutiveLayoutLabels}
           selectedObjectId={canonicalSelectedObjectId}
+          svieHealthVisualByObjectId={svieHealthVisualization.visualByObjectId}
+          svieRiskHotspotVisualByObjectId={svieRiskHotspotVisualByObjectId}
+          svieCauseChainNodeVisualByObjectId={svieCauseChainVisualization.nodeVisualByObjectId}
+          svieRecommendationNodeVisualByObjectId={svieRecommendationVisualization.nodeVisualByObjectId}
+          svieConfidenceNodeVisualByObjectId={svieConfidenceVisualization.nodeVisualByObjectId}
+          svieExecutiveStoryNodeVisualByObjectId={svieExecutiveStoryLayer.nodeVisualByObjectId}
+          svieFutureStateNodeVisualByObjectId={svieFutureStateOverlay.nodeVisualByObjectId}
+          svieScenarioDeltaNodeVisualByObjectId={svieScenarioDeltaOverlay.nodeVisualByObjectId}
+          svieScenarioImpactNodeVisualByObjectId={svieScenarioImpactVisualization.nodeVisualByObjectId}
+          svieScenarioComparisonNodeVisualByObjectId={svieScenarioComparisonLayer.nodeVisualByObjectId}
+          svieScenarioConfidenceNodeVisualByObjectId={svieScenarioConfidenceLayer.nodeVisualByObjectId}
+          svieExecutiveFutureStoryNodeVisualByObjectId={svieExecutiveFutureStoryLayer.nodeVisualByObjectId}
+        />
+
+        <SvieCauseChainOverlay
+          connectionVisuals={svieCauseChainVisualization.connectionVisuals}
+          objects={objects}
+          runtimeObjectPositionContext={runtimeObjectPositionContext}
+        />
+
+        <SvieExecutiveStoryOverlay
+          connectionVisuals={svieExecutiveStoryLayer.connectionVisuals}
+          objects={objects}
+          runtimeObjectPositionContext={runtimeObjectPositionContext}
+        />
+
+        <SvieScenarioImpactChainOverlay
+          connectionVisuals={svieScenarioImpactVisualization.connectionVisuals}
+          objects={objects}
+          runtimeObjectPositionContext={runtimeObjectPositionContext}
+        />
+
+        <SvieExecutiveFutureStoryOverlay
+          connectionVisuals={svieExecutiveFutureStoryLayer.connectionVisuals}
+          objects={objects}
+          runtimeObjectPositionContext={runtimeObjectPositionContext}
         />
 
         <TopologyConnectionLines

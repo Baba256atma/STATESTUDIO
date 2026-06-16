@@ -1,5 +1,5 @@
 import {
-  requestCameraPreset,
+  requestGlobalSceneReset,
   requestSceneNavigationAction,
   focusObject,
 } from "../sceneNavigationContract";
@@ -60,7 +60,7 @@ export function handleExecutiveKeyboardNavigation(
     return true;
   }
   if (action === "global_view") {
-    requestCameraPreset("global", "keyboard");
+    requestGlobalSceneReset("keyboard");
     return true;
   }
   if (action === "clear_focus") {

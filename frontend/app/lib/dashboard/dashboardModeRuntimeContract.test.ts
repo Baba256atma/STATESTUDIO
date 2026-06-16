@@ -28,8 +28,12 @@ describe("dashboardModeRuntimeContract", () => {
   });
 
   it("falls back invalid mode to overview", () => {
-    expect(normalizeDashboardMode("timeline")).toBe("overview");
+    expect(normalizeDashboardMode("invalid_mode")).toBe("overview");
     expect(normalizeDashboardMode(null)).toBe("overview");
+  });
+
+  it("accepts timeline as a dedicated dashboard mode", () => {
+    expect(normalizeDashboardMode("timeline")).toBe("timeline");
   });
 
   it("routes unknown requests to overview with redirect flag", () => {
@@ -43,8 +47,9 @@ describe("dashboardModeRuntimeContract", () => {
 
   it("maps legacy dashboard contexts to runtime modes", () => {
     expect(mapLegacyDashboardContextToMode("risk")).toBe("analyze");
-    expect(mapLegacyDashboardContextToMode("timeline")).toBe("overview");
-    expect(mapDashboardModeToLegacyContext("compare")).toBe("scenario");
+    expect(mapLegacyDashboardContextToMode("timeline")).toBe("timeline");
+    expect(mapDashboardModeToLegacyContext("compare")).toBe("compare");
+    expect(mapDashboardModeToLegacyContext("scenario")).toBe("scenario");
   });
 
   it("maps legacy routes to runtime modes", () => {
@@ -87,6 +92,6 @@ describe("dashboardModeRuntimeContract", () => {
   it("sync helper prefers explicit dashboardMode input", () => {
     const synced = syncDashboardModeAndContext({ dashboardMode: "compare" });
     expect(synced.dashboardMode).toBe("compare");
-    expect(synced.dashboardContext).toBe("scenario");
+    expect(synced.dashboardContext).toBe("compare");
   });
 });

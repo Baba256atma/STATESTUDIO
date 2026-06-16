@@ -1,0 +1,7 @@
+export const ADVISORY_LEGACY_SURFACE_REMOVED_TAG = "[ADVISORY_LEGACY_SURFACE_REMOVED]" as const;
+
+export const ADVISORY_DASHBOARD_CONTEXT = "advisory" as const;
+
+export const ADVISORY_SUB_WORKSPACE_MODE = "advisory" as const;
+
+export const ADVISORY_DASHBOARDMODE_FIXED_TAG = "[ADVISORY_DASHBOARDMODE_FIXED]" as const;

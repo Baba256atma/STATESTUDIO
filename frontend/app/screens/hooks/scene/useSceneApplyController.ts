@@ -413,6 +413,8 @@ export function useSceneApplyController(input: UseSceneApplyControllerInput): Us
         selection: nextSelection ?? null,
       });
       const normalizedSource = String(source ?? "").toLowerCase();
+      const isGlobalSceneResetWrite = normalizedSource === "global_scene_reset";
+      const bypassStableWriteGuard = options?.bypassStableWriteGuard === true || isGlobalSceneResetWrite;
       const isPanelDrivenSource =
         normalizedSource.includes("panel") ||
         normalizedSource.includes("rightpanelhost") ||
@@ -433,6 +435,7 @@ export function useSceneApplyController(input: UseSceneApplyControllerInput): Us
         return;
       }
       if (
+        !bypassStableWriteGuard &&
         !isSceneHydrationWrite &&
         (prevStableWriteSignature === nextStableWriteSignature ||
           lastStableSceneWriteSignatureRef.current === nextStableWriteSignature)
@@ -450,7 +453,11 @@ export function useSceneApplyController(input: UseSceneApplyControllerInput): Us
         });
         return;
       }
-      if (prevSemanticSig === semanticSig && prevVisualSig === nextVisualSig) {
+      if (
+        !bypassStableWriteGuard &&
+        prevSemanticSig === semanticSig &&
+        prevVisualSig === nextVisualSig
+      ) {
         emitSceneApplyDiagnostic("apply_skipped", {
           skippedReason: "semantic_visual_match_inside_apply",
           source: String(source),

@@ -58,6 +58,7 @@ export const NEXORA_ROUTING_CONTRACT = Object.freeze({
   allowedDashboardContexts: [
     "overview",
     "sources",
+    "compare",
     "scenario",
     "risk",
     "war_room",

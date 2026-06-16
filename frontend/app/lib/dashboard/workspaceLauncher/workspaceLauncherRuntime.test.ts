@@ -5,6 +5,7 @@ import {
   buildWorkspaceLauncherState,
   listLauncherCatalogEntries,
   requestWorkspaceLaunch,
+  resetWorkspaceLauncherRouteSignatureForTests,
 } from "./workspaceLauncherRuntime.ts";
 import { resetWorkspaceLauncherForTests } from "./workspaceLauncherContract.ts";
 import { resetExecutiveWorkspaceRegistryRuntimeForTests } from "../executiveWorkspaceRegistryRuntime.ts";
@@ -29,6 +30,7 @@ import {
 
 test.beforeEach(() => {
   resetWorkspaceLauncherForTests();
+  resetWorkspaceLauncherRouteSignatureForTests();
   resetExecutiveWorkspaceRegistryRuntimeForTests();
   resetExecutiveWorkspaceLifecycleRuntimeForTests();
   resetExecutiveWorkspaceTransitionControllerRuntimeForTests();
@@ -38,15 +40,23 @@ test.beforeEach(() => {
 });
 
 function launchAndCommit(
-  workspace: "analyze" | "compare" | "scenario" | "war_room",
+  workspace: "analyze" | "compare" | "scenario" | "war_room" | "advisory" | "focus",
   objectId = "line-1"
 ): void {
-  const request = requestWorkspaceLaunch({
-    source: "workspace_launcher",
-    workspaceId: workspace,
-    objectId,
-    objectName: "Line 1",
-  });
+  const request =
+    workspace === "advisory" || workspace === "focus"
+      ? requestWorkspaceLaunch({
+          source: "object_panel",
+          objectPanelAction: workspace,
+          objectId,
+          objectName: objectId,
+        })
+      : requestWorkspaceLaunch({
+          source: "workspace_launcher",
+          workspaceId: workspace,
+          objectId,
+          objectName: "Line 1",
+        });
   assert.equal(request.approved, true, workspace);
   const commit = commitExecutiveWorkspaceTransition(workspace);
   assert.equal(commit.approved, true);
@@ -63,8 +73,8 @@ test("launcher catalog is registry-driven with analyze, compare, scenario, war r
   assert.ok(ids.includes("compare"));
   assert.ok(ids.includes("scenario"));
   assert.ok(ids.includes("war_room"));
-  assert.ok(ids.includes("risk"));
   assert.equal(ids.includes("overview"), false);
+  assert.equal(ids.includes("risk"), false);
 });
 
 test("buildWorkspaceLauncherState exposes active and recent workspace", () => {
@@ -91,7 +101,7 @@ test("validation matrix: launch analyze, compare, scenario, war room", () => {
   assert.equal(activeCard?.isActive, true);
 });
 
-test("rejects launching currently active workspace", () => {
+test("rejects launching currently active workspace when full route signature matches", () => {
   initializeExecutiveWorkspaceNavigationHistory();
   launchAndCommit("analyze");
 
@@ -104,6 +114,48 @@ test("rejects launching currently active workspace", () => {
   assert.equal(repeat.reason, "already_active");
 });
 
+test("approves relaunch when same workspace but selectedObjectId changed", () => {
+  initializeExecutiveWorkspaceNavigationHistory();
+  launchAndCommit("advisory", "obj-a");
+
+  const refresh = requestWorkspaceLaunch({
+    source: "object_panel",
+    objectPanelAction: "advisory",
+    objectId: "obj-b",
+    objectName: "Object B",
+  });
+  assert.equal(refresh.approved, true, refresh.reason);
+  assert.equal(refresh.workspaceId, "advisory");
+});
+
+test("approves focus after advisory without stale workspaceId-only brake", () => {
+  initializeExecutiveWorkspaceNavigationHistory();
+  launchAndCommit("advisory", "obj-a");
+
+  const focus = requestWorkspaceLaunch({
+    source: "object_panel",
+    objectPanelAction: "focus",
+    objectId: "obj-a",
+    objectName: "Object A",
+  });
+  assert.equal(focus.approved, true, focus.reason);
+  assert.equal(focus.workspaceId, "focus");
+});
+
+test("brakes advisory relaunch only when full route signature is identical", () => {
+  initializeExecutiveWorkspaceNavigationHistory();
+  launchAndCommit("advisory", "obj-a");
+
+  const sameRoute = requestWorkspaceLaunch({
+    source: "object_panel",
+    objectPanelAction: "advisory",
+    objectId: "obj-a",
+    objectName: "Object A",
+  });
+  assert.equal(sameRoute.approved, false);
+  assert.equal(sameRoute.reason, "already_active");
+});
+
 test("rejects invalid launch requests", () => {
   const missingObject = requestWorkspaceLaunch({
     source: "workspace_launcher",
@@ -114,7 +166,7 @@ test("rejects invalid launch requests", () => {
 
   const future = requestWorkspaceLaunch({
     source: "workspace_launcher",
-    workspaceId: "risk",
+    workspaceId: "simulation",
     objectId: "line-1",
   });
   assert.equal(future.approved, false);
@@ -149,8 +201,8 @@ test("object panel source resolves through requestWorkspaceLaunch", () => {
 
 test("future workspaces appear in launcher cards as non-launchable", () => {
   const state = buildWorkspaceLauncherState(null);
-  const risk = state.cards.find((card) => card.workspaceId === "risk");
-  assert.ok(risk);
-  assert.equal(risk.launchable, false);
-  assert.equal(risk.status, "future");
+  const simulation = state.cards.find((card) => card.workspaceId === "simulation");
+  assert.ok(simulation);
+  assert.equal(simulation.launchable, false);
+  assert.equal(simulation.status, "future");
 });

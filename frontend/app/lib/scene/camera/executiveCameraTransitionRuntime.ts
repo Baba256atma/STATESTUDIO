@@ -104,12 +104,17 @@ const lastAppliedTransitionSignature = new Map<string, string>();
 
 export function shouldApplyExecutiveCameraTransition(
   channel: string,
-  signature: string
+  signature: string,
+  options?: { globalResetGeneration?: number }
 ): boolean {
+  const effectiveSignature =
+    options?.globalResetGeneration != null
+      ? `${signature}:global-reset:${options.globalResetGeneration}`
+      : signature;
   const previous = lastAppliedTransitionSignature.get("global");
-  if (previous === signature) return false;
-  lastAppliedTransitionSignature.set("global", signature);
-  lastAppliedTransitionSignature.set(channel, signature);
+  if (previous === effectiveSignature) return false;
+  lastAppliedTransitionSignature.set("global", effectiveSignature);
+  lastAppliedTransitionSignature.set(channel, effectiveSignature);
   return true;
 }
 

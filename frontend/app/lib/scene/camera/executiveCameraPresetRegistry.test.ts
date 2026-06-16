@@ -142,6 +142,25 @@ describe("executive camera transition runtime", () => {
     expect(shouldApplyExecutiveCameraTransition("b", "sig-1")).toBe(false);
     expect(shouldApplyExecutiveCameraTransition("b", "sig-2")).toBe(true);
   });
+
+  it("allows repeated global transitions when reset generation changes", () => {
+    const signature = "global-preset:same-scene";
+    expect(
+      shouldApplyExecutiveCameraTransition("toolbar-preset:global", signature, {
+        globalResetGeneration: 1,
+      })
+    ).toBe(true);
+    expect(
+      shouldApplyExecutiveCameraTransition("toolbar-preset:global", signature, {
+        globalResetGeneration: 1,
+      })
+    ).toBe(false);
+    expect(
+      shouldApplyExecutiveCameraTransition("toolbar-preset:global", signature, {
+        globalResetGeneration: 2,
+      })
+    ).toBe(true);
+  });
 });
 
 describe("executive camera framing runtime", () => {

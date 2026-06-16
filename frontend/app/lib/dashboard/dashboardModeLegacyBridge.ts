@@ -16,20 +16,27 @@ import {
 const LEGACY_CONTEXT_TO_MODE: Readonly<Record<DashboardContext, DashboardMode>> = Object.freeze({
   overview: "overview",
   sources: "overview",
+  compare: "compare",
   scenario: "scenario",
   risk: "analyze",
   war_room: "war_room",
-  timeline: "overview",
-  settings: "overview",
+  timeline: "timeline",
+  settings: "governance",
+  advisory: "advisory",
+  governance: "governance",
 });
 
 const MODE_TO_LEGACY_CONTEXT: Readonly<Record<DashboardMode, DashboardContext>> = Object.freeze({
   overview: "overview",
   focus: "overview",
   analyze: "risk",
-  compare: "scenario",
+  compare: "compare",
   scenario: "scenario",
   war_room: "war_room",
+  risk: "risk",
+  timeline: "timeline",
+  advisory: "advisory",
+  governance: "governance",
 });
 
 const LEGACY_ROUTE_TO_MODE: Readonly<Record<string, DashboardMode>> = Object.freeze({
@@ -49,8 +56,12 @@ const LEGACY_ROUTE_TO_MODE: Readonly<Record<string, DashboardMode>> = Object.fre
   scenario_tree: "scenario",
   war_room: "war_room",
   war: "war_room",
-  timeline: "overview",
-  decision_timeline: "overview",
+  timeline: "timeline",
+  decision_timeline: "timeline",
+  advice: "advisory",
+  strategic_advice: "advisory",
+  recommendation: "advisory",
+  governance: "governance",
 });
 
 export function mapLegacyDashboardContextToMode(context: unknown): DashboardMode {

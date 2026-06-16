@@ -11,7 +11,11 @@ export type DashboardMode =
   | "analyze"
   | "compare"
   | "scenario"
-  | "war_room";
+  | "war_room"
+  | "risk"
+  | "timeline"
+  | "advisory"
+  | "governance";
 
 export const DASHBOARD_MODES: readonly DashboardMode[] = Object.freeze([
   "overview",
@@ -20,6 +24,10 @@ export const DASHBOARD_MODES: readonly DashboardMode[] = Object.freeze([
   "compare",
   "scenario",
   "war_room",
+  "risk",
+  "timeline",
+  "advisory",
+  "governance",
 ]);
 
 export const DEFAULT_DASHBOARD_MODE: DashboardMode = "overview";
@@ -149,6 +157,14 @@ export function dashboardModeLabel(mode: DashboardMode): string {
       return "Scenario";
     case "war_room":
       return "War Room";
+    case "risk":
+      return "Risk";
+    case "timeline":
+      return "Timeline";
+    case "advisory":
+      return "Advisory";
+    case "governance":
+      return "Governance";
     default:
       return "Overview";
   }

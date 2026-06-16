@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useSyncExternalStore } from "rea
 
 import type { NexoraHudThemeMode } from "../../../lib/scene/nexoraHudTheme";
 import {
-  requestCameraPreset,
+  requestGlobalSceneReset,
   requestSceneNavigationAction,
 } from "../../../lib/scene/sceneNavigationContract";
 import {
@@ -94,7 +94,7 @@ export function ExecutiveSceneToolbar(props: ExecutiveSceneToolbarProps): React.
 
   const handleToolbarAction = useCallback((actionId: (typeof EXECUTIVE_TOOLBAR_ACTIONS)[number]["id"]) => {
     if (actionId === "global_view") {
-      requestCameraPreset("global", "toolbar");
+      requestGlobalSceneReset("toolbar");
       return;
     }
     const action = EXECUTIVE_TOOLBAR_ACTIONS.find((entry) => entry.id === actionId);

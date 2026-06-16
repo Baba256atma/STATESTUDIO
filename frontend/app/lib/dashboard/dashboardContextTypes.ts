@@ -12,7 +12,8 @@ export type DashboardContextCategory =
   | "timeline"
   | "war_room"
   | "executive_summary"
-  | "decision";
+  | "decision"
+  | "governance";
 
 export type DashboardContextSource =
   | "scene"
@@ -59,6 +60,7 @@ export type TimelineContext = NormalizedDashboardContextBase & { category: "time
 export type WarRoomContext = NormalizedDashboardContextBase & { category: "war_room" };
 export type ExecutiveSummaryContext = NormalizedDashboardContextBase & { category: "executive_summary" };
 export type DecisionContext = NormalizedDashboardContextBase & { category: "decision" };
+export type GovernanceContext = NormalizedDashboardContextBase & { category: "governance" };
 
 export type NormalizedDashboardContext =
   | OperationalContext
@@ -67,7 +69,8 @@ export type NormalizedDashboardContext =
   | TimelineContext
   | WarRoomContext
   | ExecutiveSummaryContext
-  | DecisionContext;
+  | DecisionContext
+  | GovernanceContext;
 
 export const DASHBOARD_CONTEXT_ROUTER_VERSION = "3.2.0";
 

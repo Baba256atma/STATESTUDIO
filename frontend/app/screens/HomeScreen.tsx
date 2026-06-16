@@ -135,6 +135,13 @@ import {
   type DashboardContext,
   warnUnauthorizedMainRightPanelTab,
 } from "../lib/ui/mainRightPanelContract";
+import {
+  buildMrpContextRestorePlan,
+} from "../lib/ui/mrpContext/mrpContextRestoreContract.ts";
+import {
+  completeMrpContextBackNavigation,
+  requestMrpContextBackNavigation,
+} from "../lib/ui/mrpContext/mrpContextHistoryRuntime.ts";
 import { MainRightPanelShell } from "../components/main-right-panel/MainRightPanelShell";
 import { LegacyDashboardHostMountTrace } from "../components/main-right-panel/LegacyDashboardHostMountTrace";
 import {
@@ -158,8 +165,7 @@ import {
   buildDashboardHomeReturnAction,
 } from "../lib/dashboard";
 import {
-  buildDashboardModeActionFromRoute,
-  routeObjectPanelActionRequest,
+  launchObjectPanelActionRequest,
 } from "../lib/object-panel/objectPanelActionRouterRuntime";
 import {
   ASSISTANT_DASHBOARD_ACTION_EVENT,
@@ -717,6 +723,7 @@ import {
   applyObjectPlacementToScene,
   deselectPlacedObject,
   registerSceneObjectPlacementsFromScene,
+  resetObjectPlacementsToGlobalLayout,
   selectPlacedObject,
 } from "../lib/modeling/objectPlacementRuntime";
 import {
@@ -773,7 +780,13 @@ import {
   applyDomainTemplateToScene,
   type DomainTemplateApplyMode,
 } from "../lib/templates/domainTemplateRuntime";
-import { requestSceneNavigationAction } from "../lib/scene/sceneNavigationContract";
+import {
+  logGlobalResetApplied,
+  logGlobalResetNoopAlreadyGlobal,
+  resolveCanonicalGlobalLayoutPositions,
+  restoreSceneObjectsToGlobalLayout,
+  sceneObjectsNeedGlobalReset,
+} from "../lib/scene/navigation/globalSceneResetRuntime.ts";
 import { ExecutiveWorkspaceLoadDialog } from "../components/workspace/ExecutiveWorkspaceLoadDialog";
 import {
   applySavedViewPreferences,
@@ -1873,6 +1886,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   /** O3:5 — wired after `requestPanelAuthorityOpen` / `requestPanelAuthorityClose` are defined (same tick as render). */
   const panelAuthorityOpenBridgeRef = useRef<RequestPanelAuthorityOpenFn | null>(null);
   const panelAuthorityCloseBridgeRef = useRef<((reason?: string) => void) | null>(null);
+  const openAdvisoryWorkspaceRouteRef = useRef<
+    (input?: {
+      objectId?: string | null;
+      objectName?: string | null;
+      reason?: string;
+      source?: "object_panel" | "system" | "chat";
+    }) => boolean
+  >(() => false);
   const getValidatedPanelSharedDataOnce = useCallback(
     (rawPanelSharedData: unknown): PanelSharedDataValidationResult => {
       const signature = buildPanelValidationCacheKey(rawPanelSharedData);
@@ -2354,6 +2375,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [applySceneChangeSafe]
   );
 
+  const handleGlobalSceneLayoutReset = useCallback(() => {
+    applySceneChangeSafe(
+      (prev) => {
+        if (!prev) return prev;
+        const canonicalDefaults = resolveCanonicalGlobalLayoutPositions(prev);
+        const needsReset = sceneObjectsNeedGlobalReset(prev, canonicalDefaults, {
+          positionOverrides: overridesRef.current,
+        });
+        if (!needsReset) {
+          logGlobalResetNoopAlreadyGlobal({
+            objectCount: prev.scene?.objects?.length ?? 0,
+            source: "global_scene_reset",
+          });
+          return prev;
+        }
+        const restored = restoreSceneObjectsToGlobalLayout(prev, canonicalDefaults);
+        resetObjectPlacementsToGlobalLayout(restored, canonicalDefaults);
+        logGlobalResetApplied({
+          objectCount: restored?.scene?.objects?.length ?? 0,
+          source: "global_scene_reset",
+        });
+        return restored;
+      },
+      "global_scene_reset",
+      { bypassDedupe: true, bypassStableWriteGuard: true }
+    );
+  }, [applySceneChangeSafe]);
+
   const handleObjectEdit = useCallback(
     (objectId: string, patch: EditableObjectPatch) => {
       applySceneChangeSafe((prev) => {
@@ -2615,7 +2664,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }, mode === "import" ? "executive_domain_template_import" : "executive_domain_template_load");
       setSystemModelingOpen(false);
       requestCloseSystemModelingWorkspace("modeling_workspace_confirm");
-      requestSceneNavigationAction("fit_scene", "panel");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("nexora:scene-navigation-action", {
+            detail: {
+              action: "fit_scene",
+              source: "panel",
+              reason: "executive_template_load_fit_scene",
+            },
+          })
+        );
+      }
     },
     [applySceneChangeSafe]
   );
@@ -3227,6 +3286,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   nexoraWorkspaceStateRef.current = nexoraWorkspaceState;
   const dispatchNexoraWorkspaceStateRef = useRef(dispatchNexoraWorkspaceState);
   dispatchNexoraWorkspaceStateRef.current = dispatchNexoraWorkspaceState;
+  const [mrpSubWorkspaceMode, setMrpSubWorkspaceMode] = useState<string | null>(null);
   const [rightPanelState, _setRightPanelState] = useState<RightPanelState>(() => {
     const initialView =
       mapLegacyTabToRightPanelView(activeDomainExperience.experience.preferredRightPanelTab) ?? null;
@@ -7718,14 +7778,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const ctx = pipelineB7ActionContextRef.current;
     setNexoraB8PanelContext(ctx ? nexoraB8PanelContextFromHudRef(ctx) : null);
     traceB8DecisionAction("why_this");
-    requestPanelAuthorityOpen({
-      view: "advice",
-      family: "SIM",
-      source: "system",
+    openAdvisoryWorkspaceRouteRef.current({
       reason: "pipeline_hud_b8_why_this",
-      forceOpen: true,
+      source: "system",
     });
-  }, [requestPanelAuthorityOpen, traceB8DecisionAction]);
+  }, [traceB8DecisionAction]);
 
   const closeCenterComponent = useCallback(() => {
     commitCenterComponentState({ visible: false }, "closeCenterComponent:start");
@@ -10533,6 +10590,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       warnObjectActionRouterBrake("Missing dashboard runtime.", {});
       return false;
     }
+
+    setMrpSubWorkspaceMode(null);
+
     dispatch({
       type: "setDashboardMode",
       mode: launch.dashboardMode,
@@ -10541,12 +10601,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const workspaceId = launch.workspaceId ?? resolveWorkspaceIdFromDashboardMode(launch.dashboardMode);
     if (workspaceId) {
       const commitResult = commitExecutiveWorkspaceTransition(workspaceId);
-      if (commitResult.approved) {
-        recordForwardNavigationAfterCommit({
-          originWorkspaceId: commitResult.previousWorkspaceId,
-          targetWorkspaceId: workspaceId,
+      if (!commitResult.approved) {
+        warnObjectActionRouterBrake("Transition commit failed.", {
+          workspaceId,
+          objectPanelAction: launch.objectPanelAction ?? null,
+          reason: commitResult.reason,
         });
+        return false;
       }
+      recordForwardNavigationAfterCommit({
+        originWorkspaceId: commitResult.previousWorkspaceId,
+        targetWorkspaceId: workspaceId,
+      });
     }
     publishDashboardContextSummaryRef.current({
       completionStatus:
@@ -10577,30 +10643,58 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       (typeof input.objectName === "string" && input.objectName.trim()) ||
       (objectId ? resolveObjectLabelRef.current(objectId) : "") ||
       objectId;
-    const routeResult = routeObjectPanelActionRequest({
+    const { resolved, launch } = launchObjectPanelActionRequest({
       ...input,
+      action: input.action,
       objectId,
       objectName,
     });
-    const dashboardAction = buildDashboardModeActionFromRoute(routeResult);
-    if (!dashboardAction) {
+    if (!resolved.ok || !launch?.approved || !launch.dashboardMode) {
       return false;
     }
     return executeApprovedWorkspaceLaunchRef.current(
       Object.freeze({
-        approved: true,
-        workspaceId: resolveWorkspaceIdFromDashboardMode(dashboardAction.mode),
-        dashboardMode: dashboardAction.mode,
-        objectPanelAction: null,
-        routeObject: dashboardAction.routeObject,
+        ...launch,
+        objectPanelAction: resolved.action,
+        routeObject: launch.routeObject ?? Object.freeze({
+          objectId: resolved.objectId,
+          objectName: resolved.objectName,
+        }),
         source: "object_panel" as const,
-        reason: "object_panel_to_dashboard_mode",
       }),
       {
         routeType: options.routeType ?? "object_panel",
         completionStatus:
           options.completionStatus ??
-          (dashboardAction.mode !== "overview" ? "active" : "opened"),
+          (launch.dashboardMode !== "overview" ? "active" : "opened"),
+      }
+    );
+  };
+  openAdvisoryWorkspaceRouteRef.current = (input = {}) => {
+    const objectId =
+      (typeof input.objectId === "string" && input.objectId.trim()) ||
+      (typeof selectedObjectIdStateRef.current === "string" && selectedObjectIdStateRef.current.trim()) ||
+      nexoraWorkspaceStateRef.current.dashboardRouteObjectId?.trim() ||
+      "";
+    const objectName =
+      (typeof input.objectName === "string" && input.objectName.trim()) ||
+      (objectId ? resolveObjectLabelRef.current(objectId) : "") ||
+      objectId;
+
+    return applyObjectPanelRouteRef.current(
+      {
+        action: "advisory",
+        objectId,
+        objectName,
+      },
+      {
+        routeType:
+          input.source === "chat"
+            ? "assistant_bridge"
+            : input.source === "object_panel"
+              ? "object_panel"
+              : "dashboard_direct",
+        completionStatus: "active",
       }
     );
   };
@@ -16186,6 +16280,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         applyObjectPanelRouteRef.current({
           action,
           objectId: routeContextId,
+          objectName: routeContextId ? resolveObjectLabelRef.current(routeContextId) : undefined,
         });
         return;
       }
@@ -16217,7 +16312,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       switch (action) {
         case "explain_object":
         case "next_move":
-          openSimPanel("advice", "executive_object_action");
+        case "open_decision_analysis":
+          if (!routeContextId) return;
+          applyObjectPanelRouteRef.current({
+            action,
+            objectId: routeContextId,
+            objectName: resolveObjectLabelRef.current(routeContextId),
+          });
           return;
         case "show_dependencies":
           openSimPanel("object", "executive_object_action_dependencies");
@@ -16240,9 +16341,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           return;
         case "open_timeline":
           openSimPanel("decision_timeline", "executive_object_action_timeline");
-          return;
-        case "open_decision_analysis":
-          openSimPanel("advice", "executive_object_action_decision_analysis");
           return;
         case "open_strategic_comparison":
           openSimPanel("compare", "executive_object_action_strategic_comparison");
@@ -16366,12 +16464,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           );
           return;
         case "why_this":
-          requestPanelAuthorityOpen({
-            view: "advice",
-            family: "SIM",
-            source: "chat",
+          openAdvisoryWorkspaceRouteRef.current({
             reason: "chat_command",
-            forceOpen: true,
+            source: "chat",
           });
           return;
         case "simulate":
@@ -19049,14 +19144,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     });
   }, [requestPanelAuthorityOpen]);
   const handleRightPanelOpenWhyThis = useCallback(() => {
-    requestPanelAuthorityOpen({
-      view: "advice",
-      family: "SIM",
-      source: "sub_button",
+    openAdvisoryWorkspaceRouteRef.current({
       reason: "right_panel_host_why_this",
-      forceOpen: true,
+      source: "system",
     });
-  }, [requestPanelAuthorityOpen]);
+  }, []);
   const handleRightPanelOpenStrategicCommand = useCallback(() => {
     routeIntentToPanel("open_strategic_command", {
       destinationSurface: "component_panel",
@@ -19349,6 +19441,40 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     selectedObjectLabelForWarRoom,
   ]);
 
+  const handleMrpContextBackNavigation = useCallback(() => {
+    const back = requestMrpContextBackNavigation();
+    if (!back.approved || !back.entry) {
+      completeMrpContextBackNavigation();
+      handleReturnToDashboardHome();
+      return;
+    }
+
+    const dispatch = dispatchNexoraWorkspaceStateRef.current;
+    if (!dispatch) {
+      completeMrpContextBackNavigation();
+      return;
+    }
+
+    const plan = buildMrpContextRestorePlan(back.entry);
+    setMrpSubWorkspaceMode(plan.subWorkspaceMode);
+
+    for (const action of plan.actions) {
+      dispatch(action);
+    }
+
+    if (plan.selectedObjectId) {
+      commitObjectSelection(plan.selectedObjectId, "mrp_context_back");
+    }
+
+    publishDashboardContextSummaryRef.current({
+      completionStatus: "returned_passive",
+      routeType: "return_passive",
+      dashboardMode: back.entry.dashboardMode,
+    });
+
+    completeMrpContextBackNavigation();
+  }, [commitObjectSelection, handleReturnToDashboardHome]);
+
   const handleRecentReturn = useCallback(
     (input: { workspaceId: ExecutiveWorkspaceId; returnKind: WorkspaceRecentReturnKind }) => {
       const objectId =
@@ -19543,6 +19669,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           collapsed={executiveAssistantCollapsed}
           onToggleCollapse={handleMainRightPanelToggleCollapse}
           dashboardMode={nexoraWorkspaceState.dashboardMode}
+          dashboardContext={nexoraWorkspaceState.dashboardContext}
+          subWorkspaceMode={mrpSubWorkspaceMode}
           dashboardRouteObjectId={nexoraWorkspaceState.dashboardRouteObjectId}
           dashboardRouteObjectName={nexoraWorkspaceState.dashboardRouteObjectName}
           focusContext={focusModeContext}
@@ -19557,10 +19685,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           launcherSelectedObjectLabel={selectedObjectLabelForWarRoom}
           launcherSelectedObjectType={dashboardFocusObjectData?.objectType ?? null}
           launcherSelectedObjectStatus={dashboardFocusObjectData?.status ?? null}
+          workspaceSceneJson={visibleSceneJson ?? null}
           recommendationContext={workspaceRecommendationContext}
           recentsContext={workspaceRecentsContext}
           onRecentReturn={handleRecentReturn}
           onReturnToDashboardHome={handleReturnToDashboardHome}
+          onMrpContextBack={handleMrpContextBackNavigation}
           useIntegratedAssistantStack={useVisibleMrpRightRailHost}
           showAssistantScenarioHost={shouldShowExecutiveScenarioSuggestionsPanel()}
           showAssistantComparisonHost={shouldShowExecutiveScenarioComparisonPanel()}
@@ -20987,7 +21117,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }, "executive_workspace_load");
 
       setWorkspaceLoadOpen(false);
-      requestSceneNavigationAction("fit_scene", "panel");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("nexora:scene-navigation-action", {
+            detail: {
+              action: "fit_scene",
+              source: "panel",
+              reason: "workspace_load_fit_scene",
+            },
+          })
+        );
+      }
     },
     [applySceneChangeSafe, setFocusedId, setThemeMode, setWorkspaceLayoutPreset]
   );
@@ -23677,6 +23817,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           onObjectUserClick={handleObjectUserClick}
           sceneSelectionEchoGuardRef={sceneSelectionEchoGuardRef}
           onObjectPositionChange={handleSceneObjectPositionChange}
+          onGlobalSceneLayoutReset={handleGlobalSceneLayoutReset}
           selectedRelationshipId={selectedRelationshipId}
           onRelationshipSelect={handleRelationshipSelect}
           selectedPropagationPathId={selectedPropagationPathId}

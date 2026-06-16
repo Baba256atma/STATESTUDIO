@@ -37,6 +37,42 @@ import {
   type WorkspaceLauncherCardView,
   type WorkspaceLauncherStateView,
 } from "./workspaceLauncherContract.ts";
+import {
+  areWorkspaceLauncherRouteSignaturesEqual,
+  buildWorkspaceLauncherRouteSignature,
+  type WorkspaceLauncherRouteSignature,
+} from "./workspaceLauncherRouteSignatureContract.ts";
+
+let activeRouteSignature: WorkspaceLauncherRouteSignature | null = null;
+let routeGeneration = 0;
+
+export function getActiveWorkspaceLauncherRouteSignature(): WorkspaceLauncherRouteSignature | null {
+  return activeRouteSignature;
+}
+
+function recordApprovedWorkspaceLauncherRoute(input: {
+  workspaceId: ExecutiveWorkspaceId;
+  dashboardMode: DashboardMode | null;
+  selectedObjectId: string | null;
+  objectPanelAction: ObjectPanelDashboardAction | null;
+  source: WorkspaceLaunchRequestInput["source"];
+}): WorkspaceLauncherRouteSignature {
+  routeGeneration += 1;
+  activeRouteSignature = buildWorkspaceLauncherRouteSignature({
+    workspaceId: input.workspaceId,
+    dashboardMode: input.dashboardMode,
+    selectedObjectId: input.selectedObjectId,
+    objectPanelAction: input.objectPanelAction,
+    source: input.source,
+    routeGeneration,
+  });
+  return activeRouteSignature;
+}
+
+export function resetWorkspaceLauncherRouteSignatureForTests(): void {
+  activeRouteSignature = null;
+  routeGeneration = 0;
+}
 
 function isLauncherCatalogEntry(entry: ExecutiveWorkspaceCatalogEntry): boolean {
   if (entry.id === "overview") return false;
@@ -192,10 +228,29 @@ export function requestWorkspaceLaunch(
   }
 
   const active = getActiveWorkspaceLifecycleState();
-  if (active?.workspaceId === target.workspaceId && active.currentState === "active") {
+  const incomingRouteSignature = buildWorkspaceLauncherRouteSignature({
+    workspaceId: target.workspaceId,
+    dashboardMode: target.entry.dashboardMode,
+    selectedObjectId: objectId || null,
+    objectPanelAction: target.objectPanelAction ?? target.entry.objectPanelAction,
+    source: input.source,
+    routeGeneration,
+  });
+  const lifecycleActiveForTarget =
+    active?.workspaceId === target.workspaceId && active.currentState === "active";
+  const routeAlreadyActive =
+    lifecycleActiveForTarget &&
+    areWorkspaceLauncherRouteSignaturesEqual(activeRouteSignature, incomingRouteSignature);
+
+  if (routeAlreadyActive) {
     warnWorkspaceLauncherStateBrake("Already active workspace.", {
       workspaceId: target.workspaceId,
+      objectPanelAction: target.objectPanelAction ?? input.objectPanelAction ?? null,
       source: input.source,
+      selectedObjectId: objectId || null,
+      dashboardContext: incomingRouteSignature.dashboardContext,
+      mountKey: incomingRouteSignature.mountKey,
+      routeGeneration: activeRouteSignature?.routeGeneration ?? null,
     });
     return Object.freeze({
       approved: false,
@@ -269,14 +324,23 @@ export function requestWorkspaceLaunch(
       workspaceId: target.workspaceId,
       source: input.source,
       objectId: objectId || null,
+      routeGeneration: routeGeneration + 1,
     });
   }
+
+  recordApprovedWorkspaceLauncherRoute({
+    workspaceId: target.workspaceId,
+    dashboardMode: target.entry.dashboardMode,
+    selectedObjectId: objectId || null,
+    objectPanelAction: target.objectPanelAction ?? target.entry.objectPanelAction,
+    source: input.source,
+  });
 
   return Object.freeze({
     approved: true,
     workspaceId: target.workspaceId,
     dashboardMode: target.entry.dashboardMode,
-    objectPanelAction: target.entry.objectPanelAction,
+    objectPanelAction: target.objectPanelAction ?? target.entry.objectPanelAction,
     routeObject: objectId
       ? Object.freeze({ objectId, objectName })
       : null,

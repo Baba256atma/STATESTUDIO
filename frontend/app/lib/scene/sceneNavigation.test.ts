@@ -3,9 +3,11 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   focusObject,
   requestCameraPreset,
+  requestGlobalSceneReset,
   requestSceneNavigationAction,
   requestSceneNavigationMode,
 } from "./sceneNavigationContract";
+import { resetGlobalSceneResetRuntimeForTests } from "./navigation/globalSceneResetRuntime";
 import {
   getSceneNavigationMode,
   getSelectedCameraPresetId,
@@ -19,6 +21,7 @@ describe("sceneNavigationContract", () => {
   beforeEach(() => {
     resetSceneNavigationStoreForTests();
     resetSceneNavigationInstrumentationForTests();
+    resetGlobalSceneResetRuntimeForTests();
     if (typeof globalThis.window === "undefined") {
       (globalThis as typeof globalThis & { window: Window }).window = {
         dispatchEvent: () => true,
@@ -51,6 +54,18 @@ describe("sceneNavigationContract", () => {
     const event = vi.mocked(window.dispatchEvent).mock.calls.at(-1)?.[0] as CustomEvent;
     expect(event.type).toBe("nexora:scene-navigation-action");
     expect(event.detail.action).toBe("fit_scene");
+  });
+
+  it("dispatches global reset with monotonic generation", () => {
+    requestGlobalSceneReset("panel");
+    const first = vi.mocked(window.dispatchEvent).mock.calls.at(-1)?.[0] as CustomEvent;
+    expect(first.type).toBe("nexora:scene-navigation-preset");
+    expect(first.detail.presetId).toBe("global");
+    expect(first.detail.resetGeneration).toBe(1);
+
+    requestGlobalSceneReset("panel");
+    const second = vi.mocked(window.dispatchEvent).mock.calls.at(-1)?.[0] as CustomEvent;
+    expect(second.detail.resetGeneration).toBe(2);
   });
 });
 

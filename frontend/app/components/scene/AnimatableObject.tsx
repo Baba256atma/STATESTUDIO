@@ -76,6 +76,17 @@ import {
 } from "./sceneRenderUtils";
 import { deriveAnimatableVisualState } from "./animatableObject/deriveAnimatableVisualState";
 import { buildAnimatableMotionState } from "./animatableObject/buildAnimatableMotionState";
+import { SvieRiskHotspotOverlay } from "./SvieRiskHotspotOverlay";
+import { SvieCauseChainNodeHighlight } from "./SvieCauseChainNodeHighlight";
+import { SvieRecommendationNodeHighlight } from "./SvieRecommendationNodeHighlight";
+import { SvieConfidenceNodeHighlight } from "./SvieConfidenceNodeHighlight";
+import { SvieExecutiveStoryNodeHighlight } from "./SvieExecutiveStoryNodeHighlight";
+import { SvieFutureStateNodeHighlight } from "./SvieFutureStateNodeHighlight";
+import { SvieScenarioDeltaNodeHighlight } from "./SvieScenarioDeltaNodeHighlight";
+import { SvieScenarioImpactNodeHighlight } from "./SvieScenarioImpactNodeHighlight";
+import { SvieScenarioComparisonNodeHighlight } from "./SvieScenarioComparisonNodeHighlight";
+import { SvieScenarioConfidenceNodeHighlight } from "./SvieScenarioConfidenceNodeHighlight";
+import { SvieExecutiveFutureStoryNodeHighlight } from "./SvieExecutiveFutureStoryNodeHighlight";
 import { getCalmSeverityVisual } from "../../lib/scene/calmSeverityVisuals";
 import { resolveSceneObjectIcon } from "../../lib/scene/objectIconMapping";
 import { resolveExecutiveObjectName } from "../../lib/scene/executiveObjectNamingRuntime";
@@ -339,6 +350,18 @@ export type AnimatableObjectProps = {
     phase: "drag" | "move"
   ) => void;
   onObjectUserClick?: (objectId: string, eventId: string) => void;
+  svieHealthVisual?: import("../../lib/scene/svie/svieHealthVisualizationContract.ts").SvieObjectHealthVisualStyle | null;
+  svieRiskHotspotVisual?: import("../../lib/scene/svie/svieRiskHotspotVisualizationContract.ts").SvieObjectRiskHotspotVisualStyle | null;
+  svieCauseChainNodeVisual?: import("../../lib/scene/svie/svieCauseChainVisualizationContract.ts").SvieCauseChainNodeVisualStyle | null;
+  svieRecommendationNodeVisual?: import("../../lib/scene/svie/svieRecommendationVisualizationContract.ts").SvieRecommendationNodeVisualStyle | null;
+  svieConfidenceNodeVisual?: import("../../lib/scene/svie/svieConfidenceVisualizationContract.ts").SvieConfidenceNodeVisualStyle | null;
+  svieExecutiveStoryNodeVisual?: import("../../lib/scene/svie/svieExecutiveStoryLayerContract.ts").SvieExecutiveStoryNodeVisualStyle | null;
+  svieFutureStateNodeVisual?: import("../../lib/scene/svie/svieFutureStateVisualizationContract.ts").SvieFutureStateNodeVisualStyle | null;
+  svieScenarioDeltaNodeVisual?: import("../../lib/scene/svie/svieScenarioDeltaVisualizationContract.ts").SvieScenarioDeltaNodeVisualStyle | null;
+  svieScenarioImpactNodeVisual?: import("../../lib/scene/svie/svieScenarioImpactChainContract.ts").SvieScenarioImpactChainNodeVisualStyle | null;
+  svieScenarioComparisonNodeVisual?: import("../../lib/scene/svie/svieScenarioComparisonLayerContract.ts").SvieScenarioComparisonNodeVisualStyle | null;
+  svieScenarioConfidenceNodeVisual?: import("../../lib/scene/svie/svieScenarioConfidenceLayerContract.ts").SvieScenarioConfidenceNodeVisualStyle | null;
+  svieExecutiveFutureStoryNodeVisual?: import("../../lib/scene/svie/svieExecutiveFutureStoryLayerContract.ts").SvieExecutiveFutureStoryNodeVisualStyle | null;
 };
 
 export const AnimatableObject = React.memo(function AnimatableObject({
@@ -398,6 +421,18 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   relationshipExplorationActive = false,
   onObjectPositionChange,
   onObjectUserClick,
+  svieHealthVisual = null,
+  svieRiskHotspotVisual = null,
+  svieCauseChainNodeVisual = null,
+  svieRecommendationNodeVisual = null,
+  svieConfidenceNodeVisual = null,
+  svieExecutiveStoryNodeVisual = null,
+  svieFutureStateNodeVisual = null,
+  svieScenarioDeltaNodeVisual = null,
+  svieScenarioImpactNodeVisual = null,
+  svieScenarioComparisonNodeVisual = null,
+  svieScenarioConfidenceNodeVisual = null,
+  svieExecutiveFutureStoryNodeVisual = null,
 }: AnimatableObjectProps) {
   const ref = useRef<THREE.Object3D>(null);
   const dragStateRef = useRef<{
@@ -1346,11 +1381,19 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     : Math.max(warRoomAdjustedEmissiveIntensity, calmSeverityVisual.glowStrength);
 
   const committedMeshOpacity = roundMaterialScalar(executiveAdjustedOpacity);
-  const committedMeshEmissiveIntensity = roundMaterialScalar(rawMeshEmissiveIntensity);
+  const svieEmissiveIntensity =
+    svieHealthVisual && !selectedVisual && !scannerHighlighted
+      ? svieHealthVisual.emissiveIntensity
+      : 0;
+  const committedMeshEmissiveIntensity = roundMaterialScalar(
+    Math.max(rawMeshEmissiveIntensity, svieEmissiveIntensity)
+  );
   const committedMeshEmissiveHex = selectedVisual
       ? "#ffffff"
       : scannerHighlighted
         ? scannerColor
+        : svieHealthVisual && !scannerHighlighted
+          ? svieHealthVisual.emissiveColor
         : (materialProps.emissive as string | undefined) ?? "#000000";
 
   const materialSignature = useMemo(
@@ -1955,6 +1998,170 @@ export const AnimatableObject = React.memo(function AnimatableObject({
               opacity={scannerFocused ? 0.38 : 0.24}
             />
           </mesh>
+        ) : null}
+        {svieHealthVisual?.showGlowLayer && !selectedVisual && !scannerHaloVisible ? (
+          <mesh
+            raycast={disableMeshRaycast}
+            rotation={[Math.PI / 2, 0, 0]}
+            scale={[
+              (meshScale?.[0] ?? 1) * 1.54,
+              (meshScale?.[1] ?? 1) * 1.54,
+              (meshScale?.[2] ?? 1) * 1.54,
+            ]}
+          >
+            <torusGeometry args={[0.9, 0.038, 12, 36]} />
+            <meshStandardMaterial
+              color={sanitizeThreeColor(svieHealthVisual.glowColor)}
+              emissive={sanitizeThreeColor(svieHealthVisual.glowColor)}
+              emissiveIntensity={svieHealthVisual.glowIntensity}
+              transparent
+              opacity={svieHealthVisual.glowOpacity}
+            />
+          </mesh>
+        ) : null}
+        {svieHealthVisual?.badgeVisible && !selectedVisual ? (
+          <mesh raycast={disableMeshRaycast} position={[0, 1.05, 0]}>
+            <sphereGeometry args={[0.06, 10, 10]} />
+            <meshStandardMaterial
+              color={sanitizeThreeColor(svieHealthVisual.outlineColor)}
+              emissive={sanitizeThreeColor(svieHealthVisual.outlineColor)}
+              emissiveIntensity={svieHealthVisual.outlineOpacity}
+              transparent
+              opacity={Math.min(0.9, svieHealthVisual.outlineOpacity + 0.35)}
+            />
+          </mesh>
+        ) : null}
+        {svieRiskHotspotVisual ? (
+          <SvieRiskHotspotOverlay
+            visual={svieRiskHotspotVisual}
+            meshScale={[
+              meshScale?.[0] ?? 1,
+              meshScale?.[1] ?? 1,
+              meshScale?.[2] ?? 1,
+            ]}
+            selectedVisual={!!selectedVisual}
+            scannerHaloVisible={scannerHaloVisible}
+          />
+        ) : null}
+        {svieCauseChainNodeVisual ? (
+          <SvieCauseChainNodeHighlight
+            visual={svieCauseChainNodeVisual}
+            meshScale={[
+              meshScale?.[0] ?? 1,
+              meshScale?.[1] ?? 1,
+              meshScale?.[2] ?? 1,
+            ]}
+            selectedVisual={!!selectedVisual}
+            scannerHaloVisible={scannerHaloVisible}
+          />
+        ) : null}
+        {svieRecommendationNodeVisual ? (
+          <SvieRecommendationNodeHighlight
+            visual={svieRecommendationNodeVisual}
+            meshScale={[
+              meshScale?.[0] ?? 1,
+              meshScale?.[1] ?? 1,
+              meshScale?.[2] ?? 1,
+            ]}
+            selectedVisual={!!selectedVisual}
+            scannerHaloVisible={scannerHaloVisible}
+          />
+        ) : null}
+        {svieConfidenceNodeVisual ? (
+          <SvieConfidenceNodeHighlight
+            visual={svieConfidenceNodeVisual}
+            meshScale={[
+              meshScale?.[0] ?? 1,
+              meshScale?.[1] ?? 1,
+              meshScale?.[2] ?? 1,
+            ]}
+            selectedVisual={!!selectedVisual}
+            scannerHaloVisible={scannerHaloVisible}
+          />
+        ) : null}
+        {svieExecutiveStoryNodeVisual ? (
+          <SvieExecutiveStoryNodeHighlight
+            visual={svieExecutiveStoryNodeVisual}
+            meshScale={[
+              meshScale?.[0] ?? 1,
+              meshScale?.[1] ?? 1,
+              meshScale?.[2] ?? 1,
+            ]}
+            selectedVisual={!!selectedVisual}
+            scannerHaloVisible={scannerHaloVisible}
+          />
+        ) : null}
+        {svieFutureStateNodeVisual ? (
+          <SvieFutureStateNodeHighlight
+            visual={svieFutureStateNodeVisual}
+            meshScale={[
+              meshScale?.[0] ?? 1,
+              meshScale?.[1] ?? 1,
+              meshScale?.[2] ?? 1,
+            ]}
+            selectedVisual={!!selectedVisual}
+            scannerHaloVisible={scannerHaloVisible}
+          />
+        ) : null}
+        {svieScenarioDeltaNodeVisual ? (
+          <SvieScenarioDeltaNodeHighlight
+            visual={svieScenarioDeltaNodeVisual}
+            meshScale={[
+              meshScale?.[0] ?? 1,
+              meshScale?.[1] ?? 1,
+              meshScale?.[2] ?? 1,
+            ]}
+            selectedVisual={!!selectedVisual}
+            scannerHaloVisible={scannerHaloVisible}
+          />
+        ) : null}
+        {svieScenarioImpactNodeVisual ? (
+          <SvieScenarioImpactNodeHighlight
+            visual={svieScenarioImpactNodeVisual}
+            meshScale={[
+              meshScale?.[0] ?? 1,
+              meshScale?.[1] ?? 1,
+              meshScale?.[2] ?? 1,
+            ]}
+            selectedVisual={!!selectedVisual}
+            scannerHaloVisible={scannerHaloVisible}
+          />
+        ) : null}
+        {svieScenarioComparisonNodeVisual ? (
+          <SvieScenarioComparisonNodeHighlight
+            visual={svieScenarioComparisonNodeVisual}
+            meshScale={[
+              meshScale?.[0] ?? 1,
+              meshScale?.[1] ?? 1,
+              meshScale?.[2] ?? 1,
+            ]}
+            selectedVisual={!!selectedVisual}
+            scannerHaloVisible={scannerHaloVisible}
+          />
+        ) : null}
+        {svieScenarioConfidenceNodeVisual ? (
+          <SvieScenarioConfidenceNodeHighlight
+            visual={svieScenarioConfidenceNodeVisual}
+            meshScale={[
+              meshScale?.[0] ?? 1,
+              meshScale?.[1] ?? 1,
+              meshScale?.[2] ?? 1,
+            ]}
+            selectedVisual={!!selectedVisual}
+            scannerHaloVisible={scannerHaloVisible}
+          />
+        ) : null}
+        {svieExecutiveFutureStoryNodeVisual ? (
+          <SvieExecutiveFutureStoryNodeHighlight
+            visual={svieExecutiveFutureStoryNodeVisual}
+            meshScale={[
+              meshScale?.[0] ?? 1,
+              meshScale?.[1] ?? 1,
+              meshScale?.[2] ?? 1,
+            ]}
+            selectedVisual={!!selectedVisual}
+            scannerHaloVisible={scannerHaloVisible}
+          />
         ) : null}
         {showFocusWireframe ? (
           <mesh

@@ -1,11 +1,16 @@
 "use client";
 
 import type React from "react";
+import { useSyncExternalStore } from "react";
 
 import {
   WAR_ROOM_SITUATION_FUTURE_MESSAGE,
   type WarRoomWorkspaceContextView,
 } from "../../../lib/dashboard/warRoom/warRoomModeContract";
+import {
+  getWarRoomScenarioHandoffState,
+  subscribeWarRoomScenarioHandoffState,
+} from "../../../lib/ui/mrpWorkspace/warRoom/warRoomScenarioHandoffRuntime";
 import { nx, softCardStyle } from "../../ui/nexoraTheme";
 
 export type WarRoomWorkspaceShellProps = {
@@ -68,6 +73,12 @@ function moduleRow(module: WarRoomWorkspaceContextView["modules"][number]): Reac
 
 export function WarRoomWorkspaceShell(props: WarRoomWorkspaceShellProps): React.ReactElement {
   const context = props.context;
+  const handoffState = useSyncExternalStore(
+    subscribeWarRoomScenarioHandoffState,
+    getWarRoomScenarioHandoffState,
+    getWarRoomScenarioHandoffState
+  );
+  const commitPackage = handoffState.commitPackage;
 
   if (!context) {
     return (
@@ -151,6 +162,41 @@ export function WarRoomWorkspaceShell(props: WarRoomWorkspaceShellProps): React.
             {headerMetric("Object", context.objectName)}
             {headerMetric("Status", context.warRoomStatusLabel)}
           </div>
+        </div>
+
+        <div style={{ ...softCardStyle, padding: 12 }}>
+          <div
+            style={{
+              fontSize: 9,
+              fontWeight: 800,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: nx.lowMuted,
+              marginBottom: 8,
+            }}
+          >
+            Scenario Handoff Context
+          </div>
+          {commitPackage ? (
+            <div
+              data-nx-war-room-scenario-handoff="true"
+              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+            >
+              <div style={{ color: nx.text, fontSize: 13, fontWeight: 700 }}>
+                {commitPackage.title}
+              </div>
+              <div style={{ color: nx.textSoft, fontSize: 12, lineHeight: 1.45 }}>
+                {commitPackage.probability} · {commitPackage.impact} · {commitPackage.confidence}
+              </div>
+              <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45 }}>
+                Prepared from Scenario workspace — execution remains War Room owned.
+              </div>
+            </div>
+          ) : (
+            <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45 }}>
+              No scenario commit package received yet.
+            </div>
+          )}
         </div>
 
         <div style={{ ...softCardStyle, padding: 12 }}>

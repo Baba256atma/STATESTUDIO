@@ -7,7 +7,9 @@ import {
   warnMainRightPanelStateBrake,
   type MainRightPanelTab,
 } from "../../lib/ui/mainRightPanelStateContract";
+import type { DashboardContext } from "../../lib/ui/mainRightPanelContract";
 import type { DashboardMode } from "../../lib/dashboard/dashboardModeRuntimeContract";
+import type { SceneJson } from "../../lib/sceneTypes";
 import { dashboardModeLabel } from "../../lib/dashboard/dashboardModeRuntimeContract";
 import type { AnalyzeWorkspaceContextView } from "../../lib/dashboard/analyze/analyzeModeContract";
 import type { CompareWorkspaceContextView } from "../../lib/dashboard/compare/compareModeContract";
@@ -39,14 +41,19 @@ import {
   mrpHeaderTabRowStyle,
   traceNexoraMRPHeader,
 } from "../../lib/ui/mainRightPanelHeaderContract";
+import { useSyncMrpContextStore } from "../../lib/ui/mrpContext/useSyncMrpContextStore.ts";
 import { DashboardRuntimePanel } from "./DashboardRuntimePanel";
+import { MrpDynamicWorkspaceZone } from "./MrpDynamicWorkspaceZone";
 import { MainRightPanelAssistantPlaceholder } from "./MainRightPanelAssistantPlaceholder";
+import { MainRightPanelContextHeader } from "./MainRightPanelContextHeader";
 import { MrpChatFirstAssistantSurface } from "./MrpChatFirstAssistantSurface";
 import type { ExecutiveAssistantActionCard } from "../../lib/ui/executiveAssistantPanelTypes";
 
 export type MainRightPanelShellProps = {
   activeTab: MainRightPanelTab;
   dashboardMode: DashboardMode;
+  dashboardContext: DashboardContext;
+  subWorkspaceMode?: string | null;
   dashboardRouteObjectId?: string | null;
   dashboardRouteObjectName?: string | null;
   focusContext?: FocusModeContextView | null;
@@ -61,6 +68,8 @@ export type MainRightPanelShellProps = {
   launcherSelectedObjectLabel?: string | null;
   launcherSelectedObjectType?: string | null;
   launcherSelectedObjectStatus?: string | null;
+  /** Read-only scene snapshot for MRP workspace metrics (Risk). No scene writes. */
+  workspaceSceneJson?: SceneJson | null;
   recommendationContext?: WorkspaceRecommendationContext;
   recentsContext?: WorkspaceRecentsContextInput;
   onRecentReturn?: (input: {
@@ -68,6 +77,7 @@ export type MainRightPanelShellProps = {
     returnKind: WorkspaceRecentReturnKind;
   }) => void;
   onReturnToDashboardHome?: () => void;
+  onMrpContextBack?: () => void;
   /** Legacy RightPanelHost — isolated to Dashboard runtime legacy host slot. */
   legacyDashboardHost?: React.ReactNode;
   /** Type-C: assistant tab uses integrated executive stack hosts instead of placeholder. */
@@ -183,6 +193,78 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
   );
   const selectedObjectId = props.launcherSelectedObjectId ?? props.dashboardRouteObjectId;
   const selectedObjectLabel = props.launcherSelectedObjectLabel ?? props.dashboardRouteObjectName;
+
+  useSyncMrpContextStore({
+    activeTab,
+    dashboardMode: props.dashboardMode,
+    dashboardContext: props.dashboardContext,
+    selectedObjectId,
+    selectedObjectLabel,
+    routeObjectId: props.dashboardRouteObjectId,
+    routeObjectName: props.dashboardRouteObjectName,
+    subWorkspaceMode: props.subWorkspaceMode,
+    focusContext: props.focusContext,
+    analyzeContext: props.analyzeContext,
+    compareContext: props.compareContext,
+    scenarioContext: props.scenarioContext,
+    warRoomContext: props.warRoomContext,
+  });
+
+  const handleContextBackNavigation = React.useCallback(() => {
+    if (props.onMrpContextBack) {
+      props.onMrpContextBack();
+      return;
+    }
+    props.onReturnToDashboardHome?.();
+  }, [props.onMrpContextBack, props.onReturnToDashboardHome]);
+
+  const renderDashboardRuntime = React.useCallback(
+    () => (
+      <DashboardRuntimePanel
+        mode={props.dashboardMode}
+        routeObjectId={props.dashboardRouteObjectId}
+        routeObjectName={props.dashboardRouteObjectName}
+        focusContext={props.focusContext}
+        analyzeContext={props.analyzeContext}
+        compareContext={props.compareContext}
+        scenarioContext={props.scenarioContext}
+        warRoomContext={props.warRoomContext}
+        legacyHost={props.legacyDashboardHost}
+        activeWorkspaceId={activeWorkspaceId}
+        selectedObjectId={selectedObjectId}
+        selectedObjectLabel={selectedObjectLabel}
+        selectedObjectType={props.launcherSelectedObjectType ?? null}
+        selectedObjectStatus={props.launcherSelectedObjectStatus ?? null}
+        onWorkspaceLaunch={props.onWorkspaceLaunch}
+        recommendationContext={props.recommendationContext}
+        recentsContext={props.recentsContext}
+        onRecentReturn={props.onRecentReturn}
+        onReturnToDashboardHome={props.onReturnToDashboardHome}
+      />
+    ),
+    [
+      activeWorkspaceId,
+      props.analyzeContext,
+      props.compareContext,
+      props.dashboardMode,
+      props.dashboardRouteObjectId,
+      props.dashboardRouteObjectName,
+      props.focusContext,
+      props.launcherSelectedObjectStatus,
+      props.launcherSelectedObjectType,
+      props.legacyDashboardHost,
+      props.onRecentReturn,
+      props.onReturnToDashboardHome,
+      props.onWorkspaceLaunch,
+      props.recommendationContext,
+      props.recentsContext,
+      props.scenarioContext,
+      props.warRoomContext,
+      selectedObjectId,
+      selectedObjectLabel,
+    ]
+  );
+
   const panelBody = (
     <>
       <div
@@ -199,26 +281,18 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
           overflow: "hidden",
         }}
       >
-        <DashboardRuntimePanel
-          mode={props.dashboardMode}
-          routeObjectId={props.dashboardRouteObjectId}
-          routeObjectName={props.dashboardRouteObjectName}
-          focusContext={props.focusContext}
-          analyzeContext={props.analyzeContext}
-          compareContext={props.compareContext}
-          scenarioContext={props.scenarioContext}
-          warRoomContext={props.warRoomContext}
-          legacyHost={props.legacyDashboardHost}
-          activeWorkspaceId={activeWorkspaceId}
+        <MrpDynamicWorkspaceZone
+          dashboardMode={props.dashboardMode}
+          dashboardContext={props.dashboardContext}
+          subWorkspaceMode={props.subWorkspaceMode}
           selectedObjectId={selectedObjectId}
           selectedObjectLabel={selectedObjectLabel}
           selectedObjectType={props.launcherSelectedObjectType ?? null}
           selectedObjectStatus={props.launcherSelectedObjectStatus ?? null}
-          onWorkspaceLaunch={props.onWorkspaceLaunch}
-          recommendationContext={props.recommendationContext}
-          recentsContext={props.recentsContext}
-          onRecentReturn={props.onRecentReturn}
-          onReturnToDashboardHome={props.onReturnToDashboardHome}
+          routeObjectId={props.dashboardRouteObjectId}
+          routeObjectName={props.dashboardRouteObjectName}
+          workspaceSceneJson={props.workspaceSceneJson}
+          renderDashboardRuntime={renderDashboardRuntime}
         />
       </div>
 
@@ -376,6 +450,7 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
           overflow: "hidden",
         }}
       >
+        <MainRightPanelContextHeader onBackNavigation={handleContextBackNavigation} />
         {panelBody}
       </div>
     </div>

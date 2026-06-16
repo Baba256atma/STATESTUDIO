@@ -34,11 +34,14 @@ export type RawDashboardContextInput = Readonly<{
 const DASHBOARD_CONTEXT_TO_CATEGORY: Readonly<Record<DashboardContext, DashboardContextCategory>> = Object.freeze({
   overview: "executive_summary",
   sources: "operational",
+  compare: "scenario",
   scenario: "scenario",
   risk: "risk",
   war_room: "war_room",
   timeline: "timeline",
   settings: "operational",
+  advisory: "decision",
+  governance: "governance",
 });
 
 const ROUTE_SOURCE_TO_CONTEXT_SOURCE: Readonly<Record<RouteRequestSource, DashboardContextSource>> = Object.freeze({
@@ -88,9 +91,12 @@ function resolveIntent(input: {
   if (input.explicitIntent && input.explicitIntent !== "default") return input.explicitIntent;
   if (input.objectId && input.source === "object") return "object_selected";
   if (input.dashboardContext === "risk") return "risk_event";
+  if (input.dashboardContext === "compare") return "scenario_comparison";
   if (input.dashboardContext === "scenario") return "scenario_comparison";
   if (input.dashboardContext === "timeline") return "timeline_activation";
   if (input.dashboardContext === "war_room") return "war_room_activation";
+  if (input.dashboardContext === "advisory") return "assistant_handoff";
+  if (input.dashboardContext === "governance") return "default";
   if (input.source === "assistant") return "assistant_handoff";
   return "default";
 }
@@ -148,6 +154,8 @@ export function normalizeDashboardContextInput(input: {
   if (intent === "scenario_comparison") category = "scenario";
   if (intent === "timeline_activation") category = "timeline";
   if (intent === "war_room_activation") category = "war_room";
+  if (intent === "assistant_handoff" && dashboardContext === "advisory") category = "decision";
+  if (dashboardContext === "governance") category = "governance";
   if (intent === "assistant_handoff" && dashboardContext === "overview") category = "executive_summary";
 
   const surfaceId = resolveSurfaceFromNormalizedContext({ category, intent, dashboardContext });

@@ -7,7 +7,7 @@ import {
   scenePanelCommandButtonStyle,
 } from "../../lib/hud/scenePanelHeaderActionStyle";
 import {
-  requestCameraPreset,
+  requestGlobalSceneReset,
   requestSceneNavigationAction,
 } from "../../lib/scene/sceneNavigationContract";
 import {
@@ -46,7 +46,7 @@ export function ScenePanelControls(_props: ScenePanelControlsProps): React.React
   const handleAction = React.useCallback((actionId: ScenePanelControlActionId) => {
     traceScenePanelControlAction(actionId);
     if (actionId === "global_view") {
-      requestCameraPreset("global", "panel");
+      requestGlobalSceneReset("panel");
       return;
     }
     if (actionId === "fit_scene") {

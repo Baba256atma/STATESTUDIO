@@ -27,6 +27,7 @@ export type SceneApplySource =
 
 export type SceneApplyOptions = Readonly<{
   bypassDedupe?: boolean;
+  bypassStableWriteGuard?: boolean;
   allowDestructiveReset?: boolean;
   reason?: string;
   trace?: boolean;

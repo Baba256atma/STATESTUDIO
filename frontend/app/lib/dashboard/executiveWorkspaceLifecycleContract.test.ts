@@ -46,7 +46,12 @@ test("initializes lifecycle states from registry catalog", () => {
   assert.equal(analyze.state?.currentState, "available");
 
   const risk = validateWorkspaceLifecycleOpen("risk");
-  assert.equal(risk.valid, false);
+  assert.equal(risk.valid, true);
+  assert.equal(risk.state?.currentState, "available");
+
+  const timeline = validateWorkspaceLifecycleOpen("timeline");
+  assert.equal(timeline.valid, true);
+  assert.equal(timeline.state?.currentState, "available");
 });
 
 test("executes primary lifecycle flow: available → opening → active → completed → closed", () => {
@@ -81,7 +86,7 @@ test("rejects invalid transitions safely", () => {
   const invalid = validateLifecycleTransition("closed", "active");
   assert.equal(invalid.valid, false);
 
-  const futureOpen = prepareWorkspaceLifecycleOpen("risk");
+  const futureOpen = prepareWorkspaceLifecycleOpen("governance");
   assert.equal(futureOpen.accepted, false);
 });
 

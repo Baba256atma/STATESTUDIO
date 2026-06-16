@@ -5,13 +5,15 @@
  */
 
 import type { DashboardMode } from "../dashboard/dashboardModeRuntimeContract.ts";
+import type { WorkspaceLaunchRequestResult } from "../dashboard/workspaceLauncher/workspaceLauncherContract.ts";
 
 export type ObjectPanelDashboardAction =
   | "focus"
   | "analyze"
   | "compare"
   | "scenario"
-  | "war_room";
+  | "war_room"
+  | "advisory";
 
 export const OBJECT_PANEL_DASHBOARD_ACTIONS: readonly ObjectPanelDashboardAction[] = Object.freeze([
   "focus",
@@ -19,6 +21,7 @@ export const OBJECT_PANEL_DASHBOARD_ACTIONS: readonly ObjectPanelDashboardAction
   "compare",
   "scenario",
   "war_room",
+  "advisory",
 ]);
 
 export type ObjectPanelActionPayload = Readonly<{
@@ -39,8 +42,12 @@ export type ObjectPanelActionRouteResult = Readonly<{
   success: boolean;
   mode: DashboardMode | null;
   payload: ObjectPanelActionPayload | null;
+  action: ObjectPanelDashboardAction | null;
+  launch: WorkspaceLaunchRequestResult | null;
   reason: string;
 }>;
+
+export const OBJECT_PANEL_FOCUS_LOCK_FIXED_TAG = "[OBJECT_PANEL_FOCUS_LOCK_FIXED]" as const;
 
 export const OBJECT_PANEL_ACTION_EVENT = "nexora:object-panel-action";
 
@@ -61,6 +68,10 @@ const LEGACY_ACTION_TO_DASHBOARD: Readonly<Record<string, ObjectPanelDashboardAc
   simulate: "scenario",
   war_room: "war_room",
   open_war_room: "war_room",
+  advisory: "advisory",
+  explain_object: "advisory",
+  next_move: "advisory",
+  open_decision_analysis: "advisory",
 });
 
 /** Legacy executive-object-action ids that must route to Dashboard Runtime (not SIM/RSK panels). */
@@ -71,6 +82,9 @@ export const PRIMARY_LEGACY_DASHBOARD_OBJECT_ACTIONS = Object.freeze([
   "run_scenario",
   "open_war_room",
   "war_room",
+  "explain_object",
+  "next_move",
+  "open_decision_analysis",
 ] as const);
 
 export function shouldRouteExecutiveActionToDashboard(action: unknown): boolean {
@@ -116,6 +130,8 @@ export function objectPanelDashboardActionLabel(action: ObjectPanelDashboardActi
       return "Scenario";
     case "war_room":
       return "War Room";
+    case "advisory":
+      return "Advisory";
     default:
       return "Overview";
   }

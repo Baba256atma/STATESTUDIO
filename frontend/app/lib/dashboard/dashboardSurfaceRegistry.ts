@@ -164,11 +164,14 @@ export const DASHBOARD_SURFACE_REGISTRY: Readonly<Record<DashboardSurfaceId, Das
 const DASHBOARD_CONTEXT_TO_SURFACE: Readonly<Record<DashboardContext, DashboardSurfaceId>> = Object.freeze({
   overview: "executive_summary",
   sources: "operational",
+  compare: "scenario",
   scenario: "scenario",
   risk: "risk",
   war_room: "war_room",
   timeline: "timeline",
   settings: "operational",
+  advisory: "decision",
+  governance: "governance",
 });
 
 let registryLogged = false;

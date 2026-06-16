@@ -383,6 +383,7 @@ export type SceneCanvasProps = {
     position: { x: number; y: number; z: number },
     phase: "drag" | "move"
   ) => void;
+  onGlobalSceneLayoutReset?: () => void;
   selectedRelationshipId?: string | null;
   onRelationshipSelect?: (relationship: NexoraRelationship) => void;
   selectedPropagationPathId?: string | null;
@@ -2771,6 +2772,13 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     scheduleSceneHudDriftDetect("camera-fit-scene", sceneShellRef.current);
   }, []);
 
+  const requestStaticGlobalReframe = useCallback(() => {
+    markSceneHudDriftBaseline("camera-global-reset", sceneShellRef.current);
+    setCameraPresetOverride("GLOBAL");
+    setCameraReframeNonce((value) => value + 1);
+    scheduleSceneHudDriftDetect("camera-global-reset", sceneShellRef.current);
+  }, []);
+
   useEffect(() => {
     hydrateWorkspaceViewMode();
     hydrateExecutiveFocusMode();
@@ -3698,6 +3706,11 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
     [globalScale, layoutPositions, props.getUxForObject, props.objectUxById]
   );
 
+  const requestGlobalSceneReset = useCallback(() => {
+    requestStaticGlobalReframe();
+    props.onGlobalSceneLayoutReset?.();
+  }, [props.onGlobalSceneLayoutReset, requestStaticGlobalReframe]);
+
   const clearActivePointerSelection = useCallback(() => {
     activePointerSelectionRef.current = null;
     if (pointerSelectionResetTimerRef.current != null) {
@@ -4581,6 +4594,7 @@ function SceneCanvasComponent(props: SceneCanvasProps) {
             layoutSignature={layoutBoundsSignature}
             mountedAtMs={cameraMountedAtMsRef.current}
             onRequestStaticReframe={requestStaticCameraReframe}
+            onRequestGlobalSceneReset={requestGlobalSceneReset}
             onClearTemporaryFocus={clearTemporaryCameraFocus}
           />
         ) : null}

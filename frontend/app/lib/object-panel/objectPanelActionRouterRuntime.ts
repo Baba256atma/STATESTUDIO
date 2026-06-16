@@ -19,7 +19,23 @@ import {
 } from "./objectPanelActionRouterContract.ts";
 import { discoverExecutiveWorkspace } from "../dashboard/executiveWorkspaceRegistryRuntime.ts";
 import { requestWorkspaceLaunch } from "../dashboard/workspaceLauncher/workspaceLauncherRuntime.ts";
-import { warnWorkspaceEntryPointBrake } from "../dashboard/workspaceLauncher/workspaceLauncherContract.ts";
+import {
+  warnWorkspaceEntryPointBrake,
+  type WorkspaceLaunchRequestResult,
+} from "../dashboard/workspaceLauncher/workspaceLauncherContract.ts";
+
+export type ResolvedObjectPanelActionRequest = Readonly<{
+  ok: true;
+  action: ObjectPanelDashboardAction;
+  objectId: string;
+  objectName: string;
+  payload: ObjectPanelActionPayload;
+}>;
+
+export type ResolvedObjectPanelActionFailure = Readonly<{
+  ok: false;
+  reason: string;
+}>;
 
 export function resolveDashboardModeFromObjectPanelAction(
   action: ObjectPanelDashboardAction
@@ -28,19 +44,14 @@ export function resolveDashboardModeFromObjectPanelAction(
   return entry?.dashboardMode ?? "overview";
 }
 
-export function routeObjectPanelActionRequest(
+export function resolveObjectPanelActionRequest(
   input: ObjectPanelActionRequestInput
-): ObjectPanelActionRouteResult {
+): ResolvedObjectPanelActionRequest | ResolvedObjectPanelActionFailure {
   const objectId = typeof input.objectId === "string" ? input.objectId.trim() : "";
   if (!objectId) {
     warnObjectActionRouterBrake("Missing object.", { action: input.action ?? null });
     warnWorkspaceEntryPointBrake("Object panel missing object.", { action: input.action ?? null });
-    return Object.freeze({
-      success: false,
-      mode: null,
-      payload: null,
-      reason: "missing_object",
-    });
+    return Object.freeze({ ok: false, reason: "missing_object" });
   }
 
   const normalizedAction = normalizeObjectPanelDashboardAction(input.action);
@@ -53,44 +64,83 @@ export function routeObjectPanelActionRequest(
       action: input.action ?? null,
       objectId,
     });
-    return Object.freeze({
-      success: false,
-      mode: null,
-      payload: null,
-      reason: "invalid_action",
-    });
+    return Object.freeze({ ok: false, reason: "invalid_action" });
+  }
+
+  const objectName =
+    (typeof input.objectName === "string" && input.objectName.trim()) || objectId;
+  const payload = buildObjectPanelActionPayload({
+    action: normalizedAction,
+    objectId,
+    objectName,
+    timestamp: input.timestamp,
+  });
+
+  return Object.freeze({
+    ok: true,
+    action: normalizedAction,
+    objectId,
+    objectName,
+    payload,
+  });
+}
+
+export function launchObjectPanelActionRequest(
+  input: ObjectPanelActionRequestInput
+): Readonly<{
+  resolved: ResolvedObjectPanelActionRequest | ResolvedObjectPanelActionFailure;
+  launch: WorkspaceLaunchRequestResult | null;
+}> {
+  const resolved = resolveObjectPanelActionRequest(input);
+  if (!resolved.ok) {
+    return Object.freeze({ resolved, launch: null });
   }
 
   const launch = requestWorkspaceLaunch({
     source: "object_panel",
-    objectPanelAction: normalizedAction,
-    objectId,
-    objectName: typeof input.objectName === "string" ? input.objectName : objectId,
+    objectPanelAction: resolved.action,
+    objectId: resolved.objectId,
+    objectName: resolved.objectName,
   });
 
-  if (!launch.approved || !launch.dashboardMode) {
+  return Object.freeze({ resolved, launch });
+}
+
+export function routeObjectPanelActionRequest(
+  input: ObjectPanelActionRequestInput
+): ObjectPanelActionRouteResult {
+  const { resolved, launch } = launchObjectPanelActionRequest(input);
+  if (!resolved.ok) {
     return Object.freeze({
       success: false,
       mode: null,
       payload: null,
-      reason: launch.reason,
+      action: null,
+      launch: null,
+      reason: resolved.reason,
+    });
+  }
+
+  if (!launch?.approved || !launch.dashboardMode) {
+    return Object.freeze({
+      success: false,
+      mode: null,
+      payload: resolved.payload,
+      action: resolved.action,
+      launch,
+      reason: launch?.reason ?? "launch_rejected",
     });
   }
 
   const mode = normalizeDashboardMode(launch.dashboardMode, { warn: false });
-  const payload = buildObjectPanelActionPayload({
-    action: normalizedAction,
-    objectId,
-    objectName: typeof input.objectName === "string" ? input.objectName : objectId,
-    timestamp: input.timestamp,
-  });
 
   if (process.env.NODE_ENV !== "production") {
     globalThis.console?.debug?.("[ObjectActionRouter][Route]", {
-      action: payload.action,
-      objectId: payload.objectId,
-      objectName: payload.objectName,
+      action: resolved.payload.action,
+      objectId: resolved.payload.objectId,
+      objectName: resolved.payload.objectName,
       mode,
+      workspaceId: launch.workspaceId,
       source: "requestWorkspaceLaunch",
     });
   }
@@ -98,7 +148,12 @@ export function routeObjectPanelActionRequest(
   return Object.freeze({
     success: true,
     mode,
-    payload,
+    payload: resolved.payload,
+    action: resolved.action,
+    launch: Object.freeze({
+      ...launch,
+      objectPanelAction: resolved.action,
+    }),
     reason: "object_panel_to_dashboard_mode",
   });
 }

@@ -25,13 +25,14 @@ test.beforeEach(() => {
   resetExecutiveWorkspaceTransitionControllerRuntimeForTests();
 });
 
-test("accepts only the five dashboard actions", () => {
+test("accepts only the six dashboard actions", () => {
   assert.deepEqual(OBJECT_PANEL_DASHBOARD_ACTIONS, [
     "focus",
     "analyze",
     "compare",
     "scenario",
     "war_room",
+    "advisory",
   ]);
   assert.equal(isObjectPanelDashboardAction("analyze"), true);
   assert.equal(isObjectPanelDashboardAction("timeline"), false);
@@ -56,14 +57,16 @@ test("maps primary legacy executive actions to dashboard modes", () => {
   assert.equal(normalizeObjectPanelDashboardAction("focus_object"), "focus");
   assert.equal(normalizeObjectPanelDashboardAction("run_scenario"), "scenario");
   assert.equal(normalizeObjectPanelDashboardAction("open_war_room"), "war_room");
-  assert.equal(normalizeObjectPanelDashboardAction("explain_object"), null);
+  assert.equal(normalizeObjectPanelDashboardAction("explain_object"), "advisory");
+  assert.equal(normalizeObjectPanelDashboardAction("open_decision_analysis"), "advisory");
   assert.equal(normalizeObjectPanelDashboardAction("show_risks"), null);
 });
 
 test("routes only whitelisted legacy executive actions to dashboard", () => {
   assert.equal(shouldRouteExecutiveActionToDashboard("focus_object"), true);
   assert.equal(shouldRouteExecutiveActionToDashboard("compare_scenarios"), true);
-  assert.equal(shouldRouteExecutiveActionToDashboard("explain_object"), false);
+  assert.equal(shouldRouteExecutiveActionToDashboard("explain_object"), true);
+  assert.equal(shouldRouteExecutiveActionToDashboard("open_decision_analysis"), true);
   assert.equal(shouldRouteExecutiveActionToDashboard("show_risks"), false);
 });
 

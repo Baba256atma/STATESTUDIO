@@ -179,13 +179,17 @@ export function reduceNexoraWorkspaceState(
     }
     case "setDashboardContext": {
       const synced = syncDashboardModeAndContext({ dashboardContext: action.context });
+      const preserveRouteObject =
+        synced.dashboardContext === "advisory" &&
+        typeof state.dashboardRouteObjectId === "string" &&
+        state.dashboardRouteObjectId.trim().length > 0;
       return {
         ...state,
         activeMRPTab: "dashboard",
         dashboardMode: synced.dashboardMode,
         dashboardContext: synced.dashboardContext,
-        dashboardRouteObjectId: null,
-        dashboardRouteObjectName: null,
+        dashboardRouteObjectId: preserveRouteObject ? state.dashboardRouteObjectId : null,
+        dashboardRouteObjectName: preserveRouteObject ? state.dashboardRouteObjectName : null,
       };
     }
     case "setScenePanelState":

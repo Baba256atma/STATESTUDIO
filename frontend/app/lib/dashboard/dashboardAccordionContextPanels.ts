@@ -35,6 +35,10 @@ export const DASHBOARD_ACCORDION_CONTEXT_PRESETS = Object.freeze({
     panelTypes: ["operational", "executive_summary", "risk"] as const satisfies readonly DashboardAccordionPanelType[],
     defaultExpanded: ["operational"] as const satisfies readonly DashboardAccordionPanelType[],
   }),
+  compare: Object.freeze({
+    panelTypes: ["scenario", "executive_summary"] as const satisfies readonly DashboardAccordionPanelType[],
+    defaultExpanded: ["scenario"] as const satisfies readonly DashboardAccordionPanelType[],
+  }),
   scenario: Object.freeze({
     panelTypes: ["scenario", "risk", "executive_summary"] as const satisfies readonly DashboardAccordionPanelType[],
     defaultExpanded: ["scenario"] as const satisfies readonly DashboardAccordionPanelType[],
@@ -54,6 +58,14 @@ export const DASHBOARD_ACCORDION_CONTEXT_PRESETS = Object.freeze({
   settings: Object.freeze({
     panelTypes: ["operational", "executive_summary"] as const satisfies readonly DashboardAccordionPanelType[],
     defaultExpanded: ["operational"] as const satisfies readonly DashboardAccordionPanelType[],
+  }),
+  advisory: Object.freeze({
+    panelTypes: ["decision", "decision_guidance", "executive_summary"] as const satisfies readonly DashboardAccordionPanelType[],
+    defaultExpanded: ["decision"] as const satisfies readonly DashboardAccordionPanelType[],
+  }),
+  governance: Object.freeze({
+    panelTypes: ["governance", "policy_constraint", "decision_guidance", "executive_summary"] as const satisfies readonly DashboardAccordionPanelType[],
+    defaultExpanded: ["governance"] as const satisfies readonly DashboardAccordionPanelType[],
   }),
 }) satisfies Readonly<Record<DashboardContext, DashboardAccordionContextPreset>>;
 

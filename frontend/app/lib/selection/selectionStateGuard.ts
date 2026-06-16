@@ -88,7 +88,11 @@ export function resetVisualSelectionLayerAuditLogsForTests(): void {
 
 export function isCanonicalObjectSelectionSelectSource(source: string): boolean {
   const normalized = String(source ?? "").trim();
-  return normalized === "object_click" || normalized.startsWith("object_click:");
+  return (
+    normalized === "object_click" ||
+    normalized.startsWith("object_click:") ||
+    normalized === "mrp_context_back"
+  );
 }
 
 export function isCanonicalObjectSelectionClearSource(source: string): boolean {

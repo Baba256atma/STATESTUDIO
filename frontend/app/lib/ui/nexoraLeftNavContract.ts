@@ -31,9 +31,9 @@ export const DEFAULT_NEXORA_LEFT_NAV_MODE: NexoraLeftNavMode = "dashboard";
 export const CANONICAL_NEXORA_LEFT_NAV_ITEMS: readonly NexoraLeftNavItem[] = Object.freeze([
   {
     id: "sources",
-    label: "Sources",
+    label: "Data Sources",
     iconKey: "sources",
-    description: "Data input and source management.",
+    description: "Executive data source registry.",
     dashboardContext: "sources",
     defaultPanelTarget: "dashboard",
     routePolicy: "dashboard_context",
