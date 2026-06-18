@@ -8,6 +8,7 @@ import {
   initializeScenarioIntelligenceRuntime,
   resolveScenarioIntelligenceSurface,
 } from "../../../lib/dashboard/scenarioIntelligence/scenarioIntelligenceRuntime.ts";
+import { attachScenarioIntelligenceFeed } from "../../../lib/dashboard/scenarioIntelligence/scenarioIntelligenceFeedBridge.ts";
 import {
   dashboardVisualColors,
   dashboardVisualPanelStyle,
@@ -27,6 +28,7 @@ export type ScenarioIntelligenceSurfaceProps = {
   selectedObjectLabel?: string | null;
   objectsInScene?: number;
   timelineActive?: boolean;
+  sceneJson?: unknown;
 };
 
 export function ScenarioIntelligenceSurface(props: ScenarioIntelligenceSurfaceProps): React.ReactElement {
@@ -37,27 +39,32 @@ export function ScenarioIntelligenceSurface(props: ScenarioIntelligenceSurfacePr
     selectedObjectLabel = null,
     objectsInScene,
     timelineActive = false,
+    sceneJson,
   } = props;
 
-  const model = useMemo(
-    () =>
-      resolveScenarioIntelligenceSurface({
-        dashboardContext,
-        normalizedContext,
-        selectedObjectId,
-        selectedObjectLabel,
-        objectsInScene,
-        timelineActive,
-      }),
-    [
+  const model = useMemo(() => {
+    const baseModel = resolveScenarioIntelligenceSurface({
       dashboardContext,
       normalizedContext,
       selectedObjectId,
       selectedObjectLabel,
       objectsInScene,
       timelineActive,
-    ]
-  );
+    });
+
+    return attachScenarioIntelligenceFeed(baseModel, {
+      sceneJson,
+      selectedObjectId,
+    });
+  }, [
+    dashboardContext,
+    normalizedContext,
+    selectedObjectId,
+    selectedObjectLabel,
+    objectsInScene,
+    timelineActive,
+    sceneJson,
+  ]);
 
   useEffect(() => {
     initializeScenarioIntelligenceRuntime({
@@ -71,6 +78,8 @@ export function ScenarioIntelligenceSurface(props: ScenarioIntelligenceSurfacePr
   }, [dashboardContext, normalizedContext?.id, selectedObjectId, timelineActive]);
 
   const { snapshot } = model;
+  const feed = model.intelligenceFeed;
+  const feedBound = feed?.feedStatus === "bound";
   const scoreChart = model.visualBundle.microCharts.find(
     (chart) => chart.kind === "micro_bar" && chart.label === "Scenario Scores"
   );
@@ -117,13 +126,15 @@ export function ScenarioIntelligenceSurface(props: ScenarioIntelligenceSurfacePr
       >
         <div style={{ display: "flex", flexDirection: "column", gap: dashboardVisualSpacing.xs, flex: 1 }}>
           <span style={{ ...dashboardVisualTypography.microLabel, color: dashboardVisualColors.textSoft }}>
-            Scenario Portfolio
+            {feedBound ? feed.scenarioSummaries.title : "Scenario Portfolio"}
           </span>
           <span style={{ ...dashboardVisualTypography.summaryValue, color: dashboardVisualColors.text }}>
-            {snapshot.portfolio.activeCount} active · {snapshot.portfolio.totalCount} tracked
+            {feedBound
+              ? feed.scenarioSummaries.primaryValue
+              : `${snapshot.portfolio.activeCount} active · ${snapshot.portfolio.totalCount} tracked`}
           </span>
           <span style={{ ...dashboardVisualTypography.cardMeta, color: dashboardVisualColors.muted }}>
-            {snapshot.portfolio.comparisonEntryPoint}
+            {feedBound ? feed.scenarioSummaries.secondaryValue : snapshot.portfolio.comparisonEntryPoint}
           </span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: dashboardVisualSpacing.xs, marginTop: 4 }}>
             {snapshot.portfolio.scenarios.map((entry) => (
@@ -157,37 +168,59 @@ export function ScenarioIntelligenceSurface(props: ScenarioIntelligenceSurfacePr
       >
         <ScenarioDomainCard
           domain="scenario_confidence"
-          title="Scenario Confidence"
-          primaryValue={snapshot.confidence.label}
-          secondaryValue={snapshot.confidence.summary}
-          meta={`Trend: ${snapshot.confidence.trend}`}
+          title={feedBound ? feed.scenarioConfidence.title : "Scenario Confidence"}
+          primaryValue={feedBound ? feed.scenarioConfidence.primaryValue : snapshot.confidence.label}
+          secondaryValue={feedBound ? feed.scenarioConfidence.secondaryValue : snapshot.confidence.summary}
+          meta={feedBound ? "DS-7 scenario intelligence feed" : `Trend: ${snapshot.confidence.trend}`}
         />
         <ScenarioDomainCard
           domain="expected_impact"
-          title="Expected Impact"
-          primaryValue={snapshot.expectedImpact.label}
-          secondaryValue={snapshot.expectedImpact.summary}
-          meta={`Trend: ${snapshot.expectedImpact.trend}`}
+          title={feedBound ? feed.scenarioRecommendations.title : "Expected Impact"}
+          primaryValue={
+            feedBound ? feed.scenarioRecommendations.primaryValue : snapshot.expectedImpact.label
+          }
+          secondaryValue={
+            feedBound ? feed.scenarioRecommendations.secondaryValue : snapshot.expectedImpact.summary
+          }
+          meta={feedBound ? feed.scenarioRecommendations.meta : `Trend: ${snapshot.expectedImpact.trend}`}
         />
         <ScenarioDomainCard
           domain="tradeoff_analysis"
-          title="Tradeoff Analysis"
-          primaryValue={snapshot.tradeoffs.tradeoffs[0]?.indicator ?? "Competing objectives"}
-          secondaryValue={snapshot.tradeoffs.summary}
-          meta={snapshot.tradeoffs.tradeoffs[1]?.indicator}
+          title={feedBound ? feed.scenarioComparisonSummaries.title : "Tradeoff Analysis"}
+          primaryValue={
+            feedBound
+              ? feed.scenarioComparisonSummaries.primaryValue
+              : snapshot.tradeoffs.tradeoffs[0]?.indicator ?? "Competing objectives"
+          }
+          secondaryValue={
+            feedBound ? feed.scenarioComparisonSummaries.secondaryValue : snapshot.tradeoffs.summary
+          }
+          meta={
+            feedBound
+              ? "Scenario comparison intelligence feed"
+              : snapshot.tradeoffs.tradeoffs[1]?.indicator
+          }
         />
         <ScenarioDomainCard
           domain="investigation_paths"
           title="Investigation Paths"
-          primaryValue={snapshot.investigationPaths.paths[0]?.label ?? "Review paths"}
-          secondaryValue={snapshot.investigationPaths.summary}
+          primaryValue={
+            feedBound
+              ? feed.scenarioRecommendations.meta ?? feed.scenarioRecommendations.primaryValue
+              : snapshot.investigationPaths.paths[0]?.label ?? "Review paths"
+          }
+          secondaryValue={
+            feedBound ? feed.scenarioRecommendations.secondaryValue : snapshot.investigationPaths.summary
+          }
           meta={
-            snapshot.investigationPaths.paths.length > 1
-              ? snapshot.investigationPaths.paths
-                  .slice(1)
-                  .map((path) => path.label)
-                  .join(" · ")
-              : undefined
+            feedBound
+              ? "DS-7 recommendation intelligence feed"
+              : snapshot.investigationPaths.paths.length > 1
+                ? snapshot.investigationPaths.paths
+                    .slice(1)
+                    .map((path) => path.label)
+                    .join(" · ")
+                : undefined
           }
         />
       </div>
@@ -202,7 +235,9 @@ export function ScenarioIntelligenceSurface(props: ScenarioIntelligenceSurfacePr
           border: `1px dashed ${dashboardVisualColors.border}`,
         }}
       >
-        Comparison: {snapshot.comparisonContract.summary} · mode: {snapshot.comparisonContract.mode}
+        Comparison:{" "}
+        {feedBound ? feed.scenarioComparisonSummaries.primaryValue : snapshot.comparisonContract.summary} · mode:{" "}
+        {snapshot.comparisonContract.mode}
         {snapshot.comparisonContract.preferredScenarioId
           ? ` · preferred: ${snapshot.comparisonContract.preferredScenarioId}`
           : ""}

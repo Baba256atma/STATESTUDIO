@@ -16,9 +16,12 @@ import {
   traceScenarioGenerationOnce,
 } from "../../../../lib/ui/mrpWorkspace/scenario/scenarioGenerationRuntime.ts";
 import { hydrateScenarioWorkspaceStateOnMount } from "../../../../lib/ui/mrpWorkspace/scenario/scenarioWorkspaceStateRuntime.ts";
+import { hydrateScenarioAuthoringUiOnMount } from "../../../../lib/ui/mrpWorkspace/scenario/scenarioAuthoringUiRuntime.ts";
 import {
   traceScenarioFoundationOnce,
 } from "../../../../lib/ui/mrpWorkspace/scenario/scenarioWorkspaceRuntime.ts";
+import { useScenarioAuthoringUiView } from "../../../../lib/ui/mrpWorkspace/scenario/useScenarioAuthoringUiView.ts";
+import { useSyncScenarioAuthoringUi } from "../../../../lib/ui/mrpWorkspace/scenario/useSyncScenarioAuthoringUi.ts";
 import { useScenarioWorkspaceView } from "../../../../lib/ui/mrpWorkspace/scenario/useScenarioWorkspaceState.ts";
 import { useSyncScenarioComparison } from "../../../../lib/ui/mrpWorkspace/scenario/useSyncScenarioComparison.ts";
 import { useSyncScenarioProjection } from "../../../../lib/ui/mrpWorkspace/scenario/useSyncScenarioProjection.ts";
@@ -34,6 +37,7 @@ import {
   scenarioWorkspaceShellStyle,
   traceScenarioVisualPassOnce,
 } from "../../../../lib/ui/mrpWorkspace/scenario/scenarioVisualContract.ts";
+import { ScenarioAuthoringDraftPanel } from "./ScenarioAuthoringDraftPanel.tsx";
 import { ScenarioComparisonMatrix } from "./ScenarioComparisonMatrix.tsx";
 import { FutureProjectionPanel } from "./FutureProjectionPanel.tsx";
 import { ScenarioHandoffPanel } from "./ScenarioHandoffPanel.tsx";
@@ -53,6 +57,7 @@ export type ScenarioWorkspaceProps = Readonly<{
 
 export function ScenarioWorkspace(props: ScenarioWorkspaceProps): React.ReactElement {
   const view = useScenarioWorkspaceView();
+  const authoringView = useScenarioAuthoringUiView();
 
   useSyncScenarioWorkspaceContext({
     selectedObjectId: props.selectedObjectId,
@@ -72,9 +77,13 @@ export function ScenarioWorkspace(props: ScenarioWorkspaceProps): React.ReactEle
 
   useSyncScenarioComparison();
   useSyncScenarioProjection();
+  useSyncScenarioAuthoringUi({
+    selectedObjectId: props.selectedObjectId,
+  });
 
   React.useEffect(() => {
     hydrateScenarioWorkspaceStateOnMount(props.mountKey);
+    hydrateScenarioAuthoringUiOnMount(props.mountKey);
     traceScenarioFoundationOnce(props.mountKey);
     traceScenarioVisualPassOnce(props.mountKey);
     traceScenarioFoundationBoundaryOnce(props.mountKey);
@@ -102,6 +111,8 @@ export function ScenarioWorkspace(props: ScenarioWorkspaceProps): React.ReactEle
       data-scenario-comparison="true"
       data-scenario-projection="true"
       data-scenario-handoff="true"
+      data-scenario-authoring-ui="true"
+      data-scenario-authoring-phase={authoringView.phase}
       data-scenario-explores-futures-only="true"
       data-nexora-rule-11-boundary="true"
       style={scenarioWorkspaceShellStyle()}
@@ -121,6 +132,8 @@ export function ScenarioWorkspace(props: ScenarioWorkspaceProps): React.ReactEle
         workspaceContext={view.workspaceContext}
         phase={view.phase}
       />
+
+      <ScenarioAuthoringDraftPanel draft={authoringView.draft} phase={authoringView.phase} />
 
       {summaryCard ? <ScenarioWorkspaceCard card={summaryCard} /> : null}
 

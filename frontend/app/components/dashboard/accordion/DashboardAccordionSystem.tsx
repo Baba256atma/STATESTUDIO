@@ -18,6 +18,7 @@ export type DashboardAccordionSystemProps = {
   selectedObjectLabel?: string | null;
   objectsInScene?: number;
   timelineActive?: boolean;
+  sceneJson?: unknown;
 };
 
 function DashboardAccordionSystemInner(props: DashboardAccordionSystemProps): React.ReactElement {
@@ -29,6 +30,7 @@ function DashboardAccordionSystemInner(props: DashboardAccordionSystemProps): Re
     selectedObjectLabel,
     objectsInScene,
     timelineActive,
+    sceneJson,
   } = props;
   const accordion = useDashboardAccordionRuntime({
     dashboardContext,
@@ -104,6 +106,7 @@ function DashboardAccordionSystemInner(props: DashboardAccordionSystemProps): Re
           selectedObjectLabel={selectedObjectLabel}
           objectsInScene={objectsInScene}
           timelineActive={timelineActive}
+          sceneJson={sceneJson}
           executiveSummaryContent={
             panel.bodySlot === "executive_delegate" && panel.expansionState === "expanded"
               ? executiveSummaryContent

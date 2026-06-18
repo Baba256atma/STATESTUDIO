@@ -43,6 +43,7 @@ export type DashboardRuntimeContainerProps = {
   selectedObjectLabel?: string | null;
   objectsInScene?: number;
   timelineActive?: boolean;
+  sceneJson?: unknown;
 };
 
 export function DashboardRuntimeContainer(props: DashboardRuntimeContainerProps): React.ReactElement {
@@ -55,6 +56,7 @@ export function DashboardRuntimeContainer(props: DashboardRuntimeContainerProps)
     selectedObjectLabel = null,
     objectsInScene,
     timelineActive = false,
+    sceneJson,
   } = props;
   const contextSignature = buildAccordionContextSignature({
     dashboardContext,
@@ -263,6 +265,7 @@ export function DashboardRuntimeContainer(props: DashboardRuntimeContainerProps)
         selectedObjectLabel={selectedObjectLabel}
         objectsInScene={objectsInScene}
         timelineActive={timelineActive}
+        sceneJson={sceneJson}
       />
     </div>
   );

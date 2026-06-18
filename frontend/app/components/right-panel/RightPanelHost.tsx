@@ -2633,6 +2633,7 @@ function RightPanelHostInner(props: RightPanelHostProps) {
           normalizedContext={props.normalizedDashboardContext ?? null}
           selectedObjectId={props.selectedObjectId ?? props.activeExecutiveObjectId ?? null}
           selectedObjectLabel={props.selectedObjectLabel ?? null}
+          sceneJson={props.sceneJson}
           timelineActive={
             dashboardContext === "timeline" || props.normalizedDashboardContext?.source === "timeline"
           }
@@ -2647,6 +2648,7 @@ function RightPanelHostInner(props: RightPanelHostProps) {
           selectedObjectId={props.selectedObjectId ?? props.activeExecutiveObjectId ?? null}
           selectedObjectLabel={props.selectedObjectLabel ?? null}
           objectsInScene={props.visibleSceneObjects?.length}
+          sceneJson={props.sceneJson}
           timelineActive={
             dashboardContext === "timeline" || props.normalizedDashboardContext?.source === "timeline"
           }

@@ -8,6 +8,7 @@ import {
   initializeOperationalIntelligenceRuntime,
   resolveOperationalIntelligenceSurface,
 } from "../../../lib/dashboard/operationalIntelligence/operationalIntelligenceRuntime.ts";
+import { attachOperationalIntelligenceFeed } from "../../../lib/dashboard/operationalIntelligence/operationalIntelligenceFeedBridge.ts";
 import {
   dashboardVisualColors,
   dashboardVisualPanelStyle,
@@ -28,6 +29,7 @@ export type OperationalIntelligenceSurfaceProps = {
   selectedObjectLabel?: string | null;
   objectsInScene?: number;
   timelineActive?: boolean;
+  sceneJson?: unknown;
 };
 
 const PRESSURE_COLOR: Readonly<Record<string, string>> = Object.freeze({
@@ -54,27 +56,32 @@ export function OperationalIntelligenceSurface(
     selectedObjectLabel = null,
     objectsInScene,
     timelineActive = false,
+    sceneJson,
   } = props;
 
-  const model = useMemo(
-    () =>
-      resolveOperationalIntelligenceSurface({
-        dashboardContext,
-        normalizedContext,
-        selectedObjectId,
-        selectedObjectLabel,
-        objectsInScene,
-        timelineActive,
-      }),
-    [
+  const model = useMemo(() => {
+    const baseModel = resolveOperationalIntelligenceSurface({
       dashboardContext,
       normalizedContext,
       selectedObjectId,
       selectedObjectLabel,
       objectsInScene,
       timelineActive,
-    ]
-  );
+    });
+
+    return attachOperationalIntelligenceFeed(baseModel, {
+      sceneJson,
+      selectedObjectId,
+    });
+  }, [
+    dashboardContext,
+    normalizedContext,
+    selectedObjectId,
+    selectedObjectLabel,
+    objectsInScene,
+    timelineActive,
+    sceneJson,
+  ]);
 
   useEffect(() => {
     initializeOperationalIntelligenceRuntime({
@@ -88,6 +95,8 @@ export function OperationalIntelligenceSurface(
   }, [dashboardContext, normalizedContext?.id, selectedObjectId, objectsInScene, timelineActive]);
 
   const { snapshot } = model;
+  const feed = model.intelligenceFeed;
+  const feedBound = feed?.feedStatus === "bound";
   const demandTrendSignal: DashboardTrendLineSignal = Object.freeze({
     kind: "trend_line",
     label: "Demand Impact",
@@ -128,35 +137,51 @@ export function OperationalIntelligenceSurface(
       >
         <OperationalDomainCard
           domain="health"
-          title="Operational Health"
-          primaryValue={snapshot.health.status}
-          secondaryValue={`Trend: ${snapshot.health.trend} · Confidence: ${snapshot.health.confidence}`}
-          meta={`Level indicator`}
+          title={feedBound ? feed.objectHealth.title : "Operational Health"}
+          primaryValue={feedBound ? feed.objectHealth.primaryValue : snapshot.health.status}
+          secondaryValue={
+            feedBound
+              ? feed.objectHealth.secondaryValue
+              : `Trend: ${snapshot.health.trend} · Confidence: ${snapshot.health.confidence}`
+          }
+          meta={feedBound ? "Object intelligence feed" : "Level indicator"}
         />
         <OperationalDomainCard
           domain="active_objects"
-          title="Active Objects"
-          primaryValue={`${snapshot.activeObjects.objectsInScene} in scene`}
-          secondaryValue={snapshot.activeObjects.summary}
-          meta={
-            snapshot.activeObjects.selectedObject
-              ? `Selected: ${snapshot.activeObjects.selectedObject}`
-              : "No selection"
+          title={feedBound ? feed.objectTrend.title : "Active Objects"}
+          primaryValue={
+            feedBound ? feed.objectTrend.primaryValue : `${snapshot.activeObjects.objectsInScene} in scene`
           }
+          secondaryValue={feedBound ? feed.objectTrend.secondaryValue : snapshot.activeObjects.summary}
+          meta={feedBound ? "Object trend intelligence feed" : snapshot.activeObjects.selectedObject
+                ? `Selected: ${snapshot.activeObjects.selectedObject}`
+                : "No selection"}
         />
         <OperationalDomainCard
           domain="signals"
-          title="Operational Signals"
-          primaryValue={`${snapshot.signals.signalCount} signals`}
-          secondaryValue={snapshot.signals.recentSummary}
-          meta={`Activity: ${snapshot.signals.activityTrend}`}
+          title={feedBound ? feed.operationalKpiSignals.title : "Operational Signals"}
+          primaryValue={
+            feedBound
+              ? feed.operationalKpiSignals.primaryValue
+              : `${snapshot.signals.signalCount} signals`
+          }
+          secondaryValue={
+            feedBound ? feed.operationalKpiSignals.secondaryValue : snapshot.signals.recentSummary
+          }
+          meta={feedBound ? "KPI intelligence feed" : `Activity: ${snapshot.signals.activityTrend}`}
         />
         <OperationalDomainCard
           domain="pressure"
-          title="Operational Pressure"
-          primaryValue={snapshot.pressure.level}
-          secondaryValue={snapshot.pressure.attentionStatus}
-          meta={`Trend: ${snapshot.pressure.trend}`}
+          title={feedBound ? feed.relationshipHealth.title : "Operational Pressure"}
+          primaryValue={feedBound ? feed.relationshipHealth.primaryValue : snapshot.pressure.level}
+          secondaryValue={
+            feedBound ? feed.relationshipDependency.primaryValue : snapshot.pressure.attentionStatus
+          }
+          meta={
+            feedBound
+              ? feed.relationshipDependency.secondaryValue
+              : `Trend: ${snapshot.pressure.trend}`
+          }
         />
       </div>
 

@@ -1,5 +1,11 @@
 /** E2:25 — Canonical relationship contracts (single source of truth). */
 
+import type { RelationshipIntelligenceProfile } from "../relationship-intelligence/relationshipIntelligenceContract.ts";
+import type { RelationshipStrengthProfile } from "../relationship-intelligence/relationshipStrengthContract.ts";
+import type { DependencyProfile } from "../relationship-intelligence/dependencyIntelligenceContract.ts";
+import type { RelationshipRiskExposureProfile } from "../relationship-intelligence/relationshipRiskExposureContract.ts";
+import type { RelationshipInfluenceProfile } from "../relationship-intelligence/relationshipInfluenceContract.ts";
+
 export type NexoraRelationshipType =
   | "dependency"
   | "flow"
@@ -26,6 +32,13 @@ export interface NexoraRelationship {
   metadata?: Record<string, unknown>;
   createdAt: string;
 }
+
+export type ExecutiveRelationship = NexoraRelationship &
+  RelationshipIntelligenceProfile &
+  RelationshipStrengthProfile &
+  DependencyProfile &
+  RelationshipInfluenceProfile &
+  RelationshipRiskExposureProfile;
 
 export type RelationshipTypeDefinition = {
   id: NexoraRelationshipType;

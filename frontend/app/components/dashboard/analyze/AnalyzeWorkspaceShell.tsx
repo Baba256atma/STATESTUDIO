@@ -2,6 +2,10 @@
 
 import type React from "react";
 
+import {
+  ANALYZE_SUMMARY_READY_DIAGNOSTIC,
+  ANALYZE_SUMMARY_SURFACE_DIAGNOSTIC,
+} from "../../../lib/intelligence-integration/analyzeExecutiveSummaryContract";
 import type { AnalyzeWorkspaceContextView } from "../../../lib/dashboard/analyze/analyzeModeContract";
 import { nx, softCardStyle } from "../../ui/nexoraTheme";
 
@@ -9,7 +13,7 @@ export type AnalyzeWorkspaceShellProps = {
   context: AnalyzeWorkspaceContextView | null;
 };
 
-function headerMetric(label: string, value: string): React.ReactElement {
+function metricCell(label: string, value: string): React.ReactElement {
   return (
     <div style={{ minWidth: 0 }}>
       <div
@@ -65,6 +69,7 @@ function moduleRow(module: AnalyzeWorkspaceContextView["modules"][number]): Reac
 
 export function AnalyzeWorkspaceShell(props: AnalyzeWorkspaceShellProps): React.ReactElement {
   const context = props.context;
+  const summary = context?.executiveSummary ?? null;
 
   if (!context) {
     return (
@@ -145,10 +150,80 @@ export function AnalyzeWorkspaceShell(props: AnalyzeWorkspaceShellProps): React.
               gap: 12,
             }}
           >
-            {headerMetric("Object", context.objectName)}
-            {headerMetric("Status", context.analysisStatusLabel)}
+            {metricCell("Object", context.objectName)}
+            {metricCell("Status", context.analysisStatusLabel)}
           </div>
         </div>
+
+        {summary ? (
+          <div
+            data-nx="analyze-executive-summary"
+            data-nx-analyze-summary-surface={ANALYZE_SUMMARY_SURFACE_DIAGNOSTIC}
+            data-nx-analyze-summary-ready={ANALYZE_SUMMARY_READY_DIAGNOSTIC}
+            style={{ ...softCardStyle, padding: 12 }}
+          >
+            <div
+              style={{
+                fontSize: 9,
+                fontWeight: 800,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: nx.lowMuted,
+                marginBottom: 10,
+              }}
+            >
+              Executive Intelligence Summary
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 12,
+              }}
+            >
+              {metricCell("Health", summary.healthLabel)}
+              {metricCell("Impact", summary.impactLabel)}
+              {metricCell("Trend", summary.trendLabel)}
+              {metricCell("Importance", summary.importanceLabel)}
+              {metricCell("Risk", summary.riskLabel)}
+              {metricCell("Confidence", summary.confidenceLabel)}
+              {metricCell("Scenario Summary", summary.scenarioSummaryLabel)}
+            </div>
+            <div
+              style={{
+                marginTop: 10,
+                color: nx.textSoft,
+                fontSize: 12,
+                lineHeight: 1.5,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {summary.trendDetail}
+            </div>
+          </div>
+        ) : (
+          <div
+            data-nx="analyze-executive-summary-empty"
+            data-nx-analyze-summary-surface={ANALYZE_SUMMARY_SURFACE_DIAGNOSTIC}
+            style={{ ...softCardStyle, padding: 12 }}
+          >
+            <div
+              style={{
+                fontSize: 9,
+                fontWeight: 800,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: nx.lowMuted,
+                marginBottom: 8,
+              }}
+            >
+              Executive Intelligence Summary
+            </div>
+            <div style={{ color: nx.muted, fontSize: 12, lineHeight: 1.5 }}>
+              Intelligence unavailable for the selected object.
+            </div>
+          </div>
+        )}
 
         <div style={{ ...softCardStyle, padding: 12 }}>
           <div

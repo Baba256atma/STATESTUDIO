@@ -6,6 +6,9 @@ import type { ExecutiveWorkspaceId } from "../../../lib/dashboard/executiveWorks
 import type { NexoraHudThemeMode } from "../../../lib/scene/nexoraHudTheme";
 import { AssistantCommandDock } from "./AssistantCommandDock";
 
+export const ASSISTANT_FOOTER_EXPORT_REPAIRED_DIAGNOSTIC =
+  "[ASSISTANT_FOOTER_EXPORT_REPAIRED]" as const;
+
 export type AssistantFooterActionsProps = Readonly<{
   themeMode?: NexoraHudThemeMode;
   onWorkspaceLaunch?: (workspaceId: ExecutiveWorkspaceId) => void;
@@ -30,5 +33,3 @@ export function AssistantFooterActions(props: AssistantFooterActionsProps): Reac
     </div>
   );
 }
-
-export default AssistantFooterActions;

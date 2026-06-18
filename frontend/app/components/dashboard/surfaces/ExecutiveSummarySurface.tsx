@@ -7,6 +7,7 @@ import {
   initializeExecutiveSummaryRuntime,
   resolveExecutiveSummarySurface,
 } from "../../../lib/dashboard/executiveSummary/executiveSummaryRuntime.ts";
+import { attachExecutiveSummaryIntelligenceFeed } from "../../../lib/dashboard/executiveSummary/executiveSummaryIntelligenceFeedBridge.ts";
 import { CANONICAL_EXECUTIVE_SUMMARY_OWNER } from "../../../lib/dashboard/executiveSummary/executiveSummaryContract.ts";
 import {
   dashboardVisualColors,
@@ -25,6 +26,7 @@ export type ExecutiveSummarySurfaceProps = {
   selectedObjectId?: string | null;
   selectedObjectLabel?: string | null;
   timelineActive?: boolean;
+  sceneJson?: unknown;
 };
 
 const ATTENTION_BADGE: Readonly<Record<string, string>> = Object.freeze({
@@ -48,20 +50,24 @@ export function ExecutiveSummarySurface(props: ExecutiveSummarySurfaceProps): Re
     selectedObjectId = null,
     selectedObjectLabel = null,
     timelineActive = false,
+    sceneJson,
   } = props;
 
-  const model = useMemo(
-    () =>
-      resolveExecutiveSummarySurface({
-        dashboardContext,
-        normalizedContext,
-        selectedObjectId,
-        selectedObjectLabel,
-        timelineActive,
-        openContextCount: normalizedContext ? 1 : 0,
-      }),
-    [dashboardContext, normalizedContext, selectedObjectId, selectedObjectLabel, timelineActive]
-  );
+  const model = useMemo(() => {
+    const baseModel = resolveExecutiveSummarySurface({
+      dashboardContext,
+      normalizedContext,
+      selectedObjectId,
+      selectedObjectLabel,
+      timelineActive,
+      openContextCount: normalizedContext ? 1 : 0,
+    });
+
+    return attachExecutiveSummaryIntelligenceFeed(baseModel, {
+      sceneJson,
+      selectedObjectId,
+    });
+  }, [dashboardContext, normalizedContext, selectedObjectId, selectedObjectLabel, timelineActive, sceneJson]);
 
   useEffect(() => {
     initializeExecutiveSummaryRuntime({ dashboardContext, normalizedContext });

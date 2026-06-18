@@ -1,6 +1,13 @@
 // Shared scene contracts for StateStudio (frontend-only).
 // Keep this file as the single source of truth for SceneJson / loops / objects.
 
+import type { ObjectIntelligenceProfile } from "./object-intelligence/objectIntelligenceContract.ts";
+import type { ObjectHealthResult } from "./object-intelligence/objectHealthContract.ts";
+import type { ObjectImpactResult } from "./object-intelligence/objectImpactContract.ts";
+import type { ObjectConfidenceResult } from "./object-intelligence/objectConfidenceContract.ts";
+import type { ObjectTrendProfile } from "./object-intelligence/objectTrendContract.ts";
+import type { ObjectImportanceProfile } from "./object-intelligence/objectImportanceContract.ts";
+
 export type Vector3Tuple = [number, number, number];
 
 // Aliases for legacy imports
@@ -62,6 +69,14 @@ export type SceneObject = {
   ux?: { shape?: string; base_color?: string };
   [key: string]: unknown;
 };
+
+export type ExecutiveSceneObject = SceneObject &
+  ObjectIntelligenceProfile &
+  ObjectHealthResult &
+  ObjectImpactResult &
+  ObjectConfidenceResult &
+  ObjectTrendProfile &
+  ObjectImportanceProfile;
 
 // Loop edge
 export type SceneLoopEdge = {

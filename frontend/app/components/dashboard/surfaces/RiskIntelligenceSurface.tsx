@@ -8,6 +8,7 @@ import {
   initializeRiskIntelligenceRuntime,
   resolveRiskIntelligenceSurface,
 } from "../../../lib/dashboard/riskIntelligence/riskIntelligenceRuntime.ts";
+import { attachRiskIntelligenceFeed } from "../../../lib/dashboard/riskIntelligence/riskIntelligenceFeedBridge.ts";
 import {
   dashboardVisualColors,
   dashboardVisualPanelStyle,
@@ -28,6 +29,7 @@ export type RiskIntelligenceSurfaceProps = {
   selectedObjectLabel?: string | null;
   objectsInScene?: number;
   timelineActive?: boolean;
+  sceneJson?: unknown;
 };
 
 const EXPOSURE_COLOR: Readonly<Record<string, string>> = Object.freeze({
@@ -52,27 +54,32 @@ export function RiskIntelligenceSurface(props: RiskIntelligenceSurfaceProps): Re
     selectedObjectLabel = null,
     objectsInScene,
     timelineActive = false,
+    sceneJson,
   } = props;
 
-  const model = useMemo(
-    () =>
-      resolveRiskIntelligenceSurface({
-        dashboardContext,
-        normalizedContext,
-        selectedObjectId,
-        selectedObjectLabel,
-        objectsInScene,
-        timelineActive,
-      }),
-    [
+  const model = useMemo(() => {
+    const baseModel = resolveRiskIntelligenceSurface({
       dashboardContext,
       normalizedContext,
       selectedObjectId,
       selectedObjectLabel,
       objectsInScene,
       timelineActive,
-    ]
-  );
+    });
+
+    return attachRiskIntelligenceFeed(baseModel, {
+      sceneJson,
+      selectedObjectId,
+    });
+  }, [
+    dashboardContext,
+    normalizedContext,
+    selectedObjectId,
+    selectedObjectLabel,
+    objectsInScene,
+    timelineActive,
+    sceneJson,
+  ]);
 
   useEffect(() => {
     initializeRiskIntelligenceRuntime({
@@ -86,6 +93,8 @@ export function RiskIntelligenceSurface(props: RiskIntelligenceSurfaceProps): Re
   }, [dashboardContext, normalizedContext?.id, selectedObjectId, timelineActive]);
 
   const { snapshot } = model;
+  const feed = model.intelligenceFeed;
+  const feedBound = feed?.feedStatus === "bound";
   const momentumTrend: DashboardTrendLineSignal = Object.freeze({
     kind: "trend_line",
     label: "Risk Momentum",
@@ -133,30 +142,43 @@ export function RiskIntelligenceSurface(props: RiskIntelligenceSurfaceProps): Re
       >
         <RiskDomainCard
           domain="active_risks"
-          title="Active Risks"
-          primaryValue={activeRiskLabel}
-          secondaryValue={snapshot.activeRisks.summary}
-          meta={`Top: ${snapshot.activeRisks.topRisk}`}
+          title={feedBound ? feed.topRisks.title : "Active Risks"}
+          primaryValue={feedBound ? feed.topRisks.primaryValue : activeRiskLabel}
+          secondaryValue={feedBound ? feed.topRisks.secondaryValue : snapshot.activeRisks.summary}
+          meta={feedBound ? "DS-6 risk intelligence feed" : `Top: ${snapshot.activeRisks.topRisk}`}
         />
         <RiskDomainCard
           domain="exposure"
-          title="Risk Exposure"
-          primaryValue={snapshot.exposure.label}
-          secondaryValue={`Trend: ${snapshot.exposure.trend} · Confidence: ${snapshot.exposure.confidence}`}
+          title={feedBound ? feed.riskPropagation.title : "Risk Exposure"}
+          primaryValue={feedBound ? feed.riskPropagation.primaryValue : snapshot.exposure.label}
+          secondaryValue={
+            feedBound
+              ? feed.riskPropagation.secondaryValue
+              : `Trend: ${snapshot.exposure.trend} · Confidence: ${snapshot.exposure.confidence}`
+          }
+          meta={feedBound ? feed.riskPropagation.meta : undefined}
         />
         <RiskDomainCard
           domain="confidence"
-          title="Risk Confidence"
-          primaryValue={snapshot.confidence.level}
-          secondaryValue={snapshot.confidence.summary}
-          meta={`Trend: ${snapshot.confidence.trend}`}
+          title={feedBound ? feed.riskChains.title : "Risk Confidence"}
+          primaryValue={feedBound ? feed.riskChains.primaryValue : snapshot.confidence.level}
+          secondaryValue={feedBound ? feed.riskChains.secondaryValue : snapshot.confidence.summary}
+          meta={feedBound ? "Risk chain intelligence feed" : `Trend: ${snapshot.confidence.trend}`}
         />
         <RiskDomainCard
           domain="executive_attention"
-          title="Executive Attention Required"
-          primaryValue={snapshot.executiveAttention.label}
-          secondaryValue={snapshot.executiveAttention.recommendation}
-          meta={`Urgency: ${snapshot.executiveAttention.urgency}`}
+          title={feedBound ? feed.criticalVulnerabilities.title : "Executive Attention Required"}
+          primaryValue={
+            feedBound ? feed.criticalVulnerabilities.primaryValue : snapshot.executiveAttention.label
+          }
+          secondaryValue={
+            feedBound ? feed.criticalVulnerabilities.secondaryValue : snapshot.executiveAttention.recommendation
+          }
+          meta={
+            feedBound
+              ? "Critical vulnerability intelligence feed"
+              : `Urgency: ${snapshot.executiveAttention.urgency}`
+          }
         />
       </div>
 

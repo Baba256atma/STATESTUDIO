@@ -2,16 +2,26 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  HUD_PANEL_BODY_PADDING_STYLE,
+  HUD_PANEL_CONTRACT_RECOVERED_DIAGNOSTIC,
+  HUD_PANEL_CONTRACT_REQUIRED_EXPORTS,
+  HUD_PANEL_HEADER_PADDING_STYLE,
   HUD_PANEL_RADIUS,
+  HUD_PANEL_SAFE_TEXT_STYLE,
+  HUD_PANEL_SCROLL_BODY_STYLE,
+  HUD_PANEL_STICKY_DETAIL_HEADER_STYLE,
   HUD_PANEL_STICKY_HEADER_HEIGHT,
   HUD_PANEL_STICKY_HEADER_STYLE,
+  HUD_PANEL_STICKY_SHELL_STYLE,
   HUD_PANEL_SUBPANEL_INSET_X,
+  HUD_PANEL_TRUNCATE_TEXT_STYLE,
   OBJECT_PANEL_EXPANDED_WIDTH,
   OBJECT_PANEL_WIDTH,
   SCENE_PANEL_WIDTH,
   areHudSubpanelInsetsEqual,
   resetHudPanelDesignContractForTests,
   resetHudPanelStickyHeaderContractForTests,
+  traceHudPanelStickyHeader,
 } from "./hudPanelDesignContract.ts";
 
 test.beforeEach(() => {
@@ -32,4 +42,17 @@ test("sticky header contract keeps stable chrome height", () => {
   assert.equal(HUD_PANEL_STICKY_HEADER_STYLE.top, 0);
   assert.equal(HUD_PANEL_STICKY_HEADER_STYLE.zIndex, 2);
   assert.equal(HUD_PANEL_STICKY_HEADER_HEIGHT, 44);
+});
+
+test("exports recovered hud panel contract symbols for ObjectInfoHud consumers", () => {
+  assert.equal(HUD_PANEL_CONTRACT_RECOVERED_DIAGNOSTIC, "[HUD_PANEL_CONTRACT_RECOVERED]");
+  assert.equal(HUD_PANEL_CONTRACT_REQUIRED_EXPORTS.length, 11);
+  assert.equal(typeof HUD_PANEL_BODY_PADDING_STYLE.padding, "string");
+  assert.equal(typeof HUD_PANEL_HEADER_PADDING_STYLE.padding, "string");
+  assert.equal(HUD_PANEL_SAFE_TEXT_STYLE.minWidth, 0);
+  assert.equal(HUD_PANEL_SCROLL_BODY_STYLE.flex, 1);
+  assert.equal(HUD_PANEL_STICKY_DETAIL_HEADER_STYLE.position, "sticky");
+  assert.equal(HUD_PANEL_STICKY_SHELL_STYLE.display, "flex");
+  assert.equal(HUD_PANEL_TRUNCATE_TEXT_STYLE.whiteSpace, "nowrap");
+  assert.equal(typeof traceHudPanelStickyHeader, "function");
 });

@@ -6,6 +6,22 @@ import type React from "react";
 
 import type { SceneHudThemeSurfaceId } from "../theme/sceneThemeTokens";
 
+export const HUD_PANEL_CONTRACT_RECOVERED_DIAGNOSTIC = "[HUD_PANEL_CONTRACT_RECOVERED]" as const;
+
+export const HUD_PANEL_CONTRACT_REQUIRED_EXPORTS = Object.freeze([
+  "HUD_PANEL_BODY_PADDING_STYLE",
+  "HUD_PANEL_HEADER_PADDING_STYLE",
+  "HUD_PANEL_SAFE_TEXT_STYLE",
+  "HUD_PANEL_SCROLL_BODY_STYLE",
+  "HUD_PANEL_STICKY_DETAIL_HEADER_STYLE",
+  "HUD_PANEL_STICKY_HEADER_STYLE",
+  "HUD_PANEL_STICKY_SHELL_STYLE",
+  "HUD_PANEL_TRUNCATE_TEXT_STYLE",
+  "OBJECT_PANEL_EXPANDED_WIDTH",
+  "OBJECT_PANEL_WIDTH",
+  "traceHudPanelStickyHeader",
+] as const);
+
 export const HUD_PANEL_RADIUS = 3;
 export const HUD_PANEL_PADDING_X = 12;
 export const HUD_PANEL_PADDING_Y = 10;

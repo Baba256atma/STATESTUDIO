@@ -55,6 +55,8 @@ test("resolves ready workspace when panel data matches", () => {
   assert.equal(result.context?.objectName, "Customer Satisfaction");
   assert.equal(result.context?.analysisStatusLabel, "Ready");
   assert.equal(result.context?.modules.length, 6);
+  assert.equal(result.context?.intelligence, null);
+  assert.equal(result.context?.executiveSummary, null);
 });
 
 test("uses limited status when analysis context is missing", () => {

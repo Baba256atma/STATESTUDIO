@@ -198,6 +198,7 @@ import {
 } from "../lib/object-panel/objectPanelActionRouterContract";
 import { resolveFocusModeContext } from "../lib/dashboard/focus/focusModeContract";
 import { resolveAnalyzeModeContext } from "../lib/dashboard/analyze/analyzeModeContract";
+import { attachAnalyzeIntelligenceBinding } from "../lib/dashboard/analyze/analyzeIntelligenceBindingBridge";
 import { resolveCompareModeContext } from "../lib/dashboard/compare/compareModeContract";
 import { resolveScenarioModeContext } from "../lib/dashboard/scenario/scenarioModeContract";
 import { resolveWarRoomModeContext } from "../lib/dashboard/warRoom/warRoomModeContract";
@@ -10838,21 +10839,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     ]
   );
   const analyzeModeContext = useMemo(
-    () =>
-      dashboardModeForContext === "analyze"
-        ? resolveAnalyzeModeContext({
-            selectedObjectId: selectedObjectIdState,
-            routeObjectId: nexoraWorkspaceState.dashboardRouteObjectId,
-            routeObjectName: nexoraWorkspaceState.dashboardRouteObjectName,
-            panelData: dashboardFocusObjectData,
-          }).context
-        : null,
+    () => {
+      if (dashboardModeForContext !== "analyze") return null;
+      const resolved = resolveAnalyzeModeContext({
+        selectedObjectId: selectedObjectIdState,
+        routeObjectId: nexoraWorkspaceState.dashboardRouteObjectId,
+        routeObjectName: nexoraWorkspaceState.dashboardRouteObjectName,
+        panelData: dashboardFocusObjectData,
+      }).context;
+      return attachAnalyzeIntelligenceBinding(resolved, {
+        objectId: resolved?.objectId ?? null,
+        sceneJson: visibleSceneJson,
+      });
+    },
     [
       dashboardModeForContext,
       selectedObjectIdState,
       nexoraWorkspaceState.dashboardRouteObjectId,
       nexoraWorkspaceState.dashboardRouteObjectName,
       dashboardFocusObjectData,
+      visibleSceneJson,
     ]
   );
   const compareModeContext = useMemo(

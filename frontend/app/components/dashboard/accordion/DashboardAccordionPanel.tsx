@@ -29,6 +29,7 @@ export type DashboardAccordionPanelProps = {
   selectedObjectLabel?: string | null;
   objectsInScene?: number;
   timelineActive?: boolean;
+  sceneJson?: unknown;
   onToggle: (panelId: string) => void;
 };
 
@@ -42,6 +43,7 @@ function DashboardAccordionPanelInner(props: DashboardAccordionPanelProps): Reac
     selectedObjectLabel,
     objectsInScene,
     timelineActive,
+    sceneJson,
     onToggle,
   } = props;
   const isExpanded = panel.expansionState === "expanded";
@@ -163,6 +165,7 @@ function DashboardAccordionPanelInner(props: DashboardAccordionPanelProps): Reac
               selectedObjectLabel={selectedObjectLabel}
               objectsInScene={objectsInScene}
               timelineActive={timelineActive}
+              sceneJson={sceneJson}
             />
           ) : panel.bodySlot === "risk_intelligence" ? (
             <RiskIntelligenceSurface
@@ -172,6 +175,7 @@ function DashboardAccordionPanelInner(props: DashboardAccordionPanelProps): Reac
               selectedObjectLabel={selectedObjectLabel}
               objectsInScene={objectsInScene}
               timelineActive={timelineActive}
+              sceneJson={sceneJson}
             />
           ) : panel.bodySlot === "timeline_intelligence" ? (
             <TimelineIntelligenceSurface
@@ -190,6 +194,7 @@ function DashboardAccordionPanelInner(props: DashboardAccordionPanelProps): Reac
               selectedObjectLabel={selectedObjectLabel}
               objectsInScene={objectsInScene}
               timelineActive={timelineActive}
+              sceneJson={sceneJson}
             />
           ) : panel.bodySlot === "war_room_intelligence" ? (
             <WarRoomIntelligenceSurface

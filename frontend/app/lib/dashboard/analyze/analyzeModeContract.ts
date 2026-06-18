@@ -6,6 +6,9 @@
  */
 
 import type { ExecutiveObjectPanelData } from "../../panels/executiveObjectPanelData.ts";
+import type { AnalyzeIntelligenceBindingView } from "../../intelligence-integration/analyzeIntelligenceBindingContract.ts";
+import { buildAnalyzeExecutiveSummaryView } from "../../intelligence-integration/analyzeExecutiveSummaryContract.ts";
+import type { AnalyzeExecutiveSummaryView } from "../../intelligence-integration/analyzeExecutiveSummaryContract.ts";
 import {
   resolveFocusObjectId,
   type FocusModeContextInput,
@@ -27,6 +30,8 @@ export type AnalyzeWorkspaceContextView = Readonly<{
   analysisStatus: AnalyzeWorkspaceStatus;
   analysisStatusLabel: string;
   modules: readonly AnalyzeModuleSlot[];
+  intelligence: AnalyzeIntelligenceBindingView | null;
+  executiveSummary: AnalyzeExecutiveSummaryView | null;
 }>;
 
 export type AnalyzeModeContextResult = Readonly<{
@@ -80,6 +85,8 @@ function buildWorkspaceContext(
     analysisStatus,
     analysisStatusLabel: statusLabel(analysisStatus),
     modules: ANALYZE_WORKSPACE_MODULES,
+    intelligence: null,
+    executiveSummary: null,
   });
 }
 
