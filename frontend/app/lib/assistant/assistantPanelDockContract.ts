@@ -4,6 +4,14 @@
 
 import type { AssistantSupportAccordionPanelId } from "./assistantSupportAccordionContract.ts";
 
+export const ASSISTANT_PANEL_DOCK_CONTRACT_RECOVERED_DIAGNOSTIC =
+  "[ASSISTANT_PANEL_DOCK_CONTRACT_RECOVERED]" as const;
+
+export const ASSISTANT_PANEL_DOCK_CONTRACT_REQUIRED_EXPORTS = Object.freeze([
+  "ASSISTANT_PANEL_DOCK_DEFINITIONS",
+  "AssistantPanelDockId",
+] as const);
+
 export type AssistantPanelDockId = AssistantSupportAccordionPanelId;
 
 export type AssistantPanelVisibility = Readonly<{
