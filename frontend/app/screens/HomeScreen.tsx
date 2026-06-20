@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef, useDeferredValue } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef, useDeferredValue, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { chatToBackendLifecycle } from "../lib/api/chatApi";
 import {
@@ -58,6 +58,51 @@ import {
   inferProjectMetaFromScene,
   type WorkspaceProjectState,
 } from "../lib/workspace/workspaceModel";
+import {
+  getWorkspaceRegistrySnapshot,
+  subscribeWorkspaceRegistry,
+} from "../lib/workspace/workspaceRegistryStore";
+import {
+  getWorkspaceDomainSelection,
+  getWorkspaceDomainVersionSnapshot,
+  subscribeWorkspaceDomainSelections,
+} from "../lib/workspace/workspaceDomainContract";
+import {
+  getWorkspaceSituation,
+  getWorkspaceSituationVersionSnapshot,
+  subscribeWorkspaceSituations,
+} from "../lib/workspace/workspaceSituationContract";
+import {
+  getWorkspaceGoals,
+  getWorkspaceGoalVersionSnapshot,
+  subscribeWorkspaceGoals,
+} from "../lib/workspace/workspaceGoalContract";
+import {
+  getWorkspaceDraftModel,
+  getWorkspaceDraftModelVersionSnapshot,
+  subscribeWorkspaceDraftModels,
+} from "../lib/workspace/workspaceDraftModelContract";
+import {
+  getWorkspaceModel,
+  getWorkspaceModelVersionSnapshot,
+  getWorkspaceObjects,
+  subscribeWorkspaceModels,
+} from "../lib/workspace/workspaceApprovedModelContract";
+import {
+  createWorkspaceSceneFromApprovedModel,
+  getWorkspaceSceneJson,
+  getWorkspaceSceneVersionSnapshot,
+  subscribeWorkspaceScenes,
+} from "../lib/workspace/workspaceSceneCreationContract";
+import { DEMO_WORKSPACE_ID } from "../lib/workspace/workspaceRegistryContract";
+import {
+  getEmptyWorkspaceSceneJson,
+  getEmptyWorkspaceClientSnapshot,
+  getEmptyWorkspaceServerSnapshot,
+  isEmptyWorkspaceState,
+  resolveEmptyWorkspaceState,
+  subscribeEmptyWorkspaceState,
+} from "../lib/workspace/emptyWorkspaceContract";
 import {
   loadWorkspaceSnapshot,
   saveProjectSnapshot,
@@ -260,6 +305,7 @@ import {
   ExecutiveSceneCanvasShell,
   ExecutiveSceneWorkspaceFrame,
 } from "../components/workspace/ExecutiveSceneWorkspaceFrame";
+import { EmptyWorkspaceOverlay } from "../components/workspace/EmptyWorkspaceOverlay";
 import { TypeCDevInspector } from "../components/dev/TypeCDevInspector";
 import { TypeCAdaptiveGuidancePanel } from "../components/typec/TypeCAdaptiveGuidancePanel";
 import { TypeCAIPanel } from "../components/typec/TypeCAIPanel";
@@ -1925,6 +1971,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     requestId?: string | null;
   } | null>(null);
   const [sceneJson, setSceneJson] = useState<SceneJson | null>(null);
+  const selectionSceneJsonRef = useRef<SceneJson | null>(null);
   const [sceneBootstrapComplete, setSceneBootstrapComplete] = useState(false);
   const sceneBootstrapOwnerRef = useRef<{
     coreApplied: boolean;
@@ -4556,7 +4603,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const canonicalSelectedId = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
       const next = deriveObjectSelectionFromSelectedId({
         selectedId: canonicalSelectedId,
-        sceneJson,
+        sceneJson: selectionSceneJsonRef.current ?? sceneJson,
       });
       if (!shouldCommitObjectSelection(prev, next)) {
         if (process.env.NODE_ENV !== "production") {
@@ -4881,7 +4928,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const prevSelection = objectSelectionRef.current;
       const nextSelection = deriveObjectSelectionFromSelectedId({
         selectedId: normalizedId,
-        sceneJson,
+        sceneJson: selectionSceneJsonRef.current ?? sceneJson,
       });
       const idNoOp = !shouldCommitSelectedObjectId(prevId, normalizedId);
       const selectionNoOp = !shouldCommitObjectSelection(prevSelection, nextSelection);
@@ -8732,6 +8779,116 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [DEFAULT_PROJECT_ID]: createEmptyProjectState(DEFAULT_PROJECT_ID, "Default Project"),
   });
   const [workspaceHydrated, setWorkspaceHydrated] = useState(false);
+  const workspaceRegistrySnapshot = useSyncExternalStore(
+    subscribeWorkspaceRegistry,
+    getWorkspaceRegistrySnapshot,
+    getWorkspaceRegistrySnapshot
+  );
+  const emptyWorkspaceVersion = useSyncExternalStore(
+    subscribeEmptyWorkspaceState,
+    getEmptyWorkspaceClientSnapshot,
+    getEmptyWorkspaceServerSnapshot
+  );
+  const workspaceDomainVersion = useSyncExternalStore(
+    subscribeWorkspaceDomainSelections,
+    getWorkspaceDomainVersionSnapshot,
+    () => 0
+  );
+  const workspaceSituationVersion = useSyncExternalStore(
+    subscribeWorkspaceSituations,
+    getWorkspaceSituationVersionSnapshot,
+    () => 0
+  );
+  const workspaceGoalVersion = useSyncExternalStore(
+    subscribeWorkspaceGoals,
+    getWorkspaceGoalVersionSnapshot,
+    () => 0
+  );
+  const workspaceDraftModelVersion = useSyncExternalStore(
+    subscribeWorkspaceDraftModels,
+    getWorkspaceDraftModelVersionSnapshot,
+    () => 0
+  );
+  const workspaceModelVersion = useSyncExternalStore(
+    subscribeWorkspaceModels,
+    getWorkspaceModelVersionSnapshot,
+    () => 0
+  );
+  const workspaceSceneVersion = useSyncExternalStore(
+    subscribeWorkspaceScenes,
+    getWorkspaceSceneVersionSnapshot,
+    () => 0
+  );
+  const registryActiveWorkspace = useMemo(() => {
+    const workspaceId = workspaceRegistrySnapshot.activeWorkspaceId;
+    return workspaceId ? workspaceRegistrySnapshot.workspaces[workspaceId] ?? null : null;
+  }, [workspaceRegistrySnapshot]);
+  const emptyWorkspaceState = useMemo(
+    () => resolveEmptyWorkspaceState(registryActiveWorkspace),
+    [emptyWorkspaceVersion, registryActiveWorkspace, workspaceModelVersion, workspaceSceneVersion]
+  );
+  const emptyWorkspaceMode = isEmptyWorkspaceState(emptyWorkspaceState);
+  const activeRegistryWorkspaceId = registryActiveWorkspace?.workspaceId ?? null;
+  const workspaceDomainSelection = useMemo(
+    () => getWorkspaceDomainSelection(activeRegistryWorkspaceId),
+    [activeRegistryWorkspaceId, workspaceDomainVersion]
+  );
+  const workspaceSituation = useMemo(
+    () => getWorkspaceSituation(activeRegistryWorkspaceId),
+    [activeRegistryWorkspaceId, workspaceSituationVersion]
+  );
+  const workspaceGoals = useMemo(
+    () => getWorkspaceGoals(activeRegistryWorkspaceId),
+    [activeRegistryWorkspaceId, workspaceGoalVersion]
+  );
+  const workspaceDraftModel = useMemo(
+    () => getWorkspaceDraftModel(activeRegistryWorkspaceId),
+    [activeRegistryWorkspaceId, workspaceDraftModelVersion]
+  );
+  const workspaceModel = useMemo(
+    () => getWorkspaceModel(activeRegistryWorkspaceId),
+    [activeRegistryWorkspaceId, workspaceModelVersion]
+  );
+  const workspaceObjects = useMemo(
+    () => getWorkspaceObjects(activeRegistryWorkspaceId),
+    [activeRegistryWorkspaceId, workspaceModelVersion]
+  );
+  const workspaceSceneJson = useMemo(
+    () => getWorkspaceSceneJson(activeRegistryWorkspaceId),
+    [activeRegistryWorkspaceId, workspaceSceneVersion, workspaceModelVersion]
+  );
+  const workspaceGoalSignature = useMemo(
+    () => workspaceGoals.map((goal) => goal.goalId).sort().join("|"),
+    [workspaceGoals]
+  );
+  const workspaceObjectSignature = useMemo(
+    () => workspaceObjects.map((object) => object.objectId).sort().join("|"),
+    [workspaceObjects]
+  );
+  const workspaceDomainSignature = workspaceDomainSelection
+    ? `${workspaceDomainSelection.workspaceId}:${workspaceDomainSelection.domainId}:${workspaceDomainSelection.selectedAt}`
+    : "none";
+  const workspaceSituationSignature = workspaceSituation
+    ? `${workspaceSituation.workspaceId}:${workspaceSituation.domainId}:${workspaceSituation.updatedAt}:${workspaceSituation.situationText.length}`
+    : "none";
+  const workspaceDraftModelSignature = workspaceDraftModel
+    ? `${workspaceDraftModel.workspaceId}:${workspaceDraftModel.draftVersion}:${workspaceDraftModel.status}:${workspaceDraftModel.objects.length}`
+    : "none";
+  const workspaceModelSignature = workspaceModel
+    ? `${workspaceModel.workspaceId}:${workspaceModel.modelId}:${workspaceModel.modelVersion}:${workspaceModel.status}:${workspaceModel.approvedObjects.length}`
+    : "none";
+  const inspectorMessageSignature = useMemo(
+    () =>
+      messages
+        .map((message, index) => `${index}:${message.role}:${String(message.text ?? "").length}`)
+        .join("|"),
+    [messages]
+  );
+  useEffect(() => {
+    if (!activeRegistryWorkspaceId || activeRegistryWorkspaceId === DEMO_WORKSPACE_ID) return;
+    if (workspaceModel?.status !== "approved") return;
+    createWorkspaceSceneFromApprovedModel({ workspaceId: activeRegistryWorkspaceId });
+  }, [activeRegistryWorkspaceId, workspaceModelSignature, workspaceModel?.status]);
   const didAutoLoadDomainDemoRef = useRef(false);
   const environmentConfig = useMemo(() => {
     const env = resolveNexoraEnvironment({
@@ -9229,8 +9386,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     riskPropagation,
     submitActiveForVisibleUi,
   ]);
-  const visibleSceneJson = visibleUiState.sceneJson;
-  const visibleResponseData = visibleUiState.responseData;
+  const emptyWorkspaceSceneJson = useMemo(
+    () => (emptyWorkspaceMode && activeRegistryWorkspaceId ? getEmptyWorkspaceSceneJson(activeRegistryWorkspaceId) : null),
+    [activeRegistryWorkspaceId, emptyWorkspaceMode]
+  );
+  const workspaceModelRuntimeMode =
+    Boolean(activeRegistryWorkspaceId) &&
+    activeRegistryWorkspaceId !== DEMO_WORKSPACE_ID &&
+    workspaceModel?.status === "approved";
+  const workspaceCreatedSceneMode = workspaceModelRuntimeMode && Boolean(workspaceSceneJson);
+  const sceneHandoffPendingMode = workspaceModelRuntimeMode && !workspaceSceneJson;
+  const workspaceSceneSuppressedMode = emptyWorkspaceMode || sceneHandoffPendingMode;
+  const workspaceSuppressedSceneJson = useMemo(
+    () => (workspaceSceneSuppressedMode && activeRegistryWorkspaceId ? getEmptyWorkspaceSceneJson(activeRegistryWorkspaceId) : null),
+    [activeRegistryWorkspaceId, workspaceSceneSuppressedMode]
+  );
+  const workspaceRuntimeIsolationMode = workspaceSceneSuppressedMode || workspaceModelRuntimeMode;
+  const workspaceSelectionSuppressedMode = workspaceSceneSuppressedMode;
+  const visibleSceneJson = workspaceSceneJson ?? workspaceSuppressedSceneJson ?? emptyWorkspaceSceneJson ?? visibleUiState.sceneJson;
+  const visibleResponseData = workspaceRuntimeIsolationMode ? null : visibleUiState.responseData;
+  useLayoutEffect(() => {
+    selectionSceneJsonRef.current = visibleSceneJson ?? sceneJson ?? null;
+  }, [sceneJson, visibleSceneJson]);
   const stableVisibleResponseDataRef = useRef<StablePayloadReference<typeof visibleResponseData> | null>(null);
   const stableVisibleResponseDataSignature = useMemo(
     () => buildPayloadContentSignature(visibleResponseData),
@@ -9285,16 +9462,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     }
     return next.value;
   }, [stablePropagationPayloadSignature, visibleResponseData]);
-  const visibleObjectSelection = visibleUiState.objectSelection;
-  const visibleSelectedObjectId = visibleUiState.selectedObjectId;
-  const visibleFocusedId = visibleUiState.focusedId;
+  const visibleObjectSelection = workspaceSelectionSuppressedMode ? null : visibleUiState.objectSelection;
+  const visibleSelectedObjectId = workspaceSelectionSuppressedMode ? null : visibleUiState.selectedObjectId;
+  const visibleFocusedId = workspaceSelectionSuppressedMode ? null : visibleUiState.focusedId;
   const canonicalSceneVisualSelectedId = useMemo(
-    () => selectedObjectIdState ?? null,
-    [selectedObjectIdState]
+    () => (workspaceSelectionSuppressedMode ? null : selectedObjectIdState ?? null),
+    [workspaceSelectionSuppressedMode, selectedObjectIdState]
   );
   const canonicalVisualSelection = useMemo(
-    () => resolveCanonicalVisualSelection(selectedObjectIdState),
-    [selectedObjectIdState]
+    () => resolveCanonicalVisualSelection(workspaceSelectionSuppressedMode ? null : selectedObjectIdState),
+    [workspaceSelectionSuppressedMode, selectedObjectIdState]
   );
   const visualSelectionSignature = useMemo(
     () => JSON.stringify(canonicalVisualSelection),
@@ -9326,9 +9503,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     () =>
       deriveObjectSelectionFromSelectedId({
         selectedId: canonicalVisualSelection.selectedId,
-        sceneJson,
+        sceneJson: workspaceSelectionSuppressedMode ? visibleSceneJson : selectionSceneJsonRef.current ?? visibleSceneJson ?? sceneJson,
       }),
-    [canonicalVisualSelection.selectedId, sceneJson]
+    [canonicalVisualSelection.selectedId, workspaceSelectionSuppressedMode, sceneJson, visibleSceneJson]
   );
   useEffect(() => {
     const currentSelection = objectSelectionRef.current;
@@ -9357,14 +9534,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     canonicalVisualSelection.selectedId && visibleFocusedId === canonicalVisualSelection.selectedId
       ? canonicalVisualSelection.selectedId
       : null;
-  const visibleConflicts = visibleUiState.conflicts;
-  const visibleMemoryInsights = visibleUiState.memoryInsights;
-  const visibleRiskPropagation = visibleUiState.riskPropagation;
-  const visibleStrategicAdvice = visibleUiState.strategicAdvice;
-  const visibleDecisionCockpit = visibleUiState.decisionCockpit;
-  const visibleOpponentModel = visibleUiState.opponentModel;
-  const visibleStrategicPatterns = visibleUiState.strategicPatterns;
-  const authoritativeSceneObjectCount = countSceneObjects(sceneJson);
+  const visibleConflicts = workspaceRuntimeIsolationMode ? [] : visibleUiState.conflicts;
+  const visibleMemoryInsights = workspaceRuntimeIsolationMode ? null : visibleUiState.memoryInsights;
+  const visibleRiskPropagation = workspaceRuntimeIsolationMode ? null : visibleUiState.riskPropagation;
+  const visibleStrategicAdvice = workspaceRuntimeIsolationMode ? null : visibleUiState.strategicAdvice;
+  const visibleDecisionCockpit = workspaceRuntimeIsolationMode ? null : visibleUiState.decisionCockpit;
+  const visibleOpponentModel = workspaceRuntimeIsolationMode ? null : visibleUiState.opponentModel;
+  const visibleStrategicPatterns = workspaceRuntimeIsolationMode ? null : visibleUiState.strategicPatterns;
+  const authoritativeSceneObjectCount = workspaceRuntimeIsolationMode ? 0 : countSceneObjects(sceneJson);
   const visibleUiSceneObjectCount = countSceneObjects(visibleSceneJson);
   const effectiveVisibleSceneJson =
     authoritativeSceneObjectCount > 1 && visibleUiSceneObjectCount < authoritativeSceneObjectCount
@@ -12314,6 +12491,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         nextSelectedId: normalizedId,
         clickEventId: eventId,
       });
+      devDiagnosticLog("objectSelection", "[ObjectSelection] Object Clicked", {
+        objectId: normalizedId,
+        clickEventId: eventId,
+      });
       logObjectClickDiagnostic("[Nexora][SelectionTransactionStart]", {
         eventId,
         objectId: normalizedId,
@@ -12345,7 +12526,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         const repairPreviousSelectedId = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
         const repairedObjectSelection = deriveObjectSelectionFromSelectedId({
           selectedId: normalizedId,
-          sceneJson,
+          sceneJson: selectionSceneJsonRef.current ?? sceneJson,
         });
         selectedObjectIdStateRef.current = normalizedId;
         _setSelectedObjectIdState(normalizedId);
@@ -12368,6 +12549,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
       logObjectClickDiagnostic("[Nexora][SelectionTransactionCommit]", {
         eventId,
+        objectId: normalizedId,
+        requestSeq,
+      });
+      devDiagnosticLog("objectSelection", "[ObjectSelection] Object Selected", {
         objectId: normalizedId,
         requestSeq,
       });
@@ -12468,11 +12653,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           }
           if (panelCommit && panelCommit.objectId === normalizedId && panelCommit.clickEventId === eventId) {
             panelCommit.dashboardContextCommitted = true;
-            panelCommit.panelAuthorityCommitted = true;
           }
-          skipObjectClickPanelIntent({
-            intent: objectClickDedup.intent,
-            reason: "same_object_reclick",
+          devDiagnosticLog("objectSelection", "[ObjectSelection] MRP Context Updated", {
+            objectId: normalizedId,
+            dashboardContext: currentDashboardContext,
+            reason: "same_object_dashboard_context_noop",
           });
         } else {
           routeDashboardContextFromObjectSelection(dispatchNexoraWorkspaceStateRef.current, {
@@ -12482,15 +12667,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           });
           if (panelCommit && panelCommit.objectId === normalizedId && panelCommit.clickEventId === eventId) {
             panelCommit.dashboardContextCommitted = true;
-            panelCommit.panelAuthorityCommitted = true;
           }
-          markObjectClickPanelIntentApplied({
-            intent: objectClickDedup.intent,
-            clickEventId: eventId,
-            reason:
-              objectClickDedup.decision.reason === "changed_object"
-                ? "changed_object"
-                : "changed_mode",
+          devDiagnosticLog("objectSelection", "[ObjectSelection] MRP Context Updated", {
+            objectId: normalizedId,
+            dashboardContext: currentDashboardContext,
+            reason: `object_click:${eventId}`,
           });
           if (process.env.NODE_ENV !== "production") {
             traceNexoraLoopGuard({
@@ -14417,6 +14598,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           reason: "selection_budget_deferred",
           forceOpen: true,
           objectClickRequestId,
+        });
+        devDiagnosticLog("objectSelection", "[ObjectSelection] Object Panel Opened", {
+          objectId: finalId,
+          view: "object",
+          requestId: objectClickRequestId,
         });
       });
     },
@@ -17119,38 +17305,46 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   useEffect(() => {
     const currentSceneDomainId = readSceneJsonMetaString(sceneJson, "domain").toLowerCase();
+    if (workspaceRuntimeIsolationMode) return;
     if (!workspaceHydrated || didAutoLoadDomainDemoRef.current) return;
     if (sceneJson && currentSceneDomainId === activeDomainExperience.experience.domainId) return;
     didAutoLoadDomainDemoRef.current = true;
     void loadDomainDemoScenario(activeDomainExperience.experience.domainId);
-  }, [activeDomainExperience, loadDomainDemoScenario, sceneJson, workspaceHydrated]);
+  }, [activeDomainExperience, workspaceRuntimeIsolationMode, loadDomainDemoScenario, sceneJson, workspaceHydrated]);
 
   useEffect(() => {
     window.dispatchEvent(
       new CustomEvent("nexora:inspector-context", {
         detail: {
-          sceneJson,
-          responseData,
+          sceneJson: visibleSceneJson,
+          responseData: visibleResponseData,
           rightPanelView: rightPanelState.view ?? null,
           messages,
-          kpi,
+          kpi: workspaceRuntimeIsolationMode ? null : kpi,
           activeMode,
           activeLoopId,
-          focusedId,
+          focusedId: workspaceRuntimeIsolationMode ? null : focusedId,
           focusMode,
           focusPinned,
-          selectedObjectId: selectedObjectIdState,
-          selectedObjectInfo,
-          objectSelection,
-          riskPropagation,
-          conflicts,
-          strategicAdvice,
-          strategyKpi,
-          decisionCockpit,
-          productModeContext,
-          aiReasoning,
-          platformAssembly,
-          autonomousExploration,
+          selectedObjectId: workspaceSelectionSuppressedMode ? null : selectedObjectIdState,
+          selectedObjectInfo: workspaceSelectionSuppressedMode ? null : selectedObjectInfo,
+          objectSelection: workspaceSelectionSuppressedMode ? null : objectSelection,
+          riskPropagation: workspaceRuntimeIsolationMode ? null : riskPropagation,
+          conflicts: workspaceRuntimeIsolationMode ? [] : conflicts,
+          strategicAdvice: workspaceRuntimeIsolationMode ? null : strategicAdvice,
+          strategyKpi: workspaceRuntimeIsolationMode ? null : strategyKpi,
+          decisionCockpit: workspaceRuntimeIsolationMode ? null : decisionCockpit,
+          productModeContext: workspaceRuntimeIsolationMode ? null : productModeContext,
+          aiReasoning: workspaceRuntimeIsolationMode ? null : aiReasoning,
+          platformAssembly: workspaceRuntimeIsolationMode ? null : platformAssembly,
+          autonomousExploration: workspaceRuntimeIsolationMode ? null : autonomousExploration,
+          emptyWorkspace: emptyWorkspaceState,
+          workspaceDomain: workspaceDomainSelection,
+          workspaceSituation,
+          workspaceGoals,
+          workspaceDraftModel,
+          workspaceModel,
+          workspaceObjects,
           domainExperience: {
             domainId: activeDomainExperience.experience.domainId,
             label: activeDomainExperience.experience.label,
@@ -17186,6 +17380,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             ),
             insightOpen: Boolean(rightPanelState.isOpen && rightPanelState.view),
             guidedPromptsVisible:
+              !workspaceRuntimeIsolationMode &&
               Boolean(sceneJson) &&
               readSceneJsonMetaString(sceneJson, "demo_id").toLowerCase() ===
                 String(activeDomainDemo.id).toLowerCase() &&
@@ -17200,12 +17395,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [
     activeDomainDemo.id,
     activeDomainExperience,
+    emptyWorkspaceState,
+    workspaceRuntimeIsolationMode,
+    workspaceSelectionSuppressedMode,
+    workspaceDomainSignature,
+    workspaceSituationSignature,
+    workspaceGoalSignature,
+    workspaceDraftModelSignature,
+    workspaceModelSignature,
+    workspaceObjectSignature,
     sceneJson,
+    visibleSceneJson,
     responseData,
+    visibleResponseData,
     rightPanelState.view,
     rightPanelState.isOpen,
     sourceLabel,
-    messages,
+    inspectorMessageSignature,
     kpi,
     activeMode,
     activeLoopId,
@@ -19713,6 +19919,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           assistantRecommendedActions={DEFAULT_EXECUTIVE_ASSISTANT_ACTION_CARDS}
           onAssistantActionSelect={handleAssistantRecommendedActionSelect}
           assistantThemeMode={resolveNexoraHudThemeMode(resolvedTheme)}
+          emptyWorkspaceState={emptyWorkspaceState}
+          workspaceDomainSelection={workspaceDomainSelection}
+          workspaceSituation={workspaceSituation}
+          workspaceGoals={workspaceGoals}
+          workspaceDraftModel={workspaceDraftModel}
+          workspaceModel={workspaceModel}
+          workspaceObjects={workspaceObjects}
+          workspaceSceneCreated={workspaceCreatedSceneMode}
           legacyDashboardHost={
             shouldRenderLegacyDashboardHost ? (
         <LegacyDashboardHostMountTrace>
@@ -23843,6 +24057,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           cameraToolbar={sceneNavigationToolbarVisible}
         />
       </ExecutiveSceneCanvasShell>
+
+      <EmptyWorkspaceOverlay state={emptyWorkspaceState} />
 
       {showPipelineStatusHud ? (
         <div

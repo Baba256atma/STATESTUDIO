@@ -92,6 +92,8 @@ import { ExecutiveLeftDockZone } from "./workspace/ExecutiveLeftDockZone";
 import { ObjectPanelShell } from "./workspace/ObjectPanelShell";
 import { ExecutiveAssistantPanelShell } from "./workspace/ExecutiveAssistantPanelShell";
 import { useHudPreferencesOptional } from "../lib/ui/useHudPreferences";
+import { WorkspaceSwitcherNavSection } from "./workspace/WorkspaceSwitcherNavSection";
+import { WorkspaceModalHost } from "./workspace/WorkspaceModalHost";
 
 /** Right rail width — use EXECUTIVE_RIGHT_DOCK_WIDTH_PX from layout contracts. */
 const RIGHT_PANEL_WIDTH_PX = EXECUTIVE_RIGHT_DOCK_WIDTH_PX;
@@ -1857,6 +1859,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
               paddingTop: 4,
             }}
           >
+            <WorkspaceSwitcherNavSection />
             <SceneSettingsMenu variant="navSettings" />
             <SceneSettingsMenu variant="navInput" />
           </div>
@@ -2946,6 +2949,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
 
       </div>
       ) : null}
+      <WorkspaceModalHost />
     </div>
   );
 }

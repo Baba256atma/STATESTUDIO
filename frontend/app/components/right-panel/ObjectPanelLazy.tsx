@@ -2,11 +2,13 @@
 
 import React from "react";
 
-import FocusInsightCard from "../panels/FocusInsightCard";
 import ExecutiveObjectPanel from "../panels/ExecutiveObjectPanel";
 import { DomainObjectCatalogPanel } from "../domain/DomainObjectCatalogPanel";
 import { RightPanelFallback } from "./RightPanelFallback";
-import type { ExecutiveObjectPanelData } from "../../lib/panels/executiveObjectPanelData";
+import {
+  buildExecutiveObjectPanelData,
+  type ExecutiveObjectPanelData,
+} from "../../lib/panels/executiveObjectPanelData";
 import type { AddObjectMenuItem } from "../../lib/domain/domainAddObjectAdapter";
 import type { RightPanelView } from "../../lib/ui/right-panel/rightPanelTypes";
 
@@ -96,15 +98,19 @@ function ObjectPanelLazyComponent(props: ObjectPanelLazyProps): React.ReactEleme
     );
   }
 
-  return (
-    <FocusInsightCard
-      selectedObjectId={focusObjectId}
-      selectedObjectLabel={props.selectedObjectLabel ?? null}
-      responseData={props.responseData ?? props.sceneJson ?? null}
-      sceneJson={props.sceneJson ?? null}
-      riskPropagation={props.riskPropagation ?? null}
-    />
-  );
+  const panelData =
+    props.executiveObjectPanelData?.objectId === focusObjectId
+      ? props.executiveObjectPanelData
+      : buildExecutiveObjectPanelData({
+          objectId: focusObjectId,
+          objectName: props.selectedObjectLabel ?? null,
+          responseData: props.responseData ?? null,
+          sceneJson: props.sceneJson ?? null,
+          riskPropagation: props.riskPropagation ?? null,
+          canonicalRecommendation: null,
+        });
+
+  return <ExecutiveObjectPanel data={panelData} selectedObjectId={focusObjectId} />;
 }
 
 export const ObjectPanelLazy = React.memo(ObjectPanelLazyComponent);

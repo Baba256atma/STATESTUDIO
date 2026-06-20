@@ -32,6 +32,7 @@ import { shouldExposeExecutiveDevSurfaces } from "../../lib/ui/executiveWorkspac
 import { initializeNexoraArchitectureFreeze } from "../../lib/architecture/nexoraArchitectureFreezeRuntime";
 import { emitPhase2RuntimeCertification } from "../../lib/architecture/nexoraPhase2RuntimeCertification";
 import { emitPhase3DashboardCertification } from "../../lib/architecture/nexoraPhase3DashboardCertification";
+import { initializeWorkspaceRegistry } from "../../lib/workspace/activeWorkspaceResolver";
 import { ExecutiveFooterBar } from "../layout/ExecutiveFooterBar";
 
 export type NexoraManagerWorkspaceShellProps = {
@@ -72,6 +73,7 @@ export function NexoraManagerWorkspaceShell(props: NexoraManagerWorkspaceShellPr
   }, []);
 
   React.useEffect(() => {
+    initializeWorkspaceRegistry();
     initializeNexoraArchitectureFreeze();
     emitPhase2RuntimeCertification();
     emitPhase3DashboardCertification();

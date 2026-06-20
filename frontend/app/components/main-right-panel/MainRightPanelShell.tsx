@@ -48,6 +48,12 @@ import { MainRightPanelAssistantPlaceholder } from "./MainRightPanelAssistantPla
 import { MainRightPanelContextHeader } from "./MainRightPanelContextHeader";
 import { MrpChatFirstAssistantSurface } from "./MrpChatFirstAssistantSurface";
 import type { ExecutiveAssistantActionCard } from "../../lib/ui/executiveAssistantPanelTypes";
+import type { EmptyWorkspaceState } from "../../lib/workspace/emptyWorkspaceContract";
+import type { WorkspaceDomainSelection } from "../../lib/workspace/workspaceDomainContract";
+import type { WorkspaceSituationContext } from "../../lib/workspace/workspaceSituationContract";
+import type { WorkspaceGoal } from "../../lib/workspace/workspaceGoalContract";
+import type { WorkspaceDraftModel } from "../../lib/workspace/workspaceDraftModelContract";
+import type { WorkspaceModel, WorkspaceObject } from "../../lib/workspace/workspaceApprovedModelContract";
 
 export type MainRightPanelShellProps = {
   activeTab: MainRightPanelTab;
@@ -93,6 +99,14 @@ export type MainRightPanelShellProps = {
   assistantRecommendedActions?: readonly ExecutiveAssistantActionCard[];
   onAssistantActionSelect?: (action: ExecutiveAssistantActionCard) => void;
   assistantThemeMode?: "day" | "night";
+  emptyWorkspaceState?: EmptyWorkspaceState | null;
+  workspaceDomainSelection?: WorkspaceDomainSelection | null;
+  workspaceSituation?: WorkspaceSituationContext | null;
+  workspaceGoals?: readonly WorkspaceGoal[];
+  workspaceDraftModel?: WorkspaceDraftModel | null;
+  workspaceModel?: WorkspaceModel | null;
+  workspaceObjects?: readonly WorkspaceObject[];
+  workspaceSceneCreated?: boolean;
   /** MRP:12:2 — collapsed rail preserves tab + dashboard mode in parent state. */
   collapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -191,6 +205,14 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
     () => resolveActiveWorkspaceIdFromMode(props.dashboardMode),
     [props.dashboardMode]
   );
+  const emptyWorkspaceMode = props.emptyWorkspaceState?.state === "empty";
+  const domainLabel = props.workspaceDomainSelection?.domainName ?? null;
+  const situationCaptured = Boolean(props.workspaceSituation?.situationText.trim());
+  const goalsDefined = Boolean(props.workspaceGoals?.length);
+  const draftObjectCount = props.workspaceDraftModel?.objects.length ?? 0;
+  const approvedObjectCount = props.workspaceObjects?.length ?? props.workspaceModel?.approvedObjects.length ?? 0;
+  const modelApproved = props.workspaceModel?.status === "approved";
+  const workspaceSceneCreated = props.workspaceSceneCreated === true;
   const selectedObjectId = props.launcherSelectedObjectId ?? props.dashboardRouteObjectId;
   const selectedObjectLabel = props.launcherSelectedObjectLabel ?? props.dashboardRouteObjectName;
 
@@ -281,19 +303,40 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
           overflow: "hidden",
         }}
       >
-        <MrpDynamicWorkspaceZone
-          dashboardMode={props.dashboardMode}
-          dashboardContext={props.dashboardContext}
-          subWorkspaceMode={props.subWorkspaceMode}
-          selectedObjectId={selectedObjectId}
-          selectedObjectLabel={selectedObjectLabel}
-          selectedObjectType={props.launcherSelectedObjectType ?? null}
-          selectedObjectStatus={props.launcherSelectedObjectStatus ?? null}
-          routeObjectId={props.dashboardRouteObjectId}
-          routeObjectName={props.dashboardRouteObjectName}
-          workspaceSceneJson={props.workspaceSceneJson}
-          renderDashboardRuntime={renderDashboardRuntime}
+        <MainRightPanelDiscoveryStrip
+          domainLabel={domainLabel}
+          situationCaptured={situationCaptured}
+          goalsDefined={goalsDefined}
+          draftObjectCount={draftObjectCount}
+          approvedObjectCount={approvedObjectCount}
+          modelApproved={modelApproved}
+          workspaceSceneCreated={workspaceSceneCreated}
         />
+        {emptyWorkspaceMode ? (
+          <MainRightPanelEmptyWorkspaceMessage
+            domainLabel={domainLabel}
+            situationCaptured={situationCaptured}
+            goalsDefined={goalsDefined}
+            draftObjectCount={draftObjectCount}
+            approvedObjectCount={approvedObjectCount}
+            modelApproved={modelApproved}
+            workspaceSceneCreated={workspaceSceneCreated}
+          />
+        ) : (
+          <MrpDynamicWorkspaceZone
+            dashboardMode={props.dashboardMode}
+            dashboardContext={props.dashboardContext}
+            subWorkspaceMode={props.subWorkspaceMode}
+            selectedObjectId={selectedObjectId}
+            selectedObjectLabel={selectedObjectLabel}
+            selectedObjectType={props.launcherSelectedObjectType ?? null}
+            selectedObjectStatus={props.launcherSelectedObjectStatus ?? null}
+            routeObjectId={props.dashboardRouteObjectId}
+            routeObjectName={props.dashboardRouteObjectName}
+            workspaceSceneJson={props.workspaceSceneJson}
+            renderDashboardRuntime={renderDashboardRuntime}
+          />
+        )}
       </div>
 
       <div
@@ -310,7 +353,27 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
           overflow: "hidden",
         }}
       >
-        {props.useIntegratedAssistantStack ? (
+        <MainRightPanelDiscoveryStrip
+          domainLabel={domainLabel}
+          situationCaptured={situationCaptured}
+          goalsDefined={goalsDefined}
+          draftObjectCount={draftObjectCount}
+          approvedObjectCount={approvedObjectCount}
+          modelApproved={modelApproved}
+          workspaceSceneCreated={workspaceSceneCreated}
+        />
+        {emptyWorkspaceMode ? (
+          <MainRightPanelEmptyWorkspaceMessage
+            variant="assistant"
+            domainLabel={domainLabel}
+            situationCaptured={situationCaptured}
+            goalsDefined={goalsDefined}
+            draftObjectCount={draftObjectCount}
+            approvedObjectCount={approvedObjectCount}
+            modelApproved={modelApproved}
+            workspaceSceneCreated={workspaceSceneCreated}
+          />
+        ) : props.useIntegratedAssistantStack ? (
           <MrpChatFirstAssistantSurface
             questionSuggestions={props.assistantQuestionSuggestions}
             questionsLoading={props.assistantQuestionsLoading}
@@ -461,3 +524,114 @@ export const MainRightPanelShell = React.memo(MainRightPanelShellComponent);
 MainRightPanelShell.displayName = "MainRightPanelShell";
 
 export default MainRightPanelShell;
+
+function MainRightPanelDiscoveryStrip(props: {
+  domainLabel: string | null;
+  situationCaptured: boolean;
+  goalsDefined: boolean;
+  draftObjectCount: number;
+  approvedObjectCount: number;
+  modelApproved: boolean;
+  workspaceSceneCreated: boolean;
+}): React.ReactElement {
+  return (
+    <div
+      data-nx="mrp-domain-context"
+      style={{
+        flexShrink: 0,
+        borderBottom: `1px solid ${nx.borderSoft}`,
+        color: nx.lowMuted,
+        fontSize: 10,
+        fontWeight: 800,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        padding: "8px 12px",
+      }}
+    >
+      {props.domainLabel ? `Selected Domain: ${props.domainLabel}` : "No Domain Selected"}
+      {" · "}
+      {props.situationCaptured ? "Situation Captured" : "Situation Not Yet Defined"}
+      {" · "}
+      {props.goalsDefined ? "Goals Defined" : "No Goals Selected"}
+      {" · "}
+      {props.draftObjectCount > 0 ? `Draft Objects Generated: ${props.draftObjectCount}` : "No Draft Objects"}
+      {" · "}
+      {props.approvedObjectCount > 0 ? `Approved Objects: ${props.approvedObjectCount}` : "No Approved Objects"}
+      {" · "}
+      {props.modelApproved ? "Model Status: Approved" : "Model Status: Draft"}
+      {" · "}
+      {props.workspaceSceneCreated ? "Scene Created" : "Scene Pending"}
+    </div>
+  );
+}
+
+function MainRightPanelEmptyWorkspaceMessage(props: {
+  variant?: "dashboard" | "assistant";
+  domainLabel?: string | null;
+  situationCaptured?: boolean;
+  goalsDefined?: boolean;
+  draftObjectCount?: number;
+  approvedObjectCount?: number;
+  modelApproved?: boolean;
+  workspaceSceneCreated?: boolean;
+}): React.ReactElement {
+  const assistant = props.variant === "assistant";
+  return (
+    <div
+      data-nx="mrp-empty-workspace-message"
+      style={{
+        flex: 1,
+        minHeight: 0,
+        minWidth: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        overflow: "hidden",
+      }}
+    >
+      <section
+        style={{
+          width: "100%",
+          borderRadius: 8,
+          border: `1px solid ${nx.border}`,
+          background: nx.bgPanelSoft,
+          padding: 14,
+          display: "grid",
+          gap: 8,
+        }}
+      >
+        <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          {assistant ? "Assistant Context" : "Insight"}
+        </div>
+        <div style={{ color: nx.text, fontSize: 14, fontWeight: 800 }}>
+          No model exists yet.
+        </div>
+        <p style={{ color: nx.muted, fontSize: 12, lineHeight: 1.45, margin: 0 }}>
+          {assistant
+            ? "Assistant context will become workspace-specific after a first model is created."
+            : "Executive summaries, risks, opportunities, and scenarios will appear after this workspace has an approved model."}
+        </p>
+        <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 800 }}>
+          {props.domainLabel ? `Selected Domain: ${props.domainLabel}` : "No Domain Selected"}
+          {" · "}
+          {props.situationCaptured ? "Situation Captured" : "Situation Not Yet Defined"}
+          {" · "}
+          {props.goalsDefined ? "Goals Defined" : "No Goals Selected"}
+          {" · "}
+          {(props.draftObjectCount ?? 0) > 0
+            ? `Draft Objects Generated: ${props.draftObjectCount}`
+            : "No Draft Objects"}
+          {" · "}
+          {(props.approvedObjectCount ?? 0) > 0
+            ? `Approved Objects: ${props.approvedObjectCount}`
+            : "No Approved Objects"}
+          {" · "}
+          {props.modelApproved ? "Model Status: Approved" : "Model Status: Draft"}
+          {" · "}
+          {props.workspaceSceneCreated ? "Scene Created" : "Scene Pending"}
+        </div>
+      </section>
+    </div>
+  );
+}
