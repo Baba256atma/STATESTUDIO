@@ -8,6 +8,7 @@ import {
   type WorkspaceModel,
   type WorkspaceObject,
 } from "./workspaceApprovedModelContract.ts";
+import { getWorkspaceSyncedSceneJson, getWorkspaceSceneSyncVersionSnapshot } from "./workspaceSceneSync.ts";
 
 export const WORKSPACE_SCENE_CREATION_CONTRACT_VERSION = "NW-B:7" as const;
 
@@ -58,6 +59,11 @@ function emitSceneCreationDiagnostic(message: string, payload?: Record<string, u
 function notifyWorkspaceSceneListeners(): void {
   workspaceSceneVersion += 1;
   workspaceSceneListeners.forEach((listener) => listener());
+}
+
+export function publishWorkspaceSceneStoreUpdate(): void {
+  hydrateWorkspaceSceneStore();
+  notifyWorkspaceSceneListeners();
 }
 
 function readStorage<T>(storageKey: string): Record<WorkspaceId, T> {
@@ -286,13 +292,15 @@ export function getWorkspaceSceneJson(workspaceId?: WorkspaceId | null): SceneJs
   const model = getWorkspaceModel(resolvedWorkspaceId);
   const creation = workspaceSceneCreations[resolvedWorkspaceId];
   const objects = workspaceSceneObjects[resolvedWorkspaceId] ?? [];
-  if (!model || !creation || creation.sceneReady !== true || objects.length === 0) return null;
-  return buildWorkspaceSceneJson({
-    workspaceId: resolvedWorkspaceId,
-    model,
-    objects,
-    creation,
-  });
+  if (model && creation && creation.sceneReady === true && objects.length > 0) {
+    return buildWorkspaceSceneJson({
+      workspaceId: resolvedWorkspaceId,
+      model,
+      objects,
+      creation,
+    });
+  }
+  return getWorkspaceSyncedSceneJson(resolvedWorkspaceId);
 }
 
 export function subscribeWorkspaceScenes(listener: WorkspaceSceneListener): () => void {
@@ -303,7 +311,7 @@ export function subscribeWorkspaceScenes(listener: WorkspaceSceneListener): () =
 
 export function getWorkspaceSceneVersionSnapshot(): number {
   hydrateWorkspaceSceneStore();
-  return workspaceSceneVersion;
+  return workspaceSceneVersion + getWorkspaceSceneSyncVersionSnapshot();
 }
 
 export function resetWorkspaceScenesForTests(): void {

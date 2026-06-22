@@ -26,6 +26,7 @@ import { ObjectPanelExecutiveSummary } from "./object-panel/ObjectPanelExecutive
 import { ObjectPanelInsightsSurface } from "./object-panel/ObjectPanelInsightsSurface";
 import { ObjectPanelRelationshipSummary } from "./object-panel/ObjectPanelRelationshipSummary";
 import { ObjectPanelSignalsGrid } from "./object-panel/ObjectPanelSignalsGrid";
+import { WorkspaceObjectIntelligencePanel } from "./object-panel/WorkspaceObjectIntelligencePanel";
 
 type Props = {
   model: ExecutiveActionPanelModel;
@@ -159,6 +160,11 @@ export function ExecutiveActionPanel({ model, focusModeActive = false, view }: P
       <ObjectPanelExecutiveHeader view={executiveView} />
       <ObjectPanelExecutiveSummary view={executiveView} />
       <ObjectPanelSignalsGrid view={executiveView} />
+      <WorkspaceObjectIntelligencePanel
+        objectId={model.objectId}
+        objectName={model.objectName}
+        objectType={model.objectType}
+      />
       <ActionsSection model={model} focusModeActive={focusModeActive} />
       <ObjectPanelInsightsSurface view={executiveView} />
       <ObjectPanelRelationshipSummary view={executiveView} />

@@ -90,10 +90,17 @@ import {
 } from "../lib/workspace/workspaceApprovedModelContract";
 import {
   createWorkspaceSceneFromApprovedModel,
-  getWorkspaceSceneJson,
   getWorkspaceSceneVersionSnapshot,
   subscribeWorkspaceScenes,
 } from "../lib/workspace/workspaceSceneCreationContract";
+import {
+  createWorkspaceRelationshipsFromApprovedModel,
+  getWorkspaceDiscoveredRelationships,
+  getWorkspaceRelationshipVersionSnapshot,
+  getWorkspaceSceneJsonWithRelationships,
+  subscribeWorkspaceRelationships,
+} from "../lib/workspace/workspaceRelationshipDiscoveryContract";
+import { resolveWorkspaceRelationshipQuestion } from "../lib/workspace/workspaceRelationshipAssistantRuntime";
 import { DEMO_WORKSPACE_ID } from "../lib/workspace/workspaceRegistryContract";
 import {
   getEmptyWorkspaceSceneJson,
@@ -204,7 +211,6 @@ import {
   commitDashboardContextUpdate,
   commitDashboardRouteResolution,
   getCanonicalDashboardContext,
-  routeDashboardContextFromObjectSelection,
   seedWorkspaceStateFromPreferredTab,
   useNexoraWorkspaceState,
   buildDashboardHomeReturnAction,
@@ -354,7 +360,7 @@ import { useEmotionalFxEngine } from "../lib/fx/useEmotionalFxEngine";
 import { useStrategicRadar } from "../lib/strategy/useStrategicRadar";
 import { computeRiskLevel } from "../lib/risk/riskEscalationEngine";
 import { appendRiskEvent } from "../lib/risk/riskEventStore";
-import { routeChatInput } from "../lib/decision/decisionRouter";
+import { routeChatInput as baseRouteChatInput } from "../lib/decision/decisionRouter";
 import { buildCanonicalRecommendation } from "../lib/decision/recommendation/buildCanonicalRecommendation";
 import { buildExecutiveObjectPanelData } from "../lib/panels/executiveObjectPanelData";
 import {
@@ -741,6 +747,28 @@ import {
   reportSelectionResolved,
 } from "../lib/selection/objectSelectionRuntimeContract";
 import {
+  beginObjectClickSelectionTransaction,
+  endObjectClickSelectionTransaction,
+  readRelationshipIdsForSceneParity,
+} from "../lib/selection/objectClickSelectionReadOnlyGuard";
+import {
+  buildObjectPanelSelectionOpenRequest,
+  shouldOpenObjectPanelForSelection,
+} from "../lib/selection/objectPanelSelectionBridge";
+import {
+  clearEmptySceneDeselectReadModels,
+  hasPendingEmptySceneDeselectWork,
+  shouldCloseObjectPanelOnEmptySceneDeselect,
+  traceEmptySceneClickDeselect,
+} from "../lib/selection/emptySceneClickDeselectRuntime.ts";
+import {
+  getObjectClickSelectionContext,
+} from "../lib/selection/objectClickSelectionContextCache";
+import {
+  publishMrpSelectedObjectFromClick,
+  shouldPublishMrpSelectedObjectContext,
+} from "../lib/selection/mrpSelectedObjectBridge";
+import {
   logNexoraPanelRequest,
   logNexoraPanelSelectionWrite,
   logNexoraSelectionWrite,
@@ -1011,6 +1039,7 @@ import {
   buildRightPanelSignatureFromState,
   logRightPanelWriteSkipped,
 } from "../lib/runtime/rightPanelWriteGuard";
+import { traceNexoraLoopGuard } from "../lib/runtime/nexoraLoopGuardDiagnostics.ts";
 import { markSelectionActivity } from "../lib/runtime/selectionBurstGuard";
 import {
   markPanelSelectionWrite,
@@ -3465,33 +3494,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   } | null>(null);
   const lastPanelWriteSourceRef = useRef<string | null>(null);
   const lastCommittedPanelSignatureRef = useRef<string | null>(null);
-  const traceNexoraLoopGuard = useCallback(
-    (input: {
-      source: string | null;
-      action: "write_skipped" | "write_applied";
-      reason: "same_state" | "changed_object" | "changed_mode" | "redirect_debounced";
-      signature: string;
-      prevView?: string | null;
-      nextView?: string | null;
-      prevContextId?: string | null;
-      nextContextId?: string | null;
-      dashboardContext?: DashboardContext | null;
-    }) => {
-      if (process.env.NODE_ENV === "production") return;
-      globalThis.console?.warn?.("[NexoraLoopGuard]", {
-        source: input.source,
-        action: input.action,
-        reason: input.reason,
-        signature: input.signature,
-        prevView: input.prevView ?? null,
-        nextView: input.nextView ?? null,
-        prevContextId: input.prevContextId ?? null,
-        nextContextId: input.nextContextId ?? null,
-        dashboardContext: input.dashboardContext ?? null,
-      });
-    },
-    []
-  );
   const dashboardBootstrapAttemptedRef = useRef(false);
   const stageRightPanelWriteMeta = useCallback(
     (meta: { writer: string; source?: string | null; reason?: string | null }) => {
@@ -3863,12 +3865,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             source: "object_click",
             action: "write_skipped",
             reason: "same_state",
-            signature: loopGuardSignature,
+            stateSignature: loopGuardSignature,
             prevView: prev.view ?? null,
             nextView: guardedNext.view ?? null,
             prevContextId: prev.contextId ?? null,
             nextContextId: guardedNext.contextId ?? null,
             dashboardContext,
+            objectId: guardedNext.contextId ?? null,
           });
         }
         rightPanelWriteMetaRef.current = null;
@@ -4086,20 +4089,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               reason: pendingMeta?.reason ?? null,
             },
           });
-          globalThis.console?.warn?.("[NEXORA_RIGHT_PANEL_WRITE]", {
-            writer: pendingMeta?.writer ?? "HomeScreen.setRightPanelState",
-            prevView: prevState.view ?? null,
-            nextView: next.view ?? null,
-            contextId: next.contextId ?? null,
-            source: pendingMeta?.source ?? null,
-            reason: pendingMeta?.reason ?? null,
-          });
+          if (!isObjectClickPanelWrite) {
+            globalThis.console?.warn?.("[NEXORA_RIGHT_PANEL_WRITE]", {
+              writer: pendingMeta?.writer ?? "HomeScreen.setRightPanelState",
+              prevView: prevState.view ?? null,
+              nextView: next.view ?? null,
+              contextId: next.contextId ?? null,
+              source: pendingMeta?.source ?? null,
+              reason: pendingMeta?.reason ?? null,
+            });
+          } else {
+            traceNexoraLoopGuard({
+              source: "object_click",
+              action: "selection_resolved",
+              reason: "readonly_selection",
+              stateSignature: nextCommitSignature,
+              prevView: prevState.view ?? null,
+              nextView: next.view ?? null,
+              prevContextId: prevState.contextId ?? null,
+              nextContextId: next.contextId ?? null,
+              objectId: next.contextId ?? null,
+              dashboardContext: nexoraWorkspaceStateRef.current.dashboardContext,
+            });
+          }
         }
         rightPanelWriteMetaRef.current = null;
         return next;
       });
     },
-    [recordRightPanelAuthorityAudit, traceNexoraLoopGuard]
+    [recordRightPanelAuthorityAudit]
   );
   const getRightPanelSnapshotForController = useCallback(
     () => ({
@@ -6647,12 +6665,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               source: "object_click",
               action: "write_skipped",
               reason: "same_state",
-              signature: redirectSignature,
+              stateSignature: redirectSignature,
               prevView: rightPanelStateRef.current.view ?? null,
               nextView: mrpRuntimeRoute.runtimeView,
               prevContextId: rightPanelStateRef.current.contextId ?? null,
               nextContextId,
               dashboardContext: mrpRuntimeRoute.dashboardContext,
+              objectId: nextContextId,
             });
           }
           rightPanelController.refs.lastOpenIntentRef.current = JSON.stringify({
@@ -6671,20 +6690,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           at: Date.now(),
         };
         if (process.env.NODE_ENV !== "production") {
-          traceNexoraLoopGuard({
-            source: normalizedRequest.source,
-            action: "write_applied",
-            reason:
-              (rightPanelStateRef.current.contextId ?? null) !== nextContextId
-                ? "changed_object"
-                : "changed_mode",
-            signature: redirectSignature,
-            prevView: rightPanelStateRef.current.view ?? null,
-            nextView: mrpRuntimeRoute.runtimeView,
-            prevContextId: rightPanelStateRef.current.contextId ?? null,
-            nextContextId,
-            dashboardContext: mrpRuntimeRoute.dashboardContext,
-          });
+          if (normalizedRequest.source === "object_click") {
+            traceNexoraLoopGuard({
+              source: "object_click",
+              action: "selection_resolved",
+              reason: "readonly_selection",
+              stateSignature: redirectSignature,
+              prevView: rightPanelStateRef.current.view ?? null,
+              nextView: mrpRuntimeRoute.runtimeView,
+              prevContextId: rightPanelStateRef.current.contextId ?? null,
+              nextContextId,
+              dashboardContext: mrpRuntimeRoute.dashboardContext,
+              objectId: nextContextId,
+            });
+          } else {
+            traceNexoraLoopGuard({
+              source: normalizedRequest.source,
+              action: "write_applied",
+              reason:
+                (rightPanelStateRef.current.contextId ?? null) !== nextContextId
+                  ? "changed_object"
+                  : "changed_mode",
+              stateSignature: redirectSignature,
+              prevView: rightPanelStateRef.current.view ?? null,
+              nextView: mrpRuntimeRoute.runtimeView,
+              prevContextId: rightPanelStateRef.current.contextId ?? null,
+              nextContextId,
+              dashboardContext: mrpRuntimeRoute.dashboardContext,
+            });
+          }
         }
         if (!suppressRepeatedObjectClickRedirectLog) {
           warnLegacySurfaceBlocked(normalizedRequest.view, {
@@ -6703,7 +6737,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             source: normalizedRequest.source,
             action: "write_skipped",
             reason: "redirect_debounced",
-            signature: redirectSignature,
+            stateSignature: redirectSignature,
             prevView: rightPanelStateRef.current.view ?? null,
             nextView: mrpRuntimeRoute.runtimeView,
             prevContextId: rightPanelStateRef.current.contextId ?? null,
@@ -6711,12 +6745,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             dashboardContext: mrpRuntimeRoute.dashboardContext,
           });
         }
-        if (currentDashboardContext !== mrpRuntimeRoute.dashboardContext) {
+        if (
+          currentDashboardContext !== mrpRuntimeRoute.dashboardContext &&
+          normalizedRequest.source !== "object_click"
+        ) {
           commitDashboardContextUpdate(dispatchNexoraWorkspaceStateRef.current, {
             dashboardContext: mrpRuntimeRoute.dashboardContext,
             source: "legacy_redirect",
             reason: normalizedRequest.reason ?? "mrp_dashboard_redirect",
             priorContext: currentDashboardContext,
+            currentWorkspaceState: nexoraWorkspaceStateRef.current,
+            workspaceId: activeRegistryWorkspaceId,
           });
         }
         normalizedRequest = {
@@ -7185,7 +7224,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       rightPanelState.view,
       selectedObjectIdState,
       traceAnalyzeObjectRoute,
-      traceNexoraLoopGuard,
       writeChatPipelineDebug,
       rightPanelController.refs,
     ]
@@ -7956,6 +7994,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         commitDashboardRouteResolution(dispatchNexoraWorkspaceStateRef.current, routeResolution, {
           source: "left_nav",
           priorContext: nexoraWorkspaceStateRef.current.dashboardContext,
+          currentWorkspaceState: nexoraWorkspaceStateRef.current,
+          workspaceId: activeRegistryWorkspaceId,
         });
         requestPanelAuthorityOpen({
           view: leftNavItem.defaultPanelTarget,
@@ -8013,6 +8053,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                   ? "assistant"
                   : "system",
           priorContext: nexoraWorkspaceStateRef.current.dashboardContext,
+          currentWorkspaceState: nexoraWorkspaceStateRef.current,
+          workspaceId: activeRegistryWorkspaceId,
         });
         const resolvedAuthoritySource: NexoraPanelAuthoritySource =
           rawEventSource === "left_nav" ||
@@ -8819,6 +8861,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     getWorkspaceSceneVersionSnapshot,
     () => 0
   );
+  const workspaceRelationshipVersion = useSyncExternalStore(
+    subscribeWorkspaceRelationships,
+    getWorkspaceRelationshipVersionSnapshot,
+    () => 0
+  );
   const registryActiveWorkspace = useMemo(() => {
     const workspaceId = workspaceRegistrySnapshot.activeWorkspaceId;
     return workspaceId ? workspaceRegistrySnapshot.workspaces[workspaceId] ?? null : null;
@@ -8854,8 +8901,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [activeRegistryWorkspaceId, workspaceModelVersion]
   );
   const workspaceSceneJson = useMemo(
-    () => getWorkspaceSceneJson(activeRegistryWorkspaceId),
-    [activeRegistryWorkspaceId, workspaceSceneVersion, workspaceModelVersion]
+    () => getWorkspaceSceneJsonWithRelationships(activeRegistryWorkspaceId),
+    [activeRegistryWorkspaceId, workspaceSceneVersion, workspaceModelVersion, workspaceRelationshipVersion]
+  );
+  const workspaceDiscoveredRelationships = useMemo(
+    () => getWorkspaceDiscoveredRelationships(activeRegistryWorkspaceId),
+    [activeRegistryWorkspaceId, workspaceRelationshipVersion]
   );
   const workspaceGoalSignature = useMemo(
     () => workspaceGoals.map((goal) => goal.goalId).sort().join("|"),
@@ -8889,6 +8940,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     if (workspaceModel?.status !== "approved") return;
     createWorkspaceSceneFromApprovedModel({ workspaceId: activeRegistryWorkspaceId });
   }, [activeRegistryWorkspaceId, workspaceModelSignature, workspaceModel?.status]);
+  useEffect(() => {
+    if (!activeRegistryWorkspaceId || activeRegistryWorkspaceId === DEMO_WORKSPACE_ID) return;
+    if (workspaceModel?.status !== "approved") return;
+    if (!workspaceSceneJson) return;
+    createWorkspaceRelationshipsFromApprovedModel({ workspaceId: activeRegistryWorkspaceId });
+  }, [
+    activeRegistryWorkspaceId,
+    workspaceModel?.status,
+    workspaceModelSignature,
+    workspaceObjectSignature,
+    workspaceSceneVersion,
+  ]);
   const didAutoLoadDomainDemoRef = useRef(false);
   const environmentConfig = useMemo(() => {
     const env = resolveNexoraEnvironment({
@@ -9568,8 +9631,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [effectiveVisibleSceneJson]
   );
   const relationshipIdsForParity = useMemo(
-    () => readSceneRelationships(sceneJson).map((relationship) => relationship.id).sort(),
-    [sceneJsonIdsForParity.join("|")]
+    () => [...readRelationshipIdsForSceneParity(effectiveVisibleSceneJson ?? sceneJson)],
+    [effectiveVisibleSceneJson, sceneJson, visibleSceneJsonIdsForParity.join("|")]
   );
   const visibleSceneIdSignature = visibleSceneJsonIdsForParity.slice().sort().join("|");
   const visibleSceneSignature = useMemo(
@@ -10972,16 +11035,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     resolveObjectLabel,
   ]);
   const dashboardFocusObjectData = useMemo(() => {
+    const cachedSelection = getObjectClickSelectionContext();
     const objectId =
-      nexoraWorkspaceState.dashboardRouteObjectId?.trim() ||
+      cachedSelection?.selectedObjectId?.trim() ||
       selectedObjectIdState?.trim() ||
+      nexoraWorkspaceState.dashboardRouteObjectId?.trim() ||
       null;
     if (!objectId) return null;
     const reco = buildCanonicalRecommendation(visibleResponseData ?? visibleSceneJson ?? null);
     return buildExecutiveObjectPanelData({
       objectId,
       objectName:
-        nexoraWorkspaceState.dashboardRouteObjectName?.trim() || resolveObjectLabel(objectId),
+        cachedSelection?.selectedObjectName?.trim() ||
+        nexoraWorkspaceState.dashboardRouteObjectName?.trim() ||
+        resolveObjectLabel(objectId),
       responseData: visibleResponseData,
       sceneJson: visibleSceneJson,
       riskPropagation: visibleRiskPropagation,
@@ -12519,6 +12586,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
       activeObjectClickTransactionRef.current = { eventId, objectId: normalizedId, startedAt: now };
       lastObjectSelectionEventRef.current = { eventId, objectId: normalizedId, timestamp: now };
+      beginObjectClickSelectionTransaction({
+        objectId: normalizedId,
+        eventId,
+        startedAt: now,
+      });
 
       markSelectionUserIntent("object_click");
       const requestSeq = commitCanonicalObjectSelection(normalizedId, "object_click", eventId);
@@ -12626,8 +12698,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           dashboardContext: currentDashboardContext,
           objectId: normalizedId,
         });
-        const sameObjectDashboardContextNoOp =
-          previousSelectedId === normalizedId && currentDashboardContext === "sources";
+        const sameObjectDashboardContextNoOp = !shouldPublishMrpSelectedObjectContext({
+          previousSelectedObjectId: previousSelectedId,
+          nextObjectId: normalizedId,
+          priorDashboardContext: currentDashboardContext,
+        });
         if (sameObjectDashboardContextNoOp) {
           if (process.env.NODE_ENV !== "production") {
             globalThis.console?.warn?.("[NEXORA_RIGHT_PANEL_WRITE_SKIPPED]", {
@@ -12643,12 +12718,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               source: "object_click",
               action: "write_skipped",
               reason: "same_state",
-              signature: contextSignature,
+              stateSignature: contextSignature,
               prevView: rightPanelStateRef.current.view ?? null,
               nextView: rightPanelStateRef.current.view ?? null,
               prevContextId: rightPanelStateRef.current.contextId ?? null,
               nextContextId: rightPanelStateRef.current.contextId ?? null,
               dashboardContext: currentDashboardContext,
+              objectId: normalizedId,
             });
           }
           if (panelCommit && panelCommit.objectId === normalizedId && panelCommit.clickEventId === eventId) {
@@ -12660,9 +12736,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             reason: "same_object_dashboard_context_noop",
           });
         } else {
-          routeDashboardContextFromObjectSelection(dispatchNexoraWorkspaceStateRef.current, {
+          const selectedObjectName =
+            selectedObjectInfoRef.current?.id === normalizedId
+              ? selectedObjectInfoRef.current?.label ?? normalizedId
+              : normalizedId;
+          publishMrpSelectedObjectFromClick({
             objectId: normalizedId,
-            reason: `object_click:${eventId}`,
+            eventId,
+            objectName: selectedObjectName,
+            objectType: selectedObjectInfoRef.current?.type ?? null,
+            workspaceId: activeRegistryWorkspaceId,
             priorContext: currentDashboardContext,
           });
           if (panelCommit && panelCommit.objectId === normalizedId && panelCommit.clickEventId === eventId) {
@@ -12670,22 +12753,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           }
           devDiagnosticLog("objectSelection", "[ObjectSelection] MRP Context Updated", {
             objectId: normalizedId,
-            dashboardContext: currentDashboardContext,
+            dashboardContext: "sources",
             reason: `object_click:${eventId}`,
           });
           if (process.env.NODE_ENV !== "production") {
-            traceNexoraLoopGuard({
-              source: "object_click",
-              action: "write_applied",
-              reason: previousSelectedId === normalizedId ? "changed_mode" : "changed_object",
-              signature: contextSignature,
-              prevView: rightPanelStateRef.current.view ?? null,
-              nextView: rightPanelStateRef.current.view ?? null,
-              prevContextId: rightPanelStateRef.current.contextId ?? null,
-              nextContextId: rightPanelStateRef.current.contextId ?? null,
-              dashboardContext: currentDashboardContext,
-            });
-            logObjectClickDiagnostic("[Nexora][ObjectClickPanelContextCommitted]", {
+            logObjectClickDiagnostic("[Nexora][ObjectClickSelectionContextPublished]", {
               objectId: normalizedId,
               previousSelectedId,
               nextSelectedId: selectedObjectIdStateRef.current ?? null,
@@ -12699,6 +12771,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         if (activeObjectClickTransactionRef.current?.eventId === eventId) {
           activeObjectClickTransactionRef.current = null;
         }
+        endObjectClickSelectionTransaction(eventId);
       }, 180);
 
       reportSelectionResolved({
@@ -12732,7 +12805,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       });
       return true;
     },
-    [commitCanonicalObjectSelection, commitObjectSelection, isObjectSelectionFullyApplied, markSelectionUserIntent, sceneJson, syncSceneContextSelection]
+    [activeRegistryWorkspaceId, commitCanonicalObjectSelection, commitObjectSelection, isObjectSelectionFullyApplied, markSelectionUserIntent, sceneJson, syncSceneContextSelection]
   );
   const handleSelectedChangeRef = useRef<
     (id: string | null, options?: SceneSelectionChangeOptions) => void
@@ -13601,7 +13674,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         });
         const prevClearSig = lastSelectionSignatureRef.current;
         traceNexoraSelectionGuard(clearSig, prevClearSig, "scene");
-        if (clearSig === prevClearSig) {
+        const panelSnapshot = rightPanelStateRef.current;
+        const pendingEmptySceneDeselect = hasPendingEmptySceneDeselectWork({
+          selectedObjectId: selectedObjectIdStateRef.current,
+          panelView: panelSnapshot.view ?? null,
+          panelIsOpen: panelSnapshot.isOpen,
+        });
+        if (clearSig === prevClearSig && !pendingEmptySceneDeselect) {
           return;
         }
         lastSelectionSignatureRef.current = clearSig;
@@ -13621,6 +13700,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           setFocusedId(null);
         }
         clearFocusOwnership("Selection cleared.");
+        clearEmptySceneDeselectReadModels();
+        endObjectClickSelectionTransaction();
+        setSelectedObjectInfo(null);
+        if (nexoraWorkspaceStateRef.current.selectedObjectId) {
+          dispatchNexoraWorkspaceStateRef.current({ type: "clearSelection" });
+        }
+        const shouldCloseObjectPanel = shouldCloseObjectPanelOnEmptySceneDeselect({
+          panelView: panelSnapshot.view ?? null,
+          panelIsOpen: panelSnapshot.isOpen,
+          selectedObjectId: null,
+        });
+        if (shouldCloseObjectPanel) {
+          requestPanelAuthorityClose("empty_scene_click_deselect");
+        }
+        traceEmptySceneClickDeselect({
+          previousObjectId: previousSelectedObjectId,
+          panelView: panelSnapshot.view ?? null,
+          panelClosed: shouldCloseObjectPanel,
+        });
         if (process.env.NODE_ENV !== "production") {
           devLogThrottled({
             key: `global-selection-visual-clear:${previousSelectedObjectId ?? "none"}`,
@@ -14368,10 +14466,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
         markSelectionCascade({ selectedObjectId: finalId, reason: "object_click_heavy" });
         const traceStart = lastSelectionFlowTraceRef.current;
-        const rightPanelChanged =
-          rightPanelStateRef.current.view !== "object" ||
-          (rightPanelStateRef.current.contextId ?? null) !== finalId ||
-          rightPanelStateRef.current.isOpen !== true;
+        const rightPanelChanged = shouldOpenObjectPanelForSelection({
+          currentView: rightPanelStateRef.current.view ?? null,
+          currentContextId: rightPanelStateRef.current.contextId ?? null,
+          isOpen: rightPanelStateRef.current.isOpen,
+          objectId: finalId,
+        });
         const interactionIntentChanged =
           previousInteractionUiState.selectedObjectId !== finalId ||
           previousInteractionUiState.rightPanel !== "focus_insight" ||
@@ -14590,15 +14690,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           return;
         }
         markPanelSelectionWrite(finalId);
-        requestPanelAuthorityOpen({
-          source: "object_click",
-          family: "SCN",
-          view: "object",
-          contextId: finalId,
-          reason: "selection_budget_deferred",
-          forceOpen: true,
-          objectClickRequestId,
-        });
+        requestPanelAuthorityOpen(
+          buildObjectPanelSelectionOpenRequest({
+            objectId: finalId,
+            objectClickRequestId,
+          })
+        );
         devDiagnosticLog("objectSelection", "[ObjectSelection] Object Panel Opened", {
           objectId: finalId,
           view: "object",
@@ -14620,7 +14717,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       clearFocusOwnership,
       setInteractionUiState,
       requestPanelAuthorityOpen,
+      requestPanelAuthorityClose,
       resolveSelectedObjectDetails,
+      setSelectedObjectInfo,
       markUserStartedFlow,
       selectionLocked,
       focusedId,
@@ -14631,7 +14730,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setFocusedId,
       setViewMode,
       syncSceneContextSelection,
-      traceNexoraLoopGuard,
       rightPanelState.contextId,
       rightPanelState.isOpen,
       rightPanelState.view,
@@ -16024,6 +16122,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     ]
   );
 
+  const routeChatInputWithWorkspaceRelationships = useCallback(
+    (text: string, context: Parameters<typeof baseRouteChatInput>[1]) => {
+      const workspaceAnswer = resolveWorkspaceRelationshipQuestion(text, workspaceDiscoveredRelationships);
+      if (workspaceAnswer) return workspaceAnswer;
+      return baseRouteChatInput(text, context);
+    },
+    [workspaceDiscoveredRelationships]
+  );
+
   const chatPipelineSendTextDeps = useMemo(
     (): ChatPipelineSendTextDeps => ({
       activeChatDebugCorrelationRef,
@@ -16130,7 +16237,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       rightPanelRouteLockRef,
       rightPanelState,
       rightPanelTab,
-      routeChatInput,
+      routeChatInput: routeChatInputWithWorkspaceRelationships,
       runGuardChecks,
       runNexoraChatPromptPipeline,
       saveProject,
@@ -16215,6 +16322,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     isPilotProductMode,
     objectSelection,
     writeChatPipelineDebug,
+    routeChatInputWithWorkspaceRelationships,
     ],
   );
 
@@ -17345,6 +17453,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           workspaceDraftModel,
           workspaceModel,
           workspaceObjects,
+          workspaceDiscoveredRelationships,
           domainExperience: {
             domainId: activeDomainExperience.experience.domainId,
             label: activeDomainExperience.experience.label,
@@ -19926,6 +20035,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           workspaceDraftModel={workspaceDraftModel}
           workspaceModel={workspaceModel}
           workspaceObjects={workspaceObjects}
+          workspaceRelationshipCount={workspaceDiscoveredRelationships.length}
           workspaceSceneCreated={workspaceCreatedSceneMode}
           legacyDashboardHost={
             shouldRenderLegacyDashboardHost ? (

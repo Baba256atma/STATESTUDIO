@@ -6,6 +6,12 @@ import type { SceneObject } from "../sceneTypes.ts";
 import { resolveStableObjectId } from "./objectRegistryRuntime.ts";
 import { isValidScenePosition, type ScenePosition } from "./topology/topologyScenePositioning.ts";
 import { logRuntimeObjectPositionProvider } from "./runtimeObjectPositionDevLog.ts";
+import {
+  logRelationshipPositionCacheBuilt,
+  logRelationshipPositionCacheFallback,
+  logRelationshipPositionCacheHit,
+  logRelationshipPositionCacheMiss,
+} from "./relationshipPositionCacheDevLog.ts";
 
 export type RuntimeObjectPositionProvider =
   | "topologyRuntime.position"
@@ -31,6 +37,35 @@ export type RuntimeObjectPositionResult = {
   position: ScenePosition;
   provider: RuntimeObjectPositionProvider;
 };
+
+export type RuntimeObjectPositionLookupCache = Readonly<{
+  signature: string;
+  lookup: ReadonlyMap<string, RuntimeObjectPositionResult>;
+  sceneObjectCount: number;
+}>;
+
+function normalizeLookupKey(value: unknown): string | null {
+  if (value == null) return null;
+  const normalized = String(value).trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function collectObjectAliasKeysFromObject(object: any, index: number): string[] {
+  const keys = new Set<string>();
+  const stableId = resolveStableObjectId(object as SceneObject, index);
+  keys.add(stableId);
+
+  const id = normalizeLookupKey(object?.id);
+  if (id) keys.add(id);
+  const name = normalizeLookupKey(object?.name);
+  if (name) keys.add(name);
+  const label = normalizeLookupKey((object as { label?: string }).label);
+  if (label) keys.add(label);
+  const objectId = normalizeLookupKey((object as { objectId?: string }).objectId);
+  if (objectId) keys.add(objectId);
+
+  return [...keys];
+}
 
 function readTuplePosition(tuple: readonly number[] | undefined): ScenePosition | null {
   if (!tuple || tuple.length < 3) return null;
@@ -151,6 +186,210 @@ const BASELINE_POSITIONS: Record<string, [number, number, number]> = {
   obj_delivery: [0, 0, 0],
   obj_risk_zone: [1.6, 0, 0],
 };
+
+function resolveRuntimeObjectPositionAtIndex(input: {
+  index: number;
+  sceneObjects: readonly any[];
+  topologyRuntimeLayoutPositions?: Record<string, [number, number, number]>;
+  layoutPositions?: Record<string, [number, number, number]>;
+  objectId?: string;
+  logProvider?: boolean;
+}): RuntimeObjectPositionResult {
+  const object = input.sceneObjects[input.index];
+  const aliasKeys = collectObjectAliasKeysFromObject(object, input.index);
+  const objectId = input.objectId ?? aliasKeys[0] ?? resolveStableObjectId(object as SceneObject, input.index);
+
+  const topologyPosition = readPositionFromMap(input.topologyRuntimeLayoutPositions, aliasKeys);
+  if (topologyPosition) {
+    const result = { position: topologyPosition, provider: "topologyRuntime.position" as const };
+    if (input.logProvider !== false) {
+      logRuntimeObjectPositionProvider({ objectId, provider: result.provider, position: result.position });
+    }
+    return result;
+  }
+
+  const layoutPosition = readPositionFromMap(input.layoutPositions, aliasKeys);
+  if (layoutPosition) {
+    const result = { position: layoutPosition, provider: "layoutEngine.position" as const };
+    if (input.logProvider !== false) {
+      logRuntimeObjectPositionProvider({ objectId, provider: result.provider, position: result.position });
+    }
+    return result;
+  }
+
+  const jsonPosition = readSceneObjectJsonPosition(object);
+  if (jsonPosition) {
+    if (input.logProvider !== false) {
+      logRuntimeObjectPositionProvider({
+        objectId,
+        provider: jsonPosition.provider,
+        position: jsonPosition.position,
+      });
+    }
+    return jsonPosition;
+  }
+
+  for (const aliasKey of aliasKeys) {
+    if (BASELINE_POSITIONS[aliasKey]) {
+      const [x, y, z] = BASELINE_POSITIONS[aliasKey];
+      const result = {
+        position: { x, y, z },
+        provider: "fallback.position" as const,
+      };
+      if (input.logProvider !== false) {
+        logRuntimeObjectPositionProvider({ objectId, provider: result.provider, position: result.position });
+      }
+      return result;
+    }
+  }
+
+  const result = {
+    position: fallbackPositionFromIndex(input.index, input.sceneObjects.length),
+    provider: "fallback.position" as const,
+  };
+  if (input.logProvider !== false) {
+    logRuntimeObjectPositionProvider({ objectId, provider: result.provider, position: result.position });
+  }
+  return result;
+}
+
+export function buildRuntimeObjectPositionLookupSignature(
+  sceneObjects: readonly any[],
+  context?: RuntimeObjectPositionContext
+): string {
+  const objectSignature = sceneObjects
+    .map((object, index) => {
+      const stableId = resolveStableObjectId(object as SceneObject, index);
+      return JSON.stringify({
+        stableId,
+        id: object?.id ?? null,
+        name: object?.name ?? null,
+        label: (object as { label?: string }).label ?? null,
+        objectId: (object as { objectId?: string }).objectId ?? null,
+        position: object?.position ?? null,
+        pos: object?.pos ?? null,
+        transform: object?.transform ?? null,
+      });
+    })
+    .join("|");
+  return [
+    objectSignature || "empty",
+    JSON.stringify(context?.topologyRuntimeLayoutPositions ?? null),
+    JSON.stringify(context?.layoutPositions ?? null),
+  ].join("::");
+}
+
+export function buildRuntimeObjectPositionLookupCache(input: {
+  sceneObjects: readonly any[];
+  context?: RuntimeObjectPositionContext;
+  logBuilt?: boolean;
+}): RuntimeObjectPositionLookupCache {
+  const signature = buildRuntimeObjectPositionLookupSignature(input.sceneObjects, input.context);
+  const lookup = new Map<string, RuntimeObjectPositionResult>();
+
+  for (let index = 0; index < input.sceneObjects.length; index += 1) {
+    const resolved = resolveRuntimeObjectPositionAtIndex({
+      index,
+      sceneObjects: input.sceneObjects,
+      topologyRuntimeLayoutPositions: input.context?.topologyRuntimeLayoutPositions,
+      layoutPositions: input.context?.layoutPositions,
+      logProvider: false,
+    });
+    for (const aliasKey of collectObjectAliasKeysFromObject(input.sceneObjects[index], index)) {
+      if (!lookup.has(aliasKey)) {
+        lookup.set(aliasKey, resolved);
+      }
+    }
+  }
+
+  for (const [baselineKey, tuple] of Object.entries(BASELINE_POSITIONS)) {
+    if (lookup.has(baselineKey)) continue;
+    const position = readTuplePosition(tuple);
+    if (!position) continue;
+    lookup.set(baselineKey, {
+      position,
+      provider: "fallback.position",
+    });
+  }
+
+  if (input.logBuilt !== false) {
+    logRelationshipPositionCacheBuilt({
+      signature,
+      objectCount: input.sceneObjects.length,
+      aliasCount: lookup.size,
+    });
+  }
+
+  return Object.freeze({
+    signature,
+    lookup,
+    sceneObjectCount: input.sceneObjects.length,
+  });
+}
+
+export function getRuntimeObjectPositionFromLookup(
+  cache: RuntimeObjectPositionLookupCache | null | undefined,
+  objectId: string
+): RuntimeObjectPositionResult | null {
+  const normalized = normalizeLookupKey(objectId);
+  if (!cache || !normalized) return null;
+  return cache.lookup.get(normalized) ?? null;
+}
+
+export function resolveRuntimeObjectPositionWithLookup(input: {
+  objectId: string;
+  sceneObjects: readonly any[];
+  topologyRuntimeLayoutPositions?: Record<string, [number, number, number]>;
+  layoutPositions?: ContextLayoutPositions;
+  positionLookup?: RuntimeObjectPositionLookupCache | null;
+  logProvider?: boolean;
+}): RuntimeObjectPositionResult {
+  const objectId = String(input.objectId ?? "").trim();
+  const cached = getRuntimeObjectPositionFromLookup(input.positionLookup, objectId);
+  if (cached) {
+    logRelationshipPositionCacheHit(objectId);
+    if (input.logProvider !== false) {
+      logRuntimeObjectPositionProvider({
+        objectId,
+        provider: cached.provider,
+        position: cached.position,
+      });
+    }
+    return cached;
+  }
+
+  if (input.positionLookup) {
+    logRelationshipPositionCacheMiss(objectId);
+    logRelationshipPositionCacheFallback(objectId);
+  }
+
+  return resolveRuntimeObjectPosition({
+    objectId,
+    sceneObjects: input.sceneObjects,
+    topologyRuntimeLayoutPositions: input.topologyRuntimeLayoutPositions,
+    layoutPositions: input.layoutPositions,
+    logProvider: input.logProvider,
+  });
+}
+
+type ContextLayoutPositions = Record<string, [number, number, number]>;
+
+export function resolveRuntimeObjectPositionFromContextWithLookup(
+  objectId: string,
+  sceneObjects: readonly any[],
+  context?: RuntimeObjectPositionContext,
+  positionLookup?: RuntimeObjectPositionLookupCache | null,
+  logProvider = true
+): RuntimeObjectPositionResult {
+  return resolveRuntimeObjectPositionWithLookup({
+    objectId,
+    sceneObjects,
+    topologyRuntimeLayoutPositions: context?.topologyRuntimeLayoutPositions,
+    layoutPositions: context?.layoutPositions,
+    positionLookup,
+    logProvider,
+  });
+}
 
 function hashUnit(value: string): number {
   let hash = 2166136261;

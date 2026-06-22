@@ -2,7 +2,6 @@
 
 import React, { useMemo, useSyncExternalStore } from "react";
 
-import { readSceneRelationships } from "../../../lib/relationships/relationshipRuntime";
 import { resolveExecutiveRelationshipScenePlan } from "../../../lib/relationships/executive";
 import { resolveRelationshipViewProfile } from "../../../lib/scene/relationshipViewProfiles";
 import { logExecutiveGraphicsProfileOnce } from "../../../lib/scene/graphics/executiveGraphicsProfile";
@@ -13,8 +12,13 @@ import {
 } from "../../../lib/workspace/workspaceViewModeRuntime";
 import type { NexoraRelationship } from "../../../lib/relationships/relationshipTypes";
 import type { SceneThemeId } from "../../../lib/theme/sceneThemeTypes";
+import { readValidatedSceneRelationshipsForRender } from "../../../lib/relationships/relationshipRendererRuntime";
 import { RelationshipLine } from "./RelationshipLine";
-import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
+import {
+  buildRuntimeObjectPositionLookupCache,
+  buildRuntimeObjectPositionLookupSignature,
+  type RuntimeObjectPositionContext,
+} from "../sceneRenderUtils";
 
 export type RelationshipRendererProps = {
   sceneJson: unknown;
@@ -40,7 +44,23 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
     () => resolveRelationshipViewProfile(workspaceViewMode),
     [workspaceViewMode]
   );
-  const relationships = useMemo(() => readSceneRelationships(props.sceneJson), [props.sceneJson]);
+  const relationships = useMemo(
+    () => readValidatedSceneRelationshipsForRender(props.sceneJson, props.objects),
+    [props.objects, props.sceneJson]
+  );
+
+  const positionLookupSignature = useMemo(
+    () => buildRuntimeObjectPositionLookupSignature(props.objects, props.runtimeObjectPositionContext),
+    [props.objects, props.runtimeObjectPositionContext]
+  );
+  const positionLookup = useMemo(
+    () =>
+      buildRuntimeObjectPositionLookupCache({
+        sceneObjects: props.objects,
+        context: props.runtimeObjectPositionContext,
+      }),
+    [positionLookupSignature]
+  );
 
   const scenePlan = useMemo(
     () =>
@@ -65,9 +85,11 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
 
   return (
     <group
-      data-nx-layer="relationships"
-      data-nx-density={scenePlan.densityMode}
-      data-nx-view-mode={workspaceViewMode}
+      userData={{
+        nxLayer: "relationships",
+        nxDensity: scenePlan.densityMode,
+        nxViewMode: workspaceViewMode,
+      }}
     >
       {relationships.map((relationship) => {
         const renderPlan = scenePlan.plans[relationship.id];
@@ -88,6 +110,7 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
             emphasized={twinStressed || renderPlan?.emphasis !== "BACKGROUND"}
             onSelect={props.onRelationshipSelect}
             runtimeObjectPositionContext={props.runtimeObjectPositionContext}
+            positionLookup={positionLookup}
           />
         );
       })}

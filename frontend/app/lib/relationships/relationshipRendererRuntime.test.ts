@@ -1,0 +1,83 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+  areRelationshipLinePointsValid,
+  readValidatedSceneRelationshipsForRender,
+  resetRelationshipRendererRuntimeForTests,
+  validateRelationshipForRender,
+} from "./relationshipRendererRuntime.ts";
+
+test("validates relationship contract before render", () => {
+  resetRelationshipRendererRuntimeForTests();
+  const valid = validateRelationshipForRender({
+    id: "rel_a_b",
+    sourceId: "obj_a",
+    targetId: "obj_b",
+    type: "influences",
+    direction: "uni",
+    createdAt: "2026-06-20T00:00:00.000Z",
+    metadata: { confidence: 0.82 },
+  });
+  assert.equal(valid.valid, true);
+
+  const invalid = validateRelationshipForRender({
+    id: "rel_bad",
+    sourceId: "",
+    targetId: "obj_b",
+    type: "influences",
+    direction: "uni",
+    createdAt: "2026-06-20T00:00:00.000Z",
+  });
+  assert.equal(invalid.valid, false);
+  assert.ok(invalid.errors.includes("missing_source_object_id"));
+});
+
+test("filters invalid scene relationships and keeps valid ones", () => {
+  resetRelationshipRendererRuntimeForTests();
+  const sceneJson = {
+    scene: {
+      objects: [{ id: "obj_a" }, { id: "obj_b" }],
+      relationships: [
+        {
+          id: "rel_ok",
+          sourceId: "obj_a",
+          targetId: "obj_b",
+          type: "flow",
+          direction: "uni",
+          createdAt: "2026-06-20T00:00:00.000Z",
+        },
+        {
+          id: "rel_bad",
+          sourceId: "obj_a",
+          targetId: "missing",
+          type: "flow",
+          direction: "uni",
+          createdAt: "2026-06-20T00:00:00.000Z",
+        },
+      ],
+    },
+  };
+
+  const relationships = readValidatedSceneRelationshipsForRender(sceneJson, sceneJson.scene.objects);
+  assert.equal(relationships.length, 1);
+  assert.equal(relationships[0]?.id, "rel_ok");
+});
+
+test("guards invalid line point payloads", () => {
+  assert.equal(
+    areRelationshipLinePointsValid([
+      [0, 0, 0],
+      [1, 1, 1],
+    ]),
+    true
+  );
+  assert.equal(
+    areRelationshipLinePointsValid([
+      [Number.NaN, 0, 0],
+      [1, 1, 1],
+    ]),
+    false
+  );
+  assert.equal(areRelationshipLinePointsValid([[0, 0, 0]]), false);
+});

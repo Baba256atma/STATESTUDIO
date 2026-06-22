@@ -44,6 +44,10 @@ export function clearPointerSelectionGateForTests(): void {
   activePointerSelectionGate = null;
 }
 
+export function clearPointerSelectionGate(): void {
+  activePointerSelectionGate = null;
+}
+
 export function parseClickEventId(clickEventId: string): { pointerId: number; timeStamp: number } {
   const [pointerIdRaw, timeStampRaw] = clickEventId.split(":");
   return {

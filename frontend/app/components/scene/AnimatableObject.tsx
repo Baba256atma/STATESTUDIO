@@ -22,6 +22,8 @@ import {
   resolveExecutiveFocusWorkspaceState,
 } from "../../lib/scene/density";
 import { resolveWorkspaceLabelState } from "../../lib/scene/workspaceLabelRenderingRuntime";
+import { ObjectCaption } from "./ObjectCaption";
+import { ObjectLabelBillboard } from "./ObjectLabelBillboard";
 import {
   getWorkspaceViewMode,
   getWorkspaceViewModeServerSnapshot,
@@ -2319,7 +2321,12 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     >
       {node}
       {objectIcon && effectiveLabel.showIcon ? (
-        <Html position={[0, iconY, 0]} center transform={effectiveLabel.billboard} style={{ pointerEvents: "none" }}>
+        <ObjectLabelBillboard
+          objectId={stableIdWithName}
+          viewMode={workspaceViewMode}
+          position={[0, iconY, 0]}
+        >
+          <Html center transform={effectiveLabel.billboard} style={{ pointerEvents: "none" }}>
           <div
             aria-hidden="true"
             style={{
@@ -2354,44 +2361,40 @@ export const AnimatableObject = React.memo(function AnimatableObject({
               }}
             />
           </div>
-        </Html>
+          </Html>
+        </ObjectLabelBillboard>
       ) : null}
       {showCaption && captionText.length > 0 && effectiveLabel.showSecondary ? (
-        <Html position={[0, labelY, 0]} center transform={effectiveLabel.billboard} style={{ pointerEvents: "none" }}>
-          <div
-            style={{
-              fontSize: effectiveLabel.fontSizePx || tokens.design.typography.sm,
-              opacity: effectiveLabel.opacity,
-              padding: `${tokens.design.spacing.xs}px ${tokens.design.spacing.sm}px`,
-              background: tokens.theme === "day" ? "rgba(15,23,42,0.68)" : "rgba(0,0,0,0.55)",
-              color: tokens.design.colors.textPrimary,
-              borderRadius: tokens.design.radius.sm,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {captionText}
-          </div>
-        </Html>
+        <ObjectCaption
+          objectId={stableIdWithName}
+          viewMode={workspaceViewMode}
+          position={[0, labelY, 0]}
+          captionText={captionText}
+          fontSizePx={effectiveLabel.fontSizePx}
+          opacity={effectiveLabel.opacity}
+          tokens={tokens}
+        />
       ) : null}
       {showExecutiveObjectName ? (
-        <Html
+        <ObjectLabelBillboard
+          objectId={stableIdWithName}
+          viewMode={workspaceViewMode}
           position={[executiveNamePlacement.x, executiveNamePlacement.y, executiveNamePlacement.z]}
-          center
-          transform={effectiveLabel.billboard}
-          style={{ pointerEvents: "none" }}
         >
-          <div aria-hidden="true" style={executiveNameStyle}>
-            {executiveObjectName}
-          </div>
-        </Html>
+          <Html center transform={effectiveLabel.billboard} style={{ pointerEvents: "none" }}>
+            <div aria-hidden="true" style={executiveNameStyle}>
+              {executiveObjectName}
+            </div>
+          </Html>
+        </ObjectLabelBillboard>
       ) : null}
       {showObjectDebugLabels && process.env.NODE_ENV !== "production" ? (
-        <Html
+        <ObjectLabelBillboard
+          objectId={stableIdWithName}
+          viewMode={workspaceViewMode}
           position={[0, executiveNamePlacement.y - 0.45, 0]}
-          center
-          transform={effectiveLabel.billboard}
-          style={{ pointerEvents: "none" }}
         >
+          <Html center transform={effectiveLabel.billboard} style={{ pointerEvents: "none" }}>
           <div
             aria-hidden="true"
             style={{
@@ -2412,7 +2415,8 @@ export const AnimatableObject = React.memo(function AnimatableObject({
               {staticPosition[2].toFixed(1)}
             </div>
           </div>
-        </Html>
+          </Html>
+        </ObjectLabelBillboard>
       ) : null}
     </group>
   );

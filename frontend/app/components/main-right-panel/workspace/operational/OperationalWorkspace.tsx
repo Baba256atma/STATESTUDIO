@@ -23,8 +23,9 @@ import {
   operationalWorkspaceShellStyle,
   traceOperationalVisualPassOnce,
 } from "../../../../lib/ui/mrpWorkspace/operational/operationalVisualContract.ts";
-import { DataSourceManagerPanel } from "./DataSourceManagerPanel.tsx";
-import { DataSourceUploadPanel } from "./DataSourceUploadPanel.tsx";
+import { WorkspaceDataSourcePanel } from "./WorkspaceDataSourcePanel.tsx";
+import { WorkspaceObjectApprovalPanel } from "./WorkspaceObjectApprovalPanel.tsx";
+import { WorkspaceRelationshipApprovalPanel } from "./WorkspaceRelationshipApprovalPanel.tsx";
 import { OperationalObjectContextPanel } from "./OperationalObjectContextPanel.tsx";
 import { OperationalWorkspaceCard } from "./OperationalWorkspaceCard.tsx";
 
@@ -101,11 +102,12 @@ export function OperationalWorkspace(props: OperationalWorkspaceProps): React.Re
 
       {props.dashboardContext === "sources" ? (
         <>
-          <DataSourceUploadPanel onUploadComplete={handleDataSourceRegistryChanged} />
-          <DataSourceManagerPanel
+          <WorkspaceDataSourcePanel
             refreshSignal={dataSourceRegistryRevision}
             onRegistryChanged={handleDataSourceRegistryChanged}
           />
+          <WorkspaceObjectApprovalPanel refreshSignal={dataSourceRegistryRevision} />
+          <WorkspaceRelationshipApprovalPanel refreshSignal={dataSourceRegistryRevision} />
         </>
       ) : null}
 

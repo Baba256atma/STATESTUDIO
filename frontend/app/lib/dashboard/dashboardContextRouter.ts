@@ -5,7 +5,15 @@
 
 import type { DashboardContext } from "../ui/mainRightPanelContract.ts";
 import type { NexoraRouteResolution, RouteRequestSource } from "../routing/nexoraRoutingContract.ts";
-import type { NexoraWorkspaceAction } from "../workspace/nexoraWorkspaceStateContract.ts";
+import type {
+  NexoraWorkspaceAction,
+  NexoraWorkspaceState,
+} from "../workspace/nexoraWorkspaceStateContract.ts";
+import {
+  evaluateMrpWorkspaceCommit,
+  logMrpWriteSkipped,
+} from "../runtime/mrpWriteDedupRuntime.ts";
+import { traceNexoraLoopGuard } from "../runtime/nexoraLoopGuardDiagnostics.ts";
 import {
   CANONICAL_DASHBOARD_CONTEXT_ROUTER,
   DASHBOARD_CONTEXT_ROUTER_VERSION,
@@ -34,6 +42,10 @@ import {
 } from "./dashboardRuntimeLogging.ts";
 import { measureDashboardOperation, reportDashboardContextCost } from "./dashboardPerformanceMetrics.ts";
 import { recordDashboardRoutingFrequency } from "./dashboardPerformanceRegression.ts";
+import {
+  evaluateObjectClickDashboardCommitGuard,
+  traceObjectClickDashboardCommitBlocked,
+} from "../selection/objectClickDashboardCommitGuard.ts";
 
 export type DashboardContextRouteInput = Readonly<{
   source: DashboardContextSource | RouteRequestSource | DashboardContextCommitSource;
@@ -41,6 +53,8 @@ export type DashboardContextRouteInput = Readonly<{
   intent?: DashboardRouteIntent;
   priorContext?: DashboardContext | null;
   contextId?: string;
+  currentWorkspaceState?: NexoraWorkspaceState;
+  workspaceId?: string | null;
 }>;
 
 export type DashboardContextRouteResult = Readonly<{
@@ -218,8 +232,41 @@ export function routeAndCommitDashboardContext(
   dispatch: (action: NexoraWorkspaceAction) => void,
   input: DashboardContextRouteInput
 ): DashboardContextRouteResult {
+  const commitGuard = evaluateObjectClickDashboardCommitGuard({
+    source: String(input.source ?? ""),
+    intent: input.intent ?? null,
+    reason: input.raw.reason ?? null,
+  });
+  if (!commitGuard.allowed) {
+    traceObjectClickDashboardCommitBlocked({
+      source: input.source,
+      intent: input.intent ?? null,
+      reason: input.raw.reason ?? null,
+      selectedObjectId:
+        typeof input.raw.objectId === "string"
+          ? input.raw.objectId
+          : typeof input.raw.routeResolution?.selectedObjectId === "string"
+            ? input.raw.routeResolution.selectedObjectId
+            : null,
+    });
+    return routeDashboardContext(input);
+  }
+
   const dedupeKey = buildRouteDedupeKey(input);
   if (dedupeKey === lastCommittedRouteKey && lastCommittedRouteResult) {
+    logMrpWriteSkipped("same_state", dedupeKey, {
+      phase: "route_deduped_skip",
+      source: input.source,
+    });
+    traceNexoraLoopGuard({
+      source: String(input.source ?? "unknown"),
+      action: "write_skipped",
+      reason: "same_state",
+      stateSignature: dedupeKey,
+      surfaceId: lastCommittedRouteResult.surfaceId,
+      workspaceId: input.workspaceId ?? null,
+      dashboardContext: lastCommittedRouteResult.normalized.dashboardContext,
+    });
     reportDashboardContextCost({
       phase: "route_deduped_skip",
       contextId: lastCommittedRouteResult.normalized.id,
@@ -232,6 +279,31 @@ export function routeAndCommitDashboardContext(
   }
 
   const routeResult = routeDashboardContext(input);
+  if (input.currentWorkspaceState) {
+    const evaluation = evaluateMrpWorkspaceCommit({
+      currentWorkspace: input.currentWorkspaceState,
+      routeResult,
+      workspaceId: input.workspaceId ?? null,
+    });
+    if (!evaluation.shouldCommit) {
+      logMrpWriteSkipped("same_state", evaluation.nextSignature, {
+        previousSignature: evaluation.previousSignature,
+        surfaceId: routeResult.surfaceId,
+        source: input.source,
+      });
+      traceNexoraLoopGuard({
+        source: String(input.source ?? "unknown"),
+        action: "write_skipped",
+        reason: "same_state",
+        stateSignature: evaluation.nextSignature,
+        objectId: routeResult.normalized.objectId,
+        surfaceId: routeResult.surfaceId,
+        workspaceId: input.workspaceId ?? null,
+        dashboardContext: routeResult.normalized.dashboardContext,
+      });
+      return routeResult;
+    }
+  }
   commitDashboardContextRoute(dispatch, routeResult, { priorContext: input.priorContext ?? null });
   lastCommittedRouteKey = dedupeKey;
   lastCommittedRouteResult = routeResult;
@@ -244,11 +316,15 @@ export function routeAndCommitDashboardRouteResolution(
   options: {
     source: DashboardContextSource | RouteRequestSource | DashboardContextCommitSource;
     priorContext?: DashboardContext | null;
+    currentWorkspaceState?: NexoraWorkspaceState;
+    workspaceId?: string | null;
   }
 ): DashboardContextRouteResult {
   return routeAndCommitDashboardContext(dispatch, {
     source: options.source,
     priorContext: options.priorContext ?? null,
+    currentWorkspaceState: options.currentWorkspaceState,
+    workspaceId: options.workspaceId ?? null,
     raw: {
       routeResolution: resolution,
       reason: resolution.reason,

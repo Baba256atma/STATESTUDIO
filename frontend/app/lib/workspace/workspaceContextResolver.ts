@@ -15,6 +15,9 @@ import type {
   WorkspaceOwnershipCounts,
   WorkspaceScopedResourceCollections,
 } from "./workspaceOwnershipContract.ts";
+import { getWorkspaceDiscoveredRelationships } from "./workspaceRelationshipDiscoveryContract.ts";
+import { resolveWorkspaceDataSources } from "./workspaceDataSourceResolver.ts";
+import { listPipelineWorkspaceObjects } from "./objectCreationPipeline.ts";
 
 function emptyArray<T>(): readonly T[] {
   return Object.freeze([]) as readonly T[];
@@ -28,13 +31,37 @@ export function resolveWorkspaceIdForOwnership(workspaceId?: WorkspaceId | null)
 }
 
 export function getWorkspaceObjects(workspaceId: WorkspaceId): readonly WorkspaceOwnedObject[] {
-  void resolveWorkspaceIdForOwnership(workspaceId);
-  return emptyArray<WorkspaceOwnedObject>();
+  const resolvedWorkspaceId = resolveWorkspaceIdForOwnership(workspaceId);
+  return Object.freeze(
+    listPipelineWorkspaceObjects(resolvedWorkspaceId).map((object) =>
+      Object.freeze({
+        workspaceId: object.workspaceId,
+        resourceId: object.objectId,
+        resourceKind: "object" as const,
+        objectId: object.objectId,
+        objectName: object.objectName,
+        createdAt: object.createdAt,
+        updatedAt: object.updatedAt,
+      })
+    )
+  );
 }
 
 export function getWorkspaceRelationships(workspaceId: WorkspaceId): readonly WorkspaceOwnedRelationship[] {
-  void resolveWorkspaceIdForOwnership(workspaceId);
-  return emptyArray<WorkspaceOwnedRelationship>();
+  const resolvedWorkspaceId = resolveWorkspaceIdForOwnership(workspaceId);
+  return Object.freeze(
+    getWorkspaceDiscoveredRelationships(resolvedWorkspaceId).map((relationship) =>
+      Object.freeze({
+        workspaceId: relationship.workspaceId,
+        resourceId: relationship.relationshipId,
+        resourceKind: "relationship" as const,
+        relationshipId: relationship.relationshipId,
+        sourceObjectId: relationship.sourceObjectId,
+        targetObjectId: relationship.targetObjectId,
+        createdAt: relationship.createdAt,
+      })
+    )
+  );
 }
 
 export function getWorkspaceKpis(workspaceId: WorkspaceId): readonly WorkspaceOwnedKpi[] {
@@ -53,8 +80,21 @@ export function getWorkspaceScenarios(workspaceId: WorkspaceId): readonly Worksp
 }
 
 export function getWorkspaceDataSources(workspaceId: WorkspaceId): readonly WorkspaceOwnedDataSource[] {
-  void resolveWorkspaceIdForOwnership(workspaceId);
-  return emptyArray<WorkspaceOwnedDataSource>();
+  const resolvedWorkspaceId = resolveWorkspaceIdForOwnership(workspaceId);
+  return Object.freeze(
+    resolveWorkspaceDataSources(resolvedWorkspaceId).map((dataSource) =>
+      Object.freeze({
+        workspaceId: dataSource.workspaceId,
+        resourceId: dataSource.dataSourceId,
+        resourceKind: "data_source" as const,
+        dataSourceId: dataSource.dataSourceId,
+        label: dataSource.name,
+        sourceType: dataSource.type,
+        createdAt: dataSource.createdAt,
+        updatedAt: dataSource.updatedAt,
+      })
+    )
+  );
 }
 
 export function getWorkspaceDashboardStates(workspaceId: WorkspaceId): readonly WorkspaceOwnedDashboardState[] {

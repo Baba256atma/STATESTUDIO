@@ -4,15 +4,24 @@ import React from "react";
 import * as THREE from "three";
 
 import {
+  buildRuntimeObjectPositionLookupCache,
+  buildRuntimeObjectPositionLookupSignature,
   resolveRuntimeObjectPositionFromContext,
+  resolveRuntimeObjectPositionFromContextWithLookup,
   type RuntimeObjectPositionContext,
+  type RuntimeObjectPositionLookupCache,
   type RuntimeObjectPositionResult,
 } from "../../lib/scene/runtimeObjectPosition";
 import { logConnectionRuntimeProviders } from "../../lib/scene/runtimeObjectPositionDevLog";
 
-export type { RuntimeObjectPositionContext, RuntimeObjectPositionResult };
+export type { RuntimeObjectPositionContext, RuntimeObjectPositionLookupCache, RuntimeObjectPositionResult };
 export { logConnectionRuntimeProviders } from "../../lib/scene/runtimeObjectPositionDevLog";
-export { resolveRuntimeObjectPositionFromContext } from "../../lib/scene/runtimeObjectPosition";
+export {
+  buildRuntimeObjectPositionLookupCache,
+  buildRuntimeObjectPositionLookupSignature,
+  resolveRuntimeObjectPositionFromContext,
+  resolveRuntimeObjectPositionFromContextWithLookup,
+} from "../../lib/scene/runtimeObjectPosition";
 
 import type { SceneObject } from "../../lib/sceneTypes";
 import { riskToColor, clamp01 } from "../../lib/colorUtils";
@@ -464,9 +473,12 @@ export function fallbackPosFromId(id: string): THREE.Vector3 {
 export function getRuntimeObjPos(
   id: string,
   objects: any[],
-  context?: RuntimeObjectPositionContext
+  context?: RuntimeObjectPositionContext,
+  positionLookup?: RuntimeObjectPositionLookupCache | null
 ): THREE.Vector3 {
-  const resolved = resolveRuntimeObjectPositionFromContext(id, objects, context);
+  const resolved = positionLookup
+    ? resolveRuntimeObjectPositionFromContextWithLookup(id, objects, context, positionLookup)
+    : resolveRuntimeObjectPositionFromContext(id, objects, context);
   return new THREE.Vector3(resolved.position.x, resolved.position.y, resolved.position.z);
 }
 
@@ -476,6 +488,7 @@ export function resolveRuntimeConnectionEndpoints(input: {
   targetObjectId: string;
   objects: any[];
   context?: RuntimeObjectPositionContext;
+  positionLookup?: RuntimeObjectPositionLookupCache | null;
   sourceYOffset?: number;
   targetYOffset?: number;
 }): {
@@ -484,16 +497,19 @@ export function resolveRuntimeConnectionEndpoints(input: {
   sourceProvider: RuntimeObjectPositionResult["provider"];
   targetProvider: RuntimeObjectPositionResult["provider"];
 } {
-  const sourceResolved = resolveRuntimeObjectPositionFromContext(
-    input.sourceObjectId,
-    input.objects,
-    input.context
-  );
-  const targetResolved = resolveRuntimeObjectPositionFromContext(
-    input.targetObjectId,
-    input.objects,
-    input.context
-  );
+  const resolveEndpoint = (objectId: string) =>
+    input.positionLookup
+      ? resolveRuntimeObjectPositionFromContextWithLookup(
+          objectId,
+          input.objects,
+          input.context,
+          input.positionLookup,
+          false
+        )
+      : resolveRuntimeObjectPositionFromContext(objectId, input.objects, input.context, false);
+
+  const sourceResolved = resolveEndpoint(input.sourceObjectId);
+  const targetResolved = resolveEndpoint(input.targetObjectId);
   logConnectionRuntimeProviders({
     connectionId: input.connectionId,
     sourceProvider: sourceResolved.provider,

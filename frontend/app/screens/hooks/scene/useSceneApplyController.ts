@@ -28,6 +28,11 @@ import {
   traceRuntimeWorkspaceEmptyPayload,
 } from "../../../lib/debug/runtimeLoopTrace.ts";
 import { devLogOnSignatureChange } from "../../../lib/runtime/diagnosticIdleGate.ts";
+import {
+  evaluateObjectClickSceneWriteGuard,
+  readRelationshipIdsForSceneParity,
+  traceObjectClickSceneWriteGuard,
+} from "../../../lib/selection/objectClickSelectionReadOnlyGuard.ts";
 import { buildSceneSemanticSignature } from "../../../lib/scene/sceneSemanticSignature.ts";
 import {
   shouldIgnoreWorkspaceHydrationPayload,
@@ -268,6 +273,26 @@ export function useSceneApplyController(input: UseSceneApplyControllerInput): Us
           ? (nextOrUpdater as (p: SceneJson | null) => SceneJson | null)(prev)
           : nextOrUpdater;
       if (next === prev) return;
+
+      const objectClickWriteGuard = evaluateObjectClickSceneWriteGuard({
+        source: String(source ?? ""),
+        prev,
+        next,
+      });
+      if (!objectClickWriteGuard.allowed) {
+        traceObjectClickSceneWriteGuard({
+          ...objectClickWriteGuard,
+          source: String(source ?? ""),
+          selectedObjectId: input.selectedObjectId ?? null,
+          relationshipIds: readRelationshipIdsForSceneParity(prev),
+        });
+        emitSceneApplyDiagnostic("object_click_scene_write_blocked", {
+          source: String(source ?? ""),
+          reason: objectClickWriteGuard.reason,
+          skippedReason: objectClickWriteGuard.action,
+        });
+        return;
+      }
 
       const nextObjects = Array.isArray(next?.scene?.objects) ? next.scene.objects : [];
       const prevCount = countSceneObjectsForApply(prev);
@@ -600,6 +625,7 @@ export function useSceneApplyController(input: UseSceneApplyControllerInput): Us
     },
     [
       emitSceneApplyDiagnostic,
+      input.selectedObjectId,
       lastSceneApplySigRefOwned,
       lastDuplicateJsonApplyLogSigRef,
       lastSceneResetTraceSigRef,

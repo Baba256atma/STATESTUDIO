@@ -106,6 +106,7 @@ export type MainRightPanelShellProps = {
   workspaceDraftModel?: WorkspaceDraftModel | null;
   workspaceModel?: WorkspaceModel | null;
   workspaceObjects?: readonly WorkspaceObject[];
+  workspaceRelationshipCount?: number;
   workspaceSceneCreated?: boolean;
   /** MRP:12:2 — collapsed rail preserves tab + dashboard mode in parent state. */
   collapsed?: boolean;
@@ -211,6 +212,7 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
   const goalsDefined = Boolean(props.workspaceGoals?.length);
   const draftObjectCount = props.workspaceDraftModel?.objects.length ?? 0;
   const approvedObjectCount = props.workspaceObjects?.length ?? props.workspaceModel?.approvedObjects.length ?? 0;
+  const relationshipCount = props.workspaceRelationshipCount ?? 0;
   const modelApproved = props.workspaceModel?.status === "approved";
   const workspaceSceneCreated = props.workspaceSceneCreated === true;
   const selectedObjectId = props.launcherSelectedObjectId ?? props.dashboardRouteObjectId;
@@ -309,6 +311,7 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
           goalsDefined={goalsDefined}
           draftObjectCount={draftObjectCount}
           approvedObjectCount={approvedObjectCount}
+          relationshipCount={relationshipCount}
           modelApproved={modelApproved}
           workspaceSceneCreated={workspaceSceneCreated}
         />
@@ -319,6 +322,7 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
             goalsDefined={goalsDefined}
             draftObjectCount={draftObjectCount}
             approvedObjectCount={approvedObjectCount}
+            relationshipCount={relationshipCount}
             modelApproved={modelApproved}
             workspaceSceneCreated={workspaceSceneCreated}
           />
@@ -359,6 +363,7 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
           goalsDefined={goalsDefined}
           draftObjectCount={draftObjectCount}
           approvedObjectCount={approvedObjectCount}
+          relationshipCount={relationshipCount}
           modelApproved={modelApproved}
           workspaceSceneCreated={workspaceSceneCreated}
         />
@@ -370,6 +375,7 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
             goalsDefined={goalsDefined}
             draftObjectCount={draftObjectCount}
             approvedObjectCount={approvedObjectCount}
+            relationshipCount={relationshipCount}
             modelApproved={modelApproved}
             workspaceSceneCreated={workspaceSceneCreated}
           />
@@ -531,6 +537,7 @@ function MainRightPanelDiscoveryStrip(props: {
   goalsDefined: boolean;
   draftObjectCount: number;
   approvedObjectCount: number;
+  relationshipCount: number;
   modelApproved: boolean;
   workspaceSceneCreated: boolean;
 }): React.ReactElement {
@@ -556,7 +563,11 @@ function MainRightPanelDiscoveryStrip(props: {
       {" · "}
       {props.draftObjectCount > 0 ? `Draft Objects Generated: ${props.draftObjectCount}` : "No Draft Objects"}
       {" · "}
-      {props.approvedObjectCount > 0 ? `Approved Objects: ${props.approvedObjectCount}` : "No Approved Objects"}
+      {props.approvedObjectCount > 0 ? `Objects: ${props.approvedObjectCount}` : "Objects: 0"}
+      {" · "}
+      {props.workspaceSceneCreated
+        ? `Relationships: ${props.relationshipCount}`
+        : "Relationships: Pending"}
       {" · "}
       {props.modelApproved ? "Model Status: Approved" : "Model Status: Draft"}
       {" · "}
@@ -572,6 +583,7 @@ function MainRightPanelEmptyWorkspaceMessage(props: {
   goalsDefined?: boolean;
   draftObjectCount?: number;
   approvedObjectCount?: number;
+  relationshipCount?: number;
   modelApproved?: boolean;
   workspaceSceneCreated?: boolean;
 }): React.ReactElement {
@@ -624,8 +636,12 @@ function MainRightPanelEmptyWorkspaceMessage(props: {
             : "No Draft Objects"}
           {" · "}
           {(props.approvedObjectCount ?? 0) > 0
-            ? `Approved Objects: ${props.approvedObjectCount}`
-            : "No Approved Objects"}
+            ? `Objects: ${props.approvedObjectCount}`
+            : "Objects: 0"}
+          {" · "}
+          {props.workspaceSceneCreated
+            ? `Relationships: ${props.relationshipCount ?? 0}`
+            : "Relationships: Pending"}
           {" · "}
           {props.modelApproved ? "Model Status: Approved" : "Model Status: Draft"}
           {" · "}

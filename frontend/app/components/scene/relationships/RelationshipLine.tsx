@@ -5,7 +5,7 @@ import { Line } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-import { resolveRuntimeConnectionEndpoints, type RuntimeObjectPositionContext } from "../sceneRenderUtils";
+import { resolveRuntimeConnectionEndpoints, type RuntimeObjectPositionContext, type RuntimeObjectPositionLookupCache } from "../sceneRenderUtils";
 import { logRelationshipRendered } from "../../../lib/relationships/relationshipInstrumentation";
 import type { RelationshipRenderPlan } from "../../../lib/relationships/executive/executiveRelationshipTypes";
 import type { NexoraRelationship } from "../../../lib/relationships/relationshipTypes";
@@ -13,11 +13,16 @@ import {
   resolveExecutiveRelationshipLineTokens,
   resolveRelationshipVisualTokens,
 } from "../../../lib/relationships/relationshipTheme";
-import { resolveExecutiveRelationshipGraphicsProfile } from "../../../lib/scene/graphics/executiveGraphicsProfile";
 import type { WorkspaceViewMode } from "../../../lib/workspace/workspaceViewModeTypes";
 import type { SceneThemeId } from "../../../lib/theme/sceneThemeTypes";
 import { RelationshipLabel } from "./RelationshipLabel";
 import { sanitizeThreeColor } from "../../../lib/scene/threeColorSanitizer";
+import {
+  areRelationshipLinePointsValid,
+  logRelationshipPulseDisabled,
+  resolveSafeExecutiveRelationshipGraphicsProfile,
+  validateRelationshipForRender,
+} from "../../../lib/relationships/relationshipRendererRuntime";
 
 export type RelationshipLineProps = {
   relationship: NexoraRelationship;
@@ -32,6 +37,7 @@ export type RelationshipLineProps = {
   emphasized?: boolean;
   onSelect?: (relationship: NexoraRelationship) => void;
   runtimeObjectPositionContext?: RuntimeObjectPositionContext;
+  positionLookup?: RuntimeObjectPositionLookupCache | null;
 };
 
 function midpoint(a: THREE.Vector3, b: THREE.Vector3): [number, number, number] {
@@ -52,7 +58,17 @@ function dependencyStrengthWidth(
   return baseWidth * lineWidthMultiplier * (0.82 + Math.min(1, Math.max(0, strength)) * 0.28);
 }
 
+function readLineMaterial(
+  lineRef: React.RefObject<THREE.Object3D | null>
+): (THREE.Material & { opacity?: number }) | null {
+  const current = lineRef.current;
+  if (!current) return null;
+  const material = (current as THREE.Object3D & { material?: THREE.Material & { opacity?: number } }).material;
+  return material ?? null;
+}
+
 const PulsingExecutiveLine = React.memo(function PulsingExecutiveLine(props: {
+  relationshipId: string;
   points: [number, number, number][];
   color: string;
   baseOpacity: number;
@@ -61,18 +77,33 @@ const PulsingExecutiveLine = React.memo(function PulsingExecutiveLine(props: {
   riskPulse: boolean;
   onClick: (event: any) => void;
   onPointerDown: (event: any) => void;
-}): React.ReactElement {
+}): React.ReactElement | null {
   const lineRef = useRef<THREE.Object3D | null>(null);
+  const pulseDisabledRef = useRef(false);
 
   useFrame(({ clock }) => {
-    if (!props.pulseEnabled || !lineRef.current) return;
-    const material = (lineRef.current as THREE.Object3D & { material?: THREE.Material & { opacity?: number } })
-      .material;
-    if (!material) return;
+    if (!props.pulseEnabled || pulseDisabledRef.current) return;
+    if (!areRelationshipLinePointsValid(props.points)) {
+      pulseDisabledRef.current = true;
+      logRelationshipPulseDisabled("invalid_line_points", props.relationshipId);
+      return;
+    }
+
+    const material = readLineMaterial(lineRef);
+    if (!material || typeof material.opacity !== "number") {
+      pulseDisabledRef.current = true;
+      logRelationshipPulseDisabled("missing_line_material", props.relationshipId);
+      return;
+    }
+
     const pulse = 0.5 + 0.5 * Math.sin(clock.elapsedTime * (props.riskPulse ? 1.05 : 0.75));
     const amplitude = props.riskPulse ? 0.12 : 0.07;
     material.opacity = props.baseOpacity + amplitude * pulse;
   });
+
+  if (!areRelationshipLinePointsValid(props.points)) {
+    return null;
+  }
 
   return (
     <Line
@@ -91,12 +122,16 @@ const PulsingExecutiveLine = React.memo(function PulsingExecutiveLine(props: {
 export const RelationshipLine = React.memo(function RelationshipLine(
   props: RelationshipLineProps
 ): React.ReactElement | null {
+  const validation = useMemo(
+    () => validateRelationshipForRender(props.relationship),
+    [props.relationship]
+  );
   const viewMode = props.viewMode ?? "3D";
   const relationshipGraphics = useMemo(
-    () => resolveExecutiveRelationshipGraphicsProfile(viewMode),
+    () => resolveSafeExecutiveRelationshipGraphicsProfile(viewMode),
     [viewMode]
   );
-  const lineOpacityMul = props.lineOpacityMul ?? relationshipGraphics.lineOpacityMul;
+  const lineOpacityMul = props.lineOpacityMul ?? relationshipGraphics.lineOpacityMul ?? 1;
 
   const tokens = useMemo(() => {
     const resolved = resolveExecutiveRelationshipLineTokens({
@@ -117,6 +152,15 @@ export const RelationshipLine = React.memo(function RelationshipLine(
   );
 
   const geometry = useMemo(() => {
+    if (!validation.valid) {
+      return {
+        points: [] as [number, number, number][],
+        mid: [0, 0, 0] as [number, number, number],
+        arrow: null as [number, number, number] | null,
+        arrowRotation: null as [number, number, number] | null,
+      };
+    }
+
     const yOffset = viewMode === "2D" ? 0.06 : 0.1;
     const endpoints = resolveRuntimeConnectionEndpoints({
       connectionId: props.relationship.id,
@@ -124,6 +168,7 @@ export const RelationshipLine = React.memo(function RelationshipLine(
       targetObjectId: props.relationship.targetId,
       objects: props.objects,
       context: props.runtimeObjectPositionContext,
+      positionLookup: props.positionLookup,
       sourceYOffset: yOffset,
       targetYOffset: yOffset,
     });
@@ -134,8 +179,12 @@ export const RelationshipLine = React.memo(function RelationshipLine(
     const points: [number, number, number][] = [start, end];
 
     if (props.relationship.direction === "bi") {
-      const mid = midpoint(from, to);
-      return { points, mid, arrow: null as [number, number, number] | null, arrowRotation: null as [number, number, number] | null };
+      return {
+        points,
+        mid: midpoint(from, to),
+        arrow: null as [number, number, number] | null,
+        arrowRotation: null as [number, number, number] | null,
+      };
     }
 
     const arrow = arrowPoint(from, to);
@@ -155,10 +204,13 @@ export const RelationshipLine = React.memo(function RelationshipLine(
     props.relationship.sourceId,
     props.relationship.targetId,
     props.runtimeObjectPositionContext,
+    props.positionLookup,
+    validation.valid,
     viewMode,
   ]);
 
   React.useEffect(() => {
+    if (!validation.valid) return;
     logRelationshipRendered({
       relationshipId: props.relationship.id,
       sourceId: props.relationship.sourceId,
@@ -174,9 +226,12 @@ export const RelationshipLine = React.memo(function RelationshipLine(
     props.relationship.type,
     props.renderPlan?.classification,
     props.renderPlan?.emphasis,
+    validation.valid,
   ]);
 
-  if (geometry.points.length < 2) return null;
+  if (!validation.valid || !areRelationshipLinePointsValid(geometry.points)) {
+    return null;
+  }
 
   const labelText = props.renderPlan?.executiveLabel ?? props.relationship.type;
   const isRiskLine =
@@ -195,11 +250,10 @@ export const RelationshipLine = React.memo(function RelationshipLine(
     props.renderPlan?.lineWidthMultiplier ?? 1
   );
   const showGlow = props.renderPlan?.glow || props.selected || (isRiskLine && props.emphasized);
-  const shouldPulse =
-    relationshipGraphics.pulseEnabled &&
-    (props.selected || props.emphasized || isRiskLine);
+  const pulseEnabled = relationshipGraphics.pulseEnabled === true;
+  const shouldPulse = pulseEnabled && (props.selected || props.emphasized || isRiskLine);
   const showDirectionCue =
-    relationshipGraphics.directionCue &&
+    relationshipGraphics.directionCue === true &&
     props.relationship.direction !== "bi" &&
     geometry.arrow !== null;
 
@@ -211,10 +265,12 @@ export const RelationshipLine = React.memo(function RelationshipLine(
 
   return (
     <group
-      data-nx-relationship-id={props.relationship.id}
-      data-nx-relationship-type={props.relationship.type}
-      data-nx-relationship-class={props.renderPlan?.classification}
-      data-nx-relationship-emphasis={props.renderPlan?.emphasis}
+      userData={{
+        nxRelationshipId: props.relationship.id,
+        nxRelationshipType: props.relationship.type,
+        nxRelationshipClass: props.renderPlan?.classification ?? null,
+        nxRelationshipEmphasis: props.renderPlan?.emphasis ?? null,
+      }}
     >
       {showGlow ? (
         <Line
@@ -227,11 +283,12 @@ export const RelationshipLine = React.memo(function RelationshipLine(
       ) : null}
       {shouldPulse ? (
         <PulsingExecutiveLine
+          relationshipId={props.relationship.id}
           points={geometry.points}
           color={tokens.lineColor}
           baseOpacity={visualOpacity}
           lineWidth={lineWidth}
-          pulseEnabled
+          pulseEnabled={pulseEnabled}
           riskPulse={isRiskLine}
           onClick={handleSelect}
           onPointerDown={(event: any) => event.stopPropagation()}

@@ -4,19 +4,28 @@ import assert from "node:assert/strict";
 import {
   commitDashboardContextRoute,
   resetDashboardContextRouterForTests,
+  routeAndCommitDashboardContext,
   routeDashboardContext,
 } from "./dashboardContextRouter.ts";
+import {
+  createDefaultNexoraWorkspaceState,
+  normalizeNexoraWorkspaceState,
+  type NexoraWorkspaceAction,
+} from "../workspace/nexoraWorkspaceStateContract.ts";
 import {
   getActiveDashboardContext,
   resetDashboardContextLifecycleForTests,
 } from "./dashboardContextLifecycle.ts";
 import { resetDashboardRuntimeLoggingForTests } from "./dashboardRuntimeLogging.ts";
-import type { NexoraWorkspaceAction } from "../workspace/nexoraWorkspaceStateContract.ts";
+import { resetDiagnosticIdleGateForTests } from "../runtime/diagnosticIdleGate.ts";
+import { resetNexoraLoopGuardDiagnosticsForTests } from "../runtime/nexoraLoopGuardDiagnostics.ts";
 
 test.beforeEach(() => {
   resetDashboardContextRouterForTests();
   resetDashboardContextLifecycleForTests();
   resetDashboardRuntimeLoggingForTests();
+  resetDiagnosticIdleGateForTests();
+  resetNexoraLoopGuardDiagnosticsForTests();
 });
 
 test("object selection routes to operational surface", () => {
@@ -100,4 +109,57 @@ test("router emits required dashboard routing logs once", () => {
   } finally {
     globalThis.console.info = originalInfo;
   }
+});
+
+test("object selection commit is blocked for workspace dispatch", () => {
+  const actions: NexoraWorkspaceAction[] = [];
+  routeAndCommitDashboardContext((action) => actions.push(action), {
+    source: "object",
+    intent: "object_selected",
+    priorContext: "overview",
+    raw: {
+      objectId: "obj-a",
+      dashboardContext: "sources",
+      reason: "object_click:evt-2",
+    },
+  });
+  assert.equal(actions.length, 0);
+});
+
+test("repeated dashboard open skips workspace dispatch when state unchanged", () => {
+  const currentWorkspace = normalizeNexoraWorkspaceState({
+    ...createDefaultNexoraWorkspaceState(),
+    dashboardContext: "war_room",
+    dashboardMode: "war_room",
+    activeMRPTab: "dashboard",
+  });
+  const actions: NexoraWorkspaceAction[] = [];
+  const dispatch = (action: NexoraWorkspaceAction) => actions.push(action);
+  routeAndCommitDashboardContext(dispatch, {
+    source: "left_nav",
+    priorContext: "war_room",
+    currentWorkspaceState: currentWorkspace,
+    raw: { dashboardContext: "war_room", reason: "left_nav_war_room" },
+  });
+  assert.equal(actions.length, 0);
+  routeAndCommitDashboardContext(dispatch, {
+    source: "left_nav",
+    priorContext: "war_room",
+    currentWorkspaceState: currentWorkspace,
+    raw: { dashboardContext: "war_room", reason: "left_nav_war_room" },
+  });
+  assert.equal(actions.length, 0);
+});
+
+test("workspace switch allows single meaningful commit", () => {
+  const currentWorkspace = createDefaultNexoraWorkspaceState();
+  const actions: NexoraWorkspaceAction[] = [];
+  routeAndCommitDashboardContext((action) => actions.push(action), {
+    source: "left_nav",
+    priorContext: currentWorkspace.dashboardContext,
+    currentWorkspaceState: currentWorkspace,
+    workspaceId: "ws-target",
+    raw: { dashboardContext: "scenario", reason: "left_nav_scenario" },
+  });
+  assert.equal(actions.length, 2);
 });
