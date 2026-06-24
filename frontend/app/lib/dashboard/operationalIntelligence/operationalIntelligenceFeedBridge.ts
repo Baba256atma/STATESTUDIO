@@ -7,6 +7,19 @@ import {
   getDashboardKpiSummary,
   getDashboardWarningKpis,
 } from "../../kpi/kpiDashboardIntegrationRuntime.ts";
+import {
+  formatOperationalWorkspaceOkrSignals,
+  getDashboardCriticalObjectives,
+  getDashboardOkrSummary,
+  getDashboardWarningObjectives,
+} from "../../okr/okrDashboardIntegrationRuntime.ts";
+import {
+  formatOperationalWorkspaceRiskSignals,
+  getDashboardCriticalRisks,
+  getDashboardExposedObjects,
+  getDashboardHighRisks,
+  getDashboardRiskSummary,
+} from "../../risk/riskDashboardIntegrationRuntime.ts";
 import type {
   OperationalHealthLevel,
   OperationalIntelligenceSurfaceModel,
@@ -52,7 +65,43 @@ function enrichSnapshot(
   const workspaceSummary = getDashboardKpiSummary();
   const workspaceCriticalKpis = getDashboardCriticalKpis(workspaceSummary.workspaceId);
   const workspaceWarningKpis = getDashboardWarningKpis(workspaceSummary.workspaceId);
-  const workspaceSignalsActive = workspaceSummary.totalKpis > 0;
+  const workspaceKpiSignalsActive = workspaceSummary.totalKpis > 0;
+  const okrSummary = getDashboardOkrSummary(workspaceSummary.workspaceId);
+  const workspaceCriticalObjectives = getDashboardCriticalObjectives(okrSummary.workspaceId);
+  const workspaceWarningObjectives = getDashboardWarningObjectives(okrSummary.workspaceId);
+  const workspaceOkrSignalsActive = okrSummary.totalObjectives > 0;
+  const riskSummary = getDashboardRiskSummary(workspaceSummary.workspaceId);
+  const workspaceCriticalRisks = getDashboardCriticalRisks(riskSummary.workspaceId);
+  const workspaceHighRisks = getDashboardHighRisks(riskSummary.workspaceId);
+  const workspaceExposedObjects = getDashboardExposedObjects(riskSummary.workspaceId);
+  const workspaceRiskSignalsActive = riskSummary.totalRisks > 0;
+  const workspaceSignalsActive =
+    workspaceKpiSignalsActive || workspaceOkrSignalsActive || workspaceRiskSignalsActive;
+
+  const recentSummaryParts = [
+    workspaceKpiSignalsActive
+      ? formatOperationalWorkspaceKpiSignals({
+          summary: workspaceSummary,
+          criticalKpis: workspaceCriticalKpis,
+          warningKpis: workspaceWarningKpis,
+        })
+      : null,
+    workspaceOkrSignalsActive
+      ? formatOperationalWorkspaceOkrSignals({
+          summary: okrSummary,
+          criticalObjectives: workspaceCriticalObjectives,
+          warningObjectives: workspaceWarningObjectives,
+        })
+      : null,
+    workspaceRiskSignalsActive
+      ? formatOperationalWorkspaceRiskSignals({
+          summary: riskSummary,
+          criticalRisks: workspaceCriticalRisks,
+          highRisks: workspaceHighRisks,
+          exposedObjects: workspaceExposedObjects,
+        })
+      : null,
+  ].filter(Boolean) as string[];
 
   return Object.freeze({
     health: Object.freeze({
@@ -75,15 +124,12 @@ function enrichSnapshot(
     }),
     signals: Object.freeze({
       signalCount: workspaceSignalsActive
-        ? workspaceSummary.totalKpis
+        ? workspaceSummary.totalKpis + okrSummary.totalObjectives + riskSummary.totalRisks
         : feed.operationalKpiSignals.signalCount || kpiIntelligence.kpiCount,
-      recentSummary: workspaceSignalsActive
-        ? formatOperationalWorkspaceKpiSignals({
-            summary: workspaceSummary,
-            criticalKpis: workspaceCriticalKpis,
-            warningKpis: workspaceWarningKpis,
-          })
-        : feed.operationalKpiSignals.primaryValue,
+      recentSummary:
+        recentSummaryParts.length > 0
+          ? recentSummaryParts.join(" · ")
+          : feed.operationalKpiSignals.primaryValue,
       activityTrend: trendFromCounts(
         kpiIntelligence.topPerformingKpis.length,
         kpiIntelligence.topDecliningKpis.length

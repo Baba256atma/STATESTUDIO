@@ -5,6 +5,16 @@ import {
   formatDashboardKpiSummarySecondary,
   getDashboardKpiSummary,
 } from "../../kpi/kpiDashboardIntegrationRuntime.ts";
+import {
+  formatDashboardOkrSummaryPrimary,
+  formatDashboardOkrSummarySecondary,
+  getDashboardOkrSummary,
+} from "../../okr/okrDashboardIntegrationRuntime.ts";
+import {
+  formatDashboardRiskSummaryPrimary,
+  formatDashboardRiskSummarySecondary,
+  getDashboardRiskSummary,
+} from "../../risk/riskDashboardIntegrationRuntime.ts";
 import type {
   ExecutiveAttentionLevel,
   ExecutiveSummaryCard,
@@ -54,6 +64,76 @@ function attentionForWorkspaceKpiSummary(input: {
   return "stable";
 }
 
+function attentionForWorkspaceOkrSummary(input: {
+  criticalCount: number;
+  warningCount: number;
+}): ExecutiveAttentionLevel {
+  if (input.criticalCount > 0) return "attention_required";
+  if (input.warningCount > 0) return "monitor";
+  return "stable";
+}
+
+function attentionForWorkspaceRiskSummary(input: {
+  criticalCount: number;
+  highCount: number;
+}): ExecutiveAttentionLevel {
+  if (input.criticalCount > 0) return "attention_required";
+  if (input.highCount > 0) return "monitor";
+  return "stable";
+}
+
+export function attachWorkspaceRiskDashboardSummary(
+  model: ExecutiveSummarySurfaceModel
+): ExecutiveSummarySurfaceModel {
+  const summary = getDashboardRiskSummary();
+  if (summary.totalRisks === 0) {
+    return model;
+  }
+
+  const cards = replaceCard(
+    model.cards,
+    "active_objects",
+    Object.freeze({
+      kind: "active_objects",
+      title: "Risk Intelligence",
+      primaryValue: formatDashboardRiskSummaryPrimary(summary),
+      secondaryValue: formatDashboardRiskSummarySecondary(summary),
+      attention: attentionForWorkspaceRiskSummary(summary),
+    })
+  );
+
+  return Object.freeze({
+    ...model,
+    cards,
+  });
+}
+
+export function attachWorkspaceOkrDashboardSummary(
+  model: ExecutiveSummarySurfaceModel
+): ExecutiveSummarySurfaceModel {
+  const summary = getDashboardOkrSummary();
+  if (summary.totalObjectives === 0) {
+    return model;
+  }
+
+  const cards = replaceCard(
+    model.cards,
+    "executive_attention",
+    Object.freeze({
+      kind: "executive_attention",
+      title: "OKR Intelligence",
+      primaryValue: formatDashboardOkrSummaryPrimary(summary),
+      secondaryValue: formatDashboardOkrSummarySecondary(summary),
+      attention: attentionForWorkspaceOkrSummary(summary),
+    })
+  );
+
+  return Object.freeze({
+    ...model,
+    cards,
+  });
+}
+
 export function attachWorkspaceKpiDashboardSummary(
   model: ExecutiveSummarySurfaceModel
 ): ExecutiveSummarySurfaceModel {
@@ -86,7 +166,9 @@ export function attachExecutiveSummaryIntelligenceFeed(
 ): ExecutiveSummarySurfaceModel {
   const feed = buildExecutiveSummaryIntelligenceFeed(input);
   if (feed.feedStatus !== "bound") {
-    return attachWorkspaceKpiDashboardSummary(model);
+    return attachWorkspaceRiskDashboardSummary(
+      attachWorkspaceOkrDashboardSummary(attachWorkspaceKpiDashboardSummary(model))
+    );
   }
 
   const { objectIntelligence, riskIntelligence, kpiIntelligence, scenarioIntelligence } = feed.snapshot;
@@ -143,10 +225,14 @@ export function attachExecutiveSummaryIntelligenceFeed(
     })
   );
 
-  return attachWorkspaceKpiDashboardSummary(
-    Object.freeze({
-      ...model,
-      cards,
-    })
+  return attachWorkspaceRiskDashboardSummary(
+    attachWorkspaceOkrDashboardSummary(
+      attachWorkspaceKpiDashboardSummary(
+        Object.freeze({
+          ...model,
+          cards,
+        })
+      )
+    )
   );
 }

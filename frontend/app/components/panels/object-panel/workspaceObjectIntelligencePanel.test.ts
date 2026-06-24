@@ -12,6 +12,16 @@ import {
   WORKSPACE_KPI_PANEL_TAGS,
   resolveObjectKpiSummaryState,
 } from "./kpiSummaryRuntime.ts";
+import {
+  NEXORA_OKR_PANEL_LOG_PREFIX,
+  WORKSPACE_OKR_PANEL_TAGS,
+  resolveObjectOkrSummaryState,
+} from "./okrSummaryRuntime.ts";
+import {
+  NEXORA_RISK_PANEL_LOG_PREFIX,
+  WORKSPACE_RISK_PANEL_TAGS,
+  resolveObjectRiskSummaryState,
+} from "./riskSummaryRuntime.ts";
 import { resetWorkspaceRegistryForTests } from "../../../lib/workspace/workspaceRegistryStore.ts";
 import { resetWorkspaceObjectIntelligenceStoreForTests } from "../../../lib/workspace/workspaceObjectIntelligenceContract.ts";
 import { resetWorkspaceImpactProfileStoreForTests } from "../../../lib/workspace/workspaceImpactEngineContract.ts";
@@ -25,6 +35,13 @@ import { resetWorkspaceSceneSyncForTests } from "../../../lib/workspace/workspac
 import { resetWorkspaceKpiStoreForTests } from "../../../lib/kpi/workspaceKpiContract.ts";
 import { resetWorkspaceKpiObjectBindingStoreForTests } from "../../../lib/kpi/workspaceKpiObjectBinding.ts";
 import { resetWorkspaceKpiHealthProfileStoreForTests } from "../../../lib/kpi/workspaceKpiHealthEngine.ts";
+import { resetWorkspaceOkrStoreForTests } from "../../../lib/okr/workspaceOkrContract.ts";
+import { resetWorkspaceOkrKpiBindingStoreForTests } from "../../../lib/okr/workspaceOkrKpiBinding.ts";
+import { resetWorkspaceOkrProgressProfileStoreForTests } from "../../../lib/okr/workspaceOkrProgressEngine.ts";
+import { resetWorkspaceOkrHealthProfileStoreForTests } from "../../../lib/okr/workspaceOkrHealthEngine.ts";
+import { resetWorkspaceDetectedRiskStoreForTests } from "../../../lib/risk/workspaceRiskDetectionEngine.ts";
+import { resetWorkspaceRiskSeverityProfileStoreForTests } from "../../../lib/risk/workspaceRiskSeverityEngine.ts";
+import { resetWorkspaceRiskObjectBindingStoreForTests } from "../../../lib/risk/workspaceRiskObjectBinding.ts";
 
 const OBJECT_INTELLIGENCE_STORAGE_KEY = "nexora.workspaceObjectIntelligenceProfiles.v1";
 const IMPACT_STORAGE_KEY = "nexora.workspaceImpactProfiles.v1";
@@ -33,6 +50,13 @@ const CONFIDENCE_STORAGE_KEY = "nexora.workspaceConfidenceProfiles.v1";
 const KPI_STORAGE_KEY = "nexora.workspaceKpis.v1";
 const KPI_BINDING_STORAGE_KEY = "nexora.workspaceKpiObjectBindings.v1";
 const KPI_HEALTH_STORAGE_KEY = "nexora.workspaceKpiHealthProfiles.v1";
+const OBJECTIVE_STORAGE_KEY = "nexora.workspaceObjectives.v1";
+const OKR_KPI_BINDING_STORAGE_KEY = "nexora.workspaceOkrKpiBindings.v1";
+const OKR_PROGRESS_STORAGE_KEY = "nexora.workspaceOkrProgressProfiles.v1";
+const OKR_HEALTH_STORAGE_KEY = "nexora.workspaceOkrHealthProfiles.v1";
+const RISK_BINDING_STORAGE_KEY = "nexora.workspaceRiskObjectBindings.v1";
+const DETECTED_RISK_STORAGE_KEY = "nexora.workspaceDetectedRisks.v1";
+const RISK_SEVERITY_STORAGE_KEY = "nexora.workspaceRiskSeverityProfiles.v1";
 
 type SeedInput = {
   workspaceId: string;
@@ -237,6 +261,182 @@ function seedKpiBindings(input: KpiSeedInput | readonly KpiSeedInput[]): void {
   window.localStorage.setItem(KPI_HEALTH_STORAGE_KEY, JSON.stringify(healthStore));
 }
 
+type OkrSeedInput = {
+  workspaceId: string;
+  objectiveId: string;
+  objectiveTitle: string;
+  kpiId: string;
+  objectId: string;
+  healthStatus?: "healthy" | "watch" | "warning" | "critical" | "unknown";
+  progressPercent?: number;
+  includeHealth?: boolean;
+  includeProgress?: boolean;
+};
+
+function seedOkrBindings(input: OkrSeedInput | readonly OkrSeedInput[]): void {
+  const entries = Array.isArray(input) ? input : [input];
+  const timestamp = new Date().toISOString();
+  const objectiveStore: Record<string, Record<string, unknown>> = {};
+  const okrBindingStore: Record<string, Record<string, unknown>> = {};
+  const progressStore: Record<string, Record<string, unknown>> = {};
+  const healthStore: Record<string, Record<string, unknown>> = {};
+
+  for (const entry of entries) {
+    objectiveStore[entry.workspaceId] ??= {};
+    okrBindingStore[entry.workspaceId] ??= {};
+    progressStore[entry.workspaceId] ??= {};
+    healthStore[entry.workspaceId] ??= {};
+
+    objectiveStore[entry.workspaceId][entry.objectiveId] = {
+      contractVersion: "DS-5:1",
+      objectiveId: entry.objectiveId,
+      workspaceId: entry.workspaceId,
+      title: entry.objectiveTitle,
+      description: "",
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      source: "ds-5:1-foundation",
+    };
+
+    const bindingId = `wokr_kpi_bind_${entry.workspaceId}_${entry.objectiveId}_${entry.kpiId}`;
+    okrBindingStore[entry.workspaceId][bindingId] = {
+      contractVersion: "DS-5:4",
+      workspaceId: entry.workspaceId,
+      bindingId,
+      objectiveId: entry.objectiveId,
+      kpiId: entry.kpiId,
+      bindingStrength: "strong",
+      bindingConfidence: 0.8,
+      bindingReason: `Manually bound objective "${entry.objectiveTitle}" to KPI "${entry.kpiId}".`,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      source: "ds-5:4-okr-kpi-binding",
+    };
+
+    if (entry.includeProgress !== false) {
+      const progressPercent = entry.progressPercent ?? 100;
+      progressStore[entry.workspaceId][entry.objectiveId] = {
+        contractVersion: "DS-5:2",
+        workspaceId: entry.workspaceId,
+        objectiveId: entry.objectiveId,
+        progressPercent,
+        score: Math.min(progressPercent, 100),
+        keyResultCount: 1,
+        completedKeyResults: progressPercent >= 100 ? 1 : 0,
+        variance: 0,
+        trend: "stable",
+        reason: `${entry.objectiveTitle} objective reached ${progressPercent}% progress.`,
+        calculatedAt: timestamp,
+        source: "ds-5:2-okr-progress",
+      };
+    }
+
+    if (entry.includeHealth !== false) {
+      const healthStatus = entry.healthStatus ?? "healthy";
+      const progressPercent = entry.progressPercent ?? 100;
+      healthStore[entry.workspaceId][entry.objectiveId] = {
+        contractVersion: "DS-5:3",
+        workspaceId: entry.workspaceId,
+        objectiveId: entry.objectiveId,
+        healthScore: Math.min(progressPercent, 100),
+        healthStatus,
+        severity: healthStatus === "critical" ? "critical" : "none",
+        healthReason:
+          progressPercent >= 100
+            ? `${entry.objectiveTitle} objective exceeded expected progress.`
+            : `${entry.objectiveTitle} objective reached ${progressPercent}% progress and is declining.`,
+        progressPercent,
+        variance: 0,
+        trend: "stable",
+        calculatedAt: timestamp,
+        source: "ds-5:3-okr-health",
+      };
+    }
+  }
+
+  window.localStorage.setItem(OBJECTIVE_STORAGE_KEY, JSON.stringify(objectiveStore));
+  window.localStorage.setItem(OKR_KPI_BINDING_STORAGE_KEY, JSON.stringify(okrBindingStore));
+  window.localStorage.setItem(OKR_PROGRESS_STORAGE_KEY, JSON.stringify(progressStore));
+  window.localStorage.setItem(OKR_HEALTH_STORAGE_KEY, JSON.stringify(healthStore));
+}
+
+type RiskSeedInput = {
+  workspaceId: string;
+  objectId: string;
+  riskId: string;
+  detectionId: string;
+  riskTitle: string;
+  severityLevel?: "low" | "medium" | "high" | "critical";
+  priority?: "p1" | "p2" | "p3" | "p4";
+  severityScore?: number;
+  includeSeverity?: boolean;
+  includeDetected?: boolean;
+};
+
+function seedRiskBindings(input: RiskSeedInput | readonly RiskSeedInput[]): void {
+  const entries = Array.isArray(input) ? input : [input];
+  const timestamp = new Date().toISOString();
+  const bindingStore: Record<string, Record<string, unknown>> = {};
+  const detectedStore: Record<string, Record<string, unknown>> = {};
+  const severityStore: Record<string, Record<string, unknown>> = {};
+
+  for (const entry of entries) {
+    bindingStore[entry.workspaceId] ??= {};
+    detectedStore[entry.workspaceId] ??= {};
+    severityStore[entry.workspaceId] ??= {};
+
+    const bindingId = `wrisk_bind_${entry.workspaceId}_${entry.riskId}_${entry.objectId}`;
+    bindingStore[entry.workspaceId][bindingId] = {
+      contractVersion: "DS-6:4",
+      workspaceId: entry.workspaceId,
+      bindingId,
+      riskId: entry.riskId,
+      objectId: entry.objectId,
+      bindingStrength: "strong",
+      bindingConfidence: 0.8,
+      bindingReason: `Manually bound ${entry.riskTitle} to object ${entry.objectId}.`,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      source: "ds-6:4-risk-object-binding",
+    };
+
+    if (entry.includeDetected !== false) {
+      detectedStore[entry.workspaceId][entry.detectionId] = {
+        detectionId: entry.detectionId,
+        workspaceId: entry.workspaceId,
+        riskId: entry.riskId,
+        title: entry.riskTitle,
+        description: "Test detected risk.",
+        riskSource: "combined",
+        detectionReason: "Test detection reason.",
+        confidence: 1,
+        detectedAt: timestamp,
+        source: "ds-6:2-risk-detection",
+      };
+    }
+
+    if (entry.includeSeverity !== false) {
+      severityStore[entry.workspaceId][entry.detectionId] = {
+        contractVersion: "DS-6:3",
+        workspaceId: entry.workspaceId,
+        detectionId: entry.detectionId,
+        riskId: entry.riskId,
+        severityScore: entry.severityScore ?? 100,
+        severityLevel: entry.severityLevel ?? "critical",
+        priority: entry.priority ?? "p1",
+        severityReason: `${entry.riskTitle} has critical confidence.`,
+        evaluatedAt: timestamp,
+        source: "ds-6:3-risk-severity",
+      };
+    }
+  }
+
+  window.localStorage.setItem(RISK_BINDING_STORAGE_KEY, JSON.stringify(bindingStore));
+  window.localStorage.setItem(DETECTED_RISK_STORAGE_KEY, JSON.stringify(detectedStore));
+  window.localStorage.setItem(RISK_SEVERITY_STORAGE_KEY, JSON.stringify(severityStore));
+}
+
 function appendObjectIntelligenceProfile(input: {
   workspaceId: string;
   objectId: string;
@@ -282,12 +482,23 @@ test.beforeEach(() => {
   resetWorkspaceKpiStoreForTests();
   resetWorkspaceKpiObjectBindingStoreForTests();
   resetWorkspaceKpiHealthProfileStoreForTests();
+  resetWorkspaceOkrStoreForTests();
+  resetWorkspaceOkrKpiBindingStoreForTests();
+  resetWorkspaceOkrProgressProfileStoreForTests();
+  resetWorkspaceOkrHealthProfileStoreForTests();
+  resetWorkspaceDetectedRiskStoreForTests();
+  resetWorkspaceRiskSeverityProfileStoreForTests();
+  resetWorkspaceRiskObjectBindingStoreForTests();
 });
 
-test("exports DS-3:5 tags, DS-4:5 KPI panel tags, and diagnostic prefixes", () => {
+test("exports DS-3:5 tags, DS-4:5 KPI panel tags, DS-5:5 OKR panel tags, DS-6:5 risk panel tags, and diagnostic prefixes", () => {
   assert.equal(NEXORA_OBJECT_INTELLIGENCE_PANEL_LOG_PREFIX, "[NexoraObjectIntelligencePanel]");
   assert.equal(NEXORA_KPI_PANEL_LOG_PREFIX, "[NexoraKpiPanel]");
+  assert.equal(NEXORA_OKR_PANEL_LOG_PREFIX, "[NexoraOkrPanel]");
+  assert.equal(NEXORA_RISK_PANEL_LOG_PREFIX, "[NexoraRiskPanel]");
   assert.ok(WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS.includes("[DS45_KPI_PANEL]"));
+  assert.ok(WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS.includes("[DS55_OKR_PANEL]"));
+  assert.ok(WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS.includes("[DS65_RISK_PANEL]"));
   assert.deepEqual(WORKSPACE_KPI_PANEL_TAGS, [
     "[DS45_KPI_PANEL]",
     "[KPI_VISIBLE_IN_OBJECT_PANEL]",
@@ -295,6 +506,22 @@ test("exports DS-3:5 tags, DS-4:5 KPI panel tags, and diagnostic prefixes", () =
     "[NO_NEW_PANEL_CREATED]",
     "[DS46_READY]",
     "[DS_4_5_COMPLETE]",
+  ]);
+  assert.deepEqual(WORKSPACE_OKR_PANEL_TAGS, [
+    "[DS55_OKR_PANEL]",
+    "[OKR_VISIBLE_IN_OBJECT_PANEL]",
+    "[OBJECT_PANEL_EXTENDED]",
+    "[NO_NEW_PANEL_CREATED]",
+    "[DS56_READY]",
+    "[DS_5_5_COMPLETE]",
+  ]);
+  assert.deepEqual(WORKSPACE_RISK_PANEL_TAGS, [
+    "[DS65_RISK_PANEL]",
+    "[RISK_VISIBLE_IN_OBJECT_PANEL]",
+    "[OBJECT_PANEL_EXTENDED]",
+    "[NO_NEW_PANEL_CREATED]",
+    "[DS66_READY]",
+    "[DS_6_5_COMPLETE]",
   ]);
 });
 
@@ -560,5 +787,567 @@ test("does not mutate KPI, object, or scene storage when resolving KPI summary",
 
   assert.equal(window.localStorage.getItem(KPI_STORAGE_KEY), before.kpis);
   assert.equal(window.localStorage.getItem(OBJECT_INTELLIGENCE_STORAGE_KEY), before.objects);
+  assert.equal(getWorkspaceSceneJson("workspace_a"), before.scene);
+});
+
+test("shows OKR summary for Forecast manual walkthrough", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_forecast", objectName: "Forecast", objectType: "forecast" });
+  seedKpiBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+    kpiId: "wkpi_forecast_accuracy",
+    kpiName: "Forecast Accuracy",
+    healthStatus: "healthy",
+    progressPercent: 102,
+  });
+  seedOkrBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+    objectiveId: "wobj_improve_forecasting",
+    objectiveTitle: "Improve Forecasting",
+    kpiId: "wkpi_forecast_accuracy",
+    healthStatus: "healthy",
+    progressPercent: 105,
+  });
+
+  const state = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+  });
+
+  assert.equal(state.okrSummary.objectiveCount, 1);
+  assert.equal(state.okrSummary.items[0]?.objectiveTitle, "Improve Forecasting");
+  assert.equal(state.okrSummary.items[0]?.healthStatusLabel, "Healthy");
+  assert.equal(state.okrSummary.items[0]?.progressLabel, "105%");
+});
+
+test("shows OKR summary for Sales manual walkthrough", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_sales", objectName: "Sales", objectType: "sales" });
+  seedKpiBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+    kpiId: "wkpi_revenue_growth",
+    kpiName: "Revenue Growth",
+    healthStatus: "warning",
+    progressPercent: 80,
+  });
+  seedOkrBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+    objectiveId: "wobj_become_market_leader",
+    objectiveTitle: "Become Market Leader",
+    kpiId: "wkpi_revenue_growth",
+    healthStatus: "warning",
+    progressPercent: 70,
+  });
+
+  const state = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+  });
+
+  assert.equal(state.okrSummary.items[0]?.objectiveTitle, "Become Market Leader");
+  assert.equal(state.okrSummary.items[0]?.healthStatusLabel, "Warning");
+  assert.equal(state.okrSummary.items[0]?.progressLabel, "70%");
+});
+
+test("shows multiple OKRs for object with multiple objective bindings", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_sales", objectName: "Sales", objectType: "sales" });
+  seedKpiBindings([
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_sales",
+      kpiId: "wkpi_revenue_growth",
+      kpiName: "Revenue Growth",
+    },
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_sales",
+      kpiId: "wkpi_market_share",
+      kpiName: "Market Share",
+    },
+  ]);
+  seedOkrBindings([
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_sales",
+      objectiveId: "wobj_become_market_leader",
+      objectiveTitle: "Become Market Leader",
+      kpiId: "wkpi_revenue_growth",
+      healthStatus: "warning",
+      progressPercent: 70,
+    },
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_sales",
+      objectiveId: "wobj_reduce_cost",
+      objectiveTitle: "Reduce Operational Cost",
+      kpiId: "wkpi_market_share",
+      healthStatus: "critical",
+      progressPercent: 45,
+    },
+  ]);
+
+  const state = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+  });
+
+  assert.equal(state.okrSummary.objectiveCount, 2);
+  assert.equal(state.okrSummary.items[0]?.objectiveTitle, "Become Market Leader");
+  assert.equal(state.okrSummary.items[1]?.objectiveTitle, "Reduce Operational Cost");
+});
+
+test("shows empty OKR summary when object has KPI bindings but no OKR bindings", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_forecast", objectName: "Forecast", objectType: "forecast" });
+  seedKpiBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+    kpiId: "wkpi_forecast_accuracy",
+    kpiName: "Forecast Accuracy",
+  });
+
+  const summary = resolveObjectOkrSummaryState({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+  });
+
+  assert.equal(summary.emptyMessage, "No OKRs linked to this object.");
+  assert.equal(summary.items.length, 0);
+});
+
+test("shows missing health message when OKR binding exists without health profile", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_sales", objectName: "Sales", objectType: "sales" });
+  seedKpiBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+    kpiId: "wkpi_revenue_growth",
+    kpiName: "Revenue Growth",
+  });
+  seedOkrBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+    objectiveId: "wobj_become_market_leader",
+    objectiveTitle: "Become Market Leader",
+    kpiId: "wkpi_revenue_growth",
+    includeHealth: false,
+  });
+
+  const summary = resolveObjectOkrSummaryState({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+  });
+
+  assert.equal(summary.items.length, 1);
+  assert.equal(summary.items[0]?.healthAvailable, false);
+  assert.equal(summary.items[0]?.objectiveTitle, "Become Market Leader");
+});
+
+test("switches OKR summary when changing selected object", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_forecast", objectName: "Forecast", objectType: "forecast" });
+  appendObjectIntelligenceProfile({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+    objectName: "Sales",
+    objectType: "sales",
+  });
+  seedKpiBindings([
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_forecast",
+      kpiId: "wkpi_forecast_accuracy",
+      kpiName: "Forecast Accuracy",
+    },
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_sales",
+      kpiId: "wkpi_revenue_growth",
+      kpiName: "Revenue Growth",
+    },
+  ]);
+  seedOkrBindings([
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_forecast",
+      objectiveId: "wobj_improve_forecasting",
+      objectiveTitle: "Improve Forecasting",
+      kpiId: "wkpi_forecast_accuracy",
+      progressPercent: 105,
+    },
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_sales",
+      objectiveId: "wobj_become_market_leader",
+      objectiveTitle: "Become Market Leader",
+      kpiId: "wkpi_revenue_growth",
+      progressPercent: 70,
+      healthStatus: "warning",
+    },
+  ]);
+
+  const forecastState = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+  });
+  const salesState = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+  });
+
+  assert.equal(forecastState.okrSummary.items[0]?.objectiveTitle, "Improve Forecasting");
+  assert.equal(salesState.okrSummary.items[0]?.objectiveTitle, "Become Market Leader");
+});
+
+test("keeps OKR summary hidden when no object is selected", () => {
+  const summary = resolveObjectOkrSummaryState({
+    workspaceId: "workspace_a",
+    objectId: "",
+  });
+
+  assert.equal(summary.visible, false);
+  assert.equal(summary.items.length, 0);
+});
+
+test("preserves OKR summary workspace isolation", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_sales", objectName: "Sales", objectType: "sales" });
+  seedKpiBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+    kpiId: "wkpi_revenue_growth",
+    kpiName: "Revenue Growth",
+  });
+  seedOkrBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+    objectiveId: "wobj_become_market_leader",
+    objectiveTitle: "Become Market Leader",
+    kpiId: "wkpi_revenue_growth",
+  });
+
+  const isolated = resolveObjectOkrSummaryState({
+    workspaceId: "workspace_b",
+    objectId: "obj_sales",
+  });
+
+  assert.equal(isolated.emptyMessage, "No OKRs linked to this object.");
+  assert.equal(isolated.objectiveCount, 0);
+});
+
+test("extends existing Object Panel with OKR summary before object actions", () => {
+  const panelSource = readFileSync(
+    new URL("./WorkspaceObjectIntelligencePanel.tsx", import.meta.url),
+    "utf8"
+  );
+  const actionPanelSource = readFileSync(
+    new URL("../ExecutiveActionPanel.tsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.match(panelSource, /OkrSummarySection/);
+  assert.match(panelSource, /KpiSummarySection/);
+  assert.match(actionPanelSource, /WorkspaceObjectIntelligencePanel/);
+  assert.match(actionPanelSource, /<ActionsSection/);
+  assert.ok(panelSource.indexOf("KpiSummarySection") < panelSource.indexOf("OkrSummarySection"));
+});
+
+test("does not mutate OKR, KPI, or scene storage when resolving OKR summary", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_sales", objectName: "Sales", objectType: "sales" });
+  seedKpiBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+    kpiId: "wkpi_revenue_growth",
+    kpiName: "Revenue Growth",
+  });
+  seedOkrBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+    objectiveId: "wobj_become_market_leader",
+    objectiveTitle: "Become Market Leader",
+    kpiId: "wkpi_revenue_growth",
+  });
+
+  const before = {
+    kpis: window.localStorage.getItem(KPI_STORAGE_KEY),
+    objectives: window.localStorage.getItem(OBJECTIVE_STORAGE_KEY),
+    okrBindings: window.localStorage.getItem(OKR_KPI_BINDING_STORAGE_KEY),
+    okrProgress: window.localStorage.getItem(OKR_PROGRESS_STORAGE_KEY),
+    okrHealth: window.localStorage.getItem(OKR_HEALTH_STORAGE_KEY),
+    scene: getWorkspaceSceneJson("workspace_a"),
+  };
+
+  resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+  });
+
+  assert.equal(window.localStorage.getItem(KPI_STORAGE_KEY), before.kpis);
+  assert.equal(window.localStorage.getItem(OBJECTIVE_STORAGE_KEY), before.objectives);
+  assert.equal(window.localStorage.getItem(OKR_KPI_BINDING_STORAGE_KEY), before.okrBindings);
+  assert.equal(window.localStorage.getItem(OKR_PROGRESS_STORAGE_KEY), before.okrProgress);
+  assert.equal(window.localStorage.getItem(OKR_HEALTH_STORAGE_KEY), before.okrHealth);
+  assert.equal(getWorkspaceSceneJson("workspace_a"), before.scene);
+});
+
+test("shows risk summary for Forecast manual walkthrough", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_forecast", objectName: "Forecast", objectType: "forecast" });
+  seedRiskBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+    riskId: "risk_forecast_failure",
+    detectionId: "detect_forecast_failure",
+    riskTitle: "Forecast Failure Risk",
+    severityLevel: "critical",
+    priority: "p1",
+    severityScore: 100,
+  });
+
+  const state = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+  });
+
+  assert.equal(state.riskSummary.bindingCount, 1);
+  assert.equal(state.riskSummary.items[0]?.riskTitle, "Forecast Failure Risk");
+  assert.equal(state.riskSummary.items[0]?.severityLevelLabel, "Critical");
+  assert.equal(state.riskSummary.items[0]?.priorityLabel, "P1");
+  assert.equal(state.riskSummary.items[0]?.severityScoreLabel, "100");
+});
+
+test("shows risk summary for Sales manual walkthrough", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_sales", objectName: "Sales", objectType: "sales" });
+  seedRiskBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+    riskId: "risk_growth_execution",
+    detectionId: "detect_growth_execution",
+    riskTitle: "Growth Execution Risk",
+    severityLevel: "high",
+    priority: "p2",
+    severityScore: 80,
+  });
+
+  const state = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+  });
+
+  assert.equal(state.riskSummary.items[0]?.riskTitle, "Growth Execution Risk");
+  assert.equal(state.riskSummary.items[0]?.severityLevelLabel, "High");
+  assert.equal(state.riskSummary.items[0]?.priorityLabel, "P2");
+  assert.equal(state.riskSummary.items[0]?.severityScoreLabel, "80");
+});
+
+test("shows risk summary for Warehouse manual walkthrough", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_warehouse", objectName: "Warehouse", objectType: "warehouse" });
+  seedRiskBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_warehouse",
+    riskId: "risk_supply_chain",
+    detectionId: "detect_supply_chain",
+    riskTitle: "Supply Chain Risk",
+    severityLevel: "medium",
+    priority: "p3",
+    severityScore: 65,
+  });
+
+  const state = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_warehouse",
+  });
+
+  assert.equal(state.riskSummary.items[0]?.riskTitle, "Supply Chain Risk");
+  assert.equal(state.riskSummary.items[0]?.severityLevelLabel, "Medium");
+  assert.equal(state.riskSummary.items[0]?.priorityLabel, "P3");
+  assert.equal(state.riskSummary.items[0]?.severityScoreLabel, "65");
+});
+
+test("shows multiple risks for object with multiple bindings", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_sales", objectName: "Sales", objectType: "sales" });
+  seedRiskBindings([
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_sales",
+      riskId: "risk_growth_execution",
+      detectionId: "detect_growth_execution",
+      riskTitle: "Growth Execution Risk",
+      severityLevel: "high",
+      priority: "p2",
+      severityScore: 80,
+    },
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_sales",
+      riskId: "risk_market_expansion",
+      detectionId: "detect_market_expansion",
+      riskTitle: "Market Expansion Risk",
+      severityLevel: "medium",
+      priority: "p3",
+      severityScore: 65,
+    },
+  ]);
+
+  const state = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+  });
+
+  assert.equal(state.riskSummary.bindingCount, 2);
+  assert.equal(state.riskSummary.items.length, 2);
+});
+
+test("shows empty risk summary when object has no bindings", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_forecast", objectName: "Forecast", objectType: "forecast" });
+
+  const summary = resolveObjectRiskSummaryState({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+  });
+
+  assert.equal(summary.emptyMessage, "No risks linked to this object.");
+  assert.equal(summary.items.length, 0);
+});
+
+test("shows missing severity message when binding exists without severity profile", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_forecast", objectName: "Forecast", objectType: "forecast" });
+  seedRiskBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+    riskId: "risk_forecast_failure",
+    detectionId: "detect_forecast_failure",
+    riskTitle: "Forecast Failure Risk",
+    includeSeverity: false,
+  });
+
+  const summary = resolveObjectRiskSummaryState({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+  });
+
+  assert.equal(summary.items.length, 1);
+  assert.equal(summary.items[0]?.severityAvailable, false);
+  assert.equal(summary.items[0]?.riskTitle, "Forecast Failure Risk");
+});
+
+test("switches risk summary when changing selected object", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_forecast", objectName: "Forecast", objectType: "forecast" });
+  appendObjectIntelligenceProfile({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+    objectName: "Sales",
+    objectType: "sales",
+  });
+  seedRiskBindings([
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_forecast",
+      riskId: "risk_forecast_failure",
+      detectionId: "detect_forecast_failure",
+      riskTitle: "Forecast Failure Risk",
+      severityLevel: "critical",
+      priority: "p1",
+      severityScore: 100,
+    },
+    {
+      workspaceId: "workspace_a",
+      objectId: "obj_sales",
+      riskId: "risk_growth_execution",
+      detectionId: "detect_growth_execution",
+      riskTitle: "Growth Execution Risk",
+      severityLevel: "high",
+      priority: "p2",
+      severityScore: 80,
+    },
+  ]);
+
+  const forecastState = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+  });
+  const salesState = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_sales",
+  });
+
+  assert.equal(forecastState.riskSummary.items[0]?.riskTitle, "Forecast Failure Risk");
+  assert.equal(salesState.riskSummary.items[0]?.riskTitle, "Growth Execution Risk");
+});
+
+test("keeps risk summary hidden when no object is selected", () => {
+  const summary = resolveObjectRiskSummaryState({
+    workspaceId: "workspace_a",
+    objectId: "",
+  });
+
+  assert.equal(summary.visible, false);
+  assert.equal(summary.items.length, 0);
+});
+
+test("preserves risk summary workspace isolation", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_forecast", objectName: "Forecast", objectType: "forecast" });
+  seedRiskBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+    riskId: "risk_forecast_failure",
+    detectionId: "detect_forecast_failure",
+    riskTitle: "Forecast Failure Risk",
+  });
+
+  const isolated = resolveObjectRiskSummaryState({
+    workspaceId: "workspace_b",
+    objectId: "obj_forecast",
+  });
+
+  assert.equal(isolated.emptyMessage, "No risks linked to this object.");
+  assert.equal(isolated.bindingCount, 0);
+});
+
+test("extends existing Object Panel with risk summary after OKR summary and before object actions", () => {
+  const panelSource = readFileSync(
+    new URL("./WorkspaceObjectIntelligencePanel.tsx", import.meta.url),
+    "utf8"
+  );
+  const actionPanelSource = readFileSync(
+    new URL("../ExecutiveActionPanel.tsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.match(panelSource, /RiskSummarySection/);
+  assert.match(panelSource, /OkrSummarySection/);
+  assert.match(panelSource, /KpiSummarySection/);
+  assert.match(actionPanelSource, /WorkspaceObjectIntelligencePanel/);
+  assert.match(actionPanelSource, /<ActionsSection/);
+  assert.ok(panelSource.indexOf("KpiSummarySection") < panelSource.indexOf("OkrSummarySection"));
+  assert.ok(panelSource.indexOf("OkrSummarySection") < panelSource.indexOf("RiskSummarySection"));
+});
+
+test("does not mutate risk, KPI, OKR, or scene storage when resolving risk summary", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_forecast", objectName: "Forecast", objectType: "forecast" });
+  seedRiskBindings({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+    riskId: "risk_forecast_failure",
+    detectionId: "detect_forecast_failure",
+    riskTitle: "Forecast Failure Risk",
+  });
+
+  const before = {
+    riskBindings: window.localStorage.getItem(RISK_BINDING_STORAGE_KEY),
+    detectedRisks: window.localStorage.getItem(DETECTED_RISK_STORAGE_KEY),
+    severityProfiles: window.localStorage.getItem(RISK_SEVERITY_STORAGE_KEY),
+    kpis: window.localStorage.getItem(KPI_STORAGE_KEY),
+    objectives: window.localStorage.getItem(OBJECTIVE_STORAGE_KEY),
+    scene: getWorkspaceSceneJson("workspace_a"),
+  };
+
+  resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: "workspace_a",
+    objectId: "obj_forecast",
+  });
+
+  assert.equal(window.localStorage.getItem(RISK_BINDING_STORAGE_KEY), before.riskBindings);
+  assert.equal(window.localStorage.getItem(DETECTED_RISK_STORAGE_KEY), before.detectedRisks);
+  assert.equal(window.localStorage.getItem(RISK_SEVERITY_STORAGE_KEY), before.severityProfiles);
+  assert.equal(window.localStorage.getItem(KPI_STORAGE_KEY), before.kpis);
+  assert.equal(window.localStorage.getItem(OBJECTIVE_STORAGE_KEY), before.objectives);
   assert.equal(getWorkspaceSceneJson("workspace_a"), before.scene);
 });

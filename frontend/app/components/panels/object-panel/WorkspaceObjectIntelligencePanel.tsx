@@ -16,7 +16,11 @@ import {
   resolveWorkspaceObjectIntelligencePanelState,
 } from "./workspaceObjectIntelligencePanelRuntime.ts";
 import { KpiSummarySection } from "./KpiSummarySection.tsx";
+import { OkrSummarySection } from "./OkrSummarySection.tsx";
+import { RiskSummarySection } from "./RiskSummarySection.tsx";
 import { NEXORA_KPI_PANEL_LOG_PREFIX } from "./kpiSummaryRuntime.ts";
+import { NEXORA_OKR_PANEL_LOG_PREFIX } from "./okrSummaryRuntime.ts";
+import { NEXORA_RISK_PANEL_LOG_PREFIX } from "./riskSummaryRuntime.ts";
 
 export {
   NEXORA_OBJECT_INTELLIGENCE_PANEL_LOG_PREFIX,
@@ -76,6 +80,24 @@ export function WorkspaceObjectIntelligencePanel(
         phase: "DS-4:5",
       });
     }
+    if (state.okrSummary.visible) {
+      devDiagnosticLog("okrPanel", NEXORA_OKR_PANEL_LOG_PREFIX, {
+        objectId: state.objectId,
+        objectiveCount: state.okrSummary.objectiveCount,
+        healthProfileCount: state.okrSummary.healthProfileCount,
+        tags: WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS,
+        phase: "DS-5:5",
+      });
+    }
+    if (state.riskSummary.visible) {
+      devDiagnosticLog("riskPanel", NEXORA_RISK_PANEL_LOG_PREFIX, {
+        objectId: state.objectId,
+        riskCount: state.riskSummary.bindingCount,
+        severityProfileCount: state.riskSummary.severityProfileCount,
+        tags: WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS,
+        phase: "DS-6:5",
+      });
+    }
   }, [state]);
 
   return (
@@ -133,6 +155,8 @@ export function WorkspaceObjectIntelligencePanel(
       </div>
 
       <KpiSummarySection summary={state.kpiSummary} />
+      <OkrSummarySection summary={state.okrSummary} />
+      <RiskSummarySection summary={state.riskSummary} />
     </section>
   );
 }
