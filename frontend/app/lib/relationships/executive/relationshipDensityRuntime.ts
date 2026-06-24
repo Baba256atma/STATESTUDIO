@@ -49,8 +49,9 @@ export function shouldShowRelationshipInDensityMode(input: {
     return true;
   }
 
+  // CHECKPOINT-1-FIX-5: preserve unrelated lines in EXECUTIVE mode (dim via focusRole, do not hide).
   if (input.focusRole === "unrelated") {
-    return mode !== "EXECUTIVE" && metadata.relationshipImportance >= threshold;
+    return true;
   }
 
   return metadata.relationshipImportance >= threshold;

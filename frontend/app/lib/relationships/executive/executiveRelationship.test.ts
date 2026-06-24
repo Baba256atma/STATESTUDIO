@@ -66,7 +66,7 @@ describe("executive relationship runtimes", () => {
     expect(getRelationshipRenderPlan(plan, "r3")?.visible).toBe(false);
   });
 
-  it("highlights selected object network context", () => {
+  it("highlights selected object network context while keeping unrelated lines visible", () => {
     const relationships = [
       baseRelationship({ id: "dep", type: "dependency" }),
       baseRelationship({ id: "risk", type: "risk", metadata: { strength: 0.95 } }),
@@ -77,9 +77,34 @@ describe("executive relationship runtimes", () => {
       selectedObjectId: "obj-a",
     });
     expect(getRelationshipRenderPlan(plan, "dep")?.focusRole).toBe("direct_dependency");
+    expect(getRelationshipRenderPlan(plan, "dep")?.visible).toBe(true);
     expect(getRelationshipRenderPlan(plan, "risk")?.focusRole).toBe("major_risk_route");
+    expect(getRelationshipRenderPlan(plan, "risk")?.visible).toBe(true);
     expect(getRelationshipRenderPlan(plan, "other")?.focusRole).toBe("unrelated");
-    expect(getRelationshipRenderPlan(plan, "other")?.visible).toBe(false);
+    expect(getRelationshipRenderPlan(plan, "other")?.visible).toBe(true);
+  });
+
+  it("keeps direct dependency and unrelated relationships visible when object selected", () => {
+    const relationships = [
+      baseRelationship({ id: "dep", type: "dependency" }),
+      baseRelationship({
+        id: "unrelated",
+        sourceId: "obj-x",
+        targetId: "obj-y",
+        type: "information",
+        metadata: { strength: 0.1 },
+      }),
+    ];
+    const plan = resolveExecutiveRelationshipScenePlan({
+      relationships,
+      selectedObjectId: "obj-a",
+    });
+    const depPlan = getRelationshipRenderPlan(plan, "dep");
+    const unrelatedPlan = getRelationshipRenderPlan(plan, "unrelated");
+    expect(depPlan?.focusRole).toBe("direct_dependency");
+    expect(depPlan?.visible).toBe(true);
+    expect(unrelatedPlan?.focusRole).toBe("unrelated");
+    expect(unrelatedPlan?.visible).toBe(true);
   });
 
   it("builds relationship context for object info", () => {

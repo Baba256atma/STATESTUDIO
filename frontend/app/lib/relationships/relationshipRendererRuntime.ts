@@ -1,6 +1,54 @@
 import type { NexoraRelationship } from "./relationshipTypes.ts";
+import type {
+  RelationshipFocusRole,
+  RelationshipVisualEmphasis,
+} from "./executive/executiveRelationshipTypes.ts";
 import { devDiagnosticLog } from "../runtime/diagnosticSwitch.ts";
 import type { WorkspaceViewMode } from "../workspace/workspaceViewModeTypes.ts";
+
+export const NEXORA_RELATIONSHIP_OBJECT_FOCUS_LOG_PREFIX = "[NexoraRelationshipObjectFocus]";
+
+export type RelationshipRenderPlanForObjectFocus = {
+  focusRole?: RelationshipFocusRole | null;
+  emphasis?: RelationshipVisualEmphasis | null;
+};
+
+export function resolveRelationshipObjectFocused(input: {
+  selectedObjectId?: string | null;
+  renderPlan?: RelationshipRenderPlanForObjectFocus | null;
+}): boolean {
+  return (
+    Boolean(input.selectedObjectId) &&
+    input.renderPlan?.focusRole != null &&
+    input.renderPlan.focusRole !== "unrelated"
+  );
+}
+
+export function resolveRelationshipLineVisualReaction(input: {
+  relationshipId: string;
+  selectedRelationshipId?: string | null;
+  selectedObjectId?: string | null;
+  renderPlan?: RelationshipRenderPlanForObjectFocus | null;
+  twinStressed?: boolean;
+}): {
+  objectFocused: boolean;
+  selected: boolean;
+  emphasized: boolean;
+} {
+  const objectFocused = resolveRelationshipObjectFocused({
+    selectedObjectId: input.selectedObjectId,
+    renderPlan: input.renderPlan,
+  });
+  const relationshipSelected = input.relationshipId === input.selectedRelationshipId;
+  return {
+    objectFocused,
+    selected: relationshipSelected || objectFocused,
+    emphasized:
+      Boolean(input.twinStressed) ||
+      objectFocused ||
+      input.renderPlan?.emphasis !== "BACKGROUND",
+  };
+}
 
 function isRenderableNexoraRelationship(value: unknown): value is NexoraRelationship {
   if (!value || typeof value !== "object") return false;
@@ -171,6 +219,28 @@ export function logRelationshipPulseDisabled(reason: string, relationshipId?: st
     relationshipId: relationshipId ?? null,
     reason,
   });
+}
+
+export function logRelationshipObjectFocusDiagnostic(input: {
+  relationshipId: string;
+  selectedObjectId?: string | null;
+  focusRole?: RelationshipFocusRole | null;
+  objectFocused: boolean;
+}): void {
+  if (!isDev()) return;
+  const key = `objectFocus:${input.relationshipId}:${input.selectedObjectId ?? ""}:${input.focusRole ?? ""}:${input.objectFocused}`;
+  if (emittedDiagnosticKeys.has(key)) return;
+  emittedDiagnosticKeys.add(key);
+  devDiagnosticLog(
+    "relationshipObjectFocus",
+    NEXORA_RELATIONSHIP_OBJECT_FOCUS_LOG_PREFIX,
+    {
+      relationshipId: input.relationshipId,
+      selectedObjectId: input.selectedObjectId ?? null,
+      focusRole: input.focusRole ?? null,
+      objectFocused: input.objectFocused,
+    }
+  );
 }
 
 export function resetRelationshipRendererRuntimeForTests(): void {

@@ -12,7 +12,11 @@ import {
 } from "../../../lib/workspace/workspaceViewModeRuntime";
 import type { NexoraRelationship } from "../../../lib/relationships/relationshipTypes";
 import type { SceneThemeId } from "../../../lib/theme/sceneThemeTypes";
-import { readValidatedSceneRelationshipsForRender } from "../../../lib/relationships/relationshipRendererRuntime";
+import {
+  logRelationshipObjectFocusDiagnostic,
+  readValidatedSceneRelationshipsForRender,
+  resolveRelationshipLineVisualReaction,
+} from "../../../lib/relationships/relationshipRendererRuntime";
 import { RelationshipLine } from "./RelationshipLine";
 import {
   buildRuntimeObjectPositionLookupCache,
@@ -95,6 +99,19 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
         const renderPlan = scenePlan.plans[relationship.id];
         if (renderPlan && !renderPlan.visible) return null;
         const twinStressed = stressedIds.has(relationship.id);
+        const { objectFocused, selected, emphasized } = resolveRelationshipLineVisualReaction({
+          relationshipId: relationship.id,
+          selectedRelationshipId: props.selectedRelationshipId,
+          selectedObjectId: props.selectedObjectId,
+          renderPlan,
+          twinStressed,
+        });
+        logRelationshipObjectFocusDiagnostic({
+          relationshipId: relationship.id,
+          selectedObjectId: props.selectedObjectId,
+          focusRole: renderPlan?.focusRole,
+          objectFocused,
+        });
         return (
           <RelationshipLine
             key={relationship.id}
@@ -106,8 +123,9 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
             renderPlan={renderPlan}
             showLabel={renderPlan?.showLabel ?? relationshipViewProfile.showLabelDefault}
             billboardLabels={relationshipViewProfile.depthCue}
-            selected={relationship.id === props.selectedRelationshipId}
-            emphasized={twinStressed || renderPlan?.emphasis !== "BACKGROUND"}
+            selected={selected}
+            emphasized={emphasized}
+            selectedObjectId={props.selectedObjectId}
             onSelect={props.onRelationshipSelect}
             runtimeObjectPositionContext={props.runtimeObjectPositionContext}
             positionLookup={positionLookup}

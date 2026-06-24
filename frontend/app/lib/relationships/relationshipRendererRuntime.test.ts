@@ -5,6 +5,8 @@ import {
   areRelationshipLinePointsValid,
   readValidatedSceneRelationshipsForRender,
   resetRelationshipRendererRuntimeForTests,
+  resolveRelationshipLineVisualReaction,
+  resolveRelationshipObjectFocused,
   validateRelationshipForRender,
 } from "./relationshipRendererRuntime.ts";
 
@@ -62,6 +64,54 @@ test("filters invalid scene relationships and keeps valid ones", () => {
   const relationships = readValidatedSceneRelationshipsForRender(sceneJson, sceneJson.scene.objects);
   assert.equal(relationships.length, 1);
   assert.equal(relationships[0]?.id, "rel_ok");
+});
+
+test("object focus emphasizes connected relationships when object selected", () => {
+  const connected = resolveRelationshipLineVisualReaction({
+    relationshipId: "rel_dep",
+    selectedObjectId: "obj_a",
+    renderPlan: { focusRole: "direct_dependency", emphasis: "PRIMARY" },
+  });
+  assert.equal(connected.objectFocused, true);
+  assert.equal(connected.selected, true);
+  assert.equal(connected.emphasized, true);
+
+  const unrelated = resolveRelationshipLineVisualReaction({
+    relationshipId: "rel_other",
+    selectedObjectId: "obj_a",
+    renderPlan: { focusRole: "unrelated", emphasis: "BACKGROUND" },
+  });
+  assert.equal(unrelated.objectFocused, false);
+  assert.equal(unrelated.selected, false);
+  assert.equal(unrelated.emphasized, false);
+});
+
+test("direct relationship selection remains selected without object focus", () => {
+  const reaction = resolveRelationshipLineVisualReaction({
+    relationshipId: "rel_dep",
+    selectedRelationshipId: "rel_dep",
+    renderPlan: { focusRole: "connected_context", emphasis: "SECONDARY" },
+  });
+  assert.equal(reaction.objectFocused, false);
+  assert.equal(reaction.selected, true);
+  assert.equal(reaction.emphasized, true);
+});
+
+test("no object selection keeps normal visual reaction behavior", () => {
+  assert.equal(
+    resolveRelationshipObjectFocused({
+      selectedObjectId: null,
+      renderPlan: { focusRole: "direct_dependency", emphasis: "PRIMARY" },
+    }),
+    false
+  );
+
+  const reaction = resolveRelationshipLineVisualReaction({
+    relationshipId: "rel_a",
+    renderPlan: { focusRole: "connected_context", emphasis: "BACKGROUND" },
+  });
+  assert.equal(reaction.selected, false);
+  assert.equal(reaction.emphasized, false);
 });
 
 test("guards invalid line point payloads", () => {

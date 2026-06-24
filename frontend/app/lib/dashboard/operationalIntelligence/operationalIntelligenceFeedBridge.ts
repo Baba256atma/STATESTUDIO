@@ -1,6 +1,12 @@
 import { buildOperationalIntelligenceFeed } from "../../intelligence-integration/OperationalIntelligenceFeed.ts";
 import type { OperationalIntelligenceFeedBuildInput } from "../../intelligence-integration/operationalIntelligenceFeedContract.ts";
 import type { OperationalIntelligenceFeedView } from "../../intelligence-integration/operationalIntelligenceFeedContract.ts";
+import {
+  formatOperationalWorkspaceKpiSignals,
+  getDashboardCriticalKpis,
+  getDashboardKpiSummary,
+  getDashboardWarningKpis,
+} from "../../kpi/kpiDashboardIntegrationRuntime.ts";
 import type {
   OperationalHealthLevel,
   OperationalIntelligenceSurfaceModel,
@@ -43,6 +49,10 @@ function enrichSnapshot(
   feed: OperationalIntelligenceFeedView
 ): OperationalIntelligenceSurfaceModel["snapshot"] {
   const { objectIntelligence, relationshipIntelligence, kpiIntelligence } = feed.snapshot;
+  const workspaceSummary = getDashboardKpiSummary();
+  const workspaceCriticalKpis = getDashboardCriticalKpis(workspaceSummary.workspaceId);
+  const workspaceWarningKpis = getDashboardWarningKpis(workspaceSummary.workspaceId);
+  const workspaceSignalsActive = workspaceSummary.totalKpis > 0;
 
   return Object.freeze({
     health: Object.freeze({
@@ -64,8 +74,16 @@ function enrichSnapshot(
       summary: feed.objectTrend.secondaryValue,
     }),
     signals: Object.freeze({
-      signalCount: feed.operationalKpiSignals.signalCount || kpiIntelligence.kpiCount,
-      recentSummary: feed.operationalKpiSignals.primaryValue,
+      signalCount: workspaceSignalsActive
+        ? workspaceSummary.totalKpis
+        : feed.operationalKpiSignals.signalCount || kpiIntelligence.kpiCount,
+      recentSummary: workspaceSignalsActive
+        ? formatOperationalWorkspaceKpiSignals({
+            summary: workspaceSummary,
+            criticalKpis: workspaceCriticalKpis,
+            warningKpis: workspaceWarningKpis,
+          })
+        : feed.operationalKpiSignals.primaryValue,
       activityTrend: trendFromCounts(
         kpiIntelligence.topPerformingKpis.length,
         kpiIntelligence.topDecliningKpis.length

@@ -3,6 +3,28 @@ import type { RelationshipFocusRole } from "./executiveRelationshipTypes";
 import { classifyExecutiveRelationship } from "./relationshipClassificationRuntime";
 import { logRelationshipFocus } from "./executiveRelationshipInstrumentation";
 
+function normalizeRelationshipEndpointId(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+/** Match selected object against scene ids and workspace metadata endpoint ids. */
+export function relationshipTouchesSelectedObject(
+  relationship: NexoraRelationship,
+  selectedObjectId: string
+): boolean {
+  const objectId = selectedObjectId.trim();
+  if (!objectId) return false;
+
+  const endpointIds = [
+    relationship.sourceId,
+    relationship.targetId,
+    relationship.metadata?.sourceObjectId,
+    relationship.metadata?.targetObjectId,
+  ];
+
+  return endpointIds.some((endpointId) => normalizeRelationshipEndpointId(endpointId) === objectId);
+}
+
 export function resolveRelationshipFocusRole(input: {
   relationship: NexoraRelationship;
   selectedObjectId?: string | null;
@@ -15,8 +37,7 @@ export function resolveRelationshipFocusRole(input: {
   if (!objectId && !isSelectedRelationship) return "connected_context";
 
   const touchesObject =
-    Boolean(objectId) &&
-    (relationship.sourceId === objectId || relationship.targetId === objectId);
+    Boolean(objectId) && relationshipTouchesSelectedObject(relationship, objectId);
 
   if (!touchesObject && !isSelectedRelationship) return "unrelated";
 

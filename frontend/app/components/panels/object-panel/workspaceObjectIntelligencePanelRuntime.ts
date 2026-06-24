@@ -1,4 +1,9 @@
 import { resolveObjectPanelIntegrationState } from "../../../lib/object-panel/objectPanelIntegrationRuntime.ts";
+import {
+  resolveObjectKpiSummaryState,
+  WORKSPACE_KPI_PANEL_TAGS,
+  type ObjectKpiSummaryState,
+} from "./kpiSummaryRuntime.ts";
 
 export const WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS = Object.freeze([
   "[DS35_OBJECT_INTELLIGENCE_PANEL]",
@@ -7,6 +12,7 @@ export const WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS = Object.freeze([
   "[OBJECT_PANEL_UPGRADED]",
   "[DS36_READY]",
   "[DS_3_5_COMPLETE]",
+  ...WORKSPACE_KPI_PANEL_TAGS,
 ] as const);
 
 export const NEXORA_OBJECT_INTELLIGENCE_PANEL_LOG_PREFIX =
@@ -34,6 +40,7 @@ export type WorkspaceObjectIntelligencePanelState = Readonly<{
   }>;
   reasons: readonly string[];
   hasAnyIntelligence: boolean;
+  kpiSummary: ObjectKpiSummaryState;
 }>;
 
 export type WorkspaceObjectIntelligencePanelStateInput = Readonly<{
@@ -79,10 +86,16 @@ export function resolveWorkspaceObjectIntelligencePanelState(
     confidence?.confidenceReason
   );
 
+  const resolvedObjectId = integration.resolvedObjectId || integration.objectId;
+  const kpiSummary = resolveObjectKpiSummaryState({
+    workspaceId: integration.workspaceId,
+    objectId: resolvedObjectId,
+  });
+
   return Object.freeze({
     workspaceId: integration.workspaceId,
-    objectId: integration.resolvedObjectId || integration.objectId,
-    objectName: intelligence?.objectName ?? input.objectName ?? integration.resolvedObjectId ?? integration.objectId,
+    objectId: resolvedObjectId,
+    objectName: intelligence?.objectName ?? input.objectName ?? resolvedObjectId ?? integration.objectId,
     objectType: intelligence?.objectType ?? input.objectType ?? "Object",
     impact: Object.freeze({
       score: formatScore(impact?.impactScore),
@@ -101,5 +114,6 @@ export function resolveWorkspaceObjectIntelligencePanelState(
     }),
     reasons,
     hasAnyIntelligence: Boolean(intelligence || impact || dependency || confidence),
+    kpiSummary,
   });
 }

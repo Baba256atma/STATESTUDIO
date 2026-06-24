@@ -15,6 +15,8 @@ import {
   WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS,
   resolveWorkspaceObjectIntelligencePanelState,
 } from "./workspaceObjectIntelligencePanelRuntime.ts";
+import { KpiSummarySection } from "./KpiSummarySection.tsx";
+import { NEXORA_KPI_PANEL_LOG_PREFIX } from "./kpiSummaryRuntime.ts";
 
 export {
   NEXORA_OBJECT_INTELLIGENCE_PANEL_LOG_PREFIX,
@@ -65,6 +67,15 @@ export function WorkspaceObjectIntelligencePanel(
       tags: WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS,
       phase: "DS-3:5",
     });
+    if (state.kpiSummary.visible) {
+      devDiagnosticLog("kpiPanel", NEXORA_KPI_PANEL_LOG_PREFIX, {
+        objectId: state.objectId,
+        bindingCount: state.kpiSummary.bindingCount,
+        healthProfileCount: state.kpiSummary.healthProfileCount,
+        tags: WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS,
+        phase: "DS-4:5",
+      });
+    }
   }, [state]);
 
   return (
@@ -120,6 +131,8 @@ export function WorkspaceObjectIntelligencePanel(
           </div>
         )}
       </div>
+
+      <KpiSummarySection summary={state.kpiSummary} />
     </section>
   );
 }

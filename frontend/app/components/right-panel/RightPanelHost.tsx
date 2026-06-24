@@ -21,6 +21,11 @@ import { ExecutiveSummarySurface } from "../dashboard/surfaces/ExecutiveSummaryS
 import type { DashboardContext } from "../../lib/ui/mainRightPanelContract";
 import type { NormalizedDashboardContext } from "../../lib/dashboard/dashboardContextTypes";
 import { ObjectPanelLazy } from "./ObjectPanelLazy";
+import {
+  logReadonlyObjectPanelHostRender,
+  resolveReadonlySelectedObjectId,
+  shouldRenderReadonlyObjectPanel,
+} from "./rightPanelHostReadonlyObjectPanelRuntime.ts";
 import { StrategicCommandPreview } from "../executive/StrategicCommandPreview";
 import { DecisionComparePanel } from "../executive/DecisionComparePanel";
 import { DecisionTimelinePanel } from "../executive/DecisionTimelinePanel";
@@ -2058,6 +2063,44 @@ function RightPanelHostInner(props: RightPanelHostProps) {
         <ExecutivePanelSkeletonBody />
       ) : (
         (() => {
+        const readonlySelectedObjectId = resolveReadonlySelectedObjectId({
+          contextId: props.rightPanelState.contextId ?? null,
+          activeExecutiveObjectId: props.activeExecutiveObjectId ?? null,
+          selectedObjectId: props.selectedObjectId ?? null,
+          focusedId: props.focusedId ?? null,
+        });
+        const renderReadonlyObjectPanel = shouldRenderReadonlyObjectPanel({
+          viewToRender,
+          rightPanelOpen: props.rightPanelState.isOpen === true,
+          contextId: props.rightPanelState.contextId ?? null,
+          activeExecutiveObjectId: props.activeExecutiveObjectId ?? null,
+          selectedObjectId: props.selectedObjectId ?? null,
+          focusedId: props.focusedId ?? null,
+        });
+        if (renderReadonlyObjectPanel && readonlySelectedObjectId) {
+          logReadonlyObjectPanelHostRender({
+            viewToRender,
+            objectId: readonlySelectedObjectId,
+          });
+          return (
+            <ObjectPanelLazy
+              view="object"
+              contextId={readonlySelectedObjectId}
+              selectedObjectId={props.selectedObjectId ?? readonlySelectedObjectId}
+              activeExecutiveObjectId={props.activeExecutiveObjectId ?? null}
+              focusedId={props.focusedId ?? null}
+              selectedObjectLabel={props.selectedObjectLabel ?? null}
+              executiveObjectPanelData={props.executiveObjectPanelData ?? null}
+              visibleSceneObjects={visibleSceneObjects}
+              hasVisibleSceneObjects={hasVisibleSceneObjects}
+              domainCatalogDomainId={props.domainCatalogDomainId}
+              sceneJson={props.sceneJson}
+              responseData={props.responseData}
+              riskPropagation={props.riskPropagation}
+              onAddDomainObject={props.onAddDomainObject ?? null}
+            />
+          );
+        }
         const blockedWhenNoRealData = new Set<RightPanelView>([
           "dashboard",
           "strategic_command",

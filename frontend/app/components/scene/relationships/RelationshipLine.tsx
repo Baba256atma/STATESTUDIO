@@ -7,7 +7,7 @@ import * as THREE from "three";
 
 import { resolveRuntimeConnectionEndpoints, type RuntimeObjectPositionContext, type RuntimeObjectPositionLookupCache } from "../sceneRenderUtils";
 import { logRelationshipRendered } from "../../../lib/relationships/relationshipInstrumentation";
-import type { RelationshipRenderPlan } from "../../../lib/relationships/executive/executiveRelationshipTypes";
+import type { RelationshipFocusRole, RelationshipRenderPlan } from "../../../lib/relationships/executive/executiveRelationshipTypes";
 import type { NexoraRelationship } from "../../../lib/relationships/relationshipTypes";
 import {
   resolveExecutiveRelationshipLineTokens,
@@ -23,6 +23,15 @@ import {
   resolveSafeExecutiveRelationshipGraphicsProfile,
   validateRelationshipForRender,
 } from "../../../lib/relationships/relationshipRendererRuntime";
+import {
+  clampRelationshipFlowBallCount,
+  interpolateLinePoint,
+  readRelationshipFlowStrength,
+  resolveFlowBallPhaseOffset,
+  resolveFlowBallProgress,
+  resolveRelationshipFlowBallConfig,
+  shouldShowRelationshipFlowBalls,
+} from "./relationshipFlowRuntime";
 
 export type RelationshipLineProps = {
   relationship: NexoraRelationship;
@@ -35,6 +44,7 @@ export type RelationshipLineProps = {
   billboardLabels?: boolean;
   selected?: boolean;
   emphasized?: boolean;
+  selectedObjectId?: string | null;
   onSelect?: (relationship: NexoraRelationship) => void;
   runtimeObjectPositionContext?: RuntimeObjectPositionContext;
   positionLookup?: RuntimeObjectPositionLookupCache | null;
@@ -56,6 +66,52 @@ function dependencyStrengthWidth(
   const rawStrength = relationship.metadata?.strength;
   const strength = typeof rawStrength === "number" ? rawStrength : 0.5;
   return baseWidth * lineWidthMultiplier * (0.82 + Math.min(1, Math.max(0, strength)) * 0.28);
+}
+
+const EXECUTIVE_OBJECT_FOCUS_STRONG_ROLES = new Set<RelationshipFocusRole>([
+  "direct_dependency",
+  "critical_influence",
+  "major_risk_route",
+]);
+
+type ExecutiveObjectFocusVisuals = {
+  lineWidth: number;
+  opacity: number;
+  glow: boolean;
+  disablePulse: boolean;
+  disableDirectionCue: boolean;
+};
+
+/** REL-UX-1 — executive network clarity when an object is selected. */
+export function resolveExecutiveObjectFocusVisuals(input: {
+  selectedObjectId?: string | null;
+  focusRole?: RelationshipFocusRole | null;
+  baseLineWidth: number;
+}): ExecutiveObjectFocusVisuals | null {
+  const objectFocusActive = Boolean(input.selectedObjectId?.trim());
+  if (!objectFocusActive || !input.focusRole) return null;
+
+  if (input.focusRole === "unrelated") {
+    return {
+      lineWidth: input.baseLineWidth * 0.8,
+      opacity: 0.25,
+      glow: false,
+      disablePulse: true,
+      disableDirectionCue: true,
+    };
+  }
+
+  if (EXECUTIVE_OBJECT_FOCUS_STRONG_ROLES.has(input.focusRole)) {
+    return {
+      lineWidth: input.baseLineWidth * 2.5,
+      opacity: 1,
+      glow: true,
+      disablePulse: true,
+      disableDirectionCue: true,
+    };
+  }
+
+  return null;
 }
 
 function readLineMaterial(
@@ -116,6 +172,55 @@ const PulsingExecutiveLine = React.memo(function PulsingExecutiveLine(props: {
       onClick={props.onClick}
       onPointerDown={props.onPointerDown}
     />
+  );
+});
+
+const FLOW_BALL_RADIUS = 0.035;
+
+const RelationshipFlowBalls = React.memo(function RelationshipFlowBalls(props: {
+  points: [number, number, number][];
+  ballCount: number;
+  speedMultiplier: number;
+  color: string;
+}): React.ReactElement | null {
+  const meshRefs = useRef<Array<THREE.Mesh | null>>([]);
+  const ballCount = clampRelationshipFlowBallCount(props.ballCount);
+  const [start, end] = props.points;
+
+  useFrame(({ clock }) => {
+    if (!start || !end) return;
+    for (let index = 0; index < ballCount; index += 1) {
+      const mesh = meshRefs.current[index];
+      if (!mesh) continue;
+      const phase = resolveFlowBallPhaseOffset(index, ballCount);
+      const progress = resolveFlowBallProgress(clock.elapsedTime, props.speedMultiplier, phase);
+      const [x, y, z] = interpolateLinePoint(start, end, progress);
+      mesh.position.set(x, y, z);
+    }
+  });
+
+  return (
+    <>
+      {Array.from({ length: ballCount }, (_, index) => (
+        <mesh
+          key={index}
+          ref={(node) => {
+            meshRefs.current[index] = node;
+          }}
+        >
+          <sphereGeometry args={[FLOW_BALL_RADIUS, 8, 8]} />
+          <meshStandardMaterial
+            color={props.color}
+            emissive={props.color}
+            emissiveIntensity={0.35}
+            metalness={0.2}
+            roughness={0.55}
+            transparent
+            opacity={0.9}
+          />
+        </mesh>
+      ))}
+    </>
   );
 });
 
@@ -229,6 +334,18 @@ export const RelationshipLine = React.memo(function RelationshipLine(
     validation.valid,
   ]);
 
+  const flowBallConfig = useMemo(() => {
+    if (
+      !shouldShowRelationshipFlowBalls({
+        selectedObjectId: props.selectedObjectId,
+        focusRole: props.renderPlan?.focusRole,
+      })
+    ) {
+      return null;
+    }
+    return resolveRelationshipFlowBallConfig(readRelationshipFlowStrength(props.relationship));
+  }, [props.renderPlan?.focusRole, props.relationship, props.selectedObjectId]);
+
   if (!validation.valid || !areRelationshipLinePointsValid(geometry.points)) {
     return null;
   }
@@ -239,20 +356,40 @@ export const RelationshipLine = React.memo(function RelationshipLine(
     props.relationship.type === "risk" ||
     props.relationship.type === "blocks";
   const profileOpacity = Math.min(0.96, tokens.opacity * lineOpacityMul);
-  const visualOpacity = props.selected
-    ? Math.min(0.98, profileOpacity + 0.14)
-    : props.emphasized
-      ? profileOpacity
-      : Math.max(0.12, profileOpacity * 0.86);
-  const lineWidth = dependencyStrengthWidth(
+  const baseLineWidth = dependencyStrengthWidth(
     props.relationship,
-    props.selected ? tokens.lineWidth + 0.45 : tokens.lineWidth,
+    tokens.lineWidth,
     props.renderPlan?.lineWidthMultiplier ?? 1
   );
-  const showGlow = props.renderPlan?.glow || props.selected || (isRiskLine && props.emphasized);
-  const pulseEnabled = relationshipGraphics.pulseEnabled === true;
-  const shouldPulse = pulseEnabled && (props.selected || props.emphasized || isRiskLine);
+  const objectFocusVisuals = resolveExecutiveObjectFocusVisuals({
+    selectedObjectId: props.selectedObjectId,
+    focusRole: props.renderPlan?.focusRole,
+    baseLineWidth,
+  });
+
+  const visualOpacity = objectFocusVisuals
+    ? objectFocusVisuals.opacity
+    : props.selected
+      ? Math.min(0.98, profileOpacity + 0.14)
+      : props.emphasized
+        ? profileOpacity
+        : Math.max(0.12, profileOpacity * 0.86);
+  const lineWidth = objectFocusVisuals
+    ? objectFocusVisuals.lineWidth
+    : dependencyStrengthWidth(
+        props.relationship,
+        props.selected ? tokens.lineWidth + 0.45 : tokens.lineWidth,
+        props.renderPlan?.lineWidthMultiplier ?? 1
+      );
+  const showGlow = objectFocusVisuals
+    ? objectFocusVisuals.glow
+    : props.renderPlan?.glow || props.selected || (isRiskLine && props.emphasized);
+  const pulseEnabled =
+    !objectFocusVisuals?.disablePulse && relationshipGraphics.pulseEnabled === true;
+  const shouldPulse =
+    pulseEnabled && !objectFocusVisuals && (props.selected || props.emphasized || isRiskLine);
   const showDirectionCue =
+    !objectFocusVisuals?.disableDirectionCue &&
     relationshipGraphics.directionCue === true &&
     props.relationship.direction !== "bi" &&
     geometry.arrow !== null;
@@ -343,6 +480,14 @@ export const RelationshipLine = React.memo(function RelationshipLine(
             opacity={props.selected ? 0.92 : visualOpacity * 0.88}
           />
         </mesh>
+      ) : null}
+      {flowBallConfig ? (
+        <RelationshipFlowBalls
+          points={geometry.points}
+          ballCount={flowBallConfig.ballCount}
+          speedMultiplier={flowBallConfig.speedMultiplier}
+          color={tokens.lineColor}
+        />
       ) : null}
       {props.showLabel !== false ? (
         <RelationshipLabel

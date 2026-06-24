@@ -1,5 +1,10 @@
 import { buildExecutiveSummaryIntelligenceFeed } from "../../intelligence-integration/ExecutiveSummaryIntelligenceFeed.ts";
 import type { ExecutiveSummaryIntelligenceFeedBuildInput } from "../../intelligence-integration/executiveSummaryIntelligenceFeedContract.ts";
+import {
+  formatDashboardKpiSummaryPrimary,
+  formatDashboardKpiSummarySecondary,
+  getDashboardKpiSummary,
+} from "../../kpi/kpiDashboardIntegrationRuntime.ts";
 import type {
   ExecutiveAttentionLevel,
   ExecutiveSummaryCard,
@@ -40,13 +45,48 @@ function replaceCard(
   return Object.freeze(cards.map((card) => (card.kind === kind ? next : card)));
 }
 
+function attentionForWorkspaceKpiSummary(input: {
+  criticalCount: number;
+  warningCount: number;
+}): ExecutiveAttentionLevel {
+  if (input.criticalCount > 0) return "attention_required";
+  if (input.warningCount > 0) return "monitor";
+  return "stable";
+}
+
+export function attachWorkspaceKpiDashboardSummary(
+  model: ExecutiveSummarySurfaceModel
+): ExecutiveSummarySurfaceModel {
+  const summary = getDashboardKpiSummary();
+  if (summary.totalKpis === 0) {
+    return model;
+  }
+
+  const cards = replaceCard(
+    model.cards,
+    "active_signals",
+    Object.freeze({
+      kind: "active_signals",
+      title: "KPI Intelligence",
+      primaryValue: formatDashboardKpiSummaryPrimary(summary),
+      secondaryValue: formatDashboardKpiSummarySecondary(summary),
+      attention: attentionForWorkspaceKpiSummary(summary),
+    })
+  );
+
+  return Object.freeze({
+    ...model,
+    cards,
+  });
+}
+
 export function attachExecutiveSummaryIntelligenceFeed(
   model: ExecutiveSummarySurfaceModel,
   input: ExecutiveSummaryIntelligenceFeedAttachInput = {}
 ): ExecutiveSummarySurfaceModel {
   const feed = buildExecutiveSummaryIntelligenceFeed(input);
   if (feed.feedStatus !== "bound") {
-    return model;
+    return attachWorkspaceKpiDashboardSummary(model);
   }
 
   const { objectIntelligence, riskIntelligence, kpiIntelligence, scenarioIntelligence } = feed.snapshot;
@@ -103,8 +143,10 @@ export function attachExecutiveSummaryIntelligenceFeed(
     })
   );
 
-  return Object.freeze({
-    ...model,
-    cards,
-  });
+  return attachWorkspaceKpiDashboardSummary(
+    Object.freeze({
+      ...model,
+      cards,
+    })
+  );
 }

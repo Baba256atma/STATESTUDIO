@@ -728,6 +728,7 @@ import {
   type SceneSelectionChangeOptions,
   type UserSelectionLock,
 } from "../lib/selection/selectionStateGuard";
+import { resolveRightPanelSelectedObjectId } from "../lib/selection/homeScreenRightPanelSelectedObject";
 import {
   isExplicitUserSelectionSource,
   logNexoraSelectionBootstrap,
@@ -9597,6 +9598,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     canonicalVisualSelection.selectedId && visibleFocusedId === canonicalVisualSelection.selectedId
       ? canonicalVisualSelection.selectedId
       : null;
+  const rightPanelSelectedObjectId = useMemo(
+    () =>
+      resolveRightPanelSelectedObjectId({
+        canonicalSelectedId: canonicalVisualSelection.selectedId,
+        selectedObjectIdState,
+      }),
+    [canonicalVisualSelection.selectedId, selectedObjectIdState]
+  );
+  const rightPanelSelectedObjectPropSignatureRef = useRef<string | null>(null);
+  useEffect(() => {
+    const signature = JSON.stringify({
+      canonicalSelectedId: canonicalVisualSelection.selectedId ?? null,
+      selectedObjectIdState: selectedObjectIdState ?? null,
+      rightPanelSelectedObjectId: rightPanelSelectedObjectId ?? null,
+    });
+    if (rightPanelSelectedObjectPropSignatureRef.current === signature) return;
+    rightPanelSelectedObjectPropSignatureRef.current = signature;
+    if (process.env.NODE_ENV !== "production") {
+      devLogThrottled({
+        key: `right-panel-selected-object-prop:${rightPanelSelectedObjectId ?? "null"}`,
+        label: "[Nexora][RightPanel][SelectedObjectProp]",
+        scope: "panel",
+        intervalMs: 1000,
+        payload: {
+          canonicalSelectedId: canonicalVisualSelection.selectedId ?? null,
+          selectedObjectIdState: selectedObjectIdState ?? null,
+          rightPanelSelectedObjectId: rightPanelSelectedObjectId ?? null,
+        },
+      });
+    }
+  }, [canonicalVisualSelection.selectedId, selectedObjectIdState, rightPanelSelectedObjectId]);
   const visibleConflicts = workspaceRuntimeIsolationMode ? [] : visibleUiState.conflicts;
   const visibleMemoryInsights = workspaceRuntimeIsolationMode ? null : visibleUiState.memoryInsights;
   const visibleRiskPropagation = workspaceRuntimeIsolationMode ? null : visibleUiState.riskPropagation;
@@ -20061,7 +20093,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       decisionCockpit={visibleDecisionCockpit ?? undefined}
       opponentModel={visibleOpponentModel ?? undefined}
       strategicPatterns={visibleStrategicPatterns ?? undefined}
-      selectedObjectId={canonicalVisualSelection.selectedId}
+      selectedObjectId={rightPanelSelectedObjectId}
       activeExecutiveObjectId={liveExecutiveObjectId}
       selectedObjectLabel={selectedObjectLabelForWarRoom}
       executiveObjectPanelData={executiveObjectPanelData}
