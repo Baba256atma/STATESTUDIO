@@ -20,6 +20,10 @@ import {
   getDashboardHighRisks,
   getDashboardRiskSummary,
 } from "../../risk/riskDashboardIntegrationRuntime.ts";
+import {
+  formatOperationalWorkspaceScenarioSignals,
+  getWorkspaceScenarioWorkspaceSummary,
+} from "../../scenario/scenarioWorkspaceIntegrationRuntime.ts";
 import type {
   OperationalHealthLevel,
   OperationalIntelligenceSurfaceModel,
@@ -75,8 +79,13 @@ function enrichSnapshot(
   const workspaceHighRisks = getDashboardHighRisks(riskSummary.workspaceId);
   const workspaceExposedObjects = getDashboardExposedObjects(riskSummary.workspaceId);
   const workspaceRiskSignalsActive = riskSummary.totalRisks > 0;
+  const scenarioSummary = getWorkspaceScenarioWorkspaceSummary(workspaceSummary.workspaceId);
+  const workspaceScenarioSignalsActive = scenarioSummary.totalScenarios > 0;
   const workspaceSignalsActive =
-    workspaceKpiSignalsActive || workspaceOkrSignalsActive || workspaceRiskSignalsActive;
+    workspaceKpiSignalsActive ||
+    workspaceOkrSignalsActive ||
+    workspaceRiskSignalsActive ||
+    workspaceScenarioSignalsActive;
 
   const recentSummaryParts = [
     workspaceKpiSignalsActive
@@ -101,6 +110,9 @@ function enrichSnapshot(
           exposedObjects: workspaceExposedObjects,
         })
       : null,
+    workspaceScenarioSignalsActive
+      ? formatOperationalWorkspaceScenarioSignals({ summary: scenarioSummary })
+      : null,
   ].filter(Boolean) as string[];
 
   return Object.freeze({
@@ -124,7 +136,10 @@ function enrichSnapshot(
     }),
     signals: Object.freeze({
       signalCount: workspaceSignalsActive
-        ? workspaceSummary.totalKpis + okrSummary.totalObjectives + riskSummary.totalRisks
+        ? workspaceSummary.totalKpis +
+          okrSummary.totalObjectives +
+          riskSummary.totalRisks +
+          scenarioSummary.totalScenarios
         : feed.operationalKpiSignals.signalCount || kpiIntelligence.kpiCount,
       recentSummary:
         recentSummaryParts.length > 0

@@ -15,6 +15,11 @@ import {
   formatDashboardRiskSummarySecondary,
   getDashboardRiskSummary,
 } from "../../risk/riskDashboardIntegrationRuntime.ts";
+import {
+  formatWorkspaceScenarioSummaryPrimary,
+  formatWorkspaceScenarioSummarySecondary,
+  getWorkspaceScenarioWorkspaceSummary,
+} from "../../scenario/scenarioWorkspaceIntegrationRuntime.ts";
 import type {
   ExecutiveAttentionLevel,
   ExecutiveSummaryCard,
@@ -80,6 +85,43 @@ function attentionForWorkspaceRiskSummary(input: {
   if (input.criticalCount > 0) return "attention_required";
   if (input.highCount > 0) return "monitor";
   return "stable";
+}
+
+function attentionForWorkspaceScenarioSummary(input: {
+  activeCount: number;
+  draftCount: number;
+  latestSimulationStatus: string | null;
+}): ExecutiveAttentionLevel {
+  if (input.activeCount === 0 && input.draftCount > 0) return "monitor";
+  if (input.latestSimulationStatus === "completed") return "stable";
+  if (input.activeCount > 0) return "stable";
+  return "unknown";
+}
+
+export function attachWorkspaceScenarioDashboardSummary(
+  model: ExecutiveSummarySurfaceModel
+): ExecutiveSummarySurfaceModel {
+  const summary = getWorkspaceScenarioWorkspaceSummary();
+  if (summary.totalScenarios === 0) {
+    return model;
+  }
+
+  const cards = replaceCard(
+    model.cards,
+    "executive_attention",
+    Object.freeze({
+      kind: "executive_attention",
+      title: "Scenario Intelligence",
+      primaryValue: formatWorkspaceScenarioSummaryPrimary(summary),
+      secondaryValue: formatWorkspaceScenarioSummarySecondary(summary),
+      attention: attentionForWorkspaceScenarioSummary(summary),
+    })
+  );
+
+  return Object.freeze({
+    ...model,
+    cards,
+  });
 }
 
 export function attachWorkspaceRiskDashboardSummary(
@@ -166,8 +208,10 @@ export function attachExecutiveSummaryIntelligenceFeed(
 ): ExecutiveSummarySurfaceModel {
   const feed = buildExecutiveSummaryIntelligenceFeed(input);
   if (feed.feedStatus !== "bound") {
-    return attachWorkspaceRiskDashboardSummary(
-      attachWorkspaceOkrDashboardSummary(attachWorkspaceKpiDashboardSummary(model))
+    return attachWorkspaceScenarioDashboardSummary(
+      attachWorkspaceRiskDashboardSummary(
+        attachWorkspaceOkrDashboardSummary(attachWorkspaceKpiDashboardSummary(model))
+      )
     );
   }
 
@@ -225,13 +269,15 @@ export function attachExecutiveSummaryIntelligenceFeed(
     })
   );
 
-  return attachWorkspaceRiskDashboardSummary(
-    attachWorkspaceOkrDashboardSummary(
-      attachWorkspaceKpiDashboardSummary(
-        Object.freeze({
-          ...model,
-          cards,
-        })
+  return attachWorkspaceScenarioDashboardSummary(
+    attachWorkspaceRiskDashboardSummary(
+      attachWorkspaceOkrDashboardSummary(
+        attachWorkspaceKpiDashboardSummary(
+          Object.freeze({
+            ...model,
+            cards,
+          })
+        )
       )
     )
   );

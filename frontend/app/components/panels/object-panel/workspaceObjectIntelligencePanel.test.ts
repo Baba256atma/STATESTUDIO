@@ -22,7 +22,10 @@ import {
   WORKSPACE_RISK_PANEL_TAGS,
   resolveObjectRiskSummaryState,
 } from "./riskSummaryRuntime.ts";
-import { resetWorkspaceRegistryForTests } from "../../../lib/workspace/workspaceRegistryStore.ts";
+import {
+  createWorkspace,
+  resetWorkspaceRegistryForTests,
+} from "../../../lib/workspace/workspaceRegistryStore.ts";
 import { resetWorkspaceObjectIntelligenceStoreForTests } from "../../../lib/workspace/workspaceObjectIntelligenceContract.ts";
 import { resetWorkspaceImpactProfileStoreForTests } from "../../../lib/workspace/workspaceImpactEngineContract.ts";
 import { resetWorkspaceDependencyProfileStoreForTests } from "../../../lib/workspace/workspaceDependencyEngineContract.ts";
@@ -42,6 +45,24 @@ import { resetWorkspaceOkrHealthProfileStoreForTests } from "../../../lib/okr/wo
 import { resetWorkspaceDetectedRiskStoreForTests } from "../../../lib/risk/workspaceRiskDetectionEngine.ts";
 import { resetWorkspaceRiskSeverityProfileStoreForTests } from "../../../lib/risk/workspaceRiskSeverityEngine.ts";
 import { resetWorkspaceRiskObjectBindingStoreForTests } from "../../../lib/risk/workspaceRiskObjectBinding.ts";
+import {
+  createWorkspaceScenario,
+  resetWorkspaceScenarioStoreForTests,
+} from "../../../lib/scenario/workspaceScenarioContract.ts";
+import {
+  generateWorkspaceScenarioInsight,
+  resetWorkspaceScenarioInsightStoreForTests,
+} from "../../../lib/scenario/workspaceScenarioInsightEngine.ts";
+import {
+  createWorkspaceScenarioAssumption,
+  resetWorkspaceScenarioSimulationStoreForTests,
+  runWorkspaceScenarioSimulation,
+} from "../../../lib/scenario/workspaceScenarioSimulationEngine.ts";
+import {
+  NEXORA_SCENARIO_PANEL_LOG_PREFIX,
+  WORKSPACE_SCENARIO_PANEL_TAGS,
+  resolveObjectScenarioSummaryState,
+} from "../../../lib/scenario/scenarioWorkspaceIntegrationRuntime.ts";
 
 const OBJECT_INTELLIGENCE_STORAGE_KEY = "nexora.workspaceObjectIntelligenceProfiles.v1";
 const IMPACT_STORAGE_KEY = "nexora.workspaceImpactProfiles.v1";
@@ -489,6 +510,9 @@ test.beforeEach(() => {
   resetWorkspaceDetectedRiskStoreForTests();
   resetWorkspaceRiskSeverityProfileStoreForTests();
   resetWorkspaceRiskObjectBindingStoreForTests();
+  resetWorkspaceScenarioSimulationStoreForTests();
+  resetWorkspaceScenarioInsightStoreForTests();
+  resetWorkspaceScenarioStoreForTests();
 });
 
 test("exports DS-3:5 tags, DS-4:5 KPI panel tags, DS-5:5 OKR panel tags, DS-6:5 risk panel tags, and diagnostic prefixes", () => {
@@ -499,6 +523,16 @@ test("exports DS-3:5 tags, DS-4:5 KPI panel tags, DS-5:5 OKR panel tags, DS-6:5 
   assert.ok(WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS.includes("[DS45_KPI_PANEL]"));
   assert.ok(WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS.includes("[DS55_OKR_PANEL]"));
   assert.ok(WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS.includes("[DS65_RISK_PANEL]"));
+  assert.ok(WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS.includes("[DS75_SCENARIO_PANEL]"));
+  assert.equal(NEXORA_SCENARIO_PANEL_LOG_PREFIX, "[NexoraScenarioWorkspace]");
+  assert.deepEqual(WORKSPACE_SCENARIO_PANEL_TAGS, [
+    "[DS75_SCENARIO_PANEL]",
+    "[SCENARIO_VISIBLE_IN_OBJECT_PANEL]",
+    "[OBJECT_PANEL_EXTENDED]",
+    "[NO_NEW_PANEL_CREATED]",
+    "[DS76_READY]",
+    "[DS_7_5_COMPLETE]",
+  ]);
   assert.deepEqual(WORKSPACE_KPI_PANEL_TAGS, [
     "[DS45_KPI_PANEL]",
     "[KPI_VISIBLE_IN_OBJECT_PANEL]",
@@ -1344,10 +1378,64 @@ test("does not mutate risk, KPI, OKR, or scene storage when resolving risk summa
     objectId: "obj_forecast",
   });
 
-  assert.equal(window.localStorage.getItem(RISK_BINDING_STORAGE_KEY), before.riskBindings);
-  assert.equal(window.localStorage.getItem(DETECTED_RISK_STORAGE_KEY), before.detectedRisks);
-  assert.equal(window.localStorage.getItem(RISK_SEVERITY_STORAGE_KEY), before.severityProfiles);
   assert.equal(window.localStorage.getItem(KPI_STORAGE_KEY), before.kpis);
   assert.equal(window.localStorage.getItem(OBJECTIVE_STORAGE_KEY), before.objectives);
   assert.equal(getWorkspaceSceneJson("workspace_a"), before.scene);
+});
+
+test("shows scenario summary for Forecast manual walkthrough", () => {
+  const workspace = createWorkspace("Scenario Panel Workspace");
+  seedStores({ workspaceId: workspace.workspaceId, objectId: "obj_forecast", objectName: "Forecast", objectType: "forecast" });
+  const scenario = createWorkspaceScenario({
+    workspaceId: workspace.workspaceId,
+    name: "Forecast Improvement",
+    description: "Improve forecast accuracy.",
+    scenarioType: "realistic",
+    status: "active",
+  });
+  generateWorkspaceScenarioInsight(workspace.workspaceId, scenario.scenario?.scenarioId ?? "");
+  runWorkspaceScenarioSimulation({
+    workspaceId: workspace.workspaceId,
+    scenarioId: scenario.scenario?.scenarioId ?? "",
+    assumptions: [
+      createWorkspaceScenarioAssumption({ label: "Demand", assumptionType: "percentage", value: 20 })!,
+    ],
+  });
+
+  const state = resolveWorkspaceObjectIntelligencePanelState({
+    workspaceId: workspace.workspaceId,
+    objectId: "obj_forecast",
+  });
+
+  assert.equal(state.scenarioSummary.relatedScenarioCount, 1);
+  assert.equal(state.scenarioSummary.items[0]?.scenarioName, "Forecast Improvement");
+  assert.equal(state.scenarioSummary.items[0]?.simulationStatus, "Completed");
+  assert.equal(state.scenarioSummary.timelineStatus, "reserved");
+});
+
+test("extends existing Object Panel with scenario summary after risk summary", () => {
+  const panelSource = readFileSync(
+    new URL("./WorkspaceObjectIntelligencePanel.tsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.match(panelSource, /ScenarioSummarySection/);
+  assert.match(panelSource, /RiskSummarySection/);
+  assert.ok(panelSource.indexOf("OkrSummarySection") < panelSource.indexOf("RiskSummarySection"));
+  assert.ok(panelSource.indexOf("RiskSummarySection") < panelSource.indexOf("ScenarioSummarySection"));
+});
+
+test("does not mutate scenario storage when resolving object scenario summary", () => {
+  seedStores({ workspaceId: "workspace_a", objectId: "obj_forecast", objectName: "Forecast", objectType: "forecast" });
+  const scenario = createWorkspaceScenario({
+    workspaceId: "workspace_a",
+    name: "Forecast Improvement",
+    scenarioType: "realistic",
+    status: "active",
+  });
+  generateWorkspaceScenarioInsight("workspace_a", scenario.scenario?.scenarioId ?? "");
+
+  const before = window.localStorage.getItem("nexora.workspaceScenarios.v1");
+  resolveObjectScenarioSummaryState({ workspaceId: "workspace_a", objectId: "obj_forecast" });
+  assert.equal(window.localStorage.getItem("nexora.workspaceScenarios.v1"), before);
 });

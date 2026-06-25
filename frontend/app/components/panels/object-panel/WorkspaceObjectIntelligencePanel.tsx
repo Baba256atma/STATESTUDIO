@@ -18,9 +18,11 @@ import {
 import { KpiSummarySection } from "./KpiSummarySection.tsx";
 import { OkrSummarySection } from "./OkrSummarySection.tsx";
 import { RiskSummarySection } from "./RiskSummarySection.tsx";
+import { ScenarioSummarySection } from "./ScenarioSummarySection.tsx";
 import { NEXORA_KPI_PANEL_LOG_PREFIX } from "./kpiSummaryRuntime.ts";
 import { NEXORA_OKR_PANEL_LOG_PREFIX } from "./okrSummaryRuntime.ts";
 import { NEXORA_RISK_PANEL_LOG_PREFIX } from "./riskSummaryRuntime.ts";
+import { NEXORA_SCENARIO_PANEL_LOG_PREFIX } from "../../../lib/scenario/scenarioWorkspaceIntegrationRuntime.ts";
 
 export {
   NEXORA_OBJECT_INTELLIGENCE_PANEL_LOG_PREFIX,
@@ -98,6 +100,14 @@ export function WorkspaceObjectIntelligencePanel(
         phase: "DS-6:5",
       });
     }
+    if (state.scenarioSummary.visible) {
+      devDiagnosticLog("scenarioPanel", NEXORA_SCENARIO_PANEL_LOG_PREFIX, {
+        objectId: state.objectId,
+        relatedScenarioCount: state.scenarioSummary.relatedScenarioCount,
+        tags: WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS,
+        phase: "DS-7:5",
+      });
+    }
   }, [state]);
 
   return (
@@ -157,6 +167,7 @@ export function WorkspaceObjectIntelligencePanel(
       <KpiSummarySection summary={state.kpiSummary} />
       <OkrSummarySection summary={state.okrSummary} />
       <RiskSummarySection summary={state.riskSummary} />
+      <ScenarioSummarySection summary={state.scenarioSummary} />
     </section>
   );
 }

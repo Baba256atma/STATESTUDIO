@@ -101,6 +101,7 @@ import {
   subscribeWorkspaceRelationships,
 } from "../lib/workspace/workspaceRelationshipDiscoveryContract";
 import { resolveWorkspaceRelationshipQuestion } from "../lib/workspace/workspaceRelationshipAssistantRuntime";
+import { resolveScenarioExecutiveAdvisorRouterResult } from "../lib/scenario/scenarioExecutiveAdvisorRuntime";
 import { DEMO_WORKSPACE_ID } from "../lib/workspace/workspaceRegistryContract";
 import {
   getEmptyWorkspaceSceneJson,
@@ -16156,11 +16157,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
   const routeChatInputWithWorkspaceRelationships = useCallback(
     (text: string, context: Parameters<typeof baseRouteChatInput>[1]) => {
+      const scenarioAnswer = resolveScenarioExecutiveAdvisorRouterResult({
+        text,
+        workspaceId: activeWorkspaceId,
+      });
+      if (scenarioAnswer) return scenarioAnswer;
       const workspaceAnswer = resolveWorkspaceRelationshipQuestion(text, workspaceDiscoveredRelationships);
       if (workspaceAnswer) return workspaceAnswer;
       return baseRouteChatInput(text, context);
     },
-    [workspaceDiscoveredRelationships]
+    [activeWorkspaceId, workspaceDiscoveredRelationships]
   );
 
   const chatPipelineSendTextDeps = useMemo(

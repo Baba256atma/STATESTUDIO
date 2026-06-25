@@ -14,6 +14,11 @@ import {
   WORKSPACE_RISK_PANEL_TAGS,
   type ObjectRiskSummaryState,
 } from "./riskSummaryRuntime.ts";
+import {
+  resolveObjectScenarioSummaryState,
+  WORKSPACE_SCENARIO_PANEL_TAGS,
+  type ObjectScenarioSummaryState,
+} from "../../../lib/scenario/scenarioWorkspaceIntegrationRuntime.ts";
 
 export const WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS = Object.freeze([
   "[DS35_OBJECT_INTELLIGENCE_PANEL]",
@@ -25,6 +30,7 @@ export const WORKSPACE_OBJECT_INTELLIGENCE_PANEL_TAGS = Object.freeze([
   ...WORKSPACE_KPI_PANEL_TAGS,
   ...WORKSPACE_OKR_PANEL_TAGS,
   ...WORKSPACE_RISK_PANEL_TAGS,
+  ...WORKSPACE_SCENARIO_PANEL_TAGS,
 ] as const);
 
 export const NEXORA_OBJECT_INTELLIGENCE_PANEL_LOG_PREFIX =
@@ -55,6 +61,7 @@ export type WorkspaceObjectIntelligencePanelState = Readonly<{
   kpiSummary: ObjectKpiSummaryState;
   okrSummary: ObjectOkrSummaryState;
   riskSummary: ObjectRiskSummaryState;
+  scenarioSummary: ObjectScenarioSummaryState;
 }>;
 
 export type WorkspaceObjectIntelligencePanelStateInput = Readonly<{
@@ -113,6 +120,10 @@ export function resolveWorkspaceObjectIntelligencePanelState(
     workspaceId: integration.workspaceId,
     objectId: resolvedObjectId,
   });
+  const scenarioSummary = resolveObjectScenarioSummaryState({
+    workspaceId: integration.workspaceId,
+    objectId: resolvedObjectId,
+  });
 
   return Object.freeze({
     workspaceId: integration.workspaceId,
@@ -139,5 +150,6 @@ export function resolveWorkspaceObjectIntelligencePanelState(
     kpiSummary,
     okrSummary,
     riskSummary,
+    scenarioSummary,
   });
 }

@@ -11,6 +11,7 @@ import {
   type AssistantIntelligenceCardModel,
   type AssistantIntelligenceCardsInput,
 } from "./assistantIntelligenceCardsContract.ts";
+import { getWorkspaceScenarioWorkspaceSummary } from "../scenario/scenarioWorkspaceIntegrationRuntime.ts";
 
 function clean(value: string | null | undefined): string | null {
   const trimmed = typeof value === "string" ? value.trim() : "";
@@ -57,7 +58,11 @@ export function buildAssistantIntelligenceCards(
   input: AssistantIntelligenceCardsInput
 ): readonly AssistantIntelligenceCardModel[] {
   const objectName = resolveObjectName(input);
-  const scenarioName = resolveScenarioName(input);
+  const workspaceScenarioSummary = clean(input.activeWorkspaceId)
+    ? getWorkspaceScenarioWorkspaceSummary(input.activeWorkspaceId)
+    : null;
+  const scenarioName =
+    resolveScenarioName(input) ?? workspaceScenarioSummary?.activeScenarioName ?? null;
   const workspaceLabel = resolveWorkspaceLabel(input);
   const hasObject = Boolean(objectName);
   const hasRisk =
@@ -80,10 +85,14 @@ export function buildAssistantIntelligenceCards(
     ? `Analyze ${objectName} before committing the next action.`
     : "Start with the highest-impact workspace thread.";
   const scenarioSummary = scenarioName
-    ? `${scenarioName} is ready for comparison.`
+    ? workspaceScenarioSummary?.latestInsightSummary
+      ? `${scenarioName}: ${truncate(workspaceScenarioSummary.latestInsightSummary, 72)}`
+      : `${scenarioName} is ready for comparison.`
     : input.hasScenarioConflict
       ? "Scenario conflict is visible and ready to compare."
-      : "Scenario simulation is available when a path is selected.";
+      : workspaceScenarioSummary && workspaceScenarioSummary.totalScenarios > 0
+        ? `${workspaceScenarioSummary.totalScenarios} workspace scenario(s) available.`
+        : "Scenario simulation is available when a path is selected.";
 
   const cards: AssistantIntelligenceCardModel[] = [
     withPrompt(
@@ -154,7 +163,7 @@ export function buildAssistantIntelligenceCards(
         icon: "S",
         summary: truncate(scenarioSummary, 82),
         detail: scenarioName
-          ? "Use compare or simulate to test the active scenario against the current decision."
+          ? "Ask the Assistant to explain insight, simulation, comparison, or tradeoffs from existing scenario intelligence."
           : "Scenario readiness improves once an object or authored scenario is selected.",
         badge: scenarioName || input.hasScenarioConflict ? "Ready" : "Standby",
         badgeTone: scenarioName || input.hasScenarioConflict ? "warning" : "neutral",
@@ -165,7 +174,7 @@ export function buildAssistantIntelligenceCards(
           : DEFAULT_ASSISTANT_INTELLIGENCE_ACTIONS.openDashboard,
       }),
       scenarioName
-        ? `Compare and simulate ${scenarioName} against the current executive context.`
+        ? `Explain ${scenarioName} using existing scenario intelligence.`
         : "Open the scenario workspace and identify the most useful simulation path."
     ),
   ];
