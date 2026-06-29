@@ -1,0 +1,148 @@
+/**
+ * APP-3:10 — Executive Intent confidence canonical examples.
+ */
+
+export type IntentConfidenceCanonicalExample = Readonly<{
+  exampleId: string;
+  label: string;
+  text: string | null;
+  evolutionExampleId: string | null;
+  conflictExampleId: string | null;
+  dependencyExampleId: string | null;
+  expectedLevel: string;
+  expectedMinimumScore: number;
+  expectedMaximumScore: number;
+  readOnly: true;
+}>;
+
+export const INTENT_CONFIDENCE_CANONICAL_EXAMPLES: readonly IntentConfidenceCanonicalExample[] =
+  Object.freeze([
+    Object.freeze({
+      exampleId: "high-confidence-intent",
+      label: "High-confidence intent",
+      text: "Increase company profit by 20% next year.",
+      evolutionExampleId: null,
+      conflictExampleId: null,
+      dependencyExampleId: null,
+      expectedLevel: "high",
+      expectedMinimumScore: 70,
+      expectedMaximumScore: 100,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "incomplete-extraction",
+      label: "Incomplete extraction",
+      text: "Increase by 20%",
+      evolutionExampleId: null,
+      conflictExampleId: null,
+      dependencyExampleId: null,
+      expectedLevel: "low",
+      expectedMinimumScore: 0,
+      expectedMaximumScore: 60,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "missing-target",
+      label: "Missing target",
+      text: "Improve operational efficiency across the organization.",
+      evolutionExampleId: null,
+      conflictExampleId: null,
+      dependencyExampleId: null,
+      expectedLevel: "medium",
+      expectedMinimumScore: 40,
+      expectedMaximumScore: 85,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "multiple-unresolved-conflicts",
+      label: "Multiple unresolved conflicts",
+      text: "Increase company profit by 20% next year.",
+      evolutionExampleId: null,
+      conflictExampleId: "increase-vs-decrease-metric",
+      dependencyExampleId: null,
+      expectedLevel: "medium",
+      expectedMinimumScore: 35,
+      expectedMaximumScore: 90,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "stable-long-lived-strategy",
+      label: "Stable long-lived strategy",
+      text: "Increase company profit by 20% next year.",
+      evolutionExampleId: "version-chain",
+      conflictExampleId: null,
+      dependencyExampleId: null,
+      expectedLevel: "high",
+      expectedMinimumScore: 65,
+      expectedMaximumScore: 100,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "rapidly-changing-strategy",
+      label: "Rapidly changing strategy",
+      text: "Increase company profit by 20% next year.",
+      evolutionExampleId: "parallel-branches",
+      conflictExampleId: null,
+      dependencyExampleId: null,
+      expectedLevel: "medium",
+      expectedMinimumScore: 50,
+      expectedMaximumScore: 95,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "complex-dependency-graph",
+      label: "Complex dependency graph",
+      text: "Launch the new product in Q3.",
+      evolutionExampleId: null,
+      conflictExampleId: null,
+      dependencyExampleId: "launch-depends-prototype",
+      expectedLevel: "medium",
+      expectedMinimumScore: 45,
+      expectedMaximumScore: 95,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "simple-objective",
+      label: "Simple objective",
+      text: "Reduce operating cost by 8% next year.",
+      evolutionExampleId: null,
+      conflictExampleId: null,
+      dependencyExampleId: null,
+      expectedLevel: "high",
+      expectedMinimumScore: 65,
+      expectedMaximumScore: 100,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "unknown-information",
+      label: "Unknown information",
+      text: "Increase by 20%",
+      evolutionExampleId: null,
+      conflictExampleId: null,
+      dependencyExampleId: null,
+      expectedLevel: "low",
+      expectedMinimumScore: 0,
+      expectedMaximumScore: 55,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "low-confidence-objective",
+      label: "Low-confidence objective",
+      text: "Do better soon.",
+      evolutionExampleId: null,
+      conflictExampleId: null,
+      dependencyExampleId: null,
+      expectedLevel: "very_low",
+      expectedMinimumScore: 0,
+      expectedMaximumScore: 55,
+      readOnly: true as const,
+    }),
+  ]);
+
+export function getIntentConfidenceCanonicalExample(
+  exampleId: string
+): IntentConfidenceCanonicalExample | null {
+  return (
+    INTENT_CONFIDENCE_CANONICAL_EXAMPLES.find((entry) => entry.exampleId === exampleId) ?? null
+  );
+}

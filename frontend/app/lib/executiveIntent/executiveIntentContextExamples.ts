@@ -1,0 +1,129 @@
+/**
+ * APP-3.3.1 — Executive Intent context canonical examples.
+ * Reference context scenarios — deterministic only.
+ */
+
+export type IntentContextCanonicalExample = Readonly<{
+  exampleId: string;
+  label: string;
+  customText: string | null;
+  semanticExampleId: string | null;
+  languageCode: string;
+  expectedScope: string;
+  expectedBusinessDomain: string;
+  expectedMinimal: boolean;
+  expectedUnknown: boolean;
+  readOnly: true;
+}>;
+
+export const INTENT_CONTEXT_CANONICAL_EXAMPLES: readonly IntentContextCanonicalExample[] =
+  Object.freeze([
+    Object.freeze({
+      exampleId: "single-workspace",
+      label: "Single workspace",
+      customText: "Increase company profit by 20% next year.",
+      semanticExampleId: "increase-profit",
+      languageCode: "en",
+      expectedScope: "unknown",
+      expectedBusinessDomain: "financial",
+      expectedMinimal: false,
+      expectedUnknown: false,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "multi-object-context",
+      label: "Multi-object context",
+      customText:
+        "Increase revenue by 15% and reduce operating cost by 8% across sales and operations.",
+      semanticExampleId: "multiple-goals",
+      languageCode: "en",
+      expectedScope: "cross_department",
+      expectedBusinessDomain: "financial",
+      expectedMinimal: false,
+      expectedUnknown: false,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "business-objective",
+      label: "Business objective",
+      customText: "Expand into the European market next year.",
+      semanticExampleId: "expand-new-market",
+      languageCode: "en",
+      expectedScope: "unknown",
+      expectedBusinessDomain: "strategy",
+      expectedMinimal: false,
+      expectedUnknown: false,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "financial-objective",
+      label: "Financial objective",
+      customText: "Increase company profit by 20% next year.",
+      semanticExampleId: "increase-profit",
+      languageCode: "en",
+      expectedScope: "unknown",
+      expectedBusinessDomain: "financial",
+      expectedMinimal: false,
+      expectedUnknown: false,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "technology-initiative",
+      label: "Technology initiative",
+      customText: "Modernize core technology infrastructure by Q4.",
+      semanticExampleId: "modernize-technology",
+      languageCode: "en",
+      expectedScope: "unknown",
+      expectedBusinessDomain: "technology",
+      expectedMinimal: false,
+      expectedUnknown: false,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "cross-department-objective",
+      label: "Cross-department objective",
+      customText: null,
+      semanticExampleId: "multiple-goals",
+      languageCode: "en",
+      expectedScope: "cross_department",
+      expectedBusinessDomain: "financial",
+      expectedMinimal: false,
+      expectedUnknown: false,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "minimal-context",
+      label: "Minimal context",
+      customText: "Improve performance.",
+      semanticExampleId: "incomplete-objective",
+      languageCode: "en",
+      expectedScope: "unknown",
+      expectedBusinessDomain: "custom",
+      expectedMinimal: true,
+      expectedUnknown: false,
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "unknown-context",
+      label: "Unknown context",
+      customText: null,
+      semanticExampleId: null,
+      languageCode: "en",
+      expectedScope: "unknown",
+      expectedBusinessDomain: "unknown",
+      expectedMinimal: true,
+      expectedUnknown: true,
+      readOnly: true as const,
+    }),
+  ]);
+
+export function getIntentContextCanonicalExample(
+  exampleId: string
+): IntentContextCanonicalExample | null {
+  return INTENT_CONTEXT_CANONICAL_EXAMPLES.find((entry) => entry.exampleId === exampleId) ?? null;
+}
+
+export const ExecutiveIntentContextExamples = Object.freeze({
+  canonical: INTENT_CONTEXT_CANONICAL_EXAMPLES,
+  getIntentContextCanonicalExample,
+});

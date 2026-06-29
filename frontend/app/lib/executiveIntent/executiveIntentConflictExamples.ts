@@ -1,0 +1,140 @@
+/**
+ * APP-3:7 — Executive Intent conflict canonical examples.
+ */
+
+export type IntentConflictCanonicalExample = Readonly<{
+  exampleId: string;
+  label: string;
+  leftText: string;
+  rightText: string;
+  languageCode: string;
+  expectedConflict: boolean;
+  expectedCategories: readonly string[];
+  expectedMinimumSeverity: string;
+  readOnly: true;
+}>;
+
+export const INTENT_CONFLICT_CANONICAL_EXAMPLES: readonly IntentConflictCanonicalExample[] =
+  Object.freeze([
+    Object.freeze({
+      exampleId: "duplicate-objectives",
+      label: "Duplicate objectives",
+      leftText: "Increase company profit by 20% next year.",
+      rightText: "Increase company profit by 20% next year.",
+      languageCode: "en",
+      expectedConflict: true,
+      expectedCategories: Object.freeze(["duplicate"]),
+      expectedMinimumSeverity: "high",
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "increase-vs-decrease-metric",
+      label: "Increase vs decrease same metric",
+      leftText: "Increase company profit by 20% next year.",
+      rightText: "Reduce company profit by 10% next year.",
+      languageCode: "en",
+      expectedConflict: true,
+      expectedCategories: Object.freeze(["target"]),
+      expectedMinimumSeverity: "high",
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "shared-budget-conflict",
+      label: "Shared budget conflict",
+      leftText: "Expand market share by 15% this year.",
+      rightText: "Reduce operating cost by 8% next year.",
+      languageCode: "en",
+      expectedConflict: true,
+      expectedCategories: Object.freeze(["strategic", "financial"]),
+      expectedMinimumSeverity: "low",
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "same-team-schedule",
+      label: "Same team, incompatible schedules",
+      leftText: "Hire 50 engineers for the project by Q3.",
+      rightText: "Reduce operating cost by 8% next year without increasing headcount.",
+      languageCode: "en",
+      expectedConflict: true,
+      expectedCategories: Object.freeze(["constraint", "resource"]),
+      expectedMinimumSeverity: "medium",
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "conflicting-compliance",
+      label: "Conflicting compliance objectives",
+      leftText: "Ensure compliance with GDPR regulation by 2026.",
+      rightText: "Ensure compliance with SOX regulation by 2026.",
+      languageCode: "en",
+      expectedConflict: false,
+      expectedCategories: Object.freeze([]),
+      expectedMinimumSeverity: "none",
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "technology-replacement",
+      label: "Technology replacement conflict",
+      leftText: "Modernize cloud platform technology across the enterprise.",
+      rightText: "Upgrade legacy platform technology across the enterprise.",
+      languageCode: "en",
+      expectedConflict: true,
+      expectedCategories: Object.freeze(["technology", "target"]),
+      expectedMinimumSeverity: "medium",
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "growth-vs-cost-reduction",
+      label: "Growth vs cost reduction",
+      leftText: "Expand market share by 15% this year.",
+      rightText: "Reduce operating cost by 8% next year.",
+      languageCode: "en",
+      expectedConflict: true,
+      expectedCategories: Object.freeze(["strategic"]),
+      expectedMinimumSeverity: "high",
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "multiple-compatible",
+      label: "Multiple compatible intents",
+      leftText: "Improve operational efficiency by 10% in the department.",
+      rightText: "Mitigate supply chain risk exposure without increasing cost.",
+      languageCode: "en",
+      expectedConflict: false,
+      expectedCategories: Object.freeze([]),
+      expectedMinimumSeverity: "none",
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "no-conflict",
+      label: "No conflict",
+      leftText: "Increase company profit by 20% next year.",
+      rightText: "Improve operational efficiency by 10% in the department.",
+      languageCode: "en",
+      expectedConflict: false,
+      expectedCategories: Object.freeze([]),
+      expectedMinimumSeverity: "none",
+      readOnly: true as const,
+    }),
+    Object.freeze({
+      exampleId: "unknown-comparison",
+      label: "Unknown comparison",
+      leftText: "Increase by 20%",
+      rightText: "Improve operational efficiency by 10% in the department.",
+      languageCode: "en",
+      expectedConflict: true,
+      expectedCategories: Object.freeze(["unknown"]),
+      expectedMinimumSeverity: "unknown",
+      readOnly: true as const,
+    }),
+  ]);
+
+export function getIntentConflictCanonicalExample(
+  exampleId: string
+): IntentConflictCanonicalExample | null {
+  return INTENT_CONFLICT_CANONICAL_EXAMPLES.find((entry) => entry.exampleId === exampleId) ?? null;
+}
+
+export const ExecutiveIntentConflictExamples = Object.freeze({
+  canonical: INTENT_CONFLICT_CANONICAL_EXAMPLES,
+  getIntentConflictCanonicalExample,
+});
