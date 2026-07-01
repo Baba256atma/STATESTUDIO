@@ -391,7 +391,7 @@ export function adaptSceneRelationshipToNexoraRelationship(
   });
 }
 
-export function adaptSceneRelationshipsToNexoraRelationships(input: {
+export function adaptSceneRelationshipsToNexoraRelationships                      (input: {
   relationships: readonly WorkspaceSceneRelationshipRecord[];
   objectIdToSceneId?: ReadonlyMap<string, string>;
 }): readonly NexoraRelationship[] {
