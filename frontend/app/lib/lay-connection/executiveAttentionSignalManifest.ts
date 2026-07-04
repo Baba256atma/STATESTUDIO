@@ -1,0 +1,41 @@
+import { EXECUTIVE_ATTENTION_SIGNAL_PLATFORM_VERSION } from "./executiveAttentionSignalContracts.ts";
+import { getExecutiveAttentionSignalRegistry } from "./executiveAttentionSignalRegistry.ts";
+import type { ExecutiveAttentionSignalManifest } from "./executiveAttentionSignalTypes.ts";
+
+function fingerprint(parts: readonly string[]): string {
+  const source = parts.join("|");
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `lay-conn-6-${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+export function buildExecutiveAttentionSignalManifest(): ExecutiveAttentionSignalManifest {
+  const registry = getExecutiveAttentionSignalRegistry();
+  const deterministicFingerprint = fingerprint([
+    registry.platformId,
+    ...registry.categories,
+    ...registry.signalTypes,
+    ...registry.providers.map((provider) => `${provider.providerId}:${provider.certified}:${provider.futureCompatible}`).sort(),
+    ...registry.consumers.map((consumer) => consumer.consumerId).sort(),
+    ...registry.dependencies.map((dependency) => `${dependency.dependencyId}:${dependency.required}:${dependency.mode}`).sort(),
+    ...registry.compatibilityMatrix.map((entry) => `${entry.platformId}:${entry.compatible}:${entry.required}:${entry.mode}`).sort(),
+    ...registry.publicApis,
+  ]);
+
+  return Object.freeze({
+    platformId: registry.platformId,
+    platformVersion: EXECUTIVE_ATTENTION_SIGNAL_PLATFORM_VERSION,
+    supportedSignalCategories: registry.categories,
+    supportedSignalTypes: registry.signalTypes,
+    registeredProviders: registry.providers,
+    registeredConsumers: registry.consumers,
+    dependencies: registry.dependencies,
+    compatibility: registry.compatibilityMatrix,
+    extensionPolicy: registry.extensionPolicy,
+    releaseMetadata: registry.versionMetadata,
+    deterministicFingerprint,
+  });
+}
