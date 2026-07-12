@@ -1,0 +1,30 @@
+export {
+  ExecutiveAutomationRegistry,
+  getAutomationActionRegistry,
+  getAutomationConditionRegistry,
+  getAutomationEventRegistry,
+  getAutomationLifecycleRegistry,
+  getAutomationPolicyRegistry,
+  getAutomationRuleRegistry,
+  getAutomationTriggerRegistry,
+  getExecutiveAutomationRegistry,
+} from "./automationPlatformRegistry.ts";
+
+export type {
+  AutomationActionCategory,
+  AutomationActionDescriptor,
+  AutomationConditionCategory,
+  AutomationConditionDescriptor,
+  AutomationEventCategory,
+  AutomationEventDescriptor,
+  AutomationLifecycleDescriptor,
+  AutomationLifecycleStage,
+  AutomationPlatformRegistryDescriptor,
+  AutomationPolicyCategory,
+  AutomationPolicyDescriptor,
+  AutomationRegistrySummary,
+  AutomationRuleCategory,
+  AutomationRuleDescriptor,
+  AutomationTriggerCategory,
+  AutomationTriggerDescriptor,
+} from "./automationRegistryTypes.ts";

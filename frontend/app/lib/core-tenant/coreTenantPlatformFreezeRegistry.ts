@@ -1,0 +1,51 @@
+export const CORE_TENANT_PLATFORM_PHASE_REGISTRY = Object.freeze([
+  "CORE-TEN-1",
+  "CORE-TEN-2",
+  "CORE-TEN-3",
+  "CORE-TEN-4",
+  "CORE-TEN-5",
+  "CORE-TEN-6",
+  "CORE-TEN-7",
+  "CORE-TEN-8",
+] as const);
+
+export const CORE_TENANT_PLATFORM_DEPENDENCY_REGISTRY = Object.freeze([
+  "CORE-TEN-1",
+  "CORE-TEN-2",
+  "CORE-TEN-3",
+  "CORE-TEN-4",
+  "CORE-TEN-5",
+  "CORE-TEN-6",
+  "CORE-TEN-7",
+] as const);
+
+export const CORE_TENANT_PLATFORM_PUBLIC_API_REGISTRY = Object.freeze([
+  "CoreTenantIdentity",
+  "buildCoreTenantIdentityManifest",
+  "validateCoreTenantIdentity",
+  "ExecutiveTenantRegistry",
+  "buildExecutiveTenantRegistryManifest",
+  "validateExecutiveTenantRegistry",
+  "ExecutiveTenantContext",
+  "buildExecutiveTenantContextManifest",
+  "validateExecutiveTenantContext",
+  "ExecutiveTenantIsolation",
+  "buildExecutiveTenantIsolationManifest",
+  "validateExecutiveTenantIsolation",
+  "ExecutiveTenantResolver",
+  "buildExecutiveTenantResolverManifest",
+  "validateExecutiveTenantResolver",
+  "ExecutiveTenantValidationPlatform",
+  "buildExecutiveTenantValidationManifest",
+  "runExecutiveTenantPlatformValidation",
+  "ExecutiveTenantPlatformCertification",
+  "buildExecutiveTenantPlatformCertificationManifest",
+  "runExecutiveTenantPlatformCertification",
+  "ExecutiveTenantPlatformFreeze",
+  "buildExecutiveTenantPlatformFreezeManifest",
+  "runExecutiveTenantPlatformFreeze",
+  "getExecutiveTenantPlatformState",
+  "getExecutiveTenantCompatibilityMatrix",
+  "getExecutiveTenantExtensionPolicy",
+] as const);
+

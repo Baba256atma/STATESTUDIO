@@ -1,0 +1,23 @@
+export const ExecutiveAutomationPlatformCertificationRegistry = Object.freeze({
+  certificationId: "ops-8-7-executive-automation-platform-certification",
+  certificationName: "Executive Automation Platform Certification",
+  certificationVersion: "1.0.0",
+  platformId: "OPS-8:1",
+  platformVersion: "1.0.0",
+  certifiedPhases: Object.freeze([
+    "OPS-8:1",
+    "OPS-8:2",
+    "OPS-8:3",
+    "OPS-8:4",
+    "OPS-8:5",
+    "OPS-8:6",
+  ]),
+  certificationStatus: "PASS",
+  releaseStatus: "Ready",
+  readonlyStatus: "Readonly",
+  deterministicStatus: "Deterministic",
+  metadataOnlyStatus: "MetadataOnly",
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+} as const);

@@ -1,0 +1,8 @@
+import type { ExecutiveDependencyMap } from "./executiveIntentResolutionManifestTypes.ts";
+
+export const ExecutiveIntentResolutionDependencyMap = Object.freeze([
+  Object.freeze({ id: "eng-3-dependency-registry-foundation", source: "ENG-3:2", target: "ENG-3:1", direction: "ForwardOnly", consumption: "PublicIndexOnly", reverseDependency: false, circularDependency: false, internalImplementationDependency: false, publicIndexReference: "executiveIntentResolutionIndex.ts", metadataOnly: true, immutable: true } as const),
+  Object.freeze({ id: "eng-3-dependency-model-registry", source: "ENG-3:3", target: "ENG-3:2", direction: "ForwardOnly", consumption: "PublicIndexOnly", reverseDependency: false, circularDependency: false, internalImplementationDependency: false, publicIndexReference: "executiveIntentResolutionRegistryIndex.ts", metadataOnly: true, immutable: true } as const),
+  Object.freeze({ id: "eng-3-dependency-validation-model", source: "ENG-3:4", target: "ENG-3:3", direction: "ForwardOnly", consumption: "PublicIndexOnly", reverseDependency: false, circularDependency: false, internalImplementationDependency: false, publicIndexReference: "executiveIntentResolutionModelIndex.ts", metadataOnly: true, immutable: true } as const),
+  Object.freeze({ id: "eng-3-dependency-manifest-validation", source: "ENG-3:5", target: "ENG-3:4", direction: "ForwardOnly", consumption: "PublicIndexOnly", reverseDependency: false, circularDependency: false, internalImplementationDependency: false, publicIndexReference: "executiveIntentResolutionValidationIndex.ts", metadataOnly: true, immutable: true } as const),
+] as const) satisfies ExecutiveDependencyMap;

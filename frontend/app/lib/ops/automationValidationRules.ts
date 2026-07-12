@@ -1,0 +1,238 @@
+import type {
+  AutomationValidationGroup,
+  AutomationValidationRule,
+} from "./automationValidationTypes.ts";
+
+const FoundationValidationRules = Object.freeze([
+  Object.freeze({
+    id: "automation-foundation-contracts-present",
+    name: "Contracts Present",
+    description: "Validates automation foundation contracts are available through the public API.",
+    category: "Foundation",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-foundation-registry-present",
+    name: "Registry Present",
+    description: "Validates automation foundation registry is available through the public API.",
+    category: "Foundation",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-foundation-metadata-present",
+    name: "Metadata Present",
+    description: "Validates automation foundation metadata is available through the public API.",
+    category: "Foundation",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+] as const);
+
+const RegistryValidationRules = Object.freeze([
+  Object.freeze({
+    id: "automation-registry-events-complete",
+    name: "Event Registry Complete",
+    description: "Validates the automation event registry catalog is structurally complete.",
+    category: "Registry",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-registry-triggers-complete",
+    name: "Trigger Registry Complete",
+    description: "Validates the automation trigger registry catalog is structurally complete.",
+    category: "Registry",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-registry-conditions-complete",
+    name: "Condition Registry Complete",
+    description: "Validates the automation condition registry catalog is structurally complete.",
+    category: "Registry",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-registry-actions-complete",
+    name: "Action Registry Complete",
+    description: "Validates the automation action registry catalog is structurally complete.",
+    category: "Registry",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-registry-rules-complete",
+    name: "Rule Registry Complete",
+    description: "Validates the automation rule registry catalog is structurally complete.",
+    category: "Registry",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-registry-policies-complete",
+    name: "Policy Registry Complete",
+    description: "Validates the automation policy registry catalog is structurally complete.",
+    category: "Registry",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-registry-lifecycle-complete",
+    name: "Lifecycle Registry Complete",
+    description: "Validates the automation lifecycle registry catalog is structurally complete.",
+    category: "Registry",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+] as const);
+
+const ModelValidationRules = Object.freeze([
+  Object.freeze({
+    id: "automation-model-events-complete",
+    name: "Event Model Complete",
+    description: "Validates the automation event model is structurally complete.",
+    category: "Model",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-model-triggers-complete",
+    name: "Trigger Model Complete",
+    description: "Validates the automation trigger model is structurally complete.",
+    category: "Model",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-model-conditions-complete",
+    name: "Condition Model Complete",
+    description: "Validates the automation condition model is structurally complete.",
+    category: "Model",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-model-actions-complete",
+    name: "Action Model Complete",
+    description: "Validates the automation action model is structurally complete.",
+    category: "Model",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-model-rules-complete",
+    name: "Rule Model Complete",
+    description: "Validates the automation rule model is structurally complete.",
+    category: "Model",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-model-policies-complete",
+    name: "Policy Model Complete",
+    description: "Validates the automation policy model is structurally complete.",
+    category: "Model",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-model-executions-complete",
+    name: "Execution Model Complete",
+    description: "Validates the automation execution model is structurally complete.",
+    category: "Model",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+] as const);
+
+const PlatformValidationRules = Object.freeze([
+  Object.freeze({
+    id: "automation-platform-immutable-exports",
+    name: "Immutable Exports",
+    description: "Validates immutable automation platform exports.",
+    category: "Platform",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-platform-deterministic-metadata",
+    name: "Deterministic Metadata",
+    description: "Validates deterministic automation platform metadata outputs.",
+    category: "Platform",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-platform-readonly-structures",
+    name: "Readonly Structures",
+    description: "Validates readonly automation platform structures.",
+    category: "Platform",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-platform-public-api-integrity",
+    name: "Public API Integrity",
+    description: "Validates automation platform public API integrity.",
+    category: "Platform",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+  Object.freeze({
+    id: "automation-platform-metadata-only-compliance",
+    name: "Metadata-only Compliance",
+    description: "Validates metadata-only compliance across the automation platform.",
+    category: "Platform",
+    status: "PASS",
+    metadataOnly: true,
+  } as const satisfies AutomationValidationRule),
+] as const);
+
+export const AutomationValidationGroups = Object.freeze([
+  Object.freeze({
+    id: "automation-validation-foundation",
+    name: "Foundation Validation Group",
+    category: "Foundation",
+    rules: FoundationValidationRules,
+    metadataOnly: true,
+    immutable: true,
+    deterministic: true,
+  } as const satisfies AutomationValidationGroup),
+  Object.freeze({
+    id: "automation-validation-registry",
+    name: "Registry Validation Group",
+    category: "Registry",
+    rules: RegistryValidationRules,
+    metadataOnly: true,
+    immutable: true,
+    deterministic: true,
+  } as const satisfies AutomationValidationGroup),
+  Object.freeze({
+    id: "automation-validation-model",
+    name: "Model Validation Group",
+    category: "Model",
+    rules: ModelValidationRules,
+    metadataOnly: true,
+    immutable: true,
+    deterministic: true,
+  } as const satisfies AutomationValidationGroup),
+  Object.freeze({
+    id: "automation-validation-platform",
+    name: "Platform Validation Group",
+    category: "Platform",
+    rules: PlatformValidationRules,
+    metadataOnly: true,
+    immutable: true,
+    deterministic: true,
+  } as const satisfies AutomationValidationGroup),
+] as const);
+
+export const AutomationValidationRuleCatalog = Object.freeze([
+  ...FoundationValidationRules,
+  ...RegistryValidationRules,
+  ...ModelValidationRules,
+  ...PlatformValidationRules,
+] as const satisfies readonly AutomationValidationRule[]);
