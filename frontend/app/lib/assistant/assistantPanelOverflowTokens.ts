@@ -8,7 +8,7 @@ import type { AssistantPanelDockId } from "./assistantPanelDockContract";
 import {
   ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL,
   type AssistantPanelOverflowSizeTier,
-} from "./assistantPanelOverflowContract.ts";
+} from "./assistantPanelOverflowContract";
 
 /** Derived from design spacing scale (lg=16): compact 8×, small 9×, medium 12×. */
 export const ASSISTANT_PANEL_OVERFLOW_MAX_HEIGHT_PX: Readonly<

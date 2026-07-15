@@ -1,0 +1,31 @@
+export const ExecutiveReasoningModelMetadata = Object.freeze({
+  modelPlatformId: "ENG-6:3",
+  version: "1.0.0",
+  namespace: "nexora.engine.executive.reasoning.model",
+  owner: "ENG-6",
+  name: "Executive Reasoning Model Platform",
+  description:
+    "Canonical immutable metadata-only model platform defining Executive Reasoning Pipeline artifacts for later ENG-6 phases.",
+  compatibility: Object.freeze({
+    foundation: "ENG-6:1",
+    registry: "ENG-6:2",
+    publicIndexOnly: true,
+  } as const),
+  releaseStatus: "Draft",
+  status: Object.freeze({
+    model: "Model",
+    metadataOnly: "MetadataOnly",
+    runtimeFree: "RuntimeFree",
+    immutable: "Immutable",
+    deterministic: "Deterministic",
+    aiFree: "AiFree",
+    readyForValidation: "ReadyForValidation",
+  } as const),
+  modelCount: 8,
+  nextPhase: "ENG-6:4",
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+  runtimeFree: true,
+  aiFree: true,
+} as const);

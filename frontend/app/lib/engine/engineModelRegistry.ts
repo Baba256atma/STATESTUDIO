@@ -1,12 +1,18 @@
 import { ExecutiveEngineFoundation } from "./engineIndex.ts";
 import { ExecutiveEngineCapabilityRegistry, ExecutiveEngineRegistryManifest } from "./engineRegistryIndex.ts";
-import { ExecutiveContextModel } from "./executiveContextModel.ts";
 import { ExecutiveDecisionModel, ExecutiveDecisionOptionModel, ExecutiveReasoningRecordModel } from "./executiveDecisionModel.ts";
 import { ExecutiveGoalModel, ExecutiveIntentModel } from "./executiveIntentModel.ts";
 import { ExecutiveOutcomeModel } from "./executiveOutcomeModel.ts";
 import { ExecutiveCoordinationInstructionModel, ExecutivePlanModel, ExecutivePlanStepModel } from "./executivePlanModel.ts";
 import { ExecutiveRequestModel } from "./executiveRequestModel.ts";
-import type { ExecutiveEngineModelRelationship } from "./engineModelTypes.ts";
+import type { ExecutiveEngineModelDescriptor, ExecutiveEngineModelRelationship } from "./engineModelTypes.ts";
+
+/** ENG-1:3 generic engine context model (owned by Executive Engine; ENG-4 owns specialized assembly models). */
+export const ExecutiveContextModel = Object.freeze({
+  id: "executive-context", name: "Executive Context", description: "Conceptual schema for context references required by the Engine.", owner: "Engine", category: "ConceptualModel",
+  fields: Object.freeze(["contextId", "requestReference", "tenantReference", "workspaceReference", "actorReferences", "businessDomainReferences", "operationDomainReferences", "relevantEntityReferences", "dataSourceReferences", "timeHorizonMetadata", "constraintReferences", "assumptionReferences", "contextCompletenessStatus"]),
+  referencePolicies: Object.freeze(["external-entities-by-reference", "data-sources-by-reference", "tenant-aware-by-reference"]), publicVisibility: true, lifecycleStatus: "active", sourcePhase: "ENG-1:3", runtimeClassification: "MetadataOnly", metadataOnly: true, immutable: true,
+} as const satisfies ExecutiveEngineModelDescriptor);
 
 export const ExecutiveEngineModelRegistry = Object.freeze([
   ExecutiveRequestModel, ExecutiveIntentModel, ExecutiveGoalModel, ExecutiveContextModel,

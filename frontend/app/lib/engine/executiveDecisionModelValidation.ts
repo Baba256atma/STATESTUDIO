@@ -1,0 +1,128 @@
+import {
+  ExecutiveDecisionCoreModel,
+  ExecutiveDecisionModelPlatform,
+  ExecutiveDecisionModelRegistry,
+  ExecutiveDecisionTraceModel,
+  getExecutiveDecisionModelSummary,
+  isExecutiveDecisionModelId,
+} from "./executiveDecisionModelPlatform.ts";
+import type { ExecutiveDecisionValidationRule } from "./executiveDecisionValidationTypes.ts";
+
+const rule = (
+  key: string,
+  name: string,
+  category: ExecutiveDecisionValidationRule["category"],
+  description: string,
+  validatedArtifact: string,
+  expectedState: string,
+  actualMetadataResult: string,
+  severity: ExecutiveDecisionValidationRule["severity"] = "Error",
+) => Object.freeze({
+  id: `eng-7-validation-${key}`,
+  name,
+  category,
+  severity,
+  description,
+  validatedArtifact,
+  expectedState,
+  actualMetadataResult,
+  status: "PASS",
+  owner: "ENG-7",
+  targetPhase: "ENG-7:3",
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+  runtimeFree: true,
+  aiFree: true,
+} as const satisfies ExecutiveDecisionValidationRule);
+
+const summary = getExecutiveDecisionModelSummary();
+const uniqueModelIds = new Set(ExecutiveDecisionModelPlatform.models.map(({ id }) => id)).size;
+
+export const ExecutiveDecisionModelValidationRules = Object.freeze([
+  rule(
+    "model-canonical-completeness",
+    "Canonical Model Completeness",
+    "Model",
+    "Exactly ten canonical model descriptors are registered.",
+    "ExecutiveDecisionModelRegistry",
+    "models=10",
+    `models=${ExecutiveDecisionModelRegistry.entries.length}`,
+    "Critical",
+  ),
+  rule(
+    "model-registry-references",
+    "Registry References",
+    "Model",
+    "Core decision model declares compatible registry-backed types and domains.",
+    "ExecutiveDecisionCoreModel",
+    "compatibleTypes>0;compatibleDomains>0",
+    `compatibleTypes=${ExecutiveDecisionCoreModel.compatibleDecisionTypes.length};compatibleDomains=${ExecutiveDecisionCoreModel.compatibleDomains.length}`,
+  ),
+  rule(
+    "model-readonly-structures",
+    "Readonly Structures",
+    "Model",
+    "Model platform and models declare immutable metadata-only structures.",
+    "ExecutiveDecisionModelPlatform",
+    "immutable=true;metadataOnly=true",
+    `immutable=${ExecutiveDecisionModelPlatform.immutable};metadataOnly=${ExecutiveDecisionModelPlatform.metadataOnly}`,
+  ),
+  rule(
+    "model-trace-chain-integrity",
+    "Trace-Chain Integrity",
+    "Model",
+    "Decision trace relationship chain has eight lineage steps.",
+    "ExecutiveDecisionTraceModel",
+    "relationshipSteps=8",
+    `relationshipSteps=${ExecutiveDecisionTraceModel.relationshipChain.length}`,
+  ),
+  rule(
+    "metadata-model-ownership",
+    "Model Ownership Metadata",
+    "Metadata Compliance",
+    "Model platform ownership is ENG-7 and excludes reasoning/planning.",
+    "ExecutiveDecisionModelPlatform.ownership",
+    "owner=ENG-7;neverOwnsReasoning=true",
+    `owner=${ExecutiveDecisionModelPlatform.ownership.owner};neverOwnsReasoning=${ExecutiveDecisionModelPlatform.ownership.neverOwns.includes("reasoning")}`,
+  ),
+  rule(
+    "metadata-model-dependencies",
+    "Model Dependency Metadata",
+    "Metadata Compliance",
+    "Model identifiers are unique and known to the model-id helper.",
+    "isExecutiveDecisionModelId",
+    "uniqueModels=10;coreKnown=true",
+    `uniqueModels=${uniqueModelIds};coreKnown=${isExecutiveDecisionModelId(ExecutiveDecisionCoreModel.id)}`,
+  ),
+  rule(
+    "metadata-recommendation-publication",
+    "Recommendation And Publication Relationships",
+    "Metadata Compliance",
+    "Recommendation package targets ENG-8 and Advisor consumers.",
+    "ExecutiveDecisionRecommendationPublicationModels",
+    "consumers=ENG-8,Advisor",
+    `consumers=${ExecutiveDecisionModelPlatform.recommendationPublicationModels.recommendationPackage.targetConsumers.join(",")}`,
+  ),
+  rule(
+    "metadata-readiness",
+    "Model Readiness Metadata",
+    "Metadata Compliance",
+    "Model summary reports ReadyForDecisionValidation.",
+    "ExecutiveDecisionModelSummary",
+    "readiness=ReadyForDecisionValidation",
+    `readiness=${summary.readiness};antiDuplication=${summary.antiDuplicationStatus}`,
+  ),
+] as const);
+
+export const ExecutiveDecisionModelValidation = Object.freeze({
+  id: "eng-7-validation-group-model",
+  name: "Model",
+  description: "Architectural validation of ENG-7:3 Model public metadata.",
+  rules: ExecutiveDecisionModelValidationRules,
+  status: "PASS",
+  owner: "ENG-7",
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+} as const);

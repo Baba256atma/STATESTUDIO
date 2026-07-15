@@ -1,0 +1,57 @@
+export const ExecutivePlanningOwnership = Object.freeze({
+  owner: "ENG-5",
+  platform: "Executive Planning Platform",
+  foundationPhase: "ENG-5:1",
+  layer: "ExecutiveEngine",
+  owns: Object.freeze([
+    "execution plan definition",
+    "execution graph metadata",
+    "dependency metadata",
+    "execution ordering",
+    "execution priority",
+    "retry metadata",
+  ] as const),
+  neverOwns: Object.freeze([
+    "execution",
+    "workflow runtime",
+    "scheduling runtime",
+    "task runtime",
+    "automation runtime",
+    "visualization",
+    "persistence",
+  ] as const),
+  executionOwner: "OPS",
+  reasoningOwner: "ENG-1|ENG-2|ENG-3|ENG-4",
+  visualizationOwner: "Director|Scene|EVE",
+  boundary: Object.freeze({
+    plansExecutionOnly: true,
+    performsExecution: false,
+    ownsExecutionRuntime: false,
+  } as const),
+  rules: Object.freeze([
+    Object.freeze({
+      id: "eng-5-ownership-plans-only",
+      rule: "Executive Planning plans execution only and never performs execution.",
+      status: "Protected",
+    } as const),
+    Object.freeze({
+      id: "eng-5-ownership-ops-execution",
+      rule: "Execution, workflow runtime, scheduling runtime, task runtime, and automation runtime belong to OPS.",
+      status: "Protected",
+    } as const),
+    Object.freeze({
+      id: "eng-5-ownership-no-visualization",
+      rule: "Visualization ownership remains with Director, Scene, and EVE.",
+      status: "Protected",
+    } as const),
+    Object.freeze({
+      id: "eng-5-ownership-no-persistence",
+      rule: "Persistence is outside Executive Planning ownership.",
+      status: "Protected",
+    } as const),
+  ] as const),
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+  runtimeFree: true,
+} as const);

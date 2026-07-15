@@ -1,0 +1,128 @@
+import type {
+  ExecutiveDecisionManifestCompatibility,
+  ExecutiveDecisionManifestGuarantee,
+} from "./executiveDecisionManifestTypes.ts";
+
+const compatibility = (
+  key: string,
+  source: string,
+  target: string,
+  compatibilityType: string,
+  supportedContract: string,
+  stabilityLevel: ExecutiveDecisionManifestCompatibility["stabilityLevel"],
+  restriction: string,
+) => Object.freeze({
+  id: `eng-7-manifest-compatibility-${key}`,
+  source,
+  target,
+  compatibilityType,
+  supportedContract,
+  stabilityLevel,
+  restriction,
+  status: "Compatible",
+  metadataOnly: true,
+  immutable: true,
+} as const satisfies ExecutiveDecisionManifestCompatibility);
+
+const guarantee = (
+  key: string,
+  name: string,
+  description: string,
+) => Object.freeze({
+  id: `eng-7-manifest-guarantee-${key}`,
+  name,
+  description,
+  status: "Guaranteed",
+  metadataOnly: true,
+  immutable: true,
+} as const satisfies ExecutiveDecisionManifestGuarantee);
+
+export const ExecutiveDecisionCompatibilityManifest = Object.freeze([
+  compatibility(
+    "foundation",
+    "ENG-7:5",
+    "ENG-7:1",
+    "FoundationCompatibility",
+    "executiveDecisionPublicApi.ts",
+    "Stable",
+    "Foundation contracts remain reference-only.",
+  ),
+  compatibility(
+    "registry",
+    "ENG-7:5",
+    "ENG-7:2",
+    "RegistryCompatibility",
+    "executiveDecisionRegistryPlatform.ts",
+    "Stable",
+    "Registry inventories remain unmodified.",
+  ),
+  compatibility(
+    "model",
+    "ENG-7:5",
+    "ENG-7:3",
+    "ModelCompatibility",
+    "executiveDecisionModelPlatform.ts",
+    "Stable",
+    "Model contracts remain unmodified.",
+  ),
+  compatibility(
+    "validation",
+    "ENG-7:5",
+    "ENG-7:4",
+    "ValidationCompatibility",
+    "executiveDecisionValidationPlatform.ts",
+    "Stable",
+    "Validation certified state remains declarative.",
+  ),
+  compatibility(
+    "reasoning-output",
+    "ENG-7",
+    "ENG-6",
+    "ReasoningOutputCompatibility",
+    "executiveReasoningPublicIndex.ts",
+    "Stable",
+    "Consumes reasoning outcomes by public reference only.",
+  ),
+  compatibility(
+    "orchestration-consumer",
+    "ENG-7",
+    "ENG-8",
+    "OrchestrationConsumerCompatibility",
+    "future executiveOrchestrationPublicIndex.ts",
+    "ForwardCompatible",
+    "Publishes decision metadata for orchestration consumers.",
+  ),
+  compatibility(
+    "advisor-consumer",
+    "ENG-7",
+    "Advisor",
+    "AdvisorConsumerCompatibility",
+    "recommendation package contracts",
+    "ForwardCompatible",
+    "Publishes recommendation packages without Advisor behavior.",
+  ),
+  compatibility(
+    "future-cert-freeze-index",
+    "ENG-7:5",
+    "ENG-7:7|ENG-7:8|ENG-7:9",
+    "FuturePhaseCompatibility",
+    "manifest readiness declarations",
+    "ForwardCompatible",
+    "Manifest remains additive for certification, freeze, and public index.",
+  ),
+] as const);
+
+export const ExecutiveDecisionGuaranteeManifest = Object.freeze([
+  guarantee("metadata-only", "Metadata-only architecture", "ENG-7 architecture remains metadata-only."),
+  guarantee("deep-immutability", "Deep immutability", "Published ENG-7 metadata remains deeply frozen."),
+  guarantee("deterministic-access", "Deterministic metadata access", "Helpers return deterministic frozen metadata only."),
+  guarantee("public-api-only", "Public-API-only dependencies", "ENG-7 consumes approved public phase surfaces only."),
+  guarantee("ownership-isolation", "Ownership isolation", "ENG-7 owns decision architecture only."),
+  guarantee("anti-duplication", "Anti-duplication compliance", "Prior Engine responsibilities are referenced, never redefined."),
+  guarantee("no-reasoning-duplication", "No reasoning duplication", "Reasoning remains owned by ENG-6."),
+  guarantee("no-orchestration", "No orchestration behavior", "Orchestration remains reserved for ENG-8."),
+  guarantee("no-execution", "No execution behavior", "Execution remains owned by OPS."),
+  guarantee("no-persistence", "No persistence behavior", "Persistence remains outside ENG-7."),
+  guarantee("no-visualization", "No visualization behavior", "Director, Scene, and EVE retain presentation ownership."),
+  guarantee("forward-only", "Forward-only phase progression", "ENG-7 phases progress Foundation→Registry→Model→Validation→Manifest→Platform."),
+] as const);

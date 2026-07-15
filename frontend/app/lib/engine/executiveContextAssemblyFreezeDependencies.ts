@@ -1,0 +1,60 @@
+import type { ExecutiveContextFreezeDependency } from "./executiveContextAssemblyFreezeTypes.ts";
+
+const dependency = (
+  id: string,
+  source: string,
+  target: string,
+  publicIndexReference: string,
+) => Object.freeze({
+  id, source, target,
+  direction: "ForwardOnly",
+  consumption: "PublicIndexOnly",
+  reverseDependency: false,
+  circularDependency: false,
+  futurePhaseDependency: false,
+  publicIndexReference,
+  lockIdentifier: "ENG-4-LOCKED",
+  metadataOnly: true, immutable: true,
+} as const satisfies ExecutiveContextFreezeDependency);
+
+export const ExecutiveContextAssemblyFreezeDependencies = Object.freeze([
+  dependency("eng-4-freeze-dep-external-eng-1", "ENG-4", "ENG-1", "executiveEnginePublicIndex.ts"),
+  dependency("eng-4-freeze-dep-external-eng-2", "ENG-4", "ENG-2", "executiveRequestIntentPublicIndex.ts"),
+  dependency("eng-4-freeze-dep-external-eng-3", "ENG-4", "ENG-3", "executiveIntentResolutionPublicIndex.ts"),
+  dependency("eng-4-freeze-dep-registry-foundation", "ENG-4:2", "ENG-4:1", "executiveContextAssemblyFoundation.ts"),
+  dependency("eng-4-freeze-dep-model-foundation", "ENG-4:3", "ENG-4:1", "executiveContextAssemblyFoundation.ts"),
+  dependency("eng-4-freeze-dep-model-registry", "ENG-4:3", "ENG-4:2", "executiveContextAssemblyRegistry.ts"),
+  dependency("eng-4-freeze-dep-validation-foundation", "ENG-4:4", "ENG-4:1", "executiveContextAssemblyFoundation.ts"),
+  dependency("eng-4-freeze-dep-validation-registry", "ENG-4:4", "ENG-4:2", "executiveContextAssemblyRegistry.ts"),
+  dependency("eng-4-freeze-dep-validation-model", "ENG-4:4", "ENG-4:3", "executiveContextAssemblyModel.ts"),
+  dependency("eng-4-freeze-dep-manifest-foundation", "ENG-4:5", "ENG-4:1", "executiveContextAssemblyFoundation.ts"),
+  dependency("eng-4-freeze-dep-manifest-registry", "ENG-4:5", "ENG-4:2", "executiveContextAssemblyRegistry.ts"),
+  dependency("eng-4-freeze-dep-manifest-model", "ENG-4:5", "ENG-4:3", "executiveContextAssemblyModel.ts"),
+  dependency("eng-4-freeze-dep-manifest-validation", "ENG-4:5", "ENG-4:4", "executiveContextAssemblyValidation.ts"),
+  dependency("eng-4-freeze-dep-platform-foundation", "ENG-4:6", "ENG-4:1", "executiveContextAssemblyFoundation.ts"),
+  dependency("eng-4-freeze-dep-platform-registry", "ENG-4:6", "ENG-4:2", "executiveContextAssemblyRegistry.ts"),
+  dependency("eng-4-freeze-dep-platform-model", "ENG-4:6", "ENG-4:3", "executiveContextAssemblyModel.ts"),
+  dependency("eng-4-freeze-dep-platform-validation", "ENG-4:6", "ENG-4:4", "executiveContextAssemblyValidation.ts"),
+  dependency("eng-4-freeze-dep-platform-manifest", "ENG-4:6", "ENG-4:5", "executiveContextAssemblyManifest.ts"),
+  dependency("eng-4-freeze-dep-certification-foundation", "ENG-4:7", "ENG-4:1", "executiveContextAssemblyFoundation.ts"),
+  dependency("eng-4-freeze-dep-certification-registry", "ENG-4:7", "ENG-4:2", "executiveContextAssemblyRegistry.ts"),
+  dependency("eng-4-freeze-dep-certification-model", "ENG-4:7", "ENG-4:3", "executiveContextAssemblyModel.ts"),
+  dependency("eng-4-freeze-dep-certification-validation", "ENG-4:7", "ENG-4:4", "executiveContextAssemblyValidation.ts"),
+  dependency("eng-4-freeze-dep-certification-manifest", "ENG-4:7", "ENG-4:5", "executiveContextAssemblyManifest.ts"),
+  dependency("eng-4-freeze-dep-certification-platform", "ENG-4:7", "ENG-4:6", "executiveContextAssemblyPlatform.ts"),
+  dependency("eng-4-freeze-dep-freeze-certification", "ENG-4:8", "ENG-4:7", "executiveContextAssemblyCertification.ts"),
+] as const);
+
+export const ExecutiveContextAssemblyFreezeDependencyLock = Object.freeze({
+  consumptionPolicy: "PublicIndexOnly",
+  direction: "ForwardOnly",
+  reverseDependencies: "Prohibited",
+  circularDependencies: "Prohibited",
+  futurePhaseImports: "Prohibited",
+  privateCrossPlatformImports: "Prohibited",
+  runtimeDependencies: "Prohibited",
+  infrastructureDependencies: "Prohibited",
+  status: "Locked",
+  lockIdentifier: "ENG-4-LOCKED",
+  metadataOnly: true, immutable: true, deterministic: true,
+} as const);

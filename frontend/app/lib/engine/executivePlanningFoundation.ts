@@ -1,0 +1,25 @@
+export const ExecutivePlanningFoundation = Object.freeze({
+  platformId: "ENG-5:1",
+  name: "Executive Planning Foundation",
+  version: "1.0.0",
+  namespace: "nexora.engine.executive.planning.foundation",
+  description:
+    "Canonical metadata-only architectural foundation for the Executive Planning Platform. Plans execution only; never performs execution.",
+  status: Object.freeze({
+    foundation: "Foundation",
+    metadataOnly: "MetadataOnly",
+    runtimeFree: "RuntimeFree",
+    immutable: "Immutable",
+    deterministic: "Deterministic",
+    plansExecutionOnly: "PlansExecutionOnly",
+  } as const),
+  owner: "ENG-5",
+  phase: "ENG-5:1",
+  layer: "ExecutiveEngine",
+  module: "ExecutivePlanningFoundation",
+  nextPhase: "ENG-5:2",
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+  runtimeFree: true,
+} as const);
