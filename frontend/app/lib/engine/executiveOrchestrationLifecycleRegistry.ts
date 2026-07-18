@@ -1,0 +1,192 @@
+import {
+  ExecutiveOrchestrationFoundation,
+  ExecutiveOrchestrationLifecycleContract,
+} from "./executiveOrchestrationFoundation.ts";
+import type {
+  ExecutiveOrchestrationCapabilityId,
+  ExecutiveOrchestrationComponentId,
+  ExecutiveOrchestrationLifecycleEntry,
+  ExecutiveOrchestrationLifecycleStageId,
+} from "./executiveOrchestrationRegistryTypes.ts";
+
+const stage = (
+  stageId: ExecutiveOrchestrationLifecycleStageId,
+  sequence: number,
+  description: string,
+  previousStageId: ExecutiveOrchestrationLifecycleStageId | null,
+  nextStageId: ExecutiveOrchestrationLifecycleStageId | null,
+  participatingComponentIds: readonly ExecutiveOrchestrationComponentId[],
+  allowedCapabilityIds: readonly ExecutiveOrchestrationCapabilityId[],
+  terminal: boolean,
+) => Object.freeze({
+  id: `eng-8-life-${stageId}` as const,
+  stageId,
+  name: stageId,
+  sequence,
+  description,
+  previousStageId,
+  nextStageId,
+  participatingComponentIds: Object.freeze([...participatingComponentIds]),
+  allowedCapabilityIds: Object.freeze([...allowedCapabilityIds]),
+  terminal,
+  kind: "LifecycleStage",
+  status: "Registered",
+  metadataOnly: true,
+  runtimeFree: true,
+  immutable: true,
+} as const satisfies ExecutiveOrchestrationLifecycleEntry);
+
+/**
+ * Canonical ordered lifecycle registry aligned with ENG-8:1.
+ * No transition functions are implemented.
+ */
+export const ExecutiveOrchestrationLifecycleRegistry = Object.freeze([
+  stage(
+    "Idle",
+    1,
+    "First lifecycle stage before orchestration request reception.",
+    null,
+    "ReceiveRequest",
+    Object.freeze(["pipeline-orchestrator"] as const),
+    Object.freeze(["pipeline-coordination"] as const),
+    false,
+  ),
+  stage(
+    "ReceiveRequest",
+    2,
+    "Registers reception of an executive orchestration request as metadata.",
+    "Idle",
+    "PreparePipeline",
+    Object.freeze(["pipeline-orchestrator", "engine-coordinator"] as const),
+    Object.freeze(["pipeline-coordination"] as const),
+    false,
+  ),
+  stage(
+    "PreparePipeline",
+    3,
+    "Registers pipeline preparation architecture without constructing runtime pipelines.",
+    "ReceiveRequest",
+    "ResolveDependencies",
+    Object.freeze([
+      "pipeline-orchestrator",
+      "engine-coordinator",
+      "execution-sequence-coordinator",
+      "context-propagation-coordinator",
+    ] as const),
+    Object.freeze(["pipeline-coordination", "sequential-orchestration"] as const),
+    false,
+  ),
+  stage(
+    "ResolveDependencies",
+    4,
+    "Registers dependency-resolution architecture without resolving runtime dependencies.",
+    "PreparePipeline",
+    "CoordinateExecution",
+    Object.freeze([
+      "dependency-coordinator",
+      "engine-coordinator",
+      "bus-coordination-gateway",
+      "ops-coordination-gateway",
+    ] as const),
+    Object.freeze(["dependency-resolution"] as const),
+    false,
+  ),
+  stage(
+    "CoordinateExecution",
+    5,
+    "Registers execution-coordination architecture without coordinating runtime execution.",
+    "ResolveDependencies",
+    "AggregateResults",
+    Object.freeze([
+      "pipeline-orchestrator",
+      "engine-coordinator",
+      "execution-sequence-coordinator",
+      "parallel-coordination-descriptor",
+      "context-propagation-coordinator",
+      "failure-routing-coordinator",
+      "bus-coordination-gateway",
+      "ops-coordination-gateway",
+    ] as const),
+    Object.freeze([
+      "pipeline-coordination",
+      "sequential-orchestration",
+      "parallel-orchestration",
+      "failure-propagation",
+    ] as const),
+    false,
+  ),
+  stage(
+    "AggregateResults",
+    6,
+    "Registers result-aggregation architecture without aggregating runtime results.",
+    "CoordinateExecution",
+    "PrepareResponse",
+    Object.freeze([
+      "result-aggregator",
+      "completion-coordinator",
+      "failure-routing-coordinator",
+    ] as const),
+    Object.freeze([
+      "result-aggregation",
+      "completion-synchronization",
+      "failure-propagation",
+    ] as const),
+    false,
+  ),
+  stage(
+    "PrepareResponse",
+    7,
+    "Registers response-preparation architecture without generating runtime responses.",
+    "AggregateResults",
+    "Complete",
+    Object.freeze([
+      "result-aggregator",
+      "completion-coordinator",
+      "advisor-handoff-coordinator",
+      "failure-routing-coordinator",
+    ] as const),
+    Object.freeze([
+      "result-aggregation",
+      "completion-synchronization",
+      "advisor-routing",
+      "failure-propagation",
+    ] as const),
+    false,
+  ),
+  stage(
+    "Complete",
+    8,
+    "Final terminal lifecycle stage declaring architectural completion.",
+    "PrepareResponse",
+    null,
+    Object.freeze([
+      "pipeline-orchestrator",
+      "engine-coordinator",
+      "completion-coordinator",
+      "advisor-handoff-coordinator",
+    ] as const),
+    Object.freeze([
+      "pipeline-coordination",
+      "completion-synchronization",
+      "advisor-routing",
+    ] as const),
+    true,
+  ),
+] as const);
+
+export const ExecutiveOrchestrationLifecycleRegistryFoundationAlignment = Object.freeze({
+  foundationId: ExecutiveOrchestrationFoundation.id,
+  foundationOrdering: ExecutiveOrchestrationLifecycleContract.ordering,
+  registeredOrdering: Object.freeze([
+    "Idle",
+    "ReceiveRequest",
+    "PreparePipeline",
+    "ResolveDependencies",
+    "CoordinateExecution",
+    "AggregateResults",
+    "PrepareResponse",
+    "Complete",
+  ] as const),
+  metadataOnly: true,
+  immutable: true,
+} as const);

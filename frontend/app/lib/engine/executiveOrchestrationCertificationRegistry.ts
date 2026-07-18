@@ -1,0 +1,206 @@
+import type {
+  ExecutiveOrchestrationCertificationCategory,
+  ExecutiveOrchestrationCertificationGate,
+  ExecutiveOrchestrationCertificationGateId,
+  ExecutiveOrchestrationCertificationMetadata as ExecutiveOrchestrationCertificationMetadataDescriptor,
+  ExecutiveOrchestrationCertificationRegistry as ExecutiveOrchestrationCertificationRegistryDescriptor,
+  ExecutiveOrchestrationCertificationSeverity,
+} from "./executiveOrchestrationCertificationTypes.ts";
+
+const gate = (
+  id: ExecutiveOrchestrationCertificationGateId,
+  name: string,
+  description: string,
+  category: ExecutiveOrchestrationCertificationCategory,
+  severity: ExecutiveOrchestrationCertificationSeverity,
+) => Object.freeze({
+  id,
+  name,
+  description,
+  category,
+  status: "Certified",
+  severity,
+  certified: true,
+  metadataOnly: true,
+  runtimeFree: true,
+} as const satisfies ExecutiveOrchestrationCertificationGate);
+
+const gateInventory = Object.freeze([
+  gate(
+    "FoundationIntegrity",
+    "Foundation Integrity",
+    "Certifies ENG-8:1 foundation integrity as aggregated by ENG-8:6.",
+    "Foundation",
+    "Critical",
+  ),
+  gate(
+    "RegistryIntegrity",
+    "Registry Integrity",
+    "Certifies ENG-8:2 registry integrity as aggregated by ENG-8:6.",
+    "Registry",
+    "Critical",
+  ),
+  gate(
+    "ModelIntegrity",
+    "Model Integrity",
+    "Certifies ENG-8:3 model integrity as aggregated by ENG-8:6.",
+    "Model",
+    "Critical",
+  ),
+  gate(
+    "ValidationIntegrity",
+    "Validation Integrity",
+    "Certifies ENG-8:4 validation integrity as aggregated by ENG-8:6.",
+    "Validation",
+    "Critical",
+  ),
+  gate(
+    "ManifestIntegrity",
+    "Manifest Integrity",
+    "Certifies ENG-8:5 manifest integrity as aggregated by ENG-8:6.",
+    "Manifest",
+    "Critical",
+  ),
+  gate(
+    "PlatformIntegrity",
+    "Platform Integrity",
+    "Certifies ENG-8:6 platform assembly and canonical aggregation integrity.",
+    "Platform",
+    "Critical",
+  ),
+  gate(
+    "OwnershipIntegrity",
+    "Ownership Integrity",
+    "Certifies ownership boundaries remain isolated and unduplicated across certified sections.",
+    "Ownership",
+    "Critical",
+  ),
+  gate(
+    "DependencyCompliance",
+    "Dependency Compliance",
+    "Certifies dependency surfaces remain public-API only and forward-only.",
+    "Dependency",
+    "Error",
+  ),
+  gate(
+    "PublicApiStability",
+    "Public API Stability",
+    "Certifies ENG-8:6 public API surface stability for downstream freeze.",
+    "PublicApi",
+    "Error",
+  ),
+  gate(
+    "MetadataOnlyCompliance",
+    "Metadata Only Compliance",
+    "Certifies all certified sections remain metadata-only architectural declarations.",
+    "MetadataOnly",
+    "Info",
+  ),
+  gate(
+    "RuntimeFreeCompliance",
+    "Runtime Free Compliance",
+    "Certifies no runtime orchestration behavior exists in certified surfaces.",
+    "RuntimeFree",
+    "Info",
+  ),
+  gate(
+    "DeterministicBehavior",
+    "Deterministic Behavior",
+    "Certifies deterministic metadata accessors across certified platform surfaces.",
+    "Deterministic",
+    "Info",
+  ),
+  gate(
+    "ImmutabilityCompliance",
+    "Immutability Compliance",
+    "Certifies deeply frozen immutable metadata across certified sections.",
+    "Immutability",
+    "Warning",
+  ),
+  gate(
+    "AntiDuplicationCompliance",
+    "Anti-Duplication Compliance",
+    "Certifies no architectural responsibility duplication across certified sections.",
+    "AntiDuplication",
+    "Warning",
+  ),
+  gate(
+    "FreezeReadiness",
+    "Freeze Readiness",
+    "Certifies ENG-8:6 platform eligibility for ENG-8:8 freeze phase.",
+    "FreezeReadiness",
+    "Critical",
+  ),
+] as const);
+
+const categoryInventory = Object.freeze([
+  "Foundation",
+  "Registry",
+  "Model",
+  "Validation",
+  "Manifest",
+  "Platform",
+  "Ownership",
+  "Dependency",
+  "PublicApi",
+  "MetadataOnly",
+  "RuntimeFree",
+  "Deterministic",
+  "Immutability",
+  "AntiDuplication",
+  "FreezeReadiness",
+] as const);
+
+export const ExecutiveOrchestrationCertificationMetadata = Object.freeze({
+  id: "ENG-8:7",
+  name: "Executive Orchestration Certification Platform",
+  namespace: "nexora.engine.executive.orchestration.certification",
+  version: "1.0.0",
+  status: "Certified",
+  certificationStatus: "Certified",
+  architectureMode: "MetadataOnly",
+  immutability: "DeeplyFrozen",
+  runtimeBehavior: "None",
+  owner: "ENG-8",
+  phase: "ENG-8:7",
+  previousPhase: "ENG-8:6",
+  nextPhase: "ENG-8:8",
+  readiness: "ReadyForFreeze",
+  metadataOnly: true,
+  runtimeFree: true,
+  immutable: true,
+  deeplyFrozen: true,
+  deterministic: true,
+  readyForFreeze: true,
+} as const satisfies ExecutiveOrchestrationCertificationMetadataDescriptor);
+
+const publicApiSurface = Object.freeze([
+  "ExecutiveOrchestrationCertificationPlatform",
+  "ExecutiveOrchestrationCertificationRegistry",
+  "ExecutiveOrchestrationCertificationManifest",
+  "ExecutiveOrchestrationCertificationSummary",
+  "runExecutiveOrchestrationCertification",
+  "getExecutiveOrchestrationCertificationSummary",
+  "ExecutiveOrchestrationCertificationRunner",
+] as const);
+
+/**
+ * Canonical ENG-8:7 certification registry.
+ * Gate results are declared metadata only; no gate executes validation.
+ */
+export const ExecutiveOrchestrationCertificationRegistry = Object.freeze({
+  certificationId: "ENG-8:7",
+  gateInventory,
+  gateCount: 15,
+  certifiedGateCount: 15,
+  failedGateCount: 0,
+  pendingGateCount: 0,
+  categoryInventory,
+  dependencySurface: "executiveOrchestrationPlatform.ts",
+  publicApiSurface,
+  certificationMetadata: ExecutiveOrchestrationCertificationMetadata,
+  metadataOnly: true,
+  immutable: true,
+  runtimeFree: true,
+  deeplyFrozen: true,
+} as const satisfies ExecutiveOrchestrationCertificationRegistryDescriptor);
