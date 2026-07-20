@@ -1,0 +1,141 @@
+/**
+ * NEA-6:4 — Message Normalization Validation Ownership.
+ *
+ * Ownership and boundary declarations for Message Normalization Validation.
+ * Metadata only — no runtime assignment.
+ *
+ * Ownership: owned exclusively by NEA-6:4.
+ */
+
+export const MESSAGE_NORMALIZATION_VALIDATION_OWNS = Object.freeze([
+  "Validation Categories",
+  "Validation Rules",
+  "Validation Relationships",
+  "Validation Metadata",
+  "Cross-Model Validation Rules",
+  "Platform Integrity Validation Rules",
+  "Validation Policies",
+  "Validation Summary",
+] as const);
+
+export const MESSAGE_NORMALIZATION_VALIDATION_DOES_NOT_OWN = Object.freeze([
+  "Runtime Validation",
+  "Runtime Normalization",
+  "Message Parsing",
+  "Runtime Messages",
+  "AI",
+  "Intent Detection",
+  "DKL",
+  "Executive Engine",
+  "Storage",
+  "Routing",
+  "Security",
+  "Connector Runtime",
+  "Assistant",
+  "Advisor",
+  "Director",
+  "EVE",
+  "Domain Models",
+  "Registry Collections",
+  "Foundation Contracts",
+] as const);
+
+export const MESSAGE_NORMALIZATION_VALIDATION_PROHIBITED_SURFACES = Object.freeze([
+  "Validation Engine",
+  "Runtime Validation",
+  "Runtime Normalization",
+  "Payload Parsing",
+  "Message Processing",
+  "AI",
+  "LLM",
+  "Intent Recognition",
+  "Entity Extraction",
+  "Business Understanding",
+  "Routing",
+  "HTTP",
+  "REST",
+  "WebSockets",
+  "Database",
+  "Queue",
+  "Event Bus",
+  "Authentication",
+  "Authorization",
+  "Storage",
+  "React",
+  "Next.js",
+  "DKL invocation",
+  "Executive Engine invocation",
+  "Advisor invocation",
+  "Director invocation",
+  "EVE invocation",
+] as const);
+
+/** Canonical immutable validation ownership declaration. */
+export const MessageNormalizationValidationOwnership = Object.freeze({
+  ownershipId: "NEA-6:4/MessageNormalizationValidationOwnership",
+  sourcePhase: "NEA-6:4" as const,
+  owns: MESSAGE_NORMALIZATION_VALIDATION_OWNS,
+  doesNotOwn: MESSAGE_NORMALIZATION_VALIDATION_DOES_NOT_OWN,
+  ownsCount: MESSAGE_NORMALIZATION_VALIDATION_OWNS.length,
+  doesNotOwnCount: MESSAGE_NORMALIZATION_VALIDATION_DOES_NOT_OWN.length,
+  ownsRuntimeValidation: false as const,
+  ownsValidationEngine: false as const,
+  ownsRuntimeNormalization: false as const,
+  ownsMessageParsing: false as const,
+  ownsAi: false as const,
+  ownsIntentDetection: false as const,
+  ownsDkl: false as const,
+  ownsExecutiveEngine: false as const,
+  ownsDomainModels: false as const,
+  ownsRegistryCollections: false as const,
+  runtimeBehavior: "None" as const,
+  metadataOnly: true as const,
+  immutable: true as const,
+  deterministic: true as const,
+});
+
+/** Canonical immutable validation boundary declarations. */
+export const MessageNormalizationValidationBoundaries = Object.freeze({
+  boundariesId: "NEA-6:4/MessageNormalizationValidationBoundaries",
+  sourcePhase: "NEA-6:4" as const,
+  consumes: Object.freeze([
+    "NEA-6:3 Message Normalization Model",
+  ] as const),
+  provides: Object.freeze(["Message Normalization Validation"] as const),
+  prohibitedSurfaces: MESSAGE_NORMALIZATION_VALIDATION_PROHIBITED_SURFACES,
+  prohibitedSurfaceCount:
+    MESSAGE_NORMALIZATION_VALIDATION_PROHIBITED_SURFACES.length,
+  validationEngine: false as const,
+  runtimeValidation: false as const,
+  implementsRuntimeNormalization: false as const,
+  parsesPayloads: false as const,
+  processesMessages: false as const,
+  performsAi: false as const,
+  callsLlm: false as const,
+  recognizesIntent: false as const,
+  extractsEntities: false as const,
+  interpretsBusinessMeaning: false as const,
+  implementsRouting: false as const,
+  implementsHttp: false as const,
+  implementsRest: false as const,
+  implementsWebSockets: false as const,
+  accessesDatabase: false as const,
+  implementsQueue: false as const,
+  implementsEventBus: false as const,
+  executesAuthentication: false as const,
+  executesAuthorization: false as const,
+  implementsStorage: false as const,
+  invokesDkl: false as const,
+  invokesEngine: false as const,
+  invokesAdvisor: false as const,
+  invokesDirector: false as const,
+  invokesEve: false as const,
+  reactComponents: false as const,
+  nextJsRoutes: false as const,
+  duplicatesModelValues: false as const,
+  reconstructsModel: false as const,
+  runtimeEnforcement: false as const,
+  metadataOnly: true as const,
+  immutable: true as const,
+  deterministic: true as const,
+});

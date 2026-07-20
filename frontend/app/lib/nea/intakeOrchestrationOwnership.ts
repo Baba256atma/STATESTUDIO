@@ -1,0 +1,96 @@
+/**
+ * NEA-7:1 — Intake Orchestration Ownership.
+ *
+ * Ownership and non-ownership declarations for Intake Orchestration Foundation.
+ * Metadata only — no runtime assignment.
+ *
+ * Ownership: owned exclusively by NEA-7:1.
+ */
+
+export const INTAKE_ORCHESTRATION_OWNS = Object.freeze([
+  "Executive Intake Package Contract",
+  "Intake Metadata Contract",
+  "Intake Context Contracts",
+  "Intake Reference Contracts",
+  "Intake Lifecycle",
+  "Capabilities",
+  "Ownership",
+  "Boundaries",
+] as const);
+
+export const INTAKE_ORCHESTRATION_DOES_NOT_OWN = Object.freeze([
+  "Connectors",
+  "Routing",
+  "Normalization",
+  "Sessions",
+  "Conversations",
+  "Identities",
+  "Authentication",
+  "DKL",
+  "Executive Engine",
+  "Business Objects",
+  "AI",
+  "Runtime",
+  "Message Parsing",
+  "LLM",
+  "Intent Detection",
+  "Business Understanding",
+  "Storage",
+  "Database",
+  "Connector Runtime",
+  "HTTP",
+  "REST",
+  "WebSockets",
+  "OAuth",
+  "Queue",
+  "Event Bus",
+  "Advisor",
+  "Director",
+  "EVE",
+  "Runtime Orchestration",
+  "Workflow Execution",
+] as const);
+
+/** Canonical immutable ownership declaration. */
+export const IntakeOrchestrationOwnership = Object.freeze({
+  ownershipId: "NEA-7:1/IntakeOrchestrationOwnership",
+  sourcePhase: "NEA-7:1" as const,
+  owns: INTAKE_ORCHESTRATION_OWNS,
+  doesNotOwn: INTAKE_ORCHESTRATION_DOES_NOT_OWN,
+  ownsCount: INTAKE_ORCHESTRATION_OWNS.length,
+  doesNotOwnCount: INTAKE_ORCHESTRATION_DOES_NOT_OWN.length,
+  ownsConnectors: false as const,
+  ownsRouting: false as const,
+  ownsNormalization: false as const,
+  ownsSessions: false as const,
+  ownsConversations: false as const,
+  ownsIdentities: false as const,
+  ownsAuthentication: false as const,
+  ownsDkl: false as const,
+  ownsExecutiveEngine: false as const,
+  ownsBusinessObjects: false as const,
+  ownsAi: false as const,
+  ownsRuntime: false as const,
+  ownsMessageParsing: false as const,
+  ownsLlm: false as const,
+  ownsIntentDetection: false as const,
+  ownsBusinessUnderstanding: false as const,
+  ownsStorage: false as const,
+  ownsDatabase: false as const,
+  ownsConnectorRuntime: false as const,
+  ownsHttp: false as const,
+  ownsRest: false as const,
+  ownsWebSockets: false as const,
+  ownsOauth: false as const,
+  ownsQueue: false as const,
+  ownsEventBus: false as const,
+  ownsAdvisor: false as const,
+  ownsDirector: false as const,
+  ownsEve: false as const,
+  ownsRuntimeOrchestration: false as const,
+  ownsWorkflowExecution: false as const,
+  runtimeBehavior: "None" as const,
+  metadataOnly: true as const,
+  immutable: true as const,
+  deterministic: true as const,
+});

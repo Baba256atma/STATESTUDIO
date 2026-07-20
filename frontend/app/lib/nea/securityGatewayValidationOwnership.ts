@@ -1,0 +1,136 @@
+/**
+ * NEA-4:4 — Security Gateway Validation Ownership.
+ *
+ * Ownership and boundary declarations for Security Gateway Validation.
+ * Metadata only — no runtime assignment.
+ *
+ * Ownership: owned exclusively by NEA-4:4.
+ */
+
+export const SECURITY_GATEWAY_VALIDATION_OWNS = Object.freeze([
+  "Validation Metadata",
+  "Validation Categories",
+  "Validation Rules",
+  "Validation Relationships",
+  "Validation Policies",
+  "Validation Summary",
+  "Cross-Model Validation Rules",
+  "Platform Integrity Validation Rules",
+] as const);
+
+export const SECURITY_GATEWAY_VALIDATION_DOES_NOT_OWN = Object.freeze([
+  "Authentication Engine",
+  "Authorization Engine",
+  "Permission Engine",
+  "Trust Engine",
+  "Consent Engine",
+  "Identity Verification",
+  "Login",
+  "Logout",
+  "OAuth",
+  "JWT",
+  "SAML",
+  "OpenID Connect",
+  "MFA",
+  "Encryption",
+  "Secret Management",
+  "Runtime Security Decisions",
+  "Runtime Session Security",
+  "Gateway Routing",
+  "DKL",
+  "Executive Engine",
+  "Assistant",
+  "Advisor",
+  "Director",
+  "EVE",
+  "Domain Models",
+  "Registry Collections",
+] as const);
+
+export const SECURITY_GATEWAY_VALIDATION_PROHIBITED_SURFACES = Object.freeze([
+  "Login",
+  "Logout",
+  "Authentication",
+  "Authorization",
+  "Permission Evaluation",
+  "Trust Evaluation",
+  "Consent Enforcement",
+  "Identity Verification",
+  "OAuth",
+  "JWT",
+  "SAML",
+  "OpenID Connect",
+  "MFA",
+  "Encryption",
+  "Secret Management",
+  "HTTP",
+  "REST",
+  "Database",
+  "Queue",
+  "Event Bus",
+  "Runtime Security Decisions",
+  "Gateway Routing",
+  "AI / LLM",
+  "DKL invocation",
+  "Executive Engine invocation",
+  "Assistant invocation",
+  "React",
+  "Next.js",
+] as const);
+
+/** Canonical immutable validation ownership declaration. */
+export const SecurityGatewayValidationOwnership = Object.freeze({
+  ownershipId: "NEA-4:4/SecurityGatewayValidationOwnership",
+  sourcePhase: "NEA-4:4" as const,
+  owns: SECURITY_GATEWAY_VALIDATION_OWNS,
+  doesNotOwn: SECURITY_GATEWAY_VALIDATION_DOES_NOT_OWN,
+  ownsCount: SECURITY_GATEWAY_VALIDATION_OWNS.length,
+  doesNotOwnCount: SECURITY_GATEWAY_VALIDATION_DOES_NOT_OWN.length,
+  ownsRuntimeValidation: false as const,
+  ownsValidationEngine: false as const,
+  ownsAuthenticationEngine: false as const,
+  ownsAuthorizationEngine: false as const,
+  ownsDomainModels: false as const,
+  runtimeBehavior: "None" as const,
+  metadataOnly: true as const,
+  immutable: true as const,
+  deterministic: true as const,
+});
+
+/** Canonical immutable validation boundary declarations. */
+export const SecurityGatewayValidationBoundaries = Object.freeze({
+  boundariesId: "NEA-4:4/SecurityGatewayValidationBoundaries",
+  sourcePhase: "NEA-4:4" as const,
+  consumes: Object.freeze(["NEA-4:3 Security Gateway Model"] as const),
+  provides: Object.freeze(["Security Gateway Validation"] as const),
+  prohibitedSurfaces: SECURITY_GATEWAY_VALIDATION_PROHIBITED_SURFACES,
+  prohibitedSurfaceCount:
+    SECURITY_GATEWAY_VALIDATION_PROHIBITED_SURFACES.length,
+  validationEngine: false as const,
+  runtimeValidation: false as const,
+  executesAuthentication: false as const,
+  executesAuthorization: false as const,
+  evaluatesPermissions: false as const,
+  evaluatesTrust: false as const,
+  enforcesConsent: false as const,
+  verifiesIdentity: false as const,
+  implementsOAuth: false as const,
+  implementsJwt: false as const,
+  implementsEncryption: false as const,
+  calculatesSecurityDecisions: false as const,
+  implementsHttp: false as const,
+  accessesDatabase: false as const,
+  performsAi: false as const,
+  callsLlm: false as const,
+  invokesDkl: false as const,
+  invokesEngine: false as const,
+  invokesAssistant: false as const,
+  reactComponents: false as const,
+  nextJsRoutes: false as const,
+  duplicatesModelValues: false as const,
+  reconstructsModel: false as const,
+  runtimeEnforcement: false as const,
+  metadataOnly: true as const,
+  immutable: true as const,
+  deterministic: true as const,
+});

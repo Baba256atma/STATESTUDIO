@@ -1,0 +1,493 @@
+/**
+ * NEA-1:1 — Executive Gateway Contracts.
+ *
+ * Immutable contract declarations for gateway envelopes, security contexts,
+ * normalization, validation, routing, diagnostics, and policies.
+ * Declarations only. No runtime enforcement.
+ *
+ * Ownership: owned exclusively by NEA-1:1.
+ */
+
+import type { ExecutiveGatewayContractDeclaration } from "./executiveGatewayFoundationTypes.ts";
+
+const contract = (
+  key: string,
+  contractName: string,
+  description: string,
+  fields: ReadonlyArray<string>,
+  order: number,
+): ExecutiveGatewayContractDeclaration =>
+  Object.freeze({
+    contractId: `NEA-1:1/Contract/${key}`,
+    contractName,
+    description,
+    fields: Object.freeze([...fields]),
+    metadataOnly: true as const,
+    immutable: true as const,
+    runtimeBehavior: "None" as const,
+    deterministicOrder: order,
+  });
+
+/**
+ * Canonical gateway contract inventory.
+ * Counts must be derived from this collection by downstream phases.
+ */
+export const ExecutiveGatewayContracts: readonly ExecutiveGatewayContractDeclaration[] =
+  Object.freeze([
+    contract(
+      "GatewayIdentity",
+      "Gateway Identity",
+      "Canonical identity for the Executive Gateway Foundation.",
+      Object.freeze([
+        "foundationId",
+        "foundationName",
+        "foundationVersion",
+        "foundationNamespace",
+        "layer",
+        "phase",
+        "status",
+      ]),
+      1,
+    ),
+    contract(
+      "ExternalInteractionSource",
+      "External Interaction Source",
+      "Architectural classification of an external interaction source family.",
+      Object.freeze(["sourceFamily", "label", "description"]),
+      2,
+    ),
+    contract(
+      "ChannelFamily",
+      "Channel Family",
+      "Channel-type classification without connector implementation.",
+      Object.freeze(["channelType", "label", "description"]),
+      3,
+    ),
+    contract(
+      "InteractionModality",
+      "Interaction Modality",
+      "Modality classification for gateway input envelopes.",
+      Object.freeze(["modality", "label", "description"]),
+      4,
+    ),
+    contract(
+      "ExecutiveGatewayRequestEnvelope",
+      "Executive Gateway Request Envelope",
+      "Immutable request envelope for external interaction intake.",
+      Object.freeze([
+        "requestId",
+        "correlationId",
+        "traceId",
+        "source",
+        "channel",
+        "modality",
+        "sender",
+        "tenantContext",
+        "workspaceContext",
+        "sessionReference",
+        "conversationReference",
+        "receivedAt",
+        "payloadReference",
+        "attachmentReferences",
+        "authenticationContext",
+        "authorizationContext",
+        "trustContext",
+        "consentContext",
+        "declaredIntent",
+        "requestedDestination",
+        "metadata",
+      ]),
+      5,
+    ),
+    contract(
+      "ExecutiveGatewayResponseEnvelope",
+      "Executive Gateway Response Envelope",
+      "Immutable response envelope for gateway processing results only.",
+      Object.freeze([
+        "responseId",
+        "requestId",
+        "correlationId",
+        "processingStatus",
+        "acceptance",
+        "rejection",
+        "normalizedRequestRef",
+        "routingResultRef",
+        "diagnostics",
+        "downstreamDestination",
+        "createdAt",
+        "completedAt",
+      ]),
+      6,
+    ),
+    contract(
+      "SenderIdentityReference",
+      "Sender Identity Reference",
+      "Sender reference contract without identity resolution.",
+      Object.freeze([
+        "senderReferenceId",
+        "senderKind",
+        "externalSubjectRef",
+        "displayLabelRef",
+      ]),
+      7,
+    ),
+    contract(
+      "TenantWorkspaceContext",
+      "Tenant and Workspace Context",
+      "Tenant and workspace reference contracts without lookup.",
+      Object.freeze([
+        "tenantRef",
+        "organizationRef",
+        "workspaceRef",
+        "environmentRef",
+        "regionRef",
+        "localeRef",
+        "timezoneRef",
+      ]),
+      8,
+    ),
+    contract(
+      "SessionConversationReference",
+      "Session and Conversation Reference",
+      "Session, conversation, correlation, and trace references.",
+      Object.freeze([
+        "sessionRef",
+        "conversationRef",
+        "correlationId",
+        "traceId",
+      ]),
+      9,
+    ),
+    contract(
+      "CorrelationTraceIdentity",
+      "Correlation and Trace Identity",
+      "Correlation and trace identity fields for gateway envelopes.",
+      Object.freeze(["correlationId", "traceId", "requestId"]),
+      10,
+    ),
+    contract(
+      "RequestIntentDeclaration",
+      "Request Intent Declaration",
+      "Declared intent reference without semantic interpretation.",
+      Object.freeze([
+        "declaredIntentRef",
+        "intentCategoryRef",
+        "interpreted",
+      ]),
+      11,
+    ),
+    contract(
+      "PayloadReference",
+      "Payload Reference",
+      "Payload reference without content interpretation.",
+      Object.freeze(["payloadRef", "contentTypeRef", "sizeHintRef"]),
+      12,
+    ),
+    contract(
+      "AttachmentReference",
+      "Attachment Reference",
+      "Attachment reference without content interpretation.",
+      Object.freeze([
+        "attachmentRef",
+        "attachmentKindRef",
+        "contentTypeRef",
+      ]),
+      13,
+    ),
+    contract(
+      "AuthenticationContext",
+      "Authentication Context",
+      "Authentication context declaration without auth execution.",
+      Object.freeze([
+        "authenticationStatus",
+        "authenticationMethodRef",
+        "identityProviderRef",
+        "credentialRef",
+        "authenticationTimestamp",
+        "assuranceLevelRef",
+      ]),
+      14,
+    ),
+    contract(
+      "AuthorizationContext",
+      "Authorization Context",
+      "Authorization context declaration without permission evaluation.",
+      Object.freeze([
+        "authorizationStatus",
+        "requestedActionRef",
+        "requestedResourceRef",
+        "grantedScopes",
+        "deniedScopes",
+        "policyReferences",
+        "authorizationReasonRef",
+      ]),
+      15,
+    ),
+    contract(
+      "TrustContext",
+      "Trust Context",
+      "Trust context declaration without legal decision engine.",
+      Object.freeze([
+        "trustStatus",
+        "sourceTrustLevelRef",
+        "senderTrustLevelRef",
+        "channelTrustLevelRef",
+        "verificationReferences",
+        "trustWarnings",
+      ]),
+      16,
+    ),
+    contract(
+      "ConsentContext",
+      "Consent Context",
+      "Consent context declaration without compliance workflow.",
+      Object.freeze([
+        "consentStatus",
+        "consentScopeRef",
+        "consentSourceRef",
+        "consentTimestamp",
+        "expirationRef",
+        "revocationRef",
+      ]),
+      17,
+    ),
+    contract(
+      "NormalizationResult",
+      "Normalization Result",
+      "Normalization result for canonical gateway envelope conversion.",
+      Object.freeze([
+        "normalizationId",
+        "originalSourceFamily",
+        "originalChannel",
+        "originalModality",
+        "normalizedModality",
+        "normalizedSenderReference",
+        "normalizedTenantContextRef",
+        "normalizedWorkspaceContextRef",
+        "normalizedPayloadReference",
+        "normalizationStatus",
+        "normalizationDiagnostics",
+        "preservedSourceMetadata",
+      ]),
+      18,
+    ),
+    contract(
+      "ValidationResult",
+      "Validation Result",
+      "Validation result declaration; engine deferred to a later phase.",
+      Object.freeze([
+        "validationId",
+        "validationStatus",
+        "validationRuleReferences",
+        "errors",
+        "warnings",
+        "missingFields",
+        "unsupportedSource",
+        "unsupportedModality",
+        "missingIdentity",
+        "missingTenantContext",
+        "missingWorkspaceContext",
+        "unauthorizedDestination",
+        "malformedEnvelope",
+      ]),
+      19,
+    ),
+    contract(
+      "RoutingDestinationDeclaration",
+      "Routing Destination Declaration",
+      "Declared downstream destination family without routing execution.",
+      Object.freeze(["destination", "destinationReasonRef"]),
+      20,
+    ),
+    contract(
+      "RoutingDecisionResult",
+      "Routing Decision Result",
+      "Routing decision declaration without DKL/Engine invocation.",
+      Object.freeze([
+        "routingDecisionId",
+        "destination",
+        "destinationReasonRef",
+        "normalizedRequestRef",
+        "executesRouting",
+      ]),
+      21,
+    ),
+    contract(
+      "GatewayDiagnostic",
+      "Gateway Diagnostic",
+      "Gateway diagnostic declaration for intake processing.",
+      Object.freeze([
+        "diagnosticId",
+        "severityRef",
+        "codeRef",
+        "messageRef",
+        "relatedRequestId",
+        "relatedLifecycleState",
+      ]),
+      22,
+    ),
+    contract(
+      "GatewayLifecycle",
+      "Gateway Lifecycle",
+      "Declarative gateway lifecycle states and transitions.",
+      Object.freeze(["states", "transitions", "currentState"]),
+      23,
+    ),
+    contract(
+      "GatewayOwnership",
+      "Gateway Ownership",
+      "Ownership and non-ownership declarations for NEA.",
+      Object.freeze(["owns", "doesNotOwn", "owner"]),
+      24,
+    ),
+    contract(
+      "GatewayBoundaries",
+      "Gateway Boundaries",
+      "Explicit prohibited surfaces and architectural separation.",
+      Object.freeze([
+        "prohibitedSurfaces",
+        "consumes",
+        "provides",
+        "runtimeEnforcement",
+      ]),
+      25,
+    ),
+    contract(
+      "GatewayPolicies",
+      "Gateway Policies",
+      "Declarative gateway policies without policy execution.",
+      Object.freeze(["policyId", "policyName", "statement", "executes"]),
+      26,
+    ),
+    contract(
+      "GatewayCapabilityDeclaration",
+      "Gateway Capability Declaration",
+      "Metadata capability declarations for the Executive Gateway.",
+      Object.freeze([
+        "capabilityId",
+        "capabilityName",
+        "description",
+        "executesRuntime",
+      ]),
+      27,
+    ),
+  ]);
+
+/** Canonical routing destination vocabulary — declaration only. */
+export const ExecutiveGatewayRoutingDestinations = Object.freeze([
+  Object.freeze({
+    id: "DKL" as const,
+    label: "Data Knowledge Layer",
+    description: "Declared destination for knowledge intake preparation.",
+    executesRouting: false as const,
+    deterministicOrder: 1,
+  }),
+  Object.freeze({
+    id: "ExecutiveEngine" as const,
+    label: "Executive Engine",
+    description: "Declared destination for engine intake preparation.",
+    executesRouting: false as const,
+    deterministicOrder: 2,
+  }),
+  Object.freeze({
+    id: "KnowledgeServices" as const,
+    label: "Knowledge Services",
+    description: "Declared destination for knowledge service preparation.",
+    executesRouting: false as const,
+    deterministicOrder: 3,
+  }),
+  Object.freeze({
+    id: "IntegrationService" as const,
+    label: "Integration Service",
+    description: "Declared destination for integration coordination.",
+    executesRouting: false as const,
+    deterministicOrder: 4,
+  }),
+  Object.freeze({
+    id: "NotificationService" as const,
+    label: "Notification Service",
+    description: "Declared destination for notification preparation.",
+    executesRouting: false as const,
+    deterministicOrder: 5,
+  }),
+  Object.freeze({
+    id: "HumanReview" as const,
+    label: "Human Review",
+    description: "Declared destination for human review queues.",
+    executesRouting: false as const,
+    deterministicOrder: 6,
+  }),
+  Object.freeze({
+    id: "Rejected" as const,
+    label: "Rejected",
+    description: "Declared terminal destination for rejected intake.",
+    executesRouting: false as const,
+    deterministicOrder: 7,
+  }),
+  Object.freeze({
+    id: "Quarantine" as const,
+    label: "Quarantine",
+    description: "Declared destination for quarantined intake.",
+    executesRouting: false as const,
+    deterministicOrder: 8,
+  }),
+  Object.freeze({
+    id: "Unsupported" as const,
+    label: "Unsupported",
+    description: "Declared destination for unsupported sources or modalities.",
+    executesRouting: false as const,
+    deterministicOrder: 9,
+  }),
+] as const);
+
+/** Declarative gateway policies — no execution. */
+export const ExecutiveGatewayPolicies = Object.freeze([
+  Object.freeze({
+    policyId: "NEA-1:1/Policy/ExternalBoundaryOnly",
+    policyName: "External Boundary Only",
+    statement:
+      "NEA owns the external gateway boundary; internal Assistant is not forced through NEA.",
+    executes: false as const,
+    deterministicOrder: 1,
+  }),
+  Object.freeze({
+    policyId: "NEA-1:1/Policy/PublicIndexPreferLocal",
+    policyName: "Local Foundation Contracts",
+    statement:
+      "NEA-1:1 prefers local primitive contracts and must not import deep internals from other layers.",
+    executes: false as const,
+    deterministicOrder: 2,
+  }),
+  Object.freeze({
+    policyId: "NEA-1:1/Policy/NoRuntimeIntegration",
+    policyName: "No Runtime Integration",
+    statement:
+      "Foundation declares envelopes and classifications only; no connectors, networking, or persistence.",
+    executes: false as const,
+    deterministicOrder: 3,
+  }),
+  Object.freeze({
+    policyId: "NEA-1:1/Policy/NoBusinessUnderstanding",
+    policyName: "No Business Understanding",
+    statement:
+      "Normalization converts to canonical envelopes without assigning business meaning.",
+    executes: false as const,
+    deterministicOrder: 4,
+  }),
+  Object.freeze({
+    policyId: "NEA-1:1/Policy/NoDownstreamInvocation",
+    policyName: "No Downstream Invocation",
+    statement:
+      "Routing destinations are declared only; DKL, Engine, Assistant, Advisor, Director, and EVE are never invoked.",
+    executes: false as const,
+    deterministicOrder: 5,
+  }),
+  Object.freeze({
+    policyId: "NEA-1:1/Policy/CanonicalInventory",
+    policyName: "Canonical Inventory",
+    statement:
+      "Inventory counts are derived from canonical foundation collections by reference only.",
+    executes: false as const,
+    deterministicOrder: 6,
+  }),
+] as const);

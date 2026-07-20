@@ -1,0 +1,140 @@
+/**
+ * NEA-7:3 — Intake Orchestration Model Ownership.
+ *
+ * Ownership and boundary declarations for the Intake Orchestration Model.
+ * Metadata only — no runtime assignment.
+ *
+ * Ownership: owned exclusively by NEA-7:3.
+ */
+
+export const INTAKE_ORCHESTRATION_MODEL_OWNS = Object.freeze([
+  "Domain Models",
+  "Model Relationships",
+  "Model Lifecycle",
+  "Model Metadata",
+  "Intake Identity Model Instances",
+  "Model Composition",
+  "Model Summary",
+  "Model Boundaries",
+] as const);
+
+export const INTAKE_ORCHESTRATION_MODEL_DOES_NOT_OWN = Object.freeze([
+  "Registry Collections",
+  "Contracts",
+  "Capabilities",
+  "Routing",
+  "Normalization",
+  "Authentication",
+  "Sessions",
+  "Conversations",
+  "Connectors",
+  "DKL",
+  "Executive Engine",
+  "Runtime Behavior",
+  "Runtime Orchestration",
+  "Runtime Assembly",
+  "AI",
+  "LLM",
+  "Business Objects",
+  "Storage",
+  "Database",
+  "HTTP",
+  "REST",
+  "Queue",
+] as const);
+
+export const INTAKE_ORCHESTRATION_MODEL_PROHIBITED_SURFACES = Object.freeze([
+  "Runtime Orchestration",
+  "Runtime Intake Assembly",
+  "Runtime Routing",
+  "Runtime Validation",
+  "Runtime Publishing",
+  "DKL invocation",
+  "Business Object creation",
+  "AI",
+  "LLM",
+  "HTTP",
+  "Database",
+  "Queue",
+  "React",
+  "Next.js",
+  "REST",
+  "WebSockets",
+  "Storage",
+  "Event Bus",
+  "Authentication",
+  "Authorization",
+  "Engine invocation",
+  "Executive Engine invocation",
+  "Intent Detection",
+  "Message Parsing",
+] as const);
+
+/** Canonical immutable model ownership declaration. */
+export const IntakeOrchestrationModelOwnership = Object.freeze({
+  ownershipId: "NEA-7:3/IntakeOrchestrationModelOwnership",
+  sourcePhase: "NEA-7:3" as const,
+  owns: INTAKE_ORCHESTRATION_MODEL_OWNS,
+  doesNotOwn: INTAKE_ORCHESTRATION_MODEL_DOES_NOT_OWN,
+  ownsCount: INTAKE_ORCHESTRATION_MODEL_OWNS.length,
+  doesNotOwnCount: INTAKE_ORCHESTRATION_MODEL_DOES_NOT_OWN.length,
+  ownsRegistryCollections: false as const,
+  ownsContracts: false as const,
+  ownsCapabilities: false as const,
+  ownsRouting: false as const,
+  ownsNormalization: false as const,
+  ownsAuthentication: false as const,
+  ownsSessions: false as const,
+  ownsConversations: false as const,
+  ownsConnectors: false as const,
+  ownsDkl: false as const,
+  ownsExecutiveEngine: false as const,
+  ownsRuntimeBehavior: false as const,
+  ownsRuntimeOrchestration: false as const,
+  ownsRuntimeAssembly: false as const,
+  ownsAi: false as const,
+  ownsLlm: false as const,
+  ownsBusinessObjects: false as const,
+  ownsStorage: false as const,
+  ownsDatabase: false as const,
+  ownsHttp: false as const,
+  ownsRest: false as const,
+  ownsQueue: false as const,
+  runtimeBehavior: "None" as const,
+  metadataOnly: true as const,
+  immutable: true as const,
+  deterministic: true as const,
+});
+
+/** Canonical immutable model boundary declarations. */
+export const IntakeOrchestrationModelBoundaries = Object.freeze({
+  boundariesId: "NEA-7:3/IntakeOrchestrationModelBoundaries",
+  sourcePhase: "NEA-7:3" as const,
+  consumes: Object.freeze([
+    "NEA-7:2 Intake Orchestration Registry",
+  ] as const),
+  provides: Object.freeze(["Intake Orchestration Model"] as const),
+  prohibitedSurfaces: INTAKE_ORCHESTRATION_MODEL_PROHIBITED_SURFACES,
+  prohibitedSurfaceCount:
+    INTAKE_ORCHESTRATION_MODEL_PROHIBITED_SURFACES.length,
+  executesOrchestration: false as const,
+  assemblesRuntimePackage: false as const,
+  executesRouting: false as const,
+  executesValidation: false as const,
+  executesPublishing: false as const,
+  invokesDkl: false as const,
+  buildsBusinessObjects: false as const,
+  performsAi: false as const,
+  callsLlm: false as const,
+  implementsHttp: false as const,
+  accessesDatabase: false as const,
+  implementsQueue: false as const,
+  reactComponents: false as const,
+  nextJsRoutes: false as const,
+  duplicatesRegistryValues: false as const,
+  reconstructsRegistry: false as const,
+  runtimeEnforcement: false as const,
+  metadataOnly: true as const,
+  immutable: true as const,
+  deterministic: true as const,
+});
