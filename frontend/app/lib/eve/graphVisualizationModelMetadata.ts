@@ -1,0 +1,46 @@
+import { GraphVisualizationRegistry } from "./graphVisualizationRegistry.ts";
+import { GraphVisualizationModelInventory } from "./graphVisualizationModelInventory.ts";
+
+export const GraphVisualizationModelMetadata = Object.freeze({
+  id: "EVE-3:3/GraphVisualizationModel",
+  name: "Graph Visualization Model",
+  version: "1.0.0",
+  namespace: "nexora.eve.graph-visualization.model",
+  layer: "EVE",
+  phase: "EVE-3:3",
+  status: "ReadyForValidation",
+  readiness: "ReadyForValidation",
+  registryReference: GraphVisualizationRegistry.metadata.id,
+  inventory: GraphVisualizationModelInventory,
+  ownership: Object.freeze({
+    owns: Object.freeze([
+      "Typed graph visualization models", "Model descriptors",
+      "Relationship descriptors", "Structural composition metadata",
+      "Model inventories", "Model metadata",
+    ] as const),
+    analyticsOwnership: false,
+    runtimeOwnership: false,
+  }),
+  dependency: Object.freeze({
+    graphVisualizationRegistryOnly: true,
+    directPreviousPhaseModule: "graphVisualizationRegistry.ts",
+    directFoundationImport: false,
+    directEveTwoImport: false,
+    directEveOneImport: false,
+    otherPhaseDependencies: false,
+  }),
+  analyticsExecution: false,
+  traversal: false,
+  pathfinding: false,
+  layoutExecution: false,
+  rendering: false,
+  runtimeInteraction: false,
+  networking: false,
+  persistence: false,
+  services: false,
+  factories: false,
+  runtimeExecution: false,
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+} as const);

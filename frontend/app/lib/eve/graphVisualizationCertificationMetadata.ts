@@ -1,0 +1,58 @@
+import { GraphVisualizationPlatform } from "./graphVisualizationPlatform.ts";
+import { GraphVisualizationCertificationCompatibility } from "./graphVisualizationCertificationCompatibility.ts";
+import { GraphVisualizationCertificationCriteria } from "./graphVisualizationCertificationCriteria.ts";
+import { GraphVisualizationCertificationGates } from "./graphVisualizationCertificationGates.ts";
+import { GraphVisualizationCertificationInventory } from "./graphVisualizationCertificationInventory.ts";
+
+export const GraphVisualizationCertificationMetadata = Object.freeze({
+  id: "EVE-3:7/GraphVisualizationCertification",
+  name: "Graph Visualization Certification",
+  version: "1.0.0",
+  namespace: "nexora.eve.graph-visualization.certification",
+  layer: "EVE",
+  phase: "EVE-3:7",
+  status: "Certified",
+  readiness: "ReadyForFreeze",
+  platformReference: GraphVisualizationPlatform.metadata.id,
+  platform: GraphVisualizationPlatform,
+  criteria: GraphVisualizationCertificationCriteria,
+  gates: GraphVisualizationCertificationGates,
+  compatibility: GraphVisualizationCertificationCompatibility,
+  inventory: GraphVisualizationCertificationInventory,
+  certificationTimestampMetadata: "Static architectural certification metadata; no runtime timestamp.",
+  readinessMetadata: Object.freeze({
+    status: "Certified",
+    readiness: "ReadyForFreeze",
+    certificationComplete: true,
+    runtimeEvaluation: false,
+    metadataOnly: true,
+    immutable: true,
+  }),
+  dependency: Object.freeze({
+    graphVisualizationPlatformOnly: true,
+    directPreviousPhaseModule: "graphVisualizationPlatform.ts",
+    directManifestImport: false,
+    directValidationImport: false,
+    directModelImport: false,
+    directRegistryImport: false,
+    directFoundationImport: false,
+    directEveTwoImport: false,
+    directEveOneImport: false,
+    externalDependencies: false,
+  }),
+  certificationEngine: false,
+  runtimeCertification: false,
+  validationExecution: false,
+  analyticsExecution: false,
+  traversal: false,
+  pathfinding: false,
+  layoutExecution: false,
+  rendering: false,
+  networking: false,
+  persistence: false,
+  services: false,
+  factories: false,
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+} as const);

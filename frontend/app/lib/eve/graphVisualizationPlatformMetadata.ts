@@ -1,0 +1,67 @@
+import { GraphVisualizationManifest } from "./graphVisualizationManifest.ts";
+import { GraphVisualizationPlatformCapabilities } from "./graphVisualizationPlatformCapabilities.ts";
+import { GraphVisualizationPlatformCompatibility } from "./graphVisualizationPlatformCompatibility.ts";
+import { GraphVisualizationPlatformGuarantees } from "./graphVisualizationPlatformGuarantees.ts";
+import { GraphVisualizationPlatformInventory } from "./graphVisualizationPlatformInventory.ts";
+
+export const GraphVisualizationPlatformMetadata = Object.freeze({
+  id: "EVE-3:6/GraphVisualizationPlatform",
+  name: "Graph Visualization Platform",
+  version: "1.0.0",
+  namespace: "nexora.eve.graph-visualization.platform",
+  layer: "EVE",
+  phase: "EVE-3:6",
+  status: "ReadyForCertification",
+  readiness: "ReadyForCertification",
+  manifestReference: GraphVisualizationManifest.metadata.id,
+  composition: Object.freeze([
+    ...GraphVisualizationManifest.composition,
+    Object.freeze({
+      phase: "Platform",
+      canonicalReference: "EVE-3:6/GraphVisualizationPlatform",
+      canonicalPhase: "EVE-3:6/GraphVisualizationPlatform",
+      preservedByReference: true,
+      deterministicOrder: GraphVisualizationManifest.composition.length + 1,
+      metadataOnly: true,
+      immutable: true,
+    }),
+  ]),
+  inventory: GraphVisualizationPlatformInventory,
+  capabilities: GraphVisualizationPlatformCapabilities,
+  guarantees: GraphVisualizationPlatformGuarantees,
+  compatibility: GraphVisualizationPlatformCompatibility,
+  readinessMetadata: Object.freeze({
+    status: "ReadyForCertification",
+    manifestReady: GraphVisualizationManifest.metadata.readiness === "ReadyForPlatform",
+    certificationInputPublished: true,
+    runtimeCheck: false,
+    metadataOnly: true,
+    immutable: true,
+  }),
+  dependency: Object.freeze({
+    graphVisualizationManifestOnly: true,
+    directPreviousPhaseModule: "graphVisualizationManifest.ts",
+    directValidationImport: false,
+    directModelImport: false,
+    directRegistryImport: false,
+    directFoundationImport: false,
+    directEveTwoImport: false,
+    directEveOneImport: false,
+    otherPhaseDependencies: false,
+  }),
+  validationExecution: false,
+  analyticsExecution: false,
+  traversal: false,
+  pathfinding: false,
+  layoutExecution: false,
+  rendering: false,
+  runtimeInteraction: false,
+  networking: false,
+  persistence: false,
+  services: false,
+  factories: false,
+  runtimeExecution: false,
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+} as const);

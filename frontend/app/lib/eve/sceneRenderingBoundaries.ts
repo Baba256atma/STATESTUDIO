@@ -1,0 +1,25 @@
+export const SceneRenderingBoundaries = Object.freeze({
+  id: "EVE-2:1/SceneRenderingBoundaries",
+  consumes: Object.freeze(["Visualization Public Index"] as const),
+  consumesVisualizationSpecifications: true,
+  prohibitedSurfaces: Object.freeze([
+    "Rendering engine", "GPU execution", "Frame rendering",
+    "Scene graph execution", "Render pipeline", "HTML", "CSS", "SVG",
+    "Canvas", "WebGL", "WebGPU", "Three.js", "Babylon.js", "PixiJS",
+    "React", "Next.js", "Animation", "Timeline", "Playback", "Physics",
+    "Graph layout", "Widgets", "Dashboards", "Networking", "Persistence",
+    "Services", "Factories", "APIs", "Executive Engine",
+    "Director orchestration", "Advisor logic", "AI", "Runtime execution",
+  ] as const),
+  renderingImplementation: false,
+  frameGeneration: false,
+  gpuExecution: false,
+  sceneCompositionExecution: false,
+  runtimeExecution: false,
+  networking: false,
+  persistence: false,
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+} as const);
+

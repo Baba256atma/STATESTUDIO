@@ -1,0 +1,26 @@
+export const VisualizationBoundaries = Object.freeze({
+  boundariesId: "EVE-1:1/VisualizationBoundaries",
+  consumes: Object.freeze(["Director Public Index"] as const),
+  receives: Object.freeze(["Director visualization specifications"] as const),
+  defines: Object.freeze(["How visual information can be represented"] as const),
+  prohibitedSurfaces: Object.freeze([
+    "Rendering", "UI Components", "React", "Next.js", "HTML", "CSS", "SVG",
+    "Canvas", "WebGL", "Three.js", "Babylon.js", "PixiJS", "Animations",
+    "Physics", "Timeline", "Playback", "Graph Layout", "Business Objects",
+    "Director logic", "Advisor logic", "Executive Engine", "AI", "DKL",
+    "Persistence", "APIs", "Services", "Factories", "Runtime code",
+  ] as const),
+  directorPublicIndexOnly: true,
+  renderingImplementation: false,
+  uiImplementation: false,
+  graphicsImplementation: false,
+  runtimeExecution: false,
+  networking: false,
+  persistence: false,
+  reasoning: false,
+  businessRules: false,
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+} as const);
+

@@ -1,0 +1,98 @@
+import { TimelineVisualizationManifestPlatform } from "./timelineVisualizationManifest.ts";
+import { TimelineVisualizationPlatformCapabilities } from "./timelineVisualizationPlatformCapabilities.ts";
+import { TimelineVisualizationPlatformCompatibility } from "./timelineVisualizationPlatformCompatibility.ts";
+import { TimelineVisualizationPlatformComposition } from "./timelineVisualizationPlatformComposition.ts";
+import { TimelineVisualizationPlatformGuarantees } from "./timelineVisualizationPlatformGuarantees.ts";
+
+export const TimelineVisualizationPlatformInventory = Object.freeze({
+  phaseComposition: TimelineVisualizationPlatformComposition,
+  capabilities: TimelineVisualizationPlatformCapabilities,
+  guarantees: TimelineVisualizationPlatformGuarantees,
+  compatibility: TimelineVisualizationPlatformCompatibility,
+  manifestInventory: TimelineVisualizationManifestPlatform.inventory,
+  manifestComposition: TimelineVisualizationManifestPlatform.composition,
+  manifestGuarantees: TimelineVisualizationManifestPlatform.guarantees,
+  manifestCompatibility: TimelineVisualizationManifestPlatform.compatibility,
+  manifestReadiness: TimelineVisualizationManifestPlatform.readiness,
+  publicPlatformSurface: Object.freeze([
+    "Platform platform", "Platform ID", "Platform version", "Platform namespace",
+    "Platform metadata", "Platform summary", "Platform count", "Platform release metadata",
+  ] as const),
+  counts: Object.freeze({
+    phaseCount: TimelineVisualizationPlatformComposition.length,
+    capabilityCount: TimelineVisualizationPlatformCapabilities.length,
+    guaranteeCount: TimelineVisualizationPlatformGuarantees.length,
+    compatibilityCount: TimelineVisualizationPlatformCompatibility.length,
+  }),
+  manifestCollectionsPreservedByReference: true,
+  countsDerivedFromCanonicalCollections: true,
+  hardcodesAggregateTotals: false,
+  reconstructsUpstreamCollections: false,
+  duplicatesManifestMetadata: false,
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+} as const);
+
+export const TimelineVisualizationPlatformMetadata = Object.freeze({
+  id: "EVE-4:6/TimelineVisualizationPlatform",
+  name: "Timeline & Temporal Visualization Platform",
+  version: "1.0.0",
+  namespace: "nexora.eve.timeline-visualization.platform",
+  layer: "EVE",
+  phase: "EVE-4:6",
+  status: "ReadyForCertification",
+  readiness: "ReadyForCertification",
+  manifestReference: TimelineVisualizationManifestPlatform.metadata.id,
+  manifest: TimelineVisualizationManifestPlatform,
+  composition: TimelineVisualizationPlatformComposition,
+  capabilities: TimelineVisualizationPlatformCapabilities,
+  guarantees: TimelineVisualizationPlatformGuarantees,
+  compatibility: TimelineVisualizationPlatformCompatibility,
+  inventory: TimelineVisualizationPlatformInventory,
+  readinessMetadata: Object.freeze({
+    status: "ReadyForCertification",
+    manifestReady: TimelineVisualizationManifestPlatform.metadata.status === "ReadyForPlatform",
+    certificationInputPublished: true,
+    runtimeCheck: false,
+    metadataOnly: true,
+    immutable: true,
+  }),
+  ownership: Object.freeze({
+    owns: Object.freeze([
+      "Platform composition", "Platform metadata", "Platform capabilities",
+      "Platform guarantees", "Platform compatibility", "Platform inventories",
+      "Certification readiness metadata",
+    ] as const),
+    doesNotOwn: Object.freeze([
+      "Timeline models", "Validation execution", "Playback", "Animation", "Scheduling",
+      "Rendering", "Simulation", "Executive reasoning",
+    ] as const),
+  }),
+  dependency: Object.freeze({
+    timelineVisualizationManifestOnly: true,
+    directPreviousPhaseModule: "timelineVisualizationManifest.ts",
+    directValidationImport: false,
+    directModelImport: false,
+    directRegistryImport: false,
+    directFoundationImport: false,
+    directGraphVisualizationImport: false,
+    directEveThreeImports: false,
+    externalDependencies: false,
+  }),
+  validationExecution: false,
+  certificationExecution: false,
+  playbackExecution: false,
+  animationExecution: false,
+  scheduling: false,
+  simulation: false,
+  rendering: false,
+  networking: false,
+  persistence: false,
+  services: false,
+  factories: false,
+  runtimeExecution: false,
+  metadataOnly: true,
+  immutable: true,
+  deterministic: true,
+} as const);

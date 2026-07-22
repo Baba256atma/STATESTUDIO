@@ -1,0 +1,40 @@
+export const DirectorBoundaries = Object.freeze({
+  boundariesId: "DIRECTOR-1:1/Boundaries",
+  mayConsume: Object.freeze([
+    "Executive Engine Public APIs",
+    "Advisor outputs",
+    "Business Objects",
+    "DKL models",
+  ] as const),
+  mayProduce: Object.freeze([
+    "Scene Plans",
+    "Visualization Plans",
+    "Camera Plans",
+    "Timeline Plans",
+    "Animation Plans",
+  ] as const),
+  mustNeverDirectlyConsume: Object.freeze([
+    "Telegram",
+    "Email",
+    "REST",
+    "Databases",
+    "External APIs",
+  ] as const),
+  dependencies: Object.freeze([
+    "Executive Engine public interfaces",
+    "Advisor public interfaces",
+    "DKL public interfaces",
+    "Business Objects public interfaces",
+  ] as const),
+  publicInterfacesOnly: true,
+  importsEve: false,
+  rendersGraphics: false,
+  performsAiReasoning: false,
+  calculatesBusinessScenarios: false,
+  persists: false,
+  networks: false,
+  runtimeBehavior: "None",
+  metadataOnly: true,
+  immutable: true,
+} as const);
+
