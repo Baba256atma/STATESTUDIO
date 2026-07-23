@@ -1,0 +1,247 @@
+/**
+ * EIL-5:7 — Integration Policy & Governance Certification Criteria.
+ *
+ * Immutable declarative certification criteria for the EIL-5 Governance Platform.
+ * Descriptive only. No certification execution.
+ *
+ * Ownership: owned exclusively by EIL-5:7.
+ */
+
+import {
+  IntegrationPolicyGovernancePlatform,
+  IntegrationPolicyGovernancePlatformIdentity,
+} from "./integrationPolicyGovernancePlatform.ts";
+import type {
+  IntegrationPolicyGovernanceCertificationCriterion,
+  PolicyGovernanceCertificationCriterionCategory,
+  PolicyGovernanceCertificationCriterionKey,
+  PolicyGovernanceCertificationExpectedOutcome,
+  PolicyGovernanceCertificationSeverity,
+  PolicyGovernancePlatformReference,
+} from "./integrationPolicyGovernanceCertificationTypes.ts";
+
+const platform = IntegrationPolicyGovernancePlatform;
+
+const platformRef = (sourcePath: string): PolicyGovernancePlatformReference =>
+  Object.freeze({
+    platformId: IntegrationPolicyGovernancePlatformIdentity.canonicalId,
+    platformNamespace: IntegrationPolicyGovernancePlatformIdentity.namespace,
+    entryPoint: "integrationPolicyGovernancePlatform.ts" as const,
+    sourcePath,
+    preservesCanonicalReference: true as const,
+    duplicatesPlatformValue: false as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+  });
+
+const criterion = (
+  key: PolicyGovernanceCertificationCriterionKey,
+  canonicalName: string,
+  description: string,
+  category: PolicyGovernanceCertificationCriterionCategory,
+  expectedOutcome: PolicyGovernanceCertificationExpectedOutcome,
+  severity: PolicyGovernanceCertificationSeverity,
+  sourcePath: string,
+  ordinal: number,
+  tags: readonly string[],
+): IntegrationPolicyGovernanceCertificationCriterion =>
+  Object.freeze({
+    criterionId: `EIL-5:7/Criterion/${key}` as const,
+    canonicalKey: key,
+    canonicalName,
+    description,
+    category,
+    expectedOutcome,
+    severity,
+    sourceReference: platformRef(sourcePath),
+    ownership: "EIL-5:7" as const,
+    ordinal,
+    tags: Object.freeze([...tags]),
+    executesCertification: false as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+  });
+
+/**
+ * Exactly sixteen certification criteria.
+ * Source references point at Platform aggregate surfaces.
+ */
+export const IntegrationPolicyGovernanceCertificationCriteria: readonly IntegrationPolicyGovernanceCertificationCriterion[] =
+  Object.freeze([
+    criterion(
+      "CanonicalIdentity",
+      "Canonical Identity",
+      "Platform canonical identity must equal EIL-5:6/IntegrationPolicyGovernancePlatform.",
+      "Identity",
+      "Present",
+      "Error",
+      "identity",
+      1,
+      Object.freeze(["identity"]),
+    ),
+    criterion(
+      "NamespaceIntegrity",
+      "Namespace Integrity",
+      "Platform namespace must equal nexora.eil.integration-policy-governance.platform.",
+      "Namespace",
+      "Valid",
+      "Error",
+      "identity/namespace",
+      2,
+      Object.freeze(["namespace"]),
+    ),
+    criterion(
+      "VersionIntegrity",
+      "Version Integrity",
+      "Platform version must equal 1.0.0.",
+      "Version",
+      "Valid",
+      "Error",
+      "identity/version",
+      3,
+      Object.freeze(["version"]),
+    ),
+    criterion(
+      "DependencyIntegrity",
+      "Dependency Integrity",
+      "Platform must declare Manifest as sole upstream dependency.",
+      "Dependency",
+      "Compliant",
+      "Error",
+      "dependency",
+      4,
+      Object.freeze(["dependency"]),
+    ),
+    criterion(
+      "InventoryIntegrity",
+      "Inventory Integrity",
+      `Platform inventory total must remain derived (${platform.inventory.total}).`,
+      "Inventory",
+      "Complete",
+      "Error",
+      "inventory",
+      5,
+      Object.freeze(["inventory"]),
+    ),
+    criterion(
+      "ValidationIntegrity",
+      "Validation Integrity",
+      "Platform composition must retain Validation reference integrity.",
+      "Validation",
+      "Complete",
+      "Error",
+      "composition/validationReference",
+      6,
+      Object.freeze(["validation"]),
+    ),
+    criterion(
+      "ManifestIntegrity",
+      "Manifest Integrity",
+      "Platform must reference EIL-5:5/IntegrationPolicyGovernanceManifest without duplication.",
+      "Manifest",
+      "Complete",
+      "Error",
+      "composition/manifestReference",
+      7,
+      Object.freeze(["manifest"]),
+    ),
+    criterion(
+      "PlatformIntegrity",
+      "Platform Integrity",
+      `Platform guarantees (${platform.guarantees.length}) and compatibility (${platform.compatibility.length}) must be complete.`,
+      "Platform",
+      "Complete",
+      "Error",
+      "guarantees",
+      8,
+      Object.freeze(["platform"]),
+    ),
+    criterion(
+      "CompatibilityIntegrity",
+      "Compatibility Integrity",
+      "Platform compatibility declarations must remain complete and descriptive.",
+      "Compatibility",
+      "Complete",
+      "Error",
+      "compatibility",
+      9,
+      Object.freeze(["compatibility"]),
+    ),
+    criterion(
+      "MetadataImmutability",
+      "Metadata Immutability",
+      "All Platform exports must remain deeply immutable.",
+      "Immutability",
+      "Immutable",
+      "Error",
+      "collections",
+      10,
+      Object.freeze(["immutability"]),
+    ),
+    criterion(
+      "DeterministicOrdering",
+      "Deterministic Ordering",
+      "Platform collections must preserve explicit ascending ordinals.",
+      "Determinism",
+      "Deterministic",
+      "Error",
+      "guarantees",
+      11,
+      Object.freeze(["ordering"]),
+    ),
+    criterion(
+      "ArchitecturalConsistency",
+      "Architectural Consistency",
+      "Foundation through Manifest lineage must remain consistent in composition.",
+      "Architecture",
+      "Compliant",
+      "Error",
+      "composition",
+      12,
+      Object.freeze(["architecture"]),
+    ),
+    criterion(
+      "AggregateEntryPointIntegrity",
+      "Aggregate Entry Point Integrity",
+      "IntegrationPolicyGovernancePlatform must remain the sole Platform consumer entry point.",
+      "Export",
+      "Present",
+      "Error",
+      "summary",
+      13,
+      Object.freeze(["export"]),
+    ),
+    criterion(
+      "ComplianceIntegrity",
+      "Compliance Integrity",
+      "Platform must remain free of runtime, networking, and governance engine behavior.",
+      "Compliance",
+      "Compliant",
+      "Error",
+      "metadataOnly",
+      14,
+      Object.freeze(["compliance"]),
+    ),
+    criterion(
+      "ReleaseConsistency",
+      "Release Consistency",
+      "Release lineage and version consistency must be preserved across EIL-5.",
+      "Release",
+      "Compliant",
+      "Error",
+      "composition/releaseLineage",
+      15,
+      Object.freeze(["release"]),
+    ),
+    criterion(
+      "ReadinessCompliance",
+      "Readiness Compliance",
+      "Platform readiness must be ReadyForCertification prior to Freeze eligibility.",
+      "Readiness",
+      "Pass",
+      "Error",
+      "readiness",
+      16,
+      Object.freeze(["readiness"]),
+    ),
+  ]);
