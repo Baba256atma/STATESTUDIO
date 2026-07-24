@@ -1,0 +1,25 @@
+/**
+ * WS-1:1 — Immutable Workspace architectural contracts.
+ */
+
+import type { WorkspaceContractDefinition } from "./workspaceFoundationTypes.ts";
+
+export const WorkspaceFoundationContracts = Object.freeze([
+  Object.freeze({ id: "WS-1:1/Contract/Workspace", name: "Workspace Contract", description: "Declares a bounded executive working environment.", requiredMetadata: Object.freeze(["workspaceId", "identity", "objective", "scope"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/Identity", name: "Workspace Identity Contract", description: "Declares canonical Workspace identity metadata.", requiredMetadata: Object.freeze(["id", "name", "category", "version"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/Metadata", name: "Workspace Metadata Contract", description: "Declares descriptive Workspace metadata.", requiredMetadata: Object.freeze(["description", "owner", "tags"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/Context", name: "Workspace Context Contract", description: "Declares the executive context reference owned by a Workspace.", requiredMetadata: Object.freeze(["contextReference"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/Objective", name: "Workspace Objective Contract", description: "Declares the management objective served by a Workspace.", requiredMetadata: Object.freeze(["objectiveId", "statement"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/Scope", name: "Workspace Scope Contract", description: "Declares the bounded responsibility of a Workspace.", requiredMetadata: Object.freeze(["scopeId", "inclusions", "exclusions"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/StateReference", name: "Workspace State Reference Contract", description: "Declares a non-owning state reference.", requiredMetadata: Object.freeze(["stateReference"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/ObjectCollection", name: "Workspace Object Collection Contract", description: "Declares a collection reference for executive objects.", requiredMetadata: Object.freeze(["collectionReference"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/TimelineReference", name: "Workspace Timeline Reference Contract", description: "Declares a Workspace timeline reference.", requiredMetadata: Object.freeze(["timelineReference"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/AdvisorReference", name: "Workspace Advisor Reference Contract", description: "Declares an advisor integration reference.", requiredMetadata: Object.freeze(["advisorReference"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/SceneReference", name: "Workspace Scene Reference Contract", description: "Declares a scene and visual-context reference.", requiredMetadata: Object.freeze(["sceneReference"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/NavigationReference", name: "Workspace Navigation Reference Contract", description: "Declares navigation metadata without navigation behavior.", requiredMetadata: Object.freeze(["navigationReference"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/LayoutReference", name: "Workspace Layout Reference Contract", description: "Declares layout metadata without rendering.", requiredMetadata: Object.freeze(["layoutReference"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/ActionSurface", name: "Workspace Action Surface Contract", description: "Declares available action metadata without execution.", requiredMetadata: Object.freeze(["actionReferences"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/SessionReference", name: "Workspace Session Reference Contract", description: "Declares a Workspace session reference.", requiredMetadata: Object.freeze(["sessionReference"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/Permissions", name: "Workspace Permissions Contract", description: "Declares permission-awareness metadata without authorization.", requiredMetadata: Object.freeze(["permissionReferences"]), executable: false, metadataOnly: true, immutable: true }),
+  Object.freeze({ id: "WS-1:1/Contract/Configuration", name: "Workspace Configuration Contract", description: "Declares immutable Workspace configuration metadata.", requiredMetadata: Object.freeze(["configurationId", "version"]), executable: false, metadataOnly: true, immutable: true }),
+] as const satisfies readonly WorkspaceContractDefinition[]);

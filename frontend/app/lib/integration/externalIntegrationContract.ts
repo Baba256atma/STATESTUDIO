@@ -1,5 +1,5 @@
 import type { SceneJson, SceneLoop, SceneObject, SemanticObjectMeta } from "../sceneTypes";
-import type { WorkspaceState, WorkspaceProjectState } from "../workspace/workspaceModel";
+import type { WorkspaceState, WorkspaceProjectState } from "../workspace/workspacePersistence";
 import {
   appendAuditEvents,
   appendTrustProvenance,

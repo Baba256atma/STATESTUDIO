@@ -1,7 +1,7 @@
 import type { SceneJson, SemanticObjectMeta } from "../sceneTypes";
 import type { ScannerResult } from "./scannerContract";
-import type { WorkspaceProjectState, WorkspaceState } from "./workspaceModel";
-import { createEmptyProjectState, DEFAULT_PROJECT_ID } from "./workspaceModel";
+import type { WorkspaceProjectState, WorkspaceState } from "./workspacePersistence";
+import { createEmptyProjectState, DEFAULT_PROJECT_ID } from "./workspacePersistence";
 import { normalizeScannerResult, validateScannerResult } from "./scannerContract";
 
 export type NexoraProjectFileVersion = "1";

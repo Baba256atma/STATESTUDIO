@@ -10,7 +10,7 @@ import {
   DEFAULT_PROJECT_ID,
   type WorkspaceProjectState,
   type WorkspaceState,
-} from "./workspaceModel";
+} from "./workspacePersistence";
 
 export type ScannerMode = "create" | "enrich";
 

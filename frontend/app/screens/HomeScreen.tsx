@@ -57,7 +57,7 @@ import {
   DEFAULT_WORKSPACE_ID,
   inferProjectMetaFromScene,
   type WorkspaceProjectState,
-} from "../lib/workspace/workspaceModel";
+} from "../lib/workspace/workspacePersistence";
 import {
   getWorkspaceRegistrySnapshot,
   subscribeWorkspaceRegistry,

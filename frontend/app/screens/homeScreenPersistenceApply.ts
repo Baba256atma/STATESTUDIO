@@ -16,7 +16,7 @@ import {
   inferProjectMetaFromScene,
   type WorkspaceProjectState,
   type WorkspaceState,
-} from "../lib/workspace/workspaceModel";
+} from "../lib/workspace/workspacePersistence";
 import {
   exportProjectFile,
   importProjectFileToWorkspace,

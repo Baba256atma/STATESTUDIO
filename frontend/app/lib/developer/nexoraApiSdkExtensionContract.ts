@@ -2,8 +2,8 @@ import type { ActiveModeContext } from "../modes/productModesContract";
 import type { EnvironmentConfig } from "../ops/environmentDeploymentContract";
 import { isFeatureEnabled } from "../ops/environmentDeploymentContract";
 import type { SceneJson } from "../sceneTypes";
-import type { WorkspaceProjectState, WorkspaceState } from "../workspace/workspaceModel";
-import { createEmptyProjectState, DEFAULT_PROJECT_ID, DEFAULT_WORKSPACE_ID } from "../workspace/workspaceModel";
+import type { WorkspaceProjectState, WorkspaceState } from "../workspace/workspacePersistence";
+import { createEmptyProjectState, DEFAULT_PROJECT_ID, DEFAULT_WORKSPACE_ID } from "../workspace/workspacePersistence";
 import type { ScannerResult } from "../workspace/scannerContract";
 import { applyScannerResultToWorkspace } from "../workspace/scannerContract";
 import {
