@@ -1,0 +1,187 @@
+/** ASSISTANT-7:1 — Boundary declarations and prohibited surfaces. */
+import type {
+  AssistantExecutiveActionPlanningBoundaryMetadata,
+  AssistantExecutiveActionPlanningProhibitedSurfaceMetadata,
+} from "./assistantExecutiveActionPlanningFoundation.types.ts";
+
+const boundaryDeclarations = Object.freeze([
+  {
+    name: "Planning Runtime Boundary",
+    protectedDomain: "Planning Runtime",
+    prohibitedResponsibility: "Runtime planning execution",
+    permittedMetadataReferences: Object.freeze([
+      "Action Plan",
+      "Planned Action",
+    ]),
+    enforcementIntent: "Prevent planning engines and runtime planners.",
+  },
+  {
+    name: "OPS Execution Boundary",
+    protectedDomain: "OPS Execution",
+    prohibitedResponsibility: "OPS task creation and execution",
+    permittedMetadataReferences: Object.freeze(["Action Outcome"]),
+    enforcementIntent: "Keep Action Planning distinct from OPS runtime.",
+  },
+  {
+    name: "Workspace Execution Boundary",
+    protectedDomain: "Workspace Execution",
+    prohibitedResponsibility: "Workspace activation, routing, or switching",
+    permittedMetadataReferences: Object.freeze(["Action Planning Context"]),
+    enforcementIntent: "Allow workspace identity references only.",
+  },
+  {
+    name: "Object Mutation Boundary",
+    protectedDomain: "Executive Objects",
+    prohibitedResponsibility: "Object creation, mutation, or persistence",
+    permittedMetadataReferences: Object.freeze([
+      "Executive Object",
+      "Goal Object",
+      "Decision Object",
+    ]),
+    enforcementIntent: "Preserve upstream object identities without mutation.",
+  },
+  {
+    name: "Scheduling Boundary",
+    protectedDomain: "Scheduling",
+    prohibitedResponsibility: "Calendars, timers, and deadline calculation",
+    permittedMetadataReferences: Object.freeze(["Action Time Horizon"]),
+    enforcementIntent: "Keep timing descriptive and non-executable.",
+  },
+  {
+    name: "Assignment Boundary",
+    protectedDomain: "Assignment",
+    prohibitedResponsibility: "Automatic ownership resolution or assignment",
+    permittedMetadataReferences: Object.freeze(["Action Owner Reference"]),
+    enforcementIntent: "Represent ownership as immutable references only.",
+  },
+  {
+    name: "Approval Boundary",
+    protectedDomain: "Approval",
+    prohibitedResponsibility: "Approval workflows and automatic approvals",
+    permittedMetadataReferences: Object.freeze(["Action Plan Policy"]),
+    enforcementIntent: "Prevent approval automation in Foundation.",
+  },
+  {
+    name: "Automation Boundary",
+    protectedDomain: "Automation",
+    prohibitedResponsibility: "Workflow, task, and automation engines",
+    permittedMetadataReferences: Object.freeze(["Action Sequence"]),
+    enforcementIntent: "Prevent automatic conversion into executable workflows.",
+  },
+  {
+    name: "Persistence Boundary",
+    protectedDomain: "Persistence",
+    prohibitedResponsibility: "Databases, caches, and durable stores",
+    permittedMetadataReferences: Object.freeze(["Action Planning Metadata"]),
+    enforcementIntent: "Keep Foundation metadata-only and non-persistent.",
+  },
+  {
+    name: "AI Reasoning Boundary",
+    protectedDomain: "AI Reasoning",
+    prohibitedResponsibility: "LLM, prompt, inference, and AI reasoning",
+    permittedMetadataReferences: Object.freeze(["Action Planning Context"]),
+    enforcementIntent: "Exclude AI implementation from Foundation.",
+  },
+  {
+    name: "UI Boundary",
+    protectedDomain: "UI and Rendering",
+    prohibitedResponsibility: "UI components and rendering surfaces",
+    permittedMetadataReferences: Object.freeze(["Action Planning Metadata"]),
+    enforcementIntent: "Exclude presentation concerns from Foundation.",
+  },
+  {
+    name: "Integration Boundary",
+    protectedDomain: "External Integration",
+    prohibitedResponsibility: "APIs, networking, queues, and webhooks",
+    permittedMetadataReferences: Object.freeze([
+      "ASSISTANT-6:9/ObjectContextManagementPublicIndex",
+    ]),
+    enforcementIntent: "Limit upstream coupling to Public Index metadata.",
+  },
+] as const);
+
+export const AssistantExecutiveActionPlanningFoundationBoundaries:
+readonly AssistantExecutiveActionPlanningBoundaryMetadata[] = Object.freeze(
+  boundaryDeclarations.map((boundary, index) => Object.freeze({
+    id: `ASSISTANT-7:1/Boundary/${String(index + 1).padStart(2, "0")}`,
+    name: boundary.name,
+    protectedDomain: boundary.protectedDomain,
+    prohibitedResponsibility: boundary.prohibitedResponsibility,
+    permittedMetadataReferences: boundary.permittedMetadataReferences,
+    enforcementIntent: boundary.enforcementIntent,
+    version: "1.0.0",
+    status: "Declared",
+    order: index + 1,
+    permitted: false,
+    metadataOnly: true,
+    immutable: true,
+  })),
+);
+
+const prohibitedNames = Object.freeze([
+  "Runtime Layer",
+  "Planning Engine",
+  "Action Generation Engine",
+  "Workflow Engine",
+  "Task Engine",
+  "OPS Task Creation",
+  "Task Assignment",
+  "Automatic Ownership Resolution",
+  "Scheduling",
+  "Calendar Integration",
+  "Deadline Calculation",
+  "Dependency Resolution",
+  "Critical Path Analysis",
+  "Resource Allocation",
+  "Capacity Planning",
+  "Cost Planning",
+  "Recommendation Generation",
+  "Decision Generation",
+  "Scenario Simulation",
+  "Workspace Activation",
+  "Workspace Switching",
+  "Object Creation",
+  "Object Mutation",
+  "Object Persistence",
+  "Context Persistence",
+  "Context Synchronization",
+  "Approval Workflows",
+  "Notifications",
+  "Automation",
+  "LLM Integration",
+  "Prompt Execution",
+  "AI Inference",
+  "AI Reasoning",
+  "Database",
+  "Cache",
+  "Vector Database",
+  "File Storage",
+  "API Endpoints",
+  "Networking",
+  "Queue",
+  "Event Bus",
+  "Webhooks",
+  "SDK",
+  "UI Components",
+  "Rendering",
+  "Authentication",
+  "Authorization",
+  "Logging",
+  "Monitoring",
+  "Analytics",
+  "Telemetry",
+] as const);
+
+export const AssistantExecutiveActionPlanningProhibitedImplementations:
+readonly AssistantExecutiveActionPlanningProhibitedSurfaceMetadata[] =
+  Object.freeze(
+    prohibitedNames.map((name, index) => Object.freeze({
+      id:
+        `ASSISTANT-7:1/Prohibited/${String(index + 1).padStart(2, "0")}`,
+      name,
+      order: index + 1,
+      permitted: false,
+      metadataOnly: true,
+      immutable: true,
+    })),
+  );

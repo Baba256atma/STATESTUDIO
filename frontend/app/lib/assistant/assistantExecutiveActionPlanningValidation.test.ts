@@ -1,0 +1,180 @@
+import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import test from "node:test";
+import { AssistantExecutiveActionPlanningValidation } from "./assistantExecutiveActionPlanningValidation.ts";
+
+const files = [
+  "assistantExecutiveActionPlanningValidation.constants.ts",
+  "assistantExecutiveActionPlanningValidation.gates.ts",
+  "assistantExecutiveActionPlanningValidation.identity.ts",
+  "assistantExecutiveActionPlanningValidation.results.ts",
+  "assistantExecutiveActionPlanningValidation.rules.ts",
+  "assistantExecutiveActionPlanningValidation.test.ts",
+  "assistantExecutiveActionPlanningValidation.ts",
+  "assistantExecutiveActionPlanningValidation.types.ts",
+];
+
+test("ASSISTANT-7:4 consists of exactly eight Validation artifacts", () => {
+  assert.deepEqual(
+    readdirSync(new URL(".", import.meta.url))
+      .filter((file) => files.includes(file)).sort(),
+    files,
+  );
+});
+
+test("ASSISTANT-7:4 publishes canonical Validation identity", () => {
+  const validation = AssistantExecutiveActionPlanningValidation;
+  assert.equal(
+    validation.identity.id,
+    "ASSISTANT-7:4/ExecutiveActionPlanningValidation",
+  );
+  assert.equal(
+    validation.identity.namespace,
+    "nexora.assistant.executive-action-planning.validation",
+  );
+  assert.equal(validation.identity.version, "1.0.0");
+  assert.equal(validation.status, "Validation");
+  assert.equal(validation.readiness, "ReadyForManifest");
+  assert.equal(
+    validation.identity.sourceModel,
+    "ASSISTANT-7:3/ExecutiveActionPlanningModel",
+  );
+});
+
+test("ASSISTANT-7:4 publishes exactly 40 rules, 16 gates, and 8 categories", () => {
+  const validation = AssistantExecutiveActionPlanningValidation;
+  assert.equal(validation.rules.length, 40);
+  assert.equal(validation.gates.length, 16);
+  assert.equal(validation.categories.length, 8);
+  assert.equal(validation.results.ruleCount, 40);
+  assert.equal(validation.results.gateCount, 16);
+  assert.equal(validation.constants.ruleCount, 40);
+  assert.equal(validation.constants.gateCount, 16);
+  assert.equal(validation.statistics.validationRuleCount, 40);
+  assert.equal(validation.statistics.validationGateCount, 16);
+  assert.equal(validation.statistics.validationCategoryCount, 8);
+  assert.equal(validation.statistics.validationMetadataCount, 7);
+  assert.equal(validation.canonicalInventoryRuleSatisfied, true);
+  assert.deepEqual([...validation.categories], [
+    "Identity Validation",
+    "Registry Validation",
+    "Model Validation",
+    "Relationship Validation",
+    "Lifecycle Validation",
+    "Metadata Validation",
+    "Boundary Validation",
+    "Export Validation",
+  ]);
+  assert.deepEqual(
+    validation.gates.map(({ name }) => name),
+    [
+      "Identity Gate",
+      "Namespace Gate",
+      "Version Gate",
+      "Registry Gate",
+      "Model Gate",
+      "Relationship Gate",
+      "Lifecycle Gate",
+      "Metadata Gate",
+      "Boundary Gate",
+      "Export Gate",
+      "Dependency Gate",
+      "Canonical Inventory Gate",
+      "Metadata Integrity Gate",
+      "Consumer Readiness Gate",
+      "Final Validation Gate",
+      "ReadyForManifest Gate",
+    ],
+  );
+});
+
+test("ASSISTANT-7:4 identities and metadata are immutable", () => {
+  const validation = AssistantExecutiveActionPlanningValidation;
+  assert.equal(
+    new Set(validation.rules.map(({ ruleId }) => ruleId)).size,
+    40,
+  );
+  assert.equal(
+    new Set(validation.gates.map(({ gateId }) => gateId)).size,
+    16,
+  );
+  assert.equal(validation.rules.every(Object.isFrozen), true);
+  assert.equal(validation.gates.every(Object.isFrozen), true);
+  assert.equal(Object.isFrozen(validation), true);
+  assert.equal(Object.isFrozen(validation.results), true);
+  assert.deepEqual(
+    validation.rules.map(({ order }) => order),
+    validation.rules.map((_, index) => index + 1),
+  );
+  assert.equal(
+    validation.rules.every(
+      ({ validationTarget }) =>
+        validationTarget ===
+          "ASSISTANT-7:3/ExecutiveActionPlanningModel",
+    ),
+    true,
+  );
+  assert.equal(validation.results.manifestEligibility, "Eligible");
+  assert.equal(validation.results.validationStatus, "Passed");
+});
+
+test("ASSISTANT-7:4 consumes Model only and has no executable validation", () => {
+  const validation = AssistantExecutiveActionPlanningValidation;
+  const source = readFileSync(
+    new URL(
+      "./assistantExecutiveActionPlanningValidation.ts",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const importSources = [
+    ...source.matchAll(/from ["'](\.\/[^"']+)["']/g),
+  ].map((match) => match[1]);
+  assert.deepEqual(importSources, [
+    "./assistantExecutiveActionPlanningModel.ts",
+    "./assistantExecutiveActionPlanningValidation.constants.ts",
+    "./assistantExecutiveActionPlanningValidation.gates.ts",
+    "./assistantExecutiveActionPlanningValidation.identity.ts",
+    "./assistantExecutiveActionPlanningValidation.rules.ts",
+    "./assistantExecutiveActionPlanningValidation.results.ts",
+  ]);
+  assert.equal(
+    source.includes("assistantExecutiveActionPlanningRegistry"),
+    false,
+  );
+  assert.equal(
+    source.includes("assistantExecutiveActionPlanningFoundation"),
+    false,
+  );
+  assert.equal(
+    source.includes("assistantExecutiveActionPlanningManifest"),
+    false,
+  );
+  assert.equal(
+    source.includes("assistantObjectContextManagement"),
+    false,
+  );
+  assert.equal(
+    source.includes("assistantWorkspaceOrchestration"),
+    false,
+  );
+  assert.equal(source.includes("assistantExecutiveGuidance"), false);
+  assert.equal(source.includes("assistantIntentDialogue"), false);
+  assert.equal(source.includes("assistantExecutiveMemory"), false);
+  assert.equal(source.includes("assistantConversation"), false);
+  assert.deepEqual(validation.upstreamDependencies, [
+    "ASSISTANT-7:3 Executive Action Planning Model",
+  ]);
+  assert.equal(
+    validation.model.identity.id,
+    "ASSISTANT-7:3/ExecutiveActionPlanningModel",
+  );
+  assert.equal(validation.executableValidation, false);
+  assert.equal(validation.runtime, false);
+  assert.equal(validation.planningEngine, false);
+  assert.equal(validation.taskExecution, false);
+  assert.equal(validation.scheduling, false);
+  assert.equal(validation.assignment, false);
+  assert.equal(validation.persistence, false);
+  assert.equal(validation.networking, false);
+});

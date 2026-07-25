@@ -1,0 +1,152 @@
+import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import test from "node:test";
+import { AssistantIntentDialogueValidation } from "./assistantIntentDialogueValidation.ts";
+
+const files = [
+  "assistantIntentDialogueValidation.constants.ts",
+  "assistantIntentDialogueValidation.gates.ts",
+  "assistantIntentDialogueValidation.identity.ts",
+  "assistantIntentDialogueValidation.results.ts",
+  "assistantIntentDialogueValidation.rules.ts",
+  "assistantIntentDialogueValidation.test.ts",
+  "assistantIntentDialogueValidation.ts",
+  "assistantIntentDialogueValidation.types.ts",
+];
+
+test("ASSISTANT-3:4 consists of exactly eight Validation artifacts", () => {
+  assert.deepEqual(
+    readdirSync(new URL(".", import.meta.url))
+      .filter((file) => files.includes(file)).sort(),
+    files,
+  );
+});
+
+test("ASSISTANT-3:4 publishes canonical Validation identity", () => {
+  const validation = AssistantIntentDialogueValidation;
+  assert.equal(
+    validation.identity.id,
+    "ASSISTANT-3:4/IntentDialogueUnderstandingValidation",
+  );
+  assert.equal(
+    validation.identity.namespace,
+    "nexora.assistant.intent-dialogue.validation",
+  );
+  assert.equal(validation.identity.version, "1.0.0");
+  assert.equal(validation.status, "Validation");
+  assert.equal(validation.readiness, "ReadyForManifest");
+  assert.equal(
+    validation.identity.sourceModel,
+    "ASSISTANT-3:3/IntentDialogueUnderstandingModel",
+  );
+});
+
+test("ASSISTANT-3:4 publishes exactly 40 rules, 16 gates, and 8 categories", () => {
+  const validation = AssistantIntentDialogueValidation;
+  assert.equal(validation.rules.length, 40);
+  assert.equal(validation.gates.length, 16);
+  assert.equal(validation.categories.length, 8);
+  assert.equal(validation.results.ruleCount, 40);
+  assert.equal(validation.results.gateCount, 16);
+  assert.equal(validation.constants.ruleCount, 40);
+  assert.equal(validation.constants.gateCount, 16);
+  assert.equal(validation.statistics.validationRuleCount, 40);
+  assert.equal(validation.statistics.validationGateCount, 16);
+  assert.equal(validation.statistics.validationCategoryCount, 8);
+  assert.equal(validation.statistics.validationMetadataCount, 7);
+  assert.deepEqual([...validation.categories], [
+    "Identity Validation",
+    "Registry Validation",
+    "Model Validation",
+    "Relationship Validation",
+    "Lifecycle Validation",
+    "Metadata Validation",
+    "Boundary Validation",
+    "Export Validation",
+  ]);
+  assert.deepEqual(
+    validation.gates.map(({ name }) => name),
+    [
+      "Identity Gate",
+      "Namespace Gate",
+      "Version Gate",
+      "Registry Gate",
+      "Model Gate",
+      "Relationship Gate",
+      "Lifecycle Gate",
+      "Metadata Gate",
+      "Boundary Gate",
+      "Export Gate",
+      "Dependency Gate",
+      "Architecture Gate",
+      "Metadata Integrity Gate",
+      "Consumer Readiness Gate",
+      "Final Validation Gate",
+      "ReadyForManifest Gate",
+    ],
+  );
+});
+
+test("ASSISTANT-3:4 identities and metadata are immutable", () => {
+  const validation = AssistantIntentDialogueValidation;
+  assert.equal(
+    new Set(validation.rules.map(({ ruleId }) => ruleId)).size,
+    40,
+  );
+  assert.equal(
+    new Set(validation.gates.map(({ gateId }) => gateId)).size,
+    16,
+  );
+  assert.equal(validation.rules.every(Object.isFrozen), true);
+  assert.equal(validation.gates.every(Object.isFrozen), true);
+  assert.equal(Object.isFrozen(validation), true);
+  assert.equal(Object.isFrozen(validation.results), true);
+  assert.equal(
+    validation.rules.every(
+      ({ validationTarget }) =>
+        validationTarget === "ASSISTANT-3:3/IntentDialogueUnderstandingModel",
+    ),
+    true,
+  );
+  assert.equal(validation.results.manifestEligibility, "Eligible");
+  assert.equal(validation.results.validationStatus, "Passed");
+});
+
+test("ASSISTANT-3:4 consumes Model only and has no executable validation", () => {
+  const validation = AssistantIntentDialogueValidation;
+  const source = readFileSync(
+    new URL("./assistantIntentDialogueValidation.ts", import.meta.url),
+    "utf8",
+  );
+  const importSources = [
+    ...source.matchAll(/from ["'](\.\/[^"']+)["']/g),
+  ].map((match) => match[1]);
+  assert.deepEqual(importSources, [
+    "./assistantIntentDialogueModel.ts",
+    "./assistantIntentDialogueValidation.constants.ts",
+    "./assistantIntentDialogueValidation.gates.ts",
+    "./assistantIntentDialogueValidation.identity.ts",
+    "./assistantIntentDialogueValidation.rules.ts",
+    "./assistantIntentDialogueValidation.results.ts",
+  ]);
+  assert.equal(source.includes("assistantIntentDialogueRegistry"), false);
+  assert.equal(source.includes("assistantIntentDialogueFoundation"), false);
+  assert.equal(source.includes("assistantIntentDialogueManifest"), false);
+  assert.equal(source.includes("assistantExecutiveMemory"), false);
+  assert.equal(source.includes("assistantConversation"), false);
+  assert.deepEqual(validation.upstreamDependencies, [
+    "ASSISTANT-3:3 Intent & Dialogue Understanding Model",
+  ]);
+  assert.equal(
+    validation.model.identity.id,
+    "ASSISTANT-3:3/IntentDialogueUnderstandingModel",
+  );
+  assert.equal(validation.executableValidation, false);
+  assert.equal(validation.runtime, false);
+  assert.equal(validation.intentClassification, false);
+  assert.equal(validation.nlp, false);
+  assert.equal(validation.naturalLanguageParsing, false);
+  assert.equal(validation.dialogueExecution, false);
+  assert.equal(validation.persistence, false);
+  assert.equal(validation.networking, false);
+});
