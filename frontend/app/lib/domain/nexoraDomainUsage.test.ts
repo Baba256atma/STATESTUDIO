@@ -15,35 +15,18 @@ import {
   NEXORA_DOMAIN_USAGE_MAX_RECORDS,
   type NexoraDomainUsageRecord,
 } from "./nexoraDomainUsage.ts";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
-function installMockWindow(): { store: Record<string, string>; cleanup: () => void } {
-  const store: Record<string, string> = {};
-  const prev = globalThis.window;
-  (globalThis as unknown as { window: Window & typeof globalThis }).window = {
-    localStorage: {
-      getItem: (k: string) => (Object.prototype.hasOwnProperty.call(store, k) ? store[k]! : null),
-      setItem: (k: string, v: string) => {
-        store[k] = v;
-      },
-      removeItem: (k: string) => {
-        delete store[k];
-      },
-    },
-    dispatchEvent: () => true,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-  } as unknown as Window & typeof globalThis;
-  return {
-    store,
-    cleanup: () => {
-      if (prev === undefined) delete (globalThis as unknown as { window?: Window }).window;
-      else (globalThis as unknown as { window: Window }).window = prev;
-    },
-  };
+function installMockWindow(): { cleanup: () => void } {
+  const cleanup = ensureBrowserLocalStorageHarness({
+    includeEventDispatch: true,
+    clearIfPresent: true,
+  });
+  return { cleanup };
 }
 
 test("logging works", () => {
-  const { store, cleanup } = installMockWindow();
+  const { cleanup } = installMockWindow();
   try {
     clearDomainUsage();
     logDomainUsage({
@@ -52,8 +35,7 @@ test("logging works", () => {
       domainEffective: "retail",
       timestamp: 10_000,
     });
-    const raw = store[NEXORA_DOMAIN_USAGE_STORAGE_KEY];
-    assert.ok(raw);
+    assert.ok(window.localStorage.getItem(NEXORA_DOMAIN_USAGE_STORAGE_KEY));
     const rows = loadDomainUsage();
     assert.equal(rows.length, 1);
     assert.equal(rows[0]?.domainResolved, "retail");

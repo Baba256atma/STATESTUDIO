@@ -320,6 +320,7 @@ export function buildAssumptionsSnapshot(layer: AdvisoryRecommendationLayer): Ad
 export function buildAlternativeRecommendationsSnapshot(
   layer: AdvisoryRecommendationLayer
 ): AdvisoryFieldSnapshot {
+  void layer;
   return Object.freeze({
     headline: "Alternative recommendations available",
     detail: `${MRP_ADVISORY_RECOMMENDATION_TAG} Advisory creates recommendation only — War Room owns commitment.`,

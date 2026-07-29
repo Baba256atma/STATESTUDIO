@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
-import type { SceneLoop } from "../../lib/sceneTypes";
+import type { SceneLoop, SceneLoopEdge, SceneObject } from "../../lib/sceneTypes";
 import type { DecisionPathRendererEdge } from "../overlays/DecisionPathOverlayLayer";
 import { getThemeTokens } from "../../lib/design/designTokens";
 import { resolveRelationVisualProfile } from "../../lib/visual/objectVisualLanguage";
@@ -22,12 +22,7 @@ import {
   type SimulatedPathEdge,
 } from "./sceneRenderUtils";
 import { sanitizeThreeColor } from "../../lib/scene/threeColorSanitizer";
-import {
-  recordGeometryCreated,
-  recordGeometryDisposed,
-  recordMaterialCreated,
-  recordMaterialDisposed,
-} from "../../lib/diagnostics/connectionRuntimeStabilityAudit";
+import { recordGeometryCreated, recordMaterialCreated, recordMaterialDisposed } from "../../lib/diagnostics/connectionRuntimeStabilityAudit";
 import { buildLoopEdgesGeometrySignature } from "../../lib/scene/topology/connectionGeometrySignature";
 import { resolveStableLoopLineGeometry } from "../../lib/scene/topology/connectionGeometryRuntime";
 
@@ -44,7 +39,7 @@ type LoopEdge = {
 };
 
 export type LoopLinesAnimatedProps = {
-  objects: any[];
+  objects: SceneObject[];
   loops: SceneLoop[];
   activeLoopId: string | null;
   showLoops: boolean | undefined;
@@ -213,7 +208,7 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
 
   const posMap = useMemo(() => {
     const map = new Map<string, [number, number, number]>();
-    objects.forEach((object: any, index: number) => {
+    objects.forEach((object, index) => {
       const id = String(object?.id ?? `obj_${index}`);
       const position = getRuntimeObjPos(id, objects, runtimeObjectPositionContext);
       map.set(id, [position.x, position.y, position.z]);
@@ -236,28 +231,29 @@ export const LoopLinesAnimated = React.memo(function LoopLinesAnimated({
     loops.forEach((loop, loopIndex) => {
       const loopId = loop?.id ?? `loop_${loopIndex}`;
       const strength =
-        typeof (loop as any)?.severity === "number"
-          ? Math.min(1, Math.max(0, (loop as any).severity))
-          : typeof (loop as any)?.strength === "number"
-          ? Math.min(1, Math.max(0, (loop as any).strength))
+        typeof loop.severity === "number"
+          ? Math.min(1, Math.max(0, loop.severity))
+          : typeof loop.strength === "number"
+          ? Math.min(1, Math.max(0, loop.strength))
           : 0.5;
 
-      const polarity = ((loop as any)?.polarity as string) ?? "neutral";
+      const polarity = typeof loop.polarity === "string" ? loop.polarity : "neutral";
       if (!Array.isArray(loop?.edges)) return;
-      loop.edges.forEach((edge, edgeIndex) => {
-        const from = String((edge as any)?.from ?? "");
-        const to = String((edge as any)?.to ?? "");
+      loop.edges.forEach((edge: SceneLoopEdge, edgeIndex) => {
+        const from = String(edge.from ?? "");
+        const to = String(edge.to ?? "");
         if (!from || !to) return;
-        const weight = typeof (edge as any)?.weight === "number" ? Math.min(1, Math.max(0, (edge as any).weight)) : strength;
-        const resolvedPolarity = ((edge as any)?.polarity as string) ?? ((edge as any)?.kind as string) ?? polarity;
+        const weight =
+          typeof edge.weight === "number" ? Math.min(1, Math.max(0, edge.weight)) : strength;
+        const resolvedPolarity = edge.polarity ?? edge.kind ?? polarity;
         all.push({
           from,
           to,
           weight,
           polarity: resolvedPolarity,
           loopId,
-          label: (edge as any)?.label ?? (loop as any)?.label,
-          kind: (edge as any)?.kind ?? (loop as any)?.type ?? polarity ?? `edge_${edgeIndex}`,
+          label: edge.label ?? loop.label,
+          kind: edge.kind ?? loop.type ?? polarity ?? `edge_${edgeIndex}`,
         });
       });
     });

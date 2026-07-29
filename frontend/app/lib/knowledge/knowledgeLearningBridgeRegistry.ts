@@ -23,26 +23,7 @@ import {
   LEARNING_TARGET_PLATFORM_ID_MAP,
   OBSERVATION_TYPE_KEYS,
 } from "./knowledgeLearningBridgeCatalog.ts";
-import type {
-  KnowledgeFeedbackDescriptor,
-  KnowledgeImprovementProposal,
-  KnowledgeLearningBridge,
-  KnowledgeLearningBridgePlatformSnapshot,
-  KnowledgeLearningBridgePlatformState,
-  KnowledgeLearningBridgeRegistrationInput,
-  KnowledgeLearningResult,
-  KnowledgeLearningSource,
-  KnowledgeLearningSourceRegistrationInput,
-  KnowledgeLearningTarget,
-  KnowledgeLearningTargetRegistrationInput,
-  KnowledgeObservationDescriptor,
-  KnowledgeLearningSession,
-  LearningContext,
-  LearningDependency,
-  LearningExtensionPoint,
-  LearningMetadata,
-  LearningNamespace,
-} from "./knowledgeLearningBridgeTypes.ts";
+import type { KnowledgeFeedbackDescriptor, KnowledgeImprovementProposal, KnowledgeLearningBridge, KnowledgeLearningBridgePlatformSnapshot, KnowledgeLearningBridgePlatformState, KnowledgeLearningBridgeRegistrationInput, KnowledgeLearningResult, KnowledgeLearningSource, KnowledgeLearningSourceRegistrationInput, KnowledgeLearningTarget, KnowledgeLearningTargetRegistrationInput, KnowledgeObservationDescriptor, LearningContext, LearningDependency, LearningExtensionPoint, LearningMetadata, LearningNamespace } from "./knowledgeLearningBridgeTypes.ts";
 import {
   validateKnowledgeLearningBridgeRegistration,
   validateKnowledgeLearningSourceRegistration,
@@ -375,6 +356,7 @@ function registerLearningContext(
   contextKey: (typeof LEARNING_CONTEXT_KEYS)[number],
   timestamp: string
 ): KnowledgeLearningResult<LearningContext> {
+  void timestamp;
   const contextId = `learning-context-${contextKey}`;
   if (contextRegistry.has(contextId)) {
     return createResult(false, `Learning context already registered: ${contextId}.`, null);

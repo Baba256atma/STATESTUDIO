@@ -38,19 +38,9 @@ import { buildAdvisoryWorkspaceViewFromState } from "./advisory/advisoryWorkspac
 import { publishOperationalWorkspaceState } from "./operational/operationalWorkspaceStateRuntime.ts";
 import { resetOperationalWorkspaceStateRuntimeForTests } from "./operational/operationalWorkspaceStateRuntime.ts";
 import { publishRiskWorkspaceState } from "./risk/riskWorkspaceStateRuntime.ts";
-import { resetRiskWorkspaceStateRuntimeForTests } from "./risk/riskWorkspaceStateRuntime.ts";
-import { publishTimelineWorkspaceState } from "./timeline/timelineWorkspaceStateRuntime.ts";
-import { resetTimelineWorkspaceStateRuntimeForTests } from "./timeline/timelineWorkspaceStateRuntime.ts";
-import {
-  publishScenarioWorkspaceState,
-  resetScenarioWorkspaceStateRuntimeForTests,
-} from "./scenario/scenarioWorkspaceStateRuntime.ts";
-import { publishWarRoomState } from "./warRoom/warRoomStateRuntime.ts";
-import { resetWarRoomStateRuntimeForTests } from "./warRoom/warRoomStateRuntime.ts";
-import {
-  publishWarRoomWorkspaceState,
-  resetWarRoomWorkspaceStateRuntimeForTests,
-} from "./warRoom/warRoomWorkspaceStateRuntime.ts";
+import { resetRiskWorkspaceStateRuntimeForTests } from "./risk/riskWorkspaceStateRuntime.ts";import { resetTimelineWorkspaceStateRuntimeForTests } from "./timeline/timelineWorkspaceStateRuntime.ts";
+import { resetScenarioWorkspaceStateRuntimeForTests } from "./scenario/scenarioWorkspaceStateRuntime.ts";import { resetWarRoomStateRuntimeForTests } from "./warRoom/warRoomStateRuntime.ts";
+import { resetWarRoomWorkspaceStateRuntimeForTests } from "./warRoom/warRoomWorkspaceStateRuntime.ts";
 
 test.beforeEach(() => {
   resetAdvisoryWorkspaceRuntimeForTests();
@@ -74,7 +64,6 @@ test("exports advisory explainability freeze tag version and purpose", () => {
 
 test("deriveRecommendationDriversSurface exposes four driver sections", () => {
   publishOperationalWorkspaceState({
-    phase: "ready",
     operationalStatus: "warning",
     activityLevel: "high",
     operationalFocus: Object.freeze({
@@ -83,7 +72,6 @@ test("deriveRecommendationDriversSurface exposes four driver sections", () => {
     }),
   });
   publishRiskWorkspaceState({
-    phase: "ready",
     selectedObjectId: "factory-a",
     riskCount: 2,
     elevatedRiskCount: 1,
@@ -134,7 +122,6 @@ test("syncAdvisoryRecommendation publishes explainability surface to workspace s
     selectedObjectLabel: "Factory A",
   });
   publishRiskWorkspaceState({
-    phase: "ready",
     selectedObjectId: "factory-a",
     riskCount: 2,
     elevatedRiskCount: 1,

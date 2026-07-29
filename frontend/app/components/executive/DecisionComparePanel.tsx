@@ -16,13 +16,18 @@ import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemo
 import { buildApprovalWorkflowState } from "../../lib/approval/buildApprovalWorkflowState";
 import { loadApprovalWorkflowEnvelope } from "../../lib/approval/approvalWorkflowStore";
 import type { NexoraB8PanelContext } from "../../lib/panels/panelDataContract";
+import type { AdvicePanelData } from "../../lib/panels/panelDataContract";
 import { buildCompareMeaningCue } from "../../lib/panels/nexoraPanelMeaning";
 import type { NexoraB18CompareResolved, NexoraScenarioVariant } from "../../lib/scenario/nexoraScenarioBuilder.ts";
 import { useNexoraRunbookGuidanceOptional } from "../../lib/pilot/nexoraRunbookGuidanceContext";
 
+function readString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
 type DecisionComparePanelProps = {
-  responseData?: any;
-  strategicAdvice?: any | null;
+  responseData?: Record<string, unknown> | null;
+  strategicAdvice?: AdvicePanelData | Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
   decisionResult?: DecisionExecutionResult | null;
   decisionLoading?: boolean;
@@ -84,14 +89,19 @@ export function DecisionComparePanel(props: DecisionComparePanelProps) {
     memoryEntries: props.memoryEntries ?? [],
     policyState: policy,
   });
+  const approvalWorkspaceId = readString(props.responseData?.workspace_id);
+  const approvalProjectId = readString(props.responseData?.project_id);
+  const approvalDecisionIdKey = `${
+    governance.decision_id ?? executionIntent?.id ?? props.canonicalRecommendation?.id ?? ""
+  }`;
   const approvalEnvelope = React.useMemo(
     () =>
       loadApprovalWorkflowEnvelope(
-        props.responseData?.workspace_id ?? null,
-        props.responseData?.project_id ?? null,
-        governance.decision_id ?? executionIntent?.id ?? props.canonicalRecommendation?.id ?? null
+        approvalWorkspaceId,
+        approvalProjectId,
+        approvalDecisionIdKey.length > 0 ? approvalDecisionIdKey : null
       ),
-    [props.responseData?.workspace_id, props.responseData?.project_id, governance.decision_id, executionIntent?.id, props.canonicalRecommendation?.id]
+    [approvalWorkspaceId, approvalProjectId, approvalDecisionIdKey]
   );
   const approvalWorkflow = buildApprovalWorkflowState({
     canonicalRecommendation: props.canonicalRecommendation ?? null,

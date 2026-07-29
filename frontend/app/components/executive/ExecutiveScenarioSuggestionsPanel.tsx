@@ -238,13 +238,17 @@ export function ExecutiveScenarioSuggestionsPanel(
     [authoredScenarios, scenarioWorkspace?.activeScenarioId]
   );
 
-  useEffect(() => {
-    if (!scenarioWorkspace) return;
+  const compareSourceKey = scenarioWorkspace
+    ? `${scenarioWorkspace.comparisonTargets.join("|")}::${authoredScenarios.map((s) => s.id).join("|")}`
+    : "";
+  const [syncedCompareSourceKey, setSyncedCompareSourceKey] = useState("");
+  if (scenarioWorkspace && compareSourceKey !== syncedCompareSourceKey) {
     const next = scenarioWorkspace.comparisonTargets.length
       ? scenarioWorkspace.comparisonTargets
       : authoredScenarios.slice(0, 2).map((scenario) => scenario.id);
+    setSyncedCompareSourceKey(compareSourceKey);
     setCompareDraftIds(next.slice(0, 2));
-  }, [authoredScenarios, scenarioWorkspace]);
+  }
 
   useEffect(() => {
     if (mountedRef.current) return;

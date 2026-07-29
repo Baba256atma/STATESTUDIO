@@ -2,8 +2,6 @@
  * APP-10:7 — Recommendation Learning Engine constants.
  */
 
-import type { RecommendationCategory, RecommendationLifecycleState } from "./recommendationLearningEngineTypes.ts";
-
 export const RECOMMENDATION_LEARNING_ENGINE_CONTRACT_VERSION = "APP-10/7" as const;
 export const RECOMMENDATION_LEARNING_ENGINE_ARCHITECTURE_VERSION = "APP-10/7-recommendation-learning-arch" as const;
 export const RECOMMENDATION_LEARNING_ENGINE_OWNER = "recommendation-learning-engine" as const;
@@ -47,9 +45,9 @@ export const RECOMMENDATION_CATEGORY_KEYS = Object.freeze([
   "timeline_recommendation",
   "organizational_recommendation",
   "mixed_recommendation",
-] as const satisfies readonly RecommendationCategory[]);
+] as const);
 
-export const RECOMMENDATION_CATEGORY_LABELS: Readonly<Record<RecommendationCategory, string>> = Object.freeze({
+export const RECOMMENDATION_CATEGORY_LABELS: Readonly<Record<(typeof RECOMMENDATION_CATEGORY_KEYS)[number], string>> = Object.freeze({
   strategic_recommendation: "Strategic Recommendation",
   operational_recommendation: "Operational Recommendation",
   financial_recommendation: "Financial Recommendation",
@@ -70,9 +68,9 @@ export const RECOMMENDATION_LIFECYCLE_STATE_KEYS = Object.freeze([
   "implemented",
   "completed",
   "archived",
-] as const satisfies readonly RecommendationLifecycleState[]);
+] as const);
 
-export const RECOMMENDATION_LIFECYCLE_STATE_LABELS: Readonly<Record<RecommendationLifecycleState, string>> =
+export const RECOMMENDATION_LIFECYCLE_STATE_LABELS: Readonly<Record<(typeof RECOMMENDATION_LIFECYCLE_STATE_KEYS)[number], string>> =
   Object.freeze({
     proposed: "Proposed",
     reviewed: "Reviewed",

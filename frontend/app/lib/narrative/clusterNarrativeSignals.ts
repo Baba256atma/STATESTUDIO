@@ -254,5 +254,5 @@ export function clusterNarrativeSignals(params: {
       if (right.signalIds.length !== left.signalIds.length) return right.signalIds.length - left.signalIds.length;
       return left.id.localeCompare(right.id);
     })
-    .map(({ confidenceValues, ...cluster }) => cluster);
+    .map(({...cluster }) => cluster);
 }

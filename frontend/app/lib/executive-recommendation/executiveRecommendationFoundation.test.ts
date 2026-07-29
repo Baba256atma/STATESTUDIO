@@ -18,27 +18,7 @@ import {
   EXECUTIVE_RECOMMENDATION_RELEASE_METADATA,
   EXECUTIVE_RECOMMENDATION_SOURCE_PROVIDER_REGISTRY,
 } from "./executiveRecommendationConstants.ts";
-import {
-  EXECUTIVE_RECOMMENDATION_FREEZE_RULES,
-  EXECUTIVE_RECOMMENDATION_PLATFORM_IDENTITY,
-  EXECUTIVE_RECOMMENDATION_PLATFORM_SELF_MANIFEST,
-  EXECUTIVE_RECOMMENDATION_PUBLIC_API_RULES,
-  ExecutiveRecommendationPlatformContract,
-  buildExecutiveRecommendationFoundation,
-  createExecutiveRecommendationFoundation,
-  getExecutiveRecommendationContractVersionMetadata,
-  getExecutiveRecommendationFutureCompatibility,
-  getExecutiveRecommendationManifest,
-  registerExecutiveRecommendationCandidate,
-  registerExecutiveRecommendationSession,
-  resolveExecutiveRecommendationCandidateExample,
-  resolveExecutiveRecommendationContextExample,
-  resolveExecutiveRecommendationRequestExample,
-  resolveExecutiveRecommendationSessionExample,
-  resolveExecutiveRecommendationSourceProviderExample,
-  validateExecutiveRecommendationDependencies,
-  validateExecutiveRecommendationFoundation,
-} from "./executiveRecommendationContracts.ts";
+import { EXECUTIVE_RECOMMENDATION_FREEZE_RULES, EXECUTIVE_RECOMMENDATION_PLATFORM_IDENTITY, EXECUTIVE_RECOMMENDATION_PLATFORM_SELF_MANIFEST, EXECUTIVE_RECOMMENDATION_PUBLIC_API_RULES, ExecutiveRecommendationPlatformContract, createExecutiveRecommendationFoundation, getExecutiveRecommendationContractVersionMetadata, getExecutiveRecommendationFutureCompatibility, getExecutiveRecommendationManifest, registerExecutiveRecommendationCandidate, registerExecutiveRecommendationSession, resolveExecutiveRecommendationCandidateExample, resolveExecutiveRecommendationContextExample, resolveExecutiveRecommendationRequestExample, resolveExecutiveRecommendationSessionExample, resolveExecutiveRecommendationSourceProviderExample, validateExecutiveRecommendationDependencies, validateExecutiveRecommendationFoundation } from "./executiveRecommendationContracts.ts";
 import {
   ExecutiveRecommendationFoundation,
   isExecutiveRecommendationPlatformInitialized,

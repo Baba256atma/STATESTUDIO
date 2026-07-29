@@ -8,15 +8,16 @@ import { buildApprovalWorkflowState } from "../../lib/approval/buildApprovalWork
 import { appendApprovalDecision, loadApprovalWorkflowEnvelope } from "../../lib/approval/approvalWorkflowStore";
 import type { ApprovalActorRole } from "../../lib/approval/approvalWorkflowTypes";
 import type { CanonicalRecommendation } from "../../lib/decision/recommendation/recommendationTypes";
+import type { DecisionExecutionResult } from "../../lib/executive/decisionExecutionTypes";
 import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemoryTypes";
 import { nx, panelSurfaceStyle, secondaryButtonStyle, softCardStyle } from "../ui/nexoraTheme";
 
 type ExecutiveApprovalPanelProps = {
   workspaceId?: string | null;
   projectId?: string | null;
-  responseData?: any;
+  responseData?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
-  decisionResult?: any;
+  decisionResult?: DecisionExecutionResult | Record<string, unknown> | null;
   memoryEntries?: DecisionMemoryEntry[];
   onOpenCompare?: (() => void) | null;
   onOpenDecisionGovernance?: (() => void) | null;

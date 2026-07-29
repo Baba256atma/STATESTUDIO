@@ -37,11 +37,14 @@ export function useReplayPlayer(frames: ReplayFrame[] | null, duration: number) 
     return sortedFrames[currentIndex] ?? null;
   }, [sortedFrames, currentIndex]);
 
-  useEffect(() => {
+  const playbackIdentity = `${duration}:${sortedFrames.length}`;
+  const [syncedPlaybackIdentity, setSyncedPlaybackIdentity] = useState(playbackIdentity);
+  if (playbackIdentity !== syncedPlaybackIdentity) {
+    setSyncedPlaybackIdentity(playbackIdentity);
     setCurrentTime(0);
     setCurrentIndex(0);
     setIsPlaying(false);
-  }, [duration, sortedFrames.length]);
+  }
 
   useEffect(() => {
     if (!isPlaying) {

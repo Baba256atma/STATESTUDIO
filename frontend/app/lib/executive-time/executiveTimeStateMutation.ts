@@ -3,11 +3,7 @@
  * Sole mutation entry for entity lifecycle state — authority contract enforced.
  */
 
-import type {
-  ExecutiveTimeApprovedTransitionInput,
-  ExecutiveTimeStateMutationContract,
-  ExecutiveTimeStateMutationResult,
-} from "./executiveTimeTransitionAuthorityTypes.ts";
+import type { ExecutiveTimeApprovedTransitionInput, ExecutiveTimeStateMutationContract as ExecutiveTimeStateMutationContractType, ExecutiveTimeStateMutationResult } from "./executiveTimeTransitionAuthorityTypes.ts";
 import { EXECUTIVE_TIME_STATE_MUTATION_OWNER } from "./executiveTimeTransitionAuthorityTypes.ts";
 import { isKnownExecutiveTimeEntityType } from "./executiveTimeStateRegistry.ts";
 import { isKnownState } from "./executiveTimeStateResolver.ts";
@@ -17,9 +13,6 @@ type EntityStateKey = `${string}:${ExecutiveTimeEntityType}:${string}`;
 
 const entityStateStore = new Map<EntityStateKey, string>();
 
-function nowIso(): string {
-  return new Date().toISOString();
-}
 
 function entityKey(workspaceId: string, entityType: ExecutiveTimeEntityType, entityId: string): EntityStateKey {
   return `${workspaceId.trim()}:${entityType}:${entityId.trim()}`;
@@ -92,7 +85,7 @@ export function applyApprovedTransition(input: ExecutiveTimeApprovedTransitionIn
   });
 }
 
-export const ExecutiveTimeStateMutationContract: ExecutiveTimeStateMutationContract = Object.freeze({
+export const ExecutiveTimeStateMutationContract: ExecutiveTimeStateMutationContractType = Object.freeze({
   mutationOwner: EXECUTIVE_TIME_STATE_MUTATION_OWNER,
   applyApprovedTransition,
 });

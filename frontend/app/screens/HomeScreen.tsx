@@ -19,6 +19,7 @@ import { evaluateSelectedObjectGuard } from "../lib/chat/selectedObjectGuard";
 import { resolveExplicitSelectedObject } from "../lib/selection/explicitSelectedObjectContract";
 import { getLocalChatResponse, userSafeChatMessage } from "../lib/chat/localChatFallback";
 import type { KPIState } from "../lib/api";
+import type { RiskLevel } from "../lib/contracts";
 import { analyzeFull } from "../lib/api/analyzeApi";
 import { postStrategicAnalysisText } from "../lib/api/client";
 import { SceneCanvas } from "../components/SceneCanvas";
@@ -39,15 +40,11 @@ import {
 } from "../lib/decision";
 import { useSetViewMode } from "../components/SceneContext";
 import { clamp } from "../lib/sizeCommands";
-import { getRecentEvents } from "../lib/api/events";
-import { delay } from "../lib/delay";
-import type { SceneJson, SceneLoop, LoopType } from "../lib/sceneTypes";
+import type { SceneJson, SceneLoop, SceneLoopEdge, SceneObject } from "../lib/sceneTypes";
 import { buildSceneReactionFromIntent, type SceneIntent } from "../lib/scene/sceneIntent";
 import { appendSnapshot, loadSnapshots } from "../lib/decision/decisionStore";
 import { normalizeLoops } from "../lib/loops/loopContract";
 import { resolveLoopPlaceholders } from "../lib/loops/loopResolver";
-import { makeLoopFromTemplate } from "../lib/loops/loopTemplates";
-import { setCompanyId } from "../lib/apiBase";
 import { useCompanyConfig } from "../hooks/useCompanyConfig";
 import { useActiveLoopId, useFocusActions, useFocusMode, usePinnedId } from "../lib/focus/focusStore";
 import { applyDecisionActions } from "../lib/decision/applyDecisionActions";
@@ -133,9 +130,7 @@ import {
   resolveOrientationWelcomeFromStorage,
   traceExecutiveOrientationHydration,
   traceExecutiveOrientationVisibility,
-} from "../lib/workspace/executiveOrientationVisibilityRuntime";
-import { toggleExecutiveFocusMode } from "../lib/workspace/executiveFocusModeRuntime";
-import { resolveExecutiveHarmonizationSnapshot } from "../lib/workspace/harmonization";
+} from "../lib/workspace/executiveOrientationVisibilityRuntime";import { resolveExecutiveHarmonizationSnapshot } from "../lib/workspace/harmonization";
 import { runE2CompletionAudit, type E2WorkspaceReadinessContext } from "../lib/workspace/readiness";
 import { SCENE_HUD_THEME_SURFACES } from "../lib/theme/sceneThemeTokens";
 import { resolveSceneRuntimeSummary } from "../lib/scene/sceneRuntimeSummary";
@@ -182,12 +177,7 @@ import {
   DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS,
   MRP_CHAT_FIRST_QUESTION_SUGGESTIONS,
 } from "../lib/ui/executiveAssistantPanelTypes";
-import {
-  mapLegacyPanelRouteToDashboardContext,
-  normalizeMainRightPanelTab,
-  type DashboardContext,
-  warnUnauthorizedMainRightPanelTab,
-} from "../lib/ui/mainRightPanelContract";
+import { mapLegacyPanelRouteToDashboardContext, normalizeMainRightPanelTab, warnUnauthorizedMainRightPanelTab, type DashboardContext } from "../lib/ui/mainRightPanelContract";
 import {
   buildMrpContextRestorePlan,
 } from "../lib/ui/mrpContext/mrpContextRestoreContract.ts";
@@ -254,12 +244,7 @@ import { attachAnalyzeIntelligenceBinding } from "../lib/dashboard/analyze/analy
 import { resolveCompareModeContext } from "../lib/dashboard/compare/compareModeContract";
 import { resolveScenarioModeContext } from "../lib/dashboard/scenario/scenarioModeContract";
 import { resolveWarRoomModeContext } from "../lib/dashboard/warRoom/warRoomModeContract";
-import {
-  commitExecutiveWorkspaceTransition,
-  getExecutiveWorkspaceTransitionStatus,
-  requestPassiveWorkspacePause,
-  requestPassiveWorkspaceResume,
-} from "../lib/dashboard/executiveWorkspaceTransitionControllerRuntime";
+import { commitExecutiveWorkspaceTransition, requestPassiveWorkspacePause, requestPassiveWorkspaceResume } from "../lib/dashboard/executiveWorkspaceTransitionControllerRuntime";
 import {
   commitExecutiveWorkspaceBackNavigation,
   getWorkspaceNavigationSummary,
@@ -349,7 +334,7 @@ import {
   buildExecutiveReasoningTransparency,
   logReasoningTransparencyDiagnostics,
 } from "../lib/reasoning-transparency";
-import { nx, sceneOverlayCardStyle, sceneVignetteLayerStyle, sceneWorkingBadgeStyle, softCardStyle } from "../components/ui/nexoraTheme";
+import { nx, sceneOverlayCardStyle, sceneVignetteLayerStyle, sceneWorkingBadgeStyle } from "../components/ui/nexoraTheme";
 import {
   INITIAL_NEXORA_UI_STATE,
   isSameState as isSameInteractionState,
@@ -380,7 +365,7 @@ import { buildObservedOutcomeAssessment } from "../lib/decision/outcome/buildObs
 import { buildDecisionOutcomeFeedback } from "../lib/decision/outcome/buildDecisionOutcomeFeedback";
 import { buildDecisionFeedbackSignal } from "../lib/decision/outcome/buildDecisionFeedbackSignal";
 import { applyDecisionFeedbackToMemory } from "../lib/decision/outcome/applyDecisionFeedbackToMemory";
-import { buildActiveModeContext, getProductMode } from "../lib/modes/productModesContract";
+import { buildActiveModeContext, getProductMode, type ActiveModeContext } from "../lib/modes/productModesContract";
 import { appendDecisionActionTrace } from "../lib/governance/appendDecisionActionTrace";
 import {
   buildEnvironmentConfig,
@@ -444,11 +429,7 @@ import {
   getExecutiveWarRoomState,
   resolveExecutiveWarRoomCopilotPrompt,
 } from "../lib/scene/warroom";
-import type { ExecutiveWarRoomCommandId } from "../lib/scene/warroom";
-import {
-  getExecutiveCognitiveTwinState,
-} from "../lib/scene/twin";
-import {
+import type { ExecutiveWarRoomCommandId } from "../lib/scene/warroom";import {
   getExecutiveAdvisorState,
   resolveExecutiveAdvisorCopilotPrompt,
 } from "../lib/scene/advisor";
@@ -465,14 +446,7 @@ import {
   type TypeCExecutiveAction,
 } from "../lib/typec/typeCExecutiveActions";
 import { resolveTypeCActionPanel } from "../lib/typec/routeTypeCExecutiveAction";
-import {
-  TYPE_C_ORCHESTRATION_EXTRACTION_PLAN,
-  type TypeCApplySceneUpdateRef,
-  type TypeCExecutiveInsightContextRef,
-  type TypeCOrchestrationRefs,
-  type TypeCOrchestrationState,
-  type TypeCOpenSimPanelForTypeCRef,
-} from "./hooks/typec/useTypeCOrchestration.types.ts";
+import { type TypeCApplySceneUpdateRef, type TypeCExecutiveInsightContextRef, type TypeCOrchestrationRefs, type TypeCOrchestrationState, type TypeCOpenSimPanelForTypeCRef } from "./hooks/typec/useTypeCOrchestration.types.ts";
 import { useTypeCOrchestration } from "./hooks/typec/useTypeCOrchestration.ts";
 import type { SceneApplyControllerRefs } from "./hooks/scene/useSceneApplyController.types.ts";
 import { useSceneApplyController } from "./hooks/scene/useSceneApplyController.ts";
@@ -482,56 +456,13 @@ import {
   emitRightPanelDiagnosticDev,
 } from "./hooks/right-panel/useRightPanelController.ts";
 import { normalizeRawAuthorityPanelView } from "./hooks/right-panel/rightPanelAuthorityRoute.ts";
-import {
-  RIGHT_PANEL_CONTROLLER_EXTRACTION_PLAN,
-  type RequestPanelAuthorityOpenFn,
-  type RightPanelBridgeRefs,
-} from "./hooks/right-panel/useRightPanelController.types.ts";
-import {
-  CHAT_PIPELINE_CONTROLLER_EXTRACTION_PLAN,
-  type ChatPipelineBridgeCallbacks,
-  type ChatPipelineSendTextDeps,
-  type EmitChatPipelineDiagnosticFn,
-} from "./hooks/chat/useChatPipelineController.types.ts";
+import { type RequestPanelAuthorityOpenFn, type RightPanelBridgeRefs } from "./hooks/right-panel/useRightPanelController.types.ts";
+import { type ChatPipelineBridgeCallbacks, type ChatPipelineSendTextDeps, type EmitChatPipelineDiagnosticFn } from "./hooks/chat/useChatPipelineController.types.ts";
 import { buildChatEffectSignature, normalizeChatInputForDedup } from "./hooks/chat/chatPipelineSendTextHelpers.ts";
 import { useChatPipelineController } from "./hooks/chat";
 import type { MemoryStateV1 } from "../lib/memory/memoryTypes";
-import {
-  Msg,
-  ScenePrefs,
-  BackupV1,
-  HISTORY_KEY,
-  SESSION_KEY,
-  PREFS_KEY,
-  AUTO_BACKUP_KEY,
-  MEMORY_KEY,
-  defaultPrefs,
-  makeMsg,
-  normalizeMessages,
-  appendMessages,
-  normalizeSceneJson,
-  saveProject,
-  loadProject,
-  loadHistory,
-  pushHistory,
-  saveBackup,
-  loadBackup,
-  stableStringify,
-} from "./homeScreenUtils";
-import {
-  canonDecisionMissingSceneBlob,
-  evaluateBackupRestoreScene,
-  evaluateDomainDemoScene,
-  evaluateHistoryUndoScene,
-  evaluateProductFlowForcedScene,
-  evaluateSnapshotRestoreScene,
-  evaluateTimelineForceScene,
-  evaluateUnifiedReactionSceneReplacement,
-  evaluateWorkspaceHydrateScene,
-  isSceneCanonReplaceDecision,
-  sceneJsonFromCanonDecision,
-} from "./homeScreenSceneApply";
-import { parseDecisionSnapshotKey, pickDecisionSnapshotFromList } from "./homeScreenSnapshots";
+import { Msg, ScenePrefs, BackupV1, SESSION_KEY, PREFS_KEY, AUTO_BACKUP_KEY, MEMORY_KEY, defaultPrefs, makeMsg, normalizeMessages, appendMessages, normalizeSceneJson, saveProject, loadProject, pushHistory, saveBackup } from "./homeScreenUtils";
+import { canonDecisionMissingSceneBlob, evaluateDomainDemoScene, evaluateProductFlowForcedScene, evaluateTimelineForceScene, evaluateUnifiedReactionSceneReplacement, evaluateWorkspaceHydrateScene, isSceneCanonReplaceDecision, sceneJsonFromCanonDecision } from "./homeScreenSceneApply";
 import {
   asRecord,
   buildFirstMeaningfulState,
@@ -548,6 +479,9 @@ import {
   hasRenderableSceneForVisibleState,
   normalizeKpiStateFromUnknown,
   readCanonicalRecommendation,
+  readExecutiveSummarySurface,
+  readPayloadString,
+  readProductModeId,
   readPanelFamilyContractDiagnostics,
   readPanelFamilySliceDiagnostics,
   readSceneJsonActiveLoop,
@@ -581,30 +515,8 @@ import {
   pickAcceptedChatSceneReplacement,
   reactionModeHintFromIntent,
 } from "./homeScreenChatApplyPrep";
-import {
-  getPanelActionFallbackMessage,
-  isAutomaticRightPanelSource,
-  isExecutiveActionTarget,
-  toPanelOpenSource,
-  type ExecutiveActionIntent,
-  type ExecutiveActionTarget,
-} from "./homeScreenShellGuards";
-import {
-  buildBackupRestorePreviewContents,
-  buildPersistedProjectSnapshot,
-  buildScreenBackupV1,
-  buildWorkspaceProjectStateFromLoadedProject,
-  buildWorkspaceStateForProjectImport,
-  composeImportWarningAssistantText,
-  messageImportUnknownError,
-  pickWorkspaceProjectForHydrate,
-  prepareProjectImportFromFileText,
-  prepareUndoHistoryPop,
-  prepareWorkspaceProjectExportJson,
-  readSessionIdForPersistence,
-  resolveHudTabAfterBackupRestore,
-  withPersistedProjectSavedAt,
-} from "./homeScreenPersistenceApply";
+import { isAutomaticRightPanelSource, toPanelOpenSource } from "./homeScreenShellGuards";
+import { buildPersistedProjectSnapshot, buildScreenBackupV1, buildWorkspaceProjectStateFromLoadedProject, pickWorkspaceProjectForHydrate, readSessionIdForPersistence } from "./homeScreenPersistenceApply";
 import {
   prefetchIngestionConnectorCatalogDev,
   submitManualTextIngestion,
@@ -692,6 +604,8 @@ import { buildCurrentDomainRuntimeState, getEffectiveDomainLabel } from "../lib/
 import { emitDomainUsageLoggedDevOnce, logDomainUsage } from "../lib/domain/nexoraDomainUsage.ts";
 import { resolveNexoraLocaleDomainId } from "../lib/domain/nexoraDomainPackRegistry.ts";
 import {
+  asUnknownSetter,
+  asUnknownStateSetter,
   buildHomescreenExecutionApplyTracePayload,
   buildNexoraUiReadableStateForApply,
   createNexoraUiAdaptersForExecutionApply,
@@ -705,30 +619,7 @@ import {
   selectionGuardSourceFromReaction,
   traceNexoraSelectionGuard,
 } from "../lib/selection/selectionSignature";
-import {
-  USER_SELECTION_LOCK_TTL_MS,
-  isUserSelectionLockActive,
-  normalizeSelectedObjectId,
-  deriveObjectSelectionFromSelectedId,
-  shouldCommitObjectSelection,
-  shouldCommitSelectedObjectId,
-  shouldBlockAutomaticSelectionOverride,
-  shouldFocusOwnershipMirrorOnly,
-  logVisualSelectionAuthorityRejected,
-  resolveCanonicalSceneVisualSelection,
-  resolveCanonicalVisualSelection,
-  isAutomaticSelectionSource,
-  isSceneSelectionEchoSource,
-  isSceneSelectionUserIntentSource,
-  isCanonicalObjectSelectionClearSource,
-  shouldBlockNonCanonicalSelectionWrite,
-  logNonCanonicalSelectionWriterBlocked,
-  logFocusOwnershipSelectionWriteBlocked,
-  logStaleDebouncedSelectionSkipped,
-  OBJECT_CLICK_TRANSACTION_DEDUPE_MS,
-  type SceneSelectionChangeOptions,
-  type UserSelectionLock,
-} from "../lib/selection/selectionStateGuard";
+import { USER_SELECTION_LOCK_TTL_MS, isUserSelectionLockActive, normalizeSelectedObjectId, deriveObjectSelectionFromSelectedId, shouldCommitObjectSelection, shouldCommitSelectedObjectId, shouldBlockAutomaticSelectionOverride, shouldFocusOwnershipMirrorOnly, logVisualSelectionAuthorityRejected, resolveCanonicalVisualSelection, isSceneSelectionEchoSource, isSceneSelectionUserIntentSource, isCanonicalObjectSelectionClearSource, shouldBlockNonCanonicalSelectionWrite, logNonCanonicalSelectionWriterBlocked, logFocusOwnershipSelectionWriteBlocked, logStaleDebouncedSelectionSkipped, OBJECT_CLICK_TRANSACTION_DEDUPE_MS, type DerivedObjectSelectionMirror, type SceneSelectionChangeOptions, type UserSelectionLock } from "../lib/selection/selectionStateGuard";
 import { resolveRightPanelSelectedObjectId } from "../lib/selection/homeScreenRightPanelSelectedObject";
 import {
   isExplicitUserSelectionSource,
@@ -896,19 +787,13 @@ import { RetailDemoOverlay } from "../components/demo/RetailDemoOverlay";
 import { normalizeStrategicCouncilResult } from "../lib/council/strategicCouncilClient";
 import { useDecisionImpact } from "../lib/impact/useDecisionImpact";
 import { useDemoFlowController } from "../lib/demo/DemoFlowController";
-import {
-  isLatestDemoFlowSequence,
-  nextDemoFlowSequence,
-  shouldApplyExecutionResultImmediately,
-  traceDemoFlowEvent,
-} from "../lib/demo/demoFlowOrchestrator";
+import { nextDemoFlowSequence, shouldApplyExecutionResultImmediately, traceDemoFlowEvent } from "../lib/demo/demoFlowOrchestrator";
 import { RETAIL_FRAGILITY_DEMO_SCRIPT, type DemoScriptStep } from "../lib/demo/demoScript";
 import { useCustomerDemoMode } from "../lib/demo/useCustomerDemoMode";
 import { useNarrativeSceneBinding, useNarrativeSceneBindingDebug } from "../lib/demo/useNarrativeSceneBinding";
 import type { FocusOwnershipState } from "../lib/focus/focusOwnershipTypes";
 import { resolveFocusOwnership } from "../lib/focus/resolveFocusOwnership";
-import { runDecisionExecution } from "../lib/executive/decisionExecutionClient";
-import type { DecisionExecutionPayload, DecisionExecutionResult } from "../lib/executive/decisionExecutionTypes";
+import type { DecisionExecutionResult } from "../lib/executive/decisionExecutionTypes";
 import { DecisionComparePanel } from "../components/executive/DecisionComparePanel";
 import { TeamDecisionPanel } from "../components/executive/TeamDecisionPanel";
 import { AutonomousDecisionCouncilPanel } from "../components/executive/AutonomousDecisionCouncilPanel";
@@ -969,7 +854,6 @@ import { DecisionLifecyclePanel } from "../components/executive/DecisionLifecycl
 import { buildPreviewDecisionExecutionResult } from "../lib/execution/buildPreviewDecisionExecutionResult";
 import type { DecisionAutomationResult } from "../lib/execution/decisionAutomationTypes";
 import type { DecisionExecutionIntent } from "../lib/execution/decisionExecutionIntent";
-import { safeExecuteDecision } from "../lib/execution/decisionExecutionSafety";
 import { normalizeBackendSimulation } from "../lib/simulation/normalizeBackendSimulation";
 import {
   enforceSafeDefaults,
@@ -1030,9 +914,7 @@ import type {
 } from "../lib/ui/right-panel/panelControllerTypes";
 import { emitDebugEvent } from "../lib/debug/debugEmit";
 import { registerPanelSelfDebugLink } from "../lib/debug/debugCorrelationBridge";
-import { getRecentDebugEvents } from "../lib/debug/debugEventStore";
-import { traceSceneWrite } from "../lib/debug/sceneWriteTrace";
-import {
+import { getRecentDebugEvents } from "../lib/debug/debugEventStore";import {
   tracePanelWriteSkippedNoOp,
 } from "../lib/runtime/runtimeChurnDiagnostics";
 import {
@@ -1166,7 +1048,7 @@ import {
   buildScenarioExplanationFromDecisionAnalysis,
   pickDecisionAnalysisFromResponse,
 } from "../lib/panels/buildScenarioExplanationFromDecisionAnalysis";
-import { NexoraError } from "../lib/system/nexoraErrors";
+import { NexoraError, readUnknownErrorMessage } from "../lib/system/nexoraErrors";
 import {
   buildRunbookSurfaceHints,
   logRunbookStepChangedIfDev,
@@ -1347,41 +1229,73 @@ function nexoraPipelineUserFacingMessage(err: unknown): string {
   return NEXORA_PIPELINE_USER_FAILURE;
 }
 
-function countSceneObjects(scene: any): number {
+type HomeScreenEffectiveObjectSelection = {
+  highlighted_objects?: string[];
+  dim_unrelated_objects?: boolean;
+  risk_sources?: string[];
+  risk_targets?: string[];
+  [key: string]: unknown;
+};
+
+type HomeScreenChatPayload = Record<string, unknown>;
+type HomeScreenRiskAlert = { level: RiskLevel; score: number; reasons: string[] };
+type HomeScreenObjectOverridePatch = {
+  opacity?: number;
+  scale?: number;
+  color?: string;
+  visible?: boolean;
+  position?: [number, number, number];
+  intensity?: number;
+  caption?: string;
+  showCaption?: boolean;
+  [key: string]: unknown;
+};
+type HomeScreenObjectUxOverride = {
+  shape?: string;
+  base_color?: string;
+  opacity?: number;
+  scale?: number;
+};
+type HomeScreenVisibleUiState = {
+  sceneJson: SceneJson | null;
+  responseData: Record<string, unknown> | null;
+  objectSelection: unknown;
+  selectedObjectId: string | null;
+  focusedId: string | null;
+  conflicts: unknown[];
+  memoryInsights: unknown | null;
+  riskPropagation: unknown | null;
+  strategicAdvice: unknown | null;
+  decisionCockpit: unknown | null;
+  opponentModel: unknown | null;
+  strategicPatterns: unknown | null;
+};
+
+declare global {
+  interface Window {
+    __NEXORA_QA__?: boolean;
+    __NEXORA_SET_QA__?: (enabled: boolean) => void;
+  }
+}
+
+function countSceneObjects(scene: SceneJson | null | undefined): number {
   return Array.isArray(scene?.scene?.objects) ? scene.scene.objects.length : 0;
 }
 
-function sceneObjectIds(scene: any): string[] {
+function sceneObjectIds(scene: SceneJson | null | undefined): string[] {
   return Array.isArray(scene?.scene?.objects)
-    ? scene.scene.objects.map((obj: any) => String(obj?.id ?? obj?.name ?? "unknown"))
+    ? scene.scene.objects.map((obj) => String(obj?.id ?? obj?.name ?? "unknown"))
     : [];
 }
 
-function stableSemanticSignature(value: unknown, depth = 0, seen = new WeakSet<object>()): string {
-  if (value == null || typeof value !== "object") return JSON.stringify(value);
-  if (seen.has(value as object)) return "[Circular]";
-  seen.add(value as object);
-  if (Array.isArray(value)) {
-    if (depth >= 5) return `[Array:${value.length}]`;
-    return `[${value.map((entry) => stableSemanticSignature(entry, depth + 1, seen)).join(",")}]`;
-  }
-  const record = value as Record<string, unknown>;
-  const keys = Object.keys(record).sort();
-  if (depth >= 5) {
-    const id = typeof record.id === "string" ? `:${record.id}` : "";
-    return `{Object:${keys.length}${id}}`;
-  }
-  return `{${keys.map((key) => `${JSON.stringify(key)}:${stableSemanticSignature(record[key], depth + 1, seen)}`).join(",")}}`;
-}
-
-function sceneCanvasSceneSignature(scene: any, domainId: string | null | undefined): string {
+function sceneCanvasSceneSignature(scene: SceneJson | null | undefined, domainId: string | null | undefined): string {
   const objects = Array.isArray(scene?.scene?.objects) ? scene.scene.objects : [];
   const objectSignature = objects
-    .map((object: any, index: number) => {
+    .map((object: SceneObject, index: number) => {
       const id = String(object?.id ?? object?.name ?? `obj:${index}`);
-      const transform = object?.transform && typeof object.transform === "object" ? object.transform : {};
+      const transform = asRecord(object?.transform);
       const position = Array.isArray(transform?.pos)
-        ? transform.pos
+        ? (transform.pos as unknown[])
         : Array.isArray(object?.position)
           ? object.position
           : Array.isArray(object?.pos)
@@ -1402,10 +1316,10 @@ function sceneCanvasSceneSignature(scene: any, domainId: string | null | undefin
     .join("|");
   const loopSignature = normalizeLoops(scene?.scene?.loops)
     .map((loop) => {
-      const edges = Array.isArray((loop as any)?.edges)
-        ? (loop as any).edges.map((edge: any) => `${edge?.from ?? ""}->${edge?.to ?? ""}`).sort().join(",")
+      const edges = Array.isArray(loop?.edges)
+        ? loop.edges.map((edge: SceneLoopEdge) => `${edge?.from ?? ""}->${edge?.to ?? ""}`).sort().join(",")
         : "";
-      return `${String((loop as any)?.id ?? "")}:${edges}`;
+      return `${String(loop?.id ?? "")}:${edges}`;
     })
     .sort()
     .join("|");
@@ -1420,9 +1334,9 @@ function sceneCanvasSceneSignature(scene: any, domainId: string | null | undefin
 function loopSemanticSignature(loops: readonly SceneLoop[] | null | undefined): string {
   if (!Array.isArray(loops)) return "none";
   return loops
-    .map((loop: any, index) => {
+    .map((loop, index) => {
       const edges = Array.isArray(loop?.edges)
-        ? loop.edges.map((edge: any) => `${edge?.from ?? ""}->${edge?.to ?? ""}`).sort().join(",")
+        ? loop.edges.map((edge: SceneLoopEdge) => `${edge?.from ?? ""}->${edge?.to ?? ""}`).sort().join(",")
         : "";
       const path = Array.isArray(loop?.path) ? loop.path.map(String).join(">") : "";
       return [
@@ -1472,6 +1386,8 @@ type RightPanelOpenRequestDetail = {
   family?: "EXE" | "SCN" | "SIM" | "RSK";
   reason?: string | null;
   forceOpen?: boolean;
+  mrpTab?: string | null;
+  dashboardContext?: string | null;
 };
 
 type GuidedPromptSource =
@@ -1574,14 +1490,15 @@ function hasRenderableSceneObjects(scene: SceneJson | null): boolean {
   return Array.isArray(scene?.scene?.objects) && scene.scene.objects.length > 0;
 }
 
-function buildStarterSceneFromText(_text: string): SceneJson {
+function buildStarterSceneFromText(text: string): SceneJson {
+  void text;
   return {
     state_vector: {},
     scene: {
       objects: [
-        { id: "delivery", label: "Delivery", type: "node" } as any,
-        { id: "inventory", label: "Inventory", type: "node" } as any,
-        { id: "supplier", label: "Supplier", type: "node" } as any,
+        { id: "delivery", label: "Delivery", type: "node" },
+        { id: "inventory", label: "Inventory", type: "node" },
+        { id: "supplier", label: "Supplier", type: "node" },
       ],
     },
   } as SceneJson;
@@ -1634,12 +1551,13 @@ function shallowEqualRecord(
   return leftKeys.every((key) => Object.is(left[key], right[key]));
 }
 
+/** Compiler-legal shallow-stable hold (AD-FE-HOOKS-01): state, not render-time refs. */
 function useShallowStableObject<T extends Record<string, unknown> | null>(value: T): T {
-  const ref = React.useRef<T>(value);
-  if (value && ref.current && shallowEqualRecord(ref.current, value)) {
-    return ref.current;
+  const [held, setHeld] = React.useState<T>(value);
+  if (shallowEqualRecord(held, value)) {
+    return held;
   }
-  ref.current = value;
+  setHeld(value);
   return value;
 }
 
@@ -1656,7 +1574,7 @@ type BackendChatResponse = {
   actions?: unknown;
   analysis_summary?: string | null;
   error?: { message?: string } | null;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 // Module-scoped guards: survive StrictMode remounts and skip identical B2/B5/B7 traces before logging.
@@ -1730,8 +1648,6 @@ function loadPrefsFromStorage(): ScenePrefs | null {
     return null;
   }
 }
-
-
 
 /**
  * Nexora primary screen — orchestration shell.
@@ -1952,7 +1868,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [activeCompanyId, setActiveCompanyIdState] = useState<string>(
     process.env.NEXT_PUBLIC_COMPANY_ID || "default"
   );
-  const { config, loading: configLoading, error: configError, refresh } = useCompanyConfig(activeCompanyId);
+  const { config} = useCompanyConfig(activeCompanyId);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [memory, setMemory] = useState<MemoryStateV1>(() => createInitialMemoryState());
@@ -2254,7 +2170,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         .filter(Boolean);
       const nextSelection = asRecord(nextScene)?.object_selection;
       const highlightedIds = getHighlightedObjectIdsFromSelection(nextSelection);
-      const shouldDim = (nextSelection as any)?.dim_unrelated_objects === true;
+      const shouldDim = asRecord(nextSelection)?.dim_unrelated_objects === true;
       const dimmedIds = shouldDim ? objectIds.filter((id) => !highlightedIds.includes(id)) : [];
       return buildSceneSemanticSignature({
         objectIds,
@@ -2788,8 +2704,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   // O5 keep: shell-level Type-C core object bootstrap via scene apply (gated on mode).
   useEffect(() => {
     if (typeCMode !== "type_c") return;
-    const demoObjects = Array.isArray((activeDomainDemo?.scene as any)?.scene?.objects)
-      ? ((activeDomainDemo?.scene as any).scene.objects as unknown[])
+    const demoScene = normalizeSceneJson(activeDomainDemo?.scene ?? null);
+    const demoObjects = Array.isArray(demoScene?.scene?.objects)
+      ? demoScene.scene.objects
       : [];
     if (demoObjects.length > 0) {
       devLogThrottled({
@@ -3034,7 +2951,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       refreshTypeCDecisionReadiness,
       sceneJson,
       trackTypeCPipelineEvent,
-      typeCDecisionDraft,
       typeCDecisionReadiness,
       typeCMode,
       typeCScenarioState,
@@ -3083,7 +2999,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   useEffect(() => {
     if (process.env.NODE_ENV !== "development" || typeof window === "undefined") return;
     const sync = () => {
-      setShowChatPipelineQA(Boolean((window as any).__NEXORA_QA__));
+      setShowChatPipelineQA(Boolean(window.__NEXORA_QA__));
     };
     sync();
     window.addEventListener("nexora:qa-toggle", sync);
@@ -3091,23 +3007,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, []);
   useEffect(() => {
     if (process.env.NODE_ENV !== "development" || typeof window === "undefined") return;
-    (window as any).__NEXORA_SET_QA__ = (enabled: boolean) => {
-      (window as any).__NEXORA_QA__ = Boolean(enabled);
+    window.__NEXORA_SET_QA__ = (enabled: boolean) => {
+      window.__NEXORA_QA__ = Boolean(enabled);
       window.dispatchEvent(new Event("nexora:qa-toggle"));
     };
     return () => {
-      if ((window as any).__NEXORA_SET_QA__) {
-        delete (window as any).__NEXORA_SET_QA__;
+      if (window.__NEXORA_SET_QA__) {
+        delete window.__NEXORA_SET_QA__;
       }
     };
   }, []);
   const [activeMode, setActiveMode] = useState<string>(activeDomainExperience.experience.preferredProductMode);
-  const [activeTemplateId, setActiveTemplateId] = useState<string>("quality_protection");
+  const [activeTemplateId] = useState<string>("quality_protection");
   const [autoBackupEnabled, setAutoBackupEnabled] = useState<boolean>(
     process.env.NODE_ENV !== "production"
   );
-  const [, setRestorePreview] = useState<null | { backup: BackupV1; lines: string[] }>(null);
-  const [alert, setAlert] = useState<{ level: any; score: number; reasons: string[] } | null>(null);
+  const [alert, setAlert] = useState<HomeScreenRiskAlert | null>(null);
   const dismissAlert = useCallback(() => setAlert(null), []);
   const chatRequestSeqRef = useRef(0);
   const latestChatPipelineRunIdRef = useRef<string | null>(null);
@@ -3224,7 +3139,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   /** B20-FIX-1 — dedupe per-run outcome lookup logs. */
   const lastB20Fix1OutcomeLookupSigRef = useRef<string | null>(null);
   const lastNarrativeOverrideSignatureRef = useRef<string | null>(null);
-  const decisionFlowSeqRef = useRef(0);
   const demoFlowPauseRef = useRef<() => void>(() => {});
   const activeChatRequestRef = useRef<{
     seq: number;
@@ -4594,8 +4508,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const prevPipelineStatusForMetricRef = useRef<NexoraPipelineStatusUi["status"] | null>(null);
   const prevCompareOpenForMetricRef = useRef(false);
   const lastDecisionRunIdForMetricRef = useRef<string | null>(null);
-  const [objectSelection, _setObjectSelection] = useState<any | null>(null);
-  const objectSelectionRef = useRef<any | null>(null);
+  const [objectSelection, _setObjectSelection] = useState<DerivedObjectSelectionMirror>(null);
+  const objectSelectionRef = useRef<DerivedObjectSelectionMirror>(null);
   useLayoutEffect(() => {
     objectSelectionRef.current = objectSelection;
   }, [objectSelection]);
@@ -4618,7 +4532,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     logNexoraSelectionSource({ source, action: "user_intent_marked" });
   }, []);
   const setObjectSelection = useCallback(
-    (_nextOrUpdater: any | null | ((prev: any | null) => any | null)) => {
+    (nextOrUpdater: DerivedObjectSelectionMirror | null | ((prev: DerivedObjectSelectionMirror) => DerivedObjectSelectionMirror)) => {
+      void nextOrUpdater;
       const prev = objectSelectionRef.current;
       const canonicalSelectedId = normalizeSelectedObjectId(selectedObjectIdStateRef.current);
       const next = deriveObjectSelectionFromSelectedId({
@@ -5192,6 +5107,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         reason: string;
       }
     ) => {
+      void label;
+      void detail;
       return;
     },
     []
@@ -5280,6 +5197,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       nextView: RightPanelView,
       contextId: string | null = null
     ) => {
+      void source;
+      void previousView;
+      void nextView;
+      void contextId;
       return;
     },
     []
@@ -5296,6 +5217,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         | "legacy_sync"
         | "direct_state_write"
     ) => {
+      void source;
+      void nextView;
+      void classification;
       return;
     },
     []
@@ -5344,6 +5268,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         | "[Nexora][PanelFamilyAudit] contract_result",
       detail: Record<string, unknown>
     ) => {
+      void label;
+      void detail;
       return;
     },
     []
@@ -5367,6 +5293,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         reason: string;
       }
     ) => {
+      void event;
+      void detail;
       return;
     },
     []
@@ -5385,69 +5313,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         dashboardOverride?: boolean;
       } = {}
     ) => {
-      return;
-    },
-    []
-  );
-  const traceFocusFlashAudit = useCallback(
-    (
-      label:
-        | "[Nexora][FocusFlashAudit] focus_entered"
-        | "[Nexora][FocusFlashAudit] focus_skipped"
-        | "[Nexora][FocusFlashAudit] dashboard_followed_focus",
-      detail: {
-        nextView?: RightPanelView | null;
-      } = {}
-    ) => {
-      return;
-    },
-    []
-  );
-  const traceSemanticDominance = useCallback(
-    (
-      label:
-        | "[Nexora][SemanticDominance] forced_family_kept"
-        | "[Nexora][SemanticDominance] fallback_blocked",
-      detail: {
-        nextView?: RightPanelView | null;
-        source?: string | null;
-      } = {}
-    ) => {
-      return;
-    },
-    []
-  );
-  const tracePanelOverrideAudit = useCallback(
-    (
-      label:
-        | "[Nexora][PanelOverrideAudit] openRightPanel_called"
-        | "[Nexora][PanelOverrideAudit] dashboard_override_applied"
-        | "[Nexora][PanelOverrideAudit] dashboard_override_blocked"
-        | "[Nexora][PanelOverrideAudit] right_panel_state_changed",
-      detail: Record<string, unknown>
-    ) => {
-      return;
-    },
-    []
-  );
-  const traceSimHijackAudit = useCallback(
-    (
-      label:
-        | "[Nexora][SimHijackAudit] simulate_requested"
-        | "[Nexora][SimHijackAudit] simulate_applied"
-        | "[Nexora][SimHijackAudit] simulate_blocked"
-        | "[Nexora][SimHijackAudit] state_before_simulate",
-      detail: {
-        source: string;
-        previousView?: RightPanelView | null;
-        nextView?: RightPanelView | null;
-        clickedSource?: string | null;
-        clickedTab?: string | null;
-        clickedNav?: string | null;
-        explicitUserActionRequestedSimulate: boolean;
-        automaticFallback: boolean;
-      }
-    ) => {
+      void stage;
+      void detail;
       return;
     },
     []
@@ -5473,6 +5340,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         explicitUserIntent: boolean;
       }
     ) => {
+      void label;
+      void detail;
       return;
     },
     []
@@ -5502,29 +5371,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     []
   );
-  const traceRenderAudit = useCallback(
-    (
-      label:
-        | "[Nexora][RenderAudit] state_write"
-        | "[Nexora][RenderAudit] no_op_write",
-      detail: {
-        file: string;
-        function: string;
-        currentView: RightPanelView | null;
-        nextView: RightPanelView | null;
-        renderCount?: number;
-        reason: string;
-        panelKey?: string | null;
-        dataShape?: string | null;
-        dependencyHint?: string | null;
-      }
-    ) => {
-      return;
-    },
-    []
-  );
   const debugPanelLockState = useCallback(
-    (_label: string, _extra?: Record<string, unknown>) => {
+    (label: string, extra?: Record<string, unknown>) => {
+      void label;
+      void extra;
       return;
     },
     []
@@ -6811,17 +6661,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                   : normalizedRequest.source === "scene"
                     ? "direct_open"
                     : "unknown";
-      const isExplicitUserPanelNavigation =
-        normalizedRequest.source === "left_nav" ||
-        normalizedRequest.source === "manual_user_nav" ||
-        normalizedRequest.source === "tab_click" ||
-        normalizedRequest.source === "object_click";
-      const isManualOverrideSource =
-        normalizedRequest.source === "left_nav" ||
-        normalizedRequest.source === "manual_user_nav" ||
-        normalizedRequest.source === "object_click" ||
-        normalizedRequest.source === "scene" ||
-        normalizedRequest.source === "tab_click";
       const rawSource = `panel_authority:${normalizedRequest.source}:${normalizedRequest.reason ?? "open"}`;
       const FAST_SOURCES: NexoraPanelAuthoritySource[] = [
         "left_nav",
@@ -7252,25 +7091,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       rightPanelView: rightPanelState.view ?? null,
     });
   }, [focusedId, rightPanelState.contextId, rightPanelState.view, selectedObjectIdState, traceAnalyzeObjectRoute]);
-  const openExePanel = useCallback(
-    (
-      view: string,
-      reason: string,
-      contextId?: string | null,
-      opts?: { source?: NexoraPanelAuthoritySource }
-    ) => {
-      const src = opts?.source ?? "sub_button";
-      requestPanelAuthorityOpen({
-        source: src,
-        family: "EXE",
-        view: String(view ?? ""),
-        contextId: contextId ?? null,
-        forceOpen: true,
-        reason: src === "component_panel" ? `${reason}:strategic_command_action` : reason,
-      });
-    },
-    [requestPanelAuthorityOpen]
-  );
   const openScnPanel = useCallback(
     (view: string, contextId: string | null, reason: string) => {
       requestPanelAuthorityOpen({
@@ -7882,55 +7702,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       centerComponentCloseTimerRef.current = null;
     }, 170);
   }, [commitCenterComponentState]);
-  const toggleRightPanel = useCallback(
-    (view: RightPanelView, contextId: string | null = null) => {
-      if (!view) {
-        return;
-      }
-      requestPanelAuthorityOpen({
-        view,
-        family:
-          view === "dashboard" || view === "strategic_command"
-            ? "EXE"
-            : view === "risk" || view === "fragility" || view === "explanation"
-              ? "RSK"
-              : view === "workspace" || view === "object" || view === "object_focus"
-                ? "SCN"
-                : "SIM",
-        source: "system",
-        contextId,
-        reason: "toggle_right_panel",
-        forceOpen: true,
-      });
-    },
-    [requestPanelAuthorityOpen]
-  );
-  const toggleInspector = useCallback(() => {
-    traceRightPanelPathAudit("toggleInspector", rightPanelState.view ?? null, "direct_state_write");
-    if (rightPanelState.isOpen) {
-      requestPanelAuthorityClose("user_toggle_inspector");
-      return;
-    }
-    const v = rightPanelState.view;
-    if (!v) {
-      return;
-    }
-    requestPanelAuthorityOpen({
-      view: v,
-      family:
-        v === "dashboard" || v === "strategic_command"
-          ? "EXE"
-          : v === "risk" || v === "fragility" || v === "explanation"
-            ? "RSK"
-            : v === "workspace" || v === "object" || v === "object_focus"
-              ? "SCN"
-              : "SIM",
-      source: "system",
-      contextId: rightPanelState.contextId ?? null,
-      reason: "toggle_inspector_open_existing_view",
-      forceOpen: true,
-    });
-  }, [requestPanelAuthorityClose, requestPanelAuthorityOpen, rightPanelState.contextId, rightPanelState.isOpen, rightPanelState.view, traceRightPanelPathAudit]);
 
   useEffect(() => {
     if (!centerComponent) return;
@@ -8010,18 +7781,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         return;
       }
       if (requestedView) {
-        const requestedMrpTab = normalizeMainRightPanelTab((detail as any)?.mrpTab ?? "dashboard", {
+        const requestedMrpTab = normalizeMainRightPanelTab(detail?.mrpTab ?? "dashboard", {
           warn: false,
         });
         if (requestedMrpTab !== "dashboard") {
-          warnUnauthorizedRoutingMrpTab((detail as any)?.mrpTab);
+          warnUnauthorizedRoutingMrpTab(detail?.mrpTab);
           return;
         }
-        const dashboardContext = (detail as any)?.dashboardContext
-          ? String((detail as any).dashboardContext)
+        const dashboardContext = detail?.dashboardContext
+          ? String(detail.dashboardContext)
           : mapLegacyPanelRouteToDashboardContext(requestedView, { warn: true });
-        if ((detail as any)?.mrpTab && requestedMrpTab !== (detail as any).mrpTab) {
-          warnUnauthorizedMainRightPanelTab((detail as any).mrpTab);
+        if (detail?.mrpTab && requestedMrpTab !== detail.mrpTab) {
+          warnUnauthorizedMainRightPanelTab(detail.mrpTab);
         }
         const routeResolution = resolveNexoraRouteRequest({
           source:
@@ -8033,7 +7804,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                   ? "assistant"
                   : "system",
           target: dashboardContext === "timeline" ? "timeline" : "dashboard",
-          dashboardContext: dashboardContext as any,
+          dashboardContext: dashboardContext as DashboardContext,
           objectId: detail?.contextId ?? undefined,
           legacyRoute: requestedView,
           reason: detail?.reason ?? "nexora_open_right_panel_event",
@@ -8389,37 +8160,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     }
   }, [activeCompanyId]);
   const [sourceLabel, setSourceLabel] = useState<string | null>(null);
-  const [lastActions, setLastActions] = useState<any[]>([]);
-  const [replaying, setReplaying] = useState(false);
-  const [replayError, setReplayError] = useState<string | null>(null);
+  const [, setLastActions] = useState<unknown[]>([]);
+  const [, setReplayError] = useState<string | null>(null);
   const [healthInfo, setHealthInfo] = useState<string | null>(null);
   const [lastAnalysisSummary, setLastAnalysisSummary] = useState<string | null>(null);
-  const [sceneWarn, setSceneWarn] = useState<string | null>(null);
-  const [conflicts, setConflicts] = useState<any[]>([]);
-  const [memoryInsights, setMemoryInsights] = useState<any | null>(null);
-  const [riskPropagation, setRiskPropagation] = useState<any | null>(null);
-  const [strategicAdvice, setStrategicAdvice] = useState<any | null>(null);
+  const [, setSceneWarn] = useState<string | null>(null);
+  const [conflicts, setConflicts] = useState<unknown[]>([]);
+  const [memoryInsights, setMemoryInsights] = useState<unknown | null>(null);
+  const [riskPropagation, setRiskPropagation] = useState<unknown | null>(null);
+  const [strategicAdvice, setStrategicAdvice] = useState<unknown | null>(null);
   useEffect(() => {
     // Disabled legacy sync — controlled by explicit user actions only
     setProductModeId(activeDomainExperience.experience.preferredWorkspaceModeId);
   }, [
     activeDomainExperience,
   ]);
-  const [strategyKpi, setStrategyKpi] = useState<any | null>(null);
-  const [decisionCockpit, setDecisionCockpit] = useState<any | null>(null);
+  const [strategyKpi, setStrategyKpi] = useState<unknown | null>(null);
+  const [decisionCockpit, setDecisionCockpit] = useState<unknown | null>(null);
   const [productModeId, setProductModeId] = useState<string>(
     activeDomainExperience.experience.preferredWorkspaceModeId
   );
-  const [productModeContext, setProductModeContext] = useState<any | null>(null);
-  const [aiReasoning, setAiReasoning] = useState<any | null>(null);
-  const [platformAssembly, setPlatformAssembly] = useState<any | null>(null);
-  const [autonomousExploration, setAutonomousExploration] = useState<any | null>(null);
-  const [opponentModel, setOpponentModel] = useState<any | null>(null);
-  const [strategicPatterns, setStrategicPatterns] = useState<any | null>(null);
-  const [responseData, setResponseData] = useState<any | null>(null);
+  const [productModeContext, setProductModeContext] = useState<unknown | null>(null);
+  const [aiReasoning, setAiReasoning] = useState<unknown | null>(null);
+  const [platformAssembly, setPlatformAssembly] = useState<unknown | null>(null);
+  const [autonomousExploration, setAutonomousExploration] = useState<unknown | null>(null);
+  const [opponentModel, setOpponentModel] = useState<unknown | null>(null);
+  const [strategicPatterns, setStrategicPatterns] = useState<unknown | null>(null);
+  const [responseData, setResponseData] = useState<Record<string, unknown> | null>(null);
   const [decisionResult, setDecisionResult] = useState<DecisionExecutionResult | null>(null);
-  const [decisionExecutionLoading, setDecisionExecutionLoading] = useState(false);
-  const [decisionUiState, setDecisionUiState] = useState<{
+  const [decisionExecutionLoading] = useState(false);
+  const [decisionUiState] = useState<{
     status: "idle" | "loading" | "ready" | "error";
     mode: "simulate" | "compare" | "dashboard" | null;
     data: DecisionExecutionResult | null;
@@ -8673,7 +8443,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const handleCloseRightPanel = useCallback(() => {
     requestPanelAuthorityClose("user_close_action");
   }, [requestPanelAuthorityClose]);
-  const [noSceneUpdate, setNoSceneUpdate] = useState(false);
+  const [, setNoSceneUpdate] = useState(false);
   const [focusPinned, setFocusPinned] = useState(false);
   const [focusMode, setFocusMode] = useState<"all" | "selected">("all");
   const [focusOwnership, setFocusOwnership] = useState<FocusOwnershipState>({
@@ -8689,7 +8459,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const focusModeStore = useFocusMode();
   const pinnedId = usePinnedId();
   const activeLoopIdStore = useActiveLoopId();
-  const focusActions = useFocusActions() as any;
+  const focusActions = useFocusActions();
   const applyFocusModeToStore = useCallback(
     (nextMode: "all" | "selected" | "pinned") => {
       if (typeof focusActions?.setFocusMode === "function") {
@@ -8717,16 +8487,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [applyPinToStore]
   );
-  const setFocusPinnedFromPanels = useCallback(
-    (fn: (v: boolean) => boolean) => {
-      setFocusPinned((prev) => {
-        const next = fn(prev);
-        applyPinToStore(next, focusedId ?? null);
-        return next;
-      });
-    },
-    [applyPinToStore, focusedId]
-  );
   const [showAxes, setShowAxes] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
   const [showCameraHelper, setShowCameraHelper] = useState(false);
@@ -8747,7 +8507,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   >({});
   const [objectUxById, setObjectUxById] = useState<Record<string, { opacity?: number; scale?: number }>>({});
   const [selectedObjectInfo, setSelectedObjectInfo] = useState<ResolvedObjectDetails | null>(null);
-  const [selectionLocked, setSelectionLocked] = useState(false);
+  const [selectionLocked] = useState(false);
   const claimFocusOwnership = useCallback((next: FocusOwnershipState) => {
     setFocusOwnership(next);
     if (process.env.NODE_ENV !== "production") {
@@ -8770,8 +8530,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     sceneJson,
     responseData,
   });
-  const handleDragStart = useCallback(() => {}, []);
-  const handleDragEnd = useCallback(() => {}, []);
   const [prefs, setPrefs] = useState<ScenePrefs>(() => loadPrefsFromStorage() ?? defaultPrefs);
 
   useEffect(() => {
@@ -8789,15 +8547,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const [isOrbiting, setIsOrbiting] = useState(false);
   const [cameraLockedByUser, setCameraLockedByUser] = useState(false);
   const [episodeId, setEpisodeId] = useState<string | null>(null);
-  const [simRunning, setSimRunning] = useState(false);
-  const [simSpeed, setSimSpeed] = useState(1);
-  const [simLastError, setSimLastError] = useState<string | null>(null);
+  const [simRunning] = useState(false);
+  const [simSpeed] = useState(1);
+  const [, setSimLastError] = useState<string | null>(null);
   const [kpi, setKpi] = useState<KPIState | null>(null);
-  // --- Monte Carlo (HUD panel) ---
-  const [mcLoading, setMcLoading] = useState(false);
-  const [mcError, setMcError] = useState<string | null>(null);
-  const [mcReport, setMcReport] = useState<any | null>(null);
-  const [mcResult, setMcResult] = useState<any | null>(null);
 
   useEffect(() => {
     if (rightPanelState.isOpen && rightPanelState.view === "war_room") {
@@ -8982,7 +8735,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   );
   const normalizeDecisionPayload = useCallback(
     (payload: unknown): {
-      payload: any | null;
+      payload: Record<string, unknown> | null;
       validation: ValidationResult;
       recoveryActions: string[];
     } => {
@@ -9061,24 +8814,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     },
     [activeProjectId, emitDecisionTrace, normalizeDecisionPayload]
   );
-  const guardedResponseData = useMemo<any | null>(
-    () => normalizeDecisionPayload(responseData).payload,
+  const guardedResponseData = useMemo<Record<string, unknown> | null>(
+    () => normalizeDecisionPayload(responseData).payload as Record<string, unknown>,
     [normalizeDecisionPayload, responseData]
   );
-  const [visibleUiState, setVisibleUiState] = useState<{
-    sceneJson: SceneJson | null;
-    responseData: any | null;
-    objectSelection: any | null;
-    selectedObjectId: string | null;
-    focusedId: string | null;
-    conflicts: any[];
-    memoryInsights: any | null;
-    riskPropagation: any | null;
-    strategicAdvice: any | null;
-    decisionCockpit: any | null;
-    opponentModel: any | null;
-    strategicPatterns: any | null;
-  }>({
+  const [visibleUiState, setVisibleUiState] = useState<HomeScreenVisibleUiState>({
     sceneJson: null,
     responseData: null,
     objectSelection: null,
@@ -9116,12 +8856,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         submitActive: submitActiveForVisibleUi,
       }),
     [
-      chatRequestStatus,
       conflicts,
       decisionCockpit,
       focusedId,
       guardedResponseData,
-      loading,
       memoryInsights,
       objectSelection,
       opponentModel,
@@ -9134,18 +8872,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       visibleUiState,
     ]
   );
-  const visibleUiStateSignature = useMemo(
-    () => buildVisibleUiStateSignature(visibleUiState),
-    [visibleUiState]
-  );
   useEffect(() => {
     const currentVisibleUiState = visibleUiStateRef.current;
     const authoritySceneIds = sceneObjectIds(sceneJson);
     const currentVisibleSceneIds = sceneObjectIds(currentVisibleUiState.sceneJson);
-    const projectedVisibleSceneIds = sceneObjectIds(projectedVisibleUiState.sceneJson);
+    const projectedVisibleSceneIds = sceneObjectIds(projectedVisibleUiState.sceneJson as SceneJson | null);
     const authorityCount = countSceneObjects(sceneJson);
-    const projectedCount = countSceneObjects(projectedVisibleUiState.sceneJson);
-    const currentVisibleCount = countSceneObjects(currentVisibleUiState.sceneJson);
+    const projectedCount = countSceneObjects(projectedVisibleUiState.sceneJson as SceneJson | null);
+    const currentVisibleCount = countSceneObjects(currentVisibleUiState.sceneJson as SceneJson | null);
     const wouldCollapseScene =
       authorityCount > 1 &&
       projectedCount === 1 &&
@@ -9284,7 +9018,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             focusedId: finalVisibleUiState.focusedId ?? null,
             rightPanelView: rightPanelReconcileSnapshot.view,
             rightPanelContextId: rightPanelReconcileSnapshot.contextId,
-            sceneObjectIds: sceneObjectIds(finalVisibleUiState.sceneJson),
+            sceneObjectIds: sceneObjectIds(finalVisibleUiState.sceneJson as SceneJson | null),
           },
         });
       }
@@ -9316,7 +9050,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             focusedId: finalVisibleUiState.focusedId ?? null,
             rightPanelView: rightPanelReconcileSnapshot.view,
             rightPanelContextId: rightPanelReconcileSnapshot.contextId,
-            sceneObjectIds: sceneObjectIds(finalVisibleUiState.sceneJson),
+            sceneObjectIds: sceneObjectIds(finalVisibleUiState.sceneJson as SceneJson | null),
           },
         });
       }
@@ -9330,8 +9064,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     ) {
       return;
     }
-    const finalVisibleSceneIds = sceneObjectIds(finalVisibleUiState.sceneJson);
-    const finalVisibleCount = countSceneObjects(finalVisibleUiState.sceneJson);
+    const finalVisibleSceneIds = sceneObjectIds(finalVisibleUiState.sceneJson as SceneJson | null);
+    const finalVisibleCount = countSceneObjects(finalVisibleUiState.sceneJson as SceneJson | null);
     const scenePreservationAction =
       wouldCollapseScene
         ? "blocked_scene_collapse"
@@ -9407,9 +9141,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
     }
     setVisibleUiState((prev) => {
-      const next = {
+      const next: HomeScreenVisibleUiState = {
         sceneJson: (finalVisibleUiState.sceneJson ?? null) as SceneJson | null,
-        responseData: finalVisibleUiState.responseData,
+        responseData: (asRecord(finalVisibleUiState.responseData) ?? null) as Record<string, unknown> | null,
         objectSelection: finalVisibleUiState.objectSelection,
         selectedObjectId: finalVisibleUiState.selectedObjectId,
         focusedId: finalVisibleUiState.focusedId,
@@ -9655,7 +9389,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     : [];
   const visibleSceneObjectCount = visibleSceneObjects.length;
   const visibleSceneObjectIds = useMemo(
-    () => visibleSceneObjects.map((o: any) => o?.id ?? "unknown"),
+    () => visibleSceneObjects.map((o) => o?.id ?? "unknown"),
     [visibleSceneJson]
   );
   const sceneJsonIdsForParity = useMemo(() => sceneObjectIds(sceneJson), [sceneJson]);
@@ -9665,16 +9399,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   );
   const relationshipIdsForParity = useMemo(
     () => [...readRelationshipIdsForSceneParity(effectiveVisibleSceneJson ?? sceneJson)],
-    [effectiveVisibleSceneJson, sceneJson, visibleSceneJsonIdsForParity.join("|")]
+    [effectiveVisibleSceneJson, sceneJson]
   );
-  const visibleSceneIdSignature = visibleSceneJsonIdsForParity.slice().sort().join("|");
   const visibleSceneSignature = useMemo(
     () =>
       buildSceneVisibleSignature({
         count: visibleSceneObjectCount,
         ids: visibleSceneJsonIdsForParity,
       }),
-    [visibleSceneObjectCount, visibleSceneIdSignature]
+    [visibleSceneObjectCount, visibleSceneJsonIdsForParity]
   );
   const sceneParitySignature = useMemo(
     () =>
@@ -9686,11 +9419,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         scenarioId: selectedExecutiveScenarioId,
       }),
     [
-      relationshipIdsForParity.join("|"),
-      sceneJsonIdsForParity.join("|"),
+      relationshipIdsForParity,
+      sceneJsonIdsForParity,
       selectedExecutiveScenarioId,
       selectedObjectIdState,
-      visibleSceneJsonIdsForParity.join("|"),
+      visibleSceneJsonIdsForParity,
     ]
   );
   const legacySceneParitySignature = useMemo(
@@ -9848,7 +9581,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       JSON.parse(sceneParitySignature),
       "warn"
     );
-  }, [sceneParitySignature]);
+  }, [legacySceneParitySignature, sceneJsonIdsForParity, sceneParitySignature, visibleSceneJsonIdsForParity]);
   const hasVisibleSceneObjects = visibleSceneObjects.length > 0;
   const normalizedHealth = String(healthInfo ?? "").trim().toLowerCase();
   const isBackendHealthy =
@@ -9896,13 +9629,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const firstMeaningfulState: FirstMeaningfulState = useMemo(() => {
     const hasScene = hasVisibleSceneObjects;
     const hasAnalysis = Boolean(
-      asRecord(visibleResponseData?.decision_analysis) ??
+      asRecord(visibleResponseData)?.decision_analysis ??
         visibleResponseData?.canonical_recommendation ??
         visibleResponseData?.decision_cockpit
     );
+    const visibleRiskRecord = asRecord(visibleRiskPropagation);
     const hasSignals = Boolean(
-      visibleRiskPropagation?.sources?.length ||
-        visibleRiskPropagation?.targets?.length ||
+      (Array.isArray(visibleRiskRecord?.sources) ? visibleRiskRecord.sources.length : 0) ||
+        (Array.isArray(visibleRiskRecord?.targets) ? visibleRiskRecord.targets.length : 0) ||
         visibleConflicts?.length ||
         visibleMemoryInsights
     );
@@ -10180,14 +9914,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [stableSceneCanvasSceneSignature, effectiveVisibleSceneJson]);
   useEffect(() => {
     if (!guardedResponseData) return;
+    const canonicalRecommendation = asRecord(guardedResponseData?.canonical_recommendation);
+    const canonicalConfidence = asRecord(canonicalRecommendation?.confidence);
     emitDecisionTrace({
       stage: "pipeline_complete",
       projectId: activeProjectId,
       confidence:
-        typeof guardedResponseData?.canonical_recommendation?.confidence?.score === "number"
-          ? guardedResponseData.canonical_recommendation.confidence.score
+        typeof canonicalConfidence?.score === "number"
+          ? (canonicalConfidence.score as number)
           : typeof guardedResponseData?.decision_confidence === "number"
-            ? guardedResponseData.decision_confidence
+            ? (guardedResponseData.decision_confidence as number)
             : null,
       summary: "Decision pipeline completed with a usable payload.",
       metadata: {
@@ -10206,7 +9942,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const relations = Array.isArray(nextScene?.scene?.relations) ? nextScene.scene.relations : [];
     const loops = Array.isArray(nextScene?.scene?.loops) ? nextScene.scene.loops : [];
     const objectIds = objects
-      .map((obj: any) => String(obj?.id ?? obj?.label ?? "").trim())
+      .map((obj) => String(obj?.id ?? obj?.label ?? "").trim())
       .filter(Boolean)
       .sort();
     return JSON.stringify({
@@ -10262,113 +9998,146 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   // Derived: effectiveActiveLoopId, visibleLoops
   // =====================
   const [loops, setLoops] = useState<SceneLoop[]>([]);
-  const [showLoops, setShowLoops] = useState(true);
-  const [showLoopLabels, setShowLoopLabels] = useState(false);
-  const extractConflicts = useCallback((payload: any): any[] => {
-    if (Array.isArray(payload?.conflicts)) return payload.conflicts;
-    if (Array.isArray(payload?.scene_json?.scene?.conflicts)) return payload.scene_json.scene.conflicts;
-    if (Array.isArray(payload?.scene?.conflicts)) return payload.scene.conflicts;
+  const [showLoops] = useState(true);
+  const [showLoopLabels] = useState(false);
+  const extractConflicts = useCallback((payload: HomeScreenChatPayload): unknown[] => {
+    if (Array.isArray(payload.conflicts)) return payload.conflicts;
+    const sceneJson = asRecord(payload.scene_json);
+    const scene = asRecord(sceneJson?.scene);
+    if (Array.isArray(scene?.conflicts)) return scene.conflicts as unknown[];
+    const sceneRoot = asRecord(payload.scene);
+    if (Array.isArray(sceneRoot?.conflicts)) return sceneRoot.conflicts as unknown[];
     return [];
   }, []);
-  const extractObjectSelection = useCallback((payload: any): any | null => {
-    if (payload?.object_selection && typeof payload.object_selection === "object") return payload.object_selection;
-    if (payload?.context?.object_selection && typeof payload.context.object_selection === "object") return payload.context.object_selection;
-    if (payload?.scene_json?.object_selection && typeof payload.scene_json.object_selection === "object") return payload.scene_json.object_selection;
+  const extractObjectSelection = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.object_selection && typeof payload.object_selection === "object") return payload.object_selection;
+    const context = asRecord(payload.context);
+    if (context?.object_selection && typeof context.object_selection === "object") return context.object_selection;
+    const sceneJson = asRecord(payload.scene_json);
+    if (sceneJson?.object_selection && typeof sceneJson.object_selection === "object") return sceneJson.object_selection;
     return null;
   }, []);
-  const extractMemoryV2 = useCallback((payload: any): any | null => {
-    if (payload?.memory_v2 && typeof payload.memory_v2 === "object") return payload.memory_v2;
-    if (payload?.context?.memory_v2 && typeof payload.context.memory_v2 === "object") return payload.context.memory_v2;
-    if (payload?.scene_json?.memory_v2 && typeof payload.scene_json.memory_v2 === "object") return payload.scene_json.memory_v2;
+  const extractMemoryV2 = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.memory_v2 && typeof payload.memory_v2 === "object") return payload.memory_v2;
+    const context = asRecord(payload.context);
+    if (context?.memory_v2 && typeof context.memory_v2 === "object") return context.memory_v2;
+    const sceneJson = asRecord(payload.scene_json);
+    if (sceneJson?.memory_v2 && typeof sceneJson.memory_v2 === "object") return sceneJson.memory_v2;
     return null;
   }, []);
-  const extractRiskPropagation = useCallback((payload: any): any | null => {
-    if (payload?.risk_propagation && typeof payload.risk_propagation === "object") return payload.risk_propagation;
-    if (payload?.context?.risk_propagation && typeof payload.context.risk_propagation === "object") return payload.context.risk_propagation;
-    if (payload?.scene_json?.risk_propagation && typeof payload.scene_json.risk_propagation === "object") return payload.scene_json.risk_propagation;
-    if (payload?.scene_json?.scene?.risk_propagation && typeof payload.scene_json.scene.risk_propagation === "object") return payload.scene_json.scene.risk_propagation;
+  const extractRiskPropagation = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.risk_propagation && typeof payload.risk_propagation === "object") return payload.risk_propagation;
+    const context = asRecord(payload.context);
+    if (context?.risk_propagation && typeof context.risk_propagation === "object") return context.risk_propagation;
+    const sceneJson = asRecord(payload.scene_json);
+    if (sceneJson?.risk_propagation && typeof sceneJson.risk_propagation === "object") return sceneJson.risk_propagation;
+    const scene = asRecord(sceneJson?.scene);
+    if (scene?.risk_propagation && typeof scene.risk_propagation === "object") return scene.risk_propagation;
     return null;
   }, []);
-  const extractStrategicAdvice = useCallback((payload: any): any | null => {
-    if (payload?.strategic_advice && typeof payload.strategic_advice === "object") return payload.strategic_advice;
-    if (payload?.context?.strategic_advice && typeof payload.context.strategic_advice === "object") return payload.context.strategic_advice;
-    if (payload?.scene_json?.strategic_advice && typeof payload.scene_json.strategic_advice === "object") return payload.scene_json.strategic_advice;
-    if (payload?.scene_json?.scene?.strategic_advice && typeof payload.scene_json.scene.strategic_advice === "object") return payload.scene_json.scene.strategic_advice;
+  const extractStrategicAdvice = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.strategic_advice && typeof payload.strategic_advice === "object") return payload.strategic_advice;
+    const context = asRecord(payload.context);
+    if (context?.strategic_advice && typeof context.strategic_advice === "object") return context.strategic_advice;
+    const sceneJson = asRecord(payload.scene_json);
+    if (sceneJson?.strategic_advice && typeof sceneJson.strategic_advice === "object") return sceneJson.strategic_advice;
+    const scene = asRecord(sceneJson?.scene);
+    if (scene?.strategic_advice && typeof scene.strategic_advice === "object") return scene.strategic_advice;
     return null;
   }, []);
-  const extractStrategyKpi = useCallback((payload: any): any | null => {
-    if (payload?.strategy_kpi && typeof payload.strategy_kpi === "object") return payload.strategy_kpi;
-    if (payload?.context?.strategy_kpi && typeof payload.context.strategy_kpi === "object") return payload.context.strategy_kpi;
-    if (payload?.prompt_feedback?.strategy_kpi && typeof payload.prompt_feedback.strategy_kpi === "object") {
-      return payload.prompt_feedback.strategy_kpi;
+  const extractStrategyKpi = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.strategy_kpi && typeof payload.strategy_kpi === "object") return payload.strategy_kpi;
+    const context = asRecord(payload.context);
+    if (context?.strategy_kpi && typeof context.strategy_kpi === "object") return context.strategy_kpi;
+    const promptFeedback = asRecord(payload.prompt_feedback);
+    if (promptFeedback?.strategy_kpi && typeof promptFeedback.strategy_kpi === "object") {
+      return promptFeedback.strategy_kpi;
     }
-    if (payload?.scene_json?.strategy_kpi && typeof payload.scene_json.strategy_kpi === "object") return payload.scene_json.strategy_kpi;
+    const sceneJson = asRecord(payload.scene_json);
+    if (sceneJson?.strategy_kpi && typeof sceneJson.strategy_kpi === "object") return sceneJson.strategy_kpi;
     return null;
   }, []);
-  const extractDecisionCockpit = useCallback((payload: any): any | null => {
-    if (payload?.decision_cockpit && typeof payload.decision_cockpit === "object") return payload.decision_cockpit;
-    if (payload?.context?.decision_cockpit && typeof payload.context.decision_cockpit === "object") {
-      return payload.context.decision_cockpit;
+  const extractDecisionCockpit = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.decision_cockpit && typeof payload.decision_cockpit === "object") return payload.decision_cockpit;
+    const context = asRecord(payload.context);
+    if (context?.decision_cockpit && typeof context.decision_cockpit === "object") {
+      return context.decision_cockpit;
     }
-    if (payload?.prompt_feedback?.decision_cockpit && typeof payload.prompt_feedback.decision_cockpit === "object") {
-      return payload.prompt_feedback.decision_cockpit;
+    const promptFeedback = asRecord(payload.prompt_feedback);
+    if (promptFeedback?.decision_cockpit && typeof promptFeedback.decision_cockpit === "object") {
+      return promptFeedback.decision_cockpit;
     }
-    if (payload?.scene_json?.decision_cockpit && typeof payload.scene_json.decision_cockpit === "object") {
-      return payload.scene_json.decision_cockpit;
-    }
-    return null;
-  }, []);
-  const extractProductModeContext = useCallback((payload: any): any | null => {
-    if (payload?.product_mode && typeof payload.product_mode === "object") return payload.product_mode;
-    if (payload?.context?.product_mode && typeof payload.context.product_mode === "object") return payload.context.product_mode;
-    if (payload?.decision_cockpit?.mode && typeof payload.decision_cockpit.mode === "object") return payload.decision_cockpit.mode;
-    return null;
-  }, []);
-  const extractAiReasoning = useCallback((payload: any): any | null => {
-    if (payload?.ai_reasoning && typeof payload.ai_reasoning === "object") return payload.ai_reasoning;
-    if (payload?.context?.ai_reasoning && typeof payload.context.ai_reasoning === "object") return payload.context.ai_reasoning;
-    if (payload?.prompt_feedback?.reasoning && typeof payload.prompt_feedback.reasoning === "object") {
-      return payload.prompt_feedback.reasoning;
-    }
-    return null;
-  }, []);
-  const extractPlatformAssembly = useCallback((payload: any): any | null => {
-    if (payload?.platform_assembly && typeof payload.platform_assembly === "object") return payload.platform_assembly;
-    if (payload?.context?.platform_assembly && typeof payload.context.platform_assembly === "object") {
-      return payload.context.platform_assembly;
-    }
-    if (payload?.prompt_feedback?.platform_assembly && typeof payload.prompt_feedback.platform_assembly === "object") {
-      return payload.prompt_feedback.platform_assembly;
+    const sceneJson = asRecord(payload.scene_json);
+    if (sceneJson?.decision_cockpit && typeof sceneJson.decision_cockpit === "object") {
+      return sceneJson.decision_cockpit;
     }
     return null;
   }, []);
-  const extractAutonomousExploration = useCallback((payload: any): any | null => {
-    if (payload?.autonomous_exploration && typeof payload.autonomous_exploration === "object") {
+  const extractProductModeContext = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.product_mode && typeof payload.product_mode === "object") return payload.product_mode;
+    const context = asRecord(payload.context);
+    if (context?.product_mode && typeof context.product_mode === "object") return context.product_mode;
+    const decisionCockpit = asRecord(payload.decision_cockpit);
+    if (decisionCockpit?.mode && typeof decisionCockpit.mode === "object") return decisionCockpit.mode;
+    return null;
+  }, []);
+  const extractAiReasoning = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.ai_reasoning && typeof payload.ai_reasoning === "object") return payload.ai_reasoning;
+    const context = asRecord(payload.context);
+    if (context?.ai_reasoning && typeof context.ai_reasoning === "object") return context.ai_reasoning;
+    const promptFeedback = asRecord(payload.prompt_feedback);
+    if (promptFeedback?.reasoning && typeof promptFeedback.reasoning === "object") {
+      return promptFeedback.reasoning;
+    }
+    return null;
+  }, []);
+  const extractPlatformAssembly = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.platform_assembly && typeof payload.platform_assembly === "object") return payload.platform_assembly;
+    const context = asRecord(payload.context);
+    if (context?.platform_assembly && typeof context.platform_assembly === "object") {
+      return context.platform_assembly;
+    }
+    const promptFeedback = asRecord(payload.prompt_feedback);
+    if (promptFeedback?.platform_assembly && typeof promptFeedback.platform_assembly === "object") {
+      return promptFeedback.platform_assembly;
+    }
+    return null;
+  }, []);
+  const extractAutonomousExploration = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.autonomous_exploration && typeof payload.autonomous_exploration === "object") {
       return payload.autonomous_exploration;
     }
-    if (payload?.context?.autonomous_exploration && typeof payload.context.autonomous_exploration === "object") {
-      return payload.context.autonomous_exploration;
+    const context = asRecord(payload.context);
+    if (context?.autonomous_exploration && typeof context.autonomous_exploration === "object") {
+      return context.autonomous_exploration;
     }
+    const promptFeedback = asRecord(payload.prompt_feedback);
     if (
-      payload?.prompt_feedback?.autonomous_exploration &&
-      typeof payload.prompt_feedback.autonomous_exploration === "object"
+      promptFeedback?.autonomous_exploration &&
+      typeof promptFeedback.autonomous_exploration === "object"
     ) {
-      return payload.prompt_feedback.autonomous_exploration;
+      return promptFeedback.autonomous_exploration;
     }
     return null;
   }, []);
-  const extractOpponentModel = useCallback((payload: any): any | null => {
-    if (payload?.opponent_model && typeof payload.opponent_model === "object") return payload.opponent_model;
-    if (payload?.context?.opponent_model && typeof payload.context.opponent_model === "object") return payload.context.opponent_model;
-    if (payload?.scene_json?.opponent_model && typeof payload.scene_json.opponent_model === "object") return payload.scene_json.opponent_model;
-    if (payload?.scene_json?.scene?.opponent_model && typeof payload.scene_json.scene.opponent_model === "object") return payload.scene_json.scene.opponent_model;
+  const extractOpponentModel = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.opponent_model && typeof payload.opponent_model === "object") return payload.opponent_model;
+    const context = asRecord(payload.context);
+    if (context?.opponent_model && typeof context.opponent_model === "object") return context.opponent_model;
+    const sceneJson = asRecord(payload.scene_json);
+    if (sceneJson?.opponent_model && typeof sceneJson.opponent_model === "object") return sceneJson.opponent_model;
+    const scene = asRecord(sceneJson?.scene);
+    if (scene?.opponent_model && typeof scene.opponent_model === "object") return scene.opponent_model;
     return null;
   }, []);
-  const extractStrategicPatterns = useCallback((payload: any): any | null => {
-    if (payload?.strategic_patterns && typeof payload.strategic_patterns === "object") return payload.strategic_patterns;
-    if (payload?.context?.strategic_patterns && typeof payload.context.strategic_patterns === "object") return payload.context.strategic_patterns;
-    if (payload?.scene_json?.strategic_patterns && typeof payload.scene_json.strategic_patterns === "object") return payload.scene_json.strategic_patterns;
-    if (payload?.scene_json?.scene?.strategic_patterns && typeof payload.scene_json.scene.strategic_patterns === "object") return payload.scene_json.scene.strategic_patterns;
+  const extractStrategicPatterns = useCallback((payload: HomeScreenChatPayload): unknown | null => {
+    if (payload.strategic_patterns && typeof payload.strategic_patterns === "object") return payload.strategic_patterns;
+    const context = asRecord(payload.context);
+    if (context?.strategic_patterns && typeof context.strategic_patterns === "object") return context.strategic_patterns;
+    const sceneJson = asRecord(payload.scene_json);
+    if (sceneJson?.strategic_patterns && typeof sceneJson.strategic_patterns === "object") return sceneJson.strategic_patterns;
+    const scene = asRecord(sceneJson?.scene);
+    if (scene?.strategic_patterns && typeof scene.strategic_patterns === "object") return scene.strategic_patterns;
     return null;
   }, []);
   const ensureBackendUserId = useCallback((): string => {
@@ -10385,8 +10154,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     return userId ?? `anon-${Math.random().toString(36).slice(2, 10)}`;
   }, []);
   const buildChatRequestPayload = useCallback(
-    (text: string): Record<string, any> => {
-      const payload: Record<string, any> = {
+    (text: string): Record<string, unknown> => {
+      const payload: Record<string, unknown> = {
         text,
         user_id: ensureBackendUserId(),
         mode: activeMode,
@@ -10453,22 +10222,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     ]
   );
   const applyActions = useCallback(
-    (actions: any[] | undefined | null) => {
+    (actions: unknown[] | undefined | null) => {
       const list = Array.isArray(actions) ? actions : [];
       setLastActions(list);
       if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
+         
         console.debug("[actions]", list.length);
       }
       if (!list.length) return;
 
-      const applyObjectPatch = (id: string, patch: Record<string, any>) => {
+      const applyObjectPatch = (id: string, patch: Record<string, unknown>) => {
         if (!id || typeof id !== "string") return;
-        const safePatch: Record<string, any> = {};
+        const safePatch: HomeScreenObjectOverridePatch = {};
         if (patch.color && typeof patch.color === "string") safePatch.color = patch.color;
         if (typeof patch.visible === "boolean") safePatch.visible = patch.visible;
         if (Array.isArray(patch.position) && patch.position.length === 3) {
-          const nums = patch.position.map((n: any) => Number(n));
+          const nums = patch.position.map((n) => Number(n));
           if (nums.every((n) => Number.isFinite(n))) safePatch.position = [nums[0], nums[1], nums[2]];
         }
         if (Number.isFinite(patch.scale)) safePatch.scale = clamp(Number(patch.scale), 0.2, 2.0);
@@ -10481,13 +10250,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
       };
 
-      list.forEach((action) => {
+      list.forEach((rawAction) => {
         try {
-          if (!action || typeof action !== "object") return;
+          const action = asRecord(rawAction);
+          if (!action) return;
           // Replay wrapper (backend stores: { object: "obj_123", type:"applyObject", value: {...} })
           if (action.type === "applyObject") {
-            const objUpdate = action.value ?? action.object ?? null;
-            const id = action.object ?? objUpdate?.id ?? objUpdate?.target_id ?? objUpdate?.targetId;
+            const objUpdate = asRecord(action.value) ?? asRecord(action.object);
+            const id =
+              action.object ??
+              objUpdate?.id ??
+              objUpdate?.target_id ??
+              objUpdate?.targetId;
             if (id) applyObjectPatch(String(id), objUpdate ?? {});
             return;
           }
@@ -10500,19 +10274,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             return;
           }
           // Legacy
-          const target = action?.object ?? action?.target_id ?? action?.targetId;
+          const target = action.object ?? action.target_id ?? action.targetId;
           if (!target) return;
-          const type = (action?.type || action?.verb || "").toLowerCase();
+          const type = String(action.type ?? action.verb ?? "").toLowerCase();
           if (type === "setcolor" && action.color) {
-            applyObjectPatch(String(target), { color: action.color });
+            applyObjectPatch(String(target), { color: String(action.color) });
           } else if (type === "hide") {
             applyObjectPatch(String(target), { visible: false });
           } else if (type === "reveal") {
             applyObjectPatch(String(target), { visible: true });
           } else if (type === "setposition" && Array.isArray(action.position) && action.position.length === 3) {
-            applyObjectPatch(String(target), { position: action.position });
+            applyObjectPatch(String(target), { position: action.position as [number, number, number] });
           } else if (type === "setintensity") {
-            applyObjectPatch(String(target), { intensity: action.intensity });
+            applyObjectPatch(String(target), { intensity: action.intensity as number });
           } else if (type === "pulse") {
             const intensity = clamp(Number(action.intensity ?? 0.4), 0, 1);
             applyObjectPatch(String(target), { scale: 1 + intensity * 0.4 });
@@ -10650,7 +10424,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           traceNexoraSelectionGuard(nextSig, prevSelSig, "panel");
           if (nextSig !== prevSelSig) {
             lastSelectionSignatureRef.current = nextSig;
-            setObjectSelection(nextSel);
+            setObjectSelection(nextSel as DerivedObjectSelectionMirror);
           }
           }
         }
@@ -10671,8 +10445,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       setProductModeContext((prev: typeof productModeContext) =>
         shouldAcceptProductModeContext ? viewModel.nextProductModeContext : prev
       );
-      if (viewModel.nextProductModeContext?.mode_id) {
-        setProductModeId(String(viewModel.nextProductModeContext.mode_id));
+      const nextProductMode = asRecord(viewModel.nextProductModeContext);
+      if (nextProductMode?.mode_id) {
+        setProductModeId(String(nextProductMode.mode_id));
       }
       setAiReasoning((prev: typeof aiReasoning) => (shouldAcceptAiReasoning ? viewModel.nextAiReasoning : prev));
       setPlatformAssembly((prev: typeof platformAssembly) =>
@@ -10730,11 +10505,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
         setNoSceneUpdate(true);
       }
-      setSourceLabel((payload as any)?.source ?? null);
-      setLastAnalysisSummary((payload as any)?.analysis_summary ?? null);
+      setSourceLabel(typeof payload.source === "string" ? payload.source : null);
+      setLastAnalysisSummary(typeof payload.analysis_summary === "string" ? payload.analysis_summary : null);
       if (options?.applyActionsToScene !== false) {
         try {
-          applyActions((payload as any)?.actions);
+          applyActions(Array.isArray(payload.actions) ? payload.actions : null);
           setSceneWarn(null);
         } catch {
           setSceneWarn("⚠️ Could not apply scene actions (dev).");
@@ -10770,19 +10545,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const instanceLabelMap = useMemo(() => {
     const list = Array.isArray(config?.instances) ? config?.instances : [];
     const map: Record<string, string> = {};
-    list.forEach((inst: any) => {
+    list.forEach((inst: { id?: string; label?: string }) => {
       if (inst && typeof inst.id === "string" && typeof inst.label === "string") {
         map[inst.id] = inst.label;
-      }
-    });
-    return map;
-  }, [config]);
-  const typeLabelMap = useMemo(() => {
-    const types = config?.types && typeof config.types === "object" ? config.types : {};
-    const map: Record<string, string> = {};
-    Object.entries(types).forEach(([key, entry]) => {
-      if (entry && typeof (entry as any).label === "string") {
-        map[key] = (entry as any).label;
       }
     });
     return map;
@@ -11313,22 +11078,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     focusedId,
     commitRightPanelStateFromAuthority,
   ]);
-  const resolveTypeLabel = useCallback(
-    (id: string) => typeLabelMap[id] ?? id,
-    [typeLabelMap]
-  );
   const highlightedObjectIdSet = useMemo(() => {
-    const ids = Array.isArray(visibleObjectSelection?.highlighted_objects)
-      ? visibleObjectSelection.highlighted_objects
+    const selection = asRecord(visibleObjectSelection);
+    const ids = Array.isArray(selection?.highlighted_objects)
+      ? selection.highlighted_objects
       : [];
-    return new Set((ids as any[]).filter((x) => typeof x === "string") as string[]);
+    return new Set(ids.filter((x): x is string => typeof x === "string"));
   }, [visibleObjectSelection]);
   const riskSourceObjectIdSet = useMemo(() => {
-    const ids = Array.isArray(visibleRiskPropagation?.sources) ? visibleRiskPropagation.sources : [];
-    return new Set((ids as any[]).filter((x) => typeof x === "string") as string[]);
+    const risk = asRecord(visibleRiskPropagation);
+    const ids = Array.isArray(risk?.sources) ? risk.sources : [];
+    return new Set(ids.filter((x): x is string => typeof x === "string"));
   }, [visibleRiskPropagation]);
   const getUxForObjectInputsRef = useRef<{
-    visibleSceneJson: any;
+    visibleSceneJson: SceneJson | null;
     objectProfiles: Record<string, { ux?: { shape?: string; base_color?: string; opacity?: number; scale?: number } }>;
     objectUxById: Record<string, { opacity?: number; scale?: number }>;
     highlightedObjectIdSet: Set<string>;
@@ -11357,11 +11120,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         riskSourceObjectIdSet,
       } = getUxForObjectInputsRef.current;
       const sceneObjects = Array.isArray(visibleSceneJson?.scene?.objects) ? visibleSceneJson.scene.objects : [];
-      const sceneObject = sceneObjects.find((entry: any) => String(entry?.id ?? entry?.name ?? "") === id) ?? null;
+      const sceneObject = sceneObjects.find((entry) => String(entry?.id ?? entry?.name ?? "") === id) ?? null;
       const profileUx = objectProfiles[id]?.ux;
       const localUx = objectUxById[id];
       if (!profileUx && !localUx && !sceneObject?.scanner_highlighted && !sceneObject?.scanner_focus) return null;
-      const merged: any = { ...(profileUx ?? {}), ...(localUx ?? {}) };
+      const merged: HomeScreenObjectUxOverride = { ...(profileUx ?? {}), ...(localUx ?? {}) };
       if (highlightedObjectIdSet.has(id)) {
         const baseScale = typeof merged.scale === "number" ? merged.scale : 1;
         merged.scale = clamp(baseScale + 0.25, 0.2, 2.0);
@@ -11458,8 +11221,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const syncFocusedObjectFromResponse = useCallback(
     (payload: BackendChatResponse, options?: { allowFocusMutation?: boolean }) => {
       const allowFocusMutation = options?.allowFocusMutation === true;
-      const ctxInfo = (payload as any)?.context?.object_info;
-      if (ctxInfo && typeof ctxInfo === "object" && ctxInfo.id) {
+      const ctxInfo = asRecord(asRecord(asRecord(payload)?.context)?.object_info);
+      if (ctxInfo?.id) {
         const resolvedTargetId = String(ctxInfo.id);
         const resolvedDetails = resolveSelectedObjectDetails(resolvedTargetId);
         setSelectedObjectInfo((prev) => {
@@ -11506,7 +11269,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }
       }
 
-      const ctxAllowed = (payload as any)?.context?.allowed_objects;
+      const ctxAllowed = asRecord(asRecord(payload)?.context)?.allowed_objects;
       if (
         allowFocusMutation &&
         !focusPinned &&
@@ -11690,8 +11453,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           };
         })
         .sort((a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id));
-      const stableSceneEdges = (Array.isArray((sceneForOverrides as any)?.scene?.edges)
-        ? (sceneForOverrides as any).scene.edges
+      const stableSceneEdges = (Array.isArray(sceneForOverrides?.scene?.edges)
+        ? sceneForOverrides.scene.edges
         : []
       )
         .map((edge: unknown, idx: number) => {
@@ -11852,7 +11615,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         setObjectSelection({
           highlighted_objects: effectiveHighlighted,
           dim_unrelated_objects: isAnalyzeSystemReaction ? false : shouldDimUnrelated,
-        } as any);
+        } satisfies DerivedObjectSelectionMirror);
       }
 
       const riskPropagationSignature = JSON.stringify({
@@ -11864,7 +11627,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         setRiskPropagation({
           sources: nextRiskSources,
           targets: nextRiskTargets,
-        } as any);
+        });
       }
 
       if (shouldSkipVisualApply) {
@@ -11916,7 +11679,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
 
       if (Array.isArray(normalizedReaction.loopSuggestions)) {
-        setLoopSuggestions(normalizedReaction.loopSuggestions as any);
+        setLoopSuggestions(normalizedReaction.loopSuggestions as string[]);
       }
 
       if (normalizedReaction.activeLoopId !== undefined) {
@@ -12039,7 +11802,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       if (!reaction) continue;
       applyUnifiedSceneReactionUpstreamDedup(reaction, { allowSceneReplacement: false });
     }
-  }, [sceneIntentEpoch, applyUnifiedSceneReaction]);
+  }, [sceneIntentEpoch, applyUnifiedSceneReactionUpstreamDedup]);
 
   const applyDemoStepFallbackReaction = useCallback(
     (step: DemoScriptStep) => {
@@ -12104,7 +11867,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
 
       applyUnifiedSceneReactionUpstreamDedup(softenedReaction, { allowSceneReplacement: false });
     },
-    [applyUnifiedSceneReaction, sceneJson]
+    [applyUnifiedSceneReactionUpstreamDedup, sceneJson]
   );
   const applyExecutionResultToUi = useCallback(
     (executionResult: Awaited<ReturnType<typeof executeNexoraAction>>) => {
@@ -12138,10 +11901,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           applyFocusModeToStore,
           applyPinToStore,
           setMessages,
-          setResponseData,
+          setResponseData: asUnknownStateSetter(setResponseData),
           setLastAnalysisSummary,
           setSourceLabel,
-          setObjectSelection,
+          setObjectSelection: asUnknownStateSetter(setObjectSelection),
           setMemoryInsights,
           setRiskPropagation,
           setStrategicAdvice,
@@ -12156,18 +11919,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           setConflictsNormalized: (value) => setConflicts(Array.isArray(value) ? value : []),
           setSelectedObjectInfo,
           updateSelectedObjectInfo,
-          setObjectProfiles,
-          setObjectUxById,
-          setAlert,
+          setObjectProfiles: asUnknownStateSetter(setObjectProfiles),
+          setObjectUxById: asUnknownStateSetter(setObjectUxById),
+          setAlert: asUnknownStateSetter(setAlert),
           setReplayError,
           setHealthInfo,
-          setKpi,
-          setLoops,
+          setKpi: asUnknownStateSetter(setKpi),
+          setLoops: asUnknownSetter(setLoops),
           setActiveLoopId,
-          setLoopSuggestions,
+          setLoopSuggestions: asUnknownStateSetter(setLoopSuggestions),
           setProductModeId,
           applyUnifiedSceneReaction,
-          applyProductFlowViewModel,
+          applyProductFlowViewModel: (payload, viewModel, options) =>
+            applyProductFlowViewModel(
+              payload as BackendChatResponse,
+              viewModel as ReturnType<typeof deriveProductFlowViewModel>,
+              options
+            ),
         }),
       });
 
@@ -12254,12 +12022,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   );
   const [activeLoopId, setActiveLoopId] = useState<string | null>(null);
   const [selectedLoopId, setSelectedLoopId] = useState<string | null>(null);
-  const [loopSuggestions, setLoopSuggestions] = useState<string[]>([]);
-  const isDev = process.env.NODE_ENV !== "production";
+  const [, setLoopSuggestions] = useState<string[]>([]);
   const [snapshots, setSnapshots] = useState<DecisionSnapshot[]>([]);
   const [compareAId, setCompareAId] = useState<string | null>(null);
   const [compareBId, setCompareBId] = useState<string | null>(null);
-  const [diffState, setDiffState] = useState<ReturnType<typeof diffSnapshots> | null>(null);
+  const [, setDiffState] = useState<ReturnType<typeof diffSnapshots> | null>(null);
   const [activeSidePanel, setActiveSidePanel] = useState<HUDTabKey>("decisions");
   const lastPanelAuthorityReasonRef = useRef<string | null>(null);
   useEffect(() => {
@@ -12292,108 +12059,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     rightPanelState.contextId,
     rightPanelState.view,
   ]);
-  // --- panelContent block is moved below ---
-  const handleApplySnapshot = useCallback(
-    (snapshotKey: string) => {
-      const key = String(snapshotKey || "").trim();
-      if (!key) return;
-
-      const { id, ts } = parseDecisionSnapshotKey(key);
-
-      // 1) Try in-memory first (fast)
-      let snap: DecisionSnapshot | null = pickDecisionSnapshotFromList(
-        Array.isArray(snapshots) ? snapshots : [],
-        id,
-        ts
-      );
-
-      // 2) If not found, try persisted snapshots
-      if (!snap) {
-        const persisted = loadSnapshots(projectId);
-        snap = pickDecisionSnapshotFromList(persisted, id, ts);
-        // Keep in-memory state in sync if we found one
-        if (snap) {
-          setSnapshots(persisted);
-        }
-      }
-
-      if (!snap) {
-        if (process.env.NODE_ENV !== "production") {
-          // eslint-disable-next-line no-console
-          console.warn("[decision] snapshot not found", { snapshotKey: key, id, ts });
-        }
-        return;
-      }
-
-      // Restore scene first, then loops/selection, then panel (avoids panel/scene desync).
-      const rawScene = snap.sceneJson;
-      const sceneDecision = evaluateSnapshotRestoreScene(rawScene);
-      if (isSceneCanonReplaceDecision(sceneDecision)) {
-        applySceneChangeUpstreamDedup(sceneDecision.scene, "snapshot", { bypassDedupe: true });
-        setNoSceneUpdate(false);
-      } else if (rawScene != null && process.env.NODE_ENV !== "production") {
-        console.warn("[Nexora][HomeScreen][SceneShapeRejected]", {
-          reason: "snapshot_scene_not_renderable",
-          snapshotId: snap.id,
-          contractReason: sceneDecision.kind === "reject" ? sceneDecision.reason : "",
-        });
-      }
-
-      setLoops(Array.isArray(snap.loops) ? snap.loops : []);
-      setActiveLoopId(snap.activeLoopId ?? null);
-      setSelectedLoopId(snap.activeLoopId ?? null);
-
-      const sel = typeof snap.selectedObjectId === "string" && snap.selectedObjectId.trim() ? snap.selectedObjectId.trim() : null;
-      if (sel) {
-        selectedSetterRef.current(sel);
-        logNonCanonicalSelectionWriterBlocked({
-          writer: "snapshot_restore",
-          attemptedObjectId: sel,
-          currentSelectedId: normalizeSelectedObjectId(selectedObjectIdStateRef.current),
-          source: "snapshot_restore",
-        });
-      } else {
-        selectedSetterRef.current(null);
-        clearCanonicalObjectSelectionRef.current("empty_canvas_click");
-      }
-
-      queueMicrotask(() => {
-        if (snap.rightPanelOpen && snap.rightPanelView) {
-          requestPanelAuthorityOpen({
-            view: snap.rightPanelView,
-            family:
-              snap.rightPanelView === "dashboard" || snap.rightPanelView === "strategic_command"
-                ? "EXE"
-                : snap.rightPanelView === "risk" || snap.rightPanelView === "fragility" || snap.rightPanelView === "explanation"
-                  ? "RSK"
-                  : snap.rightPanelView === "workspace" || snap.rightPanelView === "object" || snap.rightPanelView === "object_focus"
-                    ? "SCN"
-                    : "SIM",
-            source: "system",
-            contextId: null,
-            reason: "snapshot_restore",
-            forceOpen: true,
-          });
-        } else {
-          closeRightPanel();
-        }
-      });
-
-      // eslint-disable-next-line no-console
-      console.log("[Nexora][SnapshotLoaded]", {
-        id: snap.id,
-        timestamp: snap.timestamp,
-        hasScene: Boolean(rawScene),
-        panelView: snap.rightPanelView ?? null,
-      });
-
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.debug("[decision] applied snapshot", snap.id, snap.timestamp);
-      }
-    },
-    [applySceneChangeSafe, closeRightPanel, requestPanelAuthorityOpen, snapshots, projectId]
-  );
 
   useEffect(() => {
     if (snapshots.length === 0) return;
@@ -12474,7 +12139,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         scene: Boolean(sceneClone),
         panel: snapshot.rightPanelView,
       });
-      // eslint-disable-next-line no-console
+       
       console.log("[Nexora][SnapshotSaved]", {
         id: snapshot.id,
         loops: snapshot.loops.length,
@@ -12487,10 +12152,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     }
   }, [activeLoopId, loops, projectId, sceneJson, rightPanelState.isOpen, rightPanelState.view, selectedObjectIdState]);
   const effectiveActiveLoopId = selectedLoopId ?? activeLoopId;
-  const selectLoop = useCallback((id: string | null) => {
-    setSelectedLoopId(id);
-    if (id) setActiveLoopId(id);
-  }, []);
   const selectedObjectInfoRef = useRef<typeof selectedObjectInfo>(null);
   const pendingVisualPatchesRef = useRef<null | { memory: MemoryStateV1; targets: string[] }>(null);
   const selectedSetterRef = useRef<(id: string | null) => void>(() => {});
@@ -12838,7 +12499,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       });
       return true;
     },
-    [activeRegistryWorkspaceId, commitCanonicalObjectSelection, commitObjectSelection, isObjectSelectionFullyApplied, markSelectionUserIntent, sceneJson, syncSceneContextSelection]
+    [activeRegistryWorkspaceId, commitCanonicalObjectSelection, isObjectSelectionFullyApplied, markSelectionUserIntent, sceneJson, syncSceneContextSelection]
   );
   const handleSelectedChangeRef = useRef<
     (id: string | null, options?: SceneSelectionChangeOptions) => void
@@ -12868,8 +12529,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     updateSelectedObjectInfo,
     writeChatPipelineDebug,
   ]);
-  const overridesRef = useRef<Record<string, any>>({});
-  const setOverrideRef = useRef<(id: string, patch: any) => void>(() => {});
+  const overridesRef = useRef<Record<string, HomeScreenObjectOverridePatch>>({});
+  const setOverrideRef = useRef<(id: string, patch: HomeScreenObjectOverridePatch) => void>(() => {});
   const setViewMode = useSetViewMode();
   const mapRightPanelViewToInteractionPanel = useCallback(
     (view: RightPanelView | null | undefined): NexoraUIState["rightPanel"] => {
@@ -13047,13 +12708,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       return next;
     },
     [
-      activeExecutiveObjectId,
-      commitObjectSelection,
       mapInteractionPanelToRightPanelView,
       requestPanelAuthorityClose,
       requestPanelAuthorityOpen,
       resolveSelectedObjectDetails,
-      rightPanelState.view,
       shouldBlockSelectionOverrideForUserLock,
     ]
   );
@@ -13304,7 +12962,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         clearAllOverridesRef.current?.();
         const nextOverrides = project?.scene?.overrides ?? {};
         Object.entries(nextOverrides).forEach(([id, patch]) => {
-          setOverrideRef.current?.(id, patch);
+          setOverrideRef.current?.(id, patch as HomeScreenObjectOverridePatch);
         });
 
         setKpi(project?.intelligence?.kpi ?? null);
@@ -13320,7 +12978,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         setStrategyKpi(project?.intelligence?.strategyKpi ?? null);
         setDecisionCockpit(project?.intelligence?.decisionCockpit ?? null);
         setProductModeContext(project?.intelligence?.productModeContext ?? null);
-        setProductModeId(String(project?.intelligence?.productModeContext?.mode_id ?? "manager"));
+        setProductModeId(String(asRecord(project?.intelligence?.productModeContext)?.mode_id ?? "manager"));
         setAiReasoning(project?.intelligence?.aiReasoning ?? null);
         setPlatformAssembly(project?.intelligence?.platformAssembly ?? null);
         setAutonomousExploration(project?.intelligence?.autonomousExploration ?? null);
@@ -13339,7 +12997,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         }, 0);
       }
     },
-    [applySceneChangeSafe, setFocusedId, setFocusMode, setPinnedSafe]
+    [
+      applyGuardedResponsePayload,
+      applySceneChangeUpstreamDedup,
+      setFocusedId,
+      setFocusMode,
+      setPinnedSafe,
+    ]
   );
 
   const activateProject = useCallback(
@@ -13539,7 +13203,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     environmentConfig,
     workspaceProjects,
   ]);
-  const tempHighlightRef = useRef<Record<string, { prevScale?: number }>>({});
   const selectFlashTimersRef = useRef<Record<string, number>>({});
   const flashSelectHighlight = useCallback((id: string) => {
     if (!id || !setOverrideRef.current) return;
@@ -14813,7 +14476,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     window.addEventListener("nexora:set-focus-object", onSetFocusObject as EventListener);
     return () => window.removeEventListener("nexora:set-focus-object", onSetFocusObject as EventListener);
   }, [
-    applyUnifiedSceneReaction,
+    applyUnifiedSceneReactionUpstreamDedup,
     claimFocusOwnership,
     dispatchInteraction,
     focusedId,
@@ -15161,36 +14824,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     window.addEventListener("nexora:apply-fragility-scan", onApplyFragilityScan as EventListener);
     return () =>
       window.removeEventListener("nexora:apply-fragility-scan", onApplyFragilityScan as EventListener);
-  }, [activeDomainExperience.experience.domainId, applyUnifiedSceneReaction, normalizeDecisionPayload, sceneJson]);
+  }, [activeDomainExperience.experience.domainId, applyUnifiedSceneReactionUpstreamDedup, normalizeDecisionPayload, sceneJson]);
   const isRestoringRef = useRef(false);
-  const [overridesVersion, setOverridesVersion] = useState(0);
+  const [overridesVersion] = useState(0);
   const autoBackupTimerRef = useRef<number | null>(null);
   const clearAllOverridesRef = useRef<() => void>(() => {});
   const pruneOverridesRef = useRef<(ids: string[]) => void>(() => {});
-  const handleCompanyChange = useCallback((next: string) => {
-    setCompanyId(next);
-    setActiveCompanyIdState(next);
-  }, []);
-  const toggleSelectionLock = useCallback(() => {
-    setSelectionLocked((v) => !v);
-  }, []);
-  const handleObjectHoverStart = useCallback((id: string) => {
-    if (!id) return;
-    if (tempHighlightRef.current[id]) return;
-    const prevScale = overridesRef.current[id]?.scale;
-    tempHighlightRef.current[id] = { prevScale };
-    const baseScale = typeof prevScale === "number" ? prevScale : 1;
-    const nextScale = Math.min(2, baseScale * 1.08);
-    setOverrideRef.current?.(id, { scale: nextScale });
-  }, []);
-  const handleObjectHoverEnd = useCallback((id: string) => {
-    if (!id) return;
-    const prev = tempHighlightRef.current[id];
-    if (!prev) return;
-    const restoreScale = typeof prev.prevScale === "number" ? prev.prevScale : 1;
-    setOverrideRef.current?.(id, { scale: restoreScale });
-    delete tempHighlightRef.current[id];
-  }, []);
   const preset = config?.scene_preset ?? null;
   const stableCamPosRef = useRef<{
     signature: string;
@@ -15231,50 +14870,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     if (key === "obj_quality") return "obj_risk_zone"; // quality risk visualized on risk zone (MVP)
     return key;
   }, []);
-
-  const nexoraGraphObjects = useMemo(() => {
-    const mvpRec = asRecord(nexoraMvp);
-    const list: unknown[] = Array.isArray(mvpRec?.["objects"]) ? (mvpRec["objects"] as unknown[]) : [];
-    return list
-      .map((o: any) => {
-        const id = String(o?.id ?? "").trim();
-        if (!id) return null;
-        const label = typeof o?.label === "string" && o.label.trim().length ? o.label : id;
-        // Backend mapping uses `pos`; accept `position` (array or {x,y,z}) too for safety.
-        const p = Array.isArray(o?.pos)
-          ? o.pos
-          : Array.isArray(o?.position)
-          ? o.position
-          : o?.position && typeof o.position === "object"
-          ? [o.position.x, o.position.y, o.position.z]
-          : [0, 0, 0];
-        const pos: [number, number, number] = [Number(p[0] ?? 0), Number(p[1] ?? 0), Number(p[2] ?? 0)];
-        const intensity = clamp(Number(o?.intensity ?? 0), 0, 1);
-        const state = (o?.state === "stable" || o?.state === "warning" || o?.state === "critical") ? o.state : "stable";
-        const opacity = Number.isFinite(o?.opacity) ? clamp(Number(o.opacity), 0, 1) : undefined;
-        const visible = typeof o?.visible === "boolean" ? o.visible : true;
-        return { id, label, pos, intensity, state, opacity, visible };
-      })
-      .filter(Boolean) as any[];
-  }, [nexoraMvp]);
-
-  const nexoraGraphLoops = useMemo(() => {
-    const mvpRec = asRecord(nexoraMvp);
-    const list: unknown[] = Array.isArray(mvpRec?.["loops"]) ? (mvpRec["loops"] as unknown[]) : [];
-    return list
-      .map((l: any) => {
-        const id = String(l?.id ?? "").trim();
-        if (!id) return null;
-        const label = typeof l?.label === "string" ? l.label : undefined;
-        const path = Array.isArray(l?.path) ? l.path.map((x: any) => String(x)) : [];
-        if (path.length < 2) return null;
-        const intensity = clamp(Number(l?.intensity ?? 0), 0, 1);
-        const pulseSpeed = Number.isFinite(l?.pulseSpeed) ? Number(l.pulseSpeed) : undefined;
-        const active = typeof l?.active === "boolean" ? l.active : true;
-        return { id, label, path, intensity, pulseSpeed, active };
-      })
-      .filter(Boolean) as any[];
-  }, [nexoraMvp]);
   const applyOverridePatch = useCallback(
     (id: string, patch: { scale?: number; opacity?: number }) => {
       setOverrideRef.current?.(id, patch);
@@ -15301,8 +14896,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     return loops.filter(
       (loop) =>
         loop &&
-        Array.isArray((loop as any).edges) &&
-        (loop as any).edges.some((edge: any) => edge && (edge.from === effectiveFocusId || edge.to === effectiveFocusId))
+        Array.isArray(loop.edges) &&
+        loop.edges.some((edge) => edge && (edge.from === effectiveFocusId || edge.to === effectiveFocusId))
     );
   }, [loops, focusMode, focusedId, showLoops]);
   const stableVisibleLoopsRef = useRef<{
@@ -15365,9 +14960,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     });
   }, [riskResult, rankRiskLevel]);
   const starCount = Math.round(800 + (6000 - 800) * Math.max(0, Math.min(1, prefs.starDensity)));
-  const backgroundMode = prefs.theme;
-  const cameraMode = prefs.orbitMode === "manual" ? "fixed" : "orbit";
-  const starCountControl = Math.round(Math.max(0, Math.min(2000, prefs.starDensity * 2000)));
   const setBackgroundMode = useCallback((mode: "day" | "night" | "stars") => {
     setPrefs((prev) => ({ ...prev, theme: mode }));
   }, [setPrefs]);
@@ -15400,6 +14992,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     preset?.showAxes,
     preset?.showGrid,
     preset?.showCameraHelper,
+    setBackgroundMode,
+    setCameraMode,
+    setStarCount,
   ]);
   const updateObjectUx = useCallback(
     (id: string, patch: { opacity?: number; scale?: number }) => {
@@ -15453,45 +15048,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [focusActions, handleSelectedChange, updateObjectUx]
   );
 
-  const runMonteCarloOnce = useCallback(async () => {
-    if (mcLoading) return;
-    if (!episodeId) {
-      setMcError("No episode_id yet. Send one chat message first to create an episode.");
-      return;
-    }
-
-    setMcLoading(true);
-    setMcError(null);
-
-    try {
-      const res = await fetch(`${BACKEND_BASE}/montecarlo/run`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ episode_id: episodeId, n: 200, sigma: 0.08, seed: 7 }),
-      });
-
-      const j = await res.json().catch(() => null);
-      const data = (j && typeof j === "object" ? ((j as any).data ?? j) : null) as any;
-
-      if (!res.ok || !data || data?.ok === false || data?.error || data?.detail?.error) {
-        const msg =
-          data?.detail?.error?.message ||
-          data?.error?.message ||
-          (typeof data?.detail === "string" ? data.detail : null) ||
-          `Monte Carlo failed (HTTP ${res.status})`;
-        setMcError(String(msg));
-        return;
-      }
-
-      setMcResult(data?.result ?? null);
-      setMcReport(data?.manager_report ?? null);
-    } catch (e: any) {
-      setMcError(e?.message ?? "Monte Carlo request failed");
-    } finally {
-      setMcLoading(false);
-    }
-  }, [episodeId, mcLoading]);
-
   const simulateStep = useCallback(async () => {
     if (loading) return;
     // Focus requirement
@@ -15512,25 +15068,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       const raw = await chatToBackendLifecycle(payload);
       const data = raw as BackendChatResponse;
       applyGuardedResponsePayload(data, "feedback", "Simulation tick payload updated.");
-      if (!data || (data as any).ok === false || (data as any).error) {
-        setSimLastError(((data as any)?.error?.message as string | undefined) ?? "Simulation tick failed");
+      if (!data || data.ok === false || data.error) {
+        setSimLastError((data.error?.message as string | undefined) ?? "Simulation tick failed");
         setLoading(false);
         return;
       }
       const viewModel = deriveProductFlowViewModel(data, sceneJson);
-      const nextActions = Array.isArray(data.actions) ? (data.actions as any[]) : [];
+      const nextActions = Array.isArray(data.actions) ? data.actions : [];
       setLastActions(nextActions);
       applyProductFlowViewModel(data, viewModel, { applyActionsToScene: true, syncSceneState: false });
       if (typeof data.reply === "string" && data.reply.trim().length > 0) {
         setMessages((m) => appendMessages(m, [makeMsg("assistant", data.reply ?? "")]));
       }
-    } catch (err: any) {
-      setSimLastError(err?.message ?? "Simulation tick failed");
+    } catch (err: unknown) {
+      setSimLastError(readUnknownErrorMessage(err, "Simulation tick failed"));
     } finally {
       setLoading(false);
     }
   }, [
-    activeMode,
+    applyGuardedResponsePayload,
     applyProductFlowViewModel,
     buildChatRequestPayload,
     deriveProductFlowViewModel,
@@ -15548,57 +15104,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     }, intervalMs);
     return () => window.clearInterval(id);
   }, [simRunning, simSpeed, simulateStep]);
-
-  const handleAddInventoryInstance = useCallback(() => {
-    const createdId = `obj_inventory_${Date.now()}`;
-    applySceneChangeSafe((prev) => {
-      if (!prev) return prev;
-      const next = { ...prev, scene: { ...prev.scene } };
-      const objs = Array.isArray(next.scene.objects) ? [...next.scene.objects] : [];
-      const idx = objs.filter((o: any) => (o.type === "type_inventory" || o.id?.startsWith("obj_inventory"))).length + 1;
-      const ux = getUxForObject(createdId) ?? { shape: "cube", base_color: "#3498db" };
-      objs.push({
-        id: createdId,
-        type: "box",
-        color: ux.base_color,
-        scale: 1,
-        emphasis: 0,
-        position: [objs.length * 1.6, 0, 0],
-      });
-      next.scene.objects = objs;
-      return next;
-    }, "inventory_edit");
-    selectedSetterRef.current(createdId);
-    setFocusedId((prev) => prev ?? createdId);
-    setFocusMode("selected");
-  }, [applySceneChangeSafe, getUxForObject, setFocusedId, setFocusMode]);
-
-  const handleAddLoopFromTemplate = useCallback(
-    (type: LoopType) => {
-      const loop = makeLoopFromTemplate(type);
-      setLoops((prev) => {
-        const next = Array.isArray(prev) ? [...prev] : [];
-        next.push(loop);
-        return next;
-      });
-      selectLoop(loop.id);
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.debug("[templates] added loop", loop.type, loop.id);
-      }
-    },
-    [selectLoop]
-  );
-  const toggleFocusMode = useCallback(() => {
-    setFocusMode((m) => {
-      const next = m === "all" ? "selected" : "all";
-      applyFocusModeToStore(next);
-      if (next === "all" && !focusPinned) {
-        setFocusedId(null);
-      }
-      return next;
-    });
-  }, [applyFocusModeToStore, focusPinned, setFocusedId]);
 
   useEffect(() => {
     handleSelectedChangeRef.current = handleSelectedChange;
@@ -15726,7 +15231,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     const currentProjectId = activeProjectId || DEFAULT_PROJECT_ID;
     if (autonomousExploreSignatureRef.current[currentProjectId] === sceneSignature) return;
 
-    if (String((autonomousExploration as any)?.scene_signature ?? "") === sceneSignature) {
+    if (String(asRecord(autonomousExploration)?.scene_signature ?? "") === sceneSignature) {
       autonomousExploreSignatureRef.current[currentProjectId] = sceneSignature;
       return;
     }
@@ -15735,13 +15240,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       projectId: currentProjectId,
       sceneJson,
       semanticObjectMeta: objectProfiles,
-      modeContext: productModeContext,
+      modeContext: (productModeContext as ActiveModeContext | null) ?? null,
       strategyContext: {
-        at_risk_kpis: Array.isArray((strategyKpi as any)?.summary?.at_risk_kpis)
-          ? (strategyKpi as any).summary.at_risk_kpis
+        at_risk_kpis: Array.isArray(asRecord(asRecord(strategyKpi)?.summary)?.at_risk_kpis)
+          ? (asRecord(asRecord(strategyKpi)?.summary)?.at_risk_kpis as string[])
           : [],
-        threatened_objectives: Array.isArray((strategyKpi as any)?.summary?.threatened_objectives)
-          ? (strategyKpi as any).summary.threatened_objectives
+        threatened_objectives: Array.isArray(asRecord(asRecord(strategyKpi)?.summary)?.threatened_objectives)
+          ? (asRecord(asRecord(strategyKpi)?.summary)?.threatened_objectives as string[])
           : [],
       },
       maxScenarios: environmentConfig.runtime_safety.max_scenarios_per_run,
@@ -15757,9 +15262,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       scene_signature: sceneSignature,
     };
     setAutonomousExploration(explorationPayload);
-    setMemoryInsights((prev: any) => {
-      const base = prev && typeof prev === "object" ? prev : {};
-      const prevSig = String(base?.autonomous_exploration?.scene_signature ?? "");
+    setMemoryInsights((prev: unknown) => {
+      const base = asRecord(prev) ?? {};
+      const prevExploration = asRecord(base.autonomous_exploration);
+      const prevSig = String(prevExploration?.scene_signature ?? "");
       if (prevSig === sceneSignature) return base;
       return {
         ...base,
@@ -15771,13 +15277,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         },
       };
     });
-    setResponseData((prev: any) => {
-      if (!prev || typeof prev !== "object") return prev;
+    setResponseData((prev: Record<string, unknown> | null) => {
+      if (!prev) return prev;
+      const prevExploration = asRecord(prev.autonomous_exploration);
+      const prevContextExploration = asRecord(asRecord(prev.context)?.autonomous_exploration);
       const prevSig =
-        String(prev?.autonomous_exploration?.scene_signature ?? "") ||
-        String(prev?.context?.autonomous_exploration?.scene_signature ?? "");
+        String(prevExploration?.scene_signature ?? "") ||
+        String(prevContextExploration?.scene_signature ?? "");
       if (prevSig === sceneSignature) return prev;
-      const prevContext = prev?.context && typeof prev.context === "object" ? prev.context : {};
+      const prevContext = asRecord(prev.context) ?? {};
       return normalizeDecisionPayload({
         ...prev,
         autonomous_exploration: explorationPayload,
@@ -15839,7 +15347,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       .then((res) => res.json())
       .then((data) => {
         if (cancelled) return;
-        const list: any[] = Array.isArray(data?.objects)
+        const list: unknown[] = Array.isArray(data?.objects)
           ? data.objects
           : Array.isArray(data)
           ? data
@@ -15857,22 +15365,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             ux?: { shape?: string; base_color?: string };
           }
         > = {};
-        list.forEach((entry) => {
-          if (!entry || typeof entry !== "object") return;
+        list.forEach((rawEntry) => {
+          const entry = asRecord(rawEntry);
+          if (!entry) return;
           const id = entry.id;
           if (!id || typeof id !== "string") return;
           map[id] = {
             id,
-            label: entry.label ?? id,
-            summary: entry.summary ?? "",
-            tags: Array.isArray(entry.tags) ? entry.tags : [],
+            label: typeof entry.label === "string" ? entry.label : id,
+            summary: typeof entry.summary === "string" ? entry.summary : "",
+            tags: Array.isArray(entry.tags) ? (entry.tags as string[]) : [],
             one_liner: typeof entry.one_liner === "string" ? entry.one_liner : undefined,
-            synonyms: Array.isArray(entry.synonyms) ? entry.synonyms : undefined,
+            synonyms: Array.isArray(entry.synonyms) ? (entry.synonyms as string[]) : undefined,
             domain_hints:
               typeof entry.domain_hints === "object" && entry.domain_hints
                 ? (entry.domain_hints as Record<string, string[]>)
                 : undefined,
-            ux: typeof entry.ux === "object" && entry.ux ? entry.ux : undefined,
+            ux: typeof entry.ux === "object" && entry.ux ? (entry.ux as { shape?: string; base_color?: string }) : undefined,
           };
         });
         setObjectProfiles(map);
@@ -16033,7 +15542,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const finalizeChatRequest = useCallback(
     (seq: number, status: ChatRequestLifecycleStatus, options?: { clearInput?: boolean }) => {
       if (activePanelFamilyAuditRef.current?.seq === seq) {
-        const auditToClear = activePanelFamilyAuditRef.current;
         if (pendingPanelFamilyAuditClearTimeoutRef.current !== null) {
           window.clearTimeout(pendingPanelFamilyAuditClearTimeoutRef.current);
         }
@@ -16089,14 +15597,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       isLatestChatRequest,
       traceAuditRef,
       rightPanelState.view,
-      visibleDecisionCockpit,
-      visibleFocusedId,
-      visibleObjectSelection,
-      visibleResponseData,
-      visibleRiskPropagation,
-      visibleSceneJson,
-      visibleSelectedObjectId,
-      visibleStrategicAdvice,
     ]
   );
 
@@ -16382,7 +15882,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     releaseChatSendingLock,
   });
   const {
-    callbacks: { sendText, appendMessage, replaceMessages, clearChatError },
+    callbacks: { sendText},
     emitChatPipelineDiagnostic,
   } = chatPipelineController;
   useEffect(() => {
@@ -16839,79 +16339,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     ]
   );
 
-  const handleUndo = useCallback(() => {
-    const history = loadHistory();
-    const popped = prepareUndoHistoryPop(history);
-    if (!popped) return;
-    const { nextHistory, target: prev } = popped;
-
-    setActiveMode(prev.activeMode ?? "business");
-    const undoSceneDecision = prev.sceneJson ? evaluateHistoryUndoScene(prev.sceneJson) : canonDecisionMissingSceneBlob();
-    applySceneChangeUpstreamDedup(sceneJsonFromCanonDecision(undoSceneDecision), "undo", { bypassDedupe: true });
-    setMessages(normalizeMessages(prev.messages));
-    try {
-      window.localStorage.setItem(HISTORY_KEY, JSON.stringify(nextHistory));
-      if (prev.sessionId) window.localStorage.setItem(SESSION_KEY, prev.sessionId);
-    } catch {
-      // ignore
-    }
-    saveProject(withPersistedProjectSavedAt(prev));
-  }, [applySceneChangeSafe]);
-
-  const handleExport = useCallback(() => {
-    const currentProject =
-      workspaceProjects[activeProjectId] ?? buildActiveProjectState(activeProjectId);
-    const { json, filename, mimeType } = prepareWorkspaceProjectExportJson(currentProject);
-    const blob = new Blob([json], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [activeProjectId, buildActiveProjectState, workspaceProjects]);
-
-  const handleImport = useCallback((file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const text = typeof reader.result === "string" ? reader.result : "";
-        const currentWorkspace = buildWorkspaceStateForProjectImport({
-          workspaceId: activeWorkspaceId,
-          activeProjectId,
-          workspaceProjects,
-          activeProjectSnapshot: buildActiveProjectState(activeProjectId),
-        });
-        const prepared = prepareProjectImportFromFileText(text, currentWorkspace, {
-          activate: true,
-          collision: "rename",
-        });
-        if (!prepared.ok) {
-          throw new Error(prepared.errorMessage);
-        }
-        const { importResult, parseWarnings } = prepared;
-
-        setActiveWorkspaceId(importResult.workspace.id || DEFAULT_WORKSPACE_ID);
-        setWorkspaceProjects(importResult.workspace.projects);
-        setActiveProjectId(importResult.activeProjectId);
-        applyWorkspaceProjectState(importResult.project);
-        const note = composeImportWarningAssistantText(parseWarnings, importResult.warnings);
-        if (note) {
-          setMessages((m) => appendMessages(m, [makeMsg("assistant", note)]));
-        }
-      } catch (err: unknown) {
-        setMessages((m) => appendMessages(m, [makeMsg("assistant", messageImportUnknownError(err))]));
-      }
-    };
-    reader.readAsText(file);
-  }, [
-    activeProjectId,
-    activeWorkspaceId,
-    applyWorkspaceProjectState,
-    buildActiveProjectState,
-    workspaceProjects,
-  ]);
-
   const buildBackup = useCallback((): BackupV1 => {
     return buildScreenBackupV1({
       activeCompanyId,
@@ -16949,111 +16376,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     objectUxById,
   ]);
 
-  const handleSaveBackup = useCallback(() => {
-    const backup = buildBackup();
-    saveBackup(backup);
-    setMessages((m) => appendMessages(m, [makeMsg("assistant", "✅ Backup saved (local).")]));
-  }, [buildBackup]);
-
-  const applyBackupRestore = useCallback((b: BackupV1) => {
-    isRestoringRef.current = true;
-
-    try {
-      if (b.sessionId) {
-        try { window.localStorage.setItem(SESSION_KEY, b.sessionId); } catch {}
-      }
-
-      // company
-      setActiveCompanyIdState(b.activeCompanyId ?? "default");
-      setCompanyId(b.activeCompanyId ?? "default");
-
-      // core state
-      setActiveMode(b.activeMode ?? "business");
-      setActiveTemplateId(b.activeTemplateId ?? "quality_protection");
-      setActiveSidePanel(resolveHudTabAfterBackupRestore(b.hudTab));
-      setPrefs(b.prefs ?? defaultPrefs);
-
-      // scene + chat
-      const backupSceneDecision = b.sceneJson ? evaluateBackupRestoreScene(b.sceneJson) : canonDecisionMissingSceneBlob();
-      applySceneChangeUpstreamDedup(sceneJsonFromCanonDecision(backupSceneDecision), "backup", { bypassDedupe: true });
-      setMessages(normalizeMessages(b.messages));
-
-      // loops
-      setLoops(Array.isArray(b.loops) ? b.loops : []);
-      setActiveLoopId(b.activeLoopId ?? null);
-      setSelectedLoopId(b.selectedLoopId ?? null);
-
-      // focus/selection
-      setFocusedId(b.focusedId ?? null);
-      setFocusMode(b.focusMode ?? "all");
-      setPinnedSafe(!!b.focusPinned, b.focusedId ?? null);
-
-      if (b.selectedObjectId) {
-        logNonCanonicalSelectionWriterBlocked({
-          writer: "backup_restore",
-          attemptedObjectId: b.selectedObjectId,
-          currentSelectedId: normalizeSelectedObjectId(selectedObjectIdStateRef.current),
-          source: "backup_restore",
-        });
-        selectedSetterRef.current?.(b.selectedObjectId);
-      } else {
-        selectedSetterRef.current?.(null);
-        clearCanonicalObjectSelectionRef.current("empty_canvas_click");
-      }
-
-      // overrides refs + ux
-      overridesRef.current = b.overrides ?? {};
-      setObjectUxById(b.objectUxById ?? {});
-
-      if (b.selectedObjectId) {
-        window.setTimeout(() => updateSelectedObjectInfo(b.selectedObjectId), 0);
-      }
-
-      setMessages((m) => appendMessages(m, [makeMsg("assistant", "✅ Backup restored.")]));
-    } finally {
-      window.setTimeout(() => { isRestoringRef.current = false; }, 0);
-    }
-  }, [applySceneChangeSafe, setPinnedSafe, updateSelectedObjectInfo]);
-
-  const handleRestoreBackup = useCallback(() => {
-    const b = loadBackup();
-    if (!b) {
-      setMessages((m) => appendMessages(m, [makeMsg("assistant", "⚠️ No backup found.")]));
-      return;
-    }
-    setRestorePreview(
-      buildBackupRestorePreviewContents({
-        backup: b,
-        activeCompanyId,
-        activeMode,
-        activeTemplateId,
-        hudTab: activeSidePanel,
-        loops,
-        activeLoopId,
-        selectedLoopId,
-        focusedId,
-        focusMode,
-        focusPinned,
-        selectedObjectId: selectedObjectIdState,
-        messagesLen: messages.length,
-        overridesKeysCount: Object.keys(overridesRef.current ?? {}).length,
-      })
-    );
-  }, [
-    activeCompanyId,
-    activeMode,
-    activeTemplateId,
-    activeSidePanel,
-    loops,
-    activeLoopId,
-    selectedLoopId,
-    focusedId,
-    focusMode,
-    focusPinned,
-    selectedObjectIdState,
-    messages.length,
-  ]);
-
   useEffect(() => {
     if (isRestoringRef.current) return;
     if (!autoBackupEnabled) return;
@@ -17074,158 +16396,49 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     };
   }, [autoBackupEnabled, buildBackup, overridesVersion]);
 
-
-  const handlePrefsChange = useCallback((next: ScenePrefs) => {
-    setPrefs(next);
-  }, []);
-
-  const clearFocus = useCallback(() => {
-    applyPinToStore(false, null);
-    setFocusedId(null);
-    selectedSetterRef.current(null);
-    clearCanonicalObjectSelectionRef.current("relationship_select");
-    setSelectedObjectInfo(null);
-    clearFocusOwnership("Focus cleared explicitly.");
-  }, [applyPinToStore, clearFocusOwnership, setFocusedId]);
-  const handleAskAboutSelected = useCallback(() => {
-    const id = selectedIdRef.current;
-    if (!id) return;
-    setFocusedId(id);
-    updateSelectedObjectInfo(id);
-    setFocusMode("selected");
-    sendText("tell me about the selected object");
-  }, [sendText, updateSelectedObjectInfo]);
-
-  const askAboutSelectedAndSend = useCallback(() => {
-    const id = selectedIdRef.current;
-    if (!id) return;
-    setFocusedId(id);
-    updateSelectedObjectInfo(id);
-    setFocusMode("selected");
-    const q = "Tell me about the selected object.";
-    setInput(q);
-    setTimeout(() => {
-      send();
-    }, 0);
-  }, [send, updateSelectedObjectInfo]);
-
-  const handleFocusFromLoop = useCallback(
-    (id: string) => {
-      if (!id) return;
-      const resolved = resolveSelectedObjectDetails(id);
-      if (!resolved) {
-        tracePostSuccessContextDecision("[Nexora][ContextGuardBlocked]", {
-          currentTargetId: selectedObjectIdState ?? focusedId ?? null,
-          nextTargetId: id,
-          source: "focus",
-          targetInScene: false,
-          preserved: Boolean(selectedObjectIdState ?? focusedId),
-        });
-        return;
-      }
-      tracePostSuccessContextDecision("[Nexora][PostSuccessContextAccepted]", {
-        currentTargetId: selectedObjectIdState ?? focusedId ?? null,
-        nextTargetId: id,
-        source: "focus",
-        targetInScene: true,
-        preserved: false,
-      });
-      selectedSetterRef.current(id);
-      setFocusedId(id);
-      claimFocusOwnership({
-        source: "war_room_action",
-        objectId: id,
-        isPersistent: true,
-        reason: "War Room or loop analysis requested focus.",
-      });
-      setFocusMode("selected");
-      setViewMode("input");
-    },
-    [
-      claimFocusOwnership,
-      focusedId,
-      resolveSelectedObjectDetails,
-      selectedObjectIdState,
-      setFocusMode,
-      setViewMode,
-      tracePostSuccessContextDecision,
-    ]
-  );
-
-
-  const handleReplayEvents = useCallback(async () => {
-    if (process.env.NODE_ENV === "production") return;
-    setReplayError(null);
-    setReplaying(true);
-    let userId: string | null = readSessionIdForPersistence();
-    if (!userId) {
-      try {
-        userId = window.localStorage.getItem("dev_replay_user_id");
-        if (!userId) {
-          userId = `dev-${Math.random().toString(36).slice(2, 10)}`;
-          window.localStorage.setItem("dev_replay_user_id", userId);
-        }
-      } catch {
-        userId = "dev-anon";
-      }
-    }
-    try {
-      const events = await getRecentEvents(userId, 10);
-      for (const evt of events) {
-        applyActions(evt.actions);
-        setMessages((m) => appendMessages(m, [makeMsg("assistant", `(Replayed) ${evt.reply}`)]));
-        await delay(250);
-      }
-    } catch (e: any) {
-      setReplayError("Replay failed");
-    } finally {
-      setReplaying(false);
-    }
-  }, [applyActions, setMessages]);
-
- 
-  const hudPanels = null as any;
-
-  const handleSceneUpdateFromTimeline = useCallback((payload: any) => {
-    applyGuardedResponsePayload(payload ?? null, "feedback", "Timeline payload applied.");
-    const nextScene = payload?.scene_json;
-    const sceneDecision = evaluateTimelineForceScene(nextScene, payload);
+  const handleSceneUpdateFromTimeline = useCallback((payload: unknown) => {
+    const chatPayload = (payload && typeof payload === "object" ? payload : {}) as HomeScreenChatPayload;
+    applyGuardedResponsePayload(chatPayload ?? null, "feedback", "Timeline payload applied.");
+    const nextScene = chatPayload.scene_json;
+    const sceneDecision = evaluateTimelineForceScene(nextScene, chatPayload);
     if (isSceneCanonReplaceDecision(sceneDecision)) {
       applySceneChangeUpstreamDedup(sceneDecision.scene, "timeline");
       setNoSceneUpdate(false);
     } else if (nextScene != null && typeof nextScene === "object" && !Array.isArray(nextScene)) {
       setNoSceneUpdate(true);
-      const timelineReaction = buildUnifiedReactionFromChatResponse(payload, {
+      const objectSelection = asRecord(chatPayload.object_selection);
+      const highlightedObjects = Array.isArray(objectSelection?.highlighted_objects)
+        ? objectSelection.highlighted_objects.map(String)
+        : [];
+      const timelineReaction = buildUnifiedReactionFromChatResponse(chatPayload, {
         acceptedSceneForChatReplacement: null,
         allowSceneEffects: true,
-        fallbackHighlightedObjectIds: Array.isArray(payload?.object_selection?.highlighted_objects)
-          ? payload.object_selection.highlighted_objects.map(String)
-          : [],
-        fallbackPrimaryObjectId:
-          Array.isArray(payload?.object_selection?.highlighted_objects) && payload.object_selection.highlighted_objects.length > 0
-            ? String(payload.object_selection.highlighted_objects[0])
-            : null,
+        fallbackHighlightedObjectIds: highlightedObjects,
+        fallbackPrimaryObjectId: highlightedObjects.length > 0 ? highlightedObjects[0] : null,
         reactionModeHint: "propagation",
       });
       applyUnifiedSceneReactionUpstreamDedup(timelineReaction, { allowSceneReplacement: false });
     }
 
+    const payloadContext = asRecord(chatPayload.context);
+    const payloadSceneJson = asRecord(chatPayload.scene_json);
+    const payloadScene = asRecord(payloadSceneJson?.scene);
     const nextFragility =
-      payload?.fragility ??
-      payload?.context?.fragility ??
-      payload?.scene_json?.scene?.fragility ??
+      chatPayload.fragility ??
+      payloadContext?.fragility ??
+      payloadScene?.fragility ??
       null;
 
     const nextKpi =
-      payload?.kpi ??
-      payload?.context?.kpi ??
-      payload?.scene_json?.scene?.kpi ??
+      chatPayload.kpi ??
+      payloadContext?.kpi ??
+      payloadScene?.kpi ??
       null;
 
-    if (nextKpi) setKpi(nextKpi as any);
-    setConflicts(extractConflicts(payload));
+    if (nextKpi) setKpi(nextKpi as KPIState);
+    setConflicts(extractConflicts(chatPayload));
     {
-      const nextOs = extractObjectSelection(payload);
+      const nextOs = extractObjectSelection(chatPayload);
       const osSig = buildSelectionSignature({
         focusedId: focusedId ?? null,
         highlightedIds: getHighlightedObjectIdsFromSelection(nextOs),
@@ -17235,22 +16448,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       traceNexoraSelectionGuard(osSig, prevOsSig, "chat");
       if (osSig !== prevOsSig) {
         lastSelectionSignatureRef.current = osSig;
-        setObjectSelection(nextOs);
+        setObjectSelection(nextOs as DerivedObjectSelectionMirror);
       }
     }
-    setMemoryInsights(extractMemoryV2(payload));
-    setRiskPropagation(extractRiskPropagation(payload));
-    setStrategicAdvice(extractStrategicAdvice(payload));
-    setStrategyKpi(extractStrategyKpi(payload));
-    setDecisionCockpit(extractDecisionCockpit(payload));
-    const nextProductModeContextC = extractProductModeContext(payload);
+    setMemoryInsights(extractMemoryV2(chatPayload));
+    setRiskPropagation(extractRiskPropagation(chatPayload));
+    setStrategicAdvice(extractStrategicAdvice(chatPayload));
+    setStrategyKpi(extractStrategyKpi(chatPayload));
+    setDecisionCockpit(extractDecisionCockpit(chatPayload));
+    const nextProductModeContextC = extractProductModeContext(chatPayload);
     setProductModeContext(nextProductModeContextC);
-    if (nextProductModeContextC?.mode_id) setProductModeId(String(nextProductModeContextC.mode_id));
-    setAiReasoning(extractAiReasoning(payload));
-    setPlatformAssembly(extractPlatformAssembly(payload));
-    setAutonomousExploration(extractAutonomousExploration(payload));
-    setOpponentModel(extractOpponentModel(payload));
-    setStrategicPatterns(extractStrategicPatterns(payload));
+    const nextProductModeRecord = asRecord(nextProductModeContextC);
+    if (nextProductModeRecord?.mode_id) setProductModeId(String(nextProductModeRecord.mode_id));
+    setAiReasoning(extractAiReasoning(chatPayload));
+    setPlatformAssembly(extractPlatformAssembly(chatPayload));
+    setAutonomousExploration(extractAutonomousExploration(chatPayload));
+    setOpponentModel(extractOpponentModel(chatPayload));
+    setStrategicPatterns(extractStrategicPatterns(chatPayload));
     if (nextFragility) {
       // optional: if HomeScreen stores fragility separately, update it
     }
@@ -17283,7 +16497,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     let nextScene = normalizeSceneJson(demoDefinition.scene);
     const sceneObjects = Array.isArray(nextScene.scene?.objects) ? nextScene.scene.objects : [];
     if (sceneObjects.length === 0) {
-      // eslint-disable-next-line no-console
+       
       console.warn("[Nexora][DemoLoad] skipped — scene_json has no objects", { requestedDomainId: requested });
       sceneBootstrapOwnerRef.current.phase = "complete";
       setSceneBootstrapComplete(true);
@@ -17291,7 +16505,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     }
     const sceneDomain = readSceneJsonMetaString(nextScene, "domain").trim().toLowerCase();
     if (sceneDomain && sceneDomain !== requested) {
-      // eslint-disable-next-line no-console
+       
       console.warn("[Nexora][DemoLoad] domain mismatch — scene not applied", { sceneDomain, requested });
       sceneBootstrapOwnerRef.current.phase = "complete";
       setSceneBootstrapComplete(true);
@@ -17330,7 +16544,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         mergedPayload = { ...mergedPayload, decision_analysis: decisionAnalysis };
         nextScene = { ...nextScene, decision_analysis: decisionAnalysis };
         if (process.env.NODE_ENV !== "production") {
-          // eslint-disable-next-line no-console
+           
           console.log("[Nexora][DecisionAnalysis][ScenarioLoad][Attached]", {
             strategies: Array.isArray(decisionAnalysis.strategies) ? decisionAnalysis.strategies.length : 0,
           });
@@ -17338,7 +16552,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
     } catch {
       if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
+         
         console.warn("[Nexora][DecisionAnalysis][ScenarioLoad][Attached] request_failed");
       }
     }
@@ -17388,7 +16602,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     setDecisionCockpit(extractDecisionCockpit(mergedPayload));
     const nextProductModeContextD = extractProductModeContext(mergedPayload);
     setProductModeContext(nextProductModeContextD);
-    if (nextProductModeContextD?.mode_id) setProductModeId(String(nextProductModeContextD.mode_id));
+    const nextProductModeId = readProductModeId(nextProductModeContextD);
+    if (nextProductModeId) setProductModeId(nextProductModeId);
     setAiReasoning(extractAiReasoning(mergedPayload));
     setPlatformAssembly(extractPlatformAssembly(mergedPayload));
     setAutonomousExploration(extractAutonomousExploration(mergedPayload));
@@ -17597,30 +16812,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [visibleResponseData, visibleSceneJson]
   );
   const { impact: decisionImpact } = useDecisionImpact({
-    propagation: visibleRiskPropagation ?? null,
+    propagation: (visibleRiskPropagation as Parameters<typeof useDecisionImpact>[0]["propagation"]) ?? null,
     decisionPath: warRoom.scenarioTrigger?.payload && typeof warRoom.scenarioTrigger.payload === "object"
-      ? ((warRoom.scenarioTrigger.payload as any).decisionPath ?? null)
+      ? (asRecord(warRoom.scenarioTrigger.payload)?.decisionPath as Parameters<typeof useDecisionImpact>[0]["decisionPath"]) ?? null
       : null,
-    strategicAdvice: visibleStrategicAdvice ?? null,
+    strategicAdvice: (visibleStrategicAdvice as Parameters<typeof useDecisionImpact>[0]["strategicAdvice"]) ?? null,
     strategicCouncil: strategicCouncil ?? null,
     scenarioAction: warRoom.scenarioTrigger ?? null,
     sceneJson: visibleSceneJson,
     source: "home_screen",
   });
-  const decisionExecutionScenario = useMemo(
-    () => ({
-      active_mode: activeMode,
-      scene_label:
-        readSceneJsonMetaString(visibleSceneJson, "label") ||
-        readSceneJsonMetaString(visibleSceneJson, "demo_title") ||
-        "Nexora Scene",
-      demo_profile_id: activeProfile?.id ?? null,
-      selected_object_id: visibleSelectedObjectId ?? null,
-      focused_object_id: visibleFocusedId ?? null,
-      scenario_trigger: warRoom.scenarioTrigger ?? null,
-    }),
-    [activeMode, activeProfile?.id, visibleFocusedId, visibleSceneJson, visibleSelectedObjectId, warRoom.scenarioTrigger]
-  );
   const decisionOverrideIdsRef = useRef<string[]>([]);
   const narrativeOverrideIdsRef = useRef<string[]>([]);
   const sceneFocusIdSet = useMemo(() => {
@@ -17659,9 +16860,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     if (focusOwnership.source !== "none") {
       const objectId =
         focusOwnership.source === "backend_intelligence" || focusOwnership.source === "scanner_primary"
-          ? Array.isArray(visibleObjectSelection?.highlighted_objects) &&
-            focusOwnership.objectId &&
-            visibleObjectSelection.highlighted_objects.map(String).includes(focusOwnership.objectId)
+          ? focusOwnership.objectId &&
+            getHighlightedObjectIdsFromSelection(visibleObjectSelection).includes(focusOwnership.objectId)
             ? focusOwnership.objectId
             : null
           : focusOwnership.objectId;
@@ -17694,7 +16894,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     () => getSceneScopedObjectSelection(narrativeSceneBinding.objectSelection, sceneFocusIdSet),
     [narrativeSceneBinding.objectSelection, sceneFocusIdSet]
   );
-  const effectiveObjectSelection = useMemo(() => {
+  const effectiveObjectSelection = useMemo<HomeScreenEffectiveObjectSelection | null>(() => {
     const executionOverlayActive =
       executionState?.status === "running" || executionState?.status === "paused";
     if (activeSimulation && (executionOverlayActive || !executionState || executionState.status === "stopped")) {
@@ -17707,7 +16907,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         ...activeSimulation.affectedObjectIds,
       ];
       return {
-        ...(baseSelection ?? {}),
+        ...(asRecord(baseSelection) ?? {}),
         highlighted_objects: [...new Set(highlighted)].filter(Boolean),
         risk_sources: [
           ...new Set(activeSimulation.propagationPaths.map((path) => path.from).filter(Boolean)),
@@ -17716,12 +16916,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           ...new Set(activeSimulation.propagationPaths.map((path) => path.to).filter(Boolean)),
         ],
         dim_unrelated_objects: true,
-      };
+      } as HomeScreenEffectiveObjectSelection;
     }
     if (narrativeSceneBinding.isActive && narrativeObjectSelection) {
-      return narrativeObjectSelection;
+      return narrativeObjectSelection as HomeScreenEffectiveObjectSelection;
     }
-    return visibleObjectSelection ?? null;
+    return (visibleObjectSelection as HomeScreenEffectiveObjectSelection | null) ?? null;
   }, [
     activeSimulation,
     executionState,
@@ -17733,9 +16933,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     () =>
       buildSelectionSignature({
         focusedId: focusedId ?? null,
-        highlightedIds: Array.isArray(effectiveObjectSelection?.highlighted_objects)
-          ? effectiveObjectSelection.highlighted_objects.map(String)
-          : [],
+        highlightedIds: getHighlightedObjectIdsFromSelection(effectiveObjectSelection),
         source: "system",
       }),
     [effectiveObjectSelection, focusedId]
@@ -17922,308 +17120,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     });
     narrativeOverrideIdsRef.current = nextIds;
   }, [narrativeBindingOverrideSig]);
-  const buildDecisionPayload = useCallback((): DecisionExecutionPayload => {
-    const selectedObjects = Array.from(
-      new Set([selectedObjectIdState, focusedId].filter((value): value is string => typeof value === "string" && value.trim().length > 0))
-    );
-
-    return {
-      selected_objects: selectedObjects,
-      context: normalizeMessages(messagesRef.current ?? []).map((message) => ({
-        role: message.role,
-        text: message.text,
-      })),
-      scenario: decisionExecutionScenario ?? null,
-    };
-  }, [decisionExecutionScenario, focusedId, selectedObjectIdState]);
-  const runSafeDecisionExecution = useCallback(
-    async (
-      endpoint: string,
-      payload: DecisionExecutionPayload,
-      intent: DecisionExecutionIntent | null
-    ) =>
-      safeExecuteDecision(intent, {
-        endpoint,
-        payload,
-        responseData: guardedResponseData,
-        timeoutMs: Math.min(
-          Math.max(environmentConfig.runtime_safety.max_exploration_time_ms, 600),
-          2500
-        ),
-        safeExecutionOnly: isFeatureEnabled(environmentConfig, "safe_execution_only"),
-        executor: (endpoint, payload) => {
-          if (endpoint !== "/decision/simulate" && endpoint !== "/decision/compare") {
-            return Promise.reject(new Error(`Unsupported decision execution endpoint: ${endpoint}`));
-          }
-          return runDecisionExecution(endpoint, payload);
-        },
-      }),
-    [environmentConfig, guardedResponseData]
-  );
-
-  const hasDecisionExecutionContext = useCallback(
-    (payload: DecisionExecutionPayload) =>
-      Boolean(guardedResponseData ?? sceneJson) ||
-      Boolean(payload.scenario) ||
-      (Array.isArray(payload.selected_objects) && payload.selected_objects.length > 0) ||
-      (Array.isArray(payload.context) && payload.context.length > 0),
-    [guardedResponseData, sceneJson]
-  );
-
-  const openDecisionExecutionPanel = useCallback(
-    async (
-      mode: "simulate" | "compare",
-      originView: RightPanelView | null = null
-    ) => {
-      if (decisionExecutionLoading) {
-        return;
-      }
-
-      const payload = buildDecisionPayload();
-      const requestedOriginView = originView ?? rightPanelState.view ?? null;
-      const targetView: ExecutiveActionTarget = mode;
-      const action: ExecutiveActionIntent =
-        mode === "compare" ? "compare_options" : "run_simulation";
-      const endpoint = mode === "compare" ? "/decision/compare" : "/decision/simulate";
-      const contextAvailable = hasDecisionExecutionContext(payload);
-      const decisionRequestSeq = nextDemoFlowSequence(decisionFlowSeqRef);
-      const fallbackMessage = getPanelActionFallbackMessage(action);
-      const executionIntent: DecisionExecutionIntent = {
-        id: `intent:${mode}:current`,
-        action: mode === "compare" ? "Compare current decision" : "Simulate current decision",
-        source: mode === "compare" ? "compare" : "recommendation",
-        target_ids: Array.isArray(payload.selected_objects) ? payload.selected_objects : [],
-        simulation_ready: true,
-        compare_ready: true,
-        safe_mode: true,
-      };
-
-      const applyExecutionOutcome = (
-        result: DecisionExecutionResult,
-        status: "ready" | "error",
-        errorMessage: string | null,
-        summary: string,
-        executionMode: "real" | "preview" | "fallback"
-      ) => {
-        const normalizedSimulation =
-          normalizeBackendSimulation((result as { decision_simulation?: unknown } | null)?.decision_simulation ?? null) ??
-          normalizeBackendSimulation(result?.simulation_result ?? null);
-
-        setDecisionResult(result);
-        setResponseData((current: any) =>
-          normalizeDecisionPayload(
-            {
-              ...appendDecisionActionTrace({
-                payload: current,
-                workspaceId: activeWorkspaceId,
-                projectId: activeProjectId,
-                mode,
-                summary,
-                confidence:
-                  mode === "compare"
-                    ? typeof result?.comparison?.[0]?.score === "number"
-                      ? result.comparison[0].score
-                      : null
-                    : typeof result?.simulation_result?.impact_score === "number"
-                      ? result.simulation_result.impact_score
-                      : null,
-                targetIds: Array.isArray(result?.simulation_result?.affected_objects)
-                  ? result.simulation_result.affected_objects
-                  : [],
-              }),
-              decision_result: result,
-              decision_simulation: normalizedSimulation ?? current?.decision_simulation ?? null,
-            }
-          ).payload
-        );
-        setDecisionUiState({
-          status,
-          mode,
-          data: result,
-          error: errorMessage,
-        });
-        emitDecisionTrace({
-          stage: "simulation",
-          projectId: activeProjectId,
-          confidence:
-            mode === "compare"
-              ? typeof result?.comparison?.[0]?.score === "number"
-                ? result.comparison[0].score
-                : null
-              : typeof result?.simulation_result?.impact_score === "number"
-                ? result.simulation_result.impact_score
-                : null,
-          summary,
-          metadata: {
-            endpoint,
-            execution_mode: executionMode,
-            mode,
-          },
-        });
-        if (isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
-          lastExplicitPanelIntentRef.current = {
-            view: targetView,
-            source: "openDecisionExecutionPanel",
-            clickedTab: targetView,
-            clickedNav: "strategy_group",
-            timestamp: Date.now(),
-          };
-          openSimPanel(targetView, "open_decision_execution_panel", null);
-          globalThis.console.log("[NEXORA_DECISION_PANEL_OPEN]", {
-            mode,
-            targetView,
-          });
-        }
-      };
-
-      const buildPreviewResult = (): DecisionExecutionResult => {
-        const previewResult = buildPreviewDecisionExecutionResult({
-          intent: executionIntent,
-          responseData: guardedResponseData,
-        });
-        if (mode === "compare") {
-          return {
-            ...previewResult,
-            comparison: [
-              { option: "Option A", score: 0.68 },
-              { option: "Option B", score: 0.59 },
-            ],
-            comparison_result: {
-              best_option_id: "option_a",
-              comparison_summary: "Preview comparison is active until backend compare is available.",
-              options: [
-                { id: "option_a", label: "Option A", score: 0.68 },
-                { id: "option_b", label: "Option B", score: 0.59 },
-              ],
-            },
-          };
-        }
-        return previewResult;
-      };
-
-      traceDemoFlowEvent({
-        phase: "started",
-        source: mode === "compare" ? "decision_compare" : "decision_simulate",
-        seq: decisionRequestSeq,
-        detail: {
-          requestedView: targetView,
-          originView: requestedOriginView,
-          contextAvailable,
-        },
-      });
-      setDecisionExecutionLoading(true);
-      setDecisionUiState((current) => ({
-        status: "loading",
-        mode,
-        data: current.data,
-        error: null,
-      }));
-      globalThis.console.log("[NEXORA_DECISION_EXECUTION]", {
-        mode,
-        status: "loading",
-        hasData: false,
-      });
-
-      try {
-        if (!contextAvailable) {
-          const previewResult = buildPreviewResult();
-          applyExecutionOutcome(
-            previewResult,
-            "ready",
-            fallbackMessage,
-            mode === "compare"
-              ? "Comparison context is unavailable. Showing preview result."
-              : "Simulation context is unavailable. Showing preview result.",
-            "preview"
-          );
-          globalThis.console.log("[NEXORA_DECISION_EXECUTION]", {
-            mode,
-            status: "ready",
-            hasData: true,
-          });
-          return;
-        }
-
-        const execution = await runSafeDecisionExecution(endpoint, payload, executionIntent);
-        const result = execution.result;
-        if (!result) {
-          throw new Error(execution.error ?? `${mode} execution did not return a result.`);
-        }
-        if (!isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
-          traceDemoFlowEvent({
-            phase: "stale_ignored",
-            source: mode === "compare" ? "decision_compare" : "decision_simulate",
-            seq: decisionRequestSeq,
-          });
-          return;
-        }
-
-        applyExecutionOutcome(
-          result,
-          "ready",
-          execution.mode === "preview" ? execution.error ?? null : null,
-          mode === "compare"
-            ? execution.mode === "real"
-              ? "Comparison executed successfully."
-              : execution.error ?? "Comparison fell back to preview mode."
-            : execution.mode === "real"
-              ? "Simulation executed successfully."
-              : execution.error ?? "Simulation fell back to preview mode.",
-          execution.mode === "failed" ? "fallback" : execution.mode
-        );
-        globalThis.console.log("[NEXORA_DECISION_EXECUTION]", {
-          mode,
-          status: "ready",
-          hasData: true,
-        });
-      } catch (error) {
-        if (!isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
-          traceDemoFlowEvent({
-            phase: "stale_ignored",
-            source: mode === "compare" ? "decision_compare" : "decision_simulate",
-            seq: decisionRequestSeq,
-          });
-          return;
-        }
-        console.error("[Nexora][DecisionExecution] request failed", { endpoint, error });
-        const previewResult = buildPreviewResult();
-        applyExecutionOutcome(
-          previewResult,
-          "ready",
-          mode === "compare"
-            ? "Comparison is not available yet. Showing preview result."
-            : "Simulation is not available yet. Showing preview result.",
-          mode === "compare"
-            ? "Compare backend failed. Preview comparison opened."
-            : "Simulation backend failed. Preview simulation opened.",
-          "fallback"
-        );
-        globalThis.console.log("[NEXORA_DECISION_EXECUTION]", {
-          mode,
-          status: "error",
-          hasData: true,
-        });
-      } finally {
-        if (isLatestDemoFlowSequence(decisionFlowSeqRef, decisionRequestSeq)) {
-          setDecisionExecutionLoading(false);
-        }
-      }
-    },
-    [
-      activeProjectId,
-      activeWorkspaceId,
-      buildDecisionPayload,
-      decisionExecutionLoading,
-      emitDecisionTrace,
-      dispatchCanonicalAction,
-      guardedResponseData,
-      hasDecisionExecutionContext,
-      normalizeDecisionPayload,
-      rightPanelState.view,
-      runSafeDecisionExecution,
-    ]
-  );
-
   const runDemoScenario = useCallback(async () => {
     await loadDomainDemoScenario(activeDomainExperience.experience.domainId);
     await sendText("inventory shortage is delaying delivery", `demo:investor-flow:${Date.now()}`, {
@@ -18300,24 +17196,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     [openComponentPanelFromAction]
   );
 
-  const handleOpenTimelinePanel = useCallback(
-    (contextId: string | null = null) => {
-      migrateLegacyButtonToIntent(
-        "Open Timeline",
-        "openSimPanel:timeline",
-        "open_timeline",
-        "HomeScreen.tsx",
-        {
-        destinationSurface: "component_panel",
-        source: "exe_preview",
-        caller: "handle_open_timeline",
-        contextId,
-        }
-      );
-    },
-    [migrateLegacyButtonToIntent]
-  );
-
   const handlePreviewDecision = useCallback(
     (intent: DecisionExecutionIntent | null): DecisionAutomationResult => {
       if (!intent?.target_ids?.length) {
@@ -18333,7 +17211,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         responseData: guardedResponseData,
       });
       setDecisionResult(previewResult);
-      setResponseData((current: any) =>
+      setResponseData((current: unknown) =>
         normalizeDecisionPayload(
           appendDecisionActionTrace({
             payload: current,
@@ -18383,7 +17261,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         responseData: guardedResponseData,
       });
       setDecisionResult(previewResult);
-      setResponseData((current: any) =>
+      setResponseData((current: unknown) =>
         normalizeDecisionPayload(
           appendDecisionActionTrace({
             payload: current,
@@ -18432,19 +17310,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         [...(messagesRef.current ?? [])]
           .reverse()
           .find((message) => message?.role === "user" && String(message?.text ?? "").trim())?.text ?? null;
+      const baseReco = readCanonicalRecommendation(guardedResponseData, null);
       const payload =
-        intent && guardedResponseData?.canonical_recommendation
+        intent && baseReco
           ? {
               ...guardedResponseData,
               canonical_recommendation: {
-                ...guardedResponseData.canonical_recommendation,
+                ...baseReco,
                 primary: {
-                  ...guardedResponseData.canonical_recommendation.primary,
+                  ...baseReco.primary,
                   action: intent.action,
                   target_ids: intent.target_ids,
-                  impact_summary:
-                    intent.impact_summary ??
-                    guardedResponseData.canonical_recommendation.primary?.impact_summary,
+                  impact_summary: intent.impact_summary ?? baseReco.primary?.impact_summary,
                 },
               },
             }
@@ -18466,19 +17343,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       }
 
       const observedAssessment = buildObservedOutcomeAssessment({
-        canonicalRecommendation: payload?.canonical_recommendation ?? null,
+        canonicalRecommendation: readCanonicalRecommendation(payload, null),
         responseData: payload,
         decisionResult,
         memoryEntries: decisionMemoryEntries,
       });
       const outcomeFeedback = buildDecisionOutcomeFeedback({
-        canonicalRecommendation: payload?.canonical_recommendation ?? null,
+        canonicalRecommendation: readCanonicalRecommendation(payload, null),
         observedAssessment,
         memoryEntry: decisionMemoryEntries[0] ?? null,
         responseData: payload,
       });
       const calibrationResult = buildDecisionFeedbackSignal({
-        canonicalRecommendation: payload?.canonical_recommendation ?? null,
+        canonicalRecommendation: readCanonicalRecommendation(payload, null),
         outcomeFeedback,
         priorAdjustedScore: decisionMemoryEntries[0]?.calibration_result?.adjusted_confidence_score ?? null,
       });
@@ -18496,7 +17373,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           existing: current,
         })
       );
-      setResponseData((current: any) =>
+      setResponseData((current: unknown) =>
         normalizeDecisionPayload(
           appendDecisionActionTrace({
             payload: current,
@@ -18674,28 +17551,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const panelDataValidation = useMemo<PanelSharedDataValidationResult>(
     () => {
       const DEBUG_PANEL_TRACE = process.env.NODE_ENV !== "production";
-      const guardedResponseRecord =
-        visibleResponseData && typeof visibleResponseData === "object" && !Array.isArray(visibleResponseData)
-          ? visibleResponseData
-          : null;
+      const responseRecord = asRecord(visibleResponseData);
+      const guardedResponseRecord = responseRecord;
       const scannerPanelData = buildCanonicalPanelData(visibleResponseData ?? null);
-      const promptAdviceFeedback =
-        visibleResponseData?.prompt_feedback?.advice_feedback &&
-        typeof visibleResponseData.prompt_feedback.advice_feedback === "object"
-          ? visibleResponseData.prompt_feedback.advice_feedback
-          : null;
-      const canonicalRecommendationSource =
-        visibleResponseData?.canonical_recommendation &&
-        typeof visibleResponseData.canonical_recommendation === "object"
-          ? visibleResponseData.canonical_recommendation
-          : null;
+      const promptAdviceFeedback = asRecord(asRecord(responseRecord?.prompt_feedback)?.advice_feedback);
+      const canonicalRecommendationSource = readCanonicalRecommendation(
+        visibleResponseData,
+        stableVisibleSceneJson
+      );
       const sourceAdvice =
-        visibleStrategicAdvice ??
-        visibleResponseData?.strategic_advice ??
+        asRecord(visibleStrategicAdvice) ??
+        asRecord(responseRecord?.strategic_advice) ??
         promptAdviceFeedback ??
-        canonicalRecommendationSource ??
-        null;
-      const sourceDashboard = visibleResponseData?.executive_summary_surface ?? null;
+        (canonicalRecommendationSource ? asRecord(canonicalRecommendationSource) : null);
+      const sourceDashboard = readExecutiveSummarySurface(responseRecord?.executive_summary_surface);
       const decisionAdviceSlice = decisionResult?.advice_slice ?? null;
       const decisionTimelineSlice = decisionResult?.timeline_slice ?? null;
       const decisionWarRoomSlice = decisionResult?.war_room_slice ?? null;
@@ -18723,36 +17592,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                 : null,
           }
         : null;
-      const simulationTimelineSource =
-        visibleResponseData?.decision_simulation?.timeline &&
-        typeof visibleResponseData.decision_simulation.timeline === "object"
-          ? visibleResponseData.decision_simulation.timeline
-          : null;
-      const replayTimelineSource =
-        visibleResponseData?.decision_replay?.timeline &&
-        typeof visibleResponseData.decision_replay.timeline === "object"
-          ? visibleResponseData.decision_replay.timeline
-          : null;
+      const simulationTimelineSource = asRecord(asRecord(responseRecord?.decision_simulation)?.timeline);
+      const replayTimelineSource = asRecord(asRecord(responseRecord?.decision_replay)?.timeline);
       const timelineFromSimulation = simulationTimelineSource
         ? {
-            steps: Array.isArray((simulationTimelineSource as any).steps)
-              ? (simulationTimelineSource as any).steps
+            steps: Array.isArray(asRecord(simulationTimelineSource)?.steps)
+              ? (asRecord(simulationTimelineSource)?.steps as unknown[])
               : [],
             summary:
-              typeof (simulationTimelineSource as any).summary === "string"
-                ? (simulationTimelineSource as any).summary
+              typeof asRecord(simulationTimelineSource)?.summary === "string"
+                ? (asRecord(simulationTimelineSource)?.summary as string)
                 : null,
           }
         : replayTimelineSource
           ? {
-              steps: Array.isArray((replayTimelineSource as any).steps)
-                ? (replayTimelineSource as any).steps
-                : Array.isArray((replayTimelineSource as any).timeline)
-                  ? (replayTimelineSource as any).timeline
+              steps: Array.isArray(asRecord(replayTimelineSource)?.steps)
+                ? (asRecord(replayTimelineSource)?.steps as unknown[])
+                : Array.isArray(asRecord(replayTimelineSource)?.timeline)
+                  ? (asRecord(replayTimelineSource)?.timeline as unknown[])
                   : [],
               summary:
-                typeof (replayTimelineSource as any).summary === "string"
-                  ? (replayTimelineSource as any).summary
+                typeof asRecord(replayTimelineSource)?.summary === "string"
+                  ? (asRecord(replayTimelineSource)?.summary as string)
                   : null,
             }
           : decisionSimulation
@@ -18765,52 +17626,60 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         ? normalizeCanonicalAdvicePanelData(sourceAdvice, {
             defaultTitle: "Advice",
             fallbackSummary:
-              sourceAdvice.summary ??
-              promptAdviceFeedback?.summary ??
+              readPayloadString(sourceAdvice, "summary") ??
+              readPayloadString(promptAdviceFeedback, "summary") ??
               canonicalRecommendationSource?.reasoning?.why ??
               sourceDashboard?.what_to_do ??
               null,
             fallbackRecommendedActions: Array.isArray(sourceAdvice.recommended_actions)
-              ? sourceAdvice.recommended_actions
+              ? sourceAdvice.recommended_actions.filter(
+                  (entry): entry is { action: string | null; impact_summary: string | null; tradeoff: string | null } =>
+                    Boolean(entry) && typeof entry === "object"
+                )
               : Array.isArray(promptAdviceFeedback?.recommended_actions)
-                ? promptAdviceFeedback.recommended_actions
+                ? promptAdviceFeedback.recommended_actions.filter(
+                    (entry): entry is { action: string | null; impact_summary: string | null; tradeoff: string | null } =>
+                      Boolean(entry) && typeof entry === "object"
+                  )
                 : canonicalRecommendationSource?.primary?.action
                   ? [
                       {
                         action: canonicalRecommendationSource.primary.action,
                         impact_summary: canonicalRecommendationSource.primary.impact_summary ?? null,
-                        tradeoff: canonicalRecommendationSource.reasoning?.tradeoffs?.[0] ?? null,
+                        tradeoff: canonicalRecommendationSource.alternatives?.[0]?.tradeoff ?? null,
                       },
                     ]
                   : [],
-            fallbackConfidence: sourceAdvice.confidence ?? canonicalRecommendationSource?.confidence ?? null,
+            fallbackConfidence:
+              sourceAdvice.confidence ?? canonicalRecommendationSource?.confidence ?? null,
             fallbackWhy:
-              sourceAdvice.why ??
-              promptAdviceFeedback?.why ??
+              readPayloadString(sourceAdvice, "why") ??
+              readPayloadString(promptAdviceFeedback, "why") ??
               canonicalRecommendationSource?.reasoning?.why ??
               null,
             fallbackRecommendation:
-              sourceAdvice.recommendation ??
-              sourceAdvice.primary_recommendation?.action ??
+              readPayloadString(sourceAdvice, "recommendation") ??
+              readPayloadString(asRecord(sourceAdvice.primary_recommendation), "action") ??
               canonicalRecommendationSource?.primary?.action ??
               null,
             fallbackPrimaryRecommendation:
-              sourceAdvice.primary_recommendation ??
-              (canonicalRecommendationSource?.primary?.action
-                ? { action: canonicalRecommendationSource.primary.action }
-                : null),
+              readPayloadString(asRecord(sourceAdvice.primary_recommendation), "action")
+                ? { action: readPayloadString(asRecord(sourceAdvice.primary_recommendation), "action") }
+                : canonicalRecommendationSource?.primary?.action
+                  ? { action: canonicalRecommendationSource.primary.action }
+                  : null,
             fallbackRiskSummary:
-              sourceAdvice.risk_summary ??
+              readPayloadString(sourceAdvice, "risk_summary") ??
               canonicalRecommendationSource?.reasoning?.risk_summary ??
               null,
             fallbackRecommendations: Array.isArray(sourceAdvice.recommendations)
-              ? sourceAdvice.recommendations
+              ? sourceAdvice.recommendations.filter((entry): entry is string => typeof entry === "string")
               : [],
             fallbackRelatedObjectIds: Array.isArray(sourceAdvice.related_object_ids)
-              ? sourceAdvice.related_object_ids
+              ? sourceAdvice.related_object_ids.filter((entry): entry is string => typeof entry === "string")
               : [],
             fallbackSupportingDriverLabels: Array.isArray(sourceAdvice.supporting_driver_labels)
-              ? sourceAdvice.supporting_driver_labels
+              ? sourceAdvice.supporting_driver_labels.filter((entry): entry is string => typeof entry === "string")
               : [],
           })
         : null;
@@ -18835,9 +17704,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           }
         : null;
       const mappedCompare =
-        visibleResponseData?.decision_comparison ??
-        visibleResponseData?.comparison ??
-        decisionResult?.comparison ??
+        asRecord(responseRecord?.decision_comparison) ??
+        asRecord(responseRecord?.comparison) ??
+        asRecord(decisionResult?.comparison) ??
         null;
       const mappedReplay = visibleResponseData?.decision_replay ?? null;
       const fallbackWarRoom =
@@ -18859,9 +17728,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                 null,
               simulation_summary: mappedSimulation?.summary ?? null,
               compare_summary:
-                typeof mappedCompare?.summary === "string"
-                  ? mappedCompare.summary
-                  : null,
+                readPayloadString(mappedCompare, "summary"),
               executive_summary: sourceDashboard?.summary ?? null,
               advice_summary: fallbackAdvice?.summary ?? null,
               strategic_advice: fallbackAdvice,
@@ -18993,16 +17860,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
         strategicCouncil: strategicCouncil
           ? {
               summary:
-                typeof (strategicCouncil as any).summary === "string"
-                  ? (strategicCouncil as any).summary
-                  : typeof (strategicCouncil as any).rationale === "string"
-                  ? (strategicCouncil as any).rationale
+                typeof asRecord(strategicCouncil)?.summary === "string"
+                  ? (asRecord(strategicCouncil)?.summary as string)
+                  : typeof asRecord(strategicCouncil)?.rationale === "string"
+                  ? (asRecord(strategicCouncil)?.rationale as string)
                   : null,
               recommendation:
-                typeof (strategicCouncil as any).recommendation === "string"
-                  ? (strategicCouncil as any).recommendation
-                  : typeof (strategicCouncil as any).final_recommendation === "string"
-                  ? (strategicCouncil as any).final_recommendation
+                typeof asRecord(strategicCouncil)?.recommendation === "string"
+                  ? (asRecord(strategicCouncil)?.recommendation as string)
+                  : typeof asRecord(strategicCouncil)?.final_recommendation === "string"
+                  ? (asRecord(strategicCouncil)?.final_recommendation as string)
                   : null,
             }
           : null,
@@ -19127,7 +17994,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
           hasConflict: Boolean(
             visibleResponseData?.conflict ??
               visibleResponseData?.conflicts ??
-              visibleResponseData?.multi_agent_decision?.conflicts
+              asRecord(visibleResponseData?.multi_agent_decision)?.conflicts
           ),
           hasWarRoom: Boolean(mappedWarRoom ?? strategicCouncil ?? warRoom.intelligence),
         });
@@ -19440,7 +18307,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   }, [
     activeProjectId,
     activeWorkspaceId,
-    stableSceneObjectsSignature,
     stableVisibleSceneJson,
     visibleResponseData,
     visibleSceneJson,
@@ -19467,7 +18333,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     if (process.env.NODE_ENV === "production") return;
     const trace = {
       count: visibleSceneObjects.length,
-      ids: visibleSceneObjects.map((o: any) => o?.id ?? "unknown"),
+      ids: visibleSceneObjects.map((o) => o?.id ?? "unknown"),
     };
     const sig = JSON.stringify({ ...trace, hasVisibleSceneObjects });
     if (lastRightPanelHostInputTraceRef.current === sig) return;
@@ -20624,7 +19490,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       : null;
   const alertOverlayNode = alert ? (
     <StrategicAlertOverlay
-      level={alert.level as any}
+      level={alert.level}
       score={alert.score}
       reasons={alert.reasons}
       onDismiss={dismissAlert}
@@ -20675,8 +19541,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   const traceSceneObjectIds = useMemo(
     () =>
       Array.isArray(visibleSceneJson?.scene?.objects)
-        ? (visibleSceneJson.scene.objects as any[])
-            .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
+        ? visibleSceneJson.scene.objects
+            .map((obj, idx) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
             .slice(0, 12)
         : [],
     [visibleSceneJson]
@@ -20760,13 +19626,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     logGettingStartedAction("highlight_selectable");
     const objects = Array.isArray(visibleSceneJson?.scene?.objects) ? visibleSceneJson.scene.objects : [];
     const highlighted = objects
-      .map((obj: any, idx: number) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
+      .map((obj, idx) => String(obj?.id ?? obj?.name ?? `${obj?.type ?? "obj"}:${idx}`))
       .filter(Boolean)
       .slice(0, 12);
     setObjectSelection({
       highlighted_objects: highlighted,
       dim_unrelated_objects: false,
-    } as any);
+    } satisfies DerivedObjectSelectionMirror);
   }, [logGettingStartedAction, markUserStartedFlow, setObjectSelection, visibleSceneJson]);
   const handleGettingStartedAskAssistant = useCallback(() => {
     markUserStartedFlow("ask_assistant_click");
@@ -20812,10 +19678,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     markUserStartedFlow,
     requestPanelAuthorityOpen,
   ]);
-  const shouldShowGettingStarted =
-    !hasUserStartedFlow &&
-    (entryFlowState === "idle" || entryFlowState === "describing_system") &&
-    centerComponent == null;
   const showGettingStartedCenter = false;
   const homescreenBeforeSceneTriggerSig = useMemo(
     () =>
@@ -20848,9 +19710,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       console.log("[Nexora][EffectTrigger]", { homescreenBeforeSceneTriggerSig, ran: true });
     }
     traceHighlightFlow("homescreen_before_scene", {
-      highlightedObjectIds: Array.isArray(effectiveObjectSelection?.highlighted_objects)
-        ? effectiveObjectSelection.highlighted_objects.map(String)
-        : [],
+      highlightedObjectIds: getHighlightedObjectIdsFromSelection(effectiveObjectSelection),
       dimUnrelatedObjects: effectiveObjectSelection?.dim_unrelated_objects === true,
       focusedId: focusedId ?? null,
       selectedObjectId: selectedObjectIdState ?? null,
@@ -20861,18 +19721,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       sceneObjectIds: traceSceneObjectIds,
     });
   }, [homescreenBeforeSceneTriggerSig]);
-  const domainPanelEmphasisLabels = useMemo(
-    () =>
-      activeDomainExperience.experience.preferredPanels
-        .slice(0, 4)
-        .map((panelId) =>
-          String(panelId)
-            .replace(/_panel$/i, "")
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (match) => match.toUpperCase())
-        ),
-    [activeDomainExperience]
-  );
 
   const decisionAnalysisSelectorResponseSignature = useMemo(() => {
     const rd = visibleResponseData && typeof visibleResponseData === "object" ? (visibleResponseData as Record<string, unknown>) : null;
@@ -20950,9 +19798,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
       isPersistent: false,
       reason: "Investor demo guided highlight.",
     });
-    setResponseData((prev: any) => {
-      if (!prev || typeof prev !== "object") return prev;
-      const baseSel = prev.object_selection && typeof prev.object_selection === "object" ? prev.object_selection : {};
+    setResponseData((prev) => {
+      if (!prev) return prev;
+      const baseSel = asRecord(prev.object_selection) ?? {};
       return {
         ...prev,
         object_selection: {
@@ -22028,7 +20876,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
     sceneJson,
     setFocusedId,
     setSelectedObjectIdState,
-    applyUnifiedSceneReaction,
+    applyUnifiedSceneReactionUpstreamDedup,
     mergePipelineStatus,
     nexoraMode,
     activeDomainExperience.experience.domainId,
@@ -22891,7 +21739,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
   useEffect(() => {
     if (!isDevIngestion || typeof window === "undefined") return;
     void prefetchIngestionConnectorCatalogDev();
-  }, []);
+  }, [isDevIngestion]);
 
   useEffect(() => {
     if (!isDevIngestion || typeof window === "undefined") return;
@@ -25088,7 +23936,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
             </div>
             {gettingStartedState === "empty" ? (
               <div style={{ color: nx.lowMuted, fontSize: 12, marginTop: 6 }}>
-                Example: "Delivery is late due to supplier delays."
+                Example: &quot;Delivery is late due to supplier delays.&quot;
               </div>
             ) : null}
             <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -25433,8 +24281,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               ) : null}
               {centerComponent === "strategic_command_full" ? (
                 <StrategicCommandFull
-                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
-                  projectId={visibleResponseData?.project_id ?? activeProjectId ?? null}
+                  workspaceId={readPayloadString(asRecord(visibleResponseData), "workspace_id") ?? activeWorkspaceId ?? null}
+                  projectId={readPayloadString(asRecord(visibleResponseData), "project_id") ?? activeProjectId ?? null}
                   responseData={visibleResponseData ?? visibleSceneJson ?? null}
                   canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
                   decisionResult={decisionResult ?? undefined}
@@ -25445,7 +24293,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               {centerComponent === "compare" ? (
                 <DecisionComparePanel
                   responseData={visibleResponseData ?? undefined}
-                  strategicAdvice={visibleStrategicAdvice ?? visibleSceneJson?.["strategic_advice"] ?? null}
+                  strategicAdvice={
+                    (visibleStrategicAdvice ?? visibleSceneJson?.["strategic_advice"] ?? null) as
+                      | Record<string, unknown>
+                      | null
+                  }
                   canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
                   decisionResult={decisionResult ?? undefined}
                   nexoraB8PanelContext={nexoraB8PanelContext}
@@ -25505,8 +24357,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               ) : null}
               {centerComponent === "timeline" ? (
                 <DecisionTimelinePanel
-                  responseData={(stablePanelData.timeline ?? visibleResponseData ?? visibleSceneJson) as any}
-                  strategicAdvice={(stablePanelData.advice ?? stablePanelData.strategicAdvice ?? visibleStrategicAdvice) as any}
+                  responseData={(stablePanelData.timeline ?? visibleResponseData ?? visibleSceneJson) as Record<string, unknown> | null}
+                  strategicAdvice={(stablePanelData.advice ?? stablePanelData.strategicAdvice ?? visibleStrategicAdvice) as Record<string, unknown> | null}
                   canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
                   decisionResult={decisionResult ?? undefined}
                   decisionLoading={decisionExecutionLoading}
@@ -25611,8 +24463,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               ) : null}
               {centerComponent === "decision_council" ? (
                 <AutonomousDecisionCouncilPanel
-                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
-                  projectId={visibleResponseData?.project_id ?? activeProjectId ?? null}
+                  workspaceId={readPayloadString(asRecord(visibleResponseData), "workspace_id") ?? activeWorkspaceId ?? null}
+                  projectId={readPayloadString(asRecord(visibleResponseData), "project_id") ?? activeProjectId ?? null}
                   responseData={visibleResponseData ?? visibleSceneJson ?? null}
                   canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
                   decisionResult={decisionResult ?? undefined}
@@ -25665,7 +24517,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               ) : null}
               {centerComponent === "org_memory" ? (
                 <OrgMemoryPanel
-                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
+                  workspaceId={readPayloadString(asRecord(visibleResponseData), "workspace_id") ?? activeWorkspaceId ?? null}
                   memoryEntries={decisionMemoryEntries}
                   canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
                   onOpenMemory={() =>
@@ -25760,8 +24612,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               ) : null}
               {centerComponent === "executive_approval" ? (
                 <ExecutiveApprovalPanel
-                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
-                  projectId={visibleResponseData?.project_id ?? activeProjectId ?? null}
+                  workspaceId={readPayloadString(asRecord(visibleResponseData), "workspace_id") ?? activeWorkspaceId ?? null}
+                  projectId={readPayloadString(asRecord(visibleResponseData), "project_id") ?? activeProjectId ?? null}
                   responseData={visibleResponseData ?? visibleSceneJson ?? null}
                   canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
                   decisionResult={decisionResult ?? undefined}
@@ -26055,8 +24907,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               ) : null}
               {centerComponent === "collaboration_intelligence" ? (
                 <CollaborationIntelligencePanel
-                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
-                  projectId={visibleResponseData?.project_id ?? activeProjectId ?? null}
+                  workspaceId={readPayloadString(asRecord(visibleResponseData), "workspace_id") ?? activeWorkspaceId ?? null}
+                  projectId={readPayloadString(asRecord(visibleResponseData), "project_id") ?? activeProjectId ?? null}
                   responseData={visibleResponseData ?? visibleSceneJson ?? null}
                   canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
                   decisionResult={decisionResult ?? null}
@@ -26112,7 +24964,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
               {centerComponent === "decision_memory" ? (
                 <DecisionMemoryPanel
                   entries={decisionMemoryEntries}
-                  memoryInsights={visibleMemoryInsights ?? null}
+                  memoryInsights={(visibleMemoryInsights ?? null) as Record<string, unknown> | null}
                   responseData={visibleResponseData ?? null}
                   canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
                   decisionResult={decisionResult ?? null}
@@ -26159,8 +25011,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                   canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
                   decisionResult={decisionResult ?? undefined}
                   memoryEntries={decisionMemoryEntries}
-                  workspaceId={visibleResponseData?.workspace_id ?? activeWorkspaceId ?? null}
-                  projectId={visibleResponseData?.project_id ?? activeProjectId ?? null}
+                  workspaceId={readPayloadString(asRecord(visibleResponseData), "workspace_id") ?? activeWorkspaceId ?? null}
+                  projectId={readPayloadString(asRecord(visibleResponseData), "project_id") ?? activeProjectId ?? null}
                   onOpenDecisionTimeline={() =>
                     migrateLegacyButtonToIntent(
                       "Open Timeline",
@@ -26210,7 +25062,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ domainExperience }) => {
                   responseData={visibleResponseData ?? visibleSceneJson ?? null}
                   canonicalRecommendation={readCanonicalRecommendation(visibleResponseData, visibleSceneJson)}
                   decisionResult={decisionResult ?? null}
-                  strategicAdvice={visibleStrategicAdvice ?? visibleSceneJson?.["strategic_advice"] ?? null}
+                  strategicAdvice={
+                    (visibleStrategicAdvice ?? visibleSceneJson?.["strategic_advice"] ?? null) as
+                      | Record<string, unknown>
+                      | null
+                  }
                   memoryEntries={decisionMemoryEntries}
                   resolveObjectLabel={resolveSceneObjectLabel}
                   onOpenCompare={() =>

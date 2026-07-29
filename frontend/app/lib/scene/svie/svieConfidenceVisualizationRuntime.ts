@@ -2,9 +2,7 @@
  * SVIE:3:4 — Confidence visualization runtime (read-only).
  */
 
-import { syncSvieAdvisoryLinkSnapshot } from "./svieAdvisoryLinkRuntime.ts";
-import type { SvieAdvisoryFindingInput } from "./svieAdvisoryLinkFoundationContract.ts";
-import {
+import { syncSvieAdvisoryLinkSnapshot } from "./svieAdvisoryLinkRuntime.ts";import {
   buildSvieConfidenceVisualizationSignature,
   mapRecommendationConfidences,
 } from "./svieConfidenceMapping.ts";

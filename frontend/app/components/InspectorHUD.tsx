@@ -6,7 +6,7 @@ export function InspectorHUD({
   data,
   inline,
 }: {
-  data: any;
+  data: unknown;
   inline?: boolean;
 }) {
   if (!data) return null;

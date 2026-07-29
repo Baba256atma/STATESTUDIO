@@ -2,8 +2,6 @@
  * APP-10:5 — Failure Learning Engine constants.
  */
 
-import type { FailureCategory, FailureFactorKey } from "./failureLearningEngineTypes.ts";
-
 export const FAILURE_LEARNING_ENGINE_CONTRACT_VERSION = "APP-10/5" as const;
 export const FAILURE_LEARNING_ENGINE_ARCHITECTURE_VERSION = "APP-10/5-failure-learning-arch" as const;
 export const FAILURE_LEARNING_ENGINE_OWNER = "failure-learning-engine" as const;
@@ -44,9 +42,9 @@ export const FAILURE_CATEGORY_KEYS = Object.freeze([
   "risk_escalation",
   "dependency_failure",
   "mixed_failure",
-] as const satisfies readonly FailureCategory[]);
+] as const);
 
-export const FAILURE_CATEGORY_LABELS: Readonly<Record<FailureCategory, string>> = Object.freeze({
+export const FAILURE_CATEGORY_LABELS: Readonly<Record<(typeof FAILURE_CATEGORY_KEYS)[number], string>> = Object.freeze({
   strategic_failure: "Strategic Failure",
   operational_failure: "Operational Failure",
   financial_failure: "Financial Failure",
@@ -67,9 +65,9 @@ export const FAILURE_FACTOR_KEYS = Object.freeze([
   "unmanaged_risks",
   "external_constraints",
   "stakeholder_issues",
-] as const satisfies readonly FailureFactorKey[]);
+] as const);
 
-export const FAILURE_FACTOR_LABELS: Readonly<Record<FailureFactorKey, string>> = Object.freeze({
+export const FAILURE_FACTOR_LABELS: Readonly<Record<(typeof FAILURE_FACTOR_KEYS)[number], string>> = Object.freeze({
   insufficient_resources: "Insufficient Resources",
   execution_delays: "Execution Delays",
   incorrect_assumptions: "Incorrect Assumptions",

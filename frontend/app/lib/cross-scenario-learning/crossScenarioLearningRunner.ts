@@ -248,7 +248,7 @@ export function runCrossScenarioLearningFoundation(
       workspaceId: "ws-cert-001",
       label: "Certification Learning Session",
       description: "APP-10:1 certification session registration.",
-      sourceTypes: Object.freeze(["completed_scenario", "final_outcome"]),
+      sourceTypes: Object.freeze(["completed_scenario", "final_outcome"] as const),
     }),
     timestamp
   );
@@ -266,7 +266,7 @@ export function runCrossScenarioLearningFoundation(
           workspaceId: "ws-cert-001",
           label: "Duplicate",
           description: "Duplicate registration attempt.",
-          sourceTypes: Object.freeze(["completed_scenario"]),
+          sourceTypes: Object.freeze(["completed_scenario"] as const),
         }),
         timestamp
       ).success === false,
@@ -508,7 +508,7 @@ export function runCrossScenarioLearningFoundation(
           workspaceId: "ws-runner-001",
           label: "Runner Validation Session",
           description: "Registration shape validation.",
-          sourceTypes: Object.freeze(["completed_scenario"]),
+          sourceTypes: Object.freeze(["completed_scenario"] as const),
         })
       ).valid === true,
       "valid"

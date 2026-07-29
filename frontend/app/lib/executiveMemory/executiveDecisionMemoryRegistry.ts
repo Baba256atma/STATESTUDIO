@@ -2,12 +2,7 @@
  * APP-4:7 — Executive Decision Memory registry.
  */
 
-import type {
-  ExecutiveDecisionId,
-  ExecutiveDecisionMemory,
-  ExecutiveDecisionMemoryId,
-  ExecutiveDecisionMemoryQuery,
-} from "./executiveDecisionMemoryTypes.ts";
+import type { ExecutiveDecisionMemory, ExecutiveDecisionMemoryId, ExecutiveDecisionMemoryQuery } from "./executiveDecisionMemoryTypes.ts";
 
 const memories = new Map<ExecutiveDecisionMemoryId, ExecutiveDecisionMemory>();
 

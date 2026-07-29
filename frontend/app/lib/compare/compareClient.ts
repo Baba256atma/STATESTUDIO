@@ -33,59 +33,67 @@ function clampSigned(value: unknown): number {
   return numeric;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 function normalizeResult(payload: unknown): CompareResult | null {
-  const raw = payload && typeof payload === "object" ? (payload as Record<string, any>) : null;
-  const result = raw?.comparison && typeof raw.comparison === "object" ? raw.comparison : raw;
-  if (!result || typeof result !== "object") return null;
+  const raw = asRecord(payload);
+  const result = asRecord(raw?.comparison) ?? raw;
+  if (!result) return null;
 
   const object_deltas: CompareObjectDelta[] = Array.isArray(result.object_deltas)
     ? result.object_deltas
-        .map((item: any) => {
+        .map((itemValue) => {
+          const item = asRecord(itemValue);
           const objectId = normalizeId(item?.object_id);
-          if (!objectId) return null;
+          if (!objectId || !item) return null;
           return {
             object_id: objectId,
-            impactA: clamp01(item?.impactA),
-            impactB: clamp01(item?.impactB),
-            delta: clampSigned(item?.delta),
+            impactA: clamp01(item.impactA),
+            impactB: clamp01(item.impactB),
+            delta: clampSigned(item.delta),
             interpretation:
-              item?.interpretation === "improved" || item?.interpretation === "worse" || item?.interpretation === "neutral"
+              item.interpretation === "improved" || item.interpretation === "worse" || item.interpretation === "neutral"
                 ? item.interpretation
                 : "neutral",
-            rationale: typeof item?.rationale === "string" ? item.rationale : "",
+            rationale: typeof item.rationale === "string" ? item.rationale : "",
           };
         })
-        .filter(Boolean)
+        .filter((item): item is CompareObjectDelta => item != null)
     : [];
 
   const path_deltas: ComparePathDelta[] = Array.isArray(result.path_deltas)
     ? result.path_deltas
-        .map((item: any) => {
+        .map((itemValue) => {
+          const item = asRecord(itemValue);
           const pathId = normalizeId(item?.path_id);
-          if (!pathId) return null;
+          if (!pathId || !item) return null;
           return {
             path_id: pathId,
-            strengthA: clamp01(item?.strengthA),
-            strengthB: clamp01(item?.strengthB),
-            delta: clampSigned(item?.delta),
+            strengthA: clamp01(item.strengthA),
+            strengthB: clamp01(item.strengthB),
+            delta: clampSigned(item.delta),
             interpretation:
-              item?.interpretation === "stronger" || item?.interpretation === "weaker" || item?.interpretation === "equal"
+              item.interpretation === "stronger" || item.interpretation === "weaker" || item.interpretation === "equal"
                 ? item.interpretation
                 : "equal",
             strategicRole:
-              item?.strategicRole === "critical" || item?.strategicRole === "supporting" || item?.strategicRole === "secondary"
+              item.strategicRole === "critical" || item.strategicRole === "supporting" || item.strategicRole === "secondary"
                 ? item.strategicRole
                 : "secondary",
-            rationale: typeof item?.rationale === "string" ? item.rationale : "",
+            rationale: typeof item.rationale === "string" ? item.rationale : "",
           };
         })
-        .filter(Boolean)
+        .filter((item): item is ComparePathDelta => item != null)
     : [];
 
   const tradeoffs: CompareTradeoff[] = Array.isArray(result.tradeoffs)
     ? result.tradeoffs
-        .map((item: any) => {
-          const dimension = item?.dimension;
+        .map((itemValue) => {
+          const item = asRecord(itemValue);
+          if (!item) return null;
+          const dimension = item.dimension;
           if (
             dimension !== "risk" &&
             dimension !== "efficiency" &&
@@ -96,15 +104,15 @@ function normalizeResult(payload: unknown): CompareResult | null {
           }
           return {
             dimension,
-            winner: item?.winner === "A" || item?.winner === "B" || item?.winner === "tie" ? item.winner : "tie",
-            confidence: clamp01(item?.confidence),
-            explanation: typeof item?.explanation === "string" ? item.explanation : "",
+            winner: item.winner === "A" || item.winner === "B" || item.winner === "tie" ? item.winner : "tie",
+            confidence: clamp01(item.confidence),
+            explanation: typeof item.explanation === "string" ? item.explanation : "",
           };
         })
-        .filter(Boolean)
+        .filter((item): item is CompareTradeoff => item != null)
     : [];
 
-  const summaryRaw = result.summary && typeof result.summary === "object" ? result.summary : null;
+  const summaryRaw = asRecord(result.summary);
   const summary: CompareSummary = {
     headline: typeof summaryRaw?.headline === "string" ? summaryRaw.headline : "Comparison ready.",
     winner: summaryRaw?.winner === "A" || summaryRaw?.winner === "B" || summaryRaw?.winner === "tie" ? summaryRaw.winner : "tie",
@@ -115,24 +123,25 @@ function normalizeResult(payload: unknown): CompareResult | null {
 
   const advice: CompareAdvice[] = Array.isArray(result.advice)
     ? result.advice
-        .map((item: any) => {
+        .map((itemValue) => {
+          const item = asRecord(itemValue);
           const adviceId = normalizeId(item?.advice_id);
-          if (!adviceId) return null;
+          if (!adviceId || !item) return null;
           return {
             advice_id: adviceId,
             recommendation:
-              item?.recommendation === "choose_A" ||
-              item?.recommendation === "choose_B" ||
-              item?.recommendation === "investigate_more" ||
-              item?.recommendation === "hybrid"
+              item.recommendation === "choose_A" ||
+              item.recommendation === "choose_B" ||
+              item.recommendation === "investigate_more" ||
+              item.recommendation === "hybrid"
                 ? item.recommendation
                 : "investigate_more",
-            title: typeof item?.title === "string" ? item.title : "Recommendation",
-            explanation: typeof item?.explanation === "string" ? item.explanation : "",
-            confidence: clamp01(item?.confidence),
+            title: typeof item.title === "string" ? item.title : "Recommendation",
+            explanation: typeof item.explanation === "string" ? item.explanation : "",
+            confidence: clamp01(item.confidence),
           };
         })
-        .filter(Boolean)
+        .filter((item): item is CompareAdvice => item != null)
     : [];
 
   return {

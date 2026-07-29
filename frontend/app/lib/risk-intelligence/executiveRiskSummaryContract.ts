@@ -8,7 +8,7 @@
 import type { KpiRiskProfile } from "./kpiRiskProfileContract.ts";
 import type { ObjectRiskProfile } from "./objectRiskContract.ts";
 import type { RelationshipRiskProfile } from "./relationshipRiskProfileContract.ts";
-import type { RiskPropagationChain, RiskPropagationProfile } from "./riskPropagationProfileContract.ts";
+import type { RiskPropagationProfile } from "./riskPropagationProfileContract.ts";
 
 export const EXEC_RISK_SUMMARY_DIAGNOSTIC = "[EXEC_RISK_SUMMARY]" as const;
 

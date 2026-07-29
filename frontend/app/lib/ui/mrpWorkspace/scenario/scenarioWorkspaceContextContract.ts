@@ -1,10 +1,3 @@
-/**
- * MRP:4E:1 — Scenario workspace context contract.
- *
- * Read-only structural integration — explores futures only under Rule #11.
- */
-
-import { DEFAULT_MRP_SELECTED_OBJECT } from "../../mrpContext/mrpContextStoreContract.ts";
 
 export const SCENARIO_WORKSPACE_CONTEXT_TAG = "[MRP_SCENARIO_CONTEXT]" as const;
 

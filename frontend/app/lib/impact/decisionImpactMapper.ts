@@ -15,13 +15,15 @@ import type {
   DecisionImpactSummary,
 } from "./decisionImpactTypes";
 
+import type { SceneJson } from "../sceneTypes";
+
 type DecisionImpactMapperInput = {
   propagation?: PropagationOverlayState | null;
   decisionPath?: DecisionPathResult | null;
-  strategicAdvice?: any | null;
+  strategicAdvice?: unknown;
   strategicCouncil?: StrategicCouncilResult | null;
   scenarioAction?: ScenarioActionContract | null;
-  sceneJson?: any | null;
+  sceneJson?: SceneJson | null;
   source?: string;
 };
 
@@ -169,10 +171,19 @@ function addEdge(
   });
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 function getActionLabel(input: DecisionImpactMapperInput) {
-  const advicePrimary = String(input.strategicAdvice?.primary_recommendation?.action ?? "").trim();
-  if (advicePrimary) return advicePrimary;
-  const adviceFirst = String(input.strategicAdvice?.recommended_actions?.[0]?.action ?? "").trim();
+  const strategicAdvice = asRecord(input.strategicAdvice);
+  const advicePrimary = asRecord(strategicAdvice?.primary_recommendation);
+  const advicePrimaryAction = String(advicePrimary?.action ?? "").trim();
+  if (advicePrimaryAction) return advicePrimaryAction;
+  const recommendedActions = Array.isArray(strategicAdvice?.recommended_actions)
+    ? strategicAdvice.recommended_actions
+    : [];
+  const adviceFirst = String(asRecord(recommendedActions[0])?.action ?? "").trim();
   if (adviceFirst) return adviceFirst;
   const councilAction = String(input.strategicCouncil?.synthesis?.top_actions?.[0] ?? "").trim();
   if (councilAction) return councilAction;
@@ -184,11 +195,14 @@ function getActionLabel(input: DecisionImpactMapperInput) {
 }
 
 function getConfidence(input: DecisionImpactMapperInput) {
+  const strategicAdvice = asRecord(input.strategicAdvice);
+  const decisionImpact = asRecord(input.sceneJson?.decision_impact);
+  const decisionImpactMeta = asRecord(decisionImpact?.meta);
   return clamp01(
     Number(
       input.strategicCouncil?.synthesis?.confidence ??
-        input.strategicAdvice?.confidence ??
-        input.sceneJson?.decision_impact?.meta?.confidence ??
+        strategicAdvice?.confidence ??
+        decisionImpactMeta?.confidence ??
         0.62
     )
   );
@@ -197,7 +211,7 @@ function getConfidence(input: DecisionImpactMapperInput) {
 export function mapDecisionImpact(input: DecisionImpactMapperInput): DecisionImpactState | null {
   const sceneObjects = Array.isArray(input.sceneJson?.scene?.objects) ? input.sceneJson.scene.objects : [];
   const sceneObjectIds = new Set<string>(
-    sceneObjects.map((item: any, index: number) => String(item?.id ?? item?.name ?? `obj_${index}`)).filter(Boolean)
+    sceneObjects.map((item, index) => String(item?.id ?? item?.name ?? `obj_${index}`)).filter(Boolean)
   );
   const nodeMap = new Map<string, DecisionImpactNode>();
   const edgeMap = new Map<string, DecisionImpactEdge>();

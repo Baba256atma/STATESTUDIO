@@ -1,13 +1,4 @@
-import type {
-  ExecutionMonitoringAlertDescriptor,
-  ExecutionMonitoringHealth,
-  ExecutionMonitoringMetadata,
-  ExecutionMonitoringMetricDescriptor,
-  ExecutionMonitoringPlatformDescriptor,
-  ExecutionMonitoringSnapshot,
-  ExecutionMonitoringState,
-  ExecutionMonitoringTarget,
-} from "./executionMonitoringTypes.ts";
+import type { ExecutionMonitoringAlertDescriptor, ExecutionMonitoringMetadata, ExecutionMonitoringMetricDescriptor, ExecutionMonitoringPlatformDescriptor, ExecutionMonitoringSnapshot, ExecutionMonitoringState, ExecutionMonitoringTarget } from "./executionMonitoringTypes.ts";
 
 const monitoringMetadata = Object.freeze({
   platformId: "OPS-9:1",

@@ -288,6 +288,7 @@ function collectTimelineEvents(
   organizationId: string,
   now: number
 ): OrganizationalTimelineEvent[] {
+  void now;
   const memoryState = getInstitutionalMemoryStore(organizationId).getState();
   const recallState = getInstitutionalRecallStore(organizationId).getState();
   const correlationState = getInstitutionalCorrelationStore(organizationId).getState();

@@ -28,13 +28,7 @@ import {
   resetExecutiveInboxAggregationEngineRegistryForTests,
   unregisterInboxItem,
 } from "./executiveInboxAggregationEngineRegistry.ts";
-import type {
-  ExecutiveInboxAggregationEngineState,
-  ExecutiveInboxAggregationRequest,
-  ExecutiveInboxAggregationResult,
-  ExecutiveInboxItem,
-  InboxAggregationEngineResult,
-} from "./executiveInboxAggregationEngineTypes.ts";
+import type { ExecutiveInboxAggregationEngineState, ExecutiveInboxAggregationRequest, ExecutiveInboxAggregationResult, InboxAggregationEngineResult } from "./executiveInboxAggregationEngineTypes.ts";
 import {
   validateExecutiveInboxAggregation,
   validateExecutiveInboxItem,

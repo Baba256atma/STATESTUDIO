@@ -1,8 +1,3 @@
-/**
- * D7:1:6 — Executive scenario comparison engine (deterministic, non-mutating).
- */
-
-import type { OperationalTimeline } from "../timeline/timelineTypes.ts";
 import type {
   CompareMultipleScenariosInput,
   CompareScenarioTimelinesInput,

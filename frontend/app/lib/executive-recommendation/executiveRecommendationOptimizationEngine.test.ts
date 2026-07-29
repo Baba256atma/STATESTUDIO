@@ -23,11 +23,7 @@ import {
   EXECUTIVE_RECOMMENDATION_GENERATION_SOURCE_PROVIDER_MAP,
 } from "./executiveRecommendationGenerationEngineConstants.ts";
 import type { CertifiedRecommendationSourceRecordInput } from "./executiveRecommendationGenerationEngineTypes.ts";
-import {
-  initializeRecommendationGovernanceEngine,
-  resetExecutiveRecommendationGovernanceEngineForTests,
-  validateExecutiveRecommendationGovernance,
-} from "./executiveRecommendationGovernanceEngine.ts";
+import { resetExecutiveRecommendationGovernanceEngineForTests, validateExecutiveRecommendationGovernance } from "./executiveRecommendationGovernanceEngine.ts";
 import {
   EXECUTIVE_RECOMMENDATION_OPTIMIZATION_DIMENSION_KEYS,
   EXECUTIVE_RECOMMENDATION_OPTIMIZATION_ENGINE_CONTRACT_VERSION,

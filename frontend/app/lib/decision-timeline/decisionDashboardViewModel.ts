@@ -31,16 +31,6 @@ function emptyValidation(): DecisionValidationResult {
   return Object.freeze({ valid: true, issues: Object.freeze([]), readOnly: true as const });
 }
 
-function invalidValidation(message: string): DecisionValidationResult {
-  return Object.freeze({
-    valid: false,
-    issues: Object.freeze([
-      Object.freeze({ code: "dashboard_adapter", message, readOnly: true as const }),
-    ]),
-    readOnly: true as const,
-  });
-}
-
 export function mapDecisionStateSummary(state: DecisionState): DecisionDashboardStateSummary {
   return Object.freeze({
     decisionId: state.decisionId,

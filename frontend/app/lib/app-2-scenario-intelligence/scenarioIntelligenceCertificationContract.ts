@@ -8,8 +8,6 @@ import type {
   ScenarioIntelligenceCertificationResult,
   ScenarioIntelligenceCertificationScope,
 } from "./scenarioIntelligenceTypes.ts";
-import { SCENARIO_INTELLIGENCE_CONTRACT_VERSION } from "./scenarioIntelligenceContract.ts";
-
 export const SCENARIO_INTELLIGENCE_CERTIFICATION_CONTRACT_VERSION = "APP-2/1" as const;
 
 export const SCENARIO_INTELLIGENCE_CERTIFICATION_TAG =

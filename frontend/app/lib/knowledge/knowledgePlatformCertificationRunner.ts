@@ -436,7 +436,6 @@ export function runKnowledgePlatformCertification(
     if (index === 0) return true;
     const previous = KNL_PHASE_CERTIFICATION_TARGETS[index - 1];
     const runner = PHASE_CERTIFICATION_TARGETS[target.key];
-    const manifest = runner.getManifest(timestamp);
     const prerequisites = runner.selfManifest.prerequisites ?? [];
     return (prerequisites as readonly string[]).includes(previous.phaseId);
   });

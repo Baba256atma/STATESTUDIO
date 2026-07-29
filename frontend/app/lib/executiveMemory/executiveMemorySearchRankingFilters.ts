@@ -4,6 +4,7 @@
 
 import type { ExecutiveMemoryStoredRecord } from "./executiveMemoryStorageTypes.ts";
 import type { ExecutiveMemorySearchQuery } from "./executiveMemorySearchRankingTypes.ts";
+import type { CreateExecutiveMemoryQueryInput } from "./executiveMemoryRetrievalTypes.ts";
 
 function recordReferences(record: ExecutiveMemoryStoredRecord): readonly { referenceType: string; targetId: string }[] {
   const entries = [
@@ -45,25 +46,7 @@ export function applyExecutiveMemorySearchPostFilters(
 
 export function mapExecutiveMemorySearchQueryToRetrievalInput(
   query: ExecutiveMemorySearchQuery
-): Readonly<{
-  id?: string;
-  workspaceId?: string;
-  goalId?: string;
-  intentId?: string;
-  scenarioId?: string;
-  decisionId?: string;
-  category?: string;
-  providerId?: string;
-  tags?: readonly string[];
-  referenceIds?: readonly string[];
-  lifecycleState?: string;
-  createdAfter?: string;
-  createdBefore?: string;
-  updatedAfter?: string;
-  updatedBefore?: string;
-  limit?: number;
-  offset?: number;
-}> {
+): CreateExecutiveMemoryQueryInput {
   return Object.freeze({
     id: query.recordId,
     workspaceId: query.workspaceId,

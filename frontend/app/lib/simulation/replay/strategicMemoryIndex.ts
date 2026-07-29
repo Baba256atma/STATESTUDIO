@@ -1,19 +1,4 @@
-/**
- * D7:1:9 — Strategic memory indexing (in-memory contracts only; no persistence DB).
- */
-
-import type { ScenarioBranchForestState } from "../branching/branchingTypes.ts";
-import type { ScenarioComparisonSnapshot } from "../comparison/scenarioComparisonTypes.ts";
-import type { DecisionSimulationOutcome } from "../decision/strategicDecisionTypes.ts";
-import type { OperationalTimeline } from "../timeline/timelineTypes.ts";
-import type { WarRoomSessionHistory } from "../warroom/warRoomTypes.ts";
-import type {
-  BuildStrategicMemoryInput,
-  StrategicMemoryEntry,
-  StrategicMemoryIndex,
-  StrategicMemorySnapshot,
-  TimelineReconstructionBundle,
-} from "./replayTypes.ts";
+import type { BuildStrategicMemoryInput, StrategicMemoryEntry, StrategicMemoryIndex, StrategicMemorySnapshot } from "./replayTypes.ts";
 import { detectOperationalTransitions } from "./timelineReconstruction.ts";
 import { logReplayDev } from "./replayDevLog.ts";
 

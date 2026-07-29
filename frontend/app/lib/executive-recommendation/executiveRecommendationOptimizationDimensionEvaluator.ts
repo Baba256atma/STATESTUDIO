@@ -2,16 +2,8 @@
  * APP-12:6 — Executive Recommendation Optimization dimension evaluator.
  */
 
-import {
-  EXECUTIVE_RECOMMENDATION_OPTIMIZATION_DIMENSION_KEYS,
-  EXECUTIVE_RECOMMENDATION_OPTIMIZATION_DIMENSION_LABELS,
-} from "./executiveRecommendationOptimizationEngineConstants.ts";
-import type {
-  OptimizationDimension,
-  OptimizationDimensionKey,
-  OptimizationImprovementLevel,
-  RecommendationOptimizationVariant,
-} from "./executiveRecommendationOptimizationEngineTypes.ts";
+import { EXECUTIVE_RECOMMENDATION_OPTIMIZATION_DIMENSION_LABELS } from "./executiveRecommendationOptimizationEngineConstants.ts";
+import type { OptimizationDimension, OptimizationImprovementLevel, RecommendationOptimizationVariant } from "./executiveRecommendationOptimizationEngineTypes.ts";
 import type { RecommendationGovernance } from "./executiveRecommendationGovernanceEngineTypes.ts";
 
 function levelFromCondition(improved: boolean, maintained: boolean): OptimizationImprovementLevel {

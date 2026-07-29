@@ -95,6 +95,7 @@ export function normalizeSemanticGoal(
   intent: ExecutiveIntent | null,
   timestamp: string
 ): SemanticGoal {
+  void timestamp;
   const actionType = normalizeActionTypeFromVerb(goal.actionVerb);
   return Object.freeze({
     goalId: goal.goalId,
@@ -147,6 +148,7 @@ export function normalizeTimeHorizon(
   timeReference: import("./executiveIntentExtractionTypes.ts").ExtractedTimeReference | null,
   timestamp: string
 ): SemanticTimeHorizon {
+  void timestamp;
   const mapped = normalizeTimeReferenceToHorizon(timeReference);
   return Object.freeze({
     horizonId: timeReference?.timeRefId ?? deterministicId("horizon", "unknown"),
@@ -567,7 +569,6 @@ export function buildExecutiveIntentSemanticModel(
   };
 
   const summary = buildSemanticSummary(modelWithoutSummary);
-  const model = createExecutiveIntentSemanticModel({ ...modelWithoutSummary, summary });
 
   let status: SemanticNormalizationResult["status"] = "ready";
   if (extraction.status === "failed" || !primaryGoal) status = "incomplete";

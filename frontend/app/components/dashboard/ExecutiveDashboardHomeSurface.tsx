@@ -45,6 +45,7 @@ export type ExecutiveDashboardHomeSurfaceProps = Readonly<{
 }>;
 
 export function ExecutiveDashboardHomeSurface(props: ExecutiveDashboardHomeSurfaceProps): React.ReactElement {
+  const { onRecentReturn } = props;
   const selectedObjectId = props.selectedObjectId?.trim() || null;
   const hasSelectedObject = Boolean(selectedObjectId);
   const recommendationsSectionRef = useRef<HTMLElement>(null);
@@ -70,9 +71,9 @@ export function ExecutiveDashboardHomeSurface(props: ExecutiveDashboardHomeSurfa
 
   const handleReturnToWorkspace = useCallback(
     (input: { workspaceId: ExecutiveWorkspaceId; returnKind: WorkspaceRecentReturnKind }) => {
-      props.onRecentReturn?.(input);
+      onRecentReturn?.(input);
     },
-    [props.onRecentReturn]
+    [onRecentReturn]
   );
 
   const sharedContext = {

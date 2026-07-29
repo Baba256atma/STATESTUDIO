@@ -15,8 +15,6 @@ import { runRecommendationLearningCertification } from "./recommendationLearning
 import { RECOMMENDATION_LEARNING_ENGINE_SELF_MANIFEST } from "./recommendationLearningEngine.ts";
 import type { CrossScenarioLearningPlatformLayerRegressionResult } from "./crossScenarioLearningPlatformCertificationTypes.ts";
 
-const REPO_ROOT = join(process.cwd(), "..");
-
 function layerResult(
   layerId: string,
   title: string,

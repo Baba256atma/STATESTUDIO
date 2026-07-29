@@ -238,13 +238,6 @@ function nextCooldown(state: EmotionStoreState): number {
   return clamp(base + modeOffset, 6000, 12000);
 }
 
-function toneForState(state: EmotionStoreState): InnerDialogueTone {
-  if (voiceProfile.sensitivityLevel > 0.66 && state.intensity < 0.82) return "whisper";
-  if (state.meaning.type === "fear" || state.intensity > 0.72) return "intense";
-  if (state.intensity < 0.42 && state.meaning.weight < 0.55) return "whisper";
-  return "neutral";
-}
-
 function intentForState(state: EmotionStoreState): DialogueIntent {
   const mode = state.personality.dominantMode;
   const topic = state.meaning.type;

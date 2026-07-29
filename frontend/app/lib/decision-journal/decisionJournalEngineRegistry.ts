@@ -13,7 +13,7 @@ import {
 } from "./decisionJournalEngineTypes.ts";
 
 const publishedEntries = new Map<DecisionJournalEntryId, DecisionJournalEngineEntry>();
-const revisionHistory = new Map<DecisionJournalEntryId, DecisionJournalEngineEntry[]>();
+const revisionHistory = new Map<DecisionJournalEntryId, readonly DecisionJournalEngineEntry[]>();
 const workspaceIndex = new Map<DecisionWorkspaceId, Set<DecisionJournalEntryId>>();
 const workspaceSequenceCounters = new Map<DecisionWorkspaceId, number>();
 

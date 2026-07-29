@@ -95,7 +95,7 @@ test("decision gate surface exposes outcome and readiness summary", () => {
 
 test("view mapper attaches decision gate", () => {
   const view = buildGovernanceWorkspaceViewFromState(
-    createGovernanceReadyState({ selectedObjectId: "factory-a", phase: "ready" })
+    createGovernanceReadyState({ selectedObjectId: "factory-a" })
   );
 
   assert.equal(view.decisionGate.tag, "[MRP_5B5_GATE]");

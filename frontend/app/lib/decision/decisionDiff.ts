@@ -37,7 +37,7 @@ const safeNum = (n: unknown, fallback: number | undefined = undefined): number |
   return fallback;
 };
 
-const normalizeSeverity = (loop: any): number | undefined => {
+const normalizeSeverity = (loop: SceneLoop): number | undefined => {
   const sev = safeNum(loop?.severity);
   if (typeof sev === "number") return clamp01(sev);
   const strength = safeNum(loop?.strength);
@@ -45,7 +45,7 @@ const normalizeSeverity = (loop: any): number | undefined => {
   return undefined;
 };
 
-const normalizeStatus = (loop: any): string | undefined => {
+const normalizeStatus = (loop: SceneLoop): string | undefined => {
   const status = loop?.status;
   return typeof status === "string" ? status : undefined;
 };

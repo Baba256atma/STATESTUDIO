@@ -373,7 +373,7 @@ export function resolveRootIntentId(
   while (current && parentMap.has(current)) {
     if (visited.has(current)) return null;
     visited.add(current);
-    const parents = parentMap.get(current)!;
+    const parents: IntentIdentifier[] = parentMap.get(current)!;
     current = parents.sort()[0] ?? null;
   }
 
@@ -657,7 +657,7 @@ export function buildEvolutionEvents(
         createEvent({
           intentId: edge.toIntentId,
           kind: "replaced",
-          ruleId: edge.ruleId,
+          ruleId: edge.ruleId as EvolutionRuleId,
           label: "Intent replaced",
           explanation: `Intent ${edge.toIntentId} replaces ${edge.fromIntentId}.`,
           timestamp:
@@ -668,7 +668,7 @@ export function buildEvolutionEvents(
         createEvent({
           intentId: edge.fromIntentId,
           kind: "superseded",
-          ruleId: edge.ruleId,
+          ruleId: edge.ruleId as EvolutionRuleId,
           label: "Intent superseded",
           explanation: `Intent ${edge.fromIntentId} superseded by ${edge.toIntentId}.`,
           timestamp:
@@ -681,7 +681,7 @@ export function buildEvolutionEvents(
         createEvent({
           intentId: edge.toIntentId,
           kind: "merged",
-          ruleId: edge.ruleId,
+          ruleId: edge.ruleId as EvolutionRuleId,
           label: "Intent merged",
           explanation: `Intent ${edge.fromIntentId} merged into ${edge.toIntentId}.`,
           timestamp: intentMap.get(edge.toIntentId)?.metadata.updatedAt ?? timestamp,
@@ -693,7 +693,7 @@ export function buildEvolutionEvents(
         createEvent({
           intentId: edge.toIntentId,
           kind: "split",
-          ruleId: edge.ruleId,
+          ruleId: edge.ruleId as EvolutionRuleId,
           label: "Intent split",
           explanation: `Intent ${edge.toIntentId} split from ${edge.fromIntentId}.`,
           timestamp: intentMap.get(edge.toIntentId)?.metadata.updatedAt ?? timestamp,

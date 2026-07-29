@@ -1,11 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { DEFAULT_MRP_SELECTED_OBJECT } from "../mrpContext/mrpContextStoreContract.ts";
-import {
-  DEFAULT_OPERATIONAL_OBJECT_CONTEXT,
-} from "./operational/operationalObjectContextContract.ts";
-import {
+import { DEFAULT_MRP_SELECTED_OBJECT } from "../mrpContext/mrpContextStoreContract.ts";import {
   OPERATIONAL_SCENE_AWARE_TAG,
   DEFAULT_OPERATIONAL_SCENE_AWARENESS,
   OPERATIONAL_SCENE_FORBIDDEN_CAPABILITIES,

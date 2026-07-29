@@ -1,13 +1,7 @@
 import { devDiagnosticLog } from "../runtime/diagnosticSwitch.ts";
 import type { WorkspaceId } from "./workspaceRegistryContract.ts";
 import { getActiveWorkspace } from "./workspaceRegistryStore.ts";
-import {
-  importWorkspaceDataSource,
-  removeOwnedWorkspaceDataSource,
-  resolveWorkspaceDataSource,
-  resolveWorkspaceDataSources,
-  updateOwnedWorkspaceDataSource,
-} from "./workspaceDataSourceResolver.ts";
+import { removeOwnedWorkspaceDataSource, resolveWorkspaceDataSource, resolveWorkspaceDataSources, updateOwnedWorkspaceDataSource } from "./workspaceDataSourceResolver.ts";
 import { removeWorkspaceDataSourceSchemaProfile } from "./workspaceDataSourceSchemaResolver.ts";
 import type {
   WorkspaceDataSource,

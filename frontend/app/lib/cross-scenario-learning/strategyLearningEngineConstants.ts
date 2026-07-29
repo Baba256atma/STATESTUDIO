@@ -2,8 +2,6 @@
  * APP-10:6 — Strategy Learning Engine constants.
  */
 
-import type { StrategyCategory } from "./strategyLearningEngineTypes.ts";
-
 export const STRATEGY_LEARNING_ENGINE_CONTRACT_VERSION = "APP-10/6" as const;
 export const STRATEGY_LEARNING_ENGINE_ARCHITECTURE_VERSION = "APP-10/6-strategy-learning-arch" as const;
 export const STRATEGY_LEARNING_ENGINE_OWNER = "strategy-learning-engine" as const;
@@ -45,9 +43,9 @@ export const STRATEGY_CATEGORY_KEYS = Object.freeze([
   "product_strategy",
   "organizational_strategy",
   "mixed_strategy",
-] as const satisfies readonly StrategyCategory[]);
+] as const);
 
-export const STRATEGY_CATEGORY_LABELS: Readonly<Record<StrategyCategory, string>> = Object.freeze({
+export const STRATEGY_CATEGORY_LABELS: Readonly<Record<(typeof STRATEGY_CATEGORY_KEYS)[number], string>> = Object.freeze({
   growth_strategy: "Growth Strategy",
   cost_reduction_strategy: "Cost Reduction Strategy",
   risk_reduction_strategy: "Risk Reduction Strategy",

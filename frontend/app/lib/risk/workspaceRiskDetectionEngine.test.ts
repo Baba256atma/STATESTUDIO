@@ -22,13 +22,7 @@ import {
   resetWorkspaceKpiProfileStoreForTests,
   WORKSPACE_KPI_PROFILE_STORAGE_KEY,
 } from "../kpi/workspaceKpiCalculationEngine.ts";
-import {
-  evaluateWorkspaceKpiHealth,
-  getWorkspaceKpiHealthProfile,
-  resetWorkspaceKpiHealthProfileMemoryForTests,
-  resetWorkspaceKpiHealthProfileStoreForTests,
-  WORKSPACE_KPI_HEALTH_PROFILE_STORAGE_KEY,
-} from "../kpi/workspaceKpiHealthEngine.ts";
+import { evaluateWorkspaceKpiHealth, getWorkspaceKpiHealthProfile, resetWorkspaceKpiHealthProfileStoreForTests, WORKSPACE_KPI_HEALTH_PROFILE_STORAGE_KEY } from "../kpi/workspaceKpiHealthEngine.ts";
 import {
   createWorkspaceKeyResult,
   createWorkspaceObjective,
@@ -41,13 +35,7 @@ import {
   resetWorkspaceOkrProgressProfileStoreForTests,
   WORKSPACE_OKR_PROGRESS_PROFILE_STORAGE_KEY,
 } from "../okr/workspaceOkrProgressEngine.ts";
-import {
-  evaluateWorkspaceOkrHealth,
-  getWorkspaceOkrHealthProfile,
-  resetWorkspaceOkrHealthProfileMemoryForTests,
-  resetWorkspaceOkrHealthProfileStoreForTests,
-  WORKSPACE_OKR_HEALTH_PROFILE_STORAGE_KEY,
-} from "../okr/workspaceOkrHealthEngine.ts";
+import { evaluateWorkspaceOkrHealth, getWorkspaceOkrHealthProfile, resetWorkspaceOkrHealthProfileStoreForTests, WORKSPACE_OKR_HEALTH_PROFILE_STORAGE_KEY } from "../okr/workspaceOkrHealthEngine.ts";
 import {
   WORKSPACE_RISK_STORAGE_KEY,
   resetWorkspaceRiskStoreForTests,
@@ -67,25 +55,7 @@ import {
   resetWorkspaceDetectedRiskMemoryForTests,
   resetWorkspaceDetectedRiskStoreForTests,
 } from "./workspaceRiskDetectionEngine.ts";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 function resetAllStoresForTests(): void {
   resetWorkspaceDetectedRiskStoreForTests();
@@ -104,7 +74,7 @@ function resetAllStoresForTests(): void {
 }
 
 function snapshotProtectedStorageKeys(): Record<string, string | null> {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   const keys = [
     WORKSPACE_KPI_STORAGE_KEY,
     WORKSPACE_KPI_PROFILE_STORAGE_KEY,
@@ -181,7 +151,7 @@ function seedCriticalOkrHealth(workspaceId: string, title: string) {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetAllStoresForTests();
 });

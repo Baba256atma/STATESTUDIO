@@ -79,14 +79,15 @@ export function ObjectPanelShell(props: ObjectPanelShellProps): React.ReactEleme
     logObjectSelectionObserved({ selectedObjectId, selectedObjectLabel });
   }, [selectedObjectId, selectedObjectLabel]);
 
+  const { collapsed, onToggleCollapsed } = props;
   const handleToggle = React.useCallback(() => {
-    if (props.collapsed) {
+    if (collapsed) {
       logObjectPanelExpanded();
     } else {
       logObjectPanelCollapsed();
     }
-    props.onToggleCollapsed();
-  }, [props.collapsed, props.onToggleCollapsed]);
+    onToggleCollapsed();
+  }, [collapsed, onToggleCollapsed]);
 
   if (props.headless) {
     return (

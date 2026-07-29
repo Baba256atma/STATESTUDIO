@@ -14,11 +14,7 @@ import {
   EXECUTIVE_RESOURCE_MODEL_METADATA,
   EXECUTIVE_RESOURCE_MODEL_PUBLIC_APIS,
 } from "./executiveResourceModelIndex.ts";
-import {
-  EXECUTIVE_RESOURCE_VALIDATION_METADATA,
-  EXECUTIVE_RESOURCE_VALIDATION_PUBLIC_APIS,
-  EXECUTIVE_RESOURCE_VALIDATION_RESULT,
-} from "./executiveResourceValidationIndex.ts";
+import { EXECUTIVE_RESOURCE_VALIDATION_PUBLIC_APIS, EXECUTIVE_RESOURCE_VALIDATION_RESULT } from "./executiveResourceValidationIndex.ts";
 import type {
   ExecutiveResourceManifestBundle,
   ExecutiveResourceManifestCompatibility,

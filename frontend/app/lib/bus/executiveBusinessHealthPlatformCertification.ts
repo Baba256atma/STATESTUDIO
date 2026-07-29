@@ -3,10 +3,7 @@ import {
   ExecutiveBusinessHealthContractVersion,
 } from "./executiveBusinessHealthIndex.ts";
 import { ExecutiveBusinessHealthRegistryMetadata } from "./executiveBusinessHealthRegistryIndex.ts";
-import {
-  ExecutiveBusinessHealthModelMetadata,
-  ExecutiveBusinessHealthModelVersion,
-} from "./executiveBusinessHealthModelIndex.ts";
+import { ExecutiveBusinessHealthModelVersion } from "./executiveBusinessHealthModelIndex.ts";
 import {
   ExecutiveBusinessHealthValidationVersion,
   buildExecutiveBusinessHealthValidationSummary,

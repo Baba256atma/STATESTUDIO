@@ -1,16 +1,4 @@
-import {
-  EMPTY_RISK_INTELLIGENCE_REGISTRY,
-  RISK_INTELLIGENCE_CATEGORY_LABELS,
-  RISK_INTELLIGENCE_DIAGNOSTICS,
-  RISK_INTELLIGENCE_RUNTIME_VERSION,
-  type RiskIntelligenceBuildInput,
-  type RiskIntelligenceCategory,
-  type RiskIntelligenceCategoryLabel,
-  type RiskIntelligenceCategoryScores,
-  type RiskIntelligenceMomentum,
-  type RiskIntelligenceProfile,
-  type RiskIntelligenceRegistry,
-} from "./riskIntelligenceContract.ts";
+import { EMPTY_RISK_INTELLIGENCE_REGISTRY, RISK_INTELLIGENCE_CATEGORY_LABELS, RISK_INTELLIGENCE_DIAGNOSTICS, RISK_INTELLIGENCE_RUNTIME_VERSION, type RiskIntelligenceBuildInput, type RiskIntelligenceCategory, type RiskIntelligenceCategoryScores, type RiskIntelligenceMomentum, type RiskIntelligenceProfile, type RiskIntelligenceRegistry } from "./riskIntelligenceContract.ts";
 
 type RiskRecord = Readonly<Record<string, unknown>>;
 

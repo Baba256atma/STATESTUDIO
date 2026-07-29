@@ -9,17 +9,7 @@ import {
   EXECUTIVE_STRATEGY_DEFINITION_REGISTRY,
   listExecutiveStrategyDefinitions,
 } from "./executiveStrategyDefinitionRegistry.ts";
-import {
-  buildExecutiveStrategicTheme,
-  EXECUTIVE_STRATEGIC_THEME_REGISTRY,
-  EXECUTIVE_STRATEGIC_THEME_RELATIONSHIPS,
-  EXECUTIVE_STRATEGIC_THEMES,
-  ExecutiveStrategicThemesPlatform,
-  getExecutiveStrategicThemesManifest,
-  listExecutiveStrategicThemes,
-  listExecutiveStrategicThemesPublicApis,
-  validateExecutiveStrategicTheme,
-} from "./executiveStrategicThemeIndex.ts";
+import { buildExecutiveStrategicTheme, EXECUTIVE_STRATEGIC_THEME_REGISTRY, EXECUTIVE_STRATEGIC_THEME_RELATIONSHIPS, EXECUTIVE_STRATEGIC_THEMES, ExecutiveStrategicThemesPlatform, getExecutiveStrategicThemesManifest, validateExecutiveStrategicTheme } from "./executiveStrategicThemeIndex.ts";
 import type { ExecutiveStrategicThemeRegistry } from "./executiveStrategicThemeTypes.ts";
 
 test("platform identity", () => {

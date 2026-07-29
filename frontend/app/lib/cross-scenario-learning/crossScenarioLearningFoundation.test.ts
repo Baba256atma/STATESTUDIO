@@ -30,14 +30,9 @@ import {
   CROSS_SCENARIO_LEARNING_PLATFORM_SELF_MANIFEST,
   CROSS_SCENARIO_LEARNING_PUBLIC_API_RULES,
   CrossScenarioLearningPlatformContract,
-  buildCrossScenarioLearningFoundation,
-  createCrossScenarioLearningFoundation,
   getCrossScenarioLearningContractVersionMetadata,
   getCrossScenarioLearningFutureCompatibility,
   getCrossScenarioLearningManifest,
-  isCrossScenarioLearningReady,
-  registerLearningCandidate,
-  registerLearningSession,
   resolveLearningCandidateExample,
   resolveLearningContextExample,
   resolveLearningSessionExample,
@@ -48,11 +43,16 @@ import {
 } from "./crossScenarioLearningContracts.ts";
 import {
   CrossScenarioLearningFoundation,
+  buildCrossScenarioLearningFoundation,
+  createCrossScenarioLearningFoundation,
   getCrossScenarioLearning,
   isCrossScenarioLearningPlatformInitialized,
+  isCrossScenarioLearningReady,
 } from "./crossScenarioLearningFoundation.ts";
 import {
   getCrossScenarioLearningRegistry,
+  registerLearningCandidate,
+  registerLearningSession,
   registerMetadataExtension,
 } from "./crossScenarioLearningRegistry.ts";
 import {
@@ -120,7 +120,7 @@ test("registers learning session and candidate", () => {
       workspaceId: "ws-test-001",
       label: "Test Learning Session",
       description: "Primary learning session for test workspace.",
-      sourceTypes: Object.freeze(["completed_scenario", "final_outcome"]),
+      sourceTypes: Object.freeze(["completed_scenario", "final_outcome"] as const),
     }),
     FIXED_TIME
   );
@@ -152,7 +152,7 @@ test("rejects reserved learning session ids", () => {
       workspaceId: "ws-test-001",
       label: "Reserved",
       description: "Should fail.",
-      sourceTypes: Object.freeze(["completed_scenario"]),
+      sourceTypes: Object.freeze(["completed_scenario"] as const),
     }),
     FIXED_TIME
   );
@@ -287,7 +287,13 @@ test("exports cross-scenario learning platform contract bundle", () => {
 
 test("CrossScenarioLearningFoundation namespace exposes public APIs", () => {
   assert.equal(typeof CrossScenarioLearningFoundation.buildCrossScenarioLearningFoundation, "function");
-  assert.equal(typeof CrossScenarioLearningFoundation.validateCrossScenarioLearningFoundation, "undefined");
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(
+      CrossScenarioLearningFoundation,
+      "validateCrossScenarioLearningFoundation",
+    ),
+    false,
+  );
   assert.equal(typeof buildCrossScenarioLearningFoundation, "function");
   assert.equal(typeof validateCrossScenarioLearningFoundation, "function");
 });
@@ -300,7 +306,7 @@ test("validates learning session and candidate registration shape", () => {
         workspaceId: "ws-shape-001",
         label: "Shape Test Session",
         description: "Registration shape validation.",
-        sourceTypes: Object.freeze(["completed_scenario"]),
+        sourceTypes: Object.freeze(["completed_scenario"] as const),
       })
     ).valid,
     true

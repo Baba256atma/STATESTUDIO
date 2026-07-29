@@ -29,20 +29,7 @@ import {
   EXECUTIVE_STRATEGIC_ROADMAP_REGISTRY,
   listExecutiveStrategicRoadmaps,
 } from "./executiveStrategicRoadmapIndex.ts";
-import {
-  buildExecutiveStrategyAlignment,
-  EXECUTIVE_STRATEGY_ALIGNMENT_CONSTRAINT_REGISTRY,
-  EXECUTIVE_STRATEGY_ALIGNMENT_DEPENDENCY_REGISTRY,
-  EXECUTIVE_STRATEGY_ALIGNMENT_EVIDENCE_REGISTRY,
-  EXECUTIVE_STRATEGY_ALIGNMENT_REGISTRY,
-  EXECUTIVE_STRATEGY_ALIGNMENT_RELATIONSHIPS,
-  EXECUTIVE_STRATEGY_ALIGNMENTS,
-  ExecutiveStrategyAlignmentPlatform,
-  getExecutiveStrategyAlignmentManifest,
-  listExecutiveStrategyAlignmentPublicApis,
-  listExecutiveStrategyAlignments,
-  validateExecutiveStrategyAlignment,
-} from "./executiveStrategyAlignmentIndex.ts";
+import { buildExecutiveStrategyAlignment, EXECUTIVE_STRATEGY_ALIGNMENT_CONSTRAINT_REGISTRY, EXECUTIVE_STRATEGY_ALIGNMENT_DEPENDENCY_REGISTRY, EXECUTIVE_STRATEGY_ALIGNMENT_EVIDENCE_REGISTRY, EXECUTIVE_STRATEGY_ALIGNMENT_REGISTRY, EXECUTIVE_STRATEGY_ALIGNMENT_RELATIONSHIPS, EXECUTIVE_STRATEGY_ALIGNMENTS, ExecutiveStrategyAlignmentPlatform, getExecutiveStrategyAlignmentManifest, validateExecutiveStrategyAlignment } from "./executiveStrategyAlignmentIndex.ts";
 import type { ExecutiveStrategyAlignmentRegistry } from "./executiveStrategyAlignmentTypes.ts";
 
 test("platform identity", () => {

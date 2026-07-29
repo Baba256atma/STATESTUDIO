@@ -35,7 +35,7 @@ export type MemoryUpdateInput = {
   now: number;
   focusedObjectId?: string;
   activeLoopId?: string;
-  actions: any[];
+  actions: unknown[];
   text?: string;
   mode?: string;
 };

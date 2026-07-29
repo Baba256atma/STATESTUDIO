@@ -10,19 +10,7 @@ import {
   shouldRetainUnifiedSnapshot,
 } from "./unifiedInstitutionalMemoryGuards";
 import { getUnifiedInstitutionalMemoryStore } from "./unifiedInstitutionalMemoryStore";
-import type {
-  EnterpriseMemoryCognitionSnapshot,
-  InstitutionalHealthLevel,
-  InstitutionalLearningHealth,
-  InstitutionalSubsystemId,
-  MemoryRuntimeStatus,
-  OrganizationalWisdomState,
-  SubsystemHealthRecord,
-  UnifiedInstitutionalMemoryInput,
-  UnifiedInstitutionalMemoryResult,
-  UnifiedInstitutionalMemoryState,
-  UnifiedLearningSummary,
-} from "./unifiedInstitutionalMemoryTypes";
+import type { EnterpriseMemoryCognitionSnapshot, InstitutionalHealthLevel, InstitutionalLearningHealth, MemoryRuntimeStatus, OrganizationalWisdomState, SubsystemHealthRecord, UnifiedInstitutionalMemoryInput, UnifiedInstitutionalMemoryResult, UnifiedInstitutionalMemoryState, UnifiedLearningSummary } from "./unifiedInstitutionalMemoryTypes";
 
 const DEV_LOG_PREFIX = "[Nexora][UnifiedInstitutionalMemory]";
 

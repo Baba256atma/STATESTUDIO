@@ -1,9 +1,18 @@
 import { buildCanonicalRecommendation } from "../recommendation/buildCanonicalRecommendation";
 import { buildDecisionTimeline } from "../../governance/buildDecisionTimeline";
 import type { DecisionMemoryEntry } from "./decisionMemoryTypes";
+import type { CanonicalRecommendation } from "../recommendation/recommendationTypes";
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readCanonicalRecommendation(value: unknown): CanonicalRecommendation | null {
+  return value && typeof value === "object" ? (value as CanonicalRecommendation) : null;
+}
 
 type BuildDecisionMemoryEntryInput = {
-  responseData?: any | null;
+  responseData?: Record<string, unknown> | null;
   prompt?: string | null;
   workspaceId?: string | null;
   projectId?: string | null;
@@ -28,17 +37,20 @@ export function buildDecisionMemoryEntry(input: BuildDecisionMemoryEntryInput): 
   if (!responseData || typeof responseData !== "object") return null;
 
   const canonicalRecommendation =
-    responseData.canonical_recommendation ??
+    readCanonicalRecommendation(responseData.canonical_recommendation) ??
     buildCanonicalRecommendation(responseData);
-  const decisionSimulation = responseData.decision_simulation ?? null;
-  const executiveSummary = responseData.executive_summary_surface ?? null;
-  const compare = responseData.decision_comparison ?? responseData.comparison ?? null;
-  const replay = responseData.decision_replay ?? responseData.replay ?? null;
+  const decisionSimulation = asRecord(responseData.decision_simulation);
+  const executiveSummary = asRecord(responseData.executive_summary_surface);
+  const compare = asRecord(responseData.decision_comparison) ?? asRecord(responseData.comparison);
+  const replay = asRecord(responseData.decision_replay) ?? asRecord(responseData.replay);
+  const riskPropagation = asRecord(responseData.risk_propagation);
+  const objectSelection = asRecord(responseData.object_selection);
+  const decisionResultRecord = asRecord(responseData.decisionResult);
 
   const situationSummary =
     text(executiveSummary?.happened) ||
     text(responseData.analysis_summary) ||
-    text(responseData.risk_propagation?.summary) ||
+    text(riskPropagation?.summary) ||
     "";
   const recommendationAction = text(canonicalRecommendation?.primary?.action);
   const recommendationSummary =
@@ -47,28 +59,33 @@ export function buildDecisionMemoryEntry(input: BuildDecisionMemoryEntryInput): 
     "";
   const impactSummary =
     text(canonicalRecommendation?.primary?.impact_summary) ||
-    text(decisionSimulation?.impact?.summary) ||
+    text(asRecord(decisionSimulation?.impact)?.summary) ||
     text(decisionSimulation?.summary) ||
     "";
   const compareSummary =
     text(compare?.summary) ||
     (Array.isArray(compare?.options) && compare.options.length
       ? `Compared ${compare.options.length} options.`
-      : Array.isArray(responseData?.decisionResult?.comparison) && responseData.decisionResult.comparison.length
-      ? `Compared ${responseData.decisionResult.comparison.length} options.`
+      : Array.isArray(decisionResultRecord?.comparison) && decisionResultRecord.comparison.length
+      ? `Compared ${decisionResultRecord.comparison.length} options.`
       : "");
 
   const alternativeActions = uniqueStrings([
     ...(Array.isArray(canonicalRecommendation?.alternatives)
       ? canonicalRecommendation.alternatives.map((entry: { action?: string }) => entry.action)
       : []),
-    ...(Array.isArray(compare?.options) ? compare.options.map((entry: any) => entry?.title ?? entry?.action) : []),
+    ...(Array.isArray(compare?.options)
+      ? compare.options.map((entry) => {
+          const record = asRecord(entry);
+          return record?.title ?? record?.action;
+        })
+      : []),
   ]).slice(0, 3);
 
   const targetIds = uniqueStrings([
     ...(Array.isArray(canonicalRecommendation?.primary?.target_ids) ? canonicalRecommendation.primary.target_ids : []),
-    ...(Array.isArray(responseData?.decision_simulation?.affected_objects) ? responseData.decision_simulation.affected_objects : []),
-    ...(Array.isArray(responseData?.object_selection?.highlighted_objects) ? responseData.object_selection.highlighted_objects : []),
+    ...(Array.isArray(decisionSimulation?.affected_objects) ? decisionSimulation.affected_objects : []),
+    ...(Array.isArray(objectSelection?.highlighted_objects) ? objectSelection.highlighted_objects : []),
   ]).slice(0, 6);
 
   const hasMeaningfulContext =
@@ -129,12 +146,12 @@ export function buildDecisionMemoryEntry(input: BuildDecisionMemoryEntryInput): 
     alternative_actions: alternativeActions,
     snapshot_ref:
       text(canonicalRecommendation?.simulation?.scenario_id) ||
-      text(decisionSimulation?.scenario?.id) ||
+      text(asRecord(decisionSimulation?.scenario)?.id) ||
       text(replay?.id)
         ? {
             scenario_id:
               text(canonicalRecommendation?.simulation?.scenario_id) ||
-              text(decisionSimulation?.scenario?.id) ||
+              text(asRecord(decisionSimulation?.scenario)?.id) ||
               null,
             replay_id: text(replay?.id) || null,
           }

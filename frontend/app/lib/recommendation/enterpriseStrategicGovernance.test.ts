@@ -60,6 +60,7 @@ import type { SceneJson } from "../sceneTypes.ts";
 
 function sceneFixture(): SceneJson {
   return {
+    state_vector: {},
     scene: {
       objects: [
         { id: "plant_a", label: "Plant A", domain: "manufacturing", dependencies: ["warehouse_hub"] },
@@ -710,6 +711,7 @@ test("rejects duplicate governance build fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_governance_build");
 });
 

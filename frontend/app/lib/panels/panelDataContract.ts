@@ -507,10 +507,6 @@ function getStringArray(value: unknown, limit = 8): string[] {
   ).slice(0, limit);
 }
 
-function hasText(value: unknown) {
-  return typeof value === "string" && value.trim().length > 0;
-}
-
 function normalizeAdviceActionRecord(value: unknown): AdviceAction | null {
   if (!isObject(value)) return null;
   const action = getString(value.action);
@@ -850,7 +846,6 @@ function tracePanelContractWeakening(
     ...payload,
   });
 }
-
 
 function normalizeWarRoomSlice(value: unknown): WarRoomPanelData | null {
   if (!isObject(value)) return null;
@@ -1784,7 +1779,6 @@ export function executePanelSharedDataValidation(
         rejectedSlices,
       },
     };
-    const stableSignature = `fail:${contractDebugSignature}:${buildPanelSharedDataSignature(nextResult.data)}`;
     lastPanelValidationSignatureRef.current = rootSignature;
     lastPanelValidationResultRef.current = nextResult;
     setPanelValidationCacheEntry(rootSignature, nextResult);
@@ -1845,7 +1839,6 @@ export function executePanelSharedDataValidation(
     contractDebugSignature: "ok",
     contractFailureDetail: null,
   };
-  const stableSignature = `ok:${validatedSignature}`;
   lastPanelValidationSignatureRef.current = rootSignature;
   lastPanelValidationResultRef.current = nextResult;
   setPanelValidationCacheEntry(rootSignature, nextResult);

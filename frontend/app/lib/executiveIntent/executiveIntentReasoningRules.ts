@@ -95,7 +95,7 @@ export function buildReasoningSections(input: Readonly<{
   } = input;
 
   const intentLabel =
-    extraction?.primaryIntent?.title ??
+    extraction?.primaryIntent?.metadata.title ??
     semanticModel?.summary.headline ??
     "Executive intent unavailable";
 
@@ -596,7 +596,7 @@ export function buildReasoningSummary(input: Readonly<{
   highlightCount: number;
 }>): ExecutiveIntentReasoningSummary {
   const intentLabel =
-    input.extraction?.primaryIntent?.title ??
+    input.extraction?.primaryIntent?.metadata.title ??
     input.semanticModel?.summary.headline ??
     "Executive intent";
 

@@ -16,19 +16,7 @@ import {
   SEMANTIC_BUSINESS_DIMENSION_KEYS,
   mapActionVerbToActionType,
 } from "./executiveIntentSemanticRules.ts";
-import {
-  ExecutiveIntentSemanticModelEngine,
-  buildExecutiveIntentSemanticModel,
-  buildExecutiveIntentSemanticModelFromExample,
-  buildExecutiveIntentSemanticModelProbeExample,
-  normalizeAssumptions,
-  normalizeBusinessDimension,
-  normalizeConstraints,
-  normalizeExecutiveIntent,
-  normalizeTimeHorizon,
-  resolveSemanticUnknowns,
-  validateSemanticModel,
-} from "./executiveIntentSemanticModel.ts";
+import { ExecutiveIntentSemanticModelEngine, buildExecutiveIntentSemanticModel, buildExecutiveIntentSemanticModelFromExample, buildExecutiveIntentSemanticModelProbeExample, normalizeAssumptions, normalizeBusinessDimension, normalizeConstraints, normalizeExecutiveIntent, normalizeTimeHorizon, validateSemanticModel } from "./executiveIntentSemanticModel.ts";
 import {
   EXECUTIVE_INTENT_SEMANTIC_MODEL_RULES,
   EXECUTIVE_INTENT_SEMANTIC_MODEL_TAGS,

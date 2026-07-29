@@ -281,9 +281,7 @@ function buildHud(
 function buildCopilot(
   input: BuildExecutiveAdvisorInput,
   brief: ExecutiveAdvisorStrategicBrief,
-  observations: ReturnType<typeof detectAdvisorObservations>,
-  recommendations: ExecutiveAdvisorRecommendation[],
-  scenarioEvaluations: ExecutiveAdvisorScenarioEvaluation[]
+  observations: ReturnType<typeof detectAdvisorObservations>
 ): ExecutiveAdvisorCopilotContext {
   const top = observations[0];
   return {
@@ -334,7 +332,7 @@ export function buildExecutiveAdvisorState(input: BuildExecutiveAdvisorInput): E
   const confidenceCeiling = clamp01(Math.min(0.92, overallConfidence + 0.08));
   const brief = buildBrief(input, observations, recommendations);
   const hud = buildHud(brief, observations, questions, recommendations, scenarioEvaluations, overallConfidence);
-  const copilot = buildCopilot(input, brief, observations, recommendations, scenarioEvaluations);
+  const copilot = buildCopilot(input, brief, observations);
   const signature = buildSignature(input, recommendations);
 
   const state: ExecutiveAdvisorState = {

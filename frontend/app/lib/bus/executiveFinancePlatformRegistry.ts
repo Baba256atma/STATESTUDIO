@@ -1,4 +1,4 @@
-import { FinanceIdentity, FinanceMetadata } from "./financeIndex.ts";
+import { FinanceIdentity } from "./financeIndex.ts";
 import { FinanceDependencyMatrix } from "./financeManifestIndex.ts";
 import { getFinanceValidation } from "./financeValidationIndex.ts";
 import type { ExecutiveFinancePlatformRegistry as ExecutiveFinancePlatformRegistryContract } from "./executiveFinancePlatformTypes.ts";

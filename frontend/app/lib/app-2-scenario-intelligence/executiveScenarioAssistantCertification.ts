@@ -17,10 +17,7 @@ import {
   EXECUTIVE_SCENARIO_ASSISTANT_ADAPTER_VERSION,
 } from "./executiveScenarioAssistantAdapter.ts";
 import { EXECUTIVE_SCENARIO_ASSISTANT_EXPLANATION_SECTION_KINDS } from "./executiveScenarioAssistantView.ts";
-import {
-  resolveExecutiveScenarioAssistantView,
-  resolveExecutiveScenarioAssistantViewProbeExample,
-} from "./executiveScenarioAssistantResolver.ts";
+import { resolveExecutiveScenarioAssistantView } from "./executiveScenarioAssistantResolver.ts";
 import { resolveExecutiveScenarioWorkspaceViewProbeExample } from "./executiveScenarioWorkspaceResolver.ts";
 
 export const EXECUTIVE_SCENARIO_ASSISTANT_INTEGRATION_CERTIFICATION_VERSION =

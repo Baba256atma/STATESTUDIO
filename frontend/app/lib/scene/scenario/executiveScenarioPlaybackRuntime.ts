@@ -138,8 +138,7 @@ function buildStepsFromSimulation(input: BuildExecutiveScenarioPlaybackSequenceI
 }
 
 function buildStepsFromTimeline(
-  events: NonNullable<BuildExecutiveScenarioPlaybackSequenceInput["timelineEvents"]>,
-  labels: Readonly<Record<string, string>>
+  events: NonNullable<BuildExecutiveScenarioPlaybackSequenceInput["timelineEvents"]>
 ): ExecutiveScenarioStep[] {
   return events.map((event, index) => {
     const related = [...(event.relatedObjectIds ?? [])];
@@ -202,7 +201,7 @@ export function buildExecutiveScenarioPlaybackSequence(
   input: BuildExecutiveScenarioPlaybackSequenceInput
 ): ExecutiveScenarioPlaybackSequence | null {
   const simulationSteps = buildStepsFromSimulation(input);
-  const timelineSteps = buildStepsFromTimeline(input.timelineEvents ?? [], input.sceneObjectLabels ?? {});
+  const timelineSteps = buildStepsFromTimeline(input.timelineEvents ?? []);
   const steps = mergeTimelineSteps(simulationSteps, timelineSteps);
   if (steps.length === 0) return null;
 

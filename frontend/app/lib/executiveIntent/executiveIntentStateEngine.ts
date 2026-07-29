@@ -252,7 +252,7 @@ export function evaluateExecutiveIntentStateContext(
   const diagnostics: ExecutiveIntentDiagnostic[] = [];
   const { intent, workspaceId, evaluatedAt } = request;
   let workspaceIsolated = true;
-  let lifecycleValidation = request.proposedLifecycleTransition
+  const lifecycleValidation = request.proposedLifecycleTransition
     ? resolveLifecycleTransition(
         request.proposedLifecycleTransition.from,
         request.proposedLifecycleTransition.to

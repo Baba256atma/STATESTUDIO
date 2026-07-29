@@ -14,18 +14,7 @@ import {
   getExecutiveMemoryVersionRecords,
 } from "./executiveMemoryLifecycleRegistry.ts";
 import { isExecutiveMemoryLifecycleTransitionAllowed } from "./executiveMemoryLifecycleTransitions.ts";
-import type {
-  ExecutiveMemoryGovernanceState,
-  ExecutiveMemoryLifecycle,
-  ExecutiveMemoryMergeOperation,
-  ExecutiveMemoryRetentionPolicy,
-  ExecutiveMemorySplitOperation,
-  ExecutiveMemorySupersedeOperation,
-  ExecutiveMemoryVersionRecord,
-  MergeExecutiveMemoriesInput,
-  SplitExecutiveMemoryInput,
-  SupersedeExecutiveMemoryInput,
-} from "./executiveMemoryLifecycleTypes.ts";
+import type { ExecutiveMemoryGovernanceState, ExecutiveMemoryLifecycle, ExecutiveMemoryRetentionPolicy, ExecutiveMemoryVersionRecord, MergeExecutiveMemoriesInput, SplitExecutiveMemoryInput, SupersedeExecutiveMemoryInput } from "./executiveMemoryLifecycleTypes.ts";
 import type { ExecutiveMemoryId } from "./executiveMemoryTypes.ts";
 
 export type ExecutiveMemoryLifecycleValidationIssue = Readonly<{

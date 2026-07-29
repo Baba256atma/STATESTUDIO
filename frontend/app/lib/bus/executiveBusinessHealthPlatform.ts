@@ -10,23 +10,9 @@ import {
   ExecutiveBusinessHealthContractVersion,
 } from "./executiveBusinessHealthIndex.ts";
 import { ExecutiveBusinessHealthRegistryMetadata } from "./executiveBusinessHealthRegistryIndex.ts";
-import {
-  ExecutiveBusinessHealthModelMetadata,
-  ExecutiveBusinessHealthModelName,
-  ExecutiveBusinessHealthModelVersion,
-} from "./executiveBusinessHealthModelIndex.ts";
-import {
-  ExecutiveBusinessHealthValidationName,
-  ExecutiveBusinessHealthValidationVersion,
-  getExecutiveBusinessHealthValidationMetadata,
-} from "./executiveBusinessHealthValidationIndex.ts";
-import {
-  ExecutiveBusinessHealthManifestMetadata,
-  ExecutiveBusinessHealthManifestName,
-  ExecutiveBusinessHealthManifestVersion,
-  getExecutiveBusinessHealthDependencyMetadata,
-  getExecutiveBusinessHealthPublicApiInventory,
-} from "./executiveBusinessHealthManifestIndex.ts";
+import { ExecutiveBusinessHealthModelMetadata } from "./executiveBusinessHealthModelIndex.ts";
+import { getExecutiveBusinessHealthValidationMetadata } from "./executiveBusinessHealthValidationIndex.ts";
+import { ExecutiveBusinessHealthManifestMetadata, getExecutiveBusinessHealthDependencyMetadata, getExecutiveBusinessHealthPublicApiInventory } from "./executiveBusinessHealthManifestIndex.ts";
 
 export const ExecutiveBusinessHealthPlatformId = "BUS-32:6" as const;
 

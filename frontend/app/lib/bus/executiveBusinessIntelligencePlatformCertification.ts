@@ -10,21 +10,13 @@ import {
   ExecutiveBusinessIntelligencePlatformRegistry,
   ExecutiveBusinessIntelligenceRegistryMetadata,
 } from "./executiveBusinessIntelligenceRegistryIndex.ts";
-import {
-  ExecutiveBusinessIntelligenceModelMetadata,
-  ExecutiveBusinessIntelligenceModelVersion,
-} from "./executiveBusinessIntelligenceModelIndex.ts";
+import { ExecutiveBusinessIntelligenceModelVersion } from "./executiveBusinessIntelligenceModelIndex.ts";
 import {
   ExecutiveBusinessIntelligenceValidationVersion,
   buildExecutiveBusinessIntelligenceValidationSummary,
   getExecutiveBusinessIntelligenceValidationMetadata,
 } from "./executiveBusinessIntelligenceValidationIndex.ts";
-import {
-  ExecutiveBusinessIntelligenceManifestMetadata,
-  ExecutiveBusinessIntelligenceManifestVersion,
-  getExecutiveBusinessIntelligenceDependencyMetadata,
-  getExecutiveBusinessIntelligencePublicApiInventory,
-} from "./executiveBusinessIntelligenceManifestIndex.ts";
+import { ExecutiveBusinessIntelligenceManifestVersion, getExecutiveBusinessIntelligenceDependencyMetadata, getExecutiveBusinessIntelligencePublicApiInventory } from "./executiveBusinessIntelligenceManifestIndex.ts";
 import {
   ExecutiveBusinessIntelligencePlatformMetadata,
   ExecutiveBusinessIntelligencePlatformVersion,

@@ -469,7 +469,7 @@ describe("unified executive meta-cognition D9:6:10", () => {
               awarenessSummary: {
                 ...trust.awarenessSummary,
                 dominantTrustState: "highly_trustworthy" as const,
-                dependabilityPosture: "enterprise_grade" as const,
+                dependabilityPosture: "executive_grade" as const,
               },
             }
           : null,

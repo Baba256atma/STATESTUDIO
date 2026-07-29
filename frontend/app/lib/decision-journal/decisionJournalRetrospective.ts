@@ -31,15 +31,7 @@ import {
   type DecisionJournalRetrospectiveEngineState,
   type DecisionJournalRetrospectiveResponse,
 } from "./decisionJournalRetrospectiveTypes.ts";
-import {
-  validateBuildDecisionJournalRetrospectiveInput,
-  validateDecisionJournalRetrospectiveModel,
-  validateFoundationCompatibilityForRetrospective,
-  validateJournalEngineAvailabilityForRetrospective,
-  validateQueryLayerAvailabilityForRetrospective,
-  validateReflectionLayerAvailabilityForRetrospective,
-  validateEvidenceAssumptionLayerAvailabilityForRetrospective,
-} from "./decisionJournalRetrospectiveValidation.ts";
+import { validateBuildDecisionJournalRetrospectiveInput, validateDecisionJournalRetrospectiveModel, validateJournalEngineAvailabilityForRetrospective, validateQueryLayerAvailabilityForRetrospective, validateReflectionLayerAvailabilityForRetrospective, validateEvidenceAssumptionLayerAvailabilityForRetrospective } from "./decisionJournalRetrospectiveValidation.ts";
 
 export const DECISION_JOURNAL_RETROSPECTIVE_FORBIDDEN_PATTERNS_FULL = Object.freeze([
   ...STAGE_GLOBAL_FORBIDDEN_PATTERNS,

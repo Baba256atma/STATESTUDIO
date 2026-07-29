@@ -2,9 +2,28 @@
  * D7:1:4 — Safe bridge to existing replay track contracts (read-only adapter).
  */
 
+import type { NexoraSimulationSnapshot } from "../domainSimulationScenarioEngine.ts";
 import type { NexoraReplayFrame, NexoraReplayTrack } from "../outcomeComparisonReplay.ts";
 import type { OperationalTimeline } from "./timelineTypes.ts";
 import { EXECUTIVE_TIMELINE_PHASE_LABELS } from "./timelineExecutiveSemantics.ts";
+
+function operationalSnapshotToNexoraSnapshot(
+  snapshot: OperationalTimeline["snapshots"][number]
+): NexoraSimulationSnapshot {
+  const objectStates =
+    snapshot.objectStates &&
+    typeof snapshot.objectStates === "object" &&
+    !Array.isArray(snapshot.objectStates)
+      ? { ...(snapshot.objectStates as NexoraSimulationSnapshot["objectStates"]) }
+      : {};
+  return {
+    stepIndex: snapshot.timestamp.tick,
+    objectStates,
+    relationStates: {},
+    loopStates: {},
+    kpiStates: {},
+  };
+}
 
 /** Map operational timeline snapshots to Nexora replay frames without mutating timeline history. */
 export function buildReplayFramesFromOperationalTimeline(
@@ -19,15 +38,7 @@ export function buildReplayFramesFromOperationalTimeline(
     return {
       index,
       label: phaseLabel,
-      snapshot: {
-        simulationId: snapshot.simulationId,
-        tick: snapshot.timestamp.tick,
-        simulatedAt: snapshot.timestamp.simulatedAt,
-        objectStates: snapshot.objectStates,
-        operationalMetrics: snapshot.operationalMetrics ?? null,
-        propagationState: snapshot.propagationState ?? null,
-        fingerprint: snapshot.fingerprint,
-      },
+      snapshot: operationalSnapshotToNexoraSnapshot(snapshot),
       notes: historyEntry?.causalLinkIds?.length
         ? [`Causal links: ${historyEntry.causalLinkIds.join(", ")}`]
         : [],

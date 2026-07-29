@@ -1,15 +1,8 @@
 /**
  * APP-6:1 — Decision Timeline Platform constants.
  * Versioning, decision vocabulary, limits, and certification tags.
+ * Values-first vocabulary: unions are derived in decisionTimelineTypes.ts.
  */
-
-import type {
-  DecisionCategory,
-  DecisionEventType,
-  DecisionSource,
-  DecisionStatus,
-  DecisionTypeId,
-} from "./decisionTimelineTypes.ts";
 
 export const DECISION_TIMELINE_PLATFORM_CONTRACT_VERSION = "APP-6/1" as const;
 export const DECISION_TIMELINE_PLATFORM_ARCHITECTURE_VERSION = "APP-6/1-arch" as const;
@@ -40,7 +33,7 @@ export const DECISION_TIMELINE_STATUS_KEYS = Object.freeze([
   "deferred",
   "revoked",
   "superseded",
-] as const satisfies readonly DecisionStatus[]);
+] as const);
 
 export const DECISION_TIMELINE_SOURCE_KEYS = Object.freeze([
   "executive_direct",
@@ -48,7 +41,7 @@ export const DECISION_TIMELINE_SOURCE_KEYS = Object.freeze([
   "board_resolution",
   "committee",
   "system_record",
-] as const satisfies readonly DecisionSource[]);
+] as const);
 
 export const DECISION_TIMELINE_CATEGORY_KEYS = Object.freeze([
   "strategic",
@@ -58,7 +51,7 @@ export const DECISION_TIMELINE_CATEGORY_KEYS = Object.freeze([
   "governance",
   "risk",
   "compliance",
-] as const satisfies readonly DecisionCategory[]);
+] as const);
 
 export const DECISION_TIMELINE_EVENT_TYPE_KEYS = Object.freeze([
   "decision_created",
@@ -70,14 +63,14 @@ export const DECISION_TIMELINE_EVENT_TYPE_KEYS = Object.freeze([
   "decision_reference_added",
   "metadata_annotation",
   "custom",
-] as const satisfies readonly DecisionEventType[]);
+] as const);
 
 export const DECISION_TIMELINE_RESERVED_TYPE_IDS = Object.freeze([
   "decision-system",
   "decision-reserved",
   "decision-internal",
   "decision-placeholder",
-] as const satisfies readonly DecisionTypeId[]);
+] as const);
 
 export const DECISION_TIMELINE_RESERVED_EVENT_TYPES = Object.freeze([
   "decision-system-event",

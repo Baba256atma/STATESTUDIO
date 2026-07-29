@@ -1,11 +1,4 @@
-import type {
-  ExecutiveLayerConnectionExtensionPolicy,
-  ExecutiveLayerConnectionPhaseRegistryEntry,
-  ExecutiveLayerConnectionPlatformFreeze,
-  ExecutiveLayerConnectionPublicApiEntry,
-  ExecutiveLayerConnectionReleaseMetadata,
-} from "./executiveLayerConnectionPlatformFreezeTypes.ts";
-
+import type { ExecutiveLayerConnectionExtensionPolicy, ExecutiveLayerConnectionPhaseRegistryEntry, ExecutiveLayerConnectionPlatformFreeze as ExecutiveLayerConnectionPlatformFreezeType, ExecutiveLayerConnectionPublicApiEntry, ExecutiveLayerConnectionReleaseMetadata } from "./executiveLayerConnectionPlatformFreezeTypes.ts";
 export const EXECUTIVE_LAYER_CONNECTION_FREEZE_PLATFORM_ID = "executive-layer-connection-platform-freeze";
 export const EXECUTIVE_LAYER_CONNECTION_FREEZE_VERSION = "LAY-CONN-12";
 
@@ -65,7 +58,7 @@ export function getExecutiveLayerConnectionExtensionPolicy(): ExecutiveLayerConn
   return EXECUTIVE_LAYER_CONNECTION_EXTENSION_POLICY;
 }
 
-export const ExecutiveLayerConnectionPlatformFreeze: ExecutiveLayerConnectionPlatformFreeze = Object.freeze({
+export const ExecutiveLayerConnectionPlatformFreeze: ExecutiveLayerConnectionPlatformFreezeType = Object.freeze({
   platformId: EXECUTIVE_LAYER_CONNECTION_FREEZE_PLATFORM_ID,
   releaseMetadata: EXECUTIVE_LAYER_CONNECTION_RELEASE_METADATA,
   phaseRegistry: EXECUTIVE_LAYER_CONNECTION_PHASE_REGISTRY,

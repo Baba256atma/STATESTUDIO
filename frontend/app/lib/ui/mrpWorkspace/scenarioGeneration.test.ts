@@ -31,8 +31,10 @@ import { resetTimelineWorkspaceRuntimeForTests } from "./timeline/timelineWorksp
 import { hydrateRiskWorkspaceStateOnMount } from "./risk/riskWorkspaceStateRuntime.ts";
 import { hydrateTimelineWorkspaceStateOnMount } from "./timeline/timelineWorkspaceStateRuntime.ts";
 import type { SceneJson } from "../../sceneTypes.ts";
+import type { WorkspaceNavigationHistoryEntry } from "../../dashboard/executiveWorkspaceNavigationHistoryContract.ts";
 
 const sceneWithRisks: SceneJson = {
+  state_vector: {},
   scene: {
     objects: [
       { id: "a", type: "Supply", severity: "critical", status: "active" },
@@ -40,7 +42,7 @@ const sceneWithRisks: SceneJson = {
       { id: "c", type: "Finance", state: "stable", status: "ok" },
     ],
   },
-} as SceneJson;
+};
 
 test.beforeEach(() => {
   resetScenarioGenerationRuntimeForTests();
@@ -90,17 +92,25 @@ test("scenario generation reads risk and timeline workspace data", () => {
     navigationHistoryEntries: [
       {
         workspaceId: "risk",
-        targetWorkspaceId: "risk",
+        workspaceName: "Risk",
+        transitionType: "forward",
         timestamp: Date.now(),
-        label: "Risk review",
+        originWorkspaceId: null,
+        targetWorkspaceId: "risk",
+        lifecycleSnapshot: null,
+        source: "workspace_navigation_history",
       },
       {
         workspaceId: "timeline",
-        targetWorkspaceId: "timeline",
+        workspaceName: "Timeline",
+        transitionType: "forward",
         timestamp: Date.now() - 1000,
-        label: "Timeline review",
+        originWorkspaceId: "risk",
+        targetWorkspaceId: "timeline",
+        lifecycleSnapshot: null,
+        source: "workspace_navigation_history",
       },
-    ],
+    ] satisfies readonly WorkspaceNavigationHistoryEntry[],
   });
 
   const input = buildScenarioGenerationInput({

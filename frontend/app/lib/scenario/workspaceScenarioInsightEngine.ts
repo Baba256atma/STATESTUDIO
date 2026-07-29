@@ -130,16 +130,6 @@ function tokenize(value: string): readonly string[] {
   );
 }
 
-function tokensOverlap(left: string, right: string): boolean {
-  for (const leftToken of tokenize(left)) {
-    for (const rightToken of tokenize(right)) {
-      if (leftToken === rightToken) return true;
-      if (leftToken.startsWith(rightToken) || rightToken.startsWith(leftToken)) return true;
-    }
-  }
-  return false;
-}
-
 function relevanceScore(scenarioText: string, targetText: string): number {
   const scenarioTokens = tokenize(scenarioText);
   const targetTokens = new Set(tokenize(targetText));

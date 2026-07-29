@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { createExecutiveJudgmentContext, type ExecutiveJudgmentContextItem } from "./executiveJudgmentContextEngine.ts";
+import { type ExecutiveJudgmentContextItem } from "./executiveJudgmentContextEngine.ts";
 import { validateExecutiveJudgment } from "./executiveJudgmentEngine.ts";
 import { validateExecutiveJudgmentExplanation } from "./executiveJudgmentExplanationEngine.ts";
 import {

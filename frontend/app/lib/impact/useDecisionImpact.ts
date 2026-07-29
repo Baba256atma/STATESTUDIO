@@ -9,13 +9,15 @@ import {
   summarizeDecisionImpact,
 } from "./decisionImpactMapper";
 
+import type { SceneJson } from "../sceneTypes";
+
 type UseDecisionImpactParams = {
   propagation?: PropagationOverlayState | null;
   decisionPath?: DecisionPathResult | null;
-  strategicAdvice?: any | null;
+  strategicAdvice?: unknown;
   strategicCouncil?: StrategicCouncilResult | null;
   scenarioAction?: ScenarioActionContract | null;
-  sceneJson?: any | null;
+  sceneJson?: SceneJson | null;
   source?: string;
 };
 

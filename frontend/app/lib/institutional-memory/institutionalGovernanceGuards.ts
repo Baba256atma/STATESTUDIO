@@ -1,9 +1,4 @@
-import type {
-  CognitiveGovernanceStatus,
-  InstitutionalLearningGovernanceSnapshot,
-  IntegrityLevel,
-  TrustCategory,
-} from "./institutionalGovernanceTypes";
+import type { CognitiveGovernanceStatus, InstitutionalLearningGovernanceSnapshot, IntegrityLevel } from "./institutionalGovernanceTypes";
 
 export const INSTITUTIONAL_GOVERNANCE_MAX_SNAPSHOTS = 16;
 export const INSTITUTIONAL_GOVERNANCE_MAX_SIGNALS = 16;
@@ -31,16 +26,6 @@ const VALID_INTEGRITY = new Set<IntegrityLevel>([
   "moderate",
   "strong",
   "verified",
-]);
-
-const VALID_TRUST = new Set<TrustCategory>([
-  "memory_consistency",
-  "correlation_validity",
-  "resilience_integrity",
-  "governance_stability",
-  "strategic_reliability",
-  "operational_coherence",
-  "unknown",
 ]);
 
 export function beginInstitutionalGovernanceEvaluation(): boolean {

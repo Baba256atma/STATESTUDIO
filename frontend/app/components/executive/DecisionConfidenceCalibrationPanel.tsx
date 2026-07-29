@@ -4,6 +4,7 @@ import React from "react";
 
 import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemoryTypes";
 import type { CanonicalRecommendation } from "../../lib/decision/recommendation/recommendationTypes";
+import type { DecisionExecutionResult } from "../../lib/executive/decisionExecutionTypes";
 import { buildDecisionConfidenceModel } from "../../lib/decision/confidence/buildDecisionConfidenceModel";
 import { buildDecisionConfidenceCalibration } from "../../lib/decision/confidence/calibration/buildDecisionConfidenceCalibration";
 import { buildDecisionOutcomeAssessment } from "../../lib/decision/confidence/calibration/buildDecisionOutcomeAssessment";
@@ -11,8 +12,8 @@ import { nx, panelSurfaceStyle, softCardStyle } from "../ui/nexoraTheme";
 
 type DecisionConfidenceCalibrationPanelProps = {
   canonicalRecommendation?: CanonicalRecommendation | null;
-  responseData?: any;
-  decisionResult?: any;
+  responseData?: Record<string, unknown> | null;
+  decisionResult?: DecisionExecutionResult | Record<string, unknown> | null;
   memoryEntries?: DecisionMemoryEntry[];
 };
 

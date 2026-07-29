@@ -19,10 +19,6 @@ test.beforeEach(() => {
 test("builds forecast-ready KPI structures without prediction", () => {
   const registry = buildKpiForecastFoundationRegistry({
     kpis: [{ id: "revenue", label: "Revenue", value: 120, target: 100, category: "Revenue" }],
-    historicalSnapshots: [
-      { kpiId: "revenue", value: 100, capturedAt: "2026-01-01T00:00:00.000Z" },
-      { kpiId: "revenue", value: 120, capturedAt: "2026-02-01T00:00:00.000Z" },
-    ],
     scenarioInputs: [
       {
         scenarioId: "growth-case",

@@ -3,7 +3,6 @@
  * Operates exclusively on APP-6:5 DecisionState records.
  */
 
-import type { DecisionEngineLifecycle } from "./decisionEventTypes.ts";
 import type { DecisionState } from "./decisionStateTypes.ts";
 import type {
   DecisionQueryAttributes,
@@ -47,15 +46,6 @@ function matchesTags(
   }
   const available = attributes?.tags ?? [];
   return requiredTags.every((tag) => available.includes(tag));
-}
-
-function compareLifecycle(
-  left: DecisionEngineLifecycle | null,
-  right: DecisionEngineLifecycle | null
-): number {
-  const leftValue = left ?? "";
-  const rightValue = right ?? "";
-  return leftValue.localeCompare(rightValue);
 }
 
 function resolveSortValue(state: DecisionState, field: DecisionQuerySortField): string | number {

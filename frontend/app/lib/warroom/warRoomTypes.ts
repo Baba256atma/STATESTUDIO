@@ -23,7 +23,7 @@ export type ScenarioAction = {
   type: WarRoomActionKind;
   targetId: string;
   intensity: number;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 };
 
 export type PropagationRequest = {

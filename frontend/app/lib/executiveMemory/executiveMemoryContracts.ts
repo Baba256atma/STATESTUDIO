@@ -20,16 +20,7 @@ import {
   EXECUTIVE_MEMORY_SOURCE,
   EXECUTIVE_MEMORY_TAGS,
 } from "./executiveMemoryConstants.ts";
-import type {
-  ExecutiveMemory,
-  ExecutiveMemoryCategory,
-  ExecutiveMemoryFutureCompatibility,
-  ExecutiveMemoryMetadata,
-  ExecutiveMemoryPlatformIdentity,
-  ExecutiveMemoryProvider,
-  ExecutiveMemoryReference,
-  ExecutiveMemoryTag,
-} from "./executiveMemoryTypes.ts";
+import type { ExecutiveMemory, ExecutiveMemoryFutureCompatibility, ExecutiveMemoryMetadata, ExecutiveMemoryPlatformIdentity, ExecutiveMemoryProvider, ExecutiveMemoryReference, ExecutiveMemoryTag } from "./executiveMemoryTypes.ts";
 import {
   isExecutiveMemoryCategory,
   validateExecutiveMemoryMetadataShape,

@@ -14,9 +14,9 @@ async function safeFetchJson<T>(input: RequestInfo, init?: RequestInit): Promise
   }
 }
 
-export async function fetchDecisions(companyId: string, limit = 50): Promise<ApiResult<any[]>> {
+export async function fetchDecisions(companyId: string, limit = 50): Promise<ApiResult<Record<string, unknown>[]>> {
   const url = `${BASE}/api/decisions?company_id=${encodeURIComponent(companyId)}&limit=${limit}`;
-  return safeFetchJson<any[]>(url);
+  return safeFetchJson<Record<string, unknown>[]>(url);
 }
 
 export async function saveDecision(companyId: string, snapshot: unknown): Promise<ApiResult<unknown>> {
@@ -28,9 +28,9 @@ export async function saveDecision(companyId: string, snapshot: unknown): Promis
   });
 }
 
-export async function fetchEvents(companyId: string, limit = 200): Promise<ApiResult<any[]>> {
+export async function fetchEvents(companyId: string, limit = 200): Promise<ApiResult<Record<string, unknown>[]>> {
   const url = `${BASE}/api/events?company_id=${encodeURIComponent(companyId)}&limit=${limit}`;
-  return safeFetchJson<any[]>(url);
+  return safeFetchJson<Record<string, unknown>[]>(url);
 }
 
 export async function logEvent(companyId: string, event: unknown): Promise<ApiResult<unknown>> {

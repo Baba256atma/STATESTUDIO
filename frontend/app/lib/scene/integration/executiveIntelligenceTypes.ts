@@ -1,8 +1,3 @@
-/**
- * E2:100 — Executive Intelligence Completion Layer contracts.
- */
-
-import type { TimelineEvent } from "../executiveTimelineHudTypes";
 import type { ExecutiveScenarioUniverseState } from "../scenario/executiveMultiScenarioUniverseTypes";
 import type { ExecutiveScenarioPlaybackState } from "../scenario/executiveScenarioPlaybackTypes";
 import type { ExecutiveTimelineHudModel } from "../executiveTimelineHudTypes";

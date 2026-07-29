@@ -1,20 +1,34 @@
+import type { DecisionConfidenceModel } from "../confidence/buildDecisionConfidenceModel";
+import type { CanonicalRecommendation } from "../recommendation/recommendationTypes";
 import type { DecisionMemoryEntry } from "../memory/decisionMemoryTypes";
 import type { DecisionPatternIntelligence } from "../patterns/decisionPatternTypes";
 import type { StrategicLearningState } from "../learning/strategicLearningTypes";
-import type { MetaDecisionState, DecisionStrategyScore, DecisionStrategyType } from "./metaDecisionTypes";
+import type { DecisionStrategyScore, DecisionStrategyType } from "./metaDecisionTypes";
 
 type BuildDecisionStrategyScorecardInput = {
-  reasoning?: any | null;
-  simulation?: any | null;
-  comparison?: any | null;
-  canonicalRecommendation?: any | null;
-  confidenceModel?: any | null;
-  calibration?: any | null;
+  reasoning?: Record<string, unknown> | null;
+  simulation?: Record<string, unknown> | null;
+  comparison?: Record<string, unknown> | null;
+  canonicalRecommendation?: CanonicalRecommendation | null;
+  confidenceModel?: DecisionConfidenceModel | null;
+  calibration?: { calibration_label?: string | null } | null;
   patternIntelligence?: DecisionPatternIntelligence | null;
   strategicLearning?: StrategicLearningState | null;
   memoryEntries?: DecisionMemoryEntry[];
-  responseData?: any | null;
+  responseData?: Record<string, unknown> | null;
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readNestedRecord(record: Record<string, unknown> | null | undefined, ...keys: string[]): Record<string, unknown> | null {
+  let current: unknown = record;
+  for (const key of keys) {
+    current = asRecord(current)?.[key];
+  }
+  return asRecord(current);
+}
 
 function clamp01(value: number) {
   return Math.max(0, Math.min(1, value));
@@ -50,12 +64,19 @@ export function buildDecisionStrategyScorecard(
     safe_mode_only: [],
   };
 
-  const reasoningConfidence = Number(input.reasoning?.confidence?.score ?? 0.6);
-  const ambiguityCount = (input.reasoning?.ambiguity_notes?.length ?? 0) + (input.reasoning?.trace?.detected_signals?.length ? 0 : 1);
-  const simulationConfidence = Number(input.simulation?.confidence ?? input.simulation?.impact?.confidence ?? 0.55);
+  const reasoningConfidence = Number(readNestedRecord(input.reasoning, "confidence")?.score ?? 0.6);
+  const ambiguityNotes = input.reasoning?.ambiguity_notes;
+  const ambiguityCount =
+    (Array.isArray(ambiguityNotes) ? ambiguityNotes.length : 0) +
+    (readNestedRecord(input.reasoning, "trace")?.detected_signals ? 0 : 1);
+  const simulationConfidence = Number(
+    input.simulation?.confidence ?? readNestedRecord(input.simulation, "impact")?.confidence ?? 0.55
+  );
   const tradeoffCount =
-    (input.comparison?.tradeoffs?.length ?? 0) +
-    (input.responseData?.decision_comparison?.tradeoffs?.length ?? 0) +
+    (Array.isArray(input.comparison?.tradeoffs) ? input.comparison.tradeoffs.length : 0) +
+    (Array.isArray(readNestedRecord(input.responseData, "decision_comparison")?.tradeoffs)
+      ? (readNestedRecord(input.responseData, "decision_comparison")?.tradeoffs as unknown[]).length
+      : 0) +
     (input.canonicalRecommendation?.alternatives?.length ?? 0);
   const memoryCoverage = input.memoryEntries?.length ?? 0;
   const calibratedCoverage = (input.memoryEntries ?? []).filter((entry) => entry.calibration_result).length;

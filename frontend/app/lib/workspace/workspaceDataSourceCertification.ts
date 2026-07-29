@@ -34,14 +34,7 @@ import {
   listWorkspaceColumnClassificationProfiles,
   resetWorkspaceColumnClassificationForTests,
 } from "./columnClassificationEngine.ts";
-import {
-  approveObjectApprovalCandidate,
-  buildObjectApprovalPanelSnapshot,
-  createSelectedApprovedObjects,
-  rejectObjectApprovalCandidate,
-  resetObjectApprovalPanelForTests,
-  syncObjectApprovalRecordsFromCandidates,
-} from "./objectApprovalPanelRuntime.ts";
+import { approveObjectApprovalCandidate, buildObjectApprovalPanelSnapshot, createSelectedApprovedObjects, resetObjectApprovalPanelForTests, syncObjectApprovalRecordsFromCandidates } from "./objectApprovalPanelRuntime.ts";
 import {
   OBJECT_CREATION_PIPELINE_VERSION,
   getWorkspaceCreatedObjects,
@@ -53,12 +46,7 @@ import {
   resetWorkspaceScenesForTests,
 } from "./workspaceSceneCreationContract.ts";
 import type { SceneJson } from "../sceneTypes.ts";
-import {
-  WORKSPACE_SCENE_SYNC_VERSION,
-  getWorkspaceSyncedSceneObjects,
-  resetWorkspaceSceneSyncForTests,
-  syncWorkspaceObjectsToScene,
-} from "./workspaceSceneSync.ts";
+import { getWorkspaceSyncedSceneObjects, resetWorkspaceSceneSyncForTests, syncWorkspaceObjectsToScene } from "./workspaceSceneSync.ts";
 import {
   getWorkspaceSceneSyncRecords,
   resetWorkspaceSceneSyncPipelineForTests,
@@ -90,8 +78,6 @@ type TestCsvFile = Readonly<{
 
 const ENTITIES_CSV =
   "customer_id,customer_name,supplier_id,supplier_name,warehouse_id,warehouse_name\n1,Acme,10,Global Supply,20,East\n";
-
-const ORDERS_CSV = "order_id,amount\n1,100\n2,200\n";
 
 function readSource(relativePath: string): string {
   return readFileSync(join(FRONTEND_ROOT, relativePath), "utf8");
@@ -215,8 +201,6 @@ export async function runWorkspaceDataSourceCertification(
   const gates: WorkspaceDataSourceCertificationGate[] = [];
   const scenarios: WorkspaceDataSourceCertificationScenario[] = [];
   const evidence: string[] = [];
-
-  const schemaRegistrySource = readSource("app/lib/workspace/workspaceSchemaRegistry.ts");
   const schemaDiscoverySource = readSource("app/lib/workspace/workspaceDataSourceSchemaDiscovery.ts");
   const schemaResolverSource = readSource("app/lib/workspace/workspaceDataSourceSchemaResolver.ts");
   const schemaContractSource = readSource("app/lib/workspace/workspaceDataSourceSchemaContract.ts");
@@ -233,16 +217,10 @@ export async function runWorkspaceDataSourceCertification(
   const workspaceCandidateSource = readSource(
     "app/lib/workspace/workspaceCandidateObjectDiscoveryEngine.ts"
   );
-  const workspaceCandidateContractSource = readSource(
-    "app/lib/workspace/workspaceCandidateObjectContract.ts"
-  );
   const candidateContractSource = readSource("app/lib/workspace/candidateObjectContract.ts");
   const approvalRuntimeSource = readSource("app/lib/workspace/objectApprovalPanelRuntime.ts");
   const workspaceApprovalRuntimeSource = readSource(
     "app/lib/workspace/workspaceObjectApprovalRuntime.ts"
-  );
-  const workspaceApprovalContractSource = readSource(
-    "app/lib/workspace/workspaceObjectApprovalContract.ts"
   );
   const approvalPanelSource = readSource(
     "app/components/main-right-panel/workspace/operational/WorkspaceObjectApprovalPanel.tsx"
@@ -252,17 +230,10 @@ export async function runWorkspaceDataSourceCertification(
   );
   const pipelineSource = readSource("app/lib/workspace/objectCreationPipeline.ts");
   const workspaceCreationSource = readSource("app/lib/workspace/workspaceObjectCreationPipeline.ts");
-  const workspaceCreationContractSource = readSource(
-    "app/lib/workspace/workspaceObjectCreationContract.ts"
-  );
   const sceneSyncSource = readSource("app/lib/workspace/workspaceSceneSync.ts");
   const workspaceSceneSyncPipelineSource = readSource(
     "app/lib/workspace/workspaceSceneSyncPipeline.ts"
   );
-  const workspaceSceneSyncContractSource = readSource(
-    "app/lib/workspace/workspaceSceneSyncContract.ts"
-  );
-  const sceneCreationSource = readSource("app/lib/workspace/workspaceSceneCreationContract.ts");
   const csvUploadSource = readSource("app/lib/workspace/workspaceCsvUploadRuntime.ts");
   const workspaceSceneSyncLegacyBridgeSource = readSource(
     "app/lib/workspace/workspaceSceneSyncLegacyBridge.ts"

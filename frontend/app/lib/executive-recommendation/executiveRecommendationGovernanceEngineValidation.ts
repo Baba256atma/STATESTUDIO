@@ -19,9 +19,7 @@ import type {
   RecommendationGovernanceValidationIssue,
 } from "./executiveRecommendationGovernanceEngineTypes.ts";
 import { isRecommendationEvaluationEngineInitialized } from "./executiveRecommendationEvaluationEngine.ts";
-import { validateRecommendationExplanationRecord } from "./executiveRecommendationExplainabilityEngineValidation.ts";
-import type { RecommendationExplanation } from "./executiveRecommendationExplainabilityEngineTypes.ts";
-import { isRecommendationExplainabilityEngineInitialized } from "./executiveRecommendationExplainabilityEngine.ts";
+import { validateRecommendationExplanationRecord } from "./executiveRecommendationExplainabilityEngineValidation.ts";import { isRecommendationExplainabilityEngineInitialized } from "./executiveRecommendationExplainabilityEngine.ts";
 import { isRecommendationGenerationEngineInitialized } from "./executiveRecommendationGenerationEngine.ts";
 import { isExecutiveRecommendationPlatformInitialized } from "./executiveRecommendationFoundation.ts";
 

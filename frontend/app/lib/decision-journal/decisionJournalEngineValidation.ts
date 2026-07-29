@@ -34,7 +34,7 @@ function issue(code: string, message: string, field?: string): DecisionJournalVa
   return Object.freeze({ code, message, field, readOnly: true as const });
 }
 
-function result(issues: DecisionJournalValidationIssue[]): DecisionJournalValidationResult {
+function result(issues: readonly DecisionJournalValidationIssue[]): DecisionJournalValidationResult {
   return Object.freeze({ valid: issues.length === 0, issues: Object.freeze(issues), readOnly: true as const });
 }
 
@@ -113,7 +113,7 @@ export function validateDecisionJournalEntryInput(
   if (!isDecisionJournalConfidence(input.confidence)) {
     issues.push(issue("invalid_enum", "Invalid confidence.", "confidence"));
   }
-  const status = "status" in input ? input.status : "draft";
+  const status = input.status ?? "draft";
   if (!isDecisionJournalStatus(status)) {
     issues.push(issue("invalid_enum", "Invalid status.", "status"));
   }

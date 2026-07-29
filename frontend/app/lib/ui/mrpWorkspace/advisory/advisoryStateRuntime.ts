@@ -2,13 +2,7 @@
  * MRP:5A:2 — Advisory recommendation runtime state store.
  */
 
-import {
-  ADVISORY_CONFIDENCE_LEVELS,
-  DEFAULT_ADVISORY_RECOMMENDATION_RUNTIME,
-  MRP_ADVISORY_RUNTIME_TAG,
-  type AdvisoryConfidenceLevel,
-  type AdvisoryRecommendationRuntime,
-} from "./advisoryStateContract.ts";
+import { ADVISORY_CONFIDENCE_LEVELS, MRP_ADVISORY_RUNTIME_TAG, type AdvisoryConfidenceLevel, type AdvisoryRecommendationRuntime } from "./advisoryStateContract.ts";
 import {
   buildAdvisoryRecommendationRuntimeSignature,
   resolveAdvisoryRecommendationRuntimeFromContext,

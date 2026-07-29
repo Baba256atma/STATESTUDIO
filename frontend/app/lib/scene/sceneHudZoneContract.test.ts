@@ -1,10 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 
-import {
-  resetSceneHudZoneContractForTests,
-  resolveSceneHudZoneContract,
-  SCENE_HUD_ZONE_METRICS,
-} from "./sceneHudZoneContract";
+import { resetSceneHudZoneContractForTests, resolveSceneHudZoneContract } from "./sceneHudZoneContract";
 import {
   HUD_EDGE_INSET,
   OBJECT_PANEL_RIGHT,

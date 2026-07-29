@@ -9,12 +9,7 @@ import * as freeze from "./resourcePlatformFreezeIndex.ts";
 import {
   ResourceIntelligenceIdentity,
 } from "./resourceIntelligenceIndex.ts";
-import {
-  ExecutiveResourceIntelligencePlatform,
-  ExecutiveResourceIntelligencePlatformPublicRegistry,
-  ExecutiveResourceIntelligencePlatformReleaseSummary,
-  validateResourcePlatformIndex,
-} from "./resourcePlatformIndex.ts";
+import { ExecutiveResourceIntelligencePlatformPublicRegistry, ExecutiveResourceIntelligencePlatformReleaseSummary, validateResourcePlatformIndex } from "./resourcePlatformIndex.ts";
 import {
   buildResourcePlatformCertificationManifest,
   getResourcePlatformCertificationStatus,

@@ -16,9 +16,7 @@ import type {
   RecommendationEvaluationValidation,
   RecommendationEvaluationValidationIssue,
 } from "./executiveRecommendationEvaluationEngineTypes.ts";
-import { validateRecommendationCandidate } from "./executiveRecommendationGenerationEngineValidation.ts";
-import type { RecommendationCandidate } from "./executiveRecommendationGenerationEngineTypes.ts";
-import { isRecommendationGenerationEngineInitialized } from "./executiveRecommendationGenerationEngine.ts";
+import { validateRecommendationCandidate } from "./executiveRecommendationGenerationEngineValidation.ts";import { isRecommendationGenerationEngineInitialized } from "./executiveRecommendationGenerationEngine.ts";
 import { isExecutiveRecommendationPlatformInitialized } from "./executiveRecommendationFoundation.ts";
 
 function issue(code: string, message: string, field?: string): RecommendationEvaluationValidationIssue {

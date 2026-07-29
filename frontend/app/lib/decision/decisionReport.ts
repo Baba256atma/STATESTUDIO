@@ -1,4 +1,5 @@
 import type { KpiValue } from "../kpi/kpiEngine";
+import type { SceneJson, SceneLoop } from "../sceneTypes";
 
 export type DecisionImpact = {
   kpiId: string;
@@ -56,8 +57,8 @@ function trendFromDelta(delta?: number): "up" | "down" | "flat" {
 }
 
 export function buildDecisionReport(args: {
-  sceneJson: any | null;
-  loops: any[];
+  sceneJson: SceneJson | null;
+  loops: SceneLoop[];
   kpis: KpiValue[];
   lastKpis?: Record<string, number>;
   selectedObjectId: string | null;
@@ -77,7 +78,7 @@ export function buildDecisionReport(args: {
     const delta = typeof from === "number" ? to - from : undefined;
     return {
       kpiId: k.id,
-      label: (k as any).label ?? k.id,
+      label: k.label ?? k.id,
       from,
       to,
       delta,

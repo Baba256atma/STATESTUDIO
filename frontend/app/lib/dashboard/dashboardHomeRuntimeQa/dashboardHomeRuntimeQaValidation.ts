@@ -5,12 +5,7 @@
  */
 
 import { CANONICAL_DASHBOARD_MODE_OWNER } from "../dashboardModeRuntimeContract.ts";
-import {
-  DASHBOARD_HOME_CANONICAL_SECTION_ORDER,
-  DASHBOARD_HOME_LAYOUT_ZONES,
-  type DashboardHomeLayoutSectionId,
-  type DashboardHomeLayoutZoneId,
-} from "../dashboardHomeLayout/dashboardHomeLayoutContract.ts";
+import { DASHBOARD_HOME_CANONICAL_SECTION_ORDER, DASHBOARD_HOME_LAYOUT_ZONES, type DashboardHomeLayoutSectionId } from "../dashboardHomeLayout/dashboardHomeLayoutContract.ts";
 import {
   buildDashboardHomeLayoutView,
   sectionBelongsToZone,

@@ -25,15 +25,15 @@ export function createPsychStore() {
     applyText: (text: string) => {
       if (process.env.NODE_ENV !== "production") {
         // dev log
-        // eslint-disable-next-line no-console
+         
         console.log("[Sycho][Reaction][Input]", text);
       }
       const reaction = interpretUserInput(text);
-      const result = applyReaction(state, objects, reaction as any);
+      const result = applyReaction(state, objects, reaction);
       state = result.nextState;
       objects = result.nextObjects;
       if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
+         
         console.log("[Sycho][Reaction][Result]", { state, objects, reaction });
       }
       return { state: { ...state }, objects: { ...objects }, reaction };

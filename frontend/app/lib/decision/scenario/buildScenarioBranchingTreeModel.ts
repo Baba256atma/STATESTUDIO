@@ -35,10 +35,10 @@ export type ScenarioBranchingTreeModel = {
 };
 
 type BuildScenarioBranchingTreeModelInput = {
-  responseData?: any | null;
+  responseData?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
   decisionResult?: DecisionExecutionResult | null;
-  strategicAdvice?: any | null;
+  strategicAdvice?: Record<string, unknown> | null;
   memoryEntries?: DecisionMemoryEntry[];
 };
 
@@ -72,23 +72,37 @@ function matchMemoryEntry(
   );
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readCanonicalRecommendation(value: unknown): CanonicalRecommendation | null {
+  return value && typeof value === "object" ? (value as CanonicalRecommendation) : null;
+}
+
 export function buildScenarioBranchingTreeModel(
   input: BuildScenarioBranchingTreeModelInput
 ): ScenarioBranchingTreeModel {
   const responseData = input.responseData ?? null;
   const canonicalRecommendation =
-    input.canonicalRecommendation ?? responseData?.canonical_recommendation ?? null;
+    input.canonicalRecommendation ?? readCanonicalRecommendation(responseData?.canonical_recommendation);
+  const strategicAdvice = asRecord(input.strategicAdvice) ?? asRecord(responseData?.strategic_advice);
+  const executiveSummary = asRecord(responseData?.executive_summary_surface);
+  const riskPropagation = asRecord(responseData?.risk_propagation);
+  const decisionSimulation = asRecord(responseData?.decision_simulation);
+  const simulationScenario = asRecord(decisionSimulation?.scenario);
+  const simulationResult = asRecord(input.decisionResult?.simulation_result);
   const compareModel = buildComparePanelModel({
     canonicalRecommendation,
     decisionResult: input.decisionResult ?? null,
-    strategicAdvice: input.strategicAdvice ?? responseData?.strategic_advice ?? null,
+    strategicAdvice,
     responseData,
   });
   const timeline = buildDecisionTimelineModel({
     responseData,
     canonicalRecommendation,
     decisionResult: input.decisionResult ?? null,
-    strategicAdvice: input.strategicAdvice ?? responseData?.strategic_advice ?? null,
+    strategicAdvice,
   });
   const memoryEntries = input.memoryEntries ?? [];
 
@@ -97,12 +111,12 @@ export function buildScenarioBranchingTreeModel(
     title: "Current State",
     summary: firstText(
       timeline.stages.find((stage) => stage.id === "before")?.summary,
-      responseData?.executive_summary_surface?.happened,
+      executiveSummary?.happened,
       responseData?.analysis_summary,
       "Current-state summary unavailable. Run an analysis to build a decision tree."
     ),
     type: "current",
-    impact_summary: text(responseData?.risk_propagation?.summary) || null,
+    impact_summary: text(riskPropagation?.summary) || null,
     impact_items:
       timeline.stages.find((stage) => stage.id === "before")?.impactItems?.slice(0, 3) ??
       [],
@@ -111,7 +125,7 @@ export function buildScenarioBranchingTreeModel(
 
   const recommendedScenarioId =
     text(canonicalRecommendation?.simulation?.scenario_id) ||
-    text(responseData?.decision_simulation?.scenario?.id) ||
+    text(simulationScenario?.id) ||
     null;
   const recommendedMemory = matchMemoryEntry(
     memoryEntries,
@@ -151,7 +165,9 @@ export function buildScenarioBranchingTreeModel(
           target_ids: uniqueStrings([
             ...(canonicalRecommendation?.primary.target_ids ?? []),
             ...(compareModel.recommendedOption?.target_ids ?? []),
-            ...(input.decisionResult?.simulation_result?.affected_objects ?? []),
+            ...(Array.isArray(simulationResult?.affected_objects)
+              ? (simulationResult.affected_objects as string[])
+              : []),
           ]).slice(0, 6),
           impact_items:
             timeline.stages.find((stage) => stage.id === "after")?.impactItems?.slice(0, 4) ??

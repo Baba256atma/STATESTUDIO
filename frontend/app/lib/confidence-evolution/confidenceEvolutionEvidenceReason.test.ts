@@ -20,19 +20,7 @@ import {
   buildConfidenceTrendModel,
 } from "./confidenceEvolutionTrend.ts";
 import { calculateConfidenceDeltas } from "./confidenceEvolutionDeltas.ts";
-import {
-  buildConfidenceEvidenceReasonLinkModel,
-  buildConfidenceEvidenceLinks,
-  buildConfidenceReasonLinks,
-  calculateConfidenceEvidenceCoverage,
-  detectConfidenceExplanationFlags,
-  initializeConfidenceEvidenceReasonLayer,
-  mapConfidenceMovementsToEvidence,
-  mapConfidenceMovementsToReasons,
-  resetConfidenceEvidenceReasonLayerForTests,
-  validateConfidenceEvidenceReasonLinkModel,
-  CONFIDENCE_EVOLUTION_EVIDENCE_REASON_SELF_MANIFEST,
-} from "./confidenceEvolutionEvidenceReason.ts";
+import { buildConfidenceEvidenceReasonLinkModel, buildConfidenceEvidenceLinks, buildConfidenceReasonLinks, calculateConfidenceEvidenceCoverage, detectConfidenceExplanationFlags, initializeConfidenceEvidenceReasonLayer, mapConfidenceMovementsToEvidence, mapConfidenceMovementsToReasons, resetConfidenceEvidenceReasonLayerForTests, CONFIDENCE_EVOLUTION_EVIDENCE_REASON_SELF_MANIFEST } from "./confidenceEvolutionEvidenceReason.ts";
 import { runConfidenceEvidenceReasonCertification } from "./confidenceEvolutionEvidenceReasonRunner.ts";
 import {
   CONFIDENCE_EVOLUTION_EVIDENCE_REASON_CONTRACT_VERSION,
@@ -241,7 +229,7 @@ test("explained movement detected when reason or evidence present", () => {
   const deltas = calculateConfidenceDeltas(records);
   const model = buildConfidenceEvidenceReasonLinkModel({ workspaceId: WORKSPACE });
   void model;
-  const explainedLinks = records.slice(1).map((record, _index, _array) => {
+  const explainedLinks = records.slice(1).map((record) => {
     const delta = deltas[0];
     assert.ok(delta);
     return Object.freeze({

@@ -28,12 +28,15 @@ export function useCustomerDemoMode(defaultDomainId?: string | null): CustomerDe
 } {
   const defaultProfileId = useMemo(() => getDefaultCustomerDemoProfileId(defaultDomainId), [defaultDomainId]);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(() => readStoredProfileId() ?? defaultProfileId);
+  const [syncedDefaultProfileId, setSyncedDefaultProfileId] = useState(defaultProfileId);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (readStoredProfileId()) return;
-    setActiveProfileId((current) => current ?? defaultProfileId);
-  }, [defaultProfileId]);
+  // When the domain default changes and nothing is stored, adopt the new default (no effect).
+  if (syncedDefaultProfileId !== defaultProfileId) {
+    setSyncedDefaultProfileId(defaultProfileId);
+    if (!readStoredProfileId()) {
+      setActiveProfileId((current) => current ?? defaultProfileId);
+    }
+  }
 
   useEffect(() => {
     const onProfileChanged = (event: Event) => {

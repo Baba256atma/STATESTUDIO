@@ -177,7 +177,7 @@ export function buildDecisionExplanation(
     return assistantFailure(dashboardResponse.reason);
   }
 
-  const explanation = buildDecisionExplanationRecord(input, dashboardResponse.data, integrationTimestamp);
+  const explanation = buildDecisionExplanationRecord(input, dashboardResponse.data);
   return assistantSuccess(
     "Decision explanation built.",
     Object.freeze({

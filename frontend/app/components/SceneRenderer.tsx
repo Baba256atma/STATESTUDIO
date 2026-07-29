@@ -4,28 +4,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExtern
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 
-import type { SceneJson, SceneObject, SceneLoop } from "../lib/sceneTypes";
-import { riskToColor, clamp01 } from "../lib/colorUtils";
-import { useStateVector, useSetSelectedId, useOverrides, useChatOffset } from "./SceneContext";
-import { clamp } from "../lib/sizeCommands";
-import {
-  buildObjectVisualProfile,
-  deriveObjectVisualRole,
-  resolveGeometryKindForObject,
-  resolveRelationVisualProfile,
-  roleToHierarchyStyle,
-  type ObjectVisualRole,
-  type VisualLanguageContext,
-} from "../lib/visual/objectVisualLanguage";
-import {
-  resolveScannerCausalityRole,
-  traceScannerCausalityRole,
-} from "../lib/visual/scannerCausalityPolicy";
+import type { SceneJson, SceneObject, SceneLoop, SceneLoopEdge } from "../lib/sceneTypes";
+import { clamp01 } from "../lib/colorUtils";
+import { useChatOffset } from "./SceneContext";
 import { resolveScannerPrimaryTarget } from "../lib/visual/scannerPrimaryTargetResolver";
-import {
-  resolveScannerVisualPriority,
-  traceScannerVisualPriorityPolicy,
-} from "../lib/visual/scannerVisualPriorityPolicy";
 import { dedupeNexoraDevLog } from "../lib/debug/panelConsoleTraceDedupe";
 import {
   auditExecutiveSceneReadability,
@@ -42,21 +24,8 @@ import {
   resolveObjectNameDensityProfile,
   shouldRenderExecutiveObjectName,
 } from "../lib/scene/objectNameDensityProfile";
-import {
-  type DomainLabelSeverity,
-  resolveDomainAwareLabelTemplate,
-  resolveDomainAwareObjectName,
-  resolveDomainVocabulary,
-} from "../lib/visual/domainVocabulary";
 import type { PropagationOverlayState } from "../lib/simulation/propagationTypes";
-import type {
-  DecisionPathNarrativeNodeRole,
-  DecisionPathNodeVisualHints,
-  DecisionPathRendererEdge,
-  DecisionPathRendererState,
-} from "./overlays/DecisionPathOverlayLayer";
-import { getThemeTokens } from "../lib/design/designTokens";
-import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
+import type { DecisionPathRendererState } from "./overlays/DecisionPathOverlayLayer";import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
 import { CALM_FRAMING } from "../lib/scene/calmCameraFraming";
 import {
   buildSceneObjectsRegistrySignature,
@@ -69,6 +38,7 @@ import {
   subscribeWorkspaceViewMode,
 } from "../lib/workspace/workspaceViewModeRuntime";
 import { SceneObjectInstances, type SceneObjectInstancePlan } from "./scene/SceneObjectInstances";
+import type { AnimatableObjectProps } from "./scene/AnimatableObject";
 import { TopologyConnectionLines } from "./scene/topology/TopologyConnectionLines";
 import type { SceneConnectionLine } from "../lib/scene/topology/topologyConnectionTypes";
 import {
@@ -97,10 +67,72 @@ import { SvieExecutiveStoryOverlay } from "./scene/SvieExecutiveStoryOverlay";
 import { SvieScenarioImpactChainOverlay } from "./scene/SvieScenarioImpactChainOverlay";
 import { SvieExecutiveFutureStoryOverlay } from "./scene/SvieExecutiveFutureStoryOverlay";
 const EMPTY_STRING_ARRAY: string[] = [];
-const EMPTY_SCENE_ANIMS: any[] = [];
+const EMPTY_SCENE_ANIMS: unknown[] = [];
 const EMPTY_SCENE_LOOPS: SceneLoop[] = [];
 const STATIC_VISUAL_FREEZE = true;
 const loggedRendererPositionAuditSignatures = new Set<string>();
+
+type SceneObjectTransform = { pos?: unknown; scale?: unknown; rot?: unknown };
+
+function readSceneObjectTransform(object: SceneObject): SceneObjectTransform {
+  const transform = object.transform;
+  return transform && typeof transform === "object" && !Array.isArray(transform)
+    ? (transform as SceneObjectTransform)
+    : {};
+}
+
+function readSceneObjectPosition(object: SceneObject, fallback: [number, number, number]): [number, number, number] {
+  const transform = readSceneObjectTransform(object);
+  return toPosTuple(transform.pos ?? object.position ?? object.pos, fallback);
+}
+
+type SceneLightConfig = {
+  type?: string;
+  intensity?: number;
+  pos?: [number, number, number] | number[];
+};
+
+function readVec3Components(position: unknown): { x: number; y: number; z: number } | null {
+  if (!position || typeof position !== "object") return null;
+  const record = position as Record<string, unknown>;
+  const x = Number(record.x);
+  const y = Number(record.y);
+  const z = Number(record.z);
+  return Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z) ? { x, y, z } : null;
+}
+
+function readNestedRecord(source: unknown, ...path: string[]): Record<string, unknown> | null {
+  let current: unknown = source;
+  for (const key of path) {
+    if (!current || typeof current !== "object") return null;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return current && typeof current === "object" && !Array.isArray(current)
+    ? (current as Record<string, unknown>)
+    : null;
+}
+
+function readProductModeId(sceneJson: SceneJson): string {
+  const productMode = sceneJson.product_mode;
+  if (productMode && typeof productMode === "object") {
+    const modeId = (productMode as Record<string, unknown>).mode_id;
+    if (typeof modeId === "string" && modeId.trim()) return modeId.trim();
+  }
+  const metaModeId = sceneJson.meta?.product_mode_id;
+  return typeof metaModeId === "string" ? metaModeId.trim() : "";
+}
+
+function readSceneFragilityScore(sceneJson: SceneJson): number {
+  const sceneRecord = sceneJson.scene as Record<string, unknown>;
+  const scannerState = sceneRecord.scanner_state_vector;
+  if (scannerState && typeof scannerState === "object") {
+    const score = (scannerState as Record<string, unknown>).fragility_score;
+    if (typeof score === "number") return score;
+  }
+  const topScore = sceneJson.state_vector?.fragility_score;
+  if (typeof topScore === "number") return topScore;
+  return 0;
+}
 
 function buildSceneObjectRenderSignature(object: SceneObject, index: number): string {
   return JSON.stringify({
@@ -111,7 +143,7 @@ function buildSceneObjectRenderSignature(object: SceneObject, index: number): st
     type: object?.type ?? null,
     position: object?.position ?? null,
     pos: object?.pos ?? null,
-    transform: (object as any)?.transform ?? null,
+    transform: readSceneObjectTransform(object),
     color: object?.color ?? null,
     scale: object?.scale ?? null,
     emphasis: object?.emphasis ?? null,
@@ -145,267 +177,15 @@ function readRendererAuditPosition(
     layoutPositions?.[stableId] ??
     (object.id ? layoutPositions?.[String(object.id)] : undefined) ??
     (object.name ? layoutPositions?.[String(object.name)] : undefined) ??
-    (Array.isArray((object as any)?.transform?.pos) ? ((object as any).transform.pos as number[]) : undefined) ??
-    (Array.isArray((object as any)?.position) ? ((object as any).position as number[]) : undefined);
+    readSceneObjectTransform(object).pos ??
+    object.position;
   if (!Array.isArray(raw) || raw.length < 3) return null;
   return [Number(raw[0]) || 0, Number(raw[1]) || 0, Number(raw[2]) || 0];
 }
 
 // --------------------
-// Geometry registry
-// --------------------
-type GeometryKind =
-  | SceneObject["type"]
-  | "ring";
-
-function geometryFor(type: GeometryKind) {
-  switch (type) {
-    case "sphere":
-      return <sphereGeometry args={[0.8, 32, 32]} />;
-    case "box":
-      return <boxGeometry args={[1.2, 1.2, 1.2]} />;
-    case "torus":
-      return <torusGeometry args={[0.8, 0.25, 20, 60]} />;
-    case "ring":
-      return <torusGeometry args={[0.55, 0.12, 16, 32]} />;
-    case "cone":
-      return <coneGeometry args={[0.8, 1.4, 32]} />;
-    case "cylinder":
-      return <cylinderGeometry args={[0.6, 0.6, 1.4, 32]} />;
-    case "icosahedron":
-      return <icosahedronGeometry args={[0.9, 0]} />;
-    default:
-      return <boxGeometry args={[1, 1, 1]} />;
-  }
-}
-
-// --------------------
 // Auto color / intensity helpers
 // --------------------
-function computeAutoColor(tags: string[], sv: Record<string, number> | null) {
-  if (!sv) return "#dddddd";
-  const qualityRisk = clamp01(sv.quality_risk ?? 0.2);
-  const inventoryPressure = clamp01(sv.inventory_pressure ?? 0.2);
-  const timePressure = clamp01(sv.time_pressure ?? 0.2);
-
-  if (tags.includes("quality")) return riskToColor(qualityRisk);
-  if (tags.includes("inventory")) return riskToColor(inventoryPressure);
-  if (tags.includes("time")) return riskToColor(timePressure);
-
-  const avg = clamp01((qualityRisk + inventoryPressure + timePressure) / 3);
-  return riskToColor(avg);
-}
-
-function computeAutoIntensity(tags: string[], base: number, sv: Record<string, number> | null) {
-  let k = base;
-  if (!sv) return k;
-
-  const q = clamp01(sv.quality_risk ?? 0.2);
-  const inv = clamp01(sv.inventory_pressure ?? 0.2);
-  const tp = clamp01(sv.time_pressure ?? 0.2);
-
-  if (tags.includes("quality")) k = Math.max(k, q);
-  if (tags.includes("inventory")) k = Math.max(k, inv);
-  if (tags.includes("time")) k = Math.max(k, tp);
-  if (tags.includes("state_core")) k = Math.max(k, (q + inv + tp) / 3);
-
-  return k;
-}
-
-function severityToScannerColor(severity: string | undefined, theme: "day" | "night" | "stars"): string {
-  const normalized = normalizeText(severity);
-  if (normalized === "critical") return theme === "day" ? "#dc2626" : "#fb7185";
-  if (normalized === "high") return theme === "day" ? "#ea580c" : "#fb923c";
-  if (normalized === "medium" || normalized === "moderate") return theme === "day" ? "#d97706" : "#fbbf24";
-  if (normalized === "low") return theme === "day" ? "#0891b2" : "#22d3ee";
-  return theme === "day" ? "#2563eb" : "#60a5fa";
-}
-
-function compactScannerReason(reason: unknown): string | null {
-  const value = String(reason ?? "").trim();
-  if (!value) return null;
-  if (value.length <= 80) return value;
-  return `${value.slice(0, 77).trimEnd()}...`;
-}
-
-function normalizeText(value: unknown): string {
-  return String(value ?? "").trim().toLowerCase();
-}
-
-function normalizeScannerLabelSeverity(
-  scannerSeverity: string | undefined,
-  scannerFragilityScore: number
-): DomainLabelSeverity {
-  const severity = normalizeText(scannerSeverity);
-  if (severity === "critical") return "critical";
-  if (severity === "high") return "high";
-  if (severity === "medium" || severity === "moderate") return "medium";
-  if (severity === "low") return "low";
-  if (scannerFragilityScore >= 0.9) return "critical";
-  if (scannerFragilityScore >= 0.72) return "high";
-  if (scannerFragilityScore >= 0.42) return "medium";
-  return "low";
-}
-
-function colorWithAlpha(color: string, alpha: number): string {
-  const normalizedAlpha = clamp01(alpha);
-  try {
-    const parsed = new THREE.Color(color);
-    const r = Math.round(parsed.r * 255);
-    const g = Math.round(parsed.g * 255);
-    const b = Math.round(parsed.b * 255);
-    return `rgba(${r},${g},${b},${normalizedAlpha})`;
-  } catch {
-    return color;
-  }
-}
-
-function getScannerLabelVisualTone(
-  severity: DomainLabelSeverity,
-  role: "primary" | "affected" | "context" | "neutral",
-  theme: "day" | "night" | "stars",
-  baseColor: string
-): {
-  titleColor: string;
-  dotColor: string;
-  dotGlow: string;
-  borderColor: string;
-  boxShadow: string;
-  bodyColor: string;
-  background: string;
-} {
-  const isDay = theme === "day";
-  const tone =
-    severity === "critical"
-      ? {
-          titleAlpha: 1,
-          dotAlpha: 0.98,
-          glowAlpha: 0.44,
-          glowSize: 18,
-          borderAlpha: isDay ? 0.36 : 0.34,
-          shadowAlpha: isDay ? 0.2 : 0.5,
-          ringAlpha: isDay ? 0.14 : 0.18,
-          bodyColor: isDay ? "#1e293b" : "#f1f5f9",
-          background: isDay ? "rgba(255,255,255,0.96)" : "rgba(2,6,23,0.9)",
-        }
-      : severity === "high"
-      ? {
-          titleAlpha: 0.98,
-          dotAlpha: 0.92,
-          glowAlpha: 0.32,
-          glowSize: 16,
-          borderAlpha: isDay ? 0.28 : 0.26,
-          shadowAlpha: isDay ? 0.16 : 0.42,
-          ringAlpha: isDay ? 0.1 : 0.14,
-          bodyColor: isDay ? "#334155" : "#e2e8f0",
-          background: isDay ? "rgba(255,255,255,0.94)" : "rgba(2,6,23,0.86)",
-        }
-      : severity === "medium"
-      ? {
-          titleAlpha: 0.94,
-          dotAlpha: 0.88,
-          glowAlpha: 0.24,
-          glowSize: 14,
-          borderAlpha: isDay ? 0.2 : 0.18,
-          shadowAlpha: isDay ? 0.12 : 0.36,
-          ringAlpha: isDay ? 0.08 : 0.12,
-          bodyColor: isDay ? "#475569" : "#cbd5e1",
-          background: isDay ? "rgba(255,255,255,0.9)" : "rgba(2,6,23,0.82)",
-        }
-      : {
-          titleAlpha: 0.8,
-          dotAlpha: 0.72,
-          glowAlpha: 0.16,
-          glowSize: 11,
-          borderAlpha: isDay ? 0.14 : 0.14,
-          shadowAlpha: isDay ? 0.09 : 0.28,
-          ringAlpha: isDay ? 0.06 : 0.1,
-          bodyColor: isDay ? "#64748b" : "#94a3b8",
-          background: isDay ? "rgba(255,255,255,0.88)" : "rgba(2,6,23,0.78)",
-        };
-
-  const roleTone =
-    role === "primary"
-      ? {
-          titleBoost: 0.08,
-          dotBoost: 0.08,
-          glowBoost: 0.08,
-          glowSizeBoost: 2,
-          borderBoost: 0.08,
-          shadowBoost: 0.08,
-          ringBoost: 0.05,
-          background: isDay ? "rgba(255,255,255,0.97)" : "rgba(2,6,23,0.92)",
-          bodyColor: isDay ? "#1e293b" : "#f8fafc",
-        }
-      : role === "affected"
-      ? {
-          titleBoost: 0,
-          dotBoost: 0,
-          glowBoost: 0,
-          glowSizeBoost: 0,
-          borderBoost: 0,
-          shadowBoost: 0,
-          ringBoost: 0,
-          background: tone.background,
-          bodyColor: tone.bodyColor,
-        }
-      : role === "context"
-      ? {
-          titleBoost: -0.14,
-          dotBoost: -0.16,
-          glowBoost: -0.12,
-          glowSizeBoost: -2,
-          borderBoost: -0.08,
-          shadowBoost: -0.1,
-          ringBoost: -0.04,
-          background: isDay ? "rgba(255,255,255,0.87)" : "rgba(2,6,23,0.76)",
-          bodyColor: isDay ? "#64748b" : "#94a3b8",
-        }
-      : {
-          titleBoost: -0.2,
-          dotBoost: -0.2,
-          glowBoost: -0.14,
-          glowSizeBoost: -3,
-          borderBoost: -0.1,
-          shadowBoost: -0.12,
-          ringBoost: -0.05,
-          background: isDay ? "rgba(255,255,255,0.85)" : "rgba(2,6,23,0.74)",
-          bodyColor: isDay ? "#64748b" : "#94a3b8",
-        };
-
-  const titleAlpha = clamp01(tone.titleAlpha + roleTone.titleBoost);
-  const dotAlpha = clamp01(tone.dotAlpha + roleTone.dotBoost);
-  const glowAlpha = clamp01(tone.glowAlpha + roleTone.glowBoost);
-  const glowSize = Math.max(8, tone.glowSize + roleTone.glowSizeBoost);
-  const borderAlpha = clamp01(tone.borderAlpha + roleTone.borderBoost);
-  const shadowAlpha = clamp01(tone.shadowAlpha + roleTone.shadowBoost);
-  const ringAlpha = clamp01(tone.ringAlpha + roleTone.ringBoost);
-
-  return {
-    titleColor: colorWithAlpha(baseColor, titleAlpha),
-    dotColor: colorWithAlpha(baseColor, dotAlpha),
-    dotGlow: `0 0 ${glowSize}px ${colorWithAlpha(baseColor, glowAlpha)}`,
-    borderColor: colorWithAlpha(baseColor, borderAlpha),
-    boxShadow: isDay
-      ? `0 8px 28px rgba(15,23,42,${shadowAlpha}), 0 0 0 1px ${colorWithAlpha(baseColor, ringAlpha)}`
-      : `0 10px 28px rgba(2,6,23,${shadowAlpha}), 0 0 0 1px ${colorWithAlpha(baseColor, ringAlpha)}`,
-    bodyColor: roleTone.bodyColor,
-    background: roleTone.background,
-  };
-}
-
-function getRoleDynamicLayoutProfile(role: "primary" | "affected" | "context" | "neutral") {
-  if (role === "primary") {
-    return { attraction: 0.16, repulsion: 0, orbitStrength: 0.02, yLift: 0.16, zBias: -0.1 };
-  }
-  if (role === "affected") {
-    return { attraction: 0.08, repulsion: 0, orbitStrength: 0.06, yLift: 0.06, zBias: -0.03 };
-  }
-  if (role === "context") {
-    return { attraction: 0.02, repulsion: 0.04, orbitStrength: 0.09, yLift: 0.02, zBias: 0.04 };
-  }
-  return { attraction: 0, repulsion: 0, orbitStrength: 0.02, yLift: 0, zBias: 0 };
-}
 
 function resolveDecisionCenter(objects: SceneObject[], primaryId: string | null): [number, number, number] {
   if (!primaryId) return [0, 0, 0];
@@ -417,7 +197,7 @@ function resolveDecisionCenter(objects: SceneObject[], primaryId: string | null)
   if (primaryIndex < 0) return [0, 0, 0];
   const primaryObject = objects[primaryIndex];
   const defaultPos = fallbackPos(primaryIndex, objects.length);
-  return toPosTuple((primaryObject?.transform as any)?.pos ?? (primaryObject as any)?.position, defaultPos);
+  return readSceneObjectPosition(primaryObject, defaultPos);
 }
 
 function resolveStableObjectPosition(objects: SceneObject[], objectId: string | null): [number, number, number] | null {
@@ -430,14 +210,14 @@ function resolveStableObjectPosition(objects: SceneObject[], objectId: string | 
   if (objectIndex < 0) return null;
   const object = objects[objectIndex];
   const defaultPos = fallbackPos(objectIndex, objects.length);
-  return toPosTuple((object?.transform as any)?.pos ?? (object as any)?.position, defaultPos);
+  return readSceneObjectPosition(object, defaultPos);
 }
 
 function resolveSceneCenter(objects: SceneObject[]): [number, number, number] {
   if (objects.length === 0) return [0, 0, 0];
   const total = objects.reduce<[number, number, number]>((acc, object, idx) => {
     const defaultPos = fallbackPos(idx, objects.length);
-    const pos = toPosTuple((object?.transform as any)?.pos ?? (object as any)?.position, defaultPos);
+    const pos = readSceneObjectPosition(object, defaultPos);
     return [acc[0] + pos[0], acc[1] + pos[1], acc[2] + pos[2]];
   }, [0, 0, 0]);
   return [total[0] / objects.length, total[1] / objects.length, total[2] / objects.length];
@@ -452,13 +232,7 @@ type ScannerStoryReveal = {
 
 type InteractionRole = "primary" | "affected" | "context" | "neutral";
 type NarrativeNodeRole = "primary" | "affected" | "context" | "outside";
-type NarrativeEdgeRole = "path" | "secondary" | "outside";
-type SimulatedPathEdge = {
-  from: string;
-  to: string;
-  depth: number;
-  strength: number;
-};
+
 type AttentionMemorySource = "hover" | "selected" | "scanner_primary";
 type AttentionMemoryEntry = {
   id: string;
@@ -645,31 +419,6 @@ function resolveNarrativeFocusStrength(params: {
   return params.scannerActive ? 0.18 : 0;
 }
 
-function getNarrativeNodeStyle(role: NarrativeNodeRole, strength: number) {
-  const safeStrength = clamp01(strength);
-  if (role === "primary") {
-    return { scaleMul: 1 + safeStrength * 0.026, emissiveBoost: safeStrength * 0.1, opacityMul: 1, opacityBoost: safeStrength * 0.018, liftY: safeStrength * 0.022 };
-  }
-  if (role === "affected") {
-    return { scaleMul: 1 + safeStrength * 0.015, emissiveBoost: safeStrength * 0.055, opacityMul: 0.98, opacityBoost: safeStrength * 0.01, liftY: safeStrength * 0.01 };
-  }
-  if (role === "context") {
-    return { scaleMul: 1 + safeStrength * 0.004, emissiveBoost: safeStrength * 0.018, opacityMul: 0.82, opacityBoost: 0, liftY: safeStrength * 0.003 };
-  }
-  return { scaleMul: 1, emissiveBoost: 0, opacityMul: 1 - safeStrength * 0.28, opacityBoost: 0, liftY: 0 };
-}
-
-function getNarrativeEdgeStyle(role: NarrativeEdgeRole, strength: number) {
-  const safeStrength = clamp01(strength);
-  if (role === "path") {
-    return { opacityMul: 1 + safeStrength * 0.22, colorMul: 1 + safeStrength * 0.08, pulseBoost: safeStrength * 0.025 };
-  }
-  if (role === "secondary") {
-    return { opacityMul: 1 + safeStrength * 0.06, colorMul: 1 + safeStrength * 0.025, pulseBoost: safeStrength * 0.01 };
-  }
-  return { opacityMul: 1 - safeStrength * 0.28, colorMul: 1 - safeStrength * 0.08, pulseBoost: 0 };
-}
-
 function traceNarrativeFocus(payload: {
   primaryId: string | null;
   affectedCount: number;
@@ -696,29 +445,6 @@ function buildNarrativeFocusSignature(input: {
   });
 }
 
-function getSimulationNodeStyle(strength: number, isSource: boolean) {
-  const safeStrength = clamp01(strength);
-  if (safeStrength <= 0) {
-    return { scaleMul: 1, emissiveBoost: 0, opacityBoost: 0, motionBoost: 0 };
-  }
-  return {
-    scaleMul: 1 + safeStrength * (isSource ? 0.038 : 0.014),
-    emissiveBoost: safeStrength * (isSource ? 0.12 : 0.045),
-    opacityBoost: safeStrength * (isSource ? 0.04 : 0.012),
-    motionBoost: safeStrength * (isSource ? 0.035 : 0.012),
-  };
-}
-
-function getSimulationEdgeStyle(depth: number, strength: number) {
-  const safeStrength = clamp01(strength);
-  const depthFade = depth <= 1 ? 1 : depth === 2 ? 0.76 : 0.58;
-  return {
-    opacityMul: 1 + safeStrength * 0.2 * depthFade,
-    colorMul: 1 + safeStrength * 0.06 * depthFade,
-    pulseBoost: safeStrength * 0.014 * depthFade,
-  };
-}
-
 function resolveCameraIntelligenceTarget(params: {
   hoveredId: string | null;
   selectedId: string | null;
@@ -733,8 +459,7 @@ function resolveCameraIntelligenceTarget(params: {
   kind: "hover" | "selected" | "primary" | "decision_center" | "scene_center";
 } {
   const {
-    hoveredId,
-    selectedId,
+        selectedId,
     resolvedPrimaryRenderId,
     decisionCenter,
     sceneCenter,
@@ -823,130 +548,12 @@ function resolveIdsAgainstScene(candidateIds: string[], objects: SceneObject[]):
   return Array.from(resolved);
 }
 
-
-function readStringArrayField(source: any, field: string): string[] {
-  if (!source || typeof source !== "object" || !Array.isArray(source[field])) return EMPTY_STRING_ARRAY;
+function readStringArrayField(source: Record<string, unknown> | null | undefined, field: string): string[] {
+  if (!source || !Array.isArray(source[field])) return EMPTY_STRING_ARRAY;
   const values = source[field]
     .map((value: unknown) => String(value ?? "").trim())
     .filter(Boolean);
   return values.length > 0 ? values : EMPTY_STRING_ARRAY;
-}
-
-
-function buildProfessionalObjectLabelName(obj: SceneObject, index: number, domainId?: string | null): string {
-  const domainAwareName = resolveDomainAwareObjectName({
-    explicitLabel: String((obj as any)?.label ?? "").trim() || null,
-    objectName: String(obj?.name ?? "").trim() || null,
-    objectId: String(obj?.id ?? "").trim() || null,
-    tags: Array.isArray(obj?.tags) ? obj.tags.map((tag) => String(tag ?? "")) : null,
-    domainId,
-  });
-  if (domainAwareName) return domainAwareName;
-
-  const rawId = String(obj?.id ?? "").trim();
-  if (rawId) {
-    const cleaned = rawId
-      .replace(/^obj_+/, "")
-      .replace(/_\d+$/, "")
-      .replace(/[_-]+/g, " ")
-      .trim();
-    if (cleaned) {
-      return cleaned
-        .split(/\s+/)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ");
-    }
-  }
-
-  const firstTag = Array.isArray(obj?.tags) ? String(obj.tags[0] ?? "").trim() : "";
-  if (firstTag) {
-    return firstTag
-      .replace(/[_-]+/g, " ")
-      .split(/\s+/)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
-  }
-
-  const fallbackType = String(obj?.type ?? `Object ${index + 1}`);
-  return fallbackType.charAt(0).toUpperCase() + fallbackType.slice(1);
-}
-
-function buildIntelligentScannerLabel(params: {
-  objectLabelName: string;
-  scannerRoleTitle: string;
-  scannerRoleBody: string | null;
-  scannerCausalityRole: string;
-  scannerFragilityScore: number;
-  scannerSeverity?: string;
-  isScannerPrimaryTarget: boolean;
-  affectedCount: number;
-  contextCount: number;
-  activeDomainId?: string | null;
-}): {
-  title: string;
-  body: string | null;
-} {
-  const objectLabelName = String(params.objectLabelName || "System Node").trim();
-  const roleBody = typeof params.scannerRoleBody === "string" ? params.scannerRoleBody.trim() : null;
-  const severity = normalizeText(params.scannerSeverity);
-  const normalizedSeverity = normalizeScannerLabelSeverity(params.scannerSeverity, params.scannerFragilityScore);
-  const isHighPressure =
-    params.scannerFragilityScore >= 0.72 ||
-    severity === "critical" ||
-    severity === "high";
-  const vocabulary = resolveDomainVocabulary(objectLabelName, params.activeDomainId);
-  const templateRole = params.isScannerPrimaryTarget
-    ? "primary"
-    : params.scannerCausalityRole === "affected"
-    ? "affected"
-    : params.scannerCausalityRole === "related_context"
-    ? "context"
-    : "neutral";
-  const labelTemplate = resolveDomainAwareLabelTemplate({
-    objectLabelName,
-    domainId: params.activeDomainId,
-    role: templateRole,
-    severity: normalizedSeverity,
-  });
-
-  if (params.isScannerPrimaryTarget) {
-    return {
-      title: labelTemplate?.titleTemplate ?? `${objectLabelName} — ${vocabulary?.primaryTitle ?? "Primary Risk"}`,
-      body:
-        labelTemplate?.bodyTemplate ??
-        vocabulary?.primaryBody ??
-        (isHighPressure ? "High-pressure source" : null) ??
-        roleBody ??
-        "Main pressure source",
-    };
-  }
-
-  if (params.scannerCausalityRole === "affected") {
-    return {
-      title: labelTemplate?.titleTemplate ?? `${objectLabelName} — ${vocabulary?.affectedTitle ?? "Downstream Impact"}`,
-      body:
-        labelTemplate?.bodyTemplate ??
-        vocabulary?.affectedBody ??
-        roleBody ??
-        (params.affectedCount > 0 ? "Impact linked to active risk" : "Affected system node"),
-    };
-  }
-
-  if (params.scannerCausalityRole === "related_context") {
-    return {
-      title: labelTemplate?.titleTemplate ?? `${objectLabelName} — ${vocabulary?.contextTitle ?? "Related Context"}`,
-      body:
-        labelTemplate?.bodyTemplate ??
-        vocabulary?.contextBody ??
-        roleBody ??
-        (params.contextCount > 0 ? "Linked to active pressure" : "Linked context signal"),
-    };
-  }
-
-  return {
-    title: `${objectLabelName} — Scanner Signal`,
-    body: roleBody,
-  };
 }
 
 function fallbackPos(index: number, total: number): [number, number, number] {
@@ -954,96 +561,6 @@ function fallbackPos(index: number, total: number): [number, number, number] {
   const radius = Math.max(2.5, n * 0.12);
   const angle = (index / n) * Math.PI * 2;
   return [Math.cos(angle) * radius, 0, Math.sin(angle) * radius];
-}
-
-function hashIdToUnit(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i += 1) {
-    h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  }
-  return (h % 100000) / 100000;
-}
-
-function fallbackPosFromId(id: string): THREE.Vector3 {
-  const u = hashIdToUnit(id);
-  const angle = u * Math.PI * 2;
-  const r = 2.2;
-  return new THREE.Vector3(Math.cos(angle) * r, 0, Math.sin(angle) * r);
-}
-
-function getObjPos(id: string, objects: any[]): THREE.Vector3 {
-  const found = objects.find((o: any) => o?.id === id);
-  const posCandidates = [
-    found?.position,
-    (found?.transform as any)?.pos,
-    (found as any)?.pos,
-  ];
-  for (const p of posCandidates) {
-    if (Array.isArray(p) && p.length >= 3) {
-      return new THREE.Vector3(Number(p[0]) || 0, Number(p[1]) || 0, Number(p[2]) || 0);
-    }
-    if (p && typeof p === "object" && "x" in p && "y" in p && "z" in p) {
-      return new THREE.Vector3(Number((p as any).x) || 0, Number((p as any).y) || 0, Number((p as any).z) || 0);
-    }
-  }
-
-  // Preferred static layout for the 3 core business objects when no position provided.
-  const baselinePos: Record<string, [number, number, number]> = {
-    obj_inventory: [-1.6, 0, 0],
-    obj_delivery: [0, 0, 0],
-    obj_risk_zone: [1.6, 0, 0],
-  };
-  if (baselinePos[id]) {
-    const [x, y, z] = baselinePos[id];
-    return new THREE.Vector3(x, y, z);
-  }
-
-  // Fallback to deterministic layout based on index if present in objects array.
-  const idx = objects.findIndex((o: any) => o?.id === id);
-  if (idx >= 0) {
-    const [x, y, z] = fallbackPos(idx, objects.length);
-    return new THREE.Vector3(x, y, z);
-  }
-
-  // stable deterministic fallback based on id hash
-  return fallbackPosFromId(id);
-}
-
-type SceneObjectVisualState = {
-  isHighlighted: boolean;
-  isFocused: boolean;
-  isSelected: boolean;
-  isPinned: boolean;
-  isProtectedFromDim: boolean;
-  shouldDimAsUnrelated: boolean;
-};
-
-function buildSceneObjectVisualState(input: {
-  isHighlighted: boolean;
-  isFocused: boolean;
-  isSelected: boolean;
-  isPinned: boolean;
-  dimUnrelatedObjects: boolean;
-  scannerSceneActive: boolean;
-  isLowFragilityScan: boolean;
-}): SceneObjectVisualState {
-  const isProtectedFromDim =
-    input.isHighlighted || input.isFocused || input.isSelected || input.isPinned;
-
-  const shouldDimAsUnrelated =
-    input.dimUnrelatedObjects &&
-    input.scannerSceneActive &&
-    !input.isLowFragilityScan &&
-    !isProtectedFromDim;
-
-  return {
-    isHighlighted: input.isHighlighted,
-    isFocused: input.isFocused,
-    isSelected: input.isSelected,
-    isPinned: input.isPinned,
-    isProtectedFromDim,
-    shouldDimAsUnrelated,
-  };
 }
 
 function toPosTuple(
@@ -1059,157 +576,10 @@ function toPosTuple(
     }
   }
   if (raw && typeof raw === "object") {
-    const x = Number((raw as any).x);
-    const y = Number((raw as any).y);
-    const z = Number((raw as any).z);
-    if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)) {
-      return [x, y, z];
-    }
+    const vec = readVec3Components(raw);
+    if (vec) return [vec.x, vec.y, vec.z];
   }
   return fallback;
-}
-
-function AnimatedDashedEdge({
-  from,
-  to,
-  active,
-  strength,
-}: {
-  from: THREE.Vector3;
-  to: THREE.Vector3;
-  active: boolean;
-  strength: number;
-}) {
-  const geomRef = useRef<THREE.BufferGeometry>(null);
-  const dashedMatRef = useRef<THREE.LineDashedMaterial>(null);
-  const solidMatRef = useRef<THREE.LineBasicMaterial>(null);
-
-  const points = useMemo(() => [from.clone(), to.clone()], [from, to]);
-
-  useEffect(() => {
-    if (!geomRef.current) return;
-    geomRef.current.setFromPoints(points);
-    // ensures dash distances are computed
-    // @ts-ignore
-    if (geomRef.current.computeLineDistances) geomRef.current.computeLineDistances();
-  }, [points]);
-
-  const dashSize = 0.2 + clamp01(strength) * 0.35;
-  const gapSize = 0.25 + clamp01(strength) * 0.4;
-  const opacity = active ? Math.min(1, 0.5 + strength * 0.5) : Math.min(0.65, 0.25 + strength * 0.25);
-  const color = active ? "#f1c40f" : "#95a5a6";
-
-  useEffect(() => {
-    if (dashedMatRef.current) {
-      dashedMatRef.current.scale = 1;
-    }
-    if (solidMatRef.current) {
-      solidMatRef.current.opacity = Math.min(1, opacity + 0.25);
-    }
-  }, [opacity]);
-
-  return (
-    <group>
-      <line>
-        <bufferGeometry ref={geomRef} attach="geometry" />
-        <lineDashedMaterial
-          ref={dashedMatRef}
-          attach="material"
-          color={color}
-          transparent
-          opacity={opacity}
-          dashSize={dashSize}
-          gapSize={gapSize}
-        />
-      </line>
-      {active && (
-        <line>
-          <bufferGeometry ref={geomRef} attach="geometry" />
-          <lineBasicMaterial
-            ref={solidMatRef}
-            attach="material"
-            color={color}
-            transparent
-            opacity={Math.min(1, opacity + 0.25)}
-          />
-        </line>
-      )}
-    </group>
-  );
-}
-
-type RelationRole =
-  | "primary_to_affected"
-  | "primary_to_context"
-  | "affected_to_affected"
-  | "affected_to_context"
-  | "context_to_context"
-  | "neutral";
-
-function classifyRelationRole(params: {
-  fromId: string;
-  toId: string;
-  primaryId: string | null;
-  affectedIds: string[];
-  contextIds: string[];
-}): RelationRole {
-  const { fromId, toId, primaryId, affectedIds, contextIds } = params;
-  const isPrimary = (id: string) => !!primaryId && id === primaryId;
-  const isAffected = (id: string) => affectedIds.includes(id);
-  const isContext = (id: string) => contextIds.includes(id);
-
-  if ((isPrimary(fromId) && isAffected(toId)) || (isPrimary(toId) && isAffected(fromId))) {
-    return "primary_to_affected";
-  }
-  if ((isPrimary(fromId) && isContext(toId)) || (isPrimary(toId) && isContext(fromId))) {
-    return "primary_to_context";
-  }
-  if (isAffected(fromId) && isAffected(toId)) {
-    return "affected_to_affected";
-  }
-  if ((isAffected(fromId) && isContext(toId)) || (isAffected(toId) && isContext(fromId))) {
-    return "affected_to_context";
-  }
-  if (isContext(fromId) && isContext(toId)) {
-    return "context_to_context";
-  }
-  return "neutral";
-}
-
-function getRelationEmphasisStyle(params: {
-  relationRole: RelationRole;
-  severity: DomainLabelSeverity;
-  theme: "day" | "night" | "stars";
-  active: boolean;
-}) {
-  const { relationRole, severity, active } = params;
-  const severityBoost =
-    severity === "critical"
-      ? 0.08
-      : severity === "high"
-      ? 0.05
-      : severity === "medium"
-      ? 0.02
-      : 0;
-
-  const base =
-    relationRole === "primary_to_affected"
-      ? { opacity: active ? 0.84 : 0.18, colorMul: 1.14, lineCopies: active ? 2 : 1 }
-      : relationRole === "primary_to_context"
-      ? { opacity: active ? 0.4 : 0.12, colorMul: 1.03, lineCopies: 1 }
-      : relationRole === "affected_to_affected"
-      ? { opacity: active ? 0.34 : 0.11, colorMul: 0.98, lineCopies: 1 }
-      : relationRole === "affected_to_context"
-      ? { opacity: active ? 0.22 : 0.09, colorMul: 0.92, lineCopies: 1 }
-      : relationRole === "context_to_context"
-      ? { opacity: active ? 0.14 : 0.06, colorMul: 0.84, lineCopies: 1 }
-      : { opacity: active ? 0.12 : 0.05, colorMul: 0.8, lineCopies: 1 };
-
-  return {
-    opacity: clamp01(base.opacity + severityBoost * (relationRole === "neutral" ? 0.35 : 0.6)),
-    colorMul: base.colorMul + severityBoost * (relationRole === "neutral" ? 0.2 : 0.45),
-    lineCopies: base.lineCopies,
-  };
 }
 
 // --------------------
@@ -1249,19 +619,26 @@ function JsonLights({ sceneJson, shadowsEnabled }: { sceneJson: SceneJson; shado
 
   return (
     <>
-      {lights.map((l: any, i: number) => {
+      {(sceneJson.scene?.lights ?? []).map((light, i) => {
+        const l = (light && typeof light === "object" ? light : {}) as SceneLightConfig;
         if (l.type === "ambient") return <ambientLight key={i} intensity={l.intensity ?? 0.6} />;
         if (l.type === "directional")
           return (
             <directionalLight
               key={i}
-              position={l.pos ?? [5, 8, 3]}
+              position={(Array.isArray(l.pos) ? l.pos : [5, 8, 3]) as [number, number, number]}
               intensity={l.intensity ?? 0.9}
               castShadow={shadowsEnabled}
             />
           );
         if (l.type === "point")
-          return <pointLight key={i} position={l.pos ?? [0, 5, 0]} intensity={l.intensity ?? 1.0} />;
+          return (
+            <pointLight
+              key={i}
+              position={(Array.isArray(l.pos) ? l.pos : [0, 5, 0]) as [number, number, number]}
+              intensity={l.intensity ?? 1.0}
+            />
+          );
         return null;
       })}
     </>
@@ -1365,7 +742,16 @@ export type SceneRendererProps = {
 // --------------------
 // Main renderer
 // --------------------
-function SceneRendererComponent({
+type SceneRendererBodyProps = Omit<SceneRendererProps, "sceneJson"> & {
+  sceneJson: SceneJson;
+};
+
+function SceneRendererComponent(props: SceneRendererProps) {
+  if (!props.sceneJson) return null;
+  return <SceneRendererBody {...props} sceneJson={props.sceneJson} />;
+}
+
+function SceneRendererBody({
   sceneJson,
   objectSelection,
   selectedObjectId,
@@ -1393,49 +779,31 @@ function SceneRendererComponent({
   topologyConnectionLinesVisible = false,
   topologyConnectionSelectedObjectId = null,
   runtimeObjectPositionContext,
-}: SceneRendererProps) {
-  if (!sceneJson) return null;
-
+}: SceneRendererBodyProps) {
   const payloadRenderCountRef = useRef(0);
-  payloadRenderCountRef.current += 1;
-  if (process.env.NODE_ENV !== "production") {
-    logPayloadReferenceStability({
-      owner: "SceneRenderer",
-      renderCount: payloadRenderCountRef.current,
-      consumer: "SceneRenderer",
-      payloads: {
-        sceneJson,
-        loops,
-        effectiveActiveLoopId: propActiveLoopId,
-        resolvedUiTheme: theme,
-        hudThemeMode: theme,
-        propagationPayload: propagationOverlay,
-      },
-    });
-  }
+  useEffect(() => {
+    payloadRenderCountRef.current += 1;
+    if (process.env.NODE_ENV !== "production") {
+      logPayloadReferenceStability({
+        owner: "SceneRenderer",
+        renderCount: payloadRenderCountRef.current,
+        consumer: "SceneRenderer",
+        payloads: {
+          sceneJson,
+          loops,
+          effectiveActiveLoopId: propActiveLoopId,
+          resolvedUiTheme: theme,
+          hudThemeMode: theme,
+          propagationPayload: propagationOverlay,
+        },
+      });
+    }
+  }, [sceneJson, loops, propActiveLoopId, theme, propagationOverlay]);
 
   const stableGlobalScale = useMemo(() => globalScale, [globalScale]);
   const chatOffset = useChatOffset();
   const canonicalSelectedObjectId = normalizeSelectedObjectId(selectedObjectId);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const lastCommittedHoverRef = useRef<string | null>(null);
-  const lastHoverTickRef = useRef(0);
-  const setHoveredIdThrottled = useCallback((id: string | null) => {
-    if (id === null) {
-      if (lastCommittedHoverRef.current !== null) {
-        lastCommittedHoverRef.current = null;
-        lastHoverTickRef.current = typeof performance !== "undefined" ? performance.now() : Date.now();
-        setHoveredId(null);
-      }
-      return;
-    }
-    if (id === lastCommittedHoverRef.current) return;
-    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
-    if (now - lastHoverTickRef.current < 120) return;
-    lastCommittedHoverRef.current = id;
-    lastHoverTickRef.current = now;
-    setHoveredId(id);
-  }, []);
 
   const rawObjects = sceneJson.scene?.objects ?? [];
   const objectsRegistrySignature = useMemo(
@@ -1446,27 +814,10 @@ function SceneRendererComponent({
     () => buildSceneObjectsRenderSignature(rawObjects),
     [rawObjects]
   );
-  const stableObjectCacheRef = useRef(
-    new Map<string, { signature: string; object: SceneObject }>()
-  );
   const stableObjects = useMemo(() => {
     if (!Array.isArray(rawObjects) || rawObjects.length === 0) return [];
-    const nextCache = new Map<string, { signature: string; object: SceneObject }>();
-    const normalized = rawObjects.map((object, index) => {
-      const stableId = resolveStableObjectId(object, index);
-      const signature = buildSceneObjectRenderSignature(object, index);
-      const cached = stableObjectCacheRef.current.get(stableId);
-      if (cached?.signature === signature) {
-        nextCache.set(stableId, cached);
-        return cached.object;
-      }
-      const next = { signature, object };
-      nextCache.set(stableId, next);
-      return object;
-    });
-    stableObjectCacheRef.current = nextCache;
-    return normalized;
-  }, [objectsRenderSignature]);
+    return rawObjects.map((object) => object);
+  }, [objectsRenderSignature, rawObjects]);
   const stableObjectIds = useMemo(
     () => stableObjects.map((object, index) => resolveStableObjectId(object, index)),
     [objectsRegistrySignature, stableObjects]
@@ -1532,7 +883,7 @@ function SceneRendererComponent({
     () => syncExecutiveFutureStoryLayer({ sceneJson }),
     [sceneJson, objectsRegistrySignature]
   );
-  const payload = sceneJson as any;
+  const payload = sceneJson;
   const hasExplicitObjectSelection = !!objectSelection && typeof objectSelection === "object";
   const highlightedIds = useMemo(
     () => (canonicalSelectedObjectId ? [canonicalSelectedObjectId] : []),
@@ -1614,16 +965,28 @@ function SceneRendererComponent({
     logSceneObjectScaleAuditOnce(sceneJson);
     logRawGeometryAuditOnce(sceneJson);
   }, [sceneJson]);
-  const objectSelectionRiskSourceIds = useMemo(() => readStringArrayField(objectSelection, "risk_sources"), [objectSelection]);
-  const objectSelectionRiskTargetIds = useMemo(() => readStringArrayField(objectSelection, "risk_targets"), [objectSelection]);
-  const payloadRiskSourceIds = useMemo(() => readStringArrayField(payload?.object_selection, "risk_sources"), [payload]);
-  const payloadRiskTargetIds = useMemo(() => readStringArrayField(payload?.object_selection, "risk_targets"), [payload]);
+  const objectSelectionRiskSourceIds = useMemo(
+    () => readStringArrayField(objectSelection ?? null, "risk_sources"),
+    [objectSelection]
+  );
+  const objectSelectionRiskTargetIds = useMemo(
+    () => readStringArrayField(objectSelection ?? null, "risk_targets"),
+    [objectSelection]
+  );
+  const payloadRiskSourceIds = useMemo(
+    () => readStringArrayField(readNestedRecord(payload, "object_selection"), "risk_sources"),
+    [payload]
+  );
+  const payloadRiskTargetIds = useMemo(
+    () => readStringArrayField(readNestedRecord(payload, "object_selection"), "risk_targets"),
+    [payload]
+  );
   const payloadSceneRiskSourceIds = useMemo(
-    () => readStringArrayField(payload?.scene_json?.object_selection, "risk_sources"),
+    () => readStringArrayField(readNestedRecord(payload, "scene_json", "object_selection"), "risk_sources"),
     [payload]
   );
   const payloadSceneRiskTargetIds = useMemo(
-    () => readStringArrayField(payload?.scene_json?.object_selection, "risk_targets"),
+    () => readStringArrayField(readNestedRecord(payload, "scene_json", "object_selection"), "risk_targets"),
     [payload]
   );
   const resolvedRiskSourceIds = useMemo(
@@ -1659,12 +1022,14 @@ function SceneRendererComponent({
     [hasExplicitObjectSelection, objectSelectionRiskTargetIds, objects, payloadRiskTargetIds, payloadSceneRiskTargetIds]
   );
   const objectSelectionDimRequested = Boolean(objectSelection?.dim_unrelated_objects === true);
+  const payloadObjectSelectionDim =
+    readNestedRecord(payload, "object_selection")?.dim_unrelated_objects === true;
+  const payloadSceneObjectSelectionDim =
+    readNestedRecord(payload, "scene_json", "object_selection")?.dim_unrelated_objects === true;
   const scannerDimRequested =
     hasExplicitObjectSelection
       ? objectSelectionDimRequested
-      : objectSelectionDimRequested ||
-        payload?.object_selection?.dim_unrelated_objects === true ||
-        payload?.scene_json?.object_selection?.dim_unrelated_objects === true;
+      : objectSelectionDimRequested || payloadObjectSelectionDim || payloadSceneObjectSelectionDim;
   const sceneObjectIds = useMemo(
     () =>
       stableObjects
@@ -1730,13 +1095,7 @@ function SceneRendererComponent({
   const scannerTargetIds = scannerTargetResolution.resolvedIds;
   const scannerSceneActive = scannerTargetIds.length > 0;
   const primaryResolverFocusedId = null;
-  const scannerFragilityScore = clamp01(
-    typeof (sceneJson as any)?.scene?.scanner_state_vector?.fragility_score === "number"
-      ? (sceneJson as any).scene.scanner_state_vector.fragility_score
-      : typeof (sceneJson as any)?.state_vector?.fragility_score === "number"
-      ? (sceneJson as any).state_vector.fragility_score
-      : 0
-  );
+  const scannerFragilityScore = clamp01(readSceneFragilityScore(sceneJson));
   const scannerPrimaryResolution = useMemo(
     () =>
       resolveScannerPrimaryTarget({
@@ -1774,21 +1133,30 @@ function SceneRendererComponent({
   const scannerStoryKey = scannerSceneActive
     ? `${resolvedPrimaryRenderId ?? resolvedLabelOwnerId ?? "none"}:${scannerTargetIds.join("|")}`
     : "inactive";
-  const [scannerStoryReveal, setScannerStoryReveal] = useState<ScannerStoryReveal>({
-    primary: scannerSceneActive ? 1 : 1,
-    edge: scannerSceneActive ? 1 : 1,
-    affected: scannerSceneActive ? 1 : 1,
-    context: scannerSceneActive ? 1 : 1,
-  });
+  const STATIC_SCANNER_REVEAL: ScannerStoryReveal = {
+    primary: 1,
+    edge: 1,
+    affected: 1,
+    context: 1,
+  };
+  const HIDDEN_SCANNER_REVEAL: ScannerStoryReveal = {
+    primary: 0,
+    edge: 0,
+    affected: 0,
+    context: 0,
+  };
+  const [scannerStoryRevealState, setScannerStoryRevealState] = useState<{
+    key: string;
+    reveal: ScannerStoryReveal;
+  }>({ key: scannerStoryKey, reveal: HIDDEN_SCANNER_REVEAL });
+  const scannerStoryReveal =
+    STATIC_VISUAL_FREEZE || !scannerSceneActive
+      ? STATIC_SCANNER_REVEAL
+      : scannerStoryRevealState.key === scannerStoryKey
+        ? scannerStoryRevealState.reveal
+        : HIDDEN_SCANNER_REVEAL;
   useEffect(() => {
-    if (STATIC_VISUAL_FREEZE) {
-      setScannerStoryReveal({ primary: 1, edge: 1, affected: 1, context: 1 });
-      return;
-    }
-    if (!scannerSceneActive) {
-      setScannerStoryReveal({ primary: 1, edge: 1, affected: 1, context: 1 });
-      return;
-    }
+    if (STATIC_VISUAL_FREEZE || !scannerSceneActive) return;
 
     let frameId = 0;
     const start = performance.now();
@@ -1800,14 +1168,18 @@ function SceneRendererComponent({
         affected: smoothRamp(elapsed, 0.28, 0.62),
         context: smoothRamp(elapsed, 0.46, 0.85),
       };
-      setScannerStoryReveal((prev) =>
-        prev.primary === nextReveal.primary &&
-        prev.edge === nextReveal.edge &&
-        prev.affected === nextReveal.affected &&
-        prev.context === nextReveal.context
-          ? prev
-          : nextReveal
-      );
+      setScannerStoryRevealState((prev) => {
+        if (
+          prev.key === scannerStoryKey &&
+          prev.reveal.primary === nextReveal.primary &&
+          prev.reveal.edge === nextReveal.edge &&
+          prev.reveal.affected === nextReveal.affected &&
+          prev.reveal.context === nextReveal.context
+        ) {
+          return prev;
+        }
+        return { key: scannerStoryKey, reveal: nextReveal };
+      });
       if (
         nextReveal.primary < 1 ||
         nextReveal.edge < 1 ||
@@ -1818,7 +1190,6 @@ function SceneRendererComponent({
       }
     };
 
-    setScannerStoryReveal({ primary: 0, edge: 0, affected: 0, context: 0 });
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
   }, [scannerSceneActive, scannerStoryKey]);
@@ -1857,20 +1228,20 @@ function SceneRendererComponent({
   );
   // Strict calm camera rule: renderer-level camera bias only follows explicit selection.
   const cameraBiasTarget = cameraIntelligence.kind === "selected" ? cameraIntelligence.target : null;
-  const rawSceneAnims = (sceneJson.scene?.animations ?? null) as any[] | null;
+  const rawSceneAnims = sceneJson.scene?.animations ?? null;
   const anims = useMemo(
     () => (Array.isArray(rawSceneAnims) ? rawSceneAnims : EMPTY_SCENE_ANIMS),
     [rawSceneAnims]
   );
-  const rawSceneLoops = (sceneJson as any)?.scene?.loops;
+  const rawSceneLoops = sceneJson.scene?.loops;
   const loopList: SceneLoop[] = useMemo(
     () => (Array.isArray(loops) ? loops : Array.isArray(rawSceneLoops) ? rawSceneLoops : EMPTY_SCENE_LOOPS),
     [loops, rawSceneLoops]
   );
   const activeLoopId: string | null =
     propActiveLoopId ??
-    ((sceneJson as any)?.scene?.active_loop as string | undefined) ??
-    ((sceneJson as any)?.scene?.activeLoopId as string | undefined) ??
+    (typeof sceneJson.scene?.active_loop === "string" ? sceneJson.scene.active_loop : null) ??
+    (typeof sceneJson.scene?.activeLoopId === "string" ? sceneJson.scene.activeLoopId : null) ??
     null;
   const relationshipEdges = useMemo(() => readSceneRelationshipEdges(sceneJson), [sceneJson]);
   const relationshipExploration = useMemo(
@@ -1885,7 +1256,7 @@ function SceneRendererComponent({
     const relationMap = new Map<string, Set<string>>();
     loopList.forEach((loop) => {
       if (!Array.isArray(loop?.edges)) return;
-      loop.edges.forEach((edge: any) => {
+      loop.edges.forEach((edge: SceneLoopEdge) => {
         const from = String(edge?.from ?? "").trim();
         const to = String(edge?.to ?? "").trim();
         if (!from || !to) return;
@@ -1929,6 +1300,13 @@ function SceneRendererComponent({
   const selectedSemanticId = canonicalSelectedObjectId;
   const attentionMemoryRef = useRef<Map<string, AttentionMemoryEntry>>(new Map());
   const [attentionMemoryNow, setAttentionMemoryNow] = useState(() => Date.now());
+  const [attentionMemorySnap, setAttentionMemorySnap] = useState(
+    () => new Map<string, AttentionMemoryEntry>()
+  );
+  const syncAttentionMemorySnap = useCallback((now = Date.now()) => {
+    setAttentionMemorySnap(new Map(attentionMemoryRef.current));
+    setAttentionMemoryNow(now);
+  }, []);
   useEffect(() => {
     if (!hoveredId || hoveredInteractionRole === "neutral") return;
     writeAttentionMemory(attentionMemoryRef.current, {
@@ -1937,8 +1315,8 @@ function SceneRendererComponent({
       timestamp: Date.now(),
       source: "hover",
     });
-    setAttentionMemoryNow(Date.now());
-  }, [hoveredId, hoveredInteractionRole]);
+    syncAttentionMemorySnap();
+  }, [hoveredId, hoveredInteractionRole, syncAttentionMemorySnap]);
   useEffect(() => {
     const selectedId = selectedSemanticId;
     if (!selectedId) return;
@@ -1950,8 +1328,8 @@ function SceneRendererComponent({
       timestamp: Date.now(),
       source: "selected",
     });
-    setAttentionMemoryNow(Date.now());
-  }, [roleById, selectedSemanticId]);
+    syncAttentionMemorySnap();
+  }, [roleById, selectedSemanticId, syncAttentionMemorySnap]);
   useEffect(() => {
     if (!scannerSceneActive || !resolvedPrimaryRenderId) return;
     writeAttentionMemory(attentionMemoryRef.current, {
@@ -1960,8 +1338,8 @@ function SceneRendererComponent({
       timestamp: Date.now(),
       source: "scanner_primary",
     });
-    setAttentionMemoryNow(Date.now());
-  }, [resolvedPrimaryRenderId, scannerSceneActive]);
+    syncAttentionMemorySnap();
+  }, [resolvedPrimaryRenderId, scannerSceneActive, syncAttentionMemorySnap]);
   useEffect(() => {
     if (attentionMemoryRef.current.size === 0) return;
     let timerId = 0;
@@ -1969,7 +1347,7 @@ function SceneRendererComponent({
       const now = Date.now();
       const changed = pruneAttentionMemory(attentionMemoryRef.current, now);
       if (changed || attentionMemoryRef.current.size > 0) {
-        setAttentionMemoryNow(now);
+        syncAttentionMemorySnap(now);
       }
       if (attentionMemoryRef.current.size > 0) {
         timerId = window.setTimeout(tick, 120);
@@ -1977,21 +1355,21 @@ function SceneRendererComponent({
     };
     timerId = window.setTimeout(tick, 120);
     return () => window.clearTimeout(timerId);
-  }, [attentionMemoryNow]);
+  }, [attentionMemoryNow, syncAttentionMemorySnap]);
   const attentionMemoryStrengthById = useMemo(() => {
     const strengths = new Map<string, number>();
-    attentionMemoryRef.current.forEach((entry, id) => {
+    attentionMemorySnap.forEach((entry, id) => {
       const strength = getAttentionMemoryStrength(entry, attentionMemoryNow);
       if (strength > 0) strengths.set(id, strength);
     });
     return strengths;
-  }, [attentionMemoryNow]);
+  }, [attentionMemoryNow, attentionMemorySnap]);
   const loopEdges = useMemo(
     () =>
       loopList.flatMap((loop) =>
         Array.isArray(loop?.edges)
           ? loop.edges
-              .map((edge: any) => ({
+              .map((edge: SceneLoopEdge) => ({
                 from: String(edge?.from ?? "").trim(),
                 to: String(edge?.to ?? "").trim(),
                 weight:
@@ -2023,11 +1401,12 @@ function SceneRendererComponent({
         scannerAffectedIds: affectedTargetIds,
         scannerContextIds: contextTargetIds,
         edges: loopEdges,
-        attentionMemory: attentionMemoryRef.current,
+        attentionMemory: attentionMemorySnap,
         attentionMemoryStrengthById,
       }),
     [
       affectedTargetIds,
+      attentionMemorySnap,
       attentionMemoryStrengthById,
       contextTargetIds,
       hoveredId,
@@ -2218,19 +1597,21 @@ function SceneRendererComponent({
       narrativeTargetLookAt[2] + (simulationCentroid[2] - narrativeTargetLookAt[2]) * simulationBias,
     ];
   }, [cameraBiasTarget, cameraIntelligence.kind, cameraIntelligence.role, effectivePropagationSourceId, effectivePropagationSourceStrength, narrativeCentroid, narrativeFocusPath.primaryId, narrativeFocusRoleById, narrativeFocusStrength, objects, scannerStoryReveal.affected, scannerStoryReveal.context, scannerStoryReveal.primary, sceneCenter, simulationCentroid]);
-  const visualModeId: string | undefined =
-    String(
-      (sceneJson as any)?.product_mode?.mode_id ??
-        (sceneJson as any)?.meta?.product_mode_id ??
-        ""
-    ).trim() || undefined;
+  const visualModeId: string | undefined = readProductModeId(sceneJson) || undefined;
 
   const animMap = useMemo(() => {
-    const m = new Map<string, any>();
-    for (const a of anims) {
-      const target = a?.target != null ? String(a.target) : "";
+    const m = new Map<string | undefined, AnimatableObjectProps["anim"]>();
+    for (const entry of anims) {
+      if (!entry || typeof entry !== "object") continue;
+      const record = entry as Record<string, unknown>;
+      const target = record.target != null ? String(record.target) : "";
       if (!target) continue;
-      m.set(target, a);
+      const type = record.type;
+      if (type !== "pulse" && type !== "wobble" && type !== "spin") continue;
+      m.set(target, {
+        type,
+        intensity: Number(record.intensity) || 0,
+      });
     }
     return m;
   }, [anims]);
@@ -2251,10 +1632,13 @@ function SceneRendererComponent({
       const sortIds = (ids: string[]) => [...ids].sort((a, b) => a.localeCompare(b));
       const normPayload = (v: unknown) =>
         Array.isArray(v) ? sortIds(v.map(String).filter(Boolean)) : null;
+      const payloadObjectSelection = readNestedRecord(payload, "object_selection");
+      const payloadSceneObjectSelection = readNestedRecord(payload, "scene_json", "object_selection");
+      const payloadContextObjectSelection = readNestedRecord(payload, "context", "object_selection");
       const signature = JSON.stringify({
-        payloadHighlighted: normPayload(payload?.object_selection?.highlighted_objects),
-        sceneHighlighted: normPayload(payload?.scene_json?.object_selection?.highlighted_objects),
-        contextHighlighted: normPayload(payload?.context?.object_selection?.highlighted_objects),
+        payloadHighlighted: normPayload(payloadObjectSelection?.highlighted_objects),
+        sceneHighlighted: normPayload(payloadSceneObjectSelection?.highlighted_objects),
+        contextHighlighted: normPayload(payloadContextObjectSelection?.highlighted_objects),
         highlightedIds: sortIds(highlightedIds.map(String)),
         scannerTargetIds: sortIds(scannerTargetIds.map(String)),
       });
@@ -2263,14 +1647,14 @@ function SceneRendererComponent({
       }
       lastSceneTargetResolutionSignatureRef.current = signature;
       console.groupCollapsed("[Nexora][SceneTargetResolution]");
-      console.log("payload.object_selection.highlighted_objects", payload?.object_selection?.highlighted_objects);
+      console.log("payload.object_selection.highlighted_objects", payloadObjectSelection?.highlighted_objects);
       console.log(
         "payload.scene_json.object_selection.highlighted_objects",
-        payload?.scene_json?.object_selection?.highlighted_objects
+        payloadSceneObjectSelection?.highlighted_objects
       );
       console.log(
         "payload.context.object_selection.highlighted_objects",
-        payload?.context?.object_selection?.highlighted_objects
+        payloadContextObjectSelection?.highlighted_objects
       );
       console.log("highlightedIds", highlightedIds);
       console.log("SCANNER TARGET IDS:", scannerTargetIds);
@@ -2471,7 +1855,7 @@ function SceneRendererComponent({
         scannerStoryReveal,
         hoveredId,
         hoveredInteractionRole,
-        setHoveredId: setHoveredIdThrottled,
+        setHoveredId,
         motionCalm,
         neighborIds: neighborIdsByStableId.get(stableId) ?? EMPTY_STRING_ARRAY,
         attentionMemoryStrength: Math.max(

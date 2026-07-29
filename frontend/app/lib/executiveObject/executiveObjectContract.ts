@@ -174,8 +174,6 @@ export const EXECUTIVE_OBJECT_INTEGRATION_SELF_MANIFEST = Object.freeze({
 export const EXECUTIVE_OBJECT_INTEGRATION_MODULE_PATHS = Object.freeze(
   EXECUTIVE_OBJECT_INTEGRATION_SELF_MANIFEST.allowedFiles.filter((entry) => entry.endsWith(".ts"))
 );
-
-const EXAMPLE_TS = "2026-06-22T00:00:00.000Z";
 const EXAMPLE_INTEGRATION_SESSION_ID = "eoi-session-example-001";
 const EXAMPLE_REGISTRY_ID = "eoi-registry-example-001";
 

@@ -129,6 +129,12 @@ const collapseButtonStyle: React.CSSProperties = mrpHeaderCollapseButtonStyle({
 });
 
 function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.ReactElement {
+  const {
+    onToggleCollapse,
+    onTabChange,
+    onMrpContextBack,
+    onReturnToDashboardHome,
+  } = props;
   const activeTab = props.activeTab;
   const collapsed = props.collapsed === true;
   const previousTabRef = React.useRef<MainRightPanelTab>(activeTab);
@@ -157,8 +163,8 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
   }, [collapsed]);
 
   const handleToggleCollapse = React.useCallback(() => {
-    props.onToggleCollapse?.();
-  }, [props.onToggleCollapse]);
+    onToggleCollapse?.();
+  }, [onToggleCollapse]);
 
   React.useEffect(() => {
     const runtimeTraceSignature = JSON.stringify({
@@ -197,9 +203,9 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
         });
         return;
       }
-      props.onTabChange(tab);
+      onTabChange(tab);
     },
-    [activeTab, props.onTabChange]
+    [activeTab, onTabChange]
   );
 
   const activeWorkspaceId = React.useMemo(
@@ -235,12 +241,12 @@ function MainRightPanelShellComponent(props: MainRightPanelShellProps): React.Re
   });
 
   const handleContextBackNavigation = React.useCallback(() => {
-    if (props.onMrpContextBack) {
-      props.onMrpContextBack();
+    if (onMrpContextBack) {
+      onMrpContextBack();
       return;
     }
-    props.onReturnToDashboardHome?.();
-  }, [props.onMrpContextBack, props.onReturnToDashboardHome]);
+    onReturnToDashboardHome?.();
+  }, [onMrpContextBack, onReturnToDashboardHome]);
 
   const renderDashboardRuntime = React.useCallback(
     () => (

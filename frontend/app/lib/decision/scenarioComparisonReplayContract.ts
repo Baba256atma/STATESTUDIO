@@ -114,12 +114,12 @@ function safeMetaStats(semanticObjectMeta?: Record<string, SemanticObjectMeta | 
   const values = Object.values(semanticObjectMeta ?? {});
   const domains = unique(
     values
-      .map((v: any) => String(v?.domain ?? "").trim().toLowerCase())
+      .map((v) => String((v as Record<string, unknown>)?.domain ?? "").trim().toLowerCase())
       .filter(Boolean)
   );
   const categories = unique(
     values
-      .map((v: any) => String(v?.category ?? "").trim().toLowerCase())
+      .map((v) => String((v as Record<string, unknown>)?.category ?? "").trim().toLowerCase())
       .filter(Boolean)
   );
   return {
@@ -141,7 +141,11 @@ export function createScenarioSnapshot(params: {
   const ts = Number.isFinite(params.timestamp) ? Number(params.timestamp) : Date.now();
   const scene = params.sceneJson;
   const objectCount = Array.isArray(scene?.scene?.objects) ? scene!.scene.objects!.length : 0;
-  const relationCount = Array.isArray((scene as any)?.scene?.relations) ? (scene as any).scene.relations.length : 0;
+  const sceneRecord = scene && typeof scene === "object" ? (scene as Record<string, unknown>) : null;
+  const nestedScene = sceneRecord?.scene;
+  const nestedSceneRecord =
+    nestedScene && typeof nestedScene === "object" ? (nestedScene as Record<string, unknown>) : null;
+  const relationCount = Array.isArray(nestedSceneRecord?.relations) ? nestedSceneRecord.relations.length : 0;
   const loopCount = Array.isArray(scene?.scene?.loops) ? scene!.scene.loops!.length : 0;
   const highlightedObjectIds = unique([
     ...(params.simulation?.matchedObjectIds ?? []),

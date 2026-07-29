@@ -38,8 +38,9 @@ export function resetExecutiveSummaryWorkspaceRuntimeForTests(): void {
   resetExecutiveSummaryStateRuntimeForTests();
 }
 
-export function buildExecutiveSummaryWorkspaceView(_input?: {
+export function buildExecutiveSummaryWorkspaceView(input?: {
   mountKey?: string | null;
 }): ExecutiveSummaryWorkspaceView {
+  void input;
   return buildExecutiveSummaryWorkspaceViewFromState(getExecutiveSummaryState());
 }

@@ -6,7 +6,7 @@ import type { ExecutiveFinancePlatformFreezeManifest as ExecutiveFinancePlatform
 
 export function getExecutiveFinancePlatformFreezeManifest(): ExecutiveFinancePlatformFreezeManifestContract {
   const certification = getExecutiveFinancePlatformCertification();
-  const certificationReadiness: "Ready" = "Ready";
+  const certificationReadiness = "Ready" as const;
 
   return Object.freeze({
     platformIdentity: Object.freeze({

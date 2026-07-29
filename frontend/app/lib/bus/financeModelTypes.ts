@@ -1,7 +1,4 @@
-import type {
-  FinanceObjectRegistry,
-  FinanceRegistryObjectEntry,
-} from "./financeRegistryIndex.ts";
+import type { FinanceRegistryObjectEntry } from "./financeRegistryIndex.ts";
 
 export type FinanceModelEntity = Readonly<{
   readonly entityId: `finance-model-${Lowercase<string>}`;

@@ -9,14 +9,7 @@ import {
   normalizeScenePanelState,
   SCENE_PANEL_CONTRACT,
 } from "../../lib/scene/scenePanelContract";
-import {
-  HUD_PANEL_BODY_SCROLL_STYLE,
-  HUD_PANEL_HEADER_PADDING_STYLE,
-  HUD_PANEL_SCROLL_BODY_STYLE,
-  HUD_PANEL_STICKY_HEADER_STYLE,
-  HUD_PANEL_STICKY_SHELL_STYLE,
-  traceHudPanelStickyHeader,
-} from "../../lib/hud/hudPanelDesignContract";
+import { HUD_PANEL_HEADER_PADDING_STYLE, HUD_PANEL_SCROLL_BODY_STYLE, HUD_PANEL_STICKY_SHELL_STYLE, traceHudPanelStickyHeader } from "../../lib/hud/hudPanelDesignContract";
 import {
   SCENE_PANEL_EXPANDED_HEIGHT_RATIO,
   SCENE_PANEL_HEADER_STYLE,
@@ -87,6 +80,7 @@ const shellStyle: React.CSSProperties = {
 };
 
 export function ScenePanelShell(props: ScenePanelShellProps): React.ReactElement {
+  const { onToggleCollapsed, onAddObjectClick, onCreateSystemClick } = props;
   const mountedRef = React.useRef(false);
   const scenePanelState = normalizeScenePanelState(props.collapsed, { warn: false });
   const minimized = scenePanelState === "collapsed";
@@ -118,19 +112,19 @@ export function ScenePanelShell(props: ScenePanelShellProps): React.ReactElement
     } else {
       logScenePanelCollapsed();
     }
-    props.onToggleCollapsed();
-  }, [minimized, props.onToggleCollapsed]);
+    onToggleCollapsed();
+  }, [minimized, onToggleCollapsed]);
 
   const handleAddObject = React.useCallback(() => {
     logAddObjectPlaceholderClicked();
     requestOpenObjectCatalog(SCENE_PANEL_CONTRACT.objectCatalogEntrySource);
-    props.onAddObjectClick?.();
-  }, [props.onAddObjectClick]);
+    onAddObjectClick?.();
+  }, [onAddObjectClick]);
 
   const handleCreateSystem = React.useCallback(() => {
     requestOpenSystemModelingWorkspace("scene_panel");
-    props.onCreateSystemClick?.();
-  }, [props.onCreateSystemClick]);
+    onCreateSystemClick?.();
+  }, [onCreateSystemClick]);
 
   return (
     <div

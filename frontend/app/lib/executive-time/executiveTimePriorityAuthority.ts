@@ -3,18 +3,7 @@
  * Policy metadata and engine interface only — no priority evaluation.
  */
 
-import type {
-  ExecutiveTimePriorityEngineContract,
-  ExecutiveTimePriorityEvaluationRequest,
-  ExecutiveTimePriorityExplanation,
-  ExecutiveTimePriorityFutureIntegrations,
-  ExecutiveTimePriorityLevel,
-  ExecutiveTimePriorityOwnershipRules,
-  ExecutiveTimePriorityPolicyDefinition,
-  ExecutiveTimePriorityPolicyValidationResult,
-  ExecutiveTimePriorityReadOnlyDependencies,
-  ExecutiveTimePriorityResult,
-} from "./executiveTimePriorityAuthorityTypes.ts";
+import type { ExecutiveTimePriorityEngineContract as ExecutiveTimePriorityEngineContractType, ExecutiveTimePriorityEvaluationRequest, ExecutiveTimePriorityExplanation, ExecutiveTimePriorityFutureIntegrations, ExecutiveTimePriorityLevel, ExecutiveTimePriorityOwnershipRules, ExecutiveTimePriorityPolicyDefinition, ExecutiveTimePriorityPolicyValidationResult, ExecutiveTimePriorityReadOnlyDependencies, ExecutiveTimePriorityResult } from "./executiveTimePriorityAuthorityTypes.ts";
 import {
   EXECUTIVE_TIME_PRIORITY_EVALUATION_OWNER,
   EXECUTIVE_TIME_PRIORITY_POLICY_OWNER,
@@ -129,12 +118,14 @@ export function validatePolicy(policyId: string): ExecutiveTimePriorityPolicyVal
 }
 
 export function evaluatePriority(_request: ExecutiveTimePriorityEvaluationRequest): ExecutiveTimePriorityResult {
+  void _request;
   throw new ExecutiveTimePriorityEvaluationDeferredError();
 }
 
 export function evaluateMultiple(
   _requests: readonly ExecutiveTimePriorityEvaluationRequest[]
 ): readonly ExecutiveTimePriorityResult[] {
+  void _requests;
   throw new ExecutiveTimePriorityEvaluationDeferredError();
 }
 
@@ -183,7 +174,7 @@ export function buildPriorityResultContract(input: {
   });
 }
 
-export const ExecutiveTimePriorityEngineContract: ExecutiveTimePriorityEngineContract = Object.freeze({
+export const ExecutiveTimePriorityEngineContract: ExecutiveTimePriorityEngineContractType = Object.freeze({
   evaluationOwner: EXECUTIVE_TIME_PRIORITY_EVALUATION_OWNER,
   evaluatePriority,
   evaluateMultiple,

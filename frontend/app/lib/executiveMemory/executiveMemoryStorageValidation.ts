@@ -134,14 +134,23 @@ export function applyExecutiveMemoryUpdate(
         extensionMetadata: existing.metadata.extensionMetadata,
       });
 
-  const nextVersion = createExecutiveMemoryVersion({
-    versionId: `${existing.version.versionId}-rev-${updatedAt}`,
-    schemaVersion: existing.version.schemaVersion,
-    contractVersion: existing.version.contractVersion,
-    semanticVersion: bumpSemanticVersion(existing.version.semanticVersion),
-    createdAt: updatedAt,
-    compatibility: existing.version.compatibility,
-  });
+  const nextVersion = updates.version
+    ? createExecutiveMemoryVersion({
+        versionId: updates.version.versionId,
+        schemaVersion: updates.version.schemaVersion,
+        contractVersion: updates.version.contractVersion,
+        semanticVersion: updates.version.semanticVersion,
+        createdAt: updates.version.createdAt,
+        compatibility: updates.version.compatibility,
+      })
+    : createExecutiveMemoryVersion({
+        versionId: `${existing.version.versionId}-rev-${updatedAt}`,
+        schemaVersion: existing.version.schemaVersion,
+        contractVersion: existing.version.contractVersion,
+        semanticVersion: bumpSemanticVersion(existing.version.semanticVersion),
+        createdAt: updatedAt,
+        compatibility: existing.version.compatibility,
+      });
 
   return createExecutiveMemoryRecord({
     id: existing.id,

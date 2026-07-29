@@ -25,7 +25,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: unknown, info: unknown) {
     // Minimal logging for debugging; avoid leaking sensitive data.
-    // eslint-disable-next-line no-console
+     
     const message = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? error.stack : undefined;
     console.error("ErrorBoundary caught an error", {

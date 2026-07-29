@@ -80,7 +80,8 @@ export function subscribeSceneNavigationStore(listener: NavigationListener): () 
   return () => listeners.delete(listener);
 }
 
-export function setSceneNavigationMode(mode: SceneNavigationMode, _source: SceneNavigationSource): void {
+export function setSceneNavigationMode(mode: SceneNavigationMode, source: SceneNavigationSource): void {
+  void source;
   if (!isSceneNavigationMode(mode)) return;
   if (mode === navigationMode) {
     publishSceneNavigationState({ navigationMode, selectedPresetId });
@@ -90,7 +91,8 @@ export function setSceneNavigationMode(mode: SceneNavigationMode, _source: Scene
   publishSceneNavigationState({ navigationMode, selectedPresetId });
 }
 
-export function setSelectedCameraPresetId(presetId: CameraPresetId, _source: SceneNavigationSource): void {
+export function setSelectedCameraPresetId(presetId: CameraPresetId, source: SceneNavigationSource): void {
+  void source;
   if (!isCameraPresetId(presetId)) return;
   if (presetId === selectedPresetId) {
     publishSceneNavigationState({ navigationMode, selectedPresetId });

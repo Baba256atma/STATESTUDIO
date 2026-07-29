@@ -100,8 +100,9 @@ function rectForZone(
 
 export function buildHudLayoutPanels(context: SceneHudLayoutContext): HudLayoutPanel[] {
   const panels: HudLayoutPanel[] = [];
-  const rightTopStack: SceneHudPanelId[] = ["objectInfoHud", "executiveStatusHud"];
 
+  // Single descriptor per panelId — duplicate toolbar push previously created
+  // false-positive collisions when registry zoned toolbar as RIGHT_TOP (AD-SCENE-01).
   (Object.keys(context.visiblePanels) as SceneHudPanelId[]).forEach((panelId) => {
     if (!context.visiblePanels[panelId]) return;
     const entry = getSceneHudRegistration(panelId);
@@ -121,18 +122,6 @@ export function buildHudLayoutPanels(context: SceneHudLayoutContext): HudLayoutP
       rect: rectForZone({ ...entry, zone }, context, stackOffset),
     });
   });
-
-  if (context.visiblePanels.executiveSceneToolbar) {
-    const entry = getSceneHudRegistration("executiveSceneToolbar");
-    const zone = enforceCanonicalAnchor("executiveSceneToolbar", entry.zone);
-    panels.push({
-      panelId: "executiveSceneToolbar",
-      zone,
-      priority: entry.priority,
-      visible: true,
-      rect: rectForZone({ ...entry, zone }, context),
-    });
-  }
 
   return panels.sort((a, b) => b.priority - a.priority);
 }

@@ -3,7 +3,8 @@
 import React from "react";
 
 import { CustomerDemoHero } from "../demo/CustomerDemoHero";
-import { nx, panelSurfaceStyle, primaryButtonStyle, secondaryButtonStyle, softCardStyle } from "../ui/nexoraTheme";
+import { nx, panelSurfaceStyle, secondaryButtonStyle, softCardStyle } from "../ui/nexoraTheme";
+import type { SceneJson } from "../../lib/sceneTypes";
 import type { CustomerDemoProfile } from "../../lib/demo/customerDemoTypes";
 import type { NexoraB8PanelContext } from "../../lib/panels/panelDataContract";
 import { buildSimulateMeaningRows } from "../../lib/panels/nexoraPanelMeaning";
@@ -20,9 +21,6 @@ import { DecisionActionBar } from "../executive/DecisionActionBar";
 import { buildDecisionExecutionIntent } from "../../lib/execution/buildDecisionExecutionIntent";
 import type { DecisionAutomationResult } from "../../lib/execution/decisionAutomationTypes";
 import type { DecisionExecutionIntent } from "../../lib/execution/decisionExecutionIntent";
-import { buildDecisionTimeline } from "../../lib/governance/buildDecisionTimeline";
-import { buildDecisionTimelineView } from "../../lib/governance/buildDecisionTimelineView";
-import type { DecisionTimelineViewEvent } from "../../lib/governance/decisionTimelineModel";
 import {
   resolveExecutiveDashboardDecisionTrace,
   buildExecutiveDecisionTraceInputSignature,
@@ -52,20 +50,90 @@ import { loadApprovalWorkflowEnvelope } from "../../lib/approval/approvalWorkflo
 import { guardHeavyComputation } from "../../lib/ops/performanceGuard";
 import { dedupePanelConsoleTrace } from "../../lib/debug/panelConsoleTraceDedupe";
 import type { NexoraB18SimulateResolved } from "../../lib/scenario/nexoraScenarioBuilder.ts";
-import type { FirstMeaningfulState } from "../../screens/homeScreenResponseReaders";
+import { readCanonicalRecommendation, readPayloadString, type FirstMeaningfulState } from "../../screens/homeScreenResponseReaders";
+
+type LooseRecord = Record<string, unknown>;
+
+function asRecord(value: unknown): LooseRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as LooseRecord) : null;
+}
+
+type DashboardFragilitySurface = {
+  level?: unknown;
+  score?: unknown;
+  drivers?: Record<string, unknown> | null;
+};
+
+type DashboardSceneSurface = {
+  scene?: {
+    fragility?: DashboardFragilitySurface | null;
+    objects?: Array<{ id?: string | null }> | null;
+  } | null;
+  meta?: {
+    label?: unknown;
+    demo_title?: unknown;
+  } | null;
+};
+
+type DashboardObjectSelection = {
+  selected_object_id?: unknown;
+  highlighted_objects?: string[] | null;
+};
+
+type DashboardRiskPropagation = {
+  edges?: unknown[] | null;
+};
+
+function readTraceSceneJson(
+  sceneJson: SceneJson | DashboardSceneSurface | null | undefined
+): {
+  scene?: {
+    objects?: Array<{ id?: string | null }>;
+    fragility?: { level?: unknown; score?: unknown };
+  };
+} | null {
+  const surface = sceneJson as DashboardSceneSurface | null | undefined;
+  const scene = surface?.scene;
+  if (!scene) return null;
+  return {
+    scene: {
+      objects: Array.isArray(scene.objects) ? scene.objects : undefined,
+      fragility: scene.fragility
+        ? { level: scene.fragility.level, score: scene.fragility.score }
+        : undefined,
+    },
+  };
+}
+
+function readTraceObjectSelection(
+  objectSelection: DashboardObjectSelection | null | undefined
+): {
+  selected_object_id?: string | null;
+  highlighted_objects?: string[] | null;
+} | null {
+  if (!objectSelection) return null;
+  const highlighted = objectSelection.highlighted_objects;
+  return {
+    selected_object_id:
+      typeof objectSelection.selected_object_id === "string"
+        ? objectSelection.selected_object_id
+        : null,
+    highlighted_objects: Array.isArray(highlighted) ? highlighted.map(String).filter(Boolean) : null,
+  };
+}
 
 type ExecutiveDashboardPanelProps = {
-  sceneJson?: any;
-  responseData?: any;
+  sceneJson?: SceneJson | DashboardSceneSurface | null;
+  responseData?: LooseRecord | null;
   activeMode?: string | null;
-  conflicts?: any[] | null;
-  objectSelection?: any | null;
-  riskPropagation?: any | null;
+  conflicts?: unknown[] | null;
+  objectSelection?: DashboardObjectSelection | null;
+  riskPropagation?: DashboardRiskPropagation | LooseRecord | null;
   decisionMemoryEntries?: DecisionMemoryEntry[];
-  strategicAdvice?: any | null;
-  strategicCouncil?: any | null;
+  strategicAdvice?: LooseRecord | null;
+  strategicCouncil?: LooseRecord | null;
   decisionImpact?: DecisionImpactState | null;
-  decisionCockpit?: any | null;
+  decisionCockpit?: LooseRecord | null;
   selectedObjectLabel?: string | null;
   resolveObjectLabel?: ((id: string | null | undefined) => string | null) | null;
   onOpenWarRoom?: (() => void) | null;
@@ -149,55 +217,71 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
     };
   const isRealFms = firstMeaningfulState.source === "real" || firstMeaningfulState.shouldDeemphasize === true;
 
+  const responseRecord = asRecord(props.responseData);
+  const workspaceId = readPayloadString(responseRecord, "workspace_id");
+  const projectId = readPayloadString(responseRecord, "project_id");
+  const sceneSurface = props.sceneJson as DashboardSceneSurface | null | undefined;
+  const responseSceneJson = asRecord(responseRecord?.scene_json);
+  const responseScene = asRecord(responseSceneJson?.scene);
+  const fragilityScan = asRecord(responseRecord?.fragility_scan);
   const fragility =
-    props.sceneJson?.scene?.fragility ??
-    props.responseData?.fragility ??
-    props.responseData?.scene_json?.scene?.fragility ??
+    sceneSurface?.scene?.fragility ??
+    responseRecord?.fragility ??
+    responseScene?.fragility ??
     null;
-  const fragilityLevel = String(fragility?.level ?? "Unknown").replace(/^\w/, (value) => value.toUpperCase());
-  const driverEntries = Array.isArray(props.responseData?.fragility_scan?.drivers)
-    ? props.responseData.fragility_scan.drivers.map((driver: any) => ({
-        label: String(driver?.label ?? driver?.code ?? "Driver"),
-        value: typeof driver?.score === "number" ? `${Math.round(driver.score * 100)} impact` : "Active",
-      }))
-    : Object.entries((fragility?.drivers ?? {}) as Record<string, unknown>)
+  const fragilityRecord = asRecord(fragility);
+  const fragilityLevel = String(fragilityRecord?.level ?? "Unknown").replace(/^\w/, (value) => value.toUpperCase());
+  const fragilityDrivers = fragilityRecord?.drivers;
+  const driverEntries = Array.isArray(fragilityScan?.drivers)
+    ? fragilityScan.drivers.map((driver: unknown) => {
+        const driverRecord = asRecord(driver);
+        return {
+          label: String(driverRecord?.label ?? driverRecord?.code ?? "Driver"),
+          value:
+            typeof driverRecord?.score === "number" ? `${Math.round(driverRecord.score * 100)} impact` : "Active",
+        };
+      })
+    : Object.entries((fragilityDrivers ?? {}) as Record<string, unknown>)
         .map(([key, value]) => ({
           label: prettifyLabel(key),
           value: `${Math.round(Number(value ?? 0) * 100)} impact`,
         }))
         .sort((a, b) => Number.parseInt(b.value || "0", 10) - Number.parseInt(a.value || "0", 10));
 
-  const strategicAdvice = props.strategicAdvice ?? props.responseData?.strategic_advice ?? null;
-  const cockpitExecutive = props.decisionCockpit?.executive ?? props.responseData?.decision_cockpit?.executive ?? null;
+  const strategicAdvice = props.strategicAdvice ?? asRecord(responseRecord?.strategic_advice) ?? null;
+  const decisionCockpitRecord = asRecord(props.decisionCockpit);
+  const cockpitExecutive =
+    decisionCockpitRecord?.executive ?? asRecord(responseRecord?.decision_cockpit)?.executive ?? null;
   const canonicalRecommendation = React.useMemo(
     () =>
       props.canonicalRecommendation ??
-      props.responseData?.canonical_recommendation ??
+      readCanonicalRecommendation(props.responseData, (props.sceneJson as SceneJson | null) ?? null) ??
       (hasDashboardData
         ? buildCanonicalRecommendation({
             strategicAdvice,
             cockpitExecutive,
-            promptFeedback: props.responseData?.prompt_feedback ?? null,
-            decisionSimulation: props.responseData?.decision_simulation ?? null,
-            reply: props.responseData?.reply ?? null,
+            promptFeedback: responseRecord?.prompt_feedback ?? null,
+            decisionSimulation: responseRecord?.decision_simulation ?? null,
+            reply: responseRecord?.reply ?? null,
           })
         : null),
     [
       cockpitExecutive,
       hasDashboardData,
       props.canonicalRecommendation,
-      props.responseData?.canonical_recommendation,
-      props.responseData?.decision_simulation,
-      props.responseData?.prompt_feedback,
-      props.responseData?.reply,
+      props.responseData,
+      props.sceneJson,
+      responseRecord?.decision_simulation,
+      responseRecord?.prompt_feedback,
+      responseRecord?.reply,
       strategicAdvice,
     ]
   );
 
   dedupePanelConsoleTrace("PanelComponent", "dashboard", "main", {
     meaningfulData: hasDashboardData,
-    hasExecutiveSummary: Boolean(props.responseData?.executive_summary_surface ?? props.responseData?.executive_insight),
-    hasDecisionCockpit: Boolean(props.decisionCockpit ?? props.responseData?.decision_cockpit),
+    hasExecutiveSummary: Boolean(responseRecord?.executive_summary_surface ?? responseRecord?.executive_insight),
+    hasDecisionCockpit: Boolean(props.decisionCockpit ?? responseRecord?.decision_cockpit),
     hasRecommendation: Boolean(canonicalRecommendation),
     hasDecisionResult: Boolean(props.decisionResult),
   });
@@ -206,7 +290,7 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
     hasDashboardData,
     showSoftEmptyState,
     activeExecutiveView: props.activeExecutiveView ?? "dashboard",
-    hasResponseData: Boolean(props.responseData),
+    hasResponseData: Boolean(responseRecord),
     hasSceneJson: Boolean(props.sceneJson),
     hasRecommendation: Boolean(canonicalRecommendation),
     hasDecisionResult: Boolean(props.decisionResult),
@@ -216,15 +300,15 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
     () =>
       guardHeavyComputation("executive_dashboard_decision_brief", () =>
         mapDecisionBrief({
-          fragility,
+          fragility: asRecord(fragility),
           decisionImpact: props.decisionImpact ?? null,
-          strategicAdvice,
+          strategicAdvice: asRecord(strategicAdvice),
           strategicCouncil: null,
-          cockpitExecutive,
+          cockpitExecutive: asRecord(cockpitExecutive),
           canonicalRecommendation,
-          promptFeedback: props.responseData?.prompt_feedback ?? null,
-          decisionSimulation: props.responseData?.decision_simulation ?? null,
-          reply: props.responseData?.reply ?? null,
+          promptFeedback: asRecord(responseRecord?.prompt_feedback),
+          decisionSimulation: asRecord(responseRecord?.decision_simulation),
+          reply: typeof responseRecord?.reply === "string" ? responseRecord.reply : null,
           selectedObjectLabel: props.selectedObjectLabel ?? null,
           resolveObjectLabel: props.resolveObjectLabel ?? null,
         })
@@ -234,9 +318,9 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       cockpitExecutive,
       fragility,
       props.decisionImpact,
-      props.responseData?.decision_simulation,
-      props.responseData?.prompt_feedback,
-      props.responseData?.reply,
+      responseRecord?.decision_simulation,
+      responseRecord?.prompt_feedback,
+      responseRecord?.reply,
       props.resolveObjectLabel,
       props.selectedObjectLabel,
       strategicAdvice,
@@ -249,7 +333,7 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
         buildComparePanelModel({
           canonicalRecommendation,
           decisionResult: props.decisionResult ?? null,
-          strategicAdvice,
+          strategicAdvice: asRecord(strategicAdvice),
           responseData: props.responseData ?? null,
         })
       ),
@@ -268,7 +352,7 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
           responseData: props.responseData ?? null,
           canonicalRecommendation,
           decisionResult: props.decisionResult ?? null,
-          strategicAdvice,
+          strategicAdvice: asRecord(strategicAdvice),
           memoryEntries: props.decisionMemoryEntries ?? [],
         })
       ),
@@ -287,30 +371,38 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
 
   const memoryEntries = React.useMemo(() => props.decisionMemoryEntries ?? [], [props.decisionMemoryEntries]);
   const recentMemory = React.useMemo(() => memoryEntries.slice(0, 3), [memoryEntries]);
+  const objectSelectionRecord = props.objectSelection;
   const focusLabel =
     props.selectedObjectLabel ??
     resolveLabel(
       props.resolveObjectLabel,
-      Array.isArray(props.objectSelection?.highlighted_objects) ? props.objectSelection.highlighted_objects[0] : null
+      Array.isArray(objectSelectionRecord?.highlighted_objects)
+        ? objectSelectionRecord.highlighted_objects[0]
+        : null
     ) ??
-    String(props.sceneJson?.meta?.label ?? props.sceneJson?.meta?.demo_title ?? "Operations");
+    String(sceneSurface?.meta?.label ?? sceneSurface?.meta?.demo_title ?? "Operations");
+  const executiveSummarySurface = asRecord(responseRecord?.executive_summary_surface);
+  const cockpitExecutiveRecord = asRecord(cockpitExecutive);
   const situationText =
     cleanText(
-      props.responseData?.executive_summary_surface?.happened ??
-        cockpitExecutive?.summary ??
-        props.responseData?.analysis_summary ??
-        props.responseData?.reply
+      executiveSummarySurface?.happened ??
+        cockpitExecutiveRecord?.summary ??
+        responseRecord?.analysis_summary ??
+        responseRecord?.reply
     ) ?? "Nexora is ready to brief the current operating condition.";
   const whyItMatters =
     cleanText(
-      props.responseData?.executive_summary_surface?.why_it_matters ??
+      executiveSummarySurface?.why_it_matters ??
         decisionBrief.summary.core_problem ??
         canonicalRecommendation?.reasoning?.risk_summary
     ) ?? "The system is flagging a decision that merits executive review.";
+  const riskPropagationRecord = asRecord(props.riskPropagation);
   const pressureIndicators = [
     fragilityLevel !== "Unknown" ? `Fragility ${fragilityLevel}` : null,
     driverEntries[0]?.label ? driverEntries[0].label : null,
-    props.riskPropagation?.edges?.length ? `${props.riskPropagation.edges.length} propagation links` : null,
+    Array.isArray(riskPropagationRecord?.edges) && riskPropagationRecord.edges.length
+      ? `${riskPropagationRecord.edges.length} propagation links`
+      : null,
   ].filter((value): value is string => !!value);
   const recommendedTargets =
     canonicalRecommendation?.primary.target_ids?.length
@@ -345,8 +437,8 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
           responseData: props.responseData ?? null,
           canonicalRecommendation,
           memoryEntries,
-          sceneJson: props.sceneJson ?? null,
-          objectSelection: props.objectSelection ?? null,
+          sceneJson: readTraceSceneJson(props.sceneJson),
+          objectSelection: readTraceObjectSelection(props.objectSelection),
           activeMode: props.activeMode ?? null,
         })
       ),
@@ -362,8 +454,8 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       props.responseData?.active_scenario_id,
       props.responseData?.risk_level,
       props.sceneJson?.scene?.objects?.map((object: { id?: string | null }) => object?.id ?? "").join("|"),
-      props.sceneJson?.scene?.fragility?.level,
-      props.sceneJson?.scene?.fragility?.score,
+      sceneSurface?.scene?.fragility?.level,
+      sceneSurface?.scene?.fragility?.score,
     ]
   );
   const decisionTrace = React.useMemo(() => {
@@ -376,15 +468,15 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
         responseData: props.responseData ?? null,
         canonicalRecommendation,
         memoryEntries,
-        sceneJson: props.sceneJson ?? null,
-        objectSelection: props.objectSelection ?? null,
+        sceneJson: readTraceSceneJson(props.sceneJson),
+        objectSelection: readTraceObjectSelection(props.objectSelection),
         activeMode: props.activeMode ?? null,
       }),
       responseData: props.responseData ?? null,
       canonicalRecommendation,
       memoryEntries,
-      sceneJson: props.sceneJson ?? null,
-      objectSelection: props.objectSelection ?? null,
+      sceneJson: readTraceSceneJson(props.sceneJson),
+      objectSelection: readTraceObjectSelection(props.objectSelection),
       activeMode: props.activeMode ?? null,
     });
   }, [decisionTraceInputSignature]);
@@ -451,9 +543,10 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
   const metaDecision = React.useMemo(
     () =>
       buildMetaDecisionState({
-        reasoning: props.responseData?.ai_reasoning ?? null,
-        simulation: props.responseData?.decision_simulation ?? null,
-        comparison: props.responseData?.decision_comparison ?? props.responseData?.comparison ?? null,
+        reasoning: asRecord(responseRecord?.ai_reasoning),
+        simulation: asRecord(responseRecord?.decision_simulation),
+        comparison:
+          asRecord(responseRecord?.decision_comparison) ?? asRecord(responseRecord?.comparison) ?? null,
         canonicalRecommendation,
         calibration,
         responseData: props.responseData ?? null,
@@ -463,10 +556,10 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       calibration,
       canonicalRecommendation,
       memoryEntries,
-      props.responseData?.ai_reasoning,
-      props.responseData?.comparison,
-      props.responseData?.decision_comparison,
-      props.responseData?.decision_simulation,
+      responseRecord?.ai_reasoning,
+      responseRecord?.comparison,
+      responseRecord?.decision_comparison,
+      responseRecord?.decision_simulation,
       props.responseData,
     ]
   );
@@ -493,11 +586,11 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
   const collaborationEnvelope = React.useMemo(
     () =>
       loadCollaborationEnvelope(
-        props.responseData?.workspace_id ?? null,
-        props.responseData?.project_id ?? null,
+        workspaceId,
+        projectId,
         executionIntent?.id ?? canonicalRecommendation?.id ?? null
       ),
-    [props.responseData?.workspace_id, props.responseData?.project_id, executionIntent?.id, canonicalRecommendation?.id]
+    [workspaceId, projectId, executionIntent?.id, canonicalRecommendation?.id]
   );
   const collaborationState = React.useMemo(
     () =>
@@ -524,9 +617,9 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
     [canonicalRecommendation, collaborationEnvelope?.inputs, memoryEntries, props.decisionResult, props.responseData]
   );
   const orgMemoryEntries = React.useMemo(() => {
-    const scoped = loadOrgScopedDecisionMemoryEntries(props.responseData?.workspace_id ?? null);
+    const scoped = loadOrgScopedDecisionMemoryEntries(workspaceId);
     return Array.from(new Map([...scoped, ...memoryEntries].map((entry) => [entry.id, entry])).values());
-  }, [props.responseData?.workspace_id, memoryEntries]);
+  }, [workspaceId, memoryEntries]);
   const orgMemory = React.useMemo(
     () =>
       buildOrgMemoryState({
@@ -564,11 +657,11 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
   const approvalEnvelope = React.useMemo(
     () =>
       loadApprovalWorkflowEnvelope(
-        props.responseData?.workspace_id ?? null,
-        props.responseData?.project_id ?? null,
+        workspaceId,
+        projectId,
         governance.decision_id ?? executionIntent?.id ?? canonicalRecommendation?.id ?? null
       ),
-    [props.responseData?.workspace_id, props.responseData?.project_id, governance.decision_id, executionIntent?.id, canonicalRecommendation?.id]
+    [workspaceId, projectId, governance.decision_id, executionIntent?.id, canonicalRecommendation?.id]
   );
   const approvalWorkflow = React.useMemo(
     () =>
@@ -596,9 +689,10 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       : props.activeExecutiveView === "compare"
         ? "Scan the recommendation, alternatives, and future paths before committing to a deeper comparison."
         : "Understand the situation, trust the recommendation, scan alternatives, and take action from one decision cockpit.";
-  const simulationContract = props.responseData?.decision_simulation ?? null;
+  const simulationContract = asRecord(responseRecord?.decision_simulation);
+  const simulationImpact = asRecord(simulationContract?.impact);
   const simulationSummary =
-    cleanText(simulationContract?.summary ?? simulationContract?.impact?.summary) ?? null;
+    cleanText(simulationContract?.summary ?? simulationImpact?.summary) ?? null;
   const simulationImpactedNodes = Array.isArray(simulationContract?.impacted_nodes)
     ? simulationContract.impacted_nodes.map(String).filter(Boolean)
     : Array.isArray(simulationContract?.affected_objects)
@@ -607,8 +701,8 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
   const simulationRiskDelta =
     typeof simulationContract?.risk_delta === "number"
       ? simulationContract.risk_delta
-      : typeof simulationContract?.impact?.risk_change === "number"
-        ? simulationContract.impact.risk_change
+      : typeof simulationImpact?.risk_change === "number"
+        ? simulationImpact.risk_change
         : null;
 
   if (panelMode === "empty") {
@@ -882,8 +976,8 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
         accent="primary"
       >
         <StrategicCommandPreview
-          workspaceId={props.responseData?.workspace_id ?? null}
-          projectId={props.responseData?.project_id ?? null}
+          workspaceId={readPayloadString(responseRecord, "workspace_id")}
+          projectId={readPayloadString(responseRecord, "project_id")}
           responseData={props.responseData ?? props.sceneJson ?? null}
           canonicalRecommendation={canonicalRecommendation}
           decisionResult={props.decisionResult ?? null}

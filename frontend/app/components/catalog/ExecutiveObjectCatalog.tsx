@@ -63,15 +63,16 @@ export function ExecutiveObjectCatalog(props: ExecutiveObjectCatalogProps): Reac
   }, [searchResult.matches]);
 
   const preview = selected ? resolveCatalogObjectPreview(selected) : null;
+  const { onCancel, onConfirm } = props;
 
   const handleCancel = React.useCallback(() => {
-    props.onCancel();
-  }, [props.onCancel]);
+    onCancel();
+  }, [onCancel]);
 
   const handleConfirm = React.useCallback(() => {
     if (!selected) return;
-    props.onConfirm(selected);
-  }, [props.onConfirm, selected]);
+    onConfirm(selected);
+  }, [onConfirm, selected]);
 
   if (!props.open) return null;
 

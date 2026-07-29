@@ -66,7 +66,6 @@ test("exports advisory recommendation freeze tag and version", () => {
 
 test("intake consumes intelligence from risk timeline scenario and war room", () => {
   publishRiskWorkspaceState({
-    phase: "ready",
     selectedObjectId: "factory-a",
     riskCount: 3,
     elevatedRiskCount: 1,
@@ -74,7 +73,6 @@ test("intake consumes intelligence from risk timeline scenario and war room", ()
     dominantRiskCategory: "Operational",
   });
   publishTimelineWorkspaceState({
-    phase: "ready",
     selectedObjectId: "factory-a",
     totalEvents: 8,
     recentEventCount: 2,
@@ -82,7 +80,6 @@ test("intake consumes intelligence from risk timeline scenario and war room", ()
     riskEventCount: 1,
   });
   publishScenarioWorkspaceState({
-    phase: "ready",
     generatedScenarios: Object.freeze([
       Object.freeze({
         id: "expected_case",
@@ -101,7 +98,6 @@ test("intake consumes intelligence from risk timeline scenario and war room", ()
     ]),
   });
   publishWarRoomWorkspaceState({
-    phase: "ready",
     workspaceContext: Object.freeze({
       selectedObjectId: "factory-a",
       selectedObject: "Factory A",
@@ -152,7 +148,6 @@ test("syncAdvisoryRecommendation publishes recommendation surface to workspace s
   });
 
   publishRiskWorkspaceState({
-    phase: "ready",
     selectedObjectId: "factory-a",
     riskCount: 2,
     elevatedRiskCount: 1,

@@ -4,13 +4,7 @@
  */
 
 import { isDs1FoundationFrozen } from "../datasourceCertification/ds1FoundationCertification.ts";
-import {
-  EXECUTIVE_MODEL_GENERATION_SOURCE,
-  EXECUTIVE_MODEL_GENERATION_VERSION,
-  EXECUTIVE_MODEL_SOURCE_FOUNDATION_ID,
-  resolveExecutiveModelExample,
-  validateExecutiveModelRecord,
-} from "../executiveModel/executiveModelGenerationContract.ts";
+import { EXECUTIVE_MODEL_GENERATION_SOURCE, EXECUTIVE_MODEL_GENERATION_VERSION, resolveExecutiveModelExample, validateExecutiveModelRecord } from "../executiveModel/executiveModelGenerationContract.ts";
 import type { ExecutiveModelRecord } from "../executiveModel/executiveModelGenerationTypes.ts";
 import { isExecutiveModelGenerationFrozen } from "../executiveModel/executiveModelGenerationCertification.ts";
 import {

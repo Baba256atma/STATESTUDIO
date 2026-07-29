@@ -185,6 +185,10 @@ function norm(value: unknown): string {
   return String(value ?? "").trim().toLowerCase();
 }
 
+function readSemanticDomain(meta: SemanticObjectMeta | Record<string, unknown>): unknown {
+  return typeof meta === "object" && meta !== null && "domain" in meta ? meta.domain : undefined;
+}
+
 function uniq(xs: string[]): string[] {
   return Array.from(new Set((xs ?? []).map((x) => String(x || "").trim()).filter(Boolean)));
 }
@@ -209,24 +213,23 @@ function oppositeDirection(direction: "positive" | "negative" | "mixed" | "neutr
 }
 
 function objectTokens(obj: SceneObject): string[] {
+  const semantic = obj.semantic;
   return uniq([
-    ...tokenize(obj?.id),
-    ...tokenize(obj?.label),
-    ...tokenize((obj as any)?.name),
-    ...tokenize((obj as any)?.type),
-    ...tokenize((obj as any)?.semantic?.display_label),
-    ...tokenize((obj as any)?.semantic?.canonical_name),
-    ...tokenize((obj as any)?.semantic?.category),
-    ...tokenize((obj as any)?.semantic?.role),
-    ...tokenize((obj as any)?.semantic?.domain),
-    ...((Array.isArray((obj as any)?.tags) ? (obj as any).tags : []).flatMap(tokenize)),
-    ...((Array.isArray((obj as any)?.semantic?.tags) ? (obj as any).semantic.tags : []).flatMap(tokenize)),
-    ...((Array.isArray((obj as any)?.keywords) ? (obj as any).keywords : []).flatMap(tokenize)),
-    ...((Array.isArray((obj as any)?.semantic?.keywords) ? (obj as any).semantic.keywords : []).flatMap(tokenize)),
-    ...((Array.isArray((obj as any)?.related_terms) ? (obj as any).related_terms : []).flatMap(tokenize)),
-    ...((Array.isArray((obj as any)?.semantic?.related_terms)
-      ? (obj as any).semantic.related_terms
-      : []).flatMap(tokenize)),
+    ...tokenize(obj.id),
+    ...tokenize(obj.label),
+    ...tokenize(obj.name),
+    ...tokenize(obj.type),
+    ...tokenize(semantic?.display_label),
+    ...tokenize(semantic?.canonical_name),
+    ...tokenize(semantic?.category),
+    ...tokenize(semantic?.role),
+    ...tokenize(semantic?.domain),
+    ...(Array.isArray(obj.tags) ? obj.tags : []).flatMap(tokenize),
+    ...(Array.isArray(semantic?.tags) ? semantic.tags : []).flatMap(tokenize),
+    ...(Array.isArray(obj.keywords) ? obj.keywords : []).flatMap(tokenize),
+    ...(Array.isArray(semantic?.keywords) ? semantic.keywords : []).flatMap(tokenize),
+    ...(Array.isArray(obj.related_terms) ? obj.related_terms : []).flatMap(tokenize),
+    ...(Array.isArray(semantic?.related_terms) ? semantic.related_terms : []).flatMap(tokenize),
   ]);
 }
 
@@ -260,9 +263,9 @@ function inferDefaultDomain(
 ): string | undefined {
   if (fallbackDomain) return String(fallbackDomain).trim() || undefined;
   const domains = uniq([
-    ...objects.map((o: any) => norm(o?.semantic?.domain ?? o?.domain)).filter(Boolean),
+    ...objects.map((obj) => norm(obj.semantic?.domain ?? obj.domain)).filter(Boolean),
     ...Object.values(semanticObjectMeta ?? {})
-      .map((m: any) => norm(m?.domain))
+      .map((meta) => norm(readSemanticDomain(meta)))
       .filter(Boolean),
   ]);
   return domains[0] || undefined;

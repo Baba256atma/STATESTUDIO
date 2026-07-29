@@ -16,9 +16,6 @@ export type LoopEdge = {
 const DEFAULT_TIMEOUT_MS = 12_000;
 
 const SESSION_KEY = "statestudio.sessionId";
-const API_BASE =
-  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_BACKEND_URL) ||
-  "http://127.0.0.1:8000";
 
 function readSessionId(): string | null {
   if (typeof window === "undefined") return null;

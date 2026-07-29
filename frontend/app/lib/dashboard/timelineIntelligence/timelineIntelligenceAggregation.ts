@@ -7,25 +7,7 @@ import type { DashboardContext } from "../../ui/mainRightPanelContract.ts";
 import type { ImpactDirection } from "../dashboardVisualSignalContract.ts";
 import { getDashboardSurfaceVisualBundle } from "../dashboardSurfaceVisualRegistry.ts";
 import { getOperationalIntelligenceSnapshotForExecutiveSummary } from "../operationalIntelligence/operationalIntelligenceRuntime.ts";
-import {
-  type DecisionWindowsCard,
-  type DecisionWindowStatus,
-  type EventDensityCard,
-  type EventDensityLevel,
-  type MilestonePressureCard,
-  type MilestonePressureLevel,
-  type ScheduleDriftCard,
-  type ScheduleDriftLevel,
-  type TimelineContextSource,
-  type TimelineGraphicalContract,
-  type TimelineIntelligenceAggregationInput,
-  type TimelineIntelligenceSnapshot,
-  type TimelineIntelligenceSurfaceModel,
-  type TimelineMomentumCard,
-  type TimelineMomentumLevel,
-  CANONICAL_TIMELINE_INTELLIGENCE_OWNER,
-  CANONICAL_TIMELINE_INTELLIGENCE_SURFACE_ID,
-} from "./timelineIntelligenceContract.ts";
+import { type DecisionWindowStatus, type EventDensityLevel, type MilestonePressureLevel, type ScheduleDriftLevel, type TimelineContextSource, type TimelineGraphicalContract, type TimelineIntelligenceAggregationInput, type TimelineIntelligenceSnapshot, type TimelineIntelligenceSurfaceModel, type TimelineMomentumLevel, CANONICAL_TIMELINE_INTELLIGENCE_OWNER, CANONICAL_TIMELINE_INTELLIGENCE_SURFACE_ID } from "./timelineIntelligenceContract.ts";
 import {
   reportDecisionWindow,
   reportEventDensity,

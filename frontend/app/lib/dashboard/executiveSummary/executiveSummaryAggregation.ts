@@ -29,14 +29,8 @@ import { getExecutiveAdvisorySnapshotForExecutiveSummary } from "../executiveAdv
 import { getAdvisoryContextForExecutiveSummary } from "../executiveAdvisory/aggregation/advisoryAggregationRuntime.ts";
 import { getAdvisoryConfidenceForExecutiveSummary } from "../executiveAdvisory/confidence/advisoryConfidenceRuntime.ts";
 import { getAdvisoryExplanationForExecutiveSummary } from "../executiveAdvisory/explainability/advisoryExplainabilityRuntime.ts";
-import { getDecisionGuidanceSnapshotForExecutiveSummary } from "../decisionGuidance/decisionGuidanceRuntime.ts";
-import { getGovernanceIntelligenceSnapshotForExecutiveSummary } from "../governanceIntelligence/governanceIntelligenceRuntime.ts";
-import { getStrategicAlignmentSnapshotForExecutiveSummary } from "../strategicAlignment/strategicAlignmentRuntime.ts";
-import { getPolicyConstraintIntelligenceSnapshotForExecutiveSummary } from "../policyConstraintIntelligence/policyConstraintIntelligenceRuntime.ts";
-import { getStakeholderIntelligenceSnapshotForExecutiveSummary } from "../stakeholderIntelligence/stakeholderIntelligenceRuntime.ts";
 import { getConsensusIntelligenceSnapshotForExecutiveSummary } from "../consensusIntelligence/consensusIntelligenceRuntime.ts";
 import { getInstitutionalAlignmentSnapshotForExecutiveSummary } from "../institutionalAlignment/institutionalAlignmentRuntime.ts";
-import { getAdvisoryWarRoomIntegrationForExecutiveSummary } from "../advisoryWarRoomIntegration/advisoryWarRoomIntegrationRuntime.ts";
 
 const ATTENTION_LABEL: Readonly<Record<ExecutiveAttentionLevel, string>> = Object.freeze({
   attention_required: "Executive Attention Required",
@@ -142,14 +136,8 @@ function buildSummaryCards(
   const advisoryContext = getAdvisoryContextForExecutiveSummary(feedInput);
   const advisoryConfidence = getAdvisoryConfidenceForExecutiveSummary(feedInput);
   const advisoryExplanation = getAdvisoryExplanationForExecutiveSummary(feedInput);
-  const decisionGuidance = getDecisionGuidanceSnapshotForExecutiveSummary(feedInput);
-  const governanceIntelligence = getGovernanceIntelligenceSnapshotForExecutiveSummary(feedInput);
-  const strategicAlignment = getStrategicAlignmentSnapshotForExecutiveSummary(feedInput);
-  const policyConstraintIntelligence = getPolicyConstraintIntelligenceSnapshotForExecutiveSummary(feedInput);
-  const stakeholderIntelligence = getStakeholderIntelligenceSnapshotForExecutiveSummary(feedInput);
   const consensusIntelligence = getConsensusIntelligenceSnapshotForExecutiveSummary(feedInput);
   const institutionalAlignment = getInstitutionalAlignmentSnapshotForExecutiveSummary(feedInput);
-  const advisoryWarRoomIntegration = getAdvisoryWarRoomIntegrationForExecutiveSummary(feedInput);
 
   const enrichedSystemStatus =
     risk.exposure.level === "critical"
@@ -157,7 +145,6 @@ function buildSummaryCards(
       : risk.exposure.level === "high"
         ? "attention_needed"
         : mapOperationalHealthToSystemStatus(operational.health.level, systemStatus);
-  const objectLabel = input.selectedObjectLabel?.trim() || input.selectedObjectId || "None";
   const objectsInView = operational.activeObjects.selectedObject
     ? `${operational.activeObjects.objectsInScene} in scene · 1 selected`
     : `${operational.activeObjects.objectsInScene} in scene`;

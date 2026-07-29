@@ -7,27 +7,7 @@ import { EXECUTIVE_INTENT_CONTRACT_VERSION } from "./executiveIntentConstants.ts
 import {
   createIntentEvolutionDiagnostic,
   type IntentEvolutionDiagnostic,
-} from "./executiveIntentEvolutionDiagnostics.ts";
-import { getIntentEvolutionCanonicalExample } from "./executiveIntentEvolutionExamples.ts";
-import {
-  buildEvolutionEvents,
-  buildEvolutionRevisions,
-  buildEvolutionTimelineFromParts,
-  buildLineageGraph,
-  collectEvolutionRulesApplied,
-  extractExplicitLineageEdges,
-  hasBrokenLineage,
-  hasMultipleParents,
-  resolveActiveIntentId,
-  resolveAncestors as resolveAncestorsFromEdges,
-  resolveDescendants as resolveDescendantsFromEdges,
-  resolveIntentVersionForRecord,
-  resolveMergeHistory as resolveMergeHistoryFromRecords,
-  resolveReplacementHistory,
-  resolveRootIntentId,
-  resolveSplitHistory as resolveSplitHistoryFromRecords,
-  resolveSiblingIntentIds,
-} from "./executiveIntentEvolutionRules.ts";
+} from "./executiveIntentEvolutionDiagnostics.ts";import { buildEvolutionEvents, buildEvolutionRevisions, buildEvolutionTimelineFromParts, buildLineageGraph, collectEvolutionRulesApplied, extractExplicitLineageEdges, hasBrokenLineage, hasMultipleParents, resolveActiveIntentId, resolveAncestors as resolveAncestorsFromEdges, resolveDescendants as resolveDescendantsFromEdges, resolveIntentVersionForRecord, resolveMergeHistory as resolveMergeHistoryFromRecords, resolveReplacementHistory, resolveSplitHistory as resolveSplitHistoryFromRecords, resolveSiblingIntentIds } from "./executiveIntentEvolutionRules.ts";
 import { EXECUTIVE_INTENT_SEMANTIC_MODEL_VERSION } from "./executiveIntentSemanticTypes.ts";
 import type {
   ExecutiveIntent,

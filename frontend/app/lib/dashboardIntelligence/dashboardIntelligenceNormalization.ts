@@ -14,9 +14,7 @@ import type {
   DashboardIntelligenceNormalizedPayload,
   DashboardIntelligencePanelId,
   DashboardIntelligenceStatus,
-} from "./dashboardIntelligenceContract.ts";
-import { DASHBOARD_INTELLIGENCE_SOURCE } from "./dashboardIntelligenceContract.ts";
-import type { DashboardIntelligenceEnginePayload } from "./dashboardIntelligenceRouter.ts";
+} from "./dashboardIntelligenceContract.ts";import type { DashboardIntelligenceEnginePayload } from "./dashboardIntelligenceRouter.ts";
 
 function nowIso(): string {
   return new Date().toISOString();

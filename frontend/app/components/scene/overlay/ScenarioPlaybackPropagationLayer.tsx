@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import type { SceneObject } from "../../../lib/sceneTypes";
 
 import type { ExecutiveScenarioPropagationView } from "../../../lib/scene/scenario/executiveScenarioPlaybackTypes";
 import { OverlayFlowLines, overlayThemeToFlowProps } from "./OverlayFlowLines";
@@ -8,7 +9,7 @@ import type { OverlayThemeTokens } from "../../../lib/overlay/overlayTheme";
 import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type ScenarioPlaybackPropagationLayerProps = {
-  objects: any[];
+  objects: SceneObject[];
   view: ExecutiveScenarioPropagationView | null;
   visible: boolean;
   themeTokens: OverlayThemeTokens;

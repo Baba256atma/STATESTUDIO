@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { WorkspaceDomainSelection } from "./workspaceDomainContract.ts";
+import type { WorkspaceDomainId, WorkspaceDomainSelection } from "./workspaceDomainContract.ts";
 import type { WorkspaceSituationContext } from "./workspaceSituationContract.ts";
 import { createSuggestedGoal, getGoalSuggestionsForDomain, type WorkspaceGoal } from "./workspaceGoalContract.ts";
 import {
@@ -22,7 +22,7 @@ import {
   resetWorkspaceScenesForTests,
 } from "./workspaceSceneCreationContract.ts";
 
-function domain(workspaceId: string, domainId = "manufacturing"): WorkspaceDomainSelection {
+function domain(workspaceId: string, domainId: WorkspaceDomainId = "manufacturing"): WorkspaceDomainSelection {
   return {
     contractVersion: "NW-B:2",
     workspaceId,
@@ -32,7 +32,7 @@ function domain(workspaceId: string, domainId = "manufacturing"): WorkspaceDomai
   };
 }
 
-function situation(workspaceId: string, domainId = "manufacturing"): WorkspaceSituationContext {
+function situation(workspaceId: string, domainId: WorkspaceDomainId = "manufacturing"): WorkspaceSituationContext {
   return {
     contractVersion: "NW-B:3",
     workspaceId,
@@ -43,13 +43,13 @@ function situation(workspaceId: string, domainId = "manufacturing"): WorkspaceSi
   };
 }
 
-function goals(workspaceId: string, domainId = "manufacturing"): readonly WorkspaceGoal[] {
+function goals(workspaceId: string, domainId: WorkspaceDomainId = "manufacturing"): readonly WorkspaceGoal[] {
   const suggestion = getGoalSuggestionsForDomain(domainId)[0];
   assert.ok(suggestion);
   return [createSuggestedGoal({ workspaceId, suggestion })];
 }
 
-function approveWorkspace(workspaceId: string, domainId = "manufacturing") {
+function approveWorkspace(workspaceId: string, domainId: WorkspaceDomainId = "manufacturing") {
   const draft = saveWorkspaceDraftModel(
     generateWorkspaceDraftModel({
       workspaceId,
@@ -106,8 +106,8 @@ test("builds scene json without demo content or advanced intelligence", () => {
   assert.equal(sceneJson.meta?.workspaceId, "workspace_scene_b");
   assert.equal(sceneJson.meta?.source, "ApprovedModel");
   assert.equal(sceneJson.meta?.workspaceSceneCreated, true);
-  assert.equal(sceneJson.scene.relationships?.length, 0);
-  assert.equal(sceneJson.scene.loops?.length, 0);
+  assert.equal((Array.isArray(sceneJson.scene.relationships) ? (sceneJson.scene.relationships as unknown[]).length : -1), 0);
+  assert.equal((Array.isArray(sceneJson.scene.loops) ? (sceneJson.scene.loops as unknown[]).length : -1), 0);
   assert.equal(sceneJson.scene.kpi, undefined);
   assert.ok(sceneJson.scene.objects?.every((object) => object.source === "ApprovedModel"));
 });

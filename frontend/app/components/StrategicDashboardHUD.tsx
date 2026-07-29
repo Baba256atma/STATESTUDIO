@@ -2,8 +2,20 @@
 
 import React from "react";
 
+function readDashboardMetric(state: unknown, flatKey: string, signalKey?: string): unknown {
+  if (!state || typeof state !== "object") return undefined;
+  const record = state as Record<string, unknown>;
+  if (flatKey in record) return record[flatKey];
+  const signals = record.signals;
+  if (!Array.isArray(signals) || !signalKey) return undefined;
+  const match = signals.find(
+    (entry) => entry && typeof entry === "object" && (entry as Record<string, unknown>).key === signalKey
+  );
+  return match && typeof match === "object" ? (match as Record<string, unknown>).value : undefined;
+}
+
 export function StrategicDashboardHUD(props: {
-  strategicState?: any;
+  strategicState?: unknown;
   layoutMode?: "floating" | "split";
 }) {
   const { strategicState } = props;
@@ -26,11 +38,15 @@ export function StrategicDashboardHUD(props: {
     );
   }
 
-  const toPct = (v: any) => {
+  const toPct = (v: unknown) => {
     const n = Number(v);
     if (!Number.isFinite(n)) return "—";
     return `${Math.round(n * 100)}%`;
   };
+
+  const stability = readDashboardMetric(strategicState, "stability", "stability");
+  const systemicRisk = readDashboardMetric(strategicState, "systemicRisk", "systemicRisk");
+  const dominantLoopId = readDashboardMetric(strategicState, "dominantLoopId");
 
   return (
     <div
@@ -47,19 +63,19 @@ export function StrategicDashboardHUD(props: {
       <div style={{ display: "grid", gap: 6 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
           <span style={{ opacity: 0.75 }}>Tension</span>
-          <span>{toPct(1 - Number(strategicState?.stability ?? 0))}</span>
+          <span>{toPct(1 - Number(stability ?? 0))}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
           <span style={{ opacity: 0.75 }}>Risk</span>
-          <span>{toPct(strategicState?.systemicRisk)}</span>
+          <span>{toPct(systemicRisk)}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
           <span style={{ opacity: 0.75 }}>Stability</span>
-          <span>{toPct(strategicState?.stability)}</span>
+          <span>{toPct(stability)}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
           <span style={{ opacity: 0.75 }}>Dominant Loop</span>
-          <span>{strategicState?.dominantLoopId ?? "—"}</span>
+          <span>{typeof dominantLoopId === "string" && dominantLoopId.trim() ? dominantLoopId : "—"}</span>
         </div>
       </div>
     </div>

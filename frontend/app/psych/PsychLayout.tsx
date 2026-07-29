@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import PsychTopBar from "./components/PsychTopBar";
 import PsychScene from "./components/PsychScene";
 import PsychChatPanel from "./components/PsychChatPanel";
@@ -10,7 +10,6 @@ import { createPsychStore } from "../lib/psych/reactionStore";
 import { interpretUserInput } from "../lib/psych/reactionInterpreter";
 import { applyReaction } from "../lib/psych/reactionEngine";
 import type { ObjectState, PsychElementId, PsychState } from "../lib/psych/reactionTypes";
-import { apiBase } from "../lib/apiBase";
 import { getDominantPsychState, getStrongestVisualObject, mapPsychToVisual } from "./lib/visual/psychVisualMapping";
 import { applyPsychDecay } from "./lib/time/psychTimeDecay";
 import { calculatePsychGameState, type PsychGameState } from "./lib/game/psychGameScore";
@@ -65,22 +64,6 @@ const OBJECT_EXPLANATIONS: Record<string, string> = {
 };
 
 const PSYCH_OBJECT_IDS: PsychElementId[] = ["fire", "water", "air", "earth", "sun", "ego"];
-type PsychBackendElementId = PsychElementId | "liquid";
-
-type PsychBackendAnalysis = {
-  dominant_element: PsychBackendElementId;
-  intensity: number;
-  secondary_elements: PsychBackendElementId[];
-  message: string;
-};
-
-type PsychMergeResult = {
-  dominantObject: PsychElementId;
-  backendDominant: PsychBackendElementId;
-  frontendDominant: PsychElementId;
-  intensity: number;
-  strategy: "amplify" | "blend";
-};
 
 type PsychAssistantMessage = {
   id: number;
@@ -112,10 +95,6 @@ function boostObject(objects: Record<PsychElementId, ObjectState>, id: PsychElem
   };
 }
 
-function psychBackendElementToObjectId(id: PsychBackendElementId): PsychElementId {
-  return id === "liquid" ? "water" : id;
-}
-
 function boostPsychStateForElement(state: PsychState, id: PsychElementId, intensity: number): PsychState {
   const amount = Math.round(intensity * 12);
   if (id === "fire") return { ...state, tension: Math.min(100, state.tension + amount), energy: Math.min(100, state.energy + Math.round(amount * 0.35)) };
@@ -124,55 +103,6 @@ function boostPsychStateForElement(state: PsychState, id: PsychElementId, intens
   if (id === "sun") return { ...state, energy: Math.min(100, state.energy + amount) };
   if (id === "ego") return { ...state, tension: Math.min(100, state.tension + Math.round(amount * 0.45)), curiosity: Math.min(100, state.curiosity + Math.round(amount * 0.35)) };
   return { ...state, calm: Math.min(100, state.calm + Math.round(amount * 0.45)) };
-}
-
-function mergeBackendReaction(
-  state: PsychState,
-  objects: Record<PsychElementId, ObjectState>,
-  backend: PsychBackendAnalysis,
-  frontendDominant: PsychElementId
-): { state: PsychState; objects: Record<PsychElementId, ObjectState>; merge: PsychMergeResult } {
-  const backendDominant = psychBackendElementToObjectId(backend.dominant_element);
-  const intensity = Math.max(0, Math.min(1, backend.intensity));
-  const sameDominant = backendDominant === frontendDominant;
-  let nextObjects = objects;
-
-  if (sameDominant) {
-    nextObjects = boostObject(nextObjects, backendDominant, intensity * 0.28, intensity * 0.24);
-  } else {
-    nextObjects = boostObject(nextObjects, backendDominant, intensity * 0.32 * 0.7, intensity * 0.3 * 0.7);
-    nextObjects = boostObject(nextObjects, frontendDominant, intensity * 0.18 * 0.3, intensity * 0.16 * 0.3);
-  }
-
-  for (const secondary of backend.secondary_elements ?? []) {
-    const id = psychBackendElementToObjectId(secondary);
-    if (id !== backendDominant) nextObjects = boostObject(nextObjects, id, intensity * 0.05, intensity * 0.08);
-  }
-
-  if (backendDominant === "fire" && backend.secondary_elements?.includes("sun")) {
-    nextObjects = boostObject(boostObject(nextObjects, "fire", 0.16, 0.14), "sun", 0.12, 0.08);
-  }
-  if (backendDominant === "sun" && backend.secondary_elements?.includes("fire")) {
-    nextObjects = boostObject(boostObject(nextObjects, "sun", 0.18, 0.12), "fire", 0.1, 0.1);
-  }
-
-  return {
-    state: boostPsychStateForElement(state, backendDominant, intensity),
-    objects: nextObjects,
-    merge: {
-      dominantObject: backendDominant,
-      backendDominant: backend.dominant_element,
-      frontendDominant,
-      intensity,
-      strategy: sameDominant ? "amplify" : "blend",
-    },
-  };
-}
-
-function combinePsychMessages(localMessage: string, backendMessage: string): string {
-  if (!backendMessage.trim()) return localMessage;
-  if (localMessage.includes(backendMessage)) return localMessage;
-  return `${localMessage} ${backendMessage}`;
 }
 
 function messageFromPsychInterpret(result: PsychInterpretResult): string {
@@ -379,17 +309,16 @@ function amplifyLocalPsychReaction(
 
 export default function PsychLayout(): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const storeRef = useRef<ReturnType<typeof createPsychStore> | null>(null);
-  if (storeRef.current == null) storeRef.current = createPsychStore();
-  const psychStore = storeRef.current;
+  // AD-FE-SHELL-01 / AD-FE-HOOKS-01: store lifecycle via lazy state (no render-time ref reads).
+  const [psychStore] = useState(() => createPsychStore());
   const [psychState, setPsychState] = useState<PsychState>(() => psychStore.getState());
   const [psychObjects, setPsychObjects] = useState<Record<PsychElementId, ObjectState>>(() => psychStore.getObjects());
   const [lastInput, setLastInput] = useState<string | null>(null);
   const [lastReaction, setLastReaction] = useState<string | null>(null);
   const [lastDecayAt, setLastDecayAt] = useState<number | null>(null);
   const [decayActive, setDecayActive] = useState(false);
-  const [interactionCount, setInteractionCount] = useState(0);
-  const [objectClickCount, setObjectClickCount] = useState(0);
+  const [, setInteractionCount] = useState(0);
+  const [, setObjectClickCount] = useState(0);
   const [gameState, setGameState] = useState<PsychGameState>(INITIAL_GAME_STATE);
   const [accessMode, setAccessMode] = useState<AccessMode>("free");
   const [showUnlockPrompt, setShowUnlockPrompt] = useState(false);
@@ -403,17 +332,50 @@ export default function PsychLayout(): React.JSX.Element {
   const [backendDominant, setBackendDominant] = useState<string | null>(null);
   const [backendMergeResult, setBackendMergeResult] = useState<string | null>(null);
   const [inspirationSignal, setInspirationSignal] = useState<InspirationSignal | null>(null);
-  const [chatWidthPx, setChatWidthPx] = useState<number | null>(null);
+  const [chatWidthPx, setChatWidthPx] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const saved = window.localStorage.getItem(STORAGE_KEY_WIDTH);
+    return saved ? parseInt(saved, 10) : null;
+  });
+  const [defaultChatWidthPx, setDefaultChatWidthPx] = useState(360);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartX = useRef<number | null>(null);
   const startWidth = useRef<number | null>(null);
-  const [isClient, setIsClient] = useState(false);
-  const [isMobileLayout, setIsMobileLayout] = useState(false);
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
-  const [drawerRatio, setDrawerRatio] = useState<number>(0.5);
-  const [layoutStorageReady, setLayoutStorageReady] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [awakeningStage, setAwakeningStage] = useState<AwakeningStage>("free_mode");
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+  const isMobileLayout = useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === "undefined") return () => {};
+      window.addEventListener("resize", onStoreChange);
+      return () => window.removeEventListener("resize", onStoreChange);
+    },
+    () => (typeof window !== "undefined" ? window.innerWidth <= 768 : false),
+    () => false
+  );
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(STORAGE_KEY_DRAWER_OPEN) === "true";
+  });
+  const [drawerRatio, setDrawerRatio] = useState<number>(() => {
+    if (typeof window === "undefined") return 0.5;
+    const dr = window.localStorage.getItem(STORAGE_KEY_DRAWER);
+    return dr ? parseFloat(dr) : 0.5;
+  });
+  const [layoutStorageReady] = useState(() => typeof window !== "undefined");
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(ONBOARDING_STORAGE_KEY) !== "true";
+    } catch {
+      return true;
+    }
+  });
+  const [awakeningStage, setAwakeningStage] = useState<AwakeningStage>(() =>
+    typeof window !== "undefined" && !hasSeenAwakening() ? "not_started" : "free_mode"
+  );
   const psychStateRef = useRef(psychState);
   const psychObjectsRef = useRef(psychObjects);
   const gameStateRef = useRef(gameState);
@@ -620,33 +582,51 @@ export default function PsychLayout(): React.JSX.Element {
     const now = Date.now();
     if (lastInteractionAtRef.current === 0) lastInteractionAtRef.current = now;
     if (lastChatActivityAtRef.current === 0) lastChatActivityAtRef.current = now;
-    setIsClient(true);
-    const updateResponsiveLayout = () => {
-      setIsMobileLayout(window.innerWidth <= 768);
-    };
-
-    updateResponsiveLayout();
-    window.addEventListener("resize", updateResponsiveLayout);
     if (process.env.NODE_ENV !== "production") console.log("[Sycho][SYCHO-B02][LayoutReady]");
     if (process.env.NODE_ENV !== "production") console.log("[Sycho][SYCHO-B11][PolishApplied]");
     if (process.env.NODE_ENV !== "production") console.log("[Sycho][SYCHO-B12.2][MagneticPolishApplied]");
     if (process.env.NODE_ENV !== "production") console.log("[Sycho][SYCHO-B12.1-FIX-02][ClientLayoutReady]");
     if (process.env.NODE_ENV !== "production") console.log("[Sycho][B13.8-FIX][LegacyCallsRemoved]");
-
-    return () => window.removeEventListener("resize", updateResponsiveLayout);
+    if (!hasSeenAwakening() && process.env.NODE_ENV !== "production") {
+      console.log("[Sycho][v1-FIX][AwakeningStarted]");
+    }
   }, []);
 
-  useEffect(() => {
-    try {
-      setShowOnboarding(window.localStorage.getItem(ONBOARDING_STORAGE_KEY) !== "true");
-    } catch {
-      setShowOnboarding(true);
+  // AD-FE-SHELL-01: DOM width measurement is layout-effect owned (never during render).
+  // Defer setState out of the synchronous effect body to avoid set-state-in-effect.
+  useLayoutEffect(() => {
+    if (!isClient) return;
+    const node = containerRef.current;
+    if (!node) return;
+    let raf = 0;
+    const measure = () => {
+      const width = node.clientWidth;
+      if (width <= 0) return;
+      const next = Math.max(280, Math.min(width * 0.3, width * 0.55));
+      setDefaultChatWidthPx((prev) => (prev === next ? prev : next));
+    };
+    raf = window.requestAnimationFrame(measure);
+    if (typeof ResizeObserver === "undefined") {
+      const onResize = () => {
+        window.requestAnimationFrame(measure);
+      };
+      window.addEventListener("resize", onResize);
+      return () => {
+        window.cancelAnimationFrame(raf);
+        window.removeEventListener("resize", onResize);
+      };
     }
-    if (!hasSeenAwakening()) {
-      setAwakeningStage("not_started");
-      if (process.env.NODE_ENV !== "production") console.log("[Sycho][v1-FIX][AwakeningStarted]");
-    }
+    const observer = new ResizeObserver(() => {
+      window.requestAnimationFrame(measure);
+    });
+    observer.observe(node);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, [isClient]);
 
+  useEffect(() => {
     const introTimer = window.setTimeout(() => {
       if (lastInputRef.current || emptyIntroSentRef.current) return;
       emptyIntroSentRef.current = true;
@@ -677,16 +657,6 @@ export default function PsychLayout(): React.JSX.Element {
     }, delay);
     return () => window.clearTimeout(timer);
   }, [awakeningStage]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_WIDTH);
-    if (saved) setChatWidthPx(parseInt(saved, 10));
-    const dr = localStorage.getItem(STORAGE_KEY_DRAWER);
-    if (dr) setDrawerRatio(parseFloat(dr));
-    const drawerOpen = localStorage.getItem(STORAGE_KEY_DRAWER_OPEN);
-    if (drawerOpen) setIsMobileDrawerOpen(drawerOpen === "true");
-    setLayoutStorageReady(true);
-  }, []);
 
   useEffect(() => {
     if (!layoutStorageReady) return;
@@ -784,94 +754,6 @@ export default function PsychLayout(): React.JSX.Element {
       backendAbortRef.current?.abort();
     };
   }, []);
-
-  const requestBackendAnalysis = (
-    text: string,
-    localMessage: string,
-    localState: PsychState,
-    localObjects: Record<PsychElementId, ObjectState>,
-    frontendDominant: PsychElementId
-  ) => {
-    if (backendDebounceRef.current != null) window.clearTimeout(backendDebounceRef.current);
-    backendAbortRef.current?.abort();
-
-    backendDebounceRef.current = window.setTimeout(() => {
-      const controller = new AbortController();
-      backendAbortRef.current = controller;
-      const payload = {
-        text,
-        current_state: localState,
-        objects: Object.values(localObjects).map((object) => ({
-          id: object.id === "water" ? "liquid" : object.id,
-          brightness: object.brightness,
-          activity: object.activity,
-        })),
-      };
-
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[Sycho][SYCHO-B12][BackendRequest]", payload);
-      }
-
-      fetch(`${apiBase()}/psych/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      })
-        .then((response) => {
-          if (!response.ok) throw new Error(`Psych backend failed: ${response.status}`);
-          return response.json() as Promise<PsychBackendAnalysis>;
-        })
-        .then((backend) => {
-          if (controller.signal.aborted) return;
-          if (process.env.NODE_ENV !== "production") {
-            console.log("[Sycho][SYCHO-B12][BackendResponse]", backend);
-          }
-
-          const merged = mergeBackendReaction(psychStateRef.current, psychObjectsRef.current, backend, frontendDominant);
-          const finalMessage = combinePsychMessages(localMessage, backend.message);
-          const nextGameState = calculatePsychGameState({
-            psychState: merged.state,
-            objects: merged.objects,
-            interactionCount: interactionCountRef.current,
-            objectClickCount: objectClickCountRef.current,
-          });
-
-          psychStateRef.current = merged.state;
-          psychObjectsRef.current = merged.objects;
-          lastReactionRef.current = finalMessage;
-          setPsychState(merged.state);
-          setPsychObjects(merged.objects);
-          setGameState(nextGameState);
-          gameStateRef.current = nextGameState;
-          setLastReaction(finalMessage);
-          setAssistantMessage({ id: Date.now(), text: finalMessage });
-          track("message_emitted", { source: "assistant", path: "backend_refine" });
-          triggerSceneReaction(mapWordsToSceneReaction({
-            source: "chat",
-            text: finalMessage,
-            emotion: emotionStore.current,
-            userInput: lastInputRef.current,
-          }));
-          setSelectedObjectId(merged.merge.dominantObject);
-          if (selectedObjectTimeoutRef.current != null) window.clearTimeout(selectedObjectTimeoutRef.current);
-          selectedObjectTimeoutRef.current = window.setTimeout(() => setSelectedObjectId(null), 460);
-          setBackendDominant(backend.dominant_element);
-          setBackendMergeResult(`${merged.merge.strategy}:${merged.merge.frontendDominant}->${merged.merge.dominantObject}@${merged.merge.intensity.toFixed(2)}`);
-          scheduleMemorySave("backend_refine");
-
-          if (process.env.NODE_ENV !== "production") {
-            console.log("[Sycho][SYCHO-B12][ReactionMerged]", merged.merge);
-          }
-        })
-        .catch((error) => {
-          if (controller.signal.aborted) return;
-          if (process.env.NODE_ENV !== "production") {
-            console.warn("[Sycho][SYCHO-B12][BackendFailed]", error);
-          }
-        });
-    }, 360);
-  };
 
   // Drag handlers
   useEffect(() => {
@@ -1250,7 +1132,7 @@ export default function PsychLayout(): React.JSX.Element {
   // compute layout sizes
   const containerStyle: React.CSSProperties = { width: "100%", height: "100vh", position: "relative", overflow: "hidden", background: "#030312" };
 
-  const chatWidth = chatWidthPx ?? (containerRef.current ? Math.max(280, Math.min(containerRef.current.clientWidth * 0.3, containerRef.current.clientWidth * 0.55)) : 360);
+  const chatWidth = chatWidthPx ?? defaultChatWidthPx;
   const sceneObjects = useMemo(() => applyAwakeningToObjects(capPsychObjectsForAccess(psychObjects, accessMode), awakeningStage), [psychObjects, accessMode, awakeningStage]);
   const debugVisualMap = useMemo(() => mapPsychToVisual({ psychState, objects: psychObjects, selectedId: selectedObjectId }), [psychState, psychObjects, selectedObjectId]);
   const strongestObject = useMemo(() => getStrongestVisualObject(debugVisualMap), [debugVisualMap]);

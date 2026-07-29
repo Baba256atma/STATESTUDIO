@@ -31,12 +31,12 @@ function hashStableObjectFingerprint(value: string): string {
 function buildObjectIdentityFingerprint(object: SceneObject): string {
   return JSON.stringify({
     type: object?.type ?? null,
-    label: (object as any)?.label ?? null,
-    role: (object as any)?.role ?? null,
-    category: (object as any)?.category ?? null,
-    domain: (object as any)?.domain ?? null,
-    canonical_name: (object as any)?.canonical_name ?? null,
-    display_label: (object as any)?.display_label ?? null,
+    label: object?.label ?? null,
+    role: object?.role ?? null,
+    category: object?.category ?? null,
+    domain: object?.domain ?? null,
+    canonical_name: object?.canonical_name ?? null,
+    display_label: object?.display_label ?? null,
   });
 }
 
@@ -47,7 +47,7 @@ export function resolveStableObjectId(object: SceneObject, index: number): strin
   if (id) return id;
   const name = normalizeId(object?.name);
   if (name) return name;
-  const label = normalizeId((object as any)?.label);
+  const label = normalizeId(object?.label);
   if (label) return label;
   const fingerprint = buildObjectIdentityFingerprint(object);
   return `${object?.type ?? "obj"}:${hashStableObjectFingerprint(fingerprint)}`;

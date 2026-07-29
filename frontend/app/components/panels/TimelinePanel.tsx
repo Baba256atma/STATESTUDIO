@@ -14,11 +14,29 @@ import {
   softCardStyle,
 } from "../ui/nexoraTheme";
 import { EmptyStateCard, ErrorStateCard, LoadingStateCard } from "../ui/panelStates";
+import { readUnknownErrorMessage } from "../../lib/system/nexoraErrors";
+import type { SceneJson } from "../../lib/sceneTypes";
+
+type LooseRecord = Record<string, unknown>;
+
+type TimelineScenarioResult = {
+  name?: string;
+  timeline?: LooseRecord[];
+  final_fragility?: { score?: number; level?: string };
+  montecarlo?: { result?: { stats?: { mean?: number; p90?: number } } };
+};
+
+type TimelineSimulationResult = {
+  best_scenario?: string;
+  scenarios?: TimelineScenarioResult[];
+};
+
+export type TimelineSceneUpdatePayload = SceneJson | LooseRecord;
 
 type TimelinePanelProps = {
   backendBase: string;
   episodeId: string | null;
-  onSceneUpdate?: (payload: any) => void;
+  onSceneUpdate?: (payload: TimelineSceneUpdatePayload) => void;
 };
 
 /**
@@ -29,7 +47,7 @@ type TimelinePanelProps = {
  * scene timeline. Do not use this as a new Timeline architecture owner.
  * See docs/nexora-timeline-architecture.md.
  */
-function inferTimelineDomain(result: any): "business" | "politics" | "strategy" | "generic" {
+function inferTimelineDomain(result: TimelineSimulationResult | null): "business" | "politics" | "strategy" | "generic" {
   const text = JSON.stringify(result ?? {}).toLowerCase();
 
   if (
@@ -159,14 +177,14 @@ export function TimelinePanel({ backendBase, episodeId, onSceneUpdate }: Timelin
       } else {
         setApplySuccess(`Applied: ${bestScenario.name}`);
       }
-    } catch (e: any) {
-      setApplyError(String(e?.message || "Apply best scenario failed"));
+    } catch (e: unknown) {
+      setApplyError(readUnknownErrorMessage(e, "Apply best scenario failed"));
     } finally {
       setApplyLoading(false);
     }
   };
 
-  const scenarios = Array.isArray(result?.scenarios) ? (result.scenarios as any[]) : [];
+  const scenarios: TimelineScenarioResult[] = Array.isArray(result?.scenarios) ? result.scenarios : [];
   const bestScenarioName = String(result?.best_scenario ?? "").trim();
   const inferredDomain = inferTimelineDomain(result);
   const [scenarioInputs, setScenarioInputs] = useState(() =>
@@ -469,7 +487,7 @@ export function TimelinePanel({ backendBase, episodeId, onSceneUpdate }: Timelin
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {scenarios.map((s: any, idx: number) => {
+              {scenarios.map((s, idx: number) => {
                 const name = String(s?.name ?? "Scenario");
                 const isBest = name === bestScenarioName;
                 const timeline = Array.isArray(s?.timeline) ? s.timeline : [];
@@ -583,9 +601,11 @@ export function TimelinePanel({ backendBase, episodeId, onSceneUpdate }: Timelin
                       }}
                     >
                       {timeline.length ? (
-                        timeline.map((pt: any, stepIdx: number) => {
-                          const stepNo = Number(pt?.step ?? stepIdx);
-                          const score = Number(pt?.fragility?.score ?? 0);
+                        timeline.map((pt, stepIdx: number) => {
+                          const point = pt as LooseRecord;
+                          const stepNo = Number(point.step ?? stepIdx);
+                          const fragilityPoint = point.fragility as LooseRecord | undefined;
+                          const score = Number(fragilityPoint?.score ?? 0);
                           return (
                             <React.Fragment key={`${name}-step-${stepIdx}`}>
                               <div

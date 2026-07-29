@@ -124,11 +124,12 @@ function mergeObjects(existing: SceneObject[], incoming: SceneObject[]): SceneOb
   return Array.from(map.values());
 }
 
-function mergeRelations(existing: any[] | undefined, incoming: ScannerRelation[] | undefined): any[] {
+function mergeRelations(
+  existing: ScannerRelation[] | undefined,
+  incoming: ScannerRelation[] | undefined
+): ScannerRelation[] {
   const list = Array.isArray(existing) ? [...existing] : [];
-  const seen = new Set(
-    list.map((r: any) => `${String(r?.from ?? "")}|${String(r?.to ?? "")}|${String(r?.type ?? "")}`)
-  );
+  const seen = new Set(list.map((relation) => `${String(relation.from)}|${String(relation.to)}|${String(relation.type ?? "")}`));
   (Array.isArray(incoming) ? incoming : []).forEach((r) => {
     const key = `${String(r?.from ?? "")}|${String(r?.to ?? "")}|${String(r?.type ?? "")}`;
     if (!r?.from || !r?.to || seen.has(key)) return;
@@ -169,52 +170,70 @@ function mergeSemanticMeta(
   };
 }
 
+function pickSemanticString(
+  meta: SemanticObjectMeta | Record<string, unknown>,
+  obj: SceneObject,
+  key: keyof SemanticObjectMeta
+): string | undefined {
+  const metaValue = meta[key];
+  const objValue = obj[key];
+  const merged = String(metaValue ?? objValue ?? "").trim();
+  return merged || (typeof objValue === "string" ? objValue : undefined);
+}
+
+function pickSemanticStringArray(
+  meta: SemanticObjectMeta | Record<string, unknown>,
+  obj: SceneObject,
+  key: "keywords" | "dependencies" | "related_terms"
+): string[] | undefined {
+  const metaValue = meta[key];
+  const objValue = obj[key];
+  if (Array.isArray(metaValue)) return metaValue.filter((item): item is string => typeof item === "string");
+  if (Array.isArray(objValue)) return objValue.filter((item): item is string => typeof item === "string");
+  return undefined;
+}
+
 function applySemanticToObjects(
   objects: SceneObject[],
   semantic: Record<string, SemanticObjectMeta | Record<string, unknown>> | undefined
 ): SceneObject[] {
   if (!semantic || typeof semantic !== "object") return objects;
   return objects.map((obj) => {
-    const id = String(obj?.id ?? "");
+    const id = String(obj.id ?? "");
     const meta = semantic[id];
     if (!meta || typeof meta !== "object") return obj;
-    const mergedSemantic = {
-      ...(obj as any).semantic,
+    const mergedSemantic: SemanticObjectMeta = {
+      ...(obj.semantic ?? {}),
       ...meta,
     };
     return {
       ...obj,
       semantic: mergedSemantic,
-      canonical_name: String((mergedSemantic as any)?.canonical_name ?? (obj as any)?.canonical_name ?? "").trim() || (obj as any)?.canonical_name,
-      display_label: String((mergedSemantic as any)?.display_label ?? (obj as any)?.display_label ?? "").trim() || (obj as any)?.display_label,
-      category: String((mergedSemantic as any)?.category ?? (obj as any)?.category ?? "").trim() || (obj as any)?.category,
-      role: String((mergedSemantic as any)?.role ?? (obj as any)?.role ?? "").trim() || (obj as any)?.role,
-      domain: String((mergedSemantic as any)?.domain ?? (obj as any)?.domain ?? "").trim() || (obj as any)?.domain,
-      keywords: Array.isArray((mergedSemantic as any)?.keywords)
-        ? (mergedSemantic as any).keywords
-        : (obj as any).keywords,
-      dependencies: Array.isArray((mergedSemantic as any)?.dependencies)
-        ? (mergedSemantic as any).dependencies
-        : (obj as any).dependencies,
-      risk_kind: String((mergedSemantic as any)?.risk_kind ?? (obj as any)?.risk_kind ?? "").trim() || (obj as any)?.risk_kind,
-      related_terms: Array.isArray((mergedSemantic as any)?.related_terms)
-        ? (mergedSemantic as any).related_terms
-        : (obj as any).related_terms,
-      business_meaning:
-        String((mergedSemantic as any)?.business_meaning ?? (obj as any)?.business_meaning ?? "").trim() ||
-        (obj as any).business_meaning,
+      canonical_name: pickSemanticString(mergedSemantic, obj, "canonical_name"),
+      display_label: pickSemanticString(mergedSemantic, obj, "display_label"),
+      category: pickSemanticString(mergedSemantic, obj, "category"),
+      role: pickSemanticString(mergedSemantic, obj, "role"),
+      domain: pickSemanticString(mergedSemantic, obj, "domain"),
+      keywords: pickSemanticStringArray(mergedSemantic, obj, "keywords"),
+      dependencies: pickSemanticStringArray(mergedSemantic, obj, "dependencies"),
+      risk_kind: pickSemanticString(mergedSemantic, obj, "risk_kind"),
+      related_terms: pickSemanticStringArray(mergedSemantic, obj, "related_terms"),
+      business_meaning: pickSemanticString(mergedSemantic, obj, "business_meaning"),
     };
   });
 }
 
 export function validateScannerResult(input: unknown): ScannerValidationResult {
   const errors: string[] = [];
+  if (!input || typeof input !== "object") {
+    errors.push("Scanner result must be an object.");
+    return { ok: false, errors };
+  }
   const x = input as ScannerResult;
-  if (!x || typeof x !== "object") errors.push("Scanner result must be an object.");
-  const mode = String((x as any)?.mode ?? "").trim();
+  const mode = String(x.mode ?? "").trim();
   if (mode !== "create" && mode !== "enrich") errors.push("mode must be 'create' or 'enrich'.");
-  if (!(x as any)?.source || typeof (x as any).source !== "object") errors.push("source descriptor is required.");
-  if ((x as any)?.mode === "enrich" && !String((x as any)?.targetProjectId ?? (x as any)?.project?.id ?? "").trim()) {
+  if (!x.source || typeof x.source !== "object") errors.push("source descriptor is required.");
+  if (x.mode === "enrich" && !String(x.targetProjectId ?? x.project?.id ?? "").trim()) {
     errors.push("enrich mode requires targetProjectId or project.id.");
   }
   return { ok: errors.length === 0, errors };
@@ -303,10 +322,10 @@ export function applyScannerResultToWorkspace(
     mergeSemanticMeta(nextProject.semanticObjectMeta, normalized.semanticObjectMeta)
   );
 
-  const mergedRelations = mergeRelations(
-    (baseScene.scene as any)?.relations as any[] | undefined,
-    normalized.relations
-  );
+  const baseRelations = Array.isArray(baseScene.scene?.relations)
+    ? (baseScene.scene.relations as ScannerRelation[])
+    : undefined;
+  const mergedRelations = mergeRelations(baseRelations, normalized.relations);
   const mergedLoops = mergeLoops(
     Array.isArray(baseScene.scene?.loops) ? (baseScene.scene.loops as SceneLoop[]) : [],
     normalized.loops
@@ -319,7 +338,7 @@ export function applyScannerResultToWorkspace(
       objects: objectsWithSemantic,
       loops: mergedLoops,
       relations: mergedRelations,
-    } as any,
+    },
   };
 
   nextProject.scene = {
@@ -352,6 +371,11 @@ export function applyScannerResultToWorkspace(
     explanation_notes: Array.isArray(normalized.warnings) ? normalized.warnings : undefined,
   });
 
+  const existingResponseData =
+    baseProject.intelligence.responseData && typeof baseProject.intelligence.responseData === "object"
+      ? (baseProject.intelligence.responseData as Record<string, unknown>)
+      : null;
+
   nextProject.intelligence = {
     ...baseProject.intelligence,
     memoryInsights: {
@@ -375,11 +399,8 @@ export function applyScannerResultToWorkspace(
       scanner_hints: normalized.intelligenceHints ?? null,
       scanner_source: normalized.source,
       scanner_metadata: normalized.metadata ?? null,
-      trust_provenance: appendTrustProvenance(
-        (baseProject.intelligence.responseData as any)?.trust_provenance,
-        [scannerProvenance]
-      ),
-      audit_events: appendAuditEvents((baseProject.intelligence.responseData as any)?.audit_events, [scannerAuditEvent]),
+      trust_provenance: appendTrustProvenance(existingResponseData?.trust_provenance, [scannerProvenance]),
+      audit_events: appendAuditEvents(existingResponseData?.audit_events, [scannerAuditEvent]),
       timeline_seed:
         normalized.timelineSeed !== undefined ? normalized.timelineSeed : undefined,
     },

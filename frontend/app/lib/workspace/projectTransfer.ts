@@ -1,4 +1,4 @@
-import type { SceneJson, SemanticObjectMeta } from "../sceneTypes";
+import type { SceneJson, SceneLoop, SceneObject, SemanticObjectMeta } from "../sceneTypes";
 import type { ScannerResult } from "./scannerContract";
 import type { WorkspaceProjectState, WorkspaceState } from "./workspacePersistence";
 import { createEmptyProjectState, DEFAULT_PROJECT_ID } from "./workspacePersistence";
@@ -34,11 +34,11 @@ export type ProjectScenePayload = {
   loops?: {
     activeLoopId?: string | null;
     selectedLoopId?: string | null;
-    list?: any[];
+    list?: SceneLoop[];
   };
   overrides?: {
     objectUxById?: Record<string, { opacity?: number; scale?: number }>;
-    overrides?: Record<string, any>;
+    overrides?: Record<string, unknown>;
   };
 };
 
@@ -65,8 +65,8 @@ export type NexoraProjectFile = {
       label?: string;
     };
   };
-  relations?: any[];
-  loops?: any[];
+  relations?: unknown[];
+  loops?: unknown[];
   warnings?: string[];
   metadata?: Record<string, unknown>;
 };
@@ -116,25 +116,31 @@ function nextAvailableProjectId(baseId: string, projects: Record<string, Workspa
   return `${safeBase}_${i}`;
 }
 
-function isNexoraProjectFile(input: any): input is NexoraProjectFile {
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function isNexoraProjectFile(input: unknown): input is NexoraProjectFile {
+  const record = readRecord(input);
+  const project = readRecord(record.project);
+  const scene = readRecord(record.scene);
   return (
-    input &&
-    typeof input === "object" &&
-    input.format === "nexora_project_file" &&
-    typeof input.version === "string" &&
-    input.project &&
-    typeof input.project === "object" &&
-    input.scene &&
-    typeof input.scene === "object"
+    record.format === "nexora_project_file" &&
+    typeof record.version === "string" &&
+    Boolean(project && typeof record.project === "object") &&
+    Boolean(scene && typeof record.scene === "object")
   );
 }
 
 function normalizeLegacyProjectFile(raw: LegacyProjectFileV1): NexoraProjectFile {
   const sceneJson = raw?.sceneJson && typeof raw.sceneJson === "object" ? (raw.sceneJson as SceneJson) : null;
+  const meta = readRecord(sceneJson?.meta);
   const inferredId = slugifyId(
-    String((sceneJson as any)?.meta?.project_id ?? (sceneJson as any)?.meta?.demo_id ?? DEFAULT_PROJECT_ID)
+    String(meta.project_id ?? meta.demo_id ?? DEFAULT_PROJECT_ID)
   );
-  const inferredName = String((sceneJson as any)?.meta?.project_name ?? inferredId);
+  const inferredName = String(meta.project_name ?? inferredId);
 
   return {
     format: "nexora_project_file",
@@ -144,7 +150,7 @@ function normalizeLegacyProjectFile(raw: LegacyProjectFileV1): NexoraProjectFile
     project: {
       id: inferredId,
       name: inferredName,
-      domain: String((sceneJson as any)?.meta?.domain ?? "").trim() || undefined,
+      domain: String(meta.domain ?? "").trim() || undefined,
     },
     scene: {
       sceneJson,
@@ -157,7 +163,7 @@ function normalizeLegacyProjectFile(raw: LegacyProjectFileV1): NexoraProjectFile
       loops: {
         activeLoopId: null,
         selectedLoopId: null,
-        list: Array.isArray((sceneJson as any)?.scene?.loops) ? (sceneJson as any).scene.loops : [],
+        list: Array.isArray(sceneJson?.scene?.loops) ? sceneJson.scene.loops : [],
       },
       overrides: {
         objectUxById: {},
@@ -190,11 +196,14 @@ export function scannerResultToProjectFile(input: ScannerResult): NexoraProjectF
         } as SceneJson)
       : null;
 
-  const payloadObjects = Array.isArray((n as any).scenePayload?.objects)
-    ? (((n as any).scenePayload.objects as Array<Record<string, unknown>>).filter(
+  const scenePayload = readRecord((input as ScannerResult & { scenePayload?: unknown }).scenePayload);
+  const payloadObjects = Array.isArray(scenePayload.objects)
+    ? (scenePayload.objects as Array<Record<string, unknown>>).filter(
         (object): object is Record<string, unknown> & { id: string } => typeof object?.id === "string"
-      ))
-    : [];
+      )
+    : Array.isArray(n.objects)
+      ? n.objects.filter((object): object is SceneObject & { id: string } => typeof object?.id === "string")
+      : [];
 
   if (sceneJson && payloadObjects.length > 0) {
     const payloadMap = new Map<
@@ -212,7 +221,7 @@ export function scannerResultToProjectFile(input: ScannerResult): NexoraProjectF
 
     const scene = sceneJson.scene;
     if (scene && Array.isArray(scene.objects)) {
-      scene.objects = scene.objects.map((obj: any) => {
+      scene.objects = scene.objects.map((obj) => {
         const hit = payloadMap.get(obj.id);
 
         if (hit) {
@@ -221,7 +230,7 @@ export function scannerResultToProjectFile(input: ScannerResult): NexoraProjectF
             scanner_highlighted: true,
             scanner_emphasis: hit.emphasis ?? 0,
             scanner_reason: hit.reason ?? null,
-          };
+          } as unknown as SceneObject;
         }
 
         return {
@@ -229,7 +238,7 @@ export function scannerResultToProjectFile(input: ScannerResult): NexoraProjectF
           scanner_highlighted: false,
           scanner_emphasis: 0,
           scanner_reason: null,
-        };
+        } as unknown as SceneObject;
       });
     }
   }
@@ -329,7 +338,7 @@ export function exportProjectFile(project: WorkspaceProjectState): ExportResult 
       episodeId: p.chat.episodeId,
     },
     scanner: p.scanner,
-    relations: Array.isArray((p.scene.sceneJson as any)?.scene?.relations) ? (p.scene.sceneJson as any).scene.relations : [],
+    relations: Array.isArray(p.scene.sceneJson?.scene?.relations) ? p.scene.sceneJson.scene.relations : [],
     loops: Array.isArray(p.scene.loops) ? p.scene.loops : [],
   };
   return { ok: true, file, warnings: [] };
@@ -342,26 +351,30 @@ export function parseImportedProjectFile(raw: unknown): {
 } {
   const warnings: string[] = [];
   const errors: string[] = [];
-  const input = raw as any;
+  const input = readRecord(raw);
 
-  if (isNexoraProjectFile(input)) {
-    if (input.version !== "1") warnings.push(`Unsupported file version '${input.version}', attempting best-effort import.`);
-    return { file: input as NexoraProjectFile, warnings, errors };
+  if (isNexoraProjectFile(raw)) {
+    const file = raw as NexoraProjectFile;
+    if (file.version !== "1") warnings.push(`Unsupported file version '${file.version}', attempting best-effort import.`);
+    return { file, warnings, errors };
   }
 
-  if (input && typeof input === "object" && (input.mode === "create" || input.mode === "enrich") && input.source) {
-    const bridged = scannerResultToProjectFile(input as ScannerResult);
-    if (!bridged) {
-      errors.push("Invalid scanner result payload.");
-      return { file: null, warnings, errors };
+  if (input.mode === "create" || input.mode === "enrich") {
+    const source = readRecord(input.source);
+    if (source && Object.keys(source).length > 0) {
+      const bridged = scannerResultToProjectFile(raw as ScannerResult);
+      if (!bridged) {
+        errors.push("Invalid scanner result payload.");
+        return { file: null, warnings, errors };
+      }
+      warnings.push("Imported scanner result via scanner bridge.");
+      return { file: bridged, warnings, errors };
     }
-    warnings.push("Imported scanner result via scanner bridge.");
-    return { file: bridged, warnings, errors };
   }
 
-  if (input && typeof input === "object" && String(input.version ?? "") === "1" && ("sceneJson" in input || "activeMode" in input)) {
+  if (raw && typeof raw === "object" && String(input.version ?? "") === "1" && ("sceneJson" in input || "activeMode" in input)) {
     warnings.push("Imported legacy project format v1.");
-    return { file: normalizeLegacyProjectFile(input as LegacyProjectFileV1), warnings, errors };
+    return { file: normalizeLegacyProjectFile(raw as LegacyProjectFileV1), warnings, errors };
   }
 
   errors.push("Unsupported project file format.");
@@ -411,7 +424,7 @@ export function importProjectFileToWorkspace(
       focusPinned: !!inputFile?.scene?.selection?.focusPinned,
       activeLoopId: inputFile?.scene?.loops?.activeLoopId ?? null,
       selectedLoopId: inputFile?.scene?.loops?.selectedLoopId ?? null,
-      loops: loopsFromFile as any[],
+      loops: loopsFromFile as WorkspaceProjectState["scene"]["loops"],
       objectUxById:
         inputFile?.scene?.overrides?.objectUxById && typeof inputFile.scene.overrides.objectUxById === "object"
           ? inputFile.scene.overrides.objectUxById
@@ -424,8 +437,8 @@ export function importProjectFileToWorkspace(
     intelligence: {
       ...base.intelligence,
       ...(inputFile?.intelligence && typeof inputFile.intelligence === "object" ? inputFile.intelligence : {}),
-      conflicts: Array.isArray((inputFile?.intelligence as any)?.conflicts)
-        ? ((inputFile?.intelligence as any).conflicts as any[])
+      conflicts: Array.isArray(inputFile?.intelligence?.conflicts)
+        ? inputFile.intelligence.conflicts
         : [],
     },
     chat: {

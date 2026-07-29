@@ -3,19 +3,28 @@ import type { DecisionExecutionIntent } from "./decisionExecutionIntent";
 
 type BuildPreviewDecisionExecutionResultInput = {
   intent: DecisionExecutionIntent;
-  responseData?: any | null;
+  responseData?: unknown;
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
 
 export function buildPreviewDecisionExecutionResult(
   input: BuildPreviewDecisionExecutionResultInput
 ): DecisionExecutionResult {
+  const responseData = asRecord(input.responseData);
+  const decisionSimulation = asRecord(responseData?.decision_simulation);
+  const simulationImpact = asRecord(decisionSimulation?.impact);
+  const decisionResult = asRecord(responseData?.decision_result);
+  const simulationResult = asRecord(decisionResult?.simulation_result);
   const impactScore =
-    Number(input.responseData?.decision_simulation?.confidence) ||
+    Number(decisionSimulation?.confidence) ||
     Number(input.intent.confidence) ||
     0.64;
   const riskChange =
-    Number(input.responseData?.decision_simulation?.impact?.risk_change) ||
-    Number(input.responseData?.decision_result?.simulation_result?.risk_change) ||
+    Number(simulationImpact?.risk_change) ||
+    Number(simulationResult?.risk_change) ||
     -0.08;
 
   return {

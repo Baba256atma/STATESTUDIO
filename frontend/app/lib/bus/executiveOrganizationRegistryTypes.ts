@@ -1,14 +1,4 @@
-import type {
-  ExecutiveOrganization,
-  ExecutiveOrganizationHierarchy,
-  ExecutiveOwnership,
-  ExecutivePosition,
-  ExecutiveReportingRelationship,
-  ExecutiveResponsibility,
-  ExecutiveRole,
-  OrganizationStatus,
-  OrganizationUnit,
-} from "./executiveOrganizationTypes.ts";
+import type { ExecutiveOrganization, ExecutiveOrganizationHierarchy, ExecutiveOwnership, ExecutivePosition, ExecutiveReportingRelationship, ExecutiveResponsibility, ExecutiveRole, OrganizationUnit } from "./executiveOrganizationTypes.ts";
 
 export type ExecutiveOrganizationRegistryStatus = "Published" | "Frozen" | "Archived";
 

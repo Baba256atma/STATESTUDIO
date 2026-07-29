@@ -14,7 +14,6 @@ import {
   resolveExecutiveIntentExample,
   validateExecutiveIntentShape,
 } from "../executiveIntent/executiveIntentContract.ts";
-import { runExecutiveIntentPlatformRefresh } from "../executiveIntent/executiveIntentPlatformRefresh.ts";
 import { validateStageManifest } from "../stage/stageArchitectureGuards.ts";
 import { ExecutiveAssistantMemoryIntegrationContracts } from "./executiveAssistantMemoryIntegrationContracts.ts";
 import { ExecutiveContextMemoryContracts } from "./executiveContextMemoryContracts.ts";
@@ -26,12 +25,7 @@ import {
 import {
   EXECUTIVE_MEMORY_CONTRACT_VERSION,
 } from "./executiveMemoryConstants.ts";
-import {
-  EXECUTIVE_MEMORY_FREEZE_RULES,
-  EXECUTIVE_MEMORY_IDENTITY,
-  EXECUTIVE_MEMORY_SELF_MANIFEST,
-  ExecutiveMemoryContract,
-} from "./executiveMemoryContracts.ts";
+import { EXECUTIVE_MEMORY_FREEZE_RULES, EXECUTIVE_MEMORY_SELF_MANIFEST, ExecutiveMemoryContract } from "./executiveMemoryContracts.ts";
 import { ExecutiveMemoryLifecycleContracts } from "./executiveMemoryLifecycleContracts.ts";
 import { ExecutiveMemoryRecordContracts } from "./executiveMemoryRecordContracts.ts";
 import { ExecutiveMemoryRetrievalContracts } from "./executiveMemoryRetrievalContracts.ts";
@@ -132,8 +126,6 @@ export function runExecutiveMemoryPlatformCertification(): ExecutiveMemoryPlatfo
   const deterministic =
     dashboardFirst.summary.totalMemories === dashboardSecond.summary.totalMemories &&
     dashboardFirst.health.level === dashboardSecond.health.level;
-
-  const app3Refresh = runExecutiveIntentPlatformRefresh(FIXED_TIME);
   const metadataValid = ExecutiveMemoryContract.validateExecutiveMemoryMetadataShape(
     ExecutiveMemoryContract.resolveExecutiveMemoryMetadataExample(FIXED_TIME)
   ).valid;

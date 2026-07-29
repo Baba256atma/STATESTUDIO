@@ -4,14 +4,7 @@
  */
 
 import type { ExecutiveModelRecord } from "../executiveModel/executiveModelGenerationTypes.ts";
-import type {
-  PipelineCheckpointKind,
-  PipelineCheckpointRecord,
-  PipelineExecutionStage,
-  PipelineFailureKind,
-  PipelineFailureRecord,
-  PipelineValidationSummary,
-} from "../executiveModelPipeline/executiveModelPipelineTypes.ts";
+import type { PipelineCheckpointKind, PipelineExecutionStage, PipelineFailureKind, PipelineFailureRecord, PipelineValidationSummary } from "../executiveModelPipeline/executiveModelPipelineTypes.ts";
 
 export type RuntimeWorkspaceId = string;
 

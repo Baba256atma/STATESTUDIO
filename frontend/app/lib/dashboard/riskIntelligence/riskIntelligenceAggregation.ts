@@ -8,23 +8,7 @@ import type { ImpactDirection } from "../dashboardVisualSignalContract.ts";
 import { getDashboardSurfaceVisualBundle } from "../dashboardSurfaceVisualRegistry.ts";
 import { getOperationalIntelligenceSnapshotForExecutiveSummary } from "../operationalIntelligence/operationalIntelligenceRuntime.ts";
 import { getTimelineIntelligenceSnapshotForRiskIntelligence } from "../timelineIntelligence/timelineIntelligenceRuntime.ts";
-import {
-  type ActiveRisksCard,
-  type ExecutiveAttentionRequiredCard,
-  type ExecutiveRiskAttention,
-  type RiskConfidenceCard,
-  type RiskConfidenceLevel,
-  type RiskContextSource,
-  type RiskExposureCard,
-  type RiskExposureLevel,
-  type RiskIntelligenceAggregationInput,
-  type RiskIntelligenceSnapshot,
-  type RiskIntelligenceSurfaceModel,
-  type RiskMomentum,
-  type RiskMomentumCard,
-  CANONICAL_RISK_INTELLIGENCE_OWNER,
-  CANONICAL_RISK_INTELLIGENCE_SURFACE_ID,
-} from "./riskIntelligenceContract.ts";
+import { type ActiveRisksCard, type ExecutiveRiskAttention, type RiskConfidenceLevel, type RiskContextSource, type RiskExposureLevel, type RiskIntelligenceAggregationInput, type RiskIntelligenceSnapshot, type RiskIntelligenceSurfaceModel, type RiskMomentum, CANONICAL_RISK_INTELLIGENCE_OWNER, CANONICAL_RISK_INTELLIGENCE_SURFACE_ID } from "./riskIntelligenceContract.ts";
 import {
   reportActiveRisk,
   reportExecutiveAttentionRequired,

@@ -157,7 +157,7 @@ export function getScenarioTimelineFutureCompatibility(): ScenarioTimelineFuture
 export function validateScenarioTimelinePlatform(
   timestamp: string = DEFAULT_TIME
 ): ScenarioTimelinePlatformValidationReport {
-  const issues: ScenarioTimelinePlatformValidationReport["issues"] = [];
+  const issues: ScenarioTimelinePlatformValidationReport["issues"][number][] = [];
 
   if (!isScenarioTimelinePlatformInitialized()) {
     initializeScenarioTimelinePlatform(timestamp);

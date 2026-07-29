@@ -76,7 +76,20 @@ function BreathingSpace({ children }: { children: React.ReactNode }): React.JSX.
   return <group ref={sceneRef}>{children}</group>;
 }
 
-function AtmosphereAmbientLight({ energyGlow, inspirationGlow, heatField }: { energyGlow: number; inspirationGlow: number; heatField: boolean }): React.JSX.Element {
+function resolveInspirationGlow(signal: InspirationSignal | null | undefined): number {
+  if (!signal) return 0;
+  return Date.now() < signal.pulseUntil ? signal.intensity : 0;
+}
+
+function AtmosphereAmbientLight({
+  energyGlow,
+  inspirationSignal,
+  heatField,
+}: {
+  energyGlow: number;
+  inspirationSignal: InspirationSignal | null | undefined;
+  heatField: boolean;
+}): React.JSX.Element {
   const lightRef = React.useRef<THREE.AmbientLight | null>(null);
   const colorRef = React.useRef(new THREE.Color("#f0f6ff"));
   const tintRef = React.useRef(new THREE.Color("#f0f6ff"));
@@ -84,6 +97,7 @@ function AtmosphereAmbientLight({ energyGlow, inspirationGlow, heatField }: { en
 
   useFrame(() => {
     if (!lightRef.current) return;
+    const inspirationGlow = resolveInspirationGlow(inspirationSignal);
     const atmosphereEmotion = emotionInputFromStore(emotion.current);
     const scores = mapEmotionToElements(atmosphereEmotion);
     const atmosphere = buildAtmosphere(scores, atmosphereEmotion);
@@ -98,7 +112,13 @@ function AtmosphereAmbientLight({ energyGlow, inspirationGlow, heatField }: { en
     lightRef.current.color.lerp(colorRef.current, 0.05);
   });
 
-  return <ambientLight ref={lightRef} intensity={0.24 + energyGlow * 0.08 + inspirationGlow * 0.035 + (heatField ? 0.04 : 0)} color={heatField ? "#ffd8a0" : "#f0f6ff"} />;
+  return (
+    <ambientLight
+      ref={lightRef}
+      intensity={0.24 + energyGlow * 0.08 + (heatField ? 0.04 : 0)}
+      color={heatField ? "#ffd8a0" : "#f0f6ff"}
+    />
+  );
 }
 
 const PsychScene = React.memo(function PsychScene({ psychState = DEFAULT_PSYCH_STATE, objects, selectedObjectId = null, compactStars = false, inspirationSignal = null, onObjectClick }: PsychSceneProps): React.JSX.Element {
@@ -110,8 +130,6 @@ const PsychScene = React.memo(function PsychScene({ psychState = DEFAULT_PSYCH_S
 
   const energyGlow = Math.max(0, psychState.energy - 50) / 50;
   const fireGlow = Math.max(0, psychState.tension - 50) / 50;
-  const inspirationActive = !!inspirationSignal && Date.now() < inspirationSignal.pulseUntil;
-  const inspirationGlow = inspirationActive ? inspirationSignal.intensity : 0;
   const heatField = energyGlow > 0.35 && fireGlow > 0.35;
   const objectValues = useMemo(() => Object.values(objects ?? {}), [objects]);
   const globalIntensity = useMemo(() => {
@@ -134,7 +152,7 @@ const PsychScene = React.memo(function PsychScene({ psychState = DEFAULT_PSYCH_S
             GPU-safe and non-reactive to avoid WebGL errors. */}
         <color attach="background" args={["#020617"]} />
         <fog attach="fog" args={["#020617", 10, 80]} />
-        <AtmosphereAmbientLight energyGlow={energyGlow} inspirationGlow={inspirationGlow} heatField={heatField} />
+        <AtmosphereAmbientLight energyGlow={energyGlow} inspirationSignal={inspirationSignal} heatField={heatField} />
         <directionalLight position={[5, 5, 5]} intensity={0.48} />
         <pointLight position={[0, 1.6, 2.8]} intensity={0.55 + energyGlow * 0.18 + fireGlow * 0.12} color={heatField ? "#ffb35c" : "#d8ad72"} />
         <hemisphereLight args={[0x1c2430, 0x061018, 0.12]} />
@@ -142,7 +160,7 @@ const PsychScene = React.memo(function PsychScene({ psychState = DEFAULT_PSYCH_S
         <BreathingSpace>
           <NebulaField />
           <PsychNebula />
-          <PsychStars compact={compactStars} energy={psychState.energy + inspirationGlow * 12} />
+          <PsychStars compact={compactStars} energy={psychState.energy} />
           <EmotionSparkles intensity={globalIntensity} />
           <PsychFoggySun intensity={egoIntensity} />
           <PsychSparkles intensity={globalIntensity} />

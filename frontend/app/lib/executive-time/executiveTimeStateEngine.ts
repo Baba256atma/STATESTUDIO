@@ -26,13 +26,7 @@ import {
   resolveTerminalStates,
   validateExecutiveTimeStateTransition,
 } from "./executiveTimeStateResolver.ts";
-import type {
-  ExecutiveTimeEntityStateDefinition,
-  ExecutiveTimeEntityType,
-  ExecutiveTimeStateTemporalSnapshot,
-  ExecutiveTimeStateTransitionContract,
-  ExecutiveTimeStateValidationResult,
-} from "./executiveTimeStateTypes.ts";
+import type { ExecutiveTimeEntityStateDefinition, ExecutiveTimeEntityType, ExecutiveTimeStateTemporalSnapshot, ExecutiveTimeStateTransitionContract } from "./executiveTimeStateTypes.ts";
 import { EXECUTIVE_TIME_STATE_ENGINE_VERSION } from "./executiveTimeStateTypes.ts";
 import type { ExecutiveTimeWorkspaceId } from "./executiveTimeTypes.ts";
 import {

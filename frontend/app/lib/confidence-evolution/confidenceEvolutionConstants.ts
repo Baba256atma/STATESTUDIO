@@ -1,12 +1,7 @@
 /**
  * APP-9:1 — Confidence Evolution Platform constants.
+ * Values-first vocabulary: unions are derived in confidenceEvolutionTypes.ts.
  */
-
-import type {
-  ConfidenceChangeReason,
-  ConfidenceLevel,
-  ConfidenceSource,
-} from "./confidenceEvolutionTypes.ts";
 
 export const CONFIDENCE_EVOLUTION_PLATFORM_CONTRACT_VERSION = "APP-9/1" as const;
 export const CONFIDENCE_EVOLUTION_PLATFORM_ARCHITECTURE_VERSION = "APP-9/1-arch" as const;
@@ -36,7 +31,7 @@ export const CONFIDENCE_EVOLUTION_CONFIDENCE_LEVEL_KEYS = Object.freeze([
   "medium",
   "high",
   "very_high",
-] as const satisfies readonly ConfidenceLevel[]);
+] as const);
 
 export const CONFIDENCE_EVOLUTION_SOURCE_KEYS = Object.freeze([
   "manual",
@@ -47,7 +42,7 @@ export const CONFIDENCE_EVOLUTION_SOURCE_KEYS = Object.freeze([
   "journal",
   "workspace",
   "api",
-] as const satisfies readonly ConfidenceSource[]);
+] as const);
 
 export const CONFIDENCE_EVOLUTION_CHANGE_REASON_KEYS = Object.freeze([
   "new_evidence",
@@ -58,7 +53,7 @@ export const CONFIDENCE_EVOLUTION_CHANGE_REASON_KEYS = Object.freeze([
   "executive_review",
   "manual_revision",
   "unknown",
-] as const satisfies readonly ConfidenceChangeReason[]);
+] as const);
 
 export const CONFIDENCE_EVOLUTION_MANDATORY_RECORD_FIELDS = Object.freeze([
   "id",

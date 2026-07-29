@@ -73,6 +73,7 @@ export function executiveObjectNameLabelStyle(input: {
 }
 
 /** @deprecated E2:66 — use objectLabelDiagnosticGuard trace helpers instead. */
-export function logObjectLabel(_payload: Record<string, unknown>): void {
+export function logObjectLabel(payload: Record<string, unknown>): void {
+  void payload;
   /* no-op: render-path logging removed in E2:66 */
 }

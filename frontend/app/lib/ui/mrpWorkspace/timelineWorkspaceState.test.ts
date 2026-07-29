@@ -64,13 +64,14 @@ const navigationHistory: readonly WorkspaceNavigationHistoryEntry[] = Object.fre
 ]);
 
 const sceneWithMarkers: SceneJson = {
+  state_vector: {},
   scene: {
     objects: [
       { id: "a", type: "Supply", severity: "critical", status: "active" },
       { id: "b", type: "Finance", decision_status: "approved", updated_at: now - 120_000 },
     ],
   },
-} as SceneJson;
+};
 
 test("deriveTimelineWorkspaceMetrics counts navigation and scene timeline markers", () => {
   const metrics = deriveTimelineWorkspaceMetrics({

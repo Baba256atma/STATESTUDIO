@@ -27,16 +27,7 @@ import {
   FAILURE_FACTOR_KEYS,
   FAILURE_LEARNING_ENGINE_CONTRACT_VERSION,
 } from "./failureLearningEngineConstants.ts";
-import {
-  failureExists,
-  getFailures,
-  initializeFailureLearningEngine,
-  learnHistoricalFailures,
-  FAILURE_LEARNING_ENGINE_SELF_MANIFEST,
-  registerFailure,
-  resetFailureLearningEngineForTests,
-  validateExecutiveFailure,
-} from "./failureLearningEngine.ts";
+import { failureExists, getFailures, initializeFailureLearningEngine, learnHistoricalFailures, FAILURE_LEARNING_ENGINE_SELF_MANIFEST, registerFailure, validateExecutiveFailure } from "./failureLearningEngine.ts";
 import {
   resetFailureLearningEnginePlatformForTests,
   runFailureLearningCertification,
@@ -165,7 +156,7 @@ function failureRecord(
     workspaceId: WORKSPACE,
     businessGoal: "Expand into new market",
     failureCategory: "strategic_failure",
-    failureFactorKeys: Object.freeze(["execution_delays", "kpi_deterioration"]),
+    failureFactorKeys: Object.freeze(["execution_delays", "kpi_deterioration"] as const),
     failureCauses: Object.freeze([
       Object.freeze({
         label: "Incorrect market assumptions",
@@ -318,7 +309,7 @@ test("validates historical failure record input", () => {
         workspaceId: WORKSPACE,
         businessGoal: "Expand into new market",
         failureCategory: "strategic_failure",
-        failureFactorKeys: Object.freeze([]),
+        failureFactorKeys: Object.freeze([] as const),
         failureCauses: Object.freeze([]),
         kpiImpactSummary: "Revenue down",
         riskImpactSummary: "Risk up",

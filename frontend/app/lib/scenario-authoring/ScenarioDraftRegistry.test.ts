@@ -97,12 +97,16 @@ test("rejects simulation payloads and preserves registry integrity", () => {
   const valid = createScenarioDraftRegistryEntry({ draft: buildValidDraft({ draftId: "scenario-draft:valid" }) });
   assert.equal(valid.success, true);
 
-  const simulationDraft = {
-    ...buildValidDraft({ draftId: "scenario-draft:sim" }),
-    simulationActive: true,
-  } as ReturnType<typeof buildValidDraft>;
-
-  const rejected = createScenarioDraftRegistryEntry({ draft: simulationDraft });
+  const rejected = createScenarioDraftRegistryEntry(
+    JSON.parse(
+      JSON.stringify({
+        draft: {
+          ...buildValidDraft({ draftId: "scenario-draft:sim" }),
+          simulationActive: true,
+        },
+      })
+    )
+  );
   assert.equal(rejected.success, false);
   assert.equal(rejected.reason, "simulation_payload_rejected");
 

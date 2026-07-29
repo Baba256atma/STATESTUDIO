@@ -23,7 +23,7 @@ import type {
 import type { ExecutiveTimeContextKey, ExecutiveTimeWorkspaceId } from "./executiveTimeTypes.ts";
 
 type WorkspaceHistory = Readonly<{
-  entries: ExecutiveTimeCameraHistoryEntry[];
+  entries: readonly ExecutiveTimeCameraHistoryEntry[];
   cursor: number;
 }>;
 

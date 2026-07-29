@@ -3,12 +3,6 @@
  * Versioning, lifecycle keys, limits, and certification tags.
  */
 
-import type {
-  ScenarioTimelineEventType,
-  ScenarioTimelineLifecycleStage,
-  ScenarioTimelineTypeId,
-} from "./scenarioTimelinePlatformTypes.ts";
-
 export const SCENARIO_TIMELINE_PLATFORM_CONTRACT_VERSION = "APP-5/1" as const;
 export const SCENARIO_TIMELINE_PLATFORM_ARCHITECTURE_VERSION = "APP-5/1-arch" as const;
 export const SCENARIO_TIMELINE_PLATFORM_API_VERSION = "APP-5/1" as const;
@@ -36,7 +30,7 @@ export const SCENARIO_TIMELINE_LIFECYCLE_STAGE_KEYS = Object.freeze([
   "execution_finished",
   "actual_results_recorded",
   "lessons_learned",
-] as const satisfies readonly ScenarioTimelineLifecycleStage[]);
+] as const);
 
 export const SCENARIO_TIMELINE_EVENT_TYPE_KEYS = Object.freeze([
   "lifecycle_transition",
@@ -47,14 +41,14 @@ export const SCENARIO_TIMELINE_EVENT_TYPE_KEYS = Object.freeze([
   "lesson_learned",
   "metadata_annotation",
   "custom",
-] as const satisfies readonly ScenarioTimelineEventType[]);
+] as const);
 
 export const SCENARIO_TIMELINE_RESERVED_TYPE_IDS = Object.freeze([
   "timeline-system",
   "timeline-reserved",
   "timeline-internal",
   "timeline-placeholder",
-] as const satisfies readonly ScenarioTimelineTypeId[]);
+] as const);
 
 export const SCENARIO_TIMELINE_MANDATORY_EVENT_FIELDS = Object.freeze([
   "eventId",

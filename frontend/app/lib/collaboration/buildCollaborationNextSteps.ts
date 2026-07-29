@@ -3,9 +3,9 @@ import type { CollaborationAlignment, CollaborationInput } from "./collaboration
 type BuildCollaborationNextStepsInput = {
   alignment: CollaborationAlignment;
   inputs: CollaborationInput[];
-  teamDecisionState?: any | null;
-  governanceState?: any | null;
-  approvalWorkflowState?: any | null;
+  teamDecisionState?: import("../team/teamDecisionTypes").TeamDecisionState | null;
+  governanceState?: import("../governance/decisionGovernanceTypes").DecisionGovernanceState | null;
+  approvalWorkflowState?: import("../approval/approvalWorkflowTypes").ApprovalWorkflowState | null;
 };
 
 function clean(values: unknown[], limit = 4) {

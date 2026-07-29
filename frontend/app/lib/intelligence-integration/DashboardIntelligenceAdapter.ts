@@ -9,11 +9,6 @@ import {
   type DashboardIntelligenceAdapterRegistry,
 } from "./dashboardIntelligenceAdapterContract.ts";
 import type { ExecutiveIntelligenceSnapshot } from "../intelligence/executiveIntelligenceSnapshotContract.ts";
-import type { ExecutiveKpiSummary } from "../kpi-intelligence/executiveKpiSummaryContract.ts";
-import type { ExecutiveObjectIntelligenceSummary } from "../object-intelligence/executiveObjectIntelligenceSummaryContract.ts";
-import type { ExecutiveRelationshipSummary } from "../relationship-intelligence/executiveRelationshipSummaryContract.ts";
-import type { ExecutiveRiskSummary } from "../risk-intelligence/executiveRiskSummaryContract.ts";
-import type { ExecutiveScenarioSummary } from "../scenario-intelligence/executiveScenarioSummaryContract.ts";
 
 let latestDashboardIntelligenceAdapterRegistry: DashboardIntelligenceAdapterRegistry =
   EMPTY_DASHBOARD_INTELLIGENCE_ADAPTER_REGISTRY;

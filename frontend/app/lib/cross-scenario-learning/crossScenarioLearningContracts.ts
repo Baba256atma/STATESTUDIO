@@ -31,7 +31,6 @@ import {
 } from "./crossScenarioLearningConstants.ts";
 import {
   buildCrossScenarioLearningFoundation,
-  createCrossScenarioLearningFoundation,
   isCrossScenarioLearningPlatformInitialized,
 } from "./crossScenarioLearningFoundation.ts";
 import {
@@ -42,6 +41,7 @@ import type {
   CrossScenarioLearningDependencyValidationReport,
   CrossScenarioLearningFutureCompatibility,
   CrossScenarioLearningPlatformIdentity,
+  CrossScenarioLearningPlatformManifest,
   CrossScenarioLearningPlatformValidationReport,
   CrossScenarioLearningValidationResult,
   LearningCandidate,
@@ -62,7 +62,7 @@ import {
   validateWorkspaceIsolation,
 } from "./crossScenarioLearningValidation.ts";
 
-export type { CrossScenarioLearningPlatformManifest } from "./crossScenarioLearningTypes.ts";
+export type { CrossScenarioLearningPlatformManifest };
 
 export const CROSS_SCENARIO_LEARNING_PLATFORM_IDENTITY: CrossScenarioLearningPlatformIdentity = Object.freeze({
   appId: "APP-10",
@@ -226,7 +226,7 @@ export function resolveLearningContextExample(timestamp: string = DEFAULT_TIME):
     contextId: "learning-context-ws-001",
     workspaceId: "ws-cross-scenario-learning-001",
     sessionId: "cross-scenario-learning-ws-001",
-    sourceTypes: Object.freeze(["completed_scenario", "final_outcome", "confidence_evolution"]),
+    sourceTypes: Object.freeze(["completed_scenario", "final_outcome", "confidence_evolution"] as const),
     scope: "workspace",
     metadata: createLearningMetadata(timestamp),
     createdAt: timestamp,
@@ -242,7 +242,7 @@ export function resolveLearningSessionExample(timestamp: string = DEFAULT_TIME):
     status: "draft",
     label: "Executive Cross-Scenario Learning Session",
     description: "Foundation session for deterministic cross-scenario learning registration.",
-    sourceTypes: Object.freeze(["completed_scenario", "executive_decision", "confidence_evolution"]),
+    sourceTypes: Object.freeze(["completed_scenario", "executive_decision", "confidence_evolution"] as const),
     metadata: createLearningMetadata(timestamp),
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -307,7 +307,6 @@ export function buildCrossScenarioLearningManifest(
   timestamp: string
 ): CrossScenarioLearningPlatformManifest {
   void timestamp;
-  const registry = getCrossScenarioLearningRegistry();
   return Object.freeze({
     manifestVersion: CROSS_SCENARIO_LEARNING_PLATFORM_CONTRACT_VERSION,
     architectureVersion: CROSS_SCENARIO_LEARNING_PLATFORM_ARCHITECTURE_VERSION,
@@ -366,7 +365,7 @@ export function getCrossScenarioLearningManifest(
 export function validateCrossScenarioLearningFoundation(
   timestamp: string = DEFAULT_TIME
 ): CrossScenarioLearningPlatformValidationReport {
-  const issues: CrossScenarioLearningPlatformValidationReport["issues"] = [];
+  const issues: CrossScenarioLearningPlatformValidationReport["issues"][number][] = [];
 
   const identityValidation = validatePlatformIdentity(CROSS_SCENARIO_LEARNING_PLATFORM_IDENTITY);
   if (!identityValidation.valid) {
@@ -454,7 +453,6 @@ export function validateCrossScenarioLearningFoundation(
 
 export {
   buildCrossScenarioLearningFoundation,
-  createCrossScenarioLearningFoundation,
   isCrossScenarioLearningPlatformInitialized as isCrossScenarioLearningReady,
 } from "./crossScenarioLearningFoundation.ts";
 export { registerLearningSession, registerLearningCandidate } from "./crossScenarioLearningRegistry.ts";

@@ -1,3 +1,12 @@
+import type {
+  KpiStateMap,
+  NexoraScenarioOutcome,
+  NexoraSimulationKpiImpact,
+  NexoraSimulationObjectImpact,
+  NexoraSimulationSnapshot,
+  ObjectStateMap,
+} from "./domainSimulationScenarioEngine";
+
 export type NexoraOutcomeComparisonMode =
   | "baseline_vs_scenario"
   | "scenario_vs_scenario"
@@ -56,7 +65,7 @@ export interface NexoraOutcomeComparisonResult {
 export interface NexoraReplayFrame {
   index: number;
   label?: string;
-  snapshot: Record<string, any>;
+  snapshot: NexoraSimulationSnapshot;
   notes?: string[];
 }
 
@@ -91,52 +100,66 @@ function riskRank(value?: "low" | "moderate" | "high" | "critical" | null): numb
   }
 }
 
-function normalizeSnapshot(snapshot: any): Record<string, any> {
-  return snapshot && typeof snapshot === "object" && !Array.isArray(snapshot)
-    ? {
-        stepIndex: safeNumber(snapshot.stepIndex, 0),
-        objectStates:
-          snapshot.objectStates && typeof snapshot.objectStates === "object" && !Array.isArray(snapshot.objectStates)
-            ? { ...snapshot.objectStates }
-            : {},
-        relationStates:
-          snapshot.relationStates && typeof snapshot.relationStates === "object" && !Array.isArray(snapshot.relationStates)
-            ? { ...snapshot.relationStates }
-            : {},
-        loopStates:
-          snapshot.loopStates && typeof snapshot.loopStates === "object" && !Array.isArray(snapshot.loopStates)
-            ? { ...snapshot.loopStates }
-            : {},
-        kpiStates:
-          snapshot.kpiStates && typeof snapshot.kpiStates === "object" && !Array.isArray(snapshot.kpiStates)
-            ? { ...snapshot.kpiStates }
-            : {},
-      }
-    : {
-        stepIndex: 0,
-        objectStates: {},
-        relationStates: {},
-        loopStates: {},
-        kpiStates: {},
-      };
+function normalizeSnapshot(snapshot: unknown): NexoraSimulationSnapshot {
+  if (snapshot && typeof snapshot === "object" && !Array.isArray(snapshot)) {
+    const record = snapshot as Record<string, unknown>;
+    return {
+      stepIndex: safeNumber(record.stepIndex, 0),
+      objectStates:
+        record.objectStates && typeof record.objectStates === "object" && !Array.isArray(record.objectStates)
+          ? { ...(record.objectStates as NexoraSimulationSnapshot["objectStates"]) }
+          : {},
+      relationStates:
+        record.relationStates && typeof record.relationStates === "object" && !Array.isArray(record.relationStates)
+          ? { ...(record.relationStates as NexoraSimulationSnapshot["relationStates"]) }
+          : {},
+      loopStates:
+        record.loopStates && typeof record.loopStates === "object" && !Array.isArray(record.loopStates)
+          ? { ...(record.loopStates as NexoraSimulationSnapshot["loopStates"]) }
+          : {},
+      kpiStates:
+        record.kpiStates && typeof record.kpiStates === "object" && !Array.isArray(record.kpiStates)
+          ? { ...(record.kpiStates as NexoraSimulationSnapshot["kpiStates"]) }
+          : {},
+    };
+  }
+  return {
+    stepIndex: 0,
+    objectStates: {},
+    relationStates: {},
+    loopStates: {},
+    kpiStates: {},
+  };
 }
 
-function normalizeOutcome(outcome: any): {
+type NormalizedOutcome = {
   scenarioId?: string | null;
   overallRisk?: "low" | "moderate" | "high" | "critical" | null;
-  objectImpacts: Array<Record<string, any>>;
-  kpiImpacts: Array<Record<string, any>>;
-  snapshots: Array<Record<string, any>>;
-} {
+  objectImpacts: NexoraSimulationObjectImpact[];
+  kpiImpacts: NexoraSimulationKpiImpact[];
+  snapshots: NexoraSimulationSnapshot[];
+};
+
+function normalizeOutcome(outcome: unknown): NormalizedOutcome {
+  const record =
+    outcome && typeof outcome === "object" && !Array.isArray(outcome)
+      ? (outcome as Record<string, unknown>)
+      : {};
   return {
     scenarioId:
-      outcome?.scenarioId === null || outcome?.scenarioId === undefined
+      record.scenarioId === null || record.scenarioId === undefined
         ? null
-        : String(outcome.scenarioId).trim(),
-    overallRisk: outcome?.overallRisk ?? null,
-    objectImpacts: Array.isArray(outcome?.objectImpacts) ? outcome.objectImpacts.map((item: any) => ({ ...item })) : [],
-    kpiImpacts: Array.isArray(outcome?.kpiImpacts) ? outcome.kpiImpacts.map((item: any) => ({ ...item })) : [],
-    snapshots: Array.isArray(outcome?.snapshots) ? outcome.snapshots.map((snapshot: any) => normalizeSnapshot(snapshot)) : [],
+        : String(record.scenarioId).trim(),
+    overallRisk: (record.overallRisk as NormalizedOutcome["overallRisk"]) ?? null,
+    objectImpacts: Array.isArray(record.objectImpacts)
+      ? record.objectImpacts.map((item) => ({ ...(item as NexoraSimulationObjectImpact) }))
+      : [],
+    kpiImpacts: Array.isArray(record.kpiImpacts)
+      ? record.kpiImpacts.map((item) => ({ ...(item as NexoraSimulationKpiImpact) }))
+      : [],
+    snapshots: Array.isArray(record.snapshots)
+      ? record.snapshots.map((snapshot) => normalizeSnapshot(snapshot))
+      : [],
   };
 }
 
@@ -156,8 +179,8 @@ export function inferTrendFromDelta(delta: number): "up" | "down" | "stable" {
 }
 
 export function buildKpiDifferences(args: {
-  leftKpis?: Record<string, Record<string, any>> | null;
-  rightKpis?: Record<string, Record<string, any>> | null;
+  leftKpis?: KpiStateMap | null;
+  rightKpis?: KpiStateMap | null;
 }): NexoraKpiDifference[] {
   const leftKpis = args.leftKpis ?? {};
   const rightKpis = args.rightKpis ?? {};
@@ -183,8 +206,8 @@ export function buildKpiDifferences(args: {
 }
 
 export function buildObjectDifferences(args: {
-  leftObjects?: Record<string, Record<string, any>> | null;
-  rightObjects?: Record<string, Record<string, any>> | null;
+  leftObjects?: ObjectStateMap | null;
+  rightObjects?: ObjectStateMap | null;
 }): NexoraObjectDifference[] {
   const leftObjects = args.leftObjects ?? {};
   const rightObjects = args.rightObjects ?? {};
@@ -219,8 +242,8 @@ export function buildObjectDifferences(args: {
 }
 
 export function buildSnapshotDifferences(args: {
-  leftSnapshots?: any[] | null;
-  rightSnapshots?: any[] | null;
+  leftSnapshots?: NexoraSimulationSnapshot[] | null;
+  rightSnapshots?: NexoraSimulationSnapshot[] | null;
 }): NexoraSnapshotDifference[] {
   const leftSnapshots = Array.isArray(args.leftSnapshots) ? args.leftSnapshots.map((snapshot) => normalizeSnapshot(snapshot)) : [];
   const rightSnapshots = Array.isArray(args.rightSnapshots) ? args.rightSnapshots.map((snapshot) => normalizeSnapshot(snapshot)) : [];
@@ -300,8 +323,8 @@ export function buildOutcomeComparisonSummary(args: {
 }
 
 export function compareScenarioOutcomes(args: {
-  leftOutcome: any;
-  rightOutcome: any;
+  leftOutcome: NexoraScenarioOutcome | NormalizedOutcome | unknown;
+  rightOutcome: NexoraScenarioOutcome | NormalizedOutcome | unknown;
   comparisonMode?: NexoraOutcomeComparisonMode;
 }): NexoraOutcomeComparisonResult {
   const comparisonMode = args.comparisonMode ?? "scenario_vs_scenario";
@@ -352,7 +375,7 @@ export function compareScenarioOutcomes(args: {
 }
 
 export function buildReplayFramesFromOutcome(
-  outcome: any
+  outcome: NexoraScenarioOutcome | NormalizedOutcome | unknown
 ): NexoraReplayFrame[] {
   const normalized = normalizeOutcome(outcome);
   return normalized.snapshots
@@ -374,7 +397,7 @@ export function buildReplaySummary(args: {
 }
 
 export function buildReplayTrack(args: {
-  outcome: any;
+  outcome: NexoraScenarioOutcome | NormalizedOutcome | unknown;
   playbackMode?: NexoraReplayPlaybackMode;
 }): NexoraReplayTrack {
   const normalized = normalizeOutcome(args.outcome);
@@ -395,8 +418,8 @@ export function buildReplayTrack(args: {
 }
 
 export function compareBaselineToScenario(args: {
-  baselineOutcome: any;
-  scenarioOutcome: any;
+  baselineOutcome: NexoraScenarioOutcome | NormalizedOutcome | unknown;
+  scenarioOutcome: NexoraScenarioOutcome | NormalizedOutcome | unknown;
 }): NexoraOutcomeComparisonResult {
   return compareScenarioOutcomes({
     leftOutcome: args.baselineOutcome,

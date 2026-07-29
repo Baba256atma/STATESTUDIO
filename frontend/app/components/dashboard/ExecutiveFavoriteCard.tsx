@@ -15,12 +15,12 @@ export type ExecutiveFavoriteCardProps = Readonly<{
 }>;
 
 export function ExecutiveFavoriteCard(props: ExecutiveFavoriteCardProps): React.ReactElement {
-  const { card } = props;
+  const { card, onQuickOpen } = props;
 
   const handleOpen = useCallback(() => {
-    if (!card.launchable || !props.onQuickOpen) return;
-    props.onQuickOpen(card);
-  }, [card, props.onQuickOpen]);
+    if (!card.launchable || !onQuickOpen) return;
+    onQuickOpen(card);
+  }, [card, onQuickOpen]);
 
   return (
     <article

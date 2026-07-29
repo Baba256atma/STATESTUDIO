@@ -36,7 +36,11 @@ function derivePreferredFocusId(result: NexoraUiStateApplicationInput["result"])
   return result.focusedObjectId ?? result.highlightedObjectIds[0] ?? null;
 }
 
-function buildNormalizedResponseData(result: NexoraUiStateApplicationInput["result"]): any | null {
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function buildNormalizedResponseData(result: NexoraUiStateApplicationInput["result"]): unknown | null {
   return (
     result.backendPayload ??
     result.scannerPayload ??
@@ -85,6 +89,7 @@ function applyResponseData(
   applyResult: NexoraUiStateApplicationResult
 ): void {
   const normalized = buildNormalizedResponseData(result);
+  const normalizedRecord = asRecord(normalized);
   if (adapters.setResponseData && normalized) {
     adapters.setResponseData(normalized);
     markSection(applyResult, "response_data", true);
@@ -94,8 +99,8 @@ function applyResponseData(
 
   if (adapters.setLastAnalysisSummary) {
     adapters.setLastAnalysisSummary(
-      typeof normalized?.analysis_summary === "string"
-        ? normalized.analysis_summary
+      typeof normalizedRecord?.analysis_summary === "string"
+        ? normalizedRecord.analysis_summary
         : result.executionSummary ?? null
     );
     markSection(applyResult, "response_summary", true);
@@ -105,7 +110,7 @@ function applyResponseData(
 
   if (adapters.setSourceLabel) {
     adapters.setSourceLabel(
-      typeof normalized?.source === "string" ? normalized.source : result.routeTarget ?? null
+      typeof normalizedRecord?.source === "string" ? normalizedRecord.source : result.routeTarget ?? null
     );
     markSection(applyResult, "response_metadata", true);
   } else {
@@ -113,7 +118,7 @@ function applyResponseData(
   }
 
   if (adapters.setLastActions) {
-    const actions = Array.isArray(normalized?.actions) ? normalized.actions : [];
+    const actions = Array.isArray(normalizedRecord?.actions) ? normalizedRecord.actions : [];
     adapters.setLastActions(actions);
   }
 }
@@ -210,30 +215,30 @@ function applyPanelPayloadState(
   }
 
   let appliedAny = false;
-  const maybeApply = <T,>(value: T | undefined, setter?: (value: T) => void) => {
+  const maybeApply = <T,>(value: unknown, setter?: (next: T) => void) => {
     if (setter && value !== undefined) {
-      setter(value);
+      setter(value as T);
       appliedAny = true;
     }
   };
 
-  maybeApply(panelUpdates.objectSelection, adapters.setObjectSelection);
-  maybeApply(panelUpdates.memoryInsights, adapters.setMemoryInsights);
-  maybeApply(panelUpdates.riskPropagation, adapters.setRiskPropagation);
-  maybeApply(panelUpdates.strategicAdvice, adapters.setStrategicAdvice);
-  maybeApply(panelUpdates.strategyKpi, adapters.setStrategyKpi);
-  maybeApply(panelUpdates.decisionCockpit, adapters.setDecisionCockpit);
-  maybeApply(panelUpdates.productModeContext, adapters.setProductModeContext);
-  maybeApply(panelUpdates.aiReasoning, adapters.setAiReasoning);
-  maybeApply(panelUpdates.platformAssembly, adapters.setPlatformAssembly);
-  maybeApply(panelUpdates.autonomousExploration, adapters.setAutonomousExploration);
-  maybeApply(panelUpdates.opponentModel, adapters.setOpponentModel);
-  maybeApply(panelUpdates.strategicPatterns, adapters.setStrategicPatterns);
-  maybeApply(panelUpdates.conflicts, adapters.setConflicts);
-  maybeApply(panelUpdates.kpi, adapters.setKpi);
-  maybeApply(panelUpdates.loops, adapters.setLoops);
-  maybeApply(panelUpdates.activeLoopId, adapters.setActiveLoopId);
-  maybeApply(panelUpdates.loopSuggestions, adapters.setLoopSuggestions);
+  maybeApply<unknown | null>(panelUpdates.objectSelection, adapters.setObjectSelection);
+  maybeApply<unknown | null>(panelUpdates.memoryInsights, adapters.setMemoryInsights);
+  maybeApply<unknown | null>(panelUpdates.riskPropagation, adapters.setRiskPropagation);
+  maybeApply<unknown | null>(panelUpdates.strategicAdvice, adapters.setStrategicAdvice);
+  maybeApply<unknown | null>(panelUpdates.strategyKpi, adapters.setStrategyKpi);
+  maybeApply<unknown | null>(panelUpdates.decisionCockpit, adapters.setDecisionCockpit);
+  maybeApply<unknown | null>(panelUpdates.productModeContext, adapters.setProductModeContext);
+  maybeApply<unknown | null>(panelUpdates.aiReasoning, adapters.setAiReasoning);
+  maybeApply<unknown | null>(panelUpdates.platformAssembly, adapters.setPlatformAssembly);
+  maybeApply<unknown | null>(panelUpdates.autonomousExploration, adapters.setAutonomousExploration);
+  maybeApply<unknown | null>(panelUpdates.opponentModel, adapters.setOpponentModel);
+  maybeApply<unknown | null>(panelUpdates.strategicPatterns, adapters.setStrategicPatterns);
+  maybeApply<unknown[] | null>(panelUpdates.conflicts, adapters.setConflicts);
+  maybeApply<unknown | null>(panelUpdates.kpi, adapters.setKpi);
+  maybeApply<unknown[]>(panelUpdates.loops, adapters.setLoops);
+  maybeApply<string | null>(panelUpdates.activeLoopId, adapters.setActiveLoopId);
+  maybeApply<unknown[]>(panelUpdates.loopSuggestions, adapters.setLoopSuggestions);
 
   if (panelUpdates.productModeId !== undefined && adapters.setProductModeId) {
     adapters.setProductModeId(String(panelUpdates.productModeId));

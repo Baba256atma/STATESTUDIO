@@ -1,5 +1,6 @@
 import type { SceneJson } from "../sceneTypes";
 import type { ActiveModeContext, ModePanelPreference, ModeWorkflowPreference } from "../modes/productModesContract";
+import type { KpiImpactSummary } from "../strategy/strategyKpiContract";
 
 export type CockpitSceneSummary = {
   object_count: number;
@@ -126,11 +127,38 @@ function inferSceneHealth(riskLevel: "low" | "moderate" | "high"): "stable" | "w
   return "stable";
 }
 
-function pickTimelineSteps(payload: any): string[] {
-  const timeline = payload?.timeline_impact;
-  if (Array.isArray(timeline?.steps)) return timeline.steps.map((x: any) => String(x));
-  const simTimeline = Array.isArray(payload?.decision_simulation?.timeline)
-    ? payload.decision_simulation.timeline.map((s: any) => String(s?.summary ?? "")).filter(Boolean)
+type CockpitSourcePayload = Record<string, unknown>;
+
+type MemoryObjectSnapshot = {
+  volatility?: number;
+};
+
+function readRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item)).filter(Boolean);
+}
+
+function readNestedRecord(root: Record<string, unknown>, key: string): Record<string, unknown> | null {
+  return readRecord(root[key]);
+}
+
+function pickTimelineSteps(payload: CockpitSourcePayload): string[] {
+  const timeline = readNestedRecord(payload, "timeline_impact");
+  if (timeline && Array.isArray(timeline.steps)) {
+    return timeline.steps.map((step) => String(step));
+  }
+  const decisionSimulation = readNestedRecord(payload, "decision_simulation");
+  const simTimeline = Array.isArray(decisionSimulation?.timeline)
+    ? decisionSimulation.timeline
+        .map((step) => {
+          const record = readRecord(step);
+          return record && typeof record.summary === "string" ? record.summary : "";
+        })
+        .filter(Boolean)
     : [];
   return simTimeline;
 }
@@ -141,7 +169,7 @@ export function buildDecisionCockpitState(params: {
   projectName?: string;
   projectDomain?: string;
   sceneJson?: SceneJson | null;
-  payload?: any;
+  payload?: CockpitSourcePayload | null;
   selectedObjectId?: string | null;
   selectedObjectLabel?: string | null;
   focusMode?: "all" | "selected";
@@ -153,67 +181,94 @@ export function buildDecisionCockpitState(params: {
   } | null;
   modeContext?: ActiveModeContext | null;
 }): DecisionCockpitState {
-  const payload = params.payload ?? {};
-  const scene = params.sceneJson ?? payload?.scene_json ?? null;
+  const payload: CockpitSourcePayload = params.payload ?? {};
+  const scene = params.sceneJson ?? (readRecord(payload.scene_json) as SceneJson | null) ?? null;
 
   const objectCount = Array.isArray(scene?.scene?.objects) ? scene.scene.objects.length : 0;
-  const relationCount = Array.isArray((scene as any)?.scene?.relations) ? (scene as any).scene.relations.length : 0;
+  const relationCount = Array.isArray(scene?.scene?.relations) ? scene.scene.relations.length : 0;
   const loopCount = Array.isArray(scene?.scene?.loops) ? scene.scene.loops.length : 0;
 
+  const objectSelection = readNestedRecord(payload, "object_selection");
+  const promptFeedback = readNestedRecord(payload, "prompt_feedback");
+  const sceneFeedback = promptFeedback ? readNestedRecord(promptFeedback, "scene_feedback") : null;
+  const decisionScenarioSnapshot = readNestedRecord(payload, "decision_scenario_snapshot");
+  const snapshotScene = decisionScenarioSnapshot ? readNestedRecord(decisionScenarioSnapshot, "scene") : null;
+
   const highlights = uniq(
-    (
-      payload?.object_selection?.highlighted_objects ??
-      payload?.prompt_feedback?.scene_feedback?.highlighted_objects ??
-      payload?.decision_scenario_snapshot?.scene?.highlightedObjectIds ??
-      []
-    ).map(String)
+    readStringArray(objectSelection?.highlighted_objects).concat(
+      readStringArray(sceneFeedback?.highlighted_objects),
+      readStringArray(snapshotScene?.highlightedObjectIds)
+    )
   );
 
+  const riskPropagation = readNestedRecord(payload, "risk_propagation");
+  const decisionSimulation = readNestedRecord(payload, "decision_simulation");
+  const simulationRisk = decisionSimulation ? readNestedRecord(decisionSimulation, "risk") : null;
+  const promptRiskFeedback = promptFeedback ? readNestedRecord(promptFeedback, "risk_feedback") : null;
+
   const riskSummary = String(
-    payload?.risk_propagation?.summary ??
-      payload?.decision_simulation?.risk?.summary ??
+    riskPropagation?.summary ??
+      simulationRisk?.summary ??
       "Risk summary is not available yet."
   );
   const affectedDimensions = uniq(
-    (
-      payload?.decision_simulation?.risk?.affectedDimensions ??
-      payload?.prompt_feedback?.risk_feedback?.affected_dimensions ??
-      []
-    ).map(String)
+    readStringArray(simulationRisk?.affectedDimensions).concat(
+      readStringArray(promptRiskFeedback?.affected_dimensions)
+    )
   );
-  const riskSources = uniq((payload?.risk_propagation?.sources ?? []).map(String));
-  const riskLevel = inferRiskLevel(riskSummary, Number(payload?.decision_simulation?.confidence ?? 0.5));
+  const riskSources = uniq(readStringArray(riskPropagation?.sources));
+  const riskLevel = inferRiskLevel(riskSummary, Number(decisionSimulation?.confidence ?? 0.5));
 
+  const timelineImpact = readNestedRecord(payload, "timeline_impact");
   const timelineSteps = pickTimelineSteps(payload).filter(Boolean);
-  const immediate = String(payload?.timeline_impact?.immediate ?? timelineSteps[0] ?? "").trim() || undefined;
-  const nearTerm = String(payload?.timeline_impact?.near_term ?? timelineSteps[1] ?? "").trim() || undefined;
-  const followUp = String(payload?.timeline_impact?.follow_up ?? timelineSteps[2] ?? "").trim() || undefined;
+  const immediate = String(timelineImpact?.immediate ?? timelineSteps[0] ?? "").trim() || undefined;
+  const nearTerm = String(timelineImpact?.near_term ?? timelineSteps[1] ?? "").trim() || undefined;
+  const followUp = String(timelineImpact?.follow_up ?? timelineSteps[2] ?? "").trim() || undefined;
 
-  const strategySummary = payload?.strategy_kpi?.summary ?? payload?.strategy_kpi?.strategy?.impact_summary ?? null;
+  const strategyKpi = readNestedRecord(payload, "strategy_kpi");
+  const strategySummaryRaw =
+    readRecord(strategyKpi?.summary) ??
+    readNestedRecord(readRecord(strategyKpi?.strategy) ?? {}, "impact_summary");
+  const strategySummary = strategySummaryRaw as Partial<KpiImpactSummary> | null;
   const strategy = {
     summary: String(strategySummary?.summary ?? "").trim() || undefined,
-    at_risk_kpis: uniq((strategySummary?.at_risk_kpis ?? []).map(String)),
-    improved_kpis: uniq((strategySummary?.improved_kpis ?? []).map(String)),
-    threatened_objectives: uniq((strategySummary?.threatened_objectives ?? []).map(String)),
-    improved_objectives: uniq((strategySummary?.improved_objectives ?? []).map(String)),
+    at_risk_kpis: uniq(readStringArray(strategySummary?.at_risk_kpis)),
+    improved_kpis: uniq(readStringArray(strategySummary?.improved_kpis)),
+    threatened_objectives: uniq(readStringArray(strategySummary?.threatened_objectives)),
+    improved_objectives: uniq(readStringArray(strategySummary?.improved_objectives)),
   };
 
-  const baselineReady = payload?.decision_comparison?.baselineReady;
-  const comparisonChangedCount = Number(
-    payload?.decision_comparison?.delta?.changedObjects?.added?.length ?? 0
-  ) + Number(payload?.decision_comparison?.delta?.changedObjects?.removed?.length ?? 0);
+  const decisionComparison = readNestedRecord(payload, "decision_comparison");
+  const baselineReady = readRecord(decisionComparison?.baselineReady);
+  const comparisonDelta = decisionComparison ? readNestedRecord(decisionComparison, "delta") : null;
+  const changedObjects = comparisonDelta ? readNestedRecord(comparisonDelta, "changedObjects") : null;
+  const comparisonChangedCount =
+    readStringArray(changedObjects?.added).length + readStringArray(changedObjects?.removed).length;
 
   const memoryObjects = params.memoryState?.objects ?? {};
   const volatileNodes = Object.entries(memoryObjects)
-    .filter(([, value]: any) => Number(value?.volatility ?? 0) >= 0.35)
+    .filter(([, value]) => Number((value as MemoryObjectSnapshot)?.volatility ?? 0) >= 0.35)
     .map(([id]) => id)
     .slice(0, 5);
 
   const recurringLoops = Object.keys(params.memoryState?.loops ?? {}).slice(0, 5);
 
-  const drivers = Array.isArray(payload?.executive_insight?.drivers)
-    ? payload.executive_insight.drivers.slice(0, 4).map((d: any) => String(d?.object_id ?? "")).filter(Boolean)
+  const executiveInsight = readNestedRecord(payload, "executive_insight");
+  const drivers = Array.isArray(executiveInsight?.drivers)
+    ? executiveInsight.drivers
+        .slice(0, 4)
+        .map((driver) => {
+          const record = readRecord(driver);
+          return record && typeof record.object_id === "string" ? record.object_id : "";
+        })
+        .filter(Boolean)
     : [];
+
+  const decisionReplay = readNestedRecord(payload, "decision_replay");
+  const strategicAdvice = readNestedRecord(payload, "strategic_advice");
+  const primaryRecommendation = strategicAdvice ? readNestedRecord(strategicAdvice, "primary_recommendation") : null;
+  const executiveSummarySurface = readNestedRecord(payload, "executive_summary_surface");
+  const executiveConfidence = executiveInsight ? readRecord(executiveInsight.confidence) : null;
 
   return {
     mode: params.modeContext
@@ -233,10 +288,16 @@ export function buildDecisionCockpitState(params: {
       project_domain: params.projectDomain,
     },
     scenario: {
-      scenario_id: String(payload?.decision_simulation?.scenario?.id ?? "").trim() || undefined,
-      scenario_name: String(payload?.decision_simulation?.scenario?.name ?? "").trim() || undefined,
-      comparison_mode: String(payload?.decision_comparison?.mode ?? "").trim() || undefined,
-      replay_ready: !!payload?.decision_replay?.steps?.length,
+      scenario_id: typeof decisionSimulation?.scenario === "object" && decisionSimulation.scenario !== null
+        ? String((decisionSimulation.scenario as Record<string, unknown>).id ?? "").trim() || undefined
+        : undefined,
+      scenario_name: typeof decisionSimulation?.scenario === "object" && decisionSimulation.scenario !== null
+        ? String((decisionSimulation.scenario as Record<string, unknown>).name ?? "").trim() || undefined
+        : undefined,
+      comparison_mode: typeof decisionComparison?.mode === "string"
+        ? String(decisionComparison.mode).trim() || undefined
+        : undefined,
+      replay_ready: Array.isArray(decisionReplay?.steps) && decisionReplay.steps.length > 0,
     },
     scene: {
       object_count: objectCount,
@@ -264,23 +325,28 @@ export function buildDecisionCockpitState(params: {
       near_term: nearTerm,
       follow_up: followUp,
       steps: timelineSteps,
-      replay_ready: !!payload?.decision_replay?.steps?.length,
+      replay_ready: Array.isArray(decisionReplay?.steps) && decisionReplay.steps.length > 0,
     },
     strategy,
     comparison: {
-      mode: String(payload?.decision_comparison?.mode ?? "").trim() || undefined,
-      summary: String(payload?.decision_comparison?.summary ?? "").trim() || undefined,
-      baseline_available: !!baselineReady?.baselineAvailable,
-      comparable: !!baselineReady?.comparable,
+      mode: typeof decisionComparison?.mode === "string" ? String(decisionComparison.mode).trim() || undefined : undefined,
+      summary: typeof decisionComparison?.summary === "string"
+        ? String(decisionComparison.summary).trim() || undefined
+        : undefined,
+      baseline_available: baselineReady?.baselineAvailable === true,
+      comparable: baselineReady?.comparable === true,
       changed_objects_count: Number.isFinite(comparisonChangedCount) ? comparisonChangedCount : undefined,
     },
     advice: {
-      summary: String(payload?.strategic_advice?.summary ?? "").trim() || undefined,
-      primary_action: String(payload?.strategic_advice?.primary_recommendation?.action ?? "").trim() || undefined,
-      confidence: Number.isFinite(Number(payload?.strategic_advice?.confidence))
-        ? Number(payload?.strategic_advice?.confidence)
+      summary: typeof strategicAdvice?.summary === "string" ? String(strategicAdvice.summary).trim() || undefined : undefined,
+      primary_action:
+        typeof primaryRecommendation?.action === "string"
+          ? String(primaryRecommendation.action).trim() || undefined
+          : undefined,
+      confidence: Number.isFinite(Number(strategicAdvice?.confidence))
+        ? Number(strategicAdvice?.confidence)
         : undefined,
-      why: String(payload?.strategic_advice?.why ?? "").trim() || undefined,
+      why: typeof strategicAdvice?.why === "string" ? String(strategicAdvice.why).trim() || undefined : undefined,
     },
     history: {
       memory_available: !!params.memoryState,
@@ -292,17 +358,19 @@ export function buildDecisionCockpitState(params: {
     },
     executive: {
       summary:
-        String(payload?.executive_summary_surface?.summary ?? payload?.executive_insight?.summary ?? "").trim() ||
+        String(executiveSummarySurface?.summary ?? executiveInsight?.summary ?? "").trim() ||
         undefined,
       happened:
-        String(payload?.executive_summary_surface?.happened ?? "").trim() || undefined,
+        String(executiveSummarySurface?.happened ?? "").trim() || undefined,
       why_it_matters:
-        String(payload?.executive_summary_surface?.why_it_matters ?? "").trim() || undefined,
+        String(executiveSummarySurface?.why_it_matters ?? "").trim() || undefined,
       what_to_do:
-        String(payload?.executive_summary_surface?.what_to_do ?? "").trim() || undefined,
-      confidence_level: String(payload?.executive_insight?.confidence?.level ?? "").trim() || undefined,
-      confidence_score: Number.isFinite(Number(payload?.executive_insight?.confidence?.score))
-        ? Number(payload?.executive_insight?.confidence?.score)
+        String(executiveSummarySurface?.what_to_do ?? "").trim() || undefined,
+      confidence_level: typeof executiveConfidence?.level === "string"
+        ? String(executiveConfidence.level).trim() || undefined
+        : undefined,
+      confidence_score: Number.isFinite(Number(executiveConfidence?.score))
+        ? Number(executiveConfidence?.score)
         : undefined,
       key_drivers: uniq(drivers),
     },

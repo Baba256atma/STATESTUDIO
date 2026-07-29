@@ -5,10 +5,7 @@
 
 import { validateScenarioIdentityShape, isScenarioStatus } from "./scenarioIntelligenceContract.ts";
 import { createScenarioDiagnostic } from "./scenarioIntelligenceDiagnostics.ts";
-import {
-  getScenarioLifecycleStageDefinition,
-  isScenarioLifecycleTerminalStage,
-} from "./scenarioIntelligenceLifecycle.ts";
+import { getScenarioLifecycleStageDefinition } from "./scenarioIntelligenceLifecycle.ts";
 import { validateScenarioMetadataShape } from "./scenarioIntelligenceMetadata.ts";
 import { SCENARIO_DEFAULT_HEALTH_STATE } from "./scenarioIntelligenceStates.ts";
 import type {

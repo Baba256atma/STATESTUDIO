@@ -13,7 +13,7 @@ export type InteractionIntentType =
 export type InteractionIntent = {
   type: InteractionIntentType;
   source: InteractionSource;
-  payload?: Record<string, any>;
+  payload?: Record<string, unknown>;
 };
 
 export type NexoraUIState = {

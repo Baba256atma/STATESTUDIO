@@ -45,15 +45,6 @@ import {
   calculateFragmentationPressureScore,
 } from "./continuityFragmentationAnalysis.ts";
 
-function stableStringify(value: unknown): string {
-  if (value === null || value === undefined) return "null";
-  if (typeof value !== "object") return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map((v) => stableStringify(v)).join(",")}]`;
-  const record = value as Record<string, unknown>;
-  const keys = Object.keys(record).sort();
-  return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(record[k])}`).join(",")}}`;
-}
-
 function metaInput(
   stack: ReturnType<typeof buildRealityStack>,
   strategicRealityState: StrategicRealityIntelligenceState
@@ -682,6 +673,7 @@ test("rejects duplicate continuity build fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_continuity_build");
 });
 

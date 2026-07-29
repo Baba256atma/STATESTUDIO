@@ -10,8 +10,8 @@ import { nx, panelSurfaceStyle, primaryButtonStyle, secondaryButtonStyle, softCa
 
 type DecisionMemoryPanelProps = {
   entries: DecisionMemoryEntry[];
-  memoryInsights?: any | null;
-  responseData?: any;
+  memoryInsights?: Record<string, unknown> | null;
+  responseData?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
   decisionResult?: DecisionExecutionResult | null;
   resolveObjectLabel?: ((id: string | null | undefined) => string | null) | null;

@@ -11,20 +11,8 @@ import {
   runExecutiveBusinessHealthPlatformCertification,
 } from "./executiveBusinessHealthPlatformCertificationIndex.ts";
 import { getExecutiveBusinessHealthManifestMetadata } from "./executiveBusinessHealthManifestIndex.ts";
-import {
-  ExecutiveBusinessHealthPlatformMetadata,
-  ExecutiveBusinessHealthPlatformName,
-  ExecutiveBusinessHealthPlatformNamespace,
-  ExecutiveBusinessHealthPlatformVersion,
-  getExecutiveBusinessHealthPlatformPublicApi,
-} from "./executiveBusinessHealthPlatformIndex.ts";
-import {
-  ExecutiveBusinessHealthPlatformFreezeMetadata,
-  ExecutiveBusinessHealthPlatformFreezeVersion,
-  ExecutiveBusinessHealthPlatformFreezeResult,
-  getExecutiveBusinessHealthPlatformCompatibility,
-  getExecutiveBusinessHealthPlatformReleaseMetadata,
-} from "./executiveBusinessHealthPlatformFreezeIndex.ts";
+import { ExecutiveBusinessHealthPlatformMetadata, ExecutiveBusinessHealthPlatformName, ExecutiveBusinessHealthPlatformNamespace, ExecutiveBusinessHealthPlatformVersion } from "./executiveBusinessHealthPlatformIndex.ts";
+import { ExecutiveBusinessHealthPlatformFreezeVersion, ExecutiveBusinessHealthPlatformFreezeResult, getExecutiveBusinessHealthPlatformCompatibility, getExecutiveBusinessHealthPlatformReleaseMetadata } from "./executiveBusinessHealthPlatformFreezeIndex.ts";
 
 export * from "./executiveBusinessHealthIndex.ts";
 export * from "./executiveBusinessHealthRegistryIndex.ts";

@@ -62,6 +62,7 @@ const categorize = (exportName: string, phase: OwnerPhase): ApiCategory => {
 };
 
 const api = (exportName: string, ownerPhase: OwnerPhase, namespace: string) => {
+  void namespace;
   const category = categorize(exportName, ownerPhase);
   return Object.freeze({
     apiId: `${ownerPhase}:${exportName}`,

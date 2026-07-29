@@ -14,10 +14,7 @@ import {
   EXECUTIVE_SCENARIO_WORKSPACE_ADAPTER_RULES,
   EXECUTIVE_SCENARIO_WORKSPACE_ADAPTER_VERSION,
 } from "./executiveScenarioWorkspaceAdapter.ts";
-import {
-  resolveExecutiveScenarioWorkspaceView,
-  resolveExecutiveScenarioWorkspaceViewProbeExample,
-} from "./executiveScenarioWorkspaceResolver.ts";
+import { resolveExecutiveScenarioWorkspaceView } from "./executiveScenarioWorkspaceResolver.ts";
 import { resolveExecutiveScenarioPackageProbeExample } from "./executiveScenarioPackageResolver.ts";
 
 export const EXECUTIVE_SCENARIO_WORKSPACE_INTEGRATION_CERTIFICATION_VERSION =

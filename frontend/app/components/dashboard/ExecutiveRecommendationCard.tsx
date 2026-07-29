@@ -29,13 +29,13 @@ export type ExecutiveRecommendationCardProps = Readonly<{
 }>;
 
 export function ExecutiveRecommendationCard(props: ExecutiveRecommendationCardProps): React.ReactElement {
-  const { card } = props;
+  const { card, onWorkspaceLaunch } = props;
   const canLaunch = card.launchable && card.actionKind === "workspace_launch";
 
   const handleAction = useCallback(() => {
-    if (!canLaunch || !card.suggestedWorkspaceId || !props.onWorkspaceLaunch) return;
-    props.onWorkspaceLaunch(card.suggestedWorkspaceId);
-  }, [canLaunch, card.suggestedWorkspaceId, props.onWorkspaceLaunch]);
+    if (!canLaunch || !card.suggestedWorkspaceId || !onWorkspaceLaunch) return;
+    onWorkspaceLaunch(card.suggestedWorkspaceId);
+  }, [canLaunch, card.suggestedWorkspaceId, onWorkspaceLaunch]);
 
   return (
     <article

@@ -1,12 +1,3 @@
-/**
- * MRP:3:2 — Unified MRP Context Store runtime.
- *
- * Single publish authority for Section B Context Header fields.
- */
-
-import type { DashboardContext } from "../mainRightPanelContract.ts";
-import type { DashboardMode } from "../../dashboard/dashboardModeRuntimeContract.ts";
-import type { MainRightPanelTab } from "../mainRightPanelContract.ts";
 import {
   DEFAULT_MRP_ACTIVE_MODE,
   DEFAULT_MRP_BACK_LABEL,

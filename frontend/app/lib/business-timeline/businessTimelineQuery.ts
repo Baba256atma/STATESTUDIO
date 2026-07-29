@@ -9,7 +9,7 @@ import { BUSINESS_TIMELINE_MUST_NOT_OWN } from "./businessTimelineConstants.ts";
 import {
   isBusinessTimelinePlatformInitialized,
 } from "./businessTimelineFoundation.ts";
-import { isBusinessEventEngineInitialized, BUSINESS_EVENT_ENGINE_SELF_MANIFEST } from "./businessEventEngine.ts";
+import { BUSINESS_EVENT_ENGINE_SELF_MANIFEST } from "./businessEventEngine.ts";
 import { orderBusinessTimelineEvents } from "./businessTimelineOrdering.ts";
 import { applyBusinessTimelineQueryFilters } from "./businessTimelineQueryFilters.ts";
 import {
@@ -160,7 +160,7 @@ export function queryBusinessTimeline(filters: BusinessTimelineQueryFilters): Bu
 
 export function getBusinessTimelineOrderedEvents(
   filters: BusinessTimelineQueryFilters
-): readonly BusinessTimelineQueryResult["events"] {
+): readonly BusinessTimelineQueryResult["events"][number][] {
   const response = queryBusinessTimeline(filters);
   return response.data?.events ?? Object.freeze([]);
 }

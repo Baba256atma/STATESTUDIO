@@ -2,13 +2,25 @@
 
 import React from "react";
 import { nx, sectionTitleStyle, softCardStyle } from "../ui/nexoraTheme";
+import type { SceneJson } from "../../lib/sceneTypes";
+
+type LooseRecord = Record<string, unknown>;
+
+function asRecord(value: unknown): LooseRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as LooseRecord) : null;
+}
+
+type RiskPropagationEdge = {
+  from?: unknown;
+  to?: unknown;
+};
 
 type FocusInsightCardProps = {
   selectedObjectId: string | null;
   selectedObjectLabel?: string | null;
-  responseData?: any;
-  sceneJson?: any;
-  riskPropagation?: any;
+  responseData?: LooseRecord | null;
+  sceneJson?: SceneJson | LooseRecord | null;
+  riskPropagation?: LooseRecord | null;
 };
 
 function toLabel(id: string): string {
@@ -26,16 +38,19 @@ export default function FocusInsightCard(props: FocusInsightCardProps) {
   const selectedId = String(props.selectedObjectId ?? "").trim();
   if (!selectedId) return null;
 
+  const riskRecord = asRecord(props.responseData?.risk);
+  const fragilityRecord = asRecord(props.responseData?.fragility);
   const riskScore = Math.max(
     0,
-    Math.min(1, Number(props.responseData?.risk?.score ?? props.responseData?.fragility?.score ?? 0) || 0)
+    Math.min(1, Number(riskRecord?.score ?? fragilityRecord?.score ?? 0) || 0)
   );
   const confidence = confidenceFromRisk(riskScore);
   const impacted = (() => {
-    const edges = Array.isArray(props.riskPropagation?.edges) ? props.riskPropagation.edges : [];
+    const riskEdges = asRecord(props.riskPropagation);
+    const edges = Array.isArray(riskEdges?.edges) ? (riskEdges.edges as RiskPropagationEdge[]) : [];
     const targets = edges
-      .filter((edge: any) => String(edge?.from ?? "").trim() === selectedId)
-      .map((edge: any) => String(edge?.to ?? "").trim())
+      .filter((edge) => String(edge?.from ?? "").trim() === selectedId)
+      .map((edge) => String(edge?.to ?? "").trim())
       .filter(Boolean);
     return targets.slice(0, 2).map((id: string) => toLabel(id));
   })();

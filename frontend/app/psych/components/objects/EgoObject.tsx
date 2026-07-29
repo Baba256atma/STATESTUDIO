@@ -5,7 +5,7 @@
 // Only buffer values may change.
 // Prevents WebGL buffer mismatch errors.
 
-import React, { useMemo, useRef } from "react";
+import React, { useLayoutEffect, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import type { PsychVisualProps } from "../../lib/visual/psychVisualMapping";
@@ -225,8 +225,9 @@ const EgoObject = React.memo(function EgoObject({ brightness = 0.6, activity = 0
   const eyelidMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const lowerEyelidMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const eyeGlintMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
-  const faceMaterial = useMemo(() => createShadowFaceMaterial(), []);
-  const proceduralEyeMaterial = useMemo(() => createProceduralEyeMaterial(), []);
+  // AD-R3F-01 — lifecycle-owned shader materials; uniform mutation only in useFrame.
+  const faceMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const proceduralEyeMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const smoothVisual = useRef<PsychVisualProps>({ ...DEFAULT_VISUAL });
   const emotion = useEmotionStore();
   const smoothFocusRef = useRef(0.4);
@@ -250,6 +251,29 @@ const EgoObject = React.memo(function EgoObject({ brightness = 0.6, activity = 0
   const smoothOracleControlRef = useRef(0);
   const smoothOracleFamiliarityRef = useRef(0);
   const lastOracleSyncLogAtRef = useRef(0);
+
+  useLayoutEffect(() => {
+    const faceMaterial = createShadowFaceMaterial();
+    const proceduralEyeMaterial = createProceduralEyeMaterial();
+    faceMaterialRef.current = faceMaterial;
+    proceduralEyeMaterialRef.current = proceduralEyeMaterial;
+    if (faceRef.current) {
+      faceRef.current.material = faceMaterial;
+    }
+    if (proceduralEyeRef.current) {
+      proceduralEyeRef.current.material = proceduralEyeMaterial;
+    }
+    return () => {
+      faceMaterial.dispose();
+      proceduralEyeMaterial.dispose();
+      if (faceMaterialRef.current === faceMaterial) {
+        faceMaterialRef.current = null;
+      }
+      if (proceduralEyeMaterialRef.current === proceduralEyeMaterial) {
+        proceduralEyeMaterialRef.current = null;
+      }
+    };
+  }, []);
 
   useFrame(({ camera, clock }, delta) => {
     const t = clock.getElapsedTime();
@@ -469,18 +493,30 @@ const EgoObject = React.memo(function EgoObject({ brightness = 0.6, activity = 0
     if (eyeGlintMaterialRef.current) {
       eyeGlintMaterialRef.current.opacity = debugRevealActive ? 0.32 : Math.min(0.22, eyeVisibility * (0.16 + eyeClarity * 0.08));
     }
-    faceMaterial.uniforms.time.value = t;
-    faceMaterial.uniforms.visibility.value = faceStateRef.current.visibility;
-    faceMaterial.uniforms.clarity.value = faceStateRef.current.clarity;
-    faceMaterial.uniforms.darkness.value = personalityFearTarget;
-    faceMaterial.uniforms.emotionIntensity.value = emotion.current.intensity;
-    faceMaterial.uniforms.debugReveal.value = debugRevealActive ? 1 : 0;
-    proceduralEyeMaterial.uniforms.uTime.value = t;
-    proceduralEyeMaterial.uniforms.uIntensity.value = Math.max(emotion.current.intensity, eyeContactPulse, memoryShadowDepth * 0.45, oracleExploration * 0.7);
-    proceduralEyeMaterial.uniforms.uVisibility.value = Math.min(0.72, smoothProceduralEyeRef.current + eyeContactPulse * 0.32 + oracleFamiliarity * 0.02 - oracleFear * 0.02);
-    proceduralEyeMaterial.uniforms.uNoiseScale.value = 5.5 + smoothProceduralEyeRef.current * 3.5 + memoryShadowDepth * 1.2;
-    proceduralEyeMaterial.uniforms.uEyeFocus.value = Math.max(smoothIdentityRef.current, sceneEgoBoost, eyeContactPulse, debugRevealActive ? 1 : 0);
-    proceduralEyeMaterial.uniforms.uShadowDepth.value = memoryShadowDepth;
+    const faceMaterial = faceMaterialRef.current;
+    const proceduralEyeMaterial = proceduralEyeMaterialRef.current;
+    if (faceMaterial && faceRef.current && faceRef.current.material !== faceMaterial) {
+      faceRef.current.material = faceMaterial;
+    }
+    if (proceduralEyeMaterial && proceduralEyeRef.current && proceduralEyeRef.current.material !== proceduralEyeMaterial) {
+      proceduralEyeRef.current.material = proceduralEyeMaterial;
+    }
+    if (faceMaterial) {
+      faceMaterial.uniforms.time.value = t;
+      faceMaterial.uniforms.visibility.value = faceStateRef.current.visibility;
+      faceMaterial.uniforms.clarity.value = faceStateRef.current.clarity;
+      faceMaterial.uniforms.darkness.value = personalityFearTarget;
+      faceMaterial.uniforms.emotionIntensity.value = emotion.current.intensity;
+      faceMaterial.uniforms.debugReveal.value = debugRevealActive ? 1 : 0;
+    }
+    if (proceduralEyeMaterial) {
+      proceduralEyeMaterial.uniforms.uTime.value = t;
+      proceduralEyeMaterial.uniforms.uIntensity.value = Math.max(emotion.current.intensity, eyeContactPulse, memoryShadowDepth * 0.45, oracleExploration * 0.7);
+      proceduralEyeMaterial.uniforms.uVisibility.value = Math.min(0.72, smoothProceduralEyeRef.current + eyeContactPulse * 0.32 + oracleFamiliarity * 0.02 - oracleFear * 0.02);
+      proceduralEyeMaterial.uniforms.uNoiseScale.value = 5.5 + smoothProceduralEyeRef.current * 3.5 + memoryShadowDepth * 1.2;
+      proceduralEyeMaterial.uniforms.uEyeFocus.value = Math.max(smoothIdentityRef.current, sceneEgoBoost, eyeContactPulse, debugRevealActive ? 1 : 0);
+      proceduralEyeMaterial.uniforms.uShadowDepth.value = memoryShadowDepth;
+    }
     if (faceLightRef.current) {
       const lightIntensity = emotion.current.intensity * 0.5 + meaning.weight * 0.5;
       faceLightRef.current.intensity = Math.min(0.9, lightIntensity * (0.28 + faceStateRef.current.visibility * 0.45));
@@ -527,10 +563,10 @@ const EgoObject = React.memo(function EgoObject({ brightness = 0.6, activity = 0
         <sphereGeometry args={[0.98, 28, 16]} />
         <meshStandardMaterial ref={materialRef} color="#343541" emissive="#b99059" emissiveIntensity={0.2 * brightness} roughness={0.24} metalness={0.58} />
       </mesh>
-      <mesh ref={faceRef} position={[0, 0, 0.34]} material={faceMaterial} renderOrder={1}>
+      <mesh ref={faceRef} position={[0, 0, 0.34]} renderOrder={1}>
         <planeGeometry args={[1.2, 1.6]} />
       </mesh>
-      <mesh ref={proceduralEyeRef} position={[0, 0, 0.26]} material={proceduralEyeMaterial} renderOrder={2}>
+      <mesh ref={proceduralEyeRef} position={[0, 0, 0.26]} renderOrder={2}>
         <planeGeometry args={[1.18, 0.78]} />
       </mesh>
       <group ref={eyeFaceRef} position={[0, 0, 0.5]} renderOrder={2}>

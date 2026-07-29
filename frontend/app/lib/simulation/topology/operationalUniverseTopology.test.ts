@@ -21,6 +21,7 @@ import { buildExecutiveTopologySemantics } from "./executiveTopologySemantics.ts
 
 function sceneFixture(): SceneJson {
   return {
+    state_vector: {},
     scene: {
       objects: [
         {
@@ -160,6 +161,7 @@ test("rejects duplicate topology fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_topology");
 });
 

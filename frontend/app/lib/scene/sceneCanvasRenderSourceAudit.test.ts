@@ -3,11 +3,28 @@ import assert from "node:assert/strict";
 
 import { getSceneCanvasPropChanges, shouldSceneCanvasPropsRender } from "./sceneCanvasRenderSourceAudit.ts";
 import type { SceneCanvasProps } from "../../components/SceneCanvas.tsx";
+import { buildExecutiveQuickActionsModel } from "../ui/executiveQuickActionsTypes.ts";
+
+import type { ScenePrefs } from "../../screens/homeScreenUtils";
+import type { SceneJson } from "../sceneTypes";
 
 function baseProps(): SceneCanvasProps {
   const noop = () => {};
+  const prefs: ScenePrefs = {
+    theme: "night",
+    starDensity: 0.5,
+    showGrid: false,
+    showAxes: false,
+    orbitMode: "auto",
+    globalScale: 1,
+    motionIntensity: "normal",
+  };
+  const sceneJson: SceneJson = {
+    state_vector: {},
+    scene: { objects: [{ id: "a" }] },
+  };
   return {
-    prefs: { motionIntensity: "normal" },
+    prefs,
     resolvedUiTheme: "night",
     motionCalm: false,
     camPos: [0, 0, 10],
@@ -19,7 +36,7 @@ function baseProps(): SceneCanvasProps {
     effectiveActiveLoopId: null,
     cameraLockedByUser: false,
     isOrbiting: false,
-    sceneJson: { scene: { objects: [{ id: "a" }] } },
+    sceneJson,
     objectSelection: null,
     getUxForObject: () => null,
     objectUxById: {},
@@ -59,7 +76,7 @@ test("SceneCanvas prop audit ignores diagnostic-only object identity churn", () 
   const next = {
     ...prev,
     quickActionsDock: {
-      model: { actions: [] },
+      model: buildExecutiveQuickActionsModel({ hasObjectSelection: false }),
       themeMode: "night" as const,
       onAction: () => {},
     },

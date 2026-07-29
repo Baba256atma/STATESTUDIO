@@ -1,4 +1,4 @@
-import { PsychElementId, ReactionResult } from "./reactionTypes";
+import { PsychElementId, ObjectState, ReactionResult } from "./reactionTypes";
 
 function mkEmptyEffects(): Record<PsychElementId, Partial<Record<string, unknown>>> {
   return {
@@ -35,19 +35,18 @@ export function interpretUserInput(text: string): ReactionResult {
     message = "A subtle shift in energy.";
   }
 
-  // Cast effects to correct type shape: Partial<ObjectState>
-  const objectEffects = {
-    fire: (effects.fire as any) || {},
-    water: (effects.water as any) || {},
-    air: (effects.air as any) || {},
-    earth: (effects.earth as any) || {},
-    sun: (effects.sun as any) || {},
-    ego: (effects.ego as any) || {},
-  } as Record<PsychElementId, Partial<any>>;
+  const objectEffects: Record<PsychElementId, Partial<ObjectState>> = {
+    fire: effects.fire,
+    water: effects.water,
+    air: effects.air,
+    earth: effects.earth,
+    sun: effects.sun,
+    ego: effects.ego,
+  };
 
   return {
     stateDelta,
     objectEffects,
     message,
-  } as ReactionResult;
+  };
 }

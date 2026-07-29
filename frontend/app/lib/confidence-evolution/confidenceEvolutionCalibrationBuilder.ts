@@ -31,14 +31,13 @@ function incrementCount(counts: Record<string, number>, key: string): void {
   counts[key] = (counts[key] ?? 0) + 1;
 }
 
-function buildDistribution<T extends string>(
-  entries: readonly { readonly [K in string]: T | string }[],
-  field: keyof ConfidenceRecordCalibration
+function buildDistribution(
+  entries: readonly ConfidenceRecordCalibration[],
+  field: "calibrationStatus" | "accuracyLevel"
 ): Readonly<Record<string, number>> {
   const counts: Record<string, number> = {};
   for (const entry of entries) {
-    const value = String(entry[field as keyof typeof entry]);
-    incrementCount(counts, value);
+    incrementCount(counts, entry[field]);
   }
   return Object.freeze({ ...counts });
 }

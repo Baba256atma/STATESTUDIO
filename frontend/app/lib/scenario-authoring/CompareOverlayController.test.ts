@@ -54,8 +54,8 @@ function preservedState(): CompareOverlayPreservedState {
       focusedObjectId: "object-1",
     }),
     camera: Object.freeze({
-      position: Object.freeze([1, 2, 3]),
-      target: Object.freeze([4, 5, 6]),
+      position: Object.freeze([1, 2, 3] as [number, number, number]),
+      target: Object.freeze([4, 5, 6] as [number, number, number]),
       zoom: 1.25,
     }),
     timeline: Object.freeze({

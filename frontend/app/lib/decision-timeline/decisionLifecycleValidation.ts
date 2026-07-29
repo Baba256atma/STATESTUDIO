@@ -4,7 +4,7 @@
  */
 
 import { DECISION_EVENT_ENGINE_CONTRACT_VERSION } from "./decisionEventTypes.ts";
-import type { DecisionEngineEvent, DecisionEngineLifecycle } from "./decisionEventTypes.ts";
+import type { DecisionEngineLifecycle } from "./decisionEventTypes.ts";
 import { validateDecisionEvent } from "./decisionEventValidation.ts";
 import {
   DECISION_LIFECYCLE_INITIAL_STATE,

@@ -5,7 +5,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { evaluateStageFileBoundary, validateStageManifest } from "../stage/stageArchitectureGuards.ts";
+import { evaluateStageFileBoundary } from "../stage/stageArchitectureGuards.ts";
 import { resetExecutiveConflictEngineForTests } from "./executiveConflictEngine.ts";
 import { resetExecutiveEventRegistryForTests } from "./executiveEventRegistry.ts";
 import { authorizeTransition } from "./executiveTimeTransitionAuthority.ts";
@@ -23,7 +23,6 @@ import {
 import { EXECUTIVE_TIME_PLATFORM_VERSION } from "./executiveTimePlatformApiTypes.ts";
 import { ExecutiveTimePlatformResolver } from "./executiveTimePlatformResolver.ts";
 import { resetExecutiveTimeRegistryForTests } from "./executiveTimeRegistry.ts";
-import { runExecutivePredictionCertification } from "./executivePredictionCertification.ts";
 import { resetExecutiveTimeEntityStateStoreForTests } from "./executiveTimeStateMutation.ts";
 import { resetExecutiveTimeStateRegistryForTests } from "./executiveTimeStateRegistry.ts";
 import type { ExecutiveTimeCertificationCheck } from "./executiveTimeTypes.ts";
@@ -287,9 +286,6 @@ export function runExecutiveTimePlatformCertification() {
     actor: "executive",
     timestamp: nowIso(),
   });
-
-  const priorPrediction = runExecutivePredictionCertification();
-  const manifestValidation = validateStageManifest(EXECUTIVE_TIME_PLATFORM_MANIFEST);
   const reportPath = join(REPO_ROOT, "docs/app-1-8-5-executive-time-platform-api-report.md");
   const apiSource = readFileSync(join(process.cwd(), "app/lib/executive-time/executiveTimePlatformApi.ts"), "utf8");
 

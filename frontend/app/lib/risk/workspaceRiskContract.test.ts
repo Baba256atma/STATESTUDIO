@@ -34,25 +34,7 @@ import {
   resetWorkspaceRiskStoreForTests,
   updateWorkspaceRisk,
 } from "./workspaceRiskContract.ts";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 function resetAllStoresForTests(): void {
   resetWorkspaceRiskStoreForTests();
@@ -66,7 +48,7 @@ function resetAllStoresForTests(): void {
 }
 
 function snapshotProtectedStorageKeys(): Record<string, string | null> {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   const keys = [
     WORKSPACE_KPI_STORAGE_KEY,
     WORKSPACE_OBJECTIVE_STORAGE_KEY,
@@ -79,7 +61,7 @@ function snapshotProtectedStorageKeys(): Record<string, string | null> {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetAllStoresForTests();
 });

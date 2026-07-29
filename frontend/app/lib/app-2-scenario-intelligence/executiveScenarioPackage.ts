@@ -16,10 +16,8 @@ import type { ExecutiveScenarioOpportunityGraph } from "./executiveScenarioOppor
 import type { ExecutiveScenarioSnapshot } from "./executiveScenarioSnapshot.ts";
 import type { ExecutiveScenarioSummary } from "./executiveScenarioSummaryResult.ts";
 import type { ExecutiveRecommendationPortfolio } from "./executiveRecommendationResult.ts";
-import type {
-  ExecutiveScenarioPackageDiagnostic,
-  ExecutiveScenarioPackageMetadata,
-} from "./executiveScenarioPackageManifest.ts";
+import type { ExecutiveScenarioPackageDiagnostic } from "./executiveScenarioPackageDiagnostics.ts";
+import type { ExecutiveScenarioPackageMetadata } from "./executiveScenarioPackageManifest.ts";
 import { EXECUTIVE_SCENARIO_PACKAGE_VERSION } from "./executiveScenarioPackageManifest.ts";
 
 export type ExecutiveScenarioPackageReferences = Readonly<{

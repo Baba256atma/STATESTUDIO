@@ -154,6 +154,7 @@ export function resolveValidationRuleExample(timestamp: string): ValidationRule 
 }
 
 export function resolveValidationResultDescriptorExample(_timestamp: string): ValidationResultDescriptor {
+  void _timestamp;
   return Object.freeze({
     descriptorId: "validation-result-example-001",
     label: "Validation Result Descriptor",

@@ -10,11 +10,7 @@ import type {
   DecisionJournalQualityFlagType,
 } from "./decisionJournalEvidenceAssumptionTypes.ts";
 import { DECISION_JOURNAL_ASSUMPTION_RULES } from "./decisionJournalAssumptionRules.ts";
-import {
-  calculateEvidenceStrength,
-  DECISION_JOURNAL_EVIDENCE_RULES,
-  scoreEvidenceStrength,
-} from "./decisionJournalEvidenceRules.ts";
+import { DECISION_JOURNAL_EVIDENCE_RULES, scoreEvidenceStrength } from "./decisionJournalEvidenceRules.ts";
 import { isHighConfidenceLevel, scoreConfidenceLevel } from "./decisionJournalReflectionRules.ts";
 import { clampQualityConfidence } from "./decisionJournalEvidenceRules.ts";
 

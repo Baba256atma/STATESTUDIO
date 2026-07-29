@@ -1,19 +1,19 @@
-import type { SceneLoop } from "../lib/sceneTypes";
+import type { SceneLoop, SceneLoopEdge } from "../lib/sceneTypes";
 
 export type LoopEdgePair = { from: string; to: string };
 
-export function getLoopEdgePairs(loop: SceneLoop): LoopEdgePair[] {
-  // Defensive parsing: edges may arrive with loose typing from backend.
-  const rawEdges: unknown = (loop as any)?.edges;
-  const edges: any[] = Array.isArray(rawEdges) ? rawEdges : [];
+function readLoopEdges(loop: SceneLoop): SceneLoopEdge[] {
+  return Array.isArray(loop.edges) ? loop.edges : [];
+}
 
-  return edges
-    .map((e: any) => ({ from: String(e?.from ?? ""), to: String(e?.to ?? "") }))
-    .filter((p: LoopEdgePair) => Boolean(p.from) && Boolean(p.to));
+export function getLoopEdgePairs(loop: SceneLoop): LoopEdgePair[] {
+  return readLoopEdges(loop)
+    .map((edge) => ({ from: String(edge.from ?? ""), to: String(edge.to ?? "") }))
+    .filter((pair: LoopEdgePair) => Boolean(pair.from) && Boolean(pair.to));
 }
 
 export function formatLoopLabel(loop: SceneLoop, resolveObjectLabel?: (id: string) => string): string {
-  const base = (loop as any)?.label ? String((loop as any).label) : String((loop as any)?.id ?? "loop");
+  const base = loop.label ? String(loop.label) : String(loop.id ?? "loop");
   const pairs = getLoopEdgePairs(loop);
   if (!pairs.length) return base;
 
@@ -25,5 +25,6 @@ export function formatLoopLabel(loop: SceneLoop, resolveObjectLabel?: (id: strin
 }
 
 export function loopStrength(loop: SceneLoop | undefined): number {
-  return Number((loop as any)?.strength ?? (loop as any)?.weight ?? 0);
+  if (!loop) return 0;
+  return Number(loop.strength ?? loop.weight ?? 0);
 }

@@ -33,6 +33,18 @@ import { logPanelOnce } from "../../lib/debug/panelLogSignature";
 import { resolveWarRoomReadiness } from "../../lib/panels/panelDataReadiness";
 import { buildWarRoomIntelligence, logPanelIntelligence } from "../../lib/intelligence/panelIntelligence";
 import { buildWarRoomDecisionSet } from "../../lib/decision/decisionEngine";
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readCanonicalRecommendation(value: unknown): CanonicalRecommendation | null {
+  return value && typeof value === "object" ? (value as CanonicalRecommendation) : null;
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
 import { PanelDecisionSetSection } from "../panels/PanelDecisionSetSection";
 
 type WarRoomPanelProps = {
@@ -71,7 +83,12 @@ type WarRoomActionId =
 export function WarRoomPanel(props: WarRoomPanelProps) {
   const panelLabels = props.demoProfile?.panel_labels ?? {};
   const emptyStateCopy = props.demoProfile?.empty_state_copy ?? {};
-  const intelligence = (props.intelligence ?? props.controller.intelligence ?? null) as any;
+  const intelligenceRecord =
+    props.intelligence ?? props.controller.intelligence ?? null;
+  const intelligence =
+    intelligenceRecord && typeof intelligenceRecord === "object"
+      ? (intelligenceRecord as Record<string, unknown>)
+      : null;
   const warRoomReadiness = resolveWarRoomReadiness({
     intelligence: intelligence as Record<string, unknown> | null | undefined,
     decisionLoading: props.decisionLoading,
@@ -81,15 +98,16 @@ export function WarRoomPanel(props: WarRoomPanelProps) {
     logPanelOnce("[Nexora][PanelDataState]", { panel: "war_room", readiness: warRoomReadiness });
   }, [warRoomReadiness]);
   const decisionBrief = mapDecisionBrief({
-    fragility: intelligence?.fragility ?? null,
+    fragility: asRecord(intelligence?.fragility),
     decisionImpact: props.decisionImpact ?? null,
-    strategicAdvice: intelligence?.strategicAdvice ?? intelligence?.advice ?? null,
+    strategicAdvice: asRecord(intelligence?.strategicAdvice ?? intelligence?.advice),
     strategicCouncil: props.strategicCouncil ?? null,
-    cockpitExecutive: intelligence?.executiveSummary ?? intelligence?.summary ?? null,
-    canonicalRecommendation: props.canonicalRecommendation ?? intelligence?.canonical_recommendation ?? null,
-    promptFeedback: intelligence?.prompt_feedback ?? null,
-    decisionSimulation: intelligence?.decision_simulation ?? null,
-    reply: intelligence?.reply ?? null,
+    cockpitExecutive: asRecord(intelligence?.executiveSummary ?? intelligence?.summary),
+    canonicalRecommendation:
+      props.canonicalRecommendation ?? readCanonicalRecommendation(intelligence?.canonical_recommendation),
+    promptFeedback: asRecord(intelligence?.prompt_feedback),
+    decisionSimulation: asRecord(intelligence?.decision_simulation),
+    reply: readString(intelligence?.reply),
     selectedObjectLabel: props.selectedObjectLabel,
     resolveObjectLabel: props.resolveObjectLabel ?? null,
   });
@@ -117,7 +135,9 @@ export function WarRoomPanel(props: WarRoomPanelProps) {
     focusLabel: props.selectedObjectLabel ?? decisionBrief.summary.primary_object,
   });
   const canonicalRecommendation =
-    props.canonicalRecommendation ?? decisionBrief.canonical_recommendation ?? intelligence?.canonical_recommendation ?? null;
+    props.canonicalRecommendation ??
+    decisionBrief.canonical_recommendation ??
+    readCanonicalRecommendation(intelligence?.canonical_recommendation);
   const expectedImpactLines = [
     decisionBrief.expected_impact.primary_effect,
     decisionBrief.expected_impact.risk_reduction ?? null,
@@ -194,14 +214,19 @@ export function WarRoomPanel(props: WarRoomPanelProps) {
     memoryEntries: props.memoryEntries ?? [],
     policyState: policy,
   });
+  const approvalWorkspaceId = readString(intelligence?.workspace_id);
+  const approvalProjectId = readString(intelligence?.project_id);
+  const approvalDecisionIdKey = `${
+    governance.decision_id ?? executionIntent?.id ?? canonicalRecommendation?.id ?? ""
+  }`;
   const approvalEnvelope = React.useMemo(
     () =>
       loadApprovalWorkflowEnvelope(
-        intelligence?.workspace_id ?? null,
-        intelligence?.project_id ?? null,
-        governance.decision_id ?? executionIntent?.id ?? canonicalRecommendation?.id ?? null
+        approvalWorkspaceId,
+        approvalProjectId,
+        approvalDecisionIdKey.length > 0 ? approvalDecisionIdKey : null
       ),
-    [intelligence?.workspace_id, intelligence?.project_id, governance.decision_id, executionIntent?.id, canonicalRecommendation?.id]
+    [approvalWorkspaceId, approvalProjectId, approvalDecisionIdKey]
   );
   const approvalWorkflow = buildApprovalWorkflowState({
     canonicalRecommendation,

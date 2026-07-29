@@ -11,10 +11,7 @@ import {
   type DecisionEngineEventIdentity,
   type NormalizedDecisionEventInput,
 } from "./decisionEventTypes.ts";
-import {
-  allocateDecisionSequenceNumber,
-  peekDecisionSequenceNumber,
-} from "./decisionEventRegistry.ts";
+import { peekDecisionSequenceNumber } from "./decisionEventRegistry.ts";
 import type { DecisionEventId, DecisionTimelineEntry } from "./decisionTimelineTypes.ts";
 
 let eventSequence = 0;

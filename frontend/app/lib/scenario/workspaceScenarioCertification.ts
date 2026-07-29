@@ -18,9 +18,7 @@ import { WORKSPACE_OKR_HEALTH_PROFILE_STORAGE_KEY } from "../okr/workspaceOkrHea
 import { WORKSPACE_DETECTED_RISK_STORAGE_KEY } from "../risk/workspaceRiskDetectionEngine.ts";
 import { WORKSPACE_RISK_SEVERITY_PROFILE_STORAGE_KEY } from "../risk/workspaceRiskSeverityEngine.ts";
 import { WORKSPACE_RISK_OBJECT_BINDING_STORAGE_KEY } from "../risk/workspaceRiskObjectBinding.ts";
-import { WORKSPACE_RISK_STORAGE_KEY } from "../risk/workspaceRiskContract.ts";
-import { getWorkspaceSceneJson } from "../workspace/workspaceSceneCreationContract.ts";
-import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
+import { WORKSPACE_RISK_STORAGE_KEY } from "../risk/workspaceRiskContract.ts";import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
 import {
   NEXORA_SCENARIO_ADVISOR_LOG_PREFIX,
   WORKSPACE_SCENARIO_EXECUTIVE_ADVISOR_VERSION,
@@ -361,12 +359,6 @@ function assumptionsPresent(workspaceId: WorkspaceId): boolean {
 
 function overridesSupported(): boolean {
   return WORKSPACE_SCENARIO_RESERVED_PLACEHOLDERS.overrides.reserved === true;
-}
-
-function simulationsCompleted(workspaceId: WorkspaceId): boolean {
-  return allSimulationsForWorkspace(workspaceId).some(
-    (simulation) => simulation.simulationStatus === "completed"
-  );
 }
 
 function comparisonsWithTradeoffs(workspaceId: WorkspaceId): boolean {

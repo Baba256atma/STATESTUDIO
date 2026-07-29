@@ -33,6 +33,7 @@ import { analyzeRiskConvergence } from "./riskConvergenceIntelligence.ts";
 
 function sceneFixture(): SceneJson {
   return {
+    state_vector: {},
     scene: {
       objects: [
         { id: "plant_a", label: "Plant A", domain: "manufacturing", dependencies: ["warehouse_hub"] },
@@ -257,6 +258,7 @@ test("rejects duplicate gravity build fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_gravity_build");
 });
 

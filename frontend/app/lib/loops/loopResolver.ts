@@ -1,4 +1,4 @@
-import type { SceneLoop } from "../sceneTypes";
+import type { SceneLoop, SceneLoopEdge, SceneObject } from "../sceneTypes";
 
 export type SceneObjectLite = {
   id: string;
@@ -7,7 +7,7 @@ export type SceneObjectLite = {
   type?: string;
   tags?: string[];
   role?: string;
-  domain_hints?: any;
+  domain_hints?: Record<string, unknown>;
 };
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -19,13 +19,14 @@ export function normalizeText(s: string): string {
     .replace(/[_-]+/g, " ");
 }
 
-export function buildObjectIndex(objects: any[]) {
+export function buildObjectIndex(objects: readonly unknown[]) {
   const ids: string[] = [];
   const byId: Record<string, SceneObjectLite> = {};
   const tokensById: Record<string, string[]> = {};
 
-  objects.forEach((raw) => {
-    if (!raw) return;
+  objects.forEach((rawValue) => {
+    const raw = rawValue as SceneObject | Record<string, unknown> | null | undefined;
+    if (!raw || typeof raw !== "object") return;
     const id = raw.id ?? raw.name;
     if (!id || typeof id !== "string") return;
     const entry: SceneObjectLite = {
@@ -33,9 +34,14 @@ export function buildObjectIndex(objects: any[]) {
       name: typeof raw.name === "string" ? raw.name : undefined,
       label: typeof raw.label === "string" ? raw.label : undefined,
       type: typeof raw.type === "string" ? raw.type : undefined,
-      tags: Array.isArray(raw.tags) ? raw.tags.filter((t: any) => typeof t === "string") : undefined,
+      tags: Array.isArray(raw.tags)
+        ? raw.tags.filter((tag): tag is string => typeof tag === "string")
+        : undefined,
       role: typeof raw.role === "string" ? raw.role : undefined,
-      domain_hints: raw.domain_hints,
+      domain_hints:
+        raw.domain_hints && typeof raw.domain_hints === "object" && !Array.isArray(raw.domain_hints)
+          ? (raw.domain_hints as Record<string, unknown>)
+          : undefined,
     };
     ids.push(id);
     byId[id] = entry;
@@ -43,8 +49,8 @@ export function buildObjectIndex(objects: any[]) {
     tokenSrc.push(id, entry.name ?? "", entry.label ?? "", entry.type ?? "", entry.role ?? "");
     if (entry.tags) tokenSrc.push(...entry.tags);
     if (entry.domain_hints && typeof entry.domain_hints === "object") {
-      Object.values(entry.domain_hints).forEach((v: any) => {
-        if (Array.isArray(v)) tokenSrc.push(...v.map((x: any) => String(x ?? "")));
+      Object.values(entry.domain_hints).forEach((value) => {
+        if (Array.isArray(value)) tokenSrc.push(...value.map((entryValue) => String(entryValue ?? "")));
       });
     }
     const tokens = tokenSrc
@@ -116,23 +122,26 @@ export function resolveObjectId(rawId: string, index: ReturnType<typeof buildObj
   return rawId;
 }
 
-export function resolveLoopPlaceholders(loops: SceneLoop[], objects: any[]): SceneLoop[] {
+export function resolveLoopPlaceholders(loops: SceneLoop[], objects: readonly unknown[]): SceneLoop[] {
   const index = buildObjectIndex(Array.isArray(objects) ? objects : []);
   return loops.map((loop) => {
-    const edges = Array.isArray((loop as any)?.edges) ? (loop as any).edges : [];
-    const resolvedEdges = edges
-      .map((e: any) => {
-        const fromId = resolveObjectId(String(e?.from ?? ""), index);
-        const toId = resolveObjectId(String(e?.to ?? ""), index);
-        if (!fromId || !toId) return null;
-        return {
-          ...e,
+    const edges = Array.isArray(loop?.edges) ? loop.edges : [];
+    const resolvedEdges: SceneLoopEdge[] = edges.flatMap((edge) => {
+      const record = edge as SceneLoopEdge;
+      const fromId = resolveObjectId(String(record?.from ?? ""), index);
+      const toId = resolveObjectId(String(record?.to ?? ""), index);
+      if (!fromId || !toId) return [];
+      return [
+        {
           from: fromId,
           to: toId,
-          weight: typeof e?.weight === "number" ? clamp01(e.weight) : e?.weight,
-        };
-      })
-      .filter(Boolean) as any[];
+          kind: typeof record.kind === "string" ? record.kind : undefined,
+          label: typeof record.label === "string" ? record.label : undefined,
+          polarity: typeof record.polarity === "string" ? record.polarity : undefined,
+          weight: typeof record.weight === "number" ? clamp01(record.weight) : undefined,
+        },
+      ];
+    });
 
     return {
       ...loop,

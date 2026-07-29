@@ -3,15 +3,7 @@
  * Entity lifecycle state catalog — metadata only.
  */
 
-import type {
-  ExecutiveTimeEntityStateDefinition,
-  ExecutiveTimeEntityStateSet,
-  ExecutiveTimeEntityType,
-  ExecutiveTimeStateRegistrationResult,
-  ExecutiveTimeStateRegistrySnapshot,
-  ExecutiveTimeStateValidationIssue,
-  ExecutiveTimeStateValidationResult,
-} from "./executiveTimeStateTypes.ts";
+import type { ExecutiveTimeEntityStateDefinition, ExecutiveTimeEntityType, ExecutiveTimeStateRegistrationResult, ExecutiveTimeStateRegistrySnapshot, ExecutiveTimeStateValidationIssue, ExecutiveTimeStateValidationResult } from "./executiveTimeStateTypes.ts";
 import { EXECUTIVE_TIME_STATE_ENGINE_VERSION } from "./executiveTimeStateTypes.ts";
 
 export const EXECUTIVE_TIME_ENTITY_TYPES = Object.freeze([

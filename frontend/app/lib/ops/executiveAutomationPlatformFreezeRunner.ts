@@ -1,7 +1,4 @@
-import {
-  ExecutiveAutomationFoundation,
-  AutomationRegistry,
-} from "./automationIndex.ts";
+import { AutomationRegistry } from "./automationIndex.ts";
 import {
   ExecutiveAutomationModel,
 } from "./automationModelIndex.ts";

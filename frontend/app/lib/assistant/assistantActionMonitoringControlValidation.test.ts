@@ -121,7 +121,7 @@ test("ASSISTANT-9:4 publishes exactly 10 categories and 42 rules", () => {
 
 test("ASSISTANT-9:4 rules are unique, referenced, and immutable", () => {
   const validation = AssistantActionMonitoringControlValidation;
-  const allowedSources = new Set([
+  const allowedSources = new Set<string>([
     validation.model.identity.id,
     validation.model.registry.identity.id,
     validation.model.registry.foundation.identity.id,
@@ -141,14 +141,15 @@ test("ASSISTANT-9:4 rules are unique, referenced, and immutable", () => {
     validation.rules.map(({ order }) => order),
     validation.rules.map((_, index) => index + 1),
   );
+  const allowedSourceValues = [...allowedSources];
   assert.equal(
     validation.rules.every(({ sourceReference }) =>
-      allowedSources.has(sourceReference)),
+      allowedSourceValues.some((value) => value === sourceReference)),
     true,
   );
   assert.equal(
     validation.rules.every(({ targetComponent }) =>
-      allowedSources.has(targetComponent)),
+      allowedSourceValues.some((value) => value === targetComponent)),
     true,
   );
   assert.equal(

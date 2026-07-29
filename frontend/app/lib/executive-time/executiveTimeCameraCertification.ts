@@ -8,22 +8,7 @@ import { join } from "node:path";
 import { evaluateStageFileBoundary, validateStageManifest } from "../stage/stageArchitectureGuards.ts";
 import { runExecutiveTimeContextCertification } from "./executiveTimeContextCertification.ts";
 import { EXECUTIVE_TIME_FORBIDDEN_PATTERNS, EXECUTIVE_TIME_MUST_NOT_OWN } from "./executiveTimeContract.ts";
-import {
-  getExecutiveTimeCameraPosition,
-  jumpToCurrentQuarter,
-  jumpToCurrentYear,
-  jumpToFutureProjection,
-  jumpToPastReview,
-  jumpToToday,
-  moveBackward,
-  moveForward,
-  moveToContext,
-  next,
-  previous,
-  resetCamera,
-  getHistory,
-  resetExecutiveTimeCameraForTests,
-} from "./executiveTimeCameraEngine.ts";
+import { getExecutiveTimeCameraPosition, jumpToCurrentQuarter, jumpToCurrentYear, jumpToFutureProjection, jumpToPastReview, jumpToToday, moveBackward, moveForward, moveToContext, previous, resetCamera, getHistory, resetExecutiveTimeCameraForTests } from "./executiveTimeCameraEngine.ts";
 import {
   EXECUTIVE_TIME_CAMERA_FUTURE_BINDINGS,
   EXECUTIVE_TIME_CAMERA_NAVIGATION_LADDER,

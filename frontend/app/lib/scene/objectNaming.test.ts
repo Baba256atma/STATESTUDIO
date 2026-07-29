@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { SceneObject } from "../sceneTypes";
+import { resolveDomainVocabulary } from "../visual/domainVocabulary";
 import {
   normalizeExecutiveObjectName,
   resetExecutiveObjectNamingLogsForTests,
@@ -34,10 +35,26 @@ const sampleObject = (overrides: Partial<SceneObject> = {}): SceneObject =>
   }) as SceneObject;
 
 describe("executiveObjectNamingRuntime", () => {
-  it("resolves stable executive names from object metadata", () => {
+  it("maps revenue metadata to the E2:58 domain-aware canonical display name", () => {
     resetExecutiveObjectNamingLogsForTests();
-    expect(resolveExecutiveObjectName({ object: sampleObject(), index: 0 })).toBe("Revenue");
-    expect(normalizeExecutiveObjectName("  Supplier Hub  ")).toBe("Supplier Hub");
+    const fixture = sampleObject();
+    // E2:58 vocabulary: revenue-related tokens resolve to displayName "Pricing".
+    const canonical = resolveDomainVocabulary(String(fixture.name))?.displayName;
+    expect(canonical).toBeTruthy();
+    expect(resolveExecutiveObjectName({ object: fixture, index: 0 })).toBe(canonical);
+    expect(resolveExecutiveObjectName({ object: fixture, index: 0 })).toBe("Pricing");
+  });
+
+  it("falls back to normalized literal metadata when vocabulary does not match", () => {
+    resetExecutiveObjectNamingLogsForTests();
+    // Avoid E2:58 vocabulary match tokens (supplier/revenue/etc.).
+    expect(
+      resolveExecutiveObjectName({
+        object: sampleObject({ id: "zeta_widget_1", name: "Zeta Widget", tags: ["custom"] }),
+        index: 0,
+      })
+    ).toBe("Zeta Widget");
+    expect(normalizeExecutiveObjectName("  Zeta Widget  ")).toBe("Zeta Widget");
   });
 
   it("truncates overly long names", () => {

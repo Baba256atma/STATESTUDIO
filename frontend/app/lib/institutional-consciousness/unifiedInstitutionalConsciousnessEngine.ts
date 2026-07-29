@@ -1,15 +1,5 @@
 import { stableSignature } from "../intelligence/shared/dedupe";
-import {
-  awarenessLevelRank,
-  beginUnifiedInstitutionalConsciousnessEvaluation,
-  endUnifiedInstitutionalConsciousnessEvaluation,
-  runtimeStatusRank,
-  shouldEvaluateUnifiedInstitutionalConsciousness,
-  UNIFIED_INSTITUTIONAL_CONSCIOUSNESS_MAX_RUNTIME_SIGNALS,
-  UNIFIED_INSTITUTIONAL_CONSCIOUSNESS_MIN_ACTIVE_SUBSYSTEMS,
-  UNIFIED_INSTITUTIONAL_CONSCIOUSNESS_MIN_STEWARDSHIP_DEPTH,
-  validateCivilizationScaleEnterpriseSnapshot,
-} from "./unifiedInstitutionalConsciousnessGuards";
+import { beginUnifiedInstitutionalConsciousnessEvaluation, endUnifiedInstitutionalConsciousnessEvaluation, shouldEvaluateUnifiedInstitutionalConsciousness, UNIFIED_INSTITUTIONAL_CONSCIOUSNESS_MAX_RUNTIME_SIGNALS, UNIFIED_INSTITUTIONAL_CONSCIOUSNESS_MIN_ACTIVE_SUBSYSTEMS, UNIFIED_INSTITUTIONAL_CONSCIOUSNESS_MIN_STEWARDSHIP_DEPTH, validateCivilizationScaleEnterpriseSnapshot } from "./unifiedInstitutionalConsciousnessGuards";
 import { getUnifiedInstitutionalConsciousnessStore } from "./unifiedInstitutionalConsciousnessStore";
 import type {
   CivilizationScaleEnterpriseSnapshot,

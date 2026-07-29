@@ -1,11 +1,5 @@
 import { stableSignature } from "../intelligence/shared/dedupe";
-import {
-  beginAdaptationRecoveryEvaluation,
-  endAdaptationRecoveryEvaluation,
-  shouldEvaluateAdaptationRecovery,
-  shouldRetainAdaptationRecord,
-  validateAdaptationRecord,
-} from "./adaptationRecoveryGuards";
+import { beginAdaptationRecoveryEvaluation, endAdaptationRecoveryEvaluation, shouldEvaluateAdaptationRecovery, shouldRetainAdaptationRecord } from "./adaptationRecoveryGuards";
 import { getAdaptationRecoveryStore } from "./adaptationRecoveryStore";
 import { getInstitutionalCorrelationStore } from "./institutionalCorrelationStore";
 import { getInstitutionalMemoryStore } from "./institutionalMemoryStore";

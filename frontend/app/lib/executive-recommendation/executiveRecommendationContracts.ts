@@ -36,11 +36,7 @@ import {
   EXECUTIVE_RECOMMENDATION_RELEASE_METADATA,
   EXECUTIVE_RECOMMENDATION_SOURCE_PROVIDER_REGISTRY,
 } from "./executiveRecommendationConstants.ts";
-import {
-  buildExecutiveRecommendationFoundation,
-  createExecutiveRecommendationFoundation,
-  isExecutiveRecommendationPlatformInitialized,
-} from "./executiveRecommendationFoundation.ts";
+import { buildExecutiveRecommendationFoundation, isExecutiveRecommendationPlatformInitialized } from "./executiveRecommendationFoundation.ts";
 import {
   getExecutiveRecommendationRegistry,
   getExecutiveRecommendationRegistrySnapshot,

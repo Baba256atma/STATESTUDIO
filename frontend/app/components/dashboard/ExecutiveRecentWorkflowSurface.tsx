@@ -26,20 +26,21 @@ export type ExecutiveRecentWorkflowSurfaceProps = Readonly<{
 export function ExecutiveRecentWorkflowSurface(
   props: ExecutiveRecentWorkflowSurfaceProps
 ): React.ReactElement {
+  const { activeWorkspaceId, selectedObjectId, onReopenSession } = props;
   const sessions = useMemo(
     () =>
       buildRecentWorkflowSessions({
-        activeWorkspaceId: props.activeWorkspaceId,
-        selectedObjectId: props.selectedObjectId,
+        activeWorkspaceId,
+        selectedObjectId,
       }),
-    [props.activeWorkspaceId, props.selectedObjectId]
+    [activeWorkspaceId, selectedObjectId]
   );
 
   const handleReopen = useCallback(
     (workspaceId: ExecutiveWorkspaceId, returnKind: WorkspaceRecentReturnKind) => {
-      props.onReopenSession?.({ workspaceId, returnKind });
+      onReopenSession?.({ workspaceId, returnKind });
     },
-    [props.onReopenSession]
+    [onReopenSession]
   );
 
   return (

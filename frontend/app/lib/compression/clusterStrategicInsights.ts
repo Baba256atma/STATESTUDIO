@@ -181,5 +181,5 @@ export function clusterStrategicInsights(params: {
       if (right.signalIds.length !== left.signalIds.length) return right.signalIds.length - left.signalIds.length;
       return left.id.localeCompare(right.id);
     })
-    .map(({ score, ...cluster }) => cluster);
+    .map(({...cluster }) => cluster);
 }

@@ -80,9 +80,6 @@ export function classifyEventLifecyclePhase(event: BusinessEngineEvent): PhaseRu
   if (event.type === "operational" && event.category === "operations") {
     return rule("stabilization", 0.81, "Operational event maps to stabilization phase.");
   }
-  if (event.category === "strategy" && event.type === "transformation") {
-    return rule("renewal", 0.85, "Strategy transformation maps to renewal phase.");
-  }
   if (event.type === "milestone") {
     return rule("early-growth", 0.65, "Generic milestone maps to early-growth phase.");
   }

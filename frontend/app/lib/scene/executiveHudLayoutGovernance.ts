@@ -1,4 +1,10 @@
-/** E2:56 — Canonical executive HUD zones (one anchor per surface). */
+/**
+ * E2:56 — Canonical executive HUD zones (one anchor per surface).
+ *
+ * AD-SCENE-01 (Accepted 2026-07-28) narrowly supersedes E2:56 for
+ * `executiveSceneToolbar.zone` only → `TOP_CENTER`. All other E2:56 fields
+ * and HUD components remain authoritative under E2:56.
+ */
 
 import type { SceneHudPanelId } from "./sceneHudRegistry";
 
@@ -10,9 +16,13 @@ export type ExecutiveHudZone =
   | "BOTTOM_CENTER"
   | "RIGHT_BOTTOM";
 
+/** AD-SCENE-01 decision id for toolbar-zone authority traceability. */
+export const AD_SCENE_01_DECISION_ID = "AD-SCENE-01" as const;
+
 export const CANONICAL_HUD_ANCHORS: Readonly<Record<SceneHudPanelId, ExecutiveHudZone>> = Object.freeze({
   sceneInfoHud: "LEFT_TOP",
-  executiveSceneToolbar: "RIGHT_TOP",
+  // AD-SCENE-01: toolbar participates in E2:21/E2:57 unified top-row (TOP_CENTER).
+  executiveSceneToolbar: "TOP_CENTER",
   objectInfoHud: "RIGHT_TOP",
   executiveStatusHud: "RIGHT_TOP",
   timelineHud: "BOTTOM_CENTER",

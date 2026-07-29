@@ -147,7 +147,6 @@ function buildForecastImpact(
   const baselineHealth = calculateKpiHealthProfile(baselineProfile);
   const projectedHealth = calculateKpiHealthProfile(projectedProfile);
   const baselineTrend = calculateKpiTrendProfile(baselineProfile, snapshots);
-  const projectedTrend = calculateKpiTrendProfile(projectedProfile, snapshots);
   const baselineImpact = calculateKpiImpactProfile(baselineProfile, rawRecord);
   const projectedImpact = calculateKpiImpactProfile(projectedProfile, rawRecord);
 

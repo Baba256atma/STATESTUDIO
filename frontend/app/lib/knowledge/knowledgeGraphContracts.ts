@@ -164,6 +164,7 @@ export function resolveKnowledgeGraphEdgeExample(timestamp: string): KnowledgeGr
 }
 
 export function resolveKnowledgeGraphDefinitionExample(timestamp: string): KnowledgeGraphDefinition {
+  void timestamp;
   return Object.freeze({
     graphId: KNOWLEDGE_GRAPH_ID,
     graphName: KNOWLEDGE_GRAPH_NAME,

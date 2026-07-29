@@ -24,6 +24,7 @@ import {
 import {
   compareBaselineToScenario,
   safeNumber,
+  type NexoraOutcomeComparisonResult,
 } from "../simulation/outcomeComparisonReplay";
 import {
   runAutonomousScenarioExploration,
@@ -36,6 +37,7 @@ import {
 } from "../scanner/systemFragilityScannerEngine";
 import {
   generateExecutiveBrief,
+  type NexoraExecutiveBrief,
 } from "../executive/executiveInsightRecommendation";
 import {
   buildStrategicDecisionStory,
@@ -45,7 +47,9 @@ import {
 import {
   integrateDomainProjectIntoRuntime,
   type NexoraDomainRuntimeIntegrationResult,
+  type NexoraDomainRuntimeModel,
 } from "../runtime/domainRuntimeIntegration";
+import type { NexoraSimulationRuntimeInput } from "../simulation/domainSimulationScenarioEngine";
 
 export type NexoraProductMode =
   | "business"
@@ -63,14 +67,14 @@ export interface NexoraUserPromptInput {
 }
 
 export interface NexoraProductFlowResult {
-  interpretation?: any;
-  runtimeModel?: any;
-  simulationOutcome?: any;
-  comparisonResult?: any;
+  interpretation?: NexoraDomainScenarioKpiInterpretation;
+  runtimeModel?: NexoraDomainRuntimeModel;
+  simulationOutcome?: NexoraScenarioOutcome;
+  comparisonResult?: NexoraOutcomeComparisonResult | null;
   fragilityScan?: NexoraSystemFragilityScannerResult;
   explorationResult?: NexoraAutonomousExplorationResult;
-  executiveBrief?: any;
-  decisionStory?: any;
+  executiveBrief?: NexoraExecutiveBrief;
+  decisionStory?: NexoraDecisionStory;
   notes?: string[];
 }
 
@@ -306,7 +310,7 @@ function buildProjectForScenario(args: {
   });
 }
 
-function buildBaselineOutcome(runtimeModel: any, scenario?: NexoraScenarioDefinition): NexoraScenarioOutcome {
+function buildBaselineOutcome(runtimeModel: NexoraSimulationRuntimeInput, scenario?: NexoraScenarioDefinition): NexoraScenarioOutcome {
   return {
     scenarioId: "baseline",
     label: scenario ? `${scenario.label} Baseline` : "Baseline",
@@ -346,7 +350,7 @@ export function runPromptInterpretationStep(
 }
 
 export function detectScenarioFromPrompt(
-  interpretation: any
+  interpretation: NexoraDomainScenarioKpiInterpretation | unknown
 ) {
   const normalizedInterpretation =
     interpretation as NexoraDomainScenarioKpiInterpretation;
@@ -373,7 +377,7 @@ export function detectScenarioFromPrompt(
 
 export function prepareRuntimeForSimulation(
   args: {
-    project?: any;
+    project?: NexoraDomainProjectAssemblyResult | unknown;
     domainId?: string | null;
   }
 ) {
@@ -386,8 +390,8 @@ export function prepareRuntimeForSimulation(
 
 export function runScenarioSimulationStep(
   args: {
-    runtimeModel: any;
-    scenario: any;
+    runtimeModel: NexoraSimulationRuntimeInput;
+    scenario: NexoraScenarioDefinition;
   }
 ) {
   return runDomainScenarioSimulation({
@@ -398,8 +402,8 @@ export function runScenarioSimulationStep(
 
 export function runOutcomeComparisonStep(
   args: {
-    baselineOutcome?: any;
-    scenarioOutcome?: any;
+    baselineOutcome?: NexoraScenarioOutcome;
+    scenarioOutcome?: NexoraScenarioOutcome;
   }
 ) {
   if (!args.baselineOutcome || !args.scenarioOutcome) return null;
@@ -411,8 +415,8 @@ export function runOutcomeComparisonStep(
 
 export function runExecutiveInsightStep(
   args: {
-    runtimeModel?: any;
-    scenarioOutcome?: any;
+    runtimeModel?: NexoraDomainRuntimeModel | NexoraSimulationRuntimeInput | unknown;
+    scenarioOutcome?: NexoraScenarioOutcome;
     fragilityScan?: NexoraSystemFragilityScannerResult;
     explorationResult?: NexoraAutonomousExplorationResult;
   }
@@ -428,16 +432,16 @@ export function runExecutiveInsightStep(
 
 export function runStrategicStoryStep(
   args: {
-    runtimeModel?: any;
-    scenarioOutcome?: any;
-    executiveBrief?: any;
-    comparisonResult?: any;
+    runtimeModel?: NexoraDomainRuntimeModel | NexoraSimulationRuntimeInput | unknown;
+    scenarioOutcome?: NexoraScenarioOutcome;
+    executiveBrief?: NexoraExecutiveBrief;
+    comparisonResult?: NexoraOutcomeComparisonResult | null;
     explorationResult?: NexoraAutonomousExplorationResult;
     mode?: NexoraProductMode;
   }
 ) {
   return buildStrategicDecisionStory({
-    domainId: args.runtimeModel?.domainId ?? null,
+    domainId: (args.runtimeModel as NexoraDomainRuntimeModel | undefined)?.domainId ?? null,
     mode: args.mode ?? "general",
     runtimeModel: args.runtimeModel,
     scenarioOutcome: args.scenarioOutcome,
@@ -449,34 +453,36 @@ export function runStrategicStoryStep(
 
 export function runAutonomousExplorationStep(
   args: {
-    runtimeModel?: any;
-    runtimeContext?: any;
+    runtimeModel?: NexoraDomainRuntimeModel | NexoraSimulationRuntimeInput | unknown;
+    runtimeContext?: unknown;
     fragilityScan?: NexoraSystemFragilityScannerResult;
     mode?: NexoraProductMode;
   }
 ) {
   if (!args.runtimeModel) return null;
+  const runtimeModel = args.runtimeModel as NexoraDomainRuntimeModel | undefined;
   return runAutonomousScenarioExploration({
     runtimeModel: args.runtimeModel,
     runtimeContext: args.runtimeContext,
     fragilityScan: args.fragilityScan,
-    domainId: args.runtimeModel?.domainId ?? null,
+    domainId: runtimeModel?.domainId ?? null,
     goal: resolveExplorationGoal(args.mode),
   });
 }
 
 export function runSystemFragilityScanStep(
   args: {
-    runtimeModel?: any;
-    runtimeContext?: any;
+    runtimeModel?: NexoraDomainRuntimeModel | NexoraSimulationRuntimeInput | unknown;
+    runtimeContext?: unknown;
     mode?: NexoraProductMode;
   }
 ) {
   if (!args.runtimeModel) return null;
+  const runtimeModel = args.runtimeModel as NexoraDomainRuntimeModel | undefined;
   return runSystemFragilityScanner({
     runtimeModel: args.runtimeModel,
     runtimeContext: args.runtimeContext,
-    domain: args.runtimeModel?.domainId ?? args.mode ?? null,
+    domain: runtimeModel?.domainId ?? args.mode ?? null,
   });
 }
 

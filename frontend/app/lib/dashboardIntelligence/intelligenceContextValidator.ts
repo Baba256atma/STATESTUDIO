@@ -3,9 +3,7 @@
  * Validates workspace, selection consistency, and consumer identity — no calculations.
  */
 
-import { getWorkspaceById } from "../workspace/workspaceRegistryStore.ts";
-import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
-import { getIntelligenceConsumer } from "./intelligenceConsumerRegistry.ts";
+import { getWorkspaceById } from "../workspace/workspaceRegistryStore.ts";import { getIntelligenceConsumer } from "./intelligenceConsumerRegistry.ts";
 import type {
   BuildIntelligenceContextInput,
   IntelligenceContextValidationIssue,

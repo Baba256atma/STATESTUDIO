@@ -2,7 +2,6 @@
  * LLM-12 — Immutable freeze manifest generation.
  */
 
-import { getLlmPlatformCompatibilityMatrix } from "./llmPlatformCompatibility.ts";
 import {
   getLlmPlatformExtensionRegistry,
   getLlmPlatformPublicApiRegistry,
@@ -18,7 +17,6 @@ export function buildLlmPlatformFreezeManifest(
   certificationStatus: LlmPlatformCertificationStatusKey = "certified"
 ): LlmPlatformFreezeManifest {
   const registry = getLlmPlatformRegistry();
-  const compatibility = getLlmPlatformCompatibilityMatrix();
   return Object.freeze({
     manifestId: "llm-platform-freeze-manifest",
     platformName: registry.platformName,

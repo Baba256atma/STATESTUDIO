@@ -28,13 +28,7 @@ import {
   mapAssistantMilestones,
 } from "./scenarioTimelineAssistantSummary.ts";
 import { validateScenarioTimelineAssistantContext } from "./scenarioTimelineAssistantValidator.ts";
-import {
-  fetchScenarioTimelineMilestones,
-  fetchScenarioTimelineProgress,
-  fetchScenarioTimelineStatus,
-  fetchScenarioTimelineSummary,
-  fetchScenarioTimelineView,
-} from "./scenarioTimelineAssistantAdapter.ts";
+import { fetchScenarioTimelineMilestones, fetchScenarioTimelineProgress, fetchScenarioTimelineStatus, fetchScenarioTimelineView } from "./scenarioTimelineAssistantAdapter.ts";
 import type {
   ScenarioTimelineAssistantChangeRecord,
   ScenarioTimelineAssistantContext,

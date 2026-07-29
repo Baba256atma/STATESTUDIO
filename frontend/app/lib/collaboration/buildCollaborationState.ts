@@ -1,6 +1,12 @@
 import { buildDecisionGovernanceState } from "../governance/buildDecisionGovernanceState";
+import type { DecisionGovernanceState } from "../governance/decisionGovernanceTypes";
 import { buildApprovalWorkflowState } from "../approval/buildApprovalWorkflowState";
+import type { ApprovalWorkflowState } from "../approval/approvalWorkflowTypes";
 import { buildTeamDecisionState } from "../team/buildTeamDecisionState";
+import type { TeamDecisionState } from "../team/teamDecisionTypes";
+import type { DecisionMemoryEntry } from "../decision/memory/decisionMemoryTypes";
+import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes";
+import type { DecisionExecutionIntent } from "../execution/decisionExecutionIntent";
 import { buildCollaboratorPerspective } from "./buildCollaboratorPerspective";
 import { buildCollaborationAlignment } from "./buildCollaborationAlignment";
 import { buildCollaborationDecisionDelta } from "./buildCollaborationDecisionDelta";
@@ -12,15 +18,15 @@ import type {
 } from "./collaborationTypes";
 
 type BuildCollaborationStateInput = {
-  canonicalRecommendation?: any | null;
-  decisionExecutionIntent?: any | null;
-  responseData?: any | null;
-  decisionResult?: any | null;
-  memoryEntries?: any[];
+  canonicalRecommendation?: CanonicalRecommendation | null;
+  decisionExecutionIntent?: DecisionExecutionIntent | null;
+  responseData?: Record<string, unknown> | null;
+  decisionResult?: Record<string, unknown> | null;
+  memoryEntries?: DecisionMemoryEntry[];
   collaborationInputs?: CollaborationInput[];
-  teamDecisionState?: any | null;
-  governanceState?: any | null;
-  approvalWorkflowState?: any | null;
+  teamDecisionState?: TeamDecisionState | null;
+  governanceState?: DecisionGovernanceState | null;
+  approvalWorkflowState?: ApprovalWorkflowState | null;
 };
 
 function clean(value: unknown, fallback = "") {

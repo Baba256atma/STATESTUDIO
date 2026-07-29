@@ -14,8 +14,6 @@ import { runExecutiveInboxSchedulingCertification } from "./executiveInboxSchedu
 import { EXECUTIVE_INBOX_SCHEDULING_ENGINE_SELF_MANIFEST } from "./executiveInboxSchedulingEngine.ts";
 import type { ExecutiveInboxPlatformLayerRegressionResult } from "./executiveInboxPlatformCertificationTypes.ts";
 
-const REPO_ROOT = join(process.cwd(), "..");
-
 function layerResult(
   layerId: string,
   title: string,

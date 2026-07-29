@@ -155,6 +155,7 @@ function buildScenarioMemoryInput(
       summary: "Structured scenario memory for executive review.",
       owner: "executive-owner",
       sourceModule: "executive-scenario-memory",
+      customMetadata: Object.freeze({}),
     }),
     version: createExecutiveScenarioMemoryVersion({
       versionId: `version-${memoryId}`,

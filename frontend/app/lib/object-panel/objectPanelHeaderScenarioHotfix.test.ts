@@ -18,7 +18,7 @@ test("exports object panel header scenario removed tag", () => {
 test("scene action dock header excludes scenario button", () => {
   const ids = SCENE_ACTION_DOCK_HEADER_ACTIONS.map((entry) => entry.id);
   assert.deepEqual(ids, ["object", "focus", "explain"]);
-  assert.equal(ids.includes("scenario"), false);
+  assert.equal(ids.filter((id) => String(id) === "scenario").length, 0);
   assert.equal(
     SCENE_ACTION_DOCK_HEADER_ACTIONS.some((entry) => entry.label === "Scenario"),
     false
@@ -40,7 +40,7 @@ test("header dock retains focus and explain without scenario launch source", () 
   assert.equal(focus?.dashboardAction, "focus");
   assert.equal(explain?.dashboardAction, "advisory");
   assert.equal(
-    SCENE_ACTION_DOCK_HEADER_ACTIONS.some((entry) => entry.dashboardAction === "scenario"),
-    false
+    SCENE_ACTION_DOCK_HEADER_ACTIONS.filter((entry) => String(entry.dashboardAction) === "scenario").length,
+    0
   );
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import {
   buildWorkspaceLayoutSignature,
@@ -58,9 +58,15 @@ export type WorkspaceLayoutContextValue = {
 
 const WorkspaceLayoutContext = createContext<WorkspaceLayoutContextValue | null>(null);
 
+function subscribeNoop() {
+  return () => {};
+}
+
 export function WorkspaceLayoutProvider(props: { children: React.ReactNode }): React.ReactElement {
+  const isClient = useSyncExternalStore(subscribeNoop, () => true, () => false);
   const [preset, setPresetState] = useState<WorkspaceLayoutPreset>(DEFAULT_WORKSPACE_LAYOUT_PRESET);
   const [viewportWidth, setViewportWidth] = useState<number>(EXECUTIVE_HUD_SSR_VIEWPORT.width);
+  const [viewportHydrated, setViewportHydrated] = useState(false);
   const mountedRef = useRef(false);
   const hudPreferences = useHudPreferencesOptional();
 
@@ -77,19 +83,26 @@ export function WorkspaceLayoutProvider(props: { children: React.ReactNode }): R
     logWorkspaceLayoutMounted();
   }, []);
 
-  useEffect(() => {
-    traceHUDSSRLayout();
-    markExecutiveHudLayoutHydrated();
-    startIdleRuntimeWatchdog();
+  // Seed client viewport width during render (hydration-safe SSR default retained until client).
+  if (isClient && !viewportHydrated) {
     const width = Math.round(window.innerWidth);
+    setViewportHydrated(true);
     setViewportWidth((previousWidth) => {
       const previousSignature = buildViewportResizeSignature(previousWidth);
       const nextSignature = buildViewportResizeSignature(width);
       return previousSignature === nextSignature ? previousWidth : width;
     });
+  }
+
+  useEffect(() => {
+    if (!viewportHydrated) return;
+    const width = Math.round(window.innerWidth);
+    traceHUDSSRLayout();
+    markExecutiveHudLayoutHydrated();
+    startIdleRuntimeWatchdog();
     traceHUDClientLayout(width);
     traceResponsiveLayoutApplied(width);
-  }, []);
+  }, [viewportHydrated]);
 
   const viewportSignatureRef = useRef(buildViewportResizeSignature(EXECUTIVE_HUD_SSR_VIEWPORT.width));
   const viewportBucketRef = useRef(bucketViewportWidth(EXECUTIVE_HUD_SSR_VIEWPORT.width));
@@ -117,7 +130,7 @@ export function WorkspaceLayoutProvider(props: { children: React.ReactNode }): R
       hudPreferences
         ? applyHudPreferencesToLayoutContract(baseContract, hudPreferences.preferences)
         : baseContract,
-    [baseContract, hudPreferences?.preferences]
+    [baseContract, hudPreferences]
   );
 
   const lastHudLayoutSignatureRef = useRef<string | null>(null);

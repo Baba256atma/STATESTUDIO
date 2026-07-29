@@ -4,18 +4,12 @@ import {
   EXECUTIVE_RESOURCE_PLATFORM_VERSION,
 } from "./executiveResourceIndex.ts";
 import { EXECUTIVE_RESOURCE_PLATFORM_REGISTRY } from "./executiveResourceRegistryIndex.ts";
-import {
-  EXECUTIVE_RESOURCE_MODEL_METADATA,
-  EXECUTIVE_RESOURCE_MODEL_PUBLIC_APIS,
-} from "./executiveResourceModelIndex.ts";
+import { EXECUTIVE_RESOURCE_MODEL_METADATA } from "./executiveResourceModelIndex.ts";
 import {
   EXECUTIVE_RESOURCE_VALIDATION_METADATA,
   EXECUTIVE_RESOURCE_VALIDATION_RESULT,
 } from "./executiveResourceValidationIndex.ts";
-import {
-  EXECUTIVE_RESOURCE_MANIFEST_METADATA,
-  EXECUTIVE_RESOURCE_MANIFEST_PUBLIC_APIS,
-} from "./executiveResourceManifestIndex.ts";
+import { EXECUTIVE_RESOURCE_MANIFEST_PUBLIC_APIS } from "./executiveResourceManifestIndex.ts";
 import {
   EXECUTIVE_RESOURCE_PLATFORM_DEPENDENCIES,
   EXECUTIVE_RESOURCE_PLATFORM_EXTENSION_POLICY,

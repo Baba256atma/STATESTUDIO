@@ -8,7 +8,7 @@ export interface NexoraScannerEntityCandidate {
   description?: string;
   tags?: string[];
   sourceType?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface NexoraScannerRelationCandidate {
@@ -19,7 +19,7 @@ export interface NexoraScannerRelationCandidate {
   description?: string;
   tags?: string[];
   sourceType?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface NexoraScannerLoopCandidate {
@@ -29,7 +29,7 @@ export interface NexoraScannerLoopCandidate {
   nodes?: string[];
   tags?: string[];
   sourceType?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface NexoraDomainEntityMappingResult {
@@ -176,49 +176,62 @@ function scoreCandidate(text: string, candidate: string): number {
   return score;
 }
 
-function normalizePack(domainPack?: any | null): DomainPackLike | null {
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function normalizePack(domainPack?: unknown | null): DomainPackLike | null {
   if (!domainPack || typeof domainPack !== "object") return null;
+  const pack = readRecord(domainPack);
 
   return {
-    id: typeof domainPack.id === "string" ? domainPack.id.trim() : undefined,
-    label: typeof domainPack.label === "string" ? domainPack.label.trim() : undefined,
-    tags: Array.isArray(domainPack.tags) ? uniq(domainPack.tags.map((value: unknown) => String(value))) : [],
-    objectVocabulary: Array.isArray(domainPack.objectVocabulary)
-      ? domainPack.objectVocabulary.map((item: any) => ({
-          id: String(item.id ?? "").trim(),
-          label: String(item.label ?? item.id ?? "").trim(),
-          coreRole: String(item.coreRole ?? "").trim(),
-          ...(typeof item.description === "string" && item.description.trim()
-            ? { description: item.description.trim() }
+    id: typeof pack.id === "string" ? pack.id.trim() : undefined,
+    label: typeof pack.label === "string" ? pack.label.trim() : undefined,
+    tags: Array.isArray(pack.tags) ? uniq(pack.tags.map((value: unknown) => String(value))) : [],
+    objectVocabulary: Array.isArray(pack.objectVocabulary)
+      ? pack.objectVocabulary.map((item) => {
+          const entry = readRecord(item);
+          return {
+          id: String(entry.id ?? "").trim(),
+          label: String(entry.label ?? entry.id ?? "").trim(),
+          coreRole: String(entry.coreRole ?? "").trim(),
+          ...(typeof entry.description === "string" && entry.description.trim()
+            ? { description: entry.description.trim() }
             : {}),
-          synonyms: Array.isArray(item.synonyms)
-            ? uniq(item.synonyms.map((value: unknown) => String(value)))
+          synonyms: Array.isArray(entry.synonyms)
+            ? uniq(entry.synonyms.map((value: unknown) => String(value)))
             : [],
-          tags: Array.isArray(item.tags) ? uniq(item.tags.map((value: unknown) => String(value))) : [],
-        }))
+          tags: Array.isArray(entry.tags) ? uniq(entry.tags.map((value: unknown) => String(value))) : [],
+        };
+        })
       : [],
-    preferredRelationTypes: Array.isArray(domainPack.preferredRelationTypes)
-      ? uniq(domainPack.preferredRelationTypes.map((value: unknown) => String(value)))
+    preferredRelationTypes: Array.isArray(pack.preferredRelationTypes)
+      ? uniq(pack.preferredRelationTypes.map((value: unknown) => String(value)))
       : [],
-    preferredLoopTypes: Array.isArray(domainPack.preferredLoopTypes)
-      ? uniq(domainPack.preferredLoopTypes.map((value: unknown) => String(value)))
+    preferredLoopTypes: Array.isArray(pack.preferredLoopTypes)
+      ? uniq(pack.preferredLoopTypes.map((value: unknown) => String(value)))
       : [],
-    scannerHints: Array.isArray(domainPack.scannerHints)
-      ? domainPack.scannerHints.map((hint: any) => ({
-          ...(typeof hint.sourceType === "string" && hint.sourceType.trim()
-            ? { sourceType: hint.sourceType.trim() }
+    scannerHints: Array.isArray(pack.scannerHints)
+      ? pack.scannerHints.map((hint) => {
+          const entry = readRecord(hint);
+          return {
+          ...(typeof entry.sourceType === "string" && entry.sourceType.trim()
+            ? { sourceType: entry.sourceType.trim() }
             : {}),
-          entityKeywords: Array.isArray(hint.entityKeywords)
-            ? uniq(hint.entityKeywords.map((value: unknown) => String(value)))
+          entityKeywords: Array.isArray(entry.entityKeywords)
+            ? uniq(entry.entityKeywords.map((value: unknown) => String(value)))
             : [],
-          relationKeywords: Array.isArray(hint.relationKeywords)
-            ? uniq(hint.relationKeywords.map((value: unknown) => String(value)))
+          relationKeywords: Array.isArray(entry.relationKeywords)
+            ? uniq(entry.relationKeywords.map((value: unknown) => String(value)))
             : [],
-          loopKeywords: Array.isArray(hint.loopKeywords)
-            ? uniq(hint.loopKeywords.map((value: unknown) => String(value)))
+          loopKeywords: Array.isArray(entry.loopKeywords)
+            ? uniq(entry.loopKeywords.map((value: unknown) => String(value)))
             : [],
-          tags: Array.isArray(hint.tags) ? uniq(hint.tags.map((value: unknown) => String(value))) : [],
-        }))
+          tags: Array.isArray(entry.tags) ? uniq(entry.tags.map((value: unknown) => String(value))) : [],
+        };
+        })
       : [],
   };
 }
@@ -312,7 +325,7 @@ export function tokenizeScannerText(text: string): string[] {
 
 export function mapScannerEntityToDomain(args: {
   entity: NexoraScannerEntityCandidate;
-  domainPack?: any | null;
+  domainPack?: unknown | null;
   domainId?: string | null;
 }): NexoraDomainEntityMappingResult {
   const entity = args.entity;
@@ -405,7 +418,7 @@ export function mapScannerEntityToDomain(args: {
 
 export function mapScannerRelationToDomain(args: {
   relation: NexoraScannerRelationCandidate;
-  domainPack?: any | null;
+  domainPack?: unknown | null;
   domainId?: string | null;
 }): NexoraDomainRelationMappingResult {
   const relation = args.relation;
@@ -457,7 +470,7 @@ export function mapScannerRelationToDomain(args: {
 
 export function mapScannerLoopToDomain(args: {
   loop: NexoraScannerLoopCandidate;
-  domainPack?: any | null;
+  domainPack?: unknown | null;
   domainId?: string | null;
 }): NexoraDomainLoopMappingResult {
   const loop = args.loop;
@@ -509,7 +522,7 @@ export function mapScannerLoopToDomain(args: {
 
 export function mapScannerEntitiesToDomain(args: {
   entities: NexoraScannerEntityCandidate[];
-  domainPack?: any | null;
+  domainPack?: unknown | null;
   domainId?: string | null;
 }): NexoraDomainEntityMappingResult[] {
   return (args.entities ?? []).map((entity) =>
@@ -523,7 +536,7 @@ export function mapScannerEntitiesToDomain(args: {
 
 export function mapScannerRelationsToDomain(args: {
   relations: NexoraScannerRelationCandidate[];
-  domainPack?: any | null;
+  domainPack?: unknown | null;
   domainId?: string | null;
 }): NexoraDomainRelationMappingResult[] {
   return (args.relations ?? []).map((relation) =>
@@ -537,7 +550,7 @@ export function mapScannerRelationsToDomain(args: {
 
 export function mapScannerLoopsToDomain(args: {
   loops: NexoraScannerLoopCandidate[];
-  domainPack?: any | null;
+  domainPack?: unknown | null;
   domainId?: string | null;
 }): NexoraDomainLoopMappingResult[] {
   return (args.loops ?? []).map((loop) =>
@@ -580,7 +593,7 @@ export function inferScannerInterpretationTags(args: {
 
 export function interpretScannerOutputForDomain(args: {
   domainId?: string | null;
-  domainPack?: any | null;
+  domainPack?: unknown | null;
   entities?: NexoraScannerEntityCandidate[];
   relations?: NexoraScannerRelationCandidate[];
   loops?: NexoraScannerLoopCandidate[];

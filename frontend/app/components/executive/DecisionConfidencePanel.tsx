@@ -2,6 +2,7 @@
 
 import React from "react";
 
+import type { DecisionExecutionResult } from "../../lib/executive/decisionExecutionTypes";
 import type { CanonicalRecommendation } from "../../lib/decision/recommendation/recommendationTypes";
 import {
   buildDecisionConfidenceModel,
@@ -11,8 +12,8 @@ import { nx, cardStyle, sectionTitleStyle, softCardStyle } from "../ui/nexoraThe
 
 type DecisionConfidencePanelProps = {
   canonicalRecommendation?: CanonicalRecommendation | null;
-  responseData?: any;
-  decisionResult?: any;
+  responseData?: Record<string, unknown> | null;
+  decisionResult?: DecisionExecutionResult | Record<string, unknown> | null;
   titleLabel?: string;
 };
 

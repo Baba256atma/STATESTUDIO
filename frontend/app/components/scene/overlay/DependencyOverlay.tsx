@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import type { SceneObject } from "../../../lib/sceneTypes";
 
 import type { OverlayThemeTokens } from "../../../lib/overlay/overlayTheme";
 import { collectDependencyOverlayEdges } from "../../../lib/relationships/relationshipRuntime";
@@ -8,7 +9,7 @@ import { OverlayFlowLines, overlayThemeToFlowProps } from "./OverlayFlowLines";
 import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type DependencyOverlayProps = {
-  objects: any[];
+  objects: SceneObject[];
   sceneJson: unknown;
   visible: boolean;
   themeTokens: OverlayThemeTokens;

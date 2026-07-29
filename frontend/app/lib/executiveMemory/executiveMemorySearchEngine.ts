@@ -34,15 +34,7 @@ import {
   validateExecutiveMemorySearchQuery,
 } from "./executiveMemorySearchRankingValidator.ts";
 import type { ExecutiveMemoryStoredRecord } from "./executiveMemoryStorageTypes.ts";
-import type {
-  CreateExecutiveMemoryRankingProfileInput,
-  CreateExecutiveMemorySearchQueryInput,
-  ExecutiveMemoryRankingExplanation,
-  ExecutiveMemoryRankingResult,
-  ExecutiveMemorySearchEngineState,
-  ExecutiveMemorySearchQuery,
-  ExecutiveMemorySearchResult,
-} from "./executiveMemorySearchRankingTypes.ts";
+import type { CreateExecutiveMemoryRankingProfileInput, CreateExecutiveMemorySearchQueryInput, ExecutiveMemoryRankingExplanation, ExecutiveMemorySearchEngineState, ExecutiveMemorySearchQuery, ExecutiveMemorySearchResult } from "./executiveMemorySearchRankingTypes.ts";
 
 let initialized = false;
 

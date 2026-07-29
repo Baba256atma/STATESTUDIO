@@ -4,11 +4,7 @@ import test from "node:test";
 import { evaluateStageFileBoundary, validateStageManifest } from "../stage/stageArchitectureGuards.ts";
 import { CROSS_SCENARIO_LEARNING_PLATFORM_IDENTITY } from "../cross-scenario-learning/crossScenarioLearningContracts.ts";
 import { CONFIDENCE_EVOLUTION_PLATFORM_IDENTITY } from "../confidence-evolution/confidenceEvolutionContracts.ts";
-import {
-  generateExecutiveRecommendations,
-  initializeRecommendationGenerationEngine,
-  resetExecutiveRecommendationGenerationEngineForTests,
-} from "./executiveRecommendationGenerationEngine.ts";
+import { generateExecutiveRecommendations, resetExecutiveRecommendationGenerationEngineForTests } from "./executiveRecommendationGenerationEngine.ts";
 import {
   EXECUTIVE_RECOMMENDATION_GENERATION_SOURCE_PROVIDER_MAP,
 } from "./executiveRecommendationGenerationEngineConstants.ts";

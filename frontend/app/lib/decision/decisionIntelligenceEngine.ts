@@ -624,11 +624,12 @@ export function buildDecisionIntelligenceInput(args: BuildDecisionIntelligenceIn
     });
   }
   const conflicts = Array.isArray(args.conflicts) ? args.conflicts : [];
-  conflicts.slice(0, 6).forEach((c: any, i) => {
+  conflicts.slice(0, 6).forEach((c, i) => {
+    const conflict = c && typeof c === "object" ? (c as Record<string, unknown>) : null;
     latestSignals.push({
       id: `signal-conflict-${i}`,
       type: "conflict",
-      label: String(c?.title ?? c?.summary ?? c?.id ?? "conflict"),
+      label: String(conflict?.title ?? conflict?.summary ?? conflict?.id ?? "conflict"),
       strength: 0.55,
       severity: "warning",
     });

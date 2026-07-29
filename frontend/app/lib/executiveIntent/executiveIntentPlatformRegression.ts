@@ -8,9 +8,7 @@ import { readFileSync } from "node:fs";
 import { ExecutiveIntentAssistantIntegration } from "./executiveIntentAssistantIntegration.ts";
 import { EXECUTIVE_INTENT_ASSISTANT_INTEGRATION_VERSION } from "./executiveIntentAssistantTypes.ts";
 import { classifyExecutiveIntent } from "./executiveIntentClassificationEngine.ts";
-import { EXECUTIVE_INTENT_CLASSIFICATION_ENGINE_VERSION } from "./executiveIntentClassificationTypes.ts";
-import { buildIntentConfidence } from "./executiveIntentConfidenceEngine.ts";
-import { EXECUTIVE_INTENT_CONFIDENCE_ENGINE_VERSION } from "./executiveIntentConfidenceTypes.ts";
+import { EXECUTIVE_INTENT_CLASSIFICATION_ENGINE_VERSION } from "./executiveIntentClassificationTypes.ts";import { EXECUTIVE_INTENT_CONFIDENCE_ENGINE_VERSION } from "./executiveIntentConfidenceTypes.ts";
 import { detectIntentConflicts } from "./executiveIntentConflictEngine.ts";
 import { EXECUTIVE_INTENT_CONFLICT_ENGINE_VERSION } from "./executiveIntentConflictTypes.ts";
 import {

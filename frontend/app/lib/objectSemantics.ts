@@ -188,8 +188,14 @@ export function getObjectMatchingTerms(obj: SemanticObject): string[] {
   return Array.from(new Set(expanded.map((t) => normalizeSemanticText(t)).filter(Boolean)));
 }
 
-export function getSceneObjectsFromPayload(payload: any, fallbackScene: SceneJson | null): SemanticObject[] {
-  if (Array.isArray(payload?.scene_json?.scene?.objects)) return payload.scene_json.scene.objects as SemanticObject[];
+export function getSceneObjectsFromPayload(payload: unknown, fallbackScene: SceneJson | null): SemanticObject[] {
+  const payloadRecord = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+  const sceneJson = payloadRecord?.scene_json;
+  const nestedScene =
+    sceneJson && typeof sceneJson === "object" ? (sceneJson as Record<string, unknown>).scene : null;
+  const objects =
+    nestedScene && typeof nestedScene === "object" ? (nestedScene as Record<string, unknown>).objects : null;
+  if (Array.isArray(objects)) return objects as SemanticObject[];
   if (Array.isArray(fallbackScene?.scene?.objects)) return fallbackScene.scene.objects as SemanticObject[];
   return [];
 }

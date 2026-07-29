@@ -4,11 +4,7 @@
 
 import { findExecutiveMemories } from "./executiveMemoryRetrievalEngine.ts";
 import { hasExecutiveMemory } from "./executiveMemoryStorageEngine.ts";
-import {
-  getExecutiveMemoryLifecycle,
-  listExecutiveMemoryLifecycles,
-  getExecutiveMemoryVersionRecords,
-} from "./executiveMemoryLifecycleRegistry.ts";
+import { listExecutiveMemoryLifecycles, getExecutiveMemoryVersionRecords } from "./executiveMemoryLifecycleRegistry.ts";
 import { validateExecutiveMemoryVersionChain } from "./executiveMemoryLifecycleValidator.ts";
 import { isExecutiveMemoryGovernanceState } from "./executiveMemoryLifecycleValidator.ts";
 import type { ExecutiveMemoryIntegrityIssue, ExecutiveMemoryIntegrityReport } from "./executiveMemoryLifecycleTypes.ts";

@@ -1,23 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  CURRENCY_TYPES,
-  ExecutiveFinancePlatformFoundation,
-  FINANCIAL_OBJECT_TYPES,
-  FINANCIAL_PERIOD_TYPES,
-  FINANCIAL_STATUSES,
-  FINANCIAL_VISIBILITIES,
-  FinanceApi,
-  FinanceContracts,
-  FinanceEnums,
-  FinanceIdentity,
-  FinanceMetadata,
-  getFinanceContracts,
-  getFinanceIdentity,
-  getFinanceMetadata,
-  getFinancePublicApi,
-} from "./financeIndex.ts";
+import { CURRENCY_TYPES, ExecutiveFinancePlatformFoundation, FINANCIAL_OBJECT_TYPES, FINANCIAL_PERIOD_TYPES, FINANCIAL_STATUSES, FINANCIAL_VISIBILITIES, FinanceApi, FinanceContracts, FinanceEnums, FinanceIdentity, getFinanceContracts, getFinanceIdentity, getFinanceMetadata, getFinancePublicApi } from "./financeIndex.ts";
 import type {
   FinanceContractSummary,
   FinanceIdentity as FinanceIdentityContract,

@@ -200,11 +200,9 @@ test("rejects identity mismatch and read-only violations", () => {
   });
   assert.equal(validateExecutiveIntentShape(mismatched).valid, false);
 
-  const notReadOnly = Object.freeze({
-    ...example,
-    readOnly: false as const,
-  });
-  assert.equal(validateExecutiveIntentShape(notReadOnly).valid, false);
+  const invalidExample = structuredClone(example);
+  Object.assign(invalidExample, { readOnly: false });
+  assert.equal(validateExecutiveIntentShape(invalidExample).valid, false);
 });
 
 test("rejects duplicate relation and dependency identifiers", () => {

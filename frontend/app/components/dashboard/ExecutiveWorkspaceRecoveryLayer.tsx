@@ -27,19 +27,20 @@ export type ExecutiveWorkspaceRecoveryLayerProps = Readonly<{
 export function ExecutiveWorkspaceRecoveryLayer(
   props: ExecutiveWorkspaceRecoveryLayerProps
 ): React.ReactElement {
+  const { context, onRecoveryResume, layoutVariant: layoutVariantProp } = props;
   const recoveryView = useMemo(
-    () => buildExecutiveWorkspaceRecoveryView(props.context ?? {}),
-    [props.context]
+    () => buildExecutiveWorkspaceRecoveryView(context ?? {}),
+    [context]
   );
 
   const handleResume = useCallback(
     (input: { workspaceId: ExecutiveWorkspaceId; returnKind: WorkspaceRecentReturnKind }) => {
-      props.onRecoveryResume?.(input);
+      onRecoveryResume?.(input);
     },
-    [props.onRecoveryResume]
+    [onRecoveryResume]
   );
 
-  const layoutVariant = props.layoutVariant ?? "standalone";
+  const layoutVariant = layoutVariantProp ?? "standalone";
 
   return (
     <section

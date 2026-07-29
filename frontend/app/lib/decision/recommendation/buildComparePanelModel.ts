@@ -26,9 +26,13 @@ export type ComparePanelModel = {
 type BuildComparePanelModelInput = {
   canonicalRecommendation?: CanonicalRecommendation | null;
   decisionResult?: DecisionExecutionResult | null;
-  strategicAdvice?: any | null;
-  responseData?: any | null;
+  strategicAdvice?: Record<string, unknown> | null;
+  responseData?: Record<string, unknown> | null;
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
 
 function text(value: unknown) {
   return String(value ?? "").trim();
@@ -41,11 +45,13 @@ function titleCase(value: string) {
 export function buildComparePanelModel(input: BuildComparePanelModelInput): ComparePanelModel {
   const rec = input.canonicalRecommendation ?? null;
   const safeAlternatives = Array.isArray(rec?.alternatives) ? rec.alternatives : [];
-  const strategicAdvice = input.strategicAdvice ?? input.responseData?.strategic_advice ?? null;
-  const compareItems = Array.isArray(input.decisionResult?.comparison) ? input.decisionResult?.comparison : [];
+  const strategicAdvice =
+    input.strategicAdvice ?? asRecord(input.responseData?.strategic_advice) ?? null;
   const fallbackActions = Array.isArray(strategicAdvice?.recommended_actions)
     ? strategicAdvice.recommended_actions
     : [];
+  const compareItems = Array.isArray(input.decisionResult?.comparison) ? input.decisionResult.comparison : [];
+  const primaryFallbackAction = asRecord(fallbackActions[0]);
 
   const recommendedOption: CompareOption | null = rec
     ? {
@@ -58,20 +64,22 @@ export function buildComparePanelModel(input: BuildComparePanelModelInput): Comp
         target_ids: Array.isArray(rec?.primary?.target_ids) ? rec.primary.target_ids : [],
         isRecommended: true,
       }
-    : fallbackActions[0]
+    : primaryFallbackAction
     ? {
-        id: text(fallbackActions[0]?.id) || "fallback_primary",
-        title: text(fallbackActions[0]?.action) || "Recommended option",
+        id: text(primaryFallbackAction.id) || "fallback_primary",
+        title: text(primaryFallbackAction.action) || "Recommended option",
         summary: text(strategicAdvice?.why) || null,
-        impact_summary: text(fallbackActions[0]?.impact) || null,
+        impact_summary: text(primaryFallbackAction.impact) || null,
         tradeoff: null,
         confidence_level: "medium",
-        target_ids: Array.isArray(fallbackActions[0]?.targets) ? fallbackActions[0].targets : [],
+        target_ids: Array.isArray(primaryFallbackAction.targets)
+          ? (primaryFallbackAction.targets as string[])
+          : [],
         isRecommended: true,
       }
     : null;
 
-  const alternativesFromRec = safeAlternatives.map((alternative, index) => ({
+  const alternativesFromRec: CompareOption[] = safeAlternatives.map((alternative, index) => ({
     id: `alternative:${index}:${alternative.action}`,
     title: text(alternative.action) || `Alternative ${index + 1}`,
     summary: alternative.tradeoff ?? null,
@@ -82,8 +90,9 @@ export function buildComparePanelModel(input: BuildComparePanelModelInput): Comp
     isRecommended: false,
   }));
 
-  const alternativesFromDecision = compareItems
-    .filter((item) => text(item?.option) && text(item?.option) !== recommendedOption?.title)
+  const alternativesFromDecision: CompareOption[] = compareItems
+    .map((item) => asRecord(item))
+    .filter((item): item is Record<string, unknown> => Boolean(item && text(item.option) && text(item.option) !== recommendedOption?.title))
     .slice(0, 2)
     .map((item, index) => ({
       id: `decision:${index}:${item.option}`,
@@ -97,23 +106,26 @@ export function buildComparePanelModel(input: BuildComparePanelModelInput): Comp
       isRecommended: false,
     }));
 
-  const alternatives =
+  const alternatives: CompareOption[] =
     alternativesFromRec.length > 0
       ? alternativesFromRec.slice(0, 2)
       : alternativesFromDecision.length > 0
       ? alternativesFromDecision
       : fallbackActions
           .slice(recommendedOption ? 1 : 0, 3)
-          .map((action: any, index: number) => ({
-            id: text(action?.id) || `fallback_alt:${index}`,
-            title: text(action?.action) || `Alternative ${index + 1}`,
-            summary: text(action?.impact) || null,
-            impact_summary: text(action?.impact) || null,
-            tradeoff: null,
-            confidence_level: "medium" as const,
-            target_ids: Array.isArray(action?.targets) ? action.targets : [],
-            isRecommended: false,
-          }));
+          .map((actionValue, index) => {
+            const action = asRecord(actionValue);
+            return {
+              id: text(action?.id) || `fallback_alt:${index}`,
+              title: text(action?.action) || `Alternative ${index + 1}`,
+              summary: text(action?.impact) || null,
+              impact_summary: text(action?.impact) || null,
+              tradeoff: null,
+              confidence_level: "medium" as const,
+              target_ids: Array.isArray(action?.targets) ? (action.targets as string[]) : [],
+              isRecommended: false,
+            };
+          });
 
   const hasAlternatives = alternatives.length > 0;
 
@@ -121,7 +133,9 @@ export function buildComparePanelModel(input: BuildComparePanelModelInput): Comp
     ...(safeAlternatives
       .map((alternative: CanonicalRecommendation["alternatives"][number]) => text(alternative.tradeoff))
       .filter(Boolean) as string[]),
-    ...((Array.isArray(input.responseData?.comparison?.notes) ? input.responseData.comparison.notes : []) as string[]),
+    ...((Array.isArray(asRecord(input.responseData?.comparison)?.notes)
+      ? (asRecord(input.responseData?.comparison)?.notes as unknown[])
+      : []) as string[]),
     ...(text(rec?.reasoning?.risk_summary) ? [text(rec?.reasoning?.risk_summary)] : []),
   ].slice(0, 4);
 
@@ -142,16 +156,18 @@ export function buildComparePanelModel(input: BuildComparePanelModelInput): Comp
     recommendedOption,
     alternatives,
     reasoningWhy: rec?.reasoning?.why ?? (text(strategicAdvice?.why) || null),
-    riskSummary: rec?.reasoning?.risk_summary ?? (text(input.responseData?.risk_propagation?.summary) || null),
+    riskSummary:
+      rec?.reasoning?.risk_summary ??
+      (text(asRecord(input.responseData?.risk_propagation)?.summary) || null),
     compareSummary:
-      (text(input.responseData?.analysis_summary) ||
+      text(input.responseData?.analysis_summary) ||
       text(rec?.simulation?.summary) ||
       (recommendedOption && !hasAlternatives
         ? "No alternatives available yet."
         : null) ||
       (recommendedOption
         ? `${recommendedOption.title} is currently the strongest visible move.`
-        : null)),
+        : null),
     tradeoffs,
     whyRecommended,
     whyNotOthers,

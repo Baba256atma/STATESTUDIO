@@ -15,8 +15,6 @@ import { runRecommendationDeliveryCertification } from "./executiveRecommendatio
 import { EXECUTIVE_RECOMMENDATION_DELIVERY_ENGINE_SELF_MANIFEST } from "./executiveRecommendationDeliveryEngine.ts";
 import type { PlatformRegressionLayerResult } from "./executiveRecommendationPlatformCertificationTypes.ts";
 
-const REPO_ROOT = join(process.cwd(), "..");
-
 function layerResult(
   layerId: string,
   title: string,

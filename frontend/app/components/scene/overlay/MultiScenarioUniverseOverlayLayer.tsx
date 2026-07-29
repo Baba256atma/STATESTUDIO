@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import type { SceneObject } from "../../../lib/sceneTypes";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 
@@ -9,7 +10,7 @@ import { getObjPos } from "../sceneRenderUtils";
 import { sanitizeThreeColor } from "../../../lib/scene/threeColorSanitizer";
 
 export type MultiScenarioUniverseOverlayLayerProps = {
-  objects: any[];
+  objects: SceneObject[];
   ghostLayers: readonly ExecutiveScenarioUniverseLayer[];
   activeScenarioId: string | null;
   layoutMode: "overlay" | "split" | "ghost";
@@ -23,16 +24,18 @@ function layerOffset(index: number, layoutMode: MultiScenarioUniverseOverlayLaye
 
 function GhostScenarioMarker(props: {
   layer: ExecutiveScenarioUniverseLayer;
-  objects: any[];
+  objects: SceneObject[];
   offset: [number, number, number];
   active: boolean;
 }): React.ReactElement | null {
   const simulation = props.layer.simulation;
-  if (!simulation || simulation.affectedObjectIds.length === 0) return null;
-  const primaryId = simulation.propagationPaths[0]?.to ?? simulation.affectedObjectIds[0];
-  if (!primaryId) return null;
+  const primaryId =
+    simulation && simulation.affectedObjectIds.length > 0
+      ? simulation.propagationPaths[0]?.to ?? simulation.affectedObjectIds[0] ?? null
+      : null;
 
   const position = useMemo(() => {
+    if (!primaryId) return null;
     const pos = getObjPos(primaryId, props.objects);
     return new THREE.Vector3(
       pos.x + props.offset[0],
@@ -40,6 +43,8 @@ function GhostScenarioMarker(props: {
       pos.z + props.offset[2]
     );
   }, [primaryId, props.objects, props.offset]);
+
+  if (!simulation || !primaryId || !position) return null;
 
   const materialColor = sanitizeThreeColor(props.layer.colorToken);
 

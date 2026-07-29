@@ -20,13 +20,7 @@ import {
   type ObjectRiskRegistry,
 } from "./objectRiskContract.ts";
 
-type ObjectRecord = Readonly<Record<string, unknown>>;
-
 let latestObjectRiskRegistry: ObjectRiskRegistry = EMPTY_OBJECT_RISK_REGISTRY;
-
-function asRecord(value: unknown): ObjectRecord | null {
-  return value && typeof value === "object" ? (value as ObjectRecord) : null;
-}
 
 function readSceneObjects(sceneJson: unknown): readonly unknown[] {
   const objects = (sceneJson as { scene?: { objects?: unknown[] } } | null)?.scene?.objects;
@@ -36,19 +30,6 @@ function readSceneObjects(sceneJson: unknown): readonly unknown[] {
 function clampScore(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function readString(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function resolveObjectId(record: ObjectRecord, index: number, sourcePrefix: string): string {
-  return (
-    readString(record.objectId) ||
-    readString(record.id) ||
-    readString(record.name) ||
-    `${sourcePrefix}:object:${index + 1}`
-  );
 }
 
 function resolveTrendRiskScore(trend: ObjectTrendProfile): number {

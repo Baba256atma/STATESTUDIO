@@ -31,7 +31,7 @@ export interface ExecutionMonitoringValidationResult {
   readonly deterministic: true;
 }
 
-export interface ExecutionMonitoringValidationSummary extends Omit<ExecutionMonitoringValidationResult, "checks"> {}
+export type ExecutionMonitoringValidationSummary = Omit<ExecutionMonitoringValidationResult, "checks">;
 
 export interface ExecutionMonitoringValidationDescriptor {
   readonly validationId: string;

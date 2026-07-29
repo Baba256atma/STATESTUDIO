@@ -111,6 +111,7 @@ function buildLinkInput(
       notes: "Certification link example.",
       createdBy: "executive-owner",
       sourceModule: "executive-intent-memory-link",
+      customMetadata: Object.freeze({}),
     }),
     version: createExecutiveIntentMemoryLinkVersion({
       versionId: `version-${linkId}`,

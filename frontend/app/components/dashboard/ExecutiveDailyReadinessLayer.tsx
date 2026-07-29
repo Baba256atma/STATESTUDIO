@@ -30,7 +30,7 @@ const STATE_ACCENT: Readonly<Record<DailyReadinessView["state"], string>> = Obje
 export function ExecutiveDailyReadinessLayer(
   props: ExecutiveDailyReadinessLayerProps
 ): React.ReactElement {
-  const { readiness } = props;
+  const { readiness, onFocusRecommendations, onResumeSession, onWorkspaceLaunch } = props;
 
   const handleAction = useCallback(
     (action: DailyReadinessView["actions"][number]) => {
@@ -38,19 +38,19 @@ export function ExecutiveDailyReadinessLayer(
 
       switch (action.kind) {
         case "review_recommendations":
-          props.onFocusRecommendations?.();
+          onFocusRecommendations?.();
           break;
         case "resume_session":
-          if (action.workspaceId && action.returnKind && props.onResumeSession) {
-            props.onResumeSession({
+          if (action.workspaceId && action.returnKind && onResumeSession) {
+            onResumeSession({
               workspaceId: action.workspaceId,
               returnKind: action.returnKind,
             });
           }
           break;
         case "open_analyze":
-          if (action.workspaceId && props.onWorkspaceLaunch) {
-            props.onWorkspaceLaunch(action.workspaceId);
+          if (action.workspaceId && onWorkspaceLaunch) {
+            onWorkspaceLaunch(action.workspaceId);
           }
           break;
         case "open_dashboard":
@@ -59,7 +59,7 @@ export function ExecutiveDailyReadinessLayer(
           break;
       }
     },
-    [props.onFocusRecommendations, props.onResumeSession, props.onWorkspaceLaunch]
+    [onFocusRecommendations, onResumeSession, onWorkspaceLaunch]
   );
 
   return (

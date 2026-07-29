@@ -30,7 +30,6 @@ function supportingRefs(entries: DecisionMemoryEntry[]) {
 
 export function buildOrgMemorySignals(input: BuildOrgMemorySignalsInput): OrgMemorySignal[] {
   const entries = [...input.memoryEntries].sort((a, b) => Number(b.created_at || 0) - Number(a.created_at || 0));
-  const calibrated = entries.filter((entry) => entry.calibration_result);
   const replayBacked = entries.filter((entry) => entry.snapshot_ref?.replay_id || entry.observed_outcome_summary);
   const overconfident = entries.filter((entry) => entry.calibration_result?.calibration_label === "overconfident");
   const underconfident = entries.filter((entry) => entry.calibration_result?.calibration_label === "underconfident");

@@ -50,6 +50,20 @@ type MessageLikeError = {
   message?: string;
 };
 
+type LocalDecisionRouterPayload = {
+  actions?: unknown[];
+  assistantReply?: string | null;
+};
+
+function readLocalDecisionRouterPayload(value: unknown): LocalDecisionRouterPayload | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  return {
+    actions: Array.isArray(record.actions) ? record.actions : undefined,
+    assistantReply: typeof record.assistantReply === "string" ? record.assistantReply : null,
+  };
+}
+
 function createBaseExecutionResult(input: NexoraExecutionInput): NexoraExecutionResult {
   return {
     ok: true,
@@ -223,12 +237,14 @@ export async function executeNexoraAction(input: NexoraExecutionInput): Promise<
 
   if (input.handlers.runLocalDecisionRouter) {
     try {
-      const localDecisionPayload = await input.handlers.runLocalDecisionRouter(input.userText);
+      const localDecisionPayload = readLocalDecisionRouterPayload(
+        await input.handlers.runLocalDecisionRouter(input.userText)
+      );
       const hasActions = Array.isArray(localDecisionPayload?.actions) && localDecisionPayload.actions.length > 0;
-      if (hasActions) {
+      if (hasActions && localDecisionPayload) {
         result.localDecisionPayload = localDecisionPayload;
         result.chatReply =
-          typeof localDecisionPayload?.assistantReply === "string" ? localDecisionPayload.assistantReply : null;
+          typeof localDecisionPayload.assistantReply === "string" ? localDecisionPayload.assistantReply : null;
         markStep(result, "local_decision", true);
       } else {
         markStep(result, "local_decision", false);

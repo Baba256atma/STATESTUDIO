@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useSyncExternalStore } from "react";
+import type { SceneObject } from "../../../lib/sceneTypes";
 
 import { resolveExecutiveRelationshipScenePlan } from "../../../lib/relationships/executive";
 import { resolveRelationshipViewProfile } from "../../../lib/scene/relationshipViewProfiles";
@@ -20,13 +21,12 @@ import {
 import { RelationshipLine } from "./RelationshipLine";
 import {
   buildRuntimeObjectPositionLookupCache,
-  buildRuntimeObjectPositionLookupSignature,
   type RuntimeObjectPositionContext,
 } from "../sceneRenderUtils";
 
 export type RelationshipRendererProps = {
   sceneJson: unknown;
-  objects: any[];
+  objects: SceneObject[];
   themeId: SceneThemeId;
   selectedObjectId?: string | null;
   selectedRelationshipId?: string | null;
@@ -53,17 +53,13 @@ export const RelationshipRenderer = React.memo(function RelationshipRenderer(
     [props.objects, props.sceneJson]
   );
 
-  const positionLookupSignature = useMemo(
-    () => buildRuntimeObjectPositionLookupSignature(props.objects, props.runtimeObjectPositionContext),
-    [props.objects, props.runtimeObjectPositionContext]
-  );
   const positionLookup = useMemo(
     () =>
       buildRuntimeObjectPositionLookupCache({
         sceneObjects: props.objects,
         context: props.runtimeObjectPositionContext,
       }),
-    [positionLookupSignature]
+    [props.objects, props.runtimeObjectPositionContext]
   );
 
   const scenePlan = useMemo(

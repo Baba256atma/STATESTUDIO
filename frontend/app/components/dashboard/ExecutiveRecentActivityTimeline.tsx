@@ -28,19 +28,20 @@ export type ExecutiveRecentActivityTimelineProps = Readonly<{
 export function ExecutiveRecentActivityTimeline(
   props: ExecutiveRecentActivityTimelineProps
 ): React.ReactElement {
+  const { context, onActivityReopen, layoutVariant: layoutVariantProp } = props;
   const timelineView = useMemo(
-    () => buildExecutiveActivityTimelineView(props.context ?? {}),
-    [props.context]
+    () => buildExecutiveActivityTimelineView(context ?? {}),
+    [context]
   );
 
   const handleReopen = useCallback(
     (input: { workspaceId: ExecutiveWorkspaceId; returnKind: WorkspaceRecentReturnKind }) => {
-      props.onActivityReopen?.(input);
+      onActivityReopen?.(input);
     },
-    [props.onActivityReopen]
+    [onActivityReopen]
   );
 
-  const layoutVariant = props.layoutVariant ?? "standalone";
+  const layoutVariant = layoutVariantProp ?? "standalone";
 
   return (
     <section

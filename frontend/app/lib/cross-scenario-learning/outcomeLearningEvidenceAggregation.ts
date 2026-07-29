@@ -4,18 +4,7 @@
 
 import { OUTCOME_CATEGORY_KEYS, OUTCOME_CATEGORY_LABELS, OUTCOME_LEARNING_ENGINE_CONTRACT_VERSION } from "./outcomeLearningEngineConstants.ts";
 import { buildOutcomeId } from "./outcomeLearningNormalizer.ts";
-import type {
-  ExecutiveOutcome,
-  NormalizedOutcomeRecord,
-  OutcomeCategory,
-  OutcomeEvidence,
-  OutcomeHistory,
-  OutcomeMetadata,
-  OutcomeProfile,
-  OutcomeProvenance,
-  OutcomeStatistics,
-  OutcomeSummary,
-} from "./outcomeLearningEngineTypes.ts";
+import type { ExecutiveOutcome, NormalizedOutcomeRecord, OutcomeCategory, OutcomeEvidence, OutcomeHistory, OutcomeProfile, OutcomeProvenance, OutcomeStatistics, OutcomeSummary } from "./outcomeLearningEngineTypes.ts";
 
 export type OutcomeRecordGroup = Readonly<{
   groupKey: string;

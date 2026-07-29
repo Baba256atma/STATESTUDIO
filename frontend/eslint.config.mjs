@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Temporary tsc emit for executiveIntent/executiveMemory experiments (not governed source).
+    // Owner: Frontend Tooling. Parallel to `.tmp/` psych smoke outDir; never linted as product code.
+    ".tmp-em/**",
   ]),
 ]);
 

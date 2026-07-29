@@ -115,13 +115,14 @@ test("builds scenario-ready risk structures with what-if and alternative path sl
     scenario.scenarioId.startsWith("alternative-path")
   );
   assert.equal(alternativeScenario != null, true);
-  assert.equal(alternativeScenario?.alternativePaths.length > 0, true);
+  const alternativePaths = alternativeScenario?.alternativePaths ?? [];
+  assert.equal(alternativePaths.length > 0, true);
   assert.equal(
-    alternativeScenario?.alternativePaths.every((path) => path.pathReady === true),
+    alternativePaths.every((path) => path.pathReady === true),
     true
   );
   assert.equal(
-    alternativeScenario?.alternativePaths.every((path) => path.alternativePropagationScore === null),
+    alternativePaths.every((path) => path.alternativePropagationScore === null),
     true
   );
   assert.equal(Object.isFrozen(registry.scenarios), true);

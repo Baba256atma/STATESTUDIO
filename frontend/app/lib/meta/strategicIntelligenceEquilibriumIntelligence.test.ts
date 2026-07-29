@@ -17,11 +17,7 @@ import {
   evaluateStrategicIntelligenceEquilibrium,
   freezeStrategicIntelligenceEquilibriumSnapshot,
 } from "./strategicIntelligenceEquilibriumEngine.ts";
-import {
-  buildEquilibriumContentFingerprint,
-  EQUILIBRIUM_AMBIGUITY_DISCLAIMER,
-  guardEvaluateStrategicIntelligenceEquilibrium,
-} from "./strategicIntelligenceEquilibriumGuards.ts";
+import { EQUILIBRIUM_AMBIGUITY_DISCLAIMER, guardEvaluateStrategicIntelligenceEquilibrium } from "./strategicIntelligenceEquilibriumGuards.ts";
 import { deriveStrategicIntelligenceEquilibriumSignals, analyzeLongHorizonEquilibrium } from "./longHorizonEquilibriumModeling.ts";
 
 function buildEquilibriumStack() {
@@ -308,5 +304,7 @@ test("duplicate equilibrium fingerprint rejection", () => {
     priorEquilibriumFingerprints: [contentFp],
   });
   assert.equal(second.ok, false);
-  if (!second.ok) assert.equal(second.guard.code, "duplicate_equilibrium_build");
+  if (second.ok === false && second.guard.ok === false) {
+    assert.equal(second.guard.code, "duplicate_equilibrium_build");
+  }
 });

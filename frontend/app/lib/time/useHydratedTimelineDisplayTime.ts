@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { resolveNexoraTimelineDisplayTime } from "./nexoraTimeFormat";
 import { resolveHydrationSafeTimelineTime } from "./timelineHydrationSafeTimeContract";
@@ -9,6 +9,10 @@ export type HydratedTimelineDisplayTimeInput = {
   timestampIso?: string | null;
   timestamp?: string | null;
 };
+
+function subscribeNoop() {
+  return () => {};
+}
 
 /** SSR-safe display: semantic labels only until mount; ISO times deferred until hydration. */
 export function getStableTimelineDisplayTimeForRender(
@@ -23,13 +27,9 @@ export function getStableTimelineDisplayTimeForRender(
 export function useHydratedTimelineDisplayTime(
   input: HydratedTimelineDisplayTimeInput
 ): string {
-  const [displayTime, setDisplayTime] = useState(() =>
-    getStableTimelineDisplayTimeForRender(input)
-  );
-
-  useEffect(() => {
-    setDisplayTime(resolveNexoraTimelineDisplayTime(input));
-  }, [input.timestamp, input.timestampIso]);
-
-  return displayTime;
+  const hydrated = useSyncExternalStore(subscribeNoop, () => true, () => false);
+  if (!hydrated) {
+    return getStableTimelineDisplayTimeForRender(input);
+  }
+  return resolveNexoraTimelineDisplayTime(input);
 }

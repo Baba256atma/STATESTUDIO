@@ -1,9 +1,3 @@
-/**
- * Phase 5:2 — Executive Advisory surface generation.
- * Consumes Advisory Context only — does not consume raw intelligence directly.
- */
-
-import type { ImpactDirection } from "../dashboardVisualSignalContract.ts";
 import { getDashboardSurfaceVisualBundle } from "../dashboardSurfaceVisualRegistry.ts";
 import { getAdvisoryContextForExecutiveAdvisory } from "./aggregation/advisoryAggregationRuntime.ts";
 import type { AdvisoryContext } from "./aggregation/advisoryContextContract.ts";

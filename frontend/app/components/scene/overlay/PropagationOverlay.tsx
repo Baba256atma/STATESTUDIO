@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo } from "react";
+import type { SceneObject } from "../../../lib/sceneTypes";
 
 import type { PropagationOverlayState } from "../../../lib/simulation/propagationTypes";
 import { propagationOverlayToEdges } from "../../../lib/overlay/mergePropagationOverlay";
@@ -10,7 +11,7 @@ import { OverlayFlowLines, overlayThemeToFlowProps } from "./OverlayFlowLines";
 import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type PropagationOverlayProps = {
-  objects: any[];
+  objects: SceneObject[];
   overlay: PropagationOverlayState | null | undefined;
   visible: boolean;
   themeTokens: OverlayThemeTokens;

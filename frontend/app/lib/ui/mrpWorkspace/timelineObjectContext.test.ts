@@ -54,7 +54,8 @@ test("resolveTimelineObjectContext reflects Factory A fixture", () => {
 
 test("resolveTimelineObjectContext reads scene object timeline fields", () => {
   const now = Date.now();
-  const sceneJson = {
+  const sceneJson: SceneJson = {
+    state_vector: {},
     scene: {
       objects: [
         {
@@ -65,7 +66,7 @@ test("resolveTimelineObjectContext reads scene object timeline fields", () => {
         },
       ],
     },
-  } as SceneJson;
+  };
 
   const context = resolveTimelineObjectContext({
     selectedObjectId: "node-1",

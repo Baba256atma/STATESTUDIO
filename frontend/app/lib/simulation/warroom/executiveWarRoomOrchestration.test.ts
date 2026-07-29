@@ -213,6 +213,7 @@ test("rejects conflicting interventions at same step", () => {
 
   assert.equal(result.ok, false);
   if (result.ok) return;
+  if (result.guard.ok) return;
   assert.equal(result.guard.code, "conflicting_interventions");
 });
 
@@ -245,6 +246,7 @@ test("rejects duplicate orchestration fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_orchestration");
 });
 

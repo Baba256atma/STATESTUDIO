@@ -23,7 +23,7 @@ export function isConfidenceEvolutionConsumerId(value: string): value is Confide
 export function validateConfidenceEvolutionConsumerAccess(
   request: ConfidenceEvolutionConsumerAccessRequest
 ): ConfidenceEvolutionValidationResult {
-  const issues: ConfidenceEvolutionValidationResult["issues"] = [];
+  const issues: ConfidenceEvolutionValidationResult["issues"][number][] = [];
 
   if (!isConfidenceEvolutionConsumerId(request.consumerId)) {
     issues.push(

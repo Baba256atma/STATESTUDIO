@@ -125,9 +125,12 @@ export function resolveSecondaryClassifications(
         classId,
         label: definition.label,
         ruleId: matching?.ruleId ?? "RULE_KEYWORD_TARGET",
-        source: matching?.source === "dimension" || matching?.source === "action"
-          ? "composite"
-          : (matching?.source ?? "keyword"),
+        source: (() => {
+          const src = matching?.source;
+          if (src === "dimension" || src === "action") return "composite" as const;
+          if (src === "goal" || src === "keyword") return src;
+          return "keyword" as const;
+        })(),
         readOnly: true as const,
       });
     })

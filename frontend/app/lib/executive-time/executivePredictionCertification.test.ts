@@ -5,11 +5,7 @@ import { moveToContext, resetExecutiveTimeCameraForTests } from "./executiveTime
 import { EXECUTIVE_TIME_FORBIDDEN_PATTERNS } from "./executiveTimeContract.ts";
 import { resetExecutiveTimeContextStoreForTests } from "./executiveTimeContextStore.ts";
 import { resetExecutiveTimeRegistryForTests } from "./executiveTimeRegistry.ts";
-import {
-  classifyConflict,
-  detectConflicts,
-  resetExecutiveConflictEngineForTests,
-} from "./executiveConflictEngine.ts";
+import { classifyConflict, resetExecutiveConflictEngineForTests } from "./executiveConflictEngine.ts";
 import { resolveConflictCountBySeverity, resolveHighestSeverityConflict } from "./executiveConflictResolver.ts";
 import { requestPrediction, validateExecutivePredictionRequest } from "./executivePredictionAuthority.ts";
 import { runExecutivePredictionAuthorityCertification } from "./executivePredictionAuthorityCertification.ts";

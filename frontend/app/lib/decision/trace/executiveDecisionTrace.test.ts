@@ -12,6 +12,14 @@ import {
 } from "./executiveDecisionTraceCache";
 import { resolveExecutiveDashboardDecisionTrace } from "./executiveDecisionTraceRuntime";
 import { resetDecisionTraceDiagnosticsForTests } from "./decisionTraceDiagnostics";
+import type { DecisionMemoryEntry } from "../memory/decisionMemoryTypes";
+
+const testMemoryEntry: DecisionMemoryEntry = {
+  id: "mem-1",
+  created_at: 1,
+  title: "Test memory",
+  source: "system",
+};
 
 describe("executiveDecisionTraceSignature", () => {
   it("builds stable signatures for equivalent business inputs", () => {
@@ -30,7 +38,7 @@ describe("executiveDecisionTraceSignature", () => {
           events: [{ id: "e1", type: "recommendation" }],
         },
       },
-      memoryEntries: [{ id: "mem-1", decision_id: "dec-1" } as any],
+      memoryEntries: [testMemoryEntry],
       sceneJson: { scene: { objects: [{ id: "obj-a" }], fragility: { level: "high", score: 0.81 } } },
       objectSelection: { selected_object_id: "obj-a" },
       activeMode: "executive",

@@ -24,13 +24,9 @@ import {
   EXECUTIVE_INBOX_PLATFORM_SELF_MANIFEST,
   EXECUTIVE_INBOX_PUBLIC_API_RULES,
   ExecutiveInboxPlatformContract,
-  buildExecutiveInboxFoundation,
-  createExecutiveInboxFoundation,
   getExecutiveInboxContractVersionMetadata,
   getExecutiveInboxFutureCompatibility,
   getExecutiveInboxManifest,
-  registerExecutiveInboxItem,
-  registerExecutiveInboxSession,
   resolveExecutiveInboxContextExample,
   resolveExecutiveInboxItemExample,
   resolveExecutiveInboxSessionExample,
@@ -40,10 +36,17 @@ import {
 } from "./executiveInboxContracts.ts";
 import {
   ExecutiveInboxFoundation,
+  buildExecutiveInboxFoundation,
+  createExecutiveInboxFoundation,
   getExecutiveInbox,
   isExecutiveInboxPlatformInitialized,
 } from "./executiveInboxFoundation.ts";
-import { getExecutiveInboxRegistry, registerMetadataExtension } from "./executiveInboxRegistry.ts";
+import {
+  getExecutiveInboxRegistry,
+  registerExecutiveInboxItem,
+  registerExecutiveInboxSession,
+  registerMetadataExtension,
+} from "./executiveInboxRegistry.ts";
 import { resetExecutiveInboxPlatformForTests, runExecutiveInboxFoundation } from "./executiveInboxRunner.ts";
 import {
   hasDuplicateIds,
@@ -106,7 +109,7 @@ test("registers inbox session and item", () => {
       workspaceId: "ws-test-001",
       label: "Test Inbox Session",
       description: "Foundation test session.",
-      sourceTypes: Object.freeze(["scenario", "decision"]),
+      sourceTypes: Object.freeze(["scenario", "decision"] as const),
     }),
     FIXED_TIME
   );
@@ -247,7 +250,7 @@ test("validates inbox session and item registration shape", () => {
         workspaceId: "ws-valid",
         label: "Valid",
         description: "Valid session.",
-        sourceTypes: Object.freeze(["scenario"]),
+        sourceTypes: Object.freeze(["scenario"] as const),
       })
     ).valid,
     true

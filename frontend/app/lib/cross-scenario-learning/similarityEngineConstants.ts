@@ -2,8 +2,6 @@
  * APP-10:3 — Similarity Engine constants.
  */
 
-import type { KpiDirection, RiskProfile, SimilarityDimensionId } from "./similarityEngineTypes.ts";
-
 export const SIMILARITY_ENGINE_CONTRACT_VERSION = "APP-10/3" as const;
 export const SIMILARITY_ENGINE_ARCHITECTURE_VERSION = "APP-10/3-similarity-engine-arch" as const;
 export const SIMILARITY_ENGINE_OWNER = "similarity-engine" as const;
@@ -39,14 +37,14 @@ export const KPI_DIRECTION_KEYS = Object.freeze([
   "decrease",
   "stable",
   "mixed",
-] as const satisfies readonly KpiDirection[]);
+] as const);
 
 export const RISK_PROFILE_KEYS = Object.freeze([
   "low",
   "medium",
   "high",
   "stable",
-] as const satisfies readonly RiskProfile[]);
+] as const);
 
 export const SIMILARITY_DIMENSION_IDS = Object.freeze([
   "strategy_chain",
@@ -59,9 +57,9 @@ export const SIMILARITY_DIMENSION_IDS = Object.freeze([
   "decision_type",
   "outcome_type",
   "pattern_category",
-] as const satisfies readonly SimilarityDimensionId[]);
+] as const);
 
-export const SIMILARITY_DIMENSION_WEIGHTS: Readonly<Record<SimilarityDimensionId, number>> = Object.freeze({
+export const SIMILARITY_DIMENSION_WEIGHTS: Readonly<Record<(typeof SIMILARITY_DIMENSION_IDS)[number], number>> = Object.freeze({
   strategy_chain: 30,
   kpi_direction: 20,
   risk_profile: 20,
@@ -74,7 +72,7 @@ export const SIMILARITY_DIMENSION_WEIGHTS: Readonly<Record<SimilarityDimensionId
   pattern_category: 0,
 });
 
-export const SIMILARITY_DIMENSION_LABELS: Readonly<Record<SimilarityDimensionId, string>> = Object.freeze({
+export const SIMILARITY_DIMENSION_LABELS: Readonly<Record<(typeof SIMILARITY_DIMENSION_IDS)[number], string>> = Object.freeze({
   strategy_chain: "Strategy Chain",
   kpi_direction: "KPI Direction",
   risk_profile: "Risk Profile",

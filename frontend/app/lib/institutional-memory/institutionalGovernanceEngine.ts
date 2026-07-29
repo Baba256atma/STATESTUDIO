@@ -7,17 +7,7 @@ import { getInstitutionalCorrelationStore } from "./institutionalCorrelationStor
 import { getInstitutionalMaturityStore } from "./institutionalMaturityStore";
 import { getInstitutionalMemoryStore } from "./institutionalMemoryStore";
 import { getInstitutionalRecallStore } from "./institutionalRecallStore";
-import {
-  beginInstitutionalGovernanceEvaluation,
-  endInstitutionalGovernanceEvaluation,
-  INSTITUTIONAL_GOVERNANCE_AMPLIFICATION_THRESHOLD,
-  INSTITUTIONAL_GOVERNANCE_MAX_LAYER_DEPTH,
-  integrityRank,
-  shouldAllowIntegrityPromotion,
-  shouldEvaluateInstitutionalGovernance,
-  shouldRetainGovernanceSnapshot,
-  statusSeverity,
-} from "./institutionalGovernanceGuards";
+import { beginInstitutionalGovernanceEvaluation, endInstitutionalGovernanceEvaluation, INSTITUTIONAL_GOVERNANCE_AMPLIFICATION_THRESHOLD, INSTITUTIONAL_GOVERNANCE_MAX_LAYER_DEPTH, shouldAllowIntegrityPromotion, shouldEvaluateInstitutionalGovernance, shouldRetainGovernanceSnapshot, statusSeverity } from "./institutionalGovernanceGuards";
 import { getInstitutionalGovernanceStore } from "./institutionalGovernanceStore";
 import type {
   CognitiveGovernanceStatus,

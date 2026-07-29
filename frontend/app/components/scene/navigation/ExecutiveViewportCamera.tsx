@@ -10,7 +10,6 @@ import {
   resolveExecutiveViewportCameraFrame,
   resolveExecutiveViewportOrthoBounds,
 } from "../../../lib/scene/viewport/executiveViewportCameraRuntime";
-import { resolveExecutiveViewportModeConfig } from "../../../lib/scene/viewport/executiveViewportModeRuntime";
 import { resolveExecutive3DDefaultCamera } from "../../../lib/scene/camera/executive3DCameraProfile";
 import { shouldSuppressIdleDebugLog } from "../../../lib/runtime/idleRuntimeStabilityGuard";
 
@@ -82,10 +81,6 @@ function logLateCameraWriteOnce(input: {
 
 export function ExecutiveViewportCamera(props: ExecutiveViewportCameraProps): React.ReactElement {
   const { size } = useThree();
-  const modeConfig = useMemo(
-    () => resolveExecutiveViewportModeConfig(props.viewMode),
-    [props.viewMode]
-  );
   const frame = useMemo(
     () =>
       resolveExecutiveViewportCameraFrame({

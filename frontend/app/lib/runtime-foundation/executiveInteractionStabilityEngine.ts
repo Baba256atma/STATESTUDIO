@@ -1,15 +1,5 @@
 import { stableSignature } from "../intelligence/shared/dedupe";
-import {
-  beginExecutiveInteractionStabilityEvaluation,
-  clampExecutiveInteractionStabilityConfidence,
-  endExecutiveInteractionStabilityEvaluation,
-  EXECUTIVE_INTERACTION_STABILITY_MAX_UI_SIGNALS,
-  EXECUTIVE_INTERACTION_STABILITY_MIN_ACTIVE_CATEGORIES,
-  EXECUTIVE_INTERACTION_STABILITY_MIN_OPERATIONAL_RELIABILITY_DEPTH,
-  interactionReliabilityLevelRank,
-  shouldEvaluateExecutiveInteractionStability,
-  validateExecutiveInteractionStabilitySnapshot,
-} from "./executiveInteractionStabilityGuards";
+import { beginExecutiveInteractionStabilityEvaluation, clampExecutiveInteractionStabilityConfidence, endExecutiveInteractionStabilityEvaluation, EXECUTIVE_INTERACTION_STABILITY_MAX_UI_SIGNALS, EXECUTIVE_INTERACTION_STABILITY_MIN_ACTIVE_CATEGORIES, EXECUTIVE_INTERACTION_STABILITY_MIN_OPERATIONAL_RELIABILITY_DEPTH, shouldEvaluateExecutiveInteractionStability, validateExecutiveInteractionStabilitySnapshot } from "./executiveInteractionStabilityGuards";
 import { getExecutiveInteractionStabilityStore } from "./executiveInteractionStabilityStore";
 import type {
   ChatInteractionReliability,

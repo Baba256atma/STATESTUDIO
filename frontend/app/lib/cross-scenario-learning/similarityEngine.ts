@@ -27,12 +27,7 @@ import {
   registerSimilarityResult,
   similarityResultExists,
 } from "./similarityEngineRegistry.ts";
-import type {
-  ScenarioSimilarityComparisonResult,
-  ScenarioSimilarityInput,
-  SimilarityEngineState,
-  SimilarityResult,
-} from "./similarityEngineTypes.ts";
+import type { ScenarioSimilarityComparisonResult, ScenarioSimilarityInput, SimilarityEngineState } from "./similarityEngineTypes.ts";
 import {
   validateEngineDependencies,
   validateScenarioSimilarityInput,

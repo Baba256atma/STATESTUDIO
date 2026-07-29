@@ -24,11 +24,7 @@ import {
   type BusinessTimelineContextEngineState,
   type BusinessTimelineContextModel,
 } from "./businessTimelineContextTypes.ts";
-import {
-  validateBusinessTimelineContextModel,
-  validateFoundationCompatibilityForContext,
-  validatePrerequisitesForContext,
-} from "./businessTimelineContextValidation.ts";
+import { validateBusinessTimelineContextModel, validatePrerequisitesForContext } from "./businessTimelineContextValidation.ts";
 
 export const BUSINESS_TIMELINE_CONTEXT_FORBIDDEN_PATTERNS_FULL = Object.freeze([
   ...STAGE_GLOBAL_FORBIDDEN_PATTERNS,

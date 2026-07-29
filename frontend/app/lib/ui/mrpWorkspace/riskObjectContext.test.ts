@@ -53,7 +53,8 @@ test("resolveRiskObjectContext reflects Factory A fixture", () => {
 });
 
 test("resolveRiskObjectContext reads scene object risk fields", () => {
-  const sceneJson = {
+  const sceneJson: SceneJson = {
+    state_vector: {},
     scene: {
       objects: [
         {
@@ -64,7 +65,7 @@ test("resolveRiskObjectContext reads scene object risk fields", () => {
         },
       ],
     },
-  } as SceneJson;
+  };
 
   const context = resolveRiskObjectContext({
     selectedObjectId: "node-1",

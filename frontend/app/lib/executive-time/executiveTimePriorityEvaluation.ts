@@ -27,8 +27,8 @@ export const EXECUTIVE_TIME_PRIORITY_ENGINE_VERSION = "APP-1/6" as const;
 
 type EvaluationSignals = Readonly<{
   score: number;
-  factors: ExecutiveTimePriorityContributingFactor[];
-  warnings: string[];
+  factors: readonly ExecutiveTimePriorityContributingFactor[];
+  warnings: readonly string[];
 }>;
 
 const HISTORICAL_CONTEXTS = new Set(["yesterday", "last_week", "last_month", "last_quarter", "last_year", "past_review"]);

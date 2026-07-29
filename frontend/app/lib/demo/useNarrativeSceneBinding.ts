@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { dedupeNexoraDevLog } from "../debug/panelConsoleTraceDedupe";
 
 import type { NarrativeSceneAction } from "./narrativeSceneTypes";
 import type { DemoScriptStep } from "./demoScript";
 
+import type { SceneJson } from "../sceneTypes";
+
 type UseNarrativeSceneBindingArgs = {
   step: DemoScriptStep | null;
-  sceneJson: any | null;
+  sceneJson: SceneJson | null;
 };
 
 type NarrativeSceneBinding = {
@@ -27,7 +29,7 @@ type NarrativeSceneBinding = {
   } | null;
 };
 
-function resolveSceneObjectIdSet(sceneJson: any | null) {
+function resolveSceneObjectIdSet(sceneJson: SceneJson | null) {
   const objects = Array.isArray(sceneJson?.scene?.objects) ? sceneJson.scene.objects : [];
   return new Set<string>(
     objects
@@ -44,10 +46,35 @@ function getIdsSignature(ids: string[]) {
   return ids.join("|");
 }
 
+function getNarrativeBindingSignature(binding: NarrativeSceneBinding) {
+  return JSON.stringify({
+    stepId: binding.stepId,
+    clear: binding.clear,
+    isActive: binding.isActive,
+    focusId: binding.focusId,
+    highlightIds: getIdsSignature(binding.highlightIds),
+    dimIds: getIdsSignature(binding.dimIds),
+    hasObjectSelection: Boolean(binding.objectSelection),
+  });
+}
+
+/** AD-FE-HOOKS-01: signature-stable hold via state (not render-time refs). */
+function useSignatureStableNarrativeBinding(value: NarrativeSceneBinding): NarrativeSceneBinding {
+  const [held, setHeld] = useState(() => ({
+    signature: getNarrativeBindingSignature(value),
+    value,
+  }));
+  const signature = getNarrativeBindingSignature(value);
+  if (signature !== held.signature) {
+    setHeld({ signature, value });
+    return value;
+  }
+  return held.value;
+}
+
 export function useNarrativeSceneBinding(args: UseNarrativeSceneBindingArgs): NarrativeSceneBinding {
   const { step, sceneJson } = args;
-  const previousBindingSignatureRef = useRef<string>("");
-  const previousBindingRef = useRef<NarrativeSceneBinding | null>(null);
+  // Diagnostic dedupe only — effect-owned (AD-FE-HOOKS-01).
   const lastObservedInputKeyRef = useRef<string>("");
   const lastLoggedBindingSignatureRef = useRef<string>("");
 
@@ -55,7 +82,7 @@ export function useNarrativeSceneBinding(args: UseNarrativeSceneBindingArgs): Na
   const sceneObjectIdSignature = useMemo(() => Array.from(sceneObjectIdSet).sort().join("|"), [sceneObjectIdSet]);
   const actionSignature = useMemo(() => JSON.stringify(step?.scene_action ?? null), [step?.scene_action]);
 
-  const binding = useMemo(() => {
+  const nextBinding = useMemo(() => {
     const availableIds = sceneObjectIdSet;
     const action = step?.scene_action ?? null;
     const highlightIds = resolveIds(action?.highlight_ids, availableIds);
@@ -76,7 +103,7 @@ export function useNarrativeSceneBinding(args: UseNarrativeSceneBindingArgs): Na
           }
         : null;
 
-    const nextBinding = {
+    return {
       stepId: step?.step_id ?? null,
       action,
       highlightIds,
@@ -86,24 +113,9 @@ export function useNarrativeSceneBinding(args: UseNarrativeSceneBindingArgs): Na
       isActive,
       objectSelection,
     };
-    const bindingSignature = JSON.stringify({
-      stepId: nextBinding.stepId,
-      clear: nextBinding.clear,
-      isActive: nextBinding.isActive,
-      focusId: nextBinding.focusId,
-      highlightIds: getIdsSignature(nextBinding.highlightIds),
-      dimIds: getIdsSignature(nextBinding.dimIds),
-      hasObjectSelection: Boolean(nextBinding.objectSelection),
-    });
-
-    if (previousBindingSignatureRef.current === bindingSignature && previousBindingRef.current) {
-      return previousBindingRef.current;
-    }
-
-    previousBindingSignatureRef.current = bindingSignature;
-    previousBindingRef.current = nextBinding;
-    return nextBinding;
   }, [sceneObjectIdSet, step]);
+
+  const binding = useSignatureStableNarrativeBinding(nextBinding);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -112,15 +124,7 @@ export function useNarrativeSceneBinding(args: UseNarrativeSceneBindingArgs): Na
     const requestedFocusId =
       action?.focus_id != null && String(action.focus_id).trim().length > 0 ? String(action.focus_id).trim() : null;
     const invalidFocusTarget = requestedFocusId && !sceneObjectIdSet.has(requestedFocusId) ? requestedFocusId : null;
-    const bindingSignature = JSON.stringify({
-      stepId: binding.stepId,
-      clear: binding.clear,
-      isActive: binding.isActive,
-      focusId: binding.focusId,
-      highlightIds: getIdsSignature(binding.highlightIds),
-      dimIds: getIdsSignature(binding.dimIds),
-      hasObjectSelection: Boolean(binding.objectSelection),
-    });
+    const bindingSignature = getNarrativeBindingSignature(binding);
     const inputKey = `${binding.stepId ?? "none"}|${actionSignature}|${sceneObjectIdSignature}`;
     const traceDetail = {
       stepId: binding.stepId,

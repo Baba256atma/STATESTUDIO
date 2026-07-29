@@ -78,6 +78,7 @@ import {
   WORKSPACE_OBJECT_INTELLIGENCE_CERTIFICATION_GATE_TITLES,
   WORKSPACE_OBJECT_INTELLIGENCE_CERTIFICATION_TAGS,
 } from "./workspaceObjectIntelligenceCertificationContract.ts";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const DATA_SOURCE_ID = "wds_object_intelligence_certification";
 const OBJECT_INTELLIGENCE_STORAGE_KEY = "nexora.workspaceObjectIntelligenceProfiles.v1";
@@ -86,25 +87,6 @@ const DEPENDENCY_STORAGE_KEY = "nexora.workspaceDependencyProfiles.v1";
 const CONFIDENCE_STORAGE_KEY = "nexora.workspaceConfidenceProfiles.v1";
 const CREATED_OBJECTS_STORAGE_KEY = "nexora.workspaceCreatedObjects.v2";
 const SCENE_SYNC_OBJECTS_STORAGE_KEY = "nexora.workspaceSceneSyncObjects.v2";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
 
 function resetAllStores(): void {
   window.localStorage.clear();
@@ -270,7 +252,7 @@ function runCertifiedPipeline(input: {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   resetAllStores();
 });
 

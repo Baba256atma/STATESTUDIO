@@ -20,15 +20,9 @@ import {
   mapConfidenceMovementsToReasons,
 } from "./confidenceEvolutionMovementMapping.ts";
 import { buildConfidenceReasonLinks } from "./confidenceEvolutionReasonLinks.ts";
-import {
-  CONFIDENCE_EVOLUTION_TREND_SELF_MANIFEST,
-  isConfidenceEvolutionTrendLayerInitialized,
-} from "./confidenceEvolutionTrend.ts";
+import { CONFIDENCE_EVOLUTION_TREND_SELF_MANIFEST } from "./confidenceEvolutionTrend.ts";
 import { calculateConfidenceDeltas } from "./confidenceEvolutionDeltas.ts";
-import {
-  getConfidenceRecordsOrdered,
-  isConfidenceEvolutionQueryLayerInitialized,
-} from "./confidenceEvolutionQuery.ts";
+import { getConfidenceRecordsOrdered } from "./confidenceEvolutionQuery.ts";
 import {
   CONFIDENCE_EVOLUTION_EVIDENCE_REASON_CONTRACT_VERSION,
   CONFIDENCE_EVOLUTION_EVIDENCE_REASON_FORBIDDEN_PATTERNS,

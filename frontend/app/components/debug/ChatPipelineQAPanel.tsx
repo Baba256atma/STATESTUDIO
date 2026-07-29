@@ -10,7 +10,7 @@ import {
 } from "../../lib/debug/chatPipelineQAHarness";
 
 type ChatPipelineQAPanelProps = {
-  runChatInput: (input: string) => Promise<any>;
+  runChatInput: (input: string) => Promise<Record<string, unknown>>;
 };
 
 export function ChatPipelineQAPanel(props: ChatPipelineQAPanelProps) {

@@ -4,18 +4,7 @@
  */
 
 import type { DECISION_TIMELINE_PLATFORM_CONTRACT_VERSION } from "./decisionTimelineConstants.ts";
-import type {
-  DecisionContext,
-  DecisionEventId,
-  DecisionId,
-  DecisionMetadata,
-  DecisionReference,
-  DecisionTag,
-  DecisionTimelineEntry,
-  DecisionValidationIssue,
-  DecisionValidationResult,
-  DecisionWorkspaceId,
-} from "./decisionTimelineTypes.ts";
+import type { DecisionContext, DecisionEventId, DecisionId, DecisionReference, DecisionTag, DecisionTimelineEntry, DecisionValidationIssue, DecisionValidationResult, DecisionWorkspaceId } from "./decisionTimelineTypes.ts";
 
 export const DECISION_EVENT_ENGINE_CONTRACT_VERSION = "APP-6/2" as const;
 export const DECISION_EVENT_ENGINE_ARCHITECTURE_VERSION = "APP-6/2-event-engine-arch" as const;

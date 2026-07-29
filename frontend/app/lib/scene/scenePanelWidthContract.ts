@@ -48,7 +48,8 @@ export function resolveScenePanelZoneWidth(
   return resolveScenePanelFixedWidth(requestedWidth);
 }
 
-export function resolveScenePanelZoneMaxWidth(_state?: ScenePanelDisplayState): string {
+export function resolveScenePanelZoneMaxWidth(state?: ScenePanelDisplayState): string {
+  void state;
   return `${resolveScenePanelFixedWidth()}px`;
 }
 

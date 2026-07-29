@@ -3,15 +3,7 @@
 import React from "react";
 import * as THREE from "three";
 
-import {
-  buildRuntimeObjectPositionLookupCache,
-  buildRuntimeObjectPositionLookupSignature,
-  resolveRuntimeObjectPositionFromContext,
-  resolveRuntimeObjectPositionFromContextWithLookup,
-  type RuntimeObjectPositionContext,
-  type RuntimeObjectPositionLookupCache,
-  type RuntimeObjectPositionResult,
-} from "../../lib/scene/runtimeObjectPosition";
+import { resolveRuntimeObjectPositionFromContext, resolveRuntimeObjectPositionFromContextWithLookup, type RuntimeObjectPositionContext, type RuntimeObjectPositionLookupCache, type RuntimeObjectPositionResult } from "../../lib/scene/runtimeObjectPosition";
 import { logConnectionRuntimeProviders } from "../../lib/scene/runtimeObjectPositionDevLog";
 
 export type { RuntimeObjectPositionContext, RuntimeObjectPositionLookupCache, RuntimeObjectPositionResult };
@@ -352,7 +344,7 @@ export function getInteractionProfile(role: InteractionRole) {
 
 export function buildProfessionalObjectLabelName(obj: SceneObject, index: number, domainId?: string | null): string {
   const domainAwareName = resolveDomainAwareObjectName({
-    explicitLabel: String((obj as any)?.label ?? "").trim() || null,
+    explicitLabel: String(obj.label ?? "").trim() || null,
     objectName: String(obj?.name ?? "").trim() || null,
     objectId: String(obj?.id ?? "").trim() || null,
     tags: Array.isArray(obj?.tags) ? obj.tags.map((tag) => String(tag ?? "")) : null,
@@ -472,7 +464,7 @@ export function fallbackPosFromId(id: string): THREE.Vector3 {
 
 export function getRuntimeObjPos(
   id: string,
-  objects: any[],
+  objects: SceneObject[],
   context?: RuntimeObjectPositionContext,
   positionLookup?: RuntimeObjectPositionLookupCache | null
 ): THREE.Vector3 {
@@ -486,7 +478,7 @@ export function resolveRuntimeConnectionEndpoints(input: {
   connectionId: string;
   sourceObjectId: string;
   targetObjectId: string;
-  objects: any[];
+  objects: SceneObject[];
   context?: RuntimeObjectPositionContext;
   positionLookup?: RuntimeObjectPositionLookupCache | null;
   sourceYOffset?: number;
@@ -531,15 +523,32 @@ export function resolveRuntimeConnectionEndpoints(input: {
   };
 }
 
-export function getObjPos(id: string, objects: any[]): THREE.Vector3 {
-  const found = objects.find((object: any) => object?.id === id);
-  const posCandidates = [found?.position, (found?.transform as any)?.pos, (found as any)?.pos];
+function readObjectTransform(obj: SceneObject | undefined): { pos?: unknown } {
+  const transform = obj?.transform;
+  return transform && typeof transform === "object" && !Array.isArray(transform)
+    ? (transform as { pos?: unknown })
+    : {};
+}
+
+function readVec3Components(position: unknown): { x: number; y: number; z: number } | null {
+  if (!position || typeof position !== "object") return null;
+  const record = position as Record<string, unknown>;
+  const x = Number(record.x);
+  const y = Number(record.y);
+  const z = Number(record.z);
+  return Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z) ? { x, y, z } : null;
+}
+
+export function getObjPos(id: string, objects: SceneObject[]): THREE.Vector3 {
+  const found = objects.find((object) => object?.id === id);
+  const posCandidates = [found?.position, readObjectTransform(found).pos, found?.pos];
   for (const position of posCandidates) {
     if (Array.isArray(position) && position.length >= 3) {
       return new THREE.Vector3(Number(position[0]) || 0, Number(position[1]) || 0, Number(position[2]) || 0);
     }
-    if (position && typeof position === "object" && "x" in position && "y" in position && "z" in position) {
-      return new THREE.Vector3(Number((position as any).x) || 0, Number((position as any).y) || 0, Number((position as any).z) || 0);
+    const vec = readVec3Components(position);
+    if (vec) {
+      return new THREE.Vector3(vec.x, vec.y, vec.z);
     }
   }
 
@@ -553,7 +562,7 @@ export function getObjPos(id: string, objects: any[]): THREE.Vector3 {
     return new THREE.Vector3(x, y, z);
   }
 
-  const index = objects.findIndex((object: any) => object?.id === id);
+  const index = objects.findIndex((object) => object?.id === id);
   if (index >= 0) {
     const [x, y, z] = fallbackPos(index, objects.length);
     return new THREE.Vector3(x, y, z);
@@ -598,10 +607,8 @@ export function toPosTuple(raw: unknown, fallback: [number, number, number]): [n
     if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)) return [x, y, z];
   }
   if (raw && typeof raw === "object") {
-    const x = Number((raw as any).x);
-    const y = Number((raw as any).y);
-    const z = Number((raw as any).z);
-    if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)) return [x, y, z];
+    const vec = readVec3Components(raw);
+    if (vec) return [vec.x, vec.y, vec.z];
   }
   return fallback;
 }

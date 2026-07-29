@@ -152,8 +152,9 @@ test("executiveMultiScenarioUniverseStore loads, switches, and clears", () => {
   assert.equal(switched?.activeScenarioId, "scenario_b");
   assert.equal(resolveActiveUniverseSimulation(switched)?.scenarioId, "scenario_b");
 
-  setScenarioUniverseLayoutMode("overlay");
-  assert.equal(resolveGhostUniverseLayers(switched)?.length, 0);
+  const overlay = setScenarioUniverseLayoutMode("overlay");
+  assert.equal(overlay?.layoutMode, "overlay");
+  assert.equal(resolveGhostUniverseLayers(overlay)?.length, 0);
 
   clearExecutiveScenarioUniverse();
 });

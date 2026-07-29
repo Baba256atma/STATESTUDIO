@@ -20,6 +20,7 @@ import type {
 } from "./decisionJournalReflectionTypes.ts";
 import type {
   DecisionJournalRetrospectiveModel,
+  DecisionJournalRetrospectiveWorkspaceModel,
   DecisionJournalOutcomeEvaluation,
 } from "./decisionJournalRetrospectiveTypes.ts";
 import type { DecisionJournalValidationIssue, DecisionJournalValidationResult } from "./decisionJournalTypes.ts";
@@ -186,7 +187,7 @@ export type DecisionJournalApiQualitySurface = Readonly<{
 export type DecisionJournalApiRetrospectiveSurface = Readonly<{
   buildRetrospectiveModel: (
     input: Parameters<typeof import("./decisionJournalRetrospective.ts").buildDecisionJournalRetrospectiveModel>[0]
-  ) => DecisionJournalApiResponse<DecisionJournalRetrospectiveModel>;
+  ) => DecisionJournalApiResponse<DecisionJournalRetrospectiveWorkspaceModel>;
   evaluateOutcome: (entryId: string, workspaceId: string) => DecisionJournalApiResponse<DecisionJournalOutcomeEvaluation>;
   evaluateRetrospective: (
     entryId: string,

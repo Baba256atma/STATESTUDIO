@@ -46,7 +46,7 @@ function objectRegistry(): ObjectIntelligenceRegistry {
     objectCount: 1,
     sceneMutation: false,
     simulation: false,
-    diagnostics: Object.freeze(["[OBJECT_INTELLIGENCE_RUNTIME]", "[OBJECT_INTELLIGENCE_PROFILE_CREATED]"]),
+    diagnostics: Object.freeze(["[OBJECT_INTELLIGENCE_RUNTIME]", "[OBJECT_INTELLIGENCE_PROFILE_CREATED]"] as const),
   });
 }
 
@@ -70,7 +70,7 @@ function relationshipRegistry(): RelationshipIntelligenceRegistry {
     sceneMutation: false,
     objectMutation: false,
     routingMutation: false,
-    diagnostics: Object.freeze(["[RELATIONSHIP_INTELLIGENCE_RUNTIME]", "[RELATIONSHIP_INTELLIGENCE_READY]"]),
+    diagnostics: Object.freeze(["[RELATIONSHIP_INTELLIGENCE_RUNTIME]", "[RELATIONSHIP_INTELLIGENCE_READY]"] as const),
   });
 }
 
@@ -91,11 +91,11 @@ function kpiRegistry(): KpiIntelligenceRegistry {
     profiles: Object.freeze([profile]),
     profileByKpiId: Object.freeze({ [profile.kpiId]: profile }),
     kpiCount: 1,
-    supportedCategories: Object.freeze(["Revenue"]),
+    supportedCategories: Object.freeze(["Revenue"] as const),
     visualRendering: false,
     sceneMutation: false,
     mrpMutation: false,
-    diagnostics: Object.freeze(["[KPI_INTELLIGENCE_RUNTIME]", "[KPI_INTELLIGENCE_READY]"]),
+    diagnostics: Object.freeze(["[KPI_INTELLIGENCE_RUNTIME]", "[KPI_INTELLIGENCE_READY]"] as const),
   });
 }
 
@@ -128,7 +128,7 @@ function riskRegistry(): RiskIntelligenceRegistry {
     sceneMutation: false,
     routingMutation: false,
     simulation: false,
-    diagnostics: Object.freeze(["[RISK_INTELLIGENCE_RUNTIME]", "[RISK_INTELLIGENCE_READY]"]),
+    diagnostics: Object.freeze(["[RISK_INTELLIGENCE_RUNTIME]", "[RISK_INTELLIGENCE_READY]"] as const),
   });
 }
 

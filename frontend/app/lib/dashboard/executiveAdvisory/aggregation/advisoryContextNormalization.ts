@@ -9,18 +9,7 @@ import { getRiskIntelligenceSnapshotForExecutiveSummary } from "../../riskIntell
 import { getTimelineIntelligenceSnapshotForExecutiveSummary } from "../../timelineIntelligence/timelineIntelligenceRuntime.ts";
 import { getScenarioIntelligenceSnapshotForExecutiveSummary } from "../../scenarioIntelligence/scenarioIntelligenceRuntime.ts";
 import { getWarRoomIntelligenceSnapshotForExecutiveSummary } from "../../warRoomIntelligence/warRoomIntelligenceRuntime.ts";
-import type {
-  AdvisoryContextAggregationInput,
-  AdvisoryInputConfidence,
-  AdvisoryInputImpact,
-  AdvisoryInputPriority,
-  OperationalAdvisoryInputs,
-  RiskAdvisoryInputs,
-  ScenarioAdvisoryInputs,
-  StandardizedAdvisoryInput,
-  TimelineAdvisoryInputs,
-  WarRoomAdvisoryInputs,
-} from "./advisoryContextContract.ts";
+import type { AdvisoryContextAggregationInput, AdvisoryInputConfidence, AdvisoryInputImpact, OperationalAdvisoryInputs, RiskAdvisoryInputs, ScenarioAdvisoryInputs, StandardizedAdvisoryInput, TimelineAdvisoryInputs, WarRoomAdvisoryInputs } from "./advisoryContextContract.ts";
 import {
   computeAdvisoryInputScore,
   mapLevelToImpact,

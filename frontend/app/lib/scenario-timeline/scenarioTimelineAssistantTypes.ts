@@ -7,9 +7,7 @@ import type {
   SCENARIO_TIMELINE_ASSISTANT_QUESTION_KEYS,
 } from "./scenarioTimelineAssistantConstants.ts";
 import type { ScenarioTimelineEvent } from "./scenarioTimelineEventTypes.ts";
-import type { ScenarioTimelineHistorySummary } from "./scenarioTimelineHistoryTypes.ts";
-import type { ScenarioTimelineHistoryMilestone } from "./scenarioTimelineHistoryTypes.ts";
-import type { ScenarioTimelineLifecycleStatus } from "./scenarioTimelineLifecycleTypes.ts";
+import type { ScenarioTimelineHistorySummary } from "./scenarioTimelineHistoryTypes.ts";import type { ScenarioTimelineLifecycleStatus } from "./scenarioTimelineLifecycleTypes.ts";
 import type {
   ScenarioTimelineLifecycleStage,
   ScenarioTimelineScenarioId,

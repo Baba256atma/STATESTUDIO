@@ -14,7 +14,6 @@ import {
 import {
   logExecutiveOrbit,
   logExecutivePan,
-  logExecutiveZoom,
 } from "../../../lib/scene/interaction/executiveInteractionDiagnostics";
 import { patchExecutiveInteractionState } from "../../../lib/scene/interaction/executiveInteractionStateRuntime";
 import { armExecutiveCameraMemory } from "../../../lib/scene/camera/executiveCameraMemoryRuntime";
@@ -227,7 +226,7 @@ export function ExecutiveOrbitControls(props: ExecutiveOrbitControlsProps): Reac
 
   return (
     <OrbitControls
-      ref={props.controlsRef as React.Ref<any>}
+      ref={props.controlsRef as unknown as React.Ref<React.ComponentRef<typeof OrbitControls>>}
       enabled={props.enabled}
       enableZoom={config.enableZoom}
       enableRotate={config.enableRotate}

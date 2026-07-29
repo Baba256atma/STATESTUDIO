@@ -63,6 +63,7 @@ import {
   WORKSPACE_SCENARIO_PANEL_TAGS,
   resolveObjectScenarioSummaryState,
 } from "../../../lib/scenario/scenarioWorkspaceIntegrationRuntime.ts";
+import { ensureBrowserLocalStorageHarness } from "../../../lib/test-harness/browserLocalStorageHarness.ts";
 
 const OBJECT_INTELLIGENCE_STORAGE_KEY = "nexora.workspaceObjectIntelligenceProfiles.v1";
 const IMPACT_STORAGE_KEY = "nexora.workspaceImpactProfiles.v1";
@@ -88,25 +89,6 @@ type SeedInput = {
   dependency?: boolean;
   confidence?: boolean;
 };
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
 
 function seedStores(input: SeedInput): void {
   const timestamp = new Date().toISOString();
@@ -491,7 +473,7 @@ function appendObjectIntelligenceProfile(input: {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetWorkspaceRegistryForTests();
   resetWorkspaceObjectIntelligenceStoreForTests();

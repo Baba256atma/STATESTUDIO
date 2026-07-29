@@ -28,8 +28,8 @@ export type DecisionTimelineModel = {
 };
 
 type BuildDecisionTimelineModelInput = {
-  responseData?: any | null;
-  strategicAdvice?: any | null;
+  responseData?: Record<string, unknown> | null;
+  strategicAdvice?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
   decisionResult?: DecisionExecutionResult | null;
 };
@@ -76,11 +76,27 @@ function uniqueItems(values: Array<string | null | undefined>, limit = 4) {
   return results;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readCanonicalRecommendation(value: unknown): CanonicalRecommendation | null {
+  return value && typeof value === "object" ? (value as CanonicalRecommendation) : null;
+}
+
 export function buildDecisionTimelineModel(input: BuildDecisionTimelineModelInput): DecisionTimelineModel {
   const responseData = input.responseData ?? null;
-  const strategicAdvice = input.strategicAdvice ?? responseData?.strategic_advice ?? null;
-  const canonicalRecommendation = input.canonicalRecommendation ?? responseData?.canonical_recommendation ?? null;
-  const decisionSimulation = responseData?.decision_simulation ?? null;
+  const strategicAdvice = asRecord(input.strategicAdvice) ?? asRecord(responseData?.strategic_advice);
+  const canonicalRecommendation =
+    input.canonicalRecommendation ?? readCanonicalRecommendation(responseData?.canonical_recommendation);
+  const decisionSimulation = asRecord(responseData?.decision_simulation);
+  const executiveSummary = asRecord(responseData?.executive_summary_surface);
+  const riskPropagation = asRecord(responseData?.risk_propagation);
+  const strategyKpi = asRecord(responseData?.strategy_kpi);
+  const decisionComparison = asRecord(responseData?.decision_comparison);
+  const decisionReplay = asRecord(responseData?.decision_replay);
+  const simulationResult = asRecord(input.decisionResult?.simulation_result);
+  const simulationImpact = asRecord(decisionSimulation?.impact);
   const compareModel = buildComparePanelModel({
     canonicalRecommendation,
     decisionResult: input.decisionResult ?? null,
@@ -89,56 +105,58 @@ export function buildDecisionTimelineModel(input: BuildDecisionTimelineModelInpu
   });
 
   const beforeSummary = firstText(
-    responseData?.executive_summary_surface?.happened,
-    responseData?.analysis_summary,
-    responseData?.risk_propagation?.summary,
-    responseData?.executive_summary_surface?.summary,
-    responseData?.reply,
+    text(executiveSummary?.happened),
+    text(responseData?.analysis_summary),
+    text(riskPropagation?.summary),
+    text(executiveSummary?.summary),
+    text(responseData?.reply),
     "No current-state summary available yet."
   );
   const beforeDetails = uniqueItems([
-    responseData?.executive_summary_surface?.why_it_matters,
-    responseData?.risk_propagation?.summary,
-    responseData?.strategy_kpi?.summary,
+    text(executiveSummary?.why_it_matters),
+    text(riskPropagation?.summary),
+    text(strategyKpi?.summary),
     compareModel.riskSummary,
   ]);
 
   const beforeImpactItems: DecisionTimelineImpactItem[] = uniqueItems([
-    text(responseData?.executive_summary_surface?.what_matters_most),
-    text(responseData?.strategy_kpi?.headline),
-    text(responseData?.strategy_kpi?.summary),
+    text(executiveSummary?.what_matters_most),
+    text(strategyKpi?.headline),
+    text(strategyKpi?.summary),
   ], 2).map((item) => ({
     label: "Current signal",
     direction: "neutral",
     value: item,
   }));
 
-  const afterKpis = Array.isArray(input.decisionResult?.simulation_result?.kpi_effects)
-    ? input.decisionResult?.simulation_result?.kpi_effects ?? []
+  const afterKpis = Array.isArray(simulationResult?.kpi_effects)
+    ? (simulationResult.kpi_effects as Array<{ kpi: string; change: number }>)
     : [];
   const afterSummary = firstText(
-    decisionSimulation?.impact?.summary,
+    text(simulationImpact?.summary),
     canonicalRecommendation?.primary.impact_summary,
     compareModel.recommendedOption?.impact_summary,
     "No projected outcome yet. Run a simulation to see the expected change."
   );
   const afterDetails = uniqueItems([
     canonicalRecommendation?.reasoning.why,
-    responseData?.executive_summary_surface?.what_to_do,
+    text(executiveSummary?.what_to_do),
     compareModel.compareSummary,
-    decisionSimulation?.timeline?.[0]?.summary,
+    Array.isArray(decisionSimulation?.timeline)
+      ? text(asRecord((decisionSimulation.timeline as unknown[])[0])?.summary)
+      : null,
   ]);
 
   const afterImpactItems: DecisionTimelineImpactItem[] = [];
-  if (Number.isFinite(input.decisionResult?.simulation_result?.impact_score)) {
+  if (Number.isFinite(simulationResult?.impact_score as number)) {
     afterImpactItems.push({
       label: "Impact score",
       direction: "up",
-      value: (input.decisionResult?.simulation_result?.impact_score ?? 0).toFixed(2),
+      value: Number(simulationResult?.impact_score ?? 0).toFixed(2),
     });
   }
-  if (Number.isFinite(input.decisionResult?.simulation_result?.risk_change)) {
-    const riskChange = input.decisionResult?.simulation_result?.risk_change ?? 0;
+  if (Number.isFinite(simulationResult?.risk_change as number)) {
+    const riskChange = Number(simulationResult?.risk_change ?? 0);
     afterImpactItems.push({
       label: "Risk change",
       direction: riskChange < 0 ? "down" : riskChange > 0 ? "up" : "neutral",
@@ -162,24 +180,27 @@ export function buildDecisionTimelineModel(input: BuildDecisionTimelineModelInpu
 
   const recommendedTargets =
     canonicalRecommendation?.primary.target_ids ??
-    input.decisionResult?.simulation_result?.affected_objects ??
-    [];
+    (Array.isArray(simulationResult?.affected_objects)
+      ? (simulationResult.affected_objects as string[])
+      : []);
 
   const alternative = compareModel.alternatives[0] ?? null;
-  const comparison = Array.isArray(input.decisionResult?.comparison) ? input.decisionResult?.comparison : [];
+  const comparison = Array.isArray(input.decisionResult?.comparison)
+    ? (input.decisionResult.comparison as Array<{ option?: string; score?: number }>)
+    : [];
   const alternativeScore = comparison.find((item) => text(item.option) === alternative?.title) ?? comparison[1] ?? null;
   const whatIfSummary = firstText(
     alternative?.impact_summary,
     alternative?.summary,
-    responseData?.decision_comparison?.summary,
-    responseData?.decision_replay?.alternative_summary,
+    text(decisionComparison?.summary),
+    text(decisionReplay?.alternative_summary),
     "No alternative path available yet. Use Compare Options to evaluate another move."
   );
   const whatIfDetails = uniqueItems([
     alternative?.tradeoff,
     compareModel.whyNotOthers[0],
-    responseData?.decision_comparison?.tradeoff_summary,
-    responseData?.decision_replay?.summary,
+    text(decisionComparison?.tradeoff_summary),
+    text(decisionReplay?.summary),
   ]);
 
   const whatIfImpactItems: DecisionTimelineImpactItem[] = [];

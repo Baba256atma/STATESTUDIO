@@ -72,7 +72,7 @@ test("builds scene json from synced objects without relationships", () => {
 
   const sceneJson = getWorkspaceSceneJson(workspace.workspaceId);
   assert.ok(sceneJson);
-  assert.equal(sceneJson.scene?.objects.length, 1);
+  assert.equal(sceneJson.scene?.objects?.length, 1);
   assert.deepEqual(sceneJson.scene?.relationships, []);
 
   const syncState = getWorkspaceSceneSyncState(workspace.workspaceId);

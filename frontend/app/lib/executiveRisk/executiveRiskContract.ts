@@ -3,11 +3,7 @@
  * Risk definition vocabulary — triple-registry input only.
  */
 
-import {
-  resolveExecutiveObjectById,
-  resolveExecutiveObjectRegistryExample,
-  validateExecutiveObjectRegistry,
-} from "../executiveObject/executiveObjectContract.ts";
+import { resolveExecutiveObjectById, validateExecutiveObjectRegistry } from "../executiveObject/executiveObjectContract.ts";
 import type { ExecutiveObject, ExecutiveObjectRegistry } from "../executiveObject/executiveObjectTypes.ts";
 import {
   resolveExecutiveKpiById,

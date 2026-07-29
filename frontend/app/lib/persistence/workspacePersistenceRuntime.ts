@@ -6,9 +6,7 @@ import {
   setExecutiveFocusModeEnabled,
   setExecutiveFocusProfile,
 } from "../workspace/executiveFocusModeRuntime";
-import { isFocusModeProfileId } from "../workspace/focusModeProfiles";
-import type { OverlayRuntimeVisibility } from "../overlay/overlayContracts";
-import { persistHudPreferences } from "../ui/hudPreferencesStore";
+import { isFocusModeProfileId } from "../workspace/focusModeProfiles";import { persistHudPreferences } from "../ui/hudPreferencesStore";
 import { persistThemeMode } from "../ui/nexoraUiTheme";
 import { persistWorkspaceLayoutPreset } from "../ui/workspaceLayoutStore";
 import type { WorkspaceLayoutPreset } from "../ui/workspaceLayoutTypes";

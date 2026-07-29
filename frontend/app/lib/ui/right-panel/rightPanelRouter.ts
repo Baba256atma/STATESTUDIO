@@ -394,7 +394,7 @@ export function resolveRightPanelAction(actionId: string): {
 }
 
 export function resolveSafeRightPanelView(
-  view: any,
+  view: unknown,
   source: "direct_open" | "legacy_alias" | "action_intent" | "unknown" = "unknown"
 ): RightPanelView | null {
   const normalized = typeof view === "string" ? view.trim() : view;

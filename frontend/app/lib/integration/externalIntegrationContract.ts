@@ -163,13 +163,27 @@ function toScannerMode(mode: IntegrationMode): "create" | "enrich" {
   return mode === "create" ? "create" : "enrich";
 }
 
+type MemorySeedHints = {
+  fragility_markers?: string[];
+};
+
+function readMemorySeedHints(seed: unknown): MemorySeedHints {
+  if (!seed || typeof seed !== "object") return {};
+  const record = seed as Record<string, unknown>;
+  return {
+    fragility_markers: Array.isArray(record.fragility_markers)
+      ? record.fragility_markers.filter((item): item is string => typeof item === "string")
+      : undefined,
+  };
+}
+
 function buildScannerHints(input: ExternalIntegrationResult): ScannerIntelligenceHints {
   const mappingWarnings = Array.isArray(input.mapping?.warnings) ? input.mapping.warnings : [];
   const unresolved = Array.isArray(input.mapping?.unresolved_items) ? input.mapping.unresolved_items : [];
-  const memorySeed = input.normalized_payload?.memory_seed as any;
+  const memorySeed = readMemorySeedHints(input.normalized_payload?.memory_seed);
   return {
     domain_hints: input.source?.domain_hint ? { [input.source.domain_hint]: ["integration_source"] } : undefined,
-    fragility_markers: Array.isArray(memorySeed?.fragility_markers) ? memorySeed.fragility_markers : [],
+    fragility_markers: memorySeed.fragility_markers ?? [],
     external_source_category: input.source.source_category,
     mapping_status: input.mapping.status,
     mapping_warnings: mappingWarnings,
@@ -182,12 +196,15 @@ export function validateExternalIntegrationResult(input: unknown): {
   errors: string[];
 } {
   const errors: string[] = [];
+  if (!input || typeof input !== "object") {
+    errors.push("External integration result must be an object.");
+    return { ok: false, errors };
+  }
   const x = input as ExternalIntegrationResult;
-  if (!x || typeof x !== "object") errors.push("External integration result must be an object.");
-  const mode = String((x as any)?.mode ?? "").trim();
+  const mode = String(x.mode ?? "").trim();
   if (!["create", "enrich", "sync"].includes(mode)) errors.push("mode must be create|enrich|sync.");
-  if (!(x as any)?.source || typeof (x as any)?.source !== "object") errors.push("source descriptor is required.");
-  if (!(x as any)?.mapping || typeof (x as any)?.mapping !== "object") errors.push("mapping result is required.");
+  if (!x.source || typeof x.source !== "object") errors.push("source descriptor is required.");
+  if (!x.mapping || typeof x.mapping !== "object") errors.push("mapping result is required.");
   return { ok: errors.length === 0, errors };
 }
 
@@ -246,13 +263,25 @@ export function externalIntegrationResultToScannerResult(input: ExternalIntegrat
   };
 }
 
+function readExternalBindings(scanner: WorkspaceProjectState["scanner"]): ProjectExternalBinding[] {
+  if (!scanner || typeof scanner !== "object") return [];
+  const bindings = (scanner as Record<string, unknown>).external_bindings;
+  if (!Array.isArray(bindings)) return [];
+  return bindings.filter(
+    (binding): binding is ProjectExternalBinding =>
+      !!binding &&
+      typeof binding === "object" &&
+      typeof (binding as ProjectExternalBinding).binding_id === "string"
+  );
+}
+
 function appendExternalBinding(
   project: WorkspaceProjectState,
   binding: ProjectExternalBinding
 ): WorkspaceProjectState {
   const scanner = project.scanner ?? {};
-  const existing = Array.isArray((scanner as any).external_bindings) ? (scanner as any).external_bindings : [];
-  const filtered = existing.filter((b: any) => String(b?.binding_id ?? "") !== binding.binding_id);
+  const existing = readExternalBindings(scanner);
+  const filtered = existing.filter((entry) => String(entry.binding_id ?? "") !== binding.binding_id);
   return {
     ...project,
     scanner: {
@@ -307,6 +336,10 @@ export function applyExternalIntegrationToWorkspace(
     provenance_ref_id: integrationProvenance.id,
     explanation_notes: input.mapping?.warnings,
   });
+  const existingResponseData =
+    patchedProject.intelligence.responseData && typeof patchedProject.intelligence.responseData === "object"
+      ? (patchedProject.intelligence.responseData as Record<string, unknown>)
+      : null;
   const patchedProjectWithAudit: WorkspaceProjectState = {
     ...patchedProject,
     intelligence: {
@@ -323,13 +356,8 @@ export function applyExternalIntegrationToWorkspace(
           mapping_status: input.mapping?.status,
           update_policy: input.update_policy ?? input.source.refresh_policy ?? DEFAULT_UPDATE_POLICY,
         },
-        trust_provenance: appendTrustProvenance(
-          (patchedProject.intelligence.responseData as any)?.trust_provenance,
-          [integrationProvenance]
-        ),
-        audit_events: appendAuditEvents((patchedProject.intelligence.responseData as any)?.audit_events, [
-          integrationAuditEvent,
-        ]),
+        trust_provenance: appendTrustProvenance(existingResponseData?.trust_provenance, [integrationProvenance]),
+        audit_events: appendAuditEvents(existingResponseData?.audit_events, [integrationAuditEvent]),
       },
     },
   };

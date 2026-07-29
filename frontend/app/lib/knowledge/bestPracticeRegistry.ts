@@ -32,9 +32,7 @@ import type {
   BestPracticeSource,
   BestPracticeTemplate,
   BestPracticeTemplateRegistrationInput,
-} from "./bestPracticeTypes.ts";
-import type { BestPracticeCategoryKey } from "./bestPracticeTypes.ts";
-import {
+} from "./bestPracticeTypes.ts";import {
   validateBestPracticeCategoryRegistration,
   validateBestPracticeRegistration,
   validateBestPracticeTemplateRegistration,

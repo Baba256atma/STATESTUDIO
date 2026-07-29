@@ -96,7 +96,7 @@ test("builds reasoning for simple executive objective", () => {
   const result = buildReasoningExample("simple-executive-objective", WS, "executive-owner", FIXED_TIME);
   assert.ok(result);
   assert.equal(validateReasoning(result!).valid, true);
-  assert.ok(result!.sections.length, 11);
+  assert.equal(result!.sections.length, 11);
   assert.equal(result!.readOnly, true);
 });
 

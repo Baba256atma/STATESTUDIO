@@ -17,11 +17,7 @@ import {
   detectConfidencePeaks,
   detectConfidenceRecoveries,
 } from "./confidenceEvolutionMovementDetection.ts";
-import {
-  CONFIDENCE_EVOLUTION_QUERY_SELF_MANIFEST,
-  getConfidenceRecordsOrdered,
-  isConfidenceEvolutionQueryLayerInitialized,
-} from "./confidenceEvolutionQuery.ts";
+import { CONFIDENCE_EVOLUTION_QUERY_SELF_MANIFEST, getConfidenceRecordsOrdered } from "./confidenceEvolutionQuery.ts";
 import {
   classifyConfidenceStability,
   classifyConfidenceTrendDirection,
@@ -31,18 +27,7 @@ import {
   calculateConfidenceVolatility,
   classifyConfidenceVolatilityLevel,
 } from "./confidenceEvolutionVolatility.ts";
-import {
-  CONFIDENCE_EVOLUTION_TREND_CONTRACT_VERSION,
-  CONFIDENCE_EVOLUTION_TREND_FORBIDDEN_PATTERNS,
-  CONFIDENCE_EVOLUTION_TREND_TAGS,
-  trendFailure,
-  trendSuccess,
-  type BuildConfidenceTrendModelInput,
-  type ConfidenceEvolutionEngineRecord,
-  type ConfidenceEvolutionTrendEngineState,
-  type ConfidenceEvolutionTrendModel,
-  type ConfidenceEvolutionTrendResponse,
-} from "./confidenceEvolutionTrendTypes.ts";
+import { CONFIDENCE_EVOLUTION_TREND_CONTRACT_VERSION, CONFIDENCE_EVOLUTION_TREND_FORBIDDEN_PATTERNS, CONFIDENCE_EVOLUTION_TREND_TAGS, trendFailure, trendSuccess, type BuildConfidenceTrendModelInput, type ConfidenceEvolutionEngineRecord, type ConfidenceEvolutionTrendEngineState, type ConfidenceEvolutionTrendResponse } from "./confidenceEvolutionTrendTypes.ts";
 import {
   validateBuildConfidenceTrendModelInput,
   validateConfidenceEngineAvailabilityForTrend,

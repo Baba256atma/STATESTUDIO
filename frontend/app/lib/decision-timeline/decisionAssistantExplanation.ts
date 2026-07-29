@@ -42,8 +42,7 @@ export function buildDecisionExplanationText(
 
 export function buildDecisionExplanation(
   input: DecisionAssistantIntegrationInput,
-  dashboard: DecisionDashboardModel,
-  generatedAt: string
+  dashboard: DecisionDashboardModel
 ): DecisionAssistantExplanation {
   return Object.freeze({
     explanationId: `decision-assistant-explanation-${dashboard.modelId}`,

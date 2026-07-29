@@ -66,29 +66,11 @@ import {
   getImpactProfiles,
   resetWorkspaceImpactProfileStoreForTests,
 } from "./workspaceImpactEngineContract.ts";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const DATA_SOURCE_ID = "wds_impact_engine_entities";
 const OBJECT_INTELLIGENCE_STORAGE_KEY = "nexora.workspaceObjectIntelligenceProfiles.v1";
 const IMPACT_STORAGE_KEY = "nexora.workspaceImpactProfiles.v1";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
 
 function seedImpactWorkspace(workspaceName: string, csvText: string) {
   const workspace = createWorkspace(workspaceName);
@@ -192,7 +174,7 @@ function seedStoredObjectIntelligenceProfiles(workspaceId: string): void {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetWorkspaceRegistryForTests();
   resetWorkspaceDataSourcesForTests();

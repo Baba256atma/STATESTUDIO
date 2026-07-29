@@ -40,10 +40,10 @@ export type SceneApplyContractDecision =
 function logSceneContract(rejected: boolean, detail: Record<string, unknown>): void {
   if (process.env.NODE_ENV === "production") return;
   if (rejected) {
-    // eslint-disable-next-line no-console
+     
     console.warn("[Nexora][SceneContract][Rejected]", detail);
   } else {
-    // eslint-disable-next-line no-console
+     
     console.log("[Nexora][SceneContract][Decision]", detail);
   }
 }

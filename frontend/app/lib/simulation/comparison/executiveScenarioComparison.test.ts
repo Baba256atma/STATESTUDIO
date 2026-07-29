@@ -187,6 +187,7 @@ test("rejects identical timeline self-comparison", () => {
   });
   assert.equal(result.ok, false);
   if (result.ok) return;
+  if (result.guard.ok) return;
   assert.equal(result.guard.code, "identical_timelines");
 });
 
@@ -202,6 +203,7 @@ test("rejects tick out of range", () => {
   });
   assert.equal(result.ok, false);
   if (result.ok) return;
+  if (result.guard.ok) return;
   assert.equal(result.guard.code, "tick_out_of_range");
 });
 

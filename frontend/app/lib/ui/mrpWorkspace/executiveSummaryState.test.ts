@@ -65,14 +65,12 @@ test("empty state uses empty copy for all fields", () => {
 
 test("publishExecutiveSummaryState skips duplicate signatures", () => {
   const first = publishExecutiveSummaryState({
-    phase: "ready",
     systemStatus: DEFAULT_EXECUTIVE_SUMMARY_READY_STATE.systemStatus,
     topRisk: DEFAULT_EXECUTIVE_SUMMARY_READY_STATE.topRisk,
     topOpportunity: DEFAULT_EXECUTIVE_SUMMARY_READY_STATE.topOpportunity,
     recommendedAttention: DEFAULT_EXECUTIVE_SUMMARY_READY_STATE.recommendedAttention,
   });
   const second = publishExecutiveSummaryState({
-    phase: "ready",
     systemStatus: DEFAULT_EXECUTIVE_SUMMARY_READY_STATE.systemStatus,
     topRisk: DEFAULT_EXECUTIVE_SUMMARY_READY_STATE.topRisk,
     topOpportunity: DEFAULT_EXECUTIVE_SUMMARY_READY_STATE.topOpportunity,
@@ -94,7 +92,6 @@ test("hydrateExecutiveSummaryStateOnMount transitions loading to ready", () => {
 
 test("getExecutiveSummaryStateServerSnapshot returns loading defaults", () => {
   publishExecutiveSummaryState({
-    phase: "ready",
     systemStatus: "warning",
   });
   const snapshot = getExecutiveSummaryStateServerSnapshot();

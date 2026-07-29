@@ -18,14 +18,15 @@ function formatTime(ts: number): string {
   return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatDeltaCounts(v: any): string {
+function formatDeltaCounts(v: unknown): string {
   if (!v || typeof v !== "object") return "";
-  const added = Number(v.added ?? 0);
-  const removed = Number(v.removed ?? 0);
-  const modified = Number(v.modified ?? 0);
-  const unchanged = Number(v.unchanged ?? 0);
-  const severityUp = Number(v.severityUp ?? 0);
-  const severityDown = Number(v.severityDown ?? 0);
+  const record = v as Record<string, unknown>;
+  const added = Number(record.added ?? 0);
+  const removed = Number(record.removed ?? 0);
+  const modified = Number(record.modified ?? 0);
+  const unchanged = Number(record.unchanged ?? 0);
+  const severityUp = Number(record.severityUp ?? 0);
+  const severityDown = Number(record.severityDown ?? 0);
   return `added ${added} • removed ${removed} • modified ${modified} • unchanged ${unchanged} • severity↑ ${severityUp} • severity↓ ${severityDown}`;
 }
 
@@ -113,7 +114,8 @@ function insightFromDecisionDiff(diff: DecisionDiff): DecisionInsight {
     delta === 0 ? "none" : delta <= 2 ? "minor" : "major";
 
   const stability =
-    ((diff as any)?.stabilityHint as DecisionInsight["signals"]["stability"] | undefined) ?? "unknown";
+    (diff as DecisionDiff & { stabilityHint?: DecisionInsight["signals"]["stability"] }).stabilityHint ??
+    "unknown";
 
   const confidence: DecisionInsight["confidence"] =
     stability === "unknown"
@@ -265,7 +267,7 @@ export function DecisionCompareHUD({
   const summaryText =
     typeof diff?.summary === "string"
       ? diff.summary
-      : formatDeltaCounts((diff as any)?.summary) || JSON.stringify((diff as any)?.summary ?? "");
+      : formatDeltaCounts(diff?.summary) || JSON.stringify(diff?.summary ?? "");
 
   return (
     <div

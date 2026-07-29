@@ -1,14 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { normalizeDevTask, sortDevTasks } from "./nexoraDevTaskContract.ts";
+import { normalizeDevTask } from "./nexoraDevTaskContract.ts";
 
 test("normalizeDevTask trims and defaults", () => {
   const t = normalizeDevTask({
     id: "id-1",
     title: "  hello  ",
-    status: "IN_PROGRESS",
-    priority: "HIGH",
+    status: "in_progress",
+    priority: "high",
     createdAt: 5,
     updatedAt: 6,
   });

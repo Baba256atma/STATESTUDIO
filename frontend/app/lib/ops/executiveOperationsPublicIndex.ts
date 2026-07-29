@@ -9,12 +9,7 @@ import * as freeze from "./executionPlatformFreezeIndex.ts";
 import {
   ExecutionPlatformIdentity,
 } from "./executionIndex.ts";
-import {
-  ExecutiveOperationsPlatform,
-  ExecutiveOperationsPlatformPublicRegistry,
-  ExecutiveOperationsPlatformReleaseSummary,
-  validateExecutionPlatformIndex,
-} from "./executionPlatformIndex.ts";
+import { ExecutiveOperationsPlatformPublicRegistry, ExecutiveOperationsPlatformReleaseSummary } from "./executionPlatformIndex.ts";
 import {
   buildExecutionPlatformCertificationManifest,
   getExecutionPlatformCertificationStatus,

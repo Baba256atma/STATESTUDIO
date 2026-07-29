@@ -1,16 +1,5 @@
 import type { DomainId } from "./domainFoundationIndex.ts";
-import type {
-  DomainKpiAggregationType,
-  DomainKpiDefinition,
-  DomainKpiDirection,
-  DomainKpiId,
-  DomainKpiPackageId,
-  DomainKpiRegistry,
-  DomainKpiScope,
-  DomainKpiStatus,
-  DomainKpiUnitType,
-  RegisteredDomainKpiPackage,
-} from "./domainKpiIndex.ts";
+import type { DomainKpiDefinition, DomainKpiId, DomainKpiPackageId, DomainKpiRegistry, DomainKpiScope, DomainKpiStatus, RegisteredDomainKpiPackage } from "./domainKpiIndex.ts";
 
 export type DomainKpiSortKey = "kpiPackageId" | "domainId" | "registrationOrder";
 

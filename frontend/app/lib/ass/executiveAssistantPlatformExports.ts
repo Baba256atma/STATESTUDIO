@@ -2,19 +2,7 @@
  * ASS-1 — Public Executive Assistant Platform exports and foundation facade.
  */
 
-import {
-  ASS_CAPABILITY_KEYS,
-  ASS_CONVERSATION_SCOPE_KEYS,
-  ASS_EXTENSION_POINT_KEYS,
-  ASS_FUTURE_DEPENDENCY_RULES,
-  ASS_INTEGRATION_KEYS,
-  ASS_PLATFORM_CONTRACT_VERSION,
-  ASS_PLATFORM_ID,
-  ASS_PLATFORM_NAME,
-  ASS_PLATFORM_PRINCIPLES,
-  ASS_PUBLIC_API_REGISTRY,
-  ASS_RELEASE_METADATA,
-} from "./executiveAssistantPlatformContracts.ts";
+import { ASS_CAPABILITY_KEYS, ASS_CONVERSATION_SCOPE_KEYS, ASS_EXTENSION_POINT_KEYS, ASS_FUTURE_DEPENDENCY_RULES, ASS_INTEGRATION_KEYS, ASS_PLATFORM_CONTRACT_VERSION, ASS_PLATFORM_ID, ASS_PLATFORM_NAME, ASS_PUBLIC_API_REGISTRY, ASS_RELEASE_METADATA } from "./executiveAssistantPlatformContracts.ts";
 import { getExecutiveAssistantPlatformManifest } from "./executiveAssistantPlatformManifest.ts";
 import {
   getExecutiveAssistantPlatformIdentity,

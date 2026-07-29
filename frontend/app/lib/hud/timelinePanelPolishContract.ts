@@ -4,13 +4,7 @@
 
 import type React from "react";
 
-import {
-  HUD_PANEL_HEADER_PADDING_STYLE,
-  HUD_PANEL_RADIUS,
-  HUD_PANEL_SAFE_TEXT_STYLE,
-  HUD_PANEL_STICKY_HEADER_STYLE,
-  HUD_PANEL_TRUNCATE_TEXT_STYLE,
-} from "./hudPanelDesignContract.ts";
+import { HUD_PANEL_HEADER_PADDING_STYLE, HUD_PANEL_RADIUS, HUD_PANEL_STICKY_HEADER_STYLE, HUD_PANEL_TRUNCATE_TEXT_STYLE } from "./hudPanelDesignContract.ts";
 import { TIMELINE_BOTTOM_INSET_PX } from "./timelineBottomAnchorContract.ts";
 import { resolveTimelineSceneWidthRatio } from "./timelineZoneContract.ts";
 

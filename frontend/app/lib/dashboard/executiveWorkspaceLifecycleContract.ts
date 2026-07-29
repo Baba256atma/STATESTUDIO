@@ -6,15 +6,7 @@
  */
 
 import type { DashboardMode } from "./dashboardModeRuntimeContract.ts";
-import {
-  getExecutiveWorkspaceEntry,
-  listExecutiveWorkspaceIds,
-  resolveExecutiveWorkspaceByDashboardMode,
-  resolveExecutiveWorkspaceByObjectPanelAction,
-  type ExecutiveWorkspaceAvailabilityState,
-  type ExecutiveWorkspaceCatalogEntry,
-  type ExecutiveWorkspaceId,
-} from "./executiveWorkspaceRegistryContract.ts";
+import { resolveExecutiveWorkspaceByDashboardMode, resolveExecutiveWorkspaceByObjectPanelAction, type ExecutiveWorkspaceAvailabilityState, type ExecutiveWorkspaceCatalogEntry, type ExecutiveWorkspaceId } from "./executiveWorkspaceRegistryContract.ts";
 
 export type ExecutiveWorkspaceLifecycleState =
   | "registered"

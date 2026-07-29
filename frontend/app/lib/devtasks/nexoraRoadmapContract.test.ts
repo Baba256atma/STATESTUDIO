@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { groupPhasesByParent, normalizeRoadmapPhase, sortRoadmapPhases } from "./nexoraRoadmapContract.ts";
 
 test("normalizeRoadmapPhase defaults parent and order", () => {
-  const p = normalizeRoadmapPhase({ id: "B.1", title: "  t  ", status: "ACTIVE" });
+  const p = normalizeRoadmapPhase({ id: "B.1", title: "  t  ", status: "active" });
   assert.equal(p.title, "t");
   assert.equal(p.status, "active");
   assert.equal(p.parentId ?? null, null);

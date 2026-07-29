@@ -3,9 +3,13 @@
  */
 
 import type { ExecutiveMemoryCategory, ExecutiveMemoryId, ExecutiveMemoryProviderId, ExecutiveMemoryResult, ExecutiveMemoryWorkspaceId } from "./executiveMemoryTypes.ts";
+export type { ExecutiveMemoryId, ExecutiveMemoryProviderId, ExecutiveMemoryWorkspaceId } from "./executiveMemoryTypes.ts";
+
 import type { ExecutiveMemoryRecord } from "./executiveMemoryRecord.ts";
-import type { ExecutiveMemoryMetadata } from "./executiveMemoryMetadata.ts";
-import type { ExecutiveMemoryBody, ExecutiveMemoryHeader } from "./executiveMemoryMetadata.ts";
+import type {
+  ExecutiveMemoryHeader,
+  ExecutiveMemoryVersion,
+} from "./executiveMemoryMetadata.ts";
 import type { ExecutiveMemoryAssumption, ExecutiveMemoryConstraint, ExecutiveMemoryEvidence, ExecutiveMemoryLessonLearned, ExecutiveMemoryOutcome } from "./executiveMemoryEvidence.ts";
 import type { ExecutiveMemoryConfidence } from "./executiveMemoryConfidence.ts";
 import type { ExecutiveMemoryDecision } from "./executiveMemoryDecision.ts";
@@ -66,6 +70,7 @@ export type ExecutiveMemoryUpdateInput = Readonly<{
     narrative?: string;
     keyPoints?: readonly string[];
   }>;
+  version?: ExecutiveMemoryVersion;
   goal?: ExecutiveMemoryGoal | null;
   intent?: ExecutiveMemoryIntent | null;
   scenario?: ExecutiveMemoryScenario | null;

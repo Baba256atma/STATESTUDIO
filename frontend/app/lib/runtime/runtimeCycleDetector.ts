@@ -56,6 +56,7 @@ function sequenceKey(events: RuntimeCycleEvent[]): string {
 }
 
 function detectRepeatingCycles(now: number): void {
+  void now;
   if (recentEvents.length < MIN_REPEAT_CYCLES) return;
 
   const minLen = 2;

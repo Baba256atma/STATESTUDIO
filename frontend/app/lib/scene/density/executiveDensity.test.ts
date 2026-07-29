@@ -17,6 +17,7 @@ import {
   resetWorkspaceScaleMetricsForTests,
   computeWorkspaceScaleMetrics,
 } from "./index";
+import type { Vector3Tuple } from "../../sceneTypes";
 
 describe("executive density runtimes", () => {
   beforeEach(() => {
@@ -81,7 +82,7 @@ describe("executive density runtimes", () => {
       [0, 0, 0] as const,
       [1.2, 0, 0.4] as const,
     ];
-    const placement = resolveSpacedCatalogPlacementPosition(existing as any, 2, {
+    const placement = resolveSpacedCatalogPlacementPosition(existing as Vector3Tuple[], 2, {
       objectCount: 3,
     });
     expect(placement.position).toHaveLength(3);

@@ -7,6 +7,7 @@ import {
 } from "./workspacePersistenceRuntime";
 import { resetWorkspacePersistenceInstrumentationForTests } from "./workspacePersistenceInstrumentation";
 import type { SceneJson } from "../sceneTypes";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const baseScene: SceneJson = {
   state_vector: {},
@@ -45,25 +46,7 @@ describe("workspacePersistenceRuntime", () => {
   beforeEach(() => {
     resetWorkspacePersistenceInstrumentationForTests();
     vi.spyOn(globalThis.console, "info").mockImplementation(() => undefined);
-    if (typeof globalThis.window === "undefined") {
-      const store: Record<string, string> = {};
-      (globalThis as typeof globalThis & { window: Window }).window = {
-        localStorage: {
-          getItem: (key: string) => store[key] ?? null,
-          setItem: (key: string, value: string) => {
-            store[key] = value;
-          },
-          removeItem: (key: string) => {
-            delete store[key];
-          },
-          clear: () => {
-            Object.keys(store).forEach((key) => delete store[key]);
-          },
-        },
-      } as unknown as Window;
-    } else {
-      window.localStorage.clear();
-    }
+    ensureBrowserLocalStorageHarness();
   });
 
   it("saves and lists executive workspaces", () => {
@@ -90,6 +73,6 @@ describe("workspacePersistenceRuntime", () => {
     });
     expect(loaded.success).toBe(true);
     expect(loaded.nextScene?.scene.objects?.length).toBe(2);
-    expect(loaded.nextScene?.scene.relationships?.length).toBe(1);
+    expect(Array.isArray(loaded.nextScene?.scene.relationships) ? loaded.nextScene?.scene.relationships.length : -1).toBe(1);
   });
 });

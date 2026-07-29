@@ -3,15 +3,7 @@
  * Structured extraction vocabulary — no classification, ranking, or recommendations.
  */
 
-import type {
-  ExecutiveIntent,
-  ExecutiveIntentWorkspaceId,
-  IntentCategory,
-  IntentIdentifier,
-  IntentPriority,
-  IntentScope,
-  IntentTarget,
-} from "./executiveIntentTypes.ts";
+import type { ExecutiveIntent, ExecutiveIntentWorkspaceId, IntentPriority, IntentScope, IntentTarget } from "./executiveIntentTypes.ts";
 import type { IntentExtractionDiagnostic } from "./executiveIntentExtractionDiagnostics.ts";
 
 export const EXECUTIVE_INTENT_EXTRACTION_ENGINE_VERSION = "APP-3/4" as const;

@@ -1,3 +1,61 @@
+export type SimulationMetadata = Record<string, unknown>;
+
+export interface SimulationObjectState {
+  id: string;
+  label: string;
+  coreRole: unknown;
+  domainId: unknown;
+  activityLevel: number;
+  riskLevel: number;
+  stabilityLevel: number;
+  tags: string[];
+  metadata: SimulationMetadata;
+}
+
+export interface SimulationRelationState {
+  id: string;
+  from: string;
+  to: string;
+  relationType: unknown;
+  domainId: unknown;
+  strength: number;
+  volatility: number;
+  tags: string[];
+  metadata: SimulationMetadata;
+}
+
+export interface SimulationLoopState {
+  id: string;
+  label: string;
+  loopType: unknown;
+  nodes: string[];
+  intensity: number;
+  stability: number;
+  domainId: unknown;
+  tags: string[];
+}
+
+export interface SimulationKpiState {
+  id: string;
+  label: string;
+  value: number;
+  trend: unknown;
+  domainId: unknown;
+}
+
+export type ObjectStateMap = Record<string, SimulationObjectState>;
+export type RelationStateMap = Record<string, SimulationRelationState>;
+export type LoopStateMap = Record<string, SimulationLoopState>;
+export type KpiStateMap = Record<string, SimulationKpiState>;
+
+export interface NexoraSimulationRuntimeInput {
+  domainId?: string | null;
+  objects?: unknown[];
+  relations?: unknown[];
+  loops?: unknown[];
+  kpis?: unknown[];
+}
+
 export type NexoraScenarioEventType =
   | "shock"
   | "pressure"
@@ -25,7 +83,7 @@ export interface NexoraScenarioEvent {
   direction?: "increase" | "decrease" | "mixed";
   description?: string;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: SimulationMetadata;
 }
 
 export interface NexoraScenarioDefinition {
@@ -36,7 +94,7 @@ export interface NexoraScenarioDefinition {
   events: NexoraScenarioEvent[];
   tags?: string[];
   severity?: "low" | "moderate" | "high" | "critical";
-  metadata?: Record<string, any>;
+  metadata?: SimulationMetadata;
 }
 
 export interface NexoraSimulationStep {
@@ -72,10 +130,10 @@ export interface NexoraSimulationObjectImpact {
 
 export interface NexoraSimulationSnapshot {
   stepIndex: number;
-  objectStates: Record<string, Record<string, any>>;
-  relationStates: Record<string, Record<string, any>>;
-  loopStates: Record<string, Record<string, any>>;
-  kpiStates: Record<string, Record<string, any>>;
+  objectStates: ObjectStateMap;
+  relationStates: RelationStateMap;
+  loopStates: LoopStateMap;
+  kpiStates: KpiStateMap;
 }
 
 export interface NexoraScenarioOutcome {
@@ -92,16 +150,11 @@ export interface NexoraScenarioOutcome {
 }
 
 export interface NexoraSimulationEngineInput {
-  runtimeModel: any;
-  runtimeContext?: any;
+  runtimeModel: NexoraSimulationRuntimeInput;
+  runtimeContext?: unknown;
   scenario: NexoraScenarioDefinition;
   maxSteps?: number;
 }
-
-type ObjectStateMap = Record<string, Record<string, any>>;
-type RelationStateMap = Record<string, Record<string, any>>;
-type LoopStateMap = Record<string, Record<string, any>>;
-type KpiStateMap = Record<string, Record<string, any>>;
 
 function clamp01(value: number | undefined): number {
   if (!Number.isFinite(Number(value))) return 0;
@@ -120,34 +173,19 @@ function uniq(values: string[]): string[] {
   return Array.from(new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean)));
 }
 
-function normalizeMetadata(value: unknown): Record<string, any> {
-  return value && typeof value === "object" && !Array.isArray(value) ? { ...(value as Record<string, any>) } : {};
+function normalizeMetadata(value: unknown): SimulationMetadata {
+  return value && typeof value === "object" && !Array.isArray(value) ? { ...(value as SimulationMetadata) } : {};
 }
 
 function sortIds(values: string[]): string[] {
   return uniq(values).sort((a, b) => a.localeCompare(b));
 }
 
-function cloneStateMap<T extends Record<string, Record<string, any>>>(stateMap: T): T {
+function cloneStateMap<T>(stateMap: Record<string, T>): Record<string, T> {
   return Object.keys(stateMap).reduce((acc, key) => {
-    acc[key as keyof T] = { ...stateMap[key] } as T[keyof T];
+    acc[key] = { ...stateMap[key] };
     return acc;
-  }, {} as T);
-}
-
-function severityRank(value?: "low" | "moderate" | "high" | "critical" | null): number {
-  switch (value) {
-    case "critical":
-      return 4;
-    case "high":
-      return 3;
-    case "moderate":
-      return 2;
-    case "low":
-      return 1;
-    default:
-      return 0;
-  }
+  }, {} as Record<string, T>);
 }
 
 function trendFromDelta(delta: number): "up" | "down" | "stable" {
@@ -247,14 +285,24 @@ export function normalizeScenarioDefinition(
       ? { description: input.description.trim() }
       : {}),
     ...(input.domainId === undefined ? {} : { domainId: input.domainId === null ? null : String(input.domainId).trim() }),
-    events: Array.isArray(input.events) ? input.events.map((event) => normalizeScenarioEvent(event as any)) : [],
+    events: Array.isArray(input.events)
+      ? input.events.map((event) =>
+          normalizeScenarioEvent(
+            event as Partial<NexoraScenarioEvent> & {
+              id: string;
+              type: NexoraScenarioEventType;
+              targetType: NexoraScenarioTargetType;
+            }
+          )
+        )
+      : [],
     tags: Array.isArray(input.tags) ? uniq(input.tags.map((value) => String(value))) : [],
     ...(input.severity ? { severity: input.severity } : {}),
     metadata: normalizeMetadata(input.metadata),
   };
 }
 
-export function buildBaselineObjectStateMap(runtimeModel: any): Record<string, Record<string, any>> {
+export function buildBaselineObjectStateMap(runtimeModel: NexoraSimulationRuntimeInput): ObjectStateMap {
   const objects = Array.isArray(runtimeModel?.objects) ? runtimeModel.objects : [];
   return objects.reduce((acc: ObjectStateMap, object: unknown) => {
     const id = String((object as { id?: unknown })?.id ?? "").trim();
@@ -275,7 +323,7 @@ export function buildBaselineObjectStateMap(runtimeModel: any): Record<string, R
   }, {} as ObjectStateMap);
 }
 
-export function buildBaselineRelationStateMap(runtimeModel: any): Record<string, Record<string, any>> {
+export function buildBaselineRelationStateMap(runtimeModel: NexoraSimulationRuntimeInput): RelationStateMap {
   const relations = Array.isArray(runtimeModel?.relations) ? runtimeModel.relations : [];
   return relations.reduce((acc: RelationStateMap, relation: unknown) => {
     const id = String((relation as { id?: unknown })?.id ?? "").trim();
@@ -296,7 +344,7 @@ export function buildBaselineRelationStateMap(runtimeModel: any): Record<string,
   }, {} as RelationStateMap);
 }
 
-export function buildBaselineLoopStateMap(runtimeModel: any): Record<string, Record<string, any>> {
+export function buildBaselineLoopStateMap(runtimeModel: NexoraSimulationRuntimeInput): LoopStateMap {
   const loops = Array.isArray(runtimeModel?.loops) ? runtimeModel.loops : [];
   return loops.reduce((acc: LoopStateMap, loop: unknown) => {
     const id = String((loop as { id?: unknown })?.id ?? "").trim();
@@ -316,7 +364,7 @@ export function buildBaselineLoopStateMap(runtimeModel: any): Record<string, Rec
   }, {} as LoopStateMap);
 }
 
-export function buildBaselineKpiStateMap(runtimeModel: any): Record<string, Record<string, any>> {
+export function buildBaselineKpiStateMap(runtimeModel: NexoraSimulationRuntimeInput): KpiStateMap {
   const kpis = Array.isArray(runtimeModel?.kpis) ? runtimeModel.kpis : [];
   return kpis.reduce((acc: KpiStateMap, kpi: unknown) => {
     const id = String((kpi as { id?: unknown })?.id ?? "").trim();
@@ -334,9 +382,9 @@ export function buildBaselineKpiStateMap(runtimeModel: any): Record<string, Reco
 }
 
 export function applyScenarioEventToObjectState(
-  state: Record<string, any>,
+  state: SimulationObjectState,
   event: NexoraScenarioEvent
-): Record<string, any> {
+): SimulationObjectState {
   const delta = inferObjectDeltaForEvent(event);
   return {
     ...state,
@@ -347,9 +395,9 @@ export function applyScenarioEventToObjectState(
 }
 
 export function applyScenarioEventToRelationState(
-  state: Record<string, any>,
+  state: SimulationRelationState,
   event: NexoraScenarioEvent
-): Record<string, any> {
+): SimulationRelationState {
   const intensity = clamp01(event.intensity ?? 0.5);
   const weight = clamp01(event.weight ?? 0.5);
   const delta = intensity * weight;
@@ -377,9 +425,9 @@ export function applyScenarioEventToRelationState(
 }
 
 export function applyScenarioEventToLoopState(
-  state: Record<string, any>,
+  state: SimulationLoopState,
   event: NexoraScenarioEvent
-): Record<string, any> {
+): SimulationLoopState {
   const intensity = clamp01(event.intensity ?? 0.5);
   const weight = clamp01(event.weight ?? 0.5);
   const delta = intensity * weight;
@@ -407,9 +455,9 @@ export function applyScenarioEventToLoopState(
 }
 
 export function applyScenarioEventToKpiState(
-  state: Record<string, any>,
+  state: SimulationKpiState,
   event: NexoraScenarioEvent
-): Record<string, any> {
+): SimulationKpiState {
   const intensity = clamp01(event.intensity ?? 0.5);
   const weight = clamp01(event.weight ?? 0.5);
   const delta = intensity * weight;
@@ -433,9 +481,9 @@ export function applyScenarioEventToKpiState(
 }
 
 export function propagateScenarioAcrossRelations(args: {
-  objectStates: Record<string, Record<string, any>>;
-  relationStates: Record<string, Record<string, any>>;
-}): Record<string, Record<string, any>> {
+  objectStates: ObjectStateMap;
+  relationStates: RelationStateMap;
+}): ObjectStateMap {
   const nextObjectStates = cloneStateMap(args.objectStates);
   const relationIds = Object.keys(args.relationStates).sort((a, b) => a.localeCompare(b));
 
@@ -465,9 +513,9 @@ export function propagateScenarioAcrossRelations(args: {
 }
 
 export function applyLoopInfluenceToObjectStates(args: {
-  objectStates: Record<string, Record<string, any>>;
-  loopStates: Record<string, Record<string, any>>;
-}): Record<string, Record<string, any>> {
+  objectStates: ObjectStateMap;
+  loopStates: LoopStateMap;
+}): ObjectStateMap {
   const nextObjectStates = cloneStateMap(args.objectStates);
   const loopIds = Object.keys(args.loopStates).sort((a, b) => a.localeCompare(b));
 
@@ -511,8 +559,8 @@ export function applyLoopInfluenceToObjectStates(args: {
 }
 
 export function deriveKpiImpactsFromRuntimeState(args: {
-  baselineKpis: Record<string, Record<string, any>>;
-  finalKpis: Record<string, Record<string, any>>;
+  baselineKpis: KpiStateMap;
+  finalKpis: KpiStateMap;
 }): NexoraSimulationKpiImpact[] {
   const ids = sortIds([...Object.keys(args.baselineKpis), ...Object.keys(args.finalKpis)]);
   return ids.map((id) => {
@@ -532,8 +580,8 @@ export function deriveKpiImpactsFromRuntimeState(args: {
 }
 
 export function deriveObjectImpactsFromRuntimeState(args: {
-  baselineObjects: Record<string, Record<string, any>>;
-  finalObjects: Record<string, Record<string, any>>;
+  baselineObjects: ObjectStateMap;
+  finalObjects: ObjectStateMap;
 }): NexoraSimulationObjectImpact[] {
   const ids = sortIds([...Object.keys(args.baselineObjects), ...Object.keys(args.finalObjects)]);
   return ids.map((id) => {
@@ -641,8 +689,8 @@ export function runDomainScenarioSimulation(
   const baselineKpis = buildBaselineKpiStateMap(input.runtimeModel);
 
   let workingObjects = cloneStateMap(baselineObjects);
-  let workingRelations = cloneStateMap(baselineRelations);
-  let workingLoops = cloneStateMap(baselineLoops);
+  const workingRelations = cloneStateMap(baselineRelations);
+  const workingLoops = cloneStateMap(baselineLoops);
   let workingKpis = cloneStateMap(baselineKpis);
 
   const steps: NexoraSimulationStep[] = [];

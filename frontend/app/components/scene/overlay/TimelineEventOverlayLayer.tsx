@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import type { SceneObject } from "../../../lib/sceneTypes";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 
@@ -8,7 +9,7 @@ import type { SpatialTimelineEventAnchor } from "../../../lib/scene/timeline/spa
 import { getObjPos } from "../sceneRenderUtils";
 
 export type TimelineEventOverlayLayerProps = {
-  objects: any[];
+  objects: SceneObject[];
   anchors: readonly SpatialTimelineEventAnchor[];
   visibleAnchorIds: readonly string[];
   selectedEventId?: string | null;
@@ -50,7 +51,7 @@ function markerScale(anchor: SpatialTimelineEventAnchor, selected: boolean, hove
 
 function TimelineEventMarker(props: {
   anchor: SpatialTimelineEventAnchor;
-  objects: any[];
+  objects: SceneObject[];
   selected: boolean;
   hovered: boolean;
   viewMode?: string | null;

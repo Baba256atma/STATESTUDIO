@@ -6,28 +6,7 @@
 import { isExecutiveBusinessDataSourceFrozen } from "../datasource/executiveBusinessDataSourceCertification.ts";
 import { isWorkspaceRegistryAdapterFrozen } from "../datasource/workspaceDataSourceRegistryAdapterCertification.ts";
 import { isBusinessKnowledgeLayerFrozen } from "../businessKnowledge/businessKnowledgeLayerCertification.ts";
-import {
-  INPUT_CENTER_CONNECTOR_TYPES,
-  INPUT_CENTER_DEFAULT_SECURITY_PROFILE,
-  INPUT_CENTER_FORBIDDEN_PATTERNS,
-  INPUT_CENTER_MUST_NOT_OWN,
-  INPUT_CENTER_REQUEST_STATUSES,
-  INPUT_CENTER_REQUEST_TYPES,
-  INPUT_DATA_SOURCE_CENTER_FREEZE_TAGS,
-  INPUT_DATA_SOURCE_CENTER_MODULE_PATHS,
-  INPUT_DATA_SOURCE_CENTER_SELF_MANIFEST,
-  INPUT_DATA_SOURCE_CENTER_TAGS,
-  INPUT_DATA_SOURCE_CENTER_VERSION,
-  computeInputDataSourceCenterOverallScore,
-  meetsInputDataSourceCenterMinimumScore,
-  resolveConnectionRequestExample,
-  resolveImportRequestExample,
-  resolveSourceRegistrationRequestExample,
-  resolveUploadRequestExample,
-  resolveValidationRequestExample,
-  validateInputDataSourceRequest,
-  validateInputCenterOwnership,
-} from "./inputDataSourceCenterContract.ts";
+import { INPUT_CENTER_CONNECTOR_TYPES, INPUT_CENTER_DEFAULT_SECURITY_PROFILE, INPUT_CENTER_FORBIDDEN_PATTERNS, INPUT_CENTER_MUST_NOT_OWN, INPUT_CENTER_REQUEST_STATUSES, INPUT_CENTER_REQUEST_TYPES, INPUT_DATA_SOURCE_CENTER_FREEZE_TAGS, INPUT_DATA_SOURCE_CENTER_MODULE_PATHS, INPUT_DATA_SOURCE_CENTER_SELF_MANIFEST, INPUT_DATA_SOURCE_CENTER_TAGS, INPUT_DATA_SOURCE_CENTER_VERSION, computeInputDataSourceCenterOverallScore, meetsInputDataSourceCenterMinimumScore, resolveConnectionRequestExample, resolveImportRequestExample, resolveSourceRegistrationRequestExample, resolveUploadRequestExample, resolveValidationRequestExample, validateInputDataSourceRequest } from "./inputDataSourceCenterContract.ts";
 import {
   getInputCenterDiagnosticsLog,
   getInputCenterEvents,
@@ -190,10 +169,6 @@ export function runInputDataSourceCenterCertification(input?: {
     validateInputDataSourceRequest(resolveConnectionRequestExample()).valid &&
     validateInputDataSourceRequest(resolveImportRequestExample()).valid &&
     validateInputDataSourceRequest(resolveValidationRequestExample()).valid;
-
-  const ownershipRejected = !validateInputCenterOwnership({
-    record: { requestId: "idsc-001", workspaceId: "" },
-  }).valid;
 
   const securityLocked = INPUT_CENTER_DEFAULT_SECURITY_PROFILE.crossWorkspaceAccess === false;
 

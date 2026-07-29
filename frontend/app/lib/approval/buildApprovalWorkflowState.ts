@@ -11,15 +11,19 @@ import { buildApprovalWorkflowNextSteps } from "./buildApprovalWorkflowNextSteps
 import type { ApprovalWorkflowState } from "./approvalWorkflowTypes";
 
 type BuildApprovalWorkflowStateInput = {
-  canonicalRecommendation?: any | null;
-  decisionExecutionIntent?: any | null;
-  decisionGovernance?: any | null;
-  decisionResult?: any | null;
-  responseData?: any | null;
-  memoryEntries?: any[];
+  canonicalRecommendation?: import("../decision/recommendation/recommendationTypes").CanonicalRecommendation | null;
+  decisionExecutionIntent?: import("../execution/decisionExecutionIntent").DecisionExecutionIntent | null;
+  decisionGovernance?: import("../governance/decisionGovernanceTypes").DecisionGovernanceState | null;
+  decisionResult?: Record<string, unknown> | null;
+  responseData?: Record<string, unknown> | null;
+  memoryEntries?: import("../decision/memory/decisionMemoryTypes").DecisionMemoryEntry[];
   existingWorkflow?: ApprovalWorkflowState | null;
-  policyState?: any | null;
+  policyState?: import("../policy/decisionPolicyTypes").DecisionPolicyState | null;
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
 
 export function buildApprovalWorkflowState(
   input: BuildApprovalWorkflowStateInput
@@ -33,9 +37,10 @@ export function buildApprovalWorkflowState(
       decisionResult: input.decisionResult ?? null,
     });
   const metaDecision = buildMetaDecisionState({
-    reasoning: input.responseData?.ai_reasoning ?? null,
-    simulation: input.responseData?.decision_simulation ?? null,
-    comparison: input.responseData?.decision_comparison ?? input.responseData?.comparison ?? null,
+    reasoning: asRecord(input.responseData?.ai_reasoning),
+    simulation: asRecord(input.responseData?.decision_simulation),
+    comparison:
+      asRecord(input.responseData?.decision_comparison) ?? asRecord(input.responseData?.comparison),
     canonicalRecommendation: input.canonicalRecommendation ?? null,
     calibration: null,
     responseData: input.responseData ?? null,

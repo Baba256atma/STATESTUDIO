@@ -255,7 +255,7 @@ export function runExecutiveInboxFoundation(
       workspaceId: "ws-cert-001",
       label: "Certification Inbox Session",
       description: "APP-11:1 certification session registration.",
-      sourceTypes: Object.freeze(["scenario", "decision"]),
+      sourceTypes: Object.freeze(["scenario", "decision"] as const),
     }),
     timestamp
   );
@@ -271,7 +271,7 @@ export function runExecutiveInboxFoundation(
           workspaceId: "ws-cert-001",
           label: "Duplicate",
           description: "Duplicate registration attempt.",
-          sourceTypes: Object.freeze(["scenario"]),
+          sourceTypes: Object.freeze(["scenario"] as const),
         }),
         timestamp
       ).success === false,
@@ -409,7 +409,7 @@ export function runExecutiveInboxFoundation(
           workspaceId: "ws-cert-001",
           label: "Invalid",
           description: "Missing session id.",
-          sourceTypes: Object.freeze(["scenario"]),
+          sourceTypes: Object.freeze(["scenario"] as const),
         })
       ).valid === false,
       "invalid rejected"

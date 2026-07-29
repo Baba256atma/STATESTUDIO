@@ -34,25 +34,29 @@ test.beforeEach(() => {
 
 test("builds immutable object impact profiles from object intelligence", () => {
   const registry = buildObjectImpactProfileRegistry({
-    sceneObjects: [
-      {
-        id: "supplier-1",
-        label: "Supplier",
-        status: "active",
-        health: 70,
-        relationships: [{ status: "healthy" }],
-        role: "hub",
+    sceneJson: {
+      scene: {
+        objects: [
+          {
+            id: "supplier-1",
+            label: "Supplier",
+            status: "active",
+            health: 70,
+            relationships: [{ status: "healthy" }],
+            role: "hub",
+          },
+          {
+            id: "inventory-1",
+            label: "Inventory",
+            status: "idle",
+            health: 55,
+          },
+        ],
+        relationships: [{ id: "rel-1", sourceId: "supplier-1", targetId: "inventory-1" }],
+        kpis: [{ id: "revenue", value: 100 }],
+        risks: [{ id: "risk-1", severity: 70 }],
       },
-      {
-        id: "inventory-1",
-        label: "Inventory",
-        status: "idle",
-        health: 55,
-      },
-    ],
-    relationships: [{ id: "rel-1", sourceId: "supplier-1", targetId: "inventory-1" }],
-    kpis: [{ id: "revenue", value: 100 }],
-    risks: [{ id: "risk-1", severity: 70 }],
+    },
   });
 
   assert.equal(registry.scenarioCount, 4);
@@ -84,6 +88,7 @@ test("builds immutable object impact profiles from object intelligence", () => {
 
 test("reads scene payload without mutating source records", () => {
   const sceneJson = {
+    state_vector: {},
     scene: {
       objects: [{ id: "line-1", label: "Line", status: "running", health: 62, role: "hub" }],
       relationships: [{ id: "rel-1", sourceId: "line-1", targetId: "line-2" }],
@@ -103,9 +108,15 @@ test("reads scene payload without mutating source records", () => {
 test("indexes profiles by object and scenario while evaluating opportunity uplift", () => {
   const registry = buildObjectImpactProfileRegistry({
     sceneObjects: [{ id: "supplier-1", label: "Supplier", status: "active", health: 60, role: "hub" }],
-    relationships: [{ id: "rel-1", sourceId: "supplier-1", targetId: "inventory-1" }],
-    kpis: [{ id: "margin", value: 40 }],
-    risks: [{ id: "supply-risk", severity: 55 }],
+    sceneJson: {
+      state_vector: {},
+      scene: {
+        objects: [{ id: "supplier-1", label: "Supplier", status: "active", health: 60, role: "hub" }],
+        relationships: [{ id: "rel-1", sourceId: "supplier-1", targetId: "inventory-1" }],
+        kpis: [{ id: "margin", value: 40 }],
+        risks: [{ id: "supply-risk", severity: 55 }],
+      },
+    },
   });
 
   const opportunityProfiles = registry.profilesByScenarioId["scenario:opportunity"];

@@ -63,28 +63,10 @@ import {
   getObjectIntelligenceProfiles,
   resetWorkspaceObjectIntelligenceStoreForTests,
 } from "./workspaceObjectIntelligenceContract.ts";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const DATA_SOURCE_ID = "wds_object_intelligence_entities";
 const OBJECT_INTELLIGENCE_STORAGE_KEY = "nexora.workspaceObjectIntelligenceProfiles.v1";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
 
 function seedObjectIntelligenceWorkspace(workspaceName: string, csvText: string) {
   const workspace = createWorkspace(workspaceName);
@@ -142,7 +124,7 @@ function profile(workspaceId: string, objectId: string) {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetWorkspaceRegistryForTests();
   resetWorkspaceDataSourcesForTests();

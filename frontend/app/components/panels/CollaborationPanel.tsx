@@ -3,6 +3,48 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { cardStyle, inputStyle, nx, primaryButtonStyle, sectionTitleStyle, softCardStyle } from "../ui/nexoraTheme";
 import { EmptyStateCard, ErrorStateCard, LoadingStateCard } from "../ui/panelStates";
+import { readUnknownErrorMessage } from "../../lib/system/nexoraErrors";
+
+type LooseRecord = Record<string, unknown>;
+
+type CollaborationNote = {
+  id?: string;
+  author?: string;
+  text?: string;
+  created_at?: string;
+};
+
+type CollaborationViewpoint = {
+  id?: string;
+  author?: string;
+  label?: string;
+  summary?: string;
+};
+
+type CollaborationData = {
+  summary?: string;
+  notes?: CollaborationNote[];
+  viewpoints?: CollaborationViewpoint[];
+};
+
+function readApiErrorMessage(json: unknown, fallback: string): string {
+  if (!json || typeof json !== "object") return fallback;
+  const record = json as LooseRecord;
+  const detail = record.detail;
+  if (detail && typeof detail === "object") {
+    const detailRecord = detail as LooseRecord;
+    const error = detailRecord.error;
+    if (error && typeof error === "object") {
+      const message = (error as LooseRecord).message;
+      if (typeof message === "string" && message.trim()) return message;
+    }
+    if (typeof detailRecord.message === "string" && detailRecord.message.trim()) {
+      return detailRecord.message;
+    }
+  }
+  if (typeof detail === "string" && detail.trim()) return detail;
+  return fallback;
+}
 
 type Props = {
   backendBase: string;
@@ -14,7 +56,7 @@ export default function CollaborationPanel({ backendBase, episodeId }: Props) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<any | null>(null);
+  const [data, setData] = useState<CollaborationData | null>(null);
 
   const [noteAuthor, setNoteAuthor] = useState("");
   const [noteText, setNoteText] = useState("");
@@ -33,14 +75,14 @@ export default function CollaborationPanel({ backendBase, episodeId }: Props) {
         method: "GET",
         headers: { Accept: "application/json" },
       });
-      const json = await res.json().catch(() => ({}));
+      const json: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = (json as any)?.detail?.error?.message ?? (json as any)?.detail ?? "Failed to load collaboration.";
+        const msg = readApiErrorMessage(json, "Failed to load collaboration.");
         throw new Error(String(msg));
       }
-      setData(json);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load collaboration.");
+      setData(json as CollaborationData);
+    } catch (e: unknown) {
+      setError(readUnknownErrorMessage(e, "Failed to load collaboration."));
     } finally {
       setLoading(false);
     }
@@ -68,15 +110,15 @@ export default function CollaborationPanel({ backendBase, episodeId }: Props) {
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ author: noteAuthor.trim(), text: noteText.trim() }),
       });
-      const json = await res.json().catch(() => ({}));
+      const json: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = (json as any)?.detail?.error?.message ?? (json as any)?.detail ?? "Failed to add note.";
+        const msg = readApiErrorMessage(json, "Failed to add note.");
         throw new Error(String(msg));
       }
       setNoteText("");
       await loadCollaboration();
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to add note.");
+    } catch (e: unknown) {
+      setError(readUnknownErrorMessage(e, "Failed to add note."));
     } finally {
       setSaving(false);
     }
@@ -100,16 +142,16 @@ export default function CollaborationPanel({ backendBase, episodeId }: Props) {
           summary: viewSummary.trim(),
         }),
       });
-      const json = await res.json().catch(() => ({}));
+      const json: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = (json as any)?.detail?.error?.message ?? (json as any)?.detail ?? "Failed to add viewpoint.";
+        const msg = readApiErrorMessage(json, "Failed to add viewpoint.");
         throw new Error(String(msg));
       }
       setViewLabel("");
       setViewSummary("");
       await loadCollaboration();
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to add viewpoint.");
+    } catch (e: unknown) {
+      setError(readUnknownErrorMessage(e, "Failed to add viewpoint."));
     } finally {
       setSaving(false);
     }
@@ -149,7 +191,7 @@ export default function CollaborationPanel({ backendBase, episodeId }: Props) {
       <div style={cardStyle}>
         <div style={sectionTitleStyle}>Notes</div>
         {notes.length ? (
-          notes.slice(0, 3).map((n: any) => (
+          notes.slice(0, 3).map((n) => (
             <div key={String(n?.id ?? Math.random())} style={{ ...softCardStyle, padding: 10 }}>
               <div style={{ color: nx.text, fontSize: 12, fontWeight: 700 }}>{String(n?.author ?? "-")}</div>
               <div style={{ color: "#cbd5e1", fontSize: 12 }}>{String(n?.text ?? "")}</div>
@@ -192,7 +234,7 @@ export default function CollaborationPanel({ backendBase, episodeId }: Props) {
       <div style={cardStyle}>
         <div style={sectionTitleStyle}>Viewpoints</div>
         {viewpoints.length ? (
-          viewpoints.slice(0, 3).map((v: any) => (
+          viewpoints.slice(0, 3).map((v) => (
             <div key={String(v?.id ?? Math.random())} style={{ ...softCardStyle, padding: 10 }}>
               <div style={{ color: nx.text, fontSize: 12, fontWeight: 700 }}>
                 {String(v?.author ?? "-")} · {String(v?.label ?? "-")}

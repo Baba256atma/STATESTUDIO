@@ -5,17 +5,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { evaluateStageFileBoundary, validateStageManifest } from "../stage/stageArchitectureGuards.ts";
+import { evaluateStageFileBoundary } from "../stage/stageArchitectureGuards.ts";
 import { moveToContext, resetExecutiveTimeCameraForTests } from "./executiveTimeCameraEngine.ts";
 import { EXECUTIVE_TIME_FORBIDDEN_PATTERNS } from "./executiveTimeContract.ts";
 import { resetExecutiveTimeContextStoreForTests } from "./executiveTimeContextStore.ts";
 import { resetExecutiveTimeRegistryForTests } from "./executiveTimeRegistry.ts";
-import {
-  classifyConflict,
-  detectConflict,
-  detectConflicts,
-  resetExecutiveConflictEngineForTests,
-} from "./executiveConflictEngine.ts";
+import { classifyConflict, detectConflict, resetExecutiveConflictEngineForTests } from "./executiveConflictEngine.ts";
 import { resolveHighestSeverityConflict } from "./executiveConflictResolver.ts";
 import {
   generatePrediction,
@@ -32,7 +27,6 @@ import {
   resolvePredictionsByHorizon,
 } from "./executivePredictionResolver.ts";
 import { requestPrediction, validateExecutivePredictionRequest } from "./executivePredictionAuthority.ts";
-import { runExecutivePredictionAuthorityCertification } from "./executivePredictionAuthorityCertification.ts";
 import { ExecutivePredictionExecutionDeferredError } from "./executivePredictionAuthorityTypes.ts";
 import { resetExecutiveEventRegistryForTests } from "./executiveEventRegistry.ts";
 import { resetExecutiveTimeEntityStateStoreForTests } from "./executiveTimeStateMutation.ts";
@@ -247,9 +241,6 @@ export function runExecutivePredictionCertification() {
   } catch (error) {
     authorityStillDeferred = error instanceof ExecutivePredictionExecutionDeferredError;
   }
-
-  const priorAuthority = runExecutivePredictionAuthorityCertification();
-  const manifestValidation = validateStageManifest(EXECUTIVE_PREDICTION_ENGINE_MANIFEST);
   const reportPath = join(REPO_ROOT, "docs/app-1-8-executive-prediction-conflict-engine-report.md");
   const engineSource = readFileSync(join(process.cwd(), "app/lib/executive-time/executivePredictionEngine.ts"), "utf8");
   const conflictSource = readFileSync(join(process.cwd(), "app/lib/executive-time/executiveConflictEngine.ts"), "utf8");

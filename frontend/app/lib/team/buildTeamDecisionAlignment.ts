@@ -1,9 +1,12 @@
 import type { TeamDecisionAlignment, TeamRolePerspective } from "./teamDecisionTypes";
 
+import type { MetaDecisionState } from "../decision/meta/metaDecisionTypes";
+import type { DecisionConfidenceModel } from "../decision/confidence/buildDecisionConfidenceModel";
+
 type BuildTeamDecisionAlignmentInput = {
   perspectives: TeamRolePerspective[];
-  confidenceModel?: any | null;
-  metaDecision?: any | null;
+  confidenceModel?: DecisionConfidenceModel | null;
+  metaDecision?: MetaDecisionState | null;
 };
 
 type ActionCategory = "simulate" | "compare" | "preview" | "evidence" | "memory" | "act";

@@ -5,7 +5,7 @@
 // Only buffer values may change.
 // Prevents WebGL buffer mismatch errors.
 
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { PsychVisualProps } from "../../lib/visual/psychVisualMapping";

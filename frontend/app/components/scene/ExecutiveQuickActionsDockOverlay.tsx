@@ -1,9 +1,6 @@
 "use client";
 
-import React from "react";
-
-import type { NexoraHudThemeMode } from "../../lib/scene/nexoraHudTheme";
-import { useFocusHudPresentation } from "../../lib/workspace/useFocusHudPresentation";
+import React from "react";import { useFocusHudPresentation } from "../../lib/workspace/useFocusHudPresentation";
 import { useWorkspaceLayout } from "../../lib/ui/useWorkspaceLayout";
 import {
   ExecutiveQuickActionsDock,
@@ -22,7 +19,7 @@ export type ExecutiveQuickActionsDockOverlayProps = ExecutiveQuickActionsDockPro
 export function ExecutiveQuickActionsDockOverlay(
   props: ExecutiveQuickActionsDockOverlayProps
 ): React.ReactElement {
-  const { stackAboveTimeline = false, ...dockProps } = props;
+  const {...dockProps } = props;
   const { hudStyle, getHudPlacement } = useWorkspaceLayout();
   const placement = getHudPlacement("quickActionsDock");
   const focusHud = useFocusHudPresentation("quickActionsDock", placement.visible);

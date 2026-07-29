@@ -2,9 +2,7 @@
  * SVIE:3:3 — Recommendation visualization runtime (read-only).
  */
 
-import { syncSvieAdvisoryLinkSnapshot } from "./svieAdvisoryLinkRuntime.ts";
-import type { SvieAdvisoryFindingInput } from "./svieAdvisoryLinkFoundationContract.ts";
-import {
+import { syncSvieAdvisoryLinkSnapshot } from "./svieAdvisoryLinkRuntime.ts";import {
   buildSvieRecommendationVisualizationSignature,
   deriveRecommendationHierarchies,
 } from "./svieRecommendationHierarchyDerivation.ts";

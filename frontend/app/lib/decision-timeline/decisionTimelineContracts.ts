@@ -284,7 +284,7 @@ export function getDecisionTimelineManifest(
 export function validateDecisionTimelineFoundation(
   timestamp: string = DEFAULT_TIME
 ): DecisionPlatformValidationReport {
-  const issues: DecisionPlatformValidationReport["issues"] = [];
+  const issues: DecisionPlatformValidationReport["issues"][number][] = [];
 
   const identityValidation = validatePlatformIdentity(DECISION_TIMELINE_PLATFORM_IDENTITY);
   if (!identityValidation.valid) {

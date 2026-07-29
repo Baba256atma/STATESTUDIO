@@ -131,10 +131,10 @@ function buildContextMemoryInput(
   const { record } = env;
   const businessContext = createExecutiveBusinessContext({
     contextId: record.businessContext!.contextId,
-    domain: record.businessContext!.domain,
-    businessUnit: record.businessContext!.businessUnit,
-    department: record.businessContext!.department,
-    market: record.businessContext!.market,
+    domain: record.businessContext!.domain ?? "",
+    businessUnit: record.businessContext!.businessUnit ?? "",
+    department: record.businessContext!.department ?? "",
+    market: record.businessContext!.market ?? "",
     description: record.businessContext!.description,
   });
 
@@ -232,6 +232,7 @@ function buildContextMemoryInput(
       summary: "Structured context memory for executive review.",
       owner: "executive-owner",
       sourceModule: "executive-context-memory",
+      customMetadata: Object.freeze({}),
     }),
     version: createExecutiveContextMemoryVersion({
       versionId: `version-${memoryId}`,

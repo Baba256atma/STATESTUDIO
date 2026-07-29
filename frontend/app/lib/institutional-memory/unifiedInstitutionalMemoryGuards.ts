@@ -71,8 +71,9 @@ export function runtimeSeverity(status: MemoryRuntimeStatus): number {
 
 export function shouldRetainUnifiedSnapshot(
   snapshot: EnterpriseMemoryCognitionSnapshot,
-  _layerDepth: number
+  layerDepth: number
 ): boolean {
+  void layerDepth;
   if (!validateEnterpriseMemorySnapshot(snapshot)) return false;
   if (snapshot.institutionalHealth === "verified" && snapshot.activeSubsystems.length < 5) {
     return false;

@@ -107,7 +107,7 @@ export function classifyBusinessLifecycleSegments(
 export function buildBusinessLifecycleSummary(
   events: readonly BusinessEngineEvent[],
   segments: readonly BusinessLifecycleSegment[],
-  milestones: readonly BusinessLifecycleModel["milestones"]
+  milestones: readonly BusinessLifecycleModel["milestones"][number][]
 ): BusinessLifecycleSummary {
   const phaseCounts: Record<string, number> = {};
   for (const segment of segments) {

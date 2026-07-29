@@ -24,19 +24,7 @@ import {
   EXECUTIVE_STRATEGIC_INITIATIVE_REGISTRY,
   listExecutiveStrategicInitiatives,
 } from "./executiveStrategicInitiativeIndex.ts";
-import {
-  buildExecutiveStrategicRoadmap,
-  EXECUTIVE_STRATEGIC_ROADMAP_MILESTONES,
-  EXECUTIVE_STRATEGIC_ROADMAP_PHASES,
-  EXECUTIVE_STRATEGIC_ROADMAP_REGISTRY,
-  EXECUTIVE_STRATEGIC_ROADMAP_RELATIONSHIPS,
-  EXECUTIVE_STRATEGIC_ROADMAPS,
-  ExecutiveStrategicRoadmapsPlatform,
-  getExecutiveStrategicRoadmapsManifest,
-  listExecutiveStrategicRoadmaps,
-  listExecutiveStrategicRoadmapsPublicApis,
-  validateExecutiveStrategicRoadmap,
-} from "./executiveStrategicRoadmapIndex.ts";
+import { buildExecutiveStrategicRoadmap, EXECUTIVE_STRATEGIC_ROADMAP_PHASES, EXECUTIVE_STRATEGIC_ROADMAP_REGISTRY, EXECUTIVE_STRATEGIC_ROADMAP_RELATIONSHIPS, EXECUTIVE_STRATEGIC_ROADMAPS, ExecutiveStrategicRoadmapsPlatform, getExecutiveStrategicRoadmapsManifest, validateExecutiveStrategicRoadmap } from "./executiveStrategicRoadmapIndex.ts";
 import type { ExecutiveStrategicRoadmapRegistry } from "./executiveStrategicRoadmapTypes.ts";
 
 test("platform identity", () => {

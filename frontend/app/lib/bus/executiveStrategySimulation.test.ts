@@ -38,20 +38,7 @@ import {
   EXECUTIVE_STRATEGY_MONITORING_PUBLIC_APIS,
   EXECUTIVE_STRATEGY_MONITORING_REGISTRY,
 } from "./executiveStrategyMonitoringIndex.ts";
-import {
-  buildExecutiveStrategySimulation,
-  EXECUTIVE_STRATEGY_SIMULATION_ASSUMPTION_REGISTRY,
-  EXECUTIVE_STRATEGY_SIMULATION_OUTCOME_REGISTRY,
-  EXECUTIVE_STRATEGY_SIMULATION_REGISTRY,
-  EXECUTIVE_STRATEGY_SIMULATION_RELATIONSHIPS,
-  EXECUTIVE_STRATEGY_SIMULATION_SCENARIO_REGISTRY,
-  EXECUTIVE_STRATEGY_SIMULATIONS,
-  ExecutiveStrategySimulationPlatform,
-  getExecutiveStrategySimulationManifest,
-  listExecutiveStrategySimulationPublicApis,
-  listExecutiveStrategySimulations,
-  validateExecutiveStrategySimulation,
-} from "./executiveStrategySimulationIndex.ts";
+import { buildExecutiveStrategySimulation, EXECUTIVE_STRATEGY_SIMULATION_ASSUMPTION_REGISTRY, EXECUTIVE_STRATEGY_SIMULATION_OUTCOME_REGISTRY, EXECUTIVE_STRATEGY_SIMULATION_REGISTRY, EXECUTIVE_STRATEGY_SIMULATION_RELATIONSHIPS, EXECUTIVE_STRATEGY_SIMULATION_SCENARIO_REGISTRY, EXECUTIVE_STRATEGY_SIMULATIONS, ExecutiveStrategySimulationPlatform, getExecutiveStrategySimulationManifest, validateExecutiveStrategySimulation } from "./executiveStrategySimulationIndex.ts";
 import type { ExecutiveStrategySimulationRegistry } from "./executiveStrategySimulationTypes.ts";
 
 test("platform identity", () => {

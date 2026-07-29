@@ -16,36 +16,79 @@ import {
 import { buildSimulationResult, createSimulationInputFromPrompt, type SimulationResult } from "../simulationContract";
 import { orchestrateMultiAgentDecision } from "../../reasoning/multiAgentDecisionEngineContract";
 import type { DecisionExecutionResult } from "../../executive/decisionExecutionTypes";
+import type { CanonicalRecommendation } from "../recommendation/recommendationTypes";
 import type { DecisionPipelineState } from "./decisionPipelineTypes";
+import type { SimulationRelation } from "../simulationContract";
+import type { SemanticObject } from "../../objectSemantics";
+import type { SceneObject } from "../../sceneTypes";
+import type { MultiAgentResult } from "../../reasoning/multiAgentDecisionEngineContract";
 
 type RunDecisionPipelineInput = {
   prompt?: string | null;
-  responseData?: any | null;
-  sceneContext?: any | null;
+  responseData?: Record<string, unknown> | null;
+  sceneContext?: Record<string, unknown> | null;
   workspaceId?: string | null;
   projectId?: string | null;
   memoryEntries?: DecisionMemoryEntry[];
   decisionResult?: DecisionExecutionResult | null;
 };
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readNestedRecord(record: Record<string, unknown> | null | undefined, ...keys: string[]): Record<string, unknown> | null {
+  let current: unknown = record;
+  for (const key of keys) {
+    current = asRecord(current)?.[key];
+  }
+  return asRecord(current);
+}
+
+function readNestedValue(record: Record<string, unknown> | null | undefined, ...keys: string[]): unknown {
+  let current: unknown = record;
+  for (const key of keys) {
+    current = asRecord(current)?.[key];
+  }
+  return current;
+}
+
+function readCanonicalFromResponse(responseData: Record<string, unknown>): CanonicalRecommendation | null {
+  const raw = responseData["canonical_recommendation"];
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const record = raw as Record<string, unknown>;
+  const primary = asRecord(record.primary);
+  const reasoning = asRecord(record.reasoning);
+  const confidence = asRecord(record.confidence);
+  if (typeof record.id !== "string" || !primary || typeof primary.action !== "string") return null;
+  if (!reasoning || typeof reasoning.why !== "string") return null;
+  if (!confidence || typeof confidence.score !== "number") return null;
+  if (!Array.isArray(record.alternatives)) return null;
+  return raw as CanonicalRecommendation;
+}
+
+function getObjects(payload: Record<string, unknown> | null | undefined): unknown[] {
+  const sceneJsonObjects = readNestedRecord(payload, "scene_json", "scene")?.objects;
+  if (Array.isArray(sceneJsonObjects)) return sceneJsonObjects;
+  const sceneObjects = readNestedRecord(payload, "scene")?.objects;
+  if (Array.isArray(sceneObjects)) return sceneObjects;
+  return Array.isArray(payload?.objects) ? payload.objects : [];
+}
+
 function text(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
 }
 
-function getObjects(payload: any): any[] {
-  return Array.isArray(payload?.scene_json?.scene?.objects)
-    ? payload.scene_json.scene.objects
-    : Array.isArray(payload?.scene?.objects)
-      ? payload.scene.objects
-      : Array.isArray(payload?.objects)
-        ? payload.objects
-        : [];
-}
-
 function buildFallbackReasoning(input: RunDecisionPipelineInput): ReasoningOutput | null {
-  const prompt = text(input.prompt) || text(input.responseData?.prompt_feedback?.prompt) || "";
-  const projectId = String(input.projectId ?? input.responseData?.project_id ?? "default_project");
-  if (!prompt) return input.responseData?.ai_reasoning ?? null;
+  const responseData = input.responseData ?? null;
+  const prompt = text(input.prompt) || text(readNestedRecord(responseData, "prompt_feedback")?.prompt) || "";
+  const projectId = String(input.projectId ?? responseData?.project_id ?? "default_project");
+  const existingReasoning = readNestedValue(responseData, "ai_reasoning");
+  if (!prompt) {
+    return existingReasoning && typeof existingReasoning === "object"
+      ? (existingReasoning as ReasoningOutput)
+      : null;
+  }
 
   return buildReasoningOutput(
     createReasoningInput({
@@ -53,7 +96,10 @@ function buildFallbackReasoning(input: RunDecisionPipelineInput): ReasoningOutpu
       context: {
         workspace_id: input.workspaceId ?? undefined,
         project_id: projectId,
-        project_domain: input.responseData?.project_domain ?? undefined,
+        project_domain:
+          typeof readNestedValue(responseData, "project_domain") === "string"
+            ? (readNestedValue(responseData, "project_domain") as string)
+            : undefined,
         selected_object_id: null,
         active_mode: null,
         memory_signals: {
@@ -61,14 +107,23 @@ function buildFallbackReasoning(input: RunDecisionPipelineInput): ReasoningOutpu
           recurring_patterns: (input.memoryEntries ?? []).map((entry) => entry.recommendation_action ?? "").filter(Boolean).slice(0, 3),
         },
       },
-      semanticObjects: getObjects(input.sceneContext ?? input.responseData),
+      semanticObjects: getObjects(input.sceneContext ?? responseData) as SemanticObject[],
       simulationContext: {
-        baseline_available: Boolean(input.responseData?.decision_comparison ?? input.responseData?.comparison),
-        active_scenario_id: input.responseData?.decision_simulation?.scenario?.id ?? undefined,
+        baseline_available: Boolean(
+          readNestedValue(responseData, "decision_comparison") ?? readNestedValue(responseData, "comparison")
+        ),
+        active_scenario_id:
+          typeof readNestedRecord(responseData, "decision_simulation", "scenario")?.id === "string"
+            ? (readNestedRecord(responseData, "decision_simulation", "scenario")?.id as string)
+            : undefined,
       },
       strategyContext: {
-        at_risk_kpis: input.responseData?.strategy_kpi?.impact_summary?.at_risk_kpis ?? [],
-        threatened_objectives: input.responseData?.strategy_kpi?.impact_summary?.threatened_objectives ?? [],
+        at_risk_kpis:
+          (readNestedRecord(responseData, "strategy_kpi", "impact_summary")?.at_risk_kpis as string[] | undefined) ?? [],
+        threatened_objectives:
+          (readNestedRecord(responseData, "strategy_kpi", "impact_summary")?.threatened_objectives as
+            | string[]
+            | undefined) ?? [],
       },
     })
   );
@@ -77,10 +132,12 @@ function buildFallbackReasoning(input: RunDecisionPipelineInput): ReasoningOutpu
 function buildFallbackSimulation(input: {
   prompt: string;
   reasoning: ReasoningOutput | null;
-  responseData: any;
+  responseData: Record<string, unknown> | null;
   projectId: string;
 }): SimulationResult | null {
-  if (input.responseData?.decision_simulation) return input.responseData.decision_simulation;
+  const responseData = input.responseData;
+  const existingSimulation = readNestedValue(responseData, "decision_simulation");
+  if (existingSimulation) return existingSimulation as SimulationResult;
   if (!input.reasoning?.inferred_decision_input) return null;
 
   const simInput = createSimulationInputFromPrompt({
@@ -90,13 +147,19 @@ function buildFallbackSimulation(input: {
     kind: input.reasoning.inferred_decision_input.kind,
   });
 
+  const canonicalRecommendation = readCanonicalFromResponse(responseData ?? {});
+  const executiveSummary = readNestedRecord(responseData, "executive_summary_surface");
+  const decisionSimulationRisk = readNestedRecord(responseData, "decision_simulation", "risk");
+
   return buildSimulationResult({
     projectId: input.projectId,
     input: simInput,
-    objects: getObjects(input.responseData),
-    relations: input.responseData?.scene_json?.scene?.relations ?? input.responseData?.relations ?? [],
+    objects: getObjects(responseData) as SceneObject[],
+    relations:
+      ((readNestedRecord(responseData, "scene_json", "scene")?.relations as unknown[]) ??
+      (Array.isArray(responseData?.relations) ? responseData.relations : [])) as SimulationRelation[],
     riskSummary:
-      text(input.responseData?.risk_propagation?.summary) ||
+      text(readNestedRecord(responseData, "risk_propagation")?.summary) ||
       "Simulation estimated downstream exposure based on the current scene graph.",
     timelineSteps: [
       "Immediate pressure appears on the selected targets.",
@@ -104,39 +167,43 @@ function buildFallbackSimulation(input: {
       "Downstream effects remain visible if no mitigation is added.",
     ],
     recommendation:
-      text(input.responseData?.canonical_recommendation?.primary?.action) ||
-      text(input.responseData?.executive_summary_surface?.what_to_do) ||
+      text(canonicalRecommendation?.primary?.action) ||
+      text(executiveSummary?.what_to_do) ||
       "Stabilize the most exposed nodes first.",
     confidence:
-      input.responseData?.canonical_recommendation?.confidence?.score ??
+      canonicalRecommendation?.confidence?.score ??
       input.reasoning.confidence?.score ??
       0.62,
-    affectedDimensions: input.responseData?.decision_simulation?.risk?.affectedDimensions ?? ["stability"],
+    affectedDimensions:
+      (decisionSimulationRisk?.affectedDimensions as string[] | undefined) ?? ["stability"],
   });
 }
 
 export function runDecisionPipeline(input: RunDecisionPipelineInput): DecisionPipelineState {
-  const responseData = input.responseData ?? {};
-  const projectId = String(input.projectId ?? responseData?.project_id ?? "default_project");
+  const responseData: Record<string, unknown> = input.responseData ?? {};
+  const projectId = String(input.projectId ?? responseData.project_id ?? "default_project");
   const prompt =
     text(input.prompt) ||
-    text(responseData?.prompt_feedback?.prompt) ||
+    text(readNestedRecord(responseData, "prompt_feedback")?.prompt) ||
     text(input.memoryEntries?.[0]?.prompt) ||
     "";
-  const recommendation =
-    responseData?.canonical_recommendation ??
-    buildCanonicalRecommendation(responseData);
-  const reasoning = responseData?.ai_reasoning ?? buildFallbackReasoning(input);
+  const recommendation = readCanonicalFromResponse(responseData) ?? buildCanonicalRecommendation(responseData);
+  const reasoningRaw = readNestedValue(responseData, "ai_reasoning");
+  const reasoning =
+    (reasoningRaw && typeof reasoningRaw === "object" ? (reasoningRaw as ReasoningOutput) : null) ??
+    buildFallbackReasoning(input);
+  const simulationRaw = readNestedValue(responseData, "decision_simulation");
   const simulation =
-    responseData?.decision_simulation ??
+    (simulationRaw ? (simulationRaw as SimulationResult) : null) ??
     buildFallbackSimulation({
       prompt,
       reasoning,
       responseData,
       projectId,
     });
+  const multiAgentRaw = readNestedValue(responseData, "multi_agent_decision");
   const multiAgent =
-    responseData?.multi_agent_decision ??
+    (multiAgentRaw && typeof multiAgentRaw === "object" ? multiAgentRaw : null) ??
     (reasoning
       ? orchestrateMultiAgentDecision({
           context: {
@@ -160,7 +227,7 @@ export function runDecisionPipeline(input: RunDecisionPipelineInput): DecisionPi
       responseData: {
         ...responseData,
         canonical_recommendation: recommendation,
-        decision_simulation: simulation ?? responseData?.decision_simulation,
+        decision_simulation: simulation ?? readNestedValue(responseData, "decision_simulation"),
       },
       prompt,
       workspaceId: input.workspaceId,
@@ -188,9 +255,11 @@ export function runDecisionPipeline(input: RunDecisionPipelineInput): DecisionPi
     canonicalRecommendation: recommendation,
   });
   const metaDecision = buildMetaDecisionState({
-    reasoning,
-    simulation,
-    comparison: responseData?.decision_comparison ?? responseData?.comparison ?? null,
+    reasoning: asRecord(reasoningRaw),
+    simulation: asRecord(simulationRaw),
+    comparison:
+      asRecord(readNestedValue(responseData, "decision_comparison")) ??
+      asRecord(readNestedValue(responseData, "comparison")),
     canonicalRecommendation: recommendation,
     calibration,
     responseData,
@@ -203,6 +272,7 @@ export function runDecisionPipeline(input: RunDecisionPipelineInput): DecisionPi
     prompt,
   });
   const now = Date.now();
+  const executionRaw = readNestedValue(responseData, "decision_result");
 
   return {
     decision_id: recommendation?.id ?? `decision_pipeline_${now}`,
@@ -210,8 +280,10 @@ export function runDecisionPipeline(input: RunDecisionPipelineInput): DecisionPi
     reasoning,
     simulation,
     recommendation,
-    multi_agent: multiAgent,
-    execution: input.decisionResult ?? responseData?.decision_result ?? null,
+    multi_agent: (multiAgent as MultiAgentResult | null) ?? null,
+    execution: (input.decisionResult ?? (executionRaw && typeof executionRaw === "object" ? executionRaw : null)) as
+      | DecisionExecutionResult
+      | null,
     memory,
     observed_outcome: observedOutcome,
     outcome_feedback: outcomeFeedback,

@@ -8,9 +8,9 @@ type BuildCollaborationDecisionDeltaInput = {
   sharedRecommendation: string;
   inputs: CollaborationInput[];
   perspectives: CollaboratorPerspective[];
-  teamDecisionState?: any | null;
-  governanceState?: any | null;
-  approvalWorkflowState?: any | null;
+  teamDecisionState?: import("../team/teamDecisionTypes").TeamDecisionState | null;
+  governanceState?: import("../governance/decisionGovernanceTypes").DecisionGovernanceState | null;
+  approvalWorkflowState?: import("../approval/approvalWorkflowTypes").ApprovalWorkflowState | null;
 };
 
 function clean(value: unknown) {
@@ -36,8 +36,8 @@ export function buildCollaborationDecisionDelta(
 
   const changed =
     Boolean(strongestSignal) ||
-    input.governanceState?.approval?.required ||
-    (input.approvalWorkflowState?.required && input.approvalWorkflowState?.status !== "approved");
+    Boolean(input.governanceState?.approval?.required) ||
+    Boolean(input.approvalWorkflowState?.required && input.approvalWorkflowState?.status !== "approved");
 
   return {
     changed,

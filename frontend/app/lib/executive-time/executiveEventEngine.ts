@@ -70,8 +70,6 @@ function buildCameraSnapshot(workspaceId: string): ExecutiveEventCameraSnapshot 
 }
 
 export function createExecutiveEvent(request: ExecutiveEventPublishRequest): ExecutiveEventCreationResult {
-  let lifecycleState = createExecutiveEventLifecycleMetadata("created").currentState;
-
   const validation = validateExecutiveEventRequest(request);
   if (!validation.valid || !validation.normalizedRequest) {
     return Object.freeze({
@@ -81,7 +79,6 @@ export function createExecutiveEvent(request: ExecutiveEventPublishRequest): Exe
       lifecycleState: null,
     });
   }
-  lifecycleState = "validated";
 
   const normalized = validation.normalizedRequest;
   const workspaceId = normalized.workspaceId;
@@ -120,14 +117,12 @@ export function createExecutiveEvent(request: ExecutiveEventPublishRequest): Exe
     readOnly: true as const,
   });
 
-  lifecycleState = "classified";
   const classification = classifyExecutiveEvent({
     entityType: normalized.entityType,
     category: normalized.category,
     eventType: normalized.eventType,
   });
 
-  lifecycleState = "registered";
   const eventId = generateExecutiveEventId(workspaceId);
   const draftEvent: ExecutiveEventRecord = Object.freeze({
     id: eventId,

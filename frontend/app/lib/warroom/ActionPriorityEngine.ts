@@ -190,7 +190,7 @@ function rerank(priorities: readonly WarRoomPriority[]): readonly WarRoomPriorit
 
 function buildTopActions(priorityQueue: readonly WarRoomPriority[]): readonly ExecutiveActionItem[] {
   return Object.freeze(
-    priorityQueue.slice(0, 3).map((priority, index) =>
+    priorityQueue.slice(0, 3).map((priority) =>
       Object.freeze({
         actionId: `top-action:${priority.priorityId}`,
         priorityId: priority.priorityId,

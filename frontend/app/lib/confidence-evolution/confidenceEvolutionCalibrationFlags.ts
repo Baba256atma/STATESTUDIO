@@ -3,16 +3,8 @@
  */
 
 import type { ConfidenceEvolutionEngineRecord } from "./confidenceEvolutionEngineTypes.ts";
-import {
-  CONFIDENCE_CALIBRATION_RULES,
-  calculateRecordEvidenceSupportScore,
-  clampCalibrationScore,
-  isSourceReasonCalibrationAligned,
-} from "./confidenceEvolutionCalibrationRules.ts";
-import {
-  classifyConfidenceCalibrationStatus,
-  evaluateConfidenceCalibration,
-} from "./confidenceEvolutionCalibrationScoring.ts";
+import { CONFIDENCE_CALIBRATION_RULES, clampCalibrationScore, isSourceReasonCalibrationAligned } from "./confidenceEvolutionCalibrationRules.ts";
+import { evaluateConfidenceCalibration } from "./confidenceEvolutionCalibrationScoring.ts";
 import type {
   ConfidenceCalibrationFlagType,
   ConfidenceCalibrationModelFlag,

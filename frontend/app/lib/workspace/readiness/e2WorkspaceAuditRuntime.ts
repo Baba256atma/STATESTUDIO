@@ -47,10 +47,10 @@ export function runE2WorkspaceAudit(context: E2WorkspaceReadinessContext): E2Wor
     );
   }
 
-  const passedChecks = results.filter((r) => r.passed).map(({ severity: _s, ...rest }) => rest);
-  const warnings = results.filter((r) => !r.passed && r.severity === "warn").map(({ severity: _s, ...rest }) => rest);
-  const recommendations = results.filter((r) => !r.passed && r.severity === "rec").map(({ severity: _s, ...rest }) => rest);
-  const criticalIssues = results.filter((r) => !r.passed && r.severity === "critical").map(({ severity: _s, ...rest }) => rest);
+  const passedChecks = results.filter((r) => r.passed).map(({ severity, ...rest }) => { void severity; return rest; });
+  const warnings = results.filter((r) => !r.passed && r.severity === "warn").map(({ severity, ...rest }) => { void severity; return rest; });
+  const recommendations = results.filter((r) => !r.passed && r.severity === "rec").map(({ severity, ...rest }) => { void severity; return rest; });
+  const criticalIssues = results.filter((r) => !r.passed && r.severity === "critical").map(({ severity, ...rest }) => { void severity; return rest; });
 
   const score = Math.round((passedChecks.length / results.length) * 100);
   const report: E2WorkspaceAuditReport = {

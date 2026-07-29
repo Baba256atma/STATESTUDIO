@@ -3,9 +3,7 @@ import type {
   ExecutiveDependencyDirection,
   ExecutiveRelationshipClassification,
   ExecutiveRelationshipMetadata,
-} from "./executiveRelationshipTypes";
-import { TYPE_TO_CLASSIFICATION } from "./executiveRelationshipTypes";
-import { classifyExecutiveRelationship } from "./relationshipClassificationRuntime";
+} from "./executiveRelationshipTypes";import { classifyExecutiveRelationship } from "./relationshipClassificationRuntime";
 import { logExecutiveRelationship } from "./executiveRelationshipInstrumentation";
 
 function readStrength(relationship: NexoraRelationship): number {

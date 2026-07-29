@@ -18,7 +18,7 @@ export type DecisionPipelineState = {
   multi_agent?: MultiAgentResult | null;
   execution?: DecisionExecutionResult | null;
   memory?: DecisionMemoryEntry | null;
-  observed_outcome?: any;
+  observed_outcome?: unknown;
   outcome_feedback?: DecisionOutcomeFeedback | null;
   calibration?: DecisionCalibrationResult | null;
   meta_decision?: MetaDecisionState | null;

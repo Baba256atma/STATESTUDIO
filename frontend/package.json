@@ -7,6 +7,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "typecheck": "tsc --noEmit --pretty false --incremental false",
+    "test:scene:vitest": "node scripts/run-scene-vitest.mjs",
+    "test:scene:node": "node scripts/run-scene-node.mjs",
+    "test:scene": "npm run test:scene:vitest && npm run test:scene:node",
     "test:b3-pipeline-status": "node --test app/screens/nexoraPipelineStatus.test.ts",
     "test:simulation-foundation": "node --test app/lib/simulation/simulationFoundation.test.ts",
     "test:operational-evolution": "node --test app/lib/simulation/operationalStateEvolution.test.ts",
@@ -110,7 +114,9 @@
     "baseline-browser-mapping": "^2.10.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
+    "jiti": "2.6.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "3.2.7"
   }
 }

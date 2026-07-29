@@ -5,7 +5,7 @@ import type { SceneLoop } from "../lib/sceneTypes";
 
 function strengthOf(loop: SceneLoop | undefined): number {
   if (!loop) return 0;
-  return Number((loop as any)?.strength ?? (loop as any)?.weight ?? 0);
+  return Number(loop.strength ?? loop.weight ?? 0);
 }
 
 export function LoopOverlayHUD({
@@ -36,9 +36,9 @@ export function LoopOverlayHUD({
     if (!loop || !Array.isArray(loop.edges)) return [];
     return loop.edges
       .map((e) => ({
-        from: String((e as any)?.from ?? ""),
-        to: String((e as any)?.to ?? ""),
-        label: (e as any)?.label as string | undefined,
+        from: String(e.from ?? ""),
+        to: String(e.to ?? ""),
+        label: typeof e.label === "string" ? e.label : undefined,
       }))
       .filter((p) => p.from && p.to);
   };
@@ -164,7 +164,7 @@ export function LoopOverlayHUD({
                     border: "1px solid rgba(255,255,255,0.18)",
                   }}
                 >
-                  {(activeLoop as any).polarity ?? "neutral"}
+                  {activeLoop.polarity ?? "neutral"}
                 </span>
               </div>
               <div
@@ -230,7 +230,7 @@ export function LoopOverlayHUD({
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                     <div style={{ fontWeight: 700, fontSize: 12, flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {(loop as any).label ?? loop.id}
+                      {loop.label ?? loop.id}
                     </div>
                     <div style={{ fontSize: 11, opacity: 0.75 }}>{s.toFixed(2)}</div>
                   </div>
@@ -244,10 +244,10 @@ export function LoopOverlayHUD({
                         border: "1px solid rgba(255,255,255,0.12)",
                       }}
                     >
-                      {(loop as any).polarity ?? "neutral"}
+                      {loop.polarity ?? "neutral"}
                     </span>
                     <span style={{ fontSize: 11, opacity: 0.75 }}>
-                      {Array.isArray((loop as any).edges) ? `${(loop as any).edges.length} edges` : "0 edges"}
+                      {Array.isArray(loop.edges) ? `${loop.edges.length} edges` : "0 edges"}
                     </span>
                   </div>
                 </div>

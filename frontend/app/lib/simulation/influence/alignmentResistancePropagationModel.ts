@@ -5,9 +5,6 @@
 import type { HumanActorSimulationState } from "../actors/humanActorTypes.ts";
 import type { ExecutiveCoordinationState } from "../coordination/coordinationDynamicsTypes.ts";
 import type { OrganizationalDecisionFrictionState } from "../friction/decisionFrictionTypes.ts";
-import type { EnterpriseEquilibriumState } from "../equilibrium/equilibriumTypes.ts";
-import type { EnterpriseMomentumState } from "../momentum/operationalMomentumTypes.ts";
-import type { OrganizationalRecoveryState } from "../recovery/recoveryCapacityTypes.ts";
 import type { OperationalUniverseTopology } from "../topology/topologyTypes.ts";
 import type {
   StakeholderInfluenceSignal,

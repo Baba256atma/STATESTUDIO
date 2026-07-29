@@ -2,8 +2,6 @@
  * APP-10:4 — Outcome Learning Engine constants.
  */
 
-import type { OutcomeCategory } from "./outcomeLearningEngineTypes.ts";
-
 export const OUTCOME_LEARNING_ENGINE_CONTRACT_VERSION = "APP-10/4" as const;
 export const OUTCOME_LEARNING_ENGINE_ARCHITECTURE_VERSION = "APP-10/4-outcome-learning-arch" as const;
 export const OUTCOME_LEARNING_ENGINE_OWNER = "outcome-learning-engine" as const;
@@ -40,9 +38,9 @@ export const OUTCOME_CATEGORY_KEYS = Object.freeze([
   "moderate_failure",
   "critical_failure",
   "mixed_outcome",
-] as const satisfies readonly OutcomeCategory[]);
+] as const);
 
-export const OUTCOME_CATEGORY_LABELS: Readonly<Record<OutcomeCategory, string>> = Object.freeze({
+export const OUTCOME_CATEGORY_LABELS: Readonly<Record<(typeof OUTCOME_CATEGORY_KEYS)[number], string>> = Object.freeze({
   strong_success: "Strong Success",
   moderate_success: "Moderate Success",
   neutral: "Neutral",

@@ -427,28 +427,21 @@ export function SceneMood({
   chaos: number;
   mode?: "day" | "night" | "stars";
 }) {
-  const { scene } = useThree();
-  useEffect(() => {
-    const settings = {
-      day: { fogColor: "#d7e3f4", baseNear: 10, baseFar: 32 },
-      night: { fogColor: "#0b0f16", baseNear: 7, baseFar: 20 },
-      stars: { fogColor: "#070b1a", baseNear: 8, baseFar: 24 },
-    }[mode];
-    const near = settings.baseNear - chaos * 0.6;
-    const far = settings.baseFar - chaos * 1.2;
-    scene.fog = new THREE.Fog(
-      settings.fogColor,
-      Math.max(3, near),
-      Math.max(near + 6, far)
-    );
-    return () => {
-      scene.fog = null;
-    };
-  }, [chaos, mode, scene]);
-
+  const settings = {
+    day: { fogColor: "#d7e3f4", baseNear: 10, baseFar: 32 },
+    night: { fogColor: "#0b0f16", baseNear: 7, baseFar: 20 },
+    stars: { fogColor: "#070b1a", baseNear: 8, baseFar: 24 },
+  }[mode];
+  const near = settings.baseNear - chaos * 0.6;
+  const far = settings.baseFar - chaos * 1.2;
   const baseAmbient = mode === "day" ? 0.55 : mode === "night" ? 0.3 : 0.26;
   const intensity = clamp(baseAmbient + chaos * 0.08, 0.22, 0.7);
-  return <ambientLight intensity={intensity} />;
+  return (
+    <>
+      <fog attach="fog" args={[settings.fogColor, Math.max(3, near), Math.max(near + 6, far)]} />
+      <ambientLight intensity={intensity} />
+    </>
+  );
 }
 
 function ErrorOverlay({ error }: { error: string }) {
@@ -493,25 +486,25 @@ export function SystemVisualScene({
   backgroundMode?: "day" | "night" | "stars";
 }) {
   const parsed = useMemo(() => parseVisualState(visual), [visual]);
-  if (!parsed.ok) {
+  const data: VisualState | null = parsed.ok ? parsed.data : null;
+  const focusId = data?.focus;
+  const focusActive = !!focusId;
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, VisualNode>();
+    data?.nodes.forEach((node) => map.set(node.id, node));
+    return map;
+  }, [data?.nodes]);
+
+  if (!parsed.ok || !data) {
     return (
       <>
         <CameraInit position={[0, 0, 6]} />
         <ambientLight intensity={0.35} />
         <directionalLight position={[4, 6, 4]} intensity={0.6} />
-        <ErrorOverlay error={parsed.error} />
+        <ErrorOverlay error={parsed.ok ? "Invalid visual state" : parsed.error} />
       </>
     );
   }
-
-  const data: VisualState = parsed.data;
-  const focusId = data.focus;
-  const focusActive = !!focusId;
-  const nodeMap = useMemo(() => {
-    const map = new Map<string, VisualNode>();
-    data.nodes.forEach((node) => map.set(node.id, node));
-    return map;
-  }, [data.nodes]);
 
   const chaos = data.field?.chaos ?? 0;
   const directionalIntensity =

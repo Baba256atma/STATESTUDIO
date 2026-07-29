@@ -244,13 +244,16 @@ export function runDecisionComparisonEngine(): DecisionComparisonEngineCertifica
     )
   );
 
+  const versionLeft = comparison.data?.versionDiff.left;
+  const versionRight = comparison.data?.versionDiff.right;
   checks.push(
     check(
       "version_diff",
       "Version diff field populated",
-      comparison.data?.versionDiff.left === comparison.data?.versionDiff.right &&
-        comparison.data?.versionDiff.left.includes("APP-6/3"),
-      comparison.data?.versionDiff.left ?? "null"
+      versionLeft !== undefined &&
+        versionLeft === versionRight &&
+        versionLeft.includes("APP-6/3"),
+      versionLeft ?? "null"
     )
   );
 

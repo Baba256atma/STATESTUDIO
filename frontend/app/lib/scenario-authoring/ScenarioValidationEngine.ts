@@ -5,16 +5,7 @@ import { getRelationshipIntelligenceRegistry } from "../relationship-intelligenc
 import { getRiskIntelligenceRegistry } from "../risk-intelligence/RiskIntelligenceRuntime.ts";
 import type { ScenarioDraft } from "./scenarioAuthoringContract.ts";
 import type { ScenarioInputModel } from "./scenarioInputModelContract.ts";
-import {
-  EMPTY_SCENARIO_VALIDATION_REFERENCE_CATALOG,
-  EMPTY_SCENARIO_VALIDATION_RESULT,
-  SCENARIO_VALIDATION_ENGINE_DIAGNOSTICS,
-  SCENARIO_VALIDATION_ENGINE_VERSION,
-  type ScenarioValidationEngineBuildInput,
-  type ScenarioValidationIssue,
-  type ScenarioValidationReferenceCatalog,
-  type ScenarioValidationResult,
-} from "./scenarioValidationEngineContract.ts";
+import { EMPTY_SCENARIO_VALIDATION_RESULT, SCENARIO_VALIDATION_ENGINE_DIAGNOSTICS, SCENARIO_VALIDATION_ENGINE_VERSION, type ScenarioValidationEngineBuildInput, type ScenarioValidationIssue, type ScenarioValidationReferenceCatalog, type ScenarioValidationResult } from "./scenarioValidationEngineContract.ts";
 
 let latestScenarioValidationResult: ScenarioValidationResult = EMPTY_SCENARIO_VALIDATION_RESULT;
 

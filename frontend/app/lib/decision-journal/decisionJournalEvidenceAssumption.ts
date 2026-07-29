@@ -27,14 +27,7 @@ import {
   type DecisionJournalEvidenceAssumptionEngineState,
   type DecisionJournalEvidenceAssumptionResponse,
 } from "./decisionJournalEvidenceAssumptionTypes.ts";
-import {
-  validateBuildDecisionJournalEvidenceAssumptionInput,
-  validateDecisionJournalEvidenceAssumptionModel,
-  validateFoundationCompatibilityForEvidenceAssumption,
-  validateJournalEngineAvailabilityForEvidenceAssumption,
-  validateQueryLayerAvailabilityForEvidenceAssumption,
-  validateReflectionLayerAvailabilityForEvidenceAssumption,
-} from "./decisionJournalEvidenceAssumptionValidation.ts";
+import { validateBuildDecisionJournalEvidenceAssumptionInput, validateDecisionJournalEvidenceAssumptionModel, validateJournalEngineAvailabilityForEvidenceAssumption, validateQueryLayerAvailabilityForEvidenceAssumption, validateReflectionLayerAvailabilityForEvidenceAssumption } from "./decisionJournalEvidenceAssumptionValidation.ts";
 
 export const DECISION_JOURNAL_EVIDENCE_ASSUMPTION_FORBIDDEN_PATTERNS_FULL = Object.freeze([
   ...STAGE_GLOBAL_FORBIDDEN_PATTERNS,

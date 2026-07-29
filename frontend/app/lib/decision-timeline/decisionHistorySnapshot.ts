@@ -3,12 +3,7 @@
  * Immutable read-only history snapshots — no persistence.
  */
 
-import {
-  createDecisionHistoryId,
-  DECISION_HISTORY_ENGINE_CONTRACT_VERSION,
-  type DecisionHistory,
-  type DecisionHistorySnapshot,
-} from "./decisionHistoryTypes.ts";
+import { DECISION_HISTORY_ENGINE_CONTRACT_VERSION, type DecisionHistory, type DecisionHistorySnapshot } from "./decisionHistoryTypes.ts";
 import { freezeDecisionHistory } from "./decisionHistoryBuilder.ts";
 
 export function createDecisionHistorySnapshotId(

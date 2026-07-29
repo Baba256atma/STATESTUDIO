@@ -15,18 +15,16 @@ import {
 } from "./sceneNavigationStore";
 import { resetSceneNavigationInstrumentationForTests } from "../ui/sceneNavigationInstrumentation";
 import { resolveSceneNavigationToolbarPlacement } from "./sceneNavigationPlacement";
+import { EXECUTIVE_SCENE_HUD_GRID } from "./executiveSceneHudGrid";
 import { resolveWorkspaceLayoutContract } from "../ui/workspaceLayoutController";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 describe("sceneNavigationContract", () => {
   beforeEach(() => {
     resetSceneNavigationStoreForTests();
     resetSceneNavigationInstrumentationForTests();
     resetGlobalSceneResetRuntimeForTests();
-    if (typeof globalThis.window === "undefined") {
-      (globalThis as typeof globalThis & { window: Window }).window = {
-        dispatchEvent: () => true,
-      } as unknown as Window;
-    }
+    ensureBrowserLocalStorageHarness({ includeEventDispatch: true });
     vi.spyOn(window, "dispatchEvent").mockImplementation(() => true);
   });
 
@@ -70,8 +68,10 @@ describe("sceneNavigationContract", () => {
 });
 
 describe("sceneNavigationPlacement", () => {
-  it("offsets top-center toolbar when top-docked HUDs are visible", () => {
+  it("places top-center toolbar on the E2:57 unified top baseline", () => {
     const contract = resolveWorkspaceLayoutContract("analysis", 1280);
+    // Pre-unification fixture: a top-docked timeline must not displace the toolbar.
+    // E2:21/E2:57 keep the toolbar on EXECUTIVE_SCENE_HUD_GRID.topMargin with peer HUDs.
     contract.hud.timelineHud = {
       ...contract.hud.timelineHud,
       bottom: undefined,
@@ -80,7 +80,7 @@ describe("sceneNavigationPlacement", () => {
       transform: "translateX(-50%)",
     };
     const style = resolveSceneNavigationToolbarPlacement(contract);
-    expect(style.top).toBeGreaterThan(12);
+    expect(style.top).toBe(EXECUTIVE_SCENE_HUD_GRID.topMargin);
     expect(style.left).toBe("50%");
   });
 });

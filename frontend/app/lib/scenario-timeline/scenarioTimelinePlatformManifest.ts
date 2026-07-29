@@ -15,7 +15,10 @@ import {
 } from "./scenarioTimelinePlatformConstants.ts";
 import { isScenarioTimelinePlatformInitialized } from "./scenarioTimelinePlatformFoundation.ts";
 import { getTimelineRegistrySnapshot } from "./scenarioTimelinePlatformRegistry.ts";
-import type { ScenarioTimelineValidationResult } from "./scenarioTimelinePlatformTypes.ts";
+import type {
+  ScenarioTimelineValidationIssue,
+  ScenarioTimelineValidationResult,
+} from "./scenarioTimelinePlatformTypes.ts";
 
 export type ScenarioTimelinePlatformManifest = Readonly<{
   manifestVersion: typeof SCENARIO_TIMELINE_PLATFORM_CONTRACT_VERSION;
@@ -55,7 +58,9 @@ export function validateScenarioTimelineManifest(
   manifest: ScenarioTimelinePlatformManifest
 ): ScenarioTimelineValidationResult {
   const stageValidation = validateStageManifest(manifest.stageManifest);
-  const issues = [...stageValidation.issues];
+  const issues: ScenarioTimelineValidationIssue[] = stageValidation.issues.map((issue) =>
+    Object.freeze({ code: issue.code, message: issue.message, readOnly: true as const })
+  );
   if (manifest.manifestVersion !== SCENARIO_TIMELINE_PLATFORM_CONTRACT_VERSION) {
     issues.push(
       Object.freeze({

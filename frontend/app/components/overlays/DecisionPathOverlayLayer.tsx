@@ -148,10 +148,9 @@ export function DecisionPathOverlayLayer({
   overlay: DecisionPathOverlayState | null;
   children: (state: DecisionPathRendererState) => React.ReactNode;
 }) {
-  const overlaySignature = buildDecisionPathOverlaySignature(overlay);
   const renderState = useMemo(
     () => buildDecisionPathRendererState(overlay),
-    [overlaySignature]
+    [overlay]
   );
 
   useEffect(() => {

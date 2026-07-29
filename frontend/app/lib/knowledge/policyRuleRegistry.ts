@@ -35,7 +35,7 @@ import type {
   PolicyRuleBaseState,
   RuleOwner,
 } from "./policyRuleTypes.ts";
-import type { PolicyCategoryKey, PolicyGroupKey } from "./policyRuleTypes.ts";
+import type { PolicyGroupKey } from "./policyRuleTypes.ts";
 import {
   validateBusinessRuleRegistration,
   validatePolicyCategoryRegistration,

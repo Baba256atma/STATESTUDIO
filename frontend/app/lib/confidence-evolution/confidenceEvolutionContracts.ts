@@ -248,7 +248,7 @@ export function getConfidenceEvolutionManifest(
 export function validateConfidenceEvolution(
   timestamp: string = DEFAULT_TIME
 ): ConfidenceEvolutionPlatformValidationReport {
-  const issues: ConfidenceEvolutionPlatformValidationReport["issues"] = [];
+  const issues: ConfidenceEvolutionPlatformValidationReport["issues"][number][] = [];
 
   const identityValidation = validatePlatformIdentity(CONFIDENCE_EVOLUTION_PLATFORM_IDENTITY);
   if (!identityValidation.valid) {

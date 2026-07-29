@@ -153,6 +153,54 @@ export default function StrategicAdvicePanel({
     });
   }
 
+  return (
+    <StrategicAdvicePanelReady
+      summary={summary}
+      primaryRecommendation={primaryRecommendation}
+      why={why}
+      executiveSummary={executiveSummary}
+      actions={actions}
+      confidence={confidence}
+      recommendation={recommendation}
+      adviceWhyLines={adviceWhyLines}
+      simulationSummary={simulationSummary}
+      impactedNodes={impactedNodes}
+      riskDelta={riskDelta}
+      supportingDriverLabels={supportingDriverLabels}
+      relatedObjectIds={relatedObjectIds}
+    />
+  );
+}
+
+function StrategicAdvicePanelReady({
+  summary,
+  primaryRecommendation,
+  why,
+  executiveSummary,
+  actions,
+  confidence,
+  recommendation,
+  adviceWhyLines,
+  simulationSummary,
+  impactedNodes,
+  riskDelta,
+  supportingDriverLabels,
+  relatedObjectIds,
+}: {
+  summary: string;
+  primaryRecommendation: string | null;
+  why: string | null;
+  executiveSummary: string | null;
+  actions: AdviceAction[];
+  confidence: unknown;
+  recommendation: CanonicalRecommendation | null;
+  adviceWhyLines: string[];
+  simulationSummary: string | null;
+  impactedNodes: string[];
+  riskDelta: number | null;
+  supportingDriverLabels: string[];
+  relatedObjectIds: string[];
+}) {
   const intelligence = React.useMemo(
     () =>
       buildAdviceIntelligence({

@@ -28,11 +28,7 @@ import {
   resetExecutiveRecommendationGovernanceEngineForTests,
   validateExecutiveRecommendationGovernance,
 } from "./executiveRecommendationGovernanceEngine.ts";
-import {
-  initializeRecommendationOptimizationEngine,
-  optimizeExecutiveRecommendations,
-  resetExecutiveRecommendationOptimizationEngineForTests,
-} from "./executiveRecommendationOptimizationEngine.ts";
+import { optimizeExecutiveRecommendations, resetExecutiveRecommendationOptimizationEngineForTests } from "./executiveRecommendationOptimizationEngine.ts";
 import {
   EXECUTIVE_RECOMMENDATION_DELIVERY_CONSUMER_TARGETS,
   EXECUTIVE_RECOMMENDATION_DELIVERY_ENGINE_CONTRACT_VERSION,

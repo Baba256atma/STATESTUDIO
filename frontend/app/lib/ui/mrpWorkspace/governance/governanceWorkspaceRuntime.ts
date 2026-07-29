@@ -3,10 +3,7 @@
  */
 
 import type { GovernanceWorkspaceView } from "./governanceWorkspaceContract.ts";
-import {
-  resetGovernanceWorkspaceFoundationBoundaryForTests,
-  traceGovernanceFoundationBoundaryOnce,
-} from "./governanceWorkspaceFoundationBoundary.ts";
+import { resetGovernanceWorkspaceFoundationBoundaryForTests } from "./governanceWorkspaceFoundationBoundary.ts";
 import { resetGovernanceDecisionGateForTests } from "./governanceDecisionGateRuntime.ts";
 import { resetGovernanceDecisionGateBoundaryForTests } from "./governanceDecisionGateBoundary.ts";
 import { resetGovernanceApprovalLayerBoundaryForTests } from "./governanceApprovalLayerBoundary.ts";
@@ -90,9 +87,10 @@ export function resetGovernanceWorkspaceRuntimeForTests(): void {
   resetGovernanceWorkspaceFoundationBoundaryForTests();
 }
 
-export function buildGovernanceWorkspaceView(_input?: {
+export function buildGovernanceWorkspaceView(input?: {
   mountKey?: string | null;
 }): GovernanceWorkspaceView {
+  void input;
   return buildGovernanceWorkspaceViewFromState(getGovernanceWorkspaceState());
 }
 

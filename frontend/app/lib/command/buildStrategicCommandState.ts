@@ -23,9 +23,9 @@ import { buildStrategicCommandPriority } from "./buildStrategicCommandPriority";
 import { buildStrategicCommandRoutingHints } from "./buildStrategicCommandRoutingHints";
 
 type BuildStrategicCommandStateInput = {
-  responseData?: any | null;
+  responseData?: unknown;
   canonicalRecommendation?: CanonicalRecommendation | null;
-  decisionResult?: any | null;
+  decisionResult?: unknown;
   memoryEntries?: DecisionMemoryEntry[];
   collaborationInputs?: CollaborationInput[];
   confidenceModel?: ReturnType<typeof buildDecisionConfidenceModel> | null;
@@ -56,17 +56,24 @@ function dedupe(items: Array<string | null | undefined>, limit = 5): string[] {
   ).slice(0, limit);
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 export function buildStrategicCommandState(
   input: BuildStrategicCommandStateInput
 ): StrategicCommandState {
-  const responseData = input.responseData ?? null;
+  const responseRecord = asRecord(input.responseData);
+  const responseData = responseRecord;
+  const decisionResultRecord = asRecord(input.decisionResult);
+  const executiveSummarySurface = asRecord(responseRecord?.executive_summary_surface);
   const canonicalRecommendation = input.canonicalRecommendation ?? null;
   const memoryEntries = input.memoryEntries ?? [];
   const executionIntent = buildDecisionExecutionIntent({
     source: "recommendation",
     canonicalRecommendation,
     responseData,
-    decisionResult: input.decisionResult ?? null,
+    decisionResult: decisionResultRecord,
   });
 
   const confidenceModel =
@@ -74,7 +81,7 @@ export function buildStrategicCommandState(
     buildDecisionConfidenceModel({
       canonicalRecommendation,
       responseData,
-      decisionResult: input.decisionResult ?? null,
+      decisionResult: decisionResultRecord,
     });
   const calibration =
     input.calibration ??
@@ -84,7 +91,7 @@ export function buildStrategicCommandState(
       outcomeAssessment: buildDecisionOutcomeAssessment({
         canonicalRecommendation,
         responseData,
-        decisionResult: input.decisionResult ?? null,
+        decisionResult: decisionResultRecord,
         memoryEntries,
       }),
       memoryEntries,
@@ -96,7 +103,7 @@ export function buildStrategicCommandState(
       observedAssessment: buildObservedOutcomeAssessment({
         canonicalRecommendation,
         responseData,
-        decisionResult: input.decisionResult ?? null,
+        decisionResult: decisionResultRecord,
         memoryEntries,
       }),
       memoryEntry: memoryEntries[0] ?? null,
@@ -105,9 +112,9 @@ export function buildStrategicCommandState(
   const metaDecision =
     input.metaDecision ??
     buildMetaDecisionState({
-      reasoning: responseData?.ai_reasoning ?? null,
-      simulation: responseData?.decision_simulation ?? null,
-      comparison: responseData?.decision_comparison ?? responseData?.comparison ?? null,
+      reasoning: asRecord(responseRecord?.ai_reasoning),
+      simulation: asRecord(responseRecord?.decision_simulation),
+      comparison: asRecord(responseRecord?.decision_comparison ?? responseRecord?.comparison),
       canonicalRecommendation,
       calibration,
       responseData,
@@ -118,7 +125,7 @@ export function buildStrategicCommandState(
     buildTeamDecisionState({
       responseData,
       canonicalRecommendation,
-      decisionResult: input.decisionResult ?? null,
+      decisionResult: decisionResultRecord,
       memoryEntries,
     });
   const collaborationState =
@@ -127,7 +134,7 @@ export function buildStrategicCommandState(
       canonicalRecommendation,
       decisionExecutionIntent: executionIntent,
       responseData,
-      decisionResult: input.decisionResult ?? null,
+      decisionResult: decisionResultRecord,
       memoryEntries,
       collaborationInputs: input.collaborationInputs ?? [],
       teamDecisionState: teamDecision,
@@ -143,7 +150,7 @@ export function buildStrategicCommandState(
     buildDecisionPolicyState({
       canonicalRecommendation,
       decisionExecutionIntent: executionIntent,
-      decisionResult: input.decisionResult ?? null,
+      decisionResult: decisionResultRecord,
       responseData,
       memoryEntries,
     });
@@ -152,7 +159,7 @@ export function buildStrategicCommandState(
     buildDecisionGovernanceState({
       canonicalRecommendation,
       decisionExecutionIntent: executionIntent,
-      decisionResult: input.decisionResult ?? null,
+      decisionResult: decisionResultRecord,
       responseData,
       memoryEntries,
       orgMemoryState: orgMemory,
@@ -166,7 +173,7 @@ export function buildStrategicCommandState(
       canonicalRecommendation,
       decisionExecutionIntent: executionIntent,
       decisionGovernance: governanceState,
-      decisionResult: input.decisionResult ?? null,
+      decisionResult: decisionResultRecord,
       responseData,
       memoryEntries,
       policyState,
@@ -176,14 +183,15 @@ export function buildStrategicCommandState(
     buildAutonomousDecisionCouncilState({
       responseData,
       canonicalRecommendation,
-      decisionResult: input.decisionResult ?? null,
+      decisionResult: decisionResultRecord,
       memoryEntries,
       collaborationInputs: input.collaborationInputs ?? [],
     });
 
   const recommendationAction = text(
-    canonicalRecommendation?.primary?.action,
-    responseData?.executive_summary_surface?.what_to_do ?? "No clear recommendation is available yet."
+    canonicalRecommendation?.primary?.action ||
+      executiveSummarySurface?.what_to_do,
+    "No clear recommendation is available yet."
   );
   const orgWarning = orgMemory.relevant_signals[0]?.summary ?? orgMemory.current_decision_note ?? null;
   const councilReservation = decisionCouncil.consensus.main_reservations[0] ?? decisionCouncil.debate.unresolved_questions[0] ?? null;
@@ -271,10 +279,10 @@ export function buildStrategicCommandState(
                   : priority === "stabilize"
                     ? "Stabilize before escalation"
                     : "Safe action is available",
-    summary:
-      responseData?.executive_summary_surface?.why_it_matters ??
-      canonicalRecommendation?.reasoning?.why ??
-      "Nexora is synthesizing recommendation, control, and review posture into one command view.",
+    summary: text(
+      executiveSummarySurface?.why_it_matters ?? canonicalRecommendation?.reasoning?.why,
+      "Nexora is synthesizing recommendation, control, and review posture into one command view."
+    ),
     priority,
     priority_reason: priorityReason,
     alerts,

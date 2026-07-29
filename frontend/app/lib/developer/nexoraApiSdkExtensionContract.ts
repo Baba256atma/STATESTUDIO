@@ -2,6 +2,8 @@ import type { ActiveModeContext } from "../modes/productModesContract";
 import type { EnvironmentConfig } from "../ops/environmentDeploymentContract";
 import { isFeatureEnabled } from "../ops/environmentDeploymentContract";
 import type { SceneJson } from "../sceneTypes";
+import type { SemanticObject } from "../objectSemantics";
+import type { ScannerRelation } from "../workspace/scannerContract";
 import type { WorkspaceProjectState, WorkspaceState } from "../workspace/workspacePersistence";
 import { createEmptyProjectState, DEFAULT_PROJECT_ID, DEFAULT_WORKSPACE_ID } from "../workspace/workspacePersistence";
 import type { ScannerResult } from "../workspace/scannerContract";
@@ -61,7 +63,7 @@ export type PublicReasoningRequest = {
   project_id: string;
   prompt: string;
   selected_object_id?: string | null;
-  semantic_objects?: any[];
+  semantic_objects?: SemanticObject[];
   strategy_context?: {
     at_risk_kpis?: string[];
     threatened_objectives?: string[];
@@ -206,9 +208,24 @@ function getSceneObjectsCount(project: WorkspaceProjectState): number {
   return Array.isArray(objs) ? objs.length : 0;
 }
 
+function readSceneRelations(sceneJson: SceneJson | null | undefined): ScannerRelation[] {
+  const relations = sceneJson?.scene?.relations;
+  if (!Array.isArray(relations)) return [];
+  return relations.filter(
+    (relation): relation is ScannerRelation =>
+      !!relation &&
+      typeof relation === "object" &&
+      typeof (relation as ScannerRelation).from === "string" &&
+      typeof (relation as ScannerRelation).to === "string"
+  );
+}
+
+function readResponseDataRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
 function getRelationCount(project: WorkspaceProjectState): number {
-  const rel = (project?.scene?.sceneJson as any)?.scene?.relations;
-  return Array.isArray(rel) ? rel.length : 0;
+  return readSceneRelations(project?.scene?.sceneJson ?? null).length;
 }
 
 export function createNexoraApiContract(deps: NexoraApiDeps): NexoraApiContract {
@@ -294,8 +311,8 @@ export function createNexoraApiContract(deps: NexoraApiDeps): NexoraApiContract 
       const project = readProject(workspace, normalizeProjectId(input.project_id));
       if (!project) return null;
       const scene = project.scene.sceneJson;
-      const objects = Array.isArray(scene?.scene?.objects) ? scene!.scene.objects! : [];
-      const relations = Array.isArray((scene as any)?.scene?.relations) ? (scene as any).scene.relations : [];
+      const objects = Array.isArray(scene?.scene?.objects) ? scene.scene.objects : [];
+      const relations = readSceneRelations(scene);
       const simInput = createSimulationInputFromPrompt({
         text: input.text,
         matchedObjectIds: input.matched_object_ids,
@@ -308,8 +325,8 @@ export function createNexoraApiContract(deps: NexoraApiDeps): NexoraApiContract 
         projectId: project.id,
         scenarioName: `SDK Scenario: ${input.text}`,
         input: simInput,
-        objects: objects as any[],
-        relations: relations as any[],
+        objects,
+        relations,
         riskSummary: "Simulation run via SDK/API contract.",
         timelineSteps: [
           "Immediate: direct impact observed on selected objects.",
@@ -342,9 +359,11 @@ export function createNexoraApiContract(deps: NexoraApiDeps): NexoraApiContract 
       if (!project) return null;
 
       const scene = project.scene.sceneJson;
-      const semanticObjects = Array.isArray(input.semantic_objects)
+      const semanticObjects: SemanticObject[] = Array.isArray(input.semantic_objects)
         ? input.semantic_objects
-        : (Array.isArray(scene?.scene?.objects) ? (scene!.scene.objects as any[]) : []);
+        : Array.isArray(scene?.scene?.objects)
+        ? (scene.scene.objects as SemanticObject[])
+        : [];
       const reasoningInput = createReasoningInput({
         prompt: input.prompt,
         context: {
@@ -416,13 +435,14 @@ export function createNexoraApiContract(deps: NexoraApiDeps): NexoraApiContract 
       const workspace = deps.get_workspace_state();
       const project = readProject(workspace, normalizeProjectId(input.project_id));
       if (!project) return null;
+      const responseData = readResponseDataRecord(project.intelligence.responseData);
       return {
         project: toHandle(workspace, project),
         scene_object_count: getSceneObjectsCount(project),
         relation_count: getRelationCount(project),
         has_strategy: !!project.intelligence.strategyKpi,
         has_reasoning: !!project.intelligence.aiReasoning,
-        has_simulation: !!(project.intelligence.responseData as any)?.decision_simulation,
+        has_simulation: !!responseData.decision_simulation,
         has_cockpit: !!project.intelligence.decisionCockpit,
       };
     },
@@ -431,15 +451,15 @@ export function createNexoraApiContract(deps: NexoraApiDeps): NexoraApiContract 
       const workspace = deps.get_workspace_state();
       const project = readProject(workspace, normalizeProjectId(input.project_id));
       if (!project) return null;
-      const responseData: any = project.intelligence.responseData ?? {};
-      const trust = Array.isArray(responseData?.trust_provenance) ? responseData.trust_provenance : [];
-      const audit = Array.isArray(responseData?.audit_events) ? responseData.audit_events : [];
+      const responseData = readResponseDataRecord(project.intelligence.responseData);
+      const trust = Array.isArray(responseData.trust_provenance) ? responseData.trust_provenance : [];
+      const audit = Array.isArray(responseData.audit_events) ? responseData.audit_events : [];
       return {
         project: toHandle(workspace, project),
-        governance: (responseData?.governance_context as ProjectGovernanceContext | null) ?? null,
+        governance: (responseData.governance_context as ProjectGovernanceContext | null) ?? null,
         trust_provenance_count: trust.length,
         audit_event_count: audit.length,
-        latest_audit_events: audit.slice(-6),
+        latest_audit_events: audit.slice(-6) as AuditEvent[],
       };
     },
   };

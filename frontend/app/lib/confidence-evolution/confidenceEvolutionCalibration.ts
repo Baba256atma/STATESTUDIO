@@ -16,10 +16,7 @@ import {
   evaluateConfidenceCalibration,
 } from "./confidenceEvolutionCalibrationScoring.ts";
 import { detectConfidenceCalibrationFlags } from "./confidenceEvolutionCalibrationFlags.ts";
-import {
-  CONFIDENCE_EVOLUTION_EVIDENCE_REASON_SELF_MANIFEST,
-  isConfidenceEvidenceReasonLayerInitialized,
-} from "./confidenceEvolutionEvidenceReason.ts";
+import { CONFIDENCE_EVOLUTION_EVIDENCE_REASON_SELF_MANIFEST } from "./confidenceEvolutionEvidenceReason.ts";
 import { getConfidenceRecordsOrdered } from "./confidenceEvolutionQuery.ts";
 import { calculateConfidenceDeltas } from "./confidenceEvolutionDeltas.ts";
 import { calculateConfidenceVolatility } from "./confidenceEvolutionVolatility.ts";

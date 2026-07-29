@@ -1,22 +1,4 @@
-import type {
-  ExecutiveResource,
-  ExecutiveResourceAllocation,
-  ExecutiveResourceAvailability,
-  ExecutiveResourceCapacity,
-  ExecutiveResourceCategory,
-  ExecutiveResourceClassification,
-  ExecutiveResourceConstraint,
-  ExecutiveResourceLifecycle,
-  ExecutiveResourceMetadata,
-  ExecutiveResourceOwner,
-  ExecutiveResourcePlatformId,
-  ExecutiveResourcePlatformName,
-  ExecutiveResourcePlatformNamespace,
-  ExecutiveResourcePlatformStatus,
-  ExecutiveResourcePlatformVersion,
-  ExecutiveResourceType,
-  ExecutiveResourceUtilization,
-} from "./executiveResourceIndex.ts";
+import type { ExecutiveResource, ExecutiveResourceAllocation, ExecutiveResourceAvailability, ExecutiveResourceCapacity, ExecutiveResourceCategory, ExecutiveResourceClassification, ExecutiveResourceConstraint, ExecutiveResourceLifecycle, ExecutiveResourceMetadata, ExecutiveResourceOwner, ExecutiveResourcePlatformId, ExecutiveResourcePlatformName, ExecutiveResourcePlatformNamespace, ExecutiveResourcePlatformVersion, ExecutiveResourceType, ExecutiveResourceUtilization } from "./executiveResourceIndex.ts";
 
 export type ExecutiveResourceRegistryStatus = "Published" | "Frozen" | "Archived";
 

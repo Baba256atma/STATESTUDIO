@@ -4,11 +4,7 @@
  * Never accesses EIP, registries, or business logic directly.
  */
 
-import type {
-  ExecutiveDashboardResponse,
-  ExecutiveDashboardSectionDefinition,
-  ExecutiveDashboardWidgetDefinition,
-} from "../executiveDashboard/executiveDashboardTypes.ts";
+import type { ExecutiveDashboardSectionDefinition, ExecutiveDashboardWidgetDefinition } from "../executiveDashboard/executiveDashboardTypes.ts";
 import { resolveExecutiveDashboardResponseExample } from "../executiveDashboard/executiveDashboardContract.ts";
 import type { ExecutiveAssistantResponse } from "../executiveAssistant/executiveAssistantTypes.ts";
 import { resolveExecutiveAssistantResponseExample } from "../executiveAssistant/executiveAssistantContract.ts";

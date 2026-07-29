@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ReplayEpisode } from "../lib/api/replayApi";
 import { getEpisode } from "../lib/api/replayApi";
+import { readUnknownErrorMessage } from "../lib/system/nexoraErrors";
 
 export function useReplayEpisode(episodeId: string | null): {
   loading: boolean;
@@ -28,9 +29,9 @@ export function useReplayEpisode(episodeId: string | null): {
         frames,
         duration: duration > 0 ? duration : 0,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setEpisode(null);
-      setError(err?.message ?? "Failed to load replay episode");
+      setError(readUnknownErrorMessage(err, "Failed to load replay episode"));
     } finally {
       setLoading(false);
     }

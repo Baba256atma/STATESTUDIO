@@ -118,9 +118,6 @@ export function resolveDependencyFlags(input: Readonly<{
     (entry) => !entry.bidirectional && entry.category !== "parallel"
   );
   const hasDependencies = directional.length > 0;
-  const prerequisiteIds = new Set(
-    directional.map((entry) => entry.prerequisiteReference.semanticModelId)
-  );
   const dependentIds = new Set(
     directional.map((entry) => entry.dependentReference.semanticModelId)
   );

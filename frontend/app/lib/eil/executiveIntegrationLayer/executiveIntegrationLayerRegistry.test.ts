@@ -282,31 +282,31 @@ describe("EIL-9:2 Executive Integration Layer Registry", () => {
       ),
     );
 
-    const module = ExecutiveIntegrationLayerModuleRegistry[0];
-    assert.ok(module);
-    assert.equal(module.id, "EIL-9:2/Module/ExecutiveIntegrationSuite");
+    const suiteModuleRecord = ExecutiveIntegrationLayerModuleRegistry[0];
+    assert.ok(suiteModuleRecord);
+    assert.equal(suiteModuleRecord.id, "EIL-9:2/Module/ExecutiveIntegrationSuite");
     assert.equal(
-      module.publicIndexId,
+      suiteModuleRecord.publicIndexId,
       "EIL-8:9/ExecutiveIntegrationSuitePublicIndex",
     );
-    assert.equal(module.referencesPublicIndexOnly, true);
-    assert.equal(module.bypassesPublicIndex, false);
-    assert.equal(module.referencesEil1ThroughEil7Directly, false);
+    assert.equal(suiteModuleRecord.referencesPublicIndexOnly, true);
+    assert.equal(suiteModuleRecord.bypassesPublicIndex, false);
+    assert.equal(suiteModuleRecord.referencesEil1ThroughEil7Directly, false);
     assert.equal(
-      module.publicIndexNamespace,
-      module.foundationReference.publicIndexNamespace,
+      suiteModuleRecord.publicIndexNamespace,
+      suiteModuleRecord.foundationReference.publicIndexNamespace,
     );
     assert.equal(
-      module.suiteLockId,
-      module.foundationReference.suiteLockId,
+      suiteModuleRecord.suiteLockId,
+      suiteModuleRecord.foundationReference.suiteLockId,
     );
     assert.equal(
-      module.suiteConsumerEntry,
-      module.foundationReference.suiteConsumerEntry,
+      suiteModuleRecord.suiteConsumerEntry,
+      suiteModuleRecord.foundationReference.suiteConsumerEntry,
     );
     assert.equal(
-      module.suiteReadiness,
-      module.foundationReference.suiteReadiness,
+      suiteModuleRecord.suiteReadiness,
+      suiteModuleRecord.foundationReference.suiteReadiness,
     );
   });
 

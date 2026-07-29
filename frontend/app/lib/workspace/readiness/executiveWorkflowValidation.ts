@@ -68,7 +68,7 @@ export function validateExecutiveWorkflow(context: E2WorkspaceReadinessContext):
   const passed = steps.filter((s) => s.passed).length >= 6;
   const report: ExecutiveWorkflowValidationReport = {
     passed,
-    steps: steps.map(({ friction: _f, ...rest }) => rest),
+    steps: steps.map(({ friction, ...rest }) => { void friction; return rest; }),
     frictionPoints,
   };
 

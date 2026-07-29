@@ -5,7 +5,6 @@
 
 import { devDiagnosticLog } from "../runtime/diagnosticSwitch.ts";
 import type { WorkspaceId } from "./workspaceRegistryContract.ts";
-import { getActiveWorkspace } from "./workspaceRegistryStore.ts";
 import { guardWorkspaceDataSourceAccess } from "./workspaceDataSourceIsolationGuard.ts";
 import { resolveWorkspaceDataSource } from "./workspaceDataSourceResolver.ts";
 import { getApprovedCandidates } from "./workspaceObjectApprovalRuntime.ts";
@@ -112,12 +111,6 @@ function hydrateObjectCreationStore(): void {
   if (objectCreationHydrated) return;
   objectCreationHydrated = true;
   workspaceCreatedObjects = readStorage();
-}
-
-function resolveWorkspaceId(workspaceId?: WorkspaceId | null): WorkspaceId | null {
-  const explicit = workspaceId?.trim();
-  if (explicit) return explicit;
-  return getActiveWorkspace()?.workspaceId ?? null;
 }
 
 function getWorkspaceObjectMap(workspaceId: WorkspaceId): WorkspaceObjectCreationStore[WorkspaceId] {

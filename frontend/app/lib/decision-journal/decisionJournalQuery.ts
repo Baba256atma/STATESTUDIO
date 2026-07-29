@@ -7,10 +7,7 @@ import { STAGE_GLOBAL_FORBIDDEN_PATTERNS } from "../stage/stageArchitectureContr
 import type { StageManifest } from "../stage/stageArchitectureTypes.ts";
 import { DECISION_JOURNAL_MUST_NOT_OWN } from "./decisionJournalConstants.ts";
 import { isDecisionJournalPlatformInitialized } from "./decisionJournalFoundation.ts";
-import {
-  DECISION_JOURNAL_ENGINE_SELF_MANIFEST,
-  isDecisionJournalEngineInitialized,
-} from "./decisionJournalEngine.ts";
+import { DECISION_JOURNAL_ENGINE_SELF_MANIFEST } from "./decisionJournalEngine.ts";
 import { orderDecisionJournalEntries } from "./decisionJournalOrdering.ts";
 import { applyDecisionJournalQueryFilters } from "./decisionJournalQueryFilters.ts";
 import {
@@ -160,7 +157,7 @@ export function queryDecisionJournal(filters: DecisionJournalQueryFilters): Deci
 
 export function getDecisionJournalEntriesOrdered(
   filters: DecisionJournalQueryFilters
-): readonly DecisionJournalQueryResult["entries"] {
+): readonly DecisionJournalQueryResult["entries"][number][] {
   const response = queryDecisionJournal(filters);
   return response.data?.entries ?? Object.freeze([]);
 }

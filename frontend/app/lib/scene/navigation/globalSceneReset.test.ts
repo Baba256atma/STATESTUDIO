@@ -1,3 +1,4 @@
+import type { SceneJson } from "../../sceneTypes";
 import { describe, expect, it, beforeEach } from "vitest";
 
 import {
@@ -8,9 +9,8 @@ import {
   shouldApplyGlobalResetTransition,
 } from "./globalSceneResetRuntime";
 
-const sceneJson = {
-  scene: {
-    objects: [
+const sceneJson: SceneJson = {
+  state_vector: {}, scene: { objects: [
       { id: "a", transform: { pos: [0, 0, 0] } },
       { id: "b", transform: { pos: [2, 0, 0] } },
     ],
@@ -36,8 +36,7 @@ describe("globalSceneResetRuntime", () => {
 
   it("detects drift when only the position field moved but transform.pos stayed default", () => {
     const movedPositionField = {
-      scene: {
-        objects: [
+      state_vector: {}, scene: { objects: [
           { id: "a", transform: { pos: [0, 0, 0] }, position: [4, 0, 0] as [number, number, number] },
         ],
       },
@@ -82,11 +81,13 @@ describe("globalSceneResetRuntime", () => {
       })
     ).toBe(false);
 
+    const restoredObjects = restored?.scene.objects ?? [];
     const movedAgain = {
       ...restored,
+      state_vector: restored?.state_vector ?? {},
       scene: {
         ...restored!.scene,
-        objects: restored!.scene.objects.map((obj, index) =>
+        objects: restoredObjects.map((obj, index) =>
           index === 0
             ? { ...obj, transform: { pos: [5, 0, 0] }, position: [5, 0, 0] as [number, number, number] }
             : obj
@@ -104,7 +105,10 @@ describe("globalSceneResetRuntime", () => {
 
   it("restores all scene position channels to layout defaults", () => {
     const restored = restoreSceneObjectsToGlobalLayout(sceneJson, layoutPositions);
-    expect(restored?.scene.objects[1].transform?.pos).toEqual([1.8, 0, 0]);
-    expect(restored?.scene.objects[1].position).toEqual([1.8, 0, 0]);
+    const objectB = restored?.scene.objects?.[1];
+    const transform = objectB?.transform;
+    const pos = transform && typeof transform === "object" && "pos" in transform ? transform.pos : undefined;
+    expect(pos).toEqual([1.8, 0, 0]);
+    expect(objectB?.position).toEqual([1.8, 0, 0]);
   });
 });

@@ -242,12 +242,17 @@ export function deleteSceneObject(sceneJson: SceneJson | null, objectId: string)
   const objects = sceneJson.scene.objects.filter((object) => String(object.id ?? "").trim() !== id);
   if (objects.length === previousCount) return sceneJson;
   const relationships = Array.isArray(sceneJson.scene.relationships)
-    ? sceneJson.scene.relationships.filter((relationship: any) => relationship?.sourceId !== id && relationship?.targetId !== id)
+    ? sceneJson.scene.relationships.filter((relationship) => {
+        const record =
+          relationship && typeof relationship === "object" ? (relationship as Record<string, unknown>) : null;
+        return record?.sourceId !== id && record?.targetId !== id;
+      })
     : sceneJson.scene.relationships;
   const propagationPaths = Array.isArray(sceneJson.scene.propagationPaths)
-    ? sceneJson.scene.propagationPaths.filter(
-        (path: any) => path?.sourceObjectId !== id && path?.targetObjectId !== id
-      )
+    ? sceneJson.scene.propagationPaths.filter((path) => {
+        const record = path && typeof path === "object" ? (path as Record<string, unknown>) : null;
+        return record?.sourceObjectId !== id && record?.targetObjectId !== id;
+      })
     : sceneJson.scene.propagationPaths;
   logObjectEditingDiagnostic(
     "[Nexora][ObjectDeleted]",

@@ -156,8 +156,9 @@ export function getWorkspaceCandidateObject(
 export function saveWorkspaceCandidateObjects(
   workspaceId: WorkspaceId,
   dataSourceId: string,
-  _candidates: readonly CandidateObjectProposal[]
+  candidates: readonly CandidateObjectProposal[]
 ): CandidateObjectMutationResult {
+  void candidates;
   return toLegacyCandidateObjectMutationResult(discoverCandidateObjects(workspaceId, dataSourceId));
 }
 

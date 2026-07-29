@@ -59,6 +59,7 @@ function HiddenPortalHost(props: { id: string; "data-nx": string }): React.React
 export function ExecutiveAssistantPanelShell(
   props: ExecutiveAssistantPanelShellProps
 ): React.ReactElement {
+  const { collapsed, onToggleCollapsed } = props;
   const showScenarioHost = props.showScenarioHost ?? false;
   const showComparisonHost = props.showComparisonHost ?? false;
   const stackedExecutiveColumn = showScenarioHost || showComparisonHost;
@@ -68,13 +69,13 @@ export function ExecutiveAssistantPanelShell(
   const transitionMs = contract.transitionMs;
 
   const handleToggle = React.useCallback(() => {
-    if (props.collapsed) {
+    if (collapsed) {
       logExecutiveAssistantExpanded();
     } else {
       logExecutiveAssistantCollapsed();
     }
-    props.onToggleCollapsed();
-  }, [props.collapsed, props.onToggleCollapsed]);
+    onToggleCollapsed();
+  }, [collapsed, onToggleCollapsed]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;

@@ -70,6 +70,17 @@ export function buildHomescreenExecutionApplyTracePayload(args: {
   };
 }
 
+/** Bridge React state setters into the widened Nexora UI adapter contract. */
+export function asUnknownSetter<T>(setter: (value: T) => void): (value: unknown) => void {
+  return (value) => setter(value as T);
+}
+
+export function asUnknownStateSetter<T>(
+  setter: (value: T | ((prev: T) => T)) => void
+): (value: unknown) => void {
+  return (value) => setter(value as T | ((prev: T) => T));
+}
+
 /** Dependencies for Nexora UI adapters used after executeNexoraAction (same behavior as prior inline object). */
 export type NexoraUiAdapterDeps = {
   preferredRightPanelLegacyTabRef: MutableRefObject<string | null>;

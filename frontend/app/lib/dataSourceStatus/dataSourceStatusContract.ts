@@ -9,27 +9,7 @@ import {
   STAGE_SCORE_WEIGHTS,
 } from "../stage/stageArchitectureContract.ts";
 import type { StageManifest } from "../stage/stageArchitectureTypes.ts";
-import type {
-  DataSourceAggregationPolicy,
-  DataSourceExecutiveStatus,
-  DataSourceHealthIndicator,
-  DataSourceHealthState,
-  DataSourceProgressIndicator,
-  DataSourceProgressPhase,
-  DataSourceStatusAggregationContract,
-  DataSourceStatusError,
-  DataSourceStatusHistoryEntry,
-  DataSourceStatusMetadata,
-  DataSourceStatusOwnershipContract,
-  DataSourceStatusScoreDimensions,
-  DataSourceStatusSignal,
-  DataSourceStatusSignalSource,
-  DataSourceStatusSnapshot,
-  DataSourceStatusValidationIssue,
-  DataSourceStatusValidationResult,
-  DataSourceStatusWarning,
-  DataSourceStatusWorkspaceId,
-} from "./dataSourceStatusTypes.ts";
+import type { DataSourceAggregationPolicy, DataSourceExecutiveStatus, DataSourceHealthIndicator, DataSourceHealthState, DataSourceProgressIndicator, DataSourceProgressPhase, DataSourceStatusAggregationContract, DataSourceStatusError, DataSourceStatusHistoryEntry, DataSourceStatusMetadata, DataSourceStatusOwnershipContract, DataSourceStatusScoreDimensions, DataSourceStatusSignal, DataSourceStatusSignalSource, DataSourceStatusSnapshot, DataSourceStatusValidationIssue, DataSourceStatusValidationResult, DataSourceStatusWarning } from "./dataSourceStatusTypes.ts";
 
 export const DATA_SOURCE_STATUS_VERSION = "PHASE-2/DS1:6" as const;
 export const DATA_SOURCE_STATUS_SOURCE = "phase-2-data-source-status" as const;

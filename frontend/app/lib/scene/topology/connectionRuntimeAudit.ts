@@ -140,9 +140,17 @@ function readDependencyOverlayEdges(sceneJson: unknown): AuditEdge[] {
 
 type ScenePosition = { x: number; y: number; z: number };
 
-function readLegacySceneObjectPosition(objectId: string, objects: readonly any[]): ScenePosition {
+function readLegacyTransformPos(object: SceneObject | undefined): unknown {
+  const transform = object?.transform;
+  if (transform && typeof transform === "object" && !Array.isArray(transform)) {
+    return (transform as { pos?: unknown }).pos;
+  }
+  return undefined;
+}
+
+function readLegacySceneObjectPosition(objectId: string, objects: readonly SceneObject[]): ScenePosition {
   const found = objects.find((object) => object?.id === objectId);
-  const candidates = [found?.position, found?.transform?.pos, found?.pos];
+  const candidates = [found?.position, readLegacyTransformPos(found), found?.pos];
   for (const candidate of candidates) {
     if (Array.isArray(candidate) && candidate.length >= 3) {
       return {
@@ -162,13 +170,14 @@ function readLegacySceneObjectPosition(objectId: string, objects: readonly any[]
   return { x: 0, y: 0, z: 0 };
 }
 
-function readLegacyObjectPositionProvider(objectId: string, objects: readonly any[]): ConnectionPositionProvider {
+function readLegacyObjectPositionProvider(objectId: string, objects: readonly SceneObject[]): ConnectionPositionProvider {
   const found = objects.find((object) => object?.id === objectId);
   if (!found) return "fallback.position";
   if (Array.isArray(found.position) || (found.position && typeof found.position === "object")) {
     return "sceneObject.position";
   }
-  if (Array.isArray(found.transform?.pos) || (found.transform?.pos && typeof found.transform?.pos === "object")) {
+  const transformPos = readLegacyTransformPos(found);
+  if (Array.isArray(transformPos) || (transformPos && typeof transformPos === "object")) {
     return "sceneObject.transform.pos";
   }
   if (Array.isArray(found.pos) || (found.pos && typeof found.pos === "object")) {
@@ -212,7 +221,7 @@ function resolveEndpointAudit(input: {
   });
 
   const layoutPosition = readLayoutEnginePosition(input.objectId, input.context.runtimeLayoutPositions);
-  const legacyPosition = readLegacySceneObjectPosition(input.objectId, input.context.sceneObjects as any[]);
+  const legacyPosition = readLegacySceneObjectPosition(input.objectId, input.context.sceneObjects);
 
   const candidates: Array<{ provider: ConnectionPositionProvider; position: ScenePosition }> = [
     { provider: mapTopologySourceToProvider(topology.source), position: topology.position },
@@ -221,7 +230,7 @@ function resolveEndpointAudit(input: {
     candidates.push({ provider: "layoutEngine.position", position: layoutPosition });
   }
   candidates.push({
-    provider: readLegacyObjectPositionProvider(input.objectId, input.context.sceneObjects as any[]),
+    provider: readLegacyObjectPositionProvider(input.objectId, input.context.sceneObjects),
     position: legacyPosition,
   });
 
@@ -319,7 +328,7 @@ function buildAuditRecord(input: {
   };
 }
 
-function readLegacyObjPos(id: string, objects: readonly any[], yOffset = 0): ScenePosition {
+function readLegacyObjPos(id: string, objects: readonly SceneObject[], yOffset = 0): ScenePosition {
   const position = readLegacySceneObjectPosition(id, objects);
   return { x: position.x, y: position.y + yOffset, z: position.z };
 }
@@ -350,8 +359,8 @@ function collectRelationshipRecords(context: ConnectionRuntimeAuditContext): Con
       layer: "relationship",
       sourceObjectId: relationship.sourceId,
       targetObjectId: relationship.targetId,
-      sourceRenderPosition: readLegacyObjPos(relationship.sourceId, context.sceneObjects as any[], yOffset),
-      targetRenderPosition: readLegacyObjPos(relationship.targetId, context.sceneObjects as any[], yOffset),
+      sourceRenderPosition: readLegacyObjPos(relationship.sourceId, context.sceneObjects, yOffset),
+      targetRenderPosition: readLegacyObjPos(relationship.targetId, context.sceneObjects, yOffset),
       context,
     })
   );
@@ -369,8 +378,8 @@ function collectOverlayFlowRecords(
       layer,
       sourceObjectId: edge.from,
       targetObjectId: edge.to,
-      sourceRenderPosition: readLegacyObjPos(edge.from, context.sceneObjects as any[], yOffset),
-      targetRenderPosition: readLegacyObjPos(edge.to, context.sceneObjects as any[], yOffset),
+      sourceRenderPosition: readLegacyObjPos(edge.from, context.sceneObjects, yOffset),
+      targetRenderPosition: readLegacyObjPos(edge.to, context.sceneObjects, yOffset),
       context,
     })
   );
@@ -386,8 +395,8 @@ function collectAuthoredPropagationRecords(context: ConnectionRuntimeAuditContex
       layer: "overlay_authored_propagation",
       sourceObjectId: path.sourceObjectId,
       targetObjectId: path.targetObjectId,
-      sourceRenderPosition: readLegacyObjPos(path.sourceObjectId, context.sceneObjects as any[], yOffset),
-      targetRenderPosition: readLegacyObjPos(path.targetObjectId, context.sceneObjects as any[], yOffset),
+      sourceRenderPosition: readLegacyObjPos(path.sourceObjectId, context.sceneObjects, yOffset),
+      targetRenderPosition: readLegacyObjPos(path.targetObjectId, context.sceneObjects, yOffset),
       context,
     })
   );
@@ -409,8 +418,8 @@ function collectLoopRecords(context: ConnectionRuntimeAuditContext): ConnectionR
           layer: "loop",
           sourceObjectId: from,
           targetObjectId: to,
-          sourceRenderPosition: readLegacyObjPos(from, context.sceneObjects as any[], 0),
-          targetRenderPosition: readLegacyObjPos(to, context.sceneObjects as any[], 0),
+          sourceRenderPosition: readLegacyObjPos(from, context.sceneObjects, 0),
+          targetRenderPosition: readLegacyObjPos(to, context.sceneObjects, 0),
           context,
         })
       );
@@ -428,8 +437,8 @@ function collectScenarioOverlayRecords(context: ConnectionRuntimeAuditContext): 
       layer: "overlay_scenario",
       sourceObjectId: edge.from,
       targetObjectId: edge.to,
-      sourceRenderPosition: readLegacyObjPos(edge.from, context.sceneObjects as any[], 0.14),
-      targetRenderPosition: readLegacyObjPos(edge.to, context.sceneObjects as any[], 0.14),
+      sourceRenderPosition: readLegacyObjPos(edge.from, context.sceneObjects, 0.14),
+      targetRenderPosition: readLegacyObjPos(edge.to, context.sceneObjects, 0.14),
       context,
     })
   );

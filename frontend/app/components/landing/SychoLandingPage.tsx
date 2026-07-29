@@ -1,20 +1,24 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useSyncExternalStore } from "react";
 import Link from "next/link";
 
 const SEEN_KEY = "sycho_seen_onboarding";
 
-export default function SychoLandingPage(): React.JSX.Element {
-  const [returning, setReturning] = useState(false);
+function subscribeNoop() {
+  return () => {};
+}
 
-  useEffect(() => {
-    try {
-      setReturning(window.localStorage.getItem(SEEN_KEY) === "true");
-    } catch {
-      setReturning(false);
-    }
-  }, []);
+function readReturningClient(): boolean {
+  try {
+    return window.localStorage.getItem(SEEN_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+export default function SychoLandingPage(): React.JSX.Element {
+  const returning = useSyncExternalStore(subscribeNoop, readReturningClient, () => false);
 
   return (
     <main

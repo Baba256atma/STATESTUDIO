@@ -21,16 +21,7 @@ import {
   getWorkspaceKeyResults,
   getWorkspaceKeyResultsForObjective,
 } from "./workspaceOkrContract.ts";
-import {
-  WORKSPACE_OKR_PROGRESS_PROFILE_STORAGE_KEY,
-  NEXORA_OKR_PROGRESS_LOG_PREFIX,
-  buildKeyResultProgressSnapshot,
-  buildWorkspaceOkrProgressReason,
-  calculateKeyResultProgressPercent,
-  deriveOkrTrend,
-  getWorkspaceOkrProgressProfile,
-  getWorkspaceOkrProgressProfiles,
-} from "./workspaceOkrProgressEngine.ts";
+import { WORKSPACE_OKR_PROGRESS_PROFILE_STORAGE_KEY, NEXORA_OKR_PROGRESS_LOG_PREFIX, buildKeyResultProgressSnapshot, buildWorkspaceOkrProgressReason, calculateKeyResultProgressPercent, getWorkspaceOkrProgressProfile, getWorkspaceOkrProgressProfiles } from "./workspaceOkrProgressEngine.ts";
 import {
   WORKSPACE_OKR_HEALTH_PROFILE_STORAGE_KEY,
   NEXORA_OKR_HEALTH_LOG_PREFIX,
@@ -285,12 +276,6 @@ function varianceCalculationsValid(workspaceId: WorkspaceId): boolean {
     const roundedExpected = Math.round(expectedVariance * 100) / 100;
     return Math.abs(profile.variance - roundedExpected) < 0.011;
   });
-}
-
-function trendClassificationsValid(workspaceId: WorkspaceId): boolean {
-  return getWorkspaceOkrProgressProfiles(workspaceId).every(
-    (profile) => deriveOkrTrend(profile.variance) === profile.trend
-  );
 }
 
 function progressReasonGenerationValid(workspaceId: WorkspaceId): boolean {

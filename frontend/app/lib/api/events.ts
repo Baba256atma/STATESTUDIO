@@ -6,7 +6,7 @@ export type ChatEvent = {
   timestamp: string;
   user_text: string;
   reply: string;
-  actions: any[];
+  actions: unknown[];
 };
 
 async function safeFetch(url: string) {

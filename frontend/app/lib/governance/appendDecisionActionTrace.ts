@@ -1,7 +1,7 @@
 import { appendAuditEvents, appendTrustProvenance, createAuditEvent, createTrustProvenance } from "./governanceTrustAuditContract";
 
 type AppendDecisionActionTraceParams = {
-  payload: any;
+  payload: unknown;
   workspaceId?: string | null;
   projectId?: string | null;
   mode: "simulate" | "preview" | "compare" | "save" | "apply";
@@ -19,6 +19,8 @@ function mapAuditEventType(mode: AppendDecisionActionTraceParams["mode"]) {
 
 export function appendDecisionActionTrace(params: AppendDecisionActionTraceParams) {
   if (!params.payload || typeof params.payload !== "object") return params.payload;
+
+  const payload = params.payload as Record<string, unknown>;
 
   const provenance = createTrustProvenance({
     kind: params.mode === "simulate" ? "simulation_output" : "explainability_output",
@@ -56,8 +58,8 @@ export function appendDecisionActionTrace(params: AppendDecisionActionTraceParam
   });
 
   return {
-    ...params.payload,
-    trust_provenance: appendTrustProvenance(params.payload?.trust_provenance, [provenance]),
-    audit_events: appendAuditEvents(params.payload?.audit_events, [event]),
+    ...payload,
+    trust_provenance: appendTrustProvenance(payload.trust_provenance, [provenance]),
+    audit_events: appendAuditEvents(payload.audit_events, [event]),
   };
 }

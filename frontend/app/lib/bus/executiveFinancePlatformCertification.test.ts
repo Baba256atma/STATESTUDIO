@@ -10,16 +10,7 @@ import {
   ExecutiveFinancePlatformFoundation,
   getExecutiveFinancePlatform,
 } from "./executiveFinancePlatformIndex.ts";
-import {
-  ExecutiveFinancePlatformCertification,
-  ExecutiveFinancePlatformCertificationFoundation,
-  buildExecutiveFinancePlatformCertification,
-  buildExecutiveFinancePlatformCertificationManifest,
-  buildExecutiveFinancePlatformCertificationRegistry,
-  buildExecutiveFinancePlatformCertificationSummary,
-  getExecutiveFinancePlatformCertification,
-  runExecutiveFinancePlatformCertification,
-} from "./executiveFinancePlatformCertificationIndex.ts";
+import { ExecutiveFinancePlatformCertification, ExecutiveFinancePlatformCertificationFoundation, buildExecutiveFinancePlatformCertification, getExecutiveFinancePlatformCertification, runExecutiveFinancePlatformCertification } from "./executiveFinancePlatformCertificationIndex.ts";
 
 test("consumes previous phases only through public APIs", () => {
   assert.equal(ContractsFoundation.FinanceIdentity.platformId, "BUS-28");

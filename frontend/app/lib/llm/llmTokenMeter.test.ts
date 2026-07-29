@@ -155,7 +155,8 @@ test("aggregates usage by all supported scopes", () => {
   const providerAgg = lookupTokenAggregation(registry.records, Object.freeze({ scope: "provider", scopeKey: "gpt" }));
   assert.equal(providerAgg?.responseCount, 1);
   const modelAgg = lookupTokenAggregation(registry.records, Object.freeze({ scope: "model", scopeKey: "claude-3-5-sonnet" }));
-  assert.equal(modelAgg?.totalTokens, modelAgg?.estimatedInputTokens! + modelAgg?.estimatedOutputTokens!);
+  assert.ok(modelAgg);
+  assert.equal(modelAgg.totalTokens, modelAgg.estimatedInputTokens + modelAgg.estimatedOutputTokens);
   const allAggregations = aggregateTokenUsage(registry.records);
   assert.ok(allAggregations.some((entry) => entry.scope === "organization"));
   assert.ok(allAggregations.some((entry) => entry.scope === "session"));

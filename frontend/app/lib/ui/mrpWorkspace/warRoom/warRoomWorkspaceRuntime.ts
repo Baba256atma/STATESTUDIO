@@ -47,8 +47,9 @@ export function resetWarRoomWorkspaceRuntimeForTests(): void {
   resetWarRoomWorkspaceStateRuntimeForTests();
 }
 
-export function buildWarRoomWorkspaceView(_input?: {
+export function buildWarRoomWorkspaceView(input?: {
   mountKey?: string | null;
 }): WarRoomWorkspaceView {
+  void input;
   return buildWarRoomWorkspaceViewFromState(getWarRoomWorkspaceState());
 }

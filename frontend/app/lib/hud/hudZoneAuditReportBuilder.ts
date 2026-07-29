@@ -179,7 +179,6 @@ export function buildHudZoneAuditReport(result: HudZoneContractAuditResult): str
 export function buildHudZoneAuditReportSections(
   result: HudZoneContractAuditResult
 ): Record<HudZoneAuditReportSection, string> {
-  const full = buildHudZoneAuditReport(result);
   return {
     "zone-inventory": formatZoneTable(result),
     "visible-runtime-layout": result.zones

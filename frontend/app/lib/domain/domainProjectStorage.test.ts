@@ -19,7 +19,7 @@ function installStorage(initial: Store = {}): Store {
       store[key] = value;
     },
     removeItem: (key: string) => {
-      delete store[key];
+      Reflect.deleteProperty(store, key);
     },
   };
   Object.defineProperty(globalThis, "window", {
@@ -30,7 +30,7 @@ function installStorage(initial: Store = {}): Store {
 }
 
 function clearWindow(): void {
-  delete (globalThis as typeof globalThis & { window?: unknown }).window;
+  Reflect.deleteProperty(globalThis, "window");
 }
 
 const scene = {

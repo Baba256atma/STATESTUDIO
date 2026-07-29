@@ -58,7 +58,7 @@ export function RiskExplanationPanel(props: Props) {
   const block = useMemo(
     () => buildScenarioExplanationFromDecisionAnalysis(decisionAnalysis, props.sceneJson, props.responseData),
     // `explanationKey` includes analysis JSON + highlighted / object-impact context.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional stable key covers scene/response/analysis inputs
     [explanationKey]
   );
 

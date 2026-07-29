@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { unifiedAdaptiveGovernanceRuntime } from "./unifiedAdaptiveGovernanceRuntime";
-import { synchronizeEnterpriseGovernanceStack } from "../synchronizeEnterpriseGovernanceStack";
 
 describe("unified adaptive governance runtime F9:6", () => {
   it("synchronizes full F9 stack with unified runtime convergence", () => {
@@ -34,21 +33,6 @@ describe("unified adaptive governance runtime F9:6", () => {
   });
 
   it("merges unified headline when strategic evolution converged", () => {
-    const base = synchronizeEnterpriseGovernanceStack({
-      enabled: true,
-      sessionHydrated: true,
-      continuityPreserved: true,
-      runtimeStable: true,
-      onboardingActive: false,
-      organizationId: "nexora-ops",
-      institutional: {
-        convergenceDepth: 5,
-        enterpriseEvolutionActive: true,
-        institutionalCognitionConverged: true,
-      },
-      cognitionConverged: true,
-      fragilityElevated: false,
-    });
 
     const merged = unifiedAdaptiveGovernanceRuntime.synchronize({
       enabled: true,

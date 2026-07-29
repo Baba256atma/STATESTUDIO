@@ -47,8 +47,9 @@ export function resetScenarioWorkspaceRuntimeForTests(): void {
   resetScenarioWorkspaceStateRuntimeForTests();
 }
 
-export function buildScenarioWorkspaceView(_input?: {
+export function buildScenarioWorkspaceView(input?: {
   mountKey?: string | null;
 }): ScenarioWorkspaceView {
+  void input;
   return buildScenarioWorkspaceViewFromState(getScenarioWorkspaceState());
 }

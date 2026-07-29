@@ -5,13 +5,14 @@ import React from "react";
 import { buildDecisionExecutionIntent } from "../../lib/execution/buildDecisionExecutionIntent";
 import { buildDecisionPolicyState } from "../../lib/policy/buildDecisionPolicyState";
 import type { CanonicalRecommendation } from "../../lib/decision/recommendation/recommendationTypes";
+import type { DecisionExecutionResult } from "../../lib/executive/decisionExecutionTypes";
 import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemoryTypes";
 import { nx, panelSurfaceStyle, secondaryButtonStyle, softCardStyle } from "../ui/nexoraTheme";
 
 type DecisionPolicyPanelProps = {
-  responseData?: any;
+  responseData?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
-  decisionResult?: any;
+  decisionResult?: DecisionExecutionResult | Record<string, unknown> | null;
   memoryEntries?: DecisionMemoryEntry[];
   onOpenDecisionGovernance?: (() => void) | null;
   onOpenExecutiveApproval?: (() => void) | null;

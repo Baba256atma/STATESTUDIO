@@ -1,6 +1,11 @@
-/** E2:56 — Registry of all scene HUD surfaces with zone, priority, and visibility rules. */
+/**
+ * E2:56 — Registry of all scene HUD surfaces with zone, priority, and visibility rules.
+ *
+ * Zone values derive from `CANONICAL_HUD_ANCHORS` (single source). AD-SCENE-01
+ * sets `executiveSceneToolbar` to `TOP_CENTER`; other anchors remain E2:56.
+ */
 
-import type { ExecutiveHudZone } from "./executiveHudLayoutGovernance";
+import { CANONICAL_HUD_ANCHORS, type ExecutiveHudZone } from "./executiveHudLayoutGovernance";
 
 export type SceneHudPanelId =
   | "sceneInfoHud"
@@ -45,7 +50,7 @@ export const SCENE_HUD_REGISTRY: Readonly<Record<SceneHudPanelId, SceneHudRegist
   sceneInfoHud: {
     panelId: "sceneInfoHud",
     label: "Scene Info",
-    zone: "LEFT_TOP",
+    zone: CANONICAL_HUD_ANCHORS.sceneInfoHud,
     priority: 100,
     visibilityRule: "always",
     estimatedWidth: 244,
@@ -55,7 +60,7 @@ export const SCENE_HUD_REGISTRY: Readonly<Record<SceneHudPanelId, SceneHudRegist
   executiveSceneToolbar: {
     panelId: "executiveSceneToolbar",
     label: "Toolbar",
-    zone: "RIGHT_TOP",
+    zone: CANONICAL_HUD_ANCHORS.executiveSceneToolbar,
     priority: 120,
     visibilityRule: "always",
     estimatedWidth: 360,
@@ -65,7 +70,7 @@ export const SCENE_HUD_REGISTRY: Readonly<Record<SceneHudPanelId, SceneHudRegist
   objectInfoHud: {
     panelId: "objectInfoHud",
     label: "Object Info",
-    zone: "RIGHT_TOP",
+    zone: CANONICAL_HUD_ANCHORS.objectInfoHud,
     priority: 100,
     visibilityRule: "when_selected",
     estimatedWidth: 344,
@@ -75,7 +80,7 @@ export const SCENE_HUD_REGISTRY: Readonly<Record<SceneHudPanelId, SceneHudRegist
   executiveStatusHud: {
     panelId: "executiveStatusHud",
     label: "Status HUD",
-    zone: "RIGHT_TOP",
+    zone: CANONICAL_HUD_ANCHORS.executiveStatusHud,
     priority: 70,
     visibilityRule: "when_active",
     estimatedWidth: 280,
@@ -85,7 +90,7 @@ export const SCENE_HUD_REGISTRY: Readonly<Record<SceneHudPanelId, SceneHudRegist
   timelineHud: {
     panelId: "timelineHud",
     label: "Timeline",
-    zone: "BOTTOM_CENTER",
+    zone: CANONICAL_HUD_ANCHORS.timelineHud,
     priority: 90,
     visibilityRule: "always",
     estimatedWidth: 860,
@@ -95,7 +100,7 @@ export const SCENE_HUD_REGISTRY: Readonly<Record<SceneHudPanelId, SceneHudRegist
   quickActionsDock: {
     panelId: "quickActionsDock",
     label: "Quick Actions",
-    zone: "BOTTOM_CENTER",
+    zone: CANONICAL_HUD_ANCHORS.quickActionsDock,
     priority: 60,
     visibilityRule: "when_active",
     estimatedWidth: 420,
@@ -105,7 +110,7 @@ export const SCENE_HUD_REGISTRY: Readonly<Record<SceneHudPanelId, SceneHudRegist
   objectInfoEmptyPlaceholder: {
     panelId: "objectInfoEmptyPlaceholder",
     label: "Object Empty State",
-    zone: "RIGHT_TOP",
+    zone: CANONICAL_HUD_ANCHORS.objectInfoEmptyPlaceholder,
     priority: 20,
     visibilityRule: "when_unselected",
     estimatedWidth: 244,
@@ -115,7 +120,7 @@ export const SCENE_HUD_REGISTRY: Readonly<Record<SceneHudPanelId, SceneHudRegist
   pipelineStatusOverlay: {
     panelId: "pipelineStatusOverlay",
     label: "Pipeline Status",
-    zone: "LEFT_TOP",
+    zone: CANONICAL_HUD_ANCHORS.pipelineStatusOverlay,
     priority: 80,
     visibilityRule: "when_processing",
     estimatedWidth: 320,
@@ -125,7 +130,7 @@ export const SCENE_HUD_REGISTRY: Readonly<Record<SceneHudPanelId, SceneHudRegist
   orientationPanel: {
     panelId: "orientationPanel",
     label: "Orientation",
-    zone: "LEFT_TOP",
+    zone: CANONICAL_HUD_ANCHORS.orientationPanel,
     priority: 50,
     visibilityRule: "dev_only",
     estimatedWidth: 320,
@@ -135,7 +140,7 @@ export const SCENE_HUD_REGISTRY: Readonly<Record<SceneHudPanelId, SceneHudRegist
   scenarioOverlay: {
     panelId: "scenarioOverlay",
     label: "Scenario Visualization",
-    zone: "BOTTOM_CENTER",
+    zone: CANONICAL_HUD_ANCHORS.scenarioOverlay,
     priority: 30,
     visibilityRule: "when_active",
     estimatedWidth: 640,

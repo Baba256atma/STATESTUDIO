@@ -24,6 +24,7 @@ test.beforeEach(() => {
 });
 
 const sceneWithRisks: SceneJson = {
+  state_vector: {},
   scene: {
     objects: [
       {
@@ -41,7 +42,7 @@ const sceneWithRisks: SceneJson = {
       { id: "c", label: "Stable Asset", state: "stable", status: "ok" },
     ],
   },
-} as SceneJson;
+};
 
 test("exports MRP risk visual tag", () => {
   assert.equal(MRP_RISK_VISUAL_TAG, "[MRP_RISK_VISUAL]");

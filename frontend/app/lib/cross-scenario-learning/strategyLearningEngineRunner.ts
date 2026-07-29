@@ -94,7 +94,7 @@ function profile(suffix: string): ScenarioSimilarityProfile {
       "Profit Decreased",
       "Risk Increased",
     ]),
-    objectTypes: Object.freeze(["campaign"]),
+    objectTypes: Object.freeze(["campaign"] as const),
     kpiDirection: "decrease",
     riskProfile: "high",
     decisionType: "executive",
@@ -141,7 +141,7 @@ function failureRecord(
     workspaceId: WORKSPACE,
     businessGoal: "Expand into new market",
     failureCategory: "strategic_failure",
-    failureFactorKeys: Object.freeze(["execution_delays", "kpi_deterioration"]),
+    failureFactorKeys: Object.freeze(["execution_delays", "kpi_deterioration"] as const),
     failureCauses: Object.freeze([
       Object.freeze({
         label: "Incorrect market assumptions",

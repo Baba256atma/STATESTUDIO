@@ -6,10 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createSimulationStateSnapshot, createSimulationTimestamp } from "../simulationFoundation.index.ts";
-import {
-  advanceOperationalTimeline,
-  createOperationalTimeline,
-} from "../timeline/operationalTimelineEvolutionEngine.ts";
+import { createOperationalTimeline } from "../timeline/operationalTimelineEvolutionEngine.ts";
 import {
   createScenarioBranch,
   createScenarioBranchForest,
@@ -258,7 +255,7 @@ test("freeze governance report is immutable", () => {
 });
 
 test("integrated war-room + replay governance", () => {
-  let parent = createOperationalTimeline({ timelineId: "tl-int-gov", initialSnapshot: snap(0) });
+  const parent = createOperationalTimeline({ timelineId: "tl-int-gov", initialSnapshot: snap(0) });
   let forest = createScenarioBranchForest(parent);
   const fork = createScenarioBranch({
     sourceTimeline: parent,

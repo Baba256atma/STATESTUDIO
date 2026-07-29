@@ -23,17 +23,17 @@ export type ExecutiveActivityTimelineEntryProps = Readonly<{
 export function ExecutiveActivityTimelineEntry(
   props: ExecutiveActivityTimelineEntryProps
 ): React.ReactElement {
-  const { entry } = props;
+  const { entry, onReopen } = props;
 
   const handleAction = useCallback(() => {
-    if (!entry.actionEnabled || !entry.returnKind || !entry.relatedWorkspaceId || !props.onReopen) {
+    if (!entry.actionEnabled || !entry.returnKind || !entry.relatedWorkspaceId || !onReopen) {
       return;
     }
-    props.onReopen({
+    onReopen({
       workspaceId: entry.relatedWorkspaceId,
       returnKind: entry.returnKind,
     });
-  }, [entry.actionEnabled, entry.relatedWorkspaceId, entry.returnKind, props.onReopen]);
+  }, [entry.actionEnabled, entry.relatedWorkspaceId, entry.returnKind, onReopen]);
 
   return (
     <article

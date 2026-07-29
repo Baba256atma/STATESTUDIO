@@ -38,10 +38,6 @@ import {
   resolveExecutiveScenarioSummaryProbeExample,
 } from "./executiveScenarioSummaryResolver.ts";
 import { resolveScenarioContextProbeExample } from "./scenarioContextResolver.ts";
-import { resolveExecutiveScenarioPriorityProbeExample } from "./executiveScenarioPriorityResolver.ts";
-import { resolveScenarioDependencyGraphProbeExample } from "./scenarioDependencyResolver.ts";
-import { resolveExecutiveScenarioConflictGraphProbeExample } from "./executiveScenarioConflictResolver.ts";
-import { resolveExecutiveScenarioOpportunityGraphProbeExample } from "./executiveScenarioOpportunityResolver.ts";
 
 export const EXECUTIVE_SCENARIO_SUMMARY_ENGINE_CERTIFICATION_VERSION = "APP-2/8" as const;
 

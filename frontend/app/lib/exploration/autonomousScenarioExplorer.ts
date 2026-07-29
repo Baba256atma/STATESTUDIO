@@ -100,17 +100,24 @@ function norm(value: unknown): string {
 
 function objectTerms(obj: SceneObject, meta?: Record<string, SemanticObjectMeta | Record<string, unknown>>): string {
   const id = String(obj?.id ?? "").trim();
-  const m: any = meta?.[id] ?? obj?.semantic ?? {};
-  const tags = Array.isArray((obj as any)?.tags) ? (obj as any).tags : [];
+  const semanticMeta = obj?.semantic ?? null;
+  const metaEntry = meta?.[id];
+  const m: SemanticObjectMeta | Record<string, unknown> =
+    metaEntry && typeof metaEntry === "object"
+      ? metaEntry
+      : semanticMeta && typeof semanticMeta === "object"
+        ? semanticMeta
+        : {};
+  const tags = Array.isArray(obj?.tags) ? obj.tags : [];
   const semanticTags = Array.isArray(m?.tags) ? m.tags : [];
   return [
     id,
     obj?.label,
-    (obj as any)?.name,
+    obj?.name,
     obj?.type,
-    (obj as any)?.role,
-    (obj as any)?.category,
-    (obj as any)?.risk_kind,
+    obj?.role,
+    obj?.category,
+    obj?.risk_kind,
     m?.role,
     m?.category,
     m?.domain,
@@ -132,14 +139,14 @@ function rankObjectsByImportance(
       const id = String(obj?.id ?? "").trim();
       if (!id) return null;
       const terms = objectTerms(obj, meta);
-      let score = Number.isFinite(Number((obj as any)?.emphasis)) ? Number((obj as any).emphasis) : 0.35;
+      let score = Number.isFinite(Number(obj?.emphasis)) ? Number(obj.emphasis) : 0.35;
       if (/core|primary|critical|anchor|hub/.test(terms)) score += 0.24;
       if (/risk|pressure|fragil|delay|threat/.test(terms)) score += 0.22;
       if (/flow|delivery|dependency|order|inventory|cash|service|uptime/.test(terms)) score += 0.18;
       return { id, score: clamp01(score), terms };
     })
-    .filter(Boolean)
-    .sort((a: any, b: any) => b.score - a.score) as Array<{ id: string; score: number; terms: string }>;
+    .filter((entry): entry is { id: string; score: number; terms: string } => entry != null)
+    .sort((a, b) => b.score - a.score);
 }
 
 function buildCandidates(params: {
@@ -273,8 +280,9 @@ export function runAutonomousScenarioExploration(input: AutonomousScenarioExplor
 
   const ranked = rankObjectsByImportance(objects, input.semanticObjectMeta);
   const candidates = buildCandidates({ rankedObjects: ranked, maxScenarios, threshold: importanceThreshold });
-  const relations: SimulationRelation[] = Array.isArray((scene as any)?.scene?.relations)
-    ? ((scene as any).scene.relations as SimulationRelation[])
+  const sceneRelations = scene?.scene?.relations;
+  const relations: SimulationRelation[] = Array.isArray(sceneRelations)
+    ? (sceneRelations as SimulationRelation[])
     : [];
 
   const evaluations: ScenarioEvaluation[] = [];

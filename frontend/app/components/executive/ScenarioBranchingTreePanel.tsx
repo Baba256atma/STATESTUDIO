@@ -12,10 +12,10 @@ import {
 import { nx, panelSurfaceStyle, primaryButtonStyle, secondaryButtonStyle, softCardStyle } from "../ui/nexoraTheme";
 
 type ScenarioBranchingTreePanelProps = {
-  responseData?: any;
+  responseData?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
   decisionResult?: DecisionExecutionResult | null;
-  strategicAdvice?: any | null;
+  strategicAdvice?: Record<string, unknown> | null;
   memoryEntries?: DecisionMemoryEntry[];
   resolveObjectLabel?: ((id: string | null | undefined) => string | null) | null;
   onOpenCompare?: (() => void) | null;

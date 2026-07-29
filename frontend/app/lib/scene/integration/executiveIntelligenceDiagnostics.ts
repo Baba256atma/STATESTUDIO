@@ -1,4 +1,4 @@
-import { devLogOnSignatureChange, devLogOncePermanent } from "../../runtime/diagnosticIdleGate.ts";
+import { devLogOnSignatureChange } from "../../runtime/diagnosticIdleGate.ts";
 import { devLogThrottled, resetDiagnosticThrottleForTests } from "../../runtime/diagnosticThrottle.ts";
 
 type AcceptanceGateAuditInput = {

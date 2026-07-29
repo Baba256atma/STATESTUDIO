@@ -7,21 +7,27 @@ import { selectDecisionStrategy } from "./selectDecisionStrategy";
 import { buildMetaDecisionExplanation } from "./buildMetaDecisionExplanation";
 import type { MetaDecisionState } from "./metaDecisionTypes";
 
+import type { CanonicalRecommendation } from "../recommendation/recommendationTypes";
+
 type BuildMetaDecisionStateInput = {
-  reasoning?: any | null;
-  simulation?: any | null;
-  comparison?: any | null;
-  canonicalRecommendation?: any | null;
-  calibration?: any | null;
-  responseData?: any | null;
+  reasoning?: Record<string, unknown> | null;
+  simulation?: Record<string, unknown> | null;
+  comparison?: Record<string, unknown> | null;
+  canonicalRecommendation?: CanonicalRecommendation | null;
+  calibration?: { calibration_label?: string | null } | null;
+  responseData?: Record<string, unknown> | null;
   memoryEntries?: DecisionMemoryEntry[];
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
 
 export function buildMetaDecisionState(input: BuildMetaDecisionStateInput): MetaDecisionState {
   const confidenceModel = buildDecisionConfidenceModel({
     canonicalRecommendation: input.canonicalRecommendation ?? null,
     responseData: input.responseData ?? null,
-    decisionResult: input.responseData?.decision_result ?? null,
+    decisionResult: asRecord(input.responseData?.decision_result),
   });
   const patternIntelligence = buildDecisionPatternIntelligence({
     memoryEntries: input.memoryEntries ?? [],
@@ -39,7 +45,7 @@ export function buildMetaDecisionState(input: BuildMetaDecisionStateInput): Meta
         ? "moderate"
         : "weak";
   const uncertaintyLevel: MetaDecisionState["uncertainty_level"] =
-    (input.reasoning?.ambiguity_notes?.length ?? 0) > 1 ||
+    (Array.isArray(input.reasoning?.ambiguity_notes) ? input.reasoning.ambiguity_notes.length : 0) > 1 ||
     input.calibration?.calibration_label === "overconfident" ||
     strategicLearning.domain_drift.drift_detected
       ? "high"

@@ -2,12 +2,7 @@
  * KNL-15 — Knowledge Platform Freeze runner.
  */
 
-import {
-  KNOWLEDGE_PLATFORM_FREEZE_CONTRACT_VERSION,
-  KNL_FROZEN_PHASE_KEYS,
-} from "./knowledgePlatformFreezeCatalog.ts";
-import { getKnowledgePlatformCompatibilityMatrix } from "./knowledgePlatformFreezeCompatibility.ts";
-import { buildKnowledgePlatformFreezeManifest } from "./knowledgePlatformFreezeManifest.ts";
+import { KNL_FROZEN_PHASE_KEYS } from "./knowledgePlatformFreezeCatalog.ts";import { buildKnowledgePlatformFreezeManifest } from "./knowledgePlatformFreezeManifest.ts";
 import type {
   FreezeManifest,
   KnowledgePlatformFreezeRunResult,

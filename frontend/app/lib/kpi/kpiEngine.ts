@@ -14,15 +14,17 @@ export type KpiValue = {
   note?: string;
 };
 
+import type { SceneJson, SceneLoop } from "../sceneTypes";
+
 export type KpiComputeInput = {
-  sceneJson?: any;
+  sceneJson?: SceneJson | null;
   // Optional signals your project already uses
   stateVector?: {
     intensity?: number;
     volatility?: number;
     [k: string]: unknown;
   };
-  loops?: any[];
+  loops?: SceneLoop[];
   lastKpis?: KpiValue[];
 };
 

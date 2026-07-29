@@ -512,5 +512,6 @@ export function resolveConfidenceLevel(score: number): IntentConfidenceLevel {
 export function collectConfidenceRulesApplied(
   factors: readonly IntentConfidenceFactor[]
 ): readonly string[] {
+  void factors;
   return Object.freeze([...CONFIDENCE_RULE_IDS]);
 }

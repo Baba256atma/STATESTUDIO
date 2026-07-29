@@ -14,11 +14,7 @@ import {
   EXECUTIVE_ORGANIZATION_MODEL_PUBLIC_APIS,
   EXECUTIVE_ORGANIZATION_MODEL_STATUS,
 } from "./executiveOrganizationModelIndex.ts";
-import {
-  EXECUTIVE_ORGANIZATION_VALIDATION_METADATA,
-  EXECUTIVE_ORGANIZATION_VALIDATION_PUBLIC_APIS,
-  EXECUTIVE_ORGANIZATION_VALIDATION_RESULT,
-} from "./executiveOrganizationValidationIndex.ts";
+import { EXECUTIVE_ORGANIZATION_VALIDATION_PUBLIC_APIS, EXECUTIVE_ORGANIZATION_VALIDATION_RESULT } from "./executiveOrganizationValidationIndex.ts";
 import type {
   ExecutiveOrganizationManifestBundle,
   ExecutiveOrganizationManifestCompatibility,

@@ -2,7 +2,7 @@
 
 import React, { useMemo, useRef } from "react";
 import { Line } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { resolveRuntimeConnectionEndpoints, type RuntimeObjectPositionContext, type RuntimeObjectPositionLookupCache } from "../sceneRenderUtils";
@@ -15,6 +15,7 @@ import {
 } from "../../../lib/relationships/relationshipTheme";
 import type { WorkspaceViewMode } from "../../../lib/workspace/workspaceViewModeTypes";
 import type { SceneThemeId } from "../../../lib/theme/sceneThemeTypes";
+import type { SceneObject } from "../../../lib/sceneTypes";
 import { RelationshipLabel } from "./RelationshipLabel";
 import { sanitizeThreeColor } from "../../../lib/scene/threeColorSanitizer";
 import {
@@ -35,7 +36,7 @@ import {
 
 export type RelationshipLineProps = {
   relationship: NexoraRelationship;
-  objects: any[];
+  objects: SceneObject[];
   themeId: SceneThemeId;
   viewMode?: WorkspaceViewMode;
   lineOpacityMul?: number;
@@ -131,8 +132,8 @@ const PulsingExecutiveLine = React.memo(function PulsingExecutiveLine(props: {
   lineWidth: number;
   pulseEnabled: boolean;
   riskPulse: boolean;
-  onClick: (event: any) => void;
-  onPointerDown: (event: any) => void;
+  onClick: (event: ThreeEvent<MouseEvent>) => void;
+  onPointerDown: (event: ThreeEvent<PointerEvent>) => void;
 }): React.ReactElement | null {
   const lineRef = useRef<THREE.Object3D | null>(null);
   const pulseDisabledRef = useRef(false);
@@ -394,7 +395,7 @@ export const RelationshipLine = React.memo(function RelationshipLine(
     props.relationship.direction !== "bi" &&
     geometry.arrow !== null;
 
-  const handleSelect = (event: any) => {
+  const handleSelect = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
     props.onSelect?.(props.relationship);
@@ -428,7 +429,7 @@ export const RelationshipLine = React.memo(function RelationshipLine(
           pulseEnabled={pulseEnabled}
           riskPulse={isRiskLine}
           onClick={handleSelect}
-          onPointerDown={(event: any) => event.stopPropagation()}
+          onPointerDown={(event: ThreeEvent<PointerEvent>) => event.stopPropagation()}
         />
       ) : (
         <Line
@@ -438,7 +439,7 @@ export const RelationshipLine = React.memo(function RelationshipLine(
           opacity={visualOpacity}
           lineWidth={lineWidth}
           onClick={handleSelect}
-          onPointerDown={(event: any) => event.stopPropagation()}
+          onPointerDown={(event: ThreeEvent<PointerEvent>) => event.stopPropagation()}
         />
       )}
       {tokens.variant === "double" ? (
@@ -449,7 +450,7 @@ export const RelationshipLine = React.memo(function RelationshipLine(
           opacity={Math.max(0.16, visualOpacity - 0.24)}
           lineWidth={Math.max(0.4, lineWidth - 0.22)}
           onClick={handleSelect}
-          onPointerDown={(event: any) => event.stopPropagation()}
+          onPointerDown={(event: ThreeEvent<PointerEvent>) => event.stopPropagation()}
         />
       ) : null}
       <Line
@@ -459,7 +460,7 @@ export const RelationshipLine = React.memo(function RelationshipLine(
         opacity={0}
         lineWidth={8}
         onClick={handleSelect}
-        onPointerDown={(event: any) => event.stopPropagation()}
+        onPointerDown={(event: ThreeEvent<PointerEvent>) => event.stopPropagation()}
       />
       {showDirectionCue && geometry.arrow ? (
         <mesh position={geometry.arrow} rotation={geometry.arrowRotation ?? [0, 0, 0]}>

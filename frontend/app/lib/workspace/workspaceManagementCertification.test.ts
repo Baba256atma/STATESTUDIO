@@ -55,6 +55,16 @@ class TestCustomEvent<T = unknown> extends Event {
     super(type);
     this.detail = init?.detail as T;
   }
+
+  initCustomEvent(
+    type: string,
+    _bubbles?: boolean,
+    _cancelable?: boolean,
+    detail?: T,
+  ): void {
+    Object.defineProperty(this, "type", { configurable: true, value: type });
+    this.detail = detail as T;
+  }
 }
 
 test.beforeEach(() => {
@@ -63,15 +73,27 @@ test.beforeEach(() => {
 
 test.afterEach(() => {
   resetWorkspaceRegistryForTests();
-  if (originalWindow) {
-    (globalThis as typeof globalThis & { window?: Window }).window = originalWindow;
-  } else {
-    delete (globalThis as typeof globalThis & { window?: Window }).window;
+  const windowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
+  if (originalWindow !== undefined) {
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: originalWindow,
+    });
+  } else if (windowDesc?.configurable !== false) {
+    Reflect.deleteProperty(globalThis, "window");
   }
-  if (originalCustomEvent) {
-    (globalThis as typeof globalThis & { CustomEvent?: typeof CustomEvent }).CustomEvent = originalCustomEvent;
-  } else {
-    delete (globalThis as typeof globalThis & { CustomEvent?: typeof CustomEvent }).CustomEvent;
+  const customEventDesc = Object.getOwnPropertyDescriptor(globalThis, "CustomEvent");
+  if (originalCustomEvent !== undefined) {
+    Object.defineProperty(globalThis, "CustomEvent", {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: originalCustomEvent,
+    });
+  } else if (customEventDesc?.configurable !== false) {
+    Reflect.deleteProperty(globalThis, "CustomEvent");
   }
 });
 
@@ -84,9 +106,13 @@ test("NW-A Gates A-L certify registry, switcher, lifecycle, ownership, and isola
   assert.equal(getWorkspaceRegistrySnapshot().workspaceOrder.includes(DEMO_WORKSPACE_ID), true);
 
   const events: Array<{ type: string; detail: unknown }> = [];
-  (globalThis as typeof globalThis & { CustomEvent?: typeof CustomEvent }).CustomEvent =
-    TestCustomEvent as typeof CustomEvent;
-  (globalThis as typeof globalThis & { window?: WindowStub }).window = {
+  Object.defineProperty(globalThis, "CustomEvent", {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    value: TestCustomEvent,
+  });
+  const windowStub: WindowStub = {
     dispatchEvent: (event: Event) => {
       events.push({
         type: event.type,
@@ -95,6 +121,12 @@ test("NW-A Gates A-L certify registry, switcher, lifecycle, ownership, and isola
       return true;
     },
   };
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    value: windowStub,
+  });
 
   const workspaceA = createWorkspace("Workspace A");
   assert.equal(getActiveWorkspaceId(), workspaceA.workspaceId);

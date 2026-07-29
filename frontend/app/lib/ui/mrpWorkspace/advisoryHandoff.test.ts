@@ -71,7 +71,6 @@ test("buildRecommendationPackage includes all required fields", () => {
     selectedObjectLabel: "Factory A",
   });
   publishRiskWorkspaceState({
-    phase: "ready",
     selectedObjectId: "factory-a",
     riskCount: 2,
     elevatedRiskCount: 1,
@@ -100,7 +99,6 @@ test("commitRecommendationToGovernance transfers package to governance runtime",
     selectedObjectLabel: "Factory A",
   });
   publishRiskWorkspaceState({
-    phase: "ready",
     selectedObjectId: "factory-a",
     riskCount: 2,
     elevatedRiskCount: 1,

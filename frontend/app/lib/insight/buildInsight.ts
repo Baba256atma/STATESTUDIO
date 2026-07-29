@@ -36,12 +36,12 @@ export function buildInsight(frame: ReplayFrame | null): Insight {
     };
   }
 
-  const systemState = frame.system_state as { results?: any[] } | undefined;
+  const systemState = frame.system_state as { results?: Array<Record<string, unknown>> } | undefined;
   const topResult = systemState?.results?.[0];
   const title =
-    typeof topResult?.archetype_id === "string" ? topResult.archetype_id : "Live / Replay";
+    topResult && typeof topResult.archetype_id === "string" ? topResult.archetype_id : "Live / Replay";
   const confidence =
-    typeof topResult?.confidence === "number" ? clamp(topResult.confidence, 0, 1) : undefined;
+    topResult && typeof topResult.confidence === "number" ? clamp(topResult.confidence, 0, 1) : undefined;
 
   const signals = frame.system_signals ?? {};
   const why = pickTopSignals(signals, 3).map(
@@ -49,7 +49,9 @@ export function buildInsight(frame: ReplayFrame | null): Insight {
       `${formatSignalName(name)} at ${(value ?? 0).toFixed(2)}`
   );
 
-  const levers = (frame.visual as any)?.levers as { id: string; strength?: number }[] | undefined;
+  const visualRecord =
+    frame.visual && typeof frame.visual === "object" ? (frame.visual as Record<string, unknown>) : null;
+  const levers = visualRecord?.levers as { id: string; strength?: number }[] | undefined;
   let lever: Insight["lever"] = null;
   if (Array.isArray(levers) && levers.length > 0) {
     const sorted = [...levers].sort(

@@ -6,7 +6,7 @@
 
 import type { DashboardContext } from "../ui/mainRightPanelContract.ts";
 import { resolveNexoraLeftNavMode } from "../ui/nexoraLeftNavContract.ts";
-import type { NexoraRouteResolution, RouteRequestSource } from "../routing/nexoraRoutingContract.ts";
+import type { NexoraRouteResolution } from "../routing/nexoraRoutingContract.ts";
 import {
   createDefaultNexoraWorkspaceState,
   normalizeNexoraWorkspaceState,

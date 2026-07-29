@@ -34,21 +34,7 @@ import {
   EXECUTIVE_STRATEGY_ALIGNMENT_REGISTRY,
   listExecutiveStrategyAlignments,
 } from "./executiveStrategyAlignmentIndex.ts";
-import {
-  buildExecutiveStrategyMonitoring,
-  EXECUTIVE_STRATEGY_MONITORING_CADENCE_REGISTRY,
-  EXECUTIVE_STRATEGY_MONITORING_EVENT_REGISTRY,
-  EXECUTIVE_STRATEGY_MONITORING_EVIDENCE_REGISTRY,
-  EXECUTIVE_STRATEGY_MONITORING_REGISTRY,
-  EXECUTIVE_STRATEGY_MONITORING_RELATIONSHIPS,
-  EXECUTIVE_STRATEGY_MONITORING_THRESHOLD_REGISTRY,
-  EXECUTIVE_STRATEGY_MONITORINGS,
-  ExecutiveStrategyMonitoringPlatform,
-  getExecutiveStrategyMonitoringManifest,
-  listExecutiveStrategyMonitoringProfiles,
-  listExecutiveStrategyMonitoringPublicApis,
-  validateExecutiveStrategyMonitoring,
-} from "./executiveStrategyMonitoringIndex.ts";
+import { buildExecutiveStrategyMonitoring, EXECUTIVE_STRATEGY_MONITORING_CADENCE_REGISTRY, EXECUTIVE_STRATEGY_MONITORING_EVENT_REGISTRY, EXECUTIVE_STRATEGY_MONITORING_EVIDENCE_REGISTRY, EXECUTIVE_STRATEGY_MONITORING_REGISTRY, EXECUTIVE_STRATEGY_MONITORING_RELATIONSHIPS, EXECUTIVE_STRATEGY_MONITORING_THRESHOLD_REGISTRY, EXECUTIVE_STRATEGY_MONITORINGS, ExecutiveStrategyMonitoringPlatform, getExecutiveStrategyMonitoringManifest, validateExecutiveStrategyMonitoring } from "./executiveStrategyMonitoringIndex.ts";
 import type { ExecutiveStrategyMonitoringRegistry } from "./executiveStrategyMonitoringTypes.ts";
 
 test("platform identity", () => {

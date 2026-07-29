@@ -7,6 +7,7 @@ import {
   resetDashboardHomeLayoutBrakesForTests,
 } from "./dashboardHomeLayoutContract.ts";
 import { DASHBOARD_HOME_LAYOUT_LEGACY_ISOLATION } from "./dashboardHomeLayoutLegacyFindings.ts";
+import type { DashboardHomeLayoutSectionId } from "./dashboardHomeLayoutContract.ts";
 import {
   buildDashboardHomeLayoutView,
   sectionBelongsToZone,
@@ -47,7 +48,10 @@ test("validateDashboardHomeSectionOrder accepts canonical order", () => {
 });
 
 test("validateDashboardHomeSectionOrder rejects drift", () => {
-  const drifted = ["quick_actions", ...DASHBOARD_HOME_CANONICAL_SECTION_ORDER.slice(1)];
+  const drifted = [
+    "quick_actions" as const,
+    ...(DASHBOARD_HOME_CANONICAL_SECTION_ORDER.slice(1) as DashboardHomeLayoutSectionId[]),
+  ] satisfies readonly DashboardHomeLayoutSectionId[];
   const result = validateDashboardHomeSectionOrder(drifted);
   assert.equal(result.valid, false);
 });

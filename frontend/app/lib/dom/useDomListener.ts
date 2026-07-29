@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, type DependencyList, type RefObject } from "react";
+import { useEffect, useLayoutEffect, type RefObject } from "react";
 
 import {
   buildViewportResizeSignature,
@@ -17,46 +17,61 @@ import {
 export function useWindowListener(
   type: string,
   listener: EventListenerOrEventListenerObject,
-  deps: DependencyList,
   meta: DomListenerMeta,
   options?: boolean | AddEventListenerOptions
 ): void {
-  useEffect(() => bindWindowListener(type, listener, options, meta), deps);
+  const { component, elementId = null, eventType } = meta;
+  useEffect(() => {
+    return bindWindowListener(
+      type,
+      listener,
+      options,
+      { component, elementId, eventType }
+    );
+  }, [type, listener, options, component, elementId, eventType]);
 }
 
 export function useDocumentListener(
   type: string,
   listener: EventListenerOrEventListenerObject,
-  deps: DependencyList,
   meta: DomListenerMeta,
   options?: boolean | AddEventListenerOptions
 ): void {
-  useEffect(() => bindDocumentListener(type, listener, options, meta), deps);
+  const { component, elementId = null, eventType } = meta;
+  useEffect(() => {
+    return bindDocumentListener(
+      type,
+      listener,
+      options,
+      { component, elementId, eventType }
+    );
+  }, [type, listener, options, component, elementId, eventType]);
 }
 
 export function useRefDomListener<T extends HTMLElement>(
   ref: RefObject<T | null>,
   type: string,
   listener: EventListenerOrEventListenerObject,
-  deps: DependencyList,
   meta: DomListenerMeta,
-  options?: boolean | AddEventListenerOptions
+  options?: boolean | AddEventListenerOptions,
+  remountKey?: unknown
 ): void {
+  const { component, elementId = null, eventType } = meta;
   useLayoutEffect(() => {
+    const ownedMeta: DomListenerMeta = { component, elementId, eventType };
     const node = ref.current;
     if (!node) {
-      attachDomListener(null, type, listener, options, meta);
+      attachDomListener(null, type, listener, options, ownedMeta);
       return undefined;
     }
-    attachDomListener(node, type, listener, options, meta);
-    return () => detachDomListener(node, type, listener, options, meta);
-  }, deps);
+    attachDomListener(node, type, listener, options, ownedMeta);
+    return () => detachDomListener(node, type, listener, options, ownedMeta);
+  }, [ref, type, listener, options, component, elementId, eventType, remountKey]);
 }
 
 export function useViewportWidthListener(
   onWidthChange: (width: number) => void,
-  component: string,
-  deps: DependencyList = []
+  component: string
 ): void {
   useEffect(() => {
     if (typeof window === "undefined" || window == null) return undefined;
@@ -74,5 +89,5 @@ export function useViewportWidthListener(
     return scheduleViewportResizeCommit(() => {
       commitWidth(window.innerWidth);
     });
-  }, [component, onWidthChange, ...deps]);
+  }, [component, onWidthChange]);
 }

@@ -15,10 +15,7 @@ import {
   EXECUTIVE_SCENARIO_DASHBOARD_ADAPTER_VERSION,
 } from "./executiveScenarioDashboardAdapter.ts";
 import { EXECUTIVE_SCENARIO_DASHBOARD_INDICATOR_KINDS } from "./executiveScenarioDashboardView.ts";
-import {
-  resolveExecutiveScenarioDashboardView,
-  resolveExecutiveScenarioDashboardViewProbeExample,
-} from "./executiveScenarioDashboardResolver.ts";
+import { resolveExecutiveScenarioDashboardView } from "./executiveScenarioDashboardResolver.ts";
 import { resolveExecutiveScenarioWorkspaceViewProbeExample } from "./executiveScenarioWorkspaceResolver.ts";
 
 export const EXECUTIVE_SCENARIO_DASHBOARD_INTEGRATION_CERTIFICATION_VERSION =

@@ -2,9 +2,7 @@
  * APP-11:4 — Executive Inbox Notification eligibility evaluator.
  */
 
-import { EXECUTIVE_INBOX_NOTIFICATION_ELIGIBILITY_THRESHOLDS } from "./executiveInboxNotificationEngineConstants.ts";
-import type { ExecutiveInboxItem } from "./executiveInboxAggregationEngineTypes.ts";
-import type { ExecutiveInboxPriority, PriorityDimensionKey } from "./executiveInboxPrioritizationEngineTypes.ts";
+import { EXECUTIVE_INBOX_NOTIFICATION_ELIGIBILITY_THRESHOLDS } from "./executiveInboxNotificationEngineConstants.ts";import type { ExecutiveInboxPriority, PriorityDimensionKey } from "./executiveInboxPrioritizationEngineTypes.ts";
 import type { NotificationEligibility, PrioritizedInboxNotificationInput } from "./executiveInboxNotificationEngineTypes.ts";
 
 function dimensionScore(priority: ExecutiveInboxPriority, dimensionKey: PriorityDimensionKey): number {

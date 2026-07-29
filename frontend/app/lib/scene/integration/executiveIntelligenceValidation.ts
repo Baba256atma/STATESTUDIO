@@ -7,8 +7,6 @@ import type { ExecutiveCognitiveTwinState } from "../twin/executiveCognitiveTwin
 import type { ExecutiveWarRoomState } from "../warroom/executiveWarRoomTypes";
 import type { ExecutiveScenarioPlaybackState } from "../scenario/executiveScenarioPlaybackTypes";
 import type { ExecutiveScenarioUniverseState } from "../scenario/executiveMultiScenarioUniverseTypes";
-import type { TypeCScenarioComparison } from "../../typec/typeCScenarioComparison";
-import type { TypeCScenarioSimulation } from "../../typec/typeCScenarioSimulation";
 import type {
   BuildExecutiveIntelligenceRefreshInput,
   ExecutiveIntelligenceScorecard,

@@ -4,8 +4,12 @@
 // Geometry must be initialized once and never resized.
 // Only buffer values may change.
 // Prevents WebGL buffer mismatch errors.
+//
+// AD-R3F-01 — LifecycleOwnedResourceWithFrameBoundMutation:
+// Shader material is created/disposed in layout effect and attached to the mesh
+// imperatively. Uniform mutation occurs only in useFrame (never during render).
 
-import React, { useRef } from "react";
+import React, { useLayoutEffect, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import type { PsychVisualProps } from "../../lib/visual/psychVisualMapping";
@@ -31,11 +35,26 @@ const FireObject = React.memo(function FireObject({ brightness = 0.75, activity 
   const smoothElementScoreRef = useRef(0);
   const lastIntensityLogAtRef = useRef(0);
 
-  if (!fireMaterialRef.current) {
-    fireMaterialRef.current = createFireMaterial();
-  }
+  useLayoutEffect(() => {
+    const material = createFireMaterial();
+    fireMaterialRef.current = material;
+    const mesh = core.current;
+    if (mesh) {
+      mesh.material = material;
+    }
+    return () => {
+      material.dispose();
+      if (fireMaterialRef.current === material) {
+        fireMaterialRef.current = null;
+      }
+    };
+  }, []);
 
   useFrame(({ clock }, delta) => {
+    const material = fireMaterialRef.current;
+    if (material && core.current && core.current.material !== material) {
+      core.current.material = material;
+    }
     const t = clock.getElapsedTime();
     const alpha = Math.min(1, delta * 5.5);
     smoothVisual.current.glow = THREE.MathUtils.lerp(smoothVisual.current.glow, visual.glow, alpha);
@@ -67,10 +86,10 @@ const FireObject = React.memo(function FireObject({ brightness = 0.75, activity 
     }
     if (halo.current) halo.current.scale.setScalar((1.02 + smoothVisual.current.scale * 1.8 + Math.sin(t * 8) * 0.028 * activity) * (1 + smoothElementScoreRef.current * 0.08));
     if (ring.current) ring.current.rotation.z = t * (0.18 + smoothVisual.current.rotation * 0.06);
-    if (fireMaterialRef.current) {
-      fireMaterialRef.current.uniforms.time.value = t;
-      fireMaterialRef.current.uniforms.intensity.value = Math.min(1.18, 0.28 + brightness * 0.38 + activity * 0.2 + smoothVisual.current.glow * 0.26 + smoothTensionRef.current * 0.32 + smoothFearRef.current * 0.22 + smoothFearBiasRef.current * 0.08 + sceneBoost * 0.18 + elementVisual.glow * 0.18);
-      fireMaterialRef.current.uniforms.opacity.value = Math.min(0.98, (0.58 + elementVisual.opacity * 0.24) + brightness * 0.12 + smoothVisual.current.glow * 0.08 + smoothTensionRef.current * 0.06 + smoothFearRef.current * 0.05);
+    if (material) {
+      material.uniforms.time.value = t;
+      material.uniforms.intensity.value = Math.min(1.18, 0.28 + brightness * 0.38 + activity * 0.2 + smoothVisual.current.glow * 0.26 + smoothTensionRef.current * 0.32 + smoothFearRef.current * 0.22 + smoothFearBiasRef.current * 0.08 + sceneBoost * 0.18 + elementVisual.glow * 0.18);
+      material.uniforms.opacity.value = Math.min(0.98, (0.58 + elementVisual.opacity * 0.24) + brightness * 0.12 + smoothVisual.current.glow * 0.08 + smoothTensionRef.current * 0.06 + smoothFearRef.current * 0.05);
     }
     if (haloMaterialRef.current) haloMaterialRef.current.opacity = Math.min(0.62, 0.06 + elementVisual.opacity * 0.12 + brightness * 0.03 + smoothVisual.current.glow * 0.06 + smoothTensionRef.current * 0.08 + smoothFearRef.current * 0.06 + sceneBoost * 0.08);
   });
@@ -81,7 +100,7 @@ const FireObject = React.memo(function FireObject({ brightness = 0.75, activity 
         <sphereGeometry args={[0.98, 28, 14]} />
         <meshBasicMaterial ref={haloMaterialRef} color="#e85a24" transparent opacity={0.14 + brightness * 0.04} depthWrite={false} />
       </mesh>
-      <mesh ref={core} material={fireMaterialRef.current}>
+      <mesh ref={core}>
         <sphereGeometry args={[1, 28, 14]} />
       </mesh>
       <mesh ref={ring} rotation={[Math.PI / 2.35, -0.16, 0.36]}>

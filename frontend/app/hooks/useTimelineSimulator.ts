@@ -1,10 +1,29 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { readUnknownErrorMessage } from "../lib/system/nexoraErrors";
 
 type TimelineScenario = {
   name: string;
   delta: Record<string, number>;
+};
+
+type TimelineScenarioResult = {
+  name?: string;
+  timeline?: Record<string, unknown>[];
+  final_fragility?: { score?: number; level?: string };
+  montecarlo?: { result?: { stats?: { mean?: number; p90?: number } } };
+};
+
+export type TimelineSimulationResult = {
+  best_scenario?: string;
+  scenarios?: TimelineScenarioResult[];
+  timeline_horizon?: number;
+  manager_report?: {
+    insight?: string;
+    warning?: string;
+    recommendation?: string;
+  };
 };
 
 type TimelineParams = {
@@ -21,7 +40,7 @@ type UseTimelineSimulatorArgs = {
 export function useTimelineSimulator({ backendBase, episodeId }: UseTimelineSimulatorArgs) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<any | null>(null);
+  const [result, setResult] = useState<TimelineSimulationResult | null>(null);
 
   const runTimeline = useCallback(
     async (params: TimelineParams) => {
@@ -60,8 +79,8 @@ export function useTimelineSimulator({ backendBase, episodeId }: UseTimelineSimu
         const out = data?.data ?? data;
         setResult(out);
         return out;
-      } catch (e: any) {
-        setError(String(e?.message || "Timeline simulation failed"));
+      } catch (e: unknown) {
+        setError(readUnknownErrorMessage(e, "Timeline simulation failed"));
         return null;
       } finally {
         setLoading(false);

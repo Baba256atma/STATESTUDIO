@@ -7,11 +7,7 @@
 
 import type { ExecutiveRiskSummary } from "./executiveRiskSummaryContract.ts";
 import { EMPTY_EXECUTIVE_RISK_SUMMARY } from "./executiveRiskSummaryContract.ts";
-import type {
-  RiskPropagationChain,
-  RiskPropagationChainStep,
-  RiskPropagationNodeKind,
-} from "./riskPropagationProfileContract.ts";
+import type { RiskPropagationChainStep, RiskPropagationNodeKind } from "./riskPropagationProfileContract.ts";
 
 export const RISK_SCENARIO_FOUNDATION_DIAGNOSTIC = "[RISK_SCENARIO_FOUNDATION]" as const;
 

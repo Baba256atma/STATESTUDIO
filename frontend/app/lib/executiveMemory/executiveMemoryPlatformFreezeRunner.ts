@@ -2,10 +2,7 @@
  * APP-4:14 — Executive Memory Platform Freeze runner.
  */
 
-import {
-  EXECUTIVE_MEMORY_PLATFORM_FREEZE_CONTRACT_VERSION,
-  EXECUTIVE_MEMORY_PLATFORM_FREEZE_TAGS,
-} from "./executiveMemoryPlatformFreezeConstants.ts";
+import { EXECUTIVE_MEMORY_PLATFORM_FREEZE_CONTRACT_VERSION } from "./executiveMemoryPlatformFreezeConstants.ts";
 import {
   runExecutiveMemoryPlatformFreezeCertification,
 } from "./executiveMemoryPlatformFreezeCertification.ts";

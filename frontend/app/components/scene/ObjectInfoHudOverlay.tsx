@@ -124,55 +124,62 @@ function ObjectInfoHudOverlayInner(props: ObjectInfoHudOverlayProps): React.Reac
   const lastObjectIdRef = React.useRef<string | null>(null);
   const previousPropsRef = React.useRef<ObjectInfoHudOverlayProps | null>(null);
   const renderCountRef = React.useRef(0);
-  renderCountRef.current += 1;
   const placement = props.placement;
   const focusHud = useFocusHudPresentation("objectInfoHud", true);
   const selectedObjectId = props.model.selectedObjectId?.trim() || null;
   const hasObjectSelection = Boolean(selectedObjectId);
   const hasRelationshipDetail = Boolean(props.model.relationshipDetails);
   const hasPropagationDetail = Boolean(props.model.propagationDetails);
-  const propsDiff = diffObjectInfoHudOverlayProps(previousPropsRef.current, props);
-  const hudSignatureChanged = propsDiff.changedPropNames.includes("model");
-  const visibilityChanged =
-    Boolean(previousPropsRef.current?.placement.visible) !== Boolean(props.placement.visible);
-  const layoutStoreChanged = propsDiff.changedPropNames.includes("placement");
-  const parentRenderOnly = propsDiff.changedPropNames.length === 0;
-  devLogThrottled({
-    key: `${selectedObjectId ?? "none"}:${props.model.relationshipDetails?.id ?? "none"}:${props.model.propagationDetails?.id ?? "none"}:${placement.sizeMode}`,
-    label: "[NEXORA_OBJECT_INFO_HUD_TRACE]",
-    scope: "scene",
-    intervalMs: 1000,
-    payload: {
-      stepName: "ObjectInfoHudOverlay render",
-      file: "frontend/app/components/scene/ObjectInfoHudOverlay.tsx",
-      stateWritten: "none",
-      reason: "React render from SceneCanvas objectInfoHud prop or workspace layout store.",
-      changedProps: propsDiff.changedProps,
-      changedPropNames: propsDiff.changedPropNames,
-      hudSignatureChanged,
-      anchorChanged: layoutStoreChanged,
-      visibilityChanged,
-      layoutStoreChanged,
-      parentRenderOnly,
-      shouldRender: !parentRenderOnly,
-      renderImpact: "Scene-native object info HUD render.",
-      shouldBeImmediate: true,
-      shouldBeDeferred: false,
-      shouldBeSkippedIfSameObject: true,
-      selectedObjectIdChanged: lastObjectIdRef.current !== selectedObjectId,
-      focusedIdChanged: false,
-      objectInfoHudChanged: lastObjectIdRef.current !== selectedObjectId,
-      rightPanelChanged: false,
-      objectPanelDataBuilt: Boolean(props.model.executiveSummary || props.model.riskLevel || props.model.frsiScore),
-      executiveDataBuilt: Boolean(props.model.executiveSummary || props.model.riskLevel || props.model.frsiScore),
-      renderCountDelta: 1,
-      renderCount: renderCountRef.current,
-      selectedObjectId,
-      visible: true,
-      sizeMode: placement.sizeMode,
-    },
-  });
+
+  // AD-FE-HOOKS-01: development prop-diff / render diagnostics are effect-owned (not render state).
   React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") {
+      previousPropsRef.current = props;
+      return;
+    }
+    renderCountRef.current += 1;
+    const propsDiff = diffObjectInfoHudOverlayProps(previousPropsRef.current, props);
+    const hudSignatureChanged = propsDiff.changedPropNames.includes("model");
+    const visibilityChanged =
+      Boolean(previousPropsRef.current?.placement.visible) !== Boolean(props.placement.visible);
+    const layoutStoreChanged = propsDiff.changedPropNames.includes("placement");
+    const parentRenderOnly = propsDiff.changedPropNames.length === 0;
+    const selectedObjectIdChanged = lastObjectIdRef.current !== selectedObjectId;
+    devLogThrottled({
+      key: `${selectedObjectId ?? "none"}:${props.model.relationshipDetails?.id ?? "none"}:${props.model.propagationDetails?.id ?? "none"}:${placement.sizeMode}`,
+      label: "[NEXORA_OBJECT_INFO_HUD_TRACE]",
+      scope: "scene",
+      intervalMs: 1000,
+      payload: {
+        stepName: "ObjectInfoHudOverlay render",
+        file: "frontend/app/components/scene/ObjectInfoHudOverlay.tsx",
+        stateWritten: "none",
+        reason: "React render from SceneCanvas objectInfoHud prop or workspace layout store.",
+        changedProps: propsDiff.changedProps,
+        changedPropNames: propsDiff.changedPropNames,
+        hudSignatureChanged,
+        anchorChanged: layoutStoreChanged,
+        visibilityChanged,
+        layoutStoreChanged,
+        parentRenderOnly,
+        shouldRender: !parentRenderOnly,
+        renderImpact: "Scene-native object info HUD render.",
+        shouldBeImmediate: true,
+        shouldBeDeferred: false,
+        shouldBeSkippedIfSameObject: true,
+        selectedObjectIdChanged,
+        focusedIdChanged: false,
+        objectInfoHudChanged: selectedObjectIdChanged,
+        rightPanelChanged: false,
+        objectPanelDataBuilt: Boolean(props.model.executiveSummary || props.model.riskLevel || props.model.frsiScore),
+        executiveDataBuilt: Boolean(props.model.executiveSummary || props.model.riskLevel || props.model.frsiScore),
+        renderCountDelta: 1,
+        renderCount: renderCountRef.current,
+        selectedObjectId,
+        visible: true,
+        sizeMode: placement.sizeMode,
+      },
+    });
     previousPropsRef.current = props;
   });
 

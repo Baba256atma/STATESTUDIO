@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef } from "react";
+import type { SceneObject } from "../../../lib/sceneTypes";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 
@@ -27,7 +28,7 @@ export type OverlayFlowLineEdge = {
 };
 
 export type OverlayFlowLinesProps = {
-  objects: any[];
+  objects: SceneObject[];
   edges: OverlayFlowLineEdge[];
   color: string;
   glowColor: string;
@@ -39,7 +40,7 @@ export type OverlayFlowLinesProps = {
 };
 
 function buildLineGeometry(
-  objects: any[],
+  objects: SceneObject[],
   edges: OverlayFlowLineEdge[],
   yOffset: number,
   runtimeObjectPositionContext?: RuntimeObjectPositionContext
@@ -90,7 +91,7 @@ function resolveOverlayFlowThreeColor(input: unknown, fallback = OVERLAY_FLOW_CO
   return sanitizeThreeColor(value, fallback);
 }
 
-function extractObjectIds(objects: any[]): string[] {
+function extractObjectIds(objects: SceneObject[]): string[] {
   return objects
     .map((object, index) => String(object?.id ?? object?.name ?? `obj_${index}`).trim())
     .filter(Boolean)

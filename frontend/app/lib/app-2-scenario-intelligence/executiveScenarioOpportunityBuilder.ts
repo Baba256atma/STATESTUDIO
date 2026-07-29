@@ -334,7 +334,6 @@ export function buildExecutiveScenarioOpportunityGraph(
       entry.label.toLowerCase().includes("kpi")
     );
     if (!hasCriticalConflict) {
-      const nodeId = addNode(nodes, "kpi", kpi.kpiId, kpi.label, "high");
       addEdge(edges, rootNodeId, kpi.kpiId, "financial", "kpi_improvement", 0.72);
       addEvidence(evidenceItems, {
         originatingEntity: kpi.kpiId,

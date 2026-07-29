@@ -21,29 +21,6 @@ import type {
   CrossScenarioLearningPlatformFreezeRunResult,
 } from "./crossScenarioLearningPlatformFreezeTypes.ts";
 
-const FREEZE_CHECK_IDS = Object.freeze([
-  "A_certification_pass",
-  "B_ready_for_freeze",
-  "C_manifest_valid",
-  "D_release_identity_valid",
-  "E_phases_registered",
-  "F_public_apis_registered",
-  "G_consumers_registered",
-  "H_compatibility_matrix_valid",
-  "I_extension_policy_valid",
-  "J_forbidden_changes_listed",
-  "K_release_flags_valid",
-  "L_ready_for_release",
-  "M_no_new_runtime_behavior",
-  "N_no_ui_logic",
-  "O_no_dashboard_logic",
-  "P_no_assistant_logic",
-  "Q_no_persistence_logic",
-  "R_no_ml_logic",
-  "T_no_prior_platform_coupling",
-  "U_prior_platforms_untouched",
-] as const);
-
 let lastFreezeResult: CrossScenarioLearningPlatformFreezeRunResult | null = null;
 
 function check(id: string, title: string, passed: boolean, evidence: string): CrossScenarioLearningPlatformFreezeCheck {

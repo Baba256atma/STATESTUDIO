@@ -117,6 +117,7 @@ export function resolveKnowledgeRetrievalMetadataExample(timestamp: string): Kno
 }
 
 export function resolveKnowledgeRetrievalRequestExample(_timestamp: string): KnowledgeRetrievalRequest {
+  void _timestamp;
   return Object.freeze({
     requestId: "knowledge-retrieval-request-example-001",
     sourceKey: "knl_foundation",
@@ -157,6 +158,7 @@ export function resolveKnowledgeRetrievalSourceExample(timestamp: string): Knowl
 }
 
 export function resolveKnowledgeIndexEntryExample(_timestamp: string): KnowledgeIndexEntry {
+  void _timestamp;
   return Object.freeze({
     entryId: "knowledge-index-entry-knl_foundation",
     indexId: "knowledge-index-knl_foundation",
@@ -183,6 +185,7 @@ export function resolveKnowledgeIndexExample(timestamp: string): KnowledgeIndex 
 }
 
 export function resolveKnowledgeNamespaceMappingExample(_timestamp: string): KnowledgeNamespaceMapping {
+  void _timestamp;
   return Object.freeze({
     mappingId: "namespace-mapping-knl_foundation",
     namespaceKey: "knowledge-retrieval-sources",
@@ -193,6 +196,7 @@ export function resolveKnowledgeNamespaceMappingExample(_timestamp: string): Kno
 }
 
 export function resolveKnowledgeCategoryMappingExample(_timestamp: string): KnowledgeCategoryMapping {
+  void _timestamp;
   return Object.freeze({
     mappingId: "category-mapping-knl_foundation",
     categoryKey: "knl_foundation",
@@ -203,6 +207,7 @@ export function resolveKnowledgeCategoryMappingExample(_timestamp: string): Know
 }
 
 export function resolveKnowledgeResultDescriptorExample(_timestamp: string): KnowledgeResultDescriptor {
+  void _timestamp;
   return Object.freeze({
     descriptorId: "knowledge-result-descriptor-example-001",
     sourceKey: "knl_foundation",

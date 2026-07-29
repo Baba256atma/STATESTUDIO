@@ -13,28 +13,7 @@ import {
   BUSINESS_VOCABULARY_OWNER,
   BUSINESS_VOCABULARY_SOURCE_KEYS,
 } from "./businessVocabularyCatalog.ts";
-import type {
-  VocabularyAcronym,
-  VocabularyAcronymRegistrationInput,
-  VocabularyAlias,
-  VocabularyAliasRegistrationInput,
-  VocabularyCategory,
-  VocabularyCategoryRegistrationInput,
-  VocabularyDomain,
-  VocabularyDomainRegistrationInput,
-  VocabularyLanguage,
-  VocabularyLanguageRegistrationInput,
-  VocabularyMetadata,
-  VocabularyResult,
-  VocabularySnapshot,
-  VocabularySource,
-  VocabularySourceRegistrationInput,
-  VocabularyState,
-  VocabularyTag,
-  VocabularyTagRegistrationInput,
-  VocabularyTerm,
-  VocabularyTermRegistrationInput,
-} from "./businessVocabularyTypes.ts";
+import type { VocabularyAcronym, VocabularyAcronymRegistrationInput, VocabularyAlias, VocabularyAliasRegistrationInput, VocabularyCategory, VocabularyCategoryRegistrationInput, VocabularyDomain, VocabularyDomainRegistrationInput, VocabularyLanguage, VocabularyLanguageRegistrationInput, VocabularyResult, VocabularySnapshot, VocabularySource, VocabularySourceRegistrationInput, VocabularyState, VocabularyTag, VocabularyTagRegistrationInput, VocabularyTerm, VocabularyTermRegistrationInput } from "./businessVocabularyTypes.ts";
 import {
   validateVocabularyAcronymRegistration,
   validateVocabularyAliasRegistration,

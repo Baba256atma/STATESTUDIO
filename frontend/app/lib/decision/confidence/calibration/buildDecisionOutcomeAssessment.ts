@@ -4,8 +4,8 @@ import type { DecisionOutcomeAssessment } from "./decisionConfidenceCalibrationT
 
 type BuildDecisionOutcomeAssessmentInput = {
   canonicalRecommendation?: CanonicalRecommendation | null;
-  responseData?: Record<string, any> | null;
-  decisionResult?: Record<string, any> | null;
+  responseData?: Record<string, unknown> | null;
+  decisionResult?: Record<string, unknown> | null;
   memoryEntries?: DecisionMemoryEntry[];
 };
 
@@ -25,10 +25,18 @@ function collectUniqueStrings(values: unknown[], limit = UNIQUE_SIGNAL_LIMIT) {
   return Array.from(new Set(values.map((value) => normalizeText(value)).filter(Boolean))).slice(0, limit);
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readCanonicalRecommendation(value: unknown): CanonicalRecommendation | null {
+  return value && typeof value === "object" ? (value as CanonicalRecommendation) : null;
+}
+
 function hasActionEvidence(
   primaryMemoryEntry: DecisionMemoryEntry | null,
-  responseData: Record<string, any> | null,
-  decisionResult: Record<string, any> | null
+  responseData: Record<string, unknown> | null,
+  decisionResult: Record<string, unknown> | null
 ) {
   return Boolean(
     primaryMemoryEntry?.impact_summary ||
@@ -46,9 +54,9 @@ export function buildDecisionOutcomeAssessment(
   const decisionResult = input.decisionResult ?? null;
   // Use the first available memory entry as the primary observed outcome anchor for calibration.
   const primaryMemoryEntry = input.memoryEntries?.[0] ?? null;
-  const simulationResult = decisionResult?.simulation_result ?? null;
-  const responseSimulation = responseData?.decision_simulation ?? null;
-  const responseCanonicalRecommendation = responseData?.canonical_recommendation ?? null;
+  const simulationResult = asRecord(decisionResult?.simulation_result);
+  const responseSimulation = asRecord(responseData?.decision_simulation);
+  const responseCanonicalRecommendation = readCanonicalRecommendation(responseData?.canonical_recommendation);
   const predictedScore =
     typeof recommendation?.confidence?.score === "number"
       ? recommendation.confidence.score
@@ -62,11 +70,13 @@ export function buildDecisionOutcomeAssessment(
       : typeof responseSimulation?.confidence === "number"
         ? responseSimulation.confidence
         : null;
+  const decisionResultNested = asRecord(responseData?.decision_result);
+  const nestedSimulationResult = asRecord(decisionResultNested?.simulation_result);
   const observedRiskChange =
     typeof simulationResult?.risk_change === "number"
       ? simulationResult.risk_change
-      : typeof responseData?.decision_result?.simulation_result?.risk_change === "number"
-        ? responseData.decision_result.simulation_result.risk_change
+      : typeof nestedSimulationResult?.risk_change === "number"
+        ? nestedSimulationResult.risk_change
         : null;
 
   const outcomeAvailable = hasActionEvidence(primaryMemoryEntry, responseData, decisionResult);
@@ -90,7 +100,7 @@ export function buildDecisionOutcomeAssessment(
       ? "Observed impact stayed close to the original expectation."
       : null,
     primaryMemoryEntry?.impact_summary,
-    responseSimulation?.impact?.summary,
+    asRecord(responseSimulation?.impact)?.summary,
   ]);
 
   const mismatchedSignals = collectUniqueStrings([
@@ -103,7 +113,7 @@ export function buildDecisionOutcomeAssessment(
       ? "Observed impact came in weaker than the original confidence implied."
       : null,
     primaryMemoryEntry?.compare_summary,
-    responseData?.comparison?.summary,
+    asRecord(responseData?.comparison)?.summary,
   ]);
 
   let outcomeQuality: DecisionOutcomeAssessment["outcome_quality"] = "as_expected";

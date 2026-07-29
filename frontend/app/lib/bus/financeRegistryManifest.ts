@@ -1,4 +1,4 @@
-import { FinanceIdentity, FinanceMetadata } from "./financeIndex.ts";
+import { FinanceIdentity } from "./financeIndex.ts";
 import { getFinanceApiRegistry } from "./financeApiRegistry.ts";
 import { getFinanceCategoryRegistry } from "./financeCategoryRegistry.ts";
 import { getFinanceObjectRegistry } from "./financeObjectRegistry.ts";

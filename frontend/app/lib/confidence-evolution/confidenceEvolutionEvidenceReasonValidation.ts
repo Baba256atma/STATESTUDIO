@@ -21,7 +21,7 @@ function issue(code: string, message: string, field?: string): ConfidenceEvoluti
   return Object.freeze({ code, message, field, readOnly: true as const });
 }
 
-function result(issues: ConfidenceEvolutionValidationIssue[]): ConfidenceEvolutionValidationResult {
+function result(issues: readonly ConfidenceEvolutionValidationIssue[]): ConfidenceEvolutionValidationResult {
   return Object.freeze({ valid: issues.length === 0, issues: Object.freeze(issues), readOnly: true as const });
 }
 

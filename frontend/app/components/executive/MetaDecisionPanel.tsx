@@ -7,13 +7,17 @@ import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemo
 import type { CanonicalRecommendation } from "../../lib/decision/recommendation/recommendationTypes";
 import { nx, panelSurfaceStyle, secondaryButtonStyle, softCardStyle } from "../ui/nexoraTheme";
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 type MetaDecisionPanelProps = {
-  responseData?: any;
-  reasoning?: any | null;
-  simulation?: any | null;
-  comparison?: any | null;
+  responseData?: Record<string, unknown> | null;
+  reasoning?: Record<string, unknown> | null;
+  simulation?: Record<string, unknown> | null;
+  comparison?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
-  calibration?: any | null;
+  calibration?: { calibration_label?: string | null } | null;
   memoryEntries?: DecisionMemoryEntry[];
   onOpenCompare?: (() => void) | null;
   onOpenTimeline?: (() => void) | null;
@@ -26,9 +30,12 @@ function pretty(value: string) {
 
 export function MetaDecisionPanel(props: MetaDecisionPanelProps) {
   const state = buildMetaDecisionState({
-    reasoning: props.reasoning ?? props.responseData?.ai_reasoning ?? null,
-    simulation: props.simulation ?? props.responseData?.decision_simulation ?? null,
-    comparison: props.comparison ?? props.responseData?.decision_comparison ?? props.responseData?.comparison ?? null,
+    reasoning: props.reasoning ?? asRecord(props.responseData?.ai_reasoning),
+    simulation: props.simulation ?? asRecord(props.responseData?.decision_simulation),
+    comparison:
+      props.comparison ??
+      asRecord(props.responseData?.decision_comparison) ??
+      asRecord(props.responseData?.comparison),
     canonicalRecommendation: props.canonicalRecommendation ?? null,
     calibration: props.calibration ?? null,
     responseData: props.responseData ?? null,

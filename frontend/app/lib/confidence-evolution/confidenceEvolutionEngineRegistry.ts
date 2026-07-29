@@ -13,7 +13,7 @@ import {
 } from "./confidenceEvolutionEngineTypes.ts";
 
 const publishedRecords = new Map<ConfidenceRecordId, ConfidenceEvolutionEngineRecord>();
-const revisionHistory = new Map<ConfidenceRecordId, ConfidenceEvolutionEngineRecord[]>();
+const revisionHistory = new Map<ConfidenceRecordId, readonly ConfidenceEvolutionEngineRecord[]>();
 const workspaceIndex = new Map<ConfidenceWorkspaceId, Set<ConfidenceRecordId>>();
 const workspaceSequenceCounters = new Map<ConfidenceWorkspaceId, number>();
 

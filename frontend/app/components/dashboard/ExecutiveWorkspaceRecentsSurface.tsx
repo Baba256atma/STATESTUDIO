@@ -34,36 +34,37 @@ function RecentItemCard(props: {
   activeWorkspaceId: ExecutiveWorkspaceId | null;
   onReturn?: ExecutiveWorkspaceRecentsSurfaceProps["onRecentReturn"];
 }): React.ReactElement {
+  const { item, selectedObjectId, activeWorkspaceId, onReturn } = props;
   const validation = useMemo(
     () =>
       previewRecentReturnPath({
-        workspaceId: props.item.workspaceId,
-        activeWorkspaceId: props.activeWorkspaceId,
-        selectedObjectId: props.selectedObjectId,
+        workspaceId: item.workspaceId,
+        activeWorkspaceId,
+        selectedObjectId,
       }),
-    [props.activeWorkspaceId, props.item.workspaceId, props.selectedObjectId]
+    [activeWorkspaceId, item.workspaceId, selectedObjectId]
   );
 
   const canReturn = validation.approved && validation.returnKind !== null;
 
   const handleReturn = useCallback(() => {
-    if (!canReturn || !validation.returnKind || !props.onReturn) return;
+    if (!canReturn || !validation.returnKind || !onReturn) return;
     const attempt = validateRecentReturnPath({
-      workspaceId: props.item.workspaceId,
-      activeWorkspaceId: props.activeWorkspaceId,
-      selectedObjectId: props.selectedObjectId,
+      workspaceId: item.workspaceId,
+      activeWorkspaceId,
+      selectedObjectId,
     });
     if (!attempt.approved || !attempt.returnKind) return;
-    props.onReturn({
-      workspaceId: props.item.workspaceId,
+    onReturn({
+      workspaceId: item.workspaceId,
       returnKind: attempt.returnKind,
     });
   }, [
     canReturn,
-    props.activeWorkspaceId,
-    props.item.workspaceId,
-    props.onReturn,
-    props.selectedObjectId,
+    activeWorkspaceId,
+    item.workspaceId,
+    onReturn,
+    selectedObjectId,
     validation.returnKind,
   ]);
 

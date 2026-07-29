@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { FragilityScannerMini } from "./scanner/FragilityScannerMini";
 import { nx } from "./ui/nexoraTheme";
-import type { FragilityDriver, FragilityScanResponse } from "../types/fragilityScanner";
+import type { FragilityScanResponse } from "../types/fragilityScanner";
 import { CommandHeader } from "./layout/CommandHeader";
 import { BottomCommandDock, type ExecutiveCommandVerb } from "./layout/nexora/BottomCommandDock";
 import { MultiSourceAssessPopover, type SaveScheduledPayload } from "./layout/MultiSourceAssessPopover";
@@ -41,6 +41,8 @@ import {
   type NexoraLeftNavMode,
 } from "../lib/ui/nexoraLeftNavContract";
 import type { NexoraResolvedDomainExperience } from "../lib/domain/domainExperienceRegistry";
+import type { SceneJson, SceneObject } from "../lib/sceneTypes";
+import type { ResolvedObjectDetails } from "../lib/scene/composeResolvedObjectDetails";
 import {
   reportLeftNavCanonical,
   reportLeftNavHydrationCheck,
@@ -80,13 +82,7 @@ import {
   shouldShowExecutiveBottomCommandDock,
 } from "../lib/ui/executiveWorkspacePresentation";
 import { shouldUseVisibleMrpRightRailHost } from "../lib/ui/mainRightPanelVisibleHostRuntime";
-import {
-  EXECUTIVE_LEFT_COMMAND_COLLAPSED_PX,
-  EXECUTIVE_LEFT_COMMAND_WIDTH_PX,
-  EXECUTIVE_LEFT_NAV_WIDTH_PX,
-  EXECUTIVE_RIGHT_DOCK_WIDTH_PX,
-  EXECUTIVE_WORKSPACE_ZONE_IDS,
-} from "../lib/ui/executiveWorkspaceLayout";
+import { EXECUTIVE_LEFT_COMMAND_COLLAPSED_PX, EXECUTIVE_LEFT_NAV_WIDTH_PX, EXECUTIVE_RIGHT_DOCK_WIDTH_PX, EXECUTIVE_WORKSPACE_ZONE_IDS } from "../lib/ui/executiveWorkspaceLayout";
 import { useExecutiveWorkspaceLayout } from "../lib/ui/useExecutiveWorkspaceLayout";
 import { ExecutiveLeftDockZone } from "./workspace/ExecutiveLeftDockZone";
 import { ObjectPanelShell } from "./workspace/ObjectPanelShell";
@@ -97,7 +93,6 @@ import { WorkspaceModalHost } from "./workspace/WorkspaceModalHost";
 
 /** Right rail width — use EXECUTIVE_RIGHT_DOCK_WIDTH_PX from layout contracts. */
 const RIGHT_PANEL_WIDTH_PX = EXECUTIVE_RIGHT_DOCK_WIDTH_PX;
-const LEFT_COMMAND_WIDTH_PX = EXECUTIVE_LEFT_COMMAND_WIDTH_PX;
 const LEFT_COMMAND_COLLAPSED_PX = EXECUTIVE_LEFT_COMMAND_COLLAPSED_PX;
 
 type NexoraShellProps = {
@@ -280,6 +275,59 @@ const INSPECTOR_GROUPS: Record<
 
 const MRP_ALLOWED_INSPECTOR_TABS = new Set<InspectorEventTab | undefined>(["executive_dashboard"]);
 
+type DomainExperienceSummary = {
+  domainId?: string;
+  label?: string;
+  description?: string;
+  promptExamples?: unknown[];
+  visibleNavGroups?: unknown[];
+  visibleSections?: unknown[];
+  defaultDemoId?: string;
+};
+
+type ActiveProfileSummary = {
+  hero_summary?: string;
+  label?: string;
+  recommended_prompts?: unknown[];
+  default_mode?: string;
+};
+
+type ObjectSelectionRanking = {
+  id?: unknown;
+  score?: unknown;
+  why?: unknown;
+};
+
+type StrategicAdviceAction = {
+  action?: unknown;
+  targets?: unknown[];
+};
+
+type NexoraInspectorContext = {
+  sceneJson?: SceneJson | null;
+  responseData?: Record<string, unknown> | null;
+  rightPanelView?: string | null;
+  selectedObjectId?: string | null;
+  focusedId?: string | null;
+  selectedObjectInfo?: ResolvedObjectDetails | null;
+  objectSelection?: Record<string, unknown> | null;
+  strategicAdvice?: Record<string, unknown> | null;
+  decisionResult?: unknown;
+  domainExperience?: DomainExperienceSummary | null;
+  domainSelection?: DomainExperienceSummary | null;
+  fragilityScanResult?: FragilityScanResponse | null;
+  emptyWorkspace?: Record<string, unknown> | null;
+  demoPresentation?: Record<string, unknown> | null;
+  sourceLabel?: string | null;
+  focusPinned?: boolean;
+  focusMode?: string | null;
+  [key: string]: unknown;
+} | null;
+
+function readInspectorRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 function prettyObjectName(id: string) {
   return String(id || "")
     .replace(/^obj_/, "")
@@ -288,7 +336,10 @@ function prettyObjectName(id: string) {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function buildChatDockMessage(domainExperience: any, activeProfile?: any): string {
+function buildChatDockMessage(
+  domainExperience: DomainExperienceSummary | null | undefined,
+  activeProfile?: ActiveProfileSummary | null
+): string {
   if (activeProfile?.hero_summary) {
     const prompts = Array.isArray(activeProfile?.recommended_prompts)
       ? activeProfile.recommended_prompts.slice(0, 2).map((value: unknown) => String(value).trim()).filter(Boolean)
@@ -308,61 +359,14 @@ function buildChatDockMessage(domainExperience: any, activeProfile?: any): strin
   return `${label} workspace ready. Enter a pressure prompt to analyze the current system.`;
 }
 
-function buildCommandPlaceholder(activeProfile: any, domainExperience: any): string {
+function buildCommandPlaceholder(activeProfile: ActiveProfileSummary | null | undefined, domainExperience: DomainExperienceSummary | null | undefined): string {
   if (Array.isArray(activeProfile?.recommended_prompts) && activeProfile.recommended_prompts[0]) {
-    return activeProfile.recommended_prompts[0];
+    return String(activeProfile.recommended_prompts[0]);
   }
   if (Array.isArray(domainExperience?.promptExamples) && domainExperience.promptExamples[0]) {
     return String(domainExperience.promptExamples[0]);
   }
   return "Frame pressure, constraints, or the next best move…";
-}
-
-function traceClickRoute(detail: {
-  label:
-    | "[Nexora][ClickRoute] click_received"
-    | "[Nexora][ClickRoute] target_resolved"
-    | "[Nexora][ClickRoute] invalid_target_blocked"
-    | "[Nexora][ClickRoute] unexpected_fallback_blocked"
-    | "[Nexora][ClickRoute] wrong_scene_fallback_blocked";
-  source: "left_nav" | "right_rail" | "shell_button" | "panel_button";
-  clickedKey: string | null;
-  rawTarget: string | null;
-  resolvedView: string | null;
-  fallbackView: string | null;
-  reason: string | null;
-}) {
-  return;
-}
-
-function traceShellConsumeOnly(detail: {
-  label:
-    | "[Nexora][ShellConsumeOnly] state_consumed"
-    | "[Nexora][ShellConsumeOnly] active_section_displayed"
-    | "[Nexora][ShellConsumeOnly] downgrade_blocked"
-    | "[Nexora][ShellConsumeOnly] display_fallback_used";
-  currentRightPanelView: string | null;
-  resolvedActiveSection: ActiveSectionKey;
-  visibleSections: string[];
-  semanticFamily: string | null;
-  reason: string;
-}) {
-  return;
-}
-
-function traceViewSync(detail: {
-  label:
-    | "[Nexora][ViewSync] shell_active_tab"
-    | "[Nexora][ViewSync] desync_detected"
-    | "[Nexora][ViewSync] desync_fixed";
-  activeTab: string | null;
-  currentRightPanelView: string | null;
-  renderedView: string | null;
-  legacyTab: string | null;
-  source: string;
-  reason: string;
-}) {
-  return;
 }
 
 function NexoraStatusStripCard(props: { label: string; labelColor: string; text: string | null | undefined }) {
@@ -448,7 +452,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
     if (!handled) {
       investorDemo.startDemo();
     }
-  }, [investorDemo.startDemo]);
+  }, [investorDemo]);
   const console = React.useMemo(
     () =>
       ({
@@ -458,7 +462,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
       }) as Pick<Console, "log" | "warn" | "error">,
     []
   );
-  const [mode, setMode] = useState<"dashboard" | "studio">("dashboard");
+  const [mode] = useState<"dashboard" | "studio">("dashboard");
   const [isInspectorOpen, setIsInspectorOpen] = useState(true);
   const [isAssistantDrawerOpen, setIsAssistantDrawerOpen] = useState(true);
   const [leftCommandOpen, setLeftCommandOpen] = useState(true);
@@ -489,12 +493,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
   const [multiSourceError, setMultiSourceError] = useState<string | null>(null);
   const [nexoraHealthTier, setNexoraHealthTier] = useState<"green" | "yellow" | "red">("red");
   const [scheduledDefs, setScheduledDefs] = useState<ScheduledAssessmentDefinition[]>([]);
-  const lastRailAuditSignatureRef = React.useRef<string | null>(null);
   const lastShellSectionResolvedEmitSigRef = useRef<string | null>(null);
-  const lastRenderAuditRef = React.useRef<{ signature: string | null; count: number }>({
-    signature: null,
-    count: 0,
-  });
   const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: "user" | "assistant"; text: string }>>(() => [
     {
       id: "m1",
@@ -510,18 +509,25 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
   const [stageChatDelayedBusy, setStageChatDelayedBusy] = useState(false);
   const stageChatBusyTimerRef = useRef<number | null>(null);
 
-  const canonicalLeftNavSeedRef = useRef(
+  // AD-FE-SHELL-01: hydration seed is explicit state (not a render-time ref cache).
+  const [canonicalLeftNavSeed] = useState(() =>
     resolveCanonicalLeftNavHydrationState({
       preferredRightPanelTab: canonicalDomainExperience?.experience.preferredRightPanelTab ?? null,
       shellMode: "dashboard",
     })
   );
-  const leftNavHydrationCompleteRef = useRef(false);
-  const leftNavHydrationPreserveActiveSectionRef = useRef(false);
-  const upstreamViewBaselineRef = useRef<RightPanelView | null>(canonicalLeftNavSeedRef.current.rightPanelView);
+  const [leftNavHydrationComplete, setLeftNavHydrationComplete] = useState(false);
+  const [leftNavHydrationPreserveActiveSection, setLeftNavHydrationPreserveActiveSection] = useState(false);
+  const leftNavHydrationReportedRef = useRef(false);
+  const [upstreamViewBaseline, setUpstreamViewBaseline] = useState<RightPanelView | null>(
+    () => canonicalLeftNavSeed.rightPanelView
+  );
 
-  const [inspectorContext, setInspectorContext] = useState<any>(() => {
-    const seed = canonicalLeftNavSeedRef.current;
+  const [inspectorContext, setInspectorContext] = useState<NexoraInspectorContext>(() => {
+    const seed = resolveCanonicalLeftNavHydrationState({
+      preferredRightPanelTab: canonicalDomainExperience?.experience.preferredRightPanelTab ?? null,
+      shellMode: "dashboard",
+    });
     if (!canonicalDomainExperience) {
       return seed.rightPanelView ? { rightPanelView: seed.rightPanelView } : null;
     }
@@ -537,7 +543,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
   });
   useEffect(() => {
     const onInspectorContext = (event: Event) => {
-      const detail = (event as CustomEvent<any>).detail;
+      const detail = (event as CustomEvent<NexoraInspectorContext>).detail;
       setInspectorContext(detail ?? null);
     };
     window.addEventListener("nexora:inspector-context", onInspectorContext as EventListener);
@@ -825,9 +831,10 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
 
   const [activeSection, setActiveSection] = useState<ActiveSectionKey>(() => {
     if (mode === "studio") return "objects";
-    return canonicalLeftNavSeedRef.current.activeSection as ActiveSectionKey;
+    return canonicalLeftNavSeed.activeSection as ActiveSectionKey;
   });
-  const explicitScnIntentRef = useRef<"scene" | "objects" | "focus" | null>(null);
+  // AD-FE-SHELL-01: SCN intent is explicit one-way state (event-written; cleared when leaving SCN views).
+  const [explicitScnIntent, setExplicitScnIntent] = useState<"scene" | "objects" | "focus" | null>(null);
   const lastShellSectionIntentSigRef = useRef<string | null>(null);
   const domainExperience = inspectorContext?.domainExperience ?? inspectorContext?.domainSelection ?? null;
   const {
@@ -837,14 +844,13 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
     recommendedPrompts,
     headerContextLabel,
   } = useCustomerDemoMode(domainExperience?.domainId ?? null);
-  const sharedCoreEngine = inspectorContext?.sharedCoreEngine ?? null;
   const visibleNavGroupSet = useMemo(() => {
     const raw = Array.isArray(domainExperience?.visibleNavGroups) ? domainExperience.visibleNavGroups : [];
-    return new Set(raw.map((value: string) => resolveNexoraLeftNavMode(value, { warn: false })));
+    return new Set(raw.map((value) => resolveNexoraLeftNavMode(String(value), { warn: false })));
   }, [domainExperience]);
   const visibleSectionSet = useMemo(() => {
     const raw = Array.isArray(domainExperience?.visibleSections) ? domainExperience.visibleSections : [];
-    return new Set(raw.map((value: string) => String(value)));
+    return new Set(raw.map((value) => String(value)));
   }, [domainExperience]);
   const upstreamRightPanelView =
     typeof inspectorContext?.rightPanelView === "string"
@@ -868,12 +874,45 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
     () => getSectionForView(upstreamRightPanelView),
     [upstreamRightPanelView]
   );
+  // One-way: drop SCN intent when upstream leaves SCN family (render-time state adjust).
+  if (!isScnPanelView(upstreamRightPanelView) && explicitScnIntent !== null) {
+    setExplicitScnIntent(null);
+  }
+  // AD-FE-SHELL-01: one-shot hydration + one-way upstream section sync (render-owned, no effect setState).
+  let hydrationPreserveActiveSection = leftNavHydrationPreserveActiveSection;
+  if (!leftNavHydrationComplete) {
+    const runtimeSnapshot = resolveCanonicalLeftNavSnapshotFromView(
+      upstreamRightPanelView,
+      canonicalLeftNavSeed.activeSection
+    );
+    const matched = canonicalLeftNavSeed.signature === runtimeSnapshot.signature;
+    hydrationPreserveActiveSection = !matched;
+    setLeftNavHydrationComplete(true);
+    if (!matched) {
+      setLeftNavHydrationPreserveActiveSection(true);
+    }
+    if (upstreamRightPanelView !== upstreamViewBaseline) {
+      setUpstreamViewBaseline(upstreamRightPanelView);
+    }
+  } else if (upstreamRightPanelView !== upstreamViewBaseline) {
+    setUpstreamViewBaseline(upstreamRightPanelView);
+    if (
+      upstreamMappedSection &&
+      !isScnPanelView(upstreamRightPanelView) &&
+      activeSection !== upstreamMappedSection
+    ) {
+      setActiveSection(upstreamMappedSection);
+    }
+  }
+  const scnIntentForResolve =
+    isScnPanelView(upstreamRightPanelView) ? explicitScnIntent : null;
   const scnResolvedSection = useMemo(
-    () => resolveScnSectionFromView(upstreamRightPanelView, explicitScnIntentRef.current),
-    [upstreamRightPanelView, activeSection]
+    () => resolveScnSectionFromView(upstreamRightPanelView, scnIntentForResolve),
+    [upstreamRightPanelView, scnIntentForResolve]
   );
-  const resolvedActiveSection = useMemo(() => {
-    if (leftNavHydrationPreserveActiveSectionRef.current) {
+  // Derived render value (no useMemo): local hydrationPreserveActiveSection is render-scoped.
+  const resolvedActiveSection: ActiveSectionKey = (() => {
+    if (hydrationPreserveActiveSection) {
       return activeSection;
     }
     if (scnResolvedSection) {
@@ -898,7 +937,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
     }
 
     return upstreamMappedSection;
-  }, [activeSection, scnResolvedSection, upstreamMappedSection]);
+  })();
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
     globalThis.console?.debug?.("[Nexora][RightPanelRouteTrace]", {
@@ -927,20 +966,15 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
   }, [finalRightPanelView, localRightPanelView, upstreamRightPanelView]);
 
   useEffect(() => {
-    if (!isScnPanelView(upstreamRightPanelView)) {
-      explicitScnIntentRef.current = null;
-    }
-  }, [upstreamRightPanelView]);
-  useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
     console.log("[Nexora][SCN][NarrowPatch]", {
-      explicitScnIntent: explicitScnIntentRef.current,
+      explicitScnIntent: scnIntentForResolve,
       upstreamRightPanelView,
       scnResolvedSection,
       activeSection,
       resolvedActiveSection,
     });
-  }, [upstreamRightPanelView, scnResolvedSection, activeSection, resolvedActiveSection]);
+  }, [upstreamRightPanelView, scnResolvedSection, activeSection, resolvedActiveSection, scnIntentForResolve]);
 
   const sectionTitle = useMemo(() => {
     const map: Record<typeof activeSection, string> = {
@@ -1031,16 +1065,6 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
   }, [resolvedActiveSection]);
 
   const activeNavGroup = useMemo(() => groupForSection(resolvedActiveSection), [resolvedActiveSection]);
-  const scenePanelCardFlowStyle: React.CSSProperties = useMemo(
-    () => ({
-      position: "relative",
-      width: "100%",
-      margin: 0,
-      flexShrink: 0,
-      zIndex: "auto",
-    }),
-    []
-  );
   const lastScenePanelLayoutSigRef = useRef<string | null>(null);
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -1053,7 +1077,9 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
       sections: "normal-flow",
     });
   }, [mode, resolvedActiveSection, upstreamRightPanelView]);
-  const sceneJson = inspectorContext?.sceneJson ?? inspectorContext?.responseData?.scene_json ?? null;
+  const sceneJson = (inspectorContext?.sceneJson ??
+    readInspectorRecord(inspectorContext?.responseData)?.scene_json ??
+    null) as SceneJson | null;
   const fragilityScanResult = (inspectorContext?.responseData?.fragility_scan ??
     inspectorContext?.fragilityScanResult ??
     null) as FragilityScanResponse | null;
@@ -1066,7 +1092,10 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
     return [{ ...chatMessages[0], text: buildChatDockMessage(domainExperience, activeProfile) }];
   }, [activeProfile, chatMessages, domainExperience]);
   const scenarioLabel = useMemo(() => {
-    const sceneMeta = inspectorContext?.sceneJson?.meta ?? inspectorContext?.responseData?.scene_json?.meta ?? null;
+    const sceneMeta =
+      readInspectorRecord(inspectorContext?.sceneJson?.meta ?? null) ??
+      readInspectorRecord(readInspectorRecord(readInspectorRecord(inspectorContext?.responseData)?.scene_json)?.meta) ??
+      null;
     return String(
       sceneMeta?.label ??
         sceneMeta?.title ??
@@ -1074,30 +1103,22 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
         domainExperience?.label ??
         "Strategic Scenario"
     ).trim() || "Strategic Scenario";
-  }, [domainExperience?.label, inspectorContext?.responseData?.scene_json?.meta, inspectorContext?.sceneJson?.meta]);
+  }, [domainExperience?.label, inspectorContext?.responseData, inspectorContext?.sceneJson?.meta]);
   const sceneObjects = useMemo(() => {
     const items = sceneJson?.scene?.objects;
     return Array.isArray(items) ? items : [];
   }, [sceneJson]);
-  const fragility = inspectorContext?.sceneJson?.scene?.fragility ?? inspectorContext?.responseData?.fragility ?? null;
-  const sceneMeta = inspectorContext?.sceneJson?.scene?.scene ?? inspectorContext?.responseData?.scene_json?.scene?.scene ?? null;
-  const fragilityScore = Number(fragilityScanResult?.fragility_score ?? fragility?.score ?? 0);
-  const fragilityLevel = String(fragilityScanResult?.fragility_level ?? fragility?.level ?? "-");
-  const volatility = Number(sceneMeta?.volatility ?? 0);
-  const driverEntries = fragilityScanResult?.drivers?.length
-    ? fragilityScanResult.drivers.map((driver: FragilityDriver) => [driver.label, driver.score] as const)
-    : Object.entries((fragility?.drivers ?? {}) as Record<string, unknown>);
-  const dominantDriver = useMemo(() => {
-    if (!driverEntries.length) return null;
-    return [...driverEntries]
-      .map(([key, value]) => ({ key, value: Number(value ?? 0) }))
-      .sort((a, b) => b.value - a.value)[0];
-  }, [driverEntries]);
+  const fragilityRecord = readInspectorRecord(
+    readInspectorRecord(inspectorContext?.sceneJson?.scene ?? null)?.fragility ??
+      inspectorContext?.responseData?.fragility
+  );
+  const fragilityScore = Number(fragilityScanResult?.fragility_score ?? fragilityRecord?.score ?? 0);
+  const fragilityLevel = String(fragilityScanResult?.fragility_level ?? fragilityRecord?.level ?? "-");
   const focusedObjectId = (inspectorContext?.focusedId ?? inspectorContext?.selectedObjectId ?? null) as string | null;
   const selectedObjectInfo = inspectorContext?.selectedObjectInfo ?? null;
   const focusedObject = useMemo(() => {
     if (!focusedObjectId) return null;
-    const byScene = sceneObjects.find((o: any) => String(o?.id ?? "") === focusedObjectId);
+    const byScene = sceneObjects.find((o: SceneObject) => String(o?.id ?? "") === focusedObjectId);
     if (byScene) return byScene;
     if (selectedObjectInfo?.id === focusedObjectId) return selectedObjectInfo;
     return null;
@@ -1108,9 +1129,8 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
   const selectedObjectIdForPanel = selectedObjectId ?? focusedObjectId ?? null;
   const selectedObjectLabelForPanel = useMemo(() => {
     if (selectedObjectInfo?.label) return String(selectedObjectInfo.label);
-    if (selectedObjectInfo?.name) return String(selectedObjectInfo.name);
     if (focusedObject?.label) return String(focusedObject.label);
-    if (focusedObject?.name) return String(focusedObject.name);
+    if (focusedObject && "name" in focusedObject && focusedObject.name) return String(focusedObject.name);
     return null;
   }, [focusedObject, selectedObjectInfo]);
 
@@ -1140,12 +1160,23 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
     });
   }, [resolvedActiveSection]);
 
-  const focusReasoning = useMemo(() => {
-    const rankings = Array.isArray(objectSelection?.rankings) ? objectSelection.rankings : [];
-    if (!focusedObjectId || !rankings.length) return null;
-    return rankings.find((r: any) => String(r?.id ?? "") === focusedObjectId) ?? null;
-  }, [objectSelection, focusedObjectId]);
   const strategicAdvice = inspectorContext?.strategicAdvice ?? null;
+  const focusReasoning = useMemo(() => {
+    const rankings = Array.isArray(objectSelection?.rankings)
+      ? (objectSelection.rankings as ObjectSelectionRanking[])
+      : [];
+    if (!focusedObjectId || !rankings.length) return null;
+    return rankings.find((r) => String(r?.id ?? "") === focusedObjectId) ?? null;
+  }, [objectSelection, focusedObjectId]);
+  const focusedAdvice = useMemo(() => {
+    const list = Array.isArray(strategicAdvice?.recommended_actions)
+      ? (strategicAdvice.recommended_actions as StrategicAdviceAction[])
+      : [];
+    if (!focusedObjectId) return [];
+    return list.filter(
+      (a) => Array.isArray(a?.targets) && a.targets.includes(focusedObjectId)
+    );
+  }, [strategicAdvice, focusedObjectId]);
   const decisionResult = inspectorContext?.decisionResult ?? null;
   const strategicCouncil = useMemo(
     () =>
@@ -1156,11 +1187,6 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
       ),
     [inspectorContext?.responseData?.strategic_council, inspectorContext?.sceneJson?.strategic_council]
   );
-  const riskPropagation =
-    inspectorContext?.riskPropagation ??
-    inspectorContext?.responseData?.risk_propagation ??
-    inspectorContext?.sceneJson?.risk_propagation ??
-    null;
   const activeGroupConfig = useMemo(() => {
     const resolvedGroupKey = activeNavGroup as LeftNavGroupKey;
     const base = INSPECTOR_GROUPS[resolvedGroupKey];
@@ -1248,12 +1274,6 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
     upstreamRightPanelView,
     visibleSections,
   ]);
-  const conflicts = Array.isArray(inspectorContext?.conflicts) ? inspectorContext.conflicts : [];
-  const focusedAdvice = useMemo(() => {
-    const list = Array.isArray(strategicAdvice?.recommended_actions) ? strategicAdvice.recommended_actions : [];
-    if (!focusedObjectId) return [];
-    return list.filter((a: any) => Array.isArray(a?.targets) && a.targets.includes(focusedObjectId));
-  }, [strategicAdvice, focusedObjectId]);
   const systemStatus = useMemo(() => {
     const normalizedLevel = String(fragilityLevel || "").toLowerCase();
     if (normalizedLevel.includes("high") || fragilityScore >= 0.7) {
@@ -1277,7 +1297,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
       return "Strategy";
     }
     return "Business";
-  }, [activeProfile?.default_mode, resolvedActiveSection]);
+  }, [activeProfile, resolvedActiveSection]);
   const councilSummary = useMemo(() => {
     if (!strategicCouncil) return null;
     return `Council: ${strategicCouncil.disagreements[0]?.summary ?? strategicCouncil.synthesis.recommended_direction}`;
@@ -1286,8 +1306,11 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
     () =>
       buildExecutiveNarrative({
         fragilityScanResult,
-        scenarioResult: inspectorContext?.responseData?.decision_simulation ?? decisionResult?.simulation_result ?? null,
-        decisionResult,
+        scenarioResult:
+          inspectorContext?.responseData?.decision_simulation ??
+          readInspectorRecord(decisionResult)?.simulation_result ??
+          null,
+        decisionResult: (decisionResult ?? null) as Parameters<typeof buildExecutiveNarrative>[0]["decisionResult"],
         strategicAdvice,
         executiveSummarySurface: inspectorContext?.responseData?.executive_summary_surface ?? null,
       }),
@@ -1299,21 +1322,21 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
       strategicAdvice,
     ]
   );
-  const demoPresentation = inspectorContext?.demoPresentation ?? null;
+  const demoPresentation = readInspectorRecord(inspectorContext?.demoPresentation);
   const demoContentActive =
     Boolean(activeProfile?.id) || String(inspectorContext?.sourceLabel ?? "").toLowerCase() === "demo";
   const demoFlowStepIndex = useMemo(() => {
     if (!demoPresentation) return 0;
-    if (!demoPresentation.loadDone) return 0;
-    if (!demoPresentation.askedDone) return 1;
+    if (demoPresentation.loadDone !== true) return 0;
+    if (demoPresentation.askedDone !== true) return 1;
     return 2;
   }, [demoPresentation]);
   const demoValueMomentLabel = useMemo(() => {
     if (!demoContentActive) return null;
-    if (demoPresentation?.insightOpen) return "Insight ready";
-    if (demoPresentation?.guidedPromptsVisible) return "Prompts ready";
-    if (demoPresentation?.loadDone && demoPresentation?.askedDone) return "Output in view";
-    if (demoPresentation?.loadDone) return "Scenario ready";
+    if (demoPresentation?.insightOpen === true) return "Insight ready";
+    if (demoPresentation?.guidedPromptsVisible === true) return "Prompts ready";
+    if (demoPresentation?.loadDone === true && demoPresentation?.askedDone === true) return "Output in view";
+    if (demoPresentation?.loadDone === true) return "Scenario ready";
     return null;
   }, [demoContentActive, demoPresentation]);
   const handleFragilityScanComplete = useCallback((result: FragilityScanResponse) => {
@@ -1329,7 +1352,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
     requestedView?: RightPanelView | null,
     leftNavKey?: LeftNavGroupKey | null
   ) => {
-    leftNavHydrationPreserveActiveSectionRef.current = false;
+    setLeftNavHydrationPreserveActiveSection(false);
     const explicitSection = section;
     if (section !== activeSection) {
       setActiveSection(section);
@@ -1423,56 +1446,37 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
   }, [activeSection]);
 
   useEffect(() => {
-    if (!leftNavHydrationCompleteRef.current) {
-      leftNavHydrationCompleteRef.current = true;
-      const seed = canonicalLeftNavSeedRef.current;
-      const runtimeSnapshot = resolveCanonicalLeftNavSnapshotFromView(
-        upstreamRightPanelView,
-        seed.activeSection
-      );
-      const matched = seed.signature === runtimeSnapshot.signature;
-      reportLeftNavHydrationCheck({
-        seedSignature: seed.signature,
-        runtimeSignature: runtimeSnapshot.signature,
+    if (leftNavHydrationReportedRef.current) return;
+    leftNavHydrationReportedRef.current = true;
+    const seed = canonicalLeftNavSeed;
+    const runtimeSnapshot = resolveCanonicalLeftNavSnapshotFromView(
+      upstreamRightPanelView,
+      seed.activeSection
+    );
+    const matched = seed.signature === runtimeSnapshot.signature;
+    reportLeftNavHydrationCheck({
+      seedSignature: seed.signature,
+      runtimeSignature: runtimeSnapshot.signature,
+      seed,
+      runtime: runtimeSnapshot,
+      matched,
+    });
+    if (matched) {
+      reportLeftNavCanonical({
+        activeSection: seed.activeSection,
+        activeNavMode: seed.activeNavMode,
+        rightPanelView: seed.rightPanelView,
+        source: "NexoraShell.hydration",
+      });
+    } else {
+      reportLeftNavHydrationMismatch({
         seed,
         runtime: runtimeSnapshot,
-        matched,
+        preserved: seed,
+        source: "NexoraShell.hydration",
       });
-      if (matched) {
-        reportLeftNavCanonical({
-          activeSection: seed.activeSection,
-          activeNavMode: seed.activeNavMode,
-          rightPanelView: seed.rightPanelView,
-          source: "NexoraShell.hydration",
-        });
-      } else {
-        leftNavHydrationPreserveActiveSectionRef.current = true;
-        reportLeftNavHydrationMismatch({
-          seed,
-          runtime: runtimeSnapshot,
-          preserved: seed,
-          source: "NexoraShell.hydration",
-        });
-      }
-      upstreamViewBaselineRef.current = upstreamRightPanelView;
-      return;
     }
-
-    if (upstreamRightPanelView === upstreamViewBaselineRef.current) return;
-    upstreamViewBaselineRef.current = upstreamRightPanelView;
-
-    if (!upstreamMappedSection) return;
-    if (
-      isScnPanelView(upstreamRightPanelView) &&
-      explicitScnIntentRef.current &&
-      explicitScnIntentRef.current !== "focus"
-    ) {
-      return;
-    }
-    if (isScnPanelView(upstreamRightPanelView)) return;
-    if (activeSection === upstreamMappedSection) return;
-    setActiveSection(upstreamMappedSection);
-  }, [activeSection, upstreamMappedSection, upstreamRightPanelView]);
+  }, [canonicalLeftNavSeed, upstreamRightPanelView]);
   const focusObjectFromInspector = useCallback(
     (id: string) => {
       if (!id) return;
@@ -1508,7 +1512,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
         .map((value: unknown) => String(value).trim())
         .filter(Boolean)
         .slice(0, 3),
-    [domainExperience?.promptExamples, recommendedPrompts]
+    [domainExperience, recommendedPrompts]
   );
   const submitPresetPrompt = useCallback((text: string) => {
     if (process.env.NODE_ENV !== "production") {
@@ -1825,7 +1829,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
                     const mode = resolveNexoraLeftNavMode(item.id);
                     const requestedView = getRequestedViewForLeftNav(mode);
                     const nextSection = getSectionForLeftNavMode(mode);
-                    explicitScnIntentRef.current = null;
+                    setExplicitScnIntent(null);
                     setInspectorSection(nextSection, undefined, requestedView, mode);
                   }}
                   style={leftNavPrimaryButtonStyle({
@@ -2442,13 +2446,13 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
                           metadata: { tabKey: tab.key, eventTab: tab.eventTab ?? null },
                         });
                         if (tab.key === "scene") {
-                          explicitScnIntentRef.current = "scene";
+                          setExplicitScnIntent("scene");
                         }
                         if (tab.key === "objects") {
-                          explicitScnIntentRef.current = "objects";
+                          setExplicitScnIntent("objects");
                         }
                         if (tab.key === "focus") {
-                          explicitScnIntentRef.current = "focus";
+                          setExplicitScnIntent("focus");
                         }
                         setInspectorSection(tab.key, tab.eventTab, route.resolvedView);
                       }}
@@ -2522,7 +2526,7 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
                     </div>
                   </div>
                   {sceneObjects.length ? (
-                    sceneObjects.map((obj: any, idx: number) => {
+                    sceneObjects.map((obj: SceneObject, idx: number) => {
                       const id = String(obj?.id ?? `obj_${idx}`);
                       const isFocused = focusedObjectId === id;
                       const emphasis = Number(obj?.emphasis ?? obj?.intensity ?? 0);
@@ -2631,7 +2635,9 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
                           Type: {String(focusedObject?.type ?? selectedObjectInfo?.type ?? "-")}
                         </div>
                         <div style={{ color: nx.textSoft, fontSize: 12 }}>
-                          Emphasis: {Number(focusedObject?.emphasis ?? selectedObjectInfo?.override?.emphasis ?? 0).toFixed(2)}
+                          Emphasis: {Number(
+                            (focusedObject as SceneObject | null)?.emphasis ?? selectedObjectInfo?.emphasis ?? 0
+                          ).toFixed(2)}
                         </div>
                         <div style={{ color: nx.textSoft, fontSize: 12 }}>
                           Focus mode: {String(inspectorContext?.focusPinned ? "Pinned" : inspectorContext?.focusMode ?? "selected")}
@@ -2679,9 +2685,9 @@ export default function NexoraShell({ children, canonicalDomainExperience }: Nex
                           Suggested Actions
                         </div>
                         {focusedAdvice.length ? (
-                          focusedAdvice.slice(0, 3).map((a: any, idx: number) => (
+                          focusedAdvice.slice(0, 3).map((a: StrategicAdviceAction, idx: number) => (
                             <div key={idx} style={{ color: nx.text, fontSize: 12 }}>
-                              {a?.action ?? "Action"}
+                              {String(a?.action ?? "Action")}
                             </div>
                           ))
                         ) : (

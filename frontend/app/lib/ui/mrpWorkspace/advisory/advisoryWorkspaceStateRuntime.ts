@@ -24,22 +24,7 @@ import {
 } from "./advisoryStateContract.ts";
 import { buildAdvisoryRecommendationRuntimeSignature } from "./advisoryStateContextResolver.ts";
 import { hydrateAdvisoryStateOnMount } from "./advisoryStateRuntime.ts";
-import {
-  DEFAULT_ADVISORY_READY_STATE,
-  DEFAULT_ALTERNATIVE_RECOMMENDATIONS,
-  DEFAULT_ASSUMPTIONS,
-  DEFAULT_CONFIDENCE_SUMMARY,
-  DEFAULT_EXECUTIVE_RECOMMENDATION,
-  DEFAULT_RECOMMENDATION_DRIVERS,
-  ADVISORY_LOADING_DETAIL,
-  ADVISORY_LOADING_HEADLINE,
-  ADVISORY_RUNTIME_TAG,
-  ADVISORY_STATE_TAG,
-  type AdvisoryFieldSnapshot,
-  type AdvisoryWorkspaceState,
-  type AdvisoryWorkspaceStatePhase,
-  type AdvisoryWorkspaceStatePublishResult,
-} from "./advisoryWorkspaceStateContract.ts";
+import { DEFAULT_ADVISORY_READY_STATE, ADVISORY_LOADING_DETAIL, ADVISORY_LOADING_HEADLINE, ADVISORY_RUNTIME_TAG, ADVISORY_STATE_TAG, type AdvisoryFieldSnapshot, type AdvisoryWorkspaceState, type AdvisoryWorkspaceStatePhase, type AdvisoryWorkspaceStatePublishResult } from "./advisoryWorkspaceStateContract.ts";
 import {
   DEFAULT_ADVISORY_WORKSPACE_CONTEXT,
   type AdvisoryWorkspaceContext,
@@ -52,7 +37,6 @@ const loggedStateKeys = new Set<string>();
 
 let revision = 0;
 let lastSignature: string | null = null;
-let publishCount = 0;
 let loopGuardWindowStart = 0;
 let loopGuardPublishCount = 0;
 
@@ -258,8 +242,6 @@ export function publishAdvisoryWorkspaceState(
     phase?: AdvisoryWorkspaceStatePhase;
   }
 ): AdvisoryWorkspaceStatePublishResult {
-  publishCount += 1;
-
   if (detectRenderLoop()) {
     logRuntimeOnce("render_loop", { reason: "publish_rate_exceeded" });
     return Object.freeze({
@@ -391,7 +373,6 @@ export function hydrateAdvisoryWorkspaceStateOnMount(mountKey: string): void {
 export function resetAdvisoryWorkspaceStateRuntimeForTests(): void {
   revision = 0;
   lastSignature = null;
-  publishCount = 0;
   loopGuardWindowStart = 0;
   loopGuardPublishCount = 0;
   loggedRuntimeKeys.clear();

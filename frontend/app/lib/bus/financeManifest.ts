@@ -1,43 +1,14 @@
-import {
-  ExecutiveFinancePlatformFoundation,
-  FinanceIdentity,
-  FinanceMetadata,
-} from "./financeIndex.ts";
-import {
-  ExecutiveFinanceRegistryFoundation,
-  FinanceApiRegistry,
-  FinanceCategoryRegistry,
-  FinanceObjectRegistry,
-  getFinanceRegistryManifest,
-} from "./financeRegistryIndex.ts";
-import {
-  ExecutiveFinanceModelFoundation,
-  FinanceAggregationRegistry,
-  FinanceDependencyRegistry,
-  FinanceModelRegistry,
-  FinanceOwnershipRegistry,
-  FinanceRelationshipRegistry,
-  getFinanceModelManifest,
-} from "./financeModelIndex.ts";
-import {
-  ExecutiveFinanceValidationFoundation,
-  getFinanceValidation,
-  getFinanceValidationManifest,
-} from "./financeValidationIndex.ts";
-import { FinanceCompatibility, getFinanceCompatibility } from "./financeCompatibility.ts";
+import { FinanceIdentity, FinanceMetadata } from "./financeIndex.ts";
+import { FinanceApiRegistry, getFinanceRegistryManifest } from "./financeRegistryIndex.ts";
+import { FinanceModelRegistry, FinanceRelationshipRegistry } from "./financeModelIndex.ts";
+import { getFinanceValidation } from "./financeValidationIndex.ts";
+import { getFinanceCompatibility } from "./financeCompatibility.ts";
 import { FinanceDependencyMatrix, getFinanceDependencyMatrix } from "./financeDependencyMatrix.ts";
-import { FinanceExtensionPolicy, getFinanceExtensionPolicy } from "./financeExtensionPolicy.ts";
-import type {
-  FinanceManifest as FinanceManifestContract,
-  FinanceManifestPhaseId,
-  FinancePhaseRegistryEntry,
-  FinanceManifestSummary,
-} from "./financeManifestTypes.ts";
+import { getFinanceExtensionPolicy } from "./financeExtensionPolicy.ts";
+import type { FinanceManifest as FinanceManifestContract, FinancePhaseRegistryEntry, FinanceManifestSummary } from "./financeManifestTypes.ts";
 
 function buildPhaseRegistry(): readonly FinancePhaseRegistryEntry[] {
   const registryManifest = getFinanceRegistryManifest();
-  const modelManifest = getFinanceModelManifest();
-  const validationManifest = getFinanceValidationManifest();
 
   return Object.freeze([
     Object.freeze({

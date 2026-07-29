@@ -24,7 +24,7 @@ import {
   resetSviePhase1CertificationForTests,
   runSviePhase1Certification,
 } from "./sviePhase1Certification.ts";
-import { classifySvieRiskLevel, deriveSvieObjectRiskScore } from "./svieRiskDerivation.ts";
+import { deriveSvieObjectRiskScore } from "./svieRiskDerivation.ts";
 import type { SvieObjectRiskHotspotVisualStyle } from "./svieRiskHotspotVisualizationContract.ts";
 import {
   resetSvieRiskHotspotVisualizationRuntimeForTests,
@@ -169,7 +169,6 @@ function validateGateB(): SvieRiskLayerCertificationGate {
   const visuals = hotspot.visualByObjectId;
 
   const critical = visuals["critical-a"];
-  const high = visuals["high-b"];
   const medium = visuals["medium-c"];
   const low = visuals["low-d"];
 

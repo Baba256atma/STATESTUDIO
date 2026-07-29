@@ -3,9 +3,6 @@
  */
 
 import type { ScenarioBranchForestState } from "../branching/branchingTypes.ts";
-import type { ReplayOrchestrationSnapshot } from "../replay/replayTypes.ts";
-import type { OperationalTimeline } from "../timeline/timelineTypes.ts";
-import type { WarRoomOrchestrationSnapshot } from "../warroom/warRoomTypes.ts";
 import type { SimulationStabilityMetrics, SimulationUniverseInput } from "./simulationGovernanceTypes.ts";
 import { GOVERNANCE_POLICY } from "./governancePolicies.ts";
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import type { LayoutMode } from "../lib/contracts";
 import { HUDCollapsedRail } from "./hud/HUDCollapsedRail";
 import { HUDHeader } from "./hud/HUDHeader";
@@ -12,9 +12,7 @@ export type { HUDPanelsMap, HUDTabKey } from "./hud/hudTypes";
 export function HUDPanels({
   activeTab,
   panels,
-  layoutMode,
-  splitColumns,
-}: {
+  }: {
   activeTab: HUDTabKey;
   panels: HUDPanelsMap;
   layoutMode?: LayoutMode;
@@ -227,14 +225,6 @@ export function HUDShell({
     decisions: "DEC",
   };
 
-  const [panelAnim, setPanelAnim] = useState<"enter" | "idle">("idle");
-
-  useLayoutEffect(() => {
-    setPanelAnim("enter");
-    const id = requestAnimationFrame(() => setPanelAnim("idle"));
-    return () => cancelAnimationFrame(id);
-  }, [activeTab]);
-
   const handleChangeTab = useCallback(
     (tab: HUDTabKey) => {
       if (collapsed) setCollapsed(false);
@@ -302,6 +292,7 @@ export function HUDShell({
         pointerEvents: "none",
       }}
     >
+      <style>{`@keyframes nx-hud-panel-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`}</style>
       <div
         style={{
           pointerEvents: "auto",
@@ -448,10 +439,7 @@ export function HUDShell({
                   <div
                     key={activeTab}
                     style={{
-                      transition: "opacity 160ms ease, transform 160ms ease",
-                      opacity: panelAnim === "enter" ? 0 : 1,
-                      transform: panelAnim === "enter" ? "translateY(6px)" : "translateY(0)",
-                      willChange: "opacity, transform",
+                      animation: "nx-hud-panel-enter 160ms ease",
                       flex: "1 1 0%",
                       minHeight: 0,
                       minWidth: 0,

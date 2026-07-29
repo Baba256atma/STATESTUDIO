@@ -161,8 +161,8 @@ test("rejects invalid provider categories", () => {
       providerId: "provider-invalid-category",
       label: "Invalid Category Provider",
       version: "1.0.0",
-      supportedCategories: Object.freeze(["chat_memory"] as const),
-    }),
+      supportedCategories: Object.freeze(["chat_memory"]),
+    }) as Parameters<typeof registerExecutiveMemoryProvider>[0],
     FIXED_TIME
   );
   assert.equal(result.success, false);

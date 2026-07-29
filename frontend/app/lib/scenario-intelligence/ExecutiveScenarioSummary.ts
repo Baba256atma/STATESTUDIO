@@ -18,7 +18,7 @@ import type { KpiImpactProfile } from "./kpiImpactSimulationContract.ts";
 import type { ObjectImpactProfile } from "./objectImpactSimulationContract.ts";
 import type { RelationshipImpactProfile } from "./relationshipImpactSimulationContract.ts";
 import type { RiskImpactProfile } from "./riskImpactSimulationContract.ts";
-import type { ScenarioRegistry, ScenarioType } from "./scenarioGenerationContract.ts";
+import type { ScenarioType } from "./scenarioGenerationContract.ts";
 
 let latestExecutiveScenarioSummary: ExecutiveScenarioSummaryRecord = EMPTY_EXECUTIVE_SCENARIO_SUMMARY;
 

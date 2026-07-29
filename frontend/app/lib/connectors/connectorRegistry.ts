@@ -1,4 +1,4 @@
-import type { ConnectorCapability, ConnectorDefinition, ConnectorKind, ConnectorStatus } from "./connectorTypes.ts";
+import type { ConnectorCapability, ConnectorDefinition } from "./connectorTypes.ts";
 
 const FOUNDATION_CONNECTOR_UPDATED_AT = "2026-01-01T00:00:00.000Z";
 

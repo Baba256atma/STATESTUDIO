@@ -2,8 +2,6 @@
  * APP-10:2 — Pattern Extraction Engine constants.
  */
 
-import type { PatternCategory, PatternType } from "./patternExtractionEngineTypes.ts";
-
 export const PATTERN_EXTRACTION_ENGINE_CONTRACT_VERSION = "APP-10/2" as const;
 export const PATTERN_EXTRACTION_ENGINE_ARCHITECTURE_VERSION = "APP-10/2-pattern-extraction-arch" as const;
 export const PATTERN_EXTRACTION_ENGINE_OWNER = "pattern-extraction-engine" as const;
@@ -44,7 +42,7 @@ export const PATTERN_CATEGORY_KEYS = Object.freeze([
   "customer",
   "product",
   "organizational",
-] as const satisfies readonly PatternCategory[]);
+] as const);
 
 export const PATTERN_TYPE_KEYS = Object.freeze([
   "strategy_outcome",
@@ -52,7 +50,7 @@ export const PATTERN_TYPE_KEYS = Object.freeze([
   "decision_outcome",
   "resource_outcome",
   "risk_outcome",
-] as const satisfies readonly PatternType[]);
+] as const);
 
 export const PATTERN_EXTRACTION_MANDATORY_PATTERN_FIELDS = Object.freeze([
   "patternId",
@@ -118,7 +116,7 @@ export const PATTERN_EXTRACTION_ENGINE_PUBLIC_API_RULES = Object.freeze({
   consumerOnly: true,
 } as const);
 
-export const PATTERN_CATEGORY_LABELS: Readonly<Record<PatternCategory, string>> = Object.freeze({
+export const PATTERN_CATEGORY_LABELS: Readonly<Record<(typeof PATTERN_CATEGORY_KEYS)[number], string>> = Object.freeze({
   growth: "Growth",
   cost_reduction: "Cost Reduction",
   operational: "Operational",

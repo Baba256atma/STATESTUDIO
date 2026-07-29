@@ -72,26 +72,26 @@ export const CONFLICT_CATEGORY_ORDER = Object.freeze([
 
 const OPPOSED_ACTIONS: Readonly<Record<SemanticActionType, readonly SemanticActionType[]>> =
   Object.freeze({
-    increase: Object.freeze(["decrease", "reduce", "remove"]),
-    decrease: Object.freeze(["increase", "expand"]),
-    reduce: Object.freeze(["increase", "expand", "create"]),
-    expand: Object.freeze(["reduce", "decrease", "remove"]),
-    create: Object.freeze(["remove", "reduce"]),
-    remove: Object.freeze(["create", "expand", "increase"]),
-    replace: Object.freeze(["maintain", "protect"]),
-    transform: Object.freeze(["maintain"]),
-    optimize: Object.freeze([]),
-    protect: Object.freeze([]),
-    monitor: Object.freeze([]),
-    maintain: Object.freeze(["replace", "transform", "remove"]),
-    custom: Object.freeze([]),
+    increase: Object.freeze(["decrease", "reduce", "remove"] as const),
+    decrease: Object.freeze(["increase", "expand"] as const),
+    reduce: Object.freeze(["increase", "expand", "create"] as const),
+    expand: Object.freeze(["reduce", "decrease", "remove"] as const),
+    create: Object.freeze(["remove", "reduce"] as const),
+    remove: Object.freeze(["create", "expand", "increase"] as const),
+    replace: Object.freeze(["maintain", "protect"] as const),
+    transform: Object.freeze(["maintain"] as const),
+    optimize: Object.freeze([] as const),
+    protect: Object.freeze([] as const),
+    monitor: Object.freeze([] as const),
+    maintain: Object.freeze(["replace", "transform", "remove"] as const),
+    custom: Object.freeze([] as const),
   });
 
 const CONSTRAINT_OPPOSITION_MARKERS = Object.freeze([
-  Object.freeze(["without increasing headcount", "hire"]),
-  Object.freeze(["without increasing cost", "expand"]),
-  Object.freeze(["reduce cost", "increase"]),
-  Object.freeze(["without increasing budget", "expand"]),
+  Object.freeze(["without increasing headcount", "hire"] as const),
+  Object.freeze(["without increasing cost", "expand"] as const),
+  Object.freeze(["reduce cost", "increase"] as const),
+  Object.freeze(["without increasing budget", "expand"] as const),
 ] as const);
 
 function normalizeText(value: string | null | undefined): string {

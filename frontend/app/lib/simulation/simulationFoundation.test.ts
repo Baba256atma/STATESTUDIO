@@ -65,7 +65,7 @@ test("enqueue and advance cycle progresses snapshot deterministically", () => {
   assert.ok(prepared.ok);
   const started = startSimulationRuntime(prepared.runtime);
   assert.ok(started.ok);
-  let runtime = started.runtime;
+  const runtime = started.runtime;
 
   const enq = enqueueSimulationEvent(
     runtime,
@@ -84,7 +84,12 @@ test("enqueue and advance cycle progresses snapshot deterministically", () => {
   if (!cycle.ok) return;
   assert.equal(cycle.runtime.currentTick, 1);
   assert.equal(cycle.runtime.processedEventIds.has("evt-1"), true);
-  assert.equal(cycle.runtime.objectStates["node-a"]?.risk, 0.4);
+  const nodeState = cycle.runtime.objectStates["node-a"];
+  const risk =
+    nodeState && typeof nodeState === "object" && "risk" in nodeState
+      ? Number((nodeState as { risk: unknown }).risk)
+      : undefined;
+  assert.equal(risk, 0.4);
 
   const atTick1 = selectSimulationSnapshotAtTick(cycle.runtime, 1);
   assert.ok(atTick1);
@@ -152,5 +157,6 @@ test("advanceSimulationCycle refuses when not running", () => {
   const cycle = advanceSimulationCycle(runtime);
   assert.equal(cycle.ok, false);
   if (cycle.ok) return;
+  if (cycle.guard.ok) return;
   assert.equal(cycle.guard.code, "runtime_not_running");
 });

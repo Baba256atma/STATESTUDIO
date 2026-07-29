@@ -3,11 +3,7 @@
  * KPI definition vocabulary — ExecutiveObjectRegistry + ExecutiveRelationshipRegistry input only.
  */
 
-import {
-  resolveExecutiveObjectById,
-  resolveExecutiveObjectRegistryExample,
-  validateExecutiveObjectRegistry,
-} from "../executiveObject/executiveObjectContract.ts";
+import { resolveExecutiveObjectById, validateExecutiveObjectRegistry } from "../executiveObject/executiveObjectContract.ts";
 import type { ExecutiveObject, ExecutiveObjectRegistry } from "../executiveObject/executiveObjectTypes.ts";
 import {
   resolveExecutiveRelationshipById,

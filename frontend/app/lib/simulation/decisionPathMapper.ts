@@ -46,7 +46,10 @@ export function mapDecisionPathResultToOverlay(
         node.direction === "upstream" || node.direction === "downstream" || node.direction === "mixed"
           ? node.direction
           : undefined,
-      label: typeof (node as any)?.label === "string" ? (node as any).label : null,
+      label:
+        "label" in node && typeof (node as { label?: unknown }).label === "string"
+          ? (node as { label: string }).label
+          : null,
       rationale: typeof node.rationale === "string" ? node.rationale : null,
     };
     const existing = nodeMap.get(id);

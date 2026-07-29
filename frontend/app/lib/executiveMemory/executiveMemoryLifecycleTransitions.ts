@@ -6,13 +6,13 @@ import type { ExecutiveMemoryGovernanceState } from "./executiveMemoryLifecycleT
 
 const ALLOWED_TRANSITIONS: Readonly<Record<ExecutiveMemoryGovernanceState, readonly ExecutiveMemoryGovernanceState[]>> =
   Object.freeze({
-    draft: Object.freeze(["active"]),
-    active: Object.freeze(["archived", "superseded", "merged", "split", "locked"]),
-    archived: Object.freeze(["active"]),
-    superseded: Object.freeze(["active"]),
-    merged: Object.freeze([]),
-    split: Object.freeze([]),
-    locked: Object.freeze(["active"]),
+    draft: Object.freeze(["active"] as const),
+    active: Object.freeze(["archived", "superseded", "merged", "split", "locked"] as const),
+    archived: Object.freeze(["active"] as const),
+    superseded: Object.freeze(["active"] as const),
+    merged: Object.freeze([] as const),
+    split: Object.freeze([] as const),
+    locked: Object.freeze(["active"] as const),
   });
 
 export function isExecutiveMemoryLifecycleTransitionAllowed(

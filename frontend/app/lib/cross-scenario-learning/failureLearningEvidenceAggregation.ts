@@ -2,11 +2,7 @@
  * APP-10:5 — Failure Learning Engine evidence aggregation and profile builder.
  */
 
-import {
-  FAILURE_CATEGORY_LABELS,
-  FAILURE_FACTOR_LABELS,
-  FAILURE_LEARNING_ENGINE_CONTRACT_VERSION,
-} from "./failureLearningEngineConstants.ts";
+import { FAILURE_FACTOR_LABELS, FAILURE_LEARNING_ENGINE_CONTRACT_VERSION } from "./failureLearningEngineConstants.ts";
 import { buildFailureId } from "./failureLearningNormalizer.ts";
 import type {
   ExecutiveFailure,

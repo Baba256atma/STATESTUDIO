@@ -11,29 +11,7 @@ import {
   logE297SimulationStarted,
   logE297WarRoomInitialized,
 } from "./executiveWarRoomDiagnostics.ts";
-import type {
-  BuildExecutiveWarRoomInput,
-  ExecutiveWarRoomAlertCategory,
-  ExecutiveWarRoomAlertRecord,
-  ExecutiveWarRoomAlertSeverity,
-  ExecutiveWarRoomCommandAction,
-  ExecutiveWarRoomCopilotContext,
-  ExecutiveWarRoomDecisionRecord,
-  ExecutiveWarRoomEventKind,
-  ExecutiveWarRoomEventRecord,
-  ExecutiveWarRoomFocusMode,
-  ExecutiveWarRoomHotspot,
-  ExecutiveWarRoomHudModel,
-  ExecutiveWarRoomKpiLayer,
-  ExecutiveWarRoomMissionState,
-  ExecutiveWarRoomOperationalContext,
-  ExecutiveWarRoomRecommendationRecord,
-  ExecutiveWarRoomSimulationRecord,
-  ExecutiveWarRoomSituationBrief,
-  ExecutiveWarRoomState,
-  ExecutiveWarRoomStatusLevel,
-  ExecutiveWarRoomStrategicSummary,
-} from "./executiveWarRoomTypes";
+import type { BuildExecutiveWarRoomInput, ExecutiveWarRoomAlertRecord, ExecutiveWarRoomAlertSeverity, ExecutiveWarRoomCommandAction, ExecutiveWarRoomCopilotContext, ExecutiveWarRoomDecisionRecord, ExecutiveWarRoomEventKind, ExecutiveWarRoomEventRecord, ExecutiveWarRoomFocusMode, ExecutiveWarRoomHotspot, ExecutiveWarRoomHudModel, ExecutiveWarRoomKpiLayer, ExecutiveWarRoomMissionState, ExecutiveWarRoomRecommendationRecord, ExecutiveWarRoomSimulationRecord, ExecutiveWarRoomSituationBrief, ExecutiveWarRoomState, ExecutiveWarRoomStatusLevel, ExecutiveWarRoomStrategicSummary } from "./executiveWarRoomTypes";
 
 function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -305,7 +283,7 @@ function buildHotspots(input: BuildExecutiveWarRoomInput): ExecutiveWarRoomHotsp
     });
   });
 
-  simulation?.propagationPaths.forEach((path, index) => {
+  simulation?.propagationPaths.forEach((path) => {
     hotspots.push({
       id: `risk_${path.from}_${path.to}`,
       kind: "risk",

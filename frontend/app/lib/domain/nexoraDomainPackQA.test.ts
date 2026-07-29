@@ -25,7 +25,7 @@ test("shipped retail pack evaluates to ready", () => {
 
 test("missing insight mappings → invalid", () => {
   const bad: NexoraLocaleDomainPack = {
-    id: "broken",
+    id: "generic",
     label: "Broken",
     aliases: ["broken"],
     insightMapping: {},
@@ -45,7 +45,7 @@ test("half insight coverage → partial or invalid depending on score", () => {
     halfInsight[k] = i % 2 === 0 ? "ok" : "";
   }
   const p: NexoraLocaleDomainPack = {
-    id: "half",
+    id: "generic",
     label: "Half",
     aliases: ["half"],
     insightMapping: halfInsight,

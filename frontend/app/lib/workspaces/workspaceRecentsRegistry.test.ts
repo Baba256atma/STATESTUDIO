@@ -148,10 +148,10 @@ test("recents cannot mutate history", () => {
 
 test("retention policy trims projection", () => {
   initializeExecutiveWorkspaceNavigationHistory();
-  forwardTo("focus");
   forwardTo("analyze");
   forwardTo("compare");
   forwardTo("scenario");
+  forwardTo("war_room");
 
   const recents = buildWorkspaceRecentsView({ retention: { maxRecentEntries: 2 } });
   assert.ok(recents.items.length <= 2);

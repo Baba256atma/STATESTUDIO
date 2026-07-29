@@ -9,7 +9,6 @@ import {
   BUSINESS_TIMELINE_CATEGORY_KEYS,
   BUSINESS_TIMELINE_CERTIFICATION_METADATA,
   BUSINESS_TIMELINE_COMPATIBILITY_REGISTRY,
-  BUSINESS_TIMELINE_EVENT_TYPE_KEYS,
   BUSINESS_TIMELINE_EXTENSION_REGISTRY,
   BUSINESS_TIMELINE_FUTURE_COMPATIBILITY,
   BUSINESS_TIMELINE_IMPORTANCE_KEYS,
@@ -22,7 +21,6 @@ import {
   BUSINESS_TIMELINE_PLATFORM_PRINCIPLES,
   BUSINESS_TIMELINE_PLATFORM_TAGS,
   BUSINESS_TIMELINE_RELEASE_METADATA,
-  BUSINESS_TIMELINE_SOURCE_KEYS,
   BUSINESS_TIMELINE_STATUS_KEYS,
 } from "./businessTimelineConstants.ts";
 import {
@@ -252,7 +250,7 @@ export function getBusinessTimelineManifest(
 export function validateBusinessTimeline(
   timestamp: string = DEFAULT_TIME
 ): BusinessPlatformValidationReport {
-  const issues: BusinessPlatformValidationReport["issues"] = [];
+  const issues: BusinessPlatformValidationReport["issues"][number][] = [];
 
   const identityValidation = validatePlatformIdentity(BUSINESS_TIMELINE_PLATFORM_IDENTITY);
   if (!identityValidation.valid) {

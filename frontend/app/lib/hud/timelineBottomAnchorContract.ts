@@ -10,7 +10,6 @@ export const TIMELINE_BOTTOM_INSET_PX = TIMELINE_BOTTOM;
 export type TimelineAnchorState = "expanded" | "compact" | "maximized";
 
 let lastAnchorSignature: string | null = null;
-let lastAnchorTrace: TimelineAnchorState | null = null;
 
 export function resolveTimelineBottomAnchoredTop(input: {
   layoutHeight: number;
@@ -22,7 +21,8 @@ export function resolveTimelineBottomAnchoredTop(input: {
   return Math.max(0, input.layoutHeight - bottomInset - safeHeight);
 }
 
-export function resolveTimelineZoneBottomInset(_bottomInset?: number): number {
+export function resolveTimelineZoneBottomInset(bottomInset?: number): number {
+  void bottomInset;
   return TIMELINE_BOTTOM_INSET_PX;
 }
 
@@ -80,7 +80,6 @@ export function traceTimelineBottomAnchor(input: {
   });
   if (lastAnchorSignature === signature) return;
   lastAnchorSignature = signature;
-  lastAnchorTrace = input.anchorState;
   globalThis.console?.log?.(
     `[NexoraTimelineAnchor] bottomInset=${TIMELINE_BOTTOM_INSET_PX} state=${input.anchorState} anchored=true`
   );
@@ -93,5 +92,4 @@ export function traceTimelineBottomAnchorViolation(reason: string): void {
 
 export function resetTimelineBottomAnchorContractForTests(): void {
   lastAnchorSignature = null;
-  lastAnchorTrace = null;
 }

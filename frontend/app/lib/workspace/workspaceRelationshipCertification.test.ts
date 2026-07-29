@@ -71,27 +71,9 @@ import {
   WORKSPACE_RELATIONSHIP_CERTIFICATION_GATE_TITLES,
   WORKSPACE_RELATIONSHIP_CERTIFICATION_TAGS,
 } from "./workspaceRelationshipCertificationContract.ts";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const DATA_SOURCE_ID = "wds_relationship_certification_entities";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
 
 function seedRelationshipCertificationWorkspace(workspaceName: string, csvText: string) {
   const workspace = createWorkspace(workspaceName);
@@ -165,7 +147,7 @@ function runCertifiedPipeline(input: {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetWorkspaceRegistryForTests();
   resetWorkspaceDataSourcesForTests();
@@ -285,10 +267,16 @@ test("certifies Scenario 8 workspace switching and isolation", () => {
     isolationWorkspaceId: isolatedWorkspace.workspaceId,
   });
 
-  setActiveWorkspace(report.workspaceId);
-  assert.equal(getWorkspaceSceneJson()?.scene.relationships?.length, 1);
+  setActiveWorkspace(report.workspaceId ?? "");
+  {
+    const activeRels = getWorkspaceSceneJson()?.scene.relationships;
+    assert.equal(Array.isArray(activeRels) ? activeRels.length : -1, 1);
+  }
   setActiveWorkspace(isolatedWorkspace.workspaceId);
-  assert.equal(getWorkspaceSceneJson()?.scene.relationships?.length ?? 0, 0);
+  {
+    const isolatedRels = getWorkspaceSceneJson()?.scene.relationships;
+    assert.equal(Array.isArray(isolatedRels) ? isolatedRels.length : -1, 0);
+  }
   assert.equal(report.gates.find((entry) => entry.gateId === "F")?.status, "PASS");
   assert.equal(report.gates.find((entry) => entry.gateId === "AB")?.status, "PASS");
 });
@@ -320,8 +308,8 @@ test("certifies Scenarios 10 and 11: selection-safe render stability after sync"
   }));
   const sceneJson = getWorkspaceSceneJson(workspace.workspaceId);
   assert.ok(sceneJson);
-  const firstRead = readValidatedSceneRelationshipsForRender(sceneJson, sceneJson.scene.objects);
-  const secondRead = readValidatedSceneRelationshipsForRender(sceneJson, sceneJson.scene.objects);
+  const firstRead = readValidatedSceneRelationshipsForRender(sceneJson, sceneJson.scene.objects ?? []);
+  const secondRead = readValidatedSceneRelationshipsForRender(sceneJson, sceneJson.scene.objects ?? []);
   const afterPositions = getWorkspaceSyncedSceneObjects(workspace.workspaceId).map((object) => ({
     id: object.id,
     position: object.position,

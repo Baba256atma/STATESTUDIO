@@ -7,10 +7,14 @@ import type {
 
 type BuildObservedOutcomeAssessmentInput = {
   canonicalRecommendation?: CanonicalRecommendation | null;
-  responseData?: any | null;
-  decisionResult?: any | null;
+  responseData?: Record<string, unknown> | null;
+  decisionResult?: Record<string, unknown> | null;
   memoryEntries?: DecisionMemoryEntry[];
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
 
 function text(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
@@ -40,20 +44,22 @@ export function buildObservedOutcomeAssessment(
   const latestMemory = input.memoryEntries?.[0] ?? null;
   const responseData = input.responseData ?? null;
   const replaySummary =
-    text(responseData?.decision_replay?.summary) ||
-    text(responseData?.replay?.summary) ||
+    text(asRecord(responseData?.decision_replay)?.summary) ||
+    text(asRecord(responseData?.replay)?.summary) ||
     "";
   const memoryObservedSummary =
     text(latestMemory?.observed_outcome_summary) ||
     text(latestMemory?.feedback_summary) ||
     "";
+  const decisionResultRecord = asRecord(input.decisionResult);
   const executionObservedSummary =
-    text(input.decisionResult?.observed_summary) ||
-    text(responseData?.decision_execution_result?.observed_summary) ||
+    text(decisionResultRecord?.observed_summary) ||
+    text(asRecord(responseData?.decision_execution_result)?.observed_summary) ||
     "";
+  const strategyKpi = asRecord(responseData?.strategy_kpi);
   const kpiObservedSummary =
-    text(responseData?.strategy_kpi?.follow_up_summary) ||
-    text(responseData?.strategy_kpi?.summary) ||
+    text(strategyKpi?.follow_up_summary) ||
+    text(strategyKpi?.summary) ||
     "";
 
   const observedSummary =
@@ -63,25 +69,32 @@ export function buildObservedOutcomeAssessment(
     kpiObservedSummary ||
     "";
 
+  const simulationResult = asRecord(decisionResultRecord?.simulation_result);
+  const responseDecisionResult = asRecord(responseData?.decision_result);
+  const responseSimulationResult = asRecord(responseDecisionResult?.simulation_result);
+  const responseDecisionSimulation = asRecord(responseData?.decision_simulation);
+  const sceneActions = asRecord(decisionResultRecord?.scene_actions);
+  const sceneHighlight = Array.isArray(sceneActions?.highlight) ? sceneActions.highlight : [];
+
   const observedRiskChange =
-    typeof input.decisionResult?.simulation_result?.risk_change === "number"
-      ? input.decisionResult.simulation_result.risk_change
-      : typeof responseData?.decision_result?.simulation_result?.risk_change === "number"
-        ? responseData.decision_result.simulation_result.risk_change
+    typeof simulationResult?.risk_change === "number"
+      ? simulationResult.risk_change
+      : typeof responseSimulationResult?.risk_change === "number"
+        ? responseSimulationResult.risk_change
         : null;
   const observedImpactScore =
-    typeof input.decisionResult?.simulation_result?.impact_score === "number"
-      ? input.decisionResult.simulation_result.impact_score
-      : typeof responseData?.decision_result?.simulation_result?.impact_score === "number"
-        ? responseData.decision_result.simulation_result.impact_score
+    typeof simulationResult?.impact_score === "number"
+      ? simulationResult.impact_score
+      : typeof responseSimulationResult?.impact_score === "number"
+        ? responseSimulationResult.impact_score
         : null;
   const targetCoverage = unique([
     ...(latestMemory?.target_ids ?? []),
-    ...(Array.isArray(input.decisionResult?.simulation_result?.affected_objects)
-      ? input.decisionResult.simulation_result.affected_objects
+    ...(Array.isArray(simulationResult?.affected_objects)
+      ? (simulationResult.affected_objects as string[])
       : []),
-    ...(Array.isArray(responseData?.decision_simulation?.affected_objects)
-      ? responseData.decision_simulation.affected_objects
+    ...(Array.isArray(responseDecisionSimulation?.affected_objects)
+      ? (responseDecisionSimulation.affected_objects as string[])
       : []),
   ], 4);
 
@@ -123,8 +136,8 @@ export function buildObservedOutcomeAssessment(
     replaySummary,
     kpiObservedSummary,
     executionObservedSummary,
-    input.decisionResult?.scene_actions?.highlight?.length
-      ? `Execution preview touched ${input.decisionResult.scene_actions.highlight.length} node${input.decisionResult.scene_actions.highlight.length === 1 ? "" : "s"}.`
+    sceneHighlight.length
+      ? `Execution preview touched ${sceneHighlight.length} node${sceneHighlight.length === 1 ? "" : "s"}.`
       : null,
   ]);
 

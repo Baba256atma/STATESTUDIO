@@ -2,18 +2,7 @@ import { stableSignature } from "../../../intelligence/shared/dedupe";
 import { enterpriseCognitionOrchestrationLayer } from "./enterpriseCognitionOrchestrationLayer";
 import { executiveCognitionSynchronizationLayer } from "./executiveCognitionSynchronizationLayer";
 import { institutionalAdaptationContinuityLayer } from "./institutionalAdaptationContinuityLayer";
-import type {
-  AdaptationRuntimeState,
-  ContinuityHealthRuntime,
-  EnterpriseCognitiveRuntimeState,
-  ForesightRuntimeState,
-  GovernanceRuntimeState,
-  InstitutionalLearningRuntimeState,
-  OperationalRuntimeState,
-  ResilienceRuntimeState,
-  StrategicAdvisoryRuntimeState,
-  SynthesizeEnterpriseCognitiveRuntimeInput,
-} from "./enterpriseCognitiveRuntimeTypes";
+import type { ContinuityHealthRuntime, EnterpriseCognitiveRuntimeState, ForesightRuntimeState, GovernanceRuntimeState, InstitutionalLearningRuntimeState, OperationalRuntimeState, ResilienceRuntimeState, StrategicAdvisoryRuntimeState, SynthesizeEnterpriseCognitiveRuntimeInput } from "./enterpriseCognitiveRuntimeTypes";
 
 export function buildEnterpriseCognitiveRuntimeSignature(
   state: EnterpriseCognitiveRuntimeState

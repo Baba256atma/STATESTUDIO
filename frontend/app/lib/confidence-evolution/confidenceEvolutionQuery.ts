@@ -7,10 +7,7 @@ import { STAGE_GLOBAL_FORBIDDEN_PATTERNS } from "../stage/stageArchitectureContr
 import type { StageManifest } from "../stage/stageArchitectureTypes.ts";
 import { CONFIDENCE_EVOLUTION_MUST_NOT_OWN } from "./confidenceEvolutionConstants.ts";
 import { isConfidenceEvolutionPlatformInitialized } from "./confidenceEvolutionFoundation.ts";
-import {
-  CONFIDENCE_EVOLUTION_ENGINE_SELF_MANIFEST,
-  isConfidenceEvolutionEngineInitialized,
-} from "./confidenceEvolutionEngine.ts";
+import { CONFIDENCE_EVOLUTION_ENGINE_SELF_MANIFEST } from "./confidenceEvolutionEngine.ts";
 import { orderConfidenceRecords } from "./confidenceEvolutionOrdering.ts";
 import { applyConfidenceEvolutionQueryFilters } from "./confidenceEvolutionQueryFilters.ts";
 import {
@@ -162,7 +159,7 @@ export function queryConfidenceEvolution(filters: ConfidenceEvolutionQueryFilter
 
 export function getConfidenceRecordsOrdered(
   filters: ConfidenceEvolutionQueryFilters
-): readonly ConfidenceEvolutionQueryResult["records"] {
+): readonly ConfidenceEvolutionQueryResult["records"][number][] {
   const response = queryConfidenceEvolution(filters);
   return response.data?.records ?? Object.freeze([]);
 }

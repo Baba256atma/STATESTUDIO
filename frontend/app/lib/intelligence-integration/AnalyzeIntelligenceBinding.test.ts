@@ -8,8 +8,7 @@ import {
 } from "./AnalyzeIntelligenceBinding.ts";
 import { resetExecutiveIntelligenceAdapterForTests } from "./ExecutiveIntelligenceAdapter.ts";
 import { resetAnalyzeIntelligenceProfileForTests } from "./AnalyzeIntelligenceProfile.ts";
-import { ANALYZE_BINDING_DIAGNOSTIC, ANALYZE_BINDING_READY_DIAGNOSTIC } from "./analyzeIntelligenceBindingContract.ts";
-import { EMPTY_ANALYZE_INTELLIGENCE_PROFILE } from "./analyzeIntelligenceProfileContract.ts";
+import { ANALYZE_BINDING_DIAGNOSTIC, ANALYZE_BINDING_READY_DIAGNOSTIC } from "./analyzeIntelligenceBindingContract.ts";import { EMPTY_ANALYZE_INTELLIGENCE_PROFILE as CANONICAL_EMPTY_ANALYZE_PROFILE } from "../intelligence/analyzeIntelligenceProfileContract.ts";
 import { attachAnalyzeIntelligenceBinding } from "../dashboard/analyze/analyzeIntelligenceBindingBridge.ts";
 import { resetExecutiveObjectIntelligenceSummaryForTests } from "../object-intelligence/ExecutiveObjectIntelligenceSummary.ts";
 import { resetObjectIntelligenceRuntimeForTests } from "../object-intelligence/ObjectIntelligenceRuntime.ts";
@@ -155,7 +154,7 @@ test("returns missing object when no selection is available", () => {
 test("returns missing intelligence when analyze profile is unavailable", () => {
   const binding = resolveAnalyzeIntelligenceBinding({
     objectId: "supplier-1",
-    profile: EMPTY_ANALYZE_INTELLIGENCE_PROFILE,
+    profile: CANONICAL_EMPTY_ANALYZE_PROFILE,
     sceneJson: { scene: { objects: [], relationships: [], kpis: [], risks: [] } },
   });
   assert.equal(binding.bindingStatus, "missing_intelligence");

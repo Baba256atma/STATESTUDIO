@@ -1,9 +1,3 @@
-/**
- * APP-6:3 — Decision History Engine domain types and constants.
- * Extends APP-6:2 event types — does not redefine them.
- */
-
-import type { DECISION_EVENT_ENGINE_CONTRACT_VERSION } from "./decisionEventTypes.ts";
 import type {
   DecisionEngineEvent,
   DecisionEngineEventVersion,

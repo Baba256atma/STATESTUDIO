@@ -62,8 +62,8 @@ export function buildReplayPanelContract(input: {
   const scrubPoints = input.snapshot.reconstruction.replayTrack.frames.map((frame, frameIndex) =>
     Object.freeze({
       frameIndex,
-      tick: Number(frame.snapshot?.tick ?? 0),
-      label: String(frame.label ?? `Tick ${frame.snapshot?.tick ?? frameIndex}`),
+      tick: Number(frame.snapshot?.stepIndex ?? 0),
+      label: String(frame.label ?? `Tick ${frame.snapshot?.stepIndex ?? frameIndex}`),
     })
   );
 
@@ -102,7 +102,7 @@ function resolveStartFrameIndex(
   if (startAtTick == null) return 0;
   const target = Math.floor(Number(startAtTick));
   const frames = reconstruction.replayTrack.frames;
-  const idx = frames.findIndex((f) => Number(f.snapshot?.tick ?? -1) === target);
+  const idx = frames.findIndex((f) => Number(f.snapshot?.stepIndex ?? -1) === target);
   return idx >= 0 ? idx : 0;
 }
 

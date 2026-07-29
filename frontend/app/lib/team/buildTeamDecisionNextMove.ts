@@ -1,11 +1,15 @@
 import type { TeamDecisionAlignment, TeamRolePerspective } from "./teamDecisionTypes";
 
+import type { MetaDecisionState } from "../decision/meta/metaDecisionTypes";
+import type { ComparePanelModel } from "../decision/recommendation/buildComparePanelModel";
+import type { DecisionConfidenceModel } from "../decision/confidence/buildDecisionConfidenceModel";
+
 type BuildTeamDecisionNextMoveInput = {
   alignment: TeamDecisionAlignment;
   perspectives: TeamRolePerspective[];
-  metaDecision?: any | null;
-  compareModel?: any | null;
-  confidenceModel?: any | null;
+  metaDecision?: MetaDecisionState | null;
+  compareModel?: ComparePanelModel | null;
+  confidenceModel?: DecisionConfidenceModel | null;
 };
 
 function categorizeAction(value: string) {

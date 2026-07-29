@@ -31,16 +31,7 @@ import {
   resolveSceneHudTopAlignment,
   traceSceneHudTopAlign,
 } from "../hud/sceneHudTopAlignmentContract.ts";
-import {
-  resolveScenePanelFixedWidth,
-  resolveScenePanelZoneHeight,
-  resolveScenePanelZoneMaxWidth,
-  resolveScenePanelZoneWidth,
-  SCENE_PANEL_MINIMIZED_HEIGHT,
-  SCENE_PANEL_WIDTH,
-  traceScenePanelLayout,
-  toScenePanelHeightMode,
-} from "./scenePanelWidthContract.ts";
+import { resolveScenePanelFixedWidth, resolveScenePanelZoneHeight, resolveScenePanelZoneMaxWidth, SCENE_PANEL_MINIMIZED_HEIGHT, SCENE_PANEL_WIDTH, traceScenePanelLayout, toScenePanelHeightMode } from "./scenePanelWidthContract.ts";
 import {
   OBJECT_PANEL_EXPANDED_WIDTH,
   OBJECT_PANEL_WIDTH,

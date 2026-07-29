@@ -13,8 +13,6 @@ import {
   type DecisionAssistantModel,
 } from "./decisionAssistantTypes.ts";
 import type { DecisionDashboardModel } from "./decisionDashboardTypes.ts";
-import type { DecisionValidationResult } from "./decisionTimelineTypes.ts";
-
 let modelSequence = 0;
 
 export function resetDecisionAssistantModelSequenceForTests(): void {
@@ -43,7 +41,7 @@ export function buildDecisionAssistantModelFromDashboard(
   dashboard: DecisionDashboardModel,
   generatedAt: string
 ): DecisionAssistantModel {
-  const explanation = buildDecisionExplanation(input, dashboard, generatedAt);
+  const explanation = buildDecisionExplanation(input, dashboard);
   const validationMessages = collectValidationMessages(dashboard);
 
   return Object.freeze({

@@ -9,16 +9,13 @@ import {
 } from "./objectCatalogRuntime";
 import { resetObjectCatalogRegistryForTests } from "./objectCatalogRegistry";
 import { resetObjectCatalogInstrumentationForTests } from "./objectCatalogInstrumentation";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 describe("objectCatalogRuntime", () => {
   beforeEach(() => {
     resetObjectCatalogRegistryForTests();
     resetObjectCatalogInstrumentationForTests();
-    if (typeof globalThis.window === "undefined") {
-      (globalThis as typeof globalThis & { window: Window }).window = {
-        dispatchEvent: () => true,
-      } as unknown as Window;
-    }
+    ensureBrowserLocalStorageHarness({ includeEventDispatch: true });
     vi.spyOn(window, "dispatchEvent").mockImplementation(() => true);
   });
 

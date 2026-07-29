@@ -31,7 +31,6 @@ export function buildScenarioBranchComparisonMatrix(input: {
   const rows: ScenarioBranchComparisonRow[] = branches.map((branch) => {
     const timeline = input.forest.timelinesById[branch.childTimelineId];
     const divergence = input.forest.divergences.find((d) => d.branchId === branch.branchId);
-    const historyEntry = timeline?.history.entries[timeline.history.entries.length - 1];
     const executiveLabel =
       (branch.executiveScenarioKind && EXECUTIVE_SCENARIO_KIND_LABELS[branch.executiveScenarioKind]) ||
       branch.label;

@@ -130,7 +130,7 @@ import { ExecutiveFinanceValidationFoundation } from "./financeValidationIndex.t
 import { ExecutiveFinanceManifestFoundation } from "./financeManifestIndex.ts";
 import { ExecutiveFinancePlatformFoundation } from "./executiveFinancePlatformIndex.ts";
 import { ExecutiveFinancePlatformCertificationFoundation } from "./executiveFinancePlatformCertificationIndex.ts";
-import { ExecutiveFinancePlatformFreezeFoundation, getExecutiveFinancePlatformFreezeManifest } from "./executiveFinancePlatformFreezeIndex.ts";
+import { ExecutiveFinancePlatformFreezeFoundation } from "./executiveFinancePlatformFreezeIndex.ts";
 
 export type ExecutiveFinancePlatformPublicIndexMetadata = Readonly<{
   readonly publicIndexId: "executive-finance-platform-public-index";

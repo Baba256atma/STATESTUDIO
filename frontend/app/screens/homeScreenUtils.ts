@@ -243,10 +243,10 @@ export function loadBackup(): BackupV1 | null {
   return null;
 }
 
-export const stableStringify = (value: any): string => {
+export const stableStringify = (value: unknown): string => {
   const seen = new WeakSet<object>();
 
-  const normalize = (v: any): any => {
+  const normalize = (v: unknown): unknown => {
     if (v === null || v === undefined) return v;
     if (typeof v !== "object") return v;
     if (v instanceof Date) return v.toISOString();
@@ -256,9 +256,9 @@ export const stableStringify = (value: any): string => {
 
     if (Array.isArray(v)) return v.map(normalize);
 
-    const out: Record<string, any> = {};
-    for (const k of Object.keys(v).sort()) {
-      out[k] = normalize((v as any)[k]);
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(v as Record<string, unknown>).sort()) {
+      out[k] = normalize((v as Record<string, unknown>)[k]);
     }
     return out;
   };

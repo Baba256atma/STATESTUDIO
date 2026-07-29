@@ -5,7 +5,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { evaluateStageFileBoundary, validateStageManifest } from "../stage/stageArchitectureGuards.ts";
+import { evaluateStageFileBoundary } from "../stage/stageArchitectureGuards.ts";
 import { resetExecutiveConflictEngineForTests } from "./executiveConflictEngine.ts";
 import { resetExecutiveEventRegistryForTests } from "./executiveEventRegistry.ts";
 import { resetExecutiveTimeCameraForTests } from "./executiveTimeCameraEngine.ts";
@@ -236,14 +236,6 @@ export function runExecutiveTimeIntegrationCertification() {
     actor: "executive",
     transitionReason: "Integration certification probe",
   });
-  const priority = ExecutiveTimePlatformGateway.evaluatePriority(gatewayContext, {
-    workspaceId,
-    entityId: "decision-integration-cert",
-    entityType: "decision",
-    currentState: state.data?.currentState ?? "draft",
-    actor: "executive",
-    reason: "Integration certification probe",
-  });
   const event = ExecutiveTimePlatformGateway.createExecutiveEvent(
     gatewayContext,
     Object.freeze({
@@ -293,16 +285,11 @@ export function runExecutiveTimeIntegrationCertification() {
   const directEngine = rejectDirectEngineAccess(
     "frontend/app/lib/executive-time/executiveTimeContextEngine.ts"
   );
-  const requestResolution = resolveConsumerRequest({
-    consumerId: "timeline",
-    operation: "resolveEvent",
-  });
   const platformService = resolvePlatformService("assistant");
   const features = resolveSupportedFeatures("scenario");
   const platformCapabilities = getPlatformCapabilities();
   const consumerCapabilities = getConsumerCapabilities("recommendation");
   const priorPlatform = runExecutiveTimePlatformCertification();
-  const manifestValidation = validateStageManifest(EXECUTIVE_TIME_INTEGRATION_MANIFEST);
   const reportPath = join(REPO_ROOT, "docs/app-1-9-executive-time-integration-report.md");
 
   const checks: ExecutiveTimeCertificationCheck[] = [

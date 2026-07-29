@@ -37,7 +37,6 @@ import {
 } from "./executiveInboxConstants.ts";
 import {
   buildExecutiveInboxFoundation,
-  createExecutiveInboxFoundation,
   isExecutiveInboxPlatformInitialized,
 } from "./executiveInboxFoundation.ts";
 import {
@@ -358,7 +357,7 @@ export function getExecutiveInboxManifest(timestamp: string = DEFAULT_TIME): Exe
 export function validateExecutiveInboxFoundation(
   timestamp: string = DEFAULT_TIME
 ): ExecutiveInboxPlatformValidationReport {
-  const issues: ExecutiveInboxPlatformValidationReport["issues"] = [];
+  const issues: ExecutiveInboxPlatformValidationReport["issues"][number][] = [];
 
   const identityValidation = validatePlatformIdentity(EXECUTIVE_INBOX_PLATFORM_IDENTITY);
   if (!identityValidation.valid) {
@@ -443,7 +442,6 @@ export function validateExecutiveInboxFoundation(
 
 export {
   buildExecutiveInboxFoundation,
-  createExecutiveInboxFoundation,
   isExecutiveInboxPlatformInitialized as isExecutiveInboxReady,
 } from "./executiveInboxFoundation.ts";
 export { registerExecutiveInboxSession, registerExecutiveInboxItem } from "./executiveInboxRegistry.ts";

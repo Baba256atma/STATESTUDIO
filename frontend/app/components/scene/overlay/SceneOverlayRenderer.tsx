@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useMemo } from "react";
+import type { SceneJson, SceneObject } from "../../../lib/sceneTypes";
 
-import {
-  buildDecisionPathOverlaySignature,
-  buildDecisionPathRendererState,
-} from "../../overlays/DecisionPathOverlayLayer";
+import { buildDecisionPathRendererState } from "../../overlays/DecisionPathOverlayLayer";
 import { SceneRenderer } from "../../SceneRenderer";
 import type { PropagationOverlayState } from "../../../lib/simulation/propagationTypes";
 import type { DecisionPathOverlayState } from "../../../lib/simulation/decisionPathOverlayTypes";
@@ -31,8 +29,8 @@ import type { CognitiveTwinTwinEntity } from "../../../lib/scene/twin/executiveC
 import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type SceneOverlayRendererProps = {
-  sceneJson: any;
-  objects: any[];
+  sceneJson: SceneJson | null;
+  objects: SceneObject[];
   themeId: SceneThemeId;
   runtimeObjectPositionContext?: RuntimeObjectPositionContext;
   visibility: OverlayRuntimeVisibility;
@@ -72,7 +70,7 @@ function SceneOverlayRendererComponent(props: SceneOverlayRendererProps): React.
   const visiblePropagation = props.visibility.propagation ? props.propagationOverlay : null;
   const stableSceneJson = useMemo(
     () => ({
-      ...props.sceneJson,
+      ...(props.sceneJson ?? { state_vector: {} }),
       scene: {
         ...(props.sceneJson?.scene ?? {}),
         objects: props.objects,
@@ -80,13 +78,9 @@ function SceneOverlayRendererComponent(props: SceneOverlayRendererProps): React.
     }),
     [props.objects, props.sceneJson]
   );
-  const decisionPathSignature = useMemo(
-    () => buildDecisionPathOverlaySignature(props.decisionPathRenderInput),
-    [props.decisionPathRenderInput]
-  );
   const decisionPathRenderState = useMemo(
     () => buildDecisionPathRendererState(props.decisionPathRenderInput),
-    [decisionPathSignature]
+    [props.decisionPathRenderInput]
   );
   const runtimeObjectPositionContext = props.runtimeObjectPositionContext;
 

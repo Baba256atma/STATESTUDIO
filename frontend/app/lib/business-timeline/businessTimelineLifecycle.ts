@@ -24,11 +24,7 @@ import {
   type BusinessLifecycleModel,
   type BusinessLifecycleSummary,
 } from "./businessTimelineLifecycleTypes.ts";
-import {
-  validateBusinessLifecycleModel,
-  validateFoundationCompatibilityForLifecycle,
-  validatePrerequisitesForLifecycle,
-} from "./businessTimelineLifecycleValidation.ts";
+import { validateBusinessLifecycleModel, validatePrerequisitesForLifecycle } from "./businessTimelineLifecycleValidation.ts";
 
 export const BUSINESS_TIMELINE_LIFECYCLE_FORBIDDEN_PATTERNS_FULL = Object.freeze([
   ...STAGE_GLOBAL_FORBIDDEN_PATTERNS,

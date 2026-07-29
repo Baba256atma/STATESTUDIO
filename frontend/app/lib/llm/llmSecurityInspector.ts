@@ -11,12 +11,7 @@ import {
   redactPromptPackage,
 } from "./llmSecurityRedaction.ts";
 import { lookupSecurityPolicy } from "./llmSecurityRegistry.ts";
-import type {
-  LlmSecurityDecision,
-  LlmSecurityInspectionInput,
-  LlmSecurityInspectionResult,
-  LlmSecurityPolicyRegistration,
-} from "./llmSecurityTypes.ts";
+import type { LlmSecurityInspectionInput, LlmSecurityInspectionResult, LlmSecurityPolicyRegistration } from "./llmSecurityTypes.ts";
 import {
   getDefaultSecurityCompatibility,
   validateSecurityInspectionInput,

@@ -61,7 +61,7 @@ function objectRelevance(context: DecisionContext, seed: ScenarioSeed): number {
 function projectedFromDelta(seed: ScenarioSeed, context: DecisionContext): EvaluatedScenario["projectedEffects"] {
   const d = seed.delta;
   const risk = clamp((d.risk ?? 0) * (context.riskLevel === "critical" ? 1.15 : 1), -0.35, 0.35);
-  let stability = clamp((d.stability ?? 0) + (d.risk && d.risk < 0 ? -d.risk * 0.4 : 0), -0.2, 0.35);
+  const stability = clamp((d.stability ?? 0) + (d.risk && d.risk < 0 ? -d.risk * 0.4 : 0), -0.2, 0.35);
   const throughput = clamp(d.throughput ?? 0, -0.15, 0.35);
   let cost = clamp(d.cost ?? 0, -0.2, 0.25);
   if (context.riskLevel === "critical" && cost > 0.08) {

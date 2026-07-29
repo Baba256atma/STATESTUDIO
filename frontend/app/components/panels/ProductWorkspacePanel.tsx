@@ -3,12 +3,70 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { cardStyle, inputStyle, nx, primaryButtonStyle, sectionTitleStyle, softCardStyle } from "../ui/nexoraTheme";
 import { EmptyStateCard, ErrorStateCard, LoadingStateCard } from "../ui/panelStates";
+import { readUnknownErrorMessage } from "../../lib/system/nexoraErrors";
+
+type ProductWorkspaceRecord = {
+  id?: string;
+  label?: string;
+  owner?: string;
+  role?: string;
+};
+
+type SavedScenarioRecord = {
+  id?: string;
+  label?: string;
+  episode_id?: string;
+  created_at?: string;
+};
+
+type SavedReportRecord = {
+  id?: string;
+  label?: string;
+  episode_id?: string;
+  created_at?: string;
+  summary?: {
+    fragility_score?: unknown;
+    best_action?: unknown;
+  };
+};
+
+function readApiErrorMessage(json: unknown, fallback: string): string {
+  if (!json || typeof json !== "object") return fallback;
+  const record = json as Record<string, unknown>;
+  const detail = record.detail;
+  if (detail && typeof detail === "object") {
+    const detailRecord = detail as Record<string, unknown>;
+    const error = detailRecord.error;
+    if (error && typeof error === "object") {
+      const message = (error as Record<string, unknown>).message;
+      if (typeof message === "string" && message.trim()) return message;
+    }
+    if (typeof detailRecord.message === "string" && detailRecord.message.trim()) {
+      return detailRecord.message;
+    }
+  }
+  if (typeof detail === "string" && detail.trim()) return detail;
+  return fallback;
+}
+
+function readRecordField<T extends Record<string, unknown>>(json: unknown, field: string): T | null {
+  if (!json || typeof json !== "object") return null;
+  const value = (json as Record<string, unknown>)[field];
+  return value && typeof value === "object" ? (value as T) : null;
+}
+
+function readRecordList<T extends Record<string, unknown>>(json: unknown, field: string): T[] {
+  if (!json || typeof json !== "object") return [];
+  const value = (json as Record<string, unknown>)[field];
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is T => !!entry && typeof entry === "object") as T[];
+}
 
 type Props = {
   backendBase: string;
   episodeId: string | null;
-  responseData?: any;
-  currentScenarioInputs?: any[];
+  responseData?: unknown;
+  currentScenarioInputs?: unknown[];
 };
 
 export default function ProductWorkspacePanel({
@@ -20,14 +78,14 @@ export default function ProductWorkspacePanel({
   // MVP-FROZEN: advanced document/export management is intentionally deferred.
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [workspace, setWorkspace] = useState<any | null>(null);
-  const [scenarios, setScenarios] = useState<any[]>([]);
-  const [reports, setReports] = useState<any[]>([]);
+  const [workspace, setWorkspace] = useState<ProductWorkspaceRecord | null>(null);
+  const [scenarios, setScenarios] = useState<SavedScenarioRecord[]>([]);
+  const [reports, setReports] = useState<SavedReportRecord[]>([]);
   const [saveScenarioLabel, setSaveScenarioLabel] = useState("");
   const [saveReportLabel, setSaveReportLabel] = useState("");
   const [savingScenario, setSavingScenario] = useState(false);
   const [savingReport, setSavingReport] = useState(false);
-  const [selectedReportJson, setSelectedReportJson] = useState<any | null>(null);
+  const [selectedReportJson, setSelectedReportJson] = useState<Record<string, unknown> | null>(null);
 
   const canSave = typeof episodeId === "string" && episodeId.trim().length > 0;
   const wsId = String(workspace?.id ?? "").trim();
@@ -43,12 +101,12 @@ export default function ProductWorkspacePanel({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = (json as any)?.detail?.error?.message ?? (json as any)?.detail ?? "Failed to load workspace.";
+        const msg = readApiErrorMessage(json, "Failed to load workspace.");
         throw new Error(String(msg));
       }
-      setWorkspace((json as any)?.workspace ?? null);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load workspace.");
+      setWorkspace(readRecordField<ProductWorkspaceRecord>(json, "workspace"));
+    } catch (e: unknown) {
+      setError(readUnknownErrorMessage(e, "Failed to load workspace."));
     } finally {
       setLoading(false);
     }
@@ -63,12 +121,12 @@ export default function ProductWorkspacePanel({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = (json as any)?.detail?.error?.message ?? (json as any)?.detail ?? "Failed to load scenarios.";
+        const msg = readApiErrorMessage(json, "Failed to load scenarios.");
         throw new Error(String(msg));
       }
-      setScenarios(Array.isArray((json as any)?.items) ? (json as any).items : []);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load scenarios.");
+      setScenarios(readRecordList<SavedScenarioRecord>(json, "items"));
+    } catch (e: unknown) {
+      setError(readUnknownErrorMessage(e, "Failed to load scenarios."));
     }
   }, [backendBase, wsId]);
 
@@ -81,12 +139,12 @@ export default function ProductWorkspacePanel({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = (json as any)?.detail?.error?.message ?? (json as any)?.detail ?? "Failed to load reports.";
+        const msg = readApiErrorMessage(json, "Failed to load reports.");
         throw new Error(String(msg));
       }
-      setReports(Array.isArray((json as any)?.items) ? (json as any).items : []);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load reports.");
+      setReports(readRecordList<SavedReportRecord>(json, "items"));
+    } catch (e: unknown) {
+      setError(readUnknownErrorMessage(e, "Failed to load reports."));
     }
   }, [backendBase, wsId]);
 
@@ -116,38 +174,34 @@ export default function ProductWorkspacePanel({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = (json as any)?.detail?.error?.message ?? (json as any)?.detail ?? "Failed to save scenario.";
+        const msg = readApiErrorMessage(json, "Failed to save scenario.");
         throw new Error(String(msg));
       }
       setSaveScenarioLabel("");
       await loadScenarios();
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to save scenario.");
+    } catch (e: unknown) {
+      setError(readUnknownErrorMessage(e, "Failed to save scenario."));
     } finally {
       setSavingScenario(false);
     }
   }, [backendBase, canSave, episodeId, loadScenarios, saveScenarioLabel, scenarioInputs, wsId]);
 
   const reportSummary = useMemo(() => {
-    const fragilityScore = Number(
-      responseData?.fragility?.score ??
-        responseData?.scene_json?.scene?.fragility?.score ??
-        0
-    );
-    const bestAction = String(
-      responseData?.strategic_advice?.primary_recommendation?.action ??
-        responseData?.scene_json?.strategic_advice?.primary_recommendation?.action ??
-        ""
-    );
-    const topPattern = String(
-      responseData?.strategic_patterns?.top_pattern?.label ??
-        responseData?.scene_json?.strategic_patterns?.top_pattern?.label ??
-        ""
-    );
+    const response = (responseData ?? null) as Record<string, unknown> | null;
+    const sceneJson = (response?.scene_json ?? null) as Record<string, unknown> | null;
+    const scene = (sceneJson?.scene ?? null) as Record<string, unknown> | null;
+    const fragility = (response?.fragility ?? scene?.fragility ?? null) as Record<string, unknown> | null;
+    const strategicAdvice = (response?.strategic_advice ?? sceneJson?.strategic_advice ?? null) as Record<string, unknown> | null;
+    const strategicPatterns = (response?.strategic_patterns ?? sceneJson?.strategic_patterns ?? null) as Record<string, unknown> | null;
+    const primaryRecommendation = (strategicAdvice?.primary_recommendation ?? null) as Record<string, unknown> | null;
+    const topPattern = (strategicPatterns?.top_pattern ?? null) as Record<string, unknown> | null;
+    const fragilityScore = Number(fragility?.score ?? 0);
+    const bestAction = String(primaryRecommendation?.action ?? "");
+    const topPatternLabel = String(topPattern?.label ?? "");
     return {
       fragility_score: Number.isFinite(fragilityScore) ? fragilityScore : 0,
       best_action: bestAction,
-      top_pattern: topPattern,
+      top_pattern: topPatternLabel,
     };
   }, [responseData]);
 
@@ -167,13 +221,13 @@ export default function ProductWorkspacePanel({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = (json as any)?.detail?.error?.message ?? (json as any)?.detail ?? "Failed to save report.";
+        const msg = readApiErrorMessage(json, "Failed to save report.");
         throw new Error(String(msg));
       }
       setSaveReportLabel("");
       await loadReports();
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to save report.");
+    } catch (e: unknown) {
+      setError(readUnknownErrorMessage(e, "Failed to save report."));
     } finally {
       setSavingReport(false);
     }
@@ -189,12 +243,12 @@ export default function ProductWorkspacePanel({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = (json as any)?.detail?.error?.message ?? (json as any)?.detail ?? "Failed to load report JSON.";
+        const msg = readApiErrorMessage(json, "Failed to load report JSON.");
         throw new Error(String(msg));
       }
-      setSelectedReportJson((json as any)?.item ?? null);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load report JSON.");
+      setSelectedReportJson(readRecordField<Record<string, unknown>>(json, "item"));
+    } catch (e: unknown) {
+      setError(readUnknownErrorMessage(e, "Failed to load report JSON."));
     }
   }, [backendBase, wsId]);
 
@@ -266,7 +320,7 @@ export default function ProductWorkspacePanel({
       <div style={cardStyle}>
         <div style={sectionTitleStyle}>Saved Scenarios</div>
         {scenarios.length ? (
-          scenarios.map((s: any) => (
+          scenarios.map((s) => (
             <div key={String(s?.id ?? Math.random())} style={{ ...softCardStyle, padding: 10 }}>
               <div style={{ color: nx.text, fontSize: 12, fontWeight: 700 }}>{String(s?.label ?? "-")}</div>
               <div style={{ color: "#cbd5e1", fontSize: 12 }}>Episode: {String(s?.episode_id ?? "-")}</div>
@@ -281,7 +335,7 @@ export default function ProductWorkspacePanel({
       <div style={cardStyle}>
         <div style={sectionTitleStyle}>Saved Reports</div>
         {reports.length ? (
-          reports.map((r: any) => (
+          reports.map((r) => (
             <div key={String(r?.id ?? Math.random())} style={{ ...softCardStyle, padding: 10 }}>
               <div style={{ color: nx.text, fontSize: 12, fontWeight: 700 }}>{String(r?.label ?? "-")}</div>
               <div style={{ color: nx.text, fontSize: 12 }}>Episode: {String(r?.episode_id ?? "-")}</div>

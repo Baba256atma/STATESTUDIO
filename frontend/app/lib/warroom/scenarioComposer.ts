@@ -2,7 +2,7 @@ import { normalizeScenarioActionContract } from "../simulation/scenarioActionCon
 import { normalizeScenarioActionResponsePayload } from "../simulation/scenarioActionContract";
 import { resolveScannerPrimarySource } from "../simulation/propagationOverlay";
 import type { SceneJson } from "../sceneTypes";
-import type { ScenarioActionContract, ScenarioActionKind, ScenarioRequestedOutput } from "../simulation/scenarioActionTypes";
+import type { ScenarioActionKind, ScenarioRequestedOutput } from "../simulation/scenarioActionTypes";
 import type {
   ManualTriggerInput,
   Scenario,
@@ -95,15 +95,24 @@ export function resolveUnifiedTrigger(input: UnifiedTriggerInput): ScenarioActio
   }
 
   if (input.kind === "scanner") {
-    const payload = input.payload as any;
+    const payload =
+      input.payload && typeof input.payload === "object" ? (input.payload as Record<string, unknown>) : null;
+    const scannerPrimary =
+      payload?.scanner_primary && typeof payload.scanner_primary === "object"
+        ? (payload.scanner_primary as Record<string, unknown>)
+        : null;
+    const fragilityScan =
+      payload?.fragility_scan && typeof payload.fragility_scan === "object"
+        ? (payload.fragility_scan as Record<string, unknown>)
+        : null;
     const targetId =
       normalizeId(input.targetId) ??
-      normalizeId(payload?.scanner_primary_target_id) ??
-      normalizeId(payload?.scanner_primary?.id) ??
+      normalizeId(typeof payload?.scanner_primary_target_id === "string" ? payload.scanner_primary_target_id : null) ??
+      normalizeId(typeof scannerPrimary?.id === "string" ? scannerPrimary.id : null) ??
       null;
     if (!targetId) return null;
     const intensity = clamp01(
-      Number(payload?.fragility_score ?? payload?.fragility_scan?.fragility_score ?? 0.66),
+      Number(payload?.fragility_score ?? fragilityScan?.fragility_score ?? 0.66),
       0.66
     );
     return {

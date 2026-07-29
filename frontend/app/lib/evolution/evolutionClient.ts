@@ -4,17 +4,13 @@ import { apiBase } from "../apiBase";
 import { fetchJson } from "../api/fetchJson";
 import type { RecentMemoryState, EvolutionState, ScenarioMemoryRecord } from "./evolutionTypes";
 
-function clamp01(value: unknown): number | null {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return null;
-  if (numeric <= 0) return 0;
-  if (numeric >= 1) return 1;
-  return numeric;
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
 function normalizeRecentMemory(payload: unknown): RecentMemoryState {
-  const raw = payload && typeof payload === "object" ? (payload as Record<string, any>) : null;
-  const memory = raw?.memory && typeof raw.memory === "object" ? raw.memory : raw;
+  const raw = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+  const memory = asRecord(raw?.memory) ?? raw;
   return {
     scenario_records: Array.isArray(memory?.scenario_records) ? memory.scenario_records : [],
     strategy_records: Array.isArray(memory?.strategy_records) ? memory.strategy_records : [],
@@ -23,16 +19,17 @@ function normalizeRecentMemory(payload: unknown): RecentMemoryState {
 }
 
 function normalizeEvolutionState(payload: unknown): EvolutionState | null {
-  const raw = payload && typeof payload === "object" ? (payload as Record<string, any>) : null;
-  const evo = raw?.evolution && typeof raw.evolution === "object" ? raw.evolution : raw;
-  if (!evo || typeof evo !== "object") return null;
+  const raw = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+  const evo = asRecord(raw?.evolution) ?? raw;
+  if (!evo) return null;
+  const summary = asRecord(evo.summary);
   return {
     active: evo.active !== false,
     learning_signals: Array.isArray(evo.learning_signals) ? evo.learning_signals : [],
     policy_adjustments: Array.isArray(evo.policy_adjustments) ? evo.policy_adjustments : [],
     summary: {
-      headline: typeof evo?.summary?.headline === "string" ? evo.summary.headline : "Evolution state ready.",
-      explanation: typeof evo?.summary?.explanation === "string" ? evo.summary.explanation : "",
+      headline: typeof summary?.headline === "string" ? summary.headline : "Evolution state ready.",
+      explanation: typeof summary?.explanation === "string" ? summary.explanation : "",
     },
   };
 }
@@ -73,8 +70,11 @@ export async function updateObservedOutcome(args: {
       timeoutMs: 9000,
       retryNetworkErrors: true,
     });
-    const outcome = response && typeof response === "object" ? (response as any).outcome : null;
-    return outcome ?? null;
+    const outcome =
+      response && typeof response === "object"
+        ? (response as Record<string, unknown>).outcome ?? null
+        : null;
+    return (outcome as ScenarioMemoryRecord | null) ?? null;
   } catch {
     return null;
   }

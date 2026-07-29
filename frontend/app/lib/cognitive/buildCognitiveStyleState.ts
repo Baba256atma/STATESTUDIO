@@ -7,14 +7,26 @@ import { buildCognitiveDecisionView } from "./buildCognitiveDecisionView";
 import { selectDefaultCognitiveStyle } from "./selectDefaultCognitiveStyle";
 import type { CognitiveStyle, CognitiveStyleState } from "./cognitiveStyleTypes";
 
+import type { DecisionExecutionResult } from "../executive/decisionExecutionTypes";
+import type { DecisionMemoryEntry } from "../decision/memory/decisionMemoryTypes";
+import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes";
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readDecisionResult(value: DecisionExecutionResult | Record<string, unknown> | null | undefined): DecisionExecutionResult | null {
+  return value && typeof value === "object" ? (value as DecisionExecutionResult) : null;
+}
+
 type BuildCognitiveStyleStateInput = {
   activeStyle?: CognitiveStyle | null;
   activeMode?: string | null;
   rightPanelView?: string | null;
-  responseData?: any | null;
-  canonicalRecommendation?: any | null;
-  decisionResult?: any | null;
-  memoryEntries?: any[];
+  responseData?: Record<string, unknown> | null;
+  canonicalRecommendation?: CanonicalRecommendation | null;
+  decisionResult?: DecisionExecutionResult | Record<string, unknown> | null;
+  memoryEntries?: DecisionMemoryEntry[];
 };
 
 export function buildCognitiveStyleState(input: BuildCognitiveStyleStateInput): CognitiveStyleState {
@@ -25,16 +37,18 @@ export function buildCognitiveStyleState(input: BuildCognitiveStyleStateInput): 
     canonicalRecommendation: input.canonicalRecommendation ?? null,
   });
   const style = input.activeStyle ?? defaultSelection.style;
+  const responseData = input.responseData ?? null;
+  const decisionResult = readDecisionResult(input.decisionResult);
   const confidenceModel = buildDecisionConfidenceModel({
     canonicalRecommendation: input.canonicalRecommendation ?? null,
-    responseData: input.responseData ?? null,
-    decisionResult: input.decisionResult ?? null,
+    responseData,
+    decisionResult,
   });
   const compareModel = buildComparePanelModel({
     canonicalRecommendation: input.canonicalRecommendation ?? null,
-    decisionResult: input.decisionResult ?? null,
-    strategicAdvice: input.responseData?.strategic_advice ?? null,
-    responseData: input.responseData ?? null,
+    decisionResult,
+    strategicAdvice: asRecord(responseData?.strategic_advice),
+    responseData,
   });
   const patternIntelligence = buildDecisionPatternIntelligence({
     memoryEntries: input.memoryEntries ?? [],
@@ -45,12 +59,12 @@ export function buildCognitiveStyleState(input: BuildCognitiveStyleStateInput): 
     canonicalRecommendation: input.canonicalRecommendation ?? null,
   });
   const metaDecision = buildMetaDecisionState({
-    reasoning: input.responseData?.ai_reasoning ?? null,
-    simulation: input.responseData?.decision_simulation ?? null,
-    comparison: input.responseData?.decision_comparison ?? input.responseData?.comparison ?? null,
+    reasoning: asRecord(responseData?.ai_reasoning),
+    simulation: asRecord(responseData?.decision_simulation),
+    comparison: asRecord(responseData?.decision_comparison) ?? asRecord(responseData?.comparison),
     canonicalRecommendation: input.canonicalRecommendation ?? null,
     calibration: null,
-    responseData: input.responseData ?? null,
+    responseData,
     memoryEntries: input.memoryEntries ?? [],
   });
 
@@ -62,10 +76,10 @@ export function buildCognitiveStyleState(input: BuildCognitiveStyleStateInput): 
     view: buildCognitiveDecisionView({
       style,
       canonicalRecommendation: input.canonicalRecommendation ?? null,
-      executiveSummary: input.responseData?.executive_summary_surface ?? null,
+      executiveSummary: asRecord(responseData?.executive_summary_surface),
       confidenceModel,
       compareModel,
-      simulation: input.responseData?.decision_simulation ?? null,
+      simulation: asRecord(responseData?.decision_simulation),
       patternIntelligence,
       strategicLearning,
       metaDecision,

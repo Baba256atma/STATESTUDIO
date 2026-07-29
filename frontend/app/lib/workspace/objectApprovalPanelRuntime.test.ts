@@ -10,16 +10,7 @@ import {
   OBJECT_APPROVAL_CONTRACT,
   OBJECT_APPROVAL_TAGS,
 } from "./objectApprovalContract.ts";
-import {
-  approveObjectApprovalCandidate,
-  buildObjectApprovalPanelSnapshot,
-  createSelectedApprovedObjects,
-  listQueuedApprovedWorkspaceObjects,
-  rejectObjectApprovalCandidate,
-  renameObjectApprovalCandidate,
-  resetObjectApprovalPanelForTests,
-  syncObjectApprovalRecordsFromCandidates,
-} from "./objectApprovalPanelRuntime.ts";
+import { approveObjectApprovalCandidate, buildObjectApprovalPanelSnapshot, createSelectedApprovedObjects, rejectObjectApprovalCandidate, renameObjectApprovalCandidate, resetObjectApprovalPanelForTests, syncObjectApprovalRecordsFromCandidates } from "./objectApprovalPanelRuntime.ts";
 import {
   discoverAndSaveCandidateObjectsFromClassification,
   resetWorkspaceCandidateObjectsForTests,

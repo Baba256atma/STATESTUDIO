@@ -1,5 +1,13 @@
 import { normalizePropagationOverlay } from "./propagationOverlay";
-import type { ScenarioActionContract, ScenarioActionIntent, ScenarioActionResponsePayload, DecisionPathResult, ScenarioOverlayPackage } from "./scenarioActionTypes";
+import type {
+  ScenarioActionContract,
+  ScenarioActionIntent,
+  ScenarioActionResponsePayload,
+  DecisionPathResult,
+  ScenarioOverlayPackage,
+  DecisionPathNode,
+  DecisionPathEdge,
+} from "./scenarioActionTypes";
 
 function normalizeId(value: string | null | undefined): string | null {
   const next = String(value ?? "").trim();
@@ -11,6 +19,54 @@ function clamp01(value: number): number {
   if (value <= 0) return 0;
   if (value >= 1) return 1;
   return value;
+}
+
+function readRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readSimulationBranch(payload: Record<string, unknown>): Record<string, unknown> | null {
+  return readRecord(payload.simulation);
+}
+
+function readDecisionPathCandidate(payload: Record<string, unknown>): Record<string, unknown> | null {
+  const simulation = readSimulationBranch(payload);
+  const candidate = simulation?.decision_path ?? payload.decision_path ?? null;
+  return readRecord(candidate);
+}
+
+function readScenarioActionCandidate(payload: Record<string, unknown>): Partial<ScenarioActionContract> | null {
+  const simulation = readSimulationBranch(payload);
+  const candidate = simulation?.scenario_action ?? payload.scenario_action ?? null;
+  return readRecord(candidate) as Partial<ScenarioActionContract> | null;
+}
+
+function readDecisionPathNodeRole(value: unknown): DecisionPathNode["role"] {
+  const role = String(value ?? "context");
+  if (
+    role === "source" ||
+    role === "impacted" ||
+    role === "protected" ||
+    role === "leverage" ||
+    role === "bottleneck" ||
+    role === "destination" ||
+    role === "context"
+  ) {
+    return role;
+  }
+  return "context";
+}
+
+function readDecisionPathEdgeRole(value: unknown): DecisionPathEdge["path_role"] | undefined {
+  if (
+    value === "primary_path" ||
+    value === "secondary_path" ||
+    value === "tradeoff_path" ||
+    value === "feedback_path"
+  ) {
+    return value;
+  }
+  return undefined;
 }
 
 export function buildScenarioActionIntent(
@@ -71,103 +127,103 @@ export function normalizeScenarioActionContract(
 }
 
 export function normalizeDecisionPathResult(payload: unknown): DecisionPathResult | null {
-  const raw = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+  const raw = readRecord(payload);
   if (!raw) return null;
-  const candidate =
-    (raw.simulation as any)?.decision_path ??
-    (raw.decision_path as any) ??
-    null;
-  if (!candidate || typeof candidate !== "object") return null;
-  const nodes = Array.isArray((candidate as any).nodes)
-    ? (candidate as any).nodes
-        .map((node: any) => {
-          const objectId = normalizeId(node?.object_id);
+  const candidate = readDecisionPathCandidate(raw);
+  if (!candidate) return null;
+
+  const nodes = Array.isArray(candidate.nodes)
+    ? candidate.nodes
+        .map((node): DecisionPathNode | null => {
+          const record = readRecord(node);
+          if (!record) return null;
+          const objectId = normalizeId(typeof record.object_id === "string" ? record.object_id : null);
           if (!objectId) return null;
+          const direction =
+            record.direction === "upstream" || record.direction === "downstream" || record.direction === "mixed"
+              ? record.direction
+              : undefined;
           return {
             object_id: objectId,
-            role: (node?.role ?? "context") as DecisionPathResult["nodes"][number]["role"],
-            depth: Math.max(0, Number(node?.depth ?? 0)),
-            strength: clamp01(Number(node?.strength ?? 0)),
-            direction:
-              node?.direction === "upstream" || node?.direction === "downstream" || node?.direction === "mixed"
-                ? node.direction
-                : undefined,
-            rationale: typeof node?.rationale === "string" ? node.rationale : null,
+            role: readDecisionPathNodeRole(record.role),
+            depth: Math.max(0, Number(record.depth ?? 0)),
+            strength: clamp01(Number(record.strength ?? 0)),
+            direction,
+            rationale: typeof record.rationale === "string" ? record.rationale : null,
           };
         })
-        .filter(Boolean)
+        .filter((node): node is DecisionPathNode => node !== null)
     : [];
-  const edges = Array.isArray((candidate as any).edges)
-    ? (candidate as any).edges
-        .map((edge: any) => {
-          const fromId = normalizeId(edge?.from_id);
-          const toId = normalizeId(edge?.to_id);
+
+  const edges = Array.isArray(candidate.edges)
+    ? candidate.edges
+        .map((edge): DecisionPathEdge | null => {
+          const record = readRecord(edge);
+          if (!record) return null;
+          const fromId = normalizeId(typeof record.from_id === "string" ? record.from_id : null);
+          const toId = normalizeId(typeof record.to_id === "string" ? record.to_id : null);
           if (!fromId || !toId) return null;
           return {
             from_id: fromId,
             to_id: toId,
-            depth: Math.max(1, Number(edge?.depth ?? 1)),
-            strength: clamp01(Number(edge?.strength ?? 0)),
-            path_role:
-              edge?.path_role === "primary_path" ||
-              edge?.path_role === "secondary_path" ||
-              edge?.path_role === "tradeoff_path" ||
-              edge?.path_role === "feedback_path"
-                ? edge.path_role
-                : undefined,
+            depth: Math.max(1, Number(record.depth ?? 1)),
+            strength: clamp01(Number(record.strength ?? 0)),
+            path_role: readDecisionPathEdgeRole(record.path_role),
           };
         })
-        .filter(Boolean)
+        .filter((edge): edge is DecisionPathEdge => edge !== null)
     : [];
-  const sourceObjectId = normalizeId((candidate as any).source_object_id);
+
+  const sourceObjectId = normalizeId(
+    typeof candidate.source_object_id === "string" ? candidate.source_object_id : null
+  );
   if (!sourceObjectId && nodes.length === 0 && edges.length === 0) return null;
+
+  const metaRecord = readRecord(candidate.meta) ?? {};
   return {
-    active: (candidate as any).active !== false && (!!sourceObjectId || nodes.length > 0),
+    active: candidate.active !== false && (!!sourceObjectId || nodes.length > 0),
     source_object_id: sourceObjectId,
-    nodes: nodes as DecisionPathResult["nodes"],
-    edges: edges as DecisionPathResult["edges"],
+    nodes,
+    edges,
     meta: {
-      mode: typeof (candidate as any)?.meta?.mode === "string" ? (candidate as any).meta.mode : undefined,
-      interpretation:
-        typeof (candidate as any)?.meta?.interpretation === "string"
-          ? (candidate as any).meta.interpretation
-          : undefined,
-      engine_version:
-        typeof (candidate as any)?.meta?.engine_version === "string"
-          ? (candidate as any).meta.engine_version
-          : undefined,
-      action_id:
-        typeof (candidate as any)?.meta?.action_id === "string"
-          ? (candidate as any).meta.action_id
-          : undefined,
-      action_kind:
-        typeof (candidate as any)?.meta?.action_kind === "string"
-          ? (candidate as any).meta.action_kind
-          : undefined,
+      mode: typeof metaRecord.mode === "string" ? metaRecord.mode : undefined,
+      interpretation: typeof metaRecord.interpretation === "string" ? metaRecord.interpretation : undefined,
+      engine_version: typeof metaRecord.engine_version === "string" ? metaRecord.engine_version : undefined,
+      action_id: typeof metaRecord.action_id === "string" ? metaRecord.action_id : undefined,
+      action_kind: typeof metaRecord.action_kind === "string" ? metaRecord.action_kind : undefined,
     },
   };
 }
 
 export function normalizeScenarioActionResponsePayload(payload: unknown): ScenarioActionResponsePayload | null {
-  const raw = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+  const raw = readRecord(payload);
   if (!raw) return null;
   const propagation = normalizePropagationOverlay(payload);
   const decisionPath = normalizeDecisionPathResult(payload);
-  const scenarioAction = normalizeScenarioActionContract(
-    ((raw.simulation as any)?.scenario_action ?? raw.scenario_action ?? null) as Partial<ScenarioActionContract> | null
-  );
-  const analysisRaw = ((raw.analysis as any) ?? null) as Record<string, unknown> | null;
+  const scenarioAction = normalizeScenarioActionContract(readScenarioActionCandidate(raw));
+  const analysisRaw = readRecord(raw.analysis);
   const analysis =
     analysisRaw && (typeof analysisRaw.summary === "string" || Array.isArray(analysisRaw.advice))
       ? {
           summary: typeof analysisRaw.summary === "string" ? analysisRaw.summary : null,
           advice: Array.isArray(analysisRaw.advice)
             ? analysisRaw.advice
-                .map((item: any) => ({
-                  label: typeof item?.label === "string" ? item.label : typeof item?.title === "string" ? item.title : "",
-                  rationale: typeof item?.rationale === "string" ? item.rationale : null,
-                }))
-                .filter((item) => item.label)
+                .map((item) => {
+                  const record = readRecord(item);
+                  if (!record) return null;
+                  const label =
+                    typeof record.label === "string"
+                      ? record.label
+                      : typeof record.title === "string"
+                      ? record.title
+                      : "";
+                  if (!label) return null;
+                  return {
+                    label,
+                    rationale: typeof record.rationale === "string" ? record.rationale : null,
+                  };
+                })
+                .filter((item): item is { label: string; rationale: string | null } => item !== null)
             : [],
         }
       : null;

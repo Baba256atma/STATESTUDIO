@@ -13,7 +13,7 @@ import {
 } from "./businessEventEngineTypes.ts";
 
 const publishedEvents = new Map<BusinessEventId, BusinessEngineEvent>();
-const revisionHistory = new Map<BusinessEventId, BusinessEngineEvent[]>();
+const revisionHistory = new Map<BusinessEventId, readonly BusinessEngineEvent[]>();
 const workspaceIndex = new Map<BusinessWorkspaceId, Set<BusinessEventId>>();
 const workspaceSequenceCounters = new Map<BusinessWorkspaceId, number>();
 

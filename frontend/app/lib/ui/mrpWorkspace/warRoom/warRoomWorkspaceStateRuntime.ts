@@ -4,24 +4,7 @@
 
 import { hydrateWarRoomStateOnMount } from "./warRoomStateRuntime.ts";
 
-import {
-  DEFAULT_ACTION_PLAN,
-  DEFAULT_ACTIVE_DECISION,
-  DEFAULT_DECISION_STATUS,
-  DEFAULT_STRATEGY_SUMMARY,
-  DEFAULT_WATCH_LIST,
-  DEFAULT_WAR_ROOM_READY_STATE,
-  WAR_ROOM_EMPTY_DETAIL,
-  WAR_ROOM_EMPTY_HEADLINE,
-  WAR_ROOM_LOADING_DETAIL,
-  WAR_ROOM_LOADING_HEADLINE,
-  WAR_ROOM_RUNTIME_TAG,
-  WAR_ROOM_STATE_TAG,
-  type WarRoomFieldSnapshot,
-  type WarRoomWorkspaceState,
-  type WarRoomWorkspaceStatePhase,
-  type WarRoomWorkspaceStatePublishResult,
-} from "./warRoomWorkspaceStateContract.ts";
+import { DEFAULT_WAR_ROOM_READY_STATE, WAR_ROOM_EMPTY_DETAIL, WAR_ROOM_EMPTY_HEADLINE, WAR_ROOM_LOADING_DETAIL, WAR_ROOM_LOADING_HEADLINE, WAR_ROOM_RUNTIME_TAG, WAR_ROOM_STATE_TAG, type WarRoomFieldSnapshot, type WarRoomWorkspaceState, type WarRoomWorkspaceStatePhase, type WarRoomWorkspaceStatePublishResult } from "./warRoomWorkspaceStateContract.ts";
 import {
   DEFAULT_WAR_ROOM_ACTION_PLAN_LAYER,
   type WarRoomActionPlanLayer,

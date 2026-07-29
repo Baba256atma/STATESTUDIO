@@ -9,12 +9,7 @@ import * as freeze from "./projectPlatformFreezeIndex.ts";
 import {
   ProjectExecutionIdentity,
 } from "./projectExecutionIndex.ts";
-import {
-  ExecutiveProjectExecutionPlatform,
-  ExecutiveProjectExecutionPlatformPublicRegistry,
-  ExecutiveProjectExecutionPlatformReleaseSummary,
-  validateProjectPlatformIndex,
-} from "./projectPlatformIndex.ts";
+import { ExecutiveProjectExecutionPlatformPublicRegistry, ExecutiveProjectExecutionPlatformReleaseSummary, validateProjectPlatformIndex } from "./projectPlatformIndex.ts";
 import {
   buildProjectPlatformCertificationManifest,
   getProjectPlatformCertificationStatus,

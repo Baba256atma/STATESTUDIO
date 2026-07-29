@@ -53,10 +53,9 @@ export function validateExecutiveMemoryRecordJson(json: string): ExecutiveMemory
       validation: Object.freeze({
         valid: false,
         issues: Object.freeze([
-          Object.freeze({ code: "invalid_json", message: "JSON payload is malformed." }),
-        ]),
-      }),
-      compatibility: Object.freeze({ valid: false, issues: Object.freeze([]) }),
+          Object.freeze({ code: "invalid_json", message: "JSON payload is malformed.", readOnly: true as const }),
+        ]), readOnly: true as const }),
+      compatibility: Object.freeze({ valid: false, issues: Object.freeze([]), readOnly: true as const }),
       parsed: false,
       readOnly: true as const,
     });
@@ -69,10 +68,9 @@ export function validateExecutiveMemoryRecordJson(json: string): ExecutiveMemory
       validation: Object.freeze({
         valid: false,
         issues: Object.freeze([
-          Object.freeze({ code: "invalid_root", message: "JSON root must be an object." }),
-        ]),
-      }),
-      compatibility: Object.freeze({ valid: false, issues: Object.freeze([]) }),
+          Object.freeze({ code: "invalid_root", message: "JSON root must be an object.", readOnly: true as const }),
+        ]), readOnly: true as const }),
+      compatibility: Object.freeze({ valid: false, issues: Object.freeze([]), readOnly: true as const }),
       parsed: true,
       readOnly: true as const,
     });
@@ -82,7 +80,7 @@ export function validateExecutiveMemoryRecordJson(json: string): ExecutiveMemory
   const validation = validateExecutiveMemoryRecordShape(candidate);
   const compatibility = validation.valid
     ? validateExecutiveMemoryRecordBackwardCompatibility(candidate)
-    : Object.freeze({ valid: false, issues: Object.freeze([]) });
+    : Object.freeze({ valid: false, issues: Object.freeze([]), readOnly: true as const });
 
   return Object.freeze({
     valid: validation.valid && compatibility.valid,

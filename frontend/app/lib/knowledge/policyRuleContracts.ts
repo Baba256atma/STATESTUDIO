@@ -5,29 +5,7 @@
 import { STAGE_GLOBAL_FORBIDDEN_PATTERNS } from "../stage/stageArchitectureContract.ts";
 import type { StageManifest } from "../stage/stageArchitectureTypes.ts";
 import { validateStageManifest } from "../stage/stageArchitectureGuards.ts";
-import {
-  COMPLIANCE_TAG_KEYS,
-  POLICY_CATEGORY_KEYS,
-  POLICY_EXTENSION_POINT_KEYS,
-  POLICY_GROUP_KEYS,
-  POLICY_KEYS,
-  POLICY_RULE_BASE_ARCHITECTURE_VERSION,
-  POLICY_RULE_BASE_CONTRACT_VERSION,
-  POLICY_RULE_BASE_FORBIDDEN_PATTERNS,
-  POLICY_RULE_BASE_FUTURE_PHASE_KEYS,
-  POLICY_RULE_BASE_GOVERNANCE_RULES,
-  POLICY_RULE_BASE_ID,
-  POLICY_RULE_BASE_MUST_NOT_OWN,
-  POLICY_RULE_BASE_NAME,
-  POLICY_RULE_BASE_NAMESPACE,
-  POLICY_RULE_BASE_PRINCIPLES,
-  POLICY_RULE_BASE_PUBLIC_API_REGISTRY,
-  RULE_PRIORITY_KEYS,
-  RULE_SCOPE_KEYS,
-  RULE_SEVERITY_KEYS,
-  RULE_STATUS_KEYS,
-  RULE_TYPE_KEYS,
-} from "./policyRuleCatalog.ts";
+import { COMPLIANCE_TAG_KEYS, POLICY_CATEGORY_KEYS, POLICY_KEYS, POLICY_RULE_BASE_ARCHITECTURE_VERSION, POLICY_RULE_BASE_CONTRACT_VERSION, POLICY_RULE_BASE_FORBIDDEN_PATTERNS, POLICY_RULE_BASE_FUTURE_PHASE_KEYS, POLICY_RULE_BASE_GOVERNANCE_RULES, POLICY_RULE_BASE_ID, POLICY_RULE_BASE_MUST_NOT_OWN, POLICY_RULE_BASE_NAME, POLICY_RULE_BASE_NAMESPACE, POLICY_RULE_BASE_PRINCIPLES, POLICY_RULE_BASE_PUBLIC_API_REGISTRY, RULE_TYPE_KEYS } from "./policyRuleCatalog.ts";
 import {
   getPolicyRuleBaseSnapshot,
   initializePolicyRuleBase,
@@ -170,6 +148,7 @@ export function resolveBusinessRuleExample(timestamp: string): BusinessRule {
 }
 
 export function resolveRuleConditionExample(timestamp: string): RuleCondition {
+  void timestamp;
   return Object.freeze({
     conditionId: "rule-condition-example-001",
     description: "Expenditure exceeds approved threshold (metadata description only).",
@@ -178,6 +157,7 @@ export function resolveRuleConditionExample(timestamp: string): RuleCondition {
 }
 
 export function resolveRuleActionExample(timestamp: string): RuleAction {
+  void timestamp;
   return Object.freeze({
     actionId: "rule-action-example-001",
     description: "Require secondary approval (metadata description only).",
@@ -186,6 +166,7 @@ export function resolveRuleActionExample(timestamp: string): RuleAction {
 }
 
 export function resolveRuleExceptionExample(timestamp: string): RuleException {
+  void timestamp;
   return Object.freeze({
     exceptionId: "rule-exception-example-001",
     description: "Emergency procurement exception (metadata description only).",

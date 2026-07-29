@@ -19,18 +19,7 @@ import {
   EXECUTIVE_STRATEGIC_OBJECTIVE_REGISTRY,
   listExecutiveStrategicObjectives,
 } from "./executiveStrategicObjectiveIndex.ts";
-import {
-  buildExecutiveStrategicInitiative,
-  EXECUTIVE_STRATEGIC_INITIATIVE_MILESTONES,
-  EXECUTIVE_STRATEGIC_INITIATIVE_REGISTRY,
-  EXECUTIVE_STRATEGIC_INITIATIVE_RELATIONSHIPS,
-  EXECUTIVE_STRATEGIC_INITIATIVES,
-  ExecutiveStrategicInitiativesPlatform,
-  getExecutiveStrategicInitiativesManifest,
-  listExecutiveStrategicInitiatives,
-  listExecutiveStrategicInitiativesPublicApis,
-  validateExecutiveStrategicInitiative,
-} from "./executiveStrategicInitiativeIndex.ts";
+import { buildExecutiveStrategicInitiative, EXECUTIVE_STRATEGIC_INITIATIVE_MILESTONES, EXECUTIVE_STRATEGIC_INITIATIVE_REGISTRY, EXECUTIVE_STRATEGIC_INITIATIVE_RELATIONSHIPS, EXECUTIVE_STRATEGIC_INITIATIVES, ExecutiveStrategicInitiativesPlatform, getExecutiveStrategicInitiativesManifest, validateExecutiveStrategicInitiative } from "./executiveStrategicInitiativeIndex.ts";
 import type { ExecutiveStrategicInitiativeRegistry } from "./executiveStrategicInitiativeTypes.ts";
 
 test("platform identity", () => {

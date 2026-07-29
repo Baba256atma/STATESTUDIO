@@ -113,7 +113,7 @@ export function resolveConfidenceFlags(input: Readonly<{
   const blockingFactorCount = input.factors.filter((factor) => factor.blocking).length;
   const readinessFactor = input.factors.find((factor) => factor.factorKey === "readiness");
   const readyForReasoning =
-    readinessFactor?.rawScore >= 75 && blockingFactorCount === 0 && input.level !== "unknown";
+    (readinessFactor?.rawScore ?? 0) >= 75 && blockingFactorCount === 0 && input.level !== "unknown";
 
   return Object.freeze({
     highConfidence: input.level === "very_high" || input.level === "high",

@@ -2,13 +2,7 @@
  * APP-4:10 — Executive Memory Lifecycle statistics.
  */
 
-import {
-  getExecutiveMemoryVersionRecords,
-  listExecutiveMemoryLifecycles,
-  listExecutiveMemoryMergeOperations,
-  listExecutiveMemorySplitOperations,
-  listExecutiveMemorySupersedeOperations,
-} from "./executiveMemoryLifecycleRegistry.ts";
+import { getExecutiveMemoryVersionRecords, listExecutiveMemoryLifecycles } from "./executiveMemoryLifecycleRegistry.ts";
 import { inspectMemoryIntegrity } from "./executiveMemoryLifecycleIntegrityInspector.ts";
 import type { ExecutiveMemoryLifecycleStatistics } from "./executiveMemoryLifecycleTypes.ts";
 

@@ -1,3 +1,14 @@
+import type { NexoraSystemFragilityScannerResult } from "../scanner/systemFragilityScannerEngine";
+import type {
+  NexoraAutonomousExplorationResult,
+  NexoraRankedScenario,
+} from "../simulation/autonomousScenarioExploration";
+import type {
+  NexoraSimulationKpiImpact,
+  NexoraSimulationObjectImpact,
+  NexoraSimulationRuntimeInput,
+} from "../simulation/domainSimulationScenarioEngine";
+
 export type NexoraExecutiveSeverity =
   | "low"
   | "moderate"
@@ -127,7 +138,13 @@ function compareRecommendations(a: NexoraExecutiveRecommendation, b: NexoraExecu
   return a.id.localeCompare(b.id);
 }
 
-function normalizeObjectImpacts(objectImpacts: any[]): Array<{
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function normalizeObjectImpacts(objectImpacts: unknown[]): Array<{
   objectId: string;
   beforeRisk: number;
   afterRisk: number;
@@ -137,19 +154,22 @@ function normalizeObjectImpacts(objectImpacts: any[]): Array<{
   afterStability: number;
   notes: string[];
 }> {
-  return (Array.isArray(objectImpacts) ? objectImpacts : []).map((impact) => ({
-    objectId: String(impact?.objectId ?? "").trim(),
-    beforeRisk: safeNumber(impact?.beforeRisk, 0),
-    afterRisk: safeNumber(impact?.afterRisk, 0),
-    beforeActivity: safeNumber(impact?.beforeActivity, 0),
-    afterActivity: safeNumber(impact?.afterActivity, 0),
-    beforeStability: safeNumber(impact?.beforeStability, 0),
-    afterStability: safeNumber(impact?.afterStability, 0),
-    notes: Array.isArray(impact?.notes) ? uniq(impact.notes.map((value: unknown) => String(value))) : [],
-  }));
+  return (Array.isArray(objectImpacts) ? objectImpacts : []).map((impact) => {
+    const entry = readRecord(impact);
+    return {
+    objectId: String(entry.objectId ?? "").trim(),
+    beforeRisk: safeNumber(entry.beforeRisk, 0),
+    afterRisk: safeNumber(entry.afterRisk, 0),
+    beforeActivity: safeNumber(entry.beforeActivity, 0),
+    afterActivity: safeNumber(entry.afterActivity, 0),
+    beforeStability: safeNumber(entry.beforeStability, 0),
+    afterStability: safeNumber(entry.afterStability, 0),
+    notes: Array.isArray(entry.notes) ? uniq(entry.notes.map((value: unknown) => String(value))) : [],
+  };
+  });
 }
 
-function normalizeKpiImpacts(kpiImpacts: any[]): Array<{
+function normalizeKpiImpacts(kpiImpacts: unknown[]): Array<{
   id: string;
   label: string;
   before: number;
@@ -158,28 +178,41 @@ function normalizeKpiImpacts(kpiImpacts: any[]): Array<{
   trend: unknown;
   notes: string[];
 }> {
-  return (Array.isArray(kpiImpacts) ? kpiImpacts : []).map((impact) => ({
-    id: String(impact?.id ?? "").trim(),
-    label: String(impact?.label ?? impact?.id ?? "").trim(),
-    before: safeNumber(impact?.before, 0),
-    after: safeNumber(impact?.after, 0),
-    delta: safeNumber(impact?.delta, safeNumber(impact?.after, 0) - safeNumber(impact?.before, 0)),
-    trend: impact?.trend ?? "stable",
-    notes: Array.isArray(impact?.notes) ? uniq(impact.notes.map((value: unknown) => String(value))) : [],
-  }));
+  return (Array.isArray(kpiImpacts) ? kpiImpacts : []).map((impact) => {
+    const entry = readRecord(impact);
+    return {
+    id: String(entry.id ?? "").trim(),
+    label: String(entry.label ?? entry.id ?? "").trim(),
+    before: safeNumber(entry.before, 0),
+    after: safeNumber(entry.after, 0),
+    delta: safeNumber(entry.delta, safeNumber(entry.after, 0) - safeNumber(entry.before, 0)),
+    trend: entry.trend ?? "stable",
+    notes: Array.isArray(entry.notes) ? uniq(entry.notes.map((value: unknown) => String(value))) : [],
+  };
+  });
 }
 
-function normalizeRuntimeModel(runtimeModel?: any): any {
+type NormalizedRuntimeModel = {
+  objects: unknown[];
+  relations: unknown[];
+  loops: Array<Record<string, unknown>>;
+  kpis: unknown[];
+};
+
+function normalizeRuntimeModel(runtimeModel?: unknown): NormalizedRuntimeModel {
+  const model = readRecord(runtimeModel);
   return {
-    objects: Array.isArray(runtimeModel?.objects) ? runtimeModel.objects : [],
-    relations: Array.isArray(runtimeModel?.relations) ? runtimeModel.relations : [],
-    loops: Array.isArray(runtimeModel?.loops) ? runtimeModel.loops : [],
-    kpis: Array.isArray(runtimeModel?.kpis) ? runtimeModel.kpis : [],
+    objects: Array.isArray(model.objects) ? model.objects : [],
+    relations: Array.isArray(model.relations) ? model.relations : [],
+    loops: Array.isArray(model.loops)
+      ? model.loops.map((loop) => readRecord(loop))
+      : [],
+    kpis: Array.isArray(model.kpis) ? model.kpis : [],
   };
 }
 
 export function detectKpiDegradationInsights(
-  kpiImpacts: any[]
+  kpiImpacts: NexoraSimulationKpiImpact[] | unknown[]
 ): NexoraExecutiveInsight[] {
   return normalizeKpiImpacts(kpiImpacts)
     .filter((impact) => impact.delta < 0)
@@ -196,7 +229,7 @@ export function detectKpiDegradationInsights(
 }
 
 export function detectRiskDriverInsights(
-  objectImpacts: any[]
+  objectImpacts: NexoraSimulationObjectImpact[] | unknown[]
 ): NexoraExecutiveInsight[] {
   return normalizeObjectImpacts(objectImpacts)
     .map((impact) => ({
@@ -218,19 +251,19 @@ export function detectRiskDriverInsights(
 }
 
 export function detectLoopAmplificationInsights(
-  runtimeModel: any
+  runtimeModel: NexoraSimulationRuntimeInput | NormalizedRuntimeModel | unknown
 ): NexoraExecutiveInsight[] {
   const normalizedRuntime = normalizeRuntimeModel(runtimeModel);
   return normalizedRuntime.loops
-    .map((loop: any) => ({
-      id: String(loop?.id ?? "").trim(),
-      label: String(loop?.label ?? loop?.id ?? "").trim(),
-      loopType: String(loop?.loopType ?? "").trim(),
-      intensity: safeNumber(loop?.intensity, 0),
+    .map((loop) => ({
+      id: String(loop.id ?? "").trim(),
+      label: String(loop.label ?? loop.id ?? "").trim(),
+      loopType: String(loop.loopType ?? "").trim(),
+      intensity: safeNumber(loop.intensity, 0),
     }))
-    .filter((loop: any) => loop.id && loop.intensity >= 0.65 && (loop.loopType === "reinforcing" || loop.loopType === "pressure" || loop.loopType === "risk_cascade"))
-    .sort((a: any, b: any) => b.intensity - a.intensity || a.id.localeCompare(b.id))
-    .map((loop: any) => ({
+    .filter((loop) => loop.id && loop.intensity >= 0.65 && (loop.loopType === "reinforcing" || loop.loopType === "pressure" || loop.loopType === "risk_cascade"))
+    .sort((a, b) => b.intensity - a.intensity || a.id.localeCompare(b.id))
+    .map((loop) => ({
       id: `loop_amplification_${loop.id}`,
       label: `${loop.label || loop.id} amplification`,
       type: "loop_amplification",
@@ -242,7 +275,7 @@ export function detectLoopAmplificationInsights(
 }
 
 export function detectSystemInstabilityInsights(
-  objectImpacts: any[]
+  objectImpacts: NexoraSimulationObjectImpact[] | unknown[]
 ): NexoraExecutiveInsight[] {
   const impacts = normalizeObjectImpacts(objectImpacts);
   const unstableObjects = impacts.filter(
@@ -269,7 +302,7 @@ export function detectSystemInstabilityInsights(
 }
 
 export function detectStrategicOpportunityInsights(
-  kpiImpacts: any[]
+  kpiImpacts: NexoraSimulationKpiImpact[] | unknown[]
 ): NexoraExecutiveInsight[] {
   return normalizeKpiImpacts(kpiImpacts)
     .filter((impact) => impact.delta > 0.08)
@@ -285,14 +318,18 @@ export function detectStrategicOpportunityInsights(
     }));
 }
 
+type FragilityScanLike = Pick<NexoraSystemFragilityScannerResult, "findings"> | {
+  findings?: Array<Record<string, unknown>>;
+};
+
 export function detectExplorationInsights(
-  explorationResult?: any
+  explorationResult?: NexoraAutonomousExplorationResult | null
 ): NexoraExecutiveInsight[] {
   const rankedScenarios = Array.isArray(explorationResult?.rankedScenarios)
     ? explorationResult.rankedScenarios
     : [];
 
-  return rankedScenarios.slice(0, 2).map((scenario: any) => {
+  return rankedScenarios.slice(0, 2).map((scenario: NexoraRankedScenario) => {
     const goal = String(explorationResult?.goal ?? "general");
     const type: NexoraExecutiveInsightType =
       goal === "find_opportunity" || goal === "find_stability"
@@ -315,27 +352,27 @@ export function detectExplorationInsights(
 }
 
 export function detectFragilityScannerInsights(
-  fragilityScan?: any
+  fragilityScan?: FragilityScanLike | null
 ): NexoraExecutiveInsight[] {
   const topFindings = Array.isArray(fragilityScan?.findings) ? fragilityScan.findings.slice(0, 3) : [];
-  return topFindings.map((finding: any) => ({
-    id: `fragility_scan_${String(finding?.id ?? "finding")}`,
-    label: `${String(finding?.label ?? "Fragility finding")}`,
+  return topFindings.map((finding) => ({
+    id: `fragility_scan_${String(finding.id ?? "finding")}`,
+    label: `${String(finding.label ?? "Fragility finding")}`,
     type:
-      String(finding?.type ?? "") === "structural_imbalance"
+      String(finding.type ?? "") === "structural_imbalance"
         ? "system_instability"
-        : String(finding?.type ?? "") === "loop_fragility"
+        : String(finding.type ?? "") === "loop_fragility"
           ? "loop_amplification"
           : "system_pressure",
-    severity: severityFromMagnitude(safeNumber(finding?.score, 0)),
-    relatedObjectIds: Array.isArray(finding?.objectIds) ? finding.objectIds.map((value: unknown) => String(value)) : [],
-    relatedKpiIds: Array.isArray(finding?.kpiIds) ? finding.kpiIds.map((value: unknown) => String(value)) : [],
-    relatedLoopIds: Array.isArray(finding?.loopIds) ? finding.loopIds.map((value: unknown) => String(value)) : [],
+    severity: severityFromMagnitude(safeNumber(finding.score, 0)),
+    relatedObjectIds: Array.isArray(finding.objectIds) ? finding.objectIds.map((value: unknown) => String(value)) : [],
+    relatedKpiIds: Array.isArray(finding.kpiIds) ? finding.kpiIds.map((value: unknown) => String(value)) : [],
+    relatedLoopIds: Array.isArray(finding.loopIds) ? finding.loopIds.map((value: unknown) => String(value)) : [],
     description:
-      typeof finding?.why === "string" && finding.why.trim()
+      typeof finding.why === "string" && finding.why.trim()
         ? finding.why.trim()
         : "Platform fragility scanner detected a structural weakness in the runtime model.",
-    notes: Array.isArray(finding?.notes) ? finding.notes.map((value: unknown) => String(value)) : [],
+    notes: Array.isArray(finding.notes) ? finding.notes.map((value: unknown) => String(value)) : [],
   }));
 }
 
@@ -410,14 +447,14 @@ export function buildScenarioTestRecommendations(
 }
 
 export function buildExplorationRecommendations(
-  explorationResult?: any
+  explorationResult?: NexoraAutonomousExplorationResult | null
 ): NexoraExecutiveRecommendation[] {
   const outputs = explorationResult?.outputs?.executive;
   const rankedScenarios = Array.isArray(explorationResult?.rankedScenarios)
     ? explorationResult.rankedScenarios
     : [];
 
-  return rankedScenarios.slice(0, 2).map((scenario: any, index: number) => ({
+  return rankedScenarios.slice(0, 2).map((scenario: NexoraRankedScenario, index: number) => ({
     id: `rec_exploration_${String(scenario?.scenarioId ?? index)}`,
     label: `Validate ${String(scenario?.label ?? "top scenario")}`,
     type: "scenario_test",
@@ -434,33 +471,33 @@ export function buildExplorationRecommendations(
 }
 
 export function buildFragilityScannerRecommendations(
-  fragilityScan?: any
+  fragilityScan?: FragilityScanLike | null
 ): NexoraExecutiveRecommendation[] {
   const topFindings = Array.isArray(fragilityScan?.findings) ? fragilityScan.findings.slice(0, 2) : [];
-  return topFindings.map((finding: any, index: number) => ({
-    id: `rec_fragility_scan_${String(finding?.id ?? index)}`,
-    label: `Reduce ${String(finding?.label ?? "fragility hotspot")}`,
+  return topFindings.map((finding, index: number) => ({
+    id: `rec_fragility_scan_${String(finding.id ?? index)}`,
+    label: `Reduce ${String(finding.label ?? "fragility hotspot")}`,
     type:
-      String(finding?.type ?? "") === "bottleneck"
+      String(finding.type ?? "") === "bottleneck"
         ? "capacity_adjustment"
-        : String(finding?.type ?? "") === "single_point_of_failure"
+        : String(finding.type ?? "") === "single_point_of_failure"
           ? "risk_mitigation"
           : "system_stabilization",
-    priority: safeNumber(finding?.score, 0) >= 0.7 ? "high" : "medium",
-    confidence: clamp01(0.6 + safeNumber(finding?.score, 0) * 0.2),
-    targetObjectIds: Array.isArray(finding?.objectIds) ? finding.objectIds.map((value: unknown) => String(value)) : [],
-    targetKpiIds: Array.isArray(finding?.kpiIds) ? finding.kpiIds.map((value: unknown) => String(value)) : [],
+    priority: safeNumber(finding.score, 0) >= 0.7 ? "high" : "medium",
+    confidence: clamp01(0.6 + safeNumber(finding.score, 0) * 0.2),
+    targetObjectIds: Array.isArray(finding.objectIds) ? finding.objectIds.map((value: unknown) => String(value)) : [],
+    targetKpiIds: Array.isArray(finding.kpiIds) ? finding.kpiIds.map((value: unknown) => String(value)) : [],
     description:
-      typeof finding?.why === "string" && finding.why.trim()
+      typeof finding.why === "string" && finding.why.trim()
         ? `Address this fragility hotspot: ${finding.why.trim()}`
         : "Address the leading fragility hotspot before downstream pressure spreads.",
-    notes: [`Platform fragility score: ${safeNumber(finding?.score, 0).toFixed(2)}.`],
+    notes: [`Platform fragility score: ${safeNumber(finding.score, 0).toFixed(2)}.`],
   }));
 }
 
 export function inferSystemRiskLevel(
-  objectImpacts: any[],
-  kpiImpacts: any[]
+  objectImpacts: NexoraSimulationObjectImpact[] | unknown[],
+  kpiImpacts: NexoraSimulationKpiImpact[] | unknown[]
 ): NexoraExecutiveSeverity {
   const normalizedObjects = normalizeObjectImpacts(objectImpacts);
   const normalizedKpis = normalizeKpiImpacts(kpiImpacts);
@@ -489,11 +526,11 @@ export function buildExecutiveSummary(args: {
 }
 
 export function generateExecutiveInsights(args: {
-  runtimeModel?: any;
-  objectImpacts?: any[];
-  kpiImpacts?: any[];
-  fragilityScan?: any;
-  explorationResult?: any;
+  runtimeModel?: NexoraSimulationRuntimeInput | unknown;
+  objectImpacts?: NexoraSimulationObjectImpact[] | unknown[];
+  kpiImpacts?: NexoraSimulationKpiImpact[] | unknown[];
+  fragilityScan?: FragilityScanLike | null;
+  explorationResult?: NexoraAutonomousExplorationResult | null;
 }): NexoraExecutiveInsight[] {
   const runtimeModel = normalizeRuntimeModel(args.runtimeModel);
   const insights = [
@@ -516,8 +553,8 @@ export function generateExecutiveInsights(args: {
 
 export function generateExecutiveRecommendations(
   insights: NexoraExecutiveInsight[],
-  fragilityScan?: any,
-  explorationResult?: any
+  fragilityScan?: FragilityScanLike | null,
+  explorationResult?: NexoraAutonomousExplorationResult | null
 ): NexoraExecutiveRecommendation[] {
   const recommendations = [
     ...buildRiskMitigationRecommendations(insights),
@@ -537,11 +574,11 @@ export function generateExecutiveRecommendations(
 }
 
 export function generateExecutiveBrief(args: {
-  runtimeModel?: any;
-  objectImpacts?: any[];
-  kpiImpacts?: any[];
-  fragilityScan?: any;
-  explorationResult?: any;
+  runtimeModel?: NexoraSimulationRuntimeInput | unknown;
+  objectImpacts?: NexoraSimulationObjectImpact[] | unknown[];
+  kpiImpacts?: NexoraSimulationKpiImpact[] | unknown[];
+  fragilityScan?: FragilityScanLike | null;
+  explorationResult?: NexoraAutonomousExplorationResult | null;
 }): NexoraExecutiveBrief {
   const insights = generateExecutiveInsights(args);
   const recommendations = generateExecutiveRecommendations(insights, args.fragilityScan, args.explorationResult);

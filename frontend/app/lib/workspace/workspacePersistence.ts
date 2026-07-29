@@ -12,26 +12,26 @@ export type ProjectSceneState = {
   activeLoopId: string | null;
   selectedLoopId: string | null;
   objectUxById: Record<string, { opacity?: number; scale?: number }>;
-  overrides: Record<string, any>;
+  overrides: Record<string, unknown>;
 };
 
 export type ProjectIntelligenceState = {
-  kpi: any | null;
-  conflicts: any[];
-  objectSelection: any | null;
-  memoryInsights: any | null;
-  riskPropagation: any | null;
-  strategicAdvice: any | null;
-  strategyKpi: any | null;
-  decisionCockpit: any | null;
-  productModeContext: any | null;
-  aiReasoning: any | null;
-  platformAssembly: any | null;
-  autonomousExploration: any | null;
-  opponentModel: any | null;
-  strategicPatterns: any | null;
-  decisionResult: any | null;
-  responseData: any | null;
+  kpi: unknown | null;
+  conflicts: unknown[];
+  objectSelection: unknown | null;
+  memoryInsights: unknown | null;
+  riskPropagation: unknown | null;
+  strategicAdvice: unknown | null;
+  strategyKpi: unknown | null;
+  decisionCockpit: unknown | null;
+  productModeContext: unknown | null;
+  aiReasoning: unknown | null;
+  platformAssembly: unknown | null;
+  autonomousExploration: unknown | null;
+  opponentModel: unknown | null;
+  strategicPatterns: unknown | null;
+  decisionResult: unknown | null;
+  responseData: unknown | null;
   sourceLabel: string | null;
   lastAnalysisSummary: string | null;
 };
@@ -66,14 +66,20 @@ export const DEFAULT_WORKSPACE_ID = "default_workspace";
 export const DEFAULT_PROJECT_ID = "default";
 const LEGACY_WORKSPACE_STORE_KEY = "nexora.workspace.v1";
 
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 export function inferProjectMetaFromScene(sceneJson: SceneJson | null): {
   projectId: string; name: string; domain?: string;
 } {
-  const meta: any = sceneJson?.meta ?? {};
-  const projectId = String(meta?.project_id ?? meta?.demo_id ?? meta?.workspace_project_id ?? "")
+  const meta = readRecord(sceneJson?.meta);
+  const projectId = String(meta.project_id ?? meta.demo_id ?? meta.workspace_project_id ?? "")
     .trim().toLowerCase() || DEFAULT_PROJECT_ID;
-  const name = String(meta?.project_name ?? meta?.demo_name ?? projectId).trim() || projectId;
-  const domain = String(meta?.domain ?? "").trim() || undefined;
+  const name = String(meta.project_name ?? meta.demo_name ?? projectId).trim() || projectId;
+  const domain = String(meta.domain ?? "").trim() || undefined;
   return { projectId, name, domain };
 }
 
@@ -103,11 +109,11 @@ export function loadWorkspaceState(): WorkspaceState | null {
   try {
     const raw = window.localStorage.getItem(LEGACY_WORKSPACE_STORE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (!parsed || typeof parsed !== "object") return null;
-    const id = String((parsed as any).id ?? DEFAULT_WORKSPACE_ID);
-    const activeProjectId = String((parsed as any).activeProjectId ?? DEFAULT_PROJECT_ID);
-    const projects = (parsed as any).projects;
+    const id = String(parsed.id ?? DEFAULT_WORKSPACE_ID);
+    const activeProjectId = String(parsed.activeProjectId ?? DEFAULT_PROJECT_ID);
+    const projects = parsed.projects;
     if (!projects || typeof projects !== "object") return null;
     return { id, activeProjectId, projects } as WorkspaceState;
   } catch {
@@ -159,41 +165,45 @@ function safeParse<T>(raw: string | null): T | null {
   }
 }
 
-function ensureProjectState(raw: any, fallbackId = DEFAULT_PROJECT_ID): WorkspaceProjectState {
-  const id = String(raw?.id ?? fallbackId).trim() || fallbackId;
-  const base = createEmptyProjectState(id, String(raw?.name ?? id));
+function ensureProjectState(raw: unknown, fallbackId = DEFAULT_PROJECT_ID): WorkspaceProjectState {
+  const record = readRecord(raw);
+  const id = String(record.id ?? fallbackId).trim() || fallbackId;
+  const base = createEmptyProjectState(id, String(record.name ?? id));
+  const chat = readRecord(record.chat);
+  const scene = readRecord(record.scene);
+  const intelligence = readRecord(record.intelligence);
   return {
     ...base,
-    ...raw,
+    ...record,
     id,
-    name: String((raw?.name ?? base.name) || id),
-    domain: typeof raw?.domain === "string" ? raw.domain : undefined,
-    description: typeof raw?.description === "string" ? raw.description : undefined,
-    semanticObjectMeta: raw?.semanticObjectMeta && typeof raw.semanticObjectMeta === "object" ? raw.semanticObjectMeta : {},
+    name: String((record.name ?? base.name) || id),
+    domain: typeof record.domain === "string" ? record.domain : undefined,
+    description: typeof record.description === "string" ? record.description : undefined,
+    semanticObjectMeta: record.semanticObjectMeta && typeof record.semanticObjectMeta === "object" ? record.semanticObjectMeta as WorkspaceProjectState["semanticObjectMeta"] : {},
     chat: {
       ...base.chat,
-      ...(raw?.chat ?? {}),
-      messages: Array.isArray(raw?.chat?.messages) ? raw.chat.messages : base.chat.messages,
-      activeMode: typeof raw?.chat?.activeMode === "string" ? raw.chat.activeMode : base.chat.activeMode,
-      episodeId: typeof raw?.chat?.episodeId === "string" ? raw.chat.episodeId : null,
+      ...chat,
+      messages: Array.isArray(chat.messages) ? chat.messages as WorkspaceProjectState["chat"]["messages"] : base.chat.messages,
+      activeMode: typeof chat.activeMode === "string" ? chat.activeMode : base.chat.activeMode,
+      episodeId: typeof chat.episodeId === "string" ? chat.episodeId : null,
     },
     scene: {
       ...base.scene,
-      ...(raw?.scene ?? {}),
-      loops: Array.isArray(raw?.scene?.loops) ? raw.scene.loops : base.scene.loops,
+      ...scene,
+      loops: Array.isArray(scene.loops) ? scene.loops as WorkspaceProjectState["scene"]["loops"] : base.scene.loops,
       objectUxById:
-        raw?.scene?.objectUxById && typeof raw.scene.objectUxById === "object"
-          ? raw.scene.objectUxById
+        scene.objectUxById && typeof scene.objectUxById === "object"
+          ? scene.objectUxById as WorkspaceProjectState["scene"]["objectUxById"]
           : base.scene.objectUxById,
       overrides:
-        raw?.scene?.overrides && typeof raw.scene.overrides === "object"
-          ? raw.scene.overrides
+        scene.overrides && typeof scene.overrides === "object"
+          ? scene.overrides as WorkspaceProjectState["scene"]["overrides"]
           : base.scene.overrides,
     },
     intelligence: {
       ...base.intelligence,
-      ...(raw?.intelligence ?? {}),
-      conflicts: Array.isArray(raw?.intelligence?.conflicts) ? raw.intelligence.conflicts : base.intelligence.conflicts,
+      ...intelligence,
+      conflicts: Array.isArray(intelligence.conflicts) ? intelligence.conflicts : base.intelligence.conflicts,
     },
   };
 }
@@ -209,8 +219,8 @@ export function serializeProjectState(project: WorkspaceProjectState): Persisted
 export function deserializeProjectState(raw: unknown, fallbackId = DEFAULT_PROJECT_ID): WorkspaceProjectState | null {
   const parsed = raw as PersistedProjectStateV1 | null;
   if (!parsed || typeof parsed !== "object") return null;
-  if ((parsed as any).version !== "1") return null;
-  return ensureProjectState((parsed as any).project, fallbackId);
+  if (parsed.version !== "1") return null;
+  return ensureProjectState(parsed.project, fallbackId);
 }
 
 export function serializeWorkspaceState(state: WorkspaceState): PersistedWorkspaceStateV1 {
@@ -240,8 +250,8 @@ export function serializeWorkspaceState(state: WorkspaceState): PersistedWorkspa
 export function deserializeWorkspaceState(raw: unknown): WorkspaceState | null {
   const parsed = raw as PersistedWorkspaceStateV1 | null;
   if (!parsed || typeof parsed !== "object") return null;
-  if ((parsed as any).version !== "1") return null;
-  const ws = (parsed as any).workspace;
+  if (parsed.version !== "1") return null;
+  const ws = readRecord(parsed.workspace);
   if (!ws || typeof ws !== "object") return null;
   const activeProjectId = String(ws.activeProjectId ?? DEFAULT_PROJECT_ID).trim() || DEFAULT_PROJECT_ID;
   const id = String(ws.id ?? DEFAULT_WORKSPACE_ID).trim() || DEFAULT_WORKSPACE_ID;

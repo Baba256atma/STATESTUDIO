@@ -3,6 +3,23 @@
 import React from "react";
 import { nx, sectionTitleStyle, softCardStyle } from "../ui/nexoraTheme";
 import { EmptyStateCard } from "../ui/panelStates";
+import type { SceneJson, SceneObject } from "../../lib/sceneTypes";
+
+type LooseRecord = Record<string, unknown>;
+
+function asRecord(value: unknown): LooseRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as LooseRecord) : null;
+}
+
+type RiskPropagationEdge = {
+  from?: unknown;
+  to?: unknown;
+};
+
+function readRiskEdges(value: unknown): RiskPropagationEdge[] {
+  const record = asRecord(value);
+  return Array.isArray(record?.edges) ? (record.edges as RiskPropagationEdge[]) : [];
+}
 
 type Selection = {
   active_objects?: string[];
@@ -54,9 +71,9 @@ export default function ObjectSelectionPanel({
 }: {
   selection: Selection | null | undefined;
   selectedObjectId?: string | null;
-  sceneJson?: any;
-  responseData?: any;
-  riskPropagation?: any;
+  sceneJson?: SceneJson | LooseRecord | null;
+  responseData?: LooseRecord | null;
+  riskPropagation?: LooseRecord | null;
   onSimulate?: (() => void) | null;
   onCompare?: (() => void) | null;
 }) {
@@ -73,36 +90,58 @@ export default function ObjectSelectionPanel({
     }
     setMode(primaryId ? "details" : "list");
   }, [explicitSelectedId, primaryId]);
-  const sceneObjects = Array.isArray(sceneJson?.scene?.objects) ? sceneJson.scene.objects : [];
-  const primaryObject = sceneObjects.find((item: any) => String(item?.id ?? "").trim() === primaryId) ?? null;
+  const sceneRoot = asRecord(sceneJson);
+  const sceneInner = asRecord(sceneRoot?.scene);
+  const sceneObjects: SceneObject[] = Array.isArray(sceneInner?.objects)
+    ? (sceneInner.objects as SceneObject[])
+    : [];
+  const primaryObject = sceneObjects.find((item) => String(item?.id ?? "").trim() === primaryId) ?? null;
   const typeLabel = String(primaryObject?.type ?? "unknown").trim() || "unknown";
+  const riskRecord = asRecord(responseData?.risk);
+  const fragilityRecord = asRecord(responseData?.fragility);
   const riskScoreRaw =
-    Number(rankings.find((item) => String(item?.id ?? "") === primaryId)?.score ?? responseData?.risk?.score ?? 0) || 0;
+    Number(rankings.find((item) => String(item?.id ?? "") === primaryId)?.score ?? riskRecord?.score ?? 0) || 0;
   const riskScore = Math.max(0, Math.min(1, riskScoreRaw));
-  const fragilityContribution = Math.max(0, Math.min(1, Number(responseData?.fragility?.score ?? 0) || 0));
+  const fragilityContribution = Math.max(0, Math.min(1, Number(fragilityRecord?.score ?? 0) || 0));
   const trend = riskScore >= 0.7 ? "up" : riskScore >= 0.35 ? "flat" : "down";
   const status = riskScore >= 0.72 ? "critical" : riskScore >= 0.35 ? "warning" : "stable";
   const relationships = (() => {
-    const links = Array.isArray(riskPropagation?.edges) ? riskPropagation.edges : [];
+    const links = readRiskEdges(riskPropagation);
     const upstream = links
-      .filter((edge: any) => String(edge?.to ?? "").trim() === primaryId)
-      .map((edge: any) => toLabel(String(edge?.from ?? "")));
+      .filter((edge) => String(edge?.to ?? "").trim() === primaryId)
+      .map((edge) => toLabel(String(edge?.from ?? "")));
     const downstream = links
-      .filter((edge: any) => String(edge?.from ?? "").trim() === primaryId)
-      .map((edge: any) => toLabel(String(edge?.to ?? "")));
+      .filter((edge) => String(edge?.from ?? "").trim() === primaryId)
+      .map((edge) => toLabel(String(edge?.to ?? "")));
     return {
       upstream: truncateList(upstream),
       downstream: truncateList(downstream),
     };
   })();
+  const fragilityScan = asRecord(responseData?.fragility_scan);
   const keyDrivers = truncateList(
-    (Array.isArray(responseData?.fragility_scan?.drivers) ? responseData.fragility_scan.drivers : [])
-      .map((driver: any) => String(driver?.label ?? driver?.id ?? ""))
+    (Array.isArray(fragilityScan?.drivers) ? fragilityScan.drivers : [])
+      .map((driver) => {
+        const record = asRecord(driver);
+        return String(record?.label ?? record?.id ?? "");
+      })
       .filter(Boolean)
   );
-  const lastEvent = String(responseData?.fragility?.summary ?? responseData?.summary ?? "No recent change signal")
+  const lastEvent = String(fragilityRecord?.summary ?? responseData?.summary ?? "No recent change signal")
     .trim()
     .slice(0, 92);
+
+  const actions = buildActions({ onSimulate, onCompare });
+
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (!selection || !primaryId) return;
+    globalThis.console?.debug?.("[Nexora][ObjectsDetails]", {
+      mode,
+      primaryId,
+      status,
+    });
+  }, [mode, primaryId, status, selection]);
 
   if (!selection || !primaryId) {
     return (
@@ -115,16 +154,6 @@ export default function ObjectSelectionPanel({
       </div>
     );
   }
-  const actions = buildActions({ onSimulate, onCompare });
-
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
-    globalThis.console?.debug?.("[Nexora][ObjectsDetails]", {
-      mode,
-      primaryId,
-      status,
-    });
-  }, [mode, primaryId, status]);
 
   const sectionItemStyle: React.CSSProperties = { fontSize: 12, color: nx.text, lineHeight: 1.35 };
 

@@ -127,6 +127,50 @@ export function getHighlightedObjectIdsFromSelection(value: unknown): string[] {
   return Array.isArray(highlighted) ? highlighted.map(String).filter(Boolean) : [];
 }
 
+export function readPayloadString(
+  record: Record<string, unknown> | null | undefined,
+  key: string
+): string | null {
+  const value = record?.[key];
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (value == null || value === "") return null;
+  const normalized = String(value).trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+export function readProductModeId(value: unknown): string | null {
+  const modeId = asRecord(value)?.mode_id;
+  if (typeof modeId === "string") {
+    const trimmed = modeId.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (modeId == null || modeId === "") return null;
+  return String(modeId);
+}
+
+export function readExecutiveSummarySurface(value: unknown): {
+  summary: string | null;
+  happened: string | null;
+  why_it_matters: string | null;
+  what_to_do: string | null;
+} | null {
+  const record = asRecord(value);
+  if (!record) return null;
+  return {
+    summary: readPayloadString(record, "summary"),
+    happened: readPayloadString(record, "happened"),
+    why_it_matters: readPayloadString(record, "why_it_matters"),
+    what_to_do: readPayloadString(record, "what_to_do"),
+  };
+}
+
+export function readObjectSelectionDimUnrelated(value: unknown): boolean {
+  return asRecord(value)?.dim_unrelated_objects === true;
+}
+
 export function hasRenderableSceneForVisibleState(value: unknown): value is SceneJson {
   const record = asRecord(value);
   const scene = asRecord(record?.scene);

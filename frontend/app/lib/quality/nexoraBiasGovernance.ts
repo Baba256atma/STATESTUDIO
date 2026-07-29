@@ -128,7 +128,7 @@ export function resolveBiasGovernance(
 
   if (quality.qualityTier === "medium") mult *= 0.92;
 
-  let effective = clamp01(config.strength * mult);
+  const effective = clamp01(config.strength * mult);
 
   const mode = effectiveStrengthToMode(effective);
   let summary: string | null;

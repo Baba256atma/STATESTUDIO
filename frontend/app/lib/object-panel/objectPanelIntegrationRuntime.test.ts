@@ -20,6 +20,7 @@ import {
   resetWorkspaceScenesForTests,
 } from "../workspace/workspaceSceneCreationContract.ts";
 import { resetWorkspaceSceneSyncForTests } from "../workspace/workspaceSceneSync.ts";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const CREATED_OBJECTS_STORAGE_KEY = "nexora.workspaceCreatedObjects.v2";
 const SCENE_SYNC_OBJECTS_STORAGE_KEY = "nexora.workspaceSceneSyncObjects.v2";
@@ -27,25 +28,6 @@ const OBJECT_INTELLIGENCE_STORAGE_KEY = "nexora.workspaceObjectIntelligenceProfi
 const IMPACT_STORAGE_KEY = "nexora.workspaceImpactProfiles.v1";
 const DEPENDENCY_STORAGE_KEY = "nexora.workspaceDependencyProfiles.v1";
 const CONFIDENCE_STORAGE_KEY = "nexora.workspaceConfidenceProfiles.v1";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
 
 function workspaceObject(input: {
   workspaceId: string;
@@ -231,7 +213,7 @@ function seedFullObject(workspaceId: string, objectId = "obj_product"): void {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetWorkspaceRegistryForTests();
   resetWorkspaceObjectCreationStoreForTests();

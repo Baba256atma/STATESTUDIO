@@ -41,8 +41,9 @@ export function resetOperationalWorkspaceRuntimeForTests(): void {
   resetOperationalWorkspaceStateRuntimeForTests();
 }
 
-export function buildOperationalWorkspaceView(_input?: {
+export function buildOperationalWorkspaceView(input?: {
   mountKey?: string | null;
 }): OperationalWorkspaceView {
+  void input;
   return buildOperationalWorkspaceViewFromState(getOperationalWorkspaceState());
 }

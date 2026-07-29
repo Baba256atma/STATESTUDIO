@@ -7,17 +7,7 @@ import {
   INTENT_CLASSIFICATION_DIAGNOSTIC_CODES,
   isIntentClassificationDiagnosticCode,
 } from "./executiveIntentClassificationDiagnostics.ts";
-import {
-  ExecutiveIntentClassificationEngine,
-  buildClassificationExample,
-  buildClassificationProbe,
-  classifyExecutiveIntent,
-  classifySemanticModel,
-  resolveClassificationFlags,
-  resolvePrimaryClassification,
-  resolveSecondaryClassifications,
-  validateClassification,
-} from "./executiveIntentClassificationEngine.ts";
+import { ExecutiveIntentClassificationEngine, buildClassificationExample, buildClassificationProbe, classifyExecutiveIntent, classifySemanticModel, resolvePrimaryClassification, resolveSecondaryClassifications, validateClassification } from "./executiveIntentClassificationEngine.ts";
 import {
   EXECUTIVE_INTENT_CLASSIFICATION_ENGINE_RULES,
   EXECUTIVE_INTENT_CLASSIFICATION_ENGINE_TAGS,
@@ -63,28 +53,16 @@ function keywordModel(
   label: string,
   extras: Readonly<{ target?: string; known?: readonly string[] }> = Object.freeze({})
 ): ExecutiveIntentSemanticModel {
-  return Object.freeze({
-    primaryGoal: Object.freeze({
-      goalId: "goal-1",
-      intentId: null,
-      label,
-      actionType: "increase" as const,
-      actionVerb: "increase",
-      rawPhrase: label,
-      readOnly: true as const,
-    }),
-    targetEntity: extras.target
-      ? Object.freeze({
-          targetId: "target-1",
-          entityLabel: extras.target,
-          entityType: null,
-          readOnly: true as const,
-        })
-      : null,
-    desiredFutureState: null,
-    knownInformation: extras.known ?? Object.freeze([]),
-    businessObjects: Object.freeze([]),
-  }) as ExecutiveIntentSemanticModel;
+  const extraction = extractExecutiveIntent(
+    Object.freeze({
+      text: extras.target ? `${label} for ${extras.target}` : label,
+      workspaceId: WS,
+      owner: "executive-owner",
+      languageCode: "en",
+      generatedAt: FIXED_TIME,
+    })
+  );
+  return buildExecutiveIntentSemanticModel(extraction, FIXED_TIME).model;
 }
 
 function classifyFromSemanticExample(exampleId: string) {

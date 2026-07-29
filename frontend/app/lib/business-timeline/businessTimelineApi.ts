@@ -9,10 +9,7 @@ import { initializeBusinessTimelineQueryLayer } from "./businessTimelineQuery.ts
 import { initializeBusinessTimelineLifecycleLayer } from "./businessTimelineLifecycle.ts";
 import { initializeBusinessTimelineContextLayer } from "./businessTimelineContext.ts";
 import { createBusinessTimelineApiFacade } from "./businessTimelineApiFacade.ts";
-import {
-  buildBusinessTimelineApiManifest,
-  BUSINESS_TIMELINE_API_SELF_MANIFEST,
-} from "./businessTimelineApiManifest.ts";
+import { buildBusinessTimelineApiManifest } from "./businessTimelineApiManifest.ts";
 import {
   BUSINESS_TIMELINE_API_CONTRACT_VERSION,
   BUSINESS_TIMELINE_API_TAGS,

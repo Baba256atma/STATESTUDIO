@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { DASHBOARD_ASSISTANT_CONTEXT_SYNC_EVENT } from "./assistantContextSyncContract";
 import type { ExecutiveConversationContinuity } from "./conversationContinuityContract";
@@ -9,7 +9,6 @@ import {
   resolveWorkspaceAwarePromptHints,
 } from "./conversationContinuityContract";
 import {
-  createConversationSessionId,
   initializeConversationContinuity,
   mergeConversationContinuityFromSync,
 } from "./conversationContinuityRuntime";
@@ -21,9 +20,8 @@ export type AssistantConversationContinuityState = Readonly<{
 }>;
 
 export function useAssistantConversationContinuity(): AssistantConversationContinuityState {
-  const sessionIdRef = useRef<string>(createConversationSessionId());
   const [continuity, setContinuity] = useState<ExecutiveConversationContinuity>(() =>
-    initializeConversationContinuity(sessionIdRef.current)
+    initializeConversationContinuity()
   );
 
   useEffect(() => {
@@ -31,7 +29,7 @@ export function useAssistantConversationContinuity(): AssistantConversationConti
       const detail = (event as CustomEvent<unknown>).detail;
       setContinuity((prev) => {
         const result = mergeConversationContinuityFromSync(prev, detail, {
-          expectedSessionId: sessionIdRef.current,
+          expectedSessionId: prev.sessionId,
         });
         return result.continuity ?? prev;
       });

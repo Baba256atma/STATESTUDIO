@@ -110,7 +110,7 @@ export function buildDecisionPatternClusters(memoryEntries: DecisionMemoryEntry[
   });
 
   return Array.from(groups.entries())
-    .map(([key, entries], index) => {
+    .map(([, entries], index) => {
       const recurringActions = unique(entries.map((entry) => text(entry.recommendation_action || entry.title)));
       const recurringFeatures = topKeywords(
         entries.flatMap((entry) => [

@@ -1,10 +1,6 @@
 import type { DecisionMemoryEntry } from "../memory/decisionMemoryTypes";
 import type { MemoryEvolutionSummary } from "./strategicLearningTypes";
 
-function unique(values: string[]) {
-  return Array.from(new Set(values.filter(Boolean)));
-}
-
 function countRecurringClusters(entries: DecisionMemoryEntry[]) {
   const counts = new Map<string, number>();
   entries.forEach((entry) => {

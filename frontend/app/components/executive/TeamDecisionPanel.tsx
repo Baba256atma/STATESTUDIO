@@ -5,13 +5,14 @@ import React from "react";
 import { buildTeamDecisionState } from "../../lib/team/buildTeamDecisionState";
 import type { TeamDecisionRole } from "../../lib/team/teamDecisionTypes";
 import type { CanonicalRecommendation } from "../../lib/decision/recommendation/recommendationTypes";
+import type { DecisionExecutionResult } from "../../lib/executive/decisionExecutionTypes";
 import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemoryTypes";
 import { nx, panelSurfaceStyle, secondaryButtonStyle, softCardStyle } from "../ui/nexoraTheme";
 
 type TeamDecisionPanelProps = {
-  responseData?: any;
+  responseData?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
-  decisionResult?: any;
+  decisionResult?: DecisionExecutionResult | Record<string, unknown> | null;
   memoryEntries?: DecisionMemoryEntry[];
   onOpenCompare?: (() => void) | null;
   onOpenTimeline?: (() => void) | null;

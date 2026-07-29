@@ -12,19 +12,7 @@ import {
 } from "./causalDependencyGuards";
 import { getCausalDependencyStore } from "./causalDependencyStore";
 import { getTemporalCognitionStore } from "./temporalCognitionStore";
-import type {
-  CausalDependencySnapshot,
-  DependencyCategory,
-  DependencyPropagationSignal,
-  DependencyStrength,
-  OperationalCausalChain,
-  OperationalCausalDependencyInput,
-  OperationalCausalDependencyResult,
-  OrganizationalImpactChain,
-  PropagationType,
-  StrategicCauseEffectSequence,
-  TemporalDependencyLink,
-} from "./causalDependencyTypes";
+import type { CausalDependencySnapshot, DependencyCategory, DependencyPropagationSignal, DependencyStrength, OperationalCausalChain, OperationalCausalDependencyInput, OperationalCausalDependencyResult, OrganizationalImpactChain, StrategicCauseEffectSequence, TemporalDependencyLink } from "./causalDependencyTypes";
 import type {
   OrganizationalTimelineEvent,
   StrategicTimelineSequence,

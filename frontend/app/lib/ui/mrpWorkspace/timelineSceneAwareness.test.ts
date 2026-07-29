@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import type { SceneJson } from "../../sceneTypes.ts";
-import type { WorkspaceNavigationHistoryEntry } from "../dashboard/executiveWorkspaceNavigationHistoryContract.ts";
+import type { WorkspaceNavigationHistoryEntry } from "../../dashboard/executiveWorkspaceNavigationHistoryContract.ts";
 import {
   DEFAULT_TIMELINE_SCENE_AWARENESS,
   MRP_TIMELINE_SCENE_AWARE_TAG,
@@ -63,6 +63,7 @@ const navigationHistory: readonly WorkspaceNavigationHistoryEntry[] = Object.fre
 ]);
 
 const sceneWithEvents: SceneJson = {
+  state_vector: {},
   scene: {
     objects: Array.from({ length: 15 }, (_, index) => {
       if (index === 0) {
@@ -74,7 +75,7 @@ const sceneWithEvents: SceneJson = {
       return { id: String(index + 1), label: `Obj ${index + 1}`, state: "stable" };
     }),
   },
-} as SceneJson;
+};
 
 test("exports timeline scene awareness tag", () => {
   assert.equal(MRP_TIMELINE_SCENE_AWARE_TAG, "[MRP_TIMELINE_SCENE_AWARE]");

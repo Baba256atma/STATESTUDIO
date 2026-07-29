@@ -37,8 +37,6 @@ import {
   analyzeStrategicCoherenceDegradation,
   calculateStrategicIntelligenceCoherenceScore,
 } from "./strategicCoherenceDegradationAnalysis.ts";
-import { analyzeEnterpriseStrategicDriftIntelligence } from "./enterpriseStrategicDriftIntelligence.ts";
-
 function stableStringify(value: unknown): string {
   if (value === null || value === undefined) return "null";
   if (typeof value !== "object") return JSON.stringify(value);
@@ -547,6 +545,7 @@ test("rejects duplicate drift build fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_drift_build");
 });
 

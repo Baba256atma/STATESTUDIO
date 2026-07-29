@@ -1,17 +1,23 @@
 import { buildCognitiveDecisionView } from "../cognitive/buildCognitiveDecisionView";
 import type { CognitiveStyle } from "../cognitive/cognitiveStyleTypes";
+import type { DecisionConfidenceModel } from "../decision/confidence/buildDecisionConfidenceModel";
+import type { StrategicLearningState } from "../decision/learning/strategicLearningTypes";
+import type { MetaDecisionState } from "../decision/meta/metaDecisionTypes";
+import type { DecisionPatternIntelligence } from "../decision/patterns/decisionPatternTypes";
+import type { ComparePanelModel } from "../decision/recommendation/buildComparePanelModel";
+import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes";
 import type { TeamDecisionRole, TeamRolePerspective } from "./teamDecisionTypes";
 
 type BuildRolePerspectiveInput = {
   role: TeamDecisionRole;
-  canonicalRecommendation?: any | null;
-  executiveSummary?: any | null;
-  confidenceModel?: any | null;
-  compareModel?: any | null;
-  simulation?: any | null;
-  patternIntelligence?: any | null;
-  strategicLearning?: any | null;
-  metaDecision?: any | null;
+  canonicalRecommendation?: CanonicalRecommendation | null;
+  executiveSummary?: Record<string, unknown> | null;
+  confidenceModel?: DecisionConfidenceModel | null;
+  compareModel?: ComparePanelModel | null;
+  simulation?: Record<string, unknown> | null;
+  patternIntelligence?: DecisionPatternIntelligence | null;
+  strategicLearning?: StrategicLearningState | null;
+  metaDecision?: MetaDecisionState | null;
 };
 
 function unique(values: unknown[], limit = 3) {

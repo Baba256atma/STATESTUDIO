@@ -11,7 +11,7 @@ import {
 } from "./scenarioTimelineEventIdentity.ts";
 import type { NormalizedTimelineEventInput } from "./scenarioTimelineEventNormalizer.ts";
 import { buildScenarioTimelineEventVersion } from "./scenarioTimelineEventNormalizer.ts";
-import { allocateScenarioTimelineSequenceOrder, peekScenarioTimelineSequenceOrder } from "./scenarioTimelineEventRegistry.ts";
+import { peekScenarioTimelineSequenceOrder } from "./scenarioTimelineEventRegistry.ts";
 import type { ScenarioTimelineEvent } from "./scenarioTimelineEventTypes.ts";
 
 export function buildTimelineEvent(

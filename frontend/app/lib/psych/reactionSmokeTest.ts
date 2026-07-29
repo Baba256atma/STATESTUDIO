@@ -72,10 +72,10 @@ export function runPsychReactionSmokeTest() {
 }
 
 // Allow running directly via ts-node (CommonJS)
-declare const require: any;
+declare const require: NodeRequire | undefined;
 if (typeof require !== "undefined" && require.main === module) {
   const result = runPsychReactionSmokeTest();
-  // eslint-disable-next-line no-console
+   
   console.log("Psych Smoke Test Result:", result);
   if (!result.ok) process.exit(1);
 }

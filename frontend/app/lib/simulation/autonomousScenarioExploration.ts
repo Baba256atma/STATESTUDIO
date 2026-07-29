@@ -6,6 +6,7 @@ import {
   runDomainScenarioSimulation,
   type NexoraScenarioDefinition,
   type NexoraScenarioOutcome,
+  type NexoraSimulationRuntimeInput,
 } from "./domainSimulationScenarioEngine";
 import {
   compareBaselineToScenario,
@@ -59,7 +60,7 @@ export interface NexoraAutonomousScenarioVariant {
   label: string;
   baseCandidateId?: string | null;
   domainId?: string | null;
-  scenario: any;
+  scenario: NexoraScenarioDefinition;
   rationale?: string;
   tags?: string[];
 }
@@ -121,7 +122,7 @@ export interface NexoraAutonomousExplorationResult {
   candidates: NexoraExplorationCandidate[];
   scenarios: NexoraAutonomousScenarioVariant[];
   baselineOutcome: NexoraScenarioOutcome;
-  outcomes: any[];
+  outcomes: NexoraScenarioOutcome[];
   comparisons: NexoraOutcomeComparisonResult[];
   scores: NexoraExplorationScore[];
   topScenarioIds: string[];
@@ -130,6 +131,67 @@ export interface NexoraAutonomousExplorationResult {
   summary?: string;
   notes?: string[];
 }
+
+type NormalizedRuntimeObject = {
+  id: string;
+  label: string;
+  coreRole: string | null;
+  activityLevel: number;
+  riskLevel: number;
+  stabilityLevel: number;
+  tags: string[];
+};
+
+type NormalizedRuntimeRelation = {
+  id: string;
+  from: string;
+  to: string;
+  relationType: string | null;
+  strength: number;
+  volatility: number;
+  tags: string[];
+};
+
+type NormalizedRuntimeLoop = {
+  id: string;
+  label: string;
+  loopType: string | null;
+  intensity: number;
+  stability: number;
+  nodes: string[];
+  tags: string[];
+};
+
+type NormalizedRuntimeScenarioHint = {
+  id: string;
+  label: string;
+  severity: string;
+  tags: string[];
+};
+
+type NormalizedRuntimeKpi = {
+  id: string;
+  label: string;
+  value: number;
+  trend: string;
+};
+
+type NormalizedRuntimeModel = {
+  domainId: string | null;
+  objects: NormalizedRuntimeObject[];
+  relations: NormalizedRuntimeRelation[];
+  loops: NormalizedRuntimeLoop[];
+  scenarios: NormalizedRuntimeScenarioHint[];
+  kpis: NormalizedRuntimeKpi[];
+  tags: string[];
+};
+
+type NormalizedRuntimeContext = {
+  chaosLevel: number;
+  systemVolatility: number;
+  activeScenarioIds: string[];
+  metadata: Record<string, unknown>;
+};
 
 type FragilityScanLike = {
   fragilityScore?: number;
@@ -181,7 +243,7 @@ function sortById<T extends { id?: string }>(items: T[]): T[] {
   );
 }
 
-function buildBaselineOutcome(runtimeModel: any): NexoraScenarioOutcome {
+function buildBaselineOutcome(runtimeModel: NormalizedRuntimeModel): NexoraScenarioOutcome {
   return {
     scenarioId: "baseline",
     label: "Baseline",
@@ -204,96 +266,123 @@ function buildBaselineOutcome(runtimeModel: any): NexoraScenarioOutcome {
   };
 }
 
-function normalizeRuntimeContext(runtimeContext?: any): any {
+function normalizeRuntimeContext(runtimeContext?: unknown): NormalizedRuntimeContext {
+  const record =
+    runtimeContext && typeof runtimeContext === "object" && !Array.isArray(runtimeContext)
+      ? (runtimeContext as Record<string, unknown>)
+      : {};
+  const metadata =
+    record.metadata && typeof record.metadata === "object" && !Array.isArray(record.metadata)
+      ? { ...(record.metadata as Record<string, unknown>) }
+      : {};
   return {
-    chaosLevel: safeNumber(runtimeContext?.chaosLevel, 0.2),
-    systemVolatility: safeNumber(runtimeContext?.systemVolatility, 0.3),
-    activeScenarioIds: Array.isArray(runtimeContext?.activeScenarioIds)
-      ? uniq(runtimeContext.activeScenarioIds.map((value: unknown) => String(value)))
+    chaosLevel: safeNumber(record.chaosLevel, 0.2),
+    systemVolatility: safeNumber(record.systemVolatility, 0.3),
+    activeScenarioIds: Array.isArray(record.activeScenarioIds)
+      ? uniq(record.activeScenarioIds.map((value: unknown) => String(value)))
       : [],
-    metadata:
-      runtimeContext?.metadata && typeof runtimeContext.metadata === "object" && !Array.isArray(runtimeContext.metadata)
-        ? { ...runtimeContext.metadata }
-        : {},
+    metadata,
   };
 }
 
-function normalizeRuntimeModel(runtimeModel?: any): any {
+function readRuntimeRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function normalizeRuntimeModel(runtimeModel?: unknown): NormalizedRuntimeModel {
+  const model = readRuntimeRecord(runtimeModel);
   return {
     domainId:
-      runtimeModel?.domainId === null || runtimeModel?.domainId === undefined
+      model.domainId === null || model.domainId === undefined
         ? null
-        : normalizeText(String(runtimeModel.domainId)),
-    objects: Array.isArray(runtimeModel?.objects)
-      ? runtimeModel.objects.map((object: any) => ({
-          id: normalizeText(object?.id ?? ""),
-          label: normalizeText(object?.label ?? object?.id ?? ""),
-          coreRole:
-            object?.coreRole === null || object?.coreRole === undefined
-              ? null
-              : normalizeText(String(object.coreRole)),
-          activityLevel: safeNumber(object?.activityLevel, 0.5),
-          riskLevel: safeNumber(object?.riskLevel, 0.2),
-          stabilityLevel: safeNumber(object?.stabilityLevel, 0.8),
-          tags: Array.isArray(object?.tags)
-            ? uniq(object.tags.map((value: unknown) => String(value)))
-            : [],
-        }))
+        : normalizeText(String(model.domainId)),
+    objects: Array.isArray(model.objects)
+      ? model.objects.map((object) => {
+          const entry = readRuntimeRecord(object);
+          return {
+            id: normalizeText(String(entry.id ?? "")),
+            label: normalizeText(String(entry.label ?? entry.id ?? "")),
+            coreRole:
+              entry.coreRole === null || entry.coreRole === undefined
+                ? null
+                : normalizeText(String(entry.coreRole)),
+            activityLevel: safeNumber(entry.activityLevel, 0.5),
+            riskLevel: safeNumber(entry.riskLevel, 0.2),
+            stabilityLevel: safeNumber(entry.stabilityLevel, 0.8),
+            tags: Array.isArray(entry.tags)
+              ? uniq(entry.tags.map((value: unknown) => String(value)))
+              : [],
+          };
+        })
       : [],
-    relations: Array.isArray(runtimeModel?.relations)
-      ? runtimeModel.relations.map((relation: any) => ({
-          id: normalizeText(relation?.id ?? ""),
-          from: normalizeText(relation?.from ?? ""),
-          to: normalizeText(relation?.to ?? ""),
-          relationType:
-            relation?.relationType === null || relation?.relationType === undefined
-              ? null
-              : normalizeText(String(relation.relationType)),
-          strength: safeNumber(relation?.strength, 0.6),
-          volatility: safeNumber(relation?.volatility, 0.3),
-          tags: Array.isArray(relation?.tags)
-            ? uniq(relation.tags.map((value: unknown) => String(value)))
-            : [],
-        }))
+    relations: Array.isArray(model.relations)
+      ? model.relations.map((relation) => {
+          const entry = readRuntimeRecord(relation);
+          return {
+            id: normalizeText(String(entry.id ?? "")),
+            from: normalizeText(String(entry.from ?? "")),
+            to: normalizeText(String(entry.to ?? "")),
+            relationType:
+              entry.relationType === null || entry.relationType === undefined
+                ? null
+                : normalizeText(String(entry.relationType)),
+            strength: safeNumber(entry.strength, 0.6),
+            volatility: safeNumber(entry.volatility, 0.3),
+            tags: Array.isArray(entry.tags)
+              ? uniq(entry.tags.map((value: unknown) => String(value)))
+              : [],
+          };
+        })
       : [],
-    loops: Array.isArray(runtimeModel?.loops)
-      ? runtimeModel.loops.map((loop: any) => ({
-          id: normalizeText(loop?.id ?? ""),
-          label: normalizeText(loop?.label ?? loop?.id ?? ""),
-          loopType:
-            loop?.loopType === null || loop?.loopType === undefined
-              ? null
-              : normalizeText(String(loop.loopType)),
-          intensity: safeNumber(loop?.intensity, 0.5),
-          stability: safeNumber(loop?.stability, 0.7),
-          nodes: Array.isArray(loop?.nodes)
-            ? uniq(loop.nodes.map((value: unknown) => String(value)))
-            : [],
-          tags: Array.isArray(loop?.tags)
-            ? uniq(loop.tags.map((value: unknown) => String(value)))
-            : [],
-        }))
+    loops: Array.isArray(model.loops)
+      ? model.loops.map((loop) => {
+          const entry = readRuntimeRecord(loop);
+          return {
+            id: normalizeText(String(entry.id ?? "")),
+            label: normalizeText(String(entry.label ?? entry.id ?? "")),
+            loopType:
+              entry.loopType === null || entry.loopType === undefined
+                ? null
+                : normalizeText(String(entry.loopType)),
+            intensity: safeNumber(entry.intensity, 0.5),
+            stability: safeNumber(entry.stability, 0.7),
+            nodes: Array.isArray(entry.nodes)
+              ? uniq(entry.nodes.map((value: unknown) => String(value)))
+              : [],
+            tags: Array.isArray(entry.tags)
+              ? uniq(entry.tags.map((value: unknown) => String(value)))
+              : [],
+          };
+        })
       : [],
-    scenarios: Array.isArray(runtimeModel?.scenarios)
-      ? runtimeModel.scenarios.map((scenario: any) => ({
-          id: normalizeText(scenario?.id ?? ""),
-          label: normalizeText(scenario?.label ?? scenario?.id ?? ""),
-          severity: normalizeText(scenario?.severity ?? ""),
-          tags: Array.isArray(scenario?.tags)
-            ? uniq(scenario.tags.map((value: unknown) => String(value)))
-            : [],
-        }))
+    scenarios: Array.isArray(model.scenarios)
+      ? model.scenarios.map((scenario) => {
+          const entry = readRuntimeRecord(scenario);
+          return {
+            id: normalizeText(String(entry.id ?? "")),
+            label: normalizeText(String(entry.label ?? entry.id ?? "")),
+            severity: normalizeText(String(entry.severity ?? "")),
+            tags: Array.isArray(entry.tags)
+              ? uniq(entry.tags.map((value: unknown) => String(value)))
+              : [],
+          };
+        })
       : [],
-    kpis: Array.isArray(runtimeModel?.kpis)
-      ? runtimeModel.kpis.map((kpi: any) => ({
-          id: normalizeText(kpi?.id ?? ""),
-          label: normalizeText(kpi?.label ?? kpi?.id ?? ""),
-          value: safeNumber(kpi?.value, 0.5),
-          trend: normalizeText(kpi?.trend ?? "stable"),
-        }))
+    kpis: Array.isArray(model.kpis)
+      ? model.kpis.map((kpi) => {
+          const entry = readRuntimeRecord(kpi);
+          return {
+            id: normalizeText(String(entry.id ?? "")),
+            label: normalizeText(String(entry.label ?? entry.id ?? "")),
+            value: safeNumber(entry.value, 0.5),
+            trend: normalizeText(String(entry.trend ?? "stable")),
+          };
+        })
       : [],
-    tags: Array.isArray(runtimeModel?.tags)
-      ? uniq(runtimeModel.tags.map((value: unknown) => String(value)))
+    tags: Array.isArray(model.tags)
+      ? uniq(model.tags.map((value: unknown) => String(value)))
       : [],
   };
 }
@@ -357,9 +446,10 @@ function choosePrimaryTargetId(candidate: NexoraExplorationCandidate): string | 
   );
 }
 
-function candidateIntensityForGoal(goal: NexoraExplorationGoal, runtimeContext?: any): number {
-  const chaosBoost = safeNumber(runtimeContext?.chaosLevel, 0.2) * 0.1;
-  const volatilityBoost = safeNumber(runtimeContext?.systemVolatility, 0.3) * 0.08;
+function candidateIntensityForGoal(goal: NexoraExplorationGoal, runtimeContext?: unknown): number {
+  const context = normalizeRuntimeContext(runtimeContext);
+  const chaosBoost = context.chaosLevel * 0.1;
+  const volatilityBoost = context.systemVolatility * 0.08;
   switch (goal) {
     case "find_fragility":
     case "find_pressure_points":
@@ -405,8 +495,8 @@ export function averageExplorationScores(values: number[]): number {
 
 export function generateExplorationCandidates(
   args: {
-    runtimeModel?: any;
-    runtimeContext?: any;
+    runtimeModel?: NexoraSimulationRuntimeInput | NormalizedRuntimeModel | unknown;
+    runtimeContext?: unknown;
     fragilityScan?: FragilityScanLike | null;
     goal?: NexoraExplorationGoal;
   }
@@ -661,7 +751,7 @@ export function buildScenarioVariantsFromCandidates(
   args: {
     candidates: NexoraExplorationCandidate[];
     domainId?: string | null;
-    runtimeContext?: any;
+    runtimeContext?: unknown;
   }
 ): NexoraAutonomousScenarioVariant[] {
   return sortById(args.candidates ?? []).map((candidate, index) => {
@@ -758,14 +848,14 @@ export function buildScenarioVariantsFromCandidates(
 
 export function evaluateAutonomousScenarioOutcomes(
   args: {
-    runtimeModel?: any;
+    runtimeModel?: NexoraSimulationRuntimeInput | NormalizedRuntimeModel | unknown;
     scenarios: NexoraAutonomousScenarioVariant[];
   }
-): any[] {
+): NexoraScenarioOutcome[] {
   const runtimeModel = normalizeRuntimeModel(args.runtimeModel);
   return (args.scenarios ?? []).map((variant) =>
     runDomainScenarioSimulation({
-      runtimeModel,
+      runtimeModel: runtimeModel as NexoraSimulationRuntimeInput,
       scenario: variant.scenario,
     })
   );
@@ -784,18 +874,14 @@ export function compareAutonomousScenarioOutcomes(args: {
 }
 
 export function scoreScenarioRisk(
-  outcome: any
+  outcome: NexoraScenarioOutcome
 ): number {
-  const overallRiskScore = severityScore(outcome?.overallRisk ?? null);
+  const overallRiskScore = severityScore(outcome.overallRisk ?? null);
   const objectRiskScore = averageExplorationScores(
-    (Array.isArray(outcome?.objectImpacts) ? outcome.objectImpacts : []).map((impact: any) =>
-      safeNumber(impact?.afterRisk, 0)
-    )
+    outcome.objectImpacts.map((impact) => safeNumber(impact.afterRisk, 0))
   );
   const negativeKpiScore = averageExplorationScores(
-    (Array.isArray(outcome?.kpiImpacts) ? outcome.kpiImpacts : []).map((impact: any) =>
-      Math.max(0, -safeNumber(impact?.delta, 0))
-    )
+    outcome.kpiImpacts.map((impact) => Math.max(0, -safeNumber(impact.delta, 0)))
   );
   return clampExplorationScore(
     overallRiskScore * 0.5 + objectRiskScore * 0.3 + negativeKpiScore * 0.2
@@ -803,38 +889,36 @@ export function scoreScenarioRisk(
 }
 
 export function scoreScenarioInstability(
-  outcome: any
+  outcome: NexoraScenarioOutcome
 ): number {
-  const changedObjects = (Array.isArray(outcome?.objectImpacts) ? outcome.objectImpacts : []).filter(
-    (impact: any) =>
-      Math.abs(safeNumber(impact?.afterRisk, 0) - safeNumber(impact?.beforeRisk, 0)) > 0.1 ||
-      Math.abs(safeNumber(impact?.afterStability, 0) - safeNumber(impact?.beforeStability, 0)) > 0.1
+  const changedObjects = outcome.objectImpacts.filter(
+    (impact) =>
+      Math.abs(safeNumber(impact.afterRisk, 0) - safeNumber(impact.beforeRisk, 0)) > 0.1 ||
+      Math.abs(safeNumber(impact.afterStability, 0) - safeNumber(impact.beforeStability, 0)) > 0.1
   );
-  const instabilitySpread = changedObjects.length / Math.max(1, (outcome?.objectImpacts ?? []).length || 1);
+  const instabilitySpread = changedObjects.length / Math.max(1, outcome.objectImpacts.length || 1);
   const instabilityDepth = averageExplorationScores(
-    changedObjects.map((impact: any) =>
-      Math.abs(safeNumber(impact?.afterStability, 0) - safeNumber(impact?.beforeStability, 0))
+    changedObjects.map((impact) =>
+      Math.abs(safeNumber(impact.afterStability, 0) - safeNumber(impact.beforeStability, 0))
     )
   );
   return clampExplorationScore(instabilitySpread * 0.55 + instabilityDepth * 0.45);
 }
 
 export function scoreScenarioKpiImpact(
-  outcome: any
+  outcome: NexoraScenarioOutcome
 ): number {
-  const negativeDeltas = (Array.isArray(outcome?.kpiImpacts) ? outcome.kpiImpacts : [])
-    .map((impact: any) => Math.max(0, -safeNumber(impact?.delta, 0)));
+  const negativeDeltas = outcome.kpiImpacts.map((impact) => Math.max(0, -safeNumber(impact.delta, 0)));
   return averageExplorationScores(negativeDeltas);
 }
 
 export function scoreScenarioOpportunity(
-  outcome: any
+  outcome: NexoraScenarioOutcome
 ): number {
-  const positiveDeltas = (Array.isArray(outcome?.kpiImpacts) ? outcome.kpiImpacts : [])
-    .map((impact: any) => Math.max(0, safeNumber(impact?.delta, 0)));
+  const positiveDeltas = outcome.kpiImpacts.map((impact) => Math.max(0, safeNumber(impact.delta, 0)));
   const stabilizingObjectScore = averageExplorationScores(
-    (Array.isArray(outcome?.objectImpacts) ? outcome.objectImpacts : []).map((impact: any) =>
-      Math.max(0, safeNumber(impact?.afterStability, 0) - safeNumber(impact?.beforeStability, 0))
+    outcome.objectImpacts.map((impact) =>
+      Math.max(0, safeNumber(impact.afterStability, 0) - safeNumber(impact.beforeStability, 0))
     )
   );
   return clampExplorationScore(
@@ -845,7 +929,7 @@ export function scoreScenarioOpportunity(
 export function buildExplorationScore(
   args: {
     scenarioId: string;
-    outcome: any;
+    outcome: NexoraScenarioOutcome;
     goal?: NexoraExplorationGoal;
   }
 ): NexoraExplorationScore {
@@ -908,28 +992,28 @@ export function buildExplorationScore(
   };
 }
 
-function findMostAffectedObjectId(outcome: any): string | null {
+function findMostAffectedObjectId(outcome: NexoraScenarioOutcome | undefined): string | null {
   return (
-    [...(Array.isArray(outcome?.objectImpacts) ? outcome.objectImpacts : [])]
-      .sort((a: any, b: any) => {
+    [...outcome?.objectImpacts ?? []]
+      .sort((a, b) => {
         const scoreA =
-          Math.abs(safeNumber(a?.afterRisk, 0) - safeNumber(a?.beforeRisk, 0)) +
-          Math.abs(safeNumber(a?.afterStability, 0) - safeNumber(a?.beforeStability, 0));
+          Math.abs(safeNumber(a.afterRisk, 0) - safeNumber(a.beforeRisk, 0)) +
+          Math.abs(safeNumber(a.afterStability, 0) - safeNumber(a.beforeStability, 0));
         const scoreB =
-          Math.abs(safeNumber(b?.afterRisk, 0) - safeNumber(b?.beforeRisk, 0)) +
-          Math.abs(safeNumber(b?.afterStability, 0) - safeNumber(b?.beforeStability, 0));
-        return scoreB - scoreA || String(a?.objectId ?? "").localeCompare(String(b?.objectId ?? ""));
+          Math.abs(safeNumber(b.afterRisk, 0) - safeNumber(b.beforeRisk, 0)) +
+          Math.abs(safeNumber(b.afterStability, 0) - safeNumber(b.beforeStability, 0));
+        return scoreB - scoreA || String(a.objectId ?? "").localeCompare(String(b.objectId ?? ""));
       })[0]?.objectId ?? null
   );
 }
 
-function findMostAffectedKpiId(outcome: any): string | null {
+function findMostAffectedKpiId(outcome: NexoraScenarioOutcome | undefined): string | null {
   return (
-    [...(Array.isArray(outcome?.kpiImpacts) ? outcome.kpiImpacts : [])]
-      .sort((a: any, b: any) => {
-        const scoreA = Math.abs(safeNumber(a?.delta, 0));
-        const scoreB = Math.abs(safeNumber(b?.delta, 0));
-        return scoreB - scoreA || String(a?.id ?? "").localeCompare(String(b?.id ?? ""));
+    [...outcome?.kpiImpacts ?? []]
+      .sort((a, b) => {
+        const scoreA = Math.abs(safeNumber(a.delta, 0));
+        const scoreB = Math.abs(safeNumber(b.delta, 0));
+        return scoreB - scoreA || String(a.id ?? "").localeCompare(String(b.id ?? ""));
       })[0]?.id ?? null
   );
 }
@@ -1098,8 +1182,8 @@ export function buildExplorationOutputs(args: {
 
 export function runAutonomousScenarioExploration(
   args: {
-    runtimeModel?: any;
-    runtimeContext?: any;
+    runtimeModel?: NexoraSimulationRuntimeInput | NormalizedRuntimeModel | unknown;
+    runtimeContext?: unknown;
     fragilityScan?: FragilityScanLike | null;
     goal?: NexoraExplorationGoal;
     domainId?: string | null;

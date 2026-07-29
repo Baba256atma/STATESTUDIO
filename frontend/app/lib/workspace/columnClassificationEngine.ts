@@ -17,10 +17,7 @@ import {
   type ColumnClassificationMutationResult,
   type WorkspaceColumnClassificationProfile,
 } from "./columnClassificationContract.ts";
-import {
-  WORKSPACE_COLUMN_CLASSIFICATION_TAGS,
-  WORKSPACE_COLUMN_CLASSIFICATION_VERSION,
-} from "./workspaceColumnClassificationContract.ts";
+import { WORKSPACE_COLUMN_CLASSIFICATION_VERSION } from "./workspaceColumnClassificationContract.ts";
 import {
   classifyColumnFromSchemaColumn,
   classifyDataSourceColumns,

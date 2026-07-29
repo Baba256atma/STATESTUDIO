@@ -10,17 +10,7 @@ import {
   commitExecutiveWorkspaceTransition,
   requestExecutiveWorkspaceTransition,
 } from "./executiveWorkspaceTransitionControllerRuntime.ts";
-import {
-  buildWorkspaceNavigationHistoryEntry,
-  DEFAULT_WORKSPACE_HISTORY_DEPTH,
-  resetExecutiveWorkspaceNavigationHistoryForTests,
-  trimHistoryToDepth,
-  validateBackNavigationTarget,
-  warnWorkspaceHistoryBrake,
-  type WorkspaceNavigationHistoryEntry,
-  type WorkspaceNavigationHistorySummary,
-  type WorkspaceNavigationTransitionType,
-} from "./executiveWorkspaceNavigationHistoryContract.ts";
+import { buildWorkspaceNavigationHistoryEntry, DEFAULT_WORKSPACE_HISTORY_DEPTH, resetExecutiveWorkspaceNavigationHistoryForTests, validateBackNavigationTarget, warnWorkspaceHistoryBrake, type WorkspaceNavigationHistoryEntry, type WorkspaceNavigationHistorySummary, type WorkspaceNavigationTransitionType } from "./executiveWorkspaceNavigationHistoryContract.ts";
 
 let historyInitialized = false;
 let maxDepth = DEFAULT_WORKSPACE_HISTORY_DEPTH;

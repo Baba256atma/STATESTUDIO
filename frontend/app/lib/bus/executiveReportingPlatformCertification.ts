@@ -3,10 +3,7 @@ import {
   ExecutiveReportingContractVersion,
 } from "./executiveReportingIndex.ts";
 import { ExecutiveReportingRegistryMetadata } from "./executiveReportingRegistryIndex.ts";
-import {
-  ExecutiveReportingModelMetadata,
-  ExecutiveReportingModelVersion,
-} from "./executiveReportingModelIndex.ts";
+import { ExecutiveReportingModelVersion } from "./executiveReportingModelIndex.ts";
 import {
   ExecutiveReportingValidationVersion,
   buildExecutiveReportingValidationSummary,

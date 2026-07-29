@@ -5,13 +5,7 @@
 
 import type { ExecutiveScenarioSnapshot } from "./executiveScenarioSnapshot.ts";
 import type { ExecutiveScenarioSummary } from "./executiveScenarioSummaryResult.ts";
-import {
-  EXECUTIVE_RECOMMENDATION_CONFIDENCE_RANK,
-  EXECUTIVE_RECOMMENDATION_INTENT_LABELS,
-  EXECUTIVE_RECOMMENDATION_INTENT_ORDER,
-  type ExecutiveRecommendationFocus,
-  type ExecutiveRecommendationIntent,
-} from "./executiveRecommendationPortfolio.ts";
+import { EXECUTIVE_RECOMMENDATION_CONFIDENCE_RANK, EXECUTIVE_RECOMMENDATION_INTENT_LABELS, EXECUTIVE_RECOMMENDATION_INTENT_ORDER, type ExecutiveRecommendationFocus } from "./executiveRecommendationPortfolio.ts";
 import {
   createExecutiveRecommendationAssumption,
   createExecutiveRecommendationConstraint,

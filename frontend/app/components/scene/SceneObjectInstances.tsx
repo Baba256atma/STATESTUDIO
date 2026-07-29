@@ -100,8 +100,6 @@ function SceneObjectInstancesComponent({
   showObjectDebugLabels,
   showExecutiveLayoutLabels,
   selectedObjectId = null,
-  connectedToSelectedIds: _connectedToSelectedIds,
-  relationshipExplorationActive: _relationshipExplorationActive = false,
   svieHealthVisualByObjectId,
   svieRiskHotspotVisualByObjectId,
   svieCauseChainNodeVisualByObjectId,

@@ -473,9 +473,6 @@ export function runExecutiveRecommendationPlatformCertification(
   );
 
   const groupsPassed = groups.filter((entry) => entry.passed).length;
-  const allChecks = groups.flatMap((entry) => [...entry.checks]);
-  const passedCount = allChecks.filter((entry) => entry.passed).length;
-  const failedCount = allChecks.length - passedCount;
   const certified = groupsPassed === groups.length && regression.success;
 
   groups.push(

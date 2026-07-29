@@ -1,12 +1,7 @@
 /**
  * APP-8:1 — Decision Journal Platform constants.
+ * Values-first vocabulary: unions are derived in decisionJournalTypes.ts.
  */
-
-import type {
-  DecisionJournalConfidence,
-  DecisionJournalSource,
-  DecisionJournalStatus,
-} from "./decisionJournalTypes.ts";
 
 export const DECISION_JOURNAL_PLATFORM_CONTRACT_VERSION = "APP-8/1" as const;
 export const DECISION_JOURNAL_PLATFORM_ARCHITECTURE_VERSION = "APP-8/1-arch" as const;
@@ -35,7 +30,7 @@ export const DECISION_JOURNAL_STATUS_KEYS = Object.freeze([
   "active",
   "reviewed",
   "archived",
-] as const satisfies readonly DecisionJournalStatus[]);
+] as const);
 
 export const DECISION_JOURNAL_SOURCE_KEYS = Object.freeze([
   "manual",
@@ -43,7 +38,7 @@ export const DECISION_JOURNAL_SOURCE_KEYS = Object.freeze([
   "imported",
   "workspace",
   "api",
-] as const satisfies readonly DecisionJournalSource[]);
+] as const);
 
 export const DECISION_JOURNAL_CONFIDENCE_KEYS = Object.freeze([
   "very_low",
@@ -51,7 +46,7 @@ export const DECISION_JOURNAL_CONFIDENCE_KEYS = Object.freeze([
   "medium",
   "high",
   "very_high",
-] as const satisfies readonly DecisionJournalConfidence[]);
+] as const);
 
 export const DECISION_JOURNAL_MANDATORY_ENTRY_FIELDS = Object.freeze([
   "id",

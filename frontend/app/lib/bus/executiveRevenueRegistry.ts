@@ -9,10 +9,7 @@ import type {
   RevenueSummary,
   RevenueTarget,
 } from "./executiveRevenueContracts.ts";
-import {
-  ExecutiveRevenueContractNamespace,
-  ExecutiveRevenueContractVersion,
-} from "./executiveRevenueContracts.ts";
+import { ExecutiveRevenueContractNamespace } from "./executiveRevenueContracts.ts";
 
 export const ExecutiveRevenueRegistryId = "executive-revenue-registry" as const;
 

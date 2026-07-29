@@ -299,6 +299,7 @@ test("rejects duplicate reality build fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_reality_build");
 });
 

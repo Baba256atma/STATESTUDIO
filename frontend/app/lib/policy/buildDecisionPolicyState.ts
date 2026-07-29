@@ -12,13 +12,21 @@ import { buildDecisionPolicyRules } from "./buildDecisionPolicyRules";
 import type { DecisionPolicyState } from "./decisionPolicyTypes";
 import { evaluateDecisionPolicies } from "./evaluateDecisionPolicies";
 
+import type { DecisionMemoryEntry } from "../decision/memory/decisionMemoryTypes";
+import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes";
+import type { DecisionExecutionIntent } from "../execution/decisionExecutionIntent";
+
 type BuildDecisionPolicyStateInput = {
-  canonicalRecommendation?: any | null;
-  decisionExecutionIntent?: any | null;
-  decisionResult?: any | null;
-  responseData?: any | null;
-  memoryEntries?: any[];
+  canonicalRecommendation?: CanonicalRecommendation | null;
+  decisionExecutionIntent?: DecisionExecutionIntent | null;
+  decisionResult?: Record<string, unknown> | null;
+  responseData?: Record<string, unknown> | null;
+  memoryEntries?: DecisionMemoryEntry[];
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
 
 export function buildDecisionPolicyState(
   input: BuildDecisionPolicyStateInput
@@ -40,9 +48,10 @@ export function buildDecisionPolicyState(
     memoryEntries: input.memoryEntries ?? [],
   });
   const metaDecision = buildMetaDecisionState({
-    reasoning: input.responseData?.ai_reasoning ?? null,
-    simulation: input.responseData?.decision_simulation ?? null,
-    comparison: input.responseData?.decision_comparison ?? input.responseData?.comparison ?? null,
+    reasoning: asRecord(input.responseData?.ai_reasoning),
+    simulation: asRecord(input.responseData?.decision_simulation),
+    comparison:
+      asRecord(input.responseData?.decision_comparison) ?? asRecord(input.responseData?.comparison),
     canonicalRecommendation: input.canonicalRecommendation ?? null,
     calibration,
     responseData: input.responseData ?? null,

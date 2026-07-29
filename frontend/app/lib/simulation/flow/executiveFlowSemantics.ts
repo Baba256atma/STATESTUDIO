@@ -2,13 +2,7 @@
  * D7:2:2 — Executive-readable flow semantics.
  */
 
-import type {
-  ExecutiveFlowSemantics,
-  OperationalBottleneck,
-  OrganizationalFlow,
-  OrganizationalFlowState,
-  RegionFlowPressure,
-} from "./flowDynamicsTypes.ts";
+import type { ExecutiveFlowSemantics, OrganizationalFlow, OrganizationalFlowState } from "./flowDynamicsTypes.ts";
 import { CANONICAL_REGION_LABELS } from "../topology/operationalUniverseClassification.ts";
 
 function regionLabel(regionId: string): string {

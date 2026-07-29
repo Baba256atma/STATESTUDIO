@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useMemo } from "react";
+import type { SceneObject } from "../../../lib/sceneTypes";
 import { Line } from "@react-three/drei";
+import type { ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { readPropagationPaths, type PropagationPath } from "../../../lib/propagation/propagationAuthoringRuntime";
@@ -16,7 +18,7 @@ import { recordConnectionLineRebuild } from "../../../lib/diagnostics/connection
 
 export type AuthoredPropagationOverlayProps = {
   sceneJson: unknown;
-  objects: any[];
+  objects: SceneObject[];
   visible: boolean;
   themeTokens: OverlayThemeTokens;
   selectedPathId?: string | null;
@@ -62,7 +64,7 @@ export const AuthoredPropagationOverlay = React.memo(function AuthoredPropagatio
 
 function AuthoredPropagationPathLine(props: {
   path: PropagationPath;
-  objects: any[];
+  objects: SceneObject[];
   themeTokens: OverlayThemeTokens;
   selected: boolean;
   onSelect?: (path: PropagationPath) => void;
@@ -97,7 +99,7 @@ function AuthoredPropagationPathLine(props: {
   const strength = Math.max(0, Math.min(100, props.path.strength));
   const opacity = props.selected ? 0.92 : 0.36 + (strength / 100) * 0.34;
   const lineWidth = props.selected ? 2.7 : 0.9 + (strength / 100) * 1.1;
-  const handleSelect = (event: any) => {
+  const handleSelect = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
     props.onSelect?.(props.path);
@@ -124,7 +126,7 @@ function AuthoredPropagationPathLine(props: {
         opacity={opacity}
         lineWidth={lineWidth}
         onClick={handleSelect}
-        onPointerDown={(event: any) => event.stopPropagation()}
+        onPointerDown={(event: ThreeEvent<PointerEvent>) => event.stopPropagation()}
       />
       <Line
         points={geometry.points}
@@ -133,7 +135,7 @@ function AuthoredPropagationPathLine(props: {
         opacity={0}
         lineWidth={8}
         onClick={handleSelect}
-        onPointerDown={(event: any) => event.stopPropagation()}
+        onPointerDown={(event: ThreeEvent<PointerEvent>) => event.stopPropagation()}
       />
       <mesh position={geometry.arrow}>
         <coneGeometry args={[0.055, 0.14, 12]} />

@@ -15,17 +15,7 @@ import {
   CANONICAL_CONSENSUS_INTELLIGENCE_OWNER,
   CANONICAL_CONSENSUS_INTELLIGENCE_SURFACE_ID,
 } from "./consensusIntelligenceContract.ts";
-import type {
-  ConsensusAttentionLevel,
-  ConsensusConfidenceLevel,
-  ConsensusIntelligenceAggregationInput,
-  ConsensusIntelligenceSnapshot,
-  ConsensusIntelligenceSurfaceModel,
-  ConsensusLevel,
-  ConvergenceLevel,
-  DivergenceLevel,
-  InstitutionalTensionLevel,
-} from "./consensusIntelligenceContract.ts";
+import type { ConsensusAttentionLevel, ConsensusIntelligenceAggregationInput, ConsensusIntelligenceSnapshot, ConsensusIntelligenceSurfaceModel, ConsensusLevel, ConvergenceLevel, DivergenceLevel, InstitutionalTensionLevel } from "./consensusIntelligenceContract.ts";
 import type { ConsensusContext } from "./consensusContextContract.ts";
 import {
   reportAlignmentZone,

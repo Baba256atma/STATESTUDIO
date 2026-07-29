@@ -8,27 +8,11 @@ import { join } from "node:path";
 import { evaluateStageFileBoundary, validateStageManifest } from "../stage/stageArchitectureGuards.ts";
 import { BUSINESS_TIMELINE_PLATFORM_IDENTITY } from "../business-timeline/businessTimelineContracts.ts";
 import { DECISION_TIMELINE_PLATFORM_IDENTITY } from "../decision-timeline/decisionTimelineContracts.ts";
-import {
-  SCENARIO_TIMELINE_PLATFORM_CONTRACT_VERSION,
-  SCENARIO_TIMELINE_PLATFORM_IDENTITY,
-} from "../scenario-timeline/scenarioTimelinePlatformContracts.ts";
-import { DECISION_JOURNAL_PLATFORM_CONTRACT_VERSION, DECISION_JOURNAL_PLATFORM_IDENTITY } from "./decisionJournalContracts.ts";
+import { SCENARIO_TIMELINE_PLATFORM_IDENTITY } from "../scenario-timeline/scenarioTimelinePlatformContracts.ts";
+import { DECISION_JOURNAL_PLATFORM_IDENTITY } from "./decisionJournalContracts.ts";
 import { createDecisionJournalFoundation } from "./decisionJournalFoundation.ts";
 import { resetDecisionJournalPlatformForTests } from "./decisionJournalRunner.ts";
-import {
-  archiveDecisionJournalEntry,
-  createDecisionJournalEntry,
-  filterDecisionJournalEntries,
-  getDecisionJournalEntryById,
-  getDecisionJournalEntryRevisionHistory,
-  getDecisionJournalEntriesByWorkspace,
-  initializeDecisionJournalEngine,
-  isDecisionJournalEngineInitialized,
-  resetDecisionJournalEngineForTests,
-  updateDecisionJournalMetadata,
-  validateDecisionJournalEntryInput,
-  DECISION_JOURNAL_ENGINE_SELF_MANIFEST,
-} from "./decisionJournalEngine.ts";
+import { archiveDecisionJournalEntry, createDecisionJournalEntry, filterDecisionJournalEntries, getDecisionJournalEntryRevisionHistory, getDecisionJournalEntriesByWorkspace, initializeDecisionJournalEngine, isDecisionJournalEngineInitialized, resetDecisionJournalEngineForTests, updateDecisionJournalMetadata, validateDecisionJournalEntryInput, DECISION_JOURNAL_ENGINE_SELF_MANIFEST } from "./decisionJournalEngine.ts";
 import { getDecisionJournalEngineRegistrySnapshot } from "./decisionJournalEngineRegistry.ts";
 import {
   assertNoHardDeleteInEngineSource,

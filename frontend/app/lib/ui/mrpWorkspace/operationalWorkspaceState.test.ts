@@ -61,14 +61,12 @@ test("empty state uses empty copy for focus and notes", () => {
 
 test("publishOperationalWorkspaceState skips duplicate signatures", () => {
   const first = publishOperationalWorkspaceState({
-    phase: "ready",
     operationalStatus: DEFAULT_OPERATIONAL_READY_STATE.operationalStatus,
     activityLevel: DEFAULT_OPERATIONAL_READY_STATE.activityLevel,
     operationalFocus: DEFAULT_OPERATIONAL_READY_STATE.operationalFocus,
     operationalNotes: DEFAULT_OPERATIONAL_READY_STATE.operationalNotes,
   });
   const second = publishOperationalWorkspaceState({
-    phase: "ready",
     operationalStatus: DEFAULT_OPERATIONAL_READY_STATE.operationalStatus,
     activityLevel: DEFAULT_OPERATIONAL_READY_STATE.activityLevel,
     operationalFocus: DEFAULT_OPERATIONAL_READY_STATE.operationalFocus,
@@ -90,7 +88,6 @@ test("hydrateOperationalWorkspaceStateOnMount transitions loading to ready", () 
 
 test("getOperationalWorkspaceStateServerSnapshot returns loading defaults", () => {
   publishOperationalWorkspaceState({
-    phase: "ready",
     operationalStatus: "warning",
   });
   const snapshot = getOperationalWorkspaceStateServerSnapshot();

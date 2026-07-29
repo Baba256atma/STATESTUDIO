@@ -3,8 +3,8 @@ import type { CognitiveStyle } from "./cognitiveStyleTypes";
 type SelectDefaultCognitiveStyleInput = {
   activeMode?: string | null;
   rightPanelView?: string | null;
-  responseData?: any | null;
-  canonicalRecommendation?: any | null;
+  responseData?: Record<string, unknown> | null;
+  canonicalRecommendation?: import("../decision/recommendation/recommendationTypes").CanonicalRecommendation | null;
 };
 
 function text(value: unknown) {
@@ -21,7 +21,10 @@ export function selectDefaultCognitiveStyle(input: SelectDefaultCognitiveStyleIn
     input.canonicalRecommendation?.primary?.action,
     input.canonicalRecommendation?.reasoning?.why,
     input.canonicalRecommendation?.reasoning?.risk_summary,
-    input.responseData?.executive_summary_surface?.why_it_matters,
+    input.responseData?.executive_summary_surface &&
+    typeof input.responseData.executive_summary_surface === "object"
+      ? (input.responseData.executive_summary_surface as Record<string, unknown>).why_it_matters
+      : null,
   ]
     .map(text)
     .join(" ");

@@ -36,7 +36,6 @@ function buildPanelModel(data: ExecutiveObjectPanelData): ExecutiveActionPanelMo
 
 export default function ExecutiveObjectPanel({ data, selectedObjectId }: Props) {
   const renderCountRef = useRef(0);
-  renderCountRef.current += 1;
   const oid = String(selectedObjectId ?? "").trim();
   const focusModeActive = useSyncExternalStore(
     subscribeExecutiveFocusMode,
@@ -52,6 +51,9 @@ export default function ExecutiveObjectPanel({ data, selectedObjectId }: Props) 
       contextId: oid || null,
     });
   }, [oid]);
+  useEffect(() => {
+    renderCountRef.current += 1;
+  });
   useEffect(() => {
     devLogThrottled({
       key: `exec-obj-panel:${oid || "none"}`,

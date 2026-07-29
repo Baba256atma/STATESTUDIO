@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { listEpisodes } from "../lib/api/replayApi";
+import { readUnknownErrorMessage } from "../lib/system/nexoraErrors";
 
 type EpisodeSummary = {
   episode_id: string;
@@ -28,8 +29,8 @@ export function useReplayEpisodesList(): {
     try {
       const data = await listEpisodes();
       setEpisodes(data);
-    } catch (err: any) {
-      setError(err?.message ?? "Failed to load episodes");
+    } catch (err: unknown) {
+      setError(readUnknownErrorMessage(err, "Failed to load episodes"));
     } finally {
       setLoading(false);
     }

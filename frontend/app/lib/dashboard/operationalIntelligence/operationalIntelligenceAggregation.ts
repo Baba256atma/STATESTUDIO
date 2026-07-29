@@ -38,13 +38,6 @@ const HEALTH_LABEL: Readonly<Record<OperationalHealthLevel, string>> = Object.fr
   critical: "Critical",
 });
 
-const PRESSURE_LABEL: Readonly<Record<OperationalPressureLevel, string>> = Object.freeze({
-  low: "Low",
-  moderate: "Moderate",
-  high: "High",
-  critical: "Critical",
-});
-
 const DEMAND_ARROW: Readonly<Record<DemandImpactDirection, string>> = Object.freeze({
   growing: "↑",
   stable: "→",

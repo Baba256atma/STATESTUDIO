@@ -17,9 +17,7 @@ import type {
   RecommendationExplanationProvenance,
 } from "./executiveRecommendationExplainabilityEngineTypes.ts";
 import { isRecommendationEvaluationEngineInitialized } from "./executiveRecommendationEvaluationEngine.ts";
-import { validateRecommendationEvaluationRecord } from "./executiveRecommendationEvaluationEngineValidation.ts";
-import type { RecommendationEvaluation } from "./executiveRecommendationEvaluationEngineTypes.ts";
-import { isRecommendationGenerationEngineInitialized } from "./executiveRecommendationGenerationEngine.ts";
+import { validateRecommendationEvaluationRecord } from "./executiveRecommendationEvaluationEngineValidation.ts";import { isRecommendationGenerationEngineInitialized } from "./executiveRecommendationGenerationEngine.ts";
 import { isExecutiveRecommendationPlatformInitialized } from "./executiveRecommendationFoundation.ts";
 
 function issue(code: string, message: string, field?: string): ExplanationValidationIssue {

@@ -18,7 +18,7 @@ export type DecisionTrustTimelineModel = {
 };
 
 type BuildDecisionTrustTimelineModelParams = {
-  responseData?: any;
+  responseData?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
   decisionResult?: DecisionExecutionResult | null;
   memoryEntry?: DecisionMemoryEntry | null;
@@ -26,6 +26,10 @@ type BuildDecisionTrustTimelineModelParams = {
 
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
 function cleanText(value: unknown): string | null {
@@ -82,41 +86,53 @@ function fallbackAuditExplanation(params: {
   provenance?: TrustProvenance | null;
   recommendation?: CanonicalRecommendation | null;
   memoryEntry?: DecisionMemoryEntry | null;
-  responseData?: any;
+  responseData?: Record<string, unknown> | null;
   decisionResult?: DecisionExecutionResult | null;
 }): string {
   const note = limitSentence(asArray<string>(params.event.explanation_notes).join(" "));
   if (note) return note;
 
+  const responseData = params.responseData ?? null;
+  const promptFeedback = asRecord(responseData?.prompt_feedback);
+  const executiveSummary = asRecord(responseData?.executive_summary_surface);
+  const decisionSimulation = asRecord(responseData?.decision_simulation);
+  const simulationImpact = asRecord(decisionSimulation?.impact);
+  const decisionComparison = asRecord(responseData?.decision_comparison);
+
   switch (params.event.event_type) {
     case "prompt_submitted":
       return limitSentence(
-        params.memoryEntry?.prompt ??
-          params.responseData?.prompt_feedback?.prompt ??
-          params.responseData?.prompt ??
-          "A new decision question was submitted for review."
+        cleanText(
+          params.memoryEntry?.prompt ??
+            promptFeedback?.prompt ??
+            responseData?.prompt ??
+            "A new decision question was submitted for review."
+        )
       ) ?? "A new decision question was submitted for review.";
     case "reasoning_generated":
       return (
         limitSentence(
-          params.responseData?.executive_summary_surface?.why_it_matters ??
-            params.recommendation?.reasoning?.why ??
-            params.responseData?.analysis_summary
+          cleanText(
+            executiveSummary?.why_it_matters ??
+              params.recommendation?.reasoning?.why ??
+              responseData?.analysis_summary
+          )
         ) ?? "Nexora interpreted the situation and identified the key decision pressure."
       );
     case "simulation_run":
       return (
         limitSentence(
-          params.responseData?.decision_simulation?.impact?.summary ??
-            params.recommendation?.simulation?.summary ??
-            params.memoryEntry?.impact_summary
+          cleanText(
+            simulationImpact?.summary ??
+              params.recommendation?.simulation?.summary ??
+              params.memoryEntry?.impact_summary
+          )
         ) ?? "A simulation estimated how the system could change if the move is executed."
       );
     case "scenario_compared":
       return (
         limitSentence(
-          params.responseData?.decision_comparison?.summary ??
-            params.memoryEntry?.compare_summary
+          cleanText(decisionComparison?.summary ?? params.memoryEntry?.compare_summary)
         ) ?? "Alternative paths were reviewed to clarify the trade-offs."
       );
     case "recommendation_generated":
@@ -152,7 +168,11 @@ function sortByTimestamp(items: DecisionTrustTimelineItem[]): DecisionTrustTimel
 export function buildDecisionTrustTimelineModel(
   params: BuildDecisionTrustTimelineModelParams
 ): DecisionTrustTimelineModel {
-  const auditEvents = asArray<AuditEvent>(params.responseData?.audit_events);
+  const responseData = params.responseData ?? null;
+  const decisionSimulation = asRecord(responseData?.decision_simulation);
+  const simulationImpact = asRecord(decisionSimulation?.impact);
+  const simulationResult = asRecord(params.decisionResult?.simulation_result);
+  const auditEvents = asArray<AuditEvent>(responseData?.audit_events);
   const provenance = asArray<TrustProvenance>(params.responseData?.trust_provenance);
   const provenanceById = new Map(provenance.map((item) => [item.id, item]));
   const items: DecisionTrustTimelineItem[] = [];
@@ -188,7 +208,7 @@ export function buildDecisionTrustTimelineModel(
         (event.event_type === "recommendation_generated"
           ? normalizeConfidence(params.canonicalRecommendation?.confidence?.score)
           : event.event_type === "simulation_run"
-          ? normalizeConfidence(params.responseData?.decision_simulation?.confidence ?? params.decisionResult?.simulation_result?.impact_score)
+          ? normalizeConfidence(decisionSimulation?.confidence ?? simulationResult?.impact_score)
           : null),
       source: mapSource(event.origin_type ?? null, linkedProvenance),
       timestamp: event.timestamp,
@@ -228,18 +248,20 @@ export function buildDecisionTrustTimelineModel(
 
   if (
     !items.some((item) => item.title === "Simulation run") &&
-    (params.responseData?.decision_simulation || params.decisionResult?.simulation_result)
+    (decisionSimulation || simulationResult)
   ) {
     items.push({
       id: `simulation_${params.canonicalRecommendation?.id ?? params.memoryEntry?.id ?? "current"}`,
       title: "Simulation run",
       explanation:
         limitSentence(
-          params.responseData?.decision_simulation?.impact?.summary ??
-            params.canonicalRecommendation?.simulation?.summary ??
-            params.memoryEntry?.impact_summary
+          cleanText(
+            simulationImpact?.summary ??
+              params.canonicalRecommendation?.simulation?.summary ??
+              params.memoryEntry?.impact_summary
+          )
         ) ?? "A simulation estimated the impact of the recommended move.",
-      confidence: normalizeConfidence(params.responseData?.decision_simulation?.confidence),
+      confidence: normalizeConfidence(decisionSimulation?.confidence),
       source: "Simulation",
       timestamp: params.memoryEntry ? new Date(params.memoryEntry.created_at).toISOString() : null,
     });
@@ -269,9 +291,11 @@ export function buildDecisionTrustTimelineModel(
 
   const summary =
     limitSentence(
-      params.canonicalRecommendation?.reasoning?.why ??
-        params.responseData?.executive_summary_surface?.why_it_matters ??
-        params.memoryEntry?.recommendation_summary
+      cleanText(
+        params.canonicalRecommendation?.reasoning?.why ??
+          asRecord(responseData?.executive_summary_surface)?.why_it_matters ??
+          params.memoryEntry?.recommendation_summary
+      )
     ) ?? "Trace how the recommendation was formed, supported, and saved for review.";
 
   return {

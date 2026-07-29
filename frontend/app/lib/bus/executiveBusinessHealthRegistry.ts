@@ -1,16 +1,4 @@
-import {
-  ExecutiveBusinessHealthContractDescription,
-  ExecutiveBusinessHealthContractId,
-  ExecutiveBusinessHealthContractVersion,
-  type ExecutiveBusinessHealthCapability,
-  type ExecutiveBusinessHealthDimension,
-  type ExecutiveBusinessHealthDomainId,
-  type ExecutiveBusinessHealthIndicator,
-  type ExecutiveBusinessHealthScoreRange,
-  type ExecutiveBusinessHealthSeverity,
-  type ExecutiveBusinessHealthStatus,
-  type ExecutiveBusinessHealthTrend,
-} from "./executiveBusinessHealthIndex.ts";
+import { ExecutiveBusinessHealthContractDescription, ExecutiveBusinessHealthContractId, ExecutiveBusinessHealthContractVersion, type ExecutiveBusinessHealthCapability, type ExecutiveBusinessHealthDimension, type ExecutiveBusinessHealthDomainId, type ExecutiveBusinessHealthIndicator, type ExecutiveBusinessHealthScoreRange } from "./executiveBusinessHealthIndex.ts";
 
 const registryMetadata = Object.freeze({
   contractId: ExecutiveBusinessHealthContractId,

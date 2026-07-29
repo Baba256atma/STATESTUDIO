@@ -17,7 +17,7 @@ import {
 } from "./enterpriseDependencyPressureEngine.ts";
 import { derivePressureSignalsFromDependencies } from "./pressureAccumulationModel.ts";
 import { analyzePressurePropagation } from "./pressurePropagationAnalysis.ts";
-import { detectSaturationRegions, detectFragilityHotspots } from "./saturationDetection.ts";
+import { detectSaturationRegions } from "./saturationDetection.ts";
 import {
   buildPressureContentFingerprint,
   detectPressureCycle,
@@ -28,6 +28,7 @@ import { classifyPressureStability } from "./systemicPressureModel.ts";
 
 function sceneFixture(): SceneJson {
   return {
+    state_vector: {},
     scene: {
       objects: [
         { id: "plant_a", label: "Plant A", domain: "manufacturing", dependencies: ["warehouse_hub"] },
@@ -194,6 +195,7 @@ test("rejects duplicate pressure build fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_pressure_build");
 });
 

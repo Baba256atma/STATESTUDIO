@@ -1,11 +1,4 @@
-import {
-  ExecutiveDecisionCapabilityRegistry,
-  ExecutiveDecisionDependencyMap,
-  ExecutiveDecisionFoundation,
-  ExecutiveDecisionOwnershipMap,
-  getExecutiveDecisionFoundation,
-  getExecutiveDecisionMetadata,
-} from "./executiveDecisionPublicApi.ts";
+import { ExecutiveDecisionCapabilityRegistry, ExecutiveDecisionDependencyMap, ExecutiveDecisionOwnershipMap, getExecutiveDecisionFoundation, getExecutiveDecisionMetadata } from "./executiveDecisionPublicApi.ts";
 import type { ExecutiveDecisionValidationRule } from "./executiveDecisionValidationTypes.ts";
 
 const rule = (

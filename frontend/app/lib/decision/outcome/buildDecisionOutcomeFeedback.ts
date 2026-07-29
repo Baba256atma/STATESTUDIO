@@ -9,8 +9,12 @@ type BuildDecisionOutcomeFeedbackInput = {
   canonicalRecommendation?: CanonicalRecommendation | null;
   observedAssessment: ObservedOutcomeAssessment;
   memoryEntry?: DecisionMemoryEntry | null;
-  responseData?: any | null;
+  responseData?: Record<string, unknown> | null;
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
 
 function text(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
@@ -23,10 +27,11 @@ function unique(values: unknown[], limit = 4) {
 export function buildDecisionOutcomeFeedback(
   input: BuildDecisionOutcomeFeedbackInput
 ): DecisionOutcomeFeedback {
+  const responseSimulation = asRecord(input.responseData?.decision_simulation);
   const expectedSummary =
     text(input.canonicalRecommendation?.primary?.impact_summary) ||
-    text(input.responseData?.decision_simulation?.impact?.summary) ||
-    text(input.responseData?.decision_simulation?.summary) ||
+    text(asRecord(responseSimulation?.impact)?.summary) ||
+    text(responseSimulation?.summary) ||
     null;
   const observedSummary = input.observedAssessment.observed_summary ?? null;
 

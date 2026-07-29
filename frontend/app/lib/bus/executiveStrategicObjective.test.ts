@@ -14,17 +14,7 @@ import {
   EXECUTIVE_STRATEGIC_THEME_REGISTRY,
   listExecutiveStrategicThemes,
 } from "./executiveStrategicThemeIndex.ts";
-import {
-  buildExecutiveStrategicObjective,
-  EXECUTIVE_STRATEGIC_OBJECTIVE_REGISTRY,
-  EXECUTIVE_STRATEGIC_OBJECTIVE_RELATIONSHIPS,
-  EXECUTIVE_STRATEGIC_OBJECTIVES,
-  ExecutiveStrategicObjectivesPlatform,
-  getExecutiveStrategicObjectivesManifest,
-  listExecutiveStrategicObjectives,
-  listExecutiveStrategicObjectivesPublicApis,
-  validateExecutiveStrategicObjective,
-} from "./executiveStrategicObjectiveIndex.ts";
+import { buildExecutiveStrategicObjective, EXECUTIVE_STRATEGIC_OBJECTIVE_REGISTRY, EXECUTIVE_STRATEGIC_OBJECTIVE_RELATIONSHIPS, EXECUTIVE_STRATEGIC_OBJECTIVES, ExecutiveStrategicObjectivesPlatform, getExecutiveStrategicObjectivesManifest, validateExecutiveStrategicObjective } from "./executiveStrategicObjectiveIndex.ts";
 import type { ExecutiveStrategicObjectiveRegistry } from "./executiveStrategicObjectiveTypes.ts";
 
 test("platform identity", () => {

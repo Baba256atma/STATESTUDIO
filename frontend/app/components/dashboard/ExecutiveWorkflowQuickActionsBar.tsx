@@ -30,13 +30,21 @@ export type ExecutiveWorkflowQuickActionsBarProps = Readonly<{
 export function ExecutiveWorkflowQuickActionsBar(
   props: ExecutiveWorkflowQuickActionsBarProps
 ): React.ReactElement {
+  const {
+    activeWorkspaceId,
+    selectedObjectId,
+    onWorkspaceLaunch,
+    onFocusRecommendations,
+    onReturnToWorkspace,
+    layoutVariant: layoutVariantProp,
+  } = props;
   const launcherView = useMemo(
     () =>
       buildWorkflowLauncherView({
-        activeWorkspaceId: props.activeWorkspaceId,
-        selectedObjectId: props.selectedObjectId,
+        activeWorkspaceId,
+        selectedObjectId,
       }),
-    [props.activeWorkspaceId, props.selectedObjectId]
+    [activeWorkspaceId, selectedObjectId]
   );
 
   const handleActivate = useCallback(
@@ -45,21 +53,21 @@ export function ExecutiveWorkflowQuickActionsBar(
 
       switch (action.handler) {
         case "workspace_launch":
-          if (action.targetWorkspaceId && props.onWorkspaceLaunch) {
-            props.onWorkspaceLaunch(action.targetWorkspaceId);
+          if (action.targetWorkspaceId && onWorkspaceLaunch) {
+            onWorkspaceLaunch(action.targetWorkspaceId);
           }
           break;
         case "focus_recommendations":
-          props.onFocusRecommendations?.();
+          onFocusRecommendations?.();
           break;
         case "return_workspace": {
-          if (!props.onReturnToWorkspace) return;
+          if (!onReturnToWorkspace) return;
           const target = resolveReturnToWorkspaceTarget({
-            activeWorkspaceId: props.activeWorkspaceId,
-            selectedObjectId: props.selectedObjectId,
+            activeWorkspaceId,
+            selectedObjectId,
           });
           if (target) {
-            props.onReturnToWorkspace({
+            onReturnToWorkspace({
               workspaceId: target.workspaceId,
               returnKind: target.returnKind,
             });
@@ -71,15 +79,15 @@ export function ExecutiveWorkflowQuickActionsBar(
       }
     },
     [
-      props.activeWorkspaceId,
-      props.onFocusRecommendations,
-      props.onReturnToWorkspace,
-      props.onWorkspaceLaunch,
-      props.selectedObjectId,
+      activeWorkspaceId,
+      onFocusRecommendations,
+      onReturnToWorkspace,
+      onWorkspaceLaunch,
+      selectedObjectId,
     ]
   );
 
-  const layoutVariant = props.layoutVariant ?? "standalone";
+  const layoutVariant = layoutVariantProp ?? "standalone";
 
   return (
     <section

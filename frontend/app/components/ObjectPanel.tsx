@@ -16,7 +16,7 @@ export type ObjectPanelProps = {
     resolved?: boolean;
     currentStatusSummary?: string | null;
   } | null;
-  recentActions?: any[];
+  recentActions?: unknown[];
   resolveObjectLabel?: (id: string) => string;
   resolveTypeLabel?: (type: string) => string;
   onHoverStart?: (id: string) => void;
@@ -27,15 +27,21 @@ export type ObjectPanelProps = {
 
 const hasText = (v?: string) => typeof v === "string" && v.trim().length > 0;
 
-const getActionTargetId = (action: any): string | null => {
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+const getActionTargetId = (action: unknown): string | null => {
+  const record = asRecord(action);
+  const value = asRecord(record?.value);
   return (
-    action?.object ??
-    action?.id ??
-    action?.target_id ??
-    action?.targetId ??
-    action?.value?.id ??
-    action?.value?.target_id ??
-    action?.value?.targetId ??
+    (typeof record?.object === "string" ? record.object : null) ??
+    (typeof record?.id === "string" ? record.id : null) ??
+    (typeof record?.target_id === "string" ? record.target_id : null) ??
+    (typeof record?.targetId === "string" ? record.targetId : null) ??
+    (typeof value?.id === "string" ? value.id : null) ??
+    (typeof value?.target_id === "string" ? value.target_id : null) ??
+    (typeof value?.targetId === "string" ? value.targetId : null) ??
     null
   );
 };
@@ -57,6 +63,14 @@ export default function ObjectPanel({
   selectionLocked,
   onToggleSelectionLock,
 }: ObjectPanelProps) {
+  const activeId = selected?.id;
+  const relatedActions = useMemo(() => {
+    if (!activeId || !Array.isArray(recentActions)) return [];
+    return recentActions.filter(
+      (action) => getActionTargetId(action) === activeId
+    );
+  }, [recentActions, activeId]);
+
   if (!selected) {
     return (
       <div
@@ -97,15 +111,6 @@ export default function ObjectPanel({
       : selected.type;
 
   const tags = Array.isArray(selected.tags) ? selected.tags : [];
-
-  const activeId = selected.id;
-
-  const relatedActions = useMemo(() => {
-    if (!activeId || !Array.isArray(recentActions)) return [];
-    return recentActions.filter(
-      (action) => getActionTargetId(action) === activeId
-    );
-  }, [recentActions, activeId]);
 
   const recentForObject = relatedActions.slice(-5).reverse();
 
@@ -274,22 +279,24 @@ export default function ObjectPanel({
           </div>
         ) : (
           <div style={{ display: "grid", gap: 6 }}>
-            {recentForObject.map((action, idx) => (
+            {recentForObject.map((actionValue, idx) => {
+              const action = asRecord(actionValue);
+              return (
               <div key={idx} style={{ display: "grid", gap: 2 }}>
                 <div style={{ fontSize: 12 }}>
-                  {action?.type || action?.verb || "action"}
+                  {String(action?.type ?? action?.verb ?? "action")}
                 </div>
                 <div style={{ fontSize: 11, opacity: 0.65 }}>
-                  {action?.color
+                  {typeof action?.color === "string"
                     ? `color: ${action.color}`
-                    : action?.scale
+                    : typeof action?.scale === "number"
                     ? `scale: ${formatNumber(action.scale)}`
                     : action?.position
                     ? `position`
                     : "—"}
                 </div>
               </div>
-            ))}
+            );})}
           </div>
         )}
       </div>

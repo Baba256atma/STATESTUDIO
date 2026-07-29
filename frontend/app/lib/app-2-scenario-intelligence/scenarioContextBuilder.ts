@@ -54,7 +54,8 @@ function freezeRefs<T>(values: readonly T[] | undefined): readonly T[] {
 }
 
 function resolveReferences(input: ScenarioContextBuildInput): ScenarioContextReferencesInput {
-  const refs = input.references ?? Object.freeze({});
+  const emptyRefs: ScenarioContextReferencesInput = Object.freeze({});
+  const refs = input.references ?? emptyRefs;
   const identity = input.identity;
   return Object.freeze({
     executiveTime: refs.executiveTime ?? identity?.executiveTimeReference ?? null,

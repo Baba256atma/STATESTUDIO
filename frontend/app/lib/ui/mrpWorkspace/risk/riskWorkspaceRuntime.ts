@@ -39,8 +39,9 @@ export function resetRiskWorkspaceRuntimeForTests(): void {
   resetRiskWorkspaceStateRuntimeForTests();
 }
 
-export function buildRiskWorkspaceView(_input?: {
+export function buildRiskWorkspaceView(input?: {
   mountKey?: string | null;
 }): RiskWorkspaceView {
+  void input;
   return buildRiskWorkspaceViewFromState(getRiskWorkspaceState());
 }

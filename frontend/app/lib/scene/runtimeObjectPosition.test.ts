@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import type { SceneObject } from "../../sceneTypes.ts";
+import type { SceneObject } from "../sceneTypes.ts";
 import { bindTopologyToSceneObjects } from "./topology/topologySceneBinding.ts";
 import { buildTopologyRuntimeLayoutPositions } from "./topology/topologyScenePositioning.ts";
 import { resetRuntimeObjectPositionDevLogsForTests } from "./runtimeObjectPositionDevLog.ts";

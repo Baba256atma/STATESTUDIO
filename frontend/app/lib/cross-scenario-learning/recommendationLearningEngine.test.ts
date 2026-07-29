@@ -39,16 +39,7 @@ import {
   RECOMMENDATION_LEARNING_ENGINE_CONTRACT_VERSION,
   RECOMMENDATION_LIFECYCLE_STATE_KEYS,
 } from "./recommendationLearningEngineConstants.ts";
-import {
-  getRecommendationProfiles,
-  initializeRecommendationLearningEngine,
-  learnHistoricalRecommendations,
-  recommendationProfileExists,
-  registerRecommendationProfile,
-  resetRecommendationLearningEngineForTests,
-  RECOMMENDATION_LEARNING_ENGINE_SELF_MANIFEST,
-  validateExecutiveRecommendationHistory,
-} from "./recommendationLearningEngine.ts";
+import { getRecommendationProfiles, initializeRecommendationLearningEngine, learnHistoricalRecommendations, recommendationProfileExists, registerRecommendationProfile, RECOMMENDATION_LEARNING_ENGINE_SELF_MANIFEST, validateExecutiveRecommendationHistory } from "./recommendationLearningEngine.ts";
 import {
   resetRecommendationLearningEnginePlatformForTests,
   runRecommendationLearningCertification,
@@ -195,7 +186,7 @@ function failureRecord(
     workspaceId: WORKSPACE,
     businessGoal: "Expand into new market",
     failureCategory: "strategic_failure",
-    failureFactorKeys: Object.freeze(["execution_delays", "kpi_deterioration"]),
+    failureFactorKeys: Object.freeze(["execution_delays", "kpi_deterioration"] as const),
     failureCauses: Object.freeze([
       Object.freeze({
         label: "Incorrect market assumptions",

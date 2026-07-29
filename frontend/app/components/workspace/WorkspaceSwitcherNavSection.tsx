@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useSyncExternalStore } from "react";
+import React, { useMemo, useSyncExternalStore } from "react";
 import { nx } from "../ui/nexoraTheme";
 import { leftNavPrimaryButtonStyle } from "../../lib/ui/leftNavDesignTokens";
 import type { Workspace } from "../../lib/workspace/workspaceRegistryContract";

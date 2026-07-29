@@ -1,17 +1,27 @@
-export type ObjectTypeEntry = { label?: string; [key: string]: any };
+import type { KpiDefJson, LoopTemplateJson } from "./config/customerConfig";
 
-export type ObjectInstanceEntry = { id: string; label: string; [key: string]: any };
+export type ObjectTypeEntry = { label?: string } & Record<string, unknown>;
 
-export type LoopTemplate = Record<string, any>;
+export type ObjectInstanceEntry = { id: string; label: string } & Record<string, unknown>;
 
-export type KpiDefinition = Record<string, any>;
+export type LoopTemplate = LoopTemplateJson;
+
+export type KpiDefinition = KpiDefJson;
+
+export type CompanyConfigLoopsSection = {
+  loop_templates?: LoopTemplate[];
+};
+
+export type CompanyConfigKpisSection = {
+  kpis?: KpiDefinition[];
+};
 
 export type CompanyConfigPayload = {
   company_id?: string;
   types?: Record<string, ObjectTypeEntry>;
   instances?: ObjectInstanceEntry[];
-  loops?: { loop_templates?: LoopTemplate[] } | any;
-  kpis?: { kpis?: KpiDefinition[] } | any;
+  loops?: CompanyConfigLoopsSection | Record<string, unknown>;
+  kpis?: CompanyConfigKpisSection | Record<string, unknown>;
   display?: { name?: string };
   theme?: {
     hud?: {

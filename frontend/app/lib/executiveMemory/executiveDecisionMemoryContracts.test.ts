@@ -180,6 +180,7 @@ function buildDecisionMemoryInput(
       summary: "Structured decision memory for executive review.",
       owner: "executive-owner",
       sourceModule: "executive-decision-memory",
+      customMetadata: Object.freeze({}),
     }),
     version: createExecutiveDecisionMemoryVersion({
       versionId: `version-${memoryId}`,

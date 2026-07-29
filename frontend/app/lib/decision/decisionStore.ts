@@ -23,14 +23,17 @@ const safeParse = (json: string): unknown => {
   }
 };
 
-const isSnapshot = (x: any): x is DecisionSnapshot =>
-  x &&
-  typeof x === "object" &&
-  typeof x.id === "string" &&
-  typeof x.timestamp === "number" &&
-  typeof x.projectId === "string" &&
-  Array.isArray(x.loops) &&
-  (x.activeLoopId === null || typeof x.activeLoopId === "string");
+const isSnapshot = (x: unknown): x is DecisionSnapshot =>
+  Boolean(
+    x &&
+      typeof x === "object" &&
+      typeof (x as DecisionSnapshot).id === "string" &&
+      typeof (x as DecisionSnapshot).timestamp === "number" &&
+      typeof (x as DecisionSnapshot).projectId === "string" &&
+      Array.isArray((x as DecisionSnapshot).loops) &&
+      ((x as DecisionSnapshot).activeLoopId === null ||
+        typeof (x as DecisionSnapshot).activeLoopId === "string")
+  );
 
 function readStore(projectId: string): DecisionStoreState {
   if (typeof window === "undefined") {
@@ -40,13 +43,14 @@ function readStore(projectId: string): DecisionStoreState {
     const raw = window.localStorage.getItem(makeKey(projectId));
     if (!raw) return { version: STORE_VERSION, snapshots: [] };
     const parsed = safeParse(raw);
+    const parsedRecord =
+      parsed && typeof parsed === "object" ? (parsed as DecisionStoreState) : null;
     if (
-      parsed &&
-      typeof parsed === "object" &&
-      (parsed as any).version === STORE_VERSION &&
-      Array.isArray((parsed as any).snapshots)
+      parsedRecord &&
+      parsedRecord.version === STORE_VERSION &&
+      Array.isArray(parsedRecord.snapshots)
     ) {
-      const snapshots = (parsed as any).snapshots.filter(isSnapshot);
+      const snapshots = parsedRecord.snapshots.filter(isSnapshot);
       return { version: STORE_VERSION, snapshots };
     }
   } catch {

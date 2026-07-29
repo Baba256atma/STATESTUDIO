@@ -1,33 +1,24 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { bindDocumentListener, bindWindowListener } from "../lib/dom/domListenerLifecycle";
 import { useRefDomListener } from "../lib/dom/useDomListener";
 import { clamp, round2 } from "../lib/sizeCommands";
 import type { LoopType, SceneLoop } from "../lib/sceneTypes";
 import type { LayoutMode } from "../lib/contracts";
-import { computeKpiSuggestions } from "../lib/kpi/kpiSuggestions";
-import { formatLoopLabel, getLoopEdgePairs, loopStrength } from "./chatHudLoops";
-import {
-  useSelectedId,
-  useSetSelectedId,
-  useSetOverride,
-  useClearOverride,
-  useOverrides,
-  useRedoOverrides,
-  useUndoOverrides,
-  useSetCaption,
-  useToggleCaption,
-  useViewMode,
-  useSetViewMode,
-  useSetChatOffset,
-} from "./SceneContext";
+import { useSelectedId, useRedoOverrides, useUndoOverrides, useViewMode, useSetViewMode, useSetChatOffset } from "./SceneContext";
 import { nx } from "./ui/nexoraTheme";
 
 const STORAGE_KEY = "statestudio.chatHUD.v1";
 const SESSION_MESSAGES_KEY = "statestudio.chatHUD.sessionMessages.v1";
 
 type Msg = { id?: string; role: "user" | "assistant"; text: string };
+
+const EMPTY_MESSAGES: Msg[] = [];
+
+function subscribeNoop() {
+  return () => {};
+}
 
 type ChatHUDProps = {
   messages: Msg[];
@@ -108,37 +99,14 @@ export function ChatHUD({
   onSend,
   activeMode,
   loading,
-  sourceLabel,
-  noSceneUpdate,
-  prefs,
-  onPrefsChange,
-  objects,
-  lastActionsCount,
-  onReplayEvents,
-  replaying,
-  replayError,
-  onPingBackend,
+  sourceLabel,  prefs,
+  onPrefsChange,  lastActionsCount,
   healthInfo,
   analysisSummary,
   sceneWarn,
   focusPinned,
   onClearFocus,
   focusedId,
-  loopState,
-  kpi,
-  loopsCount,
-  showLoops,
-  onToggleLoops,
-  showLoopLabels,
-  onToggleLoopLabels,
-  onAddLoopFromTemplate,
-  onAddInventoryInstance,
-  simRunning,
-  simSpeed,
-  onToggleSimRunning,
-  onSimStep,
-  onSetSimSpeed,
-  simLastError,
   embedded = true,
   resolveObjectLabel,
   layoutMode,
@@ -146,201 +114,59 @@ export function ChatHUD({
   const viewMode = useViewMode();
   const setViewMode = useSetViewMode();
   const setChatOffset = useSetChatOffset();
-  const [selectedTemplate, setSelectedTemplate] = useState<LoopType | "">("");
   const [showProps, setShowProps] = useState<boolean>(false);
   const [hoverBtn, setHoverBtn] = useState<string | null>(null);
   const [insightsOpen, setInsightsOpen] = useState<boolean>(false);
-  const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState<Record<string, boolean>>({});
-  type KpiAlert = { id: string; level: "info" | "warn"; text: string };
-  const [kpiAlerts, setKpiAlerts] = useState<KpiAlert[]>([]);
-  const prevKpiRef = useRef<{ inventory?: number; delivery?: number; risk?: number } | null>(null);
-  const prevLoopsCountRef = useRef<number | null>(null);
   const FIXED_POS = { x: 16, y: 72 };
 
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Scene context hooks: declare early so effects can safely reference them
   const selectedId = useSelectedId();
-  const setSelectedId = useSetSelectedId();
-  const setOverride = useSetOverride();
-  const clearOverride = useClearOverride();
-  const overrides = useOverrides();
-  const setCaption = useSetCaption();
-  const toggleCaption = useToggleCaption();
-  const selectedOverrideValue = selectedId ? overrides[selectedId]?.scale ?? 1 : 1;
-  const kpiItems: { key: "inventory" | "delivery" | "risk"; label: string; value: number | undefined }[] = [
-    { key: "inventory", label: "Inv", value: kpi?.inventory },
-    { key: "delivery", label: "Del", value: kpi?.delivery },
-    { key: "risk", label: "Risk", value: kpi?.risk },
-  ];
-  const loopTemplateOptions: LoopType[] = [
-    "quality_protection",
-    "cost_compression",
-    "delivery_customer",
-    "risk_ignorance",
-    "stability_balance",
-  ];
-
-  const LOOP_IMPACT: Record<LoopType, { inventory?: number; delivery?: number; risk?: number }> = {
-    quality_protection: { risk: -1, delivery: +0.4 },
-    cost_compression: { inventory: -0.2, risk: +0.3 },
-    delivery_customer: { delivery: +1, inventory: -0.1 },
-    risk_ignorance: { risk: +1 },
-    stability_balance: { risk: -0.6, delivery: +0.2 },
-  };
-
-  const getLoopTypeSafe = (l: any): LoopType | null => {
-    const t = l?.type;
-    if (typeof t === "string") return t as LoopType;
-    const id = typeof l?.id === "string" ? l.id : "";
-    const hit = loopTemplateOptions.find((opt) => id.includes(opt));
-    return (hit ?? null) as LoopType | null;
-  };
-
-  const strongestLoops = useMemo(() => {
-    if (!Array.isArray(loopState)) return [] as SceneLoop[];
-    return [...loopState]
-      .filter(Boolean)
-      .sort((a, b) => loopStrength(b) - loopStrength(a));
-  }, [loopState]);
-
-  const topLoops = useMemo(() => {
-    if (!Array.isArray(loopState)) return [];
-    return [...loopState]
-      .filter(Boolean)
-      .sort((a, b) => loopStrength(b) - loopStrength(a))
-      .slice(0, 3);
-  }, [loopState]);
-
-  const kpiExplain = useMemo(() => {
-    const keys: Array<{ key: "inventory" | "delivery" | "risk"; title: string }> = [
-      { key: "inventory", title: "Inventory" },
-      { key: "delivery", title: "Delivery" },
-      { key: "risk", title: "Risk" },
-    ];
-
-    const pickDrivers = (k: "inventory" | "delivery" | "risk") => {
-      const candidates = strongestLoops
-        .map((l) => ({ l, t: getLoopTypeSafe(l) }))
-        .filter((x) => x.t && LOOP_IMPACT[x.t][k] !== undefined)
-        .slice(0, 2)
-        .map((x) => formatLoopLabel(x.l, resolveObjectLabel));
-
-      if (candidates.length) return candidates;
-      return topLoops.slice(0, 2).map((l) => formatLoopLabel(l, resolveObjectLabel));
-    };
-
-    return keys.map(({ key, title }) => {
-      const v = kpi?.[key];
-      const drivers = pickDrivers(key);
-      const vTxt = v === undefined ? "—" : `${Math.round(v * 100)}%`;
-
-      // Lightweight, user-friendly statement (rule-based for now)
-      const reason = drivers.length ? `Drivers: ${drivers.join(" • ")}` : "Drivers: —";
-      return { key, title, vTxt, reason };
-    });
-  }, [kpi, strongestLoops, topLoops]);
-
-  const kpiSuggestions = useMemo(
-    () => computeKpiSuggestions({ kpi, loopsCount }),
-    [kpi, loopsCount]
-  );
-  const visibleSuggestions = useMemo(
-    () => kpiSuggestions.filter((s) => !dismissedSuggestionIds[s.id]).slice(0, 3),
-    [kpiSuggestions, dismissedSuggestionIds]
-  );
-  useEffect(() => {
-    const prev = prevKpiRef.current;
-    const curr = kpi ?? null;
-
-    const nextAlerts: KpiAlert[] = [];
-
-    const push = (level: KpiAlert["level"], text: string) => {
-      nextAlerts.push({ id: `a_${Date.now()}_${Math.random().toString(16).slice(2)}`, level, text });
-    };
-
-    if (curr) {
-      const risk = curr.risk;
-      const delivery = curr.delivery;
-      const inv = curr.inventory;
-
-      // Threshold-crossing alerts (only when crossing upward/downward, not every render)
-      if (typeof risk === "number" && (!prev || (typeof prev.risk === "number" ? prev.risk : 0) < 0.75) && risk >= 0.75) {
-        push("warn", "Risk is high — consider activating protection/stability loops.");
-      }
-
-      if (typeof delivery === "number" && (!prev || (typeof prev.delivery === "number" ? prev.delivery : 1) > 0.35) && delivery <= 0.35) {
-        push("warn", "Delivery is low — consider customer/delivery reinforcement loop.");
-      }
-
-      if (typeof inv === "number" && (!prev || (typeof prev.inventory === "number" ? prev.inventory : 0) < 0.75) && inv >= 0.75) {
-        push("info", "Inventory is rising — monitor cost vs. stock stability.");
-      }
-    }
-
-    if (typeof loopsCount === "number") {
-      const prevLc = prevLoopsCountRef.current;
-      if (typeof prevLc === "number" && loopsCount > prevLc) {
-        push("info", `Loop added — total loops: ${loopsCount}.`);
-      }
-      prevLoopsCountRef.current = loopsCount;
-    }
-
-    prevKpiRef.current = curr;
-
-    if (nextAlerts.length) {
-      setKpiAlerts((old) => [...nextAlerts, ...old].slice(0, 4));
-    }
-  }, [kpi, loopsCount]);
-  const [objectsOpen, setObjectsOpen] = useState(false);
-  const [objectSearch, setObjectSearch] = useState("");
   const undoOverrides = useUndoOverrides();
   const redoOverrides = useRedoOverrides();
   const loadedRef = useRef(false);
-  const safeMessages = Array.isArray(messages) ? messages : [];
-  const [uiMessages, setUiMessages] = useState<Msg[]>(() => (Array.isArray(messages) ? messages : []));
-  const didHydrateRef = useRef(false);
+  const isClient = useSyncExternalStore(subscribeNoop, () => true, () => false);
+  const safeMessages = Array.isArray(messages) ? messages : EMPTY_MESSAGES;
+  const [uiMessages, setUiMessages] = useState<Msg[]>(() => (Array.isArray(messages) ? messages : EMPTY_MESSAGES));
+  const [syncedIncomingMessages, setSyncedIncomingMessages] = useState(safeMessages);
+  const [sessionHydrated, setSessionHydrated] = useState(false);
+
+  // Restore session messages once on the client when parent history is empty.
+  if (isClient && !sessionHydrated) {
+    setSessionHydrated(true);
+    if (safeMessages.length === 0) {
+      try {
+        const raw = window.sessionStorage.getItem(SESSION_MESSAGES_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length) {
+            setUiMessages(parsed as Msg[]);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
 
   // Keep UI history stable. Only adopt incoming messages when they are not shorter than what the UI already shows.
-  useEffect(() => {
-    setUiMessages((prev) => {
-      if (!Array.isArray(safeMessages)) return prev;
-      if (safeMessages.length >= prev.length) return safeMessages;
-      return prev;
-    });
-  }, [safeMessages]);
-
-  // Restore session messages after hydration to avoid SSR/CSR mismatch.
-  useEffect(() => {
-    if (didHydrateRef.current) return;
-    didHydrateRef.current = true;
-
-    // Only restore when parent didn't provide messages (common on deselection) and we have something in session.
-    if (safeMessages.length) return;
-
-    try {
-      const raw = window.sessionStorage.getItem(SESSION_MESSAGES_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) {
-        setUiMessages(parsed as Msg[]);
-      }
-    } catch {
-      // ignore
+  if (safeMessages !== syncedIncomingMessages) {
+    setSyncedIncomingMessages(safeMessages);
+    if (safeMessages.length >= uiMessages.length) {
+      setUiMessages(safeMessages);
     }
-  }, [safeMessages.length]);
+  }
 
   // Persist in-session chat history (only after hydration) so it survives ChatHUD remounts.
   useEffect(() => {
-    if (!didHydrateRef.current) return;
+    if (!sessionHydrated) return;
     try {
       window.sessionStorage.setItem(SESSION_MESSAGES_KEY, JSON.stringify(uiMessages));
     } catch {
       // ignore
     }
-  }, [uiMessages]);
-
-  const lastMessage = uiMessages.length ? uiMessages[uiMessages.length - 1] : null;
+  }, [sessionHydrated, uiMessages]);
   const updateChatOffsetFromPos = React.useCallback(
     (nextPos: { x: number; y: number }) => {
       const rect = panelRef.current?.getBoundingClientRect();
@@ -357,14 +183,6 @@ export function ChatHUD({
     },
     [setChatOffset]
   );
-
-  const lastAssistantMessage = useMemo(() => {
-    for (let i = uiMessages.length - 1; i >= 0; i -= 1) {
-      const m = uiMessages[i];
-      if (m?.role === "assistant") return m;
-    }
-    return null;
-  }, [uiMessages]);
 
   // View rules (messenger style):
   // - full: show conversation history + panels
@@ -396,7 +214,7 @@ export function ChatHUD({
       // ignore
     }
     // only once
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [setViewMode]);
 
   useEffect(() => {
@@ -438,7 +256,6 @@ export function ChatHUD({
   // treat ChatHUD as embedded by default unless the caller *explicitly* opts into overlay mode.
   const isPanelLayout = layoutMode === "split" || layoutMode === "floating";
   const effectiveEmbedded = embedded !== false || isPanelLayout;
-  const isSplitLayout = layoutMode === "split";
   const panelStyle: React.CSSProperties = useMemo(() => {
     const base: React.CSSProperties = {
       position: "absolute",
@@ -507,7 +324,13 @@ export function ChatHUD({
   const messagesScrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastAutoAskedId = useRef<string | null>(null);
-  const lastHintObjectIdRef = useRef<string | null>(null);
+  const [lastHintObjectId, setLastHintObjectId] = useState<string | null>(null);
+  const hintObjectId = focusedId ?? selectedId ?? null;
+  if (isClient && hintObjectId && hintObjectId !== lastHintObjectId) {
+    setLastHintObjectId(hintObjectId);
+    const label = resolveObjectLabel?.(hintObjectId) ?? hintObjectId;
+    setUiMessages((prev) => [...prev, { role: "assistant", text: `Selected: ${label}. Ask about ${label}.` }]);
+  }
   const stickToBottomRef = useRef(true);
 
   useRefDomListener(
@@ -519,12 +342,13 @@ export function ChatHUD({
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
       stickToBottomRef.current = distanceFromBottom <= 120;
     },
-    [viewMode],
     {
       component: "ChatHUD",
       elementId: "messagesScrollRef",
       eventType: "scroll",
-    }
+    },
+    undefined,
+    viewMode
   );
 
   useEffect(() => {
@@ -549,15 +373,6 @@ export function ChatHUD({
     lastAutoAskedId.current = selectedId;
     onInputChange("Tell me about the selected object.");
   }, [selectedId, viewMode, showProps, loading, onInputChange]);
-
-  useEffect(() => {
-    const id = focusedId ?? selectedId ?? null;
-    if (!id) return;
-    if (lastHintObjectIdRef.current === id) return;
-    lastHintObjectIdRef.current = id;
-    const label = resolveObjectLabel?.(id) ?? id;
-    setUiMessages((prev) => [...prev, { role: "assistant", text: `Selected: ${label}. Ask about ${label}.` }]);
-  }, [focusedId, selectedId, resolveObjectLabel]);
 
   function updatePrefs(partial: Partial<typeof prefs>) {
     onPrefsChange({ ...prefs, ...partial });
@@ -927,7 +742,7 @@ export function ChatHUD({
                   {["day", "night", "stars"].map((t) => (
                     <button
                       key={t}
-                      onClick={() => updatePrefs({ theme: t as any })}
+                      onClick={() => updatePrefs({ theme: t as typeof prefs.theme })}
                       style={{
                         ...pillStyle,
                         background: prefs.theme === t ? nx.accentSoft : nx.bgPanelSoft,
@@ -972,7 +787,9 @@ export function ChatHUD({
                   <label style={{ fontSize: 12, opacity: 0.8 }}>Override Policy</label>
                   <select
                     value={prefs.overridePolicy}
-                    onChange={(e) => updatePrefs({ overridePolicy: e.target.value as any })}
+                    onChange={(e) =>
+                      updatePrefs({ overridePolicy: e.target.value as NonNullable<typeof prefs.overridePolicy> })
+                    }
                     style={{
                       padding: "6px 8px",
                       borderRadius: 8,
@@ -1048,7 +865,7 @@ export function ChatHUD({
                   {["auto", "manual"].map((m) => (
                     <button
                       key={m}
-                      onClick={() => updatePrefs({ orbitMode: m as any })}
+                      onClick={() => updatePrefs({ orbitMode: m as typeof prefs.orbitMode })}
                       style={{
                         ...pillStyle,
                         background: prefs.orbitMode === m ? nx.accentSoft : nx.bgPanelSoft,

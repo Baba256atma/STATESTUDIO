@@ -76,7 +76,7 @@ function computeOverallScore(input: {
   return Math.max(0, Math.min(1, Number(score.toFixed(3))));
 }
 
-function buildBaselineSimulation(sceneObjectIds: readonly string[]): TypeCScenarioSimulation {
+function buildBaselineSimulation(): TypeCScenarioSimulation {
   return {
     scenarioId: BASELINE_ID,
     affectedObjectIds: [],
@@ -199,7 +199,6 @@ function buildRankings(
   );
 
   return ranked.map((layer, index) => {
-    const row = comparison.rows.find((entry) => entry.scenarioId === layer.metadata.id);
     const tradeOff = {
       gain: layer.metadata.opportunityImpact === "high" ? 0.82 : layer.metadata.opportunityImpact === "medium" ? 0.58 : 0.34,
       cost: layer.metadata.costImpact === "high" ? 0.78 : layer.metadata.costImpact === "medium" ? 0.52 : 0.24,
@@ -254,7 +253,7 @@ export function buildExecutiveScenarioUniverse(
 ): ExecutiveScenarioUniverseState {
   const draftById = new Map(input.drafts.map((draft) => [draft.id, draft]));
   const simulationById = new Map(input.simulations.map((simulation) => [simulation.scenarioId, simulation]));
-  const baselineSimulation = buildBaselineSimulation(input.sceneObjectIds ?? []);
+  const baselineSimulation = buildBaselineSimulation();
   const baselineDraft = buildBaselineDraft();
 
   const layers: ExecutiveScenarioUniverseLayer[] = [

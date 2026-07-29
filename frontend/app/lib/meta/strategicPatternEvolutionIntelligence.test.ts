@@ -33,8 +33,6 @@ import {
   analyzeStrategicPatternInstability,
   calculatePatternCoherenceScore,
 } from "./strategicPatternInstabilityAnalysis.ts";
-import { analyzeEnterprisePatternIntelligence } from "./enterprisePatternIntelligence.ts";
-
 function stableStringify(value: unknown): string {
   if (value === null || value === undefined) return "null";
   if (typeof value !== "object") return JSON.stringify(value);
@@ -349,6 +347,7 @@ test("rejects duplicate pattern build fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_pattern_build");
 });
 

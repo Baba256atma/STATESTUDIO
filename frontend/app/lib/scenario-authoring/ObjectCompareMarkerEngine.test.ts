@@ -17,7 +17,7 @@ function objectDifference(
   objectId: string,
   objectHealthDelta: number,
   objectImpactDelta: number,
-  position = Object.freeze({ x: 10, y: 20, z: 3 })
+  position: Readonly<{ x: number; y: number; z: number }> = Object.freeze({ x: 10, y: 20, z: 3 }),
 ): ObjectDifferenceProfile {
   return buildObjectDifferenceProfile({
     differenceId: `diff:${objectId}`,

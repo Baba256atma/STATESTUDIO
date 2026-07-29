@@ -504,12 +504,12 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
   const confidenceModel = buildDecisionConfidenceModel({
     canonicalRecommendation,
     responseData,
-    decisionResult: responseData?.decision_result ?? null,
+    decisionResult: asRecord(responseData?.decision_result),
   });
   const outcomeAssessment = buildDecisionOutcomeAssessment({
     canonicalRecommendation,
     responseData,
-    decisionResult: responseData?.decision_result ?? null,
+    decisionResult: asRecord(responseData?.decision_result),
     memoryEntries: params.memoryEntries ?? [],
   });
   const outcomeFeedback = buildDecisionOutcomeFeedback({
@@ -517,7 +517,7 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
     observedAssessment: buildObservedOutcomeAssessment({
       canonicalRecommendation,
       responseData,
-      decisionResult: responseData?.decision_result ?? null,
+      decisionResult: asRecord(responseData?.decision_result),
       memoryEntries: params.memoryEntries ?? [],
     }),
     memoryEntry: latestMemory,
@@ -552,7 +552,7 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
   const teamDecision = buildTeamDecisionState({
     responseData,
     canonicalRecommendation,
-    decisionResult: responseData?.decision_result ?? null,
+    decisionResult: asRecord(responseData?.decision_result),
     memoryEntries: params.memoryEntries ?? [],
   });
   const orgMemory = buildOrgMemoryState({
@@ -563,19 +563,19 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
     source: "recommendation",
     canonicalRecommendation,
     responseData,
-    decisionResult: responseData?.decision_result ?? null,
+    decisionResult: asRecord(responseData?.decision_result),
   });
   const policyState = buildDecisionPolicyState({
     canonicalRecommendation,
     decisionExecutionIntent,
-    decisionResult: responseData?.decision_result ?? null,
+    decisionResult: asRecord(responseData?.decision_result),
     responseData,
     memoryEntries: params.memoryEntries ?? [],
   });
   const governance = buildDecisionGovernanceState({
     canonicalRecommendation,
     decisionExecutionIntent,
-    decisionResult: responseData?.decision_result ?? null,
+    decisionResult: asRecord(responseData?.decision_result),
     responseData,
     memoryEntries: params.memoryEntries ?? [],
     orgMemoryState: orgMemory,
@@ -592,7 +592,7 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
     canonicalRecommendation,
     decisionExecutionIntent,
     decisionGovernance: governance,
-    decisionResult: responseData?.decision_result ?? null,
+    decisionResult: asRecord(responseData?.decision_result),
     responseData,
     memoryEntries: params.memoryEntries ?? [],
     existingWorkflow: approvalEnvelope?.workflow ?? null,
@@ -607,7 +607,7 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
     canonicalRecommendation,
     decisionExecutionIntent,
     responseData,
-    decisionResult: responseData?.decision_result ?? null,
+    decisionResult: asRecord(responseData?.decision_result),
     memoryEntries: params.memoryEntries ?? [],
     collaborationInputs: collaborationEnvelope?.inputs ?? [],
     teamDecisionState: teamDecision,
@@ -617,14 +617,14 @@ export function buildDecisionTimeline(params: BuildDecisionTimelineParams): Deci
   const decisionCouncil = buildAutonomousDecisionCouncilState({
     responseData,
     canonicalRecommendation,
-    decisionResult: responseData?.decision_result ?? null,
+    decisionResult: asRecord(responseData?.decision_result),
     memoryEntries: params.memoryEntries ?? [],
     collaborationInputs: collaborationEnvelope?.inputs ?? [],
   });
   const strategicCommand = buildStrategicCommandState({
     responseData,
     canonicalRecommendation,
-    decisionResult: responseData?.decision_result ?? null,
+    decisionResult: asRecord(responseData?.decision_result),
     memoryEntries: params.memoryEntries ?? [],
     collaborationInputs: collaborationEnvelope?.inputs ?? [],
     metaDecision,

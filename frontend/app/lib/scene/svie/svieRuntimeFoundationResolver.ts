@@ -33,8 +33,9 @@ export function readSceneObjectsFromJson(sceneJson: unknown): readonly SceneObje
 
 function resolveHealthFromObject(
   object: SceneObject,
-  _metrics: SvieSceneMetricsInput | null | undefined
+  metrics: SvieSceneMetricsInput | null | undefined
 ): SvieHealthLevel {
+  void metrics;
   return deriveSvieObjectHealthLevel(object);
 }
 

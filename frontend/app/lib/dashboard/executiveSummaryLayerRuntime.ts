@@ -4,7 +4,7 @@
  * Pure read-only aggregation from registry, lifecycle, history, recommendations, recents, diagnostics.
  */
 
-import { dashboardModeLabel, type DashboardMode } from "./dashboardModeRuntimeContract.ts";
+import { dashboardModeLabel } from "./dashboardModeRuntimeContract.ts";
 import {
   getExecutiveWorkspaceEntry,
   type ExecutiveWorkspaceId,

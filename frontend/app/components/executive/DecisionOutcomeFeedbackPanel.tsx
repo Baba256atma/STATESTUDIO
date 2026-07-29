@@ -4,6 +4,7 @@ import React from "react";
 
 import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemoryTypes";
 import type { CanonicalRecommendation } from "../../lib/decision/recommendation/recommendationTypes";
+import type { DecisionExecutionResult } from "../../lib/executive/decisionExecutionTypes";
 import { buildObservedOutcomeAssessment } from "../../lib/decision/outcome/buildObservedOutcomeAssessment";
 import { buildDecisionOutcomeFeedback } from "../../lib/decision/outcome/buildDecisionOutcomeFeedback";
 import { buildDecisionFeedbackSignal } from "../../lib/decision/outcome/buildDecisionFeedbackSignal";
@@ -11,8 +12,8 @@ import { nx, panelSurfaceStyle, secondaryButtonStyle, softCardStyle } from "../u
 
 type DecisionOutcomeFeedbackPanelProps = {
   canonicalRecommendation?: CanonicalRecommendation | null;
-  responseData?: any;
-  decisionResult?: any;
+  responseData?: Record<string, unknown> | null;
+  decisionResult?: DecisionExecutionResult | Record<string, unknown> | null;
   memoryEntries?: DecisionMemoryEntry[];
   onOpenDecisionTimeline?: (() => void) | null;
 };

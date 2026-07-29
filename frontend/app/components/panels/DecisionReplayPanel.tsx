@@ -1,17 +1,44 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { cardStyle, nx, primaryButtonStyle, sectionTitleStyle, softCardStyle } from "../ui/nexoraTheme";
+import { nx, primaryButtonStyle, sectionTitleStyle, softCardStyle } from "../ui/nexoraTheme";
 import { EmptyStateCard, ErrorStateCard, LoadingStateCard } from "../ui/panelStates";
+import { readUnknownErrorMessage } from "../../lib/system/nexoraErrors";
+import type { SceneJson } from "../../lib/sceneTypes";
+
+type LooseRecord = Record<string, unknown>;
+
+function readApiErrorMessage(json: unknown, fallback: string): string {
+  if (!json || typeof json !== "object") return fallback;
+  const record = json as LooseRecord;
+  const detail = record.detail;
+  if (detail && typeof detail === "object") {
+    const detailRecord = detail as LooseRecord;
+    const error = detailRecord.error;
+    if (error && typeof error === "object") {
+      const message = (error as LooseRecord).message;
+      if (typeof message === "string" && message.trim()) return message;
+    }
+    if (typeof detailRecord.message === "string" && detailRecord.message.trim()) {
+      return detailRecord.message;
+    }
+  }
+  if (typeof detail === "string" && detail.trim()) return detail;
+  return fallback;
+}
+
+function asRecord(value: unknown): LooseRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as LooseRecord) : null;
+}
 
 type ReplayStep = {
   index: number;
   label?: string;
-  scene_json?: any;
-  fragility?: any;
-  conflicts?: any[];
-  risk_propagation?: any;
-  object_selection?: any;
+  scene_json?: SceneJson | LooseRecord;
+  fragility?: LooseRecord;
+  conflicts?: unknown[];
+  risk_propagation?: LooseRecord;
+  object_selection?: LooseRecord;
 };
 
 type ReplayData = {
@@ -20,10 +47,18 @@ type ReplayData = {
   steps?: ReplayStep[];
 };
 
+export type DecisionReplaySceneUpdatePayload = {
+  scene_json: SceneJson | LooseRecord;
+  fragility: LooseRecord;
+  conflicts: unknown[];
+  risk_propagation: LooseRecord;
+  object_selection: LooseRecord;
+};
+
 type Props = {
   backendBase: string;
   episodeId: string | null;
-  onSceneUpdate?: (payload: any) => void;
+  onSceneUpdate?: (payload: DecisionReplaySceneUpdatePayload) => void;
 };
 
 export default function DecisionReplayPanel({ backendBase, episodeId, onSceneUpdate }: Props) {
@@ -63,17 +98,18 @@ export default function DecisionReplayPanel({ backendBase, episodeId, onSceneUpd
         method: "GET",
         headers: { Accept: "application/json" },
       });
-      const json = await res.json().catch(() => ({}));
+      const json: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = (json as any)?.detail?.error?.message ?? (json as any)?.detail ?? "Failed to load replay.";
+        const msg = readApiErrorMessage(json, "Failed to load replay.");
         throw new Error(String(msg));
       }
-      setReplayData(json as ReplayData);
+      const replay = json as ReplayData;
+      setReplayData(replay);
       setCurrentStepIndex(0);
-      const first = Array.isArray((json as any)?.steps) ? (json as any).steps[0] : null;
+      const first = Array.isArray(replay.steps) ? replay.steps[0] : null;
       applyStep(first ?? null);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load replay.");
+    } catch (e: unknown) {
+      setError(readUnknownErrorMessage(e, "Failed to load replay."));
     } finally {
       setLoading(false);
     }
@@ -106,12 +142,14 @@ export default function DecisionReplayPanel({ backendBase, episodeId, onSceneUpd
     return () => window.clearInterval(id);
   }, [playing, steps.length]);
 
-  const fragilityScore = Number(activeStep?.fragility?.score ?? 0);
-  const fragilityLevel = String(activeStep?.fragility?.level ?? "-");
+  const fragilityScore = Number(asRecord(activeStep?.fragility)?.score ?? 0);
+  const fragilityLevel = String(asRecord(activeStep?.fragility)?.level ?? "-");
   const conflictCount = Array.isArray(activeStep?.conflicts) ? activeStep!.conflicts!.length : 0;
-  const riskEdgeCount = Array.isArray(activeStep?.risk_propagation?.edges) ? activeStep.risk_propagation.edges.length : 0;
-  const topActiveObject = Array.isArray(activeStep?.object_selection?.active_objects)
-    ? String(activeStep?.object_selection?.active_objects?.[0] ?? "-")
+  const riskPropagation = asRecord(activeStep?.risk_propagation);
+  const riskEdgeCount = Array.isArray(riskPropagation?.edges) ? riskPropagation.edges.length : 0;
+  const objectSelection = asRecord(activeStep?.object_selection);
+  const topActiveObject = Array.isArray(objectSelection?.active_objects)
+    ? String(objectSelection.active_objects[0] ?? "-")
     : "-";
 
   return (

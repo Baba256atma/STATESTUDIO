@@ -6,9 +6,7 @@
  */
 
 import type { ExecutiveObjectPanelData } from "../../panels/executiveObjectPanelData.ts";
-import type { AnalyzeIntelligenceBindingView } from "../../intelligence-integration/analyzeIntelligenceBindingContract.ts";
-import { buildAnalyzeExecutiveSummaryView } from "../../intelligence-integration/analyzeExecutiveSummaryContract.ts";
-import type { AnalyzeExecutiveSummaryView } from "../../intelligence-integration/analyzeExecutiveSummaryContract.ts";
+import type { AnalyzeIntelligenceBindingView } from "../../intelligence-integration/analyzeIntelligenceBindingContract.ts";import type { AnalyzeExecutiveSummaryView } from "../../intelligence-integration/analyzeExecutiveSummaryContract.ts";
 import {
   resolveFocusObjectId,
   type FocusModeContextInput,

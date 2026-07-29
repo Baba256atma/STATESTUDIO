@@ -79,8 +79,6 @@ export type HudLayoutSnapshot = {
     height: number;
   };
 };
-
-const DEFAULT_VIEWPORT = Object.freeze({ width: 1440, height: 900 });
 const DEFAULT_OFFSETS: HudViewportOffsets = Object.freeze({ top: 12, right: 12, bottom: 12, left: 12 });
 const DEFAULT_RESERVATION: HudViewportOffsets = Object.freeze({ top: 0, right: 0, bottom: 0, left: 0 });
 

@@ -1,21 +1,52 @@
 import { buildCognitiveNarrative } from "./buildCognitiveNarrative";
+import type { DecisionConfidenceModel } from "../decision/confidence/buildDecisionConfidenceModel";
+import type { StrategicLearningState } from "../decision/learning/strategicLearningTypes";
+import type { MetaDecisionState } from "../decision/meta/metaDecisionTypes";
+import type { DecisionPatternIntelligence } from "../decision/patterns/decisionPatternTypes";
+import type { ComparePanelModel } from "../decision/recommendation/buildComparePanelModel";
+import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes";
 import type { CognitiveDecisionView, CognitiveStyle } from "./cognitiveStyleTypes";
 
 type BuildCognitiveDecisionViewInput = {
   style: CognitiveStyle;
-  canonicalRecommendation?: any | null;
-  executiveSummary?: any | null;
-  confidenceModel?: any | null;
-  compareModel?: any | null;
-  simulation?: any | null;
-  patternIntelligence?: any | null;
-  strategicLearning?: any | null;
-  metaDecision?: any | null;
+  canonicalRecommendation?: CanonicalRecommendation | null;
+  executiveSummary?: Record<string, unknown> | null;
+  confidenceModel?: DecisionConfidenceModel | null;
+  compareModel?: ComparePanelModel | null;
+  simulation?: Record<string, unknown> | null;
+  patternIntelligence?: DecisionPatternIntelligence | null;
+  strategicLearning?: StrategicLearningState | null;
+  metaDecision?: MetaDecisionState | null;
 };
 
 function text(value: unknown, fallback = "") {
   const normalized = String(value ?? "").replace(/\s+/g, " ").trim();
   return normalized || fallback;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readNestedString(record: Record<string, unknown> | null | undefined, ...keys: string[]): string {
+  let current: unknown = record;
+  for (const key of keys) {
+    current = asRecord(current)?.[key];
+  }
+  return text(current);
+}
+
+function readNestedArray(record: Record<string, unknown> | null | undefined, ...keys: string[]): unknown[] {
+  let current: unknown = record;
+  for (const key of keys) {
+    current = asRecord(current)?.[key];
+  }
+  return Array.isArray(current) ? current : [];
+}
+
+function readTimelineSummary(record: Record<string, unknown> | null | undefined, index: number): string {
+  const timeline = readNestedArray(record, "timeline");
+  return text(asRecord(timeline[index])?.summary);
 }
 
 function unique(values: unknown[], limit = 4) {
@@ -30,7 +61,7 @@ export function buildCognitiveDecisionView(input: BuildCognitiveDecisionViewInpu
   );
   const impact = text(
     input.canonicalRecommendation?.primary?.impact_summary,
-    text(input.simulation?.impact?.summary, "Expected impact remains limited")
+    readNestedString(input.simulation, "impact", "summary") || "Expected impact remains limited"
   );
   const risk = text(
     input.canonicalRecommendation?.reasoning?.risk_summary,
@@ -71,7 +102,7 @@ export function buildCognitiveDecisionView(input: BuildCognitiveDecisionViewInpu
       ]),
       risks_to_watch: risks,
       supporting_evidence: unique([
-        text(input.simulation?.risk?.summary),
+        readNestedString(input.simulation, "risk", "summary"),
         text(input.confidenceModel?.assumptions?.[0]),
         ...evidence,
       ]),
@@ -91,8 +122,8 @@ export function buildCognitiveDecisionView(input: BuildCognitiveDecisionViewInpu
       headline: `${text(input.executiveSummary?.happened, "Operational pressure is building")} -> ${action}`,
       summary: buildCognitiveNarrative({ style: input.style, action, why, confidence, tradeoff, impact, risk }),
       primary_focus: unique([
-        text(input.simulation?.timeline?.[0]?.summary),
-        text(input.simulation?.risk?.summary, risk),
+        readTimelineSummary(input.simulation, 0),
+        readNestedString(input.simulation, "risk", "summary") || risk,
         text(input.canonicalRecommendation?.primary?.target_ids?.join(", "), "Target scope is limited"),
       ]),
       risks_to_watch: unique([
@@ -101,8 +132,8 @@ export function buildCognitiveDecisionView(input: BuildCognitiveDecisionViewInpu
         input.metaDecision?.warnings?.[0],
       ]),
       supporting_evidence: unique([
-        text(input.simulation?.timeline?.[1]?.summary),
-        text(input.simulation?.impact?.summary),
+        readTimelineSummary(input.simulation, 1),
+        readNestedString(input.simulation, "impact", "summary"),
         text(input.metaDecision?.selected_strategy?.replace(/_/g, " ")),
       ]),
       next_actions: unique([

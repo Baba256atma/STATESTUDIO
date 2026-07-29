@@ -10,10 +10,7 @@ import { initializeConfidenceEvolutionTrendLayer } from "./confidenceEvolutionTr
 import { initializeConfidenceEvidenceReasonLayer } from "./confidenceEvolutionEvidenceReason.ts";
 import { initializeConfidenceCalibrationLayer } from "./confidenceEvolutionCalibration.ts";
 import { createConfidenceEvolutionApiFacade } from "./confidenceEvolutionApiFacade.ts";
-import {
-  buildConfidenceEvolutionApiManifest,
-  CONFIDENCE_EVOLUTION_API_SELF_MANIFEST,
-} from "./confidenceEvolutionApiManifest.ts";
+import { buildConfidenceEvolutionApiManifest } from "./confidenceEvolutionApiManifest.ts";
 import {
   CONFIDENCE_EVOLUTION_API_CONTRACT_VERSION,
   CONFIDENCE_EVOLUTION_API_TAGS,

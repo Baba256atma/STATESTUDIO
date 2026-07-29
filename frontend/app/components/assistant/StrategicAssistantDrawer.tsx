@@ -51,12 +51,10 @@ const flowStep = useMemo(() => {
   if (typeof step !== "number" || Number.isNaN(step)) return -1;
   return Math.max(0, Math.min(step, DEMO_FLOW_STEPS.length - 1));
 }, [props.demoFlowActiveStep]);
-  useEffect(() => {
-    if (variant !== "rail") return;
-    if (hasUserMessage || props.isBusy) {
-      setThreadExpanded(true);
-    }
-  }, [variant, hasUserMessage, props.isBusy]);
+  // Latch rail thread open when conversation activity begins (render-time adjust, not effect).
+  if (variant === "rail" && (hasUserMessage || props.isBusy) && !threadExpanded) {
+    setThreadExpanded(true);
+  }
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production" || variant !== "rail") return;

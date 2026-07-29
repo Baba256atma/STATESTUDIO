@@ -76,6 +76,8 @@ test("builds immutable decision option score explanation and recommendation", ()
         label: "Risk reduction",
         value: 90,
         weight: 60,
+        readOnly: true as const,
+        mutation: false as const,
       },
     ],
   });

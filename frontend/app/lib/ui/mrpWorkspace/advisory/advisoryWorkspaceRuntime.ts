@@ -47,8 +47,9 @@ export function resetAdvisoryWorkspaceRuntimeForTests(): void {
   resetAdvisoryWorkspaceStateRuntimeForTests();
 }
 
-export function buildAdvisoryWorkspaceView(_input?: {
+export function buildAdvisoryWorkspaceView(input?: {
   mountKey?: string | null;
 }): AdvisoryWorkspaceView {
+  void input;
   return buildAdvisoryWorkspaceViewFromState(getAdvisoryWorkspaceState());
 }

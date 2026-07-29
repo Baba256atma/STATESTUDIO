@@ -25,22 +25,29 @@ import type { StrategicCommandState } from "../../lib/command/strategicCommandTy
 export type StrategicCommandPanelModelProps = {
   workspaceId?: string | null;
   projectId?: string | null;
-  responseData?: any;
+  responseData?: unknown;
   canonicalRecommendation?: CanonicalRecommendation | null;
-  decisionResult?: any;
+  decisionResult?: unknown;
   memoryEntries?: DecisionMemoryEntry[];
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
 
 /** Shared derived state for Strategic Command preview + full workspace (same inputs as legacy panel). */
 export function useStrategicCommandPanelModel(props: StrategicCommandPanelModelProps): StrategicCommandState {
   const memoryEntries = props.memoryEntries ?? [];
+  const responseRecord = asRecord(props.responseData);
+  const decisionResultRecord = asRecord(props.decisionResult);
+  // Keep asRecord inside this memo so deps match the values the Compiler sees (preserve-manual-memoization).
   const executionIntent = React.useMemo(
     () =>
       buildDecisionExecutionIntent({
         source: "recommendation",
         canonicalRecommendation: props.canonicalRecommendation ?? null,
-        responseData: props.responseData ?? null,
-        decisionResult: props.decisionResult ?? null,
+        responseData: asRecord(props.responseData),
+        decisionResult: asRecord(props.decisionResult),
       }),
     [props.canonicalRecommendation, props.responseData, props.decisionResult]
   );
@@ -52,16 +59,16 @@ export function useStrategicCommandPanelModel(props: StrategicCommandPanelModelP
   );
   const confidenceModel = buildDecisionConfidenceModel({
     canonicalRecommendation: props.canonicalRecommendation ?? null,
-    responseData: props.responseData ?? null,
-    decisionResult: props.decisionResult ?? null,
+    responseData: responseRecord,
+    decisionResult: decisionResultRecord,
   });
   const calibration = buildDecisionConfidenceCalibration({
     canonicalRecommendation: props.canonicalRecommendation ?? null,
     confidenceModel,
     outcomeAssessment: buildDecisionOutcomeAssessment({
       canonicalRecommendation: props.canonicalRecommendation ?? null,
-      responseData: props.responseData ?? null,
-      decisionResult: props.decisionResult ?? null,
+      responseData: responseRecord,
+      decisionResult: decisionResultRecord,
       memoryEntries,
     }),
     memoryEntries,
@@ -70,33 +77,33 @@ export function useStrategicCommandPanelModel(props: StrategicCommandPanelModelP
     canonicalRecommendation: props.canonicalRecommendation ?? null,
     observedAssessment: buildObservedOutcomeAssessment({
       canonicalRecommendation: props.canonicalRecommendation ?? null,
-      responseData: props.responseData ?? null,
-      decisionResult: props.decisionResult ?? null,
+      responseData: responseRecord,
+      decisionResult: decisionResultRecord,
       memoryEntries,
     }),
     memoryEntry: memoryEntries[0] ?? null,
-    responseData: props.responseData ?? null,
+    responseData: responseRecord,
   });
   const metaDecision = buildMetaDecisionState({
-    reasoning: props.responseData?.ai_reasoning ?? null,
-    simulation: props.responseData?.decision_simulation ?? null,
-    comparison: props.responseData?.decision_comparison ?? props.responseData?.comparison ?? null,
+    reasoning: asRecord(responseRecord?.ai_reasoning),
+    simulation: asRecord(responseRecord?.decision_simulation),
+    comparison: asRecord(responseRecord?.decision_comparison ?? responseRecord?.comparison),
     canonicalRecommendation: props.canonicalRecommendation ?? null,
     calibration,
-    responseData: props.responseData ?? null,
+    responseData: responseRecord,
     memoryEntries,
   });
   const teamDecision = buildTeamDecisionState({
-    responseData: props.responseData ?? null,
+    responseData: responseRecord,
     canonicalRecommendation: props.canonicalRecommendation ?? null,
-    decisionResult: props.decisionResult ?? null,
+    decisionResult: decisionResultRecord,
     memoryEntries,
   });
   const collaborationState = buildCollaborationState({
     canonicalRecommendation: props.canonicalRecommendation ?? null,
     decisionExecutionIntent: executionIntent,
-    responseData: props.responseData ?? null,
-    decisionResult: props.decisionResult ?? null,
+    responseData: responseRecord,
+    decisionResult: decisionResultRecord,
     memoryEntries,
     collaborationInputs: collaborationEnvelope?.inputs ?? [],
     teamDecisionState: teamDecision,
@@ -108,15 +115,15 @@ export function useStrategicCommandPanelModel(props: StrategicCommandPanelModelP
   const policyState = buildDecisionPolicyState({
     canonicalRecommendation: props.canonicalRecommendation ?? null,
     decisionExecutionIntent: executionIntent,
-    decisionResult: props.decisionResult ?? null,
-    responseData: props.responseData ?? null,
+    decisionResult: decisionResultRecord,
+    responseData: responseRecord,
     memoryEntries,
   });
   const governanceState = buildDecisionGovernanceState({
     canonicalRecommendation: props.canonicalRecommendation ?? null,
     decisionExecutionIntent: executionIntent,
-    decisionResult: props.decisionResult ?? null,
-    responseData: props.responseData ?? null,
+    decisionResult: decisionResultRecord,
+    responseData: responseRecord,
     memoryEntries,
     orgMemoryState: orgMemory,
     teamDecisionState: teamDecision,
@@ -127,23 +134,23 @@ export function useStrategicCommandPanelModel(props: StrategicCommandPanelModelP
     canonicalRecommendation: props.canonicalRecommendation ?? null,
     decisionExecutionIntent: executionIntent,
     decisionGovernance: governanceState,
-    decisionResult: props.decisionResult ?? null,
-    responseData: props.responseData ?? null,
+    decisionResult: decisionResultRecord,
+    responseData: responseRecord,
     memoryEntries,
     policyState,
   });
   const decisionCouncil = buildAutonomousDecisionCouncilState({
-    responseData: props.responseData ?? null,
+    responseData: responseRecord,
     canonicalRecommendation: props.canonicalRecommendation ?? null,
-    decisionResult: props.decisionResult ?? null,
+    decisionResult: decisionResultRecord,
     memoryEntries,
     collaborationInputs: collaborationEnvelope?.inputs ?? [],
   });
 
   return buildStrategicCommandState({
-    responseData: props.responseData ?? null,
+    responseData: responseRecord,
     canonicalRecommendation: props.canonicalRecommendation ?? null,
-    decisionResult: props.decisionResult ?? null,
+    decisionResult: decisionResultRecord,
     memoryEntries,
     collaborationInputs: collaborationEnvelope?.inputs ?? [],
     confidenceModel,

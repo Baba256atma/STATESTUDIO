@@ -10,10 +10,7 @@ import { initializeDecisionJournalReflectionLayer } from "./decisionJournalRefle
 import { initializeDecisionJournalEvidenceAssumptionLayer } from "./decisionJournalEvidenceAssumption.ts";
 import { initializeDecisionJournalRetrospectiveLayer } from "./decisionJournalRetrospective.ts";
 import { createDecisionJournalApiFacade } from "./decisionJournalApiFacade.ts";
-import {
-  buildDecisionJournalApiManifest,
-  DECISION_JOURNAL_API_SELF_MANIFEST,
-} from "./decisionJournalApiManifest.ts";
+import { buildDecisionJournalApiManifest } from "./decisionJournalApiManifest.ts";
 import {
   DECISION_JOURNAL_API_CONTRACT_VERSION,
   DECISION_JOURNAL_API_TAGS,

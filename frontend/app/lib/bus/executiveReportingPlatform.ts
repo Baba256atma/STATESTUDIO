@@ -10,23 +10,9 @@ import {
   ExecutiveReportingContractVersion,
 } from "./executiveReportingIndex.ts";
 import { ExecutiveReportingRegistryMetadata } from "./executiveReportingRegistryIndex.ts";
-import {
-  ExecutiveReportingModelMetadata,
-  ExecutiveReportingModelName,
-  ExecutiveReportingModelVersion,
-} from "./executiveReportingModelIndex.ts";
-import {
-  ExecutiveReportingValidationName,
-  ExecutiveReportingValidationVersion,
-  getExecutiveReportingValidationMetadata,
-} from "./executiveReportingValidationIndex.ts";
-import {
-  ExecutiveReportingManifestMetadata,
-  ExecutiveReportingManifestName,
-  ExecutiveReportingManifestVersion,
-  getExecutiveReportingDependencyMetadata,
-  getExecutiveReportingPublicApiInventory,
-} from "./executiveReportingManifestIndex.ts";
+import { ExecutiveReportingModelMetadata } from "./executiveReportingModelIndex.ts";
+import { getExecutiveReportingValidationMetadata } from "./executiveReportingValidationIndex.ts";
+import { ExecutiveReportingManifestMetadata, getExecutiveReportingDependencyMetadata, getExecutiveReportingPublicApiInventory } from "./executiveReportingManifestIndex.ts";
 
 export const ExecutiveReportingPlatformId = "BUS-33:6" as const;
 

@@ -3,7 +3,7 @@
  * Pure / semi-pure helpers — no React state; callers apply results.
  */
 import { clamp } from "../lib/sizeCommands";
-import type { SceneJson } from "../lib/sceneTypes";
+import type { SceneJson, SemanticObjectMeta } from "../lib/sceneTypes";
 import {
   getObjectDependencies,
   getObjectDisplayLabel,
@@ -62,6 +62,14 @@ import type { NexoraExecutiveFramingStyle } from "../lib/domain/domainExperience
 type RetailDemoChatPayload = Record<string, unknown> & {
   scene_json?: unknown;
 };
+
+type RiskPropagationEdge = {
+  from: string;
+  to: string;
+  weight?: number;
+  [key: string]: unknown;
+};
+
 
 export type RetailTriggerConfig = {
   id:
@@ -307,12 +315,12 @@ export function isRetailDemoScene(scene: SceneJson | null | undefined): boolean 
 }
 
 export function upsertRiskEdge(
-  edges: any[],
+  edges: RiskPropagationEdge[],
   from: string,
   to: string,
   base: number,
   delta: number
-): any[] {
+): RiskPropagationEdge[] {
   const next = Array.isArray(edges) ? edges.map((e) => ({ ...e })) : [];
   const idx = next.findIndex((e) => String(e?.from ?? "") === from && String(e?.to ?? "") === to);
   const prev = idx >= 0 ? Number(next[idx]?.weight ?? base) : base;
@@ -339,7 +347,7 @@ function summarizePropagationPath(labels: string[]): string {
   return labels.slice(0, 3).join(" -> ");
 }
 
-function getSemanticRole(obj: any): string {
+function getSemanticRole(obj: SemanticObject): string {
   return String(getObjectSemanticMeta(obj)?.role ?? obj?.role ?? "").trim();
 }
 
@@ -353,7 +361,7 @@ function roleStage(role: string): number {
   return 6;
 }
 
-function orderObjectsForPropagation(objects: any[]): any[] {
+function orderObjectsForPropagation(objects: SemanticObject[]): SemanticObject[] {
   return [...objects].sort((a, b) => {
     const stageDelta = roleStage(getSemanticRole(a)) - roleStage(getSemanticRole(b));
     if (stageDelta !== 0) return stageDelta;
@@ -598,17 +606,12 @@ export function buildUnifiedReactionFromRetailTriggerConfig(
 }
 
 export function applyGenericPromptFeedbackEnhancement(
-  rawPayload: any,
+  rawPayload: unknown,
   userText: string,
   fallbackScene: SceneJson | null,
   modeContext?: ActiveModeContext | null,
-  reasoningHints?: {
-    workspaceId?: string;
-    selectedObjectId?: string | null;
-    memoryState?: any;
-    environmentConfig?: EnvironmentConfig | null;
-  }
-): any {
+  reasoningHints?: RetailDemoChatReasoningHints
+): unknown {
   if (!rawPayload || typeof rawPayload !== "object") return rawPayload;
 
   const objects = getSceneObjectsFromPayload(rawPayload, fallbackScene);
@@ -616,35 +619,42 @@ export function applyGenericPromptFeedbackEnhancement(
   const matchedIds = matched.map((m) => m.id);
   if (!matchedIds.length) return rawPayload;
 
-  const next: any = { ...rawPayload };
+  const next: ChatPayloadRecord = { ...(rawPayload as ChatPayloadRecord) };
   const matchedObjects = matchedIds
-    .map((id) => objects.find((o: any) => String(o?.id ?? o?.name ?? "") === id))
-    .filter(Boolean);
+    .map((id) => objects.find((o) => String(o?.id ?? o?.name ?? "") === id))
+    .filter((o): o is SemanticObject => Boolean(o));
   const orderedMatchedObjects = orderObjectsForPropagation(matchedObjects);
-  const matchedNames = orderedMatchedObjects.map((o: any) => getObjectDisplayLabel(o));
+  const matchedNames = orderedMatchedObjects.map((o) => getObjectDisplayLabel(o));
   const matchedTopics = tokenizePrompt(userText).slice(0, 5);
   const matchedSemanticTags = Array.from(
     new Set(
       orderedMatchedObjects
-        .flatMap((o: any) => getObjectSemanticTags(o))
-        .map((x: any) => String(x || "").trim())
+        .flatMap((o) => getObjectSemanticTags(o))
+        .map((x) => String(x || "").trim())
         .filter(Boolean)
     )
   ).slice(0, 5);
   const matchedDependencies = Array.from(
-    new Set(orderedMatchedObjects.flatMap((o: any) => getObjectDependencies(o)))
+    new Set(orderedMatchedObjects.flatMap((o) => getObjectDependencies(o)))
   ).slice(0, 5);
   const primaryRole = getSemanticRole(orderedMatchedObjects[0]);
   const propagationPath = summarizePropagationPath([...matchedNames, ...matchedDependencies]);
 
   const baseSelection =
-    (next?.object_selection && typeof next.object_selection === "object" ? next.object_selection : null) ??
-    (next?.scene_json?.object_selection && typeof next.scene_json.object_selection === "object"
-      ? next.scene_json.object_selection
+    (next.object_selection && typeof next.object_selection === "object"
+      ? (next.object_selection as Record<string, unknown>)
       : null) ??
+    (() => {
+      const sceneJson = asRecord(next.scene_json);
+      return sceneJson?.object_selection && typeof sceneJson.object_selection === "object"
+        ? (sceneJson.object_selection as Record<string, unknown>)
+        : null;
+    })() ??
     {};
-  const priorHighlights = Array.isArray(baseSelection?.highlighted_objects) ? baseSelection.highlighted_objects : [];
-  const orderedMatchedIds = orderedMatchedObjects.map((o: any) => String(o?.id ?? o?.name ?? ""));
+  const priorHighlights = Array.isArray(baseSelection.highlighted_objects)
+    ? (baseSelection.highlighted_objects as unknown[])
+    : [];
+  const orderedMatchedIds = orderedMatchedObjects.map((o) => String(o?.id ?? o?.name ?? ""));
   const highlighted = Array.from(new Set([...orderedMatchedIds, ...priorHighlights])).slice(0, 4);
   next.object_selection = {
     ...baseSelection,
@@ -653,15 +663,22 @@ export function applyGenericPromptFeedbackEnhancement(
   };
 
   const baseRisk =
-    (next?.risk_propagation && typeof next.risk_propagation === "object" ? next.risk_propagation : null) ??
-    (next?.scene_json?.risk_propagation && typeof next.scene_json.risk_propagation === "object"
-      ? next.scene_json.risk_propagation
+    (next.risk_propagation && typeof next.risk_propagation === "object"
+      ? (next.risk_propagation as Record<string, unknown>)
       : null) ??
-    (next?.scene_json?.scene?.risk_propagation && typeof next.scene_json.scene.risk_propagation === "object"
-      ? next.scene_json.scene.risk_propagation
-      : null) ??
+    (() => {
+      const sceneJson = asRecord(next.scene_json);
+      if (sceneJson?.risk_propagation && typeof sceneJson.risk_propagation === "object") {
+        return sceneJson.risk_propagation as Record<string, unknown>;
+      }
+      const scene = asRecord(sceneJson?.scene);
+      if (scene?.risk_propagation && typeof scene.risk_propagation === "object") {
+        return scene.risk_propagation as Record<string, unknown>;
+      }
+      return null;
+    })() ??
     {};
-  const priorSources = Array.isArray(baseRisk?.sources) ? baseRisk.sources : [];
+  const priorSources = Array.isArray(baseRisk.sources) ? (baseRisk.sources as unknown[]) : [];
   const riskSources = Array.from(new Set([...priorSources, ...orderedMatchedIds]));
   const riskSummary = buildGenericRiskSummary({ primaryRole, matchedNames, matchedDependencies });
   next.risk_propagation = {
@@ -685,10 +702,15 @@ export function applyGenericPromptFeedbackEnhancement(
   };
 
   const baseAdvice =
-    (next?.strategic_advice && typeof next.strategic_advice === "object" ? next.strategic_advice : null) ??
-    (next?.scene_json?.strategic_advice && typeof next.scene_json.strategic_advice === "object"
-      ? next.scene_json.strategic_advice
+    (next.strategic_advice && typeof next.strategic_advice === "object"
+      ? (next.strategic_advice as Record<string, unknown>)
       : null) ??
+    (() => {
+      const sceneJson = asRecord(next.scene_json);
+      return sceneJson?.strategic_advice && typeof sceneJson.strategic_advice === "object"
+        ? (sceneJson.strategic_advice as Record<string, unknown>)
+        : null;
+    })() ??
     {};
   const genericAdvice = buildGenericAdvice({ primaryRole, matchedNames, matchedSemanticTags });
   const genericAction = {
@@ -699,29 +721,35 @@ export function applyGenericPromptFeedbackEnhancement(
     impact: genericAdvice.impact,
     priority: 1,
   };
-  const existingActions = Array.isArray(baseAdvice?.recommended_actions) ? baseAdvice.recommended_actions : [];
+  const existingActions = Array.isArray(baseAdvice.recommended_actions)
+    ? (baseAdvice.recommended_actions as unknown[])
+    : [];
   next.strategic_advice = {
     ...baseAdvice,
     primary_recommendation: genericAction,
-    recommended_actions: [genericAction, ...existingActions.filter((action: any) => action?.action !== genericAction.action)].slice(0, 3),
+    recommended_actions: [genericAction, ...existingActions.filter((action: unknown) => (action as Record<string, unknown>)?.action !== genericAction.action)].slice(0, 3),
     why: genericAdvice.why,
     summary: `Recommended action: ${genericAction.action}`,
-    confidence: Number.isFinite(Number(baseAdvice?.confidence)) ? Number(baseAdvice.confidence) : 0.72,
+    confidence: Number.isFinite(Number(baseAdvice.confidence)) ? Number(baseAdvice.confidence) : 0.72,
   };
 
+  const nextRiskPropagation = asRecord(next.risk_propagation);
+  const nextStrategicAdvice = asRecord(next.strategic_advice);
   next.reply = buildReadableDemoReply({
-    riskSummary: next.risk_propagation?.summary ?? riskSummary,
+    riskSummary: (typeof nextRiskPropagation?.summary === "string" ? nextRiskPropagation.summary : null) ?? riskSummary,
     timelineSteps,
-    action: next.strategic_advice?.primary_recommendation?.action ?? genericAction.action,
+    action:
+      (asRecord(nextStrategicAdvice?.primary_recommendation)?.action as string | undefined) ?? genericAction.action,
     matchedNames,
   });
   const executiveSummarySurface = buildExecutiveSummarySurface({
     matchedNames,
     primaryRole,
-    riskSummary: next.risk_propagation?.summary ?? riskSummary,
+    riskSummary: (typeof nextRiskPropagation?.summary === "string" ? nextRiskPropagation.summary : null) ?? riskSummary,
     timelineSteps,
-    adviceAction: next.strategic_advice?.primary_recommendation?.action ?? genericAction.action,
-    adviceWhy: next.strategic_advice?.why ?? genericAdvice.why,
+    adviceAction:
+      (asRecord(nextStrategicAdvice?.primary_recommendation)?.action as string | undefined) ?? genericAction.action,
+    adviceWhy: (typeof nextStrategicAdvice?.why === "string" ? nextStrategicAdvice.why : null) ?? genericAdvice.why,
     domainLabel: modeContext?.project_domain ?? "system",
     framingStyle: "systemic",
   });
@@ -753,10 +781,11 @@ export function applyGenericPromptFeedbackEnhancement(
     input: simInput,
     objects: objects as SemanticObject[],
     relations: relationList as SimulationRelation[],
-    riskSummary: next.risk_propagation?.summary ?? riskSummary,
+    riskSummary: (typeof nextRiskPropagation?.summary === "string" ? nextRiskPropagation.summary : null) ?? riskSummary,
     timelineSteps,
-    recommendation: next.strategic_advice?.primary_recommendation?.action ?? genericAction.action,
-    confidence: Number(next?.strategic_advice?.confidence ?? 0.72),
+    recommendation:
+      (asRecord(nextStrategicAdvice?.primary_recommendation)?.action as string | undefined) ?? genericAction.action,
+    confidence: Number(nextStrategicAdvice?.confidence ?? 0.72),
     affectedDimensions: ["dependency_stability", "operational_pressure", ...matchedSemanticTags].slice(0, 4),
   });
   next.decision_simulation = decisionSimulation;
@@ -764,7 +793,8 @@ export function applyGenericPromptFeedbackEnhancement(
     projectId,
     simulation: decisionSimulation,
     sceneJson: sceneJsonFromUnknown(next?.scene_json) ?? fallbackScene ?? null,
-    semanticObjectMeta: orderedMatchedObjects.reduce((acc: Record<string, any>, o: any) => {
+    semanticObjectMeta: orderedMatchedObjects.reduce(
+      (acc: Record<string, SemanticObjectMeta | Record<string, unknown>>, o: SemanticObject) => {
       const oid = String(o?.id ?? o?.name ?? "").trim();
       if (!oid) return acc;
       acc[oid] = o?.semantic ?? {
@@ -791,7 +821,7 @@ export function applyGenericPromptFeedbackEnhancement(
     mode: "baseline_vs_impacted",
   });
   const semanticMetaById = orderedMatchedObjects.reduce(
-    (acc: Record<string, { role?: string; category?: string; domain?: string }>, o: any) => {
+    (acc: Record<string, { role?: string; category?: string; domain?: string }>, o: SemanticObject) => {
       const id = String(o?.id ?? o?.name ?? "").trim();
       if (!id) return acc;
       acc[id] = {
@@ -812,7 +842,8 @@ export function applyGenericPromptFeedbackEnhancement(
     simulation: decisionSimulation,
     comparison: scenarioComparison,
     objects: objects as SemanticObject[],
-    semanticObjectMeta: orderedMatchedObjects.reduce((acc: Record<string, any>, o: any) => {
+    semanticObjectMeta: orderedMatchedObjects.reduce(
+      (acc: Record<string, SemanticObjectMeta | Record<string, unknown>>, o: SemanticObject) => {
       const oid = String(o?.id ?? o?.name ?? "").trim();
       if (!oid) return acc;
       acc[oid] = o?.semantic ?? {};
@@ -883,7 +914,7 @@ export function applyGenericPromptFeedbackEnhancement(
   }
   const memoryObjects = reasoningHints?.memoryState?.objects ?? {};
   const volatileNodes = Object.entries(memoryObjects)
-    .filter(([, value]: any) => Number(value?.volatility ?? 0) >= 0.35)
+    .filter(([, value]: [string, unknown]) => Number((value as Record<string, unknown>)?.volatility ?? 0) >= 0.35)
     .map(([id]) => id)
     .slice(0, 5);
   const recurringPatterns = Object.keys(reasoningHints?.memoryState?.loops ?? {}).slice(0, 5);
@@ -902,16 +933,16 @@ export function applyGenericPromptFeedbackEnhancement(
         volatile_nodes: volatileNodes,
         recurring_patterns: recurringPatterns,
       },
-      scanner_context:
-        next?.scanner && typeof next.scanner === "object"
-          ? {
-              source_type: String(next?.scanner?.lastSource?.type ?? "").trim() || undefined,
-              source_id: String(next?.scanner?.lastSource?.id ?? "").trim() || undefined,
-              confidence: Number.isFinite(Number(next?.scanner?.confidence))
-                ? Number(next?.scanner?.confidence)
-                : undefined,
-            }
-          : undefined,
+      scanner_context: (() => {
+        const scanner = asRecord(next.scanner);
+        if (!scanner) return undefined;
+        const lastSource = asRecord(scanner.lastSource);
+        return {
+          source_type: String(lastSource?.type ?? "").trim() || undefined,
+          source_id: String(lastSource?.id ?? "").trim() || undefined,
+          confidence: Number.isFinite(Number(scanner.confidence)) ? Number(scanner.confidence) : undefined,
+        };
+      })(),
     },
     semanticObjects: objects as SemanticObject[],
     simulationContext: {
@@ -959,30 +990,28 @@ export function applyGenericPromptFeedbackEnhancement(
             volatile_nodes: volatileNodes,
             recurring_patterns: recurringPatterns,
           },
-          scanner:
-            next?.scanner && typeof next.scanner === "object"
-              ? {
-                  source_type: String(next?.scanner?.lastSource?.type ?? "").trim() || undefined,
-                  confidence: Number.isFinite(Number(next?.scanner?.confidence))
-                    ? Number(next?.scanner?.confidence)
-                    : undefined,
-                  unresolved_items: Array.isArray(next?.scanner?.unresolvedItems) ? next.scanner.unresolvedItems : [],
-                }
-              : null,
-          exploration:
-            next?.autonomous_exploration && typeof next.autonomous_exploration === "object"
-              ? {
-                  fragile_object_ids: Array.isArray(next?.autonomous_exploration?.summary?.fragile_object_ids)
-                    ? next.autonomous_exploration.summary.fragile_object_ids
-                    : [],
-                  highest_severity: Number.isFinite(Number(next?.autonomous_exploration?.summary?.highest_severity))
-                    ? Number(next.autonomous_exploration.summary.highest_severity)
-                    : undefined,
-                  mitigation_ideas: Array.isArray(next?.autonomous_exploration?.summary?.top_mitigation_ideas)
-                    ? next.autonomous_exploration.summary.top_mitigation_ideas
-                    : [],
-                }
-              : null,
+          scanner: (() => {
+            const scanner = asRecord(next.scanner);
+            if (!scanner) return null;
+            const lastSource = asRecord(scanner.lastSource);
+            return {
+              source_type: String(lastSource?.type ?? "").trim() || undefined,
+              confidence: Number.isFinite(Number(scanner.confidence)) ? Number(scanner.confidence) : undefined,
+              unresolved_items: Array.isArray(scanner.unresolvedItems) ? scanner.unresolvedItems : [],
+            };
+          })(),
+          exploration: (() => {
+            const exploration = asRecord(next.autonomous_exploration);
+            const summary = asRecord(exploration?.summary);
+            if (!exploration) return null;
+            return {
+              fragile_object_ids: Array.isArray(summary?.fragile_object_ids) ? summary.fragile_object_ids : [],
+              highest_severity: Number.isFinite(Number(summary?.highest_severity))
+                ? Number(summary?.highest_severity)
+                : undefined,
+              mitigation_ideas: Array.isArray(summary?.top_mitigation_ideas) ? summary.top_mitigation_ideas : [],
+            };
+          })(),
         },
       })
     : {
@@ -1086,7 +1115,7 @@ export function applyGenericPromptFeedbackEnhancement(
       version: "a12-a13",
     },
     transformation_path: ["risk_summary", "strategy_kpi", "advice_generation"],
-    confidence: Number(next?.strategic_advice?.confidence ?? aiReasoning?.confidence?.score ?? 0.72),
+    confidence: Number(nextStrategicAdvice?.confidence ?? asRecord(aiReasoning?.confidence)?.score ?? 0.72),
   });
   const multiAgentProv = createTrustProvenance({
     kind: "multi_agent_output",
@@ -1160,7 +1189,7 @@ export function applyGenericPromptFeedbackEnhancement(
       emphasis_updates: matchedIds.map((id, i) => ({ id, emphasis: Number((0.86 - i * 0.1).toFixed(2)) })),
     },
     risk_feedback: {
-      summary: next.risk_propagation?.summary ?? riskSummary,
+      summary: (typeof nextRiskPropagation?.summary === "string" ? nextRiskPropagation.summary : null) ?? riskSummary,
       affected_dimensions: ["dependency_stability", "operational_pressure", ...matchedSemanticTags].slice(0, 4),
       changed_drivers: matchedTopics.slice(0, 3),
     },
@@ -1169,8 +1198,9 @@ export function applyGenericPromptFeedbackEnhancement(
       dependency_hints: matchedDependencies,
     },
     advice_feedback: {
-      summary: next.strategic_advice?.summary,
-      recommendation: next.strategic_advice?.primary_recommendation?.action ?? genericAction.action,
+      summary: typeof nextStrategicAdvice?.summary === "string" ? nextStrategicAdvice.summary : undefined,
+      recommendation:
+        (asRecord(nextStrategicAdvice?.primary_recommendation)?.action as string | undefined) ?? genericAction.action,
     },
     strategy_kpi: {
       summary: strategyKpiContext.summary,
@@ -1251,12 +1281,14 @@ export function applyGenericPromptFeedbackEnhancement(
     executive_insight: executiveInsightWithStrategy,
   };
 
+  const riskSummaryForReply =
+    (typeof nextRiskPropagation?.summary === "string" ? nextRiskPropagation.summary : null) ?? riskSummary;
   const baseReply = typeof next.reply === "string" && next.reply.trim().length ? `${next.reply.trim()} ` : "";
   if (!baseReply.toLowerCase().includes("recommended action")) {
-    next.reply = `${baseReply}${next.risk_propagation.summary} Timeline: ${timelineSteps.join(" ")} Recommended action: ${genericAction.action}`;
+    next.reply = `${baseReply}${riskSummaryForReply} Timeline: ${timelineSteps.join(" ")} Recommended action: ${genericAction.action}`;
   }
   if (typeof next.analysis_summary !== "string" || next.analysis_summary.trim().length < 12) {
-    next.analysis_summary = `${next.risk_propagation.summary} ${timelineSteps[1]}`;
+    next.analysis_summary = `${riskSummaryForReply} ${timelineSteps[1]}`;
   }
 
   next.canonical_recommendation = buildCanonicalRecommendation(next);
@@ -1363,7 +1395,7 @@ function applyRetailCatalogLayerToEnhancedPayload(
   const baseRisk = extractPayloadRiskPropagation(next) ?? {};
   let nextEdges = Array.isArray(baseRisk.edges) ? [...(baseRisk.edges as unknown[])] : [];
   cfg.riskEdges.forEach((edge) => {
-    nextEdges = upsertRiskEdge(nextEdges, edge.from, edge.to, edge.base, edge.delta);
+    nextEdges = upsertRiskEdge(nextEdges as RiskPropagationEdge[], edge.from, edge.to, edge.base, edge.delta);
   });
   const nextSources = Array.from(
     new Set(nextEdges.map((e: unknown) => String((e as Record<string, unknown>)?.from ?? "")).filter(Boolean))

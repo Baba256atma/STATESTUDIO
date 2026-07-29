@@ -27,7 +27,7 @@ export type RuntimeObjectPositionContext = {
 
 export type RuntimeObjectPositionInput = {
   objectId: string;
-  sceneObjects: readonly any[];
+  sceneObjects: readonly SceneObject[];
   topologyRuntimeLayoutPositions?: Record<string, [number, number, number]>;
   layoutPositions?: Record<string, [number, number, number]>;
   logProvider?: boolean;
@@ -50,7 +50,7 @@ function normalizeLookupKey(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
-function collectObjectAliasKeysFromObject(object: any, index: number): string[] {
+function collectObjectAliasKeysFromObject(object: SceneObject, index: number): string[] {
   const keys = new Set<string>();
   const stableId = resolveStableObjectId(object as SceneObject, index);
   keys.add(stableId);
@@ -77,7 +77,7 @@ function readTuplePosition(tuple: readonly number[] | undefined): ScenePosition 
   return isValidScenePosition(position) ? position : null;
 }
 
-function collectObjectAliasKeys(objectId: string, sceneObjects: readonly any[]): string[] {
+function collectObjectAliasKeys(objectId: string, sceneObjects: readonly SceneObject[]): string[] {
   const keys = new Set<string>();
   const normalized = String(objectId ?? "").trim();
   if (normalized) keys.add(normalized);
@@ -118,14 +118,18 @@ function readPositionFromMap(
   return null;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 function readSceneObjectJsonPosition(
-  object: any
+  object: SceneObject
 ): { position: ScenePosition; provider: RuntimeObjectPositionProvider } | null {
   if (!object) return null;
 
   const candidates: Array<{ value: unknown; provider: RuntimeObjectPositionProvider }> = [
     { value: object.position, provider: "sceneObject.position" },
-    { value: object.transform?.pos, provider: "sceneObject.transform.pos" },
+    { value: asRecord(object.transform)?.pos, provider: "sceneObject.transform.pos" },
     { value: object.pos, provider: "sceneObject.position" },
   ];
 
@@ -156,7 +160,7 @@ function readSceneObjectJsonPosition(
   return null;
 }
 
-function findSceneObjectIndex(objectId: string, sceneObjects: readonly any[]): number {
+function findSceneObjectIndex(objectId: string, sceneObjects: readonly SceneObject[]): number {
   const normalized = String(objectId ?? "").trim();
   return sceneObjects.findIndex((object, index) => {
     const stableId = resolveStableObjectId(object as SceneObject, index);
@@ -189,7 +193,7 @@ const BASELINE_POSITIONS: Record<string, [number, number, number]> = {
 
 function resolveRuntimeObjectPositionAtIndex(input: {
   index: number;
-  sceneObjects: readonly any[];
+  sceneObjects: readonly SceneObject[];
   topologyRuntimeLayoutPositions?: Record<string, [number, number, number]>;
   layoutPositions?: Record<string, [number, number, number]>;
   objectId?: string;
@@ -254,7 +258,7 @@ function resolveRuntimeObjectPositionAtIndex(input: {
 }
 
 export function buildRuntimeObjectPositionLookupSignature(
-  sceneObjects: readonly any[],
+  sceneObjects: readonly SceneObject[],
   context?: RuntimeObjectPositionContext
 ): string {
   const objectSignature = sceneObjects
@@ -280,7 +284,7 @@ export function buildRuntimeObjectPositionLookupSignature(
 }
 
 export function buildRuntimeObjectPositionLookupCache(input: {
-  sceneObjects: readonly any[];
+  sceneObjects: readonly SceneObject[];
   context?: RuntimeObjectPositionContext;
   logBuilt?: boolean;
 }): RuntimeObjectPositionLookupCache {
@@ -338,7 +342,7 @@ export function getRuntimeObjectPositionFromLookup(
 
 export function resolveRuntimeObjectPositionWithLookup(input: {
   objectId: string;
-  sceneObjects: readonly any[];
+  sceneObjects: readonly SceneObject[];
   topologyRuntimeLayoutPositions?: Record<string, [number, number, number]>;
   layoutPositions?: ContextLayoutPositions;
   positionLookup?: RuntimeObjectPositionLookupCache | null;
@@ -376,7 +380,7 @@ type ContextLayoutPositions = Record<string, [number, number, number]>;
 
 export function resolveRuntimeObjectPositionFromContextWithLookup(
   objectId: string,
-  sceneObjects: readonly any[],
+  sceneObjects: readonly SceneObject[],
   context?: RuntimeObjectPositionContext,
   positionLookup?: RuntimeObjectPositionLookupCache | null,
   logProvider = true
@@ -426,16 +430,18 @@ export function resolveRuntimeObjectPosition(
 
   const matchedIndex = findSceneObjectIndex(objectId, input.sceneObjects);
   const matchedObject = matchedIndex >= 0 ? input.sceneObjects[matchedIndex] : undefined;
-  const jsonPosition = readSceneObjectJsonPosition(matchedObject);
-  if (jsonPosition) {
-    if (input.logProvider !== false) {
-      logRuntimeObjectPositionProvider({
-        objectId,
-        provider: jsonPosition.provider,
-        position: jsonPosition.position,
-      });
+  if (matchedObject) {
+    const jsonPosition = readSceneObjectJsonPosition(matchedObject);
+    if (jsonPosition) {
+      if (input.logProvider !== false) {
+        logRuntimeObjectPositionProvider({
+          objectId,
+          provider: jsonPosition.provider,
+          position: jsonPosition.position,
+        });
+      }
+      return jsonPosition;
     }
-    return jsonPosition;
   }
 
   if (BASELINE_POSITIONS[objectId]) {
@@ -476,7 +482,7 @@ export function resolveRuntimeObjectPosition(
 
 export function resolveRuntimeObjectPositionFromContext(
   objectId: string,
-  sceneObjects: readonly any[],
+  sceneObjects: readonly SceneObject[],
   context?: RuntimeObjectPositionContext,
   logProvider = true
 ): RuntimeObjectPositionResult {

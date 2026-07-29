@@ -32,24 +32,42 @@ function useFavoritesCount(): number {
 }
 
 export function ExecutiveSummaryCardsRow(props: ExecutiveSummaryCardsRowProps): React.ReactElement {
+  const {
+    activeWorkspaceId,
+    dashboardMode,
+    recommendationContext,
+    recentsContext,
+    selectedObjectId,
+    selectedObjectLabel,
+    selectedObjectStatus,
+    selectedObjectType,
+    layoutVariant: layoutVariantProp,
+  } = props;
   const favoritesCount = useFavoritesCount();
-  const layoutVariant = props.layoutVariant ?? "standalone";
+  const layoutVariant = layoutVariantProp ?? "standalone";
 
   const summaryView = useMemo(
     () =>
       buildExecutiveSummaryLayerView({
-        ...props,
+        activeWorkspaceId,
+        dashboardMode,
+        recommendationContext,
+        recentsContext,
+        selectedObjectId,
+        selectedObjectLabel,
+        selectedObjectStatus,
+        selectedObjectType,
         favoritesCount,
       }),
     [
-      props.activeWorkspaceId,
-      props.dashboardMode,
-      props.recommendationContext,
-      props.recentsContext,
-      props.selectedObjectId,
-      props.selectedObjectLabel,
-      props.selectedObjectStatus,
-      props.selectedObjectType,
+      activeWorkspaceId,
+      dashboardMode,
+      recommendationContext,
+      recentsContext,
+      selectedObjectId,
+      selectedObjectLabel,
+      selectedObjectStatus,
+      selectedObjectType,
       favoritesCount,
     ]
   );

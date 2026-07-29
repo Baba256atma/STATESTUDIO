@@ -19,15 +19,7 @@ import {
   ExecutiveRevenueValidationResult,
   ExecutiveRevenueValidationVersion,
 } from "./executiveRevenueValidation.ts";
-import {
-  ExecutiveRevenueManifest,
-  ExecutiveRevenueManifestCompatibility,
-  ExecutiveRevenueManifestDependencies,
-  ExecutiveRevenueManifestId,
-  ExecutiveRevenueManifestNamespace,
-  ExecutiveRevenueManifestPublicSurface,
-  ExecutiveRevenueManifestVersion,
-} from "./executiveRevenueManifest.ts";
+import { ExecutiveRevenueManifest, ExecutiveRevenueManifestDependencies, ExecutiveRevenueManifestId, ExecutiveRevenueManifestNamespace, ExecutiveRevenueManifestPublicSurface, ExecutiveRevenueManifestVersion } from "./executiveRevenueManifest.ts";
 import {
   ExecutiveRevenuePlatformDependencies,
   ExecutiveRevenuePlatformFoundation,

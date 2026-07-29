@@ -50,9 +50,24 @@ export const CHAT_QA_SCENARIOS: ChatQAScenario[] = [
   },
 ];
 
+type ChatPipelineDebugLog = {
+  input?: string;
+  runSnapshot?: Record<string, unknown>;
+  panelView?: unknown;
+  sceneSignature?: unknown;
+  confidence?: number;
+  stabilityReason?: unknown;
+  staleSkipped?: boolean;
+  lifecycleStatus?: unknown;
+  loopGuard?: Record<string, unknown> | null;
+  idempotency?: Record<string, unknown> | null;
+  sceneReactionApplied?: boolean;
+  selectedObjectGuard?: Record<string, unknown> | null;
+};
+
 export type ChatQARunResult = {
   scenarioId: string;
-  logs: any[];
+  logs: ChatPipelineDebugLog[];
   pass: boolean;
   details: string[];
 };
@@ -101,7 +116,7 @@ function stepWasSceneIdempotentSkip(log: { runSnapshot?: Record<string, unknown>
   return getIdempotency(log)?.sceneSkipped === true;
 }
 
-export function detectPanelFlash(panelHistory: string[], logs?: any[]): boolean {
+export function detectPanelFlash(panelHistory: string[], logs?: ChatPipelineDebugLog[]): boolean {
   let repeatedOpenCount = 0;
   for (let i = 1; i < panelHistory.length; i += 1) {
     if (panelHistory[i] && panelHistory[i] === panelHistory[i - 1]) {
@@ -119,7 +134,7 @@ export function detectPanelFlash(panelHistory: string[], logs?: any[]): boolean 
 }
 
 /** True only if the same non-empty scene signature was applied to the scene more than once (ignores debug-only repeats / idempotent skips). */
-export function detectDuplicateScene(sceneSignatures: string[], logs?: any[]): boolean {
+export function detectDuplicateScene(sceneSignatures: string[], logs?: ChatPipelineDebugLog[]): boolean {
   const seen = new Set<string>();
   for (let i = 0; i < sceneSignatures.length; i += 1) {
     if (logs && stepWasLoopSkipped(logs[i])) continue;
@@ -142,7 +157,7 @@ export function detectOverwrite(prevPanel: string, nextPanel: string, confidence
   return meaningful.has(prev) && !meaningful.has(next);
 }
 
-export function getChatPipelineDebugState(): any {
+export function getChatPipelineDebugState(): Record<string, unknown> {
   if (typeof window === "undefined") return {};
   const w = window as Window & { __NEXORA_DEBUG__?: Record<string, unknown> };
   return (w.__NEXORA_DEBUG__?.chatPipeline as Record<string, unknown>) ?? {};
@@ -150,11 +165,11 @@ export function getChatPipelineDebugState(): any {
 
 export async function runChatQAScenario(
   scenario: ChatQAScenario,
-  runChat: (input: string) => Promise<any>,
-  getDebugState: () => any,
+  runChat: (input: string) => Promise<Record<string, unknown>>,
+  getDebugState: () => Record<string, unknown>,
   fixtures?: ChatQAFixtureControls
 ): Promise<ChatQARunResult> {
-  const logs: any[] = [];
+  const logs: ChatPipelineDebugLog[] = [];
   const details: string[] = [];
 
   if (scenario.id === "analyze_without_object") {
@@ -174,10 +189,10 @@ export async function runChatQAScenario(
       stabilityReason: state?.stabilityReason ?? null,
       staleSkipped: state?.staleSkipped === true,
       lifecycleStatus: state?.lifecycleStatus ?? null,
-      loopGuard: state?.loopGuard ?? null,
-      idempotency: state?.idempotency ?? null,
+      loopGuard: (state?.loopGuard as Record<string, unknown> | null) ?? null,
+      idempotency: (state?.idempotency as Record<string, unknown> | null) ?? null,
       sceneReactionApplied: state?.sceneReactionApplied === true,
-      selectedObjectGuard: state?.selectedObjectGuard ?? null,
+      selectedObjectGuard: (state?.selectedObjectGuard as Record<string, unknown> | null) ?? null,
     });
     await wait(350);
   }
@@ -277,4 +292,3 @@ export async function runChatQAScenario(
     details,
   };
 }
-

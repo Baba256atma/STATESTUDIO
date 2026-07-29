@@ -2,7 +2,7 @@ import type { MutableRefObject } from "react";
 
 import type { SceneJson } from "../../../lib/sceneTypes.ts";
 import type { TypeCAIExecutiveInsight } from "../../../lib/typec/aiTypeCExecutiveInsight.ts";
-import type { TypeCAIInsightRequest, TypeCAIInsightResponse } from "../../../lib/typec/typeCAIContracts.ts";
+import type { TypeCAIInsightResponse } from "../../../lib/typec/typeCAIContracts.ts";
 import type { TypeCAlert } from "../../../lib/typec/typeCAlerts.ts";
 import type { TypeCDecisionDraft } from "../../../lib/typec/typeCDecisionDraft.ts";
 import type { TypeCDecisionReadinessSnapshot } from "../../../lib/typec/typeCDecisionReadiness.ts";
@@ -10,10 +10,10 @@ import type { TypeCDecisionRecommendation } from "../../../lib/typec/typeCDecisi
 import type { TypeCExecutiveSummary } from "../../../lib/typec/typeCExecutiveSummary.ts";
 import type { TypeCExecutionState } from "../../../lib/typec/typeCExecutionState.ts";
 import type { TypeCMemoryState } from "../../../lib/typec/typeCMemory.ts";
-import type { TypeCMultiAgentInsight, TypeCMultiAgentRequest } from "../../../lib/typec/typeCMultiAgentContracts.ts";
+import type { TypeCMultiAgentInsight } from "../../../lib/typec/typeCMultiAgentContracts.ts";
 import type { TypeCConnectionSuggestion } from "../../../lib/typec/typeCConnectionSuggestions.ts";
 import type { TypeCPipelineEvent, TypeCPipelineEventInput } from "../../../lib/typec/typeCPipelineTracker.ts";
-import type { TypeCSandboxRequest, TypeCSandboxResult, TypeCSandboxStrategy } from "../../../lib/typec/typeCSandboxContracts.ts";
+import type { TypeCSandboxResult, TypeCSandboxStrategy } from "../../../lib/typec/typeCSandboxContracts.ts";
 import type { TypeCScenarioComparison } from "../../../lib/typec/typeCScenarioComparison.ts";
 import type { TypeCScenarioDraft } from "../../../lib/typec/typeCScenarioDrafts.ts";
 import type { TypeCScenarioSimulation } from "../../../lib/typec/typeCScenarioSimulation.ts";

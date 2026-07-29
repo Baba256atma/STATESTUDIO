@@ -121,7 +121,10 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
       buildSceneSemanticSignature({
         objectIds: Array.isArray(sceneJson?.scene?.objects)
           ? sceneJson.scene.objects
-              .map((object: any, idx: number) => String(object?.id ?? object?.name ?? `${object?.type ?? "obj"}:${idx}`))
+              .map((object: unknown, idx: number) => {
+                const record = object && typeof object === "object" ? (object as Record<string, unknown>) : null;
+                return String(record?.id ?? record?.name ?? `${record?.type ?? "obj"}:${idx}`);
+              })
               .filter(Boolean)
           : [],
         highlightedIds: [selectedObjectId, scannerPrimaryObjectId, manualActionObjectId]

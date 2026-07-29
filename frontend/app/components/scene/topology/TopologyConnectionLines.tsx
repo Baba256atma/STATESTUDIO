@@ -73,7 +73,7 @@ function TopologyConnectionLinesComponent({
         selectedObjectId,
         reason: visible ? "topology-lines-visible" : "topology-lines-hidden",
       }),
-    [connectionGeometrySignature, geometryLines, visible]
+    [connectionGeometrySignature, geometryLines, selectedObjectId, visible]
   );
 
   const renderedLines = useMemo(() => {

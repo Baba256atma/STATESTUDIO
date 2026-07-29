@@ -218,6 +218,7 @@ test("rejects duplicate replay fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_replay");
 });
 
@@ -284,7 +285,7 @@ test("advanceReplayToFrame respects frame guards", () => {
 });
 
 test("integrated war-room orchestration replay", () => {
-  let parent = createOperationalTimeline({ timelineId: "tl-int", initialSnapshot: snap(0) });
+  const parent = createOperationalTimeline({ timelineId: "tl-int", initialSnapshot: snap(0) });
   let forest = createScenarioBranchForest(parent);
   const alt = createScenarioBranch({
     sourceTimeline: parent,

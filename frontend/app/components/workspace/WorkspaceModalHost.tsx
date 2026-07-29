@@ -81,45 +81,65 @@ type WorkspaceModalState =
 let workspaceModalState: WorkspaceModalState = null;
 const workspaceModalSubscribers = new Set<() => void>();
 
+
+function resolveWorkspaceDomainId(
+  domainId: string | null | undefined,
+): WorkspaceDomainId {
+  switch (domainId) {
+    case "manufacturing":
+    case "finance":
+    case "project_management":
+    case "supply_chain":
+    case "operations":
+    case "sales":
+    case "human_resources":
+    case "technology":
+    case "custom":
+      return domainId;
+    default:
+      return "custom";
+  }
+}
+
 function emitWorkspaceOverlayDiagnostic(message: string, payload?: Record<string, unknown>): void {
   if (process.env.NODE_ENV === "production") return;
-  // eslint-disable-next-line no-console
+   
   console.debug("[WorkspaceOverlay]", message, payload ?? {});
 }
 
 function emitWorkspaceHubDiagnostic(message: string, payload?: Record<string, unknown>): void {
   if (process.env.NODE_ENV === "production") return;
-  // eslint-disable-next-line no-console
+   
   console.debug("[WorkspaceHub]", message, payload ?? {});
 }
 
 function emitDomainDiscoveryDiagnostic(message: string, payload?: Record<string, unknown>): void {
   if (process.env.NODE_ENV === "production") return;
-  // eslint-disable-next-line no-console
+   
   console.debug("[DomainDiscovery]", message, payload ?? {});
 }
 
 function emitSituationDiscoveryDiagnostic(message: string, payload?: Record<string, unknown>): void {
   if (process.env.NODE_ENV === "production") return;
-  // eslint-disable-next-line no-console
+   
   console.debug("[SituationDiscovery]", message, payload ?? {});
 }
 
 function emitGoalDiscoveryDiagnostic(message: string, payload?: Record<string, unknown>): void {
   if (process.env.NODE_ENV === "production") return;
-  // eslint-disable-next-line no-console
+   
   console.debug("[GoalDiscovery]", message, payload ?? {});
 }
 
 function emitDraftModelGenerationDiagnostic(message: string, payload?: Record<string, unknown>): void {
   if (process.env.NODE_ENV === "production") return;
-  // eslint-disable-next-line no-console
+   
   console.debug("[DraftModelGeneration]", message, payload ?? {});
 }
 
 function emitModelApprovalDiagnostic(message: string, payload?: Record<string, unknown>): void {
   if (process.env.NODE_ENV === "production") return;
-  // eslint-disable-next-line no-console
+   
   console.debug("[ModelApproval]", message, payload ?? {});
 }
 
@@ -216,13 +236,17 @@ export function WorkspaceModalHost(): React.ReactElement | null {
     getWorkspaceModelVersionSnapshot,
     () => 0
   );
-  const [mounted, setMounted] = React.useState(false);
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   useEffect(() => {
-    setMounted(true);
+    if (!mounted) return;
     emitWorkspaceOverlayDiagnostic("Overlay Mounted");
     return () => emitWorkspaceOverlayDiagnostic("Overlay Unmounted");
-  }, []);
+  }, [mounted]);
 
   const workspace = useMemo(() => {
     if (
@@ -616,10 +640,12 @@ function SituationDiscoveryDialog(props: {
   onCancel: () => void;
   onComplete: () => void;
 }): React.ReactElement {
-  const domainSelection = getWorkspaceDomainSelection(props.workspaceId);
-  const existingSituation = getWorkspaceSituation(props.workspaceId);
-  const domainId = domainSelection?.domainId ?? existingSituation?.domainId ?? "custom";
-  const domainName = domainSelection?.domainName ?? "Custom";
+  const { workspaceId, onCancel, onComplete } = props;
+  const domainSelection = getWorkspaceDomainSelection(workspaceId);
+  const existingSituation = getWorkspaceSituation(workspaceId);
+  const domainId = resolveWorkspaceDomainId(domainSelection?.domainId ?? existingSituation?.domainId ?? "custom");
+  const domainName = `${domainSelection?.domainName ?? "Custom"}`;
+  const situationExists = existingSituation != null;
   const templates = getSituationTemplatesForDomain(domainId);
   const [situationText, setSituationText] = React.useState(existingSituation?.situationText ?? "");
   const meaningfulText = situationText.trim();
@@ -632,28 +658,28 @@ function SituationDiscoveryDialog(props: {
       return `${trimmed}\n\n${exampleText}`;
     });
     emitSituationDiscoveryDiagnostic("Template Applied", {
-      Workspace: props.workspaceId,
+      Workspace: workspaceId,
       Domain: domainName,
     });
-  }, [domainName, props.workspaceId]);
+  }, [domainName, setSituationText, workspaceId]);
 
-  const handleContinue = React.useCallback(() => {
+  const handleContinue = () => {
     if (!meaningfulText) return;
     const situation = saveWorkspaceSituation({
-      workspaceId: props.workspaceId,
+      workspaceId,
       domainId,
       situationText: meaningfulText,
     });
-    emitSituationDiscoveryDiagnostic(existingSituation ? "Situation Updated" : "Situation Saved", {
-      Workspace: props.workspaceId,
+    emitSituationDiscoveryDiagnostic(situationExists ? "Situation Updated" : "Situation Saved", {
+      Workspace: workspaceId,
       Domain: domainName,
       characterCount: situation.situationText.length,
     });
-    props.onComplete();
-  }, [domainId, domainName, existingSituation, meaningfulText, props]);
+    onComplete();
+  };
 
   return (
-    <WorkspaceOverlayFrame label="Situation Discovery" onCancel={props.onCancel}>
+    <WorkspaceOverlayFrame label="Situation Discovery" onCancel={onCancel}>
       <section onPointerDown={(event) => event.stopPropagation()} style={situationDiscoveryPanelStyle()}>
         <header style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
           <div style={{ display: "grid", gap: 5 }}>
@@ -670,7 +696,7 @@ function SituationDiscoveryDialog(props: {
               Selected Domain: {domainName}
             </div>
           </div>
-          <button type="button" onClick={props.onCancel} style={modalButtonStyle(false)}>
+          <button type="button" onClick={onCancel} style={modalButtonStyle(false)}>
             Close
           </button>
         </header>
@@ -705,7 +731,7 @@ function SituationDiscoveryDialog(props: {
         </label>
 
         <footer style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <button type="button" onClick={props.onCancel} style={modalButtonStyle(false)}>
+          <button type="button" onClick={onCancel} style={modalButtonStyle(false)}>
             Cancel
           </button>
           <button
@@ -727,12 +753,13 @@ function GoalDiscoveryDialog(props: {
   onCancel: () => void;
   onComplete: () => void;
 }): React.ReactElement {
-  const domainSelection = getWorkspaceDomainSelection(props.workspaceId);
-  const situation = getWorkspaceSituation(props.workspaceId);
-  const domainId = domainSelection?.domainId ?? situation?.domainId ?? "custom";
-  const domainName = domainSelection?.domainName ?? "Custom";
+  const { workspaceId, onCancel, onComplete } = props;
+  const domainSelection = getWorkspaceDomainSelection(workspaceId);
+  const situation = getWorkspaceSituation(workspaceId);
+  const domainId = resolveWorkspaceDomainId(domainSelection?.domainId ?? situation?.domainId ?? "custom");
+  const domainName = `${domainSelection?.domainName ?? "Custom"}`;
   const suggestions = getGoalSuggestionsForDomain(domainId);
-  const existingGoals = getWorkspaceGoals(props.workspaceId);
+  const existingGoals = getWorkspaceGoals(workspaceId);
   const [selectedGoals, setSelectedGoals] = React.useState<readonly WorkspaceGoal[]>(existingGoals);
   const [customGoalName, setCustomGoalName] = React.useState("");
   const selectedGoalIds = React.useMemo(
@@ -746,28 +773,28 @@ function GoalDiscoveryDialog(props: {
       const alreadySelected = currentGoals.some((goal) => goal.goalId === suggestion.goalId);
       if (alreadySelected) {
         emitGoalDiscoveryDiagnostic("Goal Removed", {
-          Workspace: props.workspaceId,
+          Workspace: workspaceId,
           goalName: suggestion.goalName,
         });
         return currentGoals.filter((goal) => goal.goalId !== suggestion.goalId);
       }
       const nextGoal = createSuggestedGoal({
-        workspaceId: props.workspaceId,
+        workspaceId,
         suggestion,
       });
       emitGoalDiscoveryDiagnostic("Goal Added", {
-        Workspace: props.workspaceId,
+        Workspace: workspaceId,
         goalName: nextGoal.goalName,
       });
       return [...currentGoals, nextGoal];
     });
-  }, [props.workspaceId]);
+  }, [workspaceId]);
 
   const handleAddCustomGoal = React.useCallback(() => {
     const cleaned = customGoalName.trim();
     if (!cleaned) return;
     const customGoal = createCustomGoal({
-      workspaceId: props.workspaceId,
+      workspaceId,
       goalName: cleaned,
     });
     setSelectedGoals((currentGoals) => {
@@ -776,39 +803,39 @@ function GoalDiscoveryDialog(props: {
     });
     setCustomGoalName("");
     emitGoalDiscoveryDiagnostic("Custom Goal Added", {
-      Workspace: props.workspaceId,
+      Workspace: workspaceId,
       goalName: customGoal.goalName,
     });
-  }, [customGoalName, props.workspaceId]);
+  }, [customGoalName, setCustomGoalName, setSelectedGoals, workspaceId]);
 
   const removeGoal = React.useCallback((goalId: string) => {
     setSelectedGoals((currentGoals) => {
       const removed = currentGoals.find((goal) => goal.goalId === goalId);
       if (removed) {
         emitGoalDiscoveryDiagnostic("Goal Removed", {
-          Workspace: props.workspaceId,
+          Workspace: workspaceId,
           goalName: removed.goalName,
         });
       }
       return currentGoals.filter((goal) => goal.goalId !== goalId);
     });
-  }, [props.workspaceId]);
+  }, [workspaceId]);
 
   const handleContinue = React.useCallback(() => {
     if (!selectedGoals.length) return;
     const savedGoals = saveWorkspaceGoals({
-      workspaceId: props.workspaceId,
+      workspaceId,
       goals: selectedGoals,
     });
     emitGoalDiscoveryDiagnostic("Goal Saved", {
-      Workspace: props.workspaceId,
+      Workspace: workspaceId,
       "Goals Selected": savedGoals.length,
     });
-    props.onComplete();
-  }, [props, selectedGoals]);
+    onComplete();
+  }, [onComplete, selectedGoals, workspaceId]);
 
   return (
-    <WorkspaceOverlayFrame label="Goal Discovery" onCancel={props.onCancel}>
+    <WorkspaceOverlayFrame label="Goal Discovery" onCancel={onCancel}>
       <section onPointerDown={(event) => event.stopPropagation()} style={goalDiscoveryPanelStyle()}>
         <header style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
           <div style={{ display: "grid", gap: 5 }}>
@@ -825,7 +852,7 @@ function GoalDiscoveryDialog(props: {
               Selected Domain: {domainName}
             </div>
           </div>
-          <button type="button" onClick={props.onCancel} style={modalButtonStyle(false)}>
+          <button type="button" onClick={onCancel} style={modalButtonStyle(false)}>
             Close
           </button>
         </header>
@@ -904,7 +931,7 @@ function GoalDiscoveryDialog(props: {
             Goals Selected: {selectedCount}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" onClick={props.onCancel} style={modalButtonStyle(false)}>
+            <button type="button" onClick={onCancel} style={modalButtonStyle(false)}>
               Cancel
             </button>
             <button
@@ -1000,7 +1027,7 @@ function DraftModelGenerationDialog(props: {
               Suggested Objects
             </div>
             <div style={{ fontSize: 12, color: nx.muted }}>
-              Review Nexora's proposed objects before they become part of the model.
+              Review Nexora&apos;s proposed objects before they become part of the model.
             </div>
             <div style={{ color: nx.lowMuted, fontSize: 10, fontWeight: 800 }}>
               {domainSelection?.domainName ?? "Custom"} · Goals: {goals.length}

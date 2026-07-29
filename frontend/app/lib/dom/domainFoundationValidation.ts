@@ -1,14 +1,6 @@
 import { MAX_DOMAIN_ID_LENGTH, SUPPORTED_DOMAIN_CATEGORIES } from "./domainFoundationConstants.ts";
 import { DOMAIN_FOUNDATION_CONTRACT_VERSION } from "./domainFoundationTypes.ts";
-import type {
-  DomainDependency,
-  DomainId,
-  DomainPackage,
-  DomainRegistry,
-  DomainValidationIssue,
-  DomainValidationResult,
-  DomainVersion,
-} from "./domainFoundationTypes.ts";
+import type { DomainId, DomainPackage, DomainRegistry, DomainValidationIssue, DomainValidationResult, DomainVersion } from "./domainFoundationTypes.ts";
 
 function issue(code: string, field: string, message: string): DomainValidationIssue {
   return Object.freeze({ code, field, message, severity: "error" });

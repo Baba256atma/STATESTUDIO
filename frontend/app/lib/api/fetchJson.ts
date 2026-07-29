@@ -1,3 +1,5 @@
+import { readUnknownErrorMessage } from "../system/nexoraErrors";
+
 export type FetchJsonError = {
   message: string;
   status?: number;
@@ -13,6 +15,53 @@ type FetchJsonOptions = {
 };
 
 const DEFAULT_TIMEOUT = 10_000;
+
+function readNestedStringMessage(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value;
+  if (typeof value !== "object" || value === null) return null;
+  if ("message" in value) {
+    const message = (value as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  return null;
+}
+
+function extractDetailsErrorMessage(details: unknown): string | null {
+  if (typeof details === "string" && details.trim()) return details;
+  if (typeof details !== "object" || details === null) return null;
+
+  const detail = "detail" in details ? (details as { detail?: unknown }).detail : undefined;
+  if (typeof detail === "string" && detail.trim()) return detail;
+  if (typeof detail === "object" && detail !== null) {
+    if ("error" in detail) {
+      const nested = readNestedStringMessage((detail as { error?: unknown }).error);
+      if (nested) return nested;
+    }
+    const direct = readNestedStringMessage(detail);
+    if (direct) return direct;
+  }
+
+  if ("error" in details) {
+    const nested = readNestedStringMessage((details as { error?: unknown }).error);
+    if (nested) return nested;
+  }
+
+  return null;
+}
+
+function isFetchJsonError(err: unknown): err is FetchJsonError {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "message" in err &&
+    typeof (err as { message?: unknown }).message === "string"
+  );
+}
+
+function toFetchJsonError(err: unknown, fallbackMessage: string): FetchJsonError {
+  if (isFetchJsonError(err)) return err;
+  return { message: readUnknownErrorMessage(err, fallbackMessage) };
+}
 
 export async function fetchJson(url: string, options: FetchJsonOptions = {}): Promise<unknown> {
   const {
@@ -32,9 +81,9 @@ export async function fetchJson(url: string, options: FetchJsonOptions = {}): Pr
         body: body !== undefined ? JSON.stringify(body) : undefined,
         signal: abortSignal,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       throw <FetchJsonError>{
-        message: err?.message || "Network request failed",
+        message: readUnknownErrorMessage(err, "Network request failed"),
         details: err,
       };
     }
@@ -43,16 +92,7 @@ export async function fetchJson(url: string, options: FetchJsonOptions = {}): Pr
       let message = "Request failed";
       try {
         details = await res.json();
-        const detailMessage =
-          typeof (details as any)?.detail?.error?.message === "string"
-            ? (details as any).detail.error.message
-            : typeof (details as any)?.detail?.message === "string"
-              ? (details as any).detail.message
-              : typeof (details as any)?.detail === "string"
-                ? (details as any).detail
-                : typeof (details as any)?.error?.message === "string"
-                  ? (details as any).error.message
-                  : null;
+        const detailMessage = extractDetailsErrorMessage(details);
         if (detailMessage && detailMessage.trim()) {
           message = detailMessage;
         }
@@ -67,11 +107,16 @@ export async function fetchJson(url: string, options: FetchJsonOptions = {}): Pr
     }
     try {
       return await res.json();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let details: unknown = undefined;
+      if (typeof err === "object" && err !== null && "message" in err) {
+        const message = (err as { message?: unknown }).message;
+        if (typeof message === "string") details = message;
+      }
       throw <FetchJsonError>{
         message: "Invalid JSON response",
         status: res.status,
-        details: err?.message,
+        details,
       };
     }
   };
@@ -81,14 +126,14 @@ export async function fetchJson(url: string, options: FetchJsonOptions = {}): Pr
 
   try {
     return await attempt(controller.signal);
-  } catch (err: any) {
-    const firstError = err as FetchJsonError;
+  } catch (err: unknown) {
+    const firstError = toFetchJsonError(err, "Request failed");
     const isNetworkError = firstError.status === undefined;
     if (retryNetworkErrors && isNetworkError) {
       try {
         return await attempt(controller.signal);
-      } catch (err2: any) {
-        throw err2 as FetchJsonError;
+      } catch (err2: unknown) {
+        throw toFetchJsonError(err2, "Request failed");
       }
     }
     throw firstError;

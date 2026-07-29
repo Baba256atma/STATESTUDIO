@@ -69,7 +69,7 @@ describe("E2:91 executive scene framing", () => {
       { id: "core-2", position: [1.2, 0, 0.4] },
       { id: "core-3", position: [-0.8, 0, 0.6] },
       { id: "far-1", position: [24, 0, 0] },
-    ] as any);
+    ]);
 
     const analysis = analyzeExecutiveSceneBounds({ sceneJson });
     const clusters = detectExecutiveObjectClusters({

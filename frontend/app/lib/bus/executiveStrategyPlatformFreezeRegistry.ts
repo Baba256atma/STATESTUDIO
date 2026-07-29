@@ -1,6 +1,6 @@
 import { EXECUTIVE_KPI_PLATFORM_IDENTITY } from "./executiveKpiPlatformFreezeIndex.ts";
 import { EXECUTIVE_OKR_PLATFORM_IDENTITY } from "./executiveOkrPlatformFreezeIndex.ts";
-import { EXECUTIVE_STRATEGY_PLATFORM_REGISTRY, listExecutiveStrategyPublicApis } from "./executiveStrategyIndex.ts";
+import { EXECUTIVE_STRATEGY_PLATFORM_REGISTRY } from "./executiveStrategyIndex.ts";
 import {
   EXECUTIVE_STRATEGY_DEFINITION_PUBLIC_APIS,
   EXECUTIVE_STRATEGY_DEFINITION_REGISTRY,
@@ -29,10 +29,7 @@ import {
   EXECUTIVE_STRATEGY_MONITORING_PUBLIC_APIS,
   EXECUTIVE_STRATEGY_MONITORING_REGISTRY,
 } from "./executiveStrategyMonitoringIndex.ts";
-import {
-  EXECUTIVE_STRATEGY_SIMULATION_PUBLIC_APIS,
-  EXECUTIVE_STRATEGY_SIMULATION_REGISTRY,
-} from "./executiveStrategySimulationIndex.ts";
+import { EXECUTIVE_STRATEGY_SIMULATION_PUBLIC_APIS } from "./executiveStrategySimulationIndex.ts";
 import type {
   ExecutiveStrategyPlatformConsumerEntry,
   ExecutiveStrategyPlatformDependencyEntry,

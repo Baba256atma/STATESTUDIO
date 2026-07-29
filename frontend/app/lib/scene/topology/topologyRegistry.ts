@@ -13,7 +13,8 @@ import type {
 
 type RegisteredTopologyType = Exclude<TopologyType, "auto">;
 
-function createPlaceholderGenerator(_topology: RegisteredTopologyType): TopologyLayoutGenerator {
+function createPlaceholderGenerator(topology: RegisteredTopologyType): TopologyLayoutGenerator {
+  void topology;
   return (nodes: TopologyNode[]): TopologyLayoutOutput => ({
     nodes: nodes.map((node) => ({
       id: node.id,

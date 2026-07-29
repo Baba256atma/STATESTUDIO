@@ -6,9 +6,7 @@
 import type {
   ScenarioIntelligenceScenarioId,
   ScenarioIntelligenceWorkspaceId,
-} from "./scenarioIntelligenceTypes.ts";
-import { EXECUTIVE_SCENARIO_SNAPSHOT_VERSION } from "./executiveScenarioSnapshot.ts";
-import type { ExecutiveScenarioSummaryDiagnostic } from "./executiveScenarioSummaryDiagnostics.ts";
+} from "./scenarioIntelligenceTypes.ts";import type { ExecutiveScenarioSummaryDiagnostic } from "./executiveScenarioSummaryDiagnostics.ts";
 
 export const EXECUTIVE_SCENARIO_SUMMARY_ENGINE_VERSION = "APP-2/8" as const;
 

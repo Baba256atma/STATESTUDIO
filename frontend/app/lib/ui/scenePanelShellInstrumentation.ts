@@ -1,4 +1,3 @@
-import type { ExecutiveWorkspaceLayoutMetrics } from "./executiveWorkspaceLayout";
 
 const loggedKeys = new Set<string>();
 

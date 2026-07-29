@@ -40,7 +40,8 @@ export function resetPsychMemoryWriteDisabled(): void {
   clearLegacyDisabledFlag();
 }
 
-export function savePsychSessionSnapshot(_snapshot: PsychSessionSnapshot): boolean {
+export function savePsychSessionSnapshot(snapshot: PsychSessionSnapshot): boolean {
+  void snapshot;
   // SYCHO-B08-SLIM:
   // Scene snapshots are intentionally disabled.
   // Persistent memory now stores only tiny behavioral signals in memoryEngine.ts.

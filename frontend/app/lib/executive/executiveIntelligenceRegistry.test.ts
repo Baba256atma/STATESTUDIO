@@ -16,6 +16,7 @@ import {
   validateExecutiveIndexCategory,
   validateExecutiveIndexDependencies,
 } from "./executiveIntelligenceRegistry.ts";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const PROTECTED_STORAGE_KEYS = Object.freeze([
   "nexora.workspaceScenarios.v1",
@@ -31,25 +32,6 @@ const PROTECTED_STORAGE_KEYS = Object.freeze([
   "nexora.workspaceScenes.v1",
 ]);
 
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
-
 function snapshotProtectedStorage(): Record<string, string | null> {
   return Object.fromEntries(
     PROTECTED_STORAGE_KEYS.map((key) => [key, window.localStorage.getItem(key)])
@@ -57,7 +39,7 @@ function snapshotProtectedStorage(): Record<string, string | null> {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetExecutiveIntelligenceRegistryStoreForTests();
 });

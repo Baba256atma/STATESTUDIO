@@ -127,8 +127,6 @@ export function routeBuildScenarioTimelineLifecycle(
       })
     );
   }
-
-  const lifecycle = ScenarioTimelineApiSources.buildScenarioLifecycle({ events: history.orderedEvents });
   const calculated = ScenarioTimelineApiSources.calculateScenarioLifecycle({ events: history.orderedEvents });
   if (!calculated.success || !calculated.data) {
     return finalize(

@@ -50,7 +50,8 @@ export type ExecutiveWorkspaceLearningContract = {
 
 export const EXECUTIVE_WORKSPACE_LEARNING_CONTRACT: ExecutiveWorkspaceLearningContract = {
   version: "e2-48-v1",
-  captureSignal(_signal) {
+  captureSignal(signal) {
+    void signal;
     // Future: persist to orientation learning store.
   },
   readProfile() {

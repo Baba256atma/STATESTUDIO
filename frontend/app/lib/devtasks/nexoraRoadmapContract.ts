@@ -61,7 +61,6 @@ export function normalizeRoadmapPhase(
  */
 export function sortRoadmapPhases(phases: readonly NexoraRoadmapPhase[]): NexoraRoadmapPhase[] {
   const list = phases.map((p) => normalizeRoadmapPhase(p as NexoraRoadmapPhase));
-  const byId = new Map(list.map((p) => [p.id, p]));
   const out: NexoraRoadmapPhase[] = [];
   const seen = new Set<string>();
 

@@ -48,11 +48,12 @@ const backButtonStyle: React.CSSProperties = {
 export function MainRightPanelContextHeader(
   props: MainRightPanelContextHeaderProps
 ): React.ReactElement {
+  const { onBackNavigation } = props;
   const header = useMrpContextHeaderView();
 
   const handleBack = React.useCallback(() => {
-    props.onBackNavigation?.();
-  }, [props.onBackNavigation]);
+    onBackNavigation?.();
+  }, [onBackNavigation]);
 
   return (
     <section

@@ -21,17 +21,6 @@ function indexResult(result: SimilarityResult): void {
   workspaceIndex.set(result.workspaceId, ids);
 }
 
-function unindexResult(result: SimilarityResult): void {
-  const ids = workspaceIndex.get(result.workspaceId);
-  if (!ids) {
-    return;
-  }
-  ids.delete(result.similarityResultId);
-  if (ids.size === 0) {
-    workspaceIndex.delete(result.workspaceId);
-  }
-}
-
 export function clearSimilarityRegistryForTests(): void {
   similarityRegistry.clear();
   workspaceIndex.clear();

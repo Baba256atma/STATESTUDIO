@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 
+import type { ProgressiveDisclosureLayer } from "../orientation/executiveOrientationTypes.ts";
 import {
   buildWorkspaceConsistencyReport,
   buildWorkspaceScalabilityReport,
@@ -11,8 +12,9 @@ import {
   validateExecutiveFirst30Seconds,
   validateExecutiveWorkflow,
 } from "./index";
+import type { E2WorkspaceReadinessContext } from "./e2ReadinessTypes";
 
-const BASE_CONTEXT = {
+const BASE_CONTEXT: E2WorkspaceReadinessContext = {
   themeMode: "night" as const,
   objectCount: 12,
   relationshipCount: 8,
@@ -44,8 +46,17 @@ const BASE_CONTEXT = {
       entryHeadline: "12 system nodes under active monitoring",
     },
     quickStart: [{ id: "analyze_risks", label: "Analyze Current Risks", rationale: "Review elevated signals." }],
-    workspaceMeaning: {} as Record<string, string>,
-    progressiveDisclosure: { visibleLayers: ["situation", "risk"], phaseLabel: "Situation" },
+    workspaceMeaning: {
+      scene: "Scene meaning",
+      objects: "Objects meaning",
+      relationships: "Relationships meaning",
+      timeline: "Timeline meaning",
+      aiAssistant: "Assistant meaning",
+    },
+    progressiveDisclosure: {
+      visibleLayers: ["situation", "risk"] as ProgressiveDisclosureLayer[],
+      phaseLabel: "Situation",
+    },
     welcome: {
       showWelcome: false,
       currentSystemState: "Stable",
@@ -55,7 +66,7 @@ const BASE_CONTEXT = {
     confidence: { signals: [{ id: "monitoring", label: "Monitoring Online", ready: true }], summaryLine: "Ready" },
   },
   harmonizationScore: 88,
-  usesLegacyShellWithoutSurface: [],
+  usesLegacyShellWithoutSurface: [] as E2WorkspaceReadinessContext["usesLegacyShellWithoutSurface"],
   layoutPreset: "executive",
   viewportWidth: 1440,
   viewportHeight: 900,

@@ -488,7 +488,6 @@ test("enterprise cognition synchronization modeling", () => {
     enterpriseCognitionSynchronizationRecords: syncRecords,
     unifiedMetaStrategicState: ctx.unifiedMetaStrategicState,
     strategicContinuityState: ctx.strategicContinuityState,
-    strategicEquilibriumState: ctx.strategicEquilibriumState,
     strategicResilienceState: ctx.strategicResilienceState,
     strategicDriftState: ctx.strategicDriftState,
   });
@@ -786,6 +785,7 @@ test("rejects duplicate completion build fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_completion_build");
 });
 

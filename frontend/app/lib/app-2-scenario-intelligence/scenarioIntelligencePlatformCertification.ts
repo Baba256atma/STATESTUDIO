@@ -21,7 +21,6 @@ import {
 } from "./executiveScenarioAssistantResolver.ts";
 import {
   resolveExecutiveScenarioDashboardView,
-  resolveExecutiveScenarioDashboardViewProbeExample,
 } from "./executiveScenarioDashboardResolver.ts";
 import { runScenarioIntelligencePlatformRegression } from "./scenarioIntelligencePlatformRegression.ts";
 import {
@@ -212,7 +211,7 @@ export function buildScenarioIntelligencePlatformCertificationChecks(
     gate(
       "S",
       "No direct APP-2 access",
-      EXECUTIVE_SCENARIO_ASSISTANT_ADAPTER_RULES.rebuildsIntelligence !== true &&
+      EXECUTIVE_SCENARIO_ASSISTANT_ADAPTER_RULES.generatesIntelligence === false &&
         EXECUTIVE_SCENARIO_DASHBOARD_ADAPTER_RULES.generatesIntelligence === false &&
         EXECUTIVE_SCENARIO_WORKSPACE_ADAPTER_RULES.rebuildsIntelligence === false,
       "Integration layer cannot rebuild APP-2 intelligence."

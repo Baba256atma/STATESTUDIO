@@ -5,7 +5,7 @@
 // Runtime animation updates only shader uniforms.
 // No geometry resize, no disposal, no state updates from useFrame.
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -42,7 +42,7 @@ function createNebulaMaterial(): THREE.ShaderMaterial {
         vec2 u = f * f * (3.0 - 2.0 * f);
         return mix(
           mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),
-          mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+          mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 0.0)), u.x),
           u.y
         );
       }
@@ -77,17 +77,11 @@ function createNebulaMaterial(): THREE.ShaderMaterial {
   });
 }
 
+// AD-R3F-01: immutable module-level fixtures — no render-time ref.current geometry/material init.
+const NEBULA_GEOMETRY = new THREE.PlaneGeometry(120, 80, 1, 1);
+const NEBULA_MATERIAL = createNebulaMaterial();
+
 function PsychNebula(): React.JSX.Element {
-  const geometryRef = useRef<THREE.PlaneGeometry | null>(null);
-  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
-
-  if (!geometryRef.current) {
-    geometryRef.current = new THREE.PlaneGeometry(120, 80, 1, 1);
-  }
-  if (!materialRef.current) {
-    materialRef.current = createNebulaMaterial();
-  }
-
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
       console.log("[Sycho][B12.3-A][NebulaReady]");
@@ -95,11 +89,10 @@ function PsychNebula(): React.JSX.Element {
   }, []);
 
   useFrame(({ clock }) => {
-    if (!materialRef.current) return;
-    materialRef.current.uniforms.time.value = clock.getElapsedTime();
+    NEBULA_MATERIAL.uniforms.time.value = clock.getElapsedTime();
   });
 
-  return <mesh geometry={geometryRef.current} material={materialRef.current} position={[0, 0, -60]} renderOrder={-20} frustumCulled={false} />;
+  return <mesh geometry={NEBULA_GEOMETRY} material={NEBULA_MATERIAL} position={[0, 0, -60]} renderOrder={-20} frustumCulled={false} />;
 }
 
 export default React.memo(PsychNebula, () => true);

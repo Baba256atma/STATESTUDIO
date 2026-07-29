@@ -114,6 +114,7 @@ test("rejects missing targets for resource reallocation", () => {
   });
   assert.equal(result.ok, false);
   if (result.ok) return;
+  if (result.guard.ok) return;
   assert.equal(result.guard.code, "missing_targets");
 });
 
@@ -126,6 +127,7 @@ test("rejects capacity increase without resource availability", () => {
   });
   assert.equal(result.ok, false);
   if (result.ok) return;
+  if (result.guard.ok) return;
   assert.equal(result.guard.code, "insufficient_resources");
 });
 
@@ -149,6 +151,7 @@ test("rejects duplicate simulation fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_simulation");
 });
 
@@ -161,6 +164,7 @@ test("rejects recursive decision loop", () => {
   });
   assert.equal(result.ok, false);
   if (result.ok) return;
+  if (result.guard.ok) return;
   assert.equal(result.guard.code, "recursive_decision_loop");
 });
 

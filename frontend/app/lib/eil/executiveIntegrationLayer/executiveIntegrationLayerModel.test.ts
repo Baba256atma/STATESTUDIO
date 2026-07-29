@@ -252,20 +252,20 @@ describe("EIL-9:3 Executive Integration Layer Model", () => {
       ExecutiveIntegrationLayerRegistry.lifecycle.map((item) => item.key),
     );
 
-    const module = ExecutiveIntegrationLayerModuleModels[0];
-    assert.ok(module);
-    assert.equal(module.modelId, "EIL-9:3/Module/ExecutiveIntegrationSuite");
+    const suiteModuleModel = ExecutiveIntegrationLayerModuleModels[0];
+    assert.ok(suiteModuleModel);
+    assert.equal(suiteModuleModel.modelId, "EIL-9:3/Module/ExecutiveIntegrationSuite");
     assert.equal(
-      module.publicIndexId,
+      suiteModuleModel.publicIndexId,
       "EIL-8:9/ExecutiveIntegrationSuitePublicIndex",
     );
-    assert.equal(module.registryRecord, ExecutiveIntegrationLayerRegistry.modules[0]);
+    assert.equal(suiteModuleModel.registryRecord, ExecutiveIntegrationLayerRegistry.modules[0]);
     assert.equal(
-      module.foundationRecord,
+      suiteModuleModel.foundationRecord,
       ExecutiveIntegrationLayerRegistry.modules[0]?.foundationReference,
     );
     assert.equal(
-      module.publicIndexId,
+      suiteModuleModel.publicIndexId,
       ExecutiveIntegrationLayerRegistry.modules[0]?.publicIndexId,
     );
 

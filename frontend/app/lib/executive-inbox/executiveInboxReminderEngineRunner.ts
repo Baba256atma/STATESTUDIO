@@ -17,12 +17,7 @@ import {
   resetExecutiveInboxAggregationEngineForTests,
 } from "./executiveInboxAggregationEngine.ts";
 import type { CertifiedInboxSourceRecordInput } from "./executiveInboxAggregationEngineTypes.ts";
-import {
-  buildExecutiveNotifications,
-  generateExecutiveNotifications,
-  initializeExecutiveInboxNotificationEngine,
-  resetExecutiveInboxNotificationEngineForTests,
-} from "./executiveInboxNotificationEngine.ts";
+import { buildExecutiveNotifications, initializeExecutiveInboxNotificationEngine, resetExecutiveInboxNotificationEngineForTests } from "./executiveInboxNotificationEngine.ts";
 import {
   calculateExecutivePriorities,
   initializeExecutiveInboxPrioritization,

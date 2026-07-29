@@ -42,13 +42,7 @@ import {
   evaluateWorkspaceOkrHealth,
   resetWorkspaceOkrHealthProfileStoreForTests,
 } from "../okr/workspaceOkrHealthEngine.ts";
-import {
-  WORKSPACE_DETECTED_RISK_STORAGE_KEY,
-  WORKSPACE_RISK_DETECTION_ENGINE_SOURCE,
-  detectWorkspaceRisks,
-  resetWorkspaceDetectedRiskStoreForTests,
-  type WorkspaceDetectedRisk,
-} from "../risk/workspaceRiskDetectionEngine.ts";
+import { WORKSPACE_DETECTED_RISK_STORAGE_KEY, detectWorkspaceRisks, resetWorkspaceDetectedRiskStoreForTests, type WorkspaceDetectedRisk } from "../risk/workspaceRiskDetectionEngine.ts";
 import {
   resetWorkspaceRiskSeverityProfileStoreForTests,
   evaluateWorkspaceRiskSeverity,
@@ -75,28 +69,10 @@ import {
   resetWorkspaceScenarioInsightMemoryForTests,
   resetWorkspaceScenarioInsightStoreForTests,
 } from "./workspaceScenarioInsightEngine.ts";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const OBJECT_INTELLIGENCE_STORAGE_KEY = "nexora.workspaceObjectIntelligenceProfiles.v1";
 const RELATIONSHIP_STORAGE_KEY = "nexora.workspaceRelationships.v1";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
 
 function resetAllStoresForTests(): void {
   resetWorkspaceScenarioInsightStoreForTests();
@@ -177,7 +153,7 @@ function buildRelationship(input: {
     sourceObjectId: input.sourceObjectId,
     targetObjectId: input.targetObjectId,
     relationshipType: input.relationshipType,
-    relationshipCategory: "dependency",
+    relationshipCategory: "Dependency",
     relationshipStrength: "strong",
     confidence: 0.9,
     createdAt: "2026-06-24T00:00:00.000Z",
@@ -267,7 +243,7 @@ function snapshotProtectedStorage(): Record<string, string | null> {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetAllStoresForTests();
 });

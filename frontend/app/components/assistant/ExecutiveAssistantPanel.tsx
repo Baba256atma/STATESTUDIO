@@ -12,12 +12,7 @@ import {
   DEFAULT_EXECUTIVE_QUESTION_SUGGESTIONS,
   type ExecutiveAssistantStatus,
 } from "../../lib/ui/executiveAssistantPanelTypes";
-import {
-  logExecutiveAssistantMessageRendered,
-  logExecutiveAssistantMounted,
-  logExecutiveAssistantSuggestionSelected,
-  logExecutiveAssistantThemeResolved,
-} from "../../lib/ui/executiveAssistantInstrumentation";
+import { logExecutiveAssistantMessageRendered, logExecutiveAssistantMounted, logExecutiveAssistantThemeResolved } from "../../lib/ui/executiveAssistantInstrumentation";
 import {
   nexoraHudSectionLabelStyle,
   type NexoraHudThemeMode,

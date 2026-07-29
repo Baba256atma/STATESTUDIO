@@ -13,6 +13,7 @@ import { useReplayEpisodesList } from "../hooks/useReplayEpisodesList";
 import { parseVisualState } from "../lib/visualState";
 import { buildInsight } from "../lib/insight/buildInsight";
 import { seedDemo } from "../lib/api/replayApi";
+import { readUnknownErrorMessage } from "../lib/system/nexoraErrors";
 
 const mockVisualState: VisualState = {
   t: 0,
@@ -188,7 +189,7 @@ export function AppShell() {
       return parsed.data;
     }
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
+       
       console.error("[VisualState] invalid payload:", parsed.error);
     }
     setVisualWarning("Visual payload invalid");
@@ -234,8 +235,8 @@ export function AppShell() {
       setViewMode("replay");
       setReplayLoadBehavior("start");
       episodesList.reload();
-    } catch (err: any) {
-      setDemoError(err?.message ?? "Failed to start demo");
+    } catch (err: unknown) {
+      setDemoError(readUnknownErrorMessage(err, "Failed to start demo"));
     } finally {
       setDemoLoading(false);
     }

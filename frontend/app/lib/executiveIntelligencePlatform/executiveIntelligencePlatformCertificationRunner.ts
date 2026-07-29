@@ -43,14 +43,7 @@ import {
   freezeExecutiveIntelligencePlatform,
   resetExecutiveIntelligencePlatformFreezeForTests,
 } from "./executiveIntelligencePlatformArchitectureFreeze.ts";
-import {
-  EXECUTIVE_INTELLIGENCE_CERTIFICATION_GROUP_TITLES,
-  EXECUTIVE_INTELLIGENCE_PLATFORM_CERTIFICATION_VERSION,
-  EXECUTIVE_INTELLIGENCE_PLATFORM_TAGS,
-  type ExecutiveIntelligenceCertificationGroupId,
-  type ExecutiveIntelligencePlatformCertificationResult,
-  type ExecutiveIntelligencePlatformCheck,
-} from "./executiveIntelligencePlatformCertificationContract.ts";
+import { EXECUTIVE_INTELLIGENCE_PLATFORM_CERTIFICATION_VERSION, EXECUTIVE_INTELLIGENCE_PLATFORM_TAGS, type ExecutiveIntelligenceCertificationGroupId, type ExecutiveIntelligencePlatformCertificationResult, type ExecutiveIntelligencePlatformCheck } from "./executiveIntelligencePlatformCertificationContract.ts";
 import {
   createPlatformCertificationWorkspace,
   ensurePlatformCertificationBrowserStorage,

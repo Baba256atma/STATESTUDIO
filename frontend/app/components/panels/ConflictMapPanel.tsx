@@ -134,6 +134,16 @@ export default function ConflictMapPanel({
     });
   }
 
+  return <ConflictMapPanelReady summary={summary ?? null} normalizedConflicts={normalizedConflicts} />;
+}
+
+function ConflictMapPanelReady({
+  summary,
+  normalizedConflicts,
+}: {
+  summary: string | null;
+  normalizedConflicts: ConflictItem[];
+}) {
   const intelligence = React.useMemo(
     () => buildConflictIntelligence({ summary, items: normalizedConflicts }),
     [summary, normalizedConflicts]

@@ -1,10 +1,6 @@
 import { buildAnalyzeIntelligenceProfile } from "./AnalyzeIntelligenceProfile.ts";
 import { buildExecutiveIntelligenceAdapterRegistry } from "./ExecutiveIntelligenceAdapter.ts";
-import {
-  resolveAnalyzeIntelligenceBinding as resolveCanonicalAnalyzeIntelligenceBinding,
-  resetAnalyzeIntelligenceBindingForTests as resetCanonicalAnalyzeIntelligenceBindingForTests,
-  getAnalyzeIntelligenceBindingResult as getCanonicalAnalyzeIntelligenceBindingResult,
-} from "../intelligence/AnalyzeIntelligenceBinding.ts";
+import { resolveAnalyzeIntelligenceBinding as resolveCanonicalAnalyzeIntelligenceBinding, resetAnalyzeIntelligenceBindingForTests as resetCanonicalAnalyzeIntelligenceBindingForTests } from "../intelligence/AnalyzeIntelligenceBinding.ts";
 import {
   EMPTY_ANALYZE_INTELLIGENCE_BINDING_RESULT,
   type AnalyzeIntelligenceBindingBuildInput,

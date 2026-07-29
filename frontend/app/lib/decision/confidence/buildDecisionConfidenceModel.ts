@@ -19,9 +19,21 @@ export type DecisionConfidenceModel = {
 
 type BuildDecisionConfidenceModelInput = {
   canonicalRecommendation?: CanonicalRecommendation | null;
-  responseData?: any | null;
-  decisionResult?: any | null;
+  responseData?: Record<string, unknown> | null;
+  decisionResult?: Record<string, unknown> | null;
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readNestedRecord(record: Record<string, unknown> | null | undefined, ...keys: string[]): Record<string, unknown> | null {
+  let current: unknown = record;
+  for (const key of keys) {
+    current = asRecord(current)?.[key];
+  }
+  return asRecord(current);
+}
 
 function clamp01(value: number) {
   if (!Number.isFinite(value)) return 0;
@@ -45,23 +57,27 @@ export function buildDecisionConfidenceModel(
   input: BuildDecisionConfidenceModelInput
 ): DecisionConfidenceModel {
   const responseData = input.responseData ?? null;
-  const recommendation = input.canonicalRecommendation ?? responseData?.canonical_recommendation ?? null;
-  const recScore = Number(recommendation?.confidence?.score);
+  const recommendation =
+    input.canonicalRecommendation ?? (asRecord(responseData?.canonical_recommendation) as CanonicalRecommendation | null);
+  const recScore = Number(readNestedRecord(asRecord(recommendation), "confidence")?.score ?? NaN);
+  const decisionSimulation = readNestedRecord(responseData, "decision_simulation");
+  const executiveInsight = readNestedRecord(responseData, "executive_insight");
   const simulationScore = Number(
-    responseData?.decision_simulation?.confidence ??
-      responseData?.executive_insight?.confidence?.score
+    decisionSimulation?.confidence ??
+      readNestedRecord(executiveInsight, "confidence")?.score
   );
-  const trustScores = Array.isArray(responseData?.trust_provenance)
-    ? responseData.trust_provenance
-        .map((entry: any) => Number(entry?.confidence))
-        .filter((value: number) => Number.isFinite(value))
-    : [];
+  const trustProvenance = Array.isArray(responseData?.trust_provenance) ? responseData.trust_provenance : [];
+  const trustScores = trustProvenance
+    .map((entry) => Number(asRecord(entry)?.confidence))
+    .filter((value: number) => Number.isFinite(value));
   const comparisonItems = Array.isArray(input.decisionResult?.comparison)
     ? input.decisionResult.comparison
     : [];
   const scoreSpread =
     comparisonItems.length >= 2
-      ? Math.abs(Number(comparisonItems[0]?.score ?? 0) - Number(comparisonItems[1]?.score ?? 0))
+      ? Math.abs(
+          Number(asRecord(comparisonItems[0])?.score ?? 0) - Number(asRecord(comparisonItems[1])?.score ?? 0)
+        )
       : null;
   const comparisonSignal =
     typeof scoreSpread === "number"
@@ -108,14 +124,22 @@ export function buildDecisionConfidenceModel(
       note: "Alternatives remain close, so the current recommendation is directionally helpful but not dominant.",
     });
   }
-  if (Array.isArray(responseData?.executive_insight?.confidence?.uncertainty_notes) && responseData.executive_insight.confidence.uncertainty_notes.length) {
+  const executiveInsightConfidence = readNestedRecord(executiveInsight, "confidence");
+  const executiveUncertaintyNotes = executiveInsightConfidence?.uncertainty_notes;
+  if (Array.isArray(executiveUncertaintyNotes) && executiveUncertaintyNotes.length) {
     drivers.push({
       label: "Uncertainty remains",
       impact: "negative",
-      note: text(responseData.executive_insight.confidence.uncertainty_notes[0]) || "Important variables remain uncertain.",
+      note: text(executiveUncertaintyNotes[0]) || "Important variables remain uncertain.",
     });
   }
-  if (Array.isArray(responseData?.trust_provenance) && responseData.trust_provenance.some((entry: any) => Array.isArray(entry?.uncertainty_notes) && entry.uncertainty_notes.length)) {
+  if (
+    trustProvenance.some(
+      (entry) =>
+        Array.isArray(asRecord(entry)?.uncertainty_notes) &&
+        (asRecord(entry)?.uncertainty_notes as unknown[]).length > 0
+    )
+  ) {
     drivers.push({
       label: "Mixed evidence quality",
       impact: "negative",
@@ -129,37 +153,39 @@ export function buildDecisionConfidenceModel(
           (driver: unknown) => `${String(driver).replace(/_/g, " ")} remains directionally stable.`
         )
       : []),
-    responseData?.executive_summary_surface?.what_to_do
+    readNestedRecord(responseData, "executive_summary_surface")?.what_to_do
       ? "Current operating constraints remain materially similar through execution."
       : null,
-    responseData?.decision_simulation?.scenario?.name
-      ? `The ${text(responseData.decision_simulation.scenario.name)} scenario remains the right frame for action.`
+    readNestedRecord(readNestedRecord(responseData, "decision_simulation"), "scenario")?.name
+      ? `The ${text(readNestedRecord(readNestedRecord(responseData, "decision_simulation"), "scenario")?.name)} scenario remains the right frame for action.`
       : null,
-    responseData?.risk_propagation?.summary
+    readNestedRecord(responseData, "risk_propagation")?.summary
       ? "Downstream dependencies behave broadly in line with the current propagation map."
       : null,
   ], 4);
 
   const uncertainties = uniqueStrings([
-    ...(Array.isArray(responseData?.executive_insight?.confidence?.uncertainty_notes)
-      ? responseData.executive_insight.confidence.uncertainty_notes
+    ...(Array.isArray(executiveInsightConfidence?.uncertainty_notes)
+      ? (executiveInsightConfidence.uncertainty_notes as unknown[])
       : []),
-    ...(Array.isArray(responseData?.trust_provenance)
-      ? responseData.trust_provenance.flatMap((entry: any) => entry?.uncertainty_notes ?? [])
-      : []),
+    ...trustProvenance.flatMap((entry) => {
+      const notes = asRecord(entry)?.uncertainty_notes;
+      return Array.isArray(notes) ? notes : [];
+    }),
     scoreSpread !== null && scoreSpread < 0.08
       ? "Alternative paths remain close enough that small changes could shift the recommendation."
       : null,
-    responseData?.strategy_kpi?.summary
+    readNestedRecord(responseData, "strategy_kpi")?.summary
       ? "Strategic KPI impact remains directional rather than fully quantified."
       : null,
   ], 4);
 
   const rawRiskFlags = uniqueStrings([
-    responseData?.risk_propagation?.summary,
-    responseData?.strategy_kpi?.summary,
-    responseData?.executive_summary_surface?.why_it_matters,
-    recommendation?.reasoning?.risk_summary,
+    readNestedRecord(responseData, "risk_propagation")?.summary,
+    readNestedRecord(responseData, "strategy_kpi")?.summary,
+    readNestedRecord(responseData, "executive_summary_surface")?.why_it_matters,
+    recommendation?.reasoning?.risk_summary ??
+      readNestedRecord(asRecord(recommendation), "reasoning")?.risk_summary,
   ], 4);
   const risk_flags: DecisionConfidenceModel["risk_flags"] = rawRiskFlags.map((label, index) => ({
     label,

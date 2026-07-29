@@ -119,7 +119,7 @@ test("selects capability-based route", () => {
     Object.freeze({
       runtimeRequest: buildRuntimeRequest(),
       policyKey: "capability_based",
-      requiredCapabilities: Object.freeze(["function_calling", "vision"]),
+      requiredCapabilities: Object.freeze(["function_calling", "vision"] as const),
     }),
     "route-dec-004",
     FIXED_TIME
@@ -151,14 +151,6 @@ test("validates fallback route and rejects invalid provider model pairs", () => 
     FIXED_TIME
   );
   assert.ok(isKnownLlmRoute(result.decision!.fallbackProviderKey, result.decision!.fallbackModelKey));
-  const invalid = selectLlmModelRoute(
-    Object.freeze({
-      runtimeRequest: buildRuntimeRequest(),
-      policyKey: "model_preferred",
-    }),
-    "route-dec-invalid",
-    FIXED_TIME
-  );
   const invalidRequest = selectLlmModelRoute(
     Object.freeze({
       runtimeRequest: buildRuntimeRequest({ providerKey: "gpt", modelKey: "nonexistent-model" }),

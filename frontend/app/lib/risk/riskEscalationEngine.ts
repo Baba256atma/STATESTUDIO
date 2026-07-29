@@ -2,10 +2,12 @@ import type { RiskLevel } from "../contracts";
 
 export type { RiskLevel };
 
+import type { SceneLoop } from "../sceneTypes";
+
 export function computeRiskLevel(input: {
-  strategicState?: any;
-  loops?: any[];
-  kpis?: any[];
+  strategicState?: Record<string, unknown> | null;
+  loops?: SceneLoop[];
+  kpis?: Record<string, unknown>[];
 }): { level: RiskLevel; score: number; reasons: string[] } {
   const { strategicState, loops } = input;
   let score = 0;

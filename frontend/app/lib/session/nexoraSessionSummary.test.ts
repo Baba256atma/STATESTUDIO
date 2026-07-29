@@ -11,8 +11,8 @@ import {
 
 const headline = { headline: "Focus line from B.45" };
 const actions = [
-  { title: "First action from B.44", description: "d", priority: "high" as const },
-  { title: "Second", description: "d2", priority: "medium" as const },
+  { domainId: "generic", title: "First action from B.44", description: "d", priority: "high" as const },
+  { domainId: "generic", title: "Second", description: "d2", priority: "medium" as const },
 ];
 
 describe("nexoraSessionSummary (B.48)", () => {

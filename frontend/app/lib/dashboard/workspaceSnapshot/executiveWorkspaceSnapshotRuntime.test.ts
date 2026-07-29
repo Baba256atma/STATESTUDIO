@@ -77,8 +77,10 @@ test("attention recommended when recommendations present", () => {
     dashboardMode: "overview",
     selectedObjectId: "line-1",
     selectedObjectLabel: "Line 1",
-    objectSignal: "risk",
-    objectImpact: "critical",
+    recommendationContext: {
+      objectSignal: "risk",
+      objectImpact: "critical",
+    },
   });
   assert.equal(view.readiness.state, "attention_recommended");
   assert.ok(view.readiness.actions.some((action) => action.kind === "review_recommendations"));

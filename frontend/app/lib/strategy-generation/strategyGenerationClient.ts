@@ -24,73 +24,87 @@ function clamp01(value: unknown): number {
   return numeric;
 }
 
-function normalizeAction(value: any, idx: number, strategyId: string): ScenarioActionIntent | null {
-  const actionKind = String(value?.action_kind ?? "").trim();
-  const sourceId = normalizeId(value?.source_object_id);
+function normalizeAction(value: unknown, idx: number, strategyId: string): ScenarioActionIntent | null {
+  const record = value && typeof value === "object" ? (value as Record<string, unknown>) : null;
+  if (!record) return null;
+  const actionKind = String(record.action_kind ?? "").trim();
+  const sourceId = normalizeId(record.source_object_id);
   if (!actionKind || !sourceId) return null;
   return {
-    action_id: normalizeId(value?.action_id) ?? `${strategyId}:action:${idx}`,
+    action_id: normalizeId(record.action_id) ?? `${strategyId}:action:${idx}`,
     action_kind: actionKind as ScenarioActionIntent["action_kind"],
     source_object_id: sourceId,
-    target_object_ids: Array.isArray(value?.target_object_ids) ? value.target_object_ids.map(String).filter(Boolean) : [],
-    label: typeof value?.label === "string" ? value.label : undefined,
-    description: typeof value?.description === "string" ? value.description : undefined,
-    parameters: value?.parameters && typeof value.parameters === "object" ? value.parameters : {},
+    target_object_ids: Array.isArray(record.target_object_ids) ? record.target_object_ids.map(String).filter(Boolean) : [],
+    label: typeof record.label === "string" ? record.label : undefined,
+    description: typeof record.description === "string" ? record.description : undefined,
+    parameters: record.parameters && typeof record.parameters === "object" ? (record.parameters as Record<string, unknown>) : {},
     mode:
-      value?.mode === "what_if" || value?.mode === "decision_path" || value?.mode === "compare" || value?.mode === "preview"
-        ? value.mode
+      record.mode === "what_if" || record.mode === "decision_path" || record.mode === "compare" || record.mode === "preview"
+        ? record.mode
         : "what_if",
-    requested_outputs: Array.isArray(value?.requested_outputs)
-      ? (value.requested_outputs.map(String) as ScenarioActionIntent["requested_outputs"])
+    requested_outputs: Array.isArray(record.requested_outputs)
+      ? (record.requested_outputs.map(String) as ScenarioActionIntent["requested_outputs"])
       : ["propagation"],
-    created_at: Number.isFinite(Number(value?.created_at)) ? Number(value.created_at) : undefined,
-    priority: Number.isFinite(Number(value?.priority)) ? Number(value.priority) : undefined,
+    created_at: Number.isFinite(Number(record.created_at)) ? Number(record.created_at) : undefined,
+    priority: Number.isFinite(Number(record.priority)) ? Number(record.priority) : undefined,
   };
 }
 
 function normalizeResult(payload: unknown): StrategyGenerationResult | null {
-  const raw = payload && typeof payload === "object" ? (payload as Record<string, any>) : null;
-  const result = raw?.strategy_generation && typeof raw.strategy_generation === "object" ? raw.strategy_generation : raw;
+  const raw = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+  const strategyGeneration = raw?.strategy_generation;
+  const result =
+    strategyGeneration && typeof strategyGeneration === "object" ? strategyGeneration : raw;
   if (!result || typeof result !== "object") return null;
+  const resultRecord = result as Record<string, unknown>;
 
-  const strategies: EvaluatedStrategy[] = Array.isArray(result.strategies)
-    ? result.strategies
-        .map((item: any) => {
-          const strategyId = normalizeId(item?.strategy?.strategy_id);
-          if (!strategyId) return null;
-          const actions = Array.isArray(item?.strategy?.actions)
-            ? item.strategy.actions
-                .map((action: any, idx: number) => normalizeAction(action, idx, strategyId))
+  const strategies: EvaluatedStrategy[] = Array.isArray(resultRecord.strategies)
+    ? resultRecord.strategies
+        .map((item) => {
+          const itemRecord = item && typeof item === "object" ? (item as Record<string, unknown>) : null;
+          const strategyRaw = itemRecord?.strategy;
+          const strategyRecord =
+            strategyRaw && typeof strategyRaw === "object" ? (strategyRaw as Record<string, unknown>) : null;
+          const strategyId = normalizeId(strategyRecord?.strategy_id);
+          if (!strategyId || !itemRecord) return null;
+          const actions = Array.isArray(strategyRecord?.actions)
+            ? strategyRecord.actions
+                .map((action, idx) => normalizeAction(action, idx, strategyId))
                 .filter(Boolean)
             : [];
           const strategy: GeneratedStrategy = {
             strategy_id: strategyId,
-            title: typeof item?.strategy?.title === "string" ? item.strategy.title : strategyId,
-            description: typeof item?.strategy?.description === "string" ? item.strategy.description : "",
+            title: typeof strategyRecord?.title === "string" ? strategyRecord.title : strategyId,
+            description: typeof strategyRecord?.description === "string" ? strategyRecord.description : "",
             actions: actions as ScenarioActionIntent[],
-            expected_focus: normalizeId(item?.strategy?.expected_focus),
-            rationale: typeof item?.strategy?.rationale === "string" ? item.strategy.rationale : "",
+            expected_focus: normalizeId(strategyRecord?.expected_focus),
+            rationale: typeof strategyRecord?.rationale === "string" ? strategyRecord.rationale : "",
           };
           return {
             strategy,
-            intelligence: (item?.intelligence ?? null) as SystemIntelligenceResult,
-            score: clamp01(item?.score),
-            ranking: Math.max(1, Number(item?.ranking ?? 1)),
-            tradeoffs: Array.isArray(item?.tradeoffs) ? item.tradeoffs.map(String).filter(Boolean) : [],
-            risk_level: clamp01(item?.risk_level),
-            expected_impact: clamp01(item?.expected_impact),
+            intelligence: (itemRecord.intelligence ?? null) as SystemIntelligenceResult,
+            score: clamp01(itemRecord.score),
+            ranking: Math.max(1, Number(itemRecord.ranking ?? 1)),
+            tradeoffs: Array.isArray(itemRecord.tradeoffs) ? itemRecord.tradeoffs.map(String).filter(Boolean) : [],
+            risk_level: clamp01(itemRecord.risk_level),
+            expected_impact: clamp01(itemRecord.expected_impact),
           };
         })
-        .filter(Boolean)
+        .filter((item): item is EvaluatedStrategy => item !== null)
     : [];
 
+  const summaryRecord =
+    resultRecord.summary && typeof resultRecord.summary === "object"
+      ? (resultRecord.summary as Record<string, unknown>)
+      : null;
+
   return {
-    strategies,
-    recommended_strategy_id: normalizeId(result.recommended_strategy_id),
+    strategies: strategies as EvaluatedStrategy[],
+    recommended_strategy_id: normalizeId(resultRecord.recommended_strategy_id),
     summary: {
-      headline: typeof result?.summary?.headline === "string" ? result.summary.headline : "Strategy generation ready.",
-      explanation: typeof result?.summary?.explanation === "string" ? result.summary.explanation : "",
-      confidence: clamp01(result?.summary?.confidence),
+      headline: typeof summaryRecord?.headline === "string" ? summaryRecord.headline : "Strategy generation ready.",
+      explanation: typeof summaryRecord?.explanation === "string" ? summaryRecord.explanation : "",
+      confidence: clamp01(summaryRecord?.confidence),
     },
   };
 }

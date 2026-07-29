@@ -60,7 +60,7 @@ function snapshotKey(s: DecisionSnapshot): string {
 function getLoopIds(s: DecisionSnapshot): string[] {
   // Be defensive: SceneLoop might not always have a stable id field.
   const ids = (s.loops || [])
-    .map((l: any) => (typeof l?.id === "string" ? l.id : typeof l?.loop_id === "string" ? l.loop_id : null))
+    .map((l) => (typeof l?.id === "string" ? l.id : typeof l?.loop_id === "string" ? l.loop_id : null))
     .filter((x): x is string => Boolean(x));
   return uniqueSorted(ids);
 }

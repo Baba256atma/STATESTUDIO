@@ -39,8 +39,9 @@ export function resetTimelineWorkspaceRuntimeForTests(): void {
   resetTimelineWorkspaceStateRuntimeForTests();
 }
 
-export function buildTimelineWorkspaceView(_input?: {
+export function buildTimelineWorkspaceView(input?: {
   mountKey?: string | null;
 }): TimelineWorkspaceView {
+  void input;
   return buildTimelineWorkspaceViewFromState(getTimelineWorkspaceState());
 }

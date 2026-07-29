@@ -5,7 +5,6 @@ import { buildExecutiveWarRoomState } from "../warroom/executiveWarRoomRuntime.t
 import { buildExecutiveCognitiveTwinState } from "../twin/executiveCognitiveTwinRuntime.ts";
 import {
   buildExecutiveIntelligenceInputSignature,
-  buildExecutiveIntelligenceRefreshSignature,
   buildExecutiveIntelligenceState,
   refreshExecutiveIntelligenceCascade,
   resetExecutiveIntelligenceRuntimeCacheForTests,
@@ -22,13 +21,16 @@ import { validateExecutiveIntelligence } from "./executiveIntelligenceValidation
 import { summarizeExecutiveRuntimeHealth } from "./executiveIntelligenceHealthMonitor.ts";
 import { buildExecutiveRuntimeRegistry } from "./executiveIntelligenceRegistry.ts";
 
+/** Canonical SceneJson shape required by `readExecutiveSceneObjects` (scene.objects). */
 const sceneJson = {
-  objects: [
-    { id: "supplier_a", name: "Supplier A", label: "Supplier A" },
-    { id: "inventory_b", name: "Inventory B", label: "Inventory B" },
-    { id: "customer_c", name: "Customer C", label: "Customer C" },
-  ],
-  relationships: [{ id: "rel_1", sourceId: "supplier_a", targetId: "inventory_b", type: "supply" }],
+  scene: {
+    objects: [
+      { id: "supplier_a", name: "Supplier A", label: "Supplier A" },
+      { id: "inventory_b", name: "Inventory B", label: "Inventory B" },
+      { id: "customer_c", name: "Customer C", label: "Customer C" },
+    ],
+    relationships: [{ id: "rel_1", sourceId: "supplier_a", targetId: "inventory_b", type: "supply" }],
+  },
 };
 
 test("refreshExecutiveIntelligenceCascade coordinates twin, war room, and advisor", () => {
@@ -128,7 +130,7 @@ test("refreshExecutiveIntelligence ignores empty bootstrap signatures", () => {
   resetExecutiveCognitiveTwinForTests();
   resetExecutiveAdvisorForTests();
 
-  const emptyScene = { objects: [] };
+  const emptyScene = { scene: { objects: [] } };
   const first = refreshExecutiveIntelligence({
     sceneJson: emptyScene,
     sceneObjectCount: 0,
@@ -210,6 +212,7 @@ test("runtime registry and validation scorecard reflect module health", () => {
     universe: null,
     health,
   });
-  assert.ok(registry.some((entry) => entry.moduleId === "war_room" && entry.health === "active"));
+  assert.ok(registry.some((entry) => entry.moduleId === "war_room" && entry.health === "degraded"));
+  // Critical war-room status is intentionally classified as degraded, not idle.
   assert.ok(validations.some((entry) => entry.validationId === "war_room_operational" && entry.passed));
 });

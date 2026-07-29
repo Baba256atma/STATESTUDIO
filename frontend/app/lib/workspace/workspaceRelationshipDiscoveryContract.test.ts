@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { WorkspaceDomainSelection } from "./workspaceDomainContract.ts";
+import type { WorkspaceDomainId, WorkspaceDomainSelection } from "./workspaceDomainContract.ts";
 import type { WorkspaceSituationContext } from "./workspaceSituationContract.ts";
 import { createSuggestedGoal, getGoalSuggestionsForDomain, type WorkspaceGoal } from "./workspaceGoalContract.ts";
 import {
@@ -27,7 +27,7 @@ import {
 } from "./workspaceRelationshipDiscoveryContract.ts";
 import { resolveWorkspaceRelationshipQuestion } from "./workspaceRelationshipAssistantRuntime.ts";
 
-function domain(workspaceId: string, domainId = "finance"): WorkspaceDomainSelection {
+function domain(workspaceId: string, domainId: WorkspaceDomainId = "finance"): WorkspaceDomainSelection {
   return {
     contractVersion: "NW-B:2",
     workspaceId,
@@ -37,7 +37,7 @@ function domain(workspaceId: string, domainId = "finance"): WorkspaceDomainSelec
   };
 }
 
-function situation(workspaceId: string, domainId = "finance"): WorkspaceSituationContext {
+function situation(workspaceId: string, domainId: WorkspaceDomainId = "finance"): WorkspaceSituationContext {
   return {
     contractVersion: "NW-B:3",
     workspaceId,
@@ -48,7 +48,7 @@ function situation(workspaceId: string, domainId = "finance"): WorkspaceSituatio
   };
 }
 
-function goals(workspaceId: string, domainId = "finance"): readonly WorkspaceGoal[] {
+function goals(workspaceId: string, domainId: WorkspaceDomainId = "finance"): readonly WorkspaceGoal[] {
   const suggestion = getGoalSuggestionsForDomain(domainId)[0];
   assert.ok(suggestion);
   return [createSuggestedGoal({ workspaceId, suggestion })];
@@ -116,10 +116,13 @@ test("merges discovered relationships into workspace scene json", () => {
 
   const sceneJson = getWorkspaceSceneJsonWithRelationships("workspace_rel_scene");
   assert.ok(sceneJson);
-  assert.ok((sceneJson.scene.relationships?.length ?? 0) >= 3);
+  {
+    const rels = sceneJson.scene.relationships;
+    assert.ok((Array.isArray(rels) ? rels.length : 0) >= 3);
+  }
   assert.equal(sceneJson.meta?.relationshipsCreated, true);
   assert.equal(sceneJson.scene.kpi, undefined);
-  assert.equal(sceneJson.scene.loops?.length, 0);
+  assert.equal((Array.isArray(sceneJson.scene.loops) ? (sceneJson.scene.loops as unknown[]).length : -1), 0);
 });
 
 test("keeps relationship discovery isolated by workspace", () => {
@@ -204,6 +207,12 @@ test("returns new SceneJson reference when relationships change", () => {
   assert.ok(beforeRelationships);
   assert.ok(afterRelationships);
   assert.notEqual(beforeRelationships, afterRelationships);
-  assert.equal(beforeRelationships?.scene.relationships?.length ?? 0, 0);
-  assert.ok((afterRelationships?.scene.relationships?.length ?? 0) >= 3);
+  {
+    const beforeRels = beforeRelationships?.scene.relationships;
+    assert.equal(Array.isArray(beforeRels) ? beforeRels.length : -1, 0);
+  }
+  {
+    const afterRels = afterRelationships?.scene.relationships;
+    assert.ok((Array.isArray(afterRels) ? afterRels.length : 0) >= 3);
+  }
 });

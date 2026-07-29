@@ -7,12 +7,7 @@ import {
 } from "./advisoryContextContract.ts";
 import { ADVISORY_AGGREGATION_REGISTRY, listRegisteredAdvisorySources } from "./advisoryAggregationRegistry.ts";
 import { generateAdvisoryContext } from "./advisoryContextGeneration.ts";
-import {
-  getAdvisoryContextForExecutiveSummary,
-  initializeAdvisoryAggregationRuntime,
-  resetAdvisoryAggregationRuntimeForTests,
-  resolveAdvisoryContext,
-} from "./advisoryAggregationRuntime.ts";
+import { initializeAdvisoryAggregationRuntime, resetAdvisoryAggregationRuntimeForTests, resolveAdvisoryContext } from "./advisoryAggregationRuntime.ts";
 import { resetAdvisoryAggregationLoggingForTests } from "./advisoryAggregationLogging.ts";
 import { aggregateExecutiveSummary } from "../../executiveSummary/executiveSummaryAggregation.ts";
 import { aggregateExecutiveAdvisory } from "../executiveAdvisoryAggregation.ts";

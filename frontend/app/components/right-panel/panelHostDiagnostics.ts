@@ -3,12 +3,6 @@ type PayloadSourceFlags = {
   usedCanonical: boolean;
   usedRaw: boolean;
 };
-
-type ConflictPayloadSourceFlags = PayloadSourceFlags & {
-  usedResponseConflict: boolean;
-  usedResponseConflicts: boolean;
-  usedLegacy: boolean;
-};
 type ConflictPayloadLogFlags = {
   usedResolved: boolean;
   usedCanonical: boolean;

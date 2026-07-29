@@ -133,7 +133,7 @@ test("handles missing JSON position and empty binding safely", () => {
     binding,
   });
   assert.ok(layout?.["no-pos"]);
-  assert.deepEqual(missingPosObjects[0]?.position, undefined);
+  assert.deepEqual((missingPosObjects[0] as { position?: unknown }).position, undefined);
 
   const emptyBinding = bindTopologyToSceneObjects({ sceneObjects: [], topologyMode: "auto" });
   const emptyLayout = buildTopologyRuntimeLayoutPositions({

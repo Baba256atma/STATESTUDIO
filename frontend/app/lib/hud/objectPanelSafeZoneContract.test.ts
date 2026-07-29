@@ -13,8 +13,6 @@ import {
   resolveSceneHudZoneContract,
   SCENE_HUD_ZONE_METRICS,
 } from "../scene/sceneHudZoneContract.ts";
-import { MIN_TIMELINE_TO_OBJECT_PANEL_GAP } from "./timelineZoneContract.ts";
-
 import { HUD_EDGE_INSET } from "../scene/sceneHudInsetContract.ts";
 
 function baseInput(overrides: Record<string, unknown> = {}) {

@@ -20,15 +20,15 @@ export type ExecutiveRecoveryCardProps = Readonly<{
 }>;
 
 export function ExecutiveRecoveryCard(props: ExecutiveRecoveryCardProps): React.ReactElement {
-  const { entry } = props;
+  const { entry, onResume } = props;
 
   const handleResume = useCallback(() => {
-    if (!entry.resumeEnabled || !entry.returnKind || !props.onResume) return;
-    props.onResume({
+    if (!entry.resumeEnabled || !entry.returnKind || !onResume) return;
+    onResume({
       workspaceId: entry.workspaceId,
       returnKind: entry.returnKind,
     });
-  }, [entry.resumeEnabled, entry.returnKind, entry.workspaceId, props.onResume]);
+  }, [entry.resumeEnabled, entry.returnKind, entry.workspaceId, onResume]);
 
   return (
     <article

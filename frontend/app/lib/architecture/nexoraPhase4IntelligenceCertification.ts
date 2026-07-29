@@ -3,10 +3,7 @@
  */
 
 import { NEXORA_ARCHITECTURE_FREEZE_REGISTRY } from "./nexoraArchitectureFreezeRegistry.ts";
-import {
-  isArchitectureFreezeInitialized,
-  runArchitectureFreezeValidationPass,
-} from "./nexoraArchitectureFreezeRuntime.ts";
+import { runArchitectureFreezeValidationPass } from "./nexoraArchitectureFreezeRuntime.ts";
 import {
   CANONICAL_DASHBOARD_RUNTIME_OWNER,
   CANONICAL_DASHBOARD_RENDER_PATH,

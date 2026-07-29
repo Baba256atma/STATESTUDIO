@@ -45,14 +45,7 @@ import {
   resetDecisionJournalRegistryForTests,
 } from "./decisionJournalRegistry.ts";
 import type { DecisionJournalCertificationCheck, DecisionJournalCertificationResult } from "./decisionJournalTypes.ts";
-import {
-  hasDuplicateIds,
-  isReservedDecisionJournalId,
-  validateDecisionJournalEntryContractShape,
-  validateDecisionJournalRegistration,
-  validateJournalIdentity,
-  validateWorkspaceIsolation,
-} from "./decisionJournalValidation.ts";
+import { hasDuplicateIds, isReservedDecisionJournalId, validateDecisionJournalEntryContractShape, validateJournalIdentity, validateWorkspaceIsolation } from "./decisionJournalValidation.ts";
 
 const FIXED_TIME = "2026-01-01T00:00:00.000Z";
 

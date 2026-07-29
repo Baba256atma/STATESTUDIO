@@ -370,7 +370,18 @@ test("failure: corrupt favorites snapshot fails safely", () => {
   const recovery = recoverWorkspaceFavoritesFromSnapshot({
     version: "0.0.0",
     updatedAt: Date.now(),
-    items: [{ id: "bad", workspaceTarget: "analyze", title: "Bad", pinnedAt: 0, order: 0 }],
+    items: [{
+      id: "bad",
+      title: "Bad",
+      description: "",
+      workspaceTarget: "analyze",
+      actionType: "workspace",
+      iconMetadata: null,
+      customLabel: null,
+      createdTimestamp: 0,
+      updatedTimestamp: 0,
+      sortOrder: 0,
+    }],
   });
   assert.equal(recovery.recovered, false);
 });

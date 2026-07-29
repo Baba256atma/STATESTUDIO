@@ -17,6 +17,59 @@ type OverrideEntry = {
   showCaption?: boolean;
 };
 
+type StoredOverrideEntry = Partial<OverrideEntry> & Record<string, unknown>;
+
+type SceneOverrideAction =
+  | {
+      type: "applyObject";
+      object?: string;
+      value?: Record<string, unknown> & { id?: string };
+    }
+  | { type: "clearObjectOverride"; object?: string }
+  | { type: "clearAllOverrides" };
+
+function readStoredOverrideEntry(value: unknown): OverrideEntry | null {
+  if (!value || typeof value !== "object") return null;
+  const v = value as StoredOverrideEntry;
+  const entry: OverrideEntry = {};
+  const s = Number(v.scale);
+  if (Number.isFinite(s)) entry.scale = clamp(s, 0.2, 2.0);
+
+  const pos = v.position;
+  if (Array.isArray(pos) && pos.length === 3) {
+    const p = pos.map((n) => Number(n));
+    if (p.every((n) => Number.isFinite(n))) entry.position = [p[0], p[1], p[2]];
+  }
+
+  const rot = v.rotation;
+  if (Array.isArray(rot) && rot.length === 3) {
+    const r = rot.map((n) => Number(n));
+    if (r.every((n) => Number.isFinite(n))) entry.rotation = [r[0], r[1], r[2]];
+  }
+
+  const col = v.color;
+  if (typeof col === "string" && /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(col)) {
+    entry.color = col;
+  }
+
+  const cap = v.caption;
+  if (typeof cap === "string") entry.caption = cap;
+
+  const showCap = v.showCaption;
+  if (typeof showCap === "boolean") entry.showCaption = showCap;
+
+  const vis = v.visible;
+  if (typeof vis === "boolean") entry.visible = vis;
+
+  return Object.keys(entry).length > 0 ? entry : null;
+}
+
+function readNumericTuple(value: unknown): [number, number, number] | null {
+  if (!Array.isArray(value) || value.length !== 3) return null;
+  const nums = value.map((n) => Number(n));
+  return nums.every((n) => Number.isFinite(n)) ? [nums[0], nums[1], nums[2]] : null;
+}
+
 type SceneContextValue = {
   stateVector: StateVector;
   selectedId: string | null;
@@ -65,40 +118,8 @@ export function SceneStateProvider({
       if (!parsed || typeof parsed !== "object") return {};
       const out: Record<string, OverrideEntry> = {};
       for (const k of Object.keys(parsed)) {
-        const v = parsed[k];
-        if (v && typeof v === "object") {
-          const entry: OverrideEntry = {};
-          const s = Number((v as any).scale);
-          if (Number.isFinite(s)) entry.scale = clamp(s, 0.2, 2.0);
-
-          const pos = (v as any).position;
-          if (Array.isArray(pos) && pos.length === 3) {
-            const p: number[] = pos.map((n: any) => Number(n));
-            if (p.every((n) => Number.isFinite(n))) entry.position = [p[0], p[1], p[2]];
-          }
-
-          const rot = (v as any).rotation;
-          if (Array.isArray(rot) && rot.length === 3) {
-            const r = rot.map((n: any) => Number(n));
-            if (r.every((n) => Number.isFinite(n))) entry.rotation = [r[0], r[1], r[2]];
-          }
-
-          const col = (v as any).color;
-          if (typeof col === "string" && /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(col)) {
-            entry.color = col;
-          }
-
-          const cap = (v as any).caption;
-          if (typeof cap === "string") entry.caption = cap;
-
-          const showCap = (v as any).showCaption;
-          if (typeof showCap === "boolean") entry.showCaption = showCap;
-
-          const vis = (v as any).visible;
-          if (typeof vis === "boolean") entry.visible = vis;
-
-          if (Object.keys(entry).length > 0) out[k] = entry;
-        }
+        const entry = readStoredOverrideEntry(parsed[k]);
+        if (entry) out[k] = entry;
       }
       return out;
     } catch {
@@ -127,17 +148,16 @@ export function SceneStateProvider({
 
       const next: Record<string, OverrideEntry> = { ...prev };
 
-      for (const raw of actions as any[]) {
+      for (const raw of actions as SceneOverrideAction[]) {
         if (!raw || typeof raw !== "object") continue;
-        const type = String((raw as any).type || "");
-        if (type === "applyObject") {
+        if (raw.type === "applyObject") {
           const id =
-            (typeof (raw as any).object === "string" && (raw as any).object) ||
-            (typeof (raw as any).value?.id === "string" && (raw as any).value.id) ||
+            (typeof raw.object === "string" && raw.object) ||
+            (typeof raw.value?.id === "string" && raw.value.id) ||
             null;
           if (!id) continue;
 
-          const v = (raw as any).value ?? {};
+          const v = raw.value ?? {};
           const cur: OverrideEntry = { ...(next[id] ?? {}) };
 
           const s = Number(v.scale);
@@ -156,10 +176,10 @@ export function SceneStateProvider({
           if (typeof v.showCaption === "boolean") cur.showCaption = v.showCaption;
 
           next[id] = cur;
-        } else if (type === "clearObjectOverride") {
-          const id = typeof (raw as any).object === "string" ? (raw as any).object : null;
+        } else if (raw.type === "clearObjectOverride") {
+          const id = typeof raw.object === "string" ? raw.object : null;
           if (id && id in next) delete next[id];
-        } else if (type === "clearAllOverrides") {
+        } else if (raw.type === "clearAllOverrides") {
           return {};
         }
       }
@@ -180,18 +200,12 @@ export function SceneStateProvider({
         if (Number.isFinite(s)) cur.scale = clamp(s, 0.2, 2.0);
       }
       if (patch.position !== undefined) {
-        const p = patch.position as any;
-        if (Array.isArray(p) && p.length === 3) {
-          const nums = p.map((n: any) => Number(n));
-          if (nums.every((n) => Number.isFinite(n))) cur.position = [nums[0], nums[1], nums[2]];
-        }
+        const position = readNumericTuple(patch.position);
+        if (position) cur.position = position;
       }
       if (patch.rotation !== undefined) {
-        const r = patch.rotation as any;
-        if (Array.isArray(r) && r.length === 3) {
-          const nums = r.map((n: any) => Number(n));
-          if (nums.every((n) => Number.isFinite(n))) cur.rotation = [nums[0], nums[1], nums[2]];
-        }
+        const rotation = readNumericTuple(patch.rotation);
+        if (rotation) cur.rotation = rotation;
       }
       if (patch.color !== undefined) {
         const c = patch.color;
@@ -376,12 +390,12 @@ export function useRedoOverrides() {
 
 export function useSetCaption() {
   const ctx = useContext(SceneStateContext);
-  return (ctx as any)?.setCaption ?? ((_: string, __: string) => {});
+  return ctx?.setCaption ?? ((caption: string, id: string) => { void caption; void id; });
 }
 
 export function useToggleCaption() {
   const ctx = useContext(SceneStateContext);
-  return (ctx as any)?.toggleCaption ?? ((_: string, __: boolean) => {});
+  return ctx?.toggleCaption ?? ((caption: string, enabled: boolean) => { void caption; void enabled; });
 }
 
 export function useCanUndoOverrides() {
@@ -396,17 +410,17 @@ export function useCanRedoOverrides() {
 
 export function useApplyActions() {
   const ctx = useContext(SceneStateContext);
-  return (ctx as any)?.applyActions ?? ((_: unknown) => {});
+  return ctx?.applyActions ?? ((actions: unknown) => { void actions; });
 }
 
 export function useViewMode() {
   const ctx = useContext(SceneStateContext);
-  return (ctx as any)?.viewMode ?? ("full" as ViewMode);
+  return ctx?.viewMode ?? ("full" as ViewMode);
 }
 
 export function useSetViewMode() {
   const ctx = useContext(SceneStateContext);
-  return (ctx as any)?.setViewMode ?? ((_: ViewMode) => {});
+  return ctx?.setViewMode ?? ((mode: ViewMode) => { void mode; });
 }
 
 export function useChatOffset(): { x: number; y: number } {
@@ -416,5 +430,5 @@ export function useChatOffset(): { x: number; y: number } {
 
 export function useSetChatOffset(): (o: { x: number; y: number }) => void {
   const ctx = useContext(SceneStateContext);
-  return ctx?.setChatOffset ?? ((_: { x: number; y: number }) => {});
+  return ctx?.setChatOffset ?? ((offset: { x: number; y: number }) => { void offset; });
 }

@@ -9,6 +9,7 @@ import {
 import { resetRelationshipInstrumentationForTests } from "./relationshipInstrumentation";
 import { validateRelationshipCreateRequest } from "./relationshipValidation";
 import type { SceneJson } from "../sceneTypes";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const baseScene: SceneJson = {
   state_vector: {},
@@ -26,11 +27,7 @@ describe("relationshipRuntime", () => {
   beforeEach(() => {
     resetRelationshipInstrumentationForTests();
     vi.spyOn(globalThis.console, "info").mockImplementation(() => undefined);
-    if (typeof globalThis.window === "undefined") {
-      (globalThis as typeof globalThis & { window: Window }).window = {
-        dispatchEvent: () => true,
-      } as unknown as Window;
-    }
+    ensureBrowserLocalStorageHarness({ includeEventDispatch: true });
     vi.spyOn(window, "dispatchEvent").mockImplementation(() => true);
   });
 

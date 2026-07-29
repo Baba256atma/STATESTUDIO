@@ -18,17 +18,7 @@ import {
   SCENARIO_TIMELINE_PLATFORM_TAGS,
   SCENARIO_TIMELINE_RELEASE_METADATA,
 } from "./scenarioTimelinePlatformConstants.ts";
-import {
-  SCENARIO_TIMELINE_FREEZE_RULES,
-  SCENARIO_TIMELINE_PLATFORM_IDENTITY,
-  SCENARIO_TIMELINE_PLATFORM_SELF_MANIFEST,
-  SCENARIO_TIMELINE_PUBLIC_API_RULES,
-  ScenarioTimelinePlatformContract,
-  getScenarioTimelineContractVersionMetadata,
-  getScenarioTimelineFutureCompatibility,
-  resolveScenarioTimelineEventExample,
-  resolveScenarioTimelineTypeRegistrationExample,
-} from "./scenarioTimelinePlatformContracts.ts";
+import { SCENARIO_TIMELINE_FREEZE_RULES, SCENARIO_TIMELINE_PLATFORM_IDENTITY, SCENARIO_TIMELINE_PLATFORM_SELF_MANIFEST, SCENARIO_TIMELINE_PUBLIC_API_RULES, getScenarioTimelineContractVersionMetadata, getScenarioTimelineFutureCompatibility, resolveScenarioTimelineEventExample, resolveScenarioTimelineTypeRegistrationExample } from "./scenarioTimelinePlatformContracts.ts";
 import {
   initializeScenarioTimelinePlatform,
   isScenarioTimelinePlatformInitialized,

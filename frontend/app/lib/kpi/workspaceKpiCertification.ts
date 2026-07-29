@@ -16,14 +16,7 @@ import {
   getWorkspaceKpi,
   getWorkspaceKpis,
 } from "./workspaceKpiContract.ts";
-import {
-  WORKSPACE_KPI_PROFILE_STORAGE_KEY,
-  NEXORA_KPI_CALCULATION_ENGINE_LOG_PREFIX,
-  calculateKpiProgressPercent,
-  calculateKpiVariance,
-  deriveKpiTrend,
-  getWorkspaceKpiProfiles,
-} from "./workspaceKpiCalculationEngine.ts";
+import { WORKSPACE_KPI_PROFILE_STORAGE_KEY, NEXORA_KPI_CALCULATION_ENGINE_LOG_PREFIX, calculateKpiProgressPercent, calculateKpiVariance, getWorkspaceKpiProfiles } from "./workspaceKpiCalculationEngine.ts";
 import {
   WORKSPACE_KPI_HEALTH_PROFILE_STORAGE_KEY,
   NEXORA_KPI_HEALTH_LOG_PREFIX,
@@ -235,19 +228,6 @@ function varianceCalculationsValid(workspaceId: WorkspaceId): boolean {
     if (!profile || expected === null) return expected === null;
     return profile.variance === expected;
   });
-}
-
-function trendClassificationsValid(workspaceId: WorkspaceId): boolean {
-  return getWorkspaceKpiProfiles(workspaceId).every((profile) => {
-    const expected = deriveKpiTrend(profile.variance);
-    return profile.trend === expected;
-  });
-}
-
-function healthProfilesValid(workspaceId: WorkspaceId): boolean {
-  return getWorkspaceKpiHealthProfiles(workspaceId).every(
-    (profile) => profile.source === "ds-4:3-kpi-health"
-  );
 }
 
 function healthStatusClassificationsValid(workspaceId: WorkspaceId): boolean {

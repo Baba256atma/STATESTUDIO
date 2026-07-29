@@ -210,14 +210,6 @@ export function WorkspaceObjectApprovalPanel(
     );
   }, [applyResult, selectedRow?.displayName, snapshot.selectedCandidateId, snapshot.workspaceId]);
 
-  const handleToggleMerge = React.useCallback((candidateId: string) => {
-    setMergeSelection((current) =>
-      current.includes(candidateId)
-        ? current.filter((id) => id !== candidateId)
-        : Object.freeze([...current, candidateId])
-    );
-  }, []);
-
   const handleMerge = React.useCallback(() => {
     if (!snapshot.workspaceId) return;
     const targets = mergeSelection.length >= 2 ? mergeSelection : [];

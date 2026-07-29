@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CompanyConfigPayload } from "../lib/companyConfigTypes";
 import { apiBase, companyId } from "../lib/apiBase";
+import { readUnknownErrorMessage } from "../lib/system/nexoraErrors";
 
 const cached: Record<string, CompanyConfigPayload> = {};
 
@@ -33,8 +34,8 @@ export function useCompanyConfig(companyOverride?: string): {
         }
         cached[id] = payload.data;
         setConfig(payload.data);
-      } catch (err: any) {
-        setError(err?.message ?? "Config fetch failed");
+      } catch (err: unknown) {
+        setError(readUnknownErrorMessage(err, "Config fetch failed"));
         setConfig(refresh ? null : cached[id] ?? null);
       } finally {
         setLoading(false);

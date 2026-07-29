@@ -42,24 +42,10 @@ import {
   collectEnginesConsumed,
   collectReasoningRulesApplied,
 } from "./executiveIntentReasoningRules.ts";
-import {
-  createExecutiveIntentReasoning,
-  createExecutiveIntentReasoningAnalysisInput,
-  EXECUTIVE_INTENT_REASONING_ENGINE_VERSION,
-  type ExecutiveIntentReasoning,
-  type ExecutiveIntentReasoningAnalysisInput,
-  type ExecutiveIntentReasoningFlags,
-  type ExecutiveIntentReasoningHighlights,
-  type ExecutiveIntentReasoningMetadata,
-  type ExecutiveIntentReasoningSummary,
-  type ExecutiveIntentReasoningValidationResult,
-  type ExecutiveIntentReadinessAssessment,
-} from "./executiveIntentReasoningTypes.ts";
+import { createExecutiveIntentReasoning, createExecutiveIntentReasoningAnalysisInput, EXECUTIVE_INTENT_REASONING_ENGINE_VERSION, type ExecutiveIntentReasoning, type ExecutiveIntentReasoningAnalysisInput, type ExecutiveIntentReasoningFlags, type ExecutiveIntentReasoningMetadata, type ExecutiveIntentReasoningValidationResult, type ExecutiveIntentReadinessAssessment } from "./executiveIntentReasoningTypes.ts";
 import { buildExecutiveIntentSemanticModel } from "./executiveIntentSemanticModel.ts";
 import { EXECUTIVE_INTENT_SEMANTIC_MODEL_VERSION } from "./executiveIntentSemanticTypes.ts";
 import { resolveExecutiveIntentStateResult } from "./executiveIntentStateEngine.ts";
-import { EXECUTIVE_INTENT_STATE_ENGINE_VERSION } from "./executiveIntentStateTypes.ts";
-
 export const EXECUTIVE_INTENT_REASONING_ENGINE_OWNER = "executive-intent-reasoning" as const;
 
 export const EXECUTIVE_INTENT_REASONING_ENGINE_TAGS = Object.freeze([

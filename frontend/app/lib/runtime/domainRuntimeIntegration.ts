@@ -7,7 +7,7 @@ export interface NexoraRuntimeObjectState {
   riskLevel?: number;
   stabilityLevel?: number;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface NexoraRuntimeRelationState {
@@ -19,7 +19,7 @@ export interface NexoraRuntimeRelationState {
   strength?: number;
   volatility?: number;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface NexoraRuntimeLoopState {
@@ -67,14 +67,14 @@ export interface NexoraDomainRuntimeContext {
   systemVolatility?: number;
   activeScenarioIds?: string[];
   selectedObjectId?: string | null;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface NexoraDomainRuntimeIntegrationResult {
   runtimeModel: NexoraDomainRuntimeModel;
   runtimeContext: NexoraDomainRuntimeContext;
-  cockpitHints?: Record<string, any>;
-  adviceHints?: Record<string, any>;
+  cockpitHints?: Record<string, unknown>;
+  adviceHints?: Record<string, unknown>;
   notes?: string[];
 }
 
@@ -84,7 +84,7 @@ type ProjectObjectLike = {
   coreRole?: string | null;
   domainId?: string | null;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 };
 
 type ProjectRelationLike = {
@@ -94,7 +94,7 @@ type ProjectRelationLike = {
   relationType?: string | null;
   domainId?: string | null;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 };
 
 type ProjectLoopLike = {
@@ -104,7 +104,7 @@ type ProjectLoopLike = {
   nodes?: string[];
   domainId?: string | null;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 };
 
 type ProjectScenarioLike = {
@@ -146,85 +146,107 @@ function uniq(values: string[]): string[] {
   return Array.from(new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean)));
 }
 
-function normalizeMetadata(value: unknown): Record<string, any> {
-  return value && typeof value === "object" && !Array.isArray(value) ? { ...(value as Record<string, any>) } : {};
+function normalizeMetadata(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? { ...(value as Record<string, unknown>) } : {};
 }
 
-function normalizeProject(input: any): ProjectLike {
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function normalizeProject(input: unknown): ProjectLike {
+  const record = readRecord(input);
   return {
-    projectId: String(input?.projectId ?? "").trim(),
+    projectId: String(record.projectId ?? "").trim(),
     domainId:
-      input?.domainId === null || input?.domainId === undefined
+      record.domainId === null || record.domainId === undefined
         ? null
-        : String(input.domainId).trim(),
-    label: typeof input?.label === "string" ? input.label.trim() : undefined,
-    objects: Array.isArray(input?.objects)
-      ? input.objects.map((item: any) => ({
-          id: String(item?.id ?? "").trim(),
-          label: typeof item?.label === "string" ? item.label.trim() : undefined,
-          coreRole:
-            item?.coreRole === null || item?.coreRole === undefined ? null : String(item.coreRole).trim(),
-          domainId:
-            item?.domainId === null || item?.domainId === undefined ? null : String(item.domainId).trim(),
-          tags: Array.isArray(item?.tags) ? uniq(item.tags.map((value: unknown) => String(value))) : [],
-          metadata: normalizeMetadata(item?.metadata),
-        }))
+        : String(record.domainId).trim(),
+    label: typeof record.label === "string" ? record.label.trim() : undefined,
+    objects: Array.isArray(record.objects)
+      ? record.objects.map((item) => {
+          const entry = readRecord(item);
+          return {
+            id: String(entry.id ?? "").trim(),
+            label: typeof entry.label === "string" ? entry.label.trim() : undefined,
+            coreRole:
+              entry.coreRole === null || entry.coreRole === undefined ? null : String(entry.coreRole).trim(),
+            domainId:
+              entry.domainId === null || entry.domainId === undefined ? null : String(entry.domainId).trim(),
+            tags: Array.isArray(entry.tags) ? uniq(entry.tags.map((value: unknown) => String(value))) : [],
+            metadata: normalizeMetadata(entry.metadata),
+          };
+        })
       : [],
-    relations: Array.isArray(input?.relations)
-      ? input.relations.map((item: any) => ({
-          id: String(item?.id ?? "").trim(),
-          from: String(item?.from ?? "").trim(),
-          to: String(item?.to ?? "").trim(),
-          relationType:
-            item?.relationType === null || item?.relationType === undefined
-              ? null
-              : String(item.relationType).trim(),
-          domainId:
-            item?.domainId === null || item?.domainId === undefined ? null : String(item.domainId).trim(),
-          tags: Array.isArray(item?.tags) ? uniq(item.tags.map((value: unknown) => String(value))) : [],
-          metadata: normalizeMetadata(item?.metadata),
-        }))
+    relations: Array.isArray(record.relations)
+      ? record.relations.map((item) => {
+          const entry = readRecord(item);
+          return {
+            id: String(entry.id ?? "").trim(),
+            from: String(entry.from ?? "").trim(),
+            to: String(entry.to ?? "").trim(),
+            relationType:
+              entry.relationType === null || entry.relationType === undefined
+                ? null
+                : String(entry.relationType).trim(),
+            domainId:
+              entry.domainId === null || entry.domainId === undefined ? null : String(entry.domainId).trim(),
+            tags: Array.isArray(entry.tags) ? uniq(entry.tags.map((value: unknown) => String(value))) : [],
+            metadata: normalizeMetadata(entry.metadata),
+          };
+        })
       : [],
-    loops: Array.isArray(input?.loops)
-      ? input.loops.map((item: any) => ({
-          id: String(item?.id ?? "").trim(),
-          label: typeof item?.label === "string" ? item.label.trim() : undefined,
-          loopType:
-            item?.loopType === null || item?.loopType === undefined ? null : String(item.loopType).trim(),
-          nodes: Array.isArray(item?.nodes) ? uniq(item.nodes.map((value: unknown) => String(value))) : [],
-          domainId:
-            item?.domainId === null || item?.domainId === undefined ? null : String(item.domainId).trim(),
-          tags: Array.isArray(item?.tags) ? uniq(item.tags.map((value: unknown) => String(value))) : [],
-          metadata: normalizeMetadata(item?.metadata),
-        }))
+    loops: Array.isArray(record.loops)
+      ? record.loops.map((item) => {
+          const entry = readRecord(item);
+          return {
+            id: String(entry.id ?? "").trim(),
+            label: typeof entry.label === "string" ? entry.label.trim() : undefined,
+            loopType:
+              entry.loopType === null || entry.loopType === undefined ? null : String(entry.loopType).trim(),
+            nodes: Array.isArray(entry.nodes) ? uniq(entry.nodes.map((value: unknown) => String(value))) : [],
+            domainId:
+              entry.domainId === null || entry.domainId === undefined ? null : String(entry.domainId).trim(),
+            tags: Array.isArray(entry.tags) ? uniq(entry.tags.map((value: unknown) => String(value))) : [],
+            metadata: normalizeMetadata(entry.metadata),
+          };
+        })
       : [],
-    scenarioHints: Array.isArray(input?.scenarioHints)
-      ? input.scenarioHints.map((item: any) => ({
-          id: String(item?.id ?? "").trim(),
-          label: typeof item?.label === "string" ? item.label.trim() : undefined,
-          severityHint: item?.severityHint,
-          domainId:
-            item?.domainId === null || item?.domainId === undefined ? null : String(item.domainId).trim(),
-          tags: Array.isArray(item?.tags) ? uniq(item.tags.map((value: unknown) => String(value))) : [],
-        }))
+    scenarioHints: Array.isArray(record.scenarioHints)
+      ? record.scenarioHints.map((item) => {
+          const entry = readRecord(item);
+          return {
+            id: String(entry.id ?? "").trim(),
+            label: typeof entry.label === "string" ? entry.label.trim() : undefined,
+            severityHint: entry.severityHint as ProjectScenarioLike["severityHint"],
+            domainId:
+              entry.domainId === null || entry.domainId === undefined ? null : String(entry.domainId).trim(),
+            tags: Array.isArray(entry.tags) ? uniq(entry.tags.map((value: unknown) => String(value))) : [],
+          };
+        })
       : [],
-    kpiHints: Array.isArray(input?.kpiHints)
-      ? input.kpiHints.map((item: any) => ({
-          id: String(item?.id ?? "").trim(),
-          label: typeof item?.label === "string" ? item.label.trim() : undefined,
-          domainId:
-            item?.domainId === null || item?.domainId === undefined ? null : String(item.domainId).trim(),
-          tags: Array.isArray(item?.tags) ? uniq(item.tags.map((value: unknown) => String(value))) : [],
-        }))
+    kpiHints: Array.isArray(record.kpiHints)
+      ? record.kpiHints.map((item) => {
+          const entry = readRecord(item);
+          return {
+            id: String(entry.id ?? "").trim(),
+            label: typeof entry.label === "string" ? entry.label.trim() : undefined,
+            domainId:
+              entry.domainId === null || entry.domainId === undefined ? null : String(entry.domainId).trim(),
+            tags: Array.isArray(entry.tags) ? uniq(entry.tags.map((value: unknown) => String(value))) : [],
+          };
+        })
       : [],
-    inferredTags: Array.isArray(input?.inferredTags)
-      ? uniq(input.inferredTags.map((value: unknown) => String(value)))
+    inferredTags: Array.isArray(record.inferredTags)
+      ? uniq(record.inferredTags.map((value: unknown) => String(value)))
       : [],
   };
 }
 
 export function buildRuntimeObjectsFromProject(
-  project: any
+  project: unknown
 ): NexoraRuntimeObjectState[] {
   const normalized = normalizeProject(project);
   return (normalized.objects ?? []).map((object) => ({
@@ -241,7 +263,7 @@ export function buildRuntimeObjectsFromProject(
 }
 
 export function buildRuntimeRelationsFromProject(
-  project: any
+  project: unknown
 ): NexoraRuntimeRelationState[] {
   const normalized = normalizeProject(project);
   return (normalized.relations ?? []).map((relation) => ({
@@ -258,7 +280,7 @@ export function buildRuntimeRelationsFromProject(
 }
 
 export function buildRuntimeLoopsFromProject(
-  project: any
+  project: unknown
 ): NexoraRuntimeLoopState[] {
   const normalized = normalizeProject(project);
   return (normalized.loops ?? []).map((loop) => ({
@@ -274,7 +296,7 @@ export function buildRuntimeLoopsFromProject(
 }
 
 export function buildRuntimeScenarios(
-  project: any
+  project: unknown
 ): NexoraRuntimeScenarioState[] {
   const normalized = normalizeProject(project);
   return (normalized.scenarioHints ?? []).map((scenario) => ({
@@ -287,7 +309,7 @@ export function buildRuntimeScenarios(
 }
 
 export function buildRuntimeKpis(
-  project: any
+  project: unknown
 ): NexoraRuntimeKpiState[] {
   const normalized = normalizeProject(project);
   return (normalized.kpiHints ?? []).map((kpi) => ({
@@ -317,7 +339,7 @@ export function buildInitialRuntimeContext(args: {
 }
 
 export function integrateDomainProjectIntoRuntime(args: {
-  project: any;
+  project: unknown;
   mode?: string | null;
 }): NexoraDomainRuntimeIntegrationResult {
   const project = normalizeProject(args.project);
@@ -414,7 +436,7 @@ export function updateRuntimeLoopState(
 
 export function buildRuntimeSnapshot(
   runtimeModel: NexoraDomainRuntimeModel
-): Record<string, any> {
+): Record<string, unknown> {
   return {
     projectId: runtimeModel.projectId,
     domainId: runtimeModel.domainId ?? null,

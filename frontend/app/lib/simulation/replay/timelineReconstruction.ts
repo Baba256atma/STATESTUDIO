@@ -168,6 +168,6 @@ export function resolveReplayTickAtFrame(
   const frames = reconstruction.replayTrack.frames;
   if (frames.length === 0) return 0;
   const idx = Math.max(0, Math.min(frames.length - 1, Math.floor(frameIndex)));
-  const tick = Number(frames[idx]?.snapshot?.tick ?? reconstruction.playbackIndex.minTick);
+  const tick = Number(frames[idx]?.snapshot?.stepIndex ?? reconstruction.playbackIndex.minTick);
   return Math.floor(Number.isFinite(tick) ? tick : 0);
 }

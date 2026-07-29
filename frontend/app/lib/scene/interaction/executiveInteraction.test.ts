@@ -6,10 +6,7 @@ import {
   resolveExecutiveOrbitRuntimeConfig,
   sanitizeExecutiveOrbitTarget,
 } from "./executiveOrbitRuntime";
-import {
-  handleExecutiveKeyboardNavigation,
-  resolveExecutiveKeyboardNavigationAction,
-} from "./executiveKeyboardNavigationRuntime";
+import { resolveExecutiveKeyboardNavigationAction } from "./executiveKeyboardNavigationRuntime";
 import {
   buildExecutiveRelationshipExploration,
   resolveExecutiveHoverAffordance,
@@ -46,36 +43,43 @@ describe("executiveOrbitRuntime", () => {
   });
 });
 
-function typingTarget(tagName: string, extras?: Record<string, unknown>): EventTarget {
+function typingTarget(tagName: string, extras?: Record<string, unknown>) {
   return {
     tagName,
     isContentEditable: false,
     closest: () => null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => true,
     ...extras,
-  } as EventTarget;
+  };
+}
+
+function keyboardNavigationEvent(
+  key: string,
+  target: ReturnType<typeof typingTarget>
+): Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "altKey" | "target"> {
+  return {
+    key,
+    metaKey: false,
+    ctrlKey: false,
+    altKey: false,
+    target,
+  };
 }
 
 describe("executiveKeyboardNavigationRuntime", () => {
   it("ignores shortcuts while typing in chat input", () => {
-    const event = {
-      key: "f",
-      metaKey: false,
-      ctrlKey: false,
-      altKey: false,
-      target: typingTarget("INPUT", { id: "nexora-chat-input" }),
-    } as KeyboardEvent;
-    expect(resolveExecutiveKeyboardNavigationAction(event)).toBeNull();
+    const event = keyboardNavigationEvent(
+      "f",
+      typingTarget("INPUT", { id: "nexora-chat-input" })
+    );
+    expect(resolveExecutiveKeyboardNavigationAction(event as KeyboardEvent)).toBeNull();
   });
 
   it("maps keyboard shortcuts when not typing", () => {
-    const event = {
-      key: "g",
-      metaKey: false,
-      ctrlKey: false,
-      altKey: false,
-      target: typingTarget("DIV"),
-    } as KeyboardEvent;
-    expect(resolveExecutiveKeyboardNavigationAction(event)).toBe("global_view");
+    const event = keyboardNavigationEvent("g", typingTarget("DIV"));
+    expect(resolveExecutiveKeyboardNavigationAction(event as KeyboardEvent)).toBe("global_view");
   });
 });
 

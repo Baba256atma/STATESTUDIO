@@ -12,12 +12,7 @@ import {
   sortNormalizedRecordsDeterministically,
 } from "./executiveRecommendationGenerationNormalizer.ts";
 import { registerRecommendationCandidate } from "./executiveRecommendationGenerationEngineRegistry.ts";
-import type {
-  ExecutiveRecommendation,
-  ExecutiveRecommendationGenerationRequest,
-  RecommendationCandidate,
-  RecommendationGenerationResult,
-} from "./executiveRecommendationGenerationEngineTypes.ts";
+import type { ExecutiveRecommendationGenerationRequest, RecommendationCandidate, RecommendationGenerationResult } from "./executiveRecommendationGenerationEngineTypes.ts";
 import {
   validateExecutiveRecommendation,
   validateExecutiveRecommendationGenerationRequest,

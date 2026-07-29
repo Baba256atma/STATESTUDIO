@@ -89,7 +89,6 @@ function readHostMetrics(selector: string): ObjectPanelOwnershipHost {
 export function auditObjectPanelOwnership(): ObjectPanelOwnershipAudit {
   const hosts = OBJECT_PANEL_HOST_SELECTORS.map(readHostMetrics);
   const visibleOwners = hosts.filter((host) => host.visible).map((host) => host.id);
-  const mountedOwners = hosts.filter((host) => host.mounted && !host.zeroSize).map((host) => host.id);
   const duplicateMountDetected = visibleOwners.length > 1;
   const shadowMountDetected =
     visibleOwners.some((id) => id.includes("object-panel-host")) &&

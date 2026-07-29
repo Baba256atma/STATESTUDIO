@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useSyncExternalStore } from "react";
+import React, { useSyncExternalStore } from "react";
 
 import type {
   ExecutiveTimelineHudModel,
@@ -37,18 +37,7 @@ import type {
   ExecutiveQuickActionId,
   ExecutiveQuickActionsDockModel,
 } from "../../lib/ui/executiveQuickActionsTypes";
-import {
-  getBottomWorkspaceState,
-  heightForBottomWorkspaceMode,
-  hydrateBottomWorkspaceState,
-  logTimelineVisibleZone,
-  logBottomWorkspaceMetrics,
-  selectBottomWorkspaceSurface,
-  selectBottomWorkspaceTimelineEvent,
-  subscribeBottomWorkspaceState,
-  toggleBottomWorkspace,
-  type ExecutiveBottomWorkspaceHeightMode,
-} from "../../lib/workspace/executiveBottomWorkspace";
+import { getBottomWorkspaceState, heightForBottomWorkspaceMode, hydrateBottomWorkspaceState, logTimelineVisibleZone, logBottomWorkspaceMetrics, selectBottomWorkspaceSurface, selectBottomWorkspaceTimelineEvent, subscribeBottomWorkspaceState, toggleBottomWorkspace } from "../../lib/workspace/executiveBottomWorkspace";
 import { registerGovernedPanel } from "../../lib/workspace/panelGovernanceRuntime";
 import {
   buildExecutiveTimelineStoryItems,
@@ -111,10 +100,6 @@ export type ExecutiveBottomWorkspaceOverlayProps = {
   themeMode?: NexoraHudThemeMode;
 };
 
-function isTimelineCompactMode(mode: ExecutiveBottomWorkspaceHeightMode): boolean {
-  return timelineDisplayStateFromHeightMode(mode) === "compact";
-}
-
 /**
  * ARCHITECTURE CONTRACT:
  * Timeline is a scene-native bottom runtime component. It is not a Left Nav
@@ -154,10 +139,11 @@ export function ExecutiveBottomWorkspaceOverlay(
     timestampIso: activeEvent?.timestampIso,
     timestamp: activeEvent?.timestamp,
   });
-  const [isTimelineHydrated, setIsTimelineHydrated] = React.useState(false);
-  useEffect(() => {
-    setIsTimelineHydrated(true);
-  }, []);
+  const isTimelineHydrated = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const contextTimeLabel = resolveHydrationSafeTimelineTime({
     eventTime:
       props.spatialSummary?.timestampLabel ??
@@ -217,44 +203,53 @@ export function ExecutiveBottomWorkspaceOverlay(
     });
   }, [compact, height, props.timeline.events.length, state.activeSurface, state.heightMode, timelineRegion.bottomOffset]);
 
+  const {
+    onEventSelect,
+    onPlaybackPrevious,
+    onPlaybackNext,
+    onPlaybackPause,
+    onPlaybackPlay,
+    playback,
+  } = props;
+
   const selectStoryIndex = React.useCallback(
     (nextIndex: number) => {
       const clamped = Math.max(0, Math.min(storyItems.length - 1, nextIndex));
       const event = storyItems[clamped];
       if (!event) return;
       selectBottomWorkspaceTimelineEvent(event.id);
-      props.onEventSelect?.(event.id, event);
+      onEventSelect?.(event.id, event);
     },
-    [props, storyItems]
+    [onEventSelect, storyItems]
   );
 
   const handleTransportPrevious = React.useCallback(() => {
-    if (props.onPlaybackPrevious) {
-      props.onPlaybackPrevious();
+    if (onPlaybackPrevious) {
+      onPlaybackPrevious();
       return;
     }
     selectStoryIndex(activeEventIndex - 1);
-  }, [activeEventIndex, props, selectStoryIndex]);
+  }, [activeEventIndex, onPlaybackPrevious, selectStoryIndex]);
 
   const handleTransportNext = React.useCallback(() => {
-    if (props.onPlaybackNext) {
-      props.onPlaybackNext();
+    if (onPlaybackNext) {
+      onPlaybackNext();
       return;
     }
     selectStoryIndex(activeEventIndex + 1);
-  }, [activeEventIndex, props, selectStoryIndex]);
+  }, [activeEventIndex, onPlaybackNext, selectStoryIndex]);
 
   const handleTransportPlayPause = React.useCallback(() => {
-    if (props.playback?.sequence) {
+    if (playback?.sequence) {
       if (playbackActive) {
-        props.onPlaybackPause?.();
+        onPlaybackPause?.();
       } else {
-        props.onPlaybackPlay?.();
+        onPlaybackPlay?.();
       }
       return;
     }
     setLocalPlaying((value) => !value);
-  }, [playbackActive, props]);
+  }, [onPlaybackPause, onPlaybackPlay, playback, playbackActive, setLocalPlaying]);
 
   if (!placement.visible && !focusHud.preserveMount) return <></>;
 
@@ -1029,20 +1024,6 @@ function PlaybackControlStrip(props: {
       </div>
     </div>
   );
-}
-
-function modeButtonStyle(theme: ReturnType<typeof useSceneHudTheme>): React.CSSProperties {
-  return {
-    borderRadius: 8,
-    border: `1px solid ${theme.controlBorder}`,
-    background: theme.controlBackground,
-    color: theme.textSecondary,
-    padding: "4px 8px",
-    fontSize: 10,
-    fontWeight: 800,
-    textTransform: "uppercase",
-    cursor: "pointer",
-  };
 }
 
 function ContextRow(props: {

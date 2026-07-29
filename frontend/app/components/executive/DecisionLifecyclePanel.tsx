@@ -4,15 +4,16 @@ import React from "react";
 
 import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemoryTypes";
 import type { CanonicalRecommendation } from "../../lib/decision/recommendation/recommendationTypes";
+import type { DecisionExecutionResult } from "../../lib/executive/decisionExecutionTypes";
 import { runDecisionPipeline } from "../../lib/decision/core/runDecisionPipeline";
 import { buildDecisionPipelineSummary } from "../../lib/decision/core/buildDecisionPipelineSummary";
 import { appendDecisionPipelineSnapshot, loadDecisionPipelineSnapshots } from "../../lib/decision/core/decisionPipelineStore";
 import { nx, panelSurfaceStyle, secondaryButtonStyle, softCardStyle } from "../ui/nexoraTheme";
 
 type DecisionLifecyclePanelProps = {
-  responseData?: any;
+  responseData?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
-  decisionResult?: any;
+  decisionResult?: DecisionExecutionResult | Record<string, unknown> | null;
   memoryEntries?: DecisionMemoryEntry[];
   workspaceId?: string | null;
   projectId?: string | null;
@@ -33,7 +34,7 @@ export function DecisionLifecyclePanel(props: DecisionLifecyclePanelProps) {
         workspaceId: props.workspaceId ?? null,
         projectId: props.projectId ?? null,
         memoryEntries: props.memoryEntries ?? [],
-        decisionResult: props.decisionResult ?? null,
+        decisionResult: (props.decisionResult as DecisionExecutionResult | null | undefined) ?? null,
       }),
     [props.responseData, props.canonicalRecommendation, props.memoryEntries, props.workspaceId, props.projectId, props.decisionResult]
   );

@@ -2,9 +2,7 @@
  * SVIE:3:5 — Executive story layer runtime (read-only).
  */
 
-import { syncSvieAdvisoryLinkSnapshot } from "./svieAdvisoryLinkRuntime.ts";
-import type { SvieAdvisoryFindingInput } from "./svieAdvisoryLinkFoundationContract.ts";
-import {
+import { syncSvieAdvisoryLinkSnapshot } from "./svieAdvisoryLinkRuntime.ts";import {
   buildExecutiveStories,
   buildSvieExecutiveStoryLayerSignature,
 } from "./svieExecutiveStoryBuilder.ts";

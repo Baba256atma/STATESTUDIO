@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // Source: ../../../../backend/openapi.json
 

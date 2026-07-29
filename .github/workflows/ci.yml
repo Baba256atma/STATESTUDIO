@@ -66,9 +66,23 @@ jobs:
             echo "No lint script found. Skipping lint."
           fi
 
+      # Full-project TypeScript gate (production + tests). Any diagnostic fails the job.
+      - name: Full-project TypeScript typecheck
+        working-directory: frontend
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: npm run typecheck
+
+      # Full Scene runtime suite (Vitest + node:test via pinned jiti). Any failure fails the job.
+      - name: Full Scene runtime tests
+        working-directory: frontend
+        run: npm run test:scene
+
       # Run build only if the frontend package defines a build script.
       - name: Run frontend build
         working-directory: frontend
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
         run: |
           if npm run | grep -q " build"; then
             npm run build

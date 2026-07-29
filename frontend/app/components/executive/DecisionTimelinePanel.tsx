@@ -24,8 +24,8 @@ import { ExecutiveMetaCognitionCard } from "./ExecutiveMetaCognitionCard";
 import { ExecutiveReasoningTransparencyCard } from "./ExecutiveReasoningTransparencyCard";
 
 type DecisionTimelinePanelProps = {
-  responseData?: any;
-  strategicAdvice?: any | null;
+  responseData?: Record<string, unknown> | null;
+  strategicAdvice?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
   decisionResult?: DecisionExecutionResult | null;
   decisionLoading?: boolean;

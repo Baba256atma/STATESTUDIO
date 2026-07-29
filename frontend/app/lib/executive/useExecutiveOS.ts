@@ -20,64 +20,71 @@ function resolveInitialMode(params: ExecutiveOSHookParams): ExecutiveOperatingMo
 }
 
 export function useExecutiveOS(params: ExecutiveOSHookParams): ExecutiveOSController {
+  const {
+    warRoom,
+    onOpenWarRoom,
+    selectedObjectLabel,
+    scannerSummary,
+    strategicCouncil,
+  } = params;
   const [operatingMode, setOperatingModeState] = useState<ExecutiveOperatingMode>(() => resolveInitialMode(params));
 
   const state = useMemo(
     () =>
       composeExecutiveOSState({
         operatingMode,
-        warRoom: params.warRoom,
-        intelligence: params.warRoom.intelligence,
-        comparison: params.warRoom.comparison,
-        strategyGeneration: params.warRoom.strategyGeneration,
-        recentMemory: params.warRoom.recentMemory,
-        evolutionState: params.warRoom.evolutionState,
-        selectedObjectLabel: params.selectedObjectLabel,
-        scannerSummary: params.scannerSummary,
-        strategicCouncil: params.strategicCouncil ?? null,
+        warRoom,
+        intelligence: warRoom.intelligence,
+        comparison: warRoom.comparison,
+        strategyGeneration: warRoom.strategyGeneration,
+        recentMemory: warRoom.recentMemory,
+        evolutionState: warRoom.evolutionState,
+        selectedObjectLabel,
+        scannerSummary,
+        strategicCouncil: strategicCouncil ?? null,
       }),
-    [operatingMode, params.scannerSummary, params.selectedObjectLabel, params.strategicCouncil, params.warRoom]
+    [operatingMode, scannerSummary, selectedObjectLabel, strategicCouncil, warRoom]
   );
 
   const setOperatingMode = useCallback(
     (mode: ExecutiveOperatingMode) => {
       setOperatingModeState(mode);
-      if (mode === "observe") params.warRoom.switchMode("analysis");
-      if (mode === "investigate") params.warRoom.switchMode("analysis");
-      if (mode === "simulate") params.warRoom.switchMode("simulation");
-      if (mode === "decide") params.warRoom.switchMode("decision");
-      if (mode === "compare") params.warRoom.setCompareViewMode("summary");
+      if (mode === "observe") warRoom.switchMode("analysis");
+      if (mode === "investigate") warRoom.switchMode("analysis");
+      if (mode === "simulate") warRoom.switchMode("simulation");
+      if (mode === "decide") warRoom.switchMode("decision");
+      if (mode === "compare") warRoom.setCompareViewMode("summary");
     },
-    [params.warRoom]
+    [warRoom]
   );
 
   const focusObject = useCallback(
     (objectId: string | null) => {
-      params.warRoom.updateFocus(objectId);
-      params.warRoom.setSelectedObject(objectId);
+      warRoom.updateFocus(objectId);
+      warRoom.setSelectedObject(objectId);
       setOperatingModeState("investigate");
     },
-    [params.warRoom]
+    [warRoom]
   );
 
   const openWarRoomForScenario = useCallback(
     (scenarioId?: string | null) => {
-      params.onOpenWarRoom?.();
-      params.warRoom.openWarRoom();
+      onOpenWarRoom?.();
+      warRoom.openWarRoom();
       setOperatingModeState("simulate");
       if (scenarioId) {
-        params.warRoom.runScenario(scenarioId);
+        warRoom.runScenario(scenarioId);
       }
     },
-    [params.onOpenWarRoom, params.warRoom]
+    [onOpenWarRoom, warRoom]
   );
 
   const openWarRoomForCompare = useCallback(() => {
-    params.onOpenWarRoom?.();
-    params.warRoom.openWarRoom();
-    params.warRoom.setCompareViewMode("summary");
+    onOpenWarRoom?.();
+    warRoom.openWarRoom();
+    warRoom.setCompareViewMode("summary");
     setOperatingModeState("compare");
-  }, [params.onOpenWarRoom, params.warRoom]);
+  }, [onOpenWarRoom, warRoom]);
 
   const reviewRecord = useCallback((recordId?: string | null) => {
     if (recordId && process.env.NODE_ENV !== "production") {
@@ -89,8 +96,8 @@ export function useExecutiveOS(params: ExecutiveOSHookParams): ExecutiveOSContro
   const runRecommendation = useCallback(
     (recommendation: ExecutiveRecommendation) => {
       if (recommendation.target_object_id) {
-        params.warRoom.updateFocus(recommendation.target_object_id);
-        params.warRoom.setSelectedObject(recommendation.target_object_id);
+        warRoom.updateFocus(recommendation.target_object_id);
+        warRoom.setSelectedObject(recommendation.target_object_id);
       }
       if (recommendation.kind === "inspect") {
         setOperatingModeState("investigate");
@@ -102,23 +109,23 @@ export function useExecutiveOS(params: ExecutiveOSHookParams): ExecutiveOSContro
       }
       if (recommendation.kind === "compare") {
         openWarRoomForCompare();
-        void params.warRoom.runCompare();
+        void warRoom.runCompare();
         return;
       }
       if (recommendation.kind === "explore_strategy") {
-        params.onOpenWarRoom?.();
-        params.warRoom.openWarRoom();
+        onOpenWarRoom?.();
+        warRoom.openWarRoom();
         setOperatingModeState("decide");
         if (recommendation.linked_strategy_id) {
-          params.warRoom.selectGeneratedStrategy(recommendation.linked_strategy_id);
+          warRoom.selectGeneratedStrategy(recommendation.linked_strategy_id);
         } else {
-          void params.warRoom.generateStrategies();
+          void warRoom.generateStrategies();
         }
         return;
       }
       reviewRecord();
     },
-    [openWarRoomForCompare, openWarRoomForScenario, params.onOpenWarRoom, params.warRoom, reviewRecord]
+    [openWarRoomForCompare, openWarRoomForScenario, onOpenWarRoom, warRoom, reviewRecord]
   );
 
   const activatePriority = useCallback(
@@ -131,19 +138,19 @@ export function useExecutiveOS(params: ExecutiveOSHookParams): ExecutiveOSContro
         return;
       }
       if (priority.source === "strategy") {
-        params.onOpenWarRoom?.();
-        params.warRoom.openWarRoom();
+        onOpenWarRoom?.();
+        warRoom.openWarRoom();
         setOperatingModeState("decide");
         return;
       }
       setOperatingModeState(priority.target_path_id ? "compare" : "investigate");
     },
-    [focusObject, openWarRoomForCompare, params.onOpenWarRoom, params.warRoom]
+    [focusObject, openWarRoomForCompare, onOpenWarRoom, warRoom]
   );
 
   return {
     state,
-    warRoom: params.warRoom,
+    warRoom,
     setOperatingMode,
     focusObject,
     runRecommendation,

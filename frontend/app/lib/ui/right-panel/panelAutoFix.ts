@@ -180,13 +180,16 @@ function summarizeDataShape(value: unknown) {
 }
 
 function applyMinimalDataRecovery(
-  _view: RightPanelView,
+  view: RightPanelView,
   panelData: PanelSharedData | null | undefined
 ): PanelSharedData | null {
+  void view;
   return panelData ?? null;
 }
 
-function needsDataRecovery(_view: RightPanelView, _panelData: PanelSharedData | null | undefined) {
+function needsDataRecovery(view: RightPanelView, panelData: PanelSharedData | null | undefined) {
+  void view;
+  void panelData;
   return false;
 }
 

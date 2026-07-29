@@ -10,8 +10,8 @@ type BuildDecisionExecutionIntentInput = {
   action?: string | null;
   impactSummary?: string | null;
   confidence?: number | null;
-  responseData?: any | null;
-  decisionResult?: any | null;
+  responseData?: unknown;
+  decisionResult?: unknown;
 };
 
 function text(value: unknown) {
@@ -29,11 +29,19 @@ function mapConfidence(level?: CompareOption["confidence_level"] | null) {
   return null;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 export function buildDecisionExecutionIntent(
   input: BuildDecisionExecutionIntentInput
 ): DecisionExecutionIntent | null {
   const recommendation = input.canonicalRecommendation ?? null;
   const option = input.compareOption ?? null;
+  const decisionResult = asRecord(input.decisionResult);
+  const simulationResult = asRecord(decisionResult?.simulation_result);
+  const responseData = asRecord(input.responseData);
+  const decisionComparison = asRecord(responseData?.decision_comparison);
   const action =
     text(input.action) ||
     text(option?.title) ||
@@ -45,8 +53,8 @@ export function buildDecisionExecutionIntent(
     ...(input.targetIds ?? []),
     ...(option?.target_ids ?? []),
     ...(recommendation?.primary?.target_ids ?? []),
-    ...(Array.isArray(input.decisionResult?.simulation_result?.affected_objects)
-      ? input.decisionResult.simulation_result.affected_objects
+    ...(Array.isArray(simulationResult?.affected_objects)
+      ? simulationResult.affected_objects
       : []),
   ]).slice(0, 8);
 
@@ -73,13 +81,13 @@ export function buildDecisionExecutionIntent(
     impact_summary: impactSummary,
     compare_ready: Boolean(
       (recommendation?.alternatives?.length ?? 0) > 0 ||
-        (Array.isArray(input.decisionResult?.comparison) && input.decisionResult.comparison.length > 0) ||
-        (Array.isArray(input.responseData?.decision_comparison?.options) && input.responseData.decision_comparison.options.length > 0)
+        (Array.isArray(decisionResult?.comparison) && decisionResult.comparison.length > 0) ||
+        (Array.isArray(decisionComparison?.options) && decisionComparison.options.length > 0)
     ),
     simulation_ready: Boolean(
       recommendation ||
-        input.responseData?.decision_simulation ||
-        input.decisionResult?.simulation_result
+        responseData?.decision_simulation ||
+        simulationResult
     ),
     safe_mode: true,
   };

@@ -4,7 +4,7 @@ import React from "react";
 
 import type { ObjectInfoHudModel } from "../../lib/scene/objectInfoHudTypes";
 import type { EditableObjectPatch } from "../../lib/modeling/objectEditingRuntime";
-import type { PropagationPathPatch } from "../../lib/propagation/propagationAuthoringRuntime";
+import type { PropagationPathPatch, PropagationPath } from "../../lib/propagation/propagationAuthoringRuntime";
 import {
   nexoraHudSectionLabelStyle,
   nexoraHudShellStyle,
@@ -137,18 +137,6 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
   const breakpoint = resolveExecutiveWorkspaceBreakpoint(viewportWidth);
   const compact = breakpoint === "mobile" || breakpoint === "tablet";
   const panelSizeMode = props.panelSizeMode ?? "normal";
-  const width =
-    panelSizeMode === "expanded"
-      ? compact
-        ? 324
-        : 364
-      : panelSizeMode === "compact"
-        ? compact
-          ? 264
-          : 304
-        : compact
-          ? 304
-          : OBJECT_PANEL_EXPANDED_WIDTH;
 
   useViewportWidthListener(setViewportWidth, "ObjectInfoHud");
 
@@ -163,7 +151,7 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
     },
     { surface: "objectInfoHud", edgeAnchor: "TOP_RIGHT" }
   );
-  const [disclosureView, setDisclosureView] = React.useState<ObjectInfoDisclosureView>(
+  const [disclosureView] = React.useState<ObjectInfoDisclosureView>(
     DEFAULT_OBJECT_INFO_DISCLOSURE_VIEW
   );
   const layout = React.useMemo(
@@ -369,7 +357,9 @@ export function ObjectInfoHud(props: ObjectInfoHudProps): React.ReactElement {
                 <select
                   aria-label="Propagation type"
                   value={details.propagationType}
-                  onChange={(event) => updatePath({ propagationType: event.target.value as any })}
+                  onChange={(event) =>
+                    updatePath({ propagationType: event.target.value as PropagationPath["propagationType"] })
+                  }
                   style={fieldStyle(hudTheme)}
                 >
                   {["risk", "operational", "resource", "financial", "dependency", "custom"].map((type) => (

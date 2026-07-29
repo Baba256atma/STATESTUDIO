@@ -1,4 +1,5 @@
 import type { DecisionMemoryEntry } from "../decision/memory/decisionMemoryTypes";
+import type { SceneJson } from "../sceneTypes";
 import type { PanelSharedData } from "./panelDataResolverTypes";
 import type {
   AdvicePanelData,
@@ -19,16 +20,16 @@ type LooseRecord = Record<string, unknown>;
 
 export type BuildMergedPanelDataInput = {
   panelData: PanelSharedData;
-  responseData?: any;
-  sceneJson?: any;
-  strategicAdvice?: any;
-  riskPropagation?: any;
-  conflicts?: any[] | null;
-  decisionResult?: any;
-  memoryInsights?: any;
-  warRoomIntelligence?: any;
-  strategicCouncil?: any;
-  decisionCockpit?: any;
+  responseData?: Record<string, unknown> | null;
+  sceneJson?: SceneJson | Record<string, unknown> | null;
+  strategicAdvice?: Record<string, unknown> | null;
+  riskPropagation?: Record<string, unknown> | null;
+  conflicts?: unknown[] | null;
+  decisionResult?: Record<string, unknown> | null;
+  memoryInsights?: Record<string, unknown> | null;
+  warRoomIntelligence?: Record<string, unknown> | null;
+  strategicCouncil?: CouncilPanelData | Record<string, unknown> | null;
+  decisionCockpit?: Record<string, unknown> | null;
   decisionMemoryEntries?: DecisionMemoryEntry[];
   canonicalRecommendation?: unknown;
   normalizedWarRoomPanelData?: CanonicalWarRoomPanelData | null;
@@ -37,9 +38,9 @@ export type BuildMergedPanelDataInput = {
 
 export type BuildCanonicalPanelPayloadInput = {
   panelData: PanelSharedData;
-  responseData?: any;
-  sceneJson?: any;
-  strategicAdvice?: any;
+  responseData?: Record<string, unknown> | null;
+  sceneJson?: SceneJson | Record<string, unknown> | null;
+  strategicAdvice?: Record<string, unknown> | null;
   canonicalRecommendation?: unknown;
 };
 
@@ -148,6 +149,14 @@ function asNonArrayRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+}
+
+function readNestedValue(record: Record<string, unknown> | null | undefined, ...keys: string[]): unknown {
+  let current: unknown = record;
+  for (const key of keys) {
+    current = asNonArrayRecord(current)?.[key];
+  }
+  return current;
 }
 
 function pickFirstDefined<T>(...values: Array<T | null | undefined>): T | null {
@@ -339,100 +348,118 @@ function coerceConflictFamilyInput(...values: unknown[]): ConflictPanelData | nu
 }
 
 function pickDashboardFamilyInput(input: BuildMergedPanelDataInput) {
+  const responseData = asNonArrayRecord(input.responseData);
+  const sceneJson = asNonArrayRecord(input.sceneJson);
   return pickFirstDefined(
     input.panelData.dashboard,
     input.panelData.decisionCockpit,
     input.panelData.executiveSummary,
     input.decisionCockpit,
-    input.responseData?.decision_cockpit,
-    input.responseData?.executive_summary_surface,
-    input.responseData?.executive_insight,
-    input.sceneJson?.decision_cockpit,
-    input.sceneJson?.executive_summary_surface,
+    readNestedValue(responseData, "decision_cockpit"),
+    readNestedValue(responseData, "executive_summary_surface"),
+    readNestedValue(responseData, "executive_insight"),
+    readNestedValue(sceneJson, "decision_cockpit"),
+    readNestedValue(sceneJson, "executive_summary_surface"),
     asNonArrayRecord(input.decisionResult),
     asNonArrayRecord(input.canonicalRecommendation)
   );
 }
 
 function pickTimelineFamilyInput(input: BuildMergedPanelDataInput) {
+  const responseData = asNonArrayRecord(input.responseData);
+  const sceneJson = asNonArrayRecord(input.sceneJson);
+  const sceneInner = asNonArrayRecord(sceneJson?.scene);
   return pickFirstDefined(
     input.panelData.timeline,
-    input.responseData?.timeline_impact,
-    input.responseData?.timeline,
-    input.responseData?.decision_timeline,
-    input.responseData?.timeline_slice,
-    input.responseData?.decision_result?.timeline,
-    input.responseData?.decision_result?.timeline_slice,
-    input.responseData?.decision_simulation?.timeline,
-    input.responseData?.simulation?.timeline,
-    input.responseData?.multi_agent_decision?.timeline,
-    input.sceneJson?.timeline,
-    input.sceneJson?.scene?.timeline,
-    input.sceneJson?.timeline_impact,
+    readNestedValue(responseData, "timeline_impact"),
+    readNestedValue(responseData, "timeline"),
+    readNestedValue(responseData, "decision_timeline"),
+    readNestedValue(responseData, "timeline_slice"),
+    readNestedValue(responseData, "decision_result", "timeline"),
+    readNestedValue(responseData, "decision_result", "timeline_slice"),
+    readNestedValue(responseData, "decision_simulation", "timeline"),
+    readNestedValue(responseData, "simulation", "timeline"),
+    readNestedValue(responseData, "multi_agent_decision", "timeline"),
+    readNestedValue(sceneJson, "timeline"),
+    readNestedValue(sceneInner, "timeline"),
+    readNestedValue(sceneJson, "timeline_impact"),
     input.decisionResult?.timeline_slice
   );
 }
 
 function pickSimulationFamilyInput(input: BuildMergedPanelDataInput) {
+  const responseData = asNonArrayRecord(input.responseData);
+  const sceneJson = asNonArrayRecord(input.sceneJson);
+  const sceneInner = asNonArrayRecord(sceneJson?.scene);
   return pickFirstDefined(
     input.panelData.simulation,
-    input.responseData?.decision_simulation,
-    input.responseData?.decision_simulation?.result,
-    input.responseData?.simulation,
-    input.responseData?.simulation_result,
-    input.responseData?.scenario_simulation,
-    input.responseData?.multi_agent_decision?.simulation,
-    input.responseData?.decision_result?.simulation_result,
-    input.sceneJson?.simulation,
-    input.sceneJson?.scene?.simulation,
+    readNestedValue(responseData, "decision_simulation"),
+    readNestedValue(responseData, "decision_simulation", "result"),
+    readNestedValue(responseData, "simulation"),
+    readNestedValue(responseData, "simulation_result"),
+    readNestedValue(responseData, "scenario_simulation"),
+    readNestedValue(responseData, "multi_agent_decision", "simulation"),
+    readNestedValue(responseData, "decision_result", "simulation_result"),
+    readNestedValue(sceneJson, "simulation"),
+    readNestedValue(sceneInner, "simulation"),
     input.decisionResult?.simulation_result
   );
 }
 
 function pickAdviceFamilyInput(input: BuildMergedPanelDataInput) {
+  const responseData = asNonArrayRecord(input.responseData);
+  const sceneJson = asNonArrayRecord(input.sceneJson);
   return pickFirstDefined(
     input.panelData.advice,
     input.panelData.strategicAdvice,
     input.strategicAdvice,
-    input.responseData?.advice_slice,
-    input.responseData?.strategic_advice,
-    input.responseData?.prompt_feedback?.advice_feedback,
-    input.responseData?.canonical_recommendation,
-    input.sceneJson?.strategic_advice
+    readNestedValue(responseData, "advice_slice"),
+    readNestedValue(responseData, "strategic_advice"),
+    readNestedValue(responseData, "prompt_feedback", "advice_feedback"),
+    readNestedValue(responseData, "canonical_recommendation"),
+    readNestedValue(sceneJson, "strategic_advice")
   );
 }
 
 function pickWarRoomFamilyInput(input: BuildMergedPanelDataInput) {
+  const responseData = asNonArrayRecord(input.responseData);
+  const sceneJson = asNonArrayRecord(input.sceneJson);
   return pickFirstDefined(
     input.panelData.warRoom,
     input.normalizedWarRoomPanelData,
-    input.responseData?.war_room,
-    input.responseData?.war_room_slice,
-    input.responseData?.multi_agent_decision,
+    readNestedValue(responseData, "war_room"),
+    readNestedValue(responseData, "war_room_slice"),
+    readNestedValue(responseData, "multi_agent_decision"),
     input.warRoomIntelligence,
-    input.sceneJson?.war_room,
-    input.sceneJson?.multi_agent_decision
+    readNestedValue(sceneJson, "war_room"),
+    readNestedValue(sceneJson, "multi_agent_decision")
   );
 }
 
 function pickRiskFamilyInput(input: BuildMergedPanelDataInput) {
+  const responseData = asNonArrayRecord(input.responseData);
+  const sceneJson = asNonArrayRecord(input.sceneJson);
+  const sceneInner = asNonArrayRecord(sceneJson?.scene);
   return pickFirstDefined(
     input.panelData.risk,
     input.riskPropagation,
-    input.responseData?.risk_propagation,
-    input.responseData?.context?.risk_propagation,
-    input.sceneJson?.risk_propagation,
-    input.sceneJson?.scene?.risk_propagation
+    readNestedValue(responseData, "risk_propagation"),
+    readNestedValue(responseData, "context", "risk_propagation"),
+    readNestedValue(sceneJson, "risk_propagation"),
+    readNestedValue(sceneInner, "risk_propagation")
   );
 }
 
 function pickFragilityFamilyInput(input: BuildMergedPanelDataInput) {
+  const responseData = asNonArrayRecord(input.responseData);
+  const sceneJson = asNonArrayRecord(input.sceneJson);
+  const sceneInner = asNonArrayRecord(sceneJson?.scene);
   return pickFirstDefined(
     input.panelData.fragility,
-    input.responseData?.fragility,
-    input.responseData?.fragility_scan,
-    input.sceneJson?.scene?.fragility,
-    input.sceneJson?.fragility
+    readNestedValue(responseData, "fragility"),
+    readNestedValue(responseData, "fragility_scan"),
+    readNestedValue(sceneInner, "fragility"),
+    readNestedValue(sceneJson, "fragility")
   );
 }
 
@@ -502,26 +529,29 @@ export function buildMergedPanelData(input: BuildMergedPanelDataInput): PanelSha
   }
 
   const panelData = input.panelData;
+  const responseData = asNonArrayRecord(input.responseData);
+  const sceneJson = asNonArrayRecord(input.sceneJson);
+  const sceneInner = asNonArrayRecord(sceneJson?.scene);
   const dashboardFamily = pickDashboardFamilyInput(input);
   const adviceFamily = pickAdviceFamilyInput(input);
   const strategicAdviceFamily = pickFirstDefined(
     panelData.strategicAdvice,
     input.strategicAdvice,
-    input.responseData?.advice_slice,
-    input.responseData?.strategic_advice,
-    input.responseData?.prompt_feedback?.advice_feedback,
-    input.responseData?.canonical_recommendation,
-    input.sceneJson?.strategic_advice
+    readNestedValue(responseData, "advice_slice"),
+    readNestedValue(responseData, "strategic_advice"),
+    readNestedValue(responseData, "prompt_feedback", "advice_feedback"),
+    readNestedValue(responseData, "canonical_recommendation"),
+    readNestedValue(sceneJson, "strategic_advice")
   );
   const decisionCockpitFamily = pickFirstDefined(
     panelData.decisionCockpit,
     input.decisionCockpit,
-    input.responseData?.decision_cockpit
+    readNestedValue(responseData, "decision_cockpit")
   );
   const executiveSummaryFamily = pickFirstDefined(
     panelData.executiveSummary,
-    input.responseData?.executive_summary_surface,
-    input.responseData?.executive_insight
+    readNestedValue(responseData, "executive_summary_surface"),
+    readNestedValue(responseData, "executive_insight")
   );
   const simulationFamily = pickSimulationFamilyInput(input);
   const timelineFamily = pickTimelineFamilyInput(input);
@@ -530,14 +560,14 @@ export function buildMergedPanelData(input: BuildMergedPanelDataInput): PanelSha
   const fragilityFamily = pickFragilityFamilyInput(input);
   const conflictFamily = coerceConflictFamilyInput(
     panelData.conflict,
-    input.responseData?.conflict,
-    input.responseData?.conflicts,
-    input.responseData?.multi_agent_decision?.conflicts,
-    input.sceneJson?.scene?.conflicts,
+    readNestedValue(responseData, "conflict"),
+    readNestedValue(responseData, "conflicts"),
+    readNestedValue(responseData, "multi_agent_decision", "conflicts"),
+    readNestedValue(sceneInner, "conflicts"),
     input.conflicts
   );
 
-  const merged: PanelSharedData = {
+  const merged = {
     ...panelData,
     dashboard: dashboardFamily,
     advice: adviceFamily,
@@ -555,16 +585,16 @@ export function buildMergedPanelData(input: BuildMergedPanelDataInput): PanelSha
     warRoom: warRoomFamily,
     compare:
       panelData.compare ??
-      input.responseData?.decision_comparison ??
-      input.responseData?.comparison ??
+      readNestedValue(responseData, "decision_comparison") ??
+      readNestedValue(responseData, "comparison") ??
       input.decisionResult?.comparison_result ??
       null,
-    governance: panelData.governance ?? input.responseData?.decision_governance ?? null,
-    approval: panelData.approval ?? input.responseData?.approval_workflow ?? null,
-    policy: panelData.policy ?? input.responseData?.decision_policy ?? null,
+    governance: panelData.governance ?? readNestedValue(responseData, "decision_governance") ?? null,
+    approval: panelData.approval ?? readNestedValue(responseData, "approval_workflow") ?? null,
+    policy: panelData.policy ?? readNestedValue(responseData, "decision_policy") ?? null,
     strategicCouncil: panelData.strategicCouncil ?? input.normalizedStrategicCouncil ?? null,
     memoryEntries: panelData.memoryEntries ?? input.decisionMemoryEntries ?? EMPTY_MEMORY_ENTRIES,
-  };
+  } as PanelSharedData;
 
   if (DEBUG_PANEL_TRACE) {
     const tracePayload = {
@@ -576,12 +606,12 @@ export function buildMergedPanelData(input: BuildMergedPanelDataInput): PanelSha
       fragility: Boolean(fragilityFamily),
       conflict: Boolean(conflictFamily),
       warRoom: Boolean(warRoomFamily),
-      conflictWrappedArray: Array.isArray(input.responseData?.conflicts) || Array.isArray(input.conflicts),
+      conflictWrappedArray: Array.isArray(readNestedValue(responseData, "conflicts")) || Array.isArray(input.conflicts),
       conflictSource:
         panelData.conflict ? "panelData" :
-        input.responseData?.conflict ? "responseData.conflict" :
-        Array.isArray(input.responseData?.conflicts) ? "responseData.conflicts" :
-        Array.isArray(input.responseData?.multi_agent_decision?.conflicts) ? "responseData.multi_agent_decision.conflicts" :
+        readNestedValue(responseData, "conflict") ? "responseData.conflict" :
+        Array.isArray(readNestedValue(responseData, "conflicts")) ? "responseData.conflicts" :
+        Array.isArray(readNestedValue(responseData, "multi_agent_decision", "conflicts")) ? "responseData.multi_agent_decision.conflicts" :
         Array.isArray(input.conflicts) ? "props.conflicts" :
         "none",
     };
@@ -637,43 +667,45 @@ export function buildCanonicalPanelPayload(
   }
 
   const panelData = input.panelData;
+  const responseData = asNonArrayRecord(input.responseData);
+  const sceneJson = asNonArrayRecord(input.sceneJson);
   const payload = {
     ...panelData,
     responseData: panelData.responseData ?? input.responseData ?? input.sceneJson ?? null,
     strategic_advice:
       panelData.advice ??
       panelData.strategicAdvice ??
-      input.responseData?.advice_slice ??
+      readNestedValue(responseData, "advice_slice") ??
       input.strategicAdvice ??
-      input.responseData?.prompt_feedback?.advice_feedback ??
-      input.sceneJson?.strategic_advice ??
+      readNestedValue(responseData, "prompt_feedback", "advice_feedback") ??
+      readNestedValue(sceneJson, "strategic_advice") ??
       null,
     canonical_recommendation: panelData.canonicalRecommendation ?? input.canonicalRecommendation ?? null,
     decision_simulation:
       panelData.simulation ??
-      input.responseData?.decision_simulation ??
-      input.responseData?.simulation_result ??
-      input.responseData?.scenario_simulation ??
-      input.responseData?.simulation ??
-      input.sceneJson?.simulation ??
+      readNestedValue(responseData, "decision_simulation") ??
+      readNestedValue(responseData, "simulation_result") ??
+      readNestedValue(responseData, "scenario_simulation") ??
+      readNestedValue(responseData, "simulation") ??
+      readNestedValue(sceneJson, "simulation") ??
       null,
     timeline_impact:
       panelData.timeline ??
-      input.responseData?.timeline_impact ??
-      input.responseData?.decision_timeline ??
-      input.responseData?.timeline_slice ??
-      input.responseData?.decision_simulation?.timeline ??
-      input.responseData?.timeline ??
-      input.sceneJson?.timeline_impact ??
-      input.sceneJson?.timeline ??
+      readNestedValue(responseData, "timeline_impact") ??
+      readNestedValue(responseData, "decision_timeline") ??
+      readNestedValue(responseData, "timeline_slice") ??
+      readNestedValue(responseData, "decision_simulation", "timeline") ??
+      readNestedValue(responseData, "timeline") ??
+      readNestedValue(sceneJson, "timeline_impact") ??
+      readNestedValue(sceneJson, "timeline") ??
       null,
-    decision_policy: panelData.policy ?? input.responseData?.decision_policy ?? null,
-    decision_governance: panelData.governance ?? input.responseData?.decision_governance ?? null,
-    approval_workflow: panelData.approval ?? input.responseData?.approval_workflow ?? null,
+    decision_policy: panelData.policy ?? readNestedValue(responseData, "decision_policy") ?? null,
+    decision_governance: panelData.governance ?? readNestedValue(responseData, "decision_governance") ?? null,
+    approval_workflow: panelData.approval ?? readNestedValue(responseData, "approval_workflow") ?? null,
     multi_agent_decision:
       panelData.warRoom ??
-      input.responseData?.multi_agent_decision ??
-      input.sceneJson?.multi_agent_decision ??
+      readNestedValue(responseData, "multi_agent_decision") ??
+      readNestedValue(sceneJson, "multi_agent_decision") ??
       null,
   };
 

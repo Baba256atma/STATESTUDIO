@@ -28,7 +28,7 @@ function issue(code: string, message: string, field?: string): BusinessValidatio
   return Object.freeze({ code, message, field, readOnly: true as const });
 }
 
-function result(issues: BusinessValidationIssue[]): BusinessValidationResult {
+function result(issues: readonly BusinessValidationIssue[]): BusinessValidationResult {
   return Object.freeze({ valid: issues.length === 0, issues: Object.freeze(issues), readOnly: true as const });
 }
 

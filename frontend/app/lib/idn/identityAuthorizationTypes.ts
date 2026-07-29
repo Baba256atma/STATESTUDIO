@@ -1,6 +1,4 @@
-import type { IdentityId } from "./identityIndex.ts";
-import type { IdentityScopeLevel } from "./identityScopeIndex.ts";
-import type { PermissionAction, PermissionAssignment, PermissionResource } from "./identityPermissionIndex.ts";
+import type { IdentityId } from "./identityIndex.ts";import type { PermissionAction, PermissionAssignment, PermissionResource } from "./identityPermissionIndex.ts";
 import type { RoleAssignment } from "./identityRoleIndex.ts";
 import type { AuthorizationDecisionValue, AuthorizationReason } from "./identityAuthorizationEnums.ts";
 

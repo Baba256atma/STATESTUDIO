@@ -65,27 +65,9 @@ import {
   resetWorkspaceRelationshipSceneSyncStoreForTests,
   syncWorkspaceRelationshipsToScene,
 } from "./workspaceRelationshipSceneSyncContract.ts";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const DATA_SOURCE_ID = "wds_relationship_scene_sync_entities";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
 
 function seedRelationshipSceneSyncWorkspace(workspaceName: string, csvText: string) {
   const workspace = createWorkspace(workspaceName);
@@ -134,7 +116,7 @@ function approveAndCreateRelationship(workspaceId: string, relationshipType: str
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetWorkspaceRegistryForTests();
   resetWorkspaceDataSourcesForTests();
@@ -230,9 +212,15 @@ test("preserves workspace isolation and workspace switching", () => {
   assert.equal(getSceneRelationships(workspaceB.workspaceId).length, 0);
 
   setActiveWorkspace(workspaceA.workspaceId);
-  assert.equal(getWorkspaceSceneJson()?.scene.relationships?.length, 1);
+  {
+    const activeRels = getWorkspaceSceneJson()?.scene.relationships;
+    assert.equal(Array.isArray(activeRels) ? activeRels.length : -1, 1);
+  }
   setActiveWorkspace(workspaceB.workspaceId);
-  assert.equal(getWorkspaceSceneJson()?.scene.relationships?.length ?? 0, 0);
+  {
+    const isolatedRels = getWorkspaceSceneJson()?.scene.relationships;
+    assert.equal(Array.isArray(isolatedRels) ? isolatedRels.length : -1, 0);
+  }
 });
 
 test("preserves relationship traceability", () => {
@@ -262,7 +250,7 @@ test("relationship rendering appears through existing renderer contract", () => 
 
   const sceneJson = getWorkspaceSceneJson(workspace.workspaceId);
   assert.ok(sceneJson);
-  const rendered = readValidatedSceneRelationshipsForRender(sceneJson, sceneJson.scene.objects);
+  const rendered = readValidatedSceneRelationshipsForRender(sceneJson, sceneJson.scene.objects ?? []);
 
   assert.equal(rendered.length, 1);
   assert.equal(rendered[0]?.sourceId, "scene_obj_supplier");
@@ -300,5 +288,8 @@ test("does not automatically sync during relationship creation", () => {
   approveAndCreateRelationship(workspace.workspaceId, "supplies");
 
   assert.equal(getSceneRelationships(workspace.workspaceId).length, 0);
-  assert.equal(getWorkspaceSceneJson(workspace.workspaceId)?.scene.relationships?.length ?? 0, 0);
+  {
+    const emptyRels = getWorkspaceSceneJson(workspace.workspaceId)?.scene.relationships;
+    assert.equal(Array.isArray(emptyRels) ? emptyRels.length : -1, 0);
+  }
 });

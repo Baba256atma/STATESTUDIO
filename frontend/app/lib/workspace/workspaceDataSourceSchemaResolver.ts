@@ -462,10 +462,11 @@ export function removeWorkspaceDataSourceSchemaProfile(
     });
   }
 
-  const { [trimmedDataSourceId]: _removed, ...remaining } = getWorkspaceSchemaMap(trimmedWorkspaceId);
+  const schemas = { ...getWorkspaceSchemaMap(trimmedWorkspaceId) };
+  delete schemas[trimmedDataSourceId];
   workspaceSchemas = Object.freeze({
     ...workspaceSchemas,
-    [trimmedWorkspaceId]: Object.freeze(remaining),
+    [trimmedWorkspaceId]: Object.freeze(schemas),
   });
   commitSchemaChange();
   emitSchemaResolverDiagnostic("Schema Removed", {

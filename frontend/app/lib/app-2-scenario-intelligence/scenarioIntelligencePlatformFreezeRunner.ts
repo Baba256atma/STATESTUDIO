@@ -8,14 +8,8 @@ import {
   SCENARIO_INTELLIGENCE_PLATFORM_FREEZE_VERSION,
   SCENARIO_INTELLIGENCE_PLATFORM_RELEASE_TAGS,
 } from "./scenarioIntelligencePlatformFreezeManifest.ts";
-import {
-  runScenarioIntelligencePlatformFinalCertification,
-  ScenarioIntelligencePlatformFinalCertification,
-} from "./scenarioIntelligencePlatformFinalCertification.ts";
-import {
-  runScenarioIntelligencePlatformFreezeRegression,
-  ScenarioIntelligencePlatformFreezeRegression,
-} from "./scenarioIntelligencePlatformFreezeRegression.ts";
+import { runScenarioIntelligencePlatformFinalCertification } from "./scenarioIntelligencePlatformFinalCertification.ts";
+import { runScenarioIntelligencePlatformFreezeRegression } from "./scenarioIntelligencePlatformFreezeRegression.ts";
 
 export type ScenarioIntelligencePlatformFreezeRunResult = Readonly<{
   freezeVersion: typeof SCENARIO_INTELLIGENCE_PLATFORM_FREEZE_VERSION;

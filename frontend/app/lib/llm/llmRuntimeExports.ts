@@ -23,15 +23,11 @@ import {
   resetLlmRuntimeRegistryForTests,
   seedDefaultLlmRuntimeRegistry,
 } from "./llmRuntimeRegistry.ts";
-import type { LlmRuntimeExecutionResult, LlmRuntimeLayerState, LlmRuntimeManifest } from "./llmRuntimeTypes.ts";
+import type { LlmRuntimeLayerState, LlmRuntimeManifest } from "./llmRuntimeTypes.ts";
 import { validateLlmRuntimeRequest, validateLlmRuntimeResponse } from "./llmRuntimeValidation.ts";
 
 let layerInitialized = false;
 let lastInitializedAt: string | null = null;
-
-function createResult<T>(success: boolean, reason: string, data: T | null): LlmRuntimeExecutionResult | Readonly<{ success: boolean; reason: string; data: T | null; readOnly: true }> {
-  return Object.freeze({ success, reason, data, readOnly: true as const });
-}
 
 export function resetLlmRuntimeContractLayerForTests(): void {
   layerInitialized = false;

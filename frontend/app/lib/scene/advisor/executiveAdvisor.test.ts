@@ -114,14 +114,19 @@ test("detectAdvisorObservations finds risk and blind spot signals", () => {
 test("executiveAdvisorStore refreshes with signature dedupe and lifecycle status", () => {
   resetExecutiveAdvisorForTests();
   const cognitiveTwin = buildExecutiveCognitiveTwinState({
-    sceneObjectIds: ["obj_a"],
-    sceneObjectMeta: [{ id: "obj_a", label: "Object A" }],
+    sceneObjectIds: ["obj_a", "obj_b"],
+    sceneObjectMeta: [
+      { id: "obj_a", label: "Supplier A" },
+      { id: "obj_b", label: "Inventory B" },
+    ],
   });
   const warRoom = buildExecutiveWarRoomState({
     selectedObjectId: "obj_a",
     cognitiveTwin,
+    activeSimulation: simulation(),
   });
-  const input = { cognitiveTwin, warRoom };
+  // Active simulation produces recommendations under current E2:99 advisor contracts.
+  const input = { cognitiveTwin, warRoom, activeSimulation: simulation() };
 
   const first = refreshExecutiveAdvisor(input);
   const second = refreshExecutiveAdvisor(input);

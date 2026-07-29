@@ -8,11 +8,7 @@ import {
   getCatalogObjectDefinition,
   getCatalogObjectsByCategory,
 } from "./objectCatalogRegistry";
-import type {
-  CatalogObjectCategoryId,
-  CatalogObjectDefinition,
-  CatalogSearchResult,
-} from "./objectCatalogTypes";
+import type { CatalogObjectDefinition, CatalogSearchResult } from "./objectCatalogTypes";
 import {
   normalizeObjectCatalogEntrySource,
   normalizeObjectCatalogState,

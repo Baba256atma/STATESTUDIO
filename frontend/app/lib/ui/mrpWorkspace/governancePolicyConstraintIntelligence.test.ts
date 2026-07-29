@@ -106,7 +106,6 @@ test("view mapper attaches policy and constraint intelligence surfaces", () => {
     createGovernanceReadyState({
       selectedObjectId: "factory-a",
       constraintStatus: "review_required",
-      phase: "ready",
     })
   );
 

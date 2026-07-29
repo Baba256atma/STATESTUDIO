@@ -133,7 +133,10 @@ export async function requestPropagationSimulation(
     return overlay;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const status = typeof error === "object" && error !== null && "status" in error ? (error as any).status : null;
+    const status =
+      typeof error === "object" && error !== null && "status" in error
+        ? (error as { status?: unknown }).status
+        : null;
     if (process.env.NODE_ENV !== "production") {
       console.debug("[Nexora][PropagationBridge][fallback]", {
         sourceId: trimmedSourceId,

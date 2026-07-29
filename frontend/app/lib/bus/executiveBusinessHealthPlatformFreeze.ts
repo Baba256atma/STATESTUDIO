@@ -1,24 +1,10 @@
-import {
-  ExecutiveBusinessHealthPlatformCertificationDescription,
-  ExecutiveBusinessHealthPlatformCertificationVersion,
-  getExecutiveBusinessHealthCertificationMetadata,
-  runExecutiveBusinessHealthPlatformCertification,
-} from "./executiveBusinessHealthPlatformCertificationIndex.ts";
+import { ExecutiveBusinessHealthPlatformCertificationVersion, getExecutiveBusinessHealthCertificationMetadata, runExecutiveBusinessHealthPlatformCertification } from "./executiveBusinessHealthPlatformCertificationIndex.ts";
 import {
   ExecutiveBusinessHealthManifestVersion,
   getExecutiveBusinessHealthDependencyMetadata,
   getExecutiveBusinessHealthManifestMetadata,
 } from "./executiveBusinessHealthManifestIndex.ts";
-import {
-  ExecutiveBusinessHealthPlatformDescription,
-  ExecutiveBusinessHealthPlatformId,
-  ExecutiveBusinessHealthPlatformMetadata,
-  ExecutiveBusinessHealthPlatformName,
-  ExecutiveBusinessHealthPlatformNamespace,
-  ExecutiveBusinessHealthPlatformVersion,
-  getExecutiveBusinessHealthPlatformDependencies,
-  getExecutiveBusinessHealthPlatformPublicApi,
-} from "./executiveBusinessHealthPlatformIndex.ts";
+import { ExecutiveBusinessHealthPlatformDescription, ExecutiveBusinessHealthPlatformId, ExecutiveBusinessHealthPlatformName, ExecutiveBusinessHealthPlatformNamespace, ExecutiveBusinessHealthPlatformVersion, getExecutiveBusinessHealthPlatformDependencies, getExecutiveBusinessHealthPlatformPublicApi } from "./executiveBusinessHealthPlatformIndex.ts";
 
 export const ExecutiveBusinessHealthPlatformFreezeId = "BUS-32:8" as const;
 

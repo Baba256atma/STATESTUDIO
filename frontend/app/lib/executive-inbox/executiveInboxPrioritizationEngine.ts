@@ -28,13 +28,7 @@ import {
   resetExecutiveInboxPrioritizationEngineRegistryForTests,
   unregisterPriority,
 } from "./executiveInboxPrioritizationEngineRegistry.ts";
-import type {
-  ExecutiveInboxPrioritizationEngineState,
-  ExecutiveInboxPrioritizationRequest,
-  ExecutiveInboxPrioritizationResult,
-  ExecutiveInboxPriority,
-  PrioritizationEngineResult,
-} from "./executiveInboxPrioritizationEngineTypes.ts";
+import type { ExecutiveInboxPrioritizationEngineState, ExecutiveInboxPrioritizationRequest, ExecutiveInboxPrioritizationResult, PrioritizationEngineResult } from "./executiveInboxPrioritizationEngineTypes.ts";
 import {
   validateExecutivePriorities,
   validateExecutivePriority,

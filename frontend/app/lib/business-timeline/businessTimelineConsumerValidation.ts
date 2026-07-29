@@ -23,7 +23,7 @@ export function isBusinessTimelineConsumerId(value: string): value is BusinessTi
 export function validateBusinessTimelineConsumerAccess(
   request: BusinessTimelineConsumerAccessRequest
 ): BusinessValidationResult {
-  const issues: BusinessValidationResult["issues"] = [];
+  const issues: BusinessValidationResult["issues"][number][] = [];
 
   if (!isBusinessTimelineConsumerId(request.consumerId)) {
     issues.push(

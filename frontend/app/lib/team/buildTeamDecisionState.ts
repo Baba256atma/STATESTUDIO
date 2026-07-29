@@ -8,11 +8,15 @@ import { buildTeamDecisionAlignment } from "./buildTeamDecisionAlignment";
 import { buildTeamDecisionNextMove } from "./buildTeamDecisionNextMove";
 import type { TeamDecisionRole, TeamDecisionState } from "./teamDecisionTypes";
 
+import type { DecisionMemoryEntry } from "../decision/memory/decisionMemoryTypes";
+import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes";
+import type { DecisionExecutionResult } from "../executive/decisionExecutionTypes";
+
 type BuildTeamDecisionStateInput = {
-  responseData?: any | null;
-  canonicalRecommendation?: any | null;
-  decisionResult?: any | null;
-  memoryEntries?: any[];
+  responseData?: Record<string, unknown> | null;
+  canonicalRecommendation?: CanonicalRecommendation | null;
+  decisionResult?: DecisionExecutionResult | Record<string, unknown> | null;
+  memoryEntries?: DecisionMemoryEntry[];
 };
 
 const ROLES: TeamDecisionRole[] = ["executive", "analyst", "operator", "investor"];
@@ -22,19 +26,24 @@ function text(value: unknown, fallback = "") {
   return normalized || fallback;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 export function buildTeamDecisionState(input: BuildTeamDecisionStateInput): TeamDecisionState {
-  const responseData = input.responseData ?? null;
+  const responseData = asRecord(input.responseData);
+  const executiveSummary = asRecord(responseData?.executive_summary_surface);
   const confidenceModel = buildDecisionConfidenceModel({
     canonicalRecommendation: input.canonicalRecommendation ?? null,
     responseData,
-    decisionResult: input.decisionResult ?? null,
+      decisionResult: input.decisionResult ?? null,
   });
   let compareModel: ReturnType<typeof buildComparePanelModel> | null = null;
   try {
     compareModel = buildComparePanelModel({
       canonicalRecommendation: input.canonicalRecommendation ?? null,
-      decisionResult: input.decisionResult ?? null,
-      strategicAdvice: responseData?.strategic_advice ?? null,
+      decisionResult: (input.decisionResult as DecisionExecutionResult | null) ?? null,
+      strategicAdvice: asRecord(responseData?.strategic_advice),
       responseData,
     });
   } catch (error) {
@@ -52,9 +61,9 @@ export function buildTeamDecisionState(input: BuildTeamDecisionStateInput): Team
     canonicalRecommendation: input.canonicalRecommendation ?? null,
   });
   const metaDecision = buildMetaDecisionState({
-    reasoning: responseData?.ai_reasoning ?? null,
-    simulation: responseData?.decision_simulation ?? null,
-    comparison: responseData?.decision_comparison ?? responseData?.comparison ?? null,
+    reasoning: asRecord(responseData?.ai_reasoning),
+    simulation: asRecord(responseData?.decision_simulation),
+    comparison: asRecord(responseData?.decision_comparison) ?? asRecord(responseData?.comparison),
     canonicalRecommendation: input.canonicalRecommendation ?? null,
     calibration: null,
     responseData,
@@ -65,10 +74,10 @@ export function buildTeamDecisionState(input: BuildTeamDecisionStateInput): Team
     buildRolePerspective({
       role,
       canonicalRecommendation: input.canonicalRecommendation ?? null,
-      executiveSummary: responseData?.executive_summary_surface ?? null,
+      executiveSummary,
       confidenceModel,
       compareModel,
-      simulation: responseData?.decision_simulation ?? null,
+      simulation: asRecord(responseData?.decision_simulation),
       patternIntelligence,
       strategicLearning,
       metaDecision,
@@ -85,13 +94,17 @@ export function buildTeamDecisionState(input: BuildTeamDecisionStateInput): Team
     generated_at: Date.now(),
     shared_recommendation: text(
       input.canonicalRecommendation?.primary?.action,
-      responseData?.executive_summary_surface?.what_to_do ?? "No shared recommendation is available yet."
+      typeof executiveSummary?.what_to_do === "string"
+        ? executiveSummary.what_to_do
+        : "No shared recommendation is available yet."
     ),
     shared_summary: text(
       input.canonicalRecommendation?.reasoning?.why,
-      responseData?.executive_summary_surface?.why_it_matters ??
-        responseData?.analysis_summary ??
-        "The team needs stronger decision context before a fuller review is possible."
+      typeof executiveSummary?.why_it_matters === "string"
+        ? executiveSummary.why_it_matters
+        : typeof responseData?.analysis_summary === "string"
+          ? responseData.analysis_summary
+          : "The team needs stronger decision context before a fuller review is possible."
     ),
     role_perspectives: rolePerspectives,
     alignment,

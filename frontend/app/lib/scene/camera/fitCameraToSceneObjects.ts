@@ -179,7 +179,7 @@ export function computeScaleAwareSceneBounds(
   let maxY = Number.NEGATIVE_INFINITY;
   let maxZ = Number.NEGATIVE_INFINITY;
 
-  objects.forEach((obj, index) => {
+  objects.forEach((obj) => {
     const position = readObjectPosition(obj, layoutPositions);
     if (!position) return;
     const extents = resolveObjectVisualExtents(obj, {

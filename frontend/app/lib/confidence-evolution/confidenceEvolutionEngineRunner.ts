@@ -9,14 +9,8 @@ import { evaluateStageFileBoundary, validateStageManifest } from "../stage/stage
 import { BUSINESS_TIMELINE_PLATFORM_IDENTITY } from "../business-timeline/businessTimelineContracts.ts";
 import { DECISION_JOURNAL_PLATFORM_IDENTITY } from "../decision-journal/decisionJournalContracts.ts";
 import { DECISION_TIMELINE_PLATFORM_IDENTITY } from "../decision-timeline/decisionTimelineContracts.ts";
-import {
-  SCENARIO_TIMELINE_PLATFORM_CONTRACT_VERSION,
-  SCENARIO_TIMELINE_PLATFORM_IDENTITY,
-} from "../scenario-timeline/scenarioTimelinePlatformContracts.ts";
-import {
-  CONFIDENCE_EVOLUTION_PLATFORM_CONTRACT_VERSION,
-  CONFIDENCE_EVOLUTION_PLATFORM_IDENTITY,
-} from "./confidenceEvolutionContracts.ts";
+import { SCENARIO_TIMELINE_PLATFORM_IDENTITY } from "../scenario-timeline/scenarioTimelinePlatformContracts.ts";
+import { CONFIDENCE_EVOLUTION_PLATFORM_IDENTITY } from "./confidenceEvolutionContracts.ts";
 import { createConfidenceEvolutionFoundation } from "./confidenceEvolutionFoundation.ts";
 import { resetConfidenceEvolutionPlatformForTests } from "./confidenceEvolutionRunner.ts";
 import {

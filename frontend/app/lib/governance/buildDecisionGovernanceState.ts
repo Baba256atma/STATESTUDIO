@@ -9,6 +9,12 @@ import { buildTeamDecisionState } from "../team/buildTeamDecisionState";
 import { buildOrgMemoryState } from "../org-memory/buildOrgMemoryState";
 import { buildDecisionPolicyState } from "../policy/buildDecisionPolicyState";
 import type { DecisionPolicyState } from "../policy/decisionPolicyTypes";
+import type { DecisionMemoryEntry } from "../decision/memory/decisionMemoryTypes";
+import type { MetaDecisionState } from "../decision/meta/metaDecisionTypes";
+import type { CanonicalRecommendation } from "../decision/recommendation/recommendationTypes";
+import type { DecisionExecutionIntent } from "../execution/decisionExecutionIntent";
+import type { OrgMemoryState } from "../org-memory/orgMemoryTypes";
+import type { TeamDecisionState } from "../team/teamDecisionTypes";
 import { buildDecisionGovernanceExplanation } from "./buildDecisionGovernanceExplanation";
 import { buildDecisionGovernanceNextSteps } from "./buildDecisionGovernanceNextSteps";
 import { buildDecisionGovernancePolicy } from "./buildDecisionGovernancePolicy";
@@ -16,14 +22,14 @@ import type { DecisionGovernanceState } from "./decisionGovernanceTypes";
 import { evaluateDecisionGovernance } from "./evaluateDecisionGovernance";
 
 type BuildDecisionGovernanceStateInput = {
-  canonicalRecommendation?: any | null;
-  decisionExecutionIntent?: any | null;
-  decisionResult?: any | null;
-  responseData?: any | null;
-  memoryEntries?: any[];
-  orgMemoryState?: any | null;
-  teamDecisionState?: any | null;
-  metaDecisionState?: any | null;
+  canonicalRecommendation?: CanonicalRecommendation | null;
+  decisionExecutionIntent?: DecisionExecutionIntent | null;
+  decisionResult?: Record<string, unknown> | null;
+  responseData?: Record<string, unknown> | null;
+  memoryEntries?: DecisionMemoryEntry[];
+  orgMemoryState?: OrgMemoryState | null;
+  teamDecisionState?: TeamDecisionState | null;
+  metaDecisionState?: MetaDecisionState | null;
   policyState?: DecisionPolicyState | null;
 };
 
@@ -59,6 +65,10 @@ function strengthenMode(
   return posturePrecedence(nextMode) > posturePrecedence(currentMode) ? nextMode : currentMode;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 export function buildDecisionGovernanceState(
   input: BuildDecisionGovernanceStateInput
 ): DecisionGovernanceState {
@@ -92,9 +102,10 @@ export function buildDecisionGovernanceState(
   const metaDecision =
     input.metaDecisionState ??
     buildMetaDecisionState({
-      reasoning: input.responseData?.ai_reasoning ?? null,
-      simulation: input.responseData?.decision_simulation ?? null,
-      comparison: input.responseData?.decision_comparison ?? input.responseData?.comparison ?? null,
+      reasoning: asRecord(input.responseData?.ai_reasoning),
+      simulation: asRecord(input.responseData?.decision_simulation),
+      comparison:
+        asRecord(input.responseData?.decision_comparison) ?? asRecord(input.responseData?.comparison),
       canonicalRecommendation: input.canonicalRecommendation ?? null,
       calibration,
       responseData: input.responseData ?? null,

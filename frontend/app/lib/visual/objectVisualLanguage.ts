@@ -57,22 +57,22 @@ function norm(value: unknown): string {
 
 function tokens(obj: SceneObject, tags: string[]): string[] {
   const root = [
-    norm((obj as any)?.id),
-    norm((obj as any)?.type),
-    norm((obj as any)?.label ?? (obj as any)?.name),
-    norm((obj as any)?.role),
-    norm((obj as any)?.category),
-    norm((obj as any)?.risk_kind),
-    norm((obj as any)?.semantic?.role),
-    norm((obj as any)?.semantic?.category),
-    norm((obj as any)?.semantic?.risk_kind),
+    norm(obj.id),
+    norm(obj.type),
+    norm(obj.label ?? obj.name),
+    norm(obj.role),
+    norm(obj.category),
+    norm(obj.risk_kind),
+    norm(obj.semantic?.role),
+    norm(obj.semantic?.category),
+    norm(obj.semantic?.risk_kind),
   ]
     .join(" ")
     .split(/[^a-z0-9_]+/g)
     .filter(Boolean);
 
-  const semanticTags = Array.isArray((obj as any)?.semantic?.tags)
-    ? (obj as any).semantic.tags.map((t: any) => norm(t)).filter(Boolean)
+  const semanticTags = Array.isArray(obj.semantic?.tags)
+    ? obj.semantic.tags.map((t) => norm(t)).filter(Boolean)
     : [];
 
   const ownTags = Array.isArray(tags) ? tags.map((t) => norm(t)).filter(Boolean) : [];
@@ -86,8 +86,9 @@ function hasAny(items: string[], re: RegExp): boolean {
 export function deriveObjectVisualRole(
   obj: SceneObject,
   tags: string[],
-  _ctx: VisualLanguageContext
+  ctx: VisualLanguageContext
 ): ObjectVisualRole {
+  void ctx;
   const ts = tokens(obj, tags);
   const text = ts.join(" ");
 
@@ -101,7 +102,7 @@ export function deriveObjectVisualRole(
     return "core";
   }
 
-  const emphasisRaw = Number((obj as any)?.emphasis);
+  const emphasisRaw = Number(obj.emphasis);
   if (Number.isFinite(emphasisRaw) && emphasisRaw >= 0.72) return "core";
   if (Number.isFinite(emphasisRaw) && emphasisRaw <= 0.22) return "background";
 
@@ -163,11 +164,11 @@ export function buildObjectVisualProfile(
 ): ObjectVisualProfile {
   const role = deriveObjectVisualRole(obj, tags, ctx);
   const category = deriveExecutiveObjectVisualCategory({
-    label: (obj as any)?.label ?? (obj as any)?.name,
-    role: (obj as any)?.role,
+    label: obj.label ?? obj.name,
+    role: obj.role,
     tags,
-    semanticRole: (obj as any)?.semantic?.role,
-    semanticCategory: (obj as any)?.semantic?.category,
+    semanticRole: obj.semantic?.role,
+    semanticCategory: obj.semantic?.category,
     visualRole: role,
   });
   const state_visuals = roleToHierarchyStyle(role, ctx);

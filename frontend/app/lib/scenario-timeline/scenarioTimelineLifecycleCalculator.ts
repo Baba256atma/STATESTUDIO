@@ -47,9 +47,6 @@ export function computeRemainingStages(currentStage: ScenarioTimelineLifecycleSt
 
 export function computeLifecycleProgress(completedStages: readonly ScenarioTimelineLifecycleStage[]): number {
   const total = SCENARIO_TIMELINE_LIFECYCLE_STAGE_KEYS.length;
-  if (total === 0) {
-    return 0;
-  }
   return Math.round((completedStages.length / total) * 100);
 }
 

@@ -1,15 +1,7 @@
 /**
  * APP-7:1 — Business Timeline Platform constants.
+ * Values-first vocabulary: unions are derived in businessTimelineTypes.ts.
  */
-
-import type {
-  BusinessEventCategory,
-  BusinessEventImportance,
-  BusinessEventSource,
-  BusinessEventStatus,
-  BusinessEventType,
-  BusinessEventTypeId,
-} from "./businessTimelineTypes.ts";
 
 export const BUSINESS_TIMELINE_PLATFORM_CONTRACT_VERSION = "APP-7/1" as const;
 export const BUSINESS_TIMELINE_PLATFORM_ARCHITECTURE_VERSION = "APP-7/1-arch" as const;
@@ -53,7 +45,7 @@ export const BUSINESS_TIMELINE_CATEGORY_KEYS = Object.freeze([
   "infrastructure",
   "governance",
   "other",
-] as const satisfies readonly BusinessEventCategory[]);
+] as const);
 
 export const BUSINESS_TIMELINE_EVENT_TYPE_KEYS = Object.freeze([
   "milestone",
@@ -73,21 +65,21 @@ export const BUSINESS_TIMELINE_EVENT_TYPE_KEYS = Object.freeze([
   "technology",
   "financial",
   "custom",
-] as const satisfies readonly BusinessEventType[]);
+] as const);
 
 export const BUSINESS_TIMELINE_IMPORTANCE_KEYS = Object.freeze([
   "low",
   "medium",
   "high",
   "critical",
-] as const satisfies readonly BusinessEventImportance[]);
+] as const);
 
 export const BUSINESS_TIMELINE_STATUS_KEYS = Object.freeze([
   "planned",
   "completed",
   "cancelled",
   "archived",
-] as const satisfies readonly BusinessEventStatus[]);
+] as const);
 
 export const BUSINESS_TIMELINE_SOURCE_KEYS = Object.freeze([
   "manual",
@@ -96,14 +88,14 @@ export const BUSINESS_TIMELINE_SOURCE_KEYS = Object.freeze([
   "api",
   "data_source",
   "simulation",
-] as const satisfies readonly BusinessEventSource[]);
+] as const);
 
 export const BUSINESS_TIMELINE_RESERVED_TYPE_IDS = Object.freeze([
   "business-system",
   "business-reserved",
   "business-internal",
   "business-placeholder",
-] as const satisfies readonly BusinessEventTypeId[]);
+] as const);
 
 export const BUSINESS_TIMELINE_MANDATORY_EVENT_FIELDS = Object.freeze([
   "id",

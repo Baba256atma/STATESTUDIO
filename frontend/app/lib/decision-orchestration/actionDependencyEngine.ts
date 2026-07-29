@@ -18,20 +18,7 @@ import {
   strengthRank,
 } from "./actionDependencyGuards";
 import { getActionDependencyStore } from "./actionDependencyStore";
-import type {
-  CoordinationBottleneckIndicator,
-  CoordinationState,
-  DependencyAwarenessSnapshot,
-  DependencyAwarenessSummary,
-  DependencyCategory,
-  DependencyStrength,
-  EnterpriseDependencyNode,
-  OperationalCoordinationGraph,
-  ResponseRelationshipSignal,
-  StrategicActionDependency,
-  StrategicActionDependencyInput,
-  StrategicActionDependencyResult,
-} from "./actionDependencyTypes";
+import type { CoordinationBottleneckIndicator, CoordinationState, DependencyAwarenessSnapshot, DependencyCategory, DependencyStrength, EnterpriseDependencyNode, OperationalCoordinationGraph, ResponseRelationshipSignal, StrategicActionDependency, StrategicActionDependencyInput, StrategicActionDependencyResult } from "./actionDependencyTypes";
 
 const DEV_LOG_PREFIX = "[Nexora][ActionDependency]";
 

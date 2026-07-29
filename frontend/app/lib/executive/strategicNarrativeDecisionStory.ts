@@ -1,3 +1,11 @@
+import type { NexoraAutonomousExplorationResult } from "../simulation/autonomousScenarioExploration";
+import type {
+  NexoraScenarioOutcome,
+  NexoraSimulationRuntimeInput,
+} from "../simulation/domainSimulationScenarioEngine";
+import type { NexoraOutcomeComparisonResult } from "../simulation/outcomeComparisonReplay";
+import type { NexoraExecutiveBrief } from "./executiveInsightRecommendation";
+
 export type NexoraNarrativeSectionType =
   | "situation"
   | "signal"
@@ -44,11 +52,11 @@ export interface NexoraDecisionStory {
 export interface NexoraStrategicNarrativeInput {
   domainId?: string | null;
   mode?: string | null;
-  runtimeModel?: any;
-  scenarioOutcome?: any;
-  comparisonResult?: any;
-  executiveBrief?: any;
-  explorationResult?: any;
+  runtimeModel?: NexoraSimulationRuntimeInput | unknown;
+  scenarioOutcome?: NexoraScenarioOutcome | unknown;
+  comparisonResult?: NexoraOutcomeComparisonResult | unknown;
+  executiveBrief?: NexoraExecutiveBrief | unknown;
+  explorationResult?: NexoraAutonomousExplorationResult | unknown;
   titleHint?: string;
   tags?: string[];
 }
@@ -84,13 +92,50 @@ type NormalizedExecutiveBrief = {
   notes: string[];
 };
 
+type NormalizedObjectImpact = {
+  objectId: string;
+  beforeRisk: number;
+  afterRisk: number;
+  beforeActivity: number;
+  afterActivity: number;
+  beforeStability: number;
+  afterStability: number;
+  notes: string[];
+};
+
+type NormalizedKpiImpact = {
+  id: string;
+  label: string;
+  before: number;
+  after: number;
+  delta: number;
+  trend: string;
+  notes: string[];
+};
+
+type NormalizedObjectDifference = {
+  objectId: string;
+  riskDelta: number;
+  activityDelta: number;
+  stabilityDelta: number;
+  notes: string[];
+};
+
+type NormalizedKpiDifference = {
+  id: string;
+  label: string;
+  delta: number;
+  trend: string;
+  notes: string[];
+};
+
 type NormalizedScenarioOutcome = {
   scenarioId?: string | null;
   label: string;
   overallRisk?: string | null;
   summary: string;
-  objectImpacts: Array<Record<string, any>>;
-  kpiImpacts: Array<Record<string, any>>;
+  objectImpacts: NormalizedObjectImpact[];
+  kpiImpacts: NormalizedKpiImpact[];
   notes: string[];
 };
 
@@ -100,8 +145,8 @@ type NormalizedComparisonResult = {
   rightScenarioId?: string | null;
   higherRiskSide?: "left" | "right" | "equal" | null;
   summary: string;
-  objectDifferences: Array<Record<string, any>>;
-  kpiDifferences: Array<Record<string, any>>;
+  objectDifferences: NormalizedObjectDifference[];
+  kpiDifferences: NormalizedKpiDifference[];
   notes: string[];
 };
 
@@ -144,193 +189,225 @@ function normalizeMode(mode?: string | null): string {
   return normalizeText(String(mode ?? "")).toLowerCase();
 }
 
-function normalizeExecutiveBrief(brief?: any): NormalizedExecutiveBrief {
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function normalizeExecutiveBrief(brief?: unknown): NormalizedExecutiveBrief {
+  const entry = readRecord(brief);
   return {
-    summary: normalizeText(brief?.summary ?? ""),
-    topInsights: (Array.isArray(brief?.topInsights) ? brief.topInsights : []).map((insight: any) => ({
-      id: normalizeText(insight?.id ?? ""),
-      label: normalizeText(insight?.label ?? ""),
-      type: normalizeText(insight?.type ?? ""),
-      ...(insight?.severity ? { severity: normalizeText(insight.severity) } : {}),
-      ...(normalizeText(insight?.description ?? "")
-        ? { description: normalizeText(insight.description) }
+    summary: normalizeText(String(entry.summary ?? "")),
+    topInsights: (Array.isArray(entry.topInsights) ? entry.topInsights : []).map((insight) => {
+      const insightEntry = readRecord(insight);
+      return {
+      id: normalizeText(String(insightEntry.id ?? "")),
+      label: normalizeText(String(insightEntry.label ?? "")),
+      type: normalizeText(String(insightEntry.type ?? "")),
+      ...(insightEntry.severity ? { severity: normalizeText(String(insightEntry.severity)) } : {}),
+      ...(normalizeText(String(insightEntry.description ?? ""))
+        ? { description: normalizeText(String(insightEntry.description)) }
         : {}),
-      relatedObjectIds: Array.isArray(insight?.relatedObjectIds)
-        ? uniq(insight.relatedObjectIds.map((value: unknown) => String(value)))
+      relatedObjectIds: Array.isArray(insightEntry.relatedObjectIds)
+        ? uniq(insightEntry.relatedObjectIds.map((value: unknown) => String(value)))
         : [],
-      relatedKpiIds: Array.isArray(insight?.relatedKpiIds)
-        ? uniq(insight.relatedKpiIds.map((value: unknown) => String(value)))
+      relatedKpiIds: Array.isArray(insightEntry.relatedKpiIds)
+        ? uniq(insightEntry.relatedKpiIds.map((value: unknown) => String(value)))
         : [],
-      relatedLoopIds: Array.isArray(insight?.relatedLoopIds)
-        ? uniq(insight.relatedLoopIds.map((value: unknown) => String(value)))
+      relatedLoopIds: Array.isArray(insightEntry.relatedLoopIds)
+        ? uniq(insightEntry.relatedLoopIds.map((value: unknown) => String(value)))
         : [],
-      notes: Array.isArray(insight?.notes)
-        ? uniq(insight.notes.map((value: unknown) => String(value)))
+      notes: Array.isArray(insightEntry.notes)
+        ? uniq(insightEntry.notes.map((value: unknown) => String(value)))
         : [],
-    })),
-    recommendations: (Array.isArray(brief?.recommendations) ? brief.recommendations : []).map(
-      (recommendation: any) => ({
-        id: normalizeText(recommendation?.id ?? ""),
-        label: normalizeText(recommendation?.label ?? ""),
-        ...(normalizeText(recommendation?.description ?? "")
-          ? { description: normalizeText(recommendation.description) }
+    };
+    }),
+    recommendations: (Array.isArray(entry.recommendations) ? entry.recommendations : []).map(
+      (recommendation) => {
+        const recommendationEntry = readRecord(recommendation);
+        return {
+        id: normalizeText(String(recommendationEntry.id ?? "")),
+        label: normalizeText(String(recommendationEntry.label ?? "")),
+        ...(normalizeText(String(recommendationEntry.description ?? ""))
+          ? { description: normalizeText(String(recommendationEntry.description)) }
           : {}),
-        type: normalizeText(recommendation?.type ?? ""),
-        ...(recommendation?.priority
-          ? { priority: normalizeText(recommendation.priority) }
+        type: normalizeText(String(recommendationEntry.type ?? "")),
+        ...(recommendationEntry.priority
+          ? { priority: normalizeText(String(recommendationEntry.priority)) }
           : {}),
-        targetObjectIds: Array.isArray(recommendation?.targetObjectIds)
-          ? uniq(recommendation.targetObjectIds.map((value: unknown) => String(value)))
+        targetObjectIds: Array.isArray(recommendationEntry.targetObjectIds)
+          ? uniq(recommendationEntry.targetObjectIds.map((value: unknown) => String(value)))
           : [],
-        targetKpiIds: Array.isArray(recommendation?.targetKpiIds)
-          ? uniq(recommendation.targetKpiIds.map((value: unknown) => String(value)))
+        targetKpiIds: Array.isArray(recommendationEntry.targetKpiIds)
+          ? uniq(recommendationEntry.targetKpiIds.map((value: unknown) => String(value)))
           : [],
-        notes: Array.isArray(recommendation?.notes)
-          ? uniq(recommendation.notes.map((value: unknown) => String(value)))
+        notes: Array.isArray(recommendationEntry.notes)
+          ? uniq(recommendationEntry.notes.map((value: unknown) => String(value)))
           : [],
-      })
+      };
+      }
     ),
-    ...(brief?.systemRiskLevel
-      ? { systemRiskLevel: normalizeText(String(brief.systemRiskLevel)) }
+    ...(entry.systemRiskLevel
+      ? { systemRiskLevel: normalizeText(String(entry.systemRiskLevel)) }
       : {}),
-    notes: Array.isArray(brief?.notes)
-      ? uniq(brief.notes.map((value: unknown) => String(value)))
+    notes: Array.isArray(entry.notes)
+      ? uniq(entry.notes.map((value: unknown) => String(value)))
       : [],
   };
 }
 
-function normalizeScenarioOutcome(outcome?: any): NormalizedScenarioOutcome {
+function normalizeScenarioOutcome(outcome?: unknown): NormalizedScenarioOutcome {
+  const entry = readRecord(outcome);
   return {
-    ...(outcome?.scenarioId !== undefined
+    ...(entry.scenarioId !== undefined
       ? {
           scenarioId:
-            outcome?.scenarioId === null ? null : normalizeText(String(outcome.scenarioId)),
+            entry.scenarioId === null ? null : normalizeText(String(entry.scenarioId)),
         }
       : {}),
-    label: normalizeText(outcome?.label ?? outcome?.scenarioId ?? ""),
-    ...(outcome?.overallRisk
-      ? { overallRisk: normalizeText(String(outcome.overallRisk)) }
+    label: normalizeText(String(entry.label ?? entry.scenarioId ?? "")),
+    ...(entry.overallRisk
+      ? { overallRisk: normalizeText(String(entry.overallRisk)) }
       : {}),
-    summary: normalizeText(outcome?.summary ?? ""),
-    objectImpacts: Array.isArray(outcome?.objectImpacts)
-      ? outcome.objectImpacts.map((impact: any) => ({
-          objectId: normalizeText(impact?.objectId ?? ""),
-          beforeRisk: safeNumber(impact?.beforeRisk, 0),
-          afterRisk: safeNumber(impact?.afterRisk, 0),
-          beforeActivity: safeNumber(impact?.beforeActivity, 0),
-          afterActivity: safeNumber(impact?.afterActivity, 0),
-          beforeStability: safeNumber(impact?.beforeStability, 0),
-          afterStability: safeNumber(impact?.afterStability, 0),
-          notes: Array.isArray(impact?.notes)
-            ? uniq(impact.notes.map((value: unknown) => String(value)))
+    summary: normalizeText(String(entry.summary ?? "")),
+    objectImpacts: Array.isArray(entry.objectImpacts)
+      ? entry.objectImpacts.map((impact) => {
+          const impactEntry = readRecord(impact);
+          return {
+          objectId: normalizeText(String(impactEntry.objectId ?? "")),
+          beforeRisk: safeNumber(impactEntry.beforeRisk, 0),
+          afterRisk: safeNumber(impactEntry.afterRisk, 0),
+          beforeActivity: safeNumber(impactEntry.beforeActivity, 0),
+          afterActivity: safeNumber(impactEntry.afterActivity, 0),
+          beforeStability: safeNumber(impactEntry.beforeStability, 0),
+          afterStability: safeNumber(impactEntry.afterStability, 0),
+          notes: Array.isArray(impactEntry.notes)
+            ? uniq(impactEntry.notes.map((value: unknown) => String(value)))
             : [],
-        }))
+        };
+        })
       : [],
-    kpiImpacts: Array.isArray(outcome?.kpiImpacts)
-      ? outcome.kpiImpacts.map((impact: any) => ({
-          id: normalizeText(impact?.id ?? ""),
-          label: normalizeText(impact?.label ?? impact?.id ?? ""),
-          before: safeNumber(impact?.before, 0),
-          after: safeNumber(impact?.after, 0),
+    kpiImpacts: Array.isArray(entry.kpiImpacts)
+      ? entry.kpiImpacts.map((impact) => {
+          const impactEntry = readRecord(impact);
+          return {
+          id: normalizeText(String(impactEntry.id ?? "")),
+          label: normalizeText(String(impactEntry.label ?? impactEntry.id ?? "")),
+          before: safeNumber(impactEntry.before, 0),
+          after: safeNumber(impactEntry.after, 0),
           delta: safeNumber(
-            impact?.delta,
-            safeNumber(impact?.after, 0) - safeNumber(impact?.before, 0)
+            impactEntry.delta,
+            safeNumber(impactEntry.after, 0) - safeNumber(impactEntry.before, 0)
           ),
-          trend: normalizeText(impact?.trend ?? "stable"),
-          notes: Array.isArray(impact?.notes)
-            ? uniq(impact.notes.map((value: unknown) => String(value)))
+          trend: normalizeText(String(impactEntry.trend ?? "stable")),
+          notes: Array.isArray(impactEntry.notes)
+            ? uniq(impactEntry.notes.map((value: unknown) => String(value)))
             : [],
-        }))
+        };
+        })
       : [],
-    notes: Array.isArray(outcome?.notes)
-      ? uniq(outcome.notes.map((value: unknown) => String(value)))
+    notes: Array.isArray(entry.notes)
+      ? uniq(entry.notes.map((value: unknown) => String(value)))
       : [],
   };
 }
 
-function normalizeComparisonResult(result?: any): NormalizedComparisonResult {
+function normalizeComparisonResult(result?: unknown): NormalizedComparisonResult {
+  const entry = readRecord(result);
   return {
-    ...(result?.comparisonMode
-      ? { comparisonMode: normalizeText(String(result.comparisonMode)) }
+    ...(entry.comparisonMode
+      ? { comparisonMode: normalizeText(String(entry.comparisonMode)) }
       : {}),
-    ...(result?.leftScenarioId !== undefined
+    ...(entry.leftScenarioId !== undefined
       ? {
           leftScenarioId:
-            result.leftScenarioId === null
+            entry.leftScenarioId === null
               ? null
-              : normalizeText(String(result.leftScenarioId)),
+              : normalizeText(String(entry.leftScenarioId)),
         }
       : {}),
-    ...(result?.rightScenarioId !== undefined
+    ...(entry.rightScenarioId !== undefined
       ? {
           rightScenarioId:
-            result.rightScenarioId === null
+            entry.rightScenarioId === null
               ? null
-              : normalizeText(String(result.rightScenarioId)),
+              : normalizeText(String(entry.rightScenarioId)),
         }
       : {}),
-    ...(result?.higherRiskSide
-      ? { higherRiskSide: result.higherRiskSide as "left" | "right" | "equal" }
+    ...(entry.higherRiskSide
+      ? { higherRiskSide: entry.higherRiskSide as "left" | "right" | "equal" }
       : {}),
-    summary: normalizeText(result?.summary ?? ""),
-    objectDifferences: Array.isArray(result?.objectDifferences)
-      ? result.objectDifferences.map((difference: any) => ({
-          objectId: normalizeText(difference?.objectId ?? ""),
-          riskDelta: safeNumber(difference?.riskDelta, 0),
-          activityDelta: safeNumber(difference?.activityDelta, 0),
-          stabilityDelta: safeNumber(difference?.stabilityDelta, 0),
-          notes: Array.isArray(difference?.notes)
-            ? uniq(difference.notes.map((value: unknown) => String(value)))
+    summary: normalizeText(String(entry.summary ?? "")),
+    objectDifferences: Array.isArray(entry.objectDifferences)
+      ? entry.objectDifferences.map((difference) => {
+          const differenceEntry = readRecord(difference);
+          return {
+          objectId: normalizeText(String(differenceEntry.objectId ?? "")),
+          riskDelta: safeNumber(differenceEntry.riskDelta, 0),
+          activityDelta: safeNumber(differenceEntry.activityDelta, 0),
+          stabilityDelta: safeNumber(differenceEntry.stabilityDelta, 0),
+          notes: Array.isArray(differenceEntry.notes)
+            ? uniq(differenceEntry.notes.map((value: unknown) => String(value)))
             : [],
-        }))
+        };
+        })
       : [],
-    kpiDifferences: Array.isArray(result?.kpiDifferences)
-      ? result.kpiDifferences.map((difference: any) => ({
-          id: normalizeText(difference?.id ?? ""),
-          label: normalizeText(difference?.label ?? difference?.id ?? ""),
-          delta: safeNumber(difference?.delta, 0),
-          trend: normalizeText(difference?.trend ?? "stable"),
-          notes: Array.isArray(difference?.notes)
-            ? uniq(difference.notes.map((value: unknown) => String(value)))
+    kpiDifferences: Array.isArray(entry.kpiDifferences)
+      ? entry.kpiDifferences.map((difference) => {
+          const differenceEntry = readRecord(difference);
+          return {
+          id: normalizeText(String(differenceEntry.id ?? "")),
+          label: normalizeText(String(differenceEntry.label ?? differenceEntry.id ?? "")),
+          delta: safeNumber(differenceEntry.delta, 0),
+          trend: normalizeText(String(differenceEntry.trend ?? "stable")),
+          notes: Array.isArray(differenceEntry.notes)
+            ? uniq(differenceEntry.notes.map((value: unknown) => String(value)))
             : [],
-        }))
+        };
+        })
       : [],
-    notes: Array.isArray(result?.notes)
-      ? uniq(result.notes.map((value: unknown) => String(value)))
+    notes: Array.isArray(entry.notes)
+      ? uniq(entry.notes.map((value: unknown) => String(value)))
       : [],
   };
 }
 
-function normalizeExplorationResult(explorationResult?: any): NormalizedExplorationResult {
+function normalizeExplorationResult(explorationResult?: unknown): NormalizedExplorationResult {
+  const entry = readRecord(explorationResult);
+  const outputs = readRecord(entry.outputs);
+  const decisionStory = readRecord(outputs.decisionStory);
   return {
-    ...(explorationResult?.goal ? { goal: normalizeText(String(explorationResult.goal)) } : {}),
-    summary: normalizeText(explorationResult?.summary ?? ""),
-    rankedScenarios: Array.isArray(explorationResult?.rankedScenarios)
-      ? explorationResult.rankedScenarios.map((scenario: any) => ({
-          scenarioId: normalizeText(scenario?.scenarioId ?? ""),
-          label: normalizeText(scenario?.label ?? scenario?.scenarioId ?? ""),
-          overallScore: safeNumber(scenario?.overallScore, 0),
-          whyGenerated: normalizeText(scenario?.whyGenerated ?? ""),
-          ...(scenario?.mostAffectedObjectId
-            ? { mostAffectedObjectId: normalizeText(String(scenario.mostAffectedObjectId)) }
+    ...(entry.goal ? { goal: normalizeText(String(entry.goal)) } : {}),
+    summary: normalizeText(String(entry.summary ?? "")),
+    rankedScenarios: Array.isArray(entry.rankedScenarios)
+      ? entry.rankedScenarios.map((scenario) => {
+          const scenarioEntry = readRecord(scenario);
+          return {
+          scenarioId: normalizeText(String(scenarioEntry.scenarioId ?? "")),
+          label: normalizeText(String(scenarioEntry.label ?? scenarioEntry.scenarioId ?? "")),
+          overallScore: safeNumber(scenarioEntry.overallScore, 0),
+          whyGenerated: normalizeText(String(scenarioEntry.whyGenerated ?? "")),
+          ...(scenarioEntry.mostAffectedObjectId
+            ? { mostAffectedObjectId: normalizeText(String(scenarioEntry.mostAffectedObjectId)) }
             : {}),
-          ...(scenario?.mostAffectedKpiId
-            ? { mostAffectedKpiId: normalizeText(String(scenario.mostAffectedKpiId)) }
+          ...(scenarioEntry.mostAffectedKpiId
+            ? { mostAffectedKpiId: normalizeText(String(scenarioEntry.mostAffectedKpiId)) }
             : {}),
-          ...(scenario?.comparisonSummary
-            ? { comparisonSummary: normalizeText(String(scenario.comparisonSummary)) }
+          ...(scenarioEntry.comparisonSummary
+            ? { comparisonSummary: normalizeText(String(scenarioEntry.comparisonSummary)) }
             : {}),
-        }))
+        };
+        })
       : [],
     outputs:
-      explorationResult?.outputs && typeof explorationResult.outputs === "object"
+      entry.outputs && typeof entry.outputs === "object"
         ? {
             decisionStory:
-              explorationResult.outputs.decisionStory &&
-              typeof explorationResult.outputs.decisionStory === "object"
+              outputs.decisionStory && typeof outputs.decisionStory === "object"
                 ? {
-                    futureStatement: normalizeText(explorationResult.outputs.decisionStory.futureStatement ?? ""),
-                    decisionFocus: normalizeText(explorationResult.outputs.decisionStory.decisionFocus ?? ""),
+                    futureStatement: normalizeText(String(decisionStory.futureStatement ?? "")),
+                    decisionFocus: normalizeText(String(decisionStory.decisionFocus ?? "")),
                   }
                 : undefined,
           }
@@ -370,7 +447,7 @@ function getPrimaryRecommendation(
   return brief.recommendations[0] ?? null;
 }
 
-function getTopRiskImpact(input: NexoraStrategicNarrativeInput): Record<string, any> | null {
+function getTopRiskImpact(input: NexoraStrategicNarrativeInput): NormalizedObjectImpact | null {
   const outcome = normalizeScenarioOutcome(input.scenarioOutcome);
   return [...outcome.objectImpacts]
     .sort(
@@ -380,7 +457,7 @@ function getTopRiskImpact(input: NexoraStrategicNarrativeInput): Record<string, 
     )[0] ?? null;
 }
 
-function getTopKpiImpact(input: NexoraStrategicNarrativeInput): Record<string, any> | null {
+function getTopKpiImpact(input: NexoraStrategicNarrativeInput): NormalizedKpiImpact | null {
   const outcome = normalizeScenarioOutcome(input.scenarioOutcome);
   return [...outcome.kpiImpacts]
     .sort(
@@ -389,7 +466,7 @@ function getTopKpiImpact(input: NexoraStrategicNarrativeInput): Record<string, a
     )[0] ?? null;
 }
 
-function getTopComparisonObject(input: NexoraStrategicNarrativeInput): Record<string, any> | null {
+function getTopComparisonObject(input: NexoraStrategicNarrativeInput): NormalizedObjectDifference | null {
   const comparison = normalizeComparisonResult(input.comparisonResult);
   return [...comparison.objectDifferences]
     .sort(
@@ -419,8 +496,8 @@ export function resolveNarrativeTone(args: {
 
 export function resolveDecisionStoryStyle(args: {
   mode?: string | null;
-  comparisonResult?: any;
-  executiveBrief?: any;
+  comparisonResult?: NexoraOutcomeComparisonResult | unknown;
+  executiveBrief?: NexoraExecutiveBrief | unknown;
 }): NexoraDecisionStoryStyle {
   if (args.comparisonResult) return "risk_future_decision";
   if (normalizeMode(args.mode) === "executive") return "executive_brief";

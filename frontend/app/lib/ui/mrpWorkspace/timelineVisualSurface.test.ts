@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import type { SceneJson } from "../../sceneTypes.ts";
-import type { WorkspaceNavigationHistoryEntry } from "../dashboard/executiveWorkspaceNavigationHistoryContract.ts";
+import type { WorkspaceNavigationHistoryEntry } from "../../dashboard/executiveWorkspaceNavigationHistoryContract.ts";
 import {
   MRP_TIMELINE_VISUAL_TAG,
   TIMELINE_DECISION_HISTORY_COLUMN_LABELS,
@@ -64,6 +64,7 @@ const navigationHistory: readonly WorkspaceNavigationHistoryEntry[] = Object.fre
 ]);
 
 const sceneWithTimelineMarkers: SceneJson = {
+  state_vector: {},
   scene: {
     objects: [
       {
@@ -75,7 +76,7 @@ const sceneWithTimelineMarkers: SceneJson = {
       },
     ],
   },
-} as SceneJson;
+};
 
 test("exports MRP timeline visual tag", () => {
   assert.equal(MRP_TIMELINE_VISUAL_TAG, "[MRP_TIMELINE_VISUAL]");

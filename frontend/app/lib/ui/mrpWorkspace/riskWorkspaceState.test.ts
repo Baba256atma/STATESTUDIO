@@ -26,6 +26,7 @@ test.beforeEach(() => {
 });
 
 const sceneWithRisks: SceneJson = {
+  state_vector: {},
   scene: {
     objects: [
       { id: "a", type: "Supply", severity: "critical", status: "active" },
@@ -33,7 +34,7 @@ const sceneWithRisks: SceneJson = {
       { id: "c", type: "Finance", state: "stable", status: "ok" },
     ],
   },
-} as SceneJson;
+};
 
 test("deriveRiskWorkspaceMetrics counts critical and elevated scene markers", () => {
   const metrics = deriveRiskWorkspaceMetrics({

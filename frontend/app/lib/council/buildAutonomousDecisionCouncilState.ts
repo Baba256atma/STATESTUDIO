@@ -88,7 +88,7 @@ export function buildAutonomousDecisionCouncilState(
   const confidenceModel = buildDecisionConfidenceModel({
     canonicalRecommendation: typedRecommendation,
     responseData,
-    decisionResult: input.decisionResult ?? null,
+    decisionResult: asRecord(input.decisionResult),
   });
   const calibration = buildDecisionConfidenceCalibration({
     canonicalRecommendation: typedRecommendation,
@@ -96,7 +96,7 @@ export function buildAutonomousDecisionCouncilState(
     outcomeAssessment: buildDecisionOutcomeAssessment({
       canonicalRecommendation: typedRecommendation,
       responseData,
-      decisionResult: input.decisionResult ?? null,
+      decisionResult: asRecord(input.decisionResult),
       memoryEntries,
     }),
     memoryEntries,
@@ -110,8 +110,8 @@ export function buildAutonomousDecisionCouncilState(
     canonicalRecommendation: typedRecommendation,
   });
   const metaDecision = buildMetaDecisionState({
-    reasoning: getValue(responseData, "ai_reasoning") ?? null,
-    simulation: simulation ?? null,
+    reasoning: asRecord(getValue(responseData, "ai_reasoning")),
+    simulation,
     comparison: decisionComparison ?? comparison ?? null,
     canonicalRecommendation: typedRecommendation,
     calibration,
@@ -122,19 +122,19 @@ export function buildAutonomousDecisionCouncilState(
     source: "recommendation",
     canonicalRecommendation: typedRecommendation,
     responseData,
-    decisionResult: input.decisionResult ?? null,
+    decisionResult: asRecord(input.decisionResult),
   });
   const teamDecision = buildTeamDecisionState({
     responseData,
     canonicalRecommendation: typedRecommendation,
-    decisionResult: input.decisionResult ?? null,
+    decisionResult: asRecord(input.decisionResult),
     memoryEntries,
   });
   const collaborationState = buildCollaborationState({
     canonicalRecommendation: typedRecommendation,
     decisionExecutionIntent: executionIntent,
     responseData,
-    decisionResult: input.decisionResult ?? null,
+    decisionResult: asRecord(input.decisionResult),
     memoryEntries,
     collaborationInputs: input.collaborationInputs ?? [],
     teamDecisionState: teamDecision,
@@ -146,14 +146,14 @@ export function buildAutonomousDecisionCouncilState(
   const policy = buildDecisionPolicyState({
     canonicalRecommendation: typedRecommendation,
     decisionExecutionIntent: executionIntent,
-    decisionResult: input.decisionResult ?? null,
+    decisionResult: asRecord(input.decisionResult),
     responseData,
     memoryEntries,
   });
   const governance = buildDecisionGovernanceState({
     canonicalRecommendation: typedRecommendation,
     decisionExecutionIntent: executionIntent,
-    decisionResult: input.decisionResult ?? null,
+    decisionResult: asRecord(input.decisionResult),
     responseData,
     memoryEntries,
     orgMemoryState: orgMemory,
@@ -165,7 +165,7 @@ export function buildAutonomousDecisionCouncilState(
     canonicalRecommendation: typedRecommendation,
     decisionExecutionIntent: executionIntent,
     decisionGovernance: governance,
-    decisionResult: input.decisionResult ?? null,
+    decisionResult: asRecord(input.decisionResult),
     responseData,
     memoryEntries,
     policyState: policy,

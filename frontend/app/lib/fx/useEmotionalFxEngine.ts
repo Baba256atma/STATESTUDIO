@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { SceneLoopEdge } from "../sceneTypes";
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
 
 export type EmotionalTarget = {
   id: string;
@@ -38,8 +43,8 @@ export function useEmotionalFxEngine({
     if (!sceneReady) return;
     if (typeof setOverride !== "function") return;
 
-    const mvp: any = nexoraMvp as any;
-    const list: any[] = Array.isArray(mvp?.objects) ? mvp.objects : [];
+    const mvp = asRecord(nexoraMvp);
+    const list = Array.isArray(mvp?.objects) ? mvp.objects : [];
 
     const targets: EmotionalTarget[] = [];
 
@@ -61,7 +66,8 @@ export function useEmotionalFxEngine({
     };
 
     // Base targets from MVP objects
-    for (const o of list) {
+    for (const objectValue of list) {
+      const o = asRecord(objectValue);
       const rawId = String(o?.id ?? "").trim();
       const sceneId = mapNexoraIdToSceneId(rawId);
       if (!sceneId) continue;
@@ -81,20 +87,25 @@ export function useEmotionalFxEngine({
     try {
       const loopId = effectiveActiveLoopId ?? null;
       if (loopId && Array.isArray(loops) && loops.length) {
-        const loop = loops.find((l: any) => String(l?.id ?? "") === String(loopId));
-        const edges: any[] = Array.isArray((loop as any)?.edges) ? (loop as any).edges : [];
+        const loop = loops.find((loopValue) => {
+          const candidate = asRecord(loopValue);
+          return String(candidate?.id ?? "") === String(loopId);
+        });
+        const loopRecord = asRecord(loop);
+        const edges = Array.isArray(loopRecord?.edges) ? (loopRecord.edges as SceneLoopEdge[]) : [];
         const nodeIds = new Set<string>();
-        for (const e of edges) {
-          const from = typeof e?.from === "string" ? e.from : null;
-          const to = typeof e?.to === "string" ? e.to : null;
+        for (const edge of edges) {
+          const from = typeof edge?.from === "string" ? edge.from : null;
+          const to = typeof edge?.to === "string" ? edge.to : null;
           if (from) nodeIds.add(from);
           if (to) nodeIds.add(to);
         }
 
-        const kk: any = kpi as any;
+        const kpiRecord = asRecord(kpi);
+        const overall = asRecord(kpiRecord?.overall);
         const moodBase = clamp01(
-          (typeof kk?.overall?.risk === "number" ? kk.overall.risk : 0) ||
-            (typeof kk?.risk === "number" ? kk.risk : 0) ||
+          (typeof overall?.risk === "number" ? overall.risk : 0) ||
+            (typeof kpiRecord?.risk === "number" ? kpiRecord.risk : 0) ||
             0.25
         );
 

@@ -10,19 +10,7 @@ import { guardWorkspaceDataSourceAccess } from "./workspaceDataSourceIsolationGu
 import { resolveWorkspaceDataSource } from "./workspaceDataSourceResolver.ts";
 import { getColumnClassifications } from "./workspaceColumnClassificationEngine.ts";
 import type { WorkspaceColumnClassification } from "./workspaceColumnClassificationContract.ts";
-import {
-  buildWorkspaceCandidateObjectId,
-  NEXORA_CANDIDATE_DISCOVERY_LOG_PREFIX,
-  WORKSPACE_CANDIDATE_OBJECT_TAGS,
-  WORKSPACE_CANDIDATE_OBJECT_VERSION,
-  workspaceCandidateObjectIsComplete,
-  workspaceDataSourceCandidateObjectProfileIsComplete,
-  type DiscoverCandidateObjectsResult,
-  type WorkspaceCandidateObject,
-  type WorkspaceCandidateObjectStore,
-  type WorkspaceCandidateObjectType,
-  type WorkspaceDataSourceCandidateObjectProfile,
-} from "./workspaceCandidateObjectContract.ts";
+import { buildWorkspaceCandidateObjectId, NEXORA_CANDIDATE_DISCOVERY_LOG_PREFIX, WORKSPACE_CANDIDATE_OBJECT_TAGS, WORKSPACE_CANDIDATE_OBJECT_VERSION, workspaceDataSourceCandidateObjectProfileIsComplete, type DiscoverCandidateObjectsResult, type WorkspaceCandidateObject, type WorkspaceCandidateObjectStore, type WorkspaceCandidateObjectType, type WorkspaceDataSourceCandidateObjectProfile } from "./workspaceCandidateObjectContract.ts";
 
 const STORAGE_KEY = "nexora.workspaceCandidateObjects.v2";
 
@@ -33,7 +21,6 @@ const candidateObjectListeners = new Set<CandidateObjectListener>();
 let workspaceCandidateObjects: WorkspaceCandidateObjectStore = {};
 let candidateObjectHydrated = false;
 let candidateObjectVersion = 0;
-let candidateObjectUpdatedAt: string | null = null;
 
 const PREFIX_SUFFIX_PATTERN =
   /^([a-z0-9]+)_(id|name|status|region|department|category|type|code|key|email|phone|date|stage|state|city|country|title|label)$/;
@@ -263,8 +250,7 @@ function getDataSourceProfiles(
   return workspaceCandidateObjects[workspaceId] ?? Object.freeze({});
 }
 
-function commitCandidateChange(timestamp = nowIso()): void {
-  candidateObjectUpdatedAt = timestamp;
+function commitCandidateChange(): void {
   writeStorage();
   notifyCandidateObjectListeners();
 }
@@ -509,7 +495,7 @@ export function discoverCandidateObjects(
       [trimmedDataSourceId]: nextProfile,
     }),
   });
-  commitCandidateChange(timestamp);
+  commitCandidateChange();
 
   return Object.freeze({
     success: true,
@@ -578,10 +564,11 @@ export function removeWorkspaceCandidateObjectsForDataSource(
     });
   }
 
-  const { [trimmedDataSourceId]: _removed, ...remaining } = getDataSourceProfiles(trimmedWorkspaceId);
+  const profiles = { ...getDataSourceProfiles(trimmedWorkspaceId) };
+  delete profiles[trimmedDataSourceId];
   workspaceCandidateObjects = Object.freeze({
     ...workspaceCandidateObjects,
-    [trimmedWorkspaceId]: Object.freeze(remaining),
+    [trimmedWorkspaceId]: Object.freeze(profiles),
   });
   commitCandidateChange();
 
@@ -597,7 +584,6 @@ export function resetWorkspaceCandidateObjectStoreForTests(): void {
   workspaceCandidateObjects = {};
   candidateObjectHydrated = false;
   candidateObjectVersion = 0;
-  candidateObjectUpdatedAt = null;
   candidateObjectListeners.clear();
   if (typeof window !== "undefined") {
     try {

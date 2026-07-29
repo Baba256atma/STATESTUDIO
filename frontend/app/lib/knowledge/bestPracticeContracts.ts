@@ -5,22 +5,7 @@
 import { STAGE_GLOBAL_FORBIDDEN_PATTERNS } from "../stage/stageArchitectureContract.ts";
 import type { StageManifest } from "../stage/stageArchitectureTypes.ts";
 import { validateStageManifest } from "../stage/stageArchitectureGuards.ts";
-import {
-  BEST_PRACTICE_ARCHITECTURE_VERSION,
-  BEST_PRACTICE_CATEGORY_KEYS,
-  BEST_PRACTICE_CONTRACT_VERSION,
-  BEST_PRACTICE_EXTENSION_POINT_KEYS,
-  BEST_PRACTICE_FORBIDDEN_PATTERNS,
-  BEST_PRACTICE_FUTURE_PHASE_KEYS,
-  BEST_PRACTICE_GOVERNANCE_RULES,
-  BEST_PRACTICE_MUST_NOT_OWN,
-  BEST_PRACTICE_NAMESPACE,
-  BEST_PRACTICE_PLATFORM_ID,
-  BEST_PRACTICE_PLATFORM_NAME,
-  BEST_PRACTICE_PRINCIPLES,
-  BEST_PRACTICE_PUBLIC_API_REGISTRY,
-  BEST_PRACTICE_SOURCE_KEYS,
-} from "./bestPracticeCatalog.ts";
+import { BEST_PRACTICE_ARCHITECTURE_VERSION, BEST_PRACTICE_CATEGORY_KEYS, BEST_PRACTICE_CONTRACT_VERSION, BEST_PRACTICE_FORBIDDEN_PATTERNS, BEST_PRACTICE_FUTURE_PHASE_KEYS, BEST_PRACTICE_GOVERNANCE_RULES, BEST_PRACTICE_MUST_NOT_OWN, BEST_PRACTICE_NAMESPACE, BEST_PRACTICE_PLATFORM_ID, BEST_PRACTICE_PLATFORM_NAME, BEST_PRACTICE_PRINCIPLES, BEST_PRACTICE_PUBLIC_API_REGISTRY, BEST_PRACTICE_SOURCE_KEYS } from "./bestPracticeCatalog.ts";
 import {
   getBestPracticePlatformSnapshot,
   initializeBestPracticePlatform,
@@ -174,6 +159,7 @@ export function resolveBestPracticePrincipleExample(timestamp: string): BestPrac
 }
 
 export function resolveBestPracticeGuidelineExample(_timestamp: string): BestPracticeGuideline {
+  void _timestamp;
   return Object.freeze({
     guidelineId: "best-practice-guideline-example-001",
     label: "Define Strategic Objectives",
@@ -183,6 +169,7 @@ export function resolveBestPracticeGuidelineExample(_timestamp: string): BestPra
 }
 
 export function resolveBestPracticeRecommendationExample(_timestamp: string): BestPracticeRecommendation {
+  void _timestamp;
   return Object.freeze({
     recommendationId: "best-practice-recommendation-example-001",
     description: "Example recommendation metadata (not executable).",
@@ -191,6 +178,7 @@ export function resolveBestPracticeRecommendationExample(_timestamp: string): Be
 }
 
 export function resolveBestPracticeContextExample(_timestamp: string): BestPracticeContext {
+  void _timestamp;
   return Object.freeze({
     contextId: "best-practice-context-example-001",
     contextKey: "organization",
@@ -201,6 +189,7 @@ export function resolveBestPracticeContextExample(_timestamp: string): BestPract
 }
 
 export function resolveBestPracticeIndustryMappingExample(_timestamp: string): BestPracticeIndustryMapping {
+  void _timestamp;
   return Object.freeze({
     mappingId: "best-practice-industry-example-001",
     industryModelId: "industry-model-technology",
@@ -210,6 +199,7 @@ export function resolveBestPracticeIndustryMappingExample(_timestamp: string): B
 }
 
 export function resolveBestPracticeFrameworkMappingExample(_timestamp: string): BestPracticeFrameworkMapping {
+  void _timestamp;
   return Object.freeze({
     mappingId: "best-practice-framework-example-001",
     frameworkId: "framework-swot",
@@ -219,6 +209,7 @@ export function resolveBestPracticeFrameworkMappingExample(_timestamp: string): 
 }
 
 export function resolveBestPracticePolicyMappingExample(_timestamp: string): BestPracticePolicyMapping {
+  void _timestamp;
   return Object.freeze({
     mappingId: "best-practice-policy-example-001",
     policyId: "policy-governance",
@@ -228,6 +219,7 @@ export function resolveBestPracticePolicyMappingExample(_timestamp: string): Bes
 }
 
 export function resolveBestPracticeKpiMappingExample(_timestamp: string): BestPracticeKpiMapping {
+  void _timestamp;
   return Object.freeze({
     mappingId: "best-practice-kpi-example-001",
     kpiLabel: "Strategic Objective Completion",
@@ -237,6 +229,7 @@ export function resolveBestPracticeKpiMappingExample(_timestamp: string): BestPr
 }
 
 export function resolveBestPracticeRiskMappingExample(_timestamp: string): BestPracticeRiskMapping {
+  void _timestamp;
   return Object.freeze({
     mappingId: "best-practice-risk-example-001",
     riskLabel: "Strategic Misalignment",

@@ -108,10 +108,6 @@ function readPanelLayoutStates(root?: ParentNode | null): Partial<Record<SceneHu
   return states;
 }
 
-function snapshotToRect(snapshot: SceneHudLayoutSnapshot): SceneHudDriftRect {
-  return normalizeHudLayoutRect(snapshot);
-}
-
 export function buildSceneHudDriftSignature(
   panelId: SceneHudDriftPanelId,
   before: SceneHudDriftRect,

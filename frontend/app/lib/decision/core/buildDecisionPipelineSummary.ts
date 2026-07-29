@@ -13,6 +13,10 @@ function text(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 export function buildDecisionPipelineSummary(state: DecisionPipelineState): DecisionPipelineSummary {
   return {
     overview:
@@ -25,7 +29,7 @@ export function buildDecisionPipelineSummary(state: DecisionPipelineState): Deci
       "No expected outcome has been captured yet.",
     observed:
       text(state.outcome_feedback?.observed_summary) ||
-      text(state.observed_outcome?.observed_summary) ||
+      text(asRecord(state.observed_outcome)?.observed_summary) ||
       "No observed outcome evidence is available yet.",
     confidenceChange:
       state.calibration?.calibration_label

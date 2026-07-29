@@ -27,16 +27,7 @@ import { useSyncScenarioComparison } from "../../../../lib/ui/mrpWorkspace/scena
 import { useSyncScenarioProjection } from "../../../../lib/ui/mrpWorkspace/scenario/useSyncScenarioProjection.ts";
 import { useSyncScenarioGeneration } from "../../../../lib/ui/mrpWorkspace/scenario/useSyncScenarioGeneration.ts";
 import { useSyncScenarioWorkspaceContext } from "../../../../lib/ui/mrpWorkspace/scenario/useSyncScenarioWorkspaceContext.ts";
-import {
-  scenarioGenerationGridStyle,
-  scenarioHeaderPurposeStyle,
-  scenarioHeaderTitleStyle,
-  scenarioInsightGridStyle,
-  scenarioSectionLabelStyle,
-  scenarioVisualSpacing,
-  scenarioWorkspaceShellStyle,
-  traceScenarioVisualPassOnce,
-} from "../../../../lib/ui/mrpWorkspace/scenario/scenarioVisualContract.ts";
+import { scenarioGenerationGridStyle, scenarioHeaderPurposeStyle, scenarioHeaderTitleStyle, scenarioSectionLabelStyle, scenarioVisualSpacing, scenarioWorkspaceShellStyle, traceScenarioVisualPassOnce } from "../../../../lib/ui/mrpWorkspace/scenario/scenarioVisualContract.ts";
 import { ScenarioAuthoringDraftPanel } from "./ScenarioAuthoringDraftPanel.tsx";
 import { ScenarioComparisonMatrix } from "./ScenarioComparisonMatrix.tsx";
 import { FutureProjectionPanel } from "./FutureProjectionPanel.tsx";

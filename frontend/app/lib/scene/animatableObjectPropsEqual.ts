@@ -27,16 +27,16 @@ function sceneObjectVisualEqual(
   const nextId = resolveStableObjectId(next, nextIndex);
   const transformSignature = (object: AnimatableObjectProps["obj"]) =>
     JSON.stringify({
-      position: (object as any)?.position ?? null,
-      pos: (object as any)?.pos ?? null,
-      transform: (object as any)?.transform ?? null,
-      scale: (object as any)?.scale ?? null,
+      position: object?.position ?? null,
+      pos: object?.pos ?? null,
+      transform: object?.transform ?? null,
+      scale: object?.scale ?? null,
     });
   const materialSignature = (object: AnimatableObjectProps["obj"]) =>
     JSON.stringify({
-      color: (object as any)?.color ?? null,
-      material: (object as any)?.material ?? null,
-      emphasis: (object as any)?.emphasis ?? null,
+      color: object?.color ?? null,
+      material: object?.material ?? null,
+      emphasis: object?.emphasis ?? null,
     });
   return (
     prevId === nextId &&
@@ -44,10 +44,10 @@ function sceneObjectVisualEqual(
     transformSignature(prev) === transformSignature(next) &&
     materialSignature(prev) === materialSignature(next) &&
     JSON.stringify(prev?.tags ?? null) === JSON.stringify(next?.tags ?? null) &&
-    (prev as any)?.scanner_highlighted === (next as any)?.scanner_highlighted &&
-    (prev as any)?.scanner_severity === (next as any)?.scanner_severity &&
-    (prev as any)?.scanner_emphasis === (next as any)?.scanner_emphasis &&
-    (prev as any)?.scanner_focus === (next as any)?.scanner_focus
+    prev?.scanner_highlighted === next?.scanner_highlighted &&
+    prev?.scanner_severity === next?.scanner_severity &&
+    prev?.scanner_emphasis === next?.scanner_emphasis &&
+    prev?.scanner_focus === next?.scanner_focus
   );
 }
 

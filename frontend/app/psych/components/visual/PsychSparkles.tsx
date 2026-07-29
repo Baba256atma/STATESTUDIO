@@ -5,7 +5,7 @@
 // Only buffer values may change.
 // Prevents WebGL buffer mismatch errors.
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useEmotionStore } from "../../engine/useEmotionStore";
@@ -20,7 +20,6 @@ type SparkleLayer = {
 };
 
 const MAX_SPARKLES = 180;
-let sparkleTargetIntensity = 0;
 
 function createSeededRandom(seed: number): () => number {
   let state = seed >>> 0;
@@ -65,19 +64,13 @@ function createSparkleGeometry(): SparkleLayer {
 }
 
 function PsychSparkles({ intensity }: PsychSparklesProps): React.JSX.Element {
-  sparkleTargetIntensity = clampIntensity(intensity);
+  const targetIntensity = clampIntensity(intensity);
   const groupRef = useRef<THREE.Group | null>(null);
   const materialRef = useRef<THREE.PointsMaterial | null>(null);
-  const layerRef = useRef<SparkleLayer | null>(null);
-  const currentIntensityRef = useRef(sparkleTargetIntensity);
+  const [layer] = useState(createSparkleGeometry);
+  const currentIntensityRef = useRef(targetIntensity);
   const sceneReactionRef = useRef(0);
   const emotion = useEmotionStore();
-
-  if (!layerRef.current) {
-    layerRef.current = createSparkleGeometry();
-  }
-
-  const layer = layerRef.current;
 
   useFrame((_, delta) => {
     const safeDelta = Math.min(delta, 0.033);
@@ -85,7 +78,7 @@ function PsychSparkles({ intensity }: PsychSparklesProps): React.JSX.Element {
     const reactionTarget = sceneReaction && performance.now() < sceneReaction.pulseUntil ? sceneReaction.intensity : 0;
     sceneReactionRef.current = THREE.MathUtils.lerp(sceneReactionRef.current, reactionTarget, safeDelta * 4);
     const particleBoost = sceneReaction ? sceneReaction.particles * sceneReactionRef.current : 0;
-    currentIntensityRef.current = THREE.MathUtils.lerp(currentIntensityRef.current, sparkleTargetIntensity, safeDelta * 5);
+    currentIntensityRef.current = THREE.MathUtils.lerp(currentIntensityRef.current, targetIntensity, safeDelta * 5);
 
     if (materialRef.current) {
       materialRef.current.opacity = Math.max(0.06, 0.16 + currentIntensityRef.current * 0.38 + particleBoost * 0.16);
@@ -109,7 +102,4 @@ function PsychSparkles({ intensity }: PsychSparklesProps): React.JSX.Element {
   );
 }
 
-export default React.memo(PsychSparkles, (_previous, next) => {
-  sparkleTargetIntensity = clampIntensity(next.intensity);
-  return true;
-});
+export default React.memo(PsychSparkles);

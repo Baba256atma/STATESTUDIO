@@ -55,6 +55,7 @@ export function intakeScenarioCommitPackage(
   commitPackage: ScenarioCommitPackage,
   source?: string | null
 ): WarRoomScenarioIntakeResult {
+  void source;
   const validation = validateScenarioCommitPackage(commitPackage);
   if (!validation.valid) {
     return Object.freeze({

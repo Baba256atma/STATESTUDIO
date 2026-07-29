@@ -140,15 +140,6 @@ function readQueuedStorage(): Record<WorkspaceId, readonly ApprovedWorkspaceObje
   }
 }
 
-function writeQueuedStorage(): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(QUEUED_STORAGE_KEY, JSON.stringify(workspaceApprovedObjects));
-  } catch {
-    // Registry remains available in-memory if storage is unavailable.
-  }
-}
-
 function hydrateQueuedStore(): void {
   if (queuedHydrated) return;
   queuedHydrated = true;
@@ -443,6 +434,7 @@ export function mergeObjectApprovalCandidates(
   workspaceId: WorkspaceId,
   candidateIds: readonly string[]
 ): ObjectApprovalPanelActionResult {
+  void candidateIds;
   return actionResult(
     false,
     resolveWorkspaceId(workspaceId),

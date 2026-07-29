@@ -496,6 +496,7 @@ export function buildExecutiveIntentContext(
       owner: EXECUTIVE_INTENT_CONTEXT_ENGINE_OWNER,
     }),
     timestamp,
+    readOnly: true as const,
   };
 
   return createExecutiveIntentContext({

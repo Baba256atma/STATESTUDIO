@@ -6,10 +6,7 @@
  * routing mutation authority.
  */
 
-import type {
-  RelationshipIntelligenceProfile,
-  RelationshipIntelligenceRegistry,
-} from "../relationship-intelligence/relationshipIntelligenceContract.ts";
+import type { RelationshipIntelligenceRegistry } from "../relationship-intelligence/relationshipIntelligenceContract.ts";
 import type { ScenarioSimulationRequest } from "./scenarioSimulationRuntimeContract.ts";
 
 export const RELATIONSHIP_SIMULATION_ENGINE_DIAGNOSTIC = "[RELATIONSHIP_SIMULATION_ENGINE]" as const;

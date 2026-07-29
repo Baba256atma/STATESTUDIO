@@ -102,7 +102,6 @@ test("exports certification freeze tags", () => {
 test("publish updates workspace view without stale values", () => {
   hydrateOperationalWorkspaceStateOnMount("test");
   publishOperationalWorkspaceState({
-    phase: "ready",
     operationalStatus: "warning",
     activityLevel: "high",
     operationalFocus: Object.freeze({
@@ -129,7 +128,6 @@ test("ready defaults include object context after hydrate", () => {
 
 test("ready defaults remain defined after reset", () => {
   publishOperationalWorkspaceState({
-    phase: "ready",
     operationalStatus: DEFAULT_OPERATIONAL_READY_STATE.operationalStatus,
     activityLevel: DEFAULT_OPERATIONAL_READY_STATE.activityLevel,
     operationalFocus: DEFAULT_OPERATIONAL_READY_STATE.operationalFocus,

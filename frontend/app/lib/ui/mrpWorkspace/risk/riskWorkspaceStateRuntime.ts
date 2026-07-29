@@ -2,23 +2,7 @@
  * MRP:4C:1 / 4C:2 — Risk workspace runtime state store.
  */
 
-import {
-  DEFAULT_RECOMMENDED_MONITORING,
-  DEFAULT_RISK_DRIVERS,
-  DEFAULT_RISK_READY_STATE,
-  DEFAULT_RISK_SUMMARY,
-  DEFAULT_TOP_RISKS,
-  RISK_EMPTY_DETAIL,
-  RISK_EMPTY_HEADLINE,
-  RISK_LOADING_DETAIL,
-  RISK_LOADING_HEADLINE,
-  RISK_RUNTIME_TAG,
-  RISK_STATE_TAG,
-  type RiskFieldSnapshot,
-  type RiskWorkspaceState,
-  type RiskWorkspaceStatePhase,
-  type RiskWorkspaceStatePublishResult,
-} from "./riskWorkspaceStateContract.ts";
+import { DEFAULT_RECOMMENDED_MONITORING, DEFAULT_RISK_DRIVERS, DEFAULT_RISK_SUMMARY, DEFAULT_TOP_RISKS, RISK_LOADING_DETAIL, RISK_LOADING_HEADLINE, RISK_RUNTIME_TAG, RISK_STATE_TAG, type RiskFieldSnapshot, type RiskWorkspaceState, type RiskWorkspaceStatePhase, type RiskWorkspaceStatePublishResult } from "./riskWorkspaceStateContract.ts";
 import { DEFAULT_RISK_WORKSPACE_METRICS } from "./riskWorkspaceMetricsContract.ts";
 import {
   DEFAULT_RISK_OBJECT_CONTEXT,

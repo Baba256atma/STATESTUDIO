@@ -348,7 +348,6 @@ export function resolveWorkspaceRegistryAdapterLinkExample(
   category: ExecutiveBusinessDataSourceCategory
 ): WorkspaceRegistryAdapterLinkRecord {
   const timestamp = "2026-06-22T00:00:00.000Z";
-  const lifecycleState = EXECUTIVE_BUSINESS_DATA_SOURCE_LIFECYCLE_STATES[2];
   return Object.freeze({
     contractVersion: WORKSPACE_REGISTRY_ADAPTER_VERSION,
     adapterLinkId: `wra-example-${category}`,

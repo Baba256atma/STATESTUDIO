@@ -107,14 +107,25 @@ function createGalaxyDustGeometry(count: number): StarLayer {
   return { geometry, count };
 }
 
+// AD-R3F-01: immutable module-level fixtures (seeded, no clock/runtime data).
+// Compact vs full variants preserve prior count policy; selected once per mount (memo never updates).
+const STAR_LAYERS_FULL = {
+  far: createStarGeometry(1000, 44, 25, 24, 90, "far"),
+  near: createStarGeometry(700, 26, 15, 8, 35, "near"),
+  dust: createGalaxyDustGeometry(700),
+} as const;
+
+const STAR_LAYERS_COMPACT = {
+  far: createStarGeometry(600, 44, 25, 24, 90, "far"),
+  near: createStarGeometry(450, 26, 15, 8, 35, "near"),
+  dust: createGalaxyDustGeometry(500),
+} as const;
+
 function PsychStars({ compact = false, energy = 50 }: PsychStarsProps): React.JSX.Element {
   const groupRef = useRef<THREE.Group | null>(null);
   const farMaterialRef = useRef<THREE.PointsMaterial | null>(null);
   const nearMaterialRef = useRef<THREE.PointsMaterial | null>(null);
   const dustMaterialRef = useRef<THREE.PointsMaterial | null>(null);
-  const farRef = useRef<StarLayer | null>(null);
-  const nearRef = useRef<StarLayer | null>(null);
-  const dustRef = useRef<StarLayer | null>(null);
   const emotion = useEmotionStore();
   const smoothEmotionIntensityRef = useRef(0.2);
   const smoothMeaningWeightRef = useRef(0.3);
@@ -134,23 +145,7 @@ function PsychStars({ compact = false, energy = 50 }: PsychStarsProps): React.JS
   const baseNearColorRef = useRef(new THREE.Color("#d9f2ff"));
   const baseDustColorRef = useRef(new THREE.Color("#7dd3fc"));
   const atmosphereTintRef = useRef(new THREE.Color("#cfe8ff"));
-  const counts = compact
-    ? { far: 600, near: 450, dust: 500 }
-    : { far: 1000, near: 700, dust: 700 };
-
-  if (!farRef.current) {
-    farRef.current = createStarGeometry(counts.far, 44, 25, 24, 90, "far");
-  }
-  if (!nearRef.current) {
-    nearRef.current = createStarGeometry(counts.near, 26, 15, 8, 35, "near");
-  }
-  if (!dustRef.current) {
-    dustRef.current = createGalaxyDustGeometry(counts.dust);
-  }
-
-  const far = farRef.current;
-  const near = nearRef.current;
-  const dust = dustRef.current;
+  const { far, near, dust } = compact ? STAR_LAYERS_COMPACT : STAR_LAYERS_FULL;
   const energyGlow = 0.9 + Math.min(100, Math.max(0, energy)) / 100 * 0.18;
 
   useEffect(() => {

@@ -197,18 +197,18 @@ export function useWarRoomController(params: UseWarRoomControllerParams): WarRoo
 
   const setFocusTarget = useCallback((targetId: string | null) => {
     const nextFocusTargetId = normalizeId(targetId);
-    setState((current) => {
-      if (current.focusTargetId === nextFocusTargetId) {
-        return current;
-      }
-      focusTargetIdRef.current = nextFocusTargetId;
-      return {
-        ...current,
-        focusTargetId: nextFocusTargetId,
-      };
-    });
+    setState((current) =>
+      current.focusTargetId === nextFocusTargetId
+        ? current
+        : {
+            ...current,
+            focusTargetId: nextFocusTargetId,
+          }
+    );
   }, []);
 
+  // Setters are already useCallback-stable ([]); pass them directly — no render-time ref indirection (AD-FE-HOOKS-01).
+  // focusTargetIdRef stays commit-synced via useLayoutEffect below (event/effect reads only).
   const rendererBridge = useMemo(
     () =>
       createRendererBridge({
@@ -316,15 +316,17 @@ export function useWarRoomController(params: UseWarRoomControllerParams): WarRoo
   );
 
   useEffect(() => {
-    setState((current) => {
-      let nextScenarios = { ...current.scenarios };
-      nextScenarios = upsertScenarioMap(nextScenarios, chatScenario);
-      nextScenarios = upsertScenarioMap(nextScenarios, scannerScenario);
-      nextScenarios = upsertScenarioMap(nextScenarios, draftScenario);
-      return {
-        ...current,
-        scenarios: nextScenarios,
-      };
+    queueMicrotask(() => {
+      setState((current) => {
+        let nextScenarios = { ...current.scenarios };
+        nextScenarios = upsertScenarioMap(nextScenarios, chatScenario);
+        nextScenarios = upsertScenarioMap(nextScenarios, scannerScenario);
+        nextScenarios = upsertScenarioMap(nextScenarios, draftScenario);
+        return {
+          ...current,
+          scenarios: nextScenarios,
+        };
+      });
     });
   }, [chatScenario, draftScenario, scannerScenario]);
 
@@ -410,7 +412,7 @@ export function useWarRoomController(params: UseWarRoomControllerParams): WarRoo
       }
       return { scenario, ranAt };
     },
-    [chatScenario?.id, draftScenario, rendererBridge, scannerScenario?.id, state.activeScenarioId, state.scenarios]
+    [chatScenario, draftScenario, rendererBridge, scannerScenario, state.activeScenarioId, state.scenarios]
   );
 
   const refreshScenario = useCallback(() => runScenario(), [runScenario]);
@@ -619,24 +621,39 @@ export function useWarRoomController(params: UseWarRoomControllerParams): WarRoo
       state.activeScenarioId && state.scenarios[state.activeScenarioId]
         ? state.scenarios[state.activeScenarioId]
         : null;
+    let cancelled = false;
+
     if (!activeScenario || !scenarioTrigger) {
-      setIntelligence(null);
-      setIntelligenceLoading(false);
-      setIntelligenceError(null);
-      return;
+      queueMicrotask(() => {
+        if (cancelled) return;
+        setIntelligence(null);
+        setIntelligenceLoading(false);
+        setIntelligenceError(null);
+      });
+      return () => {
+        cancelled = true;
+      };
     }
 
-    let cancelled = false;
-    setIntelligenceLoading(true);
-    setIntelligenceError(null);
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setIntelligenceLoading(true);
+      setIntelligenceError(null);
+    });
 
     void requestSystemIntelligence({
       scenario_action: scenarioTrigger,
       propagation: overlayDetail?.propagation ?? null,
       decision_path: overlayDetail?.decisionPath ?? null,
-      scanner_summary: params.responseData && typeof params.responseData === "object"
-        ? ((params.responseData as any).fragility_scan ?? null)
-        : null,
+      scanner_summary:
+        params.responseData && typeof params.responseData === "object"
+          ? (() => {
+              const scan = (params.responseData as Record<string, unknown>).fragility_scan;
+              return scan && typeof scan === "object" && !Array.isArray(scan)
+                ? (scan as Record<string, unknown>)
+                : null;
+            })()
+          : null,
       scene_json: (params.sceneJson as Record<string, unknown> | null) ?? null,
       current_focus_object_id: state.focusTargetId,
       mode: state.mode === "idle" ? "analysis" : state.mode,
@@ -696,7 +713,12 @@ export function useWarRoomController(params: UseWarRoomControllerParams): WarRoo
         decision_path: scenarioPayload.decisionPath ?? null,
         scanner_summary:
           params.responseData && typeof params.responseData === "object"
-            ? ((params.responseData as any).fragility_scan ?? null)
+            ? (() => {
+                const scan = (params.responseData as Record<string, unknown>).fragility_scan;
+                return scan && typeof scan === "object" && !Array.isArray(scan)
+                  ? (scan as Record<string, unknown>)
+                  : null;
+              })()
             : null,
         scene_json: (params.sceneJson as Record<string, unknown> | null) ?? null,
         current_focus_object_id: scenario.trigger.targetId,
@@ -910,7 +932,9 @@ export function useWarRoomController(params: UseWarRoomControllerParams): WarRoo
   );
 
   useEffect(() => {
-    void refreshEvolution();
+    queueMicrotask(() => {
+      void refreshEvolution();
+    });
   }, [refreshEvolution]);
 
   useEffect(() => {

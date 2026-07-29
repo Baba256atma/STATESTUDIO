@@ -150,6 +150,7 @@ test("handoff view exposes dashboardContext scenario", () => {
   syncScenarioGeneration({ selectedObjectLabel: "Factory A" });
   commitScenarioToWarRoom({
     scenarioId: "expected_case",
+    selectedObjectId: null,
     createdAt: "2026-06-13T12:00:00.000Z",
   });
   const view = buildScenarioWorkspaceViewFromState(getScenarioWorkspaceState());

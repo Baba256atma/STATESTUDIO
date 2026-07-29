@@ -1,11 +1,6 @@
 "use client";
 
-import React from "react";
-
-import { traceRuntimeParity } from "../../lib/debug/runtimeLoopTrace";
-import { traceMrp10Runtime, logMrp10RuntimeRenderChain } from "../../lib/dashboard/dashboardHomeReturnPath/dashboardHomeRuntimeTrace";
-import { devLogOnSignatureChange } from "../../lib/runtime/diagnosticIdleGate";
-import { devLogThrottled } from "../../lib/runtime/diagnosticThrottle.ts";
+import React from "react";import { traceMrp10Runtime, logMrp10RuntimeRenderChain } from "../../lib/dashboard/dashboardHomeReturnPath/dashboardHomeRuntimeTrace";import { devLogThrottled } from "../../lib/runtime/diagnosticThrottle.ts";
 import { isDiagnosticEnabled } from "../../lib/runtime/diagnosticSwitch.ts";
 
 import ConflictMapPanel from "../panels/ConflictMapPanel";
@@ -26,6 +21,14 @@ import {
   resolveReadonlySelectedObjectId,
   shouldRenderReadonlyObjectPanel,
 } from "./rightPanelHostReadonlyObjectPanelRuntime.ts";
+import {
+  useAdviceBundleHold,
+  useLastRenderableResolvedByView,
+  usePayloadHold,
+  usePreviousValidViewHold,
+  useSignatureStableValue,
+  useStableAggregatedPanelData,
+} from "./useRightPanelHostController.ts";
 import { StrategicCommandPreview } from "../executive/StrategicCommandPreview";
 import { DecisionComparePanel } from "../executive/DecisionComparePanel";
 import { DecisionTimelinePanel } from "../executive/DecisionTimelinePanel";
@@ -48,11 +51,9 @@ import { CollaborationIntelligencePanel } from "../executive/CollaborationIntell
 import { AutonomousDecisionCouncilPanel } from "../executive/AutonomousDecisionCouncilPanel";
 import { ExecutiveMetaCognitionCard } from "../executive/ExecutiveMetaCognitionCard";
 import CollaborationPanel from "../panels/CollaborationPanel";
-import { WarRoomPanel } from "../warroom/WarRoomPanel";
-import { DomainObjectCatalogPanel } from "../domain/DomainObjectCatalogPanel";
-import type { CenterExecutionSurface, CanonicalRightPanelView, RightPanelState } from "../../lib/ui/right-panel/rightPanelTypes";
+import { WarRoomPanel } from "../warroom/WarRoomPanel";import type { CenterExecutionSurface, CanonicalRightPanelView, RightPanelState } from "../../lib/ui/right-panel/rightPanelTypes";
 import type { RightPanelView } from "../../lib/ui/right-panel/rightPanelTypes";
-import type { SceneObject } from "../../lib/sceneTypes";
+import type { SceneObject, SceneJson } from "../../lib/sceneTypes";
 import type { AddObjectMenuItem } from "../../lib/domain/domainAddObjectAdapter";
 import type { DecisionExecutionResult } from "../../lib/executive/decisionExecutionTypes";
 import type { DecisionImpactState } from "../../lib/impact/decisionImpactTypes";
@@ -65,7 +66,6 @@ import type { DecisionMemoryEntry } from "../../lib/decision/memory/decisionMemo
 import type { DecisionAutomationResult } from "../../lib/execution/decisionAutomationTypes";
 import type { DecisionExecutionIntent } from "../../lib/execution/decisionExecutionIntent";
 import { RightPanelFallback } from "./RightPanelFallback";
-import { isValidRightPanelView } from "../../lib/ui/right-panel/rightPanelRouter";
 import {
   logMainRightPanelRuntime,
   resolveMainRightPanelRuntimeView,
@@ -87,7 +87,6 @@ import { getPanelCognitiveFlow } from "../../lib/ui/right-panel/panelCognitiveFl
 import { buildAdvicePanelPayload } from "./builders/buildAdvicePanelPayload";
 import { buildConflictPanelPayload } from "./builders/buildConflictPanelPayload";
 import { buildTimelinePanelPayload } from "./builders/buildTimelinePanelPayload";
-import { buildDashboardPanelPayload } from "./builders/buildDashboardPanelPayload";
 import { buildWarRoomPanelPayload } from "./builders/buildWarRoomPanelPayload";
 import { normalizeWarRoomIntelligence } from "./normalizers/normalizeWarRoomIntelligence";
 import { normalizeStrategicCouncilPanelData } from "./normalizers/normalizeStrategicCouncilPanelData";
@@ -103,7 +102,6 @@ import { insightPanelHostFrame, nx, softCardStyle } from "../ui/nexoraTheme";
 import { pickDecisionAnalysisFromResponse } from "../../lib/panels/buildScenarioExplanationFromDecisionAnalysis";
 import { dedupeCaseFallbackLog } from "../../lib/debug/panelConsoleTraceDedupe";
 import { buildDecisionTimelineModel } from "../../lib/decision/timeline/buildDecisionTimelineModel";
-import type { PanelReadiness } from "../../lib/panels/panelDataReadiness";
 import {
   resolveAdviceReadiness,
   resolveConflictReadiness,
@@ -126,36 +124,19 @@ function widenRuntimeRightPanelView(view: "dashboard"): RightPanelView {
   return view;
 }
 
-const logConflictPayloadSource = (..._args: any[]) => {};
-const logPanelDataUnderfed = (..._args: any[]) => {};
-const logPanelFallback = (..._args: any[]) => {};
-const logPanelFlow = (..._args: any[]) => {};
-const logPanelPayloadSource = (..._args: any[]) => {};
-const logPanelRender = (..._args: any[]) => {};
-const logPanelRenderDeep = (..._args: any[]) => {};
-const logPanelResolver = (..._args: any[]) => {};
-const logRegistryMiss = (..._args: any[]) => {};
-const logRenderGuardTrace = (..._args: any[]) => {};
-const logRightPanelSafeRender = (..._args: any[]) => {};
-const logRiskFlowRunSimulation = (..._args: any[]) => {};
-const logUnsupportedViewFallback = (..._args: any[]) => {};
-
-function stabilizePanelPayload<T>(
-  payload: T,
-  resolve: (p: T) => PanelReadiness,
-  lastRef: React.MutableRefObject<T | null>
-): { safe: T; displayReadiness: PanelReadiness } {
-  const current = resolve(payload);
-  if (current === "ready") {
-    lastRef.current = payload;
-  }
-  if (current === "empty") {
-    lastRef.current = null;
-  }
-  const safe = (current === "ready" ? payload : (lastRef.current ?? payload)) as T;
-  const displayReadiness = resolve(safe);
-  return { safe, displayReadiness };
+function readInspectorRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
+
+function readOptionalString(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
+const logConflictPayloadSource = (...args: unknown[]) => { void args; };
+const logPanelFallback = (...args: unknown[]) => { void args; };
+const logPanelPayloadSource = (...args: unknown[]) => { void args; };
+const logPanelRender = (...args: unknown[]) => { void args; };
+const logUnsupportedViewFallback = (...args: unknown[]) => { void args; };
 
 type RightPanelHostProps = {
   rightPanelState: RightPanelState;
@@ -164,20 +145,20 @@ type RightPanelHostProps = {
   panelData: PanelSharedData;
   backendBase: string;
   episodeId: string | null;
-  sceneJson?: any;
-  responseData?: any;
+  sceneJson?: SceneJson | null;
+  responseData?: Record<string, unknown> | null;
   activeMode?: string | null;
-  conflicts?: any[] | null;
-  objectSelection?: any | null;
-  memoryInsights?: any | null;
+  conflicts?: unknown[] | null;
+  objectSelection?: unknown | null;
+  memoryInsights?: unknown | null;
   decisionMemoryEntries?: DecisionMemoryEntry[];
-  riskPropagation?: any | null;
-  strategicAdvice?: any | null;
+  riskPropagation?: unknown | null;
+  strategicAdvice?: unknown | null;
   strategicCouncil?: StrategicCouncilResult | null;
   decisionImpact?: DecisionImpactState | null;
-  decisionCockpit?: any | null;
-  opponentModel?: any | null;
-  strategicPatterns?: any | null;
+  decisionCockpit?: unknown | null;
+  opponentModel?: unknown | null;
+  strategicPatterns?: unknown | null;
   selectedObjectId?: string | null;
   activeExecutiveObjectId?: string | null;
   selectedObjectLabel?: string | null;
@@ -215,7 +196,7 @@ type RightPanelHostProps = {
   metaCognition?: ExecutiveMetaCognitionSnapshot | null;
   reasoningTransparency?: ExecutiveReasoningTransparency | null;
   warRoom: WarRoomController;
-  onSceneUpdateFromTimeline: (payload: any) => void;
+  onSceneUpdateFromTimeline: (payload: unknown) => void;
   onSimulateDecision?: (() => void) | null;
   onRunContextualSimulation?: ((originView: RightPanelView) => void) | null;
   onCompareOptions?: (() => void) | null;
@@ -587,56 +568,6 @@ export function diffRightPanelHostProps(
   };
 }
 
-function traceViewSync(detail: {
-  label:
-    | "[Nexora][ViewSync] host_render"
-    | "[Nexora][ViewSync] desync_detected"
-    | "[Nexora][ViewSync] desync_fixed";
-  activeTab: string | null;
-  currentRightPanelView: string | null;
-  renderedView: string | null;
-  legacyTab: string | null;
-  source: string;
-  reason: string;
-}) {
-  return;
-}
-
-function shouldTracePayloadSelection(view: RightPanelView | null, panel: "advice" | "conflict" | "timeline" | "dashboard" | "war_room" | "risk"): boolean {
-  if (panel === "advice") return view === "advice";
-  if (panel === "conflict") return view === "conflict";
-  if (panel === "timeline") {
-    return (
-      view === "timeline" ||
-      view === "decision_timeline" ||
-      view === "confidence_calibration" ||
-      view === "outcome_feedback" ||
-      view === "pattern_intelligence" ||
-      view === "scenario_tree"
-    );
-  }
-  if (panel === "dashboard") {
-    return (
-      view === "dashboard" ||
-      view === "strategic_command" ||
-      view === "decision_lifecycle" ||
-      view === "strategic_learning" ||
-      view === "meta_decision" ||
-      view === "cognitive_style" ||
-      view === "team_decision" ||
-      view === "org_memory" ||
-      view === "decision_governance" ||
-      view === "decision_policy" ||
-      view === "executive_approval" ||
-      view === "decision_council" ||
-      view === "collaboration_intelligence" ||
-      view === "kpi"
-    );
-  }
-  if (panel === "war_room") return view === "war_room";
-  return view === "risk" || view === "fragility";
-}
-
 function executiveRiskStatusFrom01(risk01: number): { dot: string; label: string } {
   if (risk01 >= 0.72) return { dot: "🔴", label: "Critical" };
   if (risk01 >= 0.35) return { dot: "🟡", label: "Warning" };
@@ -764,9 +695,8 @@ function ExecutivePanelSkeletonBody() {
 }
 
 function RightPanelHostInner(props: RightPanelHostProps) {
-  const renderCountRef = React.useRef(0);
-  renderCountRef.current += 1;
   const previousPropsRef = React.useRef<RightPanelHostProps | null>(null);
+  const renderCountRef = React.useRef(0);
 
   React.useEffect(() => {
     traceMrp10Runtime("RightPanelHost legacy mounted", {
@@ -784,112 +714,100 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       rendering: "RightPanelHost",
     });
   }, [props.rightPanelState?.view, props.rightPanelState?.isOpen, props.dashboardContext, props.selectedObjectId]);
-  const renderDiff = diffRightPanelHostProps(previousPropsRef.current, props);
-  const rightPanelHostRenderCountLast10s =
-    process.env.NODE_ENV === "production" ? 0 : recordRightPanelHostRenderCountLast10s();
-  const callbacksChanged = renderDiff.propChanges.some((change) => RIGHT_PANEL_CALLBACK_PROPS.has(change.propName));
-  const rightPanelStateChange = renderDiff.propChanges.find((change) => change.propName === "rightPanelState");
-  const parentRenderOnly =
-    renderDiff.changedPropNames.length > 0 && renderDiff.propChanges.every((change) => !change.shouldCauseRender);
-  devLogThrottled({
-    key: `${props.rightPanelState.view ?? "none"}:${props.rightPanelState.contextId ?? "none"}:${props.rightPanelState.isOpen}:${props.selectedObjectId ?? "none"}:${props.activeExecutiveObjectId ?? "none"}`,
-    label: "[NEXORA_PANEL_RENDER_TRACE]",
-    scope: "panel",
-    intervalMs: 1000,
-    payload: {
-      stepName: "RightPanelHost render",
-      file: "frontend/app/components/right-panel/RightPanelHost.tsx",
-      stateWritten: "none",
-      reason: "React render from rightPanelState/panel data/selection props.",
-      renderImpact: "Right panel payload resolution and active panel render.",
-      shouldBeImmediate: props.rightPanelState.view !== "object" && props.rightPanelState.view !== "executive_object",
-      shouldBeDeferred: props.rightPanelState.view === "object" || props.rightPanelState.view === "executive_object",
-      shouldBeSkippedIfSameObject: true,
-      selectedObjectIdChanged: false,
-      focusedIdChanged: false,
-      objectInfoHudChanged: false,
-      rightPanelChanged: true,
-      objectPanelDataBuilt: Boolean(props.executiveObjectPanelData),
-      executiveDataBuilt: Boolean(props.executiveObjectPanelData),
-      renderCountDelta: 1,
-      renderCount: renderCountRef.current,
-      view: props.rightPanelState.view ?? null,
-      contextId: props.rightPanelState.contextId ?? null,
-      isOpen: props.rightPanelState.isOpen,
-      selectedObjectId: props.selectedObjectId ?? null,
-      activeExecutiveObjectId: props.activeExecutiveObjectId ?? null,
-      rightPanelHostRenderCountLast10s,
-    },
-  });
-  devLogThrottled({
-    key: `${props.rightPanelState.view ?? "none"}:${props.rightPanelState.contextId ?? "none"}:${props.rightPanelState.isOpen}:${renderDiff.changedPropNames.join(",") || "none"}`,
-    label: "[NEXORA_RIGHT_PANEL_RENDER_CAUSE]",
-    scope: "panel",
-    intervalMs: 1000,
-    payload: {
-      renderIndex: renderCountRef.current,
-      changedProps: renderDiff.propChanges,
-      changedPropNames: renderDiff.changedPropNames,
-      rightPanelViewChanged:
-        rightPanelStateChange?.prevSignature.split("::")[0] !== rightPanelStateChange?.nextSignature.split("::")[0],
-      contextIdChanged:
-        rightPanelStateChange?.prevSignature.split("::")[1] !== rightPanelStateChange?.nextSignature.split("::")[1],
-      selectedObjectIdChanged: renderDiff.propChanges.some((change) => change.propName === "selectedObjectId"),
-      panelDataChanged: renderDiff.propChanges.some((change) => change.propName === "panelData"),
-      panelPayloadChanged: renderDiff.propChanges.some((change) =>
-        [
-          "responseData",
-          "sceneJson",
-          "strategicAdvice",
-          "riskPropagation",
-          "conflicts",
-          "decisionResult",
-          "memoryInsights",
-          "decisionCockpit",
-          "executiveObjectPanelData",
-        ].includes(change.propName)
-      ),
-      activePanelChanged: renderDiff.propChanges.some((change) =>
-        change.propName === "rightPanelState" || change.propName === "activeExecutiveView"
-      ),
-      callbacksChanged,
-      parentRenderOnly,
-      stateWritten: "none",
-      reason: parentRenderOnly
-        ? "parent-render-only: prop identities changed without meaningful signature change"
-        : "meaningful RightPanelHost prop signature changed",
-      rightPanelHostRenderCountLast10s,
-    },
-  });
+
+  // AD-FE-HOOKS-01: development prop-diff / render diagnostics are effect-owned (not render state).
   React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") {
+      previousPropsRef.current = props;
+      return;
+    }
+    renderCountRef.current += 1;
+    const renderDiff = diffRightPanelHostProps(previousPropsRef.current, props);
+    const rightPanelHostRenderCountLast10s = recordRightPanelHostRenderCountLast10s();
+    const callbacksChanged = renderDiff.propChanges.some((change) => RIGHT_PANEL_CALLBACK_PROPS.has(change.propName));
+    const rightPanelStateChange = renderDiff.propChanges.find((change) => change.propName === "rightPanelState");
+    const parentRenderOnly =
+      renderDiff.changedPropNames.length > 0 && renderDiff.propChanges.every((change) => !change.shouldCauseRender);
+    devLogThrottled({
+      key: `${props.rightPanelState.view ?? "none"}:${props.rightPanelState.contextId ?? "none"}:${props.rightPanelState.isOpen}:${props.selectedObjectId ?? "none"}:${props.activeExecutiveObjectId ?? "none"}`,
+      label: "[NEXORA_PANEL_RENDER_TRACE]",
+      scope: "panel",
+      intervalMs: 1000,
+      payload: {
+        stepName: "RightPanelHost render",
+        file: "frontend/app/components/right-panel/RightPanelHost.tsx",
+        stateWritten: "none",
+        reason: "React render from rightPanelState/panel data/selection props.",
+        renderImpact: "Right panel payload resolution and active panel render.",
+        shouldBeImmediate: props.rightPanelState.view !== "object" && props.rightPanelState.view !== "executive_object",
+        shouldBeDeferred: props.rightPanelState.view === "object" || props.rightPanelState.view === "executive_object",
+        shouldBeSkippedIfSameObject: true,
+        selectedObjectIdChanged: false,
+        focusedIdChanged: false,
+        objectInfoHudChanged: false,
+        rightPanelChanged: true,
+        objectPanelDataBuilt: Boolean(props.executiveObjectPanelData),
+        executiveDataBuilt: Boolean(props.executiveObjectPanelData),
+        renderCountDelta: 1,
+        renderCount: renderCountRef.current,
+        view: props.rightPanelState.view ?? null,
+        contextId: props.rightPanelState.contextId ?? null,
+        isOpen: props.rightPanelState.isOpen,
+        selectedObjectId: props.selectedObjectId ?? null,
+        activeExecutiveObjectId: props.activeExecutiveObjectId ?? null,
+        rightPanelHostRenderCountLast10s,
+      },
+    });
+    devLogThrottled({
+      key: `${props.rightPanelState.view ?? "none"}:${props.rightPanelState.contextId ?? "none"}:${props.rightPanelState.isOpen}:${renderDiff.changedPropNames.join(",") || "none"}`,
+      label: "[NEXORA_RIGHT_PANEL_RENDER_CAUSE]",
+      scope: "panel",
+      intervalMs: 1000,
+      payload: {
+        renderIndex: renderCountRef.current,
+        changedProps: renderDiff.propChanges,
+        changedPropNames: renderDiff.changedPropNames,
+        rightPanelViewChanged:
+          rightPanelStateChange?.prevSignature.split("::")[0] !== rightPanelStateChange?.nextSignature.split("::")[0],
+        contextIdChanged:
+          rightPanelStateChange?.prevSignature.split("::")[1] !== rightPanelStateChange?.nextSignature.split("::")[1],
+        selectedObjectIdChanged: renderDiff.propChanges.some((change) => change.propName === "selectedObjectId"),
+        panelDataChanged: renderDiff.propChanges.some((change) => change.propName === "panelData"),
+        panelPayloadChanged: renderDiff.propChanges.some((change) =>
+          [
+            "responseData",
+            "sceneJson",
+            "strategicAdvice",
+            "riskPropagation",
+            "conflicts",
+            "decisionResult",
+            "memoryInsights",
+            "decisionCockpit",
+            "executiveObjectPanelData",
+          ].includes(change.propName)
+        ),
+        activePanelChanged: renderDiff.propChanges.some((change) =>
+          change.propName === "rightPanelState" || change.propName === "activeExecutiveView"
+        ),
+        callbacksChanged,
+        parentRenderOnly,
+        stateWritten: "none",
+        reason: parentRenderOnly
+          ? "parent-render-only: prop identities changed without meaningful signature change"
+          : "meaningful RightPanelHost prop signature changed",
+        rightPanelHostRenderCountLast10s,
+      },
+    });
     previousPropsRef.current = props;
   });
-  const DEBUG_PANEL_TRACE = false;
+
   const allowReal = props.allowRealPanelData ?? true;
   const visibleSceneObjects = props.visibleSceneObjects ?? [];
   const hasVisibleSceneObjects =
     props.hasVisibleSceneObjects ?? visibleSceneObjects.length > 0;
-  const visibleSceneObjectIdSet = React.useMemo(
-    () =>
-      new Set(
-        visibleSceneObjects
-          .map((obj) => String(obj?.id ?? "").trim())
-          .filter(Boolean)
-      ),
-    [visibleSceneObjects]
-  );
-  const lastRightPanelObjectSourceTraceRef = React.useRef<string | null>(null);
-  const previousValidViewRef = React.useRef<RightPanelView>("dashboard");
   const requestedView = props.rightPanelState.view;
-  React.useEffect(() => {
-    if (isValidRightPanelView(requestedView) && requestedView === "dashboard") {
-      previousValidViewRef.current = requestedView;
-    }
-  }, [requestedView]);
   /** Keep rendering the last valid panel during transient invalid transitions. */
-  const requestedViewToRender = isValidRightPanelView(requestedView)
-    ? requestedView
-    : previousValidViewRef.current ?? "dashboard";
+  const requestedViewToRender = usePreviousValidViewHold(requestedView);
   const mrpRuntimeRoute = resolveMainRightPanelRuntimeView({
     requestedView: requestedViewToRender,
     reason: "RightPanelHost.viewToRender",
@@ -933,21 +851,6 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     viewToRender === "outcome_feedback" ||
     viewToRender === "pattern_intelligence" ||
     viewToRender === "scenario_tree";
-  const shouldBuildDashboardPayload =
-    viewToRender === "dashboard" ||
-    viewToRender === "strategic_command" ||
-    viewToRender === "decision_lifecycle" ||
-    viewToRender === "strategic_learning" ||
-    viewToRender === "meta_decision" ||
-    viewToRender === "cognitive_style" ||
-    viewToRender === "team_decision" ||
-    viewToRender === "org_memory" ||
-    viewToRender === "decision_governance" ||
-    viewToRender === "decision_policy" ||
-    viewToRender === "executive_approval" ||
-    viewToRender === "decision_council" ||
-    viewToRender === "collaboration_intelligence" ||
-    viewToRender === "kpi";
   const shouldBuildWarRoomPayload = viewToRender === "war_room";
   const shouldBuildRiskPayload =
     viewToRender === "risk" || viewToRender === "fragility" || viewToRender === "explanation";
@@ -1011,7 +914,6 @@ function RightPanelHostInner(props: RightPanelHostProps) {
   const lastScnSubviewResetLogRef = React.useRef<string | null>(null);
   const lastCanonicalScenePanelSigRef = React.useRef<string | null>(null);
   const lastSceneRenderPathSigRef = React.useRef<string | null>(null);
-  const lastScnSceneResolvedSigRef = React.useRef<string | null>(null);
   const [scnMode, setScnMode] = React.useState<"scene" | "workspace">("scene");
   React.useEffect(() => {
     setExplainOpen(false);
@@ -1047,16 +949,11 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     };
   }, []);
   const lastRenderViewSignatureRef = React.useRef<string | null>(null);
-  const lastStableRiskPayloadRef = React.useRef<unknown>(null);
-  const lastStableConflictPayloadRef = React.useRef<unknown>(null);
-  const lastStableAdviceBundleRef = React.useRef<{ panel: PanelSharedData; advice: unknown } | null>(null);
   const responseStrategicAdvice = props.responseData?.strategic_advice;
   const responseConflict = props.responseData?.conflict;
   const responseConflicts = props.responseData?.conflicts;
   const responseTimelineImpact = props.responseData?.timeline_impact;
-  const responseSimulationTimeline = props.responseData?.decision_simulation?.timeline;
-  const responseExecutiveSummary = props.responseData?.executive_summary_surface;
-  const responseDecisionCockpit = props.responseData?.decision_cockpit;
+  const responseSimulationTimeline = readInspectorRecord(props.responseData?.decision_simulation)?.timeline;
   const sceneStrategicAdvice = props.sceneJson?.strategic_advice;
   const warRoomIntelligence = props.warRoom.intelligence;
 
@@ -1071,11 +968,6 @@ function RightPanelHostInner(props: RightPanelHostProps) {
 
   const dashboardRecommendation = useCanonicalRecommendation(props.responseData ?? props.sceneJson ?? null);
 
-  React.useEffect(() => {
-    if (viewToRender !== "risk" && viewToRender !== "fragility") lastStableRiskPayloadRef.current = null;
-    if (viewToRender !== "conflict") lastStableConflictPayloadRef.current = null;
-    if (viewToRender !== "advice") lastStableAdviceBundleRef.current = null;
-  }, [viewToRender]);
   const warRoomRecommendation = useCanonicalRecommendation(props.warRoom.intelligence ?? null);
   const normalizedWarRoomPanelData = React.useMemo(
     () => normalizeWarRoomIntelligence(props.warRoom.intelligence),
@@ -1089,16 +981,16 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     () =>
       buildMergedPanelData({
         panelData: props.panelData,
-        responseData: props.responseData,
+        responseData: asLooseRecord(props.responseData),
         sceneJson: props.sceneJson,
-        strategicAdvice: props.strategicAdvice,
-        riskPropagation: props.riskPropagation,
+        strategicAdvice: asLooseRecord(props.strategicAdvice),
+        riskPropagation: asLooseRecord(props.riskPropagation),
         conflicts: props.conflicts,
-        decisionResult: props.decisionResult,
-        memoryInsights: props.memoryInsights,
+        decisionResult: asLooseRecord(props.decisionResult),
+        memoryInsights: asLooseRecord(props.memoryInsights),
         warRoomIntelligence: props.warRoom.intelligence,
         strategicCouncil: props.strategicCouncil,
-        decisionCockpit: props.decisionCockpit,
+        decisionCockpit: asLooseRecord(props.decisionCockpit),
         decisionMemoryEntries: props.decisionMemoryEntries,
         canonicalRecommendation: dashboardRecommendation,
         normalizedWarRoomPanelData,
@@ -1113,34 +1005,17 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       props.riskPropagation,
       props.memoryInsights,
       props.decisionResult,
+      props.conflicts,
+      props.strategicCouncil,
+      props.warRoom.intelligence,
       normalizedWarRoomPanelData,
       normalizedStrategicCouncil,
       props.decisionMemoryEntries,
       dashboardRecommendation,
     ]
   );
-  // --- STABILITY PATCH (prevent resolver churn + re-render loop) ---
-  const stablePanelDataRef = React.useRef<PanelSharedData | null>(null);
-  const stablePanelSignatureRef = React.useRef<string | null>(null);
-  const latestAggregatedPanelDataRef = React.useRef<PanelSharedData | null>(null);
-
-  const stableAggregatedPanelData = React.useMemo(() => {
-    try {
-      const signature = buildPanelSharedDataSignature(aggregatedPanelData);
-      if (stablePanelSignatureRef.current === signature && stablePanelDataRef.current) {
-        return stablePanelDataRef.current;
-      }
-      stablePanelSignatureRef.current = signature;
-      stablePanelDataRef.current = aggregatedPanelData;
-      return aggregatedPanelData;
-    } catch {
-      // fallback (never break UI)
-      return aggregatedPanelData;
-    }
-  }, [aggregatedPanelData]);
-  React.useEffect(() => {
-    latestAggregatedPanelDataRef.current = stableAggregatedPanelData;
-  }, [stableAggregatedPanelData]);
+  // --- STABILITY PATCH (AD-FE-HOOKS-01: signature-stable controller state, not render refs) ---
+  const stableAggregatedPanelData = useStableAggregatedPanelData(aggregatedPanelData);
   const panelValidationSignature = React.useMemo(() => {
     try {
       return buildPanelValidationCacheKey(stableAggregatedPanelData);
@@ -1152,8 +1027,7 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     if (!props.rightPanelState.isOpen) {
       return validatePanelSharedDataWithDiagnostics(props.panelData);
     }
-    const sourceData = latestAggregatedPanelDataRef.current ?? stableAggregatedPanelData;
-    return validatePanelSharedDataWithDiagnostics(sourceData);
+    return validatePanelSharedDataWithDiagnostics(stableAggregatedPanelData);
   }, [panelValidationSignature, props.panelData, props.rightPanelState.isOpen, stableAggregatedPanelData]);
   const validatedPanelData = panelContractValidation.data;
 
@@ -1181,25 +1055,14 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     });
     emitGuardRailAlerts(runGuardChecks({ trigger: "contract_check" }, getRecentDebugEvents()));
   }, [panelContractValidation.contractFailed, panelContractValidation.contractDebugSignature]);
-  const lastResolvedPanelRef = React.useRef<PanelResolvedData | null>(null);
-
-  const resolvedPanel = React.useMemo(() => {
+  const resolvedPanelRaw = React.useMemo(() => {
     if (!viewToRender || !isResolverManagedView(viewToRender)) return null;
-
-    const next = buildPanelResolvedData(viewToRender, validatedPanelData);
-
-    // prevent useless churn (same panel, same status)
-    if (
-      lastResolvedPanelRef.current &&
-      lastResolvedPanelRef.current.status === next.status &&
-      JSON.stringify(lastResolvedPanelRef.current.data) === JSON.stringify(next.data)
-    ) {
-      return lastResolvedPanelRef.current;
-    }
-
-    lastResolvedPanelRef.current = next;
-    return next;
+    return buildPanelResolvedData(viewToRender, validatedPanelData);
   }, [viewToRender, validatedPanelData]);
+  const resolvedPanel = useSignatureStableValue(resolvedPanelRaw, (panel) => {
+    if (!panel) return "null";
+    return `${panel.status}|${JSON.stringify(panel.data)}`;
+  });
   const effectivePanelData = validatedPanelData;
   const basePanelPayload = React.useMemo(
     () =>
@@ -1207,7 +1070,7 @@ function RightPanelHostInner(props: RightPanelHostProps) {
         panelData: effectivePanelData,
         responseData: props.responseData,
         sceneJson: props.sceneJson,
-        strategicAdvice: props.strategicAdvice,
+        strategicAdvice: asLooseRecord(props.strategicAdvice),
         canonicalRecommendation: dashboardRecommendation,
       }),
     [effectivePanelData, props.responseData, props.sceneJson, props.strategicAdvice, dashboardRecommendation]
@@ -1227,38 +1090,34 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       rendered: viewToRender ?? null,
     });
   }, [props.rightPanelState.view, viewToRender]);
-  const lastRenderableResolvedByViewRef = React.useRef<Partial<Record<Exclude<RightPanelView, null>, PanelResolvedData>>>({});
-
-  const bestResolvedPanel = React.useMemo(() => {
-    if (!viewToRender || !isResolverManagedView(viewToRender)) {
-      return resolvedPanel;
-    }
-
-    const nextIsRenderable = Boolean(
+  const lastRenderableController = useLastRenderableResolvedByView();
+  const nextIsRenderableResolved = Boolean(
+    viewToRender &&
+      isResolverManagedView(viewToRender) &&
       resolvedPanel &&
-        !shouldRenderResolvedFallback(resolvedPanel) &&
-        hasRenderableResolvedPanelData(viewToRender, resolvedPanel)
+      !shouldRenderResolvedFallback(resolvedPanel) &&
+      hasRenderableResolvedPanelData(viewToRender, resolvedPanel)
+  );
+  React.useEffect(() => {
+    lastRenderableController.rememberRenderable(
+      viewToRender,
+      resolvedPanel,
+      nextIsRenderableResolved,
+      Boolean(viewToRender && isResolverManagedView(viewToRender))
     );
-
-    if (nextIsRenderable && resolvedPanel) {
-      lastRenderableResolvedByViewRef.current[viewToRender] = resolvedPanel;
-      return resolvedPanel;
-    }
-
-    const preserved = lastRenderableResolvedByViewRef.current[viewToRender] ?? null;
-    if (preserved) {
-      return preserved;
-    }
-
-    return resolvedPanel;
-  }, [viewToRender, resolvedPanel]);
+  }, [lastRenderableController, viewToRender, resolvedPanel, nextIsRenderableResolved]);
+  const bestResolvedPanel = lastRenderableController.selectBest(
+    viewToRender,
+    resolvedPanel,
+    nextIsRenderableResolved,
+    Boolean(viewToRender && isResolverManagedView(viewToRender))
+  );
 
   const bestResolvedPanelData = bestResolvedPanel?.data ?? null;
   const bestResolvedPanelRecord =
     bestResolvedPanelData && typeof bestResolvedPanelData === "object" && !Array.isArray(bestResolvedPanelData)
       ? (bestResolvedPanelData as Record<string, unknown>)
       : null;
-  const bestResolvedPanelStatus = bestResolvedPanel?.status ?? null;
   const bestResolvedPanelReadiness = React.useMemo(
     () => getResolvedPanelReadiness(viewToRender, bestResolvedPanel),
     [viewToRender, bestResolvedPanel]
@@ -1294,8 +1153,8 @@ function RightPanelHostInner(props: RightPanelHostProps) {
         panelData: effectivePanelData,
         context: {
           intent:
-            typeof props.responseData?.ai_reasoning?.intent === "string"
-              ? props.responseData.ai_reasoning.intent
+            typeof readInspectorRecord(props.responseData?.ai_reasoning)?.intent === "string"
+              ? (readInspectorRecord(props.responseData?.ai_reasoning)?.intent as string)
               : undefined,
           riskLevel: getRiskSignalLevel(effectivePanelData.risk ?? props.riskPropagation ?? null),
           hasSimulation: Boolean(effectivePanelData.simulation ?? props.responseData?.decision_simulation),
@@ -1314,25 +1173,26 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       props.sceneJson,
     ]
   );
-  const handleRiskFlowRunSimulation = React.useCallback(() => {
-    logRiskFlowRunSimulation(viewToRender);
-    props.onSimulateDecision?.();
-  }, [viewToRender, props.onSimulateDecision]);
+  const onSimulateDecision = props.onSimulateDecision;
+  const onCompareOptions = props.onCompareOptions;
+  const onOpenWarRoom = props.onOpenWarRoom;
+  const onOpenRiskFlow = props.onOpenRiskFlow;
+  const onOpenWhyThis = props.onOpenWhyThis;
   const handleContextualSimulationAction = React.useCallback(() => {
-    props.onSimulateDecision?.();
-  }, [props.onSimulateDecision]);
+    onSimulateDecision?.();
+  }, [onSimulateDecision]);
   const handleContextualCompareAction = React.useCallback(() => {
-    props.onCompareOptions?.();
-  }, [props.onCompareOptions]);
+    onCompareOptions?.();
+  }, [onCompareOptions]);
   const handleContextualWarRoomAction = React.useCallback(() => {
-    props.onOpenWarRoom?.();
-  }, [props.onOpenWarRoom]);
+    onOpenWarRoom?.();
+  }, [onOpenWarRoom]);
   const handleContextualRiskFlowAction = React.useCallback(() => {
-    props.onOpenRiskFlow?.(viewToRender);
-  }, [props.onOpenRiskFlow, viewToRender]);
+    onOpenRiskFlow?.(viewToRender);
+  }, [onOpenRiskFlow, viewToRender]);
   const handleContextualWhyThisAction = React.useCallback(() => {
-    props.onOpenWhyThis?.(viewToRender);
-  }, [props.onOpenWhyThis, viewToRender]);
+    onOpenWhyThis?.(viewToRender);
+  }, [onOpenWhyThis, viewToRender]);
   const resolvedPanelData =
     bestResolvedPanelData ??
     null;
@@ -1404,48 +1264,6 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     basePanelPayload,
     effectiveAdvicePayload,
   ]);
-  const effectiveDashboardPayload = React.useMemo(() => {
-    if (!shouldBuildDashboardPayload) return null;
-    const { payload, sourceFlags } = buildDashboardPanelPayload({
-      currentView: viewToRender,
-      resolvedPanelData,
-      dashboard: effectivePanelData.dashboard,
-      decisionCockpitSlice: effectivePanelData.decisionCockpit,
-      executiveSummary: effectivePanelData.executiveSummary,
-      rawExecutiveSummary: responseExecutiveSummary,
-      rawDecisionCockpit: responseDecisionCockpit,
-      canonicalPanelPayload: basePanelPayload,
-      decisionCockpit: props.decisionCockpit,
-      advicePayload: effectiveAdvicePayload,
-      fallbackStrategicAdvice: basePanelPayload.strategic_advice,
-      conflictPayload: effectiveConflictPayload,
-      responseConflict,
-      responseConflicts,
-      legacyConflicts: props.conflicts,
-    });
-    logPanelPayloadSource("dashboard", viewToRender, {
-      usedResolved: sourceFlags.usedResolved,
-      usedCanonical: sourceFlags.usedCanonical,
-      usedRaw: sourceFlags.usedRaw,
-    });
-    return payload;
-  }, [
-    viewToRender,
-    shouldBuildDashboardPayload,
-    resolvedPanelData,
-    effectivePanelData.dashboard,
-    effectivePanelData.decisionCockpit,
-    effectivePanelData.executiveSummary,
-    responseExecutiveSummary,
-    responseDecisionCockpit,
-    basePanelPayload,
-    props.decisionCockpit,
-    effectiveAdvicePayload,
-    effectiveConflictPayload,
-    responseConflict,
-    responseConflicts,
-    props.conflicts,
-  ]);
   const effectiveWarRoomPayload = React.useMemo(() => {
     if (!shouldBuildWarRoomPayload) return null;
     const { payload, sourceFlags } = buildWarRoomPanelPayload({
@@ -1502,6 +1320,28 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     props.riskPropagation,
     props.sceneJson,
   ]);
+
+  const conflictPayloadHold = usePayloadHold(
+    effectiveConflictPayload,
+    resolveConflictReadiness,
+    viewToRender === "conflict"
+  );
+  const riskPayloadHold = usePayloadHold(
+    effectiveRiskPayload,
+    resolveRiskReadiness,
+    viewToRender === "risk" || viewToRender === "fragility"
+  );
+  const adviceCurrentReadiness = resolveAdviceReadiness(
+    effectivePanelData,
+    effectiveAdvicePayload,
+    dashboardRecommendation
+  );
+  const adviceBundleHold = useAdviceBundleHold(
+    effectivePanelData,
+    effectiveAdvicePayload,
+    adviceCurrentReadiness,
+    viewToRender === "advice"
+  );
 
   React.useEffect(() => {
     if (process.env.NODE_ENV !== "production" && viewToRender !== props.rightPanelState.view) {
@@ -1632,13 +1472,10 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       prevView === "workspace" || prevView === "object" || prevView === "object_focus";
     if (prevSceneFamily && isSceneFamilyView) {
       // Never allow object/object_focus resolved cache to bleed back into workspace scene subview.
-      lastResolvedPanelRef.current = null;
-      lastRenderableResolvedByViewRef.current.workspace = undefined;
-      lastRenderableResolvedByViewRef.current.object = undefined;
-      lastRenderableResolvedByViewRef.current.object_focus = undefined;
+      lastRenderableController.clearSceneFamily();
     }
     previousViewRef.current = viewToRender;
-  }, [isSceneFamilyView, viewToRender]);
+  }, [isSceneFamilyView, viewToRender, lastRenderableController]);
 
   React.useEffect(() => {
     if (process.env.NODE_ENV === "production" || !isSceneFamilyView) return;
@@ -1707,7 +1544,14 @@ function RightPanelHostInner(props: RightPanelHostProps) {
   );
   const riskSignal01 = getRiskSignalLevel(effectivePanelData.risk ?? props.riskPropagation ?? null);
   const executiveStatus = executiveRiskStatusFrom01(riskSignal01);
+  const responseDataForScene = props.responseData;
+  const riskPropagationForScene = props.riskPropagation;
+  const selectedObjectLabelForScene = props.selectedObjectLabel;
+  const contextIdForScene = props.rightPanelState.contextId;
   const renderCanonicalScenePanel = React.useCallback(() => {
+    const sceneRiskSignal01 = getRiskSignalLevel(
+      effectivePanelData.risk ?? riskPropagationForScene ?? null
+    );
     const sceneCardStyle: React.CSSProperties = {
       position: "relative",
       width: "100%",
@@ -1723,9 +1567,9 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     const fragilityLevel =
       typeof fragilityLevelRaw === "string" && fragilityLevelRaw.trim()
         ? fragilityLevelRaw.trim()
-        : riskSignal01 >= 0.72
+        : sceneRiskSignal01 >= 0.72
           ? "critical"
-          : riskSignal01 >= 0.35
+          : sceneRiskSignal01 >= 0.35
             ? "warning"
             : "stable";
     const dashboardRecommendationRecord =
@@ -1735,12 +1579,12 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     const executivePrimary =
       (typeof dashboardRecommendationRecord?.summary === "string" ? dashboardRecommendationRecord.summary : null) ??
       (typeof dashboardRecommendationRecord?.headline === "string" ? dashboardRecommendationRecord.headline : null) ??
-      (typeof props.responseData?.summary === "string" ? props.responseData.summary : null) ??
+      (typeof responseDataForScene?.summary === "string" ? responseDataForScene.summary : null) ??
       "Scene posture is stable; inspect object-level pressure and risk flow to refine decisions.";
     const activeContextLine =
-      props.selectedObjectLabel ??
-      props.rightPanelState.contextId ??
-      (typeof props.responseData?.workspace_id === "string" ? props.responseData.workspace_id : null) ??
+      selectedObjectLabelForScene ??
+      contextIdForScene ??
+      (typeof responseDataForScene?.workspace_id === "string" ? responseDataForScene.workspace_id : null) ??
       "No active object context yet.";
     const hasSceneData = Boolean(
       (typeof dashboardRecommendationRecord?.summary === "string" ? dashboardRecommendationRecord.summary : null) ??
@@ -1750,8 +1594,8 @@ function RightPanelHostInner(props: RightPanelHostProps) {
           : null) ??
         effectivePanelData.risk ??
         effectivePanelData.fragility ??
-        props.responseData?.summary ??
-        props.responseData?.workspace_id
+        responseDataForScene?.summary ??
+        responseDataForScene?.workspace_id
     );
     const sceneModel = hasSceneData
       ? {
@@ -1760,7 +1604,7 @@ function RightPanelHostInner(props: RightPanelHostProps) {
               ? dashboardRecommendationRecord.recommended_action
               : null) ??
             "Open Object Analysis to inspect leverage points before committing action.",
-          riskSignal: Number.isFinite(riskSignal01) ? riskSignal01 : 0,
+          riskSignal: Number.isFinite(sceneRiskSignal01) ? sceneRiskSignal01 : 0,
           fragilityLevel,
           executiveInsight: String(executivePrimary),
           activeContext: activeContextLine,
@@ -1772,17 +1616,6 @@ function RightPanelHostInner(props: RightPanelHostProps) {
           executiveInsight: "No system pressure detected",
           activeContext: "No active context yet",
         };
-    if (process.env.NODE_ENV !== "production") {
-      const sig = `${props.rightPanelState.contextId ?? "null"}|${hasSceneData ? "1" : "0"}|${sceneModel.fragilityLevel}`;
-      if (lastScnSceneResolvedSigRef.current !== sig) {
-        lastScnSceneResolvedSigRef.current = sig;
-        console.log("[Nexora][SCNSceneResolved]", {
-          view: viewToRender,
-          source: "canonical_scene_stack",
-          hasData: hasSceneData,
-        });
-      }
-    }
     return (
       <div
         data-nexora-scene-panel-stack
@@ -1837,20 +1670,19 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       </div>
     );
   }, [
+    contextIdForScene,
     dashboardRecommendation,
     effectivePanelData.fragility,
     effectivePanelData.risk,
-    nx.lowMuted,
-    nx.muted,
-    nx.text,
-    nx.textSoft,
-    props.responseData?.summary,
-    props.responseData?.workspace_id,
-    props.rightPanelState.contextId,
-    props.selectedObjectLabel,
-    riskSignal01,
-    viewToRender,
+    responseDataForScene,
+    riskPropagationForScene,
+    selectedObjectLabelForScene,
   ]);
+
+  const panelActionItems = React.useMemo(
+    () => extractPanelActions(props.panelData, props.responseData),
+    [props.panelData, props.responseData]
+  );
 
   // Important: keep all hooks above this point.
   // Conditional returns below preserve React hook order stability.
@@ -1924,10 +1756,6 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     resolveObjectLabel: props.resolveObjectLabel,
   });
   const onDemandExplainText = buildOnDemandExplanation(viewToRender);
-  const panelActionItems = React.useMemo(
-    () => extractPanelActions(props.panelData, props.responseData),
-    [props.panelData, props.responseData]
-  );
   const blockBodyForDecisionLoad =
     (props.decisionLoading || props.decisionStatus === "loading") &&
     isResolverManagedView(viewToRender) &&
@@ -2140,8 +1968,8 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       }
       return (
         <StrategicCommandPreview
-          workspaceId={props.responseData?.workspace_id ?? null}
-          projectId={props.responseData?.project_id ?? null}
+          workspaceId={readOptionalString(props.responseData?.workspace_id)}
+          projectId={readOptionalString(props.responseData?.project_id)}
           responseData={props.responseData ?? props.sceneJson ?? null}
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
@@ -2235,8 +2063,8 @@ function RightPanelHostInner(props: RightPanelHostProps) {
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
           memoryEntries={props.decisionMemoryEntries ?? []}
-          workspaceId={props.responseData?.workspace_id ?? null}
-          projectId={props.responseData?.project_id ?? null}
+          workspaceId={readOptionalString(props.responseData?.workspace_id)}
+          projectId={readOptionalString(props.responseData?.project_id)}
           onOpenDecisionTimeline={handleContextualWhyThisAction}
           onOpenOutcomeFeedback={props.onOpenOutcomeFeedback ?? null}
           onOpenCompare={handleContextualCompareAction}
@@ -2294,8 +2122,8 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     case "collaboration_intelligence":
       return (
         <CollaborationIntelligencePanel
-          workspaceId={props.responseData?.workspace_id ?? null}
-          projectId={props.responseData?.project_id ?? null}
+          workspaceId={readOptionalString(props.responseData?.workspace_id)}
+          projectId={readOptionalString(props.responseData?.project_id)}
           responseData={props.responseData ?? props.sceneJson ?? null}
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
@@ -2315,8 +2143,8 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       }
       return (
         <AutonomousDecisionCouncilPanel
-          workspaceId={props.responseData?.workspace_id ?? null}
-          projectId={props.responseData?.project_id ?? null}
+          workspaceId={readOptionalString(props.responseData?.workspace_id)}
+          projectId={readOptionalString(props.responseData?.project_id)}
           responseData={props.responseData ?? props.sceneJson ?? null}
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
@@ -2330,7 +2158,7 @@ function RightPanelHostInner(props: RightPanelHostProps) {
     case "org_memory":
       return (
         <OrgMemoryPanel
-          workspaceId={props.responseData?.workspace_id ?? null}
+          workspaceId={readOptionalString(props.responseData?.workspace_id)}
           memoryEntries={props.decisionMemoryEntries ?? []}
           canonicalRecommendation={dashboardRecommendation}
           onOpenMemory={props.onOpenMemory ?? null}
@@ -2387,8 +2215,8 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       }
       return (
         <ExecutiveApprovalPanel
-          workspaceId={props.responseData?.workspace_id ?? null}
-          projectId={props.responseData?.project_id ?? null}
+          workspaceId={readOptionalString(props.responseData?.workspace_id)}
+          projectId={readOptionalString(props.responseData?.project_id)}
           responseData={props.responseData ?? props.sceneJson ?? null}
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
@@ -2465,11 +2293,7 @@ function RightPanelHostInner(props: RightPanelHostProps) {
           readiness: bestResolvedPanelReadiness,
         });
       }
-      const { safe: safeConflict, displayReadiness: conflictReadiness } = stabilizePanelPayload(
-        effectiveConflictPayload,
-        resolveConflictReadiness,
-        lastStableConflictPayloadRef
-      );
+      const { safe: safeConflict, displayReadiness: conflictReadiness } = conflictPayloadHold;
       if (process.env.NODE_ENV !== "production") {
         globalThis.console.log("[Nexora][PanelStable]", { view: "conflict", readiness: conflictReadiness });
       }
@@ -2507,8 +2331,8 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       return (
         <DecisionMemoryPanel
           entries={props.decisionMemoryEntries ?? []}
-          memoryInsights={props.memoryInsights ?? props.sceneJson?.memory_v2 ?? null}
-          responseData={props.responseData ?? props.sceneJson ?? null}
+          memoryInsights={readInspectorRecord(props.memoryInsights ?? props.sceneJson?.memory_v2)}
+          responseData={readInspectorRecord(props.responseData ?? props.sceneJson) ?? null}
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? null}
           resolveObjectLabel={props.resolveObjectLabel ?? null}
@@ -2522,7 +2346,7 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       return (
         <ScenarioBranchingTreePanel
           responseData={props.responseData ?? props.sceneJson ?? undefined}
-          strategicAdvice={props.strategicAdvice ?? props.sceneJson?.strategic_advice ?? null}
+          strategicAdvice={readInspectorRecord(props.strategicAdvice ?? props.sceneJson?.strategic_advice)}
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? undefined}
           memoryEntries={props.decisionMemoryEntries ?? []}
@@ -2534,11 +2358,7 @@ function RightPanelHostInner(props: RightPanelHostProps) {
         />
       );
     case "risk": {
-      const { safe: safeRisk, displayReadiness: riskReadiness } = stabilizePanelPayload(
-        effectiveRiskPayload,
-        resolveRiskReadiness,
-        lastStableRiskPayloadRef
-      );
+      const { safe: safeRisk, displayReadiness: riskReadiness } = riskPayloadHold;
       if (process.env.NODE_ENV !== "production") {
         globalThis.console.log("[Nexora][PanelStable]", { view: "risk", readiness: riskReadiness });
       }
@@ -2561,11 +2381,7 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       );
     }
     case "fragility": {
-      const { safe: safeFragilityRisk, displayReadiness: fragilityReadiness } = stabilizePanelPayload(
-        effectiveRiskPayload,
-        resolveRiskReadiness,
-        lastStableRiskPayloadRef
-      );
+      const { safe: safeFragilityRisk, displayReadiness: fragilityReadiness } = riskPayloadHold;
       if (process.env.NODE_ENV !== "production") {
         globalThis.console.log("[Nexora][PanelStable]", { view: "fragility", readiness: fragilityReadiness });
       }
@@ -2613,26 +2429,8 @@ function RightPanelHostInner(props: RightPanelHostProps) {
           }
         );
       }
-      const adviceCurrent = resolveAdviceReadiness(
-        effectivePanelData,
-        effectiveAdvicePayload,
-        dashboardRecommendation
-      );
-      let safeAdvicePanel = effectivePanelData;
-      let safeAdvicePayload = effectiveAdvicePayload as React.ComponentProps<typeof StrategicAdvicePanel>["advice"];
-      if (adviceCurrent === "ready") {
-        lastStableAdviceBundleRef.current = { panel: effectivePanelData, advice: effectiveAdvicePayload };
-      }
-      if (adviceCurrent === "empty") {
-        lastStableAdviceBundleRef.current = null;
-      }
-      if (adviceCurrent !== "ready") {
-        const bundle = lastStableAdviceBundleRef.current;
-        if (bundle) {
-          safeAdvicePanel = bundle.panel;
-          safeAdvicePayload = bundle.advice as React.ComponentProps<typeof StrategicAdvicePanel>["advice"];
-        }
-      }
+      const safeAdvicePanel = adviceBundleHold.panel;
+      const safeAdvicePayload = adviceBundleHold.advice as React.ComponentProps<typeof StrategicAdvicePanel>["advice"];
       const adviceDisplay = resolveAdviceReadiness(
         safeAdvicePanel,
         safeAdvicePayload,
@@ -2734,7 +2532,7 @@ function RightPanelHostInner(props: RightPanelHostProps) {
       return (
         <DecisionComparePanel
           responseData={props.responseData ?? undefined}
-          strategicAdvice={props.strategicAdvice ?? props.sceneJson?.strategic_advice ?? null}
+          strategicAdvice={readInspectorRecord(props.strategicAdvice ?? props.sceneJson?.strategic_advice)}
           canonicalRecommendation={dashboardRecommendation}
           decisionResult={props.decisionResult ?? undefined}
           decisionLoading={props.decisionLoading ?? false}
@@ -3072,38 +2870,6 @@ function riskPayloadFallbackSignature(risk: unknown): Record<string, unknown> {
   };
 }
 
-function isPanelRenderable(
-  view: RightPanelView,
-  input: {
-    resolved: PanelResolvedData | null;
-    panelData: PanelSharedData | null | undefined;
-    objectContextId?: string | null;
-    selectedObjectId?: string | null;
-    objectSelection?: unknown;
-    sceneJson?: unknown;
-  }
-) {
-  if (!view) return false;
-  if (view === "fragility") {
-    return hasRenderableRiskPayload(input.panelData?.fragility ?? input.panelData?.risk ?? null);
-  }
-  if (view === "object") {
-    return hasMeaningfulObjectViewPayload({
-      contextId: input.objectContextId ?? null,
-      selectedObjectId: input.selectedObjectId ?? null,
-      objectSelection: input.objectSelection ?? null,
-      sceneJson: input.sceneJson ?? null,
-    });
-  }
-  if (isResolverManagedView(view)) {
-    return hasRenderableResolvedPanelData(view, input.resolved);
-  }
-  const slice = (input.panelData as Record<string, unknown> | null | undefined)?.[view];
-  if (Array.isArray(slice)) return slice.length > 0;
-  if (slice && typeof slice === "object") return Object.keys(slice as Record<string, unknown>).length > 0;
-  return Boolean(slice);
-}
-
 function renderResolvedFallback(
   resolved: PanelResolvedData | null,
   suggestedActionLabel: string | null,
@@ -3155,25 +2921,6 @@ function getRiskSignalLevel(risk: unknown) {
   if (level === "high") return 0.85;
   if (level === "medium") return 0.55;
   return 0;
-}
-
-function hasMeaningfulObjectViewPayload(args: {
-  contextId: string | null;
-  selectedObjectId: string | null;
-  objectSelection: unknown;
-  sceneJson: unknown;
-}) {
-  if (typeof args.contextId === "string" && args.contextId.trim().length > 0) return true;
-  if (typeof args.selectedObjectId === "string" && args.selectedObjectId.trim().length > 0) return true;
-
-  const selection = asLooseRecord(args.objectSelection);
-  const highlighted = Array.isArray(selection?.highlighted_objects) ? selection.highlighted_objects : [];
-  if (highlighted.length > 0) return true;
-
-  const sceneJson = asLooseRecord(args.sceneJson);
-  const sceneSelection = asLooseRecord(sceneJson?.object_selection);
-  const sceneHighlighted = Array.isArray(sceneSelection?.highlighted_objects) ? sceneSelection.highlighted_objects : [];
-  return sceneHighlighted.length > 0;
 }
 
 function asLooseRecord(value: unknown): Record<string, unknown> | null {

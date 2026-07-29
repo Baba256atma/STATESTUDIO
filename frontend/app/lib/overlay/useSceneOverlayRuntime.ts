@@ -7,6 +7,8 @@ import { mapDecisionPathResultToOverlay } from "../simulation/decisionPathMapper
 import type { ScenarioActionPropagationIntent } from "../simulation/propagationTriggerTypes";
 import { usePropagationBridge } from "../simulation/usePropagationBridge";
 import { useSimulationOverlay } from "../simulation/useSimulationOverlay";
+import type { SceneJson, SceneLoop } from "../sceneTypes";
+import type { StrategicCouncilResult } from "../council/strategicCouncilTypes";
 import { mergePropagationOverlayState } from "./mergePropagationOverlay";
 import {
   getOverlayRuntimeServerVisibility,
@@ -17,7 +19,7 @@ import {
   syncSceneOverlays,
 } from "./overlayRuntime";
 import { resolveSceneOverlays } from "./resolveSceneOverlays";
-import type { OverlayRuntimeVisibility, SceneOverlayType } from "./overlayContracts";
+import type { SceneOverlayType } from "./overlayContracts";
 
 export type UseSceneOverlayRuntimeParams = {
   sceneJson: unknown;
@@ -36,6 +38,26 @@ export type UseSceneOverlayRuntimeParams = {
   previewEnabled?: boolean;
 };
 
+function asSceneJson(value: unknown): SceneJson | null {
+  return value && typeof value === "object" ? (value as SceneJson) : null;
+}
+
+function asSceneLoops(value: unknown): SceneLoop[] | null {
+  return Array.isArray(value) ? (value as SceneLoop[]) : null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readNestedRecord(value: unknown, ...keys: string[]): Record<string, unknown> | null {
+  let current: unknown = value;
+  for (const key of keys) {
+    current = asRecord(current)?.[key];
+  }
+  return asRecord(current);
+}
+
 export function useSceneOverlayRuntime(params: UseSceneOverlayRuntimeParams) {
   const visibility = useSyncExternalStore(
     subscribeOverlayRuntime,
@@ -50,8 +72,8 @@ export function useSceneOverlayRuntime(params: UseSceneOverlayRuntimeParams) {
     propagationError,
     propagationMode,
   } = usePropagationBridge({
-    sceneJson: params.sceneJson as any,
-    loops: params.loops as any,
+    sceneJson: asSceneJson(params.sceneJson),
+    loops: asSceneLoops(params.loops),
     selectedObjectId: params.selectedObjectId,
     scenarioTrigger: params.scenarioTrigger,
     manualActionObjectId: params.manualPropagationSourceId,
@@ -80,17 +102,17 @@ export function useSceneOverlayRuntime(params: UseSceneOverlayRuntimeParams) {
     propagation: mergedPropagationOverlay,
     decisionPath: scenarioOverlayPackage.decisionPath ?? null,
     strategicAdvice:
-      (params.propagationPayload as any)?.strategic_advice ??
-      (params.sceneJson as any)?.strategic_advice ??
-      (params.sceneJson as any)?.scene?.strategic_advice ??
+      readNestedRecord(params.propagationPayload, "strategic_advice") ??
+      readNestedRecord(params.sceneJson, "strategic_advice") ??
+      readNestedRecord(params.sceneJson, "scene", "strategic_advice") ??
       null,
     strategicCouncil:
-      (params.propagationPayload as any)?.strategic_council ??
-      (params.sceneJson as any)?.strategic_council ??
-      (params.sceneJson as any)?.scene?.strategic_council ??
-      null,
+      (readNestedRecord(params.propagationPayload, "strategic_council") ??
+      readNestedRecord(params.sceneJson, "strategic_council") ??
+      readNestedRecord(params.sceneJson, "scene", "strategic_council") ??
+      null) as StrategicCouncilResult | null,
     scenarioAction: scenarioOverlayPackage.sourceAction ?? params.scenarioTrigger ?? null,
-    sceneJson: params.sceneJson,
+    sceneJson: asSceneJson(params.sceneJson),
     source: "scene_overlay_runtime",
   });
 

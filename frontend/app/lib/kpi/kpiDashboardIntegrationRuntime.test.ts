@@ -34,28 +34,10 @@ import {
 import { resetWorkspaceObjectCreationStoreForTests } from "../workspace/workspaceObjectCreationPipeline.ts";
 import { resetWorkspaceScenesForTests } from "../workspace/workspaceSceneCreationContract.ts";
 import { resetWorkspaceSceneSyncForTests } from "../workspace/workspaceSceneSync.ts";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const KPI_STORAGE_KEY = "nexora.workspaceKpis.v1";
 const KPI_HEALTH_STORAGE_KEY = "nexora.workspaceKpiHealthProfiles.v1";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
 
 function resetAllStoresForTests(): void {
   resetWorkspaceKpiHealthProfileStoreForTests();
@@ -94,7 +76,7 @@ function seedManualWalkthroughKpis(workspaceId: string): void {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetAllStoresForTests();
 });

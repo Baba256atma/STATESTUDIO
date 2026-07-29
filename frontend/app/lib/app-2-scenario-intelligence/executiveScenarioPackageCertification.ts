@@ -3,11 +3,7 @@
  * Certification gates A–R for APP-2:9.5 export layer readiness.
  */
 
-import {
-  SCENARIO_INTELLIGENCE_CONTRACT_VERSION,
-  SCENARIO_INTELLIGENCE_FREEZE_RULES,
-  SCENARIO_INTELLIGENCE_SELF_MANIFEST,
-} from "./scenarioIntelligenceContract.ts";
+import { SCENARIO_INTELLIGENCE_FREEZE_RULES, SCENARIO_INTELLIGENCE_SELF_MANIFEST } from "./scenarioIntelligenceContract.ts";
 import type { ScenarioIntelligenceCertificationCheck } from "./scenarioIntelligenceTypes.ts";
 import { EXECUTIVE_SCENARIO_SNAPSHOT_VERSION } from "./executiveScenarioSnapshot.ts";
 import { EXECUTIVE_SCENARIO_SUMMARY_ENGINE_VERSION } from "./executiveScenarioSummaryResult.ts";
@@ -22,10 +18,7 @@ import {
   validateExecutiveScenarioPackageMetadata,
 } from "./executiveScenarioPackageManifest.ts";
 import { buildExecutiveScenarioPackage } from "./executiveScenarioPackageBuilder.ts";
-import {
-  resolveExecutiveScenarioPackage,
-  resolveExecutiveScenarioPackageProbeExample,
-} from "./executiveScenarioPackageResolver.ts";
+import { resolveExecutiveScenarioPackage } from "./executiveScenarioPackageResolver.ts";
 import {
   resolveExecutiveScenarioSnapshotProbeExample,
   resolveExecutiveScenarioSummaryProbeExample,

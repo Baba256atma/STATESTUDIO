@@ -22,16 +22,8 @@ import {
   initializeBusinessTimelineQueryLayer,
   resetBusinessTimelineQueryLayerForTests,
 } from "./businessTimelineQuery.ts";
-import {
-  buildBusinessLifecycleModel,
-  initializeBusinessTimelineLifecycleLayer,
-  resetBusinessTimelineLifecycleLayerForTests,
-} from "./businessTimelineLifecycle.ts";
-import {
-  buildBusinessTimelineContextModel,
-  initializeBusinessTimelineContextLayer,
-  resetBusinessTimelineContextLayerForTests,
-} from "./businessTimelineContext.ts";
+import { initializeBusinessTimelineLifecycleLayer, resetBusinessTimelineLifecycleLayerForTests } from "./businessTimelineLifecycle.ts";
+import { initializeBusinessTimelineContextLayer, resetBusinessTimelineContextLayerForTests } from "./businessTimelineContext.ts";
 import { createBusinessTimelineApiFacade } from "./businessTimelineApiFacade.ts";
 import { buildBusinessTimelineApiManifest } from "./businessTimelineApiManifest.ts";
 import { validateBusinessTimelineApiManifest, validateBusinessTimelineApiPrerequisites } from "./businessTimelineApiValidation.ts";

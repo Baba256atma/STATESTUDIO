@@ -58,17 +58,17 @@ function buildSceneObjectIndex(objects: SceneObject[]): Map<string, string> {
 
     const keys = [
       id,
-      normalizeId((object as any).name),
-      normalizeId((object as any).canonical_name),
-      normalizeId((object as any).display_label),
-      normalizeId((object as any).semantic?.canonical_name),
-      normalizeId((object as any).semantic?.display_label),
+      normalizeId(object.name),
+      normalizeId(object.canonical_name),
+      normalizeId(object.display_label),
+      normalizeId(object.semantic?.canonical_name),
+      normalizeId(object.semantic?.display_label),
       canonicalId(id),
-      canonicalId((object as any).name),
-      canonicalId((object as any).canonical_name),
-      canonicalId((object as any).display_label),
-      canonicalId((object as any).semantic?.canonical_name),
-      canonicalId((object as any).semantic?.display_label),
+      canonicalId(object.name),
+      canonicalId(object.canonical_name),
+      canonicalId(object.display_label),
+      canonicalId(object.semantic?.canonical_name),
+      canonicalId(object.semantic?.display_label),
       ...readSemanticTokens(object),
     ].filter(Boolean);
 
@@ -154,8 +154,8 @@ function resolveSemanticObjectId(objects: SceneObject[], rawId: unknown, domainI
       objectId,
       String(object.label ?? ""),
       String(object.name ?? ""),
-      String((object as any).display_label ?? ""),
-      String((object as any).canonical_name ?? ""),
+      String(object.display_label ?? ""),
+      String(object.canonical_name ?? ""),
       ...(Array.isArray(object.tags) ? object.tags : []).map(String),
     ]
       .join(" ")
@@ -190,16 +190,13 @@ function resolveSceneObjectId(
 }
 
 function clearScannerState(current: SceneObject): SceneObject {
-  const {
-    scanner_reason: _scannerReason,
-    scanner_highlighted: _scannerHighlighted,
-    scanner_severity: _scannerSeverity,
-    scanner_emphasis: _scannerEmphasis,
-    scanner_focus: _scannerFocus,
-    scanner_overlay_summary: _scannerOverlaySummary,
-    ...rest
-  } = current;
-
+  const rest = { ...current };
+  delete rest.scanner_reason;
+  delete rest.scanner_highlighted;
+  delete rest.scanner_severity;
+  delete rest.scanner_emphasis;
+  delete rest.scanner_focus;
+  delete rest.scanner_overlay_summary;
   return rest;
 }
 

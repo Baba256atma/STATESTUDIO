@@ -28,13 +28,7 @@ import {
   type DecisionJournalReflectionEngineState,
   type DecisionJournalReflectionResponse,
 } from "./decisionJournalReflectionTypes.ts";
-import {
-  validateBuildDecisionJournalReflectionInput,
-  validateDecisionJournalReflectionModel,
-  validateFoundationCompatibilityForReflection,
-  validateJournalEngineAvailabilityForReflection,
-  validateQueryLayerAvailabilityForReflection,
-} from "./decisionJournalReflectionValidation.ts";
+import { validateBuildDecisionJournalReflectionInput, validateDecisionJournalReflectionModel, validateJournalEngineAvailabilityForReflection, validateQueryLayerAvailabilityForReflection } from "./decisionJournalReflectionValidation.ts";
 
 export const DECISION_JOURNAL_REFLECTION_FORBIDDEN_PATTERNS_FULL = Object.freeze([
   ...STAGE_GLOBAL_FORBIDDEN_PATTERNS,

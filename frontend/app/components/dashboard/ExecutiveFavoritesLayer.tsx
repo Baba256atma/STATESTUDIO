@@ -36,6 +36,7 @@ function useFavoritesSnapshot() {
 }
 
 export function ExecutiveFavoritesLayer(props: ExecutiveFavoritesLayerProps): React.ReactElement {
+  const { onFavoriteOpen, layoutVariant: layoutVariantProp } = props;
   const favoritesSnapshot = useFavoritesSnapshot();
   const selectedObjectId = props.selectedObjectId?.trim() || null;
   const activeWorkspaceId = props.activeWorkspaceId ?? null;
@@ -57,13 +58,13 @@ export function ExecutiveFavoritesLayer(props: ExecutiveFavoritesLayerProps): Re
         activeWorkspaceId,
         selectedObjectId,
       });
-      if (!attempt.approved || !attempt.workspaceId || !props.onFavoriteOpen) return;
-      props.onFavoriteOpen(attempt.workspaceId);
+      if (!attempt.approved || !attempt.workspaceId || !onFavoriteOpen) return;
+      onFavoriteOpen(attempt.workspaceId);
     },
-    [activeWorkspaceId, props.onFavoriteOpen, selectedObjectId]
+    [activeWorkspaceId, onFavoriteOpen, selectedObjectId]
   );
 
-  const layoutVariant = props.layoutVariant ?? "standalone";
+  const layoutVariant = layoutVariantProp ?? "standalone";
 
   return (
     <section

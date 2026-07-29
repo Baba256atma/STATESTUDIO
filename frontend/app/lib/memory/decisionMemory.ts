@@ -1,6 +1,12 @@
 import type { MemoryStateV1, MemoryUpdateInput, ObjectMemory, LoopMemory } from "./memoryTypes";
 
-export function safeNumber(n: any, fallback: number): number {
+type SceneMemoryAction = {
+  type?: string;
+  target?: string;
+  payload?: Record<string, unknown> | null;
+};
+
+export function safeNumber(n: unknown, fallback: number): number {
   const v = Number(n);
   return Number.isFinite(v) ? v : fallback;
 }
@@ -41,37 +47,46 @@ function getLoopMemory(prev: MemoryStateV1, id: string, now: number): LoopMemory
   };
 }
 
-function actionTouchesObject(action: any): string | null {
+function actionTouchesObject(action: unknown): string | null {
   if (!action || typeof action !== "object") return null;
-  const target = typeof action.target === "string" ? action.target : null;
-  return target;
+  const target = typeof (action as SceneMemoryAction).target === "string" ? (action as SceneMemoryAction).target : null;
+  return target ?? null;
 }
 
-function isStabilizing(action: any): boolean {
+function readPayloadField(action: SceneMemoryAction, key: "opacity" | "multiplier"): number | null {
+  const payload = action.payload;
+  if (!payload || typeof payload !== "object") return null;
+  const value = payload[key];
+  return typeof value === "number" ? value : null;
+}
+
+function isStabilizing(action: unknown): boolean {
   if (!action || typeof action !== "object") return false;
-  if (action.type === "SET_OBJECT_OPACITY") {
-    const opacity = (action.payload as any)?.opacity;
+  const typed = action as SceneMemoryAction;
+  if (typed.type === "SET_OBJECT_OPACITY") {
+    const opacity = readPayloadField(typed, "opacity");
     return typeof opacity === "number" && opacity >= 0.6;
   }
-  if (action.type === "SET_OBJECT_SCALE") {
-    const multiplier = (action.payload as any)?.multiplier;
+  if (typed.type === "SET_OBJECT_SCALE") {
+    const multiplier = readPayloadField(typed, "multiplier");
     return typeof multiplier === "number" && multiplier < 1;
   }
-  if (action.type === "SET_OBJECT_COLOR") return true;
+  if (typed.type === "SET_OBJECT_COLOR") return true;
   return false;
 }
 
-function isIntense(action: any): boolean {
+function isIntense(action: unknown): boolean {
   if (!action || typeof action !== "object") return false;
-  if (action.type === "SET_OBJECT_SCALE") {
-    const multiplier = (action.payload as any)?.multiplier;
+  const typed = action as SceneMemoryAction;
+  if (typed.type === "SET_OBJECT_SCALE") {
+    const multiplier = readPayloadField(typed, "multiplier");
     return typeof multiplier === "number" && multiplier > 1;
   }
-  if (action.type === "SET_OBJECT_OPACITY") {
-    const opacity = (action.payload as any)?.opacity;
+  if (typed.type === "SET_OBJECT_OPACITY") {
+    const opacity = readPayloadField(typed, "opacity");
     return typeof opacity === "number" && opacity < 0.5;
   }
-  if (action.type === "SET_OBJECT_COLOR") return true;
+  if (typed.type === "SET_OBJECT_COLOR") return true;
   return false;
 }
 

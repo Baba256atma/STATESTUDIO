@@ -34,7 +34,12 @@ export function ExecutiveRecommendationsSurface(
 
   return (
     <section
-      ref={props.sectionRef}
+      ref={(node) => {
+        const sectionRef = props.sectionRef;
+        if (sectionRef) {
+          sectionRef.current = node;
+        }
+      }}
       id="dashboard-home-recommendations"
       data-nx="executive-recommendations-surface"
       data-section-id="recommendations_surface"

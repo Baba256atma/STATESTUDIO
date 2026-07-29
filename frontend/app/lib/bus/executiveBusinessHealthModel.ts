@@ -1,19 +1,4 @@
-import {
-  ExecutiveBusinessHealthContractDescription,
-  ExecutiveBusinessHealthContractId,
-  ExecutiveBusinessHealthContractName,
-  ExecutiveBusinessHealthContractVersion,
-  type ExecutiveBusinessHealthCapability,
-  type ExecutiveBusinessHealthContract,
-  type ExecutiveBusinessHealthDimension,
-  type ExecutiveBusinessHealthDomainId,
-  type ExecutiveBusinessHealthIndicator,
-  type ExecutiveBusinessHealthProfile,
-  type ExecutiveBusinessHealthSeverity,
-  type ExecutiveBusinessHealthStatus,
-  type ExecutiveBusinessHealthSummary,
-  type ExecutiveBusinessHealthTrend,
-} from "./executiveBusinessHealthIndex.ts";
+import { ExecutiveBusinessHealthContractDescription, ExecutiveBusinessHealthContractId, ExecutiveBusinessHealthContractName, ExecutiveBusinessHealthContractVersion, type ExecutiveBusinessHealthCapability, type ExecutiveBusinessHealthContract, type ExecutiveBusinessHealthDimension, type ExecutiveBusinessHealthDomainId, type ExecutiveBusinessHealthIndicator, type ExecutiveBusinessHealthProfile, type ExecutiveBusinessHealthSummary } from "./executiveBusinessHealthIndex.ts";
 import {
   ExecutiveBusinessHealthCapabilityRegistry,
   ExecutiveBusinessHealthDimensionRegistry,

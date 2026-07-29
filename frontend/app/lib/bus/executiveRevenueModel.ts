@@ -1,14 +1,3 @@
-import type {
-  RevenueDriver,
-  RevenueForecast,
-  RevenueMetric,
-  RevenueOpportunity,
-  RevenueRisk,
-  RevenueSource,
-  RevenueStream,
-  RevenueSummary,
-  RevenueTarget,
-} from "./executiveRevenueContracts.ts";
 import {
   ExecutiveRevenueContractNamespace,
   ExecutiveRevenueContractVersion,

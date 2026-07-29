@@ -8,7 +8,6 @@ import { validateStageManifest } from "../stage/stageArchitectureGuards.ts";
 import {
   DECISION_JOURNAL_CERTIFICATION_METADATA,
   DECISION_JOURNAL_COMPATIBILITY_REGISTRY,
-  DECISION_JOURNAL_CONFIDENCE_KEYS,
   DECISION_JOURNAL_EXTENSION_REGISTRY,
   DECISION_JOURNAL_FUTURE_COMPATIBILITY,
   DECISION_JOURNAL_MANDATORY_ENTRY_FIELDS,
@@ -20,8 +19,6 @@ import {
   DECISION_JOURNAL_PLATFORM_PRINCIPLES,
   DECISION_JOURNAL_PLATFORM_TAGS,
   DECISION_JOURNAL_RELEASE_METADATA,
-  DECISION_JOURNAL_SOURCE_KEYS,
-  DECISION_JOURNAL_STATUS_KEYS,
 } from "./decisionJournalConstants.ts";
 import {
   createDecisionJournalFoundation,
@@ -267,7 +264,7 @@ export function getDecisionJournalManifest(
 export function validateDecisionJournal(
   timestamp: string = DEFAULT_TIME
 ): DecisionJournalPlatformValidationReport {
-  const issues: DecisionJournalPlatformValidationReport["issues"] = [];
+  const issues: DecisionJournalPlatformValidationReport["issues"][number][] = [];
 
   const identityValidation = validatePlatformIdentity(DECISION_JOURNAL_PLATFORM_IDENTITY);
   if (!identityValidation.valid) {

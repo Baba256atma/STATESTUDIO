@@ -81,25 +81,7 @@ import {
   getAssistantRuntimeRegistryState,
   resetAssistantRuntimeRegistryForTests,
 } from "./assistantRuntimeRegistry.ts";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 function resetAllForTests(): void {
   resetAssistantRequestBuilderForTests();
@@ -156,7 +138,7 @@ function seedWorkspace(workspaceId: string): void {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetAllForTests();
 });

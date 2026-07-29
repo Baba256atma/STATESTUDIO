@@ -1,19 +1,22 @@
 import type { CanonicalRecommendation } from "./recommendationTypes";
 import { extractDecisionRecommendationLine } from "../../panels/buildScenarioExplanationFromDecisionAnalysis";
 
+type LooseRecord = Record<string, unknown>;
+
 type BuildCanonicalRecommendationInput = {
-  strategicAdvice?: any | null;
-  cockpitExecutive?: any | null;
-  promptFeedback?: any | null;
-  decisionSimulation?: any | null;
+  strategicAdvice?: LooseRecord | null;
+  cockpitExecutive?: LooseRecord | null;
+  promptFeedback?: LooseRecord | null;
+  decisionSimulation?: LooseRecord | null;
   reply?: string | null;
   sourceHint?: CanonicalRecommendation["source"] | null;
-  strategic_advice?: any | null;
-  executive_summary_surface?: any | null;
-  prompt_feedback?: any | null;
-  decision_simulation?: any | null;
-  ai_reasoning?: any | null;
-  decision_analysis?: any | null;
+  strategic_advice?: LooseRecord | null;
+  executive_summary_surface?: LooseRecord | null;
+  prompt_feedback?: LooseRecord | null;
+  decision_simulation?: LooseRecord | null;
+  ai_reasoning?: LooseRecord | null;
+  decision_analysis?: LooseRecord | null;
+  scene?: LooseRecord | null;
 };
 
 function clamp01(value: number) {
@@ -35,57 +38,87 @@ function uniqueStrings(values: unknown[]) {
   return Array.from(new Set(values.map((value) => text(value)).filter(Boolean)));
 }
 
+function asRecord(value: unknown): LooseRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as LooseRecord) : null;
+}
+
+function readNestedRecord(record: LooseRecord | null | undefined, key: string): LooseRecord | null {
+  return asRecord(record?.[key]);
+}
+
 export function buildCanonicalRecommendation(
-  payload: BuildCanonicalRecommendationInput | any
+  payload: BuildCanonicalRecommendationInput | LooseRecord | null | undefined
 ): CanonicalRecommendation | null {
-  const input: BuildCanonicalRecommendationInput =
-    payload && typeof payload === "object"
-      ? {
-          strategicAdvice: payload.strategicAdvice ?? payload.strategic_advice ?? null,
-          cockpitExecutive: payload.cockpitExecutive ?? payload.executive_summary_surface ?? null,
-          promptFeedback: payload.promptFeedback ?? payload.prompt_feedback ?? null,
-          decisionSimulation: payload.decisionSimulation ?? payload.decision_simulation ?? null,
-          reply: payload.reply ?? null,
-          sourceHint: payload.sourceHint ?? null,
-          strategic_advice: payload.strategic_advice ?? null,
-          executive_summary_surface: payload.executive_summary_surface ?? null,
-          prompt_feedback: payload.prompt_feedback ?? null,
-          decision_simulation: payload.decision_simulation ?? null,
-          ai_reasoning: payload.ai_reasoning ?? null,
-          decision_analysis:
-            payload.decision_analysis ??
-            (payload.scene && typeof payload.scene === "object" ? (payload.scene as { decision_analysis?: unknown }).decision_analysis : null) ??
-            null,
-        }
-      : {};
+  const loosePayload = asRecord(payload);
+  const input: BuildCanonicalRecommendationInput = loosePayload
+    ? {
+        strategicAdvice:
+          asRecord(loosePayload.strategicAdvice) ?? asRecord(loosePayload.strategic_advice) ?? null,
+        cockpitExecutive:
+          asRecord(loosePayload.cockpitExecutive) ??
+          asRecord(loosePayload.executive_summary_surface) ??
+          null,
+        promptFeedback:
+          asRecord(loosePayload.promptFeedback) ?? asRecord(loosePayload.prompt_feedback) ?? null,
+        decisionSimulation:
+          asRecord(loosePayload.decisionSimulation) ??
+          asRecord(loosePayload.decision_simulation) ??
+          null,
+        reply: typeof loosePayload.reply === "string" ? loosePayload.reply : null,
+        sourceHint:
+          typeof loosePayload.sourceHint === "string"
+            ? (loosePayload.sourceHint as CanonicalRecommendation["source"])
+            : null,
+        strategic_advice: asRecord(loosePayload.strategic_advice) ?? null,
+        executive_summary_surface: asRecord(loosePayload.executive_summary_surface) ?? null,
+        prompt_feedback: asRecord(loosePayload.prompt_feedback) ?? null,
+        decision_simulation: asRecord(loosePayload.decision_simulation) ?? null,
+        ai_reasoning: asRecord(loosePayload.ai_reasoning) ?? null,
+        decision_analysis:
+          asRecord(loosePayload.decision_analysis) ??
+          readNestedRecord(asRecord(loosePayload.scene), "decision_analysis") ??
+          null,
+      }
+    : {};
   const decisionAnalysisLine = extractDecisionRecommendationLine(input.decision_analysis);
-  const daRec = input.decision_analysis?.recommended_action as Record<string, unknown> | null | undefined;
+  const daRec = asRecord(input.decision_analysis?.recommended_action);
   const primaryAdvice =
-    input.strategicAdvice?.primary_recommendation ??
-    input.strategicAdvice?.recommended_actions?.[0] ??
+    asRecord(input.strategicAdvice?.primary_recommendation) ??
+    (Array.isArray(input.strategicAdvice?.recommended_actions)
+      ? asRecord(input.strategicAdvice.recommended_actions[0])
+      : null) ??
     null;
   const action =
     text(daRec?.action) ||
     decisionAnalysisLine ||
     text(primaryAdvice?.action) ||
     text(input.cockpitExecutive?.what_to_do) ||
-    text(input.promptFeedback?.advice_feedback?.recommendation) ||
+    text(readNestedRecord(input.promptFeedback, "advice_feedback")?.recommendation) ||
     text(input.decisionSimulation?.recommendation);
 
   if (!action) return null;
 
-  const bestStrategy = Array.isArray(input.decision_analysis?.strategies) ? input.decision_analysis.strategies[0] : null;
+  const strategies = Array.isArray(input.decision_analysis?.strategies)
+    ? input.decision_analysis.strategies
+    : [];
+  const bestStrategy = asRecord(strategies[0]);
   const daScore =
-    bestStrategy && typeof bestStrategy.decision_score === "number" && typeof bestStrategy.risk === "number"
-      ? clamp01((Math.tanh(Number(bestStrategy.decision_score)) + 1) / 2 * 0.55 + (1 - Number(bestStrategy.risk)) * 0.45)
+    bestStrategy &&
+    typeof bestStrategy.decision_score === "number" &&
+    typeof bestStrategy.risk === "number"
+      ? clamp01(
+          ((Math.tanh(Number(bestStrategy.decision_score)) + 1) / 2) * 0.55 +
+            (1 - Number(bestStrategy.risk)) * 0.45
+        )
       : null;
 
+  const aiReasoningConfidence = readNestedRecord(input.ai_reasoning, "confidence");
   let baseScore =
     daScore != null && Number.isFinite(daScore)
       ? daScore
       : Number(
           input.strategicAdvice?.confidence ??
-            input.ai_reasoning?.confidence?.score ??
+            aiReasoningConfidence?.score ??
             input.decisionSimulation?.confidence ??
             0.64
         );
@@ -100,12 +133,13 @@ export function buildCanonicalRecommendation(
     ? input.strategicAdvice.recommended_actions
     : [];
   const alternatives = recommendedActions
-    .filter((entry: any) => text(entry?.action) && text(entry?.action) !== action)
+    .map((entry) => asRecord(entry))
+    .filter((entry): entry is LooseRecord => Boolean(entry && text(entry.action) && text(entry.action) !== action))
     .slice(0, 3)
-    .map((entry: any) => ({
-      action: text(entry?.action),
-      tradeoff: text(entry?.tradeoff) || undefined,
-      impact_summary: text(entry?.impact) || undefined,
+    .map((entry) => ({
+      action: text(entry.action),
+      tradeoff: text(entry.tradeoff) || undefined,
+      impact_summary: text(entry.impact) || undefined,
     }));
 
   const why =
@@ -114,28 +148,25 @@ export function buildCanonicalRecommendation(
     (typeof input.decision_analysis?.decision_summary === "string" && text(input.decision_analysis.decision_summary)) ||
     text(input.strategicAdvice?.why) ||
     text(input.cockpitExecutive?.why_it_matters) ||
-    text(input.promptFeedback?.advice_feedback?.summary) ||
+    text(readNestedRecord(input.promptFeedback, "advice_feedback")?.summary) ||
     text(input.reply) ||
     text(primaryAdvice?.impact) ||
     "This recommendation is the strongest visible move in the current scene.";
 
+  const riskFeedback = readNestedRecord(input.promptFeedback, "risk_feedback");
   const keyDrivers = uniqueStrings([
-    ...(Array.isArray(input.promptFeedback?.risk_feedback?.changed_drivers)
-      ? input.promptFeedback.risk_feedback.changed_drivers
-      : []),
-    ...(Array.isArray(input.promptFeedback?.risk_feedback?.affected_dimensions)
-      ? input.promptFeedback.risk_feedback.affected_dimensions
-      : []),
+    ...(Array.isArray(riskFeedback?.changed_drivers) ? riskFeedback.changed_drivers : []),
+    ...(Array.isArray(riskFeedback?.affected_dimensions) ? riskFeedback.affected_dimensions : []),
   ]);
 
   const riskSummary =
-    text(input.promptFeedback?.risk_feedback?.summary) ||
+    text(riskFeedback?.summary) ||
     text(input.cockpitExecutive?.happened) ||
     undefined;
 
   const simulationSummary =
     text(input.decisionSimulation?.summary) ||
-    text(input.decisionSimulation?.comparisonReady?.summary) ||
+    text(readNestedRecord(input.decisionSimulation, "comparisonReady")?.summary) ||
     undefined;
 
   return {
@@ -145,7 +176,7 @@ export function buildCanonicalRecommendation(
     primary: {
       action,
       ...(Array.isArray(primaryAdvice?.targets) && primaryAdvice.targets.length
-        ? { target_ids: uniqueStrings(primaryAdvice.targets) }
+        ? { target_ids: uniqueStrings(primaryAdvice.targets as unknown[]) }
         : {}),
       ...(text(primaryAdvice?.impact) || simulationSummary
         ? { impact_summary: text(primaryAdvice?.impact) || simulationSummary }
@@ -165,7 +196,7 @@ export function buildCanonicalRecommendation(
       ? {
           simulation: {
             ...(text(input.decisionSimulation?.scenario_id)
-              ? { scenario_id: text(input.decisionSimulation.scenario_id) }
+              ? { scenario_id: text(input.decisionSimulation?.scenario_id) }
               : {}),
             ...(simulationSummary ? { summary: simulationSummary } : {}),
           },

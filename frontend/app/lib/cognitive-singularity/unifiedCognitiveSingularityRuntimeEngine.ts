@@ -291,8 +291,7 @@ function buildConvergenceSummary(
 
 function buildCognitiveSingularityHealth(
   intelligenceLevel: IntelligenceLevel,
-  runtimeStatus: UnifiedCognitiveSingularityRuntimeStatus,
-  summary: EnterpriseStrategicConvergenceSummary
+  runtimeStatus: UnifiedCognitiveSingularityRuntimeStatus
 ): CognitiveSingularityHealth {
   return {
     level: intelligenceLevel,
@@ -583,8 +582,7 @@ export function evaluateUnifiedCognitiveSingularityRuntime(
     const convergenceSummary = buildConvergenceSummary(input);
     const health = buildCognitiveSingularityHealth(
       intelligenceLevel,
-      runtimeStatus,
-      convergenceSummary
+      runtimeStatus
     );
     const unifiedSignals = collectUnifiedSignals(activeSubsystems, convergenceSummary, runtimeStatus);
     const risks = collectRisks(input, subsystemStates);

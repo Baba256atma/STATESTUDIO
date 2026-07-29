@@ -71,14 +71,14 @@ export function compute2DStrategicNetworkBounds(
   }
 
   let minX = Number.POSITIVE_INFINITY;
-  let minY = 0;
+  const minY = 0;
   let minZ = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
-  let maxY = 0;
+  const maxY = 0;
   let maxZ = Number.NEGATIVE_INFINITY;
   let positioned = 0;
 
-  objects.forEach((obj, index) => {
+  objects.forEach((obj) => {
     const position = readObjectPosition(obj, layoutPositions);
     if (!position) return;
     positioned += 1;

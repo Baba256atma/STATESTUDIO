@@ -54,6 +54,7 @@ import {
 } from "../workspace/workspaceSceneCreationContract.ts";
 import { resetWorkspaceSceneSyncForTests } from "../workspace/workspaceSceneSync.ts";
 import { getDashboardOkrSummary } from "./okrDashboardIntegrationRuntime.ts";
+import { ensureBrowserLocalStorageHarness } from "../test-harness/browserLocalStorageHarness.ts";
 
 const OBJECTIVE_STORAGE_KEY = "nexora.workspaceObjectives.v1";
 const KEY_RESULT_STORAGE_KEY = "nexora.workspaceKeyResults.v1";
@@ -63,25 +64,6 @@ const OKR_BINDING_STORAGE_KEY = "nexora.workspaceOkrKpiBindings.v1";
 const KPI_STORAGE_KEY = "nexora.workspaceKpis.v1";
 const KPI_BINDING_STORAGE_KEY = "nexora.workspaceKpiObjectBindings.v1";
 const OBJECT_INTELLIGENCE_STORAGE_KEY = "nexora.workspaceObjectIntelligenceProfiles.v1";
-
-function ensureBrowserStorage(): void {
-  if (typeof globalThis.window !== "undefined") return;
-  const store: Record<string, string> = {};
-  (globalThis as typeof globalThis & { window: Window }).window = {
-    localStorage: {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => {
-        store[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        for (const key of Object.keys(store)) delete store[key];
-      },
-    },
-  } as unknown as Window;
-}
 
 function resetAllStoresForTests(): void {
   resetWorkspaceOkrCertificationForTests();
@@ -254,7 +236,7 @@ function seedCertificationDataset(workspaceId: string): {
 }
 
 test.beforeEach(() => {
-  ensureBrowserStorage();
+  ensureBrowserLocalStorageHarness();
   window.localStorage.clear();
   resetAllStoresForTests();
 });

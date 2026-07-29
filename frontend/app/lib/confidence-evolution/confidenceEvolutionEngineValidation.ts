@@ -36,7 +36,7 @@ function issue(code: string, message: string, field?: string): ConfidenceEvoluti
   return Object.freeze({ code, message, field, readOnly: true as const });
 }
 
-function result(issues: ConfidenceEvolutionValidationIssue[]): ConfidenceEvolutionValidationResult {
+function result(issues: readonly ConfidenceEvolutionValidationIssue[]): ConfidenceEvolutionValidationResult {
   return Object.freeze({ valid: issues.length === 0, issues: Object.freeze(issues), readOnly: true as const });
 }
 
@@ -108,7 +108,7 @@ export function validateConfidenceRecordInput(
   if (!isConfidenceChangeReason(input.reason)) {
     issues.push(issue("invalid_enum", "Invalid reason.", "reason"));
   }
-  const status = "status" in input ? input.status : "draft";
+  const status = input.status ?? "draft";
   if (!isConfidenceRecordStatus(status)) {
     issues.push(issue("invalid_enum", "Invalid status.", "status"));
   }
@@ -121,7 +121,7 @@ export function validateConfidenceRecordInput(
   if (input.title.length > CONFIDENCE_EVOLUTION_ENGINE_LIMITS.maxTitleLength) {
     issues.push(issue("invalid_field", "title exceeds maximum length.", "title"));
   }
-  const notes = "notes" in input ? input.notes : "";
+  const notes = input.notes ?? "";
   if (notes.length > CONFIDENCE_EVOLUTION_ENGINE_LIMITS.maxNotesLength) {
     issues.push(issue("invalid_field", "notes exceeds maximum length.", "notes"));
   }

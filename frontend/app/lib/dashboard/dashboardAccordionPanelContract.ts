@@ -4,9 +4,7 @@
  */
 
 import type { DashboardContext } from "../ui/mainRightPanelContract.ts";
-import type { DashboardSurfaceId } from "./dashboardSurfaceRegistry.ts";
-import type { NormalizedDashboardContext } from "./dashboardContextTypes.ts";
-import type { DashboardSurfaceVisualBundle } from "./dashboardVisualSignalContract.ts";
+import type { DashboardSurfaceId } from "./dashboardSurfaceRegistry.ts";import type { DashboardSurfaceVisualBundle } from "./dashboardVisualSignalContract.ts";
 
 export const DASHBOARD_ACCORDION_CONTRACT_VERSION = "3.5.0";
 

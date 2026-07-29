@@ -35,8 +35,6 @@ import {
   analyzeStrategicForcePropagation,
   calculateMetaCausalityCoherenceScore,
 } from "./strategicForcePropagationAnalysis.ts";
-import { analyzeEnterpriseMetaCausalityIntelligence } from "./enterpriseMetaCausalityIntelligence.ts";
-
 function stableStringify(value: unknown): string {
   if (value === null || value === undefined) return "null";
   if (typeof value !== "object") return JSON.stringify(value);
@@ -441,6 +439,7 @@ test("rejects duplicate meta-causality build fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_meta_causality_build");
 });
 

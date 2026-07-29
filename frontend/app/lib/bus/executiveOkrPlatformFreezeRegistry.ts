@@ -1,4 +1,4 @@
-import { getExecutiveKpiPlatformFreezeState, listExecutiveKpiPlatformPhases, listExecutiveKpiPlatformPublicApis } from "./executiveKpiPlatformFreezeIndex.ts";
+import { listExecutiveKpiPlatformPhases, listExecutiveKpiPlatformPublicApis } from "./executiveKpiPlatformFreezeIndex.ts";
 import { getExecutiveOkrPlatformCompatibilityMatrix } from "./executiveOkrPlatformCompatibility.ts";
 import { EXECUTIVE_OKR_ALIGNMENT_REGISTRY } from "./executiveOkrAlignmentPlatform.ts";
 import { EXECUTIVE_OKR_DEFINITION_REGISTRY } from "./executiveOkrDefinitionPlatform.ts";

@@ -1,7 +1,7 @@
 import { stableSignalKey, stableSignature } from "../intelligence/shared/dedupe.ts";
 import { clamp01, normalizeIdPart, uniqueStrings } from "../intelligence/shared/normalization.ts";
 import { resolveConnectorDomainHints } from "./connectorDomainMapping.ts";
-import type { ExternalOperationalSignal, NormalizedExternalOperationalSignal } from "./externalSignalTypes.ts";
+import type { NormalizedExternalOperationalSignal } from "./externalSignalTypes.ts";
 
 function timestampFromUnknown(value: unknown): number {
   const numeric = typeof value === "number" ? value : Number(value);

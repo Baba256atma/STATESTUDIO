@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import type { SceneObject } from "../../../lib/sceneTypes";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 
@@ -15,22 +16,23 @@ const HEALTH_COLOR: Record<string, string> = {
 };
 
 export type CognitiveTwinLivingStateOverlayLayerProps = {
-  objects: any[];
+  objects: SceneObject[];
   livingEntities: readonly CognitiveTwinTwinEntity[];
   visible?: boolean;
 };
 
 function LivingTwinMarker(props: {
   entity: CognitiveTwinTwinEntity;
-  objects: any[];
+  objects: SceneObject[];
 }): React.ReactElement | null {
-  const objectId = props.entity.objectIds[0];
-  if (!objectId) return null;
-
+  const objectId = props.entity.objectIds[0] ?? null;
   const position = useMemo(() => {
+    if (!objectId) return null;
     const pos = getObjPos(objectId, props.objects);
     return new THREE.Vector3(pos.x, pos.y + 0.14, pos.z);
   }, [objectId, props.objects]);
+
+  if (!objectId || !position) return null;
 
   const color = HEALTH_COLOR[props.entity.healthState] ?? "#7aa7c7";
   const scale = props.entity.healthState === "critical" ? 0.11 : props.entity.healthState === "degraded" ? 0.09 : 0.07;

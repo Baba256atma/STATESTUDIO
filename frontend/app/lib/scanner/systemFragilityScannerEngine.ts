@@ -8,8 +8,8 @@ export type NexoraFragilityFindingType =
   | "structural_imbalance";
 
 export interface NexoraFragilityScannerInput {
-  runtimeModel?: any;
-  runtimeContext?: any;
+  runtimeModel?: unknown;
+  runtimeContext?: unknown;
   stateVector?: Record<string, unknown> | null;
   domain?: string | null;
 }
@@ -123,58 +123,75 @@ function safeList(value: unknown): string[] {
   return Array.isArray(value) ? uniq(value.map((entry) => String(entry))) : [];
 }
 
-function normalizeRuntimeModel(runtimeModel?: any): NormalizedRuntimeModel {
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function normalizeRuntimeModel(runtimeModel?: unknown): NormalizedRuntimeModel {
+  const model = asRecord(runtimeModel);
   return {
     domainId:
-      runtimeModel?.domainId === null || runtimeModel?.domainId === undefined
+      model?.domainId === null || model?.domainId === undefined
         ? null
-        : normalizeText(runtimeModel.domainId),
-    objects: Array.isArray(runtimeModel?.objects)
-      ? runtimeModel.objects
-          .map((object: any) => ({
-            id: normalizeText(object?.id ?? ""),
-            label: normalizeText(object?.label ?? object?.id ?? ""),
-            riskLevel: clamp01(object?.riskLevel ?? 0.2),
-            stabilityLevel: clamp01(object?.stabilityLevel ?? 0.8),
-            activityLevel: clamp01(object?.activityLevel ?? 0.5),
-            tags: safeList(object?.tags),
-          }))
+        : normalizeText(model.domainId),
+    objects: Array.isArray(model?.objects)
+      ? model.objects
+          .map((objectValue) => {
+            const object = asRecord(objectValue);
+            return {
+              id: normalizeText(object?.id ?? ""),
+              label: normalizeText(object?.label ?? object?.id ?? ""),
+              riskLevel: clamp01(object?.riskLevel ?? 0.2),
+              stabilityLevel: clamp01(object?.stabilityLevel ?? 0.8),
+              activityLevel: clamp01(object?.activityLevel ?? 0.5),
+              tags: safeList(object?.tags),
+            };
+          })
           .filter((obj: NormalizedRuntimeModel["objects"][number]) => obj.id)
       : [],
-    relations: Array.isArray(runtimeModel?.relations)
-      ? runtimeModel.relations
-          .map((relation: any) => ({
-            id: normalizeText(relation?.id ?? ""),
-            from: normalizeText(relation?.from ?? ""),
-            to: normalizeText(relation?.to ?? ""),
-            relationType: normalizeText(relation?.relationType ?? ""),
-            strength: clamp01(relation?.strength ?? 0.6),
-            volatility: clamp01(relation?.volatility ?? 0.3),
-            tags: safeList(relation?.tags),
-          }))
+    relations: Array.isArray(model?.relations)
+      ? model.relations
+          .map((relationValue) => {
+            const relation = asRecord(relationValue);
+            return {
+              id: normalizeText(relation?.id ?? ""),
+              from: normalizeText(relation?.from ?? ""),
+              to: normalizeText(relation?.to ?? ""),
+              relationType: normalizeText(relation?.relationType ?? ""),
+              strength: clamp01(relation?.strength ?? 0.6),
+              volatility: clamp01(relation?.volatility ?? 0.3),
+              tags: safeList(relation?.tags),
+            };
+          })
           .filter((rel: NormalizedRuntimeModel["relations"][number]) => rel.id && rel.from && rel.to)
       : [],
-    loops: Array.isArray(runtimeModel?.loops)
-      ? runtimeModel.loops
-          .map((loop: any) => ({
-            id: normalizeText(loop?.id ?? ""),
-            label: normalizeText(loop?.label ?? loop?.id ?? ""),
-            loopType: normalizeText(loop?.loopType ?? "reinforcing"),
-            nodes: safeList(loop?.nodes),
-            intensity: clamp01(loop?.intensity ?? 0.5),
-            stability: clamp01(loop?.stability ?? 0.7),
-            tags: safeList(loop?.tags),
-          }))
+    loops: Array.isArray(model?.loops)
+      ? model.loops
+          .map((loopValue) => {
+            const loop = asRecord(loopValue);
+            return {
+              id: normalizeText(loop?.id ?? ""),
+              label: normalizeText(loop?.label ?? loop?.id ?? ""),
+              loopType: normalizeText(loop?.loopType ?? "reinforcing"),
+              nodes: safeList(loop?.nodes),
+              intensity: clamp01(loop?.intensity ?? 0.5),
+              stability: clamp01(loop?.stability ?? 0.7),
+              tags: safeList(loop?.tags),
+            };
+          })
           .filter((lp: NormalizedRuntimeModel["loops"][number]) => lp.id)
       : [],
-    kpis: Array.isArray(runtimeModel?.kpis)
-      ? runtimeModel.kpis
-          .map((kpi: any) => ({
-            id: normalizeText(kpi?.id ?? ""),
-            label: normalizeText(kpi?.label ?? kpi?.id ?? ""),
-            value: clamp01(kpi?.value ?? 0.5),
-            trend: normalizeText(kpi?.trend ?? "stable"),
-          }))
+    kpis: Array.isArray(model?.kpis)
+      ? model.kpis
+          .map((kpiValue) => {
+            const kpi = asRecord(kpiValue);
+            return {
+              id: normalizeText(kpi?.id ?? ""),
+              label: normalizeText(kpi?.label ?? kpi?.id ?? ""),
+              value: clamp01(kpi?.value ?? 0.5),
+              trend: normalizeText(kpi?.trend ?? "stable"),
+            };
+          })
           .filter((k: NormalizedRuntimeModel["kpis"][number]) => k.id)
       : [],
   };

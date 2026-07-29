@@ -12,14 +12,7 @@ import {
   FinanceCategoryRegistry,
   FinanceObjectRegistry,
 } from "./financeRegistryIndex.ts";
-import {
-  ExecutiveFinanceModelFoundation,
-  FinanceAggregationRegistry,
-  FinanceDependencyRegistry,
-  FinanceModelRegistry,
-  FinanceOwnershipRegistry,
-  FinanceRelationshipRegistry,
-} from "./financeModelIndex.ts";
+import { FinanceAggregationRegistry, FinanceDependencyRegistry, FinanceModelRegistry, FinanceOwnershipRegistry, FinanceRelationshipRegistry } from "./financeModelIndex.ts";
 import {
   ExecutiveFinanceValidationFoundation,
   getFinanceValidation,

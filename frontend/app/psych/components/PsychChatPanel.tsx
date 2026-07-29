@@ -22,7 +22,7 @@ type PsychChatPanelProps = {
   assistantMessage?: { id: number; text: string; role?: "assistant" | "system"; source?: Speaker; tone?: InnerDialogueTone | "inner" | "mystery" | "element" } | null;
 };
 
-export default function PsychChatPanel({ mobile = false, drawerRatio, setDrawerRatio, onClose, onSendMessage, onUserActivity, assistantMessage }: PsychChatPanelProps) {
+export default function PsychChatPanel({ mobile = false, onClose, onSendMessage, onUserActivity, assistantMessage }: PsychChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [innerDialogueEnabled, setInnerDialogueEnabled] = useState(true);

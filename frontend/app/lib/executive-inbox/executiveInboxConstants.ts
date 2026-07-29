@@ -2,12 +2,6 @@
  * APP-11:1 — Executive Inbox Platform constants.
  */
 
-import type {
-  ExecutiveInboxItemStatus,
-  ExecutiveInboxSessionStatus,
-  ExecutiveInboxSourceType,
-} from "./executiveInboxTypes.ts";
-
 export const EXECUTIVE_INBOX_PLATFORM_CONTRACT_VERSION = "APP-11/1" as const;
 export const EXECUTIVE_INBOX_PLATFORM_ARCHITECTURE_VERSION = "APP-11/1-arch" as const;
 export const EXECUTIVE_INBOX_PLATFORM_API_VERSION = "APP-11/1" as const;
@@ -40,20 +34,20 @@ export const EXECUTIVE_INBOX_SOURCE_TYPE_KEYS = Object.freeze([
   "workspace",
   "report",
   "assistant",
-] as const satisfies readonly ExecutiveInboxSourceType[]);
+] as const);
 
 export const EXECUTIVE_INBOX_ITEM_STATUS_KEYS = Object.freeze([
   "registered",
   "validated",
   "archived",
   "dismissed",
-] as const satisfies readonly ExecutiveInboxItemStatus[]);
+] as const);
 
 export const EXECUTIVE_INBOX_SESSION_STATUS_KEYS = Object.freeze([
   "draft",
   "active",
   "archived",
-] as const satisfies readonly ExecutiveInboxSessionStatus[]);
+] as const);
 
 export const EXECUTIVE_INBOX_MANDATORY_INBOX_ITEM_FIELDS = Object.freeze([
   "itemId",

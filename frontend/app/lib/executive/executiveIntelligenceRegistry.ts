@@ -568,7 +568,8 @@ export function unregisterExecutiveIndex(indexId: string): UnregisterExecutiveIn
     });
   }
 
-  const { [trimmedIndexId]: _removed, ...rest } = executiveIndexRegistryStore;
+  const rest = { ...executiveIndexRegistryStore };
+  delete rest[trimmedIndexId];
   executiveIndexRegistryStore = Object.freeze(rest);
   commitExecutiveIndexRegistryChange();
 

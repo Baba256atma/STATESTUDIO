@@ -82,28 +82,16 @@ export function SceneHudZoneLayout(props: SceneHudZoneLayoutProps): React.ReactE
     return () => observer.disconnect();
   }, []);
 
+  const hudZoneContext = props.context;
   const contract = React.useMemo(
     () =>
       resolveSceneHudZoneContract({
-        ...props.context,
+        ...hudZoneContext,
         scenePanelCollapsed,
         sceneWidth: sceneBounds?.width,
         sceneHeight: sceneBounds?.height,
       }),
-    [
-      props.context.mainRightPanelVisible,
-      props.context.mainRightPanelWidth,
-      props.context.objectPanelExpanded,
-      props.context.scenePanelVisible,
-      props.context.timelineHeightMode,
-      props.context.timelineVisible,
-      props.context.topBarVisible,
-      props.context.viewportHeight,
-      props.context.viewportWidth,
-      sceneBounds?.height,
-      sceneBounds?.width,
-      scenePanelCollapsed,
-    ]
+    [hudZoneContext, sceneBounds?.height, sceneBounds?.width, scenePanelCollapsed]
   );
 
   React.useEffect(() => {

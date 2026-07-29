@@ -112,10 +112,11 @@ export function ExecutiveQuickActionsDock(props: ExecutiveQuickActionsDockProps)
   const mountedRef = useRef(false);
   const theme = useSceneHudTheme(themeMode);
   const [density, setDensity] = useState<ExecutiveQuickActionsDockDensity>(model.density);
-
-  useEffect(() => {
+  const [syncedModelDensity, setSyncedModelDensity] = useState(model.density);
+  if (model.density !== syncedModelDensity) {
+    setSyncedModelDensity(model.density);
     setDensity(model.density);
-  }, [model.density]);
+  }
 
   useEffect(() => {
     if (mountedRef.current) return;

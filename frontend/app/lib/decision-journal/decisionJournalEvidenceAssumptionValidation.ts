@@ -22,7 +22,7 @@ function issue(code: string, message: string, field?: string): DecisionJournalVa
   return Object.freeze({ code, message, field, readOnly: true as const });
 }
 
-function result(issues: DecisionJournalValidationIssue[]): DecisionJournalValidationResult {
+function result(issues: readonly DecisionJournalValidationIssue[]): DecisionJournalValidationResult {
   return Object.freeze({ valid: issues.length === 0, issues: Object.freeze(issues), readOnly: true as const });
 }
 

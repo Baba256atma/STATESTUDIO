@@ -10,19 +10,7 @@ import { guardWorkspaceDataSourceAccess } from "./workspaceDataSourceIsolationGu
 import { resolveWorkspaceDataSource } from "./workspaceDataSourceResolver.ts";
 import type { WorkspaceDataSourceColumnSchema } from "./workspaceDataSourceSchemaContract.ts";
 import { getDataSourceSchema } from "./workspaceDataSourceSchemaResolver.ts";
-import {
-  NEXORA_COLUMN_CLASSIFICATION_LOG_PREFIX,
-  WORKSPACE_COLUMN_CLASSIFICATION_SOURCE,
-  WORKSPACE_COLUMN_CLASSIFICATION_TAGS,
-  WORKSPACE_COLUMN_CLASSIFICATION_VERSION,
-  workspaceColumnClassificationIsComplete,
-  workspaceDataSourceColumnClassificationProfileIsComplete,
-  type ClassifyDataSourceColumnsResult,
-  type ColumnBusinessRole,
-  type WorkspaceColumnClassification,
-  type WorkspaceColumnClassificationStore,
-  type WorkspaceDataSourceColumnClassificationProfile,
-} from "./workspaceColumnClassificationContract.ts";
+import { NEXORA_COLUMN_CLASSIFICATION_LOG_PREFIX, WORKSPACE_COLUMN_CLASSIFICATION_SOURCE, WORKSPACE_COLUMN_CLASSIFICATION_TAGS, WORKSPACE_COLUMN_CLASSIFICATION_VERSION, workspaceDataSourceColumnClassificationProfileIsComplete, type ClassifyDataSourceColumnsResult, type ColumnBusinessRole, type WorkspaceColumnClassification, type WorkspaceColumnClassificationStore, type WorkspaceDataSourceColumnClassificationProfile } from "./workspaceColumnClassificationContract.ts";
 
 const STORAGE_KEY = "nexora.workspaceColumnClassifications.v2";
 
@@ -32,8 +20,6 @@ const columnClassificationListeners = new Set<ColumnClassificationListener>();
 
 let workspaceColumnClassifications: WorkspaceColumnClassificationStore = {};
 let columnClassificationHydrated = false;
-let columnClassificationVersion = 0;
-let classificationUpdatedAt: string | null = null;
 
 const IDENTIFIER_PATTERNS: readonly RegExp[] = [
   /^id$/,
@@ -120,7 +106,6 @@ function emitColumnClassificationDiagnostic(
 }
 
 function notifyColumnClassificationListeners(): void {
-  columnClassificationVersion += 1;
   columnClassificationListeners.forEach((listener) => listener());
 }
 
@@ -226,8 +211,7 @@ function getDataSourceProfiles(
   return workspaceColumnClassifications[workspaceId] ?? Object.freeze({});
 }
 
-function commitClassificationChange(timestamp = nowIso()): void {
-  classificationUpdatedAt = timestamp;
+function commitClassificationChange(): void {
   writeStorage();
   notifyColumnClassificationListeners();
 }
@@ -545,7 +529,7 @@ export function classifyDataSourceColumns(
       [trimmedDataSourceId]: nextProfile,
     }),
   });
-  commitClassificationChange(timestamp);
+  commitClassificationChange();
 
   return Object.freeze({
     success: true,
@@ -599,7 +583,7 @@ export function persistWorkspaceDataSourceColumnClassificationProfile(
       [dataSourceId]: nextProfile,
     }),
   });
-  commitClassificationChange(nextProfile.updatedAt);
+  commitClassificationChange();
 
   for (const classification of Object.values(nextProfile.columns)) {
     emitColumnClassificationDiagnostic("Column Classified", {
@@ -678,10 +662,11 @@ export function removeWorkspaceColumnClassificationProfile(
     });
   }
 
-  const { [trimmedDataSourceId]: _removed, ...remaining } = getDataSourceProfiles(trimmedWorkspaceId);
+  const profiles = { ...getDataSourceProfiles(trimmedWorkspaceId) };
+  delete profiles[trimmedDataSourceId];
   workspaceColumnClassifications = Object.freeze({
     ...workspaceColumnClassifications,
-    [trimmedWorkspaceId]: Object.freeze(remaining),
+    [trimmedWorkspaceId]: Object.freeze(profiles),
   });
   commitClassificationChange();
   return Object.freeze({
@@ -695,8 +680,6 @@ export function removeWorkspaceColumnClassificationProfile(
 export function resetWorkspaceColumnClassificationStoreForTests(): void {
   workspaceColumnClassifications = {};
   columnClassificationHydrated = false;
-  columnClassificationVersion = 0;
-  classificationUpdatedAt = null;
   columnClassificationListeners.clear();
   if (typeof window !== "undefined") {
     try {

@@ -5,12 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  buildNexoraMetricDropoffs,
-  buildNexoraMetricsSummary,
-  describeBiggestMetricsDropoff,
-  type NexoraMetricRecord,
-} from "./nexoraMetrics.ts";
+import { buildNexoraMetricsSummary, describeBiggestMetricsDropoff, type NexoraMetricRecord } from "./nexoraMetrics.ts";
 
 test("buildNexoraMetricsSummary: empty → zeros", () => {
   const s = buildNexoraMetricsSummary([]);

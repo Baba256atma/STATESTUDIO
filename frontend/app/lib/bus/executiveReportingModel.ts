@@ -1,16 +1,4 @@
-import {
-  ExecutiveReportingContractDescription,
-  ExecutiveReportingContractId,
-  ExecutiveReportingContractName,
-  ExecutiveReportingContractVersion,
-  type ExecutiveReportAudience,
-  type ExecutiveReportCategory,
-  type ExecutiveReportDefinition,
-  type ExecutiveReportTemplate,
-  type ExecutiveReportingContract,
-  type ExecutiveReportingProfile,
-  type ExecutiveReportingSummary,
-} from "./executiveReportingIndex.ts";
+import { ExecutiveReportingContractDescription, ExecutiveReportingContractId, ExecutiveReportingContractName, ExecutiveReportingContractVersion, type ExecutiveReportDefinition, type ExecutiveReportTemplate, type ExecutiveReportingContract, type ExecutiveReportingProfile, type ExecutiveReportingSummary } from "./executiveReportingIndex.ts";
 import {
   ExecutiveReportAudienceRegistry,
   ExecutiveReportCategoryRegistry,

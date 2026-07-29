@@ -7,12 +7,7 @@ import * as platform from "./schedulingPlatformIndex.ts";
 import * as certification from "./executiveSchedulingPlatformCertificationIndex.ts";
 import * as freeze from "./executiveSchedulingPlatformFreezeIndex.ts";
 import { SchedulingIntelligenceIdentity } from "./schedulingIntelligenceIndex.ts";
-import {
-  ExecutiveSchedulingPlatform,
-  ExecutiveSchedulingPlatformPublicRegistry,
-  ExecutiveSchedulingPlatformReleaseSummary,
-  validateSchedulingPlatformIndex,
-} from "./schedulingPlatformIndex.ts";
+import { ExecutiveSchedulingPlatformPublicRegistry, ExecutiveSchedulingPlatformReleaseSummary, validateSchedulingPlatformIndex } from "./schedulingPlatformIndex.ts";
 import {
   buildExecutiveSchedulingPlatformCertificationManifest,
   getExecutiveSchedulingCertificationSummary,

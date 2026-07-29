@@ -113,15 +113,17 @@ function extractTargetObject(text: string, adapter: IntentExtractionLanguageAdap
   return findFirstMatchingKeyword(text, keywords);
 }
 
-function extractMarkers(
+function extractMarkers<T extends ExtractedConstraint | ExtractedAssumption | ExtractedEvidence>(
   text: string,
   markers: readonly string[],
   prefix: string,
   timestamp: string,
-  build: (index: number, phrase: string, explicitText: string) => ExtractedConstraint | ExtractedAssumption | ExtractedEvidence
-): readonly ExtractedConstraint[] | readonly ExtractedAssumption[] | readonly ExtractedEvidence[] {
+  build: (index: number, phrase: string, explicitText: string) => T
+): readonly T[] {
+  void prefix;
+  void timestamp;
   const normalized = text.toLowerCase();
-  const results: Array<ExtractedConstraint | ExtractedAssumption | ExtractedEvidence> = [];
+  const results: T[] = [];
   for (const marker of markers) {
     const index = normalized.indexOf(marker.toLowerCase());
     if (index >= 0) {
@@ -287,6 +289,7 @@ export function extractIntentActors(
   text: string,
   _languageCode: string = "en"
 ): readonly ExtractedActor[] {
+  void _languageCode;
   const results: ExtractedActor[] = [];
   const rolePatterns = Object.freeze([
     Object.freeze({ role: "CEO", pattern: /\bceo\b/i }),

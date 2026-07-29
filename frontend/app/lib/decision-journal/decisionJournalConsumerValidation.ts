@@ -23,7 +23,7 @@ export function isDecisionJournalConsumerId(value: string): value is DecisionJou
 export function validateDecisionJournalConsumerAccess(
   request: DecisionJournalConsumerAccessRequest
 ): DecisionJournalValidationResult {
-  const issues: DecisionJournalValidationResult["issues"] = [];
+  const issues: DecisionJournalValidationResult["issues"][number][] = [];
 
   if (!isDecisionJournalConsumerId(request.consumerId)) {
     issues.push(

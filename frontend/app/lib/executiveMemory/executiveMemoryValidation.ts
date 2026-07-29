@@ -28,6 +28,7 @@ function result(issues: ExecutiveMemoryValidationIssue[]): ExecutiveMemoryValida
   return Object.freeze({
     valid: issues.length === 0,
     issues: Object.freeze(issues),
+    readOnly: true as const,
   });
 }
 

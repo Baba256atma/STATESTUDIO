@@ -12,7 +12,7 @@ import {
 import { nx, panelSurfaceStyle, softCardStyle } from "../ui/nexoraTheme";
 
 type DecisionTrustTimelineProps = {
-  responseData?: any;
+  responseData?: Record<string, unknown> | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
   decisionResult?: DecisionExecutionResult | null;
   memoryEntry?: DecisionMemoryEntry | null;

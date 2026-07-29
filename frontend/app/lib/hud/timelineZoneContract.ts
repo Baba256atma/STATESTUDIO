@@ -12,8 +12,6 @@ import {
 } from "../scene/sceneHudInsetContract.ts";
 
 import type { SceneHudZoneRect } from "../scene/sceneHudZoneContract.ts";
-import { SCENE_HUD_ZONE_METRICS } from "../scene/sceneHudZoneContract.ts";
-
 export const MIN_TIMELINE_BOTTOM_INSET = TIMELINE_BOTTOM;
 export const MIN_TIMELINE_TO_OBJECT_PANEL_GAP = 12;
 export const MIN_TIMELINE_TO_SCENE_PANEL_GAP = 12;

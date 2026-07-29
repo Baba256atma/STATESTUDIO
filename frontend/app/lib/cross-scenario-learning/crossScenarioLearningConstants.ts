@@ -2,12 +2,6 @@
  * APP-10:1 — Cross-Scenario Learning Platform constants.
  */
 
-import type {
-  LearningCandidateStatus,
-  LearningSessionStatus,
-  LearningSourceType,
-} from "./crossScenarioLearningTypes.ts";
-
 export const CROSS_SCENARIO_LEARNING_PLATFORM_CONTRACT_VERSION = "APP-10/1" as const;
 export const CROSS_SCENARIO_LEARNING_PLATFORM_ARCHITECTURE_VERSION = "APP-10/1-arch" as const;
 export const CROSS_SCENARIO_LEARNING_PLATFORM_API_VERSION = "APP-10/1" as const;
@@ -39,20 +33,20 @@ export const CROSS_SCENARIO_LEARNING_SOURCE_KEYS = Object.freeze([
   "validated_business_knowledge",
   "decision_journal",
   "scenario_timeline",
-] as const satisfies readonly LearningSourceType[]);
+] as const);
 
 export const CROSS_SCENARIO_LEARNING_CANDIDATE_STATUS_KEYS = Object.freeze([
   "registered",
   "validated",
   "archived",
-] as const satisfies readonly LearningCandidateStatus[]);
+] as const);
 
 export const CROSS_SCENARIO_LEARNING_SESSION_STATUS_KEYS = Object.freeze([
   "draft",
   "active",
   "completed",
   "archived",
-] as const satisfies readonly LearningSessionStatus[]);
+] as const);
 
 export const CROSS_SCENARIO_LEARNING_MANDATORY_SCENARIO_SNAPSHOT_FIELDS = Object.freeze([
   "snapshotId",

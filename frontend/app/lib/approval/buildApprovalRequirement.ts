@@ -8,13 +8,20 @@ export type ApprovalRequirement = {
   blocked_until_approval_actions: string[];
 };
 
+import type { DecisionGovernanceState } from "../governance/decisionGovernanceTypes";
+import type { MetaDecisionState } from "../decision/meta/metaDecisionTypes";
+import type { DecisionExecutionIntent } from "../execution/decisionExecutionIntent";
+import type { OrgMemoryState } from "../org-memory/orgMemoryTypes";
+import type { TeamDecisionState } from "../team/teamDecisionTypes";
+import type { DecisionPolicyState } from "../policy/decisionPolicyTypes";
+
 type BuildApprovalRequirementInput = {
-  governanceState?: any | null;
-  decisionExecutionIntent?: any | null;
-  teamDecisionState?: any | null;
-  orgMemoryState?: any | null;
-  metaDecisionState?: any | null;
-  policyState?: any | null;
+  governanceState?: DecisionGovernanceState | null;
+  decisionExecutionIntent?: DecisionExecutionIntent | null;
+  teamDecisionState?: TeamDecisionState | null;
+  orgMemoryState?: OrgMemoryState | null;
+  metaDecisionState?: MetaDecisionState | null;
+  policyState?: DecisionPolicyState | null;
 };
 
 export function buildApprovalRequirement(

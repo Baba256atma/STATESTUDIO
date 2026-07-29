@@ -9,12 +9,7 @@ import * as freeze from "./taskPlatformFreezeIndex.ts";
 import {
   TaskIntelligenceIdentity,
 } from "./taskIntelligenceIndex.ts";
-import {
-  ExecutiveTaskIntelligencePlatform,
-  ExecutiveTaskIntelligencePlatformPublicRegistry,
-  ExecutiveTaskIntelligencePlatformReleaseSummary,
-  validateTaskPlatformIndex,
-} from "./taskPlatformIndex.ts";
+import { ExecutiveTaskIntelligencePlatformPublicRegistry, ExecutiveTaskIntelligencePlatformReleaseSummary, validateTaskPlatformIndex } from "./taskPlatformIndex.ts";
 import {
   buildTaskPlatformCertificationManifest,
   getTaskPlatformCertificationStatus,

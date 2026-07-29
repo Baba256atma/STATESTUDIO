@@ -12,15 +12,17 @@ import type {
   ValueFraming,
 } from "./decisionSummaryTypes";
 
+type LooseRecord = Record<string, unknown>;
+
 type DecisionBriefMapperInput = {
-  fragility?: any | null;
+  fragility?: LooseRecord | null;
   decisionImpact?: DecisionImpactState | null;
-  strategicAdvice?: any | null;
+  strategicAdvice?: LooseRecord | null;
   strategicCouncil?: StrategicCouncilResult | null;
-  cockpitExecutive?: any | null;
+  cockpitExecutive?: LooseRecord | null;
   canonicalRecommendation?: CanonicalRecommendation | null;
-  promptFeedback?: any | null;
-  decisionSimulation?: any | null;
+  promptFeedback?: LooseRecord | null;
+  decisionSimulation?: LooseRecord | null;
   reply?: string | null;
   selectedObjectLabel?: string | null;
   resolveObjectLabel?: ((id: string | null | undefined) => string | null) | null;
@@ -40,7 +42,7 @@ function labelFor(
   return resolveObjectLabel?.(id) ?? id;
 }
 
-function deriveRiskLevel(fragility: any): DecisionRiskLevel {
+function deriveRiskLevel(fragility: LooseRecord | null | undefined): DecisionRiskLevel {
   const level = String(fragility?.level ?? "").trim().toLowerCase();
   if (level === "critical") return "critical";
   if (level === "high") return "high";

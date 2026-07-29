@@ -18,12 +18,6 @@ const FALLBACK_SYNTHESIS: TypeCMultiAgentSynthesis = {
   confidence: 0.25,
 };
 
-const FALLBACK_MULTI_AGENT: TypeCMultiAgentInsight = {
-  agentResponses: [],
-  synthesis: FALLBACK_SYNTHESIS,
-  source: "multi_agent_ai",
-};
-
 function clampText(value: unknown, maxLength: number): string {
   const text = typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
   if (text.length <= maxLength) return text;

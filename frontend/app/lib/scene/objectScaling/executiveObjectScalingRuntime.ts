@@ -181,16 +181,13 @@ export function resolveExecutiveObjectScale(input: ExecutiveObjectScaleInput): E
   if (input.dimmed) scale *= DIMMED_SCALE_MULTIPLIER;
 
   scale = Math.max(resolveMinimumReadableObjectScale(objectCount), clampScale(scale));
-  let roundedScale = roundScaleBucket(scale);
-  let governanceReason: string | undefined;
-  let minScale: number | undefined;
-  let maxScale: number | undefined;
+  const baseRoundedScale = roundScaleBucket(scale);
 
   const viewMode = input.viewMode ?? "3D";
   const governed = applyExecutiveObjectScaleGovernance({
     objectId: input.objectId,
     rawScale,
-    baseScale: roundedScale,
+    baseScale: baseRoundedScale,
     objectCount,
     viewMode,
     role: input.role,
@@ -199,10 +196,10 @@ export function resolveExecutiveObjectScale(input: ExecutiveObjectScaleInput): E
     focused: input.focused,
     zoneLike: input.zoneLike,
   });
-  roundedScale = governed.scale;
-  governanceReason = governed.reason;
-  minScale = governed.minScale;
-  maxScale = governed.maxScale;
+  const roundedScale = governed.scale;
+  const governanceReason = governed.reason;
+  const minScale = governed.minScale;
+  const maxScale = governed.maxScale;
 
   const result: ExecutiveObjectScaleResult = {
     scale: roundedScale,

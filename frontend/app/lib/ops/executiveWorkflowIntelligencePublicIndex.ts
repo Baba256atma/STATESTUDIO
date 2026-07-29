@@ -9,12 +9,7 @@ import * as freeze from "./workflowPlatformFreezeIndex.ts";
 import {
   WorkflowIntelligenceIdentity,
 } from "./workflowIntelligenceIndex.ts";
-import {
-  ExecutiveWorkflowIntelligencePlatform,
-  ExecutiveWorkflowIntelligencePlatformPublicRegistry,
-  ExecutiveWorkflowIntelligencePlatformReleaseSummary,
-  validateWorkflowPlatformIndex,
-} from "./workflowPlatformIndex.ts";
+import { ExecutiveWorkflowIntelligencePlatformPublicRegistry, ExecutiveWorkflowIntelligencePlatformReleaseSummary, validateWorkflowPlatformIndex } from "./workflowPlatformIndex.ts";
 import {
   buildWorkflowPlatformCertificationManifest,
   getWorkflowPlatformCertificationStatus,

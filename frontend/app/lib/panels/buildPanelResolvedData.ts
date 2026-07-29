@@ -283,10 +283,6 @@ function hasAnyRenderableArray(value: unknown) {
   return Array.isArray(value) && value.length > 0;
 }
 
-function hasWeakObject(value: unknown) {
-  return hasAnyRenderableFamilyRecord(value);
-}
-
 function pickFirst<T>(values: T[]): T | null {
   for (const value of values) {
     if (value == null) continue;
@@ -505,19 +501,6 @@ function hasSimulationPartial(value: unknown) {
     hasItems(record?.impacted_nodes) ||
     hasItems(record?.affected_objects) ||
     hasAnyRenderableFamilyRecord(value)
-  );
-}
-
-function hasWarRoomSupportPartial(value: unknown) {
-  const record = asRecord(value);
-  return Boolean(
-    hasText(record?.summary) ||
-      hasText(record?.recommendation) ||
-      hasText(record?.simulation_summary) ||
-      hasText(record?.compare_summary) ||
-      hasText(record?.advice_summary) ||
-      hasText(record?.executive_summary) ||
-      hasWarRoomPartial(value)
   );
 }
 

@@ -67,11 +67,11 @@ export interface MultiSourceScannerInput {
   mode?: ScannerMode;
   targetProjectId?: string;
   domainId?: string | null;
-  domainPack?: any | null;
-  panelRegistry?: Record<string, any>;
-  scenarioKpiMapping?: any | null;
-  adviceConfig?: any | null;
-  cockpitComposition?: any | null;
+  domainPack?: Record<string, unknown> | null;
+  panelRegistry?: Record<string, unknown>;
+  scenarioKpiMapping?: Record<string, unknown> | null;
+  adviceConfig?: Record<string, unknown> | null;
+  cockpitComposition?: Record<string, unknown> | null;
 }
 
 export interface ScannerNormalizedContentBlock {
@@ -836,7 +836,7 @@ function buildSceneJson(args: {
         camera: { pos: [0, 0, 16], lookAt: [0, 0, 0], autoFrame: true },
         objects,
         loops: sceneLoops,
-        relations: sceneRelations as any,
+        relations: sceneRelations,
       },
     },
     semanticObjectMeta,

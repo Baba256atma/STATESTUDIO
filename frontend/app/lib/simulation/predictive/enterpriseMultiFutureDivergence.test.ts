@@ -49,6 +49,7 @@ import type { SceneJson } from "../../sceneTypes.ts";
 
 function sceneFixture(): SceneJson {
   return {
+    state_vector: {},
     scene: {
       objects: [
         { id: "plant_a", label: "Plant A", domain: "manufacturing", dependencies: ["warehouse_hub"] },
@@ -459,12 +460,6 @@ test("convergence analysis testing", () => {
     resilienceState: stack.resilience,
     pressureState: stack.pressure,
   });
-  const signals = deriveFutureDivergenceSignals({
-    branches,
-    trajectoryState: stack.trajectory,
-    momentumState: stack.momentum,
-    resilienceState: stack.resilience,
-  });
   const separations = analyzeStrategicFutureSeparation({
     topology: stack.topology,
     branches,
@@ -538,5 +533,6 @@ test("rejects duplicate divergence build fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_divergence_build");
 });

@@ -10,17 +10,7 @@ import {
   INTENT_DEPENDENCY_DIAGNOSTIC_CODES,
   isIntentDependencyDiagnosticCode,
 } from "./executiveIntentDependencyDiagnostics.ts";
-import {
-  ExecutiveIntentDependencyEngine,
-  buildDependencyExample,
-  buildDependencyGraph,
-  buildDependencyMatrix,
-  buildDependencyProbe,
-  detectIntentDependencies,
-  detectIntentDependency,
-  resolveDependencyFlags,
-  validateDependencyGraph,
-} from "./executiveIntentDependencyEngine.ts";
+import { ExecutiveIntentDependencyEngine, buildDependencyExample, buildDependencyMatrix, buildDependencyProbe, detectIntentDependencies, detectIntentDependency, resolveDependencyFlags, validateDependencyGraph } from "./executiveIntentDependencyEngine.ts";
 import {
   EXECUTIVE_INTENT_DEPENDENCY_ENGINE_RULES,
   EXECUTIVE_INTENT_DEPENDENCY_ENGINE_TAGS,
@@ -108,7 +98,7 @@ test("detects technology migration before deployment", () => {
 
 test("detects strategic funding before acquisition", () => {
   const result = buildDependencyExample("funding-before-acquisition", WS, "executive-owner", FIXED_TIME);
-  assert.ok(result?.flags.hasDependencies || result?.dependencies.length > 0);
+  assert.ok(result?.flags.hasDependencies || (result?.dependencies?.length ?? 0) > 0);
 });
 
 test("detects shared prerequisite between financial intents", () => {

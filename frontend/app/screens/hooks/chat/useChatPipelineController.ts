@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
 import {
@@ -8,9 +8,12 @@ import {
 import { FAST_CHAT_THRESHOLD_MS } from "../../../components/assistant/LeftCommandAssistant.tsx";
 import { parseSelectedSizeCommand, parseSizeCommand } from "../../../lib/sizeCommands.ts";
 import type { UICommand } from "../../../lib/ui/uiCommands.ts";
+import type { DecisionAction } from "../../../lib/decision/decisionRouter.ts";
 import type { SceneObject } from "../../../lib/sceneTypes.ts";
+import { readUnknownErrorMessage } from "../../../lib/system/nexoraErrors.ts";
 import { appendMessages, MEMORY_KEY, type Msg, type ScenePrefs } from "../../homeScreenUtils.ts";
 import { normalizeChatInputForDedup } from "./chatPipelineSendTextHelpers.ts";
+import type { ChatPipelineSendTextRuntimeDeps } from "./useChatPipelineController.sendTextRuntimeDeps.ts";
 
 import {
   CHAT_PIPELINE_CONTROLLER_EXTRACTION_PLAN,
@@ -18,8 +21,6 @@ import {
   type ChatPipelineControllerCallbacks,
   type ChatPipelineControllerRefs,
   type ChatPipelineControllerState,
-  type ChatPipelineDiagnosticEventName,
-  type ChatPipelineDiagnosticPayload,
   type ChatPipelineMessage,
   type ChatSendInput,
   type ChatPipelineSendTextDeps,
@@ -30,7 +31,6 @@ import {
 import type { PanelAuthorityOpenRequest } from "../right-panel/useRightPanelController.types.ts";
 
 // ---- O4:5 `sendText` lifecycle (verbatim from HomeScreen; O4:7 bridges, O4:8 diagnostics). O4:10 regression-verified. ----
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 const NEXORA_PANEL_DEPRECATION_DEBUG = true;
 
 const NEXORA_PIPELINE_USER_FAILURE = "System couldn't complete analysis. Please try again.";
@@ -207,6 +207,8 @@ function dispatchChatTypeCBridge(
   return handled;
 }
 
+const noopChatPipelineDiagnostic: EmitChatPipelineDiagnosticFn = () => {};
+
 function createChatPipelineSendText(
   deps: ChatPipelineSendTextDeps,
   bridges: ChatPipelineBridgeCallbacks | null | undefined,
@@ -215,11 +217,14 @@ function createChatPipelineSendText(
     const text = textRaw.trim();
     if (!text) return;
 
+  const runtimeDeps = deps as ChatPipelineSendTextRuntimeDeps;
+  const emitChatPipelineDiagnostic =
+    runtimeDeps.emitChatPipelineDiagnostic ?? noopChatPipelineDiagnostic;
+
   const {
     activeChatDebugCorrelationRef,
     activeChatRequestRef,
     activeDomainExperience,
-    activeExecutiveObjectId,
     activeLoopIdStore,
     activeMode,
     activePanelFamilyAuditRef,
@@ -231,7 +236,6 @@ function createChatPipelineSendText(
     appendMessages,
     applyDecisionActions,
     applyExecutionResultToUi,
-    applyProductFlowViewModel,
     applyRetailTriggerEnhancement,
     applySceneFromChat,
     applyUICommands,
@@ -262,9 +266,7 @@ function createChatPipelineSendText(
     executeNexoraAction,
     finalizeChatRequest,
     firstMeaningfulState,
-    focusMode,
     focusModeStore,
-    focusPinned,
     focusedId,
     getAnalyzeLockedObjectId,
     getChatLifecycleErrorMessage,
@@ -285,7 +287,6 @@ function createChatPipelineSendText(
     lastAppliedSceneEffectRef,
     lastChatDedupRef,
     latestChatPipelineRunIdRef,
-    loading,
     logPanelGuidedPromptWarn,
     loopGuardInFlightByTextRef,
     makeMsg,
@@ -319,7 +320,6 @@ function createChatPipelineSendText(
     resolvePreferredPanelFamilyFromIntent,
     rightPanelRouteLockRef,
     rightPanelState,
-    rightPanelTab,
     routeChatInput,
     runGuardChecks,
     runNexoraChatPromptPipeline,
@@ -358,23 +358,9 @@ function createChatPipelineSendText(
     tracePanelFlowRuntime,
     updateMemory,
     updateObjectUx,
-    updateSelectedObjectInfo,
     userSafeChatMessage,
-    visibleDecisionCockpit,
-    visibleFocusedId,
-    visibleObjectSelection,
-    visibleResponseData,
-    visibleRiskPropagation,
-    visibleSceneJson,
-    visibleSelectedObjectId,
-    visibleStrategicAdvice,
     writeChatPipelineDebug,
-  } = deps as any;
-
-    const emitChatPipelineDiagnostic: EmitChatPipelineDiagnosticFn =
-      typeof (deps as any).emitChatPipelineDiagnostic === "function"
-        ? ((deps as any).emitChatPipelineDiagnostic as EmitChatPipelineDiagnosticFn)
-        : ((_event: ChatPipelineDiagnosticEventName, _payload: ChatPipelineDiagnosticPayload) => {});
+  } = runtimeDeps;
 
     markUserStartedFlow("chat_message");
     const preRunBridgeRunId = latestChatPipelineRunIdRef.current ?? "pre-run";
@@ -397,7 +383,7 @@ function createChatPipelineSendText(
         highlighted_objects: ["delivery"],
         highlighted_ids: ["delivery"],
         dim_unrelated_objects: false,
-      } as any);
+      });
       setSelectedObjectIdState("delivery");
       setEntryFlowState("objects_created");
       setCenterOverlay(null);
@@ -451,7 +437,7 @@ function createChatPipelineSendText(
         highlighted_objects: ["delivery"],
         highlighted_ids: ["delivery"],
         dim_unrelated_objects: false,
-      } as any);
+      });
       setSelectedObjectIdState("delivery");
       setEntryFlowState("objects_created");
       dispatchChatPanelBridge(
@@ -723,7 +709,7 @@ function createChatPipelineSendText(
           setMessages(nextMessages);
           emitChatResult(sel.reply, true, requestId);
           // apply override
-          setOverrideRef.current(selectedId, { scale: sel.nextScale });
+          setOverrideRef.current?.(selectedId, { scale: sel.nextScale });
           setNoSceneUpdate(false);
           setSourceLabel(null);
           const snapshot = buildPersistedProjectSnapshot({
@@ -739,7 +725,7 @@ function createChatPipelineSendText(
           return;
         }
       }
-    } catch (err) {
+    } catch {
       // fall through to normal flow on any error
     }
 
@@ -1616,7 +1602,9 @@ function createChatPipelineSendText(
         }
 
         const targets = routerResult.actions
-          .map((a: any) => (a && typeof (a as any).target === "string" ? (a as any).target : null))
+          .map((action: DecisionAction) =>
+            typeof action?.target === "string" ? action.target : null
+          )
           .filter((t: string | null): t is string => !!t);
 
         // Defer visual patches; applying overrides touches SceneStateProvider.
@@ -1650,8 +1638,8 @@ function createChatPipelineSendText(
       const fallbackReply =
         promptPipeline.coreResponse.insight ??
         executionResult.chatReply ??
-        executionResult.errors[0] ??
-        executionResult.warnings[0] ??
+        executionResult.errors?.[0] ??
+        executionResult.warnings?.[0] ??
         intentRoute.explanation;
       const assistantMsg = makeMsg("assistant", fallbackReply, {
         confidence: promptPipeline.coreResponse.confidence,
@@ -1687,10 +1675,9 @@ function createChatPipelineSendText(
       if (typeof data?.episode_id === "string" && data.episode_id.trim()) {
         setEpisodeId(data.episode_id);
       }
-      if (!data || (data as any).ok === false || (data as any).error) {
+      if (!data || data.ok === false || data.error) {
         const rawMsg =
-          ((data as any)?.error?.message as string | undefined) ??
-          "Request failed; no changes applied.";
+          readUnknownErrorMessage(data.error, "Request failed; no changes applied.");
         const msg = userSafeChatMessage(rawMsg);
         setMessages((m: Msg[]) => appendMessages(m, [makeMsg("assistant", msg)]));
         emitChatResult(msg, false, requestId);
@@ -1711,8 +1698,8 @@ function createChatPipelineSendText(
       const baseMessages = appendMessages(messagesRef.current, [userBackendMsg]);
       setMessages(baseMessages);
       const nextActiveMode: string =
-        typeof (data as any)?.active_mode === "string" && (data as any).active_mode.trim().length
-          ? (data as any).active_mode
+        typeof data.active_mode === "string" && data.active_mode.trim().length
+          ? data.active_mode
           : activeMode;
       setActiveMode(nextActiveMode);
       const viewModel = deriveProductFlowViewModel(data, sceneJson);
@@ -1747,10 +1734,12 @@ function createChatPipelineSendText(
             const objsForPolicy: SceneObject[] = Array.isArray(acceptedSceneForChatReplacement?.scene?.objects)
               ? acceptedSceneForChatReplacement.scene.objects
               : [];
-            const validIds = objsForPolicy.map((o: any, idx: number) => o.id ?? o.name ?? `${o.type ?? "obj"}:${idx}`);
+            const validIds = objsForPolicy.map(
+              (obj: SceneObject, idx: number) => obj.id ?? obj.name ?? `${obj.type ?? "obj"}:${idx}`
+            );
             pruneOverridesRef.current?.(validIds);
           }
-        } catch (e) {
+        } catch {
           // ignore policy errors
         }
       } else if (incomingSceneJson || viewModelSceneJson) {
@@ -1770,7 +1759,7 @@ function createChatPipelineSendText(
       const finalMessages = appendMessages(baseMessages, [assistantMsg]);
       setMessages(finalMessages);
       emitChatResult(assistantMsg.text, true, requestId);
-      const nextActions = Array.isArray((data as any)?.actions) ? ((data as any).actions as any[]) : [];
+      const nextActions = Array.isArray(data.actions) ? data.actions : [];
       setLastActions(nextActions);
       if (nextActions.length === 0) {
         setLastActions(promptPipeline.coreResponse.actions);
@@ -1983,7 +1972,7 @@ function createChatPipelineSendText(
           source: "analyze_object",
         });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (!isLatestChatRequest(requestSeq)) {
         traceDemoFlowEvent({
           phase: "stale_ignored",
@@ -2141,8 +2130,6 @@ function createChatPipelineSendText(
   };
 }
 
-/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
-
 export type UseChatPipelineControllerInput = Readonly<{
   messages: readonly ChatPipelineMessage[];
   inputValue: string;
@@ -2277,75 +2264,96 @@ export function useChatPipelineController(input: UseChatPipelineControllerInput)
     ]
   );
 
-  const sendTextDepsForImpl = useMemo(
-    () => ({ ...input.sendTextDeps, emitChatPipelineDiagnostic } as ChatPipelineSendTextDeps),
-    [emitChatPipelineDiagnostic, input.sendTextDeps]
-  );
-
-  const sendTextImpl = useMemo(
-    () => createChatPipelineSendText(sendTextDepsForImpl, bridges),
-    [bridges, sendTextDepsForImpl]
-  );
+  // AD-CHAT-01 — StableCallbackWithCommitSynchronizedLatestDependencies:
+  // keep sendText identity stable; read the latest committed deps/bridges only inside the event.
+  const latestSendBundleRef = useRef<{
+    deps: ChatPipelineSendTextDeps;
+    bridges: ChatPipelineBridgeCallbacks;
+    messageCount: number;
+    emitSendTextDiag: typeof emitSendTextDiag;
+  }>({
+    deps: { ...input.sendTextDeps, emitChatPipelineDiagnostic } as ChatPipelineSendTextDeps,
+    bridges,
+    messageCount: input.messages.length,
+    emitSendTextDiag,
+  });
+  useLayoutEffect(() => {
+    latestSendBundleRef.current = {
+      deps: { ...input.sendTextDeps, emitChatPipelineDiagnostic } as ChatPipelineSendTextDeps,
+      bridges,
+      messageCount: input.messages.length,
+      emitSendTextDiag,
+    };
+  }, [bridges, emitChatPipelineDiagnostic, emitSendTextDiag, input.messages.length, input.sendTextDeps]);
 
   const sendText = useCallback(
     async (textRaw: string | ChatSendInput, requestId?: string, options?: SendTextOptions) => {
+      const bundle = latestSendBundleRef.current;
       const raw = typeof textRaw === "string" ? textRaw : textRaw.text;
       const trimmed = raw.trim();
       if (!trimmed) {
-        emitSendTextDiag({
+        bundle.emitSendTextDiag({
           runId: activeRunIdRef.current,
           source: options?.source ?? (typeof textRaw === "object" ? String(textRaw.source ?? "user") : "user"),
           promptSignature: "",
-          messageCountBefore: input.messages.length,
+          messageCountBefore: bundle.messageCount,
           skippedReason: "empty_input",
         });
         return;
       }
       const promptSignature = normalizeChatInputForDedup(trimmed);
-      emitSendTextDiag({
+      bundle.emitSendTextDiag({
         runId: activeRunIdRef.current,
         source: options?.source ?? (typeof textRaw === "object" ? String(textRaw.source ?? "user") : "user"),
         promptSignature,
-        messageCountBefore: input.messages.length,
+        messageCountBefore: bundle.messageCount,
       });
+      const sendTextImpl = createChatPipelineSendText(bundle.deps, bundle.bridges);
       await sendTextImpl(raw, requestId, options);
     },
-    [activeRunIdRef, emitSendTextDiag, input.messages.length, sendTextImpl]
+    [activeRunIdRef]
   );
 
+  const setChatRequestStatus = input.setChatRequestStatus;
+  const setLoading = input.setLoading;
+  const setChatDelayedBusy = input.setChatDelayedBusy;
+  const releaseChatSendingLock = input.releaseChatSendingLock;
+  const setMessages = input.setMessages;
+  const messageCount = input.messages.length;
+
   const clearChatError = useCallback(() => {
-    input.setChatRequestStatus("idle");
-    input.setLoading(false);
-    input.setChatDelayedBusy(false);
-    input.releaseChatSendingLock();
-    emitMessageHelper("clear_error", { messageCount: input.messages.length });
+    setChatRequestStatus("idle");
+    setLoading(false);
+    setChatDelayedBusy(false);
+    releaseChatSendingLock();
+    emitMessageHelper("clear_error", { messageCount });
   }, [
     emitMessageHelper,
-    input.messages.length,
-    input.releaseChatSendingLock,
-    input.setChatDelayedBusy,
-    input.setChatRequestStatus,
-    input.setLoading,
+    messageCount,
+    releaseChatSendingLock,
+    setChatDelayedBusy,
+    setChatRequestStatus,
+    setLoading,
   ]);
 
   const appendMessage = useCallback(
     (message: ChatPipelineMessage) => {
-      input.setMessages((m) => appendMessages(m, [message as Msg]));
+      setMessages((m) => appendMessages(m, [message as Msg]));
       emitMessageHelper("append", {
-        messageCount: input.messages.length + 1,
+        messageCount: messageCount + 1,
         role: message.role ?? null,
       });
     },
-    [emitMessageHelper, input.messages.length, input.setMessages]
+    [emitMessageHelper, messageCount, setMessages]
   );
 
   const replaceMessages = useCallback(
     (next: readonly ChatPipelineMessage[]) => {
       const nextArr = [...(next as Msg[])];
-      input.setMessages(nextArr);
+      setMessages(nextArr);
       emitMessageHelper("replace", { messageCount: nextArr.length });
     },
-    [emitMessageHelper, input.setMessages]
+    [emitMessageHelper, setMessages]
   );
 
   const callbacks = useMemo<ChatPipelineControllerCallbacks>(

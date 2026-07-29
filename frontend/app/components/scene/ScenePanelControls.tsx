@@ -31,7 +31,8 @@ export type ScenePanelControlsProps = {
   variant?: "command-surface";
 };
 
-export function ScenePanelControls(_props: ScenePanelControlsProps): React.ReactElement {
+export function ScenePanelControls(props: ScenePanelControlsProps): React.ReactElement {
+  void props;
   const focusModeActive = React.useSyncExternalStore(
     subscribeExecutiveFocusMode,
     () => getExecutiveFocusModeSnapshot().enabled,

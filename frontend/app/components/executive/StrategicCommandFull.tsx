@@ -53,9 +53,10 @@ function resolvePrimaryCta(s: ReturnType<typeof useStrategicCommandPanelModel>):
 
 /** Center workspace: decision-first hierarchy; 3-column only for supporting context. */
 export function StrategicCommandFull(props: StrategicCommandFullProps) {
+  const { decisionStrip } = props;
   const commandState = useStrategicCommandPanelModel(props);
   const stripModel = React.useMemo(() => {
-    const m = buildStrategicDecisionStrip(commandState, props.decisionStrip ?? null);
+    const m = buildStrategicDecisionStrip(commandState, decisionStrip ?? null);
     if (process.env.NODE_ENV !== "production") {
       globalThis.console?.debug?.("[Nexora][DecisionStrip][Built]", {
         decision: m.decision,
@@ -66,16 +67,7 @@ export function StrategicCommandFull(props: StrategicCommandFullProps) {
       });
     }
     return m;
-  }, [
-    commandState.headline,
-    commandState.summary,
-    commandState.priority,
-    commandState.next_move,
-    commandState.command_confidence_note,
-    commandState.command_recommendation,
-    commandState.alerts,
-    props.decisionStrip,
-  ]);
+  }, [commandState, decisionStrip]);
 
   const [showMoreAlerts, setShowMoreAlerts] = React.useState(false);
   const [govOpen, setGovOpen] = React.useState(false);

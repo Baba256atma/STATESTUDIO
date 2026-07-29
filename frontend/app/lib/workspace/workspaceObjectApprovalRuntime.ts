@@ -483,10 +483,11 @@ export function removeWorkspaceObjectApprovalStatesForDataSource(
   const trimmedDataSourceId = dataSourceId.trim();
   if (!trimmedWorkspaceId || !trimmedDataSourceId) return;
 
-  const { [trimmedDataSourceId]: _removed, ...remaining } = getDataSourceProfiles(trimmedWorkspaceId);
+  const profiles = { ...getDataSourceProfiles(trimmedWorkspaceId) };
+  delete profiles[trimmedDataSourceId];
   workspaceObjectApprovals = Object.freeze({
     ...workspaceObjectApprovals,
-    [trimmedWorkspaceId]: Object.freeze(remaining),
+    [trimmedWorkspaceId]: Object.freeze(profiles),
   });
   commitApprovalChange();
 }

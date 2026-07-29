@@ -88,7 +88,7 @@ test("statuses visible as Approved Pending Rejected Unknown", () => {
 
 test("view mapper attaches approval layer intelligence surfaces", () => {
   const view = buildGovernanceWorkspaceViewFromState(
-    createGovernanceReadyState({ selectedObjectId: "factory-a", phase: "ready" })
+    createGovernanceReadyState({ selectedObjectId: "factory-a" })
   );
 
   assert.equal(view.approvalLayerIntelligence.tag, "[MRP_5B4_APPROVAL]");

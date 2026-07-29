@@ -103,10 +103,12 @@ function unique(xs: string[]): string[] {
   return Array.from(new Set(xs.filter(Boolean)));
 }
 
-function getObjectDependencies(obj: any): string[] {
-  const semanticDeps = Array.isArray(obj?.semantic?.dependencies) ? obj.semantic.dependencies : [];
-  const rootDeps = Array.isArray(obj?.dependencies) ? obj.dependencies : [];
-  return unique([...semanticDeps, ...rootDeps].map((x: any) => String(x)));
+function getObjectDependencies(obj: Record<string, unknown>): string[] {
+  const semantic = obj.semantic;
+  const semanticRecord = semantic && typeof semantic === "object" ? (semantic as Record<string, unknown>) : null;
+  const semanticDeps = Array.isArray(semanticRecord?.dependencies) ? semanticRecord.dependencies : [];
+  const rootDeps = Array.isArray(obj.dependencies) ? obj.dependencies : [];
+  return unique([...semanticDeps, ...rootDeps].map((value) => String(value)));
 }
 
 export function createSimulationInputFromPrompt(params: {
@@ -168,10 +170,11 @@ export function buildSimulationResult(params: {
 
   if (propagation.length === 0) {
     // Fallback: semantic dependencies for best-effort propagation.
-    params.objects.forEach((obj: any) => {
-      const objId = String(obj?.id ?? "");
-      if (!objId || !direct.includes(objId)) return;
-      getObjectDependencies(obj).forEach((depId) => {
+    params.objects.forEach((obj) => {
+      const record = obj && typeof obj === "object" ? (obj as Record<string, unknown>) : null;
+      const objId = String(record?.id ?? "");
+      if (!objId || !direct.includes(objId) || !record) return;
+      getObjectDependencies(record).forEach((depId) => {
         downstream.push(depId);
         propagation.push({
           step: 1,

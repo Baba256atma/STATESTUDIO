@@ -1,13 +1,30 @@
 import type { SceneJson } from "../sceneTypes";
 import type { NexoraIntentRoute } from "../router/intentRouterTypes";
+import type { ActiveModeContext } from "../modes/productModesContract";
+import type { EnvironmentConfig } from "../ops/environmentDeploymentContract";
+import type { UnifiedSceneReaction } from "../scene/unifiedReaction";
+
+export type NexoraLocalDecisionPayload = {
+  actions?: ReadonlyArray<unknown>;
+  assistantReply?: string | null;
+} & Record<string, unknown>;
+
+export type NexoraAdviceInput = {
+  text: string;
+  route: NexoraIntentRoute;
+  currentScene: SceneJson | null;
+};
 
 export type NexoraExecutionHandlers = {
-  runBackendChat?: (text: string) => Promise<any>;
-  runScanner?: (text: string, scene: SceneJson | null) => Promise<any>;
-  runSimulation?: (text: string, scene: SceneJson | null) => Promise<any>;
-  generateAdvice?: (input: any) => Promise<any>;
-  applySceneActions?: (actions: any[], scene: SceneJson | null) => Promise<any> | any;
-  runLocalDecisionRouter?: (text: string) => Promise<any> | any;
+  runBackendChat?: (text: string) => Promise<unknown>;
+  runScanner?: (text: string, scene: SceneJson | null) => Promise<unknown>;
+  runSimulation?: (text: string, scene: SceneJson | null) => Promise<unknown>;
+  generateAdvice?: (input: NexoraAdviceInput) => Promise<unknown>;
+  applySceneActions?: (
+    actions: ReadonlyArray<unknown>,
+    scene: SceneJson | null
+  ) => Promise<unknown> | unknown;
+  runLocalDecisionRouter?: (text: string) => Promise<NexoraLocalDecisionPayload | unknown> | NexoraLocalDecisionPayload | unknown;
 };
 
 export type NexoraExecutionInput = {
@@ -18,10 +35,10 @@ export type NexoraExecutionInput = {
   currentScene: SceneJson | null;
   currentRightPanelTab?: string | null;
   selectedObjectId?: string | null;
-  objectProfiles?: Record<string, any>;
-  productModeContext?: any | null;
-  memoryState?: any | null;
-  environmentConfig?: any | null;
+  objectProfiles?: Record<string, unknown>;
+  productModeContext?: ActiveModeContext | Record<string, unknown> | null;
+  memoryState?: unknown | null;
+  environmentConfig?: EnvironmentConfig | null;
   handlers: NexoraExecutionHandlers;
 };
 
@@ -56,22 +73,22 @@ export type NexoraExecutionResult = {
   shouldUpdateInspector: boolean;
 
   chatReply?: string | null;
-  backendPayload?: any | null;
-  scannerPayload?: any | null;
-  simulationPayload?: any | null;
-  advicePayload?: any | null;
-  localDecisionPayload?: any | null;
+  backendPayload?: unknown | null;
+  scannerPayload?: unknown | null;
+  simulationPayload?: unknown | null;
+  advicePayload?: unknown | null;
+  localDecisionPayload?: NexoraLocalDecisionPayload | unknown | null;
 
   highlightedObjectIds: string[];
   focusedObjectId?: string | null;
 
   allowSceneMutation: boolean;
   appliedSceneMutation: "none" | "highlight_only" | "soft_reaction" | "full_update";
-  scenePatch?: any | null;
+  scenePatch?: unknown | null;
   sceneReplacement?: SceneJson | null;
 
-  panelUpdates?: Record<string, any>;
-  objectProfileUpdates?: Record<string, any>;
+  panelUpdates?: Record<string, unknown>;
+  objectProfileUpdates?: Record<string, unknown>;
 
-  unifiedReaction?: any | null;
+  unifiedReaction?: UnifiedSceneReaction | null;
 };

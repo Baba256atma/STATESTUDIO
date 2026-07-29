@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo } from "react";
+import type { SceneObject } from "../../../lib/sceneTypes";
 
 import type { DecisionPathOverlayState } from "../../../lib/simulation/decisionPathOverlayTypes";
 import { decisionPathOverlayToEdges } from "../../../lib/overlay/mergePropagationOverlay";
@@ -10,7 +11,7 @@ import { OverlayFlowLines, overlayThemeToFlowProps } from "./OverlayFlowLines";
 import type { RuntimeObjectPositionContext } from "../sceneRenderUtils";
 
 export type ScenarioOverlayProps = {
-  objects: any[];
+  objects: SceneObject[];
   overlay: DecisionPathOverlayState | null | undefined;
   visible: boolean;
   themeTokens: OverlayThemeTokens;

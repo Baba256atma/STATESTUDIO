@@ -23,17 +23,7 @@ import {
   resetDecisionJournalEvidenceAssumptionLayerForTests,
 } from "./decisionJournalEvidenceAssumption.ts";
 import { calculateOutcomeStatus } from "./decisionJournalOutcomeRules.ts";
-import {
-  buildDecisionJournalRetrospectiveModel,
-  calculateAssumptionAccuracy,
-  calculateEvidenceReliability,
-  calculateReviewCompleteness,
-  calculateRiskRealization,
-  initializeDecisionJournalRetrospectiveLayer,
-  resetDecisionJournalRetrospectiveLayerForTests,
-  validateDecisionJournalRetrospectiveModel,
-  DECISION_JOURNAL_RETROSPECTIVE_SELF_MANIFEST,
-} from "./decisionJournalRetrospective.ts";
+import { buildDecisionJournalRetrospectiveModel, calculateAssumptionAccuracy, calculateEvidenceReliability, initializeDecisionJournalRetrospectiveLayer, resetDecisionJournalRetrospectiveLayerForTests, validateDecisionJournalRetrospectiveModel, DECISION_JOURNAL_RETROSPECTIVE_SELF_MANIFEST } from "./decisionJournalRetrospective.ts";
 import { runDecisionJournalRetrospectiveCertification } from "./decisionJournalRetrospectiveRunner.ts";
 import { DECISION_JOURNAL_EVIDENCE_ASSUMPTION_CONTRACT_VERSION } from "./decisionJournalEvidenceAssumptionTypes.ts";
 import { validateEvidenceAssumptionLayerAvailabilityForRetrospective } from "./decisionJournalRetrospectiveValidation.ts";

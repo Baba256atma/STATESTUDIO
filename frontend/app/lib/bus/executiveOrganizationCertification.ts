@@ -4,26 +4,13 @@ import {
   EXECUTIVE_ORGANIZATION_PLATFORM_VERSION,
 } from "./executiveOrganizationIndex.ts";
 import { EXECUTIVE_ORGANIZATION_PLATFORM_REGISTRY } from "./executiveOrganizationRegistryIndex.ts";
-import {
-  EXECUTIVE_ORGANIZATION_MODEL_METADATA,
-  EXECUTIVE_ORGANIZATION_MODEL_PUBLIC_APIS,
-} from "./executiveOrganizationModelIndex.ts";
+import { EXECUTIVE_ORGANIZATION_MODEL_METADATA } from "./executiveOrganizationModelIndex.ts";
 import {
   EXECUTIVE_ORGANIZATION_VALIDATION_METADATA,
   EXECUTIVE_ORGANIZATION_VALIDATION_RESULT,
 } from "./executiveOrganizationValidationIndex.ts";
-import {
-  EXECUTIVE_ORGANIZATION_MANIFEST_METADATA,
-  EXECUTIVE_ORGANIZATION_MANIFEST_PUBLIC_APIS,
-} from "./executiveOrganizationManifestIndex.ts";
-import {
-  EXECUTIVE_ORGANIZATION_PLATFORM_DEPENDENCIES,
-  EXECUTIVE_ORGANIZATION_PLATFORM_EXTENSION_POLICY,
-  EXECUTIVE_ORGANIZATION_PLATFORM_IDENTITY,
-  EXECUTIVE_ORGANIZATION_PLATFORM_METADATA,
-  EXECUTIVE_ORGANIZATION_PLATFORM_PUBLIC_APIS,
-  ExecutiveOrganizationPlatformFoundation,
-} from "./executiveOrganizationPlatformIndex.ts";
+import { EXECUTIVE_ORGANIZATION_MANIFEST_PUBLIC_APIS } from "./executiveOrganizationManifestIndex.ts";
+import { EXECUTIVE_ORGANIZATION_PLATFORM_DEPENDENCIES, EXECUTIVE_ORGANIZATION_PLATFORM_EXTENSION_POLICY, EXECUTIVE_ORGANIZATION_PLATFORM_IDENTITY, EXECUTIVE_ORGANIZATION_PLATFORM_PUBLIC_APIS } from "./executiveOrganizationPlatformIndex.ts";
 import type {
   ExecutiveOrganizationCertificationBundle,
   ExecutiveOrganizationCertificationCompatibility,

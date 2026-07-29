@@ -32,19 +32,19 @@ export type ExecutiveEventClassification = Readonly<{
 }>;
 
 const CLASSIFICATIONS: readonly ExecutiveEventClassification[] = Object.freeze([
-  Object.freeze({ key: "scenario", label: "Scenario Event", category: "scenario", entityTypes: Object.freeze(["scenario"]), eventTypes: Object.freeze(["transition", "state_change", "lifecycle"]) }),
-  Object.freeze({ key: "decision", label: "Decision Event", category: "decision", entityTypes: Object.freeze(["decision"]), eventTypes: Object.freeze(["transition", "state_change", "lifecycle"]) }),
-  Object.freeze({ key: "kpi", label: "KPI Event", category: "kpi", entityTypes: Object.freeze(["kpi"]), eventTypes: Object.freeze(["state_change", "priority_change", "lifecycle"]) }),
-  Object.freeze({ key: "risk", label: "Risk Event", category: "risk", entityTypes: Object.freeze(["risk"]), eventTypes: Object.freeze(["state_change", "priority_change", "lifecycle"]) }),
-  Object.freeze({ key: "object", label: "Object Event", category: "object", entityTypes: Object.freeze(["object"]), eventTypes: Object.freeze(["state_change", "lifecycle"]) }),
-  Object.freeze({ key: "relationship", label: "Relationship Event", category: "relationship", entityTypes: Object.freeze(["relationship"]), eventTypes: Object.freeze(["state_change", "lifecycle"]) }),
-  Object.freeze({ key: "data_source", label: "Data Source Event", category: "data_source", entityTypes: Object.freeze(["data_source"]), eventTypes: Object.freeze(["state_change", "lifecycle"]) }),
-  Object.freeze({ key: "dashboard", label: "Dashboard Event", category: "dashboard", entityTypes: Object.freeze(["dashboard"]), eventTypes: Object.freeze(["state_change", "manual"]) }),
-  Object.freeze({ key: "assistant", label: "Assistant Event", category: "assistant", entityTypes: Object.freeze(["assistant"]), eventTypes: Object.freeze(["manual", "system"]) }),
-  Object.freeze({ key: "timeline", label: "Timeline Event", category: "temporal", entityTypes: Object.freeze(["custom"]), eventTypes: Object.freeze(["context_shift", "camera_move", "system"]) }),
-  Object.freeze({ key: "audit", label: "Audit Event", category: "platform", entityTypes: Object.freeze(["custom"]), eventTypes: Object.freeze(["audit", "system"]) }),
-  Object.freeze({ key: "recommendation", label: "Recommendation Event", category: "platform", entityTypes: Object.freeze(["custom"]), eventTypes: Object.freeze(["system", "manual"]) }),
-  Object.freeze({ key: "custom", label: "Custom Event", category: "platform", entityTypes: Object.freeze(["custom"]), eventTypes: Object.freeze(["manual", "system"]) }),
+  Object.freeze({ key: "scenario", label: "Scenario Event", category: "scenario", entityTypes: Object.freeze(["scenario"] as const), eventTypes: Object.freeze(["transition", "state_change", "lifecycle"] as const) }),
+  Object.freeze({ key: "decision", label: "Decision Event", category: "decision", entityTypes: Object.freeze(["decision"] as const), eventTypes: Object.freeze(["transition", "state_change", "lifecycle"] as const) }),
+  Object.freeze({ key: "kpi", label: "KPI Event", category: "kpi", entityTypes: Object.freeze(["kpi"] as const), eventTypes: Object.freeze(["state_change", "priority_change", "lifecycle"] as const) }),
+  Object.freeze({ key: "risk", label: "Risk Event", category: "risk", entityTypes: Object.freeze(["risk"] as const), eventTypes: Object.freeze(["state_change", "priority_change", "lifecycle"] as const) }),
+  Object.freeze({ key: "object", label: "Object Event", category: "object", entityTypes: Object.freeze(["object"] as const), eventTypes: Object.freeze(["state_change", "lifecycle"] as const) }),
+  Object.freeze({ key: "relationship", label: "Relationship Event", category: "relationship", entityTypes: Object.freeze(["relationship"] as const), eventTypes: Object.freeze(["state_change", "lifecycle"] as const) }),
+  Object.freeze({ key: "data_source", label: "Data Source Event", category: "data_source", entityTypes: Object.freeze(["data_source"] as const), eventTypes: Object.freeze(["state_change", "lifecycle"] as const) }),
+  Object.freeze({ key: "dashboard", label: "Dashboard Event", category: "dashboard", entityTypes: Object.freeze(["dashboard"] as const), eventTypes: Object.freeze(["state_change", "manual"] as const) }),
+  Object.freeze({ key: "assistant", label: "Assistant Event", category: "assistant", entityTypes: Object.freeze(["assistant"] as const), eventTypes: Object.freeze(["manual", "system"] as const) }),
+  Object.freeze({ key: "timeline", label: "Timeline Event", category: "temporal", entityTypes: Object.freeze(["custom"] as const), eventTypes: Object.freeze(["context_shift", "camera_move", "system"] as const) }),
+  Object.freeze({ key: "audit", label: "Audit Event", category: "platform", entityTypes: Object.freeze(["custom"] as const), eventTypes: Object.freeze(["audit", "system"] as const) }),
+  Object.freeze({ key: "recommendation", label: "Recommendation Event", category: "platform", entityTypes: Object.freeze(["custom"] as const), eventTypes: Object.freeze(["system", "manual"] as const) }),
+  Object.freeze({ key: "custom", label: "Custom Event", category: "platform", entityTypes: Object.freeze(["custom"] as const), eventTypes: Object.freeze(["manual", "system"] as const) }),
 ]);
 
 const BY_ENTITY = Object.freeze(

@@ -1,8 +1,3 @@
-/**
- * D7:1:7 — Strategic decision consequence engine (deterministic, non-mutating).
- */
-
-import type { SimulationStateSnapshot } from "../simulationStateSnapshot.ts";
 import type { SimulationOperationalMetrics } from "../simulationTypes.ts";
 import type { SimulationPropagationSnapshotState } from "../simulationPropagationTypes.ts";
 import {

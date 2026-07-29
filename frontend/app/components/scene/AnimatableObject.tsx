@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
 import { Html, Line, useCursor } from "@react-three/drei";
+import type { ThreeEvent } from "@react-three/fiber";
 
 import type { SceneObject } from "../../lib/sceneTypes";
 import { useStateVector, useSetSelectedId, useOverrides } from "../SceneContext";
@@ -65,7 +66,6 @@ import type {
   DecisionPathNodeVisualHints,
 } from "../overlays/DecisionPathOverlayLayer";
 import {
-  compactScannerReason,
   computeAutoColor,
   geometryForExecutiveNormalized,
   hashIdToUnit,
@@ -142,6 +142,43 @@ import {
 
 const disableMeshRaycast = () => null;
 
+type LooseRecord = Record<string, unknown>;
+
+type ObjectTransformLike = {
+  pos?: unknown;
+  scale?: unknown;
+  rot?: unknown;
+};
+
+type ObjectDataLike = {
+  points?: unknown;
+  path?: unknown;
+};
+
+type MaterialLike = {
+  color?: string;
+  opacity?: number;
+  emissive?: string;
+  emissiveIntensity?: number;
+  size?: number;
+};
+
+type NexoraDebugWindow = Window & {
+  __NEXORA_ALLOW_MATERIAL_WRITE__?: boolean;
+};
+
+function asRecord(value: unknown): LooseRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as LooseRecord) : null;
+}
+
+function readObjectTransform(object: SceneObject): ObjectTransformLike {
+  return asRecord(object.transform) ?? {};
+}
+
+function readObjectData(object: SceneObject): ObjectDataLike {
+  return asRecord(object.data) ?? {};
+}
+
 const DEFAULT_SCANNER_STORY_REVEAL = Object.freeze({
   primary: 1,
   edge: 1,
@@ -208,15 +245,16 @@ function readFiniteDimension(value: unknown): number | null {
 }
 
 function readExplicitExecutiveDimensions(object: unknown): Partial<ExecutiveGeometryBounds> | null {
-  const record = object as Record<string, any> | null;
+  const record = asRecord(object);
   if (!record) return null;
   const candidates = [record.dimensions, record.size, record.geometry, record];
   const dimensions: Partial<ExecutiveGeometryBounds> = {};
   for (const candidate of candidates) {
-    if (!candidate || typeof candidate !== "object") continue;
-    const width = readFiniteDimension(candidate.width ?? candidate.w);
-    const height = readFiniteDimension(candidate.height ?? candidate.h);
-    const depth = readFiniteDimension(candidate.depth ?? candidate.d);
+    const candidateRecord = asRecord(candidate);
+    if (!candidateRecord) continue;
+    const width = readFiniteDimension(candidateRecord.width ?? candidateRecord.w);
+    const height = readFiniteDimension(candidateRecord.height ?? candidateRecord.h);
+    const depth = readFiniteDimension(candidateRecord.depth ?? candidateRecord.d);
     if (dimensions.width == null && width != null) dimensions.width = width;
     if (dimensions.height == null && height != null) dimensions.height = height;
     if (dimensions.depth == null && depth != null) dimensions.depth = depth;
@@ -369,7 +407,6 @@ export type AnimatableObjectProps = {
 export const AnimatableObject = React.memo(function AnimatableObject({
   obj,
   renderId,
-  anim,
   index,
   shadowsEnabled = false,
   focusMode,
@@ -386,9 +423,6 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   resolvedPrimaryRenderId = null,
   labelOwnerId = null,
   decisionCenter = [0, 0, 0],
-  scannerPrimaryRole = "neutral",
-  scannerPrimaryLabelTitle = null,
-  scannerPrimaryLabelBody = null,
   scannerTargetIds = [],
   dimUnrelatedObjects = false,
   affectedTargetIds = [],
@@ -416,11 +450,9 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   showExecutiveLayoutLabels = false,
   layoutPositions,
   layoutLabelOffsets,
-  connectedToSelected = false,
   isSelected = false,
   canonicalSelectedId = null,
   canonicalSelectedObjectId = null,
-  relationshipExplorationActive = false,
   onObjectPositionChange,
   onObjectUserClick,
   svieHealthVisual = null,
@@ -500,19 +532,11 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const visualProfile = useMemo(() => buildObjectVisualProfile(obj, tags, visualContext), [obj, tags, visualContext]);
   const hierarchyStyle = useMemo(() => roleToHierarchyStyle(visualRole, visualContext), [visualRole, visualContext]);
 
-  type MaterialLike = {
-    color?: string;
-    opacity?: number;
-    emissive?: string;
-    emissiveIntensity?: number;
-    size?: number;
-  };
-
   const material = useMemo<MaterialLike>(() => {
-    const resolved = (obj as any)?.material;
+    const resolved = obj.material;
     if (resolved && typeof resolved === "object") return resolved as MaterialLike;
     return { color: "#cccccc", opacity: 0.9 };
-  }, [(obj as any)?.material]);
+  }, [(obj as SceneObject & { material?: unknown })?.material]);
 
   const isFocusActive =
     hasValidFocusedTarget &&
@@ -556,16 +580,17 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const dimOthers = isFocusActive && !isFocused;
   const genericFocusDimmed = dimOthers;
   const defaultPos: [number, number, number] = [index * 1.8 - 1.8, 0, 0];
-  const transformPos = toPosTuple((obj.transform as any)?.pos ?? (obj as any).position, defaultPos);
+  const objectTransform = readObjectTransform(obj);
+  const transformPos = toPosTuple(objectTransform.pos ?? obj.position, defaultPos);
 
-  const rawTransform = (obj as any).transform ?? {};
-  const rawScale = rawTransform?.scale;
-  const rawPos = rawTransform?.pos;
+  const rawTransform = objectTransform;
+  const rawScale = rawTransform.scale;
+  const rawPos = rawTransform.pos;
 
   const transform = {
     pos: toPosTuple(rawPos, transformPos),
     scale: (Array.isArray(rawScale) && rawScale.length >= 3 ? rawScale : [1, 1, 1]) as [number, number, number],
-    rot: rawTransform?.rot,
+    rot: rawTransform.rot,
   };
 
   const baseScale = useMemo(() => transform.scale, [transform.scale]);
@@ -585,7 +610,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const ambientPhase = useMemo(() => hashIdToUnit(String(stableIdWithName)) * Math.PI * 2, [stableIdWithName]);
   const shape = resolveGeometryKindForObject({
     obj,
-    explicitShape: (obj as any).shape ?? ux?.shape,
+    explicitShape: typeof obj.shape === "string" ? obj.shape : ux?.shape,
     fallbackType: safeType,
     profile: visualProfile,
   });
@@ -597,7 +622,9 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     (obj.name ? layoutPositions?.[String(obj.name)] : undefined);
 
   const finalPosition = overrideEntry.position ?? layoutPosition ?? transformPos ?? [0, 0, 0];
-  const finalRotation = overrideEntry.rotation ?? (transform as any).rot ?? [0, 0, 0];
+  const finalRotation =
+    overrideEntry.rotation ??
+    (Array.isArray(transform.rot) ? (transform.rot as [number, number, number]) : [0, 0, 0]);
   const finalColorOverride = overrideEntry.color;
   const finalVisible = overrideEntry.visible ?? true;
   const workspaceViewMode = useSyncExternalStore(
@@ -680,7 +707,6 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   );
   const scannerDimRequested =
     dimUnrelatedObjects === true && scannerSceneActive && scannerTargetIdSet.size > 0;
-  const scannerReason = compactScannerReason(obj.scanner_reason);
   const isLowFragilityScan = scannerSceneActive && scannerFragilityScore <= 0.1;
   const isPinned = focusMode === "pinned" && isFocused;
   const scannerTargetMatch =
@@ -816,9 +842,6 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     ]
   );
   const {
-    isScannerTarget,
-    isScannerPrimaryTarget,
-    isScannerLabelOwner,
     scannerHighlighted,
     scannerFocused,
     visualState,
@@ -946,10 +969,10 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       visualProfile.category ??
       deriveExecutiveObjectVisualCategory({
         label: obj.label ?? obj.name,
-        role: (obj as any)?.role,
+        role: typeof obj.role === "string" ? obj.role : undefined,
         tags,
-        semanticRole: (obj as any)?.semantic?.role,
-        semanticCategory: (obj as any)?.semantic?.category,
+        semanticRole: obj.semantic?.role,
+        semanticCategory: obj.semantic?.category,
         visualRole,
       });
     const hierarchyTier = resolveExecutiveVisualHierarchyTier({
@@ -1076,7 +1099,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     visualRole,
   ]);
 
-  const commitUserObjectClick = (event: any, source: "click" | "double_click") => {
+  const commitUserObjectClick = (event: ThreeEvent<MouseEvent>, source: "click" | "double_click") => {
     if (!isNearestSelectableObjectHit(event, stableIdWithName)) {
       reportSelectionMiss({
         objectId: stableIdWithName,
@@ -1142,7 +1165,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     return true;
   };
 
-  const handleSelect = (event: any) => {
+  const handleSelect = (event: ThreeEvent<MouseEvent>) => {
     setHovered(false);
     setHoveredId?.(null);
     event.stopPropagation();
@@ -1157,7 +1180,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     });
   };
 
-  const handleDoubleClickFocus = (event: any) => {
+  const handleDoubleClickFocus = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
     if (!commitUserObjectClick(event, "double_click")) {
@@ -1166,7 +1189,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     focusExecutiveObjectFromInteraction(stableIdWithName, "scene");
   };
 
-  const resolveDragPosition = (event: any): { x: number; y: number; z: number } | null => {
+  const resolveDragPosition = (event: ThreeEvent<PointerEvent>): { x: number; y: number; z: number } | null => {
     const dragState = dragStateRef.current;
     if (!dragState || !event.ray) return null;
     const point = event.ray.intersectPlane(dragPlaneRef.current, dragPointRef.current);
@@ -1179,7 +1202,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     };
   };
 
-  const handleObjectPointerDown = (event: any) => {
+  const handleObjectPointerDown = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
     if (event.button != null && event.button !== 0) return;
@@ -1192,10 +1215,10 @@ export const AnimatableObject = React.memo(function AnimatableObject({
       hasMoved: false,
     };
     dragPlaneRef.current.set(new THREE.Vector3(0, 1, 0), -y * (Number.isFinite(sceneScale) && sceneScale > 0 ? sceneScale : 1));
-    event.target?.setPointerCapture?.(event.pointerId);
+    (event.target as Element | null)?.setPointerCapture?.(event.pointerId);
   };
 
-  const handleObjectPointerMove = (event: any) => {
+  const handleObjectPointerMove = (event: ThreeEvent<PointerEvent>) => {
     if (!dragStateRef.current) return;
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
@@ -1205,14 +1228,14 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     onObjectPositionChange?.(stableIdWithName, next, "drag");
   };
 
-  const handleObjectPointerUp = (event: any) => {
+  const handleObjectPointerUp = (event: ThreeEvent<PointerEvent>) => {
     const dragState = dragStateRef.current;
     if (!dragState) return;
     event.stopPropagation();
     event.nativeEvent?.stopImmediatePropagation?.();
     const next = resolveDragPosition(event);
     dragStateRef.current = null;
-    event.target?.releasePointerCapture?.(event.pointerId);
+    (event.target as Element | null)?.releasePointerCapture?.(event.pointerId);
     if (next && dragState.hasMoved) {
       onObjectPositionChange?.(stableIdWithName, next, "move");
     }
@@ -1421,7 +1444,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   // Visual-only effect. Must not emit semantic propagation or scene state changes.
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
-    if (typeof window !== "undefined" && (window as any).__NEXORA_ALLOW_MATERIAL_WRITE__) {
+    if (typeof window !== "undefined" && (window as NexoraDebugWindow).__NEXORA_ALLOW_MATERIAL_WRITE__) {
       console.error("[Nexora][VIOLATION] Material attempted state write");
     }
     if (loggedObjectMaterialSignatures.get(stableIdWithName) === materialSignature) return;
@@ -1532,9 +1555,10 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     warRoomSeverity,
   ]);
 
-  const pointsData = ((obj as any).data?.points ?? null) as number[][] | null;
+  const objectData = readObjectData(obj);
+  const pointsData = Array.isArray(objectData.points) ? (objectData.points as number[][]) : null;
   const pointsCount = Array.isArray(pointsData) ? pointsData.length : 0;
-  const pathData = ((obj as any).data?.path ?? null) as number[][] | null;
+  const pathData = Array.isArray(objectData.path) ? (objectData.path as number[][]) : null;
   const pathCount = Array.isArray(pathData) ? pathData.length : 0;
 
   const pointPositions = useMemo(() => {
@@ -1896,7 +1920,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
     onPointerCancel: handleObjectPointerUp,
     onClick: handleSelect,
     onDoubleClick: handleDoubleClickFocus,
-    onPointerOver: (event: any) => {
+    onPointerOver: (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation();
       event.nativeEvent?.stopImmediatePropagation?.();
       setHovered(true);
@@ -1931,7 +1955,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         <points geometry={pointsGeometry} raycast={disableMeshRaycast}>
           <pointsMaterial
             color={appliedColor}
-            size={((obj as any).material?.size as number | undefined) ?? 0.03}
+            size={material.size ?? 0.03}
             sizeAttenuation
             transparent
             opacity={materialProps.opacity ?? 0.85}
@@ -1962,7 +1986,7 @@ export const AnimatableObject = React.memo(function AnimatableObject({
         ) : null}
 
         <Line
-          points={(pathData ?? []) as any}
+          points={(pathData ?? []) as [number, number, number][]}
           transparent
           opacity={materialProps.opacity ?? 0.9}
           color={appliedColor}
@@ -1973,10 +1997,10 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   } else {
     const geometryNode = geometryForExecutiveNormalized(executiveGeometry);
     // Static mode: scale is owned by AnimatableObject group transform only.
-    const meshScale = useStaticObjectTransforms
+    const meshScale: [number, number, number] = useStaticObjectTransforms
       ? [1, 1, 1]
       : Array.isArray(baseScale)
-      ? (baseScale as any)
+      ? [baseScale[0] ?? 1, baseScale[1] ?? 1, baseScale[2] ?? 1]
       : [baseScale ?? 1, baseScale ?? 1, baseScale ?? 1];
 
     node = (

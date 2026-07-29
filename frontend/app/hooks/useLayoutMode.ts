@@ -1,33 +1,47 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import type { LayoutMode } from "../lib/contracts";
 
 export type { LayoutMode };
 
 const KEY = "nexora.layoutMode.v1";
 
-export function useLayoutMode(defaultMode: LayoutMode = "floating") {
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>(defaultMode);
+function subscribeNoop() {
+  return () => {};
+}
 
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(KEY);
-      if (raw === "split" || raw === "floating" || raw === "hybrid") {
-        setLayoutMode(raw);
-      }
-    } catch {
-      // ignore
+function readStoredLayoutMode(defaultMode: LayoutMode): LayoutMode {
+  try {
+    const raw = window.localStorage.getItem(KEY);
+    if (raw === "split" || raw === "floating" || raw === "hybrid") {
+      return raw;
     }
-  }, [defaultMode]);
+  } catch {
+    // ignore
+  }
+  return defaultMode;
+}
+
+export function useLayoutMode(defaultMode: LayoutMode = "floating") {
+  const isClient = useSyncExternalStore(subscribeNoop, () => true, () => false);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(defaultMode);
+  const [hydratedDefault, setHydratedDefault] = useState<LayoutMode | null>(null);
+
+  // One-way seed from localStorage once the client is available.
+  if (isClient && hydratedDefault !== defaultMode) {
+    setHydratedDefault(defaultMode);
+    setLayoutMode(readStoredLayoutMode(defaultMode));
+  }
 
   useEffect(() => {
+    if (hydratedDefault === null) return;
     try {
       window.localStorage.setItem(KEY, layoutMode);
     } catch {
       // ignore
     }
-  }, [layoutMode]);
+  }, [hydratedDefault, layoutMode]);
 
   const setFloating = useCallback(() => setLayoutMode("floating"), []);
   const setSplit = useCallback(() => setLayoutMode("split"), []);

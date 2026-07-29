@@ -36,11 +36,7 @@ import {
   initializeExecutiveMemorySearchEngine,
   resetExecutiveMemorySearchEngineForTests,
 } from "./executiveMemorySearchEngine.ts";
-import {
-  EXECUTIVE_MEMORY_LIFECYCLE_CONTRACT_VERSION,
-  EXECUTIVE_MEMORY_LIFECYCLE_ERROR_CODES,
-  EXECUTIVE_MEMORY_RETENTION_POLICY_IDS,
-} from "./executiveMemoryLifecycleConstants.ts";
+import { EXECUTIVE_MEMORY_LIFECYCLE_CONTRACT_VERSION, EXECUTIVE_MEMORY_RETENTION_POLICY_IDS } from "./executiveMemoryLifecycleConstants.ts";
 import {
   archiveMemoryLifecycle,
   compareVersions,

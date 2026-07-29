@@ -5,18 +5,7 @@ import { buildKpiRiskRegistry } from "./KpiRiskEngine.ts";
 import type { KpiRiskProfile } from "./kpiRiskProfileContract.ts";
 import type { ObjectRiskProfile } from "./objectRiskContract.ts";
 import type { RelationshipRiskProfile } from "./relationshipRiskProfileContract.ts";
-import {
-  EMPTY_RISK_PROPAGATION_PROFILE,
-  EMPTY_RISK_PROPAGATION_REGISTRY,
-  RISK_PROPAGATION_DIAGNOSTICS,
-  RISK_PROPAGATION_ENGINE_VERSION,
-  type RiskPropagationBuildInput,
-  type RiskPropagationChain,
-  type RiskPropagationChainStep,
-  type RiskPropagationNodeKind,
-  type RiskPropagationProfile,
-  type RiskPropagationRegistry,
-} from "./riskPropagationProfileContract.ts";
+import { EMPTY_RISK_PROPAGATION_REGISTRY, RISK_PROPAGATION_DIAGNOSTICS, RISK_PROPAGATION_ENGINE_VERSION, type RiskPropagationBuildInput, type RiskPropagationChain, type RiskPropagationChainStep, type RiskPropagationNodeKind, type RiskPropagationProfile, type RiskPropagationRegistry } from "./riskPropagationProfileContract.ts";
 
 type RecordMap = Readonly<Record<string, unknown>>;
 

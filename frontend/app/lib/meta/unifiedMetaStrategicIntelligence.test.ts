@@ -743,6 +743,7 @@ test("rejects duplicate unified meta build fingerprint", () => {
   });
   assert.equal(second.ok, false);
   if (second.ok) return;
+  if (second.guard.ok) return;
   assert.equal(second.guard.code, "duplicate_unified_meta_build");
 });
 

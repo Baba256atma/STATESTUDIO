@@ -1,17 +1,4 @@
-import {
-  ExecutiveBusinessIntelligenceContractDescription,
-  ExecutiveBusinessIntelligenceContractId,
-  ExecutiveBusinessIntelligenceContractName,
-  ExecutiveBusinessIntelligenceContractVersion,
-  type ExecutiveBusinessIntelligenceCapability,
-  type ExecutiveBusinessIntelligenceContract,
-  type ExecutiveBusinessIntelligenceDependency,
-  type ExecutiveBusinessIntelligenceDomain,
-  type ExecutiveBusinessIntelligenceNamespace,
-  type ExecutiveBusinessIntelligencePlatformReference,
-  type ExecutiveBusinessIntelligenceProfile,
-  type ExecutiveBusinessIntelligenceSummary,
-} from "./executiveBusinessIntelligenceIndex.ts";
+import { ExecutiveBusinessIntelligenceContractDescription, ExecutiveBusinessIntelligenceContractId, ExecutiveBusinessIntelligenceContractName, ExecutiveBusinessIntelligenceContractVersion, type ExecutiveBusinessIntelligenceCapability, type ExecutiveBusinessIntelligenceContract, type ExecutiveBusinessIntelligenceDependency, type ExecutiveBusinessIntelligenceNamespace, type ExecutiveBusinessIntelligencePlatformReference, type ExecutiveBusinessIntelligenceProfile, type ExecutiveBusinessIntelligenceSummary } from "./executiveBusinessIntelligenceIndex.ts";
 import {
   ExecutiveBusinessIntelligenceCapabilityRegistry,
   ExecutiveBusinessIntelligenceDependencyRegistry,

@@ -35,8 +35,10 @@ import {
   resolveObjectVisualExtents,
 } from "../../../lib/scene/camera/objectVisualExtents";
 
+import type { SceneJson } from "../../../lib/sceneTypes";
+
 export type ExecutiveViewportFramerProps = {
-  sceneJson: any | null;
+  sceneJson: SceneJson | null;
   layoutPositions?: Record<string, [number, number, number]>;
   layoutBoundsSignature?: string;
   settledLayoutBoundsSignature?: string | null;
@@ -47,7 +49,10 @@ export type ExecutiveViewportFramerProps = {
     cooldownUntil: number;
     appliedAt: number;
   }>;
-  controlsRef: React.MutableRefObject<any | null>;
+  controlsRef: React.MutableRefObject<{
+    target?: THREE.Vector3;
+    update?: () => void;
+  } | null>;
   localIsOrbitingRef: React.MutableRefObject<boolean>;
   isOrbiting: boolean;
   enabled: boolean;
@@ -460,8 +465,9 @@ export function ExecutiveViewportFramer(props: ExecutiveViewportFramerProps): nu
       lastAppliedSignatureRef.current = framingSignature;
       return;
     }
-    if (!explicitOverride && props.layoutBoundsSignature) {
-      props.initialLayoutFrameAppliedRef!.current = props.layoutBoundsSignature;
+    const initialLayoutFrameAppliedRef = props.initialLayoutFrameAppliedRef;
+    if (!explicitOverride && props.layoutBoundsSignature && initialLayoutFrameAppliedRef) {
+      initialLayoutFrameAppliedRef.current = props.layoutBoundsSignature;
       lastInitialLayoutFrameModeRef.current = props.viewMode;
       logSettledLayoutFrameOnce({
         objectCount: objects.length,

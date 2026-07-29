@@ -98,7 +98,6 @@ test("exports certification freeze tags", () => {
 test("publish updates workspace view without stale values", () => {
   hydrateExecutiveSummaryStateOnMount("test");
   publishExecutiveSummaryState({
-    phase: "ready",
     systemStatus: "warning",
     topRisk: Object.freeze({
       headline: "Updated risk headline",
@@ -116,7 +115,6 @@ test("publish updates workspace view without stale values", () => {
 
 test("ready defaults remain defined after reset", () => {
   publishExecutiveSummaryState({
-    phase: "ready",
     systemStatus: DEFAULT_EXECUTIVE_SUMMARY_READY_STATE.systemStatus,
     topRisk: DEFAULT_EXECUTIVE_SUMMARY_READY_STATE.topRisk,
     topOpportunity: DEFAULT_EXECUTIVE_SUMMARY_READY_STATE.topOpportunity,

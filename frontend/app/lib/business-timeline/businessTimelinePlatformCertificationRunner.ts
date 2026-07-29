@@ -229,6 +229,7 @@ function verifyReadOnlyConsumers(): BusinessTimelinePlatformCertificationCheck {
     const mutationCheck = validateBusinessTimelineConsumerAccessRequest({
       consumerId,
       apiGroup: "events",
+      operation: "createEvent",
       mutation: true,
     });
     if (mutationCheck.valid) {
@@ -249,11 +250,13 @@ function verifyWorkspaceControlledWrites(): BusinessTimelinePlatformCertificatio
   const createAccess = validateBusinessTimelineConsumerAccessRequest({
     consumerId: "WorkspaceConsumer",
     apiGroup: "events",
+    operation: "createEvent",
     mutation: true,
   });
   const certAccess = validateBusinessTimelineConsumerAccessRequest({
     consumerId: "WorkspaceConsumer",
     apiGroup: "certification",
+    operation: "runCertification",
     mutation: false,
   });
 
@@ -652,7 +655,7 @@ export function runBusinessTimelinePlatformCertification(
   const passedChecks = groups.reduce((sum, entry) => sum + entry.checksPassed, 0);
   const certificationScore = Math.round((passedChecks / totalChecks) * 100);
 
-  const finalManifest = buildBusinessTimelinePlatformManifest(
+  void buildBusinessTimelinePlatformManifest(
     timestamp,
     readyForFreeze,
     allGroupsPassed ? timestamp : null
