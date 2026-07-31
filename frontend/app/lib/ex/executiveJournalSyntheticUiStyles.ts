@@ -59,6 +59,15 @@ export const ExecutiveJournalSyntheticUiCssText = `
   --ex2-t0-muted: var(--nx-muted, #cbd5e1);
   --ex2-t0-accent: var(--nx-accent, #60a5fa);
   --ex2-t0-focus: var(--nx-focus-ring, #93c5fd);
+  --ex2-t0-selected-bg: var(
+    --nx-nav-tile-active-bg,
+    linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(15, 23, 42, 0.88))
+  );
+  --ex2-t0-selected-border: var(
+    --nx-nav-tile-active-border,
+    rgba(96, 165, 250, 0.55)
+  );
+  --ex2-t0-selected-text: var(--nx-nav-short-active, #bfdbfe);
   --ex2-t0-banner-bg: #3f3208;
   --ex2-t0-banner-text: #fff8db;
   --ex2-t0-banner-border: #e8c547;
@@ -198,8 +207,12 @@ export const ExecutiveJournalSyntheticUiCssText = `
   cursor: pointer;
 }
 .${ex2t0.recordButtonSelected} {
-  border-color: var(--ex2-t0-accent);
-  background: #243b55;
+  border-color: var(--ex2-t0-selected-border);
+  background: var(--ex2-t0-selected-bg);
+}
+.${ex2t0.recordButtonSelected} .${ex2t0.recordPrimary},
+.${ex2t0.recordButtonSelected} .${ex2t0.recordSecondary} {
+  color: var(--ex2-t0-selected-text);
 }
 .${ex2t0.recordPrimary} {
   display: block;

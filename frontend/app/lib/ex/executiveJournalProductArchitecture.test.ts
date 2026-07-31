@@ -32,6 +32,39 @@ import {
   ExecutiveJournalProductArchitectureDecisionAdrEx208,
   ExecutiveJournalProductArchitectureDecisionAdrEx209,
   ExecutiveJournalProductArchitectureDecisionAdrEx210,
+  ExecutiveJournalProductArchitectureDecisionAdrEx211,
+  ExecutiveJournalProductArchitectureDecisionAdrEx212,
+  ExecutiveJournalProductArchitectureDecisionAdrEx213,
+  ExecutiveJournalProductArchitectureDecisionAdrEx214,
+  ExecutiveJournalProductArchitectureAdEx211DependencyContract,
+  ExecutiveJournalProductArchitectureAdEx211FeatureFlag,
+  ExecutiveJournalProductArchitectureAdEx211GateTreatment,
+  ExecutiveJournalProductArchitectureAdEx211PresentationContract,
+  ExecutiveJournalProductArchitectureAdEx211RouteInventory,
+  ExecutiveJournalProductArchitectureAdEx212AuthorizationFlags,
+  ExecutiveJournalProductArchitectureAdEx212ClosedResultSurface,
+  ExecutiveJournalProductArchitectureAdEx212MandatoryFailClosedControls,
+  ExecutiveJournalProductArchitectureAdEx212Preservation,
+  ExecutiveJournalProductArchitectureAdEx212RuleFamilies,
+  ExecutiveJournalProductArchitectureAdEx213AuthorizationFlags,
+  ExecutiveJournalProductArchitectureAdEx213CapabilitySurface,
+  ExecutiveJournalProductArchitectureAdEx213ClosedVocabularies,
+  ExecutiveJournalProductArchitectureAdEx213Lifecycle,
+  ExecutiveJournalProductArchitectureAdEx213NonCapabilities,
+  ExecutiveJournalProductArchitectureAdEx213PhaseDecisions,
+  ExecutiveJournalProductArchitectureAdEx213PlatformPrerequisites,
+  ExecutiveJournalProductArchitectureAdEx213Preservation,
+  ExecutiveJournalProductArchitectureAdEx214AuthorizationFlags,
+  ExecutiveJournalProductArchitectureAdEx214CapabilityBindings,
+  ExecutiveJournalProductArchitectureAdEx214ClosedVocabularies,
+  ExecutiveJournalProductArchitectureAdEx214ConsumerBinding,
+  ExecutiveJournalProductArchitectureAdEx214Lifecycle,
+  ExecutiveJournalProductArchitectureAdEx214NonCapabilityEnforcement,
+  ExecutiveJournalProductArchitectureAdEx214PhaseDecisions,
+  ExecutiveJournalProductArchitectureAdEx214Preservation,
+  ExecutiveJournalProductArchitectureAdEx214ReadinessConditions,
+  ExecutiveJournalProductArchitectureTier0RouteAuthorizationCompletion,
+  ExecutiveJournalProductArchitectureTier0RouteImplementationEvidence,
   ExecutiveJournalProductArchitectureDecisionIds,
   ExecutiveJournalProductArchitectureDecisions,
   ExecutiveJournalProductArchitectureFormalEx2NinePhaseSequence,
@@ -40,6 +73,9 @@ import {
   ExecutiveJournalProductArchitectureAuthorizedEx21Foundation,
   ExecutiveJournalProductArchitectureAuthorizedEx22Registry,
   ExecutiveJournalProductArchitectureAuthorizedEx23Model,
+  ExecutiveJournalProductArchitectureAuthorizedEx24Validation,
+  ExecutiveJournalProductArchitectureAuthorizedEx25Manifest,
+  ExecutiveJournalProductArchitectureAuthorizedEx26Platform,
   ExecutiveJournalProductArchitectureTier0EvidenceAdoptionPolicy,
   ExecutiveJournalProductArchitectureAdEx208AuthorizationFlags,
   ExecutiveJournalProductArchitectureAdEx209AuthorizationFlags,
@@ -235,9 +271,13 @@ import {
   isExecutiveJournalProductEx21MetadataOnlyFoundationAuthorized,
   isExecutiveJournalProductEx22MetadataOnlyRegistryAuthorized,
   isExecutiveJournalProductEx23MetadataOnlyModelAuthorized,
+  isExecutiveJournalProductEx24MetadataOnlyValidationAuthorized,
+  isExecutiveJournalProductEx25MetadataOnlyManifestAuthorized,
+  isExecutiveJournalProductEx26MetadataOnlyPlatformAuthorized,
   validateExecutiveJournalProductArchitectureCoverage,
 } from "./executiveJournalProductArchitecture.ts";
 import {
+  ExecutiveJournalExperienceFoundation,
   ExecutiveJournalExperienceFoundationId,
   ExecutiveJournalExperienceFoundationReadiness,
 } from "./executiveJournalExperienceFoundation.ts";
@@ -590,7 +630,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
         decision.decisionDateClassification,
         "supplied-decision-date",
       );
-      assert.equal(ExecutiveJournalProductArchitectureDecisions.length, 11);
+      assert.equal(ExecutiveJournalProductArchitectureDecisions.length, 15);
       assert.equal(
         getExecutiveJournalProductArchitectureDecision("AD-EX2-00"),
         decision,
@@ -611,7 +651,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
 
     it("fails closed for unknown, malformed, case-modified, and whitespace decision IDs", () => {
       for (const value of [
-        "AD-EX2-11",
+        "AD-EX2-15",
         "AD-EX2",
         "ad-ex2-00",
         "AD-EX2-00 ",
@@ -1509,11 +1549,11 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       assert.equal(summary.gateVocabularyConflictReported, true);
       assert.equal(
         summary.nextRequiredDecision,
-        "NPA-T — EX-2:3 Executive Journal Experience Model",
+        "NPA-T — EX-2:6 Executive Journal Experience Platform",
       );
       assert.equal(
         summary.readinessConclusion,
-        "ReadyForMetadataOnlyEx23ModelImplementation",
+        "ReadyForMetadataOnlyEx26PlatformImplementation",
       );
       assert.equal(summary.decisionIdAdEx207, "AD-EX2-07");
       assert.equal(summary.statusAdEx207, "Accepted");
@@ -1523,6 +1563,14 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       assert.equal(summary.statusAdEx209, "Accepted");
       assert.equal(summary.decisionIdAdEx210, "AD-EX2-10");
       assert.equal(summary.statusAdEx210, "Accepted");
+      assert.equal(summary.decisionIdAdEx211, "AD-EX2-11");
+      assert.equal(summary.statusAdEx211, "Accepted");
+      assert.equal(summary.decisionIdAdEx212, "AD-EX2-12");
+      assert.equal(summary.statusAdEx212, "Accepted");
+      assert.equal(summary.decisionIdAdEx213, "AD-EX2-13");
+      assert.equal(summary.statusAdEx213, "Accepted");
+      assert.equal(summary.decisionIdAdEx214, "AD-EX2-14");
+      assert.equal(summary.statusAdEx214, "Accepted");
       assert.equal(summary.formalEx2SequenceAuthorized, true);
       assert.equal(summary.ex21MetadataOnlyFoundationAuthorized, true);
       assert.equal(summary.ex21ImplementationAuthorized, true);
@@ -1544,7 +1592,16 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
         summary.ex23ImplementationScope,
         "MetadataOnlyEx23ModelOnly",
       );
-      assert.equal(summary.ex24Authorized, false);
+      assert.equal(summary.ex24Authorized, true);
+      assert.equal(summary.ex24MetadataOnlyValidationAuthorized, true);
+      assert.equal(summary.ex24ImplementationAuthorized, true);
+      assert.equal(summary.ex25Authorized, true);
+      assert.equal(summary.ex25MetadataOnlyManifestAuthorized, true);
+      assert.equal(summary.ex25ImplementationAuthorized, true);
+      assert.equal(summary.ex26Authorized, true);
+      assert.equal(summary.ex26MetadataOnlyPlatformContractAuthorized, true);
+      assert.equal(summary.ex26ImplementationAuthorized, true);
+      assert.equal(summary.ex27Authorized, false);
       assert.equal(summary.runtimeBehaviorAuthorized, false);
       assert.equal(summary.uiExpansionAuthorized, false);
       assert.equal(summary.routeAuthorized, false);
@@ -1572,6 +1629,62 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       assert.equal(
         summary.adEx210DecisionScope,
         "Ex23ModelImplementationAndVerificationOnly",
+      );
+      assert.equal(
+        summary.adEx211SelectedOption,
+        "DevelopmentOnlyAppRouterPreviewWithFailClosedEnvironmentGate",
+      );
+      assert.equal(
+        summary.adEx211DecisionScope,
+        "Tier0SyntheticPreviewRouteArchitectureOnly",
+      );
+      assert.equal(
+        summary.adEx212SelectedOption,
+        "MetadataOnlyFailClosedExperienceValidation",
+      );
+      assert.equal(
+        summary.adEx212DecisionScope,
+        "Ex24ValidationImplementationAndVerificationOnly",
+      );
+      assert.equal(
+        summary.adEx213SelectedOption,
+        "MetadataOnlyValidatedExperienceCapabilityManifest",
+      );
+      assert.equal(
+        summary.adEx213DecisionScope,
+        "Ex25ManifestImplementationAndVerificationOnly",
+      );
+      assert.equal(summary.routeArchitectureDecisionAccepted, true);
+      assert.equal(
+        summary.routeArchitectureCanonicalPath,
+        "/executive/journal-preview",
+      );
+      assert.equal(summary.routeArchitectureImplementationAuthorized, false);
+      assert.equal(summary.routeArchitectureLocalAccessAuthorized, false);
+      assert.equal(
+        summary.routeAuthorizationId,
+        "EX2-ROUTE-AUTH-T0-2026-07-29-02",
+      );
+      assert.equal(summary.routeAuthorizationStatus, "Recorded");
+      assert.equal(
+        summary.routeAuthorizationResult,
+        "AuthorizedForTier0SyntheticPreviewRouteAndLocalAccess",
+      );
+      assert.equal(summary.tier0LocalRouteImplementationAuthorized, true);
+      assert.equal(summary.tier0LocalRouteAccessAuthorized, true);
+      assert.equal(summary.tier0LocalRouteTestsAuthorized, true);
+      assert.equal(summary.tier0LocalRouteImplementationComplete, true);
+      assert.equal(
+        summary.tier0LocalRouteImplementationEvidenceId,
+        "EX2-ROUTE-IMPL-T0-2026-07-29-01",
+      );
+      assert.equal(
+        summary.tier0LocalRouteImplementationStatus,
+        "Tier0SyntheticPreviewRouteImplemented",
+      );
+      assert.equal(
+        summary.tier0LocalRouteAccessStatus,
+        "Tier0SyntheticPreviewLocallyAccessible",
       );
       assert.equal(
         summary.tier0EvidenceAdoptionStrategy,
@@ -1879,7 +1992,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
         "C",
       );
       assert.throws(() =>
-        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-11")
+        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-15")
       );
       assert.throws(() =>
         assertExecutiveJournalProductArchitectureDecisionId("ad-ex2-04")
@@ -1943,7 +2056,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
         "C",
       );
       assert.throws(() =>
-        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-11")
+        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-15")
       );
       assert.throws(() =>
         assertExecutiveJournalProductArchitectureDecisionId("ad-ex2-05")
@@ -2154,7 +2267,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       );
       assert.equal(
         ExecutiveJournalProductArchitectureDecisions.length,
-        11,
+        15,
       );
       assert.equal(
         assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-06"),
@@ -3939,6 +4052,10 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
           "AD-EX2-08",
           "AD-EX2-09",
           "AD-EX2-10",
+          "AD-EX2-11",
+          "AD-EX2-12",
+          "AD-EX2-13",
+          "AD-EX2-14",
         ],
       );
       assert.equal(
@@ -3957,8 +4074,21 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
         assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-10"),
         "AD-EX2-10",
       );
-      assert.throws(() =>
-        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-11")
+      assert.equal(
+        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-11"),
+        "AD-EX2-11",
+      );
+      assert.equal(
+        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-12"),
+        "AD-EX2-12",
+      );
+      assert.equal(
+        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-13"),
+        "AD-EX2-13",
+      );
+      assert.equal(
+        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-14"),
+        "AD-EX2-14",
       );
       assert.equal(
         ExecutiveJournalProductArchitectureDecisionAdrEx206.status,
@@ -4684,10 +4814,10 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
 
     it("does not create later phases or routes; AD-EX2-08 itself remains non-creating", () => {
       const exDir = readdirSync(HERE);
-      // AD-EX2-08 does not authorize EX-2:3+. EX-2:2 Registry may exist under AD-EX2-09.
+      // AD-EX2-08 remains non-creating; AD-EX2-09/10 may create EX-2:2/3.
       assert.equal(
         exDir.some((name) =>
-          /executiveJournalExperience(Model|Validation|Manifest|Platform|Certification|Freeze|PublicIndex)/i
+          /executiveJournalExperience(Certification|Freeze|PublicIndex)/i
             .test(name)
         ),
         false,
@@ -4879,16 +5009,16 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       );
       assert.equal(summary.ex22Authorized, true);
       assert.equal(summary.ex22MetadataOnlyRegistryAuthorized, true);
-      // Aggregate summary advances with AD-EX2-10; AD-EX2-09 itself remains unchanged.
+      // Aggregate summary advances with AD-EX2-14; AD-EX2-09 itself remains unchanged.
       assert.equal(summary.ex23Authorized, true);
       assert.equal(summary.ex23MetadataOnlyModelAuthorized, true);
       assert.equal(
         summary.readinessConclusion,
-        "ReadyForMetadataOnlyEx23ModelImplementation",
+        "ReadyForMetadataOnlyEx26PlatformImplementation",
       );
       assert.equal(
         summary.nextRequiredDecision,
-        "NPA-T — EX-2:3 Executive Journal Experience Model",
+        "NPA-T — EX-2:6 Executive Journal Experience Platform",
       );
       assert.equal(
         decision.readinessConclusion,
@@ -4900,7 +5030,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       );
     });
 
-    it("preserves pending gates and does not create EX-2:3+ files", () => {
+    it("preserves pending gates and keeps EX-2:7+ files absent", () => {
       assert.equal(
         getExecutiveJournalProductArchitectureGate("G-EX2-04").result,
         "Pending",
@@ -4930,7 +5060,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       );
       assert.equal(
         readdirSync(HERE).some((name) =>
-          /executiveJournalExperience(Model|Validation|Manifest|Platform|Certification|Freeze|PublicIndex)/i
+          /executiveJournalExperience(Certification|Freeze|PublicIndex)/i
             .test(name)
         ),
         false,
@@ -5090,15 +5220,15 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       );
       assert.equal(summary.ex23Authorized, true);
       assert.equal(summary.ex23MetadataOnlyModelAuthorized, true);
-      assert.equal(summary.ex24Authorized, false);
+      assert.equal(summary.ex24Authorized, true);
       assert.equal(summary.uiExpansionAuthorized, false);
       assert.equal(
         summary.readinessConclusion,
-        "ReadyForMetadataOnlyEx23ModelImplementation",
+        "ReadyForMetadataOnlyEx26PlatformImplementation",
       );
       assert.equal(
         summary.nextRequiredDecision,
-        "NPA-T — EX-2:3 Executive Journal Experience Model",
+        "NPA-T — EX-2:6 Executive Journal Experience Platform",
       );
       assert.equal(model.proposedPackage.length, 8);
       assert.equal(model.mayDefineEntitiesFor.length, 16);
@@ -5106,7 +5236,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       assert.ok(model.absoluteProhibitions.length >= 18);
     });
 
-    it("preserves pending gates/issues and does not create EX-2:3 or EX-2:4 files", () => {
+    it("preserves pending gates/issues and keeps EX-2:7+ files absent", () => {
       assert.equal(
         getExecutiveJournalProductArchitectureGate("G-EX2-04").result,
         "Pending",
@@ -5140,15 +5270,1546 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       );
       assert.equal(
         readdirSync(HERE).some((name) =>
-          /executiveJournalExperience(Model|Validation|Manifest|Platform|Certification|Freeze|PublicIndex)/i
+          /executiveJournalExperience(Certification|Freeze|PublicIndex)/i
             .test(name)
         ),
         false,
       );
       assert.throws(() =>
-        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-11")
+        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-15")
       );
       assert.equal(isExecutiveJournalProductEx21Blocked(), true);
+    });
+  });
+
+  describe("AD-EX2-11 local synthetic preview route architecture", () => {
+    it("records the accepted architecture decision without creating or authorizing a route", () => {
+      const decision = ExecutiveJournalProductArchitectureDecisionAdrEx211;
+      assert.equal(decision.decisionId, "AD-EX2-11");
+      assert.equal(
+        decision.title,
+        "Establish the Tier-0 Synthetic Preview Local Route Architecture",
+      );
+      assert.equal(decision.status, "Accepted");
+      assert.equal(decision.result, "Tier0SyntheticPreviewRouteArchitectureAccepted");
+      assert.equal(
+        decision.lintClassification,
+        "RouteArchitectureAcceptedWithProjectLintBlockerDisclosed",
+      );
+      assert.equal(
+        decision.projectCiClassification,
+        "CiStillBlockedByParkedReactCompilerDebt",
+      );
+      assert.equal(decision.decisionAuthority, "Bahadoor");
+      assert.equal(
+        decision.authorityRole,
+        "Nexora Product and Architecture Authority",
+      );
+      assert.equal(decision.decisionDate, "2026-07-29");
+      assert.equal(
+        decision.selectedOption,
+        "DevelopmentOnlyAppRouterPreviewWithFailClosedEnvironmentGate",
+      );
+      assert.equal(
+        decision.decisionScope,
+        "Tier0SyntheticPreviewRouteArchitectureOnly",
+      );
+      assert.equal(decision.canonicalPath, "/executive/journal-preview");
+      assert.equal(decision.hostClass, "DevelopmentTestHarnessOnly");
+      assert.equal(decision.accessClass, "LocalDevelopmentOnly");
+      assert.equal(decision.unauthorizedBehavior, "notFound()");
+      assert.equal(decision.createsRoute, false);
+      assert.equal(decision.createsFeatureFlag, false);
+      assert.equal(decision.grantsImplementationAuthorization, false);
+      assert.equal(decision.grantsLocalAccessAuthorization, false);
+      assert.equal(decision.productionAuthorization, false);
+      assert.equal(decision.deploymentAuthorization, false);
+      assert.equal(decision.navigationExposure, false);
+      assert.equal(decision.ex1PublicIndexExposure, false);
+      assert.equal(decision.realRtc2ConsumptionAuthorized, false);
+      assert.equal(decision.networkAuthorized, false);
+      assert.equal(decision.persistenceAuthorized, false);
+      assert.equal(decision.telemetryAuthorized, false);
+      assert.equal(decision.cloudAuthorized, false);
+      assert.equal(decision.ciLintGateClean, false);
+      assert.equal(
+        getExecutiveJournalProductArchitectureDecision("AD-EX2-11"),
+        decision,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureDecisions.filter(
+          (item) => item.decisionId === "AD-EX2-11",
+        ).length,
+        1,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitecture.decisionAdEx211,
+        decision,
+      );
+      assert.equal(mutateFrozen(decision), false);
+      assert.equal(attemptNestedMutation(decision), false);
+    });
+
+    it("records the inspected route inventory and selects the conflict-free canonical path", () => {
+      const inventory =
+        ExecutiveJournalProductArchitectureAdEx211RouteInventory;
+      assert.deepEqual([...inventory.applicationRoutes], [
+        "/",
+        "/executive",
+        "/pipeline",
+        "/psych",
+        "/sycho",
+        "/type-c",
+      ]);
+      assert.equal(inventory.rootLayout, "/app/layout.tsx");
+      assert.deepEqual([...inventory.nestedLayouts], []);
+      assert.deepEqual([...inventory.developmentOnlyRoutes], []);
+      assert.equal(inventory.establishedNotFoundEnvironmentGatePattern, false);
+      assert.equal(inventory.establishedFeatureFlagFramework, false);
+      assert.equal(inventory.preferredPathConflict, false);
+      assert.equal(inventory.inspectedPreferredPath, "/executive/journal-preview");
+      assert.equal(inventory.routeExistsBeforeDecision, false);
+      assert.equal(inventory.primaryNavigationExposureBeforeDecision, false);
+      assert.equal(inventory.certifiedPreviewRequiresClientBoundary, true);
+      assert.equal(
+        inventory.prohibitedRuntimeDependencyIntroducedByCertifiedPreview,
+        false,
+      );
+    });
+
+    it("defines one server-only fail-closed flag and exact dependency direction", () => {
+      const flag = ExecutiveJournalProductArchitectureAdEx211FeatureFlag;
+      const dependency =
+        ExecutiveJournalProductArchitectureAdEx211DependencyContract;
+      assert.equal(flag.name, "EX2_TIER0_PREVIEW_ENABLED");
+      assert.equal(flag.visibility, "ServerOnly");
+      assert.equal(flag.acceptedValue, "true");
+      assert.equal(flag.allOtherValuesDenyAccess, true);
+      assert.equal(flag.default, "Disabled");
+      assert.equal(flag.productionEnablementProhibited, true);
+      assert.equal(flag.remoteConfigurationProhibited, true);
+      assert.equal(flag.createdByThisDecision, false);
+      assert.deepEqual([...dependency.direction], [
+        "AppRouterPage",
+        "CertifiedTier0SyntheticUiHarness",
+        "ReadOnlyUiFacade",
+        "CertifiedSyntheticMetadataPackage",
+      ]);
+      assert.equal(dependency.routeMayImportHarness, true);
+      assert.equal(dependency.routeMayBypassFacadeForProviderOrFixtures, false);
+      assert.deepEqual([...dependency.prohibitedImports], [
+        "RTC-1 runtime",
+        "RTC-2 runtime",
+        "RTC-3 runtime",
+        "APP-8",
+        "EX-1 Public Index",
+        "production providers",
+        "network clients",
+        "persistence",
+        "telemetry",
+        "cloud SDKs",
+      ]);
+    });
+
+    it("preserves the blocked authorization, presentation boundary, and existing gates", () => {
+      const decision = ExecutiveJournalProductArchitectureDecisionAdrEx211;
+      const presentation =
+        ExecutiveJournalProductArchitectureAdEx211PresentationContract;
+      const gates = ExecutiveJournalProductArchitectureAdEx211GateTreatment;
+      assert.equal(decision.architectureBlockerResolved, true);
+      assert.equal(decision.humanRouteAuthorizationStillRequired, true);
+      assert.equal(
+        decision.blockedAuthorizationRecordId,
+        "EX2-ROUTE-AUTH-T0-2026-07-29-01",
+      );
+      assert.equal(
+        decision.blockedAuthorizationHistoricalResult,
+        "RouteAuthorizationBlockedByMissingArchitectureDecision",
+      );
+      assert.equal(decision.blockedAuthorizationHistoricallyPreserved, true);
+      assert.equal(
+        presentation.mandatoryMarker,
+        "Synthetic / Tier 0 / Non-production",
+      );
+      assert.equal(presentation.certifiedNineStatesOnly, true);
+      assert.equal(presentation.readOnly, true);
+      assert.equal(presentation.syntheticDataOnly, true);
+      assert.equal(presentation.localhostIsAuthentication, false);
+      assert.equal(presentation.sensitiveOrRealDataAuthorized, false);
+      assert.equal(presentation.externalSharingAuthorized, false);
+      assert.equal(gates.existingEx2GateCount, 16);
+      assert.equal(gates.existingEx2GatesChanged, false);
+      assert.deepEqual([...gates.pendingEx2Gates], [
+        "G-EX2-04",
+        "G-EX2-07",
+        "G-EX2-12",
+      ]);
+      assert.equal(gates.existingTier0UiGateCount, 16);
+      assert.equal(gates.tier0UiPassCount, 16);
+      assert.equal(gates.existingTier0UiGatesChanged, false);
+      assert.equal(gates.metadataCertificationRemainsValid, true);
+      assert.equal(gates.uiCertificationRemainsValid, true);
+      assert.equal(gates.productionApplicability, false);
+      assert.equal(
+        decision.nextRequiredTask,
+        "NPA-T — EX-2 Tier-0 Synthetic Preview Route and Local Access Human Authorization Completion",
+      );
+    });
+
+    it("does not itself create route or flag artifacts", () => {
+      assert.equal(
+        ExecutiveJournalProductArchitectureDecisionAdrEx211.createsRoute,
+        false,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureDecisionAdrEx211.createsFeatureFlag,
+        false,
+      );
+      assert.equal(
+        readFileSync(
+          join(HERE, "executiveJournalProductArchitecture.ts"),
+          "utf8",
+        ).includes("NEXT_PUBLIC_EX2_TIER0_PREVIEW_ENABLED"),
+        false,
+      );
+    });
+  });
+
+  describe("AD-EX2-12 EX-2:4 Validation authorization", () => {
+    it("records the next canonical Accepted decision exactly once without rewriting AD-EX2-00 through AD-EX2-11", () => {
+      const decision = ExecutiveJournalProductArchitectureDecisionAdrEx212;
+      assert.equal(decision.decisionId, "AD-EX2-12");
+      assert.equal(
+        decision.title,
+        "Authorize Metadata-Only EX-2:4 Executive Journal Experience Validation",
+      );
+      assert.equal(decision.status, "Accepted");
+      assert.equal(
+        decision.result,
+        "Ex24MetadataOnlyValidationAuthorizationAccepted",
+      );
+      assert.equal(decision.decisionAuthority, "Bahadoor");
+      assert.equal(
+        decision.authorityRole,
+        "Nexora Product and Architecture Authority",
+      );
+      assert.equal(decision.decisionDate, "2026-07-30");
+      assert.equal(decision.decisionDateClassification, "SuppliedDecisionDate");
+      assert.equal(
+        decision.selectedOption,
+        "MetadataOnlyFailClosedExperienceValidation",
+      );
+      assert.equal(
+        decision.decisionScope,
+        "Ex24ValidationImplementationAndVerificationOnly",
+      );
+      assert.equal(
+        decision.doesNotRewriteRenumberSupersedeOrWeakenAdEx200ThroughAdEx211,
+        true,
+      );
+      assert.deepEqual(
+        ExecutiveJournalProductArchitectureDecisions.map(
+          (item) => item.decisionId,
+        ),
+        ExecutiveJournalProductArchitectureDecisionIds,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureDecisions.filter(
+          (item) => item.decisionId === "AD-EX2-12",
+        ).length,
+        1,
+      );
+      assert.equal(
+        getExecutiveJournalProductArchitectureDecision("AD-EX2-12"),
+        decision,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitecture.decisionAdEx212,
+        decision,
+      );
+      assert.equal(mutateFrozen(decision), false);
+      assert.equal(attemptNestedMutation(decision), false);
+    });
+
+    it("authorizes the exact future EX-2:4 identity and eight-file package without creating it", () => {
+      const validation =
+        ExecutiveJournalProductArchitectureAuthorizedEx24Validation;
+      assert.equal(
+        validation.identity,
+        "EX-2:4/ExecutiveJournalExperienceValidation",
+      );
+      assert.equal(
+        validation.namespace,
+        "nexora.ex.executive.journal.experience.validation",
+      );
+      assert.equal(validation.status, "Validation");
+      assert.equal(validation.readiness, "ReadyForManifest");
+      assert.equal(validation.phase, "EX-2:4");
+      assert.equal(
+        validation.previousPhase,
+        "EX-2:3 — Executive Journal Experience Model",
+      );
+      assert.equal(
+        validation.nextPhaseMetadata,
+        "EX-2:5 — Executive Journal Experience Manifest",
+      );
+      assert.equal(validation.metadataOnly, true);
+      assert.equal(validation.sideEffectFree, true);
+      assert.equal(validation.deterministic, true);
+      assert.equal(validation.failClosed, true);
+      assert.deepEqual([...validation.proposedPackage], [
+        "frontend/app/lib/ex/executiveJournalExperienceValidation.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceValidationTypes.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceValidationIdentity.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceValidationLifecycle.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceValidationContracts.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceValidationRules.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceValidationMetadata.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceValidation.test.ts",
+      ]);
+      assert.equal(validation.proposedPackage.length, 8);
+      assert.equal(
+        readdirSync(HERE).some((name) =>
+          /^executiveJournalExperienceCertification/.test(name)
+        ),
+        false,
+      );
+      assert.equal(validation.createdByThisDecision, false);
+      assert.equal(validation.readyForManifestDoesNotAuthorizeEx25, true);
+    });
+
+    it("records the pure validation surface, closed results, lifecycle, and complete rule families", () => {
+      const validation =
+        ExecutiveJournalProductArchitectureAuthorizedEx24Validation;
+      const surface =
+        ExecutiveJournalProductArchitectureAdEx212ClosedResultSurface;
+      assert.equal(validation.mayValidate.length, 11);
+      assert.deepEqual([...surface.validationResults], ["Valid", "Invalid"]);
+      assert.deepEqual([...surface.severities], [
+        "Info",
+        "Warning",
+        "Error",
+        "Critical",
+      ]);
+      assert.deepEqual([...surface.validationLifecycleStates], [
+        "Declared",
+        "UpstreamBound",
+        "RulesConstructed",
+        "Sealed",
+        "ReadyForManifest",
+      ]);
+      assert.deepEqual([...surface.ruleFamilies], [
+        "Identity",
+        "Structure",
+        "EntityCatalogue",
+        "RelationshipCatalogue",
+        "Lifecycle",
+        "Vocabulary",
+        "MetadataBoundary",
+        "PrivacyBoundary",
+        "AuthorityBoundary",
+        "Provenance",
+        "CorrectionSupersession",
+        "Projection",
+        "FilterModel",
+        "Tier0EvidenceReference",
+        "Determinism",
+        "Immutability",
+        "DependencyBoundary",
+      ]);
+      assert.equal(
+        new Set(ExecutiveJournalProductArchitectureAdEx212RuleFamilies).size,
+        17,
+      );
+      assert.equal(surface.failClosedWithoutNormalizationRepairOrFallback, true);
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx212MandatoryFailClosedControls
+          .length,
+        13,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx212MandatoryFailClosedControls
+          .filter((control) => control.outcome === "Invalid").length,
+        11,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx212MandatoryFailClosedControls
+          .filter((control) => control.outcome === "Prohibited").length,
+        2,
+      );
+      assert.equal(
+        validation.phaseDecisionRequirements
+          .preservesEx23DecisionsD01ThroughD08,
+        true,
+      );
+      assert.equal(
+        validation.phaseDecisionRequirements.notArchitectureDecisionRecords,
+        true,
+      );
+      assert.equal(attemptNestedMutation(surface), false);
+    });
+
+    it("enforces Model-only upstream direction and every explicit non-authorization", () => {
+      const decision = ExecutiveJournalProductArchitectureDecisionAdrEx212;
+      const validation =
+        ExecutiveJournalProductArchitectureAuthorizedEx24Validation;
+      const flags =
+        ExecutiveJournalProductArchitectureAdEx212AuthorizationFlags;
+      assert.equal(
+        validation.dependencyDirection,
+        "EX-2:4 Validation → EX-2:3 Model → EX-2:2 Registry → EX-2:1 Foundation → architecture metadata",
+      );
+      assert.equal(
+        validation.upstreamRuntimeDependency,
+        "EX-2:3/ExecutiveJournalExperienceModel",
+      );
+      assert.equal(validation.registryAndFoundationReachedThroughModelOnly, true);
+      assert.equal(validation.exactUpstreamReferencesRequired, true);
+      assert.equal(validation.prohibitedCapabilities.length, 11);
+      assert.equal(flags.ex24MetadataOnlyValidationAuthorized, true);
+      assert.equal(flags.ex24ImplementationAuthorized, true);
+      assert.equal(flags.ex25Authorized, false);
+      for (const value of [
+        flags.runtimeBehaviorAuthorized,
+        flags.uiExpansionAuthorized,
+        flags.routeAuthorizedByThisDecision,
+        flags.realRtc2ConsumptionAuthorized,
+        flags.productionProviderAuthorized,
+        flags.networkAuthorized,
+        flags.persistenceAuthorized,
+        flags.telemetryAuthorized,
+        flags.publicIndexAuthorized,
+        flags.deploymentAuthorized,
+      ]) {
+        assert.equal(value, false);
+      }
+      assert.equal(decision.createsEx24, false);
+      assert.equal(decision.createsEx25, false);
+      assert.equal(decision.implementsValidationRules, false);
+      assert.equal(
+        isExecutiveJournalProductEx24MetadataOnlyValidationAuthorized(),
+        true,
+      );
+    });
+
+    it("preserves issues, gates, route authority, lint classification, and later-phase absence", () => {
+      const decision = ExecutiveJournalProductArchitectureDecisionAdrEx212;
+      const preservation =
+        ExecutiveJournalProductArchitectureAdEx212Preservation;
+      assert.equal(ExecutiveJournalExperienceFoundation.openIssues.issueIds.length, 13);
+      assert.equal(
+        ExecutiveJournalExperienceFoundation.openIssues.issues.every(
+          (issue) =>
+            issue.status === "Unresolved"
+            && issue.carriedByPhase === "EX-2:1",
+        ),
+        true,
+      );
+      assert.equal(preservation.openIssueCount, 13);
+      assert.equal(preservation.allOpenIssuesRemainUnresolved, true);
+      assert.equal(
+        preservation.ownersDescriptionsAndCarriedByPhaseUnchanged,
+        true,
+      );
+      assert.deepEqual([...preservation.pendingGates], [
+        "G-EX2-04",
+        "G-EX2-07",
+        "G-EX2-12",
+      ]);
+      for (const gateId of preservation.pendingGates) {
+        assert.equal(
+          getExecutiveJournalProductArchitectureGate(gateId).result,
+          "Pending",
+        );
+      }
+      assert.equal(preservation.noIssueOrGateResolvedByAssumption, true);
+      assert.equal(
+        preservation.preservesExistingTier0PreviewRouteAuthorization,
+        true,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitecture
+          .tier0RouteAuthorizationCompletion
+          .routeImplementationAuthorized,
+        true,
+      );
+      assert.equal(
+        decision.projectCiClassification,
+        "CiStillBlockedByParkedReactCompilerDebt",
+      );
+      assert.equal(
+        decision.lintAuthorizationClassification,
+        "AllowMetadataOnlyEx24WithLintBlockerRecorded",
+      );
+      assert.deepEqual(decision.expectedParkedLintBaseline, {
+        errors: 21,
+        warnings: 288,
+        affectedFiles: 64,
+        noExplicitAny: 0,
+        unusedVariables: 0,
+      });
+      assert.equal(decision.modifiesParkedReactCompilerClusters, false);
+      assert.equal(decision.addsLintSuppressions, false);
+      assert.equal(decision.weakensEslintConfiguration, false);
+      assert.equal(decision.ciLintGateClean, false);
+      assert.equal(
+        readdirSync(HERE).some((name) =>
+          /^executiveJournalExperienceCertification/.test(name)
+        ),
+        false,
+      );
+      assert.equal(
+        decision.readinessConclusion,
+        "ReadyForMetadataOnlyEx24ValidationImplementation",
+      );
+      assert.equal(
+        decision.nextRequiredTask,
+        "NPA-T — EX-2:4 Executive Journal Experience Validation",
+      );
+    });
+  });
+
+  describe("AD-EX2-13 EX-2:5 Manifest authorization", () => {
+    it("records the next canonical Accepted decision exactly once without rewriting prior decisions", () => {
+      const decision = ExecutiveJournalProductArchitectureDecisionAdrEx213;
+      assert.equal(decision.decisionId, "AD-EX2-13");
+      assert.equal(
+        decision.title,
+        "Authorize Metadata-Only EX-2:5 Executive Journal Experience Manifest",
+      );
+      assert.equal(decision.status, "Accepted");
+      assert.equal(
+        decision.result,
+        "Ex25MetadataOnlyManifestAuthorizationAccepted",
+      );
+      assert.equal(decision.decisionAuthority, "Bahadoor");
+      assert.equal(
+        decision.authorityRole,
+        "Nexora Product and Architecture Authority",
+      );
+      assert.equal(decision.decisionDate, "2026-07-30");
+      assert.equal(
+        decision.decisionDateClassification,
+        "RepositorySuppliedDecisionDate",
+      );
+      assert.equal(
+        decision.selectedOption,
+        "MetadataOnlyValidatedExperienceCapabilityManifest",
+      );
+      assert.equal(
+        decision.decisionScope,
+        "Ex25ManifestImplementationAndVerificationOnly",
+      );
+      assert.equal(
+        decision.doesNotRewriteRenumberSupersedeOrWeakenAdEx200ThroughAdEx212,
+        true,
+      );
+      assert.deepEqual(
+        ExecutiveJournalProductArchitectureDecisions.map(
+          (item) => item.decisionId,
+        ),
+        ExecutiveJournalProductArchitectureDecisionIds,
+      );
+      assert.equal(
+        new Set(ExecutiveJournalProductArchitectureDecisionIds).size,
+        15,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureDecisions.filter(
+          (item) => item.decisionId === "AD-EX2-13",
+        ).length,
+        1,
+      );
+      assert.equal(
+        getExecutiveJournalProductArchitectureDecision("AD-EX2-13"),
+        decision,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitecture.decisionAdEx213,
+        decision,
+      );
+      assert.equal(mutateFrozen(decision), false);
+      assert.equal(attemptNestedMutation(decision), false);
+    });
+
+    it("authorizes the exact EX-2:5 identity and canonical eight-file package without creating it", () => {
+      const manifest =
+        ExecutiveJournalProductArchitectureAuthorizedEx25Manifest;
+      assert.equal(
+        manifest.identity,
+        "EX-2:5/ExecutiveJournalExperienceManifest",
+      );
+      assert.equal(
+        manifest.namespace,
+        "nexora.ex.executive.journal.experience.manifest",
+      );
+      assert.equal(manifest.status, "Manifest");
+      assert.equal(manifest.readiness, "ReadyForPlatform");
+      assert.equal(
+        manifest.previousPhase,
+        "EX-2:4 — Executive Journal Experience Validation",
+      );
+      assert.equal(
+        manifest.nextPhaseMetadata,
+        "EX-2:6 — Executive Journal Experience Platform",
+      );
+      assert.equal(manifest.metadataOnly, true);
+      assert.equal(manifest.deterministic, true);
+      assert.equal(manifest.immutable, true);
+      assert.equal(manifest.sideEffectFree, true);
+      assert.equal(manifest.failClosed, true);
+      assert.deepEqual([...manifest.proposedPackage], [
+        "frontend/app/lib/ex/executiveJournalExperienceManifest.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceManifestTypes.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceManifestIdentity.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceManifestLifecycle.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceManifestContracts.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceManifestEntries.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceManifestMetadata.ts",
+        "frontend/app/lib/ex/executiveJournalExperienceManifest.test.ts",
+      ]);
+      assert.equal(manifest.proposedPackage.length, 8);
+      assert.equal(
+        manifest.packageConventionInspection.approvedCanonicalSixthFile,
+        manifest.proposedPackage[5],
+      );
+      assert.match(
+        manifest.packageConventionInspection.rationale,
+        /EX-2 eight-file identity\/lifecycle\/contracts convention/,
+      );
+      assert.equal(manifest.createdByThisDecision, false);
+      assert.equal(manifest.readyForPlatformDoesNotAuthorizeEx26, true);
+      assert.equal(
+        readdirSync(HERE).filter((name) =>
+          /^executiveJournalExperienceManifest/.test(name)
+        ).length,
+        8,
+      );
+      assert.equal(
+        readdirSync(HERE).some((name) =>
+          /^executiveJournalExperienceCertification/.test(name)
+        ),
+        false,
+      );
+    });
+
+    it("requires exact Valid EX-2:4 evidence and Validation-only upstream dependency", () => {
+      const decision = ExecutiveJournalProductArchitectureDecisionAdrEx213;
+      const manifest =
+        ExecutiveJournalProductArchitectureAuthorizedEx25Manifest;
+      assert.equal(
+        decision.prerequisiteValidationIdentity,
+        "EX-2:4/ExecutiveJournalExperienceValidation",
+      );
+      assert.equal(
+        decision.prerequisiteValidationNamespace,
+        "nexora.ex.executive.journal.experience.validation",
+      );
+      assert.equal(decision.prerequisiteValidationStatus, "Validation");
+      assert.equal(
+        decision.prerequisiteValidationReadiness,
+        "ReadyForManifest",
+      );
+      assert.equal(decision.prerequisiteValidationFinalVerificationPassed, true);
+      assert.equal(decision.prerequisiteValidationFinalTestCount, 121);
+      assert.equal(
+        manifest.dependencyDirection,
+        "EX-2:5 Manifest → EX-2:4 Validation → EX-2:3 Model → EX-2:2 Registry → EX-2:1 Foundation → architecture metadata",
+      );
+      assert.equal(
+        manifest.upstreamRuntimeDependency,
+        "EX-2:4/ExecutiveJournalExperienceValidation",
+      );
+      assert.equal(manifest.earlierPhasesReachedThroughValidationOnly, true);
+      assert.equal(manifest.exactUpstreamReferencesRequired, true);
+      assert.equal(manifest.validatedInput.exactValidationAggregateRequired, true);
+      assert.equal(manifest.validatedInput.requiredValidationResult, "Valid");
+      assert.deepEqual([...manifest.validatedInput.ineligibleEvidence], [
+        "Invalid",
+        "Missing",
+        "Malformed",
+        "Cloned",
+        "Stale",
+        "Mismatched",
+        "Unknown",
+      ]);
+      assert.equal(manifest.validatedInput.confirmsMetadataConformanceOnly, true);
+      assert.equal(manifest.validatedInput.satisfiesProductionGates, false);
+      assert.equal(manifest.validatedInput.authorizesEx26, false);
+    });
+
+    it("closes vocabularies, capabilities, non-capabilities, prerequisites, lifecycle, and phase decisions", () => {
+      const vocabularies =
+        ExecutiveJournalProductArchitectureAdEx213ClosedVocabularies;
+      assert.deepEqual([...vocabularies.eligibility], [
+        "Eligible",
+        "Ineligible",
+      ]);
+      assert.deepEqual([...vocabularies.capabilitySupport], [
+        "Declared",
+        "NotDeclared",
+        "Prohibited",
+      ]);
+      assert.deepEqual([...vocabularies.compatibility], [
+        "Compatible",
+        "Incompatible",
+        "NotEvaluated",
+      ]);
+      assert.deepEqual([...vocabularies.requirementStatus], [
+        "Satisfied",
+        "Unsatisfied",
+        "Pending",
+      ]);
+      assert.equal(vocabularies.entryKinds.length, 11);
+      assert.equal(vocabularies.issueReasonCodes.length, 12);
+      assert.equal(
+        vocabularies
+          .unknownMalformedPartialCaseOrWhitespaceModifiedValuesFailClosed,
+        true,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx213CapabilitySurface.length,
+        16,
+      );
+      assert.equal(
+        new Set(
+          ExecutiveJournalProductArchitectureAdEx213CapabilitySurface.map(
+            (entry) => entry.capabilityId,
+          ),
+        ).size,
+        16,
+      );
+      assert.deepEqual(
+        ExecutiveJournalProductArchitectureAdEx213CapabilitySurface.map(
+          (entry) => entry.capabilityId,
+        ),
+        Array.from(
+          { length: 16 },
+          (_, index) => `EX25-CAP-${String(index + 1).padStart(2, "0")}`,
+        ),
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx213NonCapabilities.length,
+        19,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx213NonCapabilities.includes(
+          "Private reflection or its existence signals",
+        ),
+        true,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx213NonCapabilities.includes(
+          "EX-2:6 Platform implementation",
+        ),
+        true,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx213PlatformPrerequisites.length,
+        9,
+      );
+      assert.deepEqual(
+        [...ExecutiveJournalProductArchitectureAdEx213Lifecycle.states],
+        [
+          "Declared",
+          "ValidationBound",
+          "CapabilitiesDeclared",
+          "Sealed",
+          "ReadyForPlatform",
+        ],
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx213Lifecycle
+          .immediateForwardTransitions.length,
+        4,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx213Lifecycle
+          .rejectsSelfReverseSkippedMalformedCaseWhitespaceAndUnknownTransitions,
+        true,
+      );
+      assert.deepEqual(
+        ExecutiveJournalProductArchitectureAdEx213PhaseDecisions.map(
+          (entry) => entry.decisionId,
+        ),
+        [
+          "EX-2:5/D-15",
+          "EX-2:5/D-16",
+          "EX-2:5/D-17",
+          "EX-2:5/D-18",
+          "EX-2:5/D-19",
+          "EX-2:5/D-20",
+        ],
+      );
+      assert.equal(
+        new Set(ExecutiveJournalProductArchitectureAdEx213PhaseDecisions).size,
+        6,
+      );
+      assert.equal(attemptNestedMutation(vocabularies), false);
+    });
+
+    it("preserves issues, Pending gates, Tier-0 authority, and every non-authorization", () => {
+      const decision = ExecutiveJournalProductArchitectureDecisionAdrEx213;
+      const flags =
+        ExecutiveJournalProductArchitectureAdEx213AuthorizationFlags;
+      const preservation =
+        ExecutiveJournalProductArchitectureAdEx213Preservation;
+      assert.equal(flags.ex25MetadataOnlyManifestAuthorized, true);
+      assert.equal(flags.ex25ImplementationAuthorized, true);
+      assert.equal(flags.ex26Authorized, false);
+      for (const value of [
+        flags.platformBehaviorAuthorized,
+        flags.runtimeBehaviorAuthorized,
+        flags.uiExpansionAuthorized,
+        flags.routeAuthorizedByThisDecision,
+        flags.realRtc2ConsumptionAuthorized,
+        flags.productionProviderAuthorized,
+        flags.networkAuthorized,
+        flags.persistenceAuthorized,
+        flags.telemetryAuthorized,
+        flags.publicIndexAuthorized,
+        flags.deploymentAuthorized,
+      ]) {
+        assert.equal(value, false);
+      }
+      assert.equal(preservation.openIssueCount, 13);
+      assert.equal(preservation.allOpenIssuesRemainUnresolved, true);
+      assert.deepEqual([...preservation.pendingGates], [
+        "G-EX2-04",
+        "G-EX2-07",
+        "G-EX2-12",
+      ]);
+      for (const gateId of preservation.pendingGates) {
+        assert.equal(
+          getExecutiveJournalProductArchitectureGate(gateId).result,
+          "Pending",
+        );
+      }
+      assert.equal(
+        preservation.preservesExistingTier0UiAndRouteAuthorizations,
+        true,
+      );
+      assert.equal(preservation.expandsTier0UiOrRouteScope, false);
+      assert.equal(
+        ExecutiveJournalProductArchitecture
+          .tier0RouteAuthorizationCompletion.routeImplementationAuthorized,
+        true,
+      );
+      assert.equal(decision.createsEx25, false);
+      assert.equal(decision.createsEx26, false);
+      assert.equal(decision.implementsManifestEntries, false);
+      assert.equal(
+        isExecutiveJournalProductEx25MetadataOnlyManifestAuthorized(),
+        true,
+      );
+      assert.equal(
+        decision.projectCiClassification,
+        "CiStillBlockedByParkedReactCompilerDebt",
+      );
+      assert.equal(
+        decision.lintAuthorizationClassification,
+        "AllowMetadataOnlyEx25WithLintBlockerRecorded",
+      );
+      assert.deepEqual(decision.expectedParkedLintBaseline, {
+        errors: 21,
+        warnings: 288,
+        affectedFiles: 64,
+        noExplicitAny: 0,
+        unusedVariables: 0,
+      });
+      assert.equal(decision.ciLintGateClean, false);
+      assert.equal(
+        decision.readinessConclusion,
+        "ReadyForMetadataOnlyEx25ManifestImplementation",
+      );
+      assert.equal(
+        decision.nextRequiredTask,
+        "NPA-T — EX-2:5 Executive Journal Experience Manifest",
+      );
+    });
+  });
+
+  describe("AD-EX2-14 EX-2:6 Platform-contract authorization", () => {
+    it("records the next canonical Accepted decision exactly once", () => {
+      const decision = ExecutiveJournalProductArchitectureDecisionAdrEx214;
+      assert.equal(decision.decisionId, "AD-EX2-14");
+      assert.equal(
+        decision.title,
+        "Authorize Metadata-Only EX-2:6 Executive Journal Experience Platform Contract",
+      );
+      assert.equal(decision.status, "Accepted");
+      assert.equal(decision.decisionAuthority, "Bahadoor");
+      assert.equal(
+        decision.authorityRole,
+        "Nexora Product and Architecture Authority",
+      );
+      assert.equal(decision.decisionDate, "2026-07-30");
+      assert.equal(
+        decision.selectedOption,
+        "MetadataOnlyManifestBoundPlatformContract",
+      );
+      assert.equal(
+        decision.decisionScope,
+        "Ex26PlatformContractImplementationAndVerificationOnly",
+      );
+      assert.equal(
+        decision.doesNotRewriteRenumberSupersedeOrWeakenAdEx200ThroughAdEx213,
+        true,
+      );
+      assert.deepEqual(
+        ExecutiveJournalProductArchitectureDecisions.map(
+          (item) => item.decisionId,
+        ),
+        ExecutiveJournalProductArchitectureDecisionIds,
+      );
+      assert.equal(
+        new Set(ExecutiveJournalProductArchitectureDecisionIds).size,
+        15,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureDecisions.filter(
+          (item) => item.decisionId === "AD-EX2-14",
+        ).length,
+        1,
+      );
+      assert.equal(
+        getExecutiveJournalProductArchitectureDecision("AD-EX2-14"),
+        decision,
+      );
+      assert.equal(
+        assertExecutiveJournalProductArchitectureDecisionId("AD-EX2-14"),
+        "AD-EX2-14",
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitecture.decisionAdEx214,
+        decision,
+      );
+      assert.equal(mutateFrozen(decision), false);
+      assert.equal(attemptNestedMutation(decision), false);
+    });
+
+    it("authorizes the exact identity and eight-file package without creating EX-2:6", () => {
+      const platform =
+        ExecutiveJournalProductArchitectureAuthorizedEx26Platform;
+      assert.deepEqual(
+        {
+          identity: platform.identity,
+          namespace: platform.namespace,
+          status: platform.status,
+          readiness: platform.readiness,
+          previousPhase: platform.previousPhase,
+          nextPhaseMetadata: platform.nextPhaseMetadata,
+        },
+        {
+          identity: "EX-2:6/ExecutiveJournalExperiencePlatform",
+          namespace: "nexora.ex.executive.journal.experience.platform",
+          status: "Platform",
+          readiness: "ReadyForCertification",
+          previousPhase:
+            "EX-2:5 — Executive Journal Experience Manifest",
+          nextPhaseMetadata:
+            "EX-2:7 — Executive Journal Experience Certification",
+        },
+      );
+      for (const value of [
+        platform.metadataOnly,
+        platform.contractOnly,
+        platform.deterministic,
+        platform.immutable,
+        platform.sideEffectFree,
+        platform.failClosed,
+      ]) {
+        assert.equal(value, true);
+      }
+      assert.deepEqual([...platform.proposedPackage], [
+        "frontend/app/lib/ex/executiveJournalExperiencePlatform.ts",
+        "frontend/app/lib/ex/executiveJournalExperiencePlatformTypes.ts",
+        "frontend/app/lib/ex/executiveJournalExperiencePlatformIdentity.ts",
+        "frontend/app/lib/ex/executiveJournalExperiencePlatformLifecycle.ts",
+        "frontend/app/lib/ex/executiveJournalExperiencePlatformContracts.ts",
+        "frontend/app/lib/ex/executiveJournalExperiencePlatformBindings.ts",
+        "frontend/app/lib/ex/executiveJournalExperiencePlatformMetadata.ts",
+        "frontend/app/lib/ex/executiveJournalExperiencePlatform.test.ts",
+      ]);
+      assert.equal(platform.proposedPackage.length, 8);
+      assert.equal(
+        platform.packageConventionInspection.approvedCanonicalSixthFile,
+        platform.proposedPackage[5],
+      );
+      assert.equal(
+        platform.packageConventionInspection.ex16OperationalConventionCopied,
+        false,
+      );
+      assert.equal(platform.createdByThisDecision, false);
+      assert.equal(
+        platform.readyForCertificationDoesNotAuthorizeEx27,
+        true,
+      );
+      assert.equal(
+        readdirSync(HERE).filter((name) =>
+          /^executiveJournalExperiencePlatform/.test(name)
+        ).length,
+        8,
+      );
+      assert.equal(
+        readdirSync(HERE).some((name) =>
+          /^executiveJournalExperienceCertification/.test(name)
+        ),
+        false,
+      );
+    });
+
+    it("requires the exact Eligible Manifest and Manifest-only dependency", () => {
+      const decision = ExecutiveJournalProductArchitectureDecisionAdrEx214;
+      const platform =
+        ExecutiveJournalProductArchitectureAuthorizedEx26Platform;
+      assert.equal(
+        decision.prerequisiteManifestIdentity,
+        "EX-2:5/ExecutiveJournalExperienceManifest",
+      );
+      assert.equal(decision.prerequisiteManifestStatus, "Manifest");
+      assert.equal(
+        decision.prerequisiteManifestReadiness,
+        "ReadyForPlatform",
+      );
+      assert.equal(decision.prerequisiteManifestEligibility, "Eligible");
+      assert.equal(decision.prerequisiteManifestFinalVerificationPassed, true);
+      assert.equal(decision.prerequisiteManifestFinalTestCount, 111);
+      assert.equal(
+        platform.upstreamRuntimeDependency,
+        "EX-2:5/ExecutiveJournalExperienceManifest",
+      );
+      assert.equal(platform.earlierPhasesReachedThroughManifestOnly, true);
+      assert.equal(platform.exactUpstreamReferencesRequired, true);
+      assert.equal(
+        platform.eligibleManifestRequirement.requiredEligibility,
+        "Eligible",
+      );
+      assert.equal(
+        platform.eligibleManifestRequirement.requiredManifestReadiness,
+        "ReadyForPlatform",
+      );
+      assert.equal(
+        platform.eligibleManifestRequirement.failClosedCases.length,
+        12,
+      );
+      assert.deepEqual(
+        [...platform.eligibleManifestRequirement.failClosedCases],
+        [
+          "Missing Manifest",
+          "Ineligible Manifest",
+          "Cloned Manifest",
+          "Stale Manifest",
+          "Malformed Manifest",
+          "Identity mismatch",
+          "Readiness mismatch",
+          "Capability mismatch",
+          "Non-capability mismatch",
+          "Prerequisite mismatch",
+          "Upstream-reference mismatch",
+          "Platform authorization missing",
+        ],
+      );
+    });
+
+    it("closes Platform vocabularies and the metadata-only contract surface", () => {
+      const vocabularies =
+        ExecutiveJournalProductArchitectureAdEx214ClosedVocabularies;
+      assert.deepEqual([...vocabularies.eligibility], [
+        "Eligible",
+        "Ineligible",
+      ]);
+      assert.deepEqual([...vocabularies.bindingStatus], [
+        "Bound",
+        "Unbound",
+        "Rejected",
+      ]);
+      assert.deepEqual([...vocabularies.exposureStatus], [
+        "Exposed",
+        "NotExposed",
+        "Prohibited",
+      ]);
+      assert.deepEqual([...vocabularies.availability], [
+        "Available",
+        "Unavailable",
+        "Degraded",
+        "NotEvaluated",
+      ]);
+      assert.deepEqual([...vocabularies.isolation], [
+        "MetadataOnlyIsolated",
+        "NotIsolated",
+      ]);
+      assert.deepEqual([...vocabularies.providerMode], [
+        "NoProvider",
+        "SyntheticProviderReferenceOnly",
+        "ProductionProviderProhibited",
+      ]);
+      assert.equal(vocabularies.accessClassification.length, 3);
+      assert.equal(vocabularies.dataSourceClassification.length, 4);
+      assert.equal(vocabularies.integrityStatus.length, 3);
+      assert.equal(vocabularies.reasonCodes.length, 13);
+      assert.equal(vocabularies.bindingKinds.length, 16);
+      assert.equal(
+        ExecutiveJournalProductArchitectureAuthorizedEx26Platform
+          .contractSurface.length,
+        16,
+      );
+      assert.equal(
+        vocabularies
+          .unknownMalformedPartialCaseOrWhitespaceModifiedValuesFailClosed,
+        true,
+      );
+      assert.equal(attemptNestedMutation(vocabularies), false);
+    });
+
+    it("authorizes exactly sixteen capability bindings and nineteen prohibitions", () => {
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx214CapabilityBindings.length,
+        16,
+      );
+      for (const [index, binding] of
+        ExecutiveJournalProductArchitectureAdEx214CapabilityBindings
+          .entries()) {
+        assert.equal(binding.order, index + 1);
+        assert.equal(
+          binding.manifestCapability,
+          ExecutiveJournalProductArchitectureAdEx213CapabilitySurface[index],
+        );
+        assert.equal(binding.exposure, "Exposed");
+        assert.equal(binding.exactManifestReferenceRequired, true);
+        assert.equal(binding.metadataOnly, true);
+        assert.equal(binding.runtimeImplementation, false);
+        assert.equal(binding.createsAuthority, false);
+        assert.equal(binding.productionApplicable, false);
+      }
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx214NonCapabilityEnforcement
+          .length,
+        19,
+      );
+      for (const [index, enforcement] of
+        ExecutiveJournalProductArchitectureAdEx214NonCapabilityEnforcement
+          .entries()) {
+        assert.equal(enforcement.order, index + 1);
+        assert.equal(
+          enforcement.manifestNonCapability,
+          ExecutiveJournalProductArchitectureAdEx213NonCapabilities[index],
+        );
+        assert.equal(enforcement.exposure, "Prohibited");
+        assert.equal(
+          enforcement.omittedAlteredReorderedOrReclassifiedFailsClosed,
+          true,
+        );
+      }
+    });
+
+    it("authorizes consumer, provider/source, readiness, lifecycle, and phase contracts only", () => {
+      const platform =
+        ExecutiveJournalProductArchitectureAuthorizedEx26Platform;
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx214ConsumerBinding
+          .requiredDeclarations.length,
+        10,
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx214ConsumerBinding
+          .unknownOrUnauthorizedConsumersFailClosed,
+        true,
+      );
+      for (const value of [
+        ExecutiveJournalProductArchitectureAdEx214ConsumerBinding
+          .createsConsumerImplementation,
+        ExecutiveJournalProductArchitectureAdEx214ConsumerBinding
+          .createsRouteOrUiMount,
+        ExecutiveJournalProductArchitectureAdEx214ConsumerBinding
+          .grantsRealRtc2Access,
+        ExecutiveJournalProductArchitectureAdEx214ConsumerBinding
+          .broadensTier0Authorization,
+        ExecutiveJournalProductArchitectureAdEx214ConsumerBinding
+          .grantsProductionAccess,
+        platform.providerAndSourceBoundaries.providerExecutionAuthorized,
+        platform.providerAndSourceBoundaries.liveProviderSelectionAuthorized,
+        platform.providerAndSourceBoundaries.realRtc2SourceAuthorized,
+        platform.providerAndSourceBoundaries.productionSourceAuthorized,
+        platform.providerAndSourceBoundaries.networkAuthorized,
+        platform.providerAndSourceBoundaries.persistenceAuthorized,
+      ]) {
+        assert.equal(value, false);
+      }
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx214ReadinessConditions.length,
+        12,
+      );
+      assert.deepEqual(
+        [...ExecutiveJournalProductArchitectureAdEx214Lifecycle.states],
+        [
+          "Declared",
+          "ManifestBound",
+          "PlatformContractsDeclared",
+          "Sealed",
+          "ReadyForCertification",
+        ],
+      );
+      assert.equal(
+        ExecutiveJournalProductArchitectureAdEx214Lifecycle
+          .immediateForwardTransitions.length,
+        4,
+      );
+      assert.match(
+        ExecutiveJournalProductArchitectureAdEx214Lifecycle.ex16Divergence,
+        /EX-1:6 exposes operational service methods/,
+      );
+      assert.deepEqual(
+        ExecutiveJournalProductArchitectureAdEx214PhaseDecisions.map(
+          (entry) => entry.decisionId,
+        ),
+        [
+          "EX-2:6/D-21",
+          "EX-2:6/D-22",
+          "EX-2:6/D-23",
+          "EX-2:6/D-24",
+          "EX-2:6/D-25",
+          "EX-2:6/D-26",
+        ],
+      );
+    });
+
+    it("preserves issues, gates, Tier-0 authority, lint debt, and all non-authorizations", () => {
+      const decision = ExecutiveJournalProductArchitectureDecisionAdrEx214;
+      const flags =
+        ExecutiveJournalProductArchitectureAdEx214AuthorizationFlags;
+      const preservation =
+        ExecutiveJournalProductArchitectureAdEx214Preservation;
+      assert.equal(flags.ex26MetadataOnlyPlatformContractAuthorized, true);
+      assert.equal(flags.ex26ImplementationAuthorized, true);
+      assert.equal(flags.ex27Authorized, false);
+      for (const value of [
+        flags.platformRuntimeAuthorized,
+        flags.providerExecutionAuthorized,
+        flags.realRtc2ConsumptionAuthorized,
+        flags.uiExpansionAuthorized,
+        flags.routeAuthorizedByThisDecision,
+        flags.networkAuthorized,
+        flags.persistenceAuthorized,
+        flags.telemetryAuthorized,
+        flags.publicIndexAuthorized,
+        flags.deploymentAuthorized,
+        flags.productionAuthorized,
+      ]) {
+        assert.equal(value, false);
+      }
+      assert.equal(preservation.openIssueCount, 13);
+      assert.equal(preservation.allOpenIssuesRemainUnresolved, true);
+      assert.deepEqual([...preservation.pendingGates], [
+        "G-EX2-04",
+        "G-EX2-07",
+        "G-EX2-12",
+      ]);
+      for (const gateId of preservation.pendingGates) {
+        assert.equal(
+          getExecutiveJournalProductArchitectureGate(gateId).result,
+          "Pending",
+        );
+      }
+      assert.equal(
+        preservation.preservesExistingTier0MetadataUiAndRouteAuthorizations,
+        true,
+      );
+      assert.equal(preservation.expandsTier0Authorization, false);
+      assert.equal(preservation.injectsAdEx214IntoSealedUpstreamLedgers, false);
+      assert.equal(decision.createsEx26, false);
+      assert.equal(decision.createsEx27, false);
+      assert.equal(decision.implementsPlatformRuntime, false);
+      assert.equal(
+        isExecutiveJournalProductEx26MetadataOnlyPlatformAuthorized(),
+        true,
+      );
+      assert.equal(
+        decision.projectCiClassification,
+        "CiStillBlockedByParkedReactCompilerDebt",
+      );
+      assert.equal(
+        decision.lintAuthorizationClassification,
+        "AllowMetadataOnlyEx26WithLintBlockerRecorded",
+      );
+      assert.deepEqual(decision.expectedParkedLintBaseline, {
+        errors: 21,
+        warnings: 288,
+        affectedFiles: 64,
+        noExplicitAny: 0,
+        unusedVariables: 0,
+      });
+      assert.equal(
+        decision.readinessConclusion,
+        "ReadyForMetadataOnlyEx26PlatformImplementation",
+      );
+      assert.equal(
+        decision.nextRequiredTask,
+        "NPA-T — EX-2:6 Executive Journal Experience Platform",
+      );
+    });
+  });
+
+  describe("EX2-ROUTE-AUTH-T0-2026-07-29-02 authorization completion", () => {
+    it("records linked human authorization without rewriting the historical block", () => {
+      const authorization =
+        ExecutiveJournalProductArchitectureTier0RouteAuthorizationCompletion;
+      assert.equal(
+        authorization.authorizationId,
+        "EX2-ROUTE-AUTH-T0-2026-07-29-02",
+      );
+      assert.equal(authorization.status, "Recorded");
+      assert.equal(
+        authorization.result,
+        "AuthorizedForTier0SyntheticPreviewRouteAndLocalAccess",
+      );
+      assert.equal(
+        authorization.lintClassification,
+        "LocalTier0RouteAuthorizedWithProjectLintBlockerDisclosed",
+      );
+      assert.equal(
+        authorization.projectCiClassification,
+        "CiStillBlockedByParkedReactCompilerDebt",
+      );
+      assert.equal(authorization.authorizingHuman, "Bahadoor");
+      assert.equal(
+        authorization.authorityRole,
+        "Nexora Product and Architecture Authority",
+      );
+      assert.equal(authorization.decisionDate, "2026-07-29");
+      assert.equal(
+        authorization.scope,
+        "Tier0SyntheticPreviewRouteLocalDevelopmentImplementationAndTestsOnly",
+      );
+      assert.equal(authorization.parentArchitectureDecision, "AD-EX2-11");
+      assert.equal(
+        authorization.priorBlockedRecord,
+        "EX2-ROUTE-AUTH-T0-2026-07-29-01",
+      );
+      assert.equal(
+        authorization.priorBlockedResult,
+        "RouteAuthorizationBlockedByMissingArchitectureDecision",
+      );
+      assert.equal(authorization.priorBlockedRecordHistoricallyPreserved, true);
+      assert.equal(authorization.architecturePrerequisiteResolved, true);
+      assert.equal(
+        ExecutiveJournalProductArchitecture.tier0RouteAuthorizationCompletion,
+        authorization,
+      );
+      assert.equal(mutateFrozen(authorization), false);
+      assert.equal(attemptNestedMutation(authorization), false);
+    });
+
+    it("authorizes only the canonical local route implementation and tests", () => {
+      const authorization =
+        ExecutiveJournalProductArchitectureTier0RouteAuthorizationCompletion;
+      assert.equal(authorization.canonicalRoute, "/executive/journal-preview");
+      assert.equal(authorization.hostClass, "DevelopmentTestHarnessOnly");
+      assert.equal(authorization.accessClass, "LocalDevelopmentOnly");
+      assert.equal(authorization.routeImplementationAuthorized, true);
+      assert.equal(authorization.localAccessAuthorized, true);
+      assert.equal(authorization.testsAuthorized, true);
+      assert.deepEqual([...authorization.authorizedArtifacts], [
+        "OneAppRouterPageAtCanonicalRoute",
+        "MinimumRouteLocalTests",
+        "MinimumServerSideEnvironmentGate",
+        "OptionalRouteLocalLoadingOrErrorBoundaryOnlyIfRequiredByExistingAppRouterConventions",
+      ]);
+      assert.equal(authorization.routeMustMountCertifiedHarness, true);
+      assert.equal(authorization.routeImplementationComplete, false);
+      assert.equal(authorization.implementationPerformedByThisRecord, false);
+      assert.deepEqual([...authorization.prohibitedNewArtifacts], [
+        "providers",
+        "adapters",
+        "fixtures",
+        "metadata contracts",
+        "view models",
+        "production services",
+        "navigation entries",
+        "middleware",
+        "authentication systems",
+      ]);
+    });
+
+    it("requires the exact server-only fail-closed environment contract", () => {
+      const gate =
+        ExecutiveJournalProductArchitectureTier0RouteAuthorizationCompletion
+          .environmentGate;
+      assert.equal(gate.flag, "EX2_TIER0_PREVIEW_ENABLED");
+      assert.equal(gate.evaluation, "ServerSideOnly");
+      assert.equal(gate.exactEnabledValue, "true");
+      assert.equal(gate.missingDenies, true);
+      assert.equal(gate.falseDenies, true);
+      assert.equal(gate.caseVariantsDeny, true);
+      assert.equal(gate.whitespaceVariantsDeny, true);
+      assert.equal(gate.allOtherValuesDeny, true);
+      assert.equal(gate.productionAlwaysDenies, true);
+      assert.equal(gate.unauthorizedBehavior, "notFound()");
+      assert.equal(gate.clientExposureProhibited, true);
+      assert.equal(gate.remoteConfigurationProhibited, true);
+      assert.equal(gate.persistenceProhibited, true);
+      assert.equal(gate.telemetryProhibited, true);
+      assert.equal(gate.createdByThisRecord, false);
+    });
+
+    it("preserves local-access, dependency, presentation, gate, and release boundaries", () => {
+      const authorization =
+        ExecutiveJournalProductArchitectureTier0RouteAuthorizationCompletion;
+      const access = authorization.localAccessContract;
+      assert.equal(access.localDevelopment, true);
+      assert.equal(access.localTestExecution, true);
+      assert.equal(access.syntheticDataOnly, true);
+      assert.equal(access.nonProductionDemonstrations, true);
+      assert.equal(access.authenticationClaim, false);
+      assert.equal(access.userAuthorizationClaim, false);
+      assert.equal(access.productionSecurityClaim, false);
+      assert.equal(access.publicAvailability, false);
+      assert.equal(access.releaseReadiness, false);
+      assert.equal(access.deploymentReadiness, false);
+      assert.equal(
+        authorization.presentationContract.mandatoryMarker,
+        "Synthetic / Tier 0 / Non-production",
+      );
+      assert.deepEqual([...authorization.dependencyContract.direction], [
+        "AppRouterPage",
+        "CertifiedTier0SyntheticUiHarness",
+        "ReadOnlyUiFacade",
+        "CertifiedSyntheticMetadataPackage",
+      ]);
+      assert.equal(authorization.gateTreatment.existingEx2GatesChanged, false);
+      assert.equal(authorization.gateTreatment.tier0UiPassCount, 16);
+      assert.equal(authorization.navigationIntegrationAuthorized, false);
+      assert.equal(authorization.publicAccessAuthorized, false);
+      assert.equal(authorization.productionAccessAuthorized, false);
+      assert.equal(authorization.deploymentAuthorized, false);
+      assert.equal(authorization.realRtc2ConsumptionAuthorized, false);
+      assert.equal(authorization.networkAuthorized, false);
+      assert.equal(authorization.persistenceAuthorized, false);
+      assert.equal(authorization.telemetryAuthorized, false);
+      assert.equal(authorization.cloudAuthorized, false);
+      assert.equal(authorization.ex23ImplementationAuthorizedByThisRecord, false);
+      assert.equal(authorization.projectEslintParkedErrorCount, 21);
+      assert.equal(authorization.projectEslintWarningCount, 288);
+      assert.equal(authorization.ciLintGateClean, false);
+      assert.equal(authorization.productionReleaseAuthorized, false);
+      assert.equal(
+        authorization.nextRequiredTask,
+        "NPA-T — EX-2 Tier-0 Synthetic Preview Route and Local Access Implementation and Verification",
+      );
+    });
+
+    it("does not itself implement the later route or expose a public flag", () => {
+      const authorization =
+        ExecutiveJournalProductArchitectureTier0RouteAuthorizationCompletion;
+      assert.equal(authorization.implementationPerformedByThisRecord, false);
+      assert.equal(authorization.environmentGate.createdByThisRecord, false);
+      const architectureSource = readFileSync(
+        join(HERE, "executiveJournalProductArchitecture.ts"),
+        "utf8",
+      );
+      assert.equal(
+        architectureSource.includes(
+          "process.env.EX2_TIER0_PREVIEW_ENABLED",
+        ),
+        false,
+      );
+      assert.equal(
+        architectureSource.includes(
+          "NEXT_PUBLIC_EX2_TIER0_PREVIEW_ENABLED",
+        ),
+        false,
+      );
+    });
+  });
+
+  describe("EX2-ROUTE-IMPL-T0-2026-07-29-01 implementation evidence", () => {
+    it("records the exact implemented canonical route and verification statuses", () => {
+      const evidence =
+        ExecutiveJournalProductArchitectureTier0RouteImplementationEvidence;
+      assert.equal(evidence.evidenceId, "EX2-ROUTE-IMPL-T0-2026-07-29-01");
+      assert.equal(
+        evidence.implementationStatus,
+        "Tier0SyntheticPreviewRouteImplemented",
+      );
+      assert.equal(
+        evidence.localAccessStatus,
+        "Tier0SyntheticPreviewLocallyAccessible",
+      );
+      assert.equal(
+        evidence.verificationStatus,
+        "LocalTier0RouteVerifiedWithProjectLintBlockerDisclosed",
+      );
+      assert.equal(
+        evidence.projectCiClassification,
+        "CiStillBlockedByParkedReactCompilerDebt",
+      );
+      assert.equal(evidence.architectureDecision, "AD-EX2-11");
+      assert.equal(
+        evidence.authorizationId,
+        "EX2-ROUTE-AUTH-T0-2026-07-29-02",
+      );
+      assert.equal(evidence.canonicalRoute, "/executive/journal-preview");
+      assert.equal(evidence.routeImplemented, true);
+      assert.equal(evidence.routeImplementationComplete, true);
+      assert.equal(evidence.localAccessAvailableWhenGated, true);
+      assert.deepEqual([...evidence.implementationFiles], [
+        "app/executive/journal-preview/page.tsx",
+        "app/executive/journal-preview/executiveJournalPreviewRouteAccess.ts",
+        "app/executive/journal-preview/executiveJournalPreviewRouteAccess.test.ts",
+      ]);
+      assert.equal(
+        ExecutiveJournalProductArchitecture.tier0RouteImplementationEvidence,
+        evidence,
+      );
+      assert.equal(mutateFrozen(evidence), false);
+      assert.equal(attemptNestedMutation(evidence), false);
+    });
+
+    it("records enabled and denied local smoke evidence", () => {
+      const evidence =
+        ExecutiveJournalProductArchitectureTier0RouteImplementationEvidence;
+      assert.equal(evidence.serverFlag, "EX2_TIER0_PREVIEW_ENABLED");
+      assert.equal(evidence.exactEnabledValue, "true");
+      assert.equal(evidence.allOtherValuesFailClosed, true);
+      assert.equal(evidence.productionAlwaysDenied, true);
+      assert.equal(evidence.unauthorizedBehavior, "notFound()");
+      assert.equal(evidence.certifiedHarnessMounted, true);
+      assert.equal(
+        evidence.mandatoryMarker,
+        "Synthetic / Tier 0 / Non-production",
+      );
+      assert.equal(evidence.enabledSmoke.httpStatus, 200);
+      assert.equal(evidence.enabledSmoke.markerVisible, true);
+      assert.equal(evidence.enabledSmoke.certifiedPreviewVisible, true);
+      assert.equal(evidence.enabledSmoke.runtimeExceptionCount, 0);
+      assert.equal(evidence.deniedSmoke.flagValue, "false");
+      assert.equal(evidence.deniedSmoke.httpStatus, 404);
+      assert.equal(evidence.deniedSmoke.previewPayloadRendered, false);
+      assert.equal(evidence.deniedSmoke.runtimeExceptionCount, 0);
+    });
+
+    it("preserves production, navigation, data, and lint boundaries", () => {
+      const evidence =
+        ExecutiveJournalProductArchitectureTier0RouteImplementationEvidence;
+      assert.equal(evidence.routeTestPassCount, 14);
+      assert.equal(evidence.routeTestFailCount, 0);
+      assert.equal(evidence.routeFilesEslintErrorCount, 0);
+      assert.equal(evidence.routeFilesEslintWarningCount, 0);
+      assert.equal(evidence.projectEslintParkedErrorCount, 21);
+      assert.equal(evidence.projectEslintWarningCount, 288);
+      assert.equal(evidence.lintBlockerDisclosed, true);
+      assert.equal(evidence.productionAccess, false);
+      assert.equal(evidence.publicAccess, false);
+      assert.equal(evidence.navigationExposure, false);
+      assert.equal(evidence.ex1PublicIndexExposure, false);
+      assert.equal(evidence.searchIndexExposure, false);
+      assert.equal(evidence.deployment, false);
+      assert.equal(evidence.realRtc2Consumption, false);
+      assert.equal(evidence.networkBehavior, false);
+      assert.equal(evidence.persistenceBehavior, false);
+      assert.equal(evidence.telemetryBehavior, false);
+      assert.equal(evidence.cloudBehavior, false);
+      assert.equal(evidence.ex23ImplementedByThisTask, false);
     });
   });
 

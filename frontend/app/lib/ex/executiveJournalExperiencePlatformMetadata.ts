@@ -1,0 +1,90 @@
+export const ExecutiveJournalExperiencePlatformAuthorization = Object.freeze({
+  authorizationDecisionId: "AD-EX2-14" as const,
+  authorizationStatus: "Accepted" as const,
+  decisionDate: "2026-07-30" as const,
+  selectedOption: "MetadataOnlyManifestBoundPlatformContract" as const,
+  scope: "Ex26PlatformContractImplementationAndVerificationOnly" as const,
+  ex26MetadataOnlyPlatformContractAuthorized: true as const,
+  ex26ImplementationAuthorized: true as const,
+  ex27Authorized: false as const,
+  platformRuntimeAuthorized: false as const,
+  providerExecutionAuthorized: false as const,
+  realRtc2ConsumptionAuthorized: false as const,
+  productionAuthorized: false as const,
+  immutable: true as const,
+});
+
+export const ExecutiveJournalExperiencePlatformDecisions = Object.freeze([
+  Object.freeze({ decisionId: "EX-2:6/D-21" as const, order: 1, statement: "Platform remains a metadata contract and performs no operations." as const }),
+  Object.freeze({ decisionId: "EX-2:6/D-22" as const, order: 2, statement: "Exact eligible EX-2:5 Manifest is mandatory." as const }),
+  Object.freeze({ decisionId: "EX-2:6/D-23" as const, order: 3, statement: "Every declared capability has exactly one metadata binding." as const }),
+  Object.freeze({ decisionId: "EX-2:6/D-24" as const, order: 4, statement: "Every Manifest non-capability remains prohibited." as const }),
+  Object.freeze({ decisionId: "EX-2:6/D-25" as const, order: 5, statement: "Provider and source boundaries fail closed." as const }),
+  Object.freeze({ decisionId: "EX-2:6/D-26" as const, order: 6, statement: "EX-2:6 consumes only EX-2:5 Manifest at runtime." as const }),
+] as const);
+
+export const ExecutiveJournalExperiencePlatformReadinessConditions = Object.freeze([
+  "Exact eligible EX-2:5 Manifest",
+  "Complete 16-capability binding catalogue",
+  "Complete 19-non-capability enforcement catalogue",
+  "Complete dependency boundary",
+  "No provider execution",
+  "No real RTC-2 source",
+  "No prohibited exposure",
+  "Open issues carried forward",
+  "Pending gates disclosed",
+  "Separate EX-2:7 authorization",
+  "Platform package sealed",
+  "Certification evidence plan present",
+] as const);
+
+export const ExecutiveJournalExperiencePlatformProviderSourceBoundaries = Object.freeze({
+  providerMode: "NoProvider" as const,
+  syntheticProviderReference: "SyntheticProviderReferenceOnly" as const,
+  syntheticSourceClassification: "SyntheticEvidenceReferenceOnly" as const,
+  realRtc2Source: "RealRtc2SourceProhibited" as const,
+  productionSource: "ProductionSourceProhibited" as const,
+  providerExecution: false as const,
+  dataFetching: false as const,
+  network: false as const,
+  persistence: false as const,
+  browserStorage: false as const,
+  telemetry: false as const,
+  clock: false as const,
+  randomness: false as const,
+  productionApplicable: false as const,
+  metadataOnly: true as const,
+  immutable: true as const,
+});
+
+export const ExecutiveJournalExperiencePlatformBoundaries = Object.freeze({
+  boundariesId: "EX-2:6/ExecutiveJournalExperiencePlatformBoundaries" as const,
+  importsManifestOnlyAtRuntime: true as const,
+  directValidationModelRegistryFoundationOrArchitectureImport: false as const,
+  rtcApp8Ex1Tier0ReactNextRouteUiProviderAdapterFixtureImport: false as const,
+  dynamicImport: false as const,
+  requireCall: false as const,
+  networkPersistenceStorageTelemetryClockRandomnessCloudDeployment: false as const,
+  mutationExecutionProviderBehavior: false as const,
+  createsAuthorityOrProductionAccess: false as const,
+  createsOrAuthorizesEx27: false as const,
+  metadataOnly: true as const,
+  sideEffectFree: true as const,
+  deterministic: true as const,
+  immutable: true as const,
+});
+
+export const ExecutiveJournalExperiencePlatformMetadata = Object.freeze({
+  authorization: ExecutiveJournalExperiencePlatformAuthorization,
+  decisions: ExecutiveJournalExperiencePlatformDecisions,
+  readinessConditions: ExecutiveJournalExperiencePlatformReadinessConditions,
+  providerSourceBoundaries: ExecutiveJournalExperiencePlatformProviderSourceBoundaries,
+  boundaries: ExecutiveJournalExperiencePlatformBoundaries,
+  openIssuesRemainUnresolved: true as const,
+  pendingGatesRemainPending: true as const,
+  readyForCertificationAuthorizesEx27: false as const,
+  ciLintClassification: "CiStillBlockedByParkedReactCompilerDebt" as const,
+  lintAuthorizationClassification: "AllowMetadataOnlyEx26WithLintBlockerRecorded" as const,
+  metadataOnly: true as const,
+  immutable: true as const,
+});

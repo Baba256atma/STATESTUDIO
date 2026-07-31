@@ -411,6 +411,33 @@ describe("EX-2 Tier-0 Synthetic UI", () => {
       assert.match(html, new RegExp(`class="${ex2t0.recordButtonSelected}"`));
     });
 
+    it("uses the certified global and detail marker ownership exactly once each", () => {
+      const html = renderToStaticMarkup(
+        React.createElement(ExecutiveJournalSyntheticPreview, { view: readyView }),
+      );
+      assert.equal(
+        countMatches(html, /data-testid="ex2-t0-synthetic-marker"/g),
+        1,
+      );
+      assert.equal(
+        countMatches(html, /data-testid="ex2-t0-detail-synthetic-marker"/g),
+        1,
+      );
+      assert.equal(
+        countMatches(
+          html,
+          new RegExp(
+            ExecutiveJournalSyntheticUiMarkerVisible.replace(
+              /[.*+?^${}()|[\]\\]/g,
+              "\\$&",
+            ),
+            "g",
+          ),
+        ),
+        2,
+      );
+    });
+
     it("useId wires filter labels under renderToStaticMarkup", () => {
       const html = renderToStaticMarkup(
         React.createElement(ExecutiveJournalSyntheticPreview, { view: readyView }),
@@ -446,6 +473,22 @@ describe("EX-2 Tier-0 Synthetic UI", () => {
         assert.match(html, new RegExp(`data-demo-state="${state}"`));
         assert.match(html, /data-production="false"/);
         assert.match(html, /data-route="none"/);
+        assert.match(
+          html,
+          /Available only through the gated local development route\. No live journal data\./,
+        );
+        assert.doesNotMatch(html, /Not mounted by App Router/);
+        assert.equal(
+          countMatches(html, /data-testid="ex2-t0-synthetic-marker"/g),
+          1,
+        );
+        assert.equal(
+          countMatches(
+            html,
+            /data-testid="ex2-t0-detail-synthetic-marker"/g,
+          ),
+          state === "Ready" || state === "IntegrityUnavailable" ? 1 : 0,
+        );
         assertSafeHarnessHtml(html, state);
         if (state !== "Ready") {
           assert.match(html, new RegExp(ExecutiveJournalSyntheticUiStateCopy[state]));
@@ -528,6 +571,38 @@ describe("EX-2 Tier-0 Synthetic UI", () => {
       );
     });
 
+    it("uses accessible theme tokens for selected text and preserves a distinct focus ring", () => {
+      assert.match(
+        ExecutiveJournalSyntheticUiCssText,
+        /--ex2-t0-selected-bg:\s*var\(\s*--nx-nav-tile-active-bg,/,
+      );
+      assert.match(
+        ExecutiveJournalSyntheticUiCssText,
+        /--ex2-t0-selected-text:\s*var\(--nx-nav-short-active,\s*#bfdbfe\)/,
+      );
+      assert.match(
+        ExecutiveJournalSyntheticUiCssText,
+        /\.ex2t0-record-button-selected \.ex2t0-record-primary,\s*\.ex2t0-record-button-selected \.ex2t0-record-secondary\s*\{\s*color:\s*var\(--ex2-t0-selected-text\)/,
+      );
+      assert.match(
+        ExecutiveJournalSyntheticUiCssText,
+        /\.ex2t0-record-button-selected:focus-visible\s*\{\s*outline:\s*3px solid var\(--ex2-t0-focus\)/,
+      );
+      assert.doesNotMatch(ExecutiveJournalSyntheticUiCssText, /background:\s*#243b55/);
+    });
+
+    it("keeps the centered mobile layout bounded without horizontal overflow", () => {
+      assert.match(
+        ExecutiveJournalSyntheticUiCssText,
+        /max-width:\s*72rem;\s*margin:\s*0 auto;/,
+      );
+      assert.match(ExecutiveJournalSyntheticUiCssText, /overflow-x:\s*hidden/);
+      assert.match(
+        ExecutiveJournalSyntheticUiCssText,
+        /\.ex2t0-layout\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*1fr;/,
+      );
+    });
+
     it("DOM evidence excludes denied privacy and authority controls", () => {
       const html = renderToStaticMarkup(
         React.createElement(ExecutiveJournalSyntheticHarness, { demoState: "Ready" }),
@@ -544,19 +619,32 @@ describe("EX-2 Tier-0 Synthetic UI", () => {
       assert.match(html, /AI-proposed — non-authoritative/);
     });
 
-    it("has no App Router page for synthetic preview UI", () => {
+    it("allows only the authorized canonical App Router harness page", () => {
       const pages = collectAppPageFiles(APP_ROOT);
+      const harnessPages: string[] = [];
       for (const pagePath of pages) {
         const source = readFileSync(pagePath, "utf8");
         assert.doesNotMatch(source, /ExecutiveJournalSyntheticPreview/);
-        assert.doesNotMatch(source, /ExecutiveJournalSyntheticHarness/);
         assert.doesNotMatch(source, /ExecutiveJournalSyntheticPreviewUI/);
         assert.doesNotMatch(source, /executiveJournalSyntheticUiFacade/);
+        if (/ExecutiveJournalSyntheticHarness/.test(source)) {
+          harnessPages.push(pagePath);
+          assert.match(
+            pagePath,
+            /app\/executive\/journal-preview\/page\.tsx$/,
+          );
+          assert.match(source, /\bnotFound\(\)/);
+          assert.doesNotMatch(source, /ex2-tier0-route-marker/);
+          assert.doesNotMatch(source, /Synthetic \/ Tier 0 \/ Non-production/);
+          assert.match(
+            harnessSource,
+            /Available only through the gated local\s+development route\. No live journal data\./,
+          );
+          assert.doesNotMatch(source, /^["']use client["'];/m);
+          assert.doesNotMatch(source, /NEXT_PUBLIC_/);
+        }
       }
-      const syntheticPreviewRoutes = pages.filter((pagePath) =>
-        /ExecutiveJournalSynthetic|SyntheticPreviewUI|SyntheticPreview/i.test(pagePath),
-      );
-      assert.deepEqual(syntheticPreviewRoutes, []);
+      assert.equal(harnessPages.length, 1);
     });
   });
 

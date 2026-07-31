@@ -1,7 +1,7 @@
 /**
  * EX-2 Tier-0 Synthetic UI Development/Test Harness.
  *
- * Demonstrates all nine facade view states. Not mounted by App Router.
+ * Demonstrates all nine facade view states through the gated local route.
  *
  * Authorized by EX2-UI-AUTH-T0-2026-07-27-01.
  */
@@ -51,8 +51,8 @@ export function ExecutiveJournalSyntheticHarness({
       </style>
       <p className={ex2t0.harnessNote} data-testid="ex2-t0-harness-note">
         Development/test harness only. Demonstrates synthetic UI state{" "}
-        <strong>{state}</strong>. Not mounted by App Router. No live journal
-        data.
+        <strong>{state}</strong>. Available only through the gated local
+        development route. No live journal data.
       </p>
       <ExecutiveJournalSyntheticPreview
         view={view}

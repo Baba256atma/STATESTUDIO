@@ -1,5 +1,5 @@
 /**
- * EX product architecture — AD-EX2-00 through AD-EX2-10, plus Tier-0
+ * EX product architecture — AD-EX2-00 through AD-EX2-14, plus Tier-0
  * synthetic governance appointments (GOV-EX2-T0-*).
  *
  * Metadata-only records of accepted architectural direction for EX-2
@@ -110,7 +110,11 @@ export type ExecutiveJournalProductArchitectureDecisionId =
   | "AD-EX2-07"
   | "AD-EX2-08"
   | "AD-EX2-09"
-  | "AD-EX2-10";
+  | "AD-EX2-10"
+  | "AD-EX2-11"
+  | "AD-EX2-12"
+  | "AD-EX2-13"
+  | "AD-EX2-14";
 
 export const ExecutiveJournalProductArchitectureDecisionIds = Object.freeze([
   "AD-EX2-00",
@@ -124,6 +128,10 @@ export const ExecutiveJournalProductArchitectureDecisionIds = Object.freeze([
   "AD-EX2-08",
   "AD-EX2-09",
   "AD-EX2-10",
+  "AD-EX2-11",
+  "AD-EX2-12",
+  "AD-EX2-13",
+  "AD-EX2-14",
 ] as const);
 
 export const assertExecutiveJournalProductArchitectureDecisionId = (
@@ -6005,6 +6013,1495 @@ export const ExecutiveJournalProductArchitectureDecisionAdrEx210 =
   });
 
 /**
+ * AD-EX2-11 route architecture. This is architecture metadata only: it
+ * establishes one fail-closed local path without creating or authorizing it.
+ */
+export const ExecutiveJournalProductArchitectureAdEx211RouteInventory =
+  Object.freeze({
+    applicationRoutes: Object.freeze([
+      "/",
+      "/executive",
+      "/pipeline",
+      "/psych",
+      "/sycho",
+      "/type-c",
+    ] as const),
+    rootLayout: "/app/layout.tsx" as const,
+    nestedLayouts: Object.freeze([] as const),
+    routeGroupMappings: Object.freeze([
+      Object.freeze({
+        filesystemPath: "/app/(landing)/sycho/page.tsx" as const,
+        publicPath: "/sycho" as const,
+      }),
+    ] as const),
+    developmentOnlyRoutes: Object.freeze([] as const),
+    establishedNotFoundEnvironmentGatePattern: false as const,
+    establishedFeatureFlagFramework: false as const,
+    preferredPathConflict: false as const,
+    inspectedPreferredPath: "/executive/journal-preview" as const,
+    routeExistsBeforeDecision: false as const,
+    primaryNavigationExposureBeforeDecision: false as const,
+    certifiedPreviewRequiresClientBoundary: true as const,
+    clientBoundaryOwnedBy:
+      "EX-2:T0/ExecutiveJournalSyntheticPreviewUI" as const,
+    prohibitedRuntimeDependencyIntroducedByCertifiedPreview: false as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx211FeatureFlag =
+  Object.freeze({
+    name: "EX2_TIER0_PREVIEW_ENABLED" as const,
+    visibility: "ServerOnly" as const,
+    acceptedValue: "true" as const,
+    allOtherValuesDenyAccess: true as const,
+    default: "Disabled" as const,
+    evaluatedWithNodeEnvironmentOnServer: true as const,
+    productionEnablementProhibited: true as const,
+    remoteConfigurationProhibited: true as const,
+    persistenceProhibited: true as const,
+    telemetryProhibited: true as const,
+    createdByThisDecision: false as const,
+    publicBuildTimeVariableRejected: true as const,
+    publicBuildTimeVariableRejectionReason:
+      "The environment gate belongs to the server App Router boundary; exposing it in the client bundle is unnecessary and would weaken boundary ownership." as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx211DependencyContract =
+  Object.freeze({
+    direction: Object.freeze([
+      "AppRouterPage",
+      "CertifiedTier0SyntheticUiHarness",
+      "ReadOnlyUiFacade",
+      "CertifiedSyntheticMetadataPackage",
+    ] as const),
+    routeMayImportHarness: true as const,
+    routeMayBypassFacadeForProviderOrFixtures: false as const,
+    prohibitedImports: Object.freeze([
+      "RTC-1 runtime",
+      "RTC-2 runtime",
+      "RTC-3 runtime",
+      "APP-8",
+      "EX-1 Public Index",
+      "production providers",
+      "network clients",
+      "persistence",
+      "telemetry",
+      "cloud SDKs",
+    ] as const),
+    metadataOnly: true as const,
+    immutable: true as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx211PresentationContract =
+  Object.freeze({
+    mandatoryMarker: "Synthetic / Tier 0 / Non-production" as const,
+    certifiedNineStatesOnly: true as const,
+    readOnly: true as const,
+    syntheticDataOnly: true as const,
+    prohibitedCapabilities: Object.freeze([
+      "mutation controls",
+      "operational commands",
+      "confirmation or authority actions",
+      "disclosure or export controls",
+      "arbitrary payload input",
+      "upload",
+      "remote fetch",
+      "private-reflection indicators",
+      "evidence content",
+      "actor PII",
+      "debug payload dumps",
+    ] as const),
+    localhostIsAuthentication: false as const,
+    productionSecureClaim: false as const,
+    authorizationOrIdentityClaim: false as const,
+    sensitiveOrRealDataAuthorized: false as const,
+    externalSharingAuthorized: false as const,
+    screenshotsAndDemosMustRetainMarker: true as const,
+    productionLikeConfigurationReopensDecision: true as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx211GateTreatment =
+  Object.freeze({
+    existingEx2GateCount: 16 as const,
+    existingEx2GatesChanged: false as const,
+    pendingEx2Gates: Object.freeze([
+      "G-EX2-04",
+      "G-EX2-07",
+      "G-EX2-12",
+    ] as const),
+    existingTier0UiGateCount: 16 as const,
+    tier0UiPassCount: 16 as const,
+    existingTier0UiGatesChanged: false as const,
+    metadataCertificationRemainsValid: true as const,
+    uiCertificationRemainsValid: true as const,
+    routeSpecificGateCatalogueRequiredByThisDecision: false as const,
+    productionApplicability: false as const,
+    immutable: true as const,
+  });
+
+export const ExecutiveJournalProductArchitectureDecisionAdrEx211 =
+  Object.freeze({
+    decisionId: "AD-EX2-11" as const,
+    title:
+      "Establish the Tier-0 Synthetic Preview Local Route Architecture" as const,
+    status: "Accepted" as const,
+    result: "Tier0SyntheticPreviewRouteArchitectureAccepted" as const,
+    lintClassification:
+      "RouteArchitectureAcceptedWithProjectLintBlockerDisclosed" as const,
+    projectCiClassification:
+      "CiStillBlockedByParkedReactCompilerDebt" as const,
+    decisionAuthority: "Bahadoor" as const,
+    authorityRole: "Nexora Product and Architecture Authority" as const,
+    decisionDate: "2026-07-29" as const,
+    selectedOption:
+      "DevelopmentOnlyAppRouterPreviewWithFailClosedEnvironmentGate" as const,
+    decisionScope: "Tier0SyntheticPreviewRouteArchitectureOnly" as const,
+    canonicalPath: "/executive/journal-preview" as const,
+    canonicalPathImmutableUntilSuperseded: true as const,
+    hostClass: "DevelopmentTestHarnessOnly" as const,
+    accessClass: "LocalDevelopmentOnly" as const,
+    failClosedOutsideAuthorizedEnvironment: true as const,
+    laterImplementationEnvironment: Object.freeze([
+      "development",
+      "test",
+    ] as const),
+    unauthorizedBehavior: "notFound()" as const,
+    routeInventory:
+      ExecutiveJournalProductArchitectureAdEx211RouteInventory,
+    featureFlag: ExecutiveJournalProductArchitectureAdEx211FeatureFlag,
+    dependencyContract:
+      ExecutiveJournalProductArchitectureAdEx211DependencyContract,
+    presentationContract:
+      ExecutiveJournalProductArchitectureAdEx211PresentationContract,
+    gateTreatment: ExecutiveJournalProductArchitectureAdEx211GateTreatment,
+    architectureBlockerResolved: true as const,
+    humanRouteAuthorizationStillRequired: true as const,
+    blockedAuthorizationRecordId:
+      "EX2-ROUTE-AUTH-T0-2026-07-29-01" as const,
+    blockedAuthorizationHistoricalResult:
+      "RouteAuthorizationBlockedByMissingArchitectureDecision" as const,
+    blockedAuthorizationHistoricallyPreserved: true as const,
+    laterAuthorizationMayUseLinkedCompletionRecord: true as const,
+    routeAssessmentBeforeDecision: "DeferredSupportingEvidence" as const,
+    createsRoute: false as const,
+    createsFeatureFlag: false as const,
+    grantsImplementationAuthorization: false as const,
+    grantsLocalAccessAuthorization: false as const,
+    productionAuthorization: false as const,
+    deploymentAuthorization: false as const,
+    publicAvailability: false as const,
+    navigationExposure: false as const,
+    ex1PublicIndexExposure: false as const,
+    searchIndexingProhibited: true as const,
+    realRtc2ConsumptionAuthorized: false as const,
+    networkAuthorized: false as const,
+    persistenceAuthorized: false as const,
+    telemetryAuthorized: false as const,
+    cloudAuthorized: false as const,
+    ex23ImplementationAuthorizedByThisDecision: false as const,
+    modifiesParkedReactCompilerClusters: false as const,
+    ciLintGateClean: false as const,
+    routeImplementationMustPassEslintWithZeroWarnings: true as const,
+    nextRequiredTask:
+      "NPA-T — EX-2 Tier-0 Synthetic Preview Route and Local Access Human Authorization Completion" as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+  });
+
+/**
+ * Closed authorization flags recorded by AD-EX2-12.
+ * Metadata-only EX-2:4 Validation implementation and verification only.
+ */
+export const ExecutiveJournalProductArchitectureAdEx212AuthorizationFlags =
+  Object.freeze({
+    ex24MetadataOnlyValidationAuthorized: true as const,
+    ex24ImplementationAuthorized: true as const,
+    ex25Authorized: false as const,
+    runtimeBehaviorAuthorized: false as const,
+    uiExpansionAuthorized: false as const,
+    routeAuthorizedByThisDecision: false as const,
+    realRtc2ConsumptionAuthorized: false as const,
+    productionProviderAuthorized: false as const,
+    networkAuthorized: false as const,
+    persistenceAuthorized: false as const,
+    telemetryAuthorized: false as const,
+    publicIndexAuthorized: false as const,
+    deploymentAuthorized: false as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx212RuleFamilies =
+  Object.freeze([
+    "Identity",
+    "Structure",
+    "EntityCatalogue",
+    "RelationshipCatalogue",
+    "Lifecycle",
+    "Vocabulary",
+    "MetadataBoundary",
+    "PrivacyBoundary",
+    "AuthorityBoundary",
+    "Provenance",
+    "CorrectionSupersession",
+    "Projection",
+    "FilterModel",
+    "Tier0EvidenceReference",
+    "Determinism",
+    "Immutability",
+    "DependencyBoundary",
+  ] as const);
+
+export const ExecutiveJournalProductArchitectureAdEx212ClosedResultSurface =
+  Object.freeze({
+    validationResults: Object.freeze(["Valid", "Invalid"] as const),
+    severities: Object.freeze([
+      "Info",
+      "Warning",
+      "Error",
+      "Critical",
+    ] as const),
+    subjectKinds: Object.freeze([
+      "ValidationAggregate",
+      "ModelIdentity",
+      "EntityCatalogue",
+      "Entity",
+      "RelationshipCatalogue",
+      "Relationship",
+      "VocabularyCatalogue",
+      "VocabularyValue",
+      "Lifecycle",
+      "MetadataBoundary",
+      "ProvenanceReference",
+      "CorrectionSupersessionReference",
+      "Projection",
+      "FilterModel",
+      "Tier0EvidenceReference",
+      "DependencyBoundary",
+    ] as const),
+    ruleFamilies: ExecutiveJournalProductArchitectureAdEx212RuleFamilies,
+    issueCodes: Object.freeze([
+      "UnknownIdentity",
+      "InvalidStructure",
+      "UnknownEntity",
+      "UnknownRelationship",
+      "UnknownVocabularyValue",
+      "InvalidLifecycle",
+      "MissingRequiredMetadata",
+      "ForbiddenSensitiveSurface",
+      "AuthorityCreatingMetadata",
+      "OwnershipCreatingMetadata",
+      "OperationalExecutableMetadata",
+      "InvalidProvenanceReference",
+      "InvalidCorrectionSupersessionReference",
+      "LineageErasingRelationship",
+      "InputRepairAttempt",
+      "InputMutationAttempt",
+      "NonDeterministicSurface",
+      "MutableSurface",
+      "DependencyViolation",
+      "IncompleteValidationEvidence",
+    ] as const),
+    validationLifecycleStates: Object.freeze([
+      "Declared",
+      "UpstreamBound",
+      "RulesConstructed",
+      "Sealed",
+      "ReadyForManifest",
+    ] as const),
+    failClosedWithoutNormalizationRepairOrFallback: true as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx212MandatoryFailClosedControls =
+  Object.freeze([
+    Object.freeze({ input: "Unknown identity", outcome: "Invalid" }),
+    Object.freeze({ input: "Unknown entity", outcome: "Invalid" }),
+    Object.freeze({ input: "Unknown relationship", outcome: "Invalid" }),
+    Object.freeze({ input: "Unknown vocabulary value", outcome: "Invalid" }),
+    Object.freeze({ input: "Missing required metadata", outcome: "Invalid" }),
+    Object.freeze({ input: "Forbidden sensitive surface", outcome: "Invalid" }),
+    Object.freeze({ input: "Authority-creating metadata", outcome: "Invalid" }),
+    Object.freeze({ input: "Ownership-creating metadata", outcome: "Invalid" }),
+    Object.freeze({ input: "Operational or executable metadata", outcome: "Invalid" }),
+    Object.freeze({ input: "Lineage-erasing relationship", outcome: "Invalid" }),
+    Object.freeze({ input: "Input repair attempt", outcome: "Prohibited" }),
+    Object.freeze({ input: "Input mutation", outcome: "Prohibited" }),
+    Object.freeze({ input: "Incomplete validation evidence", outcome: "Invalid" }),
+  ] as const);
+
+/**
+ * Authorized future EX-2:4 Validation identity and package.
+ * Authorization only — no EX-2:4 artifact is created by this record.
+ */
+export const ExecutiveJournalProductArchitectureAuthorizedEx24Validation =
+  Object.freeze({
+    identity: "EX-2:4/ExecutiveJournalExperienceValidation" as const,
+    namespace:
+      "nexora.ex.executive.journal.experience.validation" as const,
+    status: "Validation" as const,
+    readiness: "ReadyForManifest" as const,
+    phase: "EX-2:4" as const,
+    previousPhase: "EX-2:3 — Executive Journal Experience Model" as const,
+    nextPhaseMetadata:
+      "EX-2:5 — Executive Journal Experience Manifest" as const,
+    metadataOnly: true as const,
+    sideEffectFree: true as const,
+    deterministic: true as const,
+    failClosed: true as const,
+    proposedPackage: Object.freeze([
+      "frontend/app/lib/ex/executiveJournalExperienceValidation.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceValidationTypes.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceValidationIdentity.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceValidationLifecycle.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceValidationContracts.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceValidationRules.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceValidationMetadata.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceValidation.test.ts",
+    ] as const),
+    dependencyDirection:
+      "EX-2:4 Validation → EX-2:3 Model → EX-2:2 Registry → EX-2:1 Foundation → architecture metadata" as const,
+    upstreamRuntimeDependency:
+      "EX-2:3/ExecutiveJournalExperienceModel" as const,
+    registryAndFoundationReachedThroughModelOnly: true as const,
+    exactUpstreamReferencesRequired: true as const,
+    mayValidate: Object.freeze([
+      "EX-2:3 identity and structural completeness",
+      "14-entity catalogue",
+      "13-relationship catalogue",
+      "11 closed vocabularies",
+      "lifecycle metadata",
+      "metadata privacy and authority boundaries",
+      "provenance references",
+      "correction and supersession reference structure",
+      "projection and filter-model constraints",
+      "Tier-0 evidence-reference metadata",
+      "immutable validation results and issue descriptors",
+    ] as const),
+    prohibitedCapabilities: Object.freeze([
+      "repair, normalize, trim, coerce, infer or silently strip input",
+      "input mutation",
+      "authority, confirmation, ownership, lifecycle truth or disclosure permission creation",
+      "journal body, narrative, rationale or private-reflection access",
+      "evidence content, authority evidence or actor PII access",
+      "real RTC-2 payload validation or consumption",
+      "commands or side effects",
+      "direct Registry, Foundation or product-architecture runtime imports",
+      "RTC-1, RTC-2, RTC-3, APP-8 or EX-1 Public Index imports",
+      "React, Next.js, route, UI, provider, adapter, fixture or Tier-0 imports",
+      "network, persistence, telemetry, browser storage, clock, randomness, cloud, mutation or deployment behavior",
+    ] as const),
+    resultSurface:
+      ExecutiveJournalProductArchitectureAdEx212ClosedResultSurface,
+    ruleFamilies: ExecutiveJournalProductArchitectureAdEx212RuleFamilies,
+    mandatoryFailClosedControls:
+      ExecutiveJournalProductArchitectureAdEx212MandatoryFailClosedControls,
+    phaseDecisionRequirements: Object.freeze({
+      ordered: true as const,
+      unique: true as const,
+      immutable: true as const,
+      directlyTested: true as const,
+      validationSpecificOnly: true as const,
+      notArchitectureDecisionRecords: true as const,
+      preservesEx23DecisionsD01ThroughD08: true as const,
+      doesNotWeakenAdEx200ThroughAdEx212: true as const,
+    }),
+    validResultMeaning:
+      "Metadata conforms to EX-2:3 contracts only; no production, UI, route, RTC consumption, disclosure, integration or deployment authority." as const,
+    readyForManifestDoesNotAuthorizeEx25: true as const,
+    createdByThisDecision: false as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx212Preservation =
+  Object.freeze({
+    openIssueCount: 13 as const,
+    allOpenIssuesRemainUnresolved: true as const,
+    ownersDescriptionsAndCarriedByPhaseUnchanged: true as const,
+    pendingGates: Object.freeze([
+      "G-EX2-04",
+      "G-EX2-07",
+      "G-EX2-12",
+    ] as const),
+    allPendingGateResults: "Pending" as const,
+    noIssueOrGateResolvedByAssumption: true as const,
+    blocksMetadataOnlyEx24Implementation: false as const,
+    continuesBlockingProductionClaims: true as const,
+    preservesEx23DecisionsD01ThroughD08: true as const,
+    injectsIntoFoundationLedger: false as const,
+    injectsIntoRegistryLedger: false as const,
+    preservesExistingTier0PreviewRouteAuthorization: true as const,
+    revokesOrExpandsTier0PreviewRouteAuthorization: false as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+  });
+
+/**
+ * Canonical accepted architecture decision AD-EX2-12.
+ * Authorizes later metadata-only EX-2:4 Validation implementation and
+ * verification without creating EX-2:4 or authorizing EX-2:5.
+ */
+export const ExecutiveJournalProductArchitectureDecisionAdrEx212 =
+  Object.freeze({
+    decisionId: "AD-EX2-12" as const,
+    title:
+      "Authorize Metadata-Only EX-2:4 Executive Journal Experience Validation" as const,
+    status: "Accepted" as const,
+    result:
+      "Ex24MetadataOnlyValidationAuthorizationAccepted" as const,
+    decisionAuthority: "Bahadoor" as const,
+    authorityRole: "Nexora Product and Architecture Authority" as const,
+    decisionDate: "2026-07-30" as const,
+    decisionDateClassification: "SuppliedDecisionDate" as const,
+    selectedOption:
+      "MetadataOnlyFailClosedExperienceValidation" as const,
+    decisionScope:
+      "Ex24ValidationImplementationAndVerificationOnly" as const,
+    decisionStatement:
+      "The finalized EX-2:3 Model is ReadyForValidation. A pure, deterministic, immutable and fail-closed metadata-only EX-2:4 Validation package is authorized for later implementation and verification. It may import only the EX-2:3 Model at runtime and must preserve the complete upstream chain by exact reference. This decision does not create EX-2:4, authorize or create EX-2:5, alter Tier-0 route authority, resolve open issues or gates, or authorize runtime, UI, real RTC-2, provider, network, persistence, telemetry, cloud, production, public-access or deployment behavior." as const,
+    doesNotRewriteRenumberSupersedeOrWeakenAdEx200ThroughAdEx211:
+      true as const,
+    prerequisiteModelIdentity:
+      "EX-2:3/ExecutiveJournalExperienceModel" as const,
+    prerequisiteModelNamespace:
+      "nexora.ex.executive.journal.experience.model" as const,
+    prerequisiteModelStatus: "Model" as const,
+    prerequisiteModelReadiness: "ReadyForValidation" as const,
+    prerequisiteModelFinalVerificationPassed: true as const,
+    prerequisiteModelFinalTestCount: 51 as const,
+    authorizedEx24Validation:
+      ExecutiveJournalProductArchitectureAuthorizedEx24Validation,
+    authorizationFlags:
+      ExecutiveJournalProductArchitectureAdEx212AuthorizationFlags,
+    preservation:
+      ExecutiveJournalProductArchitectureAdEx212Preservation,
+    projectCiClassification:
+      "CiStillBlockedByParkedReactCompilerDebt" as const,
+    lintAuthorizationClassification:
+      "AllowMetadataOnlyEx24WithLintBlockerRecorded" as const,
+    expectedParkedLintBaseline: Object.freeze({
+      errors: 21 as const,
+      warnings: 288 as const,
+      affectedFiles: 64 as const,
+      noExplicitAny: 0 as const,
+      unusedVariables: 0 as const,
+    }),
+    modifiesParkedReactCompilerClusters: false as const,
+    addsLintSuppressions: false as const,
+    weakensEslintConfiguration: false as const,
+    ciLintGateClean: false as const,
+    ex24MetadataOnlyValidationAuthorized: true as const,
+    ex24ImplementationAuthorized: true as const,
+    ex25Authorized: false as const,
+    createsEx24: false as const,
+    createsEx25: false as const,
+    implementsValidationRules: false as const,
+    runtimeBehaviorAuthorized: false as const,
+    uiExpansionAuthorized: false as const,
+    routeAuthorizedByThisDecision: false as const,
+    realRtc2ConsumptionAuthorized: false as const,
+    productionProviderAuthorized: false as const,
+    networkAuthorized: false as const,
+    persistenceAuthorized: false as const,
+    telemetryAuthorized: false as const,
+    cloudAuthorized: false as const,
+    publicIndexAuthorized: false as const,
+    deploymentAuthorized: false as const,
+    resolvesOpenIssuesOrProductionGates: false as const,
+    injectsIntoFoundationLedger: false as const,
+    injectsIntoRegistryLedger: false as const,
+    preservesTier0PreviewRouteAuthorization: true as const,
+    nextRequiredTask:
+      "NPA-T — EX-2:4 Executive Journal Experience Validation" as const,
+    readinessConclusion:
+      "ReadyForMetadataOnlyEx24ValidationImplementation" as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+    deterministic: true as const,
+    sideEffectFree: true as const,
+    isRuntimePhase: false as const,
+    isEx24: false as const,
+  });
+
+/**
+ * Closed authorization flags recorded by AD-EX2-13.
+ * Metadata-only EX-2:5 Manifest implementation and verification only.
+ */
+export const ExecutiveJournalProductArchitectureAdEx213AuthorizationFlags =
+  Object.freeze({
+    ex25MetadataOnlyManifestAuthorized: true as const,
+    ex25ImplementationAuthorized: true as const,
+    ex26Authorized: false as const,
+    platformBehaviorAuthorized: false as const,
+    runtimeBehaviorAuthorized: false as const,
+    uiExpansionAuthorized: false as const,
+    routeAuthorizedByThisDecision: false as const,
+    realRtc2ConsumptionAuthorized: false as const,
+    productionProviderAuthorized: false as const,
+    networkAuthorized: false as const,
+    persistenceAuthorized: false as const,
+    telemetryAuthorized: false as const,
+    publicIndexAuthorized: false as const,
+    deploymentAuthorized: false as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx213ClosedVocabularies =
+  Object.freeze({
+    eligibility: Object.freeze(["Eligible", "Ineligible"] as const),
+    capabilitySupport: Object.freeze([
+      "Declared",
+      "NotDeclared",
+      "Prohibited",
+    ] as const),
+    compatibility: Object.freeze([
+      "Compatible",
+      "Incompatible",
+      "NotEvaluated",
+    ] as const),
+    requirementStatus: Object.freeze([
+      "Satisfied",
+      "Unsatisfied",
+      "Pending",
+    ] as const),
+    entryKinds: Object.freeze([
+      "Identity",
+      "Capability",
+      "Compatibility",
+      "Requirement",
+      "NonCapability",
+      "DependencyBoundary",
+      "EvidenceReference",
+      "OpenIssue",
+      "PendingGate",
+      "PlatformPrerequisite",
+      "Summary",
+    ] as const),
+    issueReasonCodes: Object.freeze([
+      "ValidationEvidenceMissing",
+      "ValidationEvidenceInvalid",
+      "ValidationEvidenceMalformed",
+      "ValidationEvidenceCloned",
+      "ValidationEvidenceStale",
+      "ValidationEvidenceMismatched",
+      "ValidationEvidenceUnknown",
+      "UnsupportedCapability",
+      "ProhibitedCapability",
+      "DependencyBoundaryViolation",
+      "ManifestEntryUnsealed",
+      "PlatformAuthorizationMissing",
+    ] as const),
+    lifecycleStates: Object.freeze([
+      "Declared",
+      "ValidationBound",
+      "CapabilitiesDeclared",
+      "Sealed",
+      "ReadyForPlatform",
+    ] as const),
+    unknownMalformedPartialCaseOrWhitespaceModifiedValuesFailClosed:
+      true as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx213CapabilitySurface =
+  Object.freeze([
+    Object.freeze({ capabilityId: "EX25-CAP-01", capability: "Metadata-only journal experience composition" }),
+    Object.freeze({ capabilityId: "EX25-CAP-02", capability: "Journal projection presentation metadata" }),
+    Object.freeze({ capabilityId: "EX25-CAP-03", capability: "Entry-list metadata" }),
+    Object.freeze({ capabilityId: "EX25-CAP-04", capability: "Entry-summary metadata" }),
+    Object.freeze({ capabilityId: "EX25-CAP-05", capability: "Entry-detail metadata" }),
+    Object.freeze({ capabilityId: "EX25-CAP-06", capability: "Category presentation" }),
+    Object.freeze({ capabilityId: "EX25-CAP-07", capability: "Lifecycle presentation" }),
+    Object.freeze({ capabilityId: "EX25-CAP-08", capability: "Origin presentation" }),
+    Object.freeze({ capabilityId: "EX25-CAP-09", capability: "Authority-state presentation" }),
+    Object.freeze({ capabilityId: "EX25-CAP-10", capability: "Integrity-state presentation" }),
+    Object.freeze({ capabilityId: "EX25-CAP-11", capability: "Provenance references" }),
+    Object.freeze({ capabilityId: "EX25-CAP-12", capability: "Correction and supersession references" }),
+    Object.freeze({ capabilityId: "EX25-CAP-13", capability: "Filter-model metadata" }),
+    Object.freeze({ capabilityId: "EX25-CAP-14", capability: "Tier-0 evidence references" }),
+    Object.freeze({ capabilityId: "EX25-CAP-15", capability: "Deterministic summaries" }),
+    Object.freeze({ capabilityId: "EX25-CAP-16", capability: "Fail-closed consumer-boundary metadata" }),
+  ] as const);
+
+export const ExecutiveJournalProductArchitectureAdEx213NonCapabilities =
+  Object.freeze([
+    "Journal body or narrative",
+    "Rationale",
+    "Private reflection or its existence signals",
+    "Evidence content or resolvable evidence URI",
+    "Authority evidence",
+    "Actor PII",
+    "Jurisdiction/location",
+    "Retention or disclosure instructions",
+    "Commands and mutations",
+    "Real RTC-2 payload consumption",
+    "Production provider access",
+    "React UI or routes",
+    "Navigation",
+    "Network",
+    "Persistence or browser storage",
+    "Telemetry or analytics",
+    "Clock or randomness",
+    "Cloud or deployment",
+    "EX-2:6 Platform implementation",
+  ] as const);
+
+export const ExecutiveJournalProductArchitectureAdEx213PlatformPrerequisites =
+  Object.freeze([
+    "Exact EX-2:5 Manifest identity",
+    "Exact EX-2:4 Valid evidence",
+    "Canonical dependency chain intact",
+    "All manifest entries sealed",
+    "No prohibited capability declared",
+    "Open issues carried forward",
+    "Production gates disclosed as Pending",
+    "Separate EX-2:6 architecture authorization",
+    "No inference that Tier-0 evidence authorizes production",
+  ] as const);
+
+export const ExecutiveJournalProductArchitectureAdEx213Lifecycle =
+  Object.freeze({
+    states:
+      ExecutiveJournalProductArchitectureAdEx213ClosedVocabularies.lifecycleStates,
+    immediateForwardTransitions: Object.freeze([
+      Object.freeze({ from: "Declared", to: "ValidationBound" }),
+      Object.freeze({ from: "ValidationBound", to: "CapabilitiesDeclared" }),
+      Object.freeze({ from: "CapabilitiesDeclared", to: "Sealed" }),
+      Object.freeze({ from: "Sealed", to: "ReadyForPlatform" }),
+    ] as const),
+    rejectsSelfReverseSkippedMalformedCaseWhitespaceAndUnknownTransitions:
+      true as const,
+    ex15Mapping:
+      "EX-1:5 has no explicit lifecycle file or lifecycle-state vocabulary" as const,
+    authorizedEx25MappingRationale:
+      "The explicit five-state EX-2 lifecycle is binding because it continues the established EX-2 identity/lifecycle/contracts package convention and is required by this authorization." as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx213PhaseDecisions =
+  Object.freeze([
+    Object.freeze({ decisionId: "EX-2:5/D-15", principle: "Manifest entries declare validated metadata capabilities only." }),
+    Object.freeze({ decisionId: "EX-2:5/D-16", principle: "Manifest construction requires exact Valid EX-2:4 evidence." }),
+    Object.freeze({ decisionId: "EX-2:5/D-17", principle: "Unknown or unsupported capabilities fail closed." }),
+    Object.freeze({ decisionId: "EX-2:5/D-18", principle: "Prohibited capabilities remain explicit." }),
+    Object.freeze({ decisionId: "EX-2:5/D-19", principle: "Manifest declaration creates no runtime authority." }),
+    Object.freeze({ decisionId: "EX-2:5/D-20", principle: "EX-2:5 consumes only EX-2:4 Validation at runtime." }),
+  ] as const);
+
+/**
+ * Authorized future EX-2:5 Manifest identity and package.
+ * Authorization only — no EX-2:5 artifact is created by this record.
+ */
+export const ExecutiveJournalProductArchitectureAuthorizedEx25Manifest =
+  Object.freeze({
+    identity: "EX-2:5/ExecutiveJournalExperienceManifest" as const,
+    namespace: "nexora.ex.executive.journal.experience.manifest" as const,
+    status: "Manifest" as const,
+    readiness: "ReadyForPlatform" as const,
+    phase: "EX-2:5" as const,
+    previousPhase:
+      "EX-2:4 — Executive Journal Experience Validation" as const,
+    nextPhaseMetadata:
+      "EX-2:6 — Executive Journal Experience Platform" as const,
+    metadataOnly: true as const,
+    deterministic: true as const,
+    immutable: true as const,
+    sideEffectFree: true as const,
+    failClosed: true as const,
+    proposedPackage: Object.freeze([
+      "frontend/app/lib/ex/executiveJournalExperienceManifest.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceManifestTypes.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceManifestIdentity.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceManifestLifecycle.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceManifestContracts.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceManifestEntries.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceManifestMetadata.ts",
+      "frontend/app/lib/ex/executiveJournalExperienceManifest.test.ts",
+    ] as const),
+    packageConventionInspection: Object.freeze({
+      ex15Convention:
+        "Capabilities, Dependencies, Guarantees, Identity, Metadata, Registry" as const,
+      ex24Convention:
+        "Types, Identity, Lifecycle, Contracts, Rules, Metadata" as const,
+      approvedCanonicalSixthFile:
+        "frontend/app/lib/ex/executiveJournalExperienceManifestEntries.ts" as const,
+      rationale:
+        "Entries is the manifest-specific replacement for Validation Rules; the EX-2 eight-file identity/lifecycle/contracts convention is more binding than the older EX-1:5 split." as const,
+    }),
+    dependencyDirection:
+      "EX-2:5 Manifest → EX-2:4 Validation → EX-2:3 Model → EX-2:2 Registry → EX-2:1 Foundation → architecture metadata" as const,
+    upstreamRuntimeDependency:
+      "EX-2:4/ExecutiveJournalExperienceValidation" as const,
+    earlierPhasesReachedThroughValidationOnly: true as const,
+    exactUpstreamReferencesRequired: true as const,
+    validatedInput: Object.freeze({
+      exactValidationAggregateRequired: true as const,
+      requiredValidationResult: "Valid" as const,
+      bindsExactValidatedModelIdentity: true as const,
+      ineligibleEvidence: Object.freeze([
+        "Invalid",
+        "Missing",
+        "Malformed",
+        "Cloned",
+        "Stale",
+        "Mismatched",
+        "Unknown",
+      ] as const),
+      confirmsMetadataConformanceOnly: true as const,
+      satisfiesProductionGates: false as const,
+      authorizesEx26: false as const,
+    }),
+    capabilitySurface:
+      ExecutiveJournalProductArchitectureAdEx213CapabilitySurface,
+    nonCapabilities:
+      ExecutiveJournalProductArchitectureAdEx213NonCapabilities,
+    closedVocabularies:
+      ExecutiveJournalProductArchitectureAdEx213ClosedVocabularies,
+    platformPrerequisites:
+      ExecutiveJournalProductArchitectureAdEx213PlatformPrerequisites,
+    lifecycle: ExecutiveJournalProductArchitectureAdEx213Lifecycle,
+    phaseDecisions:
+      ExecutiveJournalProductArchitectureAdEx213PhaseDecisions,
+    eachCapabilityMapsToExactValidatedSurface: true as const,
+    stableCapabilityIdentityAndOrdering: true as const,
+    directCapabilityTestCoverageRequired: true as const,
+    declarationIsNotImplementation: true as const,
+    readyForPlatformDoesNotAuthorizeEx26: true as const,
+    createdByThisDecision: false as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx213Preservation =
+  Object.freeze({
+    exactReferenceUpstreamChainRequired: true as const,
+    preservesValidationRulesAndIssueCatalogues: true as const,
+    preservesModelEntitiesRelationshipsAndVocabularies: true as const,
+    preservesFoundationBoundariesAndPrinciples: true as const,
+    preservesArchitectureDecisionLedger: true as const,
+    preservesTier0EvidenceLedger: true as const,
+    preservesAuthorizationRecords: true as const,
+    openIssueCount: 13 as const,
+    allOpenIssuesRemainUnresolved: true as const,
+    ownersDescriptionsAndCarriedByPhaseUnchanged: true as const,
+    pendingGates: Object.freeze(["G-EX2-04", "G-EX2-07", "G-EX2-12"] as const),
+    allPendingGateResults: "Pending" as const,
+    manifestEligibilityResolvesIssuesOrGates: false as const,
+    blocksMetadataOnlyEx25Implementation: false as const,
+    continuesBlockingProductionClaims: true as const,
+    injectsAdEx213IntoSealedUpstreamLedgers: false as const,
+    preservesExistingTier0UiAndRouteAuthorizations: true as const,
+    expandsTier0UiOrRouteScope: false as const,
+  });
+
+/** Canonical accepted architecture decision AD-EX2-13. */
+export const ExecutiveJournalProductArchitectureDecisionAdrEx213 =
+  Object.freeze({
+    decisionId: "AD-EX2-13" as const,
+    title:
+      "Authorize Metadata-Only EX-2:5 Executive Journal Experience Manifest" as const,
+    status: "Accepted" as const,
+    result: "Ex25MetadataOnlyManifestAuthorizationAccepted" as const,
+    decisionAuthority: "Bahadoor" as const,
+    authorityRole: "Nexora Product and Architecture Authority" as const,
+    decisionDate: "2026-07-30" as const,
+    decisionDateClassification: "RepositorySuppliedDecisionDate" as const,
+    selectedOption:
+      "MetadataOnlyValidatedExperienceCapabilityManifest" as const,
+    decisionScope:
+      "Ex25ManifestImplementationAndVerificationOnly" as const,
+    decisionStatement:
+      "The finalized EX-2:4 Validation is ReadyForManifest. A closed, deterministic, immutable, side-effect-free and fail-closed metadata-only EX-2:5 Manifest package is authorized for later implementation and verification from exact Valid EX-2:4 evidence. This decision creates no EX-2:5 artifacts, does not authorize or create EX-2:6, and grants no runtime, UI, route, RTC, provider, network, persistence, telemetry, production, public-access or deployment authority." as const,
+    doesNotRewriteRenumberSupersedeOrWeakenAdEx200ThroughAdEx212:
+      true as const,
+    prerequisiteValidationIdentity:
+      "EX-2:4/ExecutiveJournalExperienceValidation" as const,
+    prerequisiteValidationNamespace:
+      "nexora.ex.executive.journal.experience.validation" as const,
+    prerequisiteValidationStatus: "Validation" as const,
+    prerequisiteValidationReadiness: "ReadyForManifest" as const,
+    prerequisiteValidationFinalVerificationPassed: true as const,
+    prerequisiteValidationFinalTestCount: 121 as const,
+    authorizedEx25Manifest:
+      ExecutiveJournalProductArchitectureAuthorizedEx25Manifest,
+    authorizationFlags:
+      ExecutiveJournalProductArchitectureAdEx213AuthorizationFlags,
+    preservation:
+      ExecutiveJournalProductArchitectureAdEx213Preservation,
+    projectCiClassification:
+      "CiStillBlockedByParkedReactCompilerDebt" as const,
+    lintAuthorizationClassification:
+      "AllowMetadataOnlyEx25WithLintBlockerRecorded" as const,
+    expectedParkedLintBaseline: Object.freeze({
+      errors: 21 as const,
+      warnings: 288 as const,
+      affectedFiles: 64 as const,
+      noExplicitAny: 0 as const,
+      unusedVariables: 0 as const,
+    }),
+    modifiesParkedReactCompilerClusters: false as const,
+    addsLintSuppressions: false as const,
+    weakensEslintConfiguration: false as const,
+    ciLintGateClean: false as const,
+    ex25MetadataOnlyManifestAuthorized: true as const,
+    ex25ImplementationAuthorized: true as const,
+    ex26Authorized: false as const,
+    createsEx25: false as const,
+    createsEx26: false as const,
+    implementsManifestEntries: false as const,
+    platformBehaviorAuthorized: false as const,
+    runtimeBehaviorAuthorized: false as const,
+    uiExpansionAuthorized: false as const,
+    routeAuthorizedByThisDecision: false as const,
+    realRtc2ConsumptionAuthorized: false as const,
+    productionProviderAuthorized: false as const,
+    networkAuthorized: false as const,
+    persistenceAuthorized: false as const,
+    telemetryAuthorized: false as const,
+    cloudAuthorized: false as const,
+    publicIndexAuthorized: false as const,
+    deploymentAuthorized: false as const,
+    resolvesOpenIssuesOrProductionGates: false as const,
+    injectsIntoSealedUpstreamLedgers: false as const,
+    preservesTier0UiAndRouteAuthorizations: true as const,
+    nextRequiredTask:
+      "NPA-T — EX-2:5 Executive Journal Experience Manifest" as const,
+    readinessConclusion:
+      "ReadyForMetadataOnlyEx25ManifestImplementation" as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+    deterministic: true as const,
+    sideEffectFree: true as const,
+    isRuntimePhase: false as const,
+    isEx25: false as const,
+  });
+
+/**
+ * Closed authorization flags recorded by AD-EX2-14.
+ * Metadata-only EX-2:6 Platform-contract implementation and verification only.
+ */
+export const ExecutiveJournalProductArchitectureAdEx214AuthorizationFlags =
+  Object.freeze({
+    ex26MetadataOnlyPlatformContractAuthorized: true as const,
+    ex26ImplementationAuthorized: true as const,
+    ex27Authorized: false as const,
+    platformRuntimeAuthorized: false as const,
+    providerExecutionAuthorized: false as const,
+    realRtc2ConsumptionAuthorized: false as const,
+    uiExpansionAuthorized: false as const,
+    routeAuthorizedByThisDecision: false as const,
+    networkAuthorized: false as const,
+    persistenceAuthorized: false as const,
+    telemetryAuthorized: false as const,
+    publicIndexAuthorized: false as const,
+    deploymentAuthorized: false as const,
+    productionAuthorized: false as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx214ClosedVocabularies =
+  Object.freeze({
+    eligibility: Object.freeze(["Eligible", "Ineligible"] as const),
+    bindingStatus: Object.freeze(["Bound", "Unbound", "Rejected"] as const),
+    exposureStatus: Object.freeze([
+      "Exposed",
+      "NotExposed",
+      "Prohibited",
+    ] as const),
+    availability: Object.freeze([
+      "Available",
+      "Unavailable",
+      "Degraded",
+      "NotEvaluated",
+    ] as const),
+    isolation: Object.freeze([
+      "MetadataOnlyIsolated",
+      "NotIsolated",
+    ] as const),
+    providerMode: Object.freeze([
+      "NoProvider",
+      "SyntheticProviderReferenceOnly",
+      "ProductionProviderProhibited",
+    ] as const),
+    accessClassification: Object.freeze([
+      "NoAccess",
+      "MetadataOnlyAccess",
+      "ProductionAccessProhibited",
+    ] as const),
+    dataSourceClassification: Object.freeze([
+      "NoSource",
+      "SyntheticEvidenceReferenceOnly",
+      "RealRtc2SourceProhibited",
+      "ProductionSourceProhibited",
+    ] as const),
+    integrityStatus: Object.freeze([
+      "Intact",
+      "Compromised",
+      "NotEvaluated",
+    ] as const),
+    reasonCodes: Object.freeze([
+      "ManifestMissing",
+      "ManifestIneligible",
+      "ManifestMalformed",
+      "ManifestCloned",
+      "ManifestStale",
+      "ManifestIdentityMismatch",
+      "ManifestReadinessMismatch",
+      "CapabilityCatalogueMismatch",
+      "NonCapabilityCatalogueMismatch",
+      "PrerequisiteCatalogueMismatch",
+      "UpstreamReferenceMismatch",
+      "PlatformAuthorizationMissing",
+      "PlatformContractUnsealed",
+    ] as const),
+    bindingKinds: Object.freeze([
+      "ManifestBinding",
+      "ConsumerBinding",
+      "CapabilityExposure",
+      "NonCapabilityEnforcement",
+      "PlatformCompatibility",
+      "AccessClassification",
+      "DataSourceClassification",
+      "ProviderModeClassification",
+      "IsolationMode",
+      "AvailabilityClassification",
+      "IntegrityClassification",
+      "FailureClassification",
+      "CertificationEvidence",
+      "DependencyBoundary",
+      "GovernanceCarryForward",
+      "PlatformSummary",
+    ] as const),
+    lifecycleStates: Object.freeze([
+      "Declared",
+      "ManifestBound",
+      "PlatformContractsDeclared",
+      "Sealed",
+      "ReadyForCertification",
+    ] as const),
+    unknownMalformedPartialCaseOrWhitespaceModifiedValuesFailClosed:
+      true as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx214CapabilityBindings =
+  Object.freeze(
+    ExecutiveJournalProductArchitectureAdEx213CapabilitySurface.map(
+      (manifestCapability, index) =>
+        Object.freeze({
+          bindingId:
+            `EX26-CAP-BIND-${String(index + 1).padStart(2, "0")}`,
+          order: index + 1,
+          manifestCapability,
+          exposure: "Exposed" as const,
+          exactManifestReferenceRequired: true as const,
+          metadataOnly: true as const,
+          runtimeImplementation: false as const,
+          createsAuthority: false as const,
+          productionApplicable: false as const,
+          directTestCoverageRequired: true as const,
+        }),
+    ),
+  );
+
+export const ExecutiveJournalProductArchitectureAdEx214NonCapabilityEnforcement =
+  Object.freeze(
+    ExecutiveJournalProductArchitectureAdEx213NonCapabilities.map(
+      (manifestNonCapability, index) =>
+        Object.freeze({
+          enforcementId:
+            `EX26-NONCAP-ENFORCE-${String(index + 1).padStart(2, "0")}`,
+          order: index + 1,
+          manifestNonCapability,
+          exposure: "Prohibited" as const,
+          exactManifestReferenceRequired: true as const,
+          immutable: true as const,
+          omittedAlteredReorderedOrReclassifiedFailsClosed: true as const,
+          directTestCoverageRequired: true as const,
+        }),
+    ),
+  );
+
+export const ExecutiveJournalProductArchitectureAdEx214ConsumerBinding =
+  Object.freeze({
+    contractId: "EX-2:6/Contract/ConsumerBinding" as const,
+    requiredDeclarations: Object.freeze([
+      "Consumer identity",
+      "Manifest identity",
+      "Allowed capability references",
+      "Prohibited capability references",
+      "Access classification",
+      "Source classification",
+      "Isolation requirement",
+      "Compatibility status",
+      "Authorization evidence",
+      "Certification requirement",
+    ] as const),
+    unknownOrUnauthorizedConsumersFailClosed: true as const,
+    createsConsumerImplementation: false as const,
+    createsRouteOrUiMount: false as const,
+    grantsRealRtc2Access: false as const,
+    createsAuthentication: false as const,
+    broadensTier0Authorization: false as const,
+    grantsProductionAccess: false as const,
+    metadataOnly: true as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx214ReadinessConditions =
+  Object.freeze([
+    "Exact eligible EX-2:5 Manifest",
+    "Complete 16-capability binding catalogue",
+    "Complete 19-non-capability enforcement catalogue",
+    "Complete dependency boundary",
+    "No provider execution",
+    "No real RTC-2 source",
+    "No prohibited exposure",
+    "Open issues carried forward",
+    "Pending gates disclosed",
+    "Separate EX-2:7 authorization",
+    "Platform package sealed",
+    "Certification evidence plan present",
+  ] as const);
+
+export const ExecutiveJournalProductArchitectureAdEx214Lifecycle =
+  Object.freeze({
+    states:
+      ExecutiveJournalProductArchitectureAdEx214ClosedVocabularies.lifecycleStates,
+    immediateForwardTransitions: Object.freeze([
+      Object.freeze({ from: "Declared", to: "ManifestBound" }),
+      Object.freeze({
+        from: "ManifestBound",
+        to: "PlatformContractsDeclared",
+      }),
+      Object.freeze({ from: "PlatformContractsDeclared", to: "Sealed" }),
+      Object.freeze({ from: "Sealed", to: "ReadyForCertification" }),
+    ] as const),
+    rejectsSelfReverseSkippedMalformedCaseWhitespaceAndUnknownTransitions:
+      true as const,
+    ex16Divergence:
+      "EX-1:6 exposes operational service methods; EX-2:6 intentionally authorizes metadata-only contract declarations and no operations." as const,
+    readyForCertificationAuthorizesEx27: false as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx214PhaseDecisions =
+  Object.freeze([
+    Object.freeze({ decisionId: "EX-2:6/D-21", principle: "Platform remains a metadata contract and performs no operations." }),
+    Object.freeze({ decisionId: "EX-2:6/D-22", principle: "Exact eligible EX-2:5 Manifest is mandatory." }),
+    Object.freeze({ decisionId: "EX-2:6/D-23", principle: "Every declared capability has exactly one metadata binding." }),
+    Object.freeze({ decisionId: "EX-2:6/D-24", principle: "Every Manifest non-capability remains prohibited." }),
+    Object.freeze({ decisionId: "EX-2:6/D-25", principle: "Provider and source boundaries fail closed." }),
+    Object.freeze({ decisionId: "EX-2:6/D-26", principle: "EX-2:6 consumes only EX-2:5 Manifest at runtime." }),
+  ] as const);
+
+/**
+ * Authorized future EX-2:6 Platform identity and package.
+ * Authorization only — no EX-2:6 artifact is created by this record.
+ */
+export const ExecutiveJournalProductArchitectureAuthorizedEx26Platform =
+  Object.freeze({
+    identity: "EX-2:6/ExecutiveJournalExperiencePlatform" as const,
+    namespace: "nexora.ex.executive.journal.experience.platform" as const,
+    status: "Platform" as const,
+    readiness: "ReadyForCertification" as const,
+    phase: "EX-2:6" as const,
+    previousPhase:
+      "EX-2:5 — Executive Journal Experience Manifest" as const,
+    nextPhaseMetadata:
+      "EX-2:7 — Executive Journal Experience Certification" as const,
+    metadataOnly: true as const,
+    contractOnly: true as const,
+    deterministic: true as const,
+    immutable: true as const,
+    sideEffectFree: true as const,
+    failClosed: true as const,
+    proposedPackage: Object.freeze([
+      "frontend/app/lib/ex/executiveJournalExperiencePlatform.ts",
+      "frontend/app/lib/ex/executiveJournalExperiencePlatformTypes.ts",
+      "frontend/app/lib/ex/executiveJournalExperiencePlatformIdentity.ts",
+      "frontend/app/lib/ex/executiveJournalExperiencePlatformLifecycle.ts",
+      "frontend/app/lib/ex/executiveJournalExperiencePlatformContracts.ts",
+      "frontend/app/lib/ex/executiveJournalExperiencePlatformBindings.ts",
+      "frontend/app/lib/ex/executiveJournalExperiencePlatformMetadata.ts",
+      "frontend/app/lib/ex/executiveJournalExperiencePlatform.test.ts",
+    ] as const),
+    packageConventionInspection: Object.freeze({
+      bindingEx2Convention:
+        "Types, Identity, Lifecycle, Contracts, phase-specific sixth file, Metadata" as const,
+      approvedCanonicalSixthFile:
+        "frontend/app/lib/ex/executiveJournalExperiencePlatformBindings.ts" as const,
+      ex16OperationalConventionCopied: false as const,
+      rationale:
+        "Bindings is the Platform-specific sixth file; EX-1:6 operational service files are intentionally excluded." as const,
+    }),
+    dependencyDirection:
+      "EX-2:6 Platform → EX-2:5 Manifest → EX-2:4 Validation → EX-2:3 Model → EX-2:2 Registry → EX-2:1 Foundation → architecture metadata" as const,
+    upstreamRuntimeDependency:
+      "EX-2:5/ExecutiveJournalExperienceManifest" as const,
+    earlierPhasesReachedThroughManifestOnly: true as const,
+    exactUpstreamReferencesRequired: true as const,
+    eligibleManifestRequirement: Object.freeze({
+      exactManifestAggregateRequired: true as const,
+      exactManifestIdentityRequired: true as const,
+      exactEligibilityResultRequired: true as const,
+      requiredEligibility: "Eligible" as const,
+      exactValidEx24EvidencePreservedThroughManifest: true as const,
+      exactUpstreamChainPreserved: true as const,
+      manifestMustBeSealed: true as const,
+      requiredManifestReadiness: "ReadyForPlatform" as const,
+      completeCapabilityNonCapabilityAndPrerequisiteCataloguesRequired:
+        true as const,
+      failClosedCases: Object.freeze([
+        "Missing Manifest",
+        "Ineligible Manifest",
+        "Cloned Manifest",
+        "Stale Manifest",
+        "Malformed Manifest",
+        "Identity mismatch",
+        "Readiness mismatch",
+        "Capability mismatch",
+        "Non-capability mismatch",
+        "Prerequisite mismatch",
+        "Upstream-reference mismatch",
+        "Platform authorization missing",
+      ] as const),
+    }),
+    contractSurface: Object.freeze([
+      "Manifest binding",
+      "Consumer binding",
+      "Capability exposure",
+      "Non-capability enforcement",
+      "Platform compatibility",
+      "Access classification",
+      "Data-source classification",
+      "Provider-mode classification",
+      "Isolation mode",
+      "Availability classification",
+      "Integrity classification",
+      "Failure classification",
+      "Certification evidence",
+      "Dependency boundaries",
+      "Open issues and Pending gates",
+      "Deterministic platform summary",
+    ] as const),
+    closedVocabularies:
+      ExecutiveJournalProductArchitectureAdEx214ClosedVocabularies,
+    capabilityBindings:
+      ExecutiveJournalProductArchitectureAdEx214CapabilityBindings,
+    nonCapabilityEnforcement:
+      ExecutiveJournalProductArchitectureAdEx214NonCapabilityEnforcement,
+    consumerBinding:
+      ExecutiveJournalProductArchitectureAdEx214ConsumerBinding,
+    readinessConditions:
+      ExecutiveJournalProductArchitectureAdEx214ReadinessConditions,
+    lifecycle: ExecutiveJournalProductArchitectureAdEx214Lifecycle,
+    phaseDecisions:
+      ExecutiveJournalProductArchitectureAdEx214PhaseDecisions,
+    providerAndSourceBoundaries: Object.freeze({
+      providerMode: "NoProvider" as const,
+      syntheticProviderReference:
+        "SyntheticProviderReferenceOnly" as const,
+      syntheticSourceClassification:
+        "SyntheticEvidenceReferenceOnly" as const,
+      tier0EvidenceMayBeReferencedExactlyAsSupportingEvidence: true as const,
+      tier0RuntimeImportAuthorized: false as const,
+      providerExecutionAuthorized: false as const,
+      liveProviderSelectionAuthorized: false as const,
+      realRtc2SourceAuthorized: false as const,
+      productionSourceAuthorized: false as const,
+      networkAuthorized: false as const,
+      persistenceAuthorized: false as const,
+    }),
+    createdByThisDecision: false as const,
+    readyForCertificationDoesNotAuthorizeEx27: true as const,
+  });
+
+export const ExecutiveJournalProductArchitectureAdEx214Preservation =
+  Object.freeze({
+    exactReferenceUpstreamChainRequired: true as const,
+    preservesManifestCapabilities: 16 as const,
+    preservesManifestNonCapabilities: 19 as const,
+    preservesManifestPlatformPrerequisites: 9 as const,
+    preservesManifestVocabulariesAndContracts: true as const,
+    preservesValidationRulesAndCatalogues: true as const,
+    preservesModelCatalogues: true as const,
+    preservesArchitectureDecisionLedger: true as const,
+    preservesTier0EvidenceLedger: true as const,
+    preservesAuthorizationRecords: true as const,
+    openIssueCount: 13 as const,
+    allOpenIssuesRemainUnresolved: true as const,
+    ownersDescriptionsReferencesAndCarriageUnchanged: true as const,
+    pendingGates: Object.freeze(["G-EX2-04", "G-EX2-07", "G-EX2-12"] as const),
+    allPendingGateResults: "Pending" as const,
+    readyForCertificationResolvesIssuesOrGates: false as const,
+    injectsAdEx214IntoSealedUpstreamLedgers: false as const,
+    preservesExistingTier0MetadataUiAndRouteAuthorizations: true as const,
+    expandsTier0Authorization: false as const,
+    continuesBlockingProductionClaims: true as const,
+  });
+
+/** Canonical accepted architecture decision AD-EX2-14. */
+export const ExecutiveJournalProductArchitectureDecisionAdrEx214 =
+  Object.freeze({
+    decisionId: "AD-EX2-14" as const,
+    title:
+      "Authorize Metadata-Only EX-2:6 Executive Journal Experience Platform Contract" as const,
+    status: "Accepted" as const,
+    result: "Ex26MetadataOnlyPlatformContractAuthorizationAccepted" as const,
+    decisionAuthority: "Bahadoor" as const,
+    authorityRole: "Nexora Product and Architecture Authority" as const,
+    decisionDate: "2026-07-30" as const,
+    decisionDateClassification: "RepositorySuppliedDecisionDate" as const,
+    selectedOption:
+      "MetadataOnlyManifestBoundPlatformContract" as const,
+    decisionScope:
+      "Ex26PlatformContractImplementationAndVerificationOnly" as const,
+    decisionStatement:
+      "The finalized EX-2:5 Manifest is ReadyForPlatform. An eight-file, deterministic, immutable, side-effect-free, fail-closed and metadata-only EX-2:6 Platform contract is authorized for later implementation and verification from the exact Eligible Manifest. This decision creates no EX-2:6 artifacts, does not authorize or create EX-2:7, and grants no provider execution, runtime, UI, route, RTC, network, persistence, telemetry, production, public-access or deployment authority." as const,
+    doesNotRewriteRenumberSupersedeOrWeakenAdEx200ThroughAdEx213:
+      true as const,
+    prerequisiteManifestIdentity:
+      "EX-2:5/ExecutiveJournalExperienceManifest" as const,
+    prerequisiteManifestNamespace:
+      "nexora.ex.executive.journal.experience.manifest" as const,
+    prerequisiteManifestStatus: "Manifest" as const,
+    prerequisiteManifestReadiness: "ReadyForPlatform" as const,
+    prerequisiteManifestEligibility: "Eligible" as const,
+    prerequisiteManifestFinalVerificationPassed: true as const,
+    prerequisiteManifestFinalTestCount: 111 as const,
+    authorizedEx26Platform:
+      ExecutiveJournalProductArchitectureAuthorizedEx26Platform,
+    authorizationFlags:
+      ExecutiveJournalProductArchitectureAdEx214AuthorizationFlags,
+    preservation:
+      ExecutiveJournalProductArchitectureAdEx214Preservation,
+    projectCiClassification:
+      "CiStillBlockedByParkedReactCompilerDebt" as const,
+    lintAuthorizationClassification:
+      "AllowMetadataOnlyEx26WithLintBlockerRecorded" as const,
+    expectedParkedLintBaseline: Object.freeze({
+      errors: 21 as const,
+      warnings: 288 as const,
+      affectedFiles: 64 as const,
+      noExplicitAny: 0 as const,
+      unusedVariables: 0 as const,
+    }),
+    modifiesParkedReactCompilerClusters: false as const,
+    addsLintSuppressions: false as const,
+    weakensEslintConfiguration: false as const,
+    ciLintGateClean: false as const,
+    ex26MetadataOnlyPlatformContractAuthorized: true as const,
+    ex26ImplementationAuthorized: true as const,
+    ex27Authorized: false as const,
+    createsEx26: false as const,
+    createsEx27: false as const,
+    implementsPlatformRuntime: false as const,
+    providerExecutionAuthorized: false as const,
+    realRtc2ConsumptionAuthorized: false as const,
+    uiExpansionAuthorized: false as const,
+    routeAuthorizedByThisDecision: false as const,
+    networkAuthorized: false as const,
+    persistenceAuthorized: false as const,
+    telemetryAuthorized: false as const,
+    cloudAuthorized: false as const,
+    publicIndexAuthorized: false as const,
+    deploymentAuthorized: false as const,
+    productionAuthorized: false as const,
+    resolvesOpenIssuesOrProductionGates: false as const,
+    injectsIntoSealedUpstreamLedgers: false as const,
+    preservesTier0MetadataUiAndRouteAuthorizations: true as const,
+    nextRequiredTask:
+      "NPA-T — EX-2:6 Executive Journal Experience Platform" as const,
+    readinessConclusion:
+      "ReadyForMetadataOnlyEx26PlatformImplementation" as const,
+    metadataOnly: true as const,
+    contractOnly: true as const,
+    immutable: true as const,
+    deterministic: true as const,
+    sideEffectFree: true as const,
+    isRuntimePhase: false as const,
+    isEx26: false as const,
+  });
+
+/**
+ * Linked human authorization completion after AD-EX2-11.
+ * Preserves EX2-ROUTE-AUTH-T0-2026-07-29-01 as historically blocked and
+ * authorizes only a later local-development route implementation and tests.
+ */
+export const ExecutiveJournalProductArchitectureTier0RouteAuthorizationCompletion =
+  Object.freeze({
+    authorizationId: "EX2-ROUTE-AUTH-T0-2026-07-29-02" as const,
+    status: "Recorded" as const,
+    result:
+      "AuthorizedForTier0SyntheticPreviewRouteAndLocalAccess" as const,
+    lintClassification:
+      "LocalTier0RouteAuthorizedWithProjectLintBlockerDisclosed" as const,
+    projectCiClassification:
+      "CiStillBlockedByParkedReactCompilerDebt" as const,
+    authorizingHuman: "Bahadoor" as const,
+    authorityRole: "Nexora Product and Architecture Authority" as const,
+    decisionDate: "2026-07-29" as const,
+    scope:
+      "Tier0SyntheticPreviewRouteLocalDevelopmentImplementationAndTestsOnly" as const,
+    parentArchitectureDecision: "AD-EX2-11" as const,
+    priorBlockedRecord: "EX2-ROUTE-AUTH-T0-2026-07-29-01" as const,
+    priorBlockedResult:
+      "RouteAuthorizationBlockedByMissingArchitectureDecision" as const,
+    priorBlockedRecordHistoricallyPreserved: true as const,
+    architecturePrerequisiteResolved: true as const,
+    canonicalRoute: "/executive/journal-preview" as const,
+    hostClass: "DevelopmentTestHarnessOnly" as const,
+    accessClass: "LocalDevelopmentOnly" as const,
+    routeImplementationAuthorized: true as const,
+    localAccessAuthorized: true as const,
+    testsAuthorized: true as const,
+    authorizedArtifacts: Object.freeze([
+      "OneAppRouterPageAtCanonicalRoute",
+      "MinimumRouteLocalTests",
+      "MinimumServerSideEnvironmentGate",
+      "OptionalRouteLocalLoadingOrErrorBoundaryOnlyIfRequiredByExistingAppRouterConventions",
+    ] as const),
+    routeMustMountCertifiedHarness: true as const,
+    routeImplementationComplete: false as const,
+    implementationPerformedByThisRecord: false as const,
+    environmentGate: Object.freeze({
+      flag: "EX2_TIER0_PREVIEW_ENABLED" as const,
+      evaluation: "ServerSideOnly" as const,
+      exactEnabledValue: "true" as const,
+      missingDenies: true as const,
+      falseDenies: true as const,
+      caseVariantsDeny: true as const,
+      whitespaceVariantsDeny: true as const,
+      allOtherValuesDeny: true as const,
+      productionAlwaysDenies: true as const,
+      unauthorizedBehavior: "notFound()" as const,
+      clientExposureProhibited: true as const,
+      remoteConfigurationProhibited: true as const,
+      persistenceProhibited: true as const,
+      telemetryProhibited: true as const,
+      createdByThisRecord: false as const,
+      immutable: true as const,
+    }),
+    localAccessContract: Object.freeze({
+      localDevelopment: true as const,
+      localTestExecution: true as const,
+      localhostOrEstablishedLocalDevelopmentHostOnly: true as const,
+      syntheticDataOnly: true as const,
+      nonProductionDemonstrations: true as const,
+      authenticationClaim: false as const,
+      userAuthorizationClaim: false as const,
+      productionSecurityClaim: false as const,
+      publicAvailability: false as const,
+      releaseReadiness: false as const,
+      deploymentReadiness: false as const,
+      immutable: true as const,
+    }),
+    presentationContract:
+      ExecutiveJournalProductArchitectureAdEx211PresentationContract,
+    dependencyContract:
+      ExecutiveJournalProductArchitectureAdEx211DependencyContract,
+    gateTreatment:
+      ExecutiveJournalProductArchitectureAdEx211GateTreatment,
+    prohibitedNewArtifacts: Object.freeze([
+      "providers",
+      "adapters",
+      "fixtures",
+      "metadata contracts",
+      "view models",
+      "production services",
+      "navigation entries",
+      "middleware",
+      "authentication systems",
+    ] as const),
+    navigationIntegrationAuthorized: false as const,
+    publicAccessAuthorized: false as const,
+    productionAccessAuthorized: false as const,
+    deploymentAuthorized: false as const,
+    realRtc2ConsumptionAuthorized: false as const,
+    networkAuthorized: false as const,
+    persistenceAuthorized: false as const,
+    telemetryAuthorized: false as const,
+    cloudAuthorized: false as const,
+    ex23ImplementationAuthorizedByThisRecord: false as const,
+    projectEslintParkedErrorCount: 21 as const,
+    projectEslintWarningCount: 288 as const,
+    ciLintGateClean: false as const,
+    routeAndTestsMustPassEslintWithZeroWarnings: true as const,
+    parkedFindingCountMayIncrease: false as const,
+    productionReleaseAuthorized: false as const,
+    nextRequiredTask:
+      "NPA-T — EX-2 Tier-0 Synthetic Preview Route and Local Access Implementation and Verification" as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+  });
+
+/**
+ * Verified implementation evidence for the authorized local Tier-0 route.
+ * This record does not widen the route into navigation, production, public,
+ * deployed, or real-data scope.
+ */
+export const ExecutiveJournalProductArchitectureTier0RouteImplementationEvidence =
+  Object.freeze({
+    evidenceId: "EX2-ROUTE-IMPL-T0-2026-07-29-01" as const,
+    implementationStatus: "Tier0SyntheticPreviewRouteImplemented" as const,
+    localAccessStatus: "Tier0SyntheticPreviewLocallyAccessible" as const,
+    verificationStatus:
+      "LocalTier0RouteVerifiedWithProjectLintBlockerDisclosed" as const,
+    projectCiClassification:
+      "CiStillBlockedByParkedReactCompilerDebt" as const,
+    architectureDecision: "AD-EX2-11" as const,
+    authorizationId: "EX2-ROUTE-AUTH-T0-2026-07-29-02" as const,
+    canonicalRoute: "/executive/journal-preview" as const,
+    hostClass: "DevelopmentTestHarnessOnly" as const,
+    accessClass: "LocalDevelopmentOnly" as const,
+    implementationFiles: Object.freeze([
+      "app/executive/journal-preview/page.tsx",
+      "app/executive/journal-preview/executiveJournalPreviewRouteAccess.ts",
+      "app/executive/journal-preview/executiveJournalPreviewRouteAccess.test.ts",
+    ] as const),
+    routeImplemented: true as const,
+    routeImplementationComplete: true as const,
+    localAccessAvailableWhenGated: true as const,
+    serverFlag: "EX2_TIER0_PREVIEW_ENABLED" as const,
+    exactEnabledValue: "true" as const,
+    allOtherValuesFailClosed: true as const,
+    productionAlwaysDenied: true as const,
+    unauthorizedBehavior: "notFound()" as const,
+    certifiedHarnessMounted: true as const,
+    mandatoryMarker: "Synthetic / Tier 0 / Non-production" as const,
+    enabledSmoke: Object.freeze({
+      url: "http://localhost:3001/executive/journal-preview" as const,
+      httpStatus: 200 as const,
+      markerVisible: true as const,
+      certifiedPreviewVisible: true as const,
+      runtimeExceptionCount: 0 as const,
+    }),
+    deniedSmoke: Object.freeze({
+      url: "http://localhost:3001/executive/journal-preview" as const,
+      flagValue: "false" as const,
+      httpStatus: 404 as const,
+      previewPayloadRendered: false as const,
+      runtimeExceptionCount: 0 as const,
+    }),
+    routeTestPassCount: 14 as const,
+    routeTestFailCount: 0 as const,
+    routeFilesEslintErrorCount: 0 as const,
+    routeFilesEslintWarningCount: 0 as const,
+    projectEslintParkedErrorCount: 21 as const,
+    projectEslintWarningCount: 288 as const,
+    lintBlockerDisclosed: true as const,
+    productionAccess: false as const,
+    publicAccess: false as const,
+    navigationExposure: false as const,
+    ex1PublicIndexExposure: false as const,
+    searchIndexExposure: false as const,
+    deployment: false as const,
+    realRtc2Consumption: false as const,
+    networkBehavior: false as const,
+    persistenceBehavior: false as const,
+    telemetryBehavior: false as const,
+    cloudBehavior: false as const,
+    ex23ImplementedByThisTask: false as const,
+    metadataOnly: true as const,
+    immutable: true as const,
+  });
+
+/**
  * Closed Tier-0 synthetic review-result vocabulary (GOV-EX2-T0-01).
  * Not valid for production or real-data reviews.
  */
@@ -7367,6 +8864,10 @@ export const ExecutiveJournalProductArchitectureDecisions = Object.freeze([
   ExecutiveJournalProductArchitectureDecisionAdrEx208,
   ExecutiveJournalProductArchitectureDecisionAdrEx209,
   ExecutiveJournalProductArchitectureDecisionAdrEx210,
+  ExecutiveJournalProductArchitectureDecisionAdrEx211,
+  ExecutiveJournalProductArchitectureDecisionAdrEx212,
+  ExecutiveJournalProductArchitectureDecisionAdrEx213,
+  ExecutiveJournalProductArchitectureDecisionAdrEx214,
 ] as const);
 
 export const getExecutiveJournalProductArchitectureAuthorizationFlagValue = (
@@ -7609,6 +9110,84 @@ export const isExecutiveJournalProductEx23MetadataOnlyModelAuthorized =
     );
   };
 
+/**
+ * AD-EX2-12 metadata-only EX-2:4 Validation authorization.
+ * Distinct from creating EX-2:4 or authorizing EX-2:5 and production.
+ */
+export const isExecutiveJournalProductEx24MetadataOnlyValidationAuthorized =
+  (): boolean => {
+    const decision12 = ExecutiveJournalProductArchitectureDecisionAdrEx212;
+    return (
+      decision12.status === "Accepted"
+      && decision12.ex24MetadataOnlyValidationAuthorized === true
+      && decision12.ex24ImplementationAuthorized === true
+      && decision12.ex25Authorized === false
+      && decision12.createsEx24 === false
+      && decision12.createsEx25 === false
+      && decision12.runtimeBehaviorAuthorized === false
+      && decision12.uiExpansionAuthorized === false
+      && decision12.routeAuthorizedByThisDecision === false
+      && decision12.realRtc2ConsumptionAuthorized === false
+      && decision12.productionProviderAuthorized === false
+      && decision12.deploymentAuthorized === false
+      && decision12.publicIndexAuthorized === false
+    );
+  };
+
+/**
+ * AD-EX2-13 metadata-only EX-2:5 Manifest authorization.
+ * Distinct from creating EX-2:5 or authorizing EX-2:6 and production.
+ */
+export const isExecutiveJournalProductEx25MetadataOnlyManifestAuthorized =
+  (): boolean => {
+    const decision13 = ExecutiveJournalProductArchitectureDecisionAdrEx213;
+    return (
+      decision13.status === "Accepted"
+      && decision13.ex25MetadataOnlyManifestAuthorized === true
+      && decision13.ex25ImplementationAuthorized === true
+      && decision13.ex26Authorized === false
+      && decision13.createsEx25 === false
+      && decision13.createsEx26 === false
+      && decision13.implementsManifestEntries === false
+      && decision13.runtimeBehaviorAuthorized === false
+      && decision13.platformBehaviorAuthorized === false
+      && decision13.uiExpansionAuthorized === false
+      && decision13.routeAuthorizedByThisDecision === false
+      && decision13.realRtc2ConsumptionAuthorized === false
+      && decision13.productionProviderAuthorized === false
+      && decision13.deploymentAuthorized === false
+      && decision13.publicIndexAuthorized === false
+    );
+  };
+
+/**
+ * AD-EX2-14 metadata-only EX-2:6 Platform-contract authorization.
+ * Distinct from creating EX-2:6, running a Platform, or authorizing EX-2:7.
+ */
+export const isExecutiveJournalProductEx26MetadataOnlyPlatformAuthorized =
+  (): boolean => {
+    const decision14 = ExecutiveJournalProductArchitectureDecisionAdrEx214;
+    return (
+      decision14.status === "Accepted"
+      && decision14.ex26MetadataOnlyPlatformContractAuthorized === true
+      && decision14.ex26ImplementationAuthorized === true
+      && decision14.ex27Authorized === false
+      && decision14.createsEx26 === false
+      && decision14.createsEx27 === false
+      && decision14.implementsPlatformRuntime === false
+      && decision14.providerExecutionAuthorized === false
+      && decision14.realRtc2ConsumptionAuthorized === false
+      && decision14.uiExpansionAuthorized === false
+      && decision14.routeAuthorizedByThisDecision === false
+      && decision14.networkAuthorized === false
+      && decision14.persistenceAuthorized === false
+      && decision14.telemetryAuthorized === false
+      && decision14.productionAuthorized === false
+      && decision14.deploymentAuthorized === false
+      && decision14.publicIndexAuthorized === false
+    );
+  };
+
 export const getExecutiveJournalProductArchitectureDecision = (
   decisionId: string,
 ) => {
@@ -7636,6 +9215,10 @@ export interface ExecutiveJournalProductArchitectureSummary {
   readonly decisionIdAdEx208: "AD-EX2-08";
   readonly decisionIdAdEx209: "AD-EX2-09";
   readonly decisionIdAdEx210: "AD-EX2-10";
+  readonly decisionIdAdEx211: "AD-EX2-11";
+  readonly decisionIdAdEx212: "AD-EX2-12";
+  readonly decisionIdAdEx213: "AD-EX2-13";
+  readonly decisionIdAdEx214: "AD-EX2-14";
   readonly statusAdEx200: "Accepted";
   readonly statusAdEx201: "Accepted";
   readonly statusAdEx202: "Accepted";
@@ -7647,6 +9230,10 @@ export interface ExecutiveJournalProductArchitectureSummary {
   readonly statusAdEx208: "Accepted";
   readonly statusAdEx209: "Accepted";
   readonly statusAdEx210: "Accepted";
+  readonly statusAdEx211: "Accepted";
+  readonly statusAdEx212: "Accepted";
+  readonly statusAdEx213: "Accepted";
+  readonly statusAdEx214: "Accepted";
   readonly selectedOption: "C";
   readonly selectedArchitectureAdEx201:
     "Future RTC-2-Governed Projection Provider with Separate EX-2 Privacy Adapter";
@@ -7779,7 +9366,16 @@ export interface ExecutiveJournalProductArchitectureSummary {
   readonly ex23MetadataOnlyModelAuthorized: true;
   readonly ex23ImplementationAuthorized: true;
   readonly ex23ImplementationScope: "MetadataOnlyEx23ModelOnly";
-  readonly ex24Authorized: false;
+  readonly ex24Authorized: true;
+  readonly ex24MetadataOnlyValidationAuthorized: true;
+  readonly ex24ImplementationAuthorized: true;
+  readonly ex25Authorized: true;
+  readonly ex25MetadataOnlyManifestAuthorized: true;
+  readonly ex25ImplementationAuthorized: true;
+  readonly ex26Authorized: true;
+  readonly ex26MetadataOnlyPlatformContractAuthorized: true;
+  readonly ex26ImplementationAuthorized: true;
+  readonly ex27Authorized: false;
   readonly runtimeBehaviorAuthorized: false;
   readonly uiExpansionAuthorized: false;
   readonly routeAuthorized: false;
@@ -7794,9 +9390,9 @@ export interface ExecutiveJournalProductArchitectureSummary {
   readonly notEvaluatedGateCount: number;
   readonly gateVocabularyConflictReported: true;
   readonly nextRequiredDecision:
-    "NPA-T — EX-2:3 Executive Journal Experience Model";
+    "NPA-T — EX-2:6 Executive Journal Experience Platform";
   readonly readinessConclusion:
-    "ReadyForMetadataOnlyEx23ModelImplementation";
+    "ReadyForMetadataOnlyEx26PlatformImplementation";
   readonly tier0UiPassedGateCount: 16;
   readonly tier0UiPendingGateCount: 0;
   readonly tier0UiFailedGateCount: 0;
@@ -7811,6 +9407,53 @@ export interface ExecutiveJournalProductArchitectureSummary {
   readonly adEx209DecisionScope: "Ex22RegistryImplementationAndVerificationOnly";
   readonly adEx210SelectedOption: "MetadataOnlyCanonicalExperienceModel";
   readonly adEx210DecisionScope: "Ex23ModelImplementationAndVerificationOnly";
+  readonly adEx211SelectedOption:
+    "DevelopmentOnlyAppRouterPreviewWithFailClosedEnvironmentGate";
+  readonly adEx211DecisionScope: "Tier0SyntheticPreviewRouteArchitectureOnly";
+  readonly adEx212SelectedOption:
+    "MetadataOnlyFailClosedExperienceValidation";
+  readonly adEx212DecisionScope:
+    "Ex24ValidationImplementationAndVerificationOnly";
+  readonly adEx212ProjectCiClassification:
+    "CiStillBlockedByParkedReactCompilerDebt";
+  readonly adEx212LintAuthorizationClassification:
+    "AllowMetadataOnlyEx24WithLintBlockerRecorded";
+  readonly adEx213SelectedOption:
+    "MetadataOnlyValidatedExperienceCapabilityManifest";
+  readonly adEx213DecisionScope:
+    "Ex25ManifestImplementationAndVerificationOnly";
+  readonly adEx213ProjectCiClassification:
+    "CiStillBlockedByParkedReactCompilerDebt";
+  readonly adEx213LintAuthorizationClassification:
+    "AllowMetadataOnlyEx25WithLintBlockerRecorded";
+  readonly adEx214SelectedOption:
+    "MetadataOnlyManifestBoundPlatformContract";
+  readonly adEx214DecisionScope:
+    "Ex26PlatformContractImplementationAndVerificationOnly";
+  readonly adEx214ProjectCiClassification:
+    "CiStillBlockedByParkedReactCompilerDebt";
+  readonly adEx214LintAuthorizationClassification:
+    "AllowMetadataOnlyEx26WithLintBlockerRecorded";
+  readonly routeArchitectureDecisionAccepted: true;
+  readonly routeArchitectureCanonicalPath: "/executive/journal-preview";
+  readonly routeArchitectureImplementationAuthorized: false;
+  readonly routeArchitectureLocalAccessAuthorized: false;
+  readonly routeArchitectureNextRequiredTask:
+    "NPA-T — EX-2 Tier-0 Synthetic Preview Route and Local Access Human Authorization Completion";
+  readonly routeAuthorizationId: "EX2-ROUTE-AUTH-T0-2026-07-29-02";
+  readonly routeAuthorizationStatus: "Recorded";
+  readonly routeAuthorizationResult:
+    "AuthorizedForTier0SyntheticPreviewRouteAndLocalAccess";
+  readonly tier0LocalRouteImplementationAuthorized: true;
+  readonly tier0LocalRouteAccessAuthorized: true;
+  readonly tier0LocalRouteTestsAuthorized: true;
+  readonly tier0LocalRouteImplementationComplete: true;
+  readonly tier0LocalRouteImplementationEvidenceId:
+    "EX2-ROUTE-IMPL-T0-2026-07-29-01";
+  readonly tier0LocalRouteImplementationStatus:
+    "Tier0SyntheticPreviewRouteImplemented";
+  readonly tier0LocalRouteAccessStatus:
+    "Tier0SyntheticPreviewLocallyAccessible";
   readonly tier0EvidenceAdoptionStrategy: "ExactReferenceEvidenceLedger";
   readonly routeAssessmentDisposition: "DeferredSupportingEvidence";
   readonly app8IntegrationAuthorized: false;
@@ -7838,6 +9481,10 @@ export function getExecutiveJournalProductArchitectureSummary():
     decisionIdAdEx208: "AD-EX2-08",
     decisionIdAdEx209: "AD-EX2-09",
     decisionIdAdEx210: "AD-EX2-10",
+    decisionIdAdEx211: "AD-EX2-11",
+    decisionIdAdEx212: "AD-EX2-12",
+    decisionIdAdEx213: "AD-EX2-13",
+    decisionIdAdEx214: "AD-EX2-14",
     statusAdEx200: "Accepted",
     statusAdEx201: "Accepted",
     statusAdEx202: "Accepted",
@@ -7849,6 +9496,10 @@ export function getExecutiveJournalProductArchitectureSummary():
     statusAdEx208: "Accepted",
     statusAdEx209: "Accepted",
     statusAdEx210: "Accepted",
+    statusAdEx211: "Accepted",
+    statusAdEx212: "Accepted",
+    statusAdEx213: "Accepted",
+    statusAdEx214: "Accepted",
     selectedOption: "C",
     selectedArchitectureAdEx201:
       "Future RTC-2-Governed Projection Provider with Separate EX-2 Privacy Adapter",
@@ -7983,7 +9634,16 @@ export function getExecutiveJournalProductArchitectureSummary():
     ex23MetadataOnlyModelAuthorized: true,
     ex23ImplementationAuthorized: true,
     ex23ImplementationScope: "MetadataOnlyEx23ModelOnly" as const,
-    ex24Authorized: false,
+    ex24Authorized: true,
+    ex24MetadataOnlyValidationAuthorized: true,
+    ex24ImplementationAuthorized: true,
+    ex25Authorized: true,
+    ex25MetadataOnlyManifestAuthorized: true,
+    ex25ImplementationAuthorized: true,
+    ex26Authorized: true,
+    ex26MetadataOnlyPlatformContractAuthorized: true,
+    ex26ImplementationAuthorized: true,
+    ex27Authorized: false,
     runtimeBehaviorAuthorized: false,
     uiExpansionAuthorized: false,
     routeAuthorized: false,
@@ -7998,9 +9658,9 @@ export function getExecutiveJournalProductArchitectureSummary():
     notEvaluatedGateCount: countGates("NotEvaluated"),
     gateVocabularyConflictReported: true,
     nextRequiredDecision:
-      "NPA-T — EX-2:3 Executive Journal Experience Model" as const,
+      "NPA-T — EX-2:6 Executive Journal Experience Platform" as const,
     readinessConclusion:
-      "ReadyForMetadataOnlyEx23ModelImplementation" as const,
+      "ReadyForMetadataOnlyEx26PlatformImplementation" as const,
     tier0UiPassedGateCount: 16 as const,
     tier0UiPendingGateCount: 0 as const,
     tier0UiFailedGateCount: 0 as const,
@@ -8017,6 +9677,54 @@ export function getExecutiveJournalProductArchitectureSummary():
     adEx209DecisionScope: "Ex22RegistryImplementationAndVerificationOnly" as const,
     adEx210SelectedOption: "MetadataOnlyCanonicalExperienceModel" as const,
     adEx210DecisionScope: "Ex23ModelImplementationAndVerificationOnly" as const,
+    adEx211SelectedOption:
+      "DevelopmentOnlyAppRouterPreviewWithFailClosedEnvironmentGate" as const,
+    adEx211DecisionScope:
+      "Tier0SyntheticPreviewRouteArchitectureOnly" as const,
+    adEx212SelectedOption:
+      "MetadataOnlyFailClosedExperienceValidation" as const,
+    adEx212DecisionScope:
+      "Ex24ValidationImplementationAndVerificationOnly" as const,
+    adEx212ProjectCiClassification:
+      "CiStillBlockedByParkedReactCompilerDebt" as const,
+    adEx212LintAuthorizationClassification:
+      "AllowMetadataOnlyEx24WithLintBlockerRecorded" as const,
+    adEx213SelectedOption:
+      "MetadataOnlyValidatedExperienceCapabilityManifest" as const,
+    adEx213DecisionScope:
+      "Ex25ManifestImplementationAndVerificationOnly" as const,
+    adEx213ProjectCiClassification:
+      "CiStillBlockedByParkedReactCompilerDebt" as const,
+    adEx213LintAuthorizationClassification:
+      "AllowMetadataOnlyEx25WithLintBlockerRecorded" as const,
+    adEx214SelectedOption:
+      "MetadataOnlyManifestBoundPlatformContract" as const,
+    adEx214DecisionScope:
+      "Ex26PlatformContractImplementationAndVerificationOnly" as const,
+    adEx214ProjectCiClassification:
+      "CiStillBlockedByParkedReactCompilerDebt" as const,
+    adEx214LintAuthorizationClassification:
+      "AllowMetadataOnlyEx26WithLintBlockerRecorded" as const,
+    routeArchitectureDecisionAccepted: true,
+    routeArchitectureCanonicalPath: "/executive/journal-preview" as const,
+    routeArchitectureImplementationAuthorized: false,
+    routeArchitectureLocalAccessAuthorized: false,
+    routeArchitectureNextRequiredTask:
+      "NPA-T — EX-2 Tier-0 Synthetic Preview Route and Local Access Human Authorization Completion" as const,
+    routeAuthorizationId: "EX2-ROUTE-AUTH-T0-2026-07-29-02" as const,
+    routeAuthorizationStatus: "Recorded" as const,
+    routeAuthorizationResult:
+      "AuthorizedForTier0SyntheticPreviewRouteAndLocalAccess" as const,
+    tier0LocalRouteImplementationAuthorized: true,
+    tier0LocalRouteAccessAuthorized: true,
+    tier0LocalRouteTestsAuthorized: true,
+    tier0LocalRouteImplementationComplete: true,
+    tier0LocalRouteImplementationEvidenceId:
+      "EX2-ROUTE-IMPL-T0-2026-07-29-01" as const,
+    tier0LocalRouteImplementationStatus:
+      "Tier0SyntheticPreviewRouteImplemented" as const,
+    tier0LocalRouteAccessStatus:
+      "Tier0SyntheticPreviewLocallyAccessible" as const,
     tier0EvidenceAdoptionStrategy: "ExactReferenceEvidenceLedger" as const,
     routeAssessmentDisposition: "DeferredSupportingEvidence" as const,
     app8IntegrationAuthorized: false,
@@ -8032,7 +9740,7 @@ export function getExecutiveJournalProductArchitectureSummary():
 }
 
 /**
- * Canonical immutable EX product architecture aggregate for AD-EX2-00..10
+ * Canonical immutable EX product architecture aggregate for AD-EX2-00..14
  * and Tier-0 synthetic governance appointments (GOV-EX2-T0-*).
  */
 export const ExecutiveJournalProductArchitecture = Object.freeze({
@@ -8048,6 +9756,14 @@ export const ExecutiveJournalProductArchitecture = Object.freeze({
   decisionAdEx208: ExecutiveJournalProductArchitectureDecisionAdrEx208,
   decisionAdEx209: ExecutiveJournalProductArchitectureDecisionAdrEx209,
   decisionAdEx210: ExecutiveJournalProductArchitectureDecisionAdrEx210,
+  decisionAdEx211: ExecutiveJournalProductArchitectureDecisionAdrEx211,
+  decisionAdEx212: ExecutiveJournalProductArchitectureDecisionAdrEx212,
+  decisionAdEx213: ExecutiveJournalProductArchitectureDecisionAdrEx213,
+  decisionAdEx214: ExecutiveJournalProductArchitectureDecisionAdrEx214,
+  tier0RouteAuthorizationCompletion:
+    ExecutiveJournalProductArchitectureTier0RouteAuthorizationCompletion,
+  tier0RouteImplementationEvidence:
+    ExecutiveJournalProductArchitectureTier0RouteImplementationEvidence,
   decisions: ExecutiveJournalProductArchitectureDecisions,
   formalEx2NinePhaseSequence:
     ExecutiveJournalProductArchitectureFormalEx2NinePhaseSequence,
@@ -8063,6 +9779,12 @@ export const ExecutiveJournalProductArchitecture = Object.freeze({
     ExecutiveJournalProductArchitectureAuthorizedEx22Registry,
   authorizedEx23Model:
     ExecutiveJournalProductArchitectureAuthorizedEx23Model,
+  authorizedEx24Validation:
+    ExecutiveJournalProductArchitectureAuthorizedEx24Validation,
+  authorizedEx25Manifest:
+    ExecutiveJournalProductArchitectureAuthorizedEx25Manifest,
+  authorizedEx26Platform:
+    ExecutiveJournalProductArchitectureAuthorizedEx26Platform,
   tier0EvidenceAdoptionPolicy:
     ExecutiveJournalProductArchitectureTier0EvidenceAdoptionPolicy,
   adEx208AuthorizationFlags:
@@ -8071,6 +9793,12 @@ export const ExecutiveJournalProductArchitecture = Object.freeze({
     ExecutiveJournalProductArchitectureAdEx209AuthorizationFlags,
   adEx210AuthorizationFlags:
     ExecutiveJournalProductArchitectureAdEx210AuthorizationFlags,
+  adEx212AuthorizationFlags:
+    ExecutiveJournalProductArchitectureAdEx212AuthorizationFlags,
+  adEx213AuthorizationFlags:
+    ExecutiveJournalProductArchitectureAdEx213AuthorizationFlags,
+  adEx214AuthorizationFlags:
+    ExecutiveJournalProductArchitectureAdEx214AuthorizationFlags,
   ex21BlockedClarification:
     ExecutiveJournalProductArchitectureEx21BlockedClarification,
   adEx208PreservedOpenIssues:
@@ -8079,6 +9807,12 @@ export const ExecutiveJournalProductArchitecture = Object.freeze({
     ExecutiveJournalProductArchitectureAdEx209PreservedOpenIssues,
   adEx210PreservedOpenIssues:
     ExecutiveJournalProductArchitectureAdEx210PreservedOpenIssues,
+  adEx212Preservation:
+    ExecutiveJournalProductArchitectureAdEx212Preservation,
+  adEx213Preservation:
+    ExecutiveJournalProductArchitectureAdEx213Preservation,
+  adEx214Preservation:
+    ExecutiveJournalProductArchitectureAdEx214Preservation,
   adEx208RouteDisposition:
     ExecutiveJournalProductArchitectureAdEx208RouteDisposition,
   getFormalEx2Phase: getExecutiveJournalProductArchitectureFormalEx2Phase,
@@ -8094,6 +9828,12 @@ export const ExecutiveJournalProductArchitecture = Object.freeze({
     isExecutiveJournalProductEx22MetadataOnlyRegistryAuthorized,
   isEx23MetadataOnlyModelAuthorized:
     isExecutiveJournalProductEx23MetadataOnlyModelAuthorized,
+  isEx24MetadataOnlyValidationAuthorized:
+    isExecutiveJournalProductEx24MetadataOnlyValidationAuthorized,
+  isEx25MetadataOnlyManifestAuthorized:
+    isExecutiveJournalProductEx25MetadataOnlyManifestAuthorized,
+  isEx26MetadataOnlyPlatformAuthorized:
+    isExecutiveJournalProductEx26MetadataOnlyPlatformAuthorized,
   governanceGovEx2T001:
     ExecutiveJournalProductArchitectureGovernanceGovEx2T001,
   governanceGovEx2T002:
