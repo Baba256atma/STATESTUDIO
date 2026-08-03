@@ -11,6 +11,7 @@ import type {
   ExecutiveTimelineLens,
 } from "./executiveCockpitTypes";
 import { cockpit } from "./executiveCockpitTheme";
+import type { AdvisorReference } from "../advisor/ExecutiveAdvisorTypes";
 import {
   ExecutiveAdvisorPanel,
   type ExecutiveAdvisorContent,
@@ -42,6 +43,9 @@ export type ExecutiveCockpitShellProps = {
   readonly onAdvisorTabChange: (tab: ExecutiveAdvisorTab) => void;
   readonly assist: ExecutiveAdvisorContent;
   readonly insight: ExecutiveAdvisorContent;
+  readonly onApproveProposal?: (proposalId: string) => void;
+  readonly onDismissProposal?: (proposalId: string) => void;
+  readonly onSelectReference?: (reference: AdvisorReference) => void;
   readonly timelineLens: ExecutiveTimelineLens;
   readonly timelineHighlighted?: boolean;
   readonly packs: readonly ExecutiveTimelinePack[];
@@ -77,6 +81,9 @@ export function ExecutiveCockpitShell({
   onAdvisorTabChange,
   assist,
   insight,
+  onApproveProposal,
+  onDismissProposal,
+  onSelectReference,
   timelineLens,
   timelineHighlighted,
   packs,
@@ -161,6 +168,9 @@ export function ExecutiveCockpitShell({
           onTabChange={onAdvisorTabChange}
           assist={assist}
           insight={insight}
+          onApproveProposal={onApproveProposal}
+          onDismissProposal={onDismissProposal}
+          onSelectReference={onSelectReference}
         />
       </div>
 

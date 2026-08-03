@@ -5,6 +5,7 @@ import {
   SOURCE_TYPE_OPTIONS,
   type WizardStep,
 } from "./ExecutiveDataConfig";
+import { ExecutiveMetadataEditor } from "../metadata";
 import { ExecutiveDataPreview } from "./ExecutiveDataPreview";
 import { useExecutiveData } from "./hooks/useExecutiveData";
 import { cockpit } from "../shell/executiveCockpitTheme";
@@ -142,10 +143,16 @@ export function ExecutiveDataWizard({ onClose }: Props) {
       {wizardStep === "preview" ? <ExecutiveDataPreview /> : null}
 
       {wizardStep === "mapping" ? (
-        <p style={{ margin: 0, fontSize: "0.8rem", color: cockpit.textSoft }}>
-          Revenue → Revenue Object · Inventory Qty → Inventory Object · Supplier
-          Rating → Create Object / Ignore (approve after finish).
-        </p>
+        <div
+          data-testid="data-wizard-mapping-metadata"
+          style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}
+        >
+          <p style={{ margin: 0, fontSize: "0.8rem", color: cockpit.textSoft }}>
+            MAT_QTY → Available Inventory → Inventory · Revenue → Revenue ·
+            Supplier Rating → Create Object / Ignore (approve after finish).
+          </p>
+          <ExecutiveMetadataEditor />
+        </div>
       ) : null}
 
       {wizardStep === "review" ? (

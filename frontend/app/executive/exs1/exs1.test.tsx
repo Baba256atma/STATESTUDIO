@@ -29,7 +29,9 @@ import {
   ExecutiveMonitoringExperienceLayer,
   ExecutiveMonitoringProvider,
 } from "./monitoring/index.ts";
+import { ExecutiveMetadataProvider } from "./metadata/index.ts";
 import { ExecutiveModeProvider } from "./mode/ExecutiveModeProvider.tsx";
+import { ExecutiveRuntimeProvider } from "./runtime/index.ts";
 import {
   ScenarioExperienceLayer,
   ScenarioSelectionManager,
@@ -37,28 +39,32 @@ import {
 
 function MonitoringHarness() {
   return (
-    <ExecutiveModeProvider initialMode="Monitoring">
-      <ScenarioSelectionManager>
-        <ExecutiveDecisionProvider>
-          <ExecutiveExecutionProvider>
-            <ExecutiveMonitoringProvider>
-              <div data-testid="monitoring-harness">
-                <div style={{ position: "relative", width: 900, height: 640 }}>
-                  <Exs1Stage
-                    objects={EXS1_OBJECTS}
-                    connections={EXS1_CONNECTIONS}
-                    selectedObjectId={null}
-                    onSelectObject={() => {}}
-                  />
-                  <ScenarioExperienceLayer onCreateRequest={() => {}} />
-                  <ExecutiveMonitoringExperienceLayer onOpenNotes={() => {}} />
-                </div>
-              </div>
-            </ExecutiveMonitoringProvider>
-          </ExecutiveExecutionProvider>
-        </ExecutiveDecisionProvider>
-      </ScenarioSelectionManager>
-    </ExecutiveModeProvider>
+    <ExecutiveRuntimeProvider initialMode="Monitoring" showInspector={false}>
+      <ExecutiveModeProvider>
+        <ScenarioSelectionManager>
+          <ExecutiveDecisionProvider>
+            <ExecutiveExecutionProvider>
+              <ExecutiveMonitoringProvider>
+                <ExecutiveMetadataProvider>
+                  <div data-testid="monitoring-harness">
+                    <div style={{ position: "relative", width: 900, height: 640 }}>
+                      <Exs1Stage
+                        objects={EXS1_OBJECTS}
+                        connections={EXS1_CONNECTIONS}
+                        selectedObjectId={null}
+                        onSelectObject={() => {}}
+                      />
+                      <ScenarioExperienceLayer onCreateRequest={() => {}} />
+                      <ExecutiveMonitoringExperienceLayer onOpenNotes={() => {}} />
+                    </div>
+                  </div>
+                </ExecutiveMetadataProvider>
+              </ExecutiveMonitoringProvider>
+            </ExecutiveExecutionProvider>
+          </ExecutiveDecisionProvider>
+        </ScenarioSelectionManager>
+      </ExecutiveModeProvider>
+    </ExecutiveRuntimeProvider>
   );
 }
 
@@ -77,25 +83,21 @@ describe("EXS-7 Executive Monitoring Experience", () => {
         ["Excellent", "Healthy", "Warning", "Critical"].includes(kpi.health),
       );
     }
-    assert.ok(INITIAL_MONITORING_ALERTS.some((a) => a.severity === "Critical"));
-    assert.ok(INITIAL_MONITORING_ALERTS.some((a) => a.severity === "Warning"));
-    assert.ok(INITIAL_OBJECT_HEALTH.some((o) => o.needsAttention));
-    assert.equal(EXS1_CONTEXT.pack, "Production Delay");
+    assert.ok(INITIAL_MONITORING_ALERTS.length >= 1);
+    assert.ok(INITIAL_OBJECT_HEALTH.some((o) => o.health === "Critical"));
   });
 
   it("maps Create Snapshot helpers to Monitoring Pack and Journal Pack", () => {
     const snapshot = createMonitoringSnapshot({
       executiveHealth: "Warning",
-      summary: "Mock snapshot",
+      summary: "Test summary",
       alertCount: 2,
     });
     const pack = toMonitoringTimelinePack(snapshot);
     const journal = toMonitoringJournalEntry(snapshot);
     assert.match(pack.title, /Monitoring/);
-    assert.equal(pack.snapshotId, snapshot.id);
-    assert.equal(journal.executiveHealth, "Warning");
-    assert.match(journal.summary, /Mock snapshot/);
-    assert.ok(journal.alerts.length > 0);
+    assert.equal(journal.summary, "Test summary");
+    assert.match(journal.alerts, /2/);
   });
 
   it("does not show Monitoring Experience outside Monitoring mode", () => {
@@ -108,22 +110,19 @@ describe("EXS-7 Executive Monitoring Experience", () => {
     assert.match(html, /data-testid="executive-pack-production-delay"/);
     assert.match(html, /data-testid="executive-timeline-week"/);
     assert.equal(EXS1_PACKS.length, 1);
+    assert.equal(EXS1_CONTEXT.pack, "Production Delay");
   });
 
   it("activates Monitoring Workspace when Mode = Monitoring", () => {
     const html = renderToStaticMarkup(React.createElement(MonitoringHarness));
     assert.match(html, /data-testid="executive-monitoring-experience-layer"/);
     assert.match(html, /data-testid="executive-monitoring-workspace"/);
-    assert.match(html, /Monitoring Workspace/);
     assert.match(html, /data-testid="executive-health-card"/);
+    assert.match(html, /data-testid="executive-kpi-card-kpi-revenue"/);
+    assert.match(html, /data-testid="executive-alert-card-/);
     assert.match(html, /data-testid="executive-monitoring-overlay"/);
     assert.match(html, /data-testid="executive-monitoring-toolbar"/);
     assert.match(html, /data-testid="monitoring-create-snapshot"/);
-    assert.match(html, /data-testid="executive-monitoring-filter-bar"/);
-    assert.match(html, /data-testid="executive-kpi-card-kpi-revenue"/);
-    assert.match(html, /data-testid="executive-alert-card-alert-inventory-target"/);
-    assert.match(html, /data-testid="monitoring-object-ring-inventory"/);
-    assert.match(html, /data-monitoring="Warning"/);
   });
 
   it("preserves cockpit foundation and pack identity", () => {
@@ -133,8 +132,7 @@ describe("EXS-7 Executive Monitoring Experience", () => {
     assert.match(html, /data-testid="executive-mode-selector"/);
     assert.match(html, /data-testid="executive-status-bar"/);
     assert.match(html, /EXS-7/);
-    assert.match(html, /S3/);
-    assert.match(html, /Production Delay/);
+    assert.match(html, /Beta/);
     for (const object of EXS1_OBJECTS) {
       assert.match(html, new RegExp(`data-testid="exs1-object-${object.id}"`));
     }

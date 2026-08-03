@@ -17,7 +17,7 @@ export function ExecutiveStatusBar({
   connected = true,
   autoSave = true,
   syncLabel = "Synced",
-  version = "EXS-7 · S3",
+  version = "EXS-7 · Beta",
   notificationCount = 0,
   onHelp,
 }: Props) {

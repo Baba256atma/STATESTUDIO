@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit --pretty false --incremental false",
+    "test": "npm run test:executive",
+    "test:executive": "npx tsx --test app/executive/page.test.tsx app/executive/exs1/exs1.test.tsx app/executive/exs1/runtime/runtime.test.tsx app/executive/exs1/advisor/advisor.test.tsx app/executive/exs1/metadata/metadata.test.tsx app/executive/exs1/data/data.test.tsx app/executive/exs1/intelligence/intelligence.test.tsx app/executive/exs1/connectors/connectors.test.tsx app/executive/exs1/simulation/simulation.test.tsx app/executive/exs1/beta/beta.test.tsx",
     "test:scene:vitest": "node scripts/run-scene-vitest.mjs",
     "test:scene:node": "node scripts/run-scene-node.mjs",
     "test:scene": "npm run test:scene:vitest && npm run test:scene:node",

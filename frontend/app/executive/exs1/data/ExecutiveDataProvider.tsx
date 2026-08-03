@@ -1,29 +1,18 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
-import {
-  INITIAL_DATA_HISTORY,
-  INITIAL_DATA_MAPPINGS,
-  INITIAL_DATA_SOURCES,
-  createDataSource,
-  toDataJournalEntry,
-  toDataTimelinePack,
-  type DataCatalogSection,
-  type DataFilter,
-  type DataHistoryEvent,
-  type DataJournalEntry,
-  type DataSourceCategory,
-  type DataTimelinePack,
-  type ExecutiveDataMapping,
-  type ExecutiveDataSource,
-  type MappingStatus,
-  type WizardStep,
+import { createContext, useMemo, type ReactNode } from "react";
+import { useRuntimeData } from "../runtime";
+import type {
+  DataCatalogSection,
+  DataFilter,
+  DataHistoryEvent,
+  DataJournalEntry,
+  DataSourceCategory,
+  DataTimelinePack,
+  ExecutiveDataMapping,
+  ExecutiveDataSource,
+  MappingStatus,
+  WizardStep,
 } from "./ExecutiveDataConfig";
 
 export type ExecutiveDataContextValue = {
@@ -69,172 +58,42 @@ type Props = {
 };
 
 /**
- * ExecutiveDataProvider — pure UI data catalog / mapping state.
- * Never touches Runtime, drivers, parsing, or timeline lens.
+ * ExecutiveDataProvider — Runtime-backed data catalog / mapping state.
  */
 export function ExecutiveDataProvider({ children }: Props) {
-  const [experienceActive, setExperienceActive] = useState(false);
-  const [section, setSection] = useState<DataCatalogSection>("Sources");
-  const [sources, setSources] = useState<ExecutiveDataSource[]>(() => [
-    ...INITIAL_DATA_SOURCES,
-  ]);
-  const [mappings, setMappings] = useState<ExecutiveDataMapping[]>(() => [
-    ...INITIAL_DATA_MAPPINGS,
-  ]);
-  const [history, setHistory] = useState<DataHistoryEvent[]>(() => [
-    ...INITIAL_DATA_HISTORY,
-  ]);
-  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(
-    "source-sales-csv",
-  );
-  const [filter, setFilter] = useState<DataFilter>("All");
-  const [query, setQuery] = useState("");
-  const [wizardStep, setWizardStep] = useState<WizardStep>("type");
-  const [wizardCategory, setWizardCategory] =
-    useState<DataSourceCategory>("CSV");
-  const [wizardName, setWizardName] = useState("new-dataset.csv");
-  const [journalEntries, setJournalEntries] = useState<DataJournalEntry[]>([]);
-  const [dataPacks, setDataPacks] = useState<DataTimelinePack[]>([]);
-  const [refreshTick, setRefreshTick] = useState(0);
-
-  const selectedSource =
-    sources.find((s) => s.id === selectedSourceId) ?? null;
-
-  const resetWizard = useCallback(() => {
-    setWizardStep("type");
-    setWizardCategory("CSV");
-    setWizardName("new-dataset.csv");
-  }, []);
-
-  const finishWizard = useCallback(() => {
-    const next = createDataSource({
-      name: wizardName,
-      category: wizardCategory,
-    });
-    setSources((prev) => [next, ...prev]);
-    setSelectedSourceId(next.id);
-    setHistory((prev) => [
-      {
-        id: `hist-${Date.now().toString(36)}`,
-        when: "Just now",
-        title: "Source Added",
-        summary: `${next.name} connected through Data Wizard (mock).`,
-      },
-      ...prev,
-    ]);
-    const journal = toDataJournalEntry(next, 1);
-    const pack = toDataTimelinePack(next);
-    setJournalEntries((prev) => [...prev, journal]);
-    setDataPacks((prev) => [...prev, pack]);
-    setSection("Sources");
-    resetWizard();
-  }, [wizardName, wizardCategory, resetWizard]);
-
-  const updateMappingStatus = useCallback(
-    (id: string, status: MappingStatus) => {
-      setMappings((prev) =>
-        prev.map((m) => (m.id === id ? { ...m, status } : m)),
-      );
-    },
-    [],
-  );
-
-  const assignMappingObject = useCallback(
-    (
-      id: string,
-      objectLabel: string,
-      objectId: ExecutiveDataMapping["objectId"],
-    ) => {
-      setMappings((prev) =>
-        prev.map((m) =>
-          m.id === id
-            ? {
-                ...m,
-                objectLabel,
-                objectId,
-                status: "Mapped" as const,
-              }
-            : m,
-        ),
-      );
-    },
-    [],
-  );
-
-  const refresh = useCallback(() => {
-    setRefreshTick((n) => n + 1);
-  }, []);
-
-  const disconnectSelected = useCallback(() => {
-    if (!selectedSourceId) return;
-    setSources((prev) =>
-      prev.map((s) =>
-        s.id === selectedSourceId
-          ? {
-              ...s,
-              status: "Disconnected",
-              health: "Disconnected",
-              lastSync: "Disconnected",
-            }
-          : s,
-      ),
-    );
-  }, [selectedSourceId]);
-
+  const runtime = useRuntimeData();
   const value = useMemo(
     () => ({
-      experienceActive,
-      setExperienceActive,
-      section,
-      setSection,
-      sources,
-      mappings,
-      history,
-      selectedSourceId,
-      selectedSource,
-      filter,
-      query,
-      wizardStep,
-      wizardCategory,
-      wizardName,
-      journalEntries,
-      dataPacks,
-      setSelectedSource: setSelectedSourceId,
-      setFilter,
-      setQuery,
-      setWizardStep,
-      setWizardCategory,
-      setWizardName,
-      resetWizard,
-      finishWizard,
-      updateMappingStatus,
-      assignMappingObject,
-      refresh,
-      disconnectSelected,
+      experienceActive: runtime.experienceActive,
+      setExperienceActive: runtime.setExperienceActive,
+      section: runtime.section,
+      setSection: runtime.setSection,
+      sources: runtime.sources,
+      mappings: runtime.mappings,
+      history: runtime.history,
+      selectedSourceId: runtime.selectedSourceId,
+      selectedSource: runtime.selectedSource,
+      filter: runtime.filter,
+      query: runtime.query,
+      wizardStep: runtime.wizardStep,
+      wizardCategory: runtime.wizardCategory,
+      wizardName: runtime.wizardName,
+      journalEntries: runtime.journalEntries,
+      dataPacks: runtime.dataPacks,
+      setSelectedSource: runtime.setSelectedSource,
+      setFilter: runtime.setFilter,
+      setQuery: runtime.setQuery,
+      setWizardStep: runtime.setWizardStep,
+      setWizardCategory: runtime.setWizardCategory,
+      setWizardName: runtime.setWizardName,
+      resetWizard: runtime.resetWizard,
+      finishWizard: runtime.finishWizard,
+      updateMappingStatus: runtime.updateMappingStatus,
+      assignMappingObject: runtime.assignMappingObject,
+      refresh: runtime.refresh,
+      disconnectSelected: runtime.disconnectSelected,
     }),
-    [
-      experienceActive,
-      section,
-      sources,
-      mappings,
-      history,
-      selectedSourceId,
-      selectedSource,
-      filter,
-      query,
-      wizardStep,
-      wizardCategory,
-      wizardName,
-      journalEntries,
-      dataPacks,
-      resetWizard,
-      finishWizard,
-      updateMappingStatus,
-      assignMappingObject,
-      refresh,
-      disconnectSelected,
-      refreshTick,
-    ],
+    [runtime],
   );
 
   return (

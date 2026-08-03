@@ -25,7 +25,7 @@ const DEFAULT_TITLES: Record<Exclude<ExecutiveFloatingPanelKind, null>, string> 
     "execution-change-status": "Change Status",
     "execution-notes": "Execution Notes",
     "monitoring-notes": "Monitoring Notes",
-    "data-wizard": "Add Data Source",
+    "data-wizard": "Publish Enterprise Connector",
     properties: "Properties",
   };
 

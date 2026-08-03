@@ -1,5 +1,6 @@
 "use client";
 
+import { useContext } from "react";
 import type { Exs1Connection, Exs1Object, Exs1ObjectId } from "../exs1Types";
 import { ExecutiveModeBadge } from "../mode/ExecutiveModeBadge";
 import { ExecutiveModeTransition } from "../mode/ExecutiveModeTransition";
@@ -8,6 +9,8 @@ import { useExecutiveDecision } from "../decision/hooks/useExecutiveDecision";
 import { useExecutiveExecution } from "../execution/hooks/useExecutiveExecution";
 import { HEALTH_COLOR } from "../monitoring/ExecutiveMonitoringConfig";
 import { useExecutiveMonitoring } from "../monitoring/hooks/useExecutiveMonitoring";
+import { useExecutiveMetadata } from "../metadata";
+import { ExecutiveRuntimeIntelligenceContext } from "../intelligence";
 import { ScenarioBadge } from "../scenario/ScenarioBadge";
 import { useScenarioExperience } from "../scenario/hooks/useScenarioExperience";
 import { exs1 } from "../exs1Theme";
@@ -54,6 +57,12 @@ export function Exs1Stage({
     healthByObjectId,
     attentionObjects,
   } = useExecutiveMonitoring();
+  const { resolveObjectName, resolveObjectBadge, resolveObjectTooltip } =
+    useExecutiveMetadata();
+  const intelligence = useContext(ExecutiveRuntimeIntelligenceContext);
+  const signalAttentionIds = intelligence?.attentionObjectIds ?? [];
+  const signalAttentionSet = new Set(signalAttentionIds);
+  const selectedSignal = intelligence?.selectedSignal ?? null;
 
   const compareScenarios = scenarios.filter((s) => compareIds.includes(s.id));
   const multiCompare = scenarioActive && compareScenarios.length >= 2;
@@ -173,7 +182,9 @@ export function Exs1Stage({
                     ? multiCompare
                       ? "Scenario comparison · dual visual language"
                       : `${currentScenario?.name ?? "Scenario"} · nodes, badges, links`
-                    : config.directorCaption}
+                    : selectedSignal
+                      ? `Attention · ${selectedSignal.summary}`
+                      : config.directorCaption}
           </p>
           <div
             style={{
@@ -204,6 +215,13 @@ export function Exs1Stage({
                   <ScenarioBadge key={s.id} label={s.name} color={s.color} />
                 ))
               : null}
+            {selectedSignal ? (
+              <ExecutiveModeBadge
+                label={`${selectedSignal.type} · ${selectedSignal.severity}`}
+                accent={accent}
+                compact
+              />
+            ) : null}
           </div>
         </div>
 
@@ -275,7 +293,8 @@ export function Exs1Stage({
         {objects.map((obj) => {
           const selected = selectedObjectId === obj.id;
           const focused = focusSet.has(obj.id);
-          const emphasis = selected || focused;
+          const signalAttention = signalAttentionSet.has(obj.id);
+          const emphasis = selected || focused || signalAttention;
           const dimmed =
             ((warRoom || scenarioActive) && !emphasis) ||
             (decisionApproved && !focused) ||
@@ -287,6 +306,9 @@ export function Exs1Stage({
             : null;
           const objectColor =
             colorForObject(obj.id) ?? monitoringColor ?? accent;
+          const metaLabel = resolveObjectName(obj.id, obj.label);
+          const metaBadge = resolveObjectBadge(obj.id);
+          const metaTooltip = resolveObjectTooltip(obj.id, obj.summary);
 
           return (
             <button
@@ -298,9 +320,12 @@ export function Exs1Stage({
               data-scenario-focus={
                 scenarioActive && focused ? "true" : "false"
               }
+              data-intelligence-attention={signalAttention ? "true" : "false"}
               data-monitoring-health={objectHealth?.health ?? ""}
+              data-meta-label={metaLabel}
               aria-pressed={selected}
-              aria-label={obj.label}
+              aria-label={metaLabel}
+              title={metaTooltip}
               onClick={() => onSelectObject(obj.id)}
               style={{
                 position: "absolute",
@@ -367,7 +392,7 @@ export function Exs1Stage({
                   letterSpacing: "0.03em",
                 }}
               >
-                {obj.label}
+                {metaLabel}
               </span>
               <span
                 style={{
@@ -379,7 +404,7 @@ export function Exs1Stage({
                   color: exs1.lowMuted,
                 }}
               >
-                {obj.kind}
+                {metaBadge ?? obj.kind}
               </span>
               {scenarioActive && focused && currentScenario ? (
                 <span style={{ display: "block", marginTop: "0.35rem" }}>

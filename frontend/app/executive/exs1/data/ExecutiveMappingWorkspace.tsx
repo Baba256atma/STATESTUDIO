@@ -1,5 +1,6 @@
 "use client";
 
+import { ExecutiveMetadataEditor } from "../metadata";
 import { ExecutiveMappingRow } from "./ExecutiveMappingRow";
 import { useExecutiveData } from "./hooks/useExecutiveData";
 import { cockpit } from "../shell/executiveCockpitTheme";
@@ -26,6 +27,7 @@ export function ExecutiveMappingWorkspace() {
       {selectedMappings.map((mapping) => (
         <ExecutiveMappingRow key={mapping.id} mapping={mapping} />
       ))}
+      <ExecutiveMetadataEditor />
     </section>
   );
 }

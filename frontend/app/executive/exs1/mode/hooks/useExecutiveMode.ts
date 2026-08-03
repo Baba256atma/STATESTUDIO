@@ -4,8 +4,7 @@ import { useContext } from "react";
 import { ExecutiveModeContext } from "../ExecutiveModeContext";
 
 /**
- * Pure UI hook for Executive Mode orchestration.
- * No runtime dependency.
+ * Executive Mode hook — Runtime-backed via ExecutiveModeProvider.
  */
 export function useExecutiveMode() {
   const value = useContext(ExecutiveModeContext);

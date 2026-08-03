@@ -10,6 +10,9 @@ export type ExecutiveNavId =
   | "Model"
   | "Objects"
   | "Data"
+  | "Knowledge"
+  | "Intelligence"
+  | "Simulations"
   | "Journal"
   | "Search"
   | "Settings";
@@ -18,8 +21,12 @@ export type ExecutiveExplorerKind =
   | "model"
   | "objects"
   | "data"
+  | "knowledge"
+  | "intelligence"
+  | "simulations"
   | "journal"
   | "search"
+  | "settings"
   | null;
 
 export type ExecutiveModeId =
@@ -67,6 +74,9 @@ export const EXECUTIVE_NAV_ITEMS: readonly ExecutiveNavId[] = Object.freeze([
   "Model",
   "Objects",
   "Data",
+  "Knowledge",
+  "Intelligence",
+  "Simulations",
   "Journal",
   "Search",
   "Settings",
@@ -94,10 +104,18 @@ export function navToExplorer(nav: ExecutiveNavId): ExecutiveExplorerKind {
       return "objects";
     case "Data":
       return "data";
+    case "Knowledge":
+      return "knowledge";
+    case "Intelligence":
+      return "intelligence";
+    case "Simulations":
+      return "simulations";
     case "Journal":
       return "journal";
     case "Search":
       return "search";
+    case "Settings":
+      return "settings";
     default:
       return null;
   }
@@ -110,11 +128,19 @@ export function explorerTitle(kind: ExecutiveExplorerKind): string {
     case "objects":
       return "Object Explorer";
     case "data":
-      return "Data Catalog";
+      return "Enterprise Connectors";
+    case "knowledge":
+      return "Knowledge";
+    case "intelligence":
+      return "Intelligence";
+    case "simulations":
+      return "Simulations";
     case "journal":
       return "Journal Explorer";
     case "search":
       return "Search";
+    case "settings":
+      return "Beta Settings";
     default:
       return "";
   }

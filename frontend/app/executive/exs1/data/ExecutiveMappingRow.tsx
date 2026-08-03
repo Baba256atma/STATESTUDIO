@@ -2,6 +2,7 @@
 
 import type { ExecutiveDataMapping } from "./ExecutiveDataConfig";
 import { useExecutiveData } from "./hooks/useExecutiveData";
+import { useExecutiveMetadata } from "../metadata";
 import { cockpit } from "../shell/executiveCockpitTheme";
 
 type Props = {
@@ -10,6 +11,10 @@ type Props = {
 
 export function ExecutiveMappingRow({ mapping }: Props) {
   const { updateMappingStatus, assignMappingObject } = useExecutiveData();
+  const { resolveFieldName, findField, setSelectedFieldId } =
+    useExecutiveMetadata();
+  const fieldMeta = findField(mapping.sourceColumn);
+  const displayName = resolveFieldName(mapping.sourceColumn);
 
   return (
     <div
@@ -26,10 +31,48 @@ export function ExecutiveMappingRow({ mapping }: Props) {
         alignItems: "center",
       }}
     >
-      <div>
+      <button
+        type="button"
+        data-testid={`mapping-field-meta-${mapping.id}`}
+        onClick={() => {
+          if (fieldMeta) setSelectedFieldId(fieldMeta.fieldId);
+        }}
+        style={{
+          textAlign: "left",
+          border: "none",
+          background: "transparent",
+          color: cockpit.text,
+          cursor: fieldMeta ? "pointer" : "default",
+          fontFamily: "inherit",
+          padding: 0,
+        }}
+      >
         <p style={label}>Source Column</p>
         <strong style={{ fontSize: "0.78rem" }}>{mapping.sourceColumn}</strong>
-      </div>
+        {displayName !== mapping.sourceColumn ? (
+          <p
+            data-testid={`mapping-display-name-${mapping.id}`}
+            style={{
+              margin: "0.15rem 0 0",
+              fontSize: "0.68rem",
+              color: cockpit.accent,
+            }}
+          >
+            {displayName}
+          </p>
+        ) : null}
+        {fieldMeta?.businessMeaning ? (
+          <p
+            style={{
+              margin: "0.1rem 0 0",
+              fontSize: "0.64rem",
+              color: cockpit.muted,
+            }}
+          >
+            {fieldMeta.businessMeaning}
+          </p>
+        ) : null}
+      </button>
       <span aria-hidden style={{ color: cockpit.lowMuted }}>
         ↓
       </span>
@@ -86,12 +129,12 @@ function Mini({
       type="button"
       onClick={onClick}
       style={{
-        padding: "0.15rem 0.35rem",
-        borderRadius: cockpit.radius.pill,
+        padding: "0.2rem 0.35rem",
+        borderRadius: cockpit.radius.sm,
         border: `1px solid ${cockpit.border}`,
         background: "transparent",
-        color: cockpit.accent,
-        fontSize: "0.52rem",
+        color: cockpit.muted,
+        fontSize: "0.55rem",
         cursor: "pointer",
         fontFamily: "inherit",
       }}

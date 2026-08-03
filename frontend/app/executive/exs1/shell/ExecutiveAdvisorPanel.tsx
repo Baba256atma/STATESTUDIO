@@ -1,5 +1,16 @@
 "use client";
 
+import { ExecutiveAdvisorConversation } from "../advisor/ExecutiveAdvisorConversation";
+import { ExecutiveAdvisorProposalCard } from "../advisor/ExecutiveAdvisorProposalCard";
+import { ExecutiveAdvisorReference } from "../advisor/ExecutiveAdvisorReference";
+import { ExecutiveAdvisorSuggestionCard } from "../advisor/ExecutiveAdvisorSuggestionCard";
+import type {
+  AdvisorConversationMode,
+  AdvisorProposal,
+  AdvisorReference,
+  AdvisorSessionMessage,
+  AdvisorSuggestion,
+} from "../advisor/ExecutiveAdvisorTypes";
 import type { ExecutiveAdvisorTab } from "./executiveCockpitTypes";
 import { cockpit } from "./executiveCockpitTheme";
 
@@ -11,6 +22,11 @@ export type ExecutiveAdvisorContent = {
   readonly quickActions?: readonly string[];
   readonly accent?: string;
   readonly packPerspective?: string;
+  readonly suggestions?: readonly AdvisorSuggestion[];
+  readonly proposals?: readonly AdvisorProposal[];
+  readonly references?: readonly AdvisorReference[];
+  readonly conversationMode?: AdvisorConversationMode;
+  readonly conversation?: readonly AdvisorSessionMessage[];
 };
 
 type Props = {
@@ -18,6 +34,9 @@ type Props = {
   readonly onTabChange: (tab: ExecutiveAdvisorTab) => void;
   readonly assist: ExecutiveAdvisorContent;
   readonly insight: ExecutiveAdvisorContent;
+  readonly onApproveProposal?: (proposalId: string) => void;
+  readonly onDismissProposal?: (proposalId: string) => void;
+  readonly onSelectReference?: (reference: AdvisorReference) => void;
 };
 
 const TABS: readonly ExecutiveAdvisorTab[] = ["Assist", "Insight"];
@@ -32,6 +51,9 @@ export function ExecutiveAdvisorPanel({
   onTabChange,
   assist,
   insight,
+  onApproveProposal,
+  onDismissProposal,
+  onSelectReference,
 }: Props) {
   const message = tab === "Assist" ? assist : insight;
   const accent = message.accent ?? cockpit.accent;
@@ -144,6 +166,21 @@ export function ExecutiveAdvisorPanel({
           {message.title}
         </h2>
 
+        {message.conversationMode ? (
+          <p
+            data-testid="executive-advisor-conversation-mode"
+            style={{
+              margin: 0,
+              fontSize: "0.62rem",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: accent,
+            }}
+          >
+            Mode · {message.conversationMode}
+          </p>
+        ) : null}
+
         {message.packPerspective ? (
           <p
             data-testid="executive-advisor-pack-perspective"
@@ -166,12 +203,40 @@ export function ExecutiveAdvisorPanel({
             fontSize: "0.88rem",
             lineHeight: 1.55,
             color: cockpit.textSoft,
+            whiteSpace: "pre-wrap",
           }}
         >
           {message.body}
         </p>
 
-        {message.suggestionCards?.length ? (
+        {message.references?.length ? (
+          <div
+            data-testid="executive-advisor-references"
+            style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}
+          >
+            {message.references.map((reference) => (
+              <ExecutiveAdvisorReference
+                key={reference.id}
+                reference={reference}
+                onSelect={(ref) => onSelectReference?.(ref)}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        {message.suggestions?.length ? (
+          <div
+            data-testid="executive-advisor-suggestion-cards"
+            style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}
+          >
+            {message.suggestions.map((suggestion) => (
+              <ExecutiveAdvisorSuggestionCard
+                key={suggestion.id}
+                suggestion={suggestion}
+              />
+            ))}
+          </div>
+        ) : message.suggestionCards?.length ? (
           <div
             data-testid="executive-advisor-suggestion-cards"
             style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}
@@ -198,7 +263,25 @@ export function ExecutiveAdvisorPanel({
           </div>
         ) : null}
 
-        {tab === "Assist" && message.quickActions?.length ? (
+        {tab === "Assist" && message.proposals?.length ? (
+          <div
+            data-testid="executive-advisor-proposals"
+            style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}
+          >
+            {message.proposals.map((proposal) => (
+              <ExecutiveAdvisorProposalCard
+                key={proposal.id}
+                proposal={proposal}
+                onApprove={(id) => onApproveProposal?.(id)}
+                onDismiss={(id) => onDismissProposal?.(id)}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        {tab === "Assist" &&
+        !message.proposals?.length &&
+        message.quickActions?.length ? (
           <div
             data-testid="executive-advisor-quick-actions"
             style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}
@@ -226,6 +309,10 @@ export function ExecutiveAdvisorPanel({
               </button>
             ))}
           </div>
+        ) : null}
+
+        {tab === "Assist" && message.conversation?.length ? (
+          <ExecutiveAdvisorConversation messages={message.conversation} />
         ) : null}
 
         <div

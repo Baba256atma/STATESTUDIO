@@ -100,7 +100,7 @@ describe("Sprint 2 Executive Visual Polish", () => {
     assert.match(html, /data-testid="executive-mode-trigger"/);
     assert.match(html, /Case/);
     assert.match(html, /Director/);
-    assert.match(html, /EXS-7 · S3/);
+    assert.match(html, /EXS-7 · Beta/);
   });
 });
 
@@ -122,5 +122,192 @@ describe("Sprint 3 Executive Data Experience", () => {
     assert.match(html, /data-data-active="false"/);
     assert.doesNotMatch(html, /data-testid="executive-data-explorer"/);
     assert.match(html, /data-testid="executive-cockpit-shell"/);
+  });
+});
+
+describe("Sprint 4 Executive Runtime Integration", () => {
+  it("ships Executive Runtime store and hooks", () => {
+    const store = readFileSync(
+      join(HERE, "exs1/runtime/ExecutiveRuntimeStore.ts"),
+      "utf8",
+    );
+    assert.match(store, /createExecutiveRuntimeStore/);
+    assert.match(store, /ModeChanged/);
+    assert.match(store, /PackSelected/);
+    assert.match(store, /DecisionApproved/);
+    assert.match(store, /ExecutionStarted/);
+    assert.match(store, /SnapshotCreated/);
+    const hooks = readFileSync(
+      join(HERE, "exs1/runtime/hooks/useExecutiveRuntime.ts"),
+      "utf8",
+    );
+    assert.match(hooks, /useRuntimeMode/);
+    assert.match(hooks, /useRuntimeData/);
+    assert.match(hooks, /useRuntimeDecision/);
+  });
+
+  it("renders cockpit as a Runtime consumer without UI regression", () => {
+    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    assert.match(html, /data-testid="exs1-cockpit"/);
+    assert.match(html, /EXS-7 · Beta/);
+    assert.match(html, /data-testid="executive-pack-production-delay"/);
+    assert.match(html, /data-data-active="false"/);
+    assert.match(html, /data-monitoring-active="false"/);
+  });
+});
+
+describe("Sprint 5 Executive Advisor AI Integration", () => {
+  it("ships Advisor engine, context builder, and prompt templates", () => {
+    const engine = readFileSync(
+      join(HERE, "exs1/advisor/ExecutiveAdvisorEngine.ts"),
+      "utf8",
+    );
+    assert.match(engine, /runExecutiveAdvisorEngine/);
+    const builder = readFileSync(
+      join(HERE, "exs1/advisor/ExecutiveAdvisorContextBuilder.ts"),
+      "utf8",
+    );
+    assert.match(builder, /buildExecutiveAdvisorContext/);
+    const templates = readFileSync(
+      join(HERE, "exs1/advisor/ExecutiveAdvisorPromptTemplates.ts"),
+      "utf8",
+    );
+    assert.match(templates, /decision-review/);
+    assert.match(templates, /monitoring-review/);
+  });
+
+  it("renders Runtime-aware Advisor Assist surface on /executive", () => {
+    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    assert.match(html, /data-testid="executive-advisor-panel"/);
+    assert.match(html, /data-testid="executive-advisor-conversation-mode"/);
+    assert.match(html, /data-testid="executive-advisor-proposals"/);
+    assert.match(html, /Pending Executive Action/);
+    assert.match(html, /EXS-7 · Beta/);
+  });
+});
+
+describe("Phase A Executive Metadata & Knowledge", () => {
+  it("ships metadata registries and knowledge graph", () => {
+    const registry = readFileSync(
+      join(HERE, "exs1/metadata/ExecutiveMetadataRegistry.ts"),
+      "utf8",
+    );
+    assert.match(registry, /resolveFieldDisplayName/);
+    assert.match(registry, /searchMetadata/);
+    const graph = readFileSync(
+      join(HERE, "exs1/metadata/ExecutiveKnowledgeGraph.ts"),
+      "utf8",
+    );
+    assert.match(graph, /EXECUTIVE_KNOWLEDGE_GRAPH/);
+    assert.match(graph, /MAT_QTY|Available Inventory|supplies/);
+  });
+
+  it("exposes Knowledge nav without breaking cockpit anchors", () => {
+    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    assert.match(html, /data-testid="executive-nav-knowledge"/);
+    assert.match(html, /data-testid="exs1-cockpit"/);
+    assert.match(html, /data-testid="executive-advisor-panel"/);
+    assert.match(html, /EXS-7 · Beta/);
+  });
+});
+
+describe("Phase B Executive Runtime Intelligence", () => {
+  it("ships Runtime Intelligence engines and signal types", () => {
+    const engine = readFileSync(
+      join(HERE, "exs1/intelligence/ExecutiveRuntimeIntelligence.ts"),
+      "utf8",
+    );
+    assert.match(engine, /processRuntimeEventForIntelligence/);
+    assert.match(engine, /recommendationFromSignals/);
+    const signals = readFileSync(
+      join(HERE, "exs1/intelligence/ExecutiveSignalTypes.ts"),
+      "utf8",
+    );
+    assert.match(signals, /Decision Required/);
+    assert.match(signals, /ExecutiveRecommendationContext/);
+  });
+
+  it("exposes Intelligence nav without breaking Runtime anchors", () => {
+    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    assert.match(html, /data-testid="executive-nav-intelligence"/);
+    assert.match(html, /data-testid="exs1-object-inventory"/);
+    assert.match(html, /data-testid="executive-advisor-panel"/);
+    assert.match(html, /EXS-7 · Beta/);
+  });
+});
+
+describe("Phase C Enterprise Connectors", () => {
+  it("ships CSV connector platform and publish wizard", () => {
+    const platform = readFileSync(
+      join(HERE, "exs1/connectors/ExecutiveConnectorPlatform.ts"),
+      "utf8",
+    );
+    assert.match(platform, /createConnectorPlatform/);
+    assert.match(platform, /publish/);
+    const csv = readFileSync(
+      join(HERE, "exs1/connectors/connectors/CsvConnector.ts"),
+      "utf8",
+    );
+    assert.match(csv, /createCsvConnector/);
+    assert.match(csv, /SAMPLE_INVENTORY_CSV/);
+  });
+
+  it("keeps cockpit Runtime anchors with Beta version", () => {
+    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    assert.match(html, /data-testid="exs1-cockpit"/);
+    assert.match(html, /data-testid="executive-advisor-panel"/);
+    assert.match(html, /EXS-7 · Beta/);
+  });
+});
+
+describe("Phase D Executive Scenario Simulation", () => {
+  it("ships simulation engine and Inventory Shortage vertical slice", () => {
+    const engine = readFileSync(
+      join(HERE, "exs1/simulation/ExecutiveScenarioSimulationEngine.ts"),
+      "utf8",
+    );
+    assert.match(engine, /runScenarioSimulation/);
+    assert.match(engine, /captureBaselineSnapshot/);
+    const config = readFileSync(
+      join(HERE, "exs1/simulation/ExecutiveSimulationConfig.ts"),
+      "utf8",
+    );
+    assert.match(config, /increase-safety-stock/);
+    assert.match(config, /INVENTORY_SHORTAGE_BASELINE/);
+  });
+
+  it("exposes Simulations nav without breaking Runtime anchors", () => {
+    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    assert.match(html, /data-testid="executive-nav-simulations"/);
+    assert.match(html, /data-testid="exs1-object-inventory"/);
+    assert.match(html, /EXS-7 · Beta/);
+  });
+});
+
+describe("Phase E Beta Preparation & Hardening", () => {
+  it("ships beta validator, flags, and documentation", () => {
+    const validator = readFileSync(
+      join(HERE, "exs1/beta/ExecutiveBetaValidator.ts"),
+      "utf8",
+    );
+    assert.match(validator, /runExecutiveBetaValidator/);
+    const flags = readFileSync(
+      join(HERE, "exs1/beta/ExecutiveFeatureFlags.ts"),
+      "utf8",
+    );
+    assert.match(flags, /EnableSimulation/);
+    assert.match(flags, /EnableConnectors/);
+    const guide = readFileSync(
+      join(HERE, "exs1/beta/docs/ExecutiveQuickStart.md"),
+      "utf8",
+    );
+    assert.match(guide, /Connect CSV/);
+  });
+
+  it("exposes Settings and Beta version without breaking Runtime anchors", () => {
+    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    assert.match(html, /data-testid="executive-nav-settings"/);
+    assert.match(html, /data-testid="exs1-object-inventory"/);
+    assert.match(html, /EXS-7 · Beta/);
   });
 });

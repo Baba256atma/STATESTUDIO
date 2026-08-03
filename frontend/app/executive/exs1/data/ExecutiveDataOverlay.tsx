@@ -49,7 +49,8 @@ export function ExecutiveDataOverlay() {
           textTransform: "uppercase",
         }}
       >
-        Data Assets · {selectedSource?.name ?? "Catalog"}
+        Enterprise Sources → Objects → Knowledge → Runtime
+        {selectedSource ? ` · ${selectedSource.name}` : ""}
       </div>
 
       {connected.map((source, index) => {

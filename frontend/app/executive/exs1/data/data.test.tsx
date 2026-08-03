@@ -15,7 +15,9 @@ import {
   toDataTimelinePack,
 } from "./ExecutiveDataConfig.ts";
 import { ExecutiveDataExplorer, ExecutiveDataProvider } from "./index.ts";
+import { ExecutiveMetadataProvider } from "../metadata/index.ts";
 import { ExecutiveModeProvider } from "../mode/ExecutiveModeProvider.tsx";
+import { ExecutiveRuntimeProvider } from "../runtime/index.ts";
 
 describe("Sprint 3 Executive Data Experience", () => {
   it("ships mock sources with required source-card fields", () => {
@@ -48,11 +50,15 @@ describe("Sprint 3 Executive Data Experience", () => {
 
   it("renders Data Explorer catalog surfaces", () => {
     const html = renderToStaticMarkup(
-      <ExecutiveModeProvider initialMode="Problem">
-        <ExecutiveDataProvider>
-          <ExecutiveDataExplorer onAddSource={() => {}} />
-        </ExecutiveDataProvider>
-      </ExecutiveModeProvider>,
+      <ExecutiveRuntimeProvider showInspector={false}>
+        <ExecutiveModeProvider>
+          <ExecutiveDataProvider>
+            <ExecutiveMetadataProvider>
+              <ExecutiveDataExplorer onAddSource={() => {}} />
+            </ExecutiveMetadataProvider>
+          </ExecutiveDataProvider>
+        </ExecutiveModeProvider>
+      </ExecutiveRuntimeProvider>,
     );
     assert.match(html, /data-testid="executive-data-explorer"/);
     assert.match(html, /Executive Data Catalog/);

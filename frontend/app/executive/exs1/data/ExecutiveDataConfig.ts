@@ -235,6 +235,14 @@ const initialMappings = [
     status: "Mapped",
   },
   {
+    id: "map-mat-qty",
+    sourceId: "source-inventory-sap",
+    sourceColumn: "MAT_QTY",
+    objectId: "inventory",
+    objectLabel: "Inventory",
+    status: "Mapped",
+  },
+  {
     id: "map-supplier-score",
     sourceId: "source-supplier-api",
     sourceColumn: "Supplier Rating",
