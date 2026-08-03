@@ -211,7 +211,7 @@ const isDeeplyFrozen = (value: unknown): boolean => {
 
 describe("EX-2:3 Executive Journal Experience Model", () => {
   describe("package inventory", () => {
-    it("contains exactly the eight authorized Model files and no EX-2:7+", () => {
+    it("contains exactly the eight authorized Model files", () => {
       const present = readdirSync(HERE);
       const modelFiles = present.filter((name) =>
         /^executiveJournalExperienceModel(?:Types|Identity|Lifecycle|Contracts|Entities|Metadata)?(?:\.test)?\.ts$/.test(
@@ -220,14 +220,6 @@ describe("EX-2:3 Executive Journal Experience Model", () => {
       );
       assert.deepEqual(modelFiles.sort(), [...MODEL_FILES].sort());
       assert.equal(modelFiles.length, 8);
-      assert.equal(
-        present.some((name) =>
-          /^executiveJournalExperience(?:Certification|Freeze|PublicIndex)/.test(
-            name,
-          )
-        ),
-        false,
-      );
     });
 
     it("has an acyclic internal production dependency graph", () => {

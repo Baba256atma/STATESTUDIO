@@ -25,7 +25,8 @@ import {
   shouldRenderExecutiveObjectName,
 } from "../lib/scene/objectNameDensityProfile";
 import type { PropagationOverlayState } from "../lib/simulation/propagationTypes";
-import type { DecisionPathRendererState } from "./overlays/DecisionPathOverlayLayer";import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
+import type { DecisionPathRendererState } from "./overlays/DecisionPathOverlayLayer";
+import { traceHighlightFlow } from "../lib/debug/highlightDebugTrace";
 import { CALM_FRAMING } from "../lib/scene/calmCameraFraming";
 import {
   buildSceneObjectsRegistrySignature,

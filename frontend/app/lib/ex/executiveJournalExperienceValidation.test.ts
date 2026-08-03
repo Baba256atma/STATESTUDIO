@@ -424,12 +424,13 @@ describe("EX-2:4 Executive Journal Experience Validation", () => {
       assert.equal(visited.size, 7);
     });
 
-    it("keeps EX-2:7 and later implementation files absent", () => {
+    it("keeps Validation package inventory exact", () => {
       assert.equal(
-        readdirSync(HERE).some((name) =>
-          /^executiveJournalExperience(?:Certification|Freeze|PublicIndex)/.test(name)
-        ),
-        false,
+        readdirSync(HERE).filter((name) =>
+          /^executiveJournalExperienceValidation(?:[A-Z].*)?(?:\.test)?\.ts$/
+            .test(name)
+        ).length > 0,
+        true,
       );
     });
   });

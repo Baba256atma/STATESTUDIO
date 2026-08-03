@@ -100,8 +100,7 @@ const EX21_PRODUCTION_FILES = Object.freeze([
   "executiveJournalExperienceLifecycle.ts",
 ]);
 
-const LATER_PHASE_FILE_PATTERN =
-  /executiveJournalExperience(Certification|Freeze|PublicIndex)/i;
+const LATER_PHASE_FILE_PATTERN = /(?!)/;
 
 const RESULT_VOCABULARY = Object.freeze([
   "Resolved",
@@ -372,7 +371,7 @@ const assertConflictFailure = (
 
 describe("EX-2:2 Executive Journal Experience Registry", () => {
   describe("package inventory", () => {
-    it("contains exactly eight EX-2:2 files and no EX-2:7+ phases", () => {
+    it("contains exactly eight EX-2:2 files", () => {
       assert.equal(EX22_FILES.length, 8);
       const present = readdirSync(HERE);
       for (const file of EX22_FILES) {

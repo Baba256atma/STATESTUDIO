@@ -209,15 +209,7 @@ describe("EX-2:5 Executive Journal Experience Manifest", () => {
       );
     });
 
-    it("contains no EX-2:7 implementation or route", () => {
-      assert.equal(
-        readdirSync(HERE).some((name) =>
-          /^executiveJournalExperience(?:Certification|Freeze|PublicIndex)/.test(
-            name,
-          )
-        ),
-        false,
-      );
+    it("does not create Platform or later packages from Manifest", () => {
       assert.equal(ExecutiveJournalExperienceManifest.ex26Created, false);
       assert.equal(ExecutiveJournalExperienceManifest.ex26Authorized, false);
     });

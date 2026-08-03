@@ -1,123 +1,127 @@
-/** E2:58 / E2:66 — Density-aware object name visibility (10 / 25 / 50 / 100 objects). */
-
-import {
-  traceObjectLabelCached,
-  traceObjectLabelComputed,
-} from "./objectLabelDiagnosticGuard";
-import { buildObjectLabelDensitySignatureForCount } from "./objectLabelSignature";
-import { getObjectLabelCached, setObjectLabelCached } from "./objectLabelRuntimeCache";
-
-export type ObjectNameDensityTier = "sparse" | "normal" | "dense" | "critical";
-
+export type ObjectNameDensityTier =
+  | "comfortable"
+  | "balanced"
+  | "compact";
 export type ObjectNameDensityProfile = {
-  tier: ObjectNameDensityTier;
-  showAllNames: boolean;
-  showSelectedOnly: boolean;
-  minOpacity: number;
-  selectedOpacity: number;
-  fontSizePx: number;
-  declutterSpacing: number;
+  readonly tier: ObjectNameDensityTier;
+  readonly maxVisibleNames: number;
+  readonly showEveryNthObject: number;
+  readonly fontSizePx: number;
+  readonly minOpacity: number;
+  readonly selectedOpacity: number;
+  /** Legacy signature/compat flags derived from tier density. */
+  readonly showAllNames: boolean;
+  readonly showSelectedOnly: boolean;
 };
-
-export function resolveObjectNameDensityTier(objectCount: number): ObjectNameDensityTier {
-  if (objectCount <= 10) return "sparse";
-  if (objectCount <= 25) return "normal";
-  if (objectCount <= 50) return "dense";
-  return "critical";
-}
-
-function computeObjectNameDensityProfile(objectCount: number): ObjectNameDensityProfile {
-  const tier = resolveObjectNameDensityTier(objectCount);
-
-  if (tier === "sparse") {
-    return {
-      tier,
-      showAllNames: true,
-      showSelectedOnly: false,
-      minOpacity: 0.92,
-      selectedOpacity: 1,
-      fontSizePx: 13,
-      declutterSpacing: 0,
-    };
-  }
-  if (tier === "normal") {
-    return {
-      tier,
-      showAllNames: true,
-      showSelectedOnly: false,
-      minOpacity: 0.84,
-      selectedOpacity: 1,
-      fontSizePx: 12,
-      declutterSpacing: 0.02,
-    };
-  }
-  if (tier === "dense") {
-    return {
-      tier,
-      showAllNames: true,
-      showSelectedOnly: false,
-      minOpacity: 0.62,
-      selectedOpacity: 0.98,
-      fontSizePx: 9,
-      declutterSpacing: 0.04,
-    };
-  }
-  return {
-    tier,
+export type ShouldRenderExecutiveObjectNameInput = {
+  readonly profile?: ObjectNameDensityProfile;
+  readonly objectCount?: number;
+  readonly selected: boolean;
+  readonly focused: boolean;
+  readonly index: number;
+};
+const OBJECT_NAME_DENSITY_PROFILES: Record<
+  ObjectNameDensityTier,
+  ObjectNameDensityProfile
+> = {
+  comfortable: {
+    tier: "comfortable",
+    maxVisibleNames: 12,
+    showEveryNthObject: 1,
+    fontSizePx: 16,
+    minOpacity: 0.78,
+    selectedOpacity: 1,
+    showAllNames: true,
+    showSelectedOnly: false,
+  },
+  balanced: {
+    tier: "balanced",
+    maxVisibleNames: 8,
+    showEveryNthObject: 2,
+    fontSizePx: 14,
+    minOpacity: 0.68,
+    selectedOpacity: 1,
+    showAllNames: true,
+    showSelectedOnly: false,
+  },
+  compact: {
+    tier: "compact",
+    maxVisibleNames: 5,
+    showEveryNthObject: 3,
+    fontSizePx: 12,
+    minOpacity: 0.56,
+    selectedOpacity: 1,
     showAllNames: false,
     showSelectedOnly: true,
-    minOpacity: 0.48,
-    selectedOpacity: 1,
-    fontSizePx: 9,
-    declutterSpacing: 0.06,
-  };
+  },
+};
+function normalizeNonNegativeInteger(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.floor(value));
 }
-
-export function resolveObjectNameDensityProfile(objectCount: number): ObjectNameDensityProfile {
-  const signature = buildObjectLabelDensitySignatureForCount(objectCount);
-  const cached = getObjectLabelCached<ObjectNameDensityProfile>("density", signature);
-  if (cached) {
-    traceObjectLabelCached("density", signature);
-    return cached;
+export function resolveObjectNameDensityTier(
+  objectCount: number
+): ObjectNameDensityTier {
+  const normalizedObjectCount =
+    normalizeNonNegativeInteger(objectCount);
+  if (normalizedObjectCount <= 8) {
+    return "comfortable";
   }
-
-  const profile = computeObjectNameDensityProfile(objectCount);
-  setObjectLabelCached("density", signature, profile);
-  traceObjectLabelComputed("density", signature, {
-    tier: profile.tier,
-    objectCount,
-    showAllNames: profile.showAllNames,
-    showSelectedOnly: profile.showSelectedOnly,
-  });
-  return profile;
+  if (normalizedObjectCount <= 18) {
+    return "balanced";
+  }
+  return "compact";
 }
-
-export function shouldRenderExecutiveObjectName(input: {
-  objectCount?: number;
-  profile?: ObjectNameDensityProfile;
-  selected: boolean;
-  focused: boolean;
-  index: number;
-}): boolean {
-  const profile =
-    input.profile ?? resolveObjectNameDensityProfile(input.objectCount ?? 0);
-  if (profile.showAllNames) return true;
-  if (profile.showSelectedOnly) return input.selected || input.focused;
-  return input.index % 2 === 0;
+export function resolveObjectNameDensityProfile(
+  objectCount: number
+): ObjectNameDensityProfile {
+  const tier = resolveObjectNameDensityTier(objectCount);
+  return OBJECT_NAME_DENSITY_PROFILES[tier];
 }
-
-export function resolveObjectNameOpacity(input: {
-  objectCount?: number;
-  profile?: ObjectNameDensityProfile;
-  selected: boolean;
-  focused: boolean;
-}): number {
-  const profile =
-    input.profile ?? resolveObjectNameDensityProfile(input.objectCount ?? 0);
-  if (input.selected || input.focused) return profile.selectedOpacity;
+export function shouldRenderExecutiveObjectName({
+  profile,
+  objectCount,
+  selected,
+  focused,
+  index,
+}: ShouldRenderExecutiveObjectNameInput): boolean {
+  if (selected || focused) return true;
+  const resolvedProfile =
+    profile ?? resolveObjectNameDensityProfile(objectCount ?? 0);
+  const normalizedIndex = normalizeNonNegativeInteger(index);
+  const normalizedObjectCount =
+    objectCount == null
+      ? resolvedProfile.maxVisibleNames
+      : normalizeNonNegativeInteger(objectCount);
+  if (normalizedIndex >= normalizedObjectCount) return false;
+  if (normalizedIndex >= resolvedProfile.maxVisibleNames) return false;
+  return normalizedIndex % resolvedProfile.showEveryNthObject === 0;
+}
+export type ResolveObjectNameOpacityInput = {
+  readonly profile: ObjectNameDensityProfile;
+  readonly objectCount?: number;
+  readonly selected: boolean;
+  readonly focused: boolean;
+};
+export function resolveObjectNameOpacity({
+  profile,
+  objectCount,
+  selected,
+  focused,
+}: ResolveObjectNameOpacityInput): number {
+  if (selected || focused) {
+    return profile.selectedOpacity;
+  }
+  const normalizedObjectCount =
+    objectCount == null
+      ? profile.maxVisibleNames
+      : normalizeNonNegativeInteger(objectCount);
+  if (normalizedObjectCount <= 0) {
+    return 0;
+  }
   return profile.minOpacity;
 }
-
+/** Retained for test harness compatibility — no logging side effects. */
 export function resetObjectNameDensityLogsForTests(): void {
-  /* retained for test compatibility — cache/diagnostics reset separately */
+  /* no-op */
 }

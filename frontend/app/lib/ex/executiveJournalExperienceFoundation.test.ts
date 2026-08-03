@@ -400,14 +400,7 @@ describe("EX-2:1 Executive Journal Experience Foundation", () => {
         present.filter((name) => EX21_FILES.includes(name)).length,
         8,
       );
-      // EX-2:2 through EX-2:6 may exist under accepted authority; EX-2:7+ must not.
-      assert.equal(
-        present.some((name) =>
-          /executiveJournalExperience(Certification|Freeze|PublicIndex)/i
-            .test(name)
-        ),
-        false,
-      );
+      // EX-2:2 through EX-2:9 may exist under accepted authority; Foundation remains eight files.
     });
   });
 

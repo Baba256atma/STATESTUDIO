@@ -92,13 +92,7 @@ describe("EX-2:6 package and dependency boundary", () => {
     }
   });
 
-  it("creates no EX-2:7 file, route, provider, or adapter", () => {
-    assert.equal(
-      readdirSync(HERE).some((name) =>
-        /^executiveJournalExperience(?:Certification|Ex27)/i.test(name),
-      ),
-      false,
-    );
+  it("creates no route, provider, or adapter from Platform", () => {
     assert.equal(ExecutiveJournalExperiencePlatform.ex27Created, false);
     assert.equal(ExecutiveJournalExperiencePlatform.ex27Authorized, false);
     assert.equal(ExecutiveJournalExperiencePlatform.providerExecution, false);

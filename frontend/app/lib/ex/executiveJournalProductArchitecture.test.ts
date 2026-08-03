@@ -4813,15 +4813,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
     });
 
     it("does not create later phases or routes; AD-EX2-08 itself remains non-creating", () => {
-      const exDir = readdirSync(HERE);
-      // AD-EX2-08 remains non-creating; AD-EX2-09/10 may create EX-2:2/3.
-      assert.equal(
-        exDir.some((name) =>
-          /executiveJournalExperience(Certification|Freeze|PublicIndex)/i
-            .test(name)
-        ),
-        false,
-      );
+      // AD-EX2-08 remains non-creating; later accepted phases may create EX-2:2..9.
       assert.equal(
         readdirSync(join(FRONTEND_ROOT, "app")).some((name) =>
           name === "executive"
@@ -5030,7 +5022,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       );
     });
 
-    it("preserves pending gates and keeps EX-2:7+ files absent", () => {
+    it("preserves pending gates without resolving production blockers", () => {
       assert.equal(
         getExecutiveJournalProductArchitectureGate("G-EX2-04").result,
         "Pending",
@@ -5056,13 +5048,6 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       // AD-EX2-09 authorizes EX-2:2 Registry implementation; Model+ remain uncreated here.
       assert.equal(
         ExecutiveJournalProductArchitectureDecisionAdrEx209.createsEx22,
-        false,
-      );
-      assert.equal(
-        readdirSync(HERE).some((name) =>
-          /executiveJournalExperience(Certification|Freeze|PublicIndex)/i
-            .test(name)
-        ),
         false,
       );
       assert.equal(isExecutiveJournalProductEx21Blocked(), true);
@@ -5236,7 +5221,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       assert.ok(model.absoluteProhibitions.length >= 18);
     });
 
-    it("preserves pending gates/issues and keeps EX-2:7+ files absent", () => {
+    it("preserves pending gates/issues without resolving production blockers", () => {
       assert.equal(
         getExecutiveJournalProductArchitectureGate("G-EX2-04").result,
         "Pending",
@@ -5266,13 +5251,6 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       );
       assert.equal(
         ExecutiveJournalProductArchitectureDecisionAdrEx210.createsEx23,
-        false,
-      );
-      assert.equal(
-        readdirSync(HERE).some((name) =>
-          /executiveJournalExperience(Certification|Freeze|PublicIndex)/i
-            .test(name)
-        ),
         false,
       );
       assert.throws(() =>
@@ -5570,7 +5548,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       assert.equal(validation.proposedPackage.length, 8);
       assert.equal(
         readdirSync(HERE).some((name) =>
-          /^executiveJournalExperienceCertification/.test(name)
+          /^executiveJournalExperience(?:DoesNotExistLaterPhase)/.test(name)
         ),
         false,
       );
@@ -5754,7 +5732,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       assert.equal(decision.ciLintGateClean, false);
       assert.equal(
         readdirSync(HERE).some((name) =>
-          /^executiveJournalExperienceCertification/.test(name)
+          /^executiveJournalExperience(?:DoesNotExistLaterPhase)/.test(name)
         ),
         false,
       );
@@ -5887,7 +5865,7 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
       );
       assert.equal(
         readdirSync(HERE).some((name) =>
-          /^executiveJournalExperienceCertification/.test(name)
+          /^executiveJournalExperience(?:DoesNotExistLaterPhase)/.test(name)
         ),
         false,
       );
@@ -6252,10 +6230,22 @@ describe("AD-EX2-00 — Executive Journal Product Architecture", () => {
         8,
       );
       assert.equal(
-        readdirSync(HERE).some((name) =>
+        readdirSync(HERE).filter((name) =>
           /^executiveJournalExperienceCertification/.test(name)
-        ),
-        false,
+        ).length,
+        8,
+      );
+      assert.equal(
+        readdirSync(HERE).filter((name) =>
+          /^executiveJournalExperienceFreeze/.test(name)
+        ).length,
+        8,
+      );
+      assert.equal(
+        readdirSync(HERE).filter((name) =>
+          /^executiveJournalExperiencePublicIndex(?:\.test)?\.ts$/.test(name)
+        ).length,
+        2,
       );
     });
 

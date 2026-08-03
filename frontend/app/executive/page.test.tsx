@@ -1,139 +1,126 @@
 /**
- * EX-BOOTSTRAP-1 — Executive Experience Route Bootstrap Tests.
+ * Sprint 1 + Sprint 2 — Executive Cockpit Integration & Visual Polish.
  *
- * Structural and render coverage for /executive.
- * No mocks. No network. No business logic.
+ * /executive composes the real EXS-1 → EXS-7 cockpit with Sprint 2 tokens.
  */
 
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { executiveStagePublicIndex } from "../lib/ex/executiveStagePublicIndex.ts";
+import { ExecutiveCockpit } from "./components/ExecutiveCockpit.tsx";
 import { ExecutiveShell } from "./components/ExecutiveShell.tsx";
-import { ExecutiveStageHost } from "./components/ExecutiveStageHost.tsx";
 import ExecutivePage from "./page.tsx";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-const BOOTSTRAP_FILES = Object.freeze([
-  "page.tsx",
-  "page.test.tsx",
-] as const);
-
-const COMPONENT_FILES = Object.freeze([
-  "ExecutiveShell.tsx",
-  "ExecutiveStageHost.tsx",
-] as const);
-
-const PROHIBITED_LIB_IMPORTS = Object.freeze([
-  /from ["']@\/app\/lib\/ex\/executiveStageTypes/,
-  /from ["']@\/app\/lib\/ex\/executiveStageRegistry/,
-  /from ["']@\/app\/lib\/ex\/executiveStageModel/,
-  /from ["']@\/app\/lib\/ex\/executiveStageValidation/,
-  /from ["']@\/app\/lib\/ex\/executiveStageManifest/,
-  /from ["']@\/app\/lib\/ex\/executiveStagePlatform/,
-  /from ["']@\/app\/lib\/ex\/executiveStageCertification/,
-  /from ["']@\/app\/lib\/ex\/executiveStageFreeze/,
-  /from ["']@\/app\/lib\/ex\/executiveStageFoundation/,
-  /from ["']@\/app\/lib\/ex\/executiveShell/,
-  /from ["']\.\.\/lib\/ex\/executiveStage(Types|Registry|Model|Validation|Manifest|Platform|Certification|Freeze|Foundation)/,
-  /from ["']\.\.\/lib\/ex\/executiveShell/,
-]);
-
-describe("EX-BOOTSTRAP-1 Executive Experience Route", () => {
-  it("creates exactly four bootstrap files", () => {
-    const pageDir = readdirSync(HERE);
-    for (const file of BOOTSTRAP_FILES) {
-      assert.ok(pageDir.includes(file), `missing ${file}`);
-    }
-    const componentsDir = readdirSync(join(HERE, "components"));
-    for (const file of COMPONENT_FILES) {
-      assert.ok(componentsDir.includes(file), `missing components/${file}`);
-    }
-    assert.equal(BOOTSTRAP_FILES.length + COMPONENT_FILES.length, 4);
-  });
-
-  it("page imports only the Public Index from lib/ex", () => {
-    const source = readFileSync(join(HERE, "page.tsx"), "utf8");
-    assert.match(
-      source,
-      /from ["']@\/app\/lib\/ex\/executiveStagePublicIndex["']/,
-    );
-    for (const pattern of PROHIBITED_LIB_IMPORTS) {
-      assert.equal(
-        pattern.test(source),
-        false,
-        `page.tsx must not match ${pattern}`,
-      );
-    }
-    assert.doesNotMatch(
-      source,
-      /from ["']@\/app\/lib\/ex\/(?!executiveStagePublicIndex)/,
-    );
-  });
-
-  it("StageHost imports only the Public Index from lib/ex", () => {
-    const source = readFileSync(
-      join(HERE, "components/ExecutiveStageHost.tsx"),
+describe("Sprint 1 Executive Cockpit Integration", () => {
+  it("composes Exs1Cockpit without redirecting to /executive/exs1", () => {
+    const pageSource = readFileSync(join(HERE, "page.tsx"), "utf8");
+    const cockpitSource = readFileSync(
+      join(HERE, "components/ExecutiveCockpit.tsx"),
       "utf8",
     );
+    assert.doesNotMatch(pageSource, /\bredirect\s*\(/i);
+    assert.doesNotMatch(pageSource, /from ["']next\/navigation["']/);
+    assert.doesNotMatch(pageSource, /href=["']\/executive\/exs1["']/);
     assert.match(
-      source,
-      /from ["']@\/app\/lib\/ex\/executiveStagePublicIndex["']/,
+      cockpitSource,
+      /from ["']\.\.\/exs1\/components\/Exs1Cockpit["']/,
     );
-    for (const pattern of PROHIBITED_LIB_IMPORTS) {
-      assert.equal(
-        pattern.test(source),
-        false,
-        `ExecutiveStageHost.tsx must not match ${pattern}`,
-      );
-    }
+    assert.match(cockpitSource, /Exs1Cockpit/);
   });
 
-  it("renders Executive page with Runtime status and release banner", () => {
+  it("renders /executive as the real Executive Cockpit", () => {
     const html = renderToStaticMarkup(React.createElement(ExecutivePage));
     assert.match(html, /data-testid="executive-page"/);
-    assert.match(html, /Executive Runtime/);
-    assert.match(html, /ReadyForConsumer/);
-    assert.match(html, /data-testid="runtime-readiness"/);
-    assert.match(html, /data-testid="development-banner"/);
-    assert.match(html, /Executive Experience/);
-    assert.match(html, /Phase · EX-1 · Released · Certified · Frozen · Stable/);
-    assert.match(html, new RegExp(executiveStagePublicIndex.readiness));
-    assert.match(
-      html,
-      new RegExp(
-        executiveStagePublicIndex.status.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-      ),
-    );
-  });
-
-  it("renders ExecutiveShell with Stage, Journal, and Timeline placeholders", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutiveShell));
     assert.match(html, /data-testid="executive-shell"/);
-    assert.match(html, /data-testid="executive-stage-container"/);
-    assert.match(html, /data-testid="journal-placeholder"/);
-    assert.match(html, /data-testid="timeline-placeholder"/);
-    assert.match(html, /Journal Placeholder/);
-    assert.match(html, /Timeline Placeholder/);
+    assert.match(html, /data-testid="executive-cockpit"/);
+    assert.match(html, /data-testid="exs1-cockpit"/);
+    assert.match(html, /data-testid="executive-cockpit-shell"/);
+    assert.match(html, /data-testid="executive-context-bar"/);
+    assert.match(html, /data-testid="executive-left-nav"/);
+    assert.match(html, /data-testid="executive-advisor-panel"/);
+    assert.match(html, /data-testid="executive-timeline-dock"/);
+    assert.match(html, /data-testid="executive-status-bar"/);
+    assert.match(html, /data-testid="executive-mode-selector"/);
+    assert.match(html, /data-testid="exs1-stage"/);
+    assert.match(html, /Production Delay/);
+    assert.match(html, /EXS-7/);
   });
 
-  it("renders ExecutiveStageHost with Stage title and Public Index metadata", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutiveStageHost));
-    assert.match(html, /data-testid="executive-stage-host"/);
-    assert.match(html, /Executive Stage/);
-    assert.match(html, /data-testid="stage-runtime-status"/);
-    assert.match(html, /data-testid="stage-public-index-version"/);
-    assert.match(html, /data-testid="stage-release-status"/);
-    assert.match(html, new RegExp(`v${executiveStagePublicIndex.version}`));
-    assert.match(html, /ReadyForConsumer/);
-    assert.match(
-      html,
-      /Released · Certified · Frozen · Stable/,
+  it("removes all placeholder UI from the production shell", () => {
+    const html = renderToStaticMarkup(React.createElement(ExecutiveShell));
+    assert.doesNotMatch(html, /Placeholder/);
+    assert.doesNotMatch(html, /Coming Soon/);
+    assert.doesNotMatch(html, /Mock Landing/);
+    assert.doesNotMatch(html, /Journal Placeholder/);
+    assert.doesNotMatch(html, /Timeline Placeholder/);
+    assert.doesNotMatch(html, /data-testid="journal-placeholder"/);
+    assert.doesNotMatch(html, /data-testid="timeline-placeholder"/);
+    assert.doesNotMatch(html, /data-testid="executive-stage-host"/);
+    assert.match(html, /data-testid="executive-cockpit-shell"/);
+  });
+
+  it("keeps /executive/exs1 as a sandbox composition of the same cockpit", () => {
+    const sandbox = readFileSync(join(HERE, "exs1/page.tsx"), "utf8");
+    assert.match(sandbox, /Exs1Cockpit/);
+    assert.match(sandbox, /data-testid="exs1-page"/);
+    const html = renderToStaticMarkup(React.createElement(ExecutiveCockpit));
+    assert.match(html, /data-testid="exs1-cockpit"/);
+    assert.match(html, /data-testid="executive-mode-selector"/);
+  });
+});
+
+describe("Sprint 2 Executive Visual Polish", () => {
+  it("ships Sprint 2 visual tokens and style guide", () => {
+    const theme = readFileSync(
+      join(HERE, "exs1/shell/executiveCockpitTheme.ts"),
+      "utf8",
     );
+    assert.match(theme, /export const motion/);
+    assert.match(theme, /export const typeScale/);
+    assert.match(theme, /export const elevation/);
+    assert.match(theme, /export const directorLanguage/);
+    assert.match(theme, /export const radius/);
+    const guide = readFileSync(
+      join(HERE, "exs1/shell/EXECUTIVE_VISUAL_STYLE_GUIDE.md"),
+      "utf8",
+    );
+    assert.match(guide, /Motion Guidelines/);
+    assert.match(guide, /Director Language/);
+  });
+
+  it("renders polished mode selector and case-file packs", () => {
+    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    assert.match(html, /Executive Mode/);
+    assert.match(html, /data-testid="executive-mode-trigger"/);
+    assert.match(html, /Case/);
+    assert.match(html, /Director/);
+    assert.match(html, /EXS-7 · S3/);
+  });
+});
+
+describe("Sprint 3 Executive Data Experience", () => {
+  it("ships mock data sources and mapping helpers", () => {
+    const config = readFileSync(
+      join(HERE, "exs1/data/ExecutiveDataConfig.ts"),
+      "utf8",
+    );
+    assert.match(config, /INITIAL_DATA_SOURCES/);
+    assert.match(config, /sales\.csv/);
+    assert.match(config, /INITIAL_DATA_MAPPINGS/);
+    assert.match(config, /createDataSource/);
+    assert.match(config, /toDataJournalEntry/);
+  });
+
+  it("keeps Data inactive until Left Nav opens Data", () => {
+    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    assert.match(html, /data-data-active="false"/);
+    assert.doesNotMatch(html, /data-testid="executive-data-explorer"/);
+    assert.match(html, /data-testid="executive-cockpit-shell"/);
   });
 });
