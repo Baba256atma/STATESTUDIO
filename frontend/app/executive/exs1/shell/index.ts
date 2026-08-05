@@ -11,6 +11,7 @@ export { ExecutiveStageFrame } from "./ExecutiveStageFrame";
 export { ExecutiveModeSelector } from "./ExecutiveModeSelector";
 export { ExecutiveAdvisorPanel } from "./ExecutiveAdvisorPanel";
 export type { ExecutiveAdvisorContent } from "./ExecutiveAdvisorPanel";
+export { ExecutiveResizablePanel } from "./ExecutiveResizablePanel";
 export { ExecutiveTimelineDock } from "./ExecutiveTimelineDock";
 export type { ExecutiveTimelinePack } from "./ExecutiveTimelineDock";
 export { ExecutiveStatusBar } from "./ExecutiveStatusBar";

@@ -179,9 +179,9 @@ describe("Sprint 5 Executive Advisor AI Integration", () => {
   it("renders Runtime-aware Advisor Assist surface on /executive", () => {
     const html = renderToStaticMarkup(React.createElement(ExecutivePage));
     assert.match(html, /data-testid="executive-advisor-panel"/);
-    assert.match(html, /data-testid="executive-advisor-conversation-mode"/);
-    assert.match(html, /data-testid="executive-advisor-proposals"/);
-    assert.match(html, /Pending Executive Action/);
+    assert.match(html, /data-testid="executive-advisor-context-button"/);
+    assert.match(html, /data-testid="executive-action-inbox-button"/);
+    assert.match(html, /Approvals/);
     assert.match(html, /EXS-7 · Beta/);
   });
 });

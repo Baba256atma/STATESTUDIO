@@ -9,13 +9,82 @@ import { formatAdvisorContextBrief } from "./ExecutiveAdvisorContextBuilder";
 import type {
   AdvisorEngineResult,
   AdvisorProposal,
+  AdvisorProposalKind,
   AdvisorReference,
   AdvisorSuggestion,
+  AdvisorSuggestionKind,
   ExecutiveAdvisorContext,
 } from "./ExecutiveAdvisorTypes";
 
-function id(prefix: string): string {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+/**
+ * Deterministic SSR-safe proposal identity from stable Runtime semantics.
+ * Never includes time, random, or UUID values.
+ */
+export function createProposalId(input: {
+  readonly kind: string;
+  readonly targetId?: string;
+  readonly sourceId?: string;
+  readonly mode: string;
+}): string {
+  return [
+    "proposal",
+    input.mode,
+    input.kind,
+    input.targetId ?? "none",
+    input.sourceId ?? "none",
+  ]
+    .join(":")
+    .toLowerCase()
+    .replace(/[^a-z0-9:-]+/g, "-");
+}
+
+function createSuggestionId(input: {
+  readonly mode: string;
+  readonly kind: AdvisorSuggestionKind;
+  readonly title: string;
+  readonly sourceId?: string;
+}): string {
+  return [
+    "suggestion",
+    input.mode,
+    input.kind,
+    input.title,
+    input.sourceId ?? "none",
+  ]
+    .join(":")
+    .toLowerCase()
+    .replace(/[^a-z0-9:-]+/g, "-");
+}
+
+function createReferenceId(input: {
+  readonly mode: string;
+  readonly kind: string;
+  readonly targetId?: string;
+}): string {
+  return ["reference", input.mode, input.kind, input.targetId ?? "none"]
+    .join(":")
+    .toLowerCase()
+    .replace(/[^a-z0-9:-]+/g, "-");
+}
+
+function proposalIdFor(
+  context: ExecutiveAdvisorContext,
+  kind: AdvisorProposalKind,
+  targetId?: string,
+  sourceId?: string,
+): string {
+  return createProposalId({
+    mode: context.mode,
+    kind,
+    targetId:
+      targetId ??
+      context.decisionId ??
+      context.scenarioId ??
+      context.selectedObjectId ??
+      context.packId ??
+      undefined,
+    sourceId: sourceId ?? context.packId ?? undefined,
+  });
 }
 
 function buildSuggestions(
@@ -23,7 +92,12 @@ function buildSuggestions(
 ): AdvisorSuggestion[] {
   const items: AdvisorSuggestion[] = [
     {
-      id: id("sug"),
+      id: createSuggestionId({
+        mode: context.mode,
+        kind: "Observation",
+        title: "Runtime Context Locked",
+        sourceId: context.packId ?? undefined,
+      }),
       kind: "Observation",
       title: "Runtime Context Locked",
       body: `Mode ${context.mode} · Pack ${context.packTitle} · Lens ${context.timelineLens}.`,
@@ -36,7 +110,12 @@ function buildSuggestions(
     context.highlightedFieldDisplayName !== context.highlightedFieldTechnical
   ) {
     items.push({
-      id: id("sug"),
+      id: createSuggestionId({
+        mode: context.mode,
+        kind: "Observation",
+        title: "Business Meaning Resolved",
+        sourceId: context.highlightedFieldTechnical,
+      }),
       kind: "Observation",
       title: "Business Meaning Resolved",
       body: `${context.highlightedFieldTechnical} means ${context.highlightedFieldDisplayName}.`,
@@ -45,21 +124,36 @@ function buildSuggestions(
 
   if (context.dataActive) {
     items.push({
-      id: id("sug"),
+      id: createSuggestionId({
+        mode: context.mode,
+        kind: "Recommendation",
+        title: "Complete Data Mapping",
+        sourceId: context.dataSourceId ?? undefined,
+      }),
       kind: "Recommendation",
       title: "Complete Data Mapping",
       body: `${context.dataSourceName ?? "Selected source"} should be mapped before Runtime data use.`,
     });
   } else if (context.mode === "Monitoring") {
     items.push({
-      id: id("sug"),
+      id: createSuggestionId({
+        mode: context.mode,
+        kind: "Warning",
+        title: "Monitoring Deviation",
+        sourceId: context.packId ?? undefined,
+      }),
       kind: "Warning",
       title: "Monitoring Deviation",
       body: context.monitoringSummary,
     });
     if (context.alertTitles[0]) {
       items.push({
-        id: id("sug"),
+        id: createSuggestionId({
+          mode: context.mode,
+          kind: "Risk",
+          title: "Alert Attention",
+          sourceId: context.alertTitles[0],
+        }),
         kind: "Risk",
         title: "Alert Attention",
         body: context.alertTitles[0],
@@ -67,7 +161,12 @@ function buildSuggestions(
     }
   } else if (context.mode === "Execution") {
     items.push({
-      id: id("sug"),
+      id: createSuggestionId({
+        mode: context.mode,
+        kind: "Warning",
+        title: "Execution Blockers",
+        sourceId: context.packId ?? undefined,
+      }),
       kind: "Warning",
       title: "Execution Blockers",
       body:
@@ -77,21 +176,36 @@ function buildSuggestions(
     });
   } else if (context.mode === "Decision") {
     items.push({
-      id: id("sug"),
+      id: createSuggestionId({
+        mode: context.mode,
+        kind: "Recommendation",
+        title: "Decision Ready for Review",
+        sourceId: context.decisionId ?? undefined,
+      }),
       kind: "Recommendation",
       title: "Decision Ready for Review",
       body: `${context.decisionName ?? "Active decision"} is ${context.decisionStatus ?? "pending"}.`,
     });
   } else if (context.mode === "Scenario") {
     items.push({
-      id: id("sug"),
+      id: createSuggestionId({
+        mode: context.mode,
+        kind: "Opportunity",
+        title: "Compare Scenarios",
+        sourceId: context.scenarioId ?? undefined,
+      }),
       kind: "Opportunity",
       title: "Compare Scenarios",
       body: `Active scenario ${context.scenarioName ?? "—"} — compare before deciding.`,
     });
   } else {
     items.push({
-      id: id("sug"),
+      id: createSuggestionId({
+        mode: context.mode,
+        kind: "Question",
+        title: "Executive Focus",
+        sourceId: context.selectedObjectId ?? context.packId ?? undefined,
+      }),
       kind: "Question",
       title: "Executive Focus",
       body: "Which object or pack should receive attention next?",
@@ -106,7 +220,12 @@ function buildProposals(context: ExecutiveAdvisorContext): AdvisorProposal[] {
 
   if (context.dataActive) {
     proposals.push({
-      id: id("prop"),
+      id: proposalIdFor(
+        context,
+        "Open Data Mapping",
+        context.dataSourceId ?? "data",
+        context.packId ?? undefined,
+      ),
       kind: "Open Data Mapping",
       title: "Open Data Mapping",
       body: "Open Mappings section for the active source. Requires manager approval.",
@@ -117,7 +236,12 @@ function buildProposals(context: ExecutiveAdvisorContext): AdvisorProposal[] {
 
   if (context.mode === "Scenario") {
     proposals.push({
-      id: id("prop"),
+      id: proposalIdFor(
+        context,
+        "Create Scenario",
+        context.scenarioId ?? "scenario",
+        context.packId ?? undefined,
+      ),
       kind: "Create Scenario",
       title: "Create Scenario",
       body: "Propose a new scenario draft from current Runtime context.",
@@ -127,7 +251,12 @@ function buildProposals(context: ExecutiveAdvisorContext): AdvisorProposal[] {
 
   if (context.mode === "Decision" && context.decisionId) {
     proposals.push({
-      id: id("prop"),
+      id: proposalIdFor(
+        context,
+        "Approve Decision",
+        context.decisionId,
+        context.packId ?? undefined,
+      ),
       kind: "Approve Decision",
       title: "Approve Decision",
       body: `Propose approval of ${context.decisionName ?? "decision"}. Manager must confirm.`,
@@ -138,7 +267,12 @@ function buildProposals(context: ExecutiveAdvisorContext): AdvisorProposal[] {
 
   if (context.mode === "Execution") {
     proposals.push({
-      id: id("prop"),
+      id: proposalIdFor(
+        context,
+        "Start Execution",
+        "execution-plan",
+        context.packId ?? undefined,
+      ),
       kind: "Start Execution",
       title: "Start Execution",
       body: "Propose starting the Capacity Expansion plan. No auto-start.",
@@ -148,7 +282,12 @@ function buildProposals(context: ExecutiveAdvisorContext): AdvisorProposal[] {
 
   if (context.mode === "Monitoring") {
     proposals.push({
-      id: id("prop"),
+      id: proposalIdFor(
+        context,
+        "Take Snapshot",
+        "monitoring-snapshot",
+        context.packId ?? undefined,
+      ),
       kind: "Take Snapshot",
       title: "Take Snapshot",
       body: "Propose a Monitoring Snapshot for Journal/Pack history.",
@@ -159,7 +298,7 @@ function buildProposals(context: ExecutiveAdvisorContext): AdvisorProposal[] {
   const focusId = context.selectedObjectId ?? context.selectedObjectIds[0];
   if (focusId) {
     proposals.push({
-      id: id("prop"),
+      id: proposalIdFor(context, "Focus Object", focusId, context.packId ?? undefined),
       kind: "Focus Object",
       title: `Focus ${context.selectedObjectLabel ?? focusId}`,
       body: "Request Director highlight for the referenced object.",
@@ -169,7 +308,12 @@ function buildProposals(context: ExecutiveAdvisorContext): AdvisorProposal[] {
   }
 
   proposals.push({
-    id: id("prop"),
+    id: proposalIdFor(
+      context,
+      "Open Journal",
+      "journal",
+      context.packId ?? undefined,
+    ),
     kind: "Open Journal",
     title: "Open Journal",
     body: "Open Explorer Journal for commitment history.",
@@ -184,7 +328,11 @@ function buildReferences(context: ExecutiveAdvisorContext): AdvisorReference[] {
   const refs: AdvisorReference[] = [];
   if (context.packId) {
     refs.push({
-      id: id("ref"),
+      id: createReferenceId({
+        mode: context.mode,
+        kind: "pack",
+        targetId: context.packId,
+      }),
       kind: "pack",
       label: context.packTitle,
       packId: context.packId,
@@ -192,7 +340,11 @@ function buildReferences(context: ExecutiveAdvisorContext): AdvisorReference[] {
   }
   if (context.selectedObjectId) {
     refs.push({
-      id: id("ref"),
+      id: createReferenceId({
+        mode: context.mode,
+        kind: "object",
+        targetId: context.selectedObjectId,
+      }),
       kind: "object",
       label: context.selectedObjectLabel ?? context.selectedObjectId,
       objectId: context.selectedObjectId,
@@ -200,7 +352,11 @@ function buildReferences(context: ExecutiveAdvisorContext): AdvisorReference[] {
   }
   if (context.scenarioId && context.scenarioName) {
     refs.push({
-      id: id("ref"),
+      id: createReferenceId({
+        mode: context.mode,
+        kind: "scenario",
+        targetId: context.scenarioId,
+      }),
       kind: "scenario",
       label: context.scenarioName,
       scenarioId: context.scenarioId,
@@ -208,14 +364,22 @@ function buildReferences(context: ExecutiveAdvisorContext): AdvisorReference[] {
   }
   if (context.decisionId && context.decisionName) {
     refs.push({
-      id: id("ref"),
+      id: createReferenceId({
+        mode: context.mode,
+        kind: "decision",
+        targetId: context.decisionId,
+      }),
       kind: "decision",
       label: context.decisionName,
       decisionId: context.decisionId,
     });
   }
   refs.push({
-    id: id("ref"),
+    id: createReferenceId({
+      mode: context.mode,
+      kind: "timeline",
+      targetId: `${context.timelineLens}-${context.timelinePosition}`,
+    }),
     kind: "timeline",
     label: `${context.timelineLens} · ${context.timelinePosition}`,
     lens: context.timelineLens,

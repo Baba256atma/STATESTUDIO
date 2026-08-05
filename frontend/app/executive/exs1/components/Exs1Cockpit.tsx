@@ -12,6 +12,7 @@ import {
   ExecutiveAdvisorProvider,
   useExecutiveAdvisor,
 } from "../advisor";
+import { ExecutiveConversationProvider } from "../conversation";
 import {
   ExecutiveMetadataExplorer,
   ExecutiveMetadataProvider,
@@ -569,7 +570,9 @@ function Exs1CockpitRuntimeTree() {
                       <ExecutiveSimulationProvider>
                         <ExecutiveRuntimeIntelligenceProvider>
                           <ExecutiveAdvisorProvider>
-                            <Exs1CockpitInner />
+                            <ExecutiveConversationProvider>
+                              <Exs1CockpitInner />
+                            </ExecutiveConversationProvider>
                           </ExecutiveAdvisorProvider>
                         </ExecutiveRuntimeIntelligenceProvider>
                       </ExecutiveSimulationProvider>

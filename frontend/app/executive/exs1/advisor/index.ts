@@ -2,7 +2,10 @@ export {
   buildExecutiveAdvisorContext,
   formatAdvisorContextBrief,
 } from "./ExecutiveAdvisorContextBuilder";
-export { runExecutiveAdvisorEngine } from "./ExecutiveAdvisorEngine";
+export {
+  createProposalId,
+  runExecutiveAdvisorEngine,
+} from "./ExecutiveAdvisorEngine";
 export {
   ADVISOR_PROMPT_TEMPLATES,
   selectPromptTemplate,
@@ -31,6 +34,28 @@ export { ExecutiveAdvisorSuggestionCard } from "./ExecutiveAdvisorSuggestionCard
 export { ExecutiveAdvisorProposalCard } from "./ExecutiveAdvisorProposalCard";
 export { ExecutiveAdvisorReference } from "./ExecutiveAdvisorReference";
 export { ExecutiveAdvisorConversation } from "./ExecutiveAdvisorConversation";
+export { ExecutiveAdvisorHeader } from "./ExecutiveAdvisorHeader";
+export { ExecutiveAdvisorStatusStrip } from "./ExecutiveAdvisorStatusStrip";
+export { ExecutiveAdvisorCollapseButton } from "./ExecutiveAdvisorCollapseButton";
+export { ExecutiveHelpPopover } from "./ExecutiveHelpPopover";
+export { ExecutiveContextPopover } from "./ExecutiveContextPopover";
+export { ExecutiveSuggestionPopover } from "./ExecutiveSuggestionPopover";
+export { ExecutiveFooterActions } from "./ExecutiveFooterActions";
+export { ExecutiveAdvisorFooter } from "./ExecutiveAdvisorFooter";
+export { ExecutiveActionInboxButton } from "./ExecutiveActionInboxButton";
+export { ExecutiveActionInboxDropdown } from "./ExecutiveActionInboxDropdown";
+export { ExecutiveActionInboxItem } from "./ExecutiveActionInboxItem";
+export { ExecutiveActionBadge } from "./ExecutiveActionBadge";
+export {
+  buildExecutiveActionItems,
+  useExecutiveActionInbox,
+  findProposalForAction,
+} from "./hooks/useExecutiveActionInbox";
+export type {
+  ExecutiveActionItem,
+  ExecutiveActionType,
+  ExecutiveActionPriority,
+} from "./hooks/useExecutiveActionInbox";
 export {
   getAdvisorInspectorSnapshot,
   publishAdvisorInspectorSnapshot,

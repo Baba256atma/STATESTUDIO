@@ -115,7 +115,11 @@ export const cockpit = {
   dayMuted: "#475569",
   /** Fixed geometry */
   navWidth: "3.5rem",
-  advisorWidth: "19.5rem",
+  /** Sprint 6.5 — Advisor Co-Pilot panel */
+  advisorWidth: "360px",
+  advisorMin: 320,
+  advisorMax: 520,
+  advisorCollapsedWidth: 52,
   drawerMin: 220,
   drawerMax: 420,
   drawerDefault: 280,

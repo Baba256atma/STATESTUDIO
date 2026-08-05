@@ -15,6 +15,7 @@ import {
   createInitialAdvisorSession,
   markProposalStatus,
 } from "./ExecutiveAdvisorSession.ts";
+import { buildExecutiveActionItems } from "./hooks/useExecutiveActionInbox.ts";
 
 describe("Sprint 5 Executive Advisor", () => {
   it("builds immutable context from Runtime state", () => {
@@ -71,6 +72,28 @@ describe("Sprint 5 Executive Advisor", () => {
     );
   });
 
+  it("uses deterministic SSR-safe proposal IDs for the same Runtime context", () => {
+    const store = createExecutiveRuntimeStore({ initialMode: "Problem" });
+    store.actions.selectObject("supplier");
+    const context = buildExecutiveAdvisorContext(store.getState());
+    const a = runExecutiveAdvisorEngine(context);
+    const b = runExecutiveAdvisorEngine(context);
+    assert.deepEqual(
+      a.proposals.map((p) => p.id),
+      b.proposals.map((p) => p.id),
+    );
+    for (const proposal of a.proposals) {
+      assert.match(proposal.id, /^proposal:/);
+      assert.doesNotMatch(proposal.id, /prop-[a-z0-9]+-[a-z0-9]+/);
+    }
+    const focus = a.proposals.find((p) => p.kind === "Focus Object");
+    assert.ok(focus);
+    assert.equal(
+      focus.id,
+      "proposal:problem:focus-object:supplier:production-delay",
+    );
+  });
+
   it("does not auto-mutate Runtime when engine generates proposals", () => {
     const store = createExecutiveRuntimeStore({ initialMode: "Execution" });
     const before = store.getState().execution.started;
@@ -79,12 +102,27 @@ describe("Sprint 5 Executive Advisor", () => {
     assert.equal(store.getState().execution.plan.status, "Idle");
   });
 
-  it("renders Advisor proposals inside the cockpit Assist panel", () => {
+  it("renders Advisor Action Inbox instead of a permanent proposal dashboard", () => {
     const html = renderToStaticMarkup(<Exs1Cockpit />);
     assert.match(html, /data-testid="executive-advisor-panel"/);
-    assert.match(html, /data-testid="executive-advisor-conversation-mode"/);
+    assert.match(html, /data-testid="executive-advisor-context-button"/);
     assert.match(html, /data-testid="executive-advisor-suggestion-cards"/);
-    assert.match(html, /data-testid="executive-advisor-proposals"/);
+    assert.match(html, /data-testid="executive-action-inbox-button"/);
+    assert.doesNotMatch(html, /data-testid="executive-advisor-proposals"/);
     assert.match(html, /EXS-7 · Beta/);
+  });
+
+  it("maps pending Runtime proposals into sorted Action Inbox items", () => {
+    const store = createExecutiveRuntimeStore({ initialMode: "Decision" });
+    const context = buildExecutiveAdvisorContext(store.getState());
+    const result = runExecutiveAdvisorEngine(context);
+    const items = buildExecutiveActionItems(result.proposals);
+    assert.ok(items.length > 0);
+    assert.ok(items.every((item) => item.status === "Requires Review"));
+    const decision = items.find((item) => item.type === "Decision");
+    if (decision) {
+      assert.equal(items[0]?.priority, "Critical");
+      assert.equal(decision.type, "Decision");
+    }
   });
 });
