@@ -1,8 +1,8 @@
 /**
- * Sprint 1 — Nexora Executive Cockpit entry.
+ * NEX-MVP:2 — Nexora Executive Decision Environment entry.
  *
  * Permanent production route: /executive
- * Composes EXS-1 → EXS-7 through ExecutiveCockpit (no duplication).
+ * Composes NEX-MVP:2 Executive Shell on NEX-MVP:1 foundation.
  * Development sandbox remains at /executive/exs1.
  */
 
@@ -10,13 +10,13 @@ import type { Metadata } from "next";
 import { ExecutiveShell } from "./components/ExecutiveShell";
 
 export const metadata: Metadata = {
-  title: "Nexora · Executive Cockpit",
+  title: "Nexora · Executive Environment",
   description:
-    "Nexora Executive Cockpit — Decision → Execution → Monitoring in one unified experience.",
+    "Nexora Executive Decision Environment — Stage-centered executive experience.",
 };
 
 /**
- * Executive Experience page — official entry at /executive.
+ * Executive Experience page — canonical MVP entry at /executive.
  */
 export default function ExecutivePage() {
   return (

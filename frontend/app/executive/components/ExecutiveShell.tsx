@@ -1,10 +1,8 @@
 "use client";
 
 /**
- * Sprint 1 — Executive Shell.
- *
- * Hosts the unified Executive Cockpit. No placeholders remain.
- * Composes existing EXS modules via ExecutiveCockpit → Exs1Cockpit.
+ * Executive Shell host for the Nexora MVP Executive Decision Environment.
+ * Composes NEX-MVP:2 via ExecutiveCockpit → NexoraExecutiveShell.
  */
 
 import { ExecutiveCockpit } from "./ExecutiveCockpit";

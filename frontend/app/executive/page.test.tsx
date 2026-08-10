@@ -1,7 +1,8 @@
 /**
- * Sprint 1 + Sprint 2 — Executive Cockpit Integration & Visual Polish.
+ * /executive production route + EXS module regression suite.
  *
- * /executive composes the real EXS-1 → EXS-7 cockpit with Sprint 2 tokens.
+ * Production route composes NEX-MVP:2 Executive Shell.
+ * EXS-1 → EXS-7 modules remain available via /executive/exs1 sandbox.
  */
 
 import assert from "node:assert/strict";
@@ -14,11 +15,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { ExecutiveCockpit } from "./components/ExecutiveCockpit.tsx";
 import { ExecutiveShell } from "./components/ExecutiveShell.tsx";
 import ExecutivePage from "./page.tsx";
+import { Exs1Cockpit } from "./exs1/components/Exs1Cockpit.tsx";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-describe("Sprint 1 Executive Cockpit Integration", () => {
-  it("composes Exs1Cockpit without redirecting to /executive/exs1", () => {
+describe("NEX-MVP:2 /executive production route", () => {
+  it("composes NexoraExecutiveShell without redirecting to /executive/exs1", () => {
     const pageSource = readFileSync(join(HERE, "page.tsx"), "utf8");
     const cockpitSource = readFileSync(
       join(HERE, "components/ExecutiveCockpit.tsx"),
@@ -29,47 +31,43 @@ describe("Sprint 1 Executive Cockpit Integration", () => {
     assert.doesNotMatch(pageSource, /href=["']\/executive\/exs1["']/);
     assert.match(
       cockpitSource,
-      /from ["']\.\.\/exs1\/components\/Exs1Cockpit["']/,
+      /from ["']\.\.\/nex-mvp\/NexoraExecutiveShell["']/,
     );
-    assert.match(cockpitSource, /Exs1Cockpit/);
+    assert.match(cockpitSource, /NexoraExecutiveShell/);
   });
 
-  it("renders /executive as the real Executive Cockpit", () => {
+  it("renders /executive as the Nexora MVP Executive Shell", () => {
     const html = renderToStaticMarkup(React.createElement(ExecutivePage));
     assert.match(html, /data-testid="executive-page"/);
     assert.match(html, /data-testid="executive-shell"/);
     assert.match(html, /data-testid="executive-cockpit"/);
-    assert.match(html, /data-testid="exs1-cockpit"/);
-    assert.match(html, /data-testid="executive-cockpit-shell"/);
+    assert.match(html, /data-testid="nexora-executive-shell"/);
     assert.match(html, /data-testid="executive-context-bar"/);
     assert.match(html, /data-testid="executive-left-nav"/);
     assert.match(html, /data-testid="executive-advisor-panel"/);
     assert.match(html, /data-testid="executive-timeline-dock"/);
     assert.match(html, /data-testid="executive-status-bar"/);
-    assert.match(html, /data-testid="executive-mode-selector"/);
-    assert.match(html, /data-testid="exs1-stage"/);
-    assert.match(html, /Production Delay/);
-    assert.match(html, /EXS-7/);
+    assert.match(html, /data-testid="nexora-stage-mount"/);
+    assert.match(html, /data-testid="nexora-workspace-dial-mount"/);
+    assert.match(html, /data-active-workspace="overview"/);
+    assert.match(html, /data-presentation-state="minimum"/);
   });
 
-  it("removes all placeholder UI from the production shell", () => {
+  it("keeps Stage dominant and omits EXS mode selector on MVP route", () => {
     const html = renderToStaticMarkup(React.createElement(ExecutiveShell));
+    assert.match(html, /data-testid="executive-stage-frame"/);
+    assert.match(html, /data-testid="executive-stage-column"/);
+    assert.doesNotMatch(html, /data-testid="executive-mode-selector"/);
+    assert.doesNotMatch(html, /data-testid="exs1-cockpit"/);
     assert.doesNotMatch(html, /Placeholder/);
     assert.doesNotMatch(html, /Coming Soon/);
-    assert.doesNotMatch(html, /Mock Landing/);
-    assert.doesNotMatch(html, /Journal Placeholder/);
-    assert.doesNotMatch(html, /Timeline Placeholder/);
-    assert.doesNotMatch(html, /data-testid="journal-placeholder"/);
-    assert.doesNotMatch(html, /data-testid="timeline-placeholder"/);
-    assert.doesNotMatch(html, /data-testid="executive-stage-host"/);
-    assert.match(html, /data-testid="executive-cockpit-shell"/);
   });
 
-  it("keeps /executive/exs1 as a sandbox composition of the same cockpit", () => {
+  it("keeps /executive/exs1 as a sandbox composition of Exs1Cockpit", () => {
     const sandbox = readFileSync(join(HERE, "exs1/page.tsx"), "utf8");
     assert.match(sandbox, /Exs1Cockpit/);
     assert.match(sandbox, /data-testid="exs1-page"/);
-    const html = renderToStaticMarkup(React.createElement(ExecutiveCockpit));
+    const html = renderToStaticMarkup(React.createElement(Exs1Cockpit));
     assert.match(html, /data-testid="exs1-cockpit"/);
     assert.match(html, /data-testid="executive-mode-selector"/);
   });
@@ -94,8 +92,8 @@ describe("Sprint 2 Executive Visual Polish", () => {
     assert.match(guide, /Director Language/);
   });
 
-  it("renders polished mode selector and case-file packs", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+  it("renders polished mode selector in EXS sandbox cockpit", () => {
+    const html = renderToStaticMarkup(React.createElement(Exs1Cockpit));
     assert.match(html, /Executive Mode/);
     assert.match(html, /data-testid="executive-mode-trigger"/);
     assert.match(html, /Case/);
@@ -117,8 +115,8 @@ describe("Sprint 3 Executive Data Experience", () => {
     assert.match(config, /toDataJournalEntry/);
   });
 
-  it("keeps Data inactive until Left Nav opens Data", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+  it("keeps Data inactive until Left Nav opens Data in EXS sandbox", () => {
+    const html = renderToStaticMarkup(React.createElement(Exs1Cockpit));
     assert.match(html, /data-data-active="false"/);
     assert.doesNotMatch(html, /data-testid="executive-data-explorer"/);
     assert.match(html, /data-testid="executive-cockpit-shell"/);
@@ -146,8 +144,8 @@ describe("Sprint 4 Executive Runtime Integration", () => {
     assert.match(hooks, /useRuntimeDecision/);
   });
 
-  it("renders cockpit as a Runtime consumer without UI regression", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+  it("renders EXS sandbox as a Runtime consumer without UI regression", () => {
+    const html = renderToStaticMarkup(React.createElement(Exs1Cockpit));
     assert.match(html, /data-testid="exs1-cockpit"/);
     assert.match(html, /EXS-7 · Beta/);
     assert.match(html, /data-testid="executive-pack-production-delay"/);
@@ -176,8 +174,8 @@ describe("Sprint 5 Executive Advisor AI Integration", () => {
     assert.match(templates, /monitoring-review/);
   });
 
-  it("renders Runtime-aware Advisor Assist surface on /executive", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+  it("renders Runtime-aware Advisor Assist surface in EXS sandbox", () => {
+    const html = renderToStaticMarkup(React.createElement(Exs1Cockpit));
     assert.match(html, /data-testid="executive-advisor-panel"/);
     assert.match(html, /data-testid="executive-advisor-context-button"/);
     assert.match(html, /data-testid="executive-action-inbox-button"/);
@@ -202,8 +200,8 @@ describe("Phase A Executive Metadata & Knowledge", () => {
     assert.match(graph, /MAT_QTY|Available Inventory|supplies/);
   });
 
-  it("exposes Knowledge nav without breaking cockpit anchors", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+  it("exposes Knowledge nav without breaking EXS cockpit anchors", () => {
+    const html = renderToStaticMarkup(React.createElement(Exs1Cockpit));
     assert.match(html, /data-testid="executive-nav-knowledge"/);
     assert.match(html, /data-testid="exs1-cockpit"/);
     assert.match(html, /data-testid="executive-advisor-panel"/);
@@ -228,7 +226,7 @@ describe("Phase B Executive Runtime Intelligence", () => {
   });
 
   it("exposes Intelligence nav without breaking Runtime anchors", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    const html = renderToStaticMarkup(React.createElement(Exs1Cockpit));
     assert.match(html, /data-testid="executive-nav-intelligence"/);
     assert.match(html, /data-testid="exs1-object-inventory"/);
     assert.match(html, /data-testid="executive-advisor-panel"/);
@@ -252,8 +250,8 @@ describe("Phase C Enterprise Connectors", () => {
     assert.match(csv, /SAMPLE_INVENTORY_CSV/);
   });
 
-  it("keeps cockpit Runtime anchors with Beta version", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+  it("keeps EXS cockpit Runtime anchors with Beta version", () => {
+    const html = renderToStaticMarkup(React.createElement(Exs1Cockpit));
     assert.match(html, /data-testid="exs1-cockpit"/);
     assert.match(html, /data-testid="executive-advisor-panel"/);
     assert.match(html, /EXS-7 · Beta/);
@@ -277,7 +275,7 @@ describe("Phase D Executive Scenario Simulation", () => {
   });
 
   it("exposes Simulations nav without breaking Runtime anchors", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    const html = renderToStaticMarkup(React.createElement(Exs1Cockpit));
     assert.match(html, /data-testid="executive-nav-simulations"/);
     assert.match(html, /data-testid="exs1-object-inventory"/);
     assert.match(html, /EXS-7 · Beta/);
@@ -305,9 +303,17 @@ describe("Phase E Beta Preparation & Hardening", () => {
   });
 
   it("exposes Settings and Beta version without breaking Runtime anchors", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
+    const html = renderToStaticMarkup(React.createElement(Exs1Cockpit));
     assert.match(html, /data-testid="executive-nav-settings"/);
     assert.match(html, /data-testid="exs1-object-inventory"/);
     assert.match(html, /EXS-7 · Beta/);
+  });
+});
+
+describe("ExecutiveCockpit production wrapper", () => {
+  it("mounts MVP shell through ExecutiveCockpit", () => {
+    const html = renderToStaticMarkup(React.createElement(ExecutiveCockpit));
+    assert.match(html, /data-testid="executive-cockpit"/);
+    assert.match(html, /data-testid="nexora-executive-shell"/);
   });
 });

@@ -1,29 +1,29 @@
 "use client";
 
 /**
- * Sprint 1 — Official Executive Cockpit composition root.
+ * Official Executive Cockpit composition root.
  *
- * Consumes the completed EXS-1 → EXS-7 host without duplication.
- * /executive/exs1 remains the development sandbox using the same modules.
+ * /executive → NEX-MVP:2 Nexora Executive Shell.
+ * /executive/exs1 remains the EXS development sandbox.
  */
 
-import { Exs1Cockpit } from "../exs1/components/Exs1Cockpit";
+import { NexoraExecutiveShell } from "../nex-mvp/NexoraExecutiveShell";
 
 /**
- * ExecutiveCockpit — permanent Nexora entry composition.
+ * ExecutiveCockpit — permanent Nexora MVP entry composition.
  */
 export function ExecutiveCockpit() {
   return (
     <div
       data-testid="executive-cockpit"
       style={{
-        height: "100vh",
+        height: "100%",
         width: "100%",
         minHeight: 0,
         overflow: "hidden",
       }}
     >
-      <Exs1Cockpit />
+      <NexoraExecutiveShell />
     </div>
   );
 }

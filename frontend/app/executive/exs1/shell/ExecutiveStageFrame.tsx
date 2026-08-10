@@ -5,13 +5,26 @@ import { cockpit } from "./executiveCockpitTheme";
 type Props = {
   readonly children: ReactNode;
   readonly overlay?: ReactNode;
+  /**
+   * Stage-associated control mount.
+   * Defaults to EXS Mode Selector. Pass MVP Workspace Dial mount (or null)
+   * to replace it without removing Stage ownership.
+   */
+  readonly stageControls?: ReactNode | null;
 };
 
 /**
  * Executive Stage Frame — largest UI region.
- * Mode Selector reads ExecutiveModeContext (only mode control).
+ * Mode Selector reads ExecutiveModeContext when stageControls is omitted.
  */
-export function ExecutiveStageFrame({ children, overlay }: Props) {
+export function ExecutiveStageFrame({
+  children,
+  overlay,
+  stageControls,
+}: Props) {
+  const controls =
+    stageControls === undefined ? <ExecutiveModeSelector /> : stageControls;
+
   return (
     <section
       data-testid="executive-stage-frame"
@@ -39,7 +52,7 @@ export function ExecutiveStageFrame({ children, overlay }: Props) {
         }}
       >
         {children}
-        <ExecutiveModeSelector />
+        {controls}
         {overlay ? (
           <div
             data-testid="executive-stage-overlay"
