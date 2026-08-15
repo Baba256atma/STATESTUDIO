@@ -964,6 +964,19 @@ function emptyStore(): ExecutiveChangeBaselineStore {
 
 let sessionStore: ExecutiveChangeBaselineStore = emptyStore();
 
+/**
+ * The change-baseline store is process-global. On the Node SSR heap it is shared
+ * across requests, so consulting it during server render can append a
+ * `changes-since-visit` Queue entry that the client's fresh heap will not have —
+ * exactly the Executive Queue hydration mismatch.
+ *
+ * Product intent: consult only in the browser after a canonical empty first paint
+ * (baseline is established post-hydration via ensureExecutiveChangeBaseline).
+ */
+export function shouldConsultExecutiveChangeSessionStoreForPresentation(): boolean {
+  return typeof window !== "undefined";
+}
+
 export function resetExecutiveChangeBaselineStoreForTests(): void {
   sessionStore = emptyStore();
   snapshotSeq = 0;

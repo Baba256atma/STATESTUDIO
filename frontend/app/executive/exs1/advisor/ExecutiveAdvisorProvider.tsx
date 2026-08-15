@@ -14,6 +14,7 @@ import {
   useExecutiveRuntimeState,
   useExecutiveRuntimeStoreApi,
 } from "../runtime";
+import { createExecutiveRuntimeStoreDecisionAdapter } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
 import { buildExecutiveAdvisorContext } from "./ExecutiveAdvisorContextBuilder";
 import { runExecutiveAdvisorEngine } from "./ExecutiveAdvisorEngine";
 import { publishAdvisorInspectorSnapshot } from "./advisorInspectorBridge";
@@ -143,6 +144,7 @@ export function ExecutiveAdvisorProvider({ children }: Props) {
   const executeApprovedProposal = useCallback(
     (proposal: AdvisorProposal) => {
       const actions = store.actions;
+      const decisionAdapter = createExecutiveRuntimeStoreDecisionAdapter(store);
       switch (proposal.kind) {
         case "Create Scenario":
           actions.addScenario({
@@ -153,7 +155,14 @@ export function ExecutiveAdvisorProvider({ children }: Props) {
           });
           break;
         case "Approve Decision":
-          if (proposal.decisionId) actions.approveDecision(proposal.decisionId);
+          if (proposal.decisionId) {
+            const existing = decisionAdapter.getDecision(proposal.decisionId);
+            decisionAdapter.transitionDecision({
+              decisionId: proposal.decisionId,
+              action: "approve",
+              title: existing?.title ?? "Decision",
+            });
+          }
           break;
         case "Start Execution":
           actions.startExecution();

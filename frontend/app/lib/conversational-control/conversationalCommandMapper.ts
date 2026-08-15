@@ -38,6 +38,22 @@ function executionClassForCommand(
     case "request-explanation":
     case "request-prioritization":
       return "analysis";
+    case "define-scenario":
+    case "modify-scenario":
+    case "evaluate-scenario":
+    case "compare-scenarios":
+    case "explain-scenario":
+    case "open-scenario":
+    case "defer-decision-commitment":
+    case "commit-decision":
+    case "approve-decision":
+    case "reject-decision":
+    case "defer-decision":
+    case "reconsider-decision":
+    case "confirm-decision-commitment":
+    case "cancel-decision-commitment":
+    case "prefer-option":
+      return "analysis";
     case "reveal-related":
     case "reveal-problems":
     case "reveal-goals":
@@ -88,6 +104,23 @@ function mappedReasonFor(kind: NexoraConversationalCommandKind): string {
     case "request-explanation":
     case "request-prioritization":
       return CONVERSATIONAL_COMMAND_REASON.MAPPED_RECOMMENDATION;
+    case "define-scenario":
+    case "modify-scenario":
+    case "evaluate-scenario":
+    case "compare-scenarios":
+    case "explain-scenario":
+    case "open-scenario":
+    case "defer-decision-commitment":
+      return CONVERSATIONAL_COMMAND_REASON.MAPPED_SCENARIO;
+    case "commit-decision":
+    case "approve-decision":
+    case "reject-decision":
+    case "defer-decision":
+    case "reconsider-decision":
+    case "confirm-decision-commitment":
+    case "cancel-decision-commitment":
+    case "prefer-option":
+      return CONVERSATIONAL_COMMAND_REASON.MAPPED_DECISION_COMMITMENT;
     default:
       return CONVERSATIONAL_COMMAND_REASON.DETERMINISTIC;
   }

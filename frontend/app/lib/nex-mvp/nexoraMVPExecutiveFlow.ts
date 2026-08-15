@@ -29,6 +29,11 @@ import {
   type NexoraMVPFlowJournalPackFixture,
   type NexoraMVPFlowTimelineEventFixture,
 } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlowFixtures";
+import type { NexoraDecisionRuntimeAdapter } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
+import {
+  projectCanonicalDecisionToFlowRecord,
+  serializeCanonicalDecisionStatus,
+} from "@/app/lib/conversational-control/executiveDecisionStatusProjection";
 
 // ─── Identity ───────────────────────────────────────────────────────────────
 
@@ -561,7 +566,8 @@ export function getNexoraMVPFlowDecisionStatus(
 }
 
 /**
- * Overlay presentation actions with authoritative flow-domain availability.
+ * Overlay presentation actions with flowDomain Decision *projection* availability.
+ * Final transition legality still belongs to canonical Decision Runtime.
  */
 export function resolveNexoraMVPFlowPresentationActions(
   base: readonly NexoraMVPPresentationAvailableAction[],
@@ -579,7 +585,8 @@ export function resolveNexoraMVPFlowPresentationActions(
             disabledReason: "No decision record for current subject.",
           });
         }
-        const available = decision.status === "under-review";
+        const available =
+          decision.status === "under-review" && decision.locked !== true;
         return Object.freeze({
           ...action,
           available,
@@ -590,7 +597,8 @@ export function resolveNexoraMVPFlowPresentationActions(
       }
       if (action.id.includes("reject") && subjectId != null) {
         const decision = decisionOf(state, subjectId);
-        const available = decision?.status === "under-review";
+        const available =
+          decision?.status === "under-review" && decision.locked !== true;
         return Object.freeze({
           ...action,
           available: Boolean(available),
@@ -704,12 +712,96 @@ function withClearedPending(
 }
 
 /**
- * Apply consequential Decision/Execution action against fixture domain state.
- * Synchronous MVP stand-in for authoritative runtime results.
+ * Project canonical Runtime Decision status/lock onto flowDomain Decision records.
+ * flowDomain remains a fixture/projection surface — not product transition authority.
+ */
+export function projectNexoraMVPFlowDecisionsFromCanonicalRuntime(
+  state: NexoraMVPFlowDomainState,
+  runtime: NexoraDecisionRuntimeAdapter,
+): NexoraMVPFlowDomainState {
+  const nextDecisions = Object.freeze(
+    state.decisions.map((entry) => {
+      const canonical = runtime.getDecision(entry.id);
+      if (canonical == null) return entry;
+      const projected = projectCanonicalDecisionToFlowRecord(canonical, {
+        label: entry.label,
+        sourceScenarioId: entry.sourceScenarioId,
+        sourceProblemId: entry.sourceProblemId,
+        objectId: entry.objectId,
+      });
+      return Object.freeze({
+        id: projected.id,
+        status: projected.status as NexoraMVPFlowDecisionStatus,
+        locked: projected.locked,
+        sourceScenarioId: projected.sourceScenarioId,
+        sourceProblemId: projected.sourceProblemId,
+        objectId: projected.objectId,
+        label: projected.label,
+      });
+    }),
+  );
+  return Object.freeze({
+    ...state,
+    decisions: nextDecisions,
+  });
+}
+
+/**
+ * Stage/catalog Decision subject status derive — consumer only.
+ * Overlays flowDomain projection (itself from canonical Runtime) onto fixture status.
+ * Does not write Stage focus, camera, or topology.
+ */
+export function projectNexoraMVPCatalogDecisionStatusesFromFlowDomain<
+  TCatalog extends {
+    readonly contextSubjects: readonly {
+      readonly id: string;
+      readonly kind: string;
+      readonly status: string;
+      readonly label: string;
+      readonly attention: string;
+    }[];
+  },
+>(
+  catalog: TCatalog,
+  state: NexoraMVPFlowDomainState,
+): TCatalog {
+  const byId = new Map(state.decisions.map((d) => [d.id, d]));
+  const contextSubjects = Object.freeze(
+    catalog.contextSubjects.map((subject) => {
+      if (subject.kind !== "decision") return subject;
+      const decision = byId.get(subject.id);
+      if (decision == null) return subject;
+      return Object.freeze({
+        ...subject,
+        status: decision.status,
+      });
+    }),
+  );
+  return Object.freeze({
+    ...catalog,
+    contextSubjects,
+  }) as TCatalog;
+}
+
+export type NexoraMVPFlowDomainActionOptions = {
+  /**
+   * Required for Decision approve/reject — canonical transition authority.
+   * Execution actions do not require this.
+   */
+  readonly decisionRuntime?: NexoraDecisionRuntimeAdapter | null;
+  /** Deterministic timeline stamp for tests / SSR-safe hosts. */
+  readonly occurredAt?: string;
+};
+
+/**
+ * Apply consequential Decision/Execution action.
+ * Decision status mutations must go through decisionRuntime (canonical authority).
+ * flowDomain Decision slice is updated only as a projection afterward.
  */
 export function applyNexoraMVPFlowDomainAction(
   state: NexoraMVPFlowDomainState,
   request: NexoraMVPFlowDomainActionRequest,
+  options?: NexoraMVPFlowDomainActionOptions,
 ): NexoraMVPFlowDomainActionResult {
   if (
     state.pendingActionId != null &&
@@ -731,7 +823,7 @@ export function applyNexoraMVPFlowDomainAction(
     });
   }
 
-  const now = new Date().toISOString();
+  const now = options?.occurredAt ?? "2026-08-15T12:00:00.000Z";
 
   if (
     request.kind === "approve-decision" ||
@@ -746,12 +838,57 @@ export function applyNexoraMVPFlowDomainAction(
         message: "No current Decision linked for this action.",
       });
     }
-    if (decision.status !== "under-review") {
+
+    const runtime = options?.decisionRuntime ?? null;
+    if (runtime == null) {
+      return Object.freeze({
+        ok: false,
+        state,
+        reason: "canonical-runtime-required",
+        message:
+          "Decision transitions require canonical Decision Runtime authority.",
+      });
+    }
+
+    const action =
+      request.kind === "approve-decision"
+        ? ("approve" as const)
+        : ("reject" as const);
+    const transition = runtime.transitionDecision({
+      decisionId: decision.id,
+      action,
+      title: decision.label,
+      scenarioId: decision.sourceScenarioId ?? undefined,
+    });
+
+    if (
+      transition.status === "transition-not-allowed" ||
+      transition.status === "failed"
+    ) {
       return Object.freeze({
         ok: false,
         state,
         reason: "invalid-transition",
-        message: `Cannot ${request.kind} while Decision is ${decision.status}.`,
+        message:
+          transition.reasons.join("; ") ||
+          `Cannot ${request.kind} while Decision is ${decision.status}.`,
+      });
+    }
+
+    if (transition.status === "already-committed") {
+      const projected = projectNexoraMVPFlowDecisionsFromCanonicalRuntime(
+        state,
+        runtime,
+      );
+      return Object.freeze({
+        ok: false,
+        state: withClearedPending(projected, {
+          lastActionMessage: `${decision.label} already ${serializeCanonicalDecisionStatus(
+            transition.decision?.status ?? "Approved",
+          )}.`,
+        }),
+        reason: "duplicate",
+        message: "This Decision transition was already recorded.",
       });
     }
 
@@ -760,22 +897,22 @@ export function applyNexoraMVPFlowDomainAction(
     const eventId = `tl-${request.subjectId}-${nextStatus}`;
     const packId = `pack-${request.subjectId}-${nextStatus}`;
 
-    // Prevent duplicate successful history for same transition
     if (state.timelineEvents.some((event) => event.id === eventId)) {
+      const projected = projectNexoraMVPFlowDecisionsFromCanonicalRuntime(
+        state,
+        runtime,
+      );
       return Object.freeze({
         ok: false,
-        state,
+        state: withClearedPending(projected, {}),
         reason: "duplicate",
         message: "This Decision transition was already recorded.",
       });
     }
 
-    const nextDecisions = Object.freeze(
-      state.decisions.map((entry) =>
-        entry.id === decision.id
-          ? Object.freeze({ ...entry, status: nextStatus })
-          : entry,
-      ),
+    const projectedBase = projectNexoraMVPFlowDecisionsFromCanonicalRuntime(
+      state,
+      runtime,
     );
 
     const timelineEvent = Object.freeze({
@@ -808,10 +945,10 @@ export function applyNexoraMVPFlowDomainAction(
       timelineEventId: eventId,
     });
 
-    let nextExecutions = state.executions;
+    let nextExecutions = projectedBase.executions;
     if (nextStatus === "approved") {
       nextExecutions = Object.freeze(
-        state.executions.map((entry) =>
+        projectedBase.executions.map((entry) =>
           entry.sourceDecisionId === decision.id && entry.status === "planned"
             ? Object.freeze({
                 ...entry,
@@ -823,11 +960,16 @@ export function applyNexoraMVPFlowDomainAction(
       );
     }
 
-    const next = withClearedPending(state, {
-      decisions: nextDecisions,
+    const next = withClearedPending(projectedBase, {
       executions: nextExecutions,
-      timelineEvents: Object.freeze([...state.timelineEvents, timelineEvent]),
-      journalPacks: Object.freeze([...state.journalPacks, journalPack]),
+      timelineEvents: Object.freeze([
+        ...projectedBase.timelineEvents,
+        timelineEvent,
+      ]),
+      journalPacks: Object.freeze([
+        ...projectedBase.journalPacks,
+        journalPack,
+      ]),
       lastActionMessage: `${decision.label} ${nextStatus}.`,
     });
 

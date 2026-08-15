@@ -69,6 +69,7 @@ import {
   resolveExecutiveChangeCollectionHeader,
   resolveExecutiveChangeQueueEntry,
   resolveExecutiveMeaningfulChanges,
+  shouldConsultExecutiveChangeSessionStoreForPresentation,
   type ExecutiveChangeComparisonResult,
   type ExecutiveChangeObjectSnapshot,
   type ExecutiveChangeSnapshot,
@@ -722,6 +723,8 @@ function resolveDefaultChangeComparisonForPreparation(
   const changeSnapshot = buildNexoraMVPExecutiveChangeSnapshot(catalog, {
     workspace: state.workspace,
   });
+  // Writer/prep resolution path: establish first-visit baseline when missing.
+  // Stage derive does not call this without an explicit changeComparison.
   let acknowledged = getAcknowledgedExecutiveChangeBaseline(
     changeSnapshot.scopeKey,
   );
@@ -2156,13 +2159,31 @@ function buildContextConnections(
 }
 
 /**
+ * Options for Stage interaction presentation derive.
+ *
+ * `consultExecutiveChangeSessionStore` defaults to the browser-only gate:
+ * the process-global change baseline must not influence SSR Queue markup.
+ */
+export type DeriveNexoraMVPStageInteractionPresentationOptions = {
+  readonly consultExecutiveChangeSessionStore?: boolean;
+};
+
+/**
  * Derive Stage interaction presentation from interaction state.
  * Uses NEX-MVP:3 scene mapping for objects; adds context nodes.
+ *
+ * Pure with respect to Queue change entries when the session store is not
+ * consulted: identical (state, catalog) → identical queueEntries. Does not
+ * write the change-baseline store during derive (no ensure side effect).
  */
 export function deriveNexoraMVPStageInteractionPresentation(
   state: NexoraMVPObjectInteractionState,
   catalog: NexoraMVPObjectInteractionCatalog = getDefaultNexoraMVPObjectInteractionCatalog(),
+  options?: DeriveNexoraMVPStageInteractionPresentationOptions,
 ): NexoraMVPStageInteractionPresentation {
+  const consultExecutiveChangeSessionStore =
+    options?.consultExecutiveChangeSessionStore ??
+    shouldConsultExecutiveChangeSessionStoreForPresentation();
   const collectionActive = state.collectionContext != null;
   const preparationActive = state.preparationContext != null;
   const presentationContextActive = collectionActive || preparationActive;
@@ -2249,24 +2270,27 @@ export function deriveNexoraMVPStageInteractionPresentation(
     readonly label?: string;
   }>;
 
-  // STAGE-PROD:2 — append Recent Changes productivity entry when meaningful.
+  // STAGE-PROD:2 — append Recent Changes when meaningful vs acknowledged baseline.
+  // Do not ensure/write the session store during derive (render must stay pure).
+  // Do not consult the process-global store during SSR — it is not request-scoped
+  // and previously caused an extra changes-since-visit <li> on the server only.
   const changeSnapshot = buildNexoraMVPExecutiveChangeSnapshot(catalog, {
     workspace: state.workspace,
   });
-  let acknowledged = getAcknowledgedExecutiveChangeBaseline(
-    changeSnapshot.scopeKey,
-  );
-  if (acknowledged == null) {
-    // First visit: establish baseline without flooding NEW; presentation stays stable.
-    ensureExecutiveChangeBaseline({ currentSnapshot: changeSnapshot });
-    acknowledged = getAcknowledgedExecutiveChangeBaseline(
-      changeSnapshot.scopeKey,
-    );
-  }
+  const acknowledged = consultExecutiveChangeSessionStore
+    ? getAcknowledgedExecutiveChangeBaseline(changeSnapshot.scopeKey)
+    : null;
   const changeComparison =
     state.collectionContext?.category === EXECUTIVE_CHANGE_PRODUCTIVITY_CATEGORY
       ? getActiveExecutiveChangeInspection()?.comparison ??
-        beginExecutiveChangeInspection({ currentSnapshot: changeSnapshot })
+        (consultExecutiveChangeSessionStore
+          ? beginExecutiveChangeInspection({
+              currentSnapshot: changeSnapshot,
+            })
+          : resolveExecutiveMeaningfulChanges({
+              previousSnapshot: null,
+              currentSnapshot: changeSnapshot,
+            }))
       : resolveExecutiveMeaningfulChanges({
           previousSnapshot: acknowledged,
           currentSnapshot: changeSnapshot,

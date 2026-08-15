@@ -281,7 +281,14 @@ test("2: weak-evidence investigate (Case B)", () => {
   });
   assert.equal(result.primaryRecommendation?.recommendationKind, "investigate");
   assert.ok(
-    result.trace.reasons.includes(EXECUTIVE_REASONING_REASON.CAUSALITY_NOT_PROVEN),
+    result.trace.policyMatches.includes(
+      EXECUTIVE_REASONING_REASON.WEAK_EVIDENCE_INVESTIGATE,
+    ),
+  );
+  assert.ok(
+    result.primaryRecommendation?.rationale.some(
+      (r) => r.code === EXECUTIVE_REASONING_REASON.CAUSALITY_NOT_PROVEN,
+    ),
   );
 });
 
@@ -487,15 +494,30 @@ test("10: click-updated context consumption (Case I)", () => {
 test("11: workspace-scoped reasoning (Case J)", () => {
   const decision = run("Prepare Decision Review", { seed: "j1" });
   assert.equal(decision.status, "applied");
+  assert.equal(decision.nextRuntimeState.workspace, "decision");
+
+  const withDecision = createEmptyNexoraExecutiveContextSnapshot({
+    ...decision.nextExecutiveContext,
+    currentWorkspaceId: "decision",
+    currentDecision: freezeExecutiveContextReference({
+      subjectId: "ctx-decision-capacity",
+      subjectKind: "decision",
+      canonicalName: "Expand Capacity",
+      source: "workspace-transition",
+      turnIndex: decision.nextExecutiveContext.turnIndex,
+    }),
+  });
+
   const prioritize = run("What needs my attention?", {
     state: decision.nextRuntimeState,
-    executiveContext: decision.nextExecutiveContext,
+    executiveContext: withDecision,
     seed: "j2",
   });
   assert.equal(prioritize.status, "applied");
+  assert.equal(prioritize.nextExecutiveContext.currentWorkspaceId, "decision");
   assert.equal(
-    prioritize.nextExecutiveContext.currentWorkspaceId,
-    "decision",
+    prioritize.recommendationResult?.trace.scopeSubjectId,
+    "ctx-decision-capacity",
   );
   assert.ok(prioritize.recommendationResult);
 });

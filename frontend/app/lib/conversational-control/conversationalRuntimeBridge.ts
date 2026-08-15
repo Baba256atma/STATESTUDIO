@@ -101,6 +101,8 @@ export const NEXORA_CONVERSATIONAL_RUNTIME_ACTION_KINDS = Object.freeze([
   "open-queue-collection",
   "change-workspace",
   "resolve-executive-recommendation",
+  "resolve-executive-scenario",
+  "resolve-executive-decision-commitment",
   "unsupported",
 ] as const);
 
@@ -171,6 +173,9 @@ export const CONVERSATIONAL_RUNTIME_BRIDGE_REASON = Object.freeze({
   RUNTIME_REVEAL_DISPATCHED: "runtime-reveal-dispatched",
   RUNTIME_WORKSPACE_DISPATCHED: "runtime-workspace-change-dispatched",
   RUNTIME_RECOMMENDATION_DISPATCHED: "runtime-recommendation-authority-dispatched",
+  RUNTIME_SCENARIO_DISPATCHED: "runtime-scenario-authority-dispatched",
+  RUNTIME_DECISION_COMMITMENT_DISPATCHED:
+    "runtime-decision-commitment-authority-dispatched",
   RUNTIME_EXPLORE_AS_FOCUS: "runtime-explore-mapped-to-focus-authority",
   RUNTIME_ANALYZE_AS_FOCUS: "runtime-analyze-mapped-to-focus-advisor-derive",
   RUNTIME_NO_OP: "runtime-no-op",

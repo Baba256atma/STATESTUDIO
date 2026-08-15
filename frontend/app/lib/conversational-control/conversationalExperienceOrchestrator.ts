@@ -49,6 +49,29 @@ import { resolveNexoraExecutiveRecommendation } from "./executiveRecommendationR
 import type { NexoraExecutiveRecommendationResult } from "./executiveRecommendation.ts";
 import type { NexoraExecutiveEvidenceFact } from "./executiveRecommendation.ts";
 import { getDefaultNexoraMVPObjectInteractionCatalog } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction.ts";
+import {
+  createEmptyNexoraExecutiveScenarioSession,
+  resolveNexoraExecutiveScenarioConversation,
+  type NexoraExecutiveScenarioConversationResult,
+  type NexoraExecutiveScenarioSession,
+} from "./executiveScenarioResolver.ts";
+import {
+  projectNexoraMVPExecutiveScenarioBaseline,
+  relatedSubjectIdsForPrimary,
+} from "@/app/lib/nex-mvp/nexoraMVPExecutiveScenarioConversation.ts";
+import type { NexoraScenarioIntervention } from "./executiveScenarioDefinition.ts";
+import type { NexoraScenarioAssumption } from "./executiveScenarioDefinition.ts";
+import {
+  resolveNexoraExecutiveDecisionCommitment,
+  type NexoraDecisionCommitmentResult,
+} from "./executiveDecisionCommitmentResolver.ts";
+import {
+  createEmptyNexoraExecutiveDecisionSession,
+  type NexoraExecutiveDecisionSession,
+} from "./executiveDecisionAuthority.ts";
+import type { NexoraDecisionRuntimeAdapter } from "./executiveDecisionRuntimeAdapter.ts";
+import { createNexoraCanonicalDecisionRuntime } from "./executiveDecisionRuntimeAdapter.ts";
+
 
 export type NexoraConversationalExperienceInput = {
   readonly utterance: string;
@@ -65,6 +88,14 @@ export type NexoraConversationalExperienceInput = {
   readonly availableExperiences?: readonly NexoraRegisteredExecutiveExperience[];
   /** Deterministic message id seed (tests). */
   readonly messageIdSeed?: string;
+  /** CC:9 session-only scenario drafts. */
+  readonly scenarioSession?: import("./executiveScenarioResolver.ts").NexoraExecutiveScenarioSession | null;
+  /** CC:10 session metadata (pending confirmation + provenance). */
+  readonly decisionSession?: NexoraExecutiveDecisionSession | null;
+  /** CC:10R canonical Decision Runtime adapter (product truth). */
+  readonly decisionRuntime?: NexoraDecisionRuntimeAdapter | null;
+  /** Deterministic clock for Decision committedAt (tests/Runtime). */
+  readonly decisionCommittedAt?: string;
 };
 
 function freezeMessage(
@@ -97,6 +128,41 @@ function isRecommendationCommandKind(kind: string | null | undefined): boolean {
     kind === "request-explanation" ||
     kind === "request-prioritization"
   );
+}
+
+function isScenarioCommandKind(kind: string | null | undefined): boolean {
+  return (
+    kind === "define-scenario" ||
+    kind === "modify-scenario" ||
+    kind === "evaluate-scenario" ||
+    kind === "compare-scenarios" ||
+    kind === "explain-scenario" ||
+    kind === "open-scenario" ||
+    kind === "defer-decision-commitment"
+  );
+}
+
+function isDecisionCommitmentCommandKind(
+  kind: string | null | undefined,
+): boolean {
+  return (
+    kind === "commit-decision" ||
+    kind === "approve-decision" ||
+    kind === "reject-decision" ||
+    kind === "defer-decision" ||
+    kind === "reconsider-decision" ||
+    kind === "confirm-decision-commitment" ||
+    kind === "cancel-decision-commitment" ||
+    kind === "prefer-option"
+  );
+}
+
+function unmodeledSubjectId(raw: string | null | undefined): string {
+  const slug = (raw ?? "unknown")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `unmodeled:${slug || "unknown"}`;
 }
 
 function withUnknownImpactIfNeeded(
@@ -137,15 +203,24 @@ function resolveRecommendationForTurn(input: {
 }): NexoraExecutiveRecommendationResult {
   const catalog =
     input.catalog ?? getDefaultNexoraMVPObjectInteractionCatalog();
+  const primarySubjectId =
+    input.primarySubjectId ??
+    input.executiveContext.currentSubject?.subjectId ??
+    input.executiveContext.currentDecision?.subjectId ??
+    input.executiveContext.currentProblem?.subjectId ??
+    input.executiveContext.currentGoal?.subjectId ??
+    input.executiveContext.currentScenario?.subjectId ??
+    input.executiveContext.currentExecution?.subjectId ??
+    null;
   const projected = projectNexoraMVPExecutiveRecommendationEvidence({
     catalog,
     executiveContext: input.executiveContext,
-    primarySubjectId: input.primarySubjectId,
+    primarySubjectId,
   });
   const facts = withUnknownImpactIfNeeded(
     projected.facts,
     input.utterance,
-    input.primarySubjectId,
+    primarySubjectId,
   );
   const requestKind =
     input.intentKind === "explain"
@@ -155,12 +230,194 @@ function resolveRecommendationForTurn(input: {
         : ("recommend" as const);
   return resolveNexoraExecutiveRecommendation({
     executiveContext: input.executiveContext,
-    primarySubjectId: input.primarySubjectId,
+    primarySubjectId,
     evidence: Object.freeze({
       ...projected,
       facts,
     }),
     requestKind,
+  });
+}
+
+function resolveScenarioForTurn(input: {
+  readonly intent: import("./conversationalIntent.ts").NexoraConversationalIntent;
+  readonly primarySubjectId: string | null;
+  readonly executiveContext: NexoraExecutiveContextSnapshot;
+  readonly catalog?: NexoraMVPObjectInteractionCatalog;
+  readonly scenarioSession?: NexoraExecutiveScenarioSession | null;
+}): NexoraExecutiveScenarioConversationResult {
+  const catalog =
+    input.catalog ?? getDefaultNexoraMVPObjectInteractionCatalog();
+  const baseline = projectNexoraMVPExecutiveScenarioBaseline({
+    catalog,
+    executiveContext: input.executiveContext,
+  });
+  const payload = input.intent.scenarioPayload ?? null;
+  const hintRaw =
+    input.intent.targetHints.find((h) => h.role === "primary")?.raw ?? null;
+  const session =
+    input.scenarioSession ??
+    createEmptyNexoraExecutiveScenarioSession({
+      baselineAttentionBySubject: baseline.attentionBySubject,
+    });
+  const active = session.activeScenarioId
+    ? session.scenariosById[session.activeScenarioId] ?? null
+    : null;
+  const activeInterventionSubject =
+    active?.interventions[0]?.subjectId ??
+    active?.subjectIds.find((id) => !id.startsWith("cc9:")) ??
+    null;
+
+  const primarySubjectId =
+    input.primarySubjectId ??
+    (input.executiveContext.currentSubject?.subjectId?.startsWith("cc9:")
+      ? null
+      : input.executiveContext.currentSubject?.subjectId) ??
+    activeInterventionSubject ??
+    (hintRaw ? unmodeledSubjectId(hintRaw) : null);
+
+  const interventionSubjectId = primarySubjectId;
+  let interventions: readonly NexoraScenarioIntervention[] | undefined;
+  let assumptions: readonly NexoraScenarioAssumption[] | undefined;
+
+  if (
+    payload?.operation === "intervention" ||
+    payload?.operation === "modify"
+  ) {
+    if (interventionSubjectId && payload.actionKind) {
+      interventions = Object.freeze([
+        Object.freeze({
+          subjectId: interventionSubjectId,
+          actionKind: payload.actionKind,
+          value: payload.value,
+          unit: payload.unit,
+        }),
+      ]);
+    } else if (interventionSubjectId) {
+      interventions = Object.freeze([
+        Object.freeze({
+          subjectId: interventionSubjectId,
+          actionKind: "unsupported",
+        }),
+      ]);
+    }
+  }
+
+  if (payload?.operation === "add-assumption") {
+    const assumptionSubject =
+      input.primarySubjectId ??
+      (payload.assumptionSubjectRaw
+        ? // Prefer resolved id when present; else unmodeled.
+          unmodeledSubjectId(payload.assumptionSubjectRaw)
+        : null);
+    if (assumptionSubject && payload.actionKind) {
+      assumptions = Object.freeze([
+        Object.freeze({
+          key: `assume:${assumptionSubject}:${payload.actionKind}:${payload.value ?? ""}`,
+          subjectId: assumptionSubject,
+          operator: payload.actionKind,
+          value: payload.value,
+          unit: payload.unit,
+        }),
+      ]);
+    }
+  }
+
+  const operation =
+    payload?.operation === "commitment-attempt"
+      ? ("commitment-attempt" as const)
+      : payload?.operation === "compare"
+        ? ("compare" as const)
+        : payload?.operation === "downside"
+          ? ("downside" as const)
+          : payload?.operation === "explain-preference"
+            ? ("explain" as const)
+            : payload?.operation === "open-ordinal"
+              ? ("open-candidate" as const)
+              : payload?.operation === "modify"
+                ? ("modify" as const)
+                : payload?.operation === "add-assumption"
+                  ? ("add-assumption" as const)
+                  : payload?.operation === "do-nothing"
+                    ? ("define-do-nothing" as const)
+                    : ("define-intervention" as const);
+
+  const horizon =
+    payload?.horizonAmount != null && payload.horizonUnit
+      ? Object.freeze({
+          amount: payload.horizonAmount,
+          unit: payload.horizonUnit,
+        })
+      : null;
+
+  return resolveNexoraExecutiveScenarioConversation({
+    executiveContext: input.executiveContext,
+    operation,
+    primarySubjectId,
+    interventions,
+    assumptions,
+    horizon,
+    requireHorizon: operation === "define-do-nothing",
+    candidateOrdinal: payload?.ordinal ?? null,
+    session,
+    baselineAttentionBySubject: baseline.attentionBySubject,
+    relatedSubjectIds: relatedSubjectIdsForPrimary({
+      catalog,
+      primarySubjectId,
+    }),
+    recommendationId: input.executiveContext.lastRecommendationId,
+  });
+}
+
+function resolveDecisionCommitmentForTurn(input: {
+  readonly intent: import("./conversationalIntent.ts").NexoraConversationalIntent;
+  readonly primarySubjectId: string | null;
+  readonly executiveContext: NexoraExecutiveContextSnapshot;
+  readonly scenarioSession?: NexoraExecutiveScenarioSession | null;
+  readonly decisionSession?: NexoraExecutiveDecisionSession | null;
+  readonly decisionRuntime?: NexoraDecisionRuntimeAdapter | null;
+  readonly commandId?: string;
+  readonly utterance: string;
+  readonly committedAt?: string;
+}): NexoraDecisionCommitmentResult {
+  const payload = input.intent.decisionCommitmentPayload;
+  const action =
+    payload?.action ??
+    (input.intent.kind === "prefer-option"
+      ? ("preference" as const)
+      : input.intent.kind === "reject-decision"
+        ? ("reject" as const)
+        : input.intent.kind === "defer-decision"
+          ? ("defer" as const)
+          : input.intent.kind === "reconsider-decision"
+            ? ("reconsider" as const)
+            : input.intent.kind === "confirm-decision-commitment"
+              ? ("confirm" as const)
+              : input.intent.kind === "cancel-decision-commitment"
+                ? ("cancel" as const)
+                : ("approve" as const));
+  const strength =
+    payload?.strength ??
+    (action === "preference" ? ("preference" as const) : ("explicit" as const));
+  const hintRaw =
+    input.intent.targetHints.find((h) => h.role === "primary")?.raw ?? null;
+
+  return resolveNexoraExecutiveDecisionCommitment({
+    action,
+    strength,
+    executiveContext: input.executiveContext,
+    decisionSession:
+      input.decisionSession ?? createEmptyNexoraExecutiveDecisionSession(),
+    decisionRuntime:
+      input.decisionRuntime ??
+      createNexoraCanonicalDecisionRuntime().adapter,
+    scenarioSession: input.scenarioSession ?? null,
+    targetHintRaw: hintRaw,
+    primarySubjectId: input.primarySubjectId,
+    commandId: input.commandId,
+    utterance: input.utterance,
+    hasCompoundExecutionRequest: payload?.hasCompoundExecutionRequest === true,
+    committedAt: input.committedAt,
   });
 }
 
@@ -691,8 +948,18 @@ export function executeNexoraConversationalExperience(
     const isRecommendation =
       isRecommendationCommandKind(commandResult.command.kind) ||
       applied.result.runtimeActionKind === "resolve-executive-recommendation";
+    const isScenario =
+      isScenarioCommandKind(commandResult.command.kind) ||
+      applied.result.runtimeActionKind === "resolve-executive-scenario";
+    const isDecisionCommitment =
+      isDecisionCommitmentCommandKind(commandResult.command.kind) ||
+      applied.result.runtimeActionKind ===
+        "resolve-executive-decision-commitment";
 
     let recommendationResult: NexoraExecutiveRecommendationResult | null = null;
+    let scenarioResult: NexoraExecutiveScenarioConversationResult | null = null;
+    let decisionCommitmentResult: NexoraDecisionCommitmentResult | null = null;
+
     if (isRecommendation && applied.result.status === "applied") {
       recommendationResult = resolveRecommendationForTurn({
         utterance,
@@ -703,13 +970,50 @@ export function executeNexoraConversationalExperience(
       });
     }
 
-    const status = mapExperienceStatus({
-      contextStatus: context.resolutionStatus,
-      experienceDecision: experienceResult.decision,
-      commandStatus: commandResult.status,
-      runtimeStatus: applied.result.status,
-      intentKind: intent.kind,
-    });
+    if (isScenario && applied.result.status === "applied") {
+      scenarioResult = resolveScenarioForTurn({
+        intent,
+        primarySubjectId: context.primarySubject?.subjectId ?? null,
+        executiveContext: previousExecutiveContext,
+        catalog: input.catalog,
+        scenarioSession: input.scenarioSession ?? null,
+      });
+    }
+
+    if (isDecisionCommitment && applied.result.status === "applied") {
+      decisionCommitmentResult = resolveDecisionCommitmentForTurn({
+        intent,
+        primarySubjectId: context.primarySubject?.subjectId ?? null,
+        executiveContext: previousExecutiveContext,
+        scenarioSession: input.scenarioSession ?? null,
+        decisionSession: input.decisionSession ?? null,
+        decisionRuntime: input.decisionRuntime ?? null,
+        commandId: commandResult.command.commandId,
+        utterance,
+        committedAt: input.decisionCommittedAt,
+      });
+    }
+
+    const status =
+      decisionCommitmentResult?.status === "clarification-required"
+        ? ("clarification-required" as const)
+        : decisionCommitmentResult?.status === "confirmation-required"
+          ? ("confirmation-required" as const)
+          : decisionCommitmentResult?.status === "unsupported" ||
+              decisionCommitmentResult?.status === "invalid-candidate" ||
+              decisionCommitmentResult?.status === "transition-not-allowed"
+            ? ("unsupported" as const)
+            : decisionCommitmentResult?.status === "failed"
+              ? ("failed" as const)
+              : scenarioResult?.status === "clarification-required"
+                ? ("clarification-required" as const)
+                : mapExperienceStatus({
+                    contextStatus: context.resolutionStatus,
+                    experienceDecision: experienceResult.decision,
+                    commandStatus: commandResult.status,
+                    runtimeStatus: applied.result.status,
+                    intentKind: intent.kind,
+                  });
 
     const response = buildNexoraConversationalExperienceResponse({
       status,
@@ -720,10 +1024,23 @@ export function executeNexoraConversationalExperience(
       utterance,
       experienceResolution: experienceResult,
       recommendationResult,
+      scenarioResult,
+      decisionCommitmentResult,
     });
 
     const shouldCommitRuntime =
-      applied.result.status === "applied" && !isRecommendation;
+      applied.result.status === "applied" &&
+      !isRecommendation &&
+      !isScenario &&
+      !isDecisionCommitment;
+    const trustedDecisionSuccess =
+      isDecisionCommitment &&
+      applied.result.status === "applied" &&
+      (decisionCommitmentResult?.status === "applied" ||
+        decisionCommitmentResult?.status === "already-committed" ||
+        decisionCommitmentResult?.status === "confirmation-required" ||
+        decisionCommitmentResult?.status === "preference-only");
+
     return finalize({
       status,
       response,
@@ -733,13 +1050,18 @@ export function executeNexoraConversationalExperience(
       commandResult,
       runtimeResult: applied.result,
       recommendationResult,
+      scenarioResult,
+      decisionCommitmentResult,
       previousExecutiveContext,
       nextRuntimeState: shouldCommitRuntime
         ? applied.nextState
         : input.runtimeState,
       shouldCommitRuntime,
       trustedAdvisorySuccess:
-        isRecommendation && applied.result.status === "applied",
+        ((isRecommendation || isScenario) &&
+          applied.result.status === "applied" &&
+          status !== "clarification-required") ||
+        trustedDecisionSuccess,
       ids,
       utterance,
       catalog: input.catalog,
@@ -781,10 +1103,12 @@ function finalize(args: {
   readonly commandResult: NexoraConversationalExperienceResult["commandResult"];
   readonly runtimeResult: NexoraConversationalExperienceResult["runtimeResult"];
   readonly recommendationResult?: NexoraExecutiveRecommendationResult | null;
+  readonly scenarioResult?: NexoraExecutiveScenarioConversationResult | null;
+  readonly decisionCommitmentResult?: NexoraDecisionCommitmentResult | null;
   readonly previousExecutiveContext: NexoraExecutiveContextSnapshot;
   readonly nextRuntimeState: NexoraMVPObjectInteractionState;
   readonly shouldCommitRuntime: boolean;
-  /** Advisory CC:8 success without Runtime mutation. */
+  /** Advisory CC:8/CC:9/CC:10 success without Stage Runtime mutation. */
   readonly trustedAdvisorySuccess?: boolean;
   readonly ids: { readonly managerId: string; readonly nexoraId: string };
   readonly utterance: string;
@@ -796,6 +1120,8 @@ function finalize(args: {
   let executiveContextUpdate: NexoraExecutiveContextUpdateResult | null = null;
   let nextExecutiveContext = args.previousExecutiveContext;
   const recommendationResult = args.recommendationResult ?? null;
+  const scenarioResult = args.scenarioResult ?? null;
+  const decisionCommitmentResult = args.decisionCommitmentResult ?? null;
   const lastRecommendationId =
     recommendationResult?.primaryRecommendation?.recommendationId ?? null;
 
@@ -840,7 +1166,38 @@ function finalize(args: {
     });
     nextExecutiveContext = executiveContextUpdate.nextContext;
   } else if (args.trustedAdvisorySuccess === true) {
-    // CC:8 advisory turn: record command + recommendation id; do not mutate Runtime focus.
+    // CC:8/CC:9/CC:10 advisory/commitment turn: record command + refs.
+    const scenarioRef = scenarioResult?.scenario
+      ? freezeExecutiveContextReference({
+          subjectId: scenarioResult.scenario.scenarioId,
+          subjectKind: "scenario",
+          canonicalName: scenarioResult.scenario.name,
+          source: "conversation",
+          turnIndex: args.previousExecutiveContext.turnIndex + 1,
+        })
+      : null;
+    const decisionRef =
+      decisionCommitmentResult?.decision &&
+      (decisionCommitmentResult.status === "applied" ||
+        decisionCommitmentResult.status === "already-committed")
+        ? freezeExecutiveContextReference({
+            subjectId: decisionCommitmentResult.decision.decisionId,
+            subjectKind: "decision",
+            canonicalName: decisionCommitmentResult.decision.title,
+            source: "conversation",
+            turnIndex: args.previousExecutiveContext.turnIndex + 1,
+          })
+        : null;
+    const presentedSet =
+      scenarioResult?.nextSession.candidateScenarioIds.length
+        ? Object.freeze({
+            kind: "scenarios" as const,
+            subjectIds: scenarioResult.nextSession.candidateScenarioIds,
+            anchorSubjectId: scenarioResult.scenario?.scenarioId ?? null,
+            turnIndex: args.previousExecutiveContext.turnIndex + 1,
+          })
+        : null;
+
     executiveContextUpdate = updateNexoraExecutiveContext({
       previousContext: args.previousExecutiveContext,
       intentResult: args.intentResult,
@@ -851,6 +1208,20 @@ function finalize(args: {
       executiveSubjects: args.executiveSubjects,
       trustedSuccess: true,
       lastRecommendationId,
+      presentedSet,
+      ...(decisionRef
+        ? {
+            runtimeFocusedSubjectId: decisionRef.subjectId,
+            runtimeFocusedSubjectKind: "decision" as const,
+            runtimeFocusedCanonicalName: decisionRef.canonicalName ?? null,
+          }
+        : scenarioRef
+          ? {
+              runtimeFocusedSubjectId: scenarioRef.subjectId,
+              runtimeFocusedSubjectKind: "scenario" as const,
+              runtimeFocusedCanonicalName: scenarioRef.canonicalName ?? null,
+            }
+          : {}),
     });
     nextExecutiveContext = executiveContextUpdate.nextContext;
   } else {
@@ -912,6 +1283,10 @@ function finalize(args: {
     commandResult: args.commandResult,
     runtimeResult: args.runtimeResult,
     recommendationResult,
+    scenarioResult,
+    decisionCommitmentResult,
+    nextScenarioSession: scenarioResult?.nextSession ?? null,
+    nextDecisionSession: decisionCommitmentResult?.nextSession ?? null,
     nextConversationContext,
     nextExecutiveContext,
     executiveContextUpdate,

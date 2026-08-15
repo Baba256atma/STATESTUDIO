@@ -13,6 +13,8 @@ import type { NexoraConversationalExperienceStatus } from "./conversationalExper
 import type { NexoraConversationalExperienceContextResolution } from "./conversationalExperienceContext.ts";
 import { getNexoraRegisteredExecutiveExperiences } from "./conversationalExperienceRegistry.ts";
 import type { NexoraExecutiveRecommendationResult } from "./executiveRecommendation.ts";
+import type { NexoraExecutiveScenarioConversationResult } from "./executiveScenarioResolver.ts";
+import type { NexoraDecisionCommitmentResult } from "./executiveDecisionCommitmentResolver.ts";
 
 export function buildNexoraConversationalExperienceResponse(input: {
   readonly status: NexoraConversationalExperienceStatus;
@@ -23,6 +25,8 @@ export function buildNexoraConversationalExperienceResponse(input: {
   readonly utterance: string;
   readonly experienceResolution?: NexoraConversationalExperienceContextResolution | null;
   readonly recommendationResult?: NexoraExecutiveRecommendationResult | null;
+  readonly scenarioResult?: NexoraExecutiveScenarioConversationResult | null;
+  readonly decisionCommitmentResult?: NexoraDecisionCommitmentResult | null;
 }): string {
   const {
     status,
@@ -32,6 +36,8 @@ export function buildNexoraConversationalExperienceResponse(input: {
     runtime,
     experienceResolution,
     recommendationResult,
+    scenarioResult,
+    decisionCommitmentResult,
   } = input;
   const label =
     context.primarySubject?.canonicalName ??
@@ -42,6 +48,26 @@ export function buildNexoraConversationalExperienceResponse(input: {
   const hintRaw =
     intent.targetHints.find((h) => h.role === "experience")?.raw ??
     intent.targetHints[0]?.raw;
+
+  if (decisionCommitmentResult) {
+    if (
+      decisionCommitmentResult.status === "clarification-required" ||
+      decisionCommitmentResult.status === "confirmation-required"
+    ) {
+      return (
+        decisionCommitmentResult.clarificationPrompt ??
+        decisionCommitmentResult.summary
+      );
+    }
+    return decisionCommitmentResult.summary;
+  }
+
+  if (scenarioResult) {
+    if (scenarioResult.status === "clarification-required") {
+      return scenarioResult.clarificationPrompt ?? "For what time horizon?";
+    }
+    return scenarioResult.summary;
+  }
 
   if (
     status === "applied" &&

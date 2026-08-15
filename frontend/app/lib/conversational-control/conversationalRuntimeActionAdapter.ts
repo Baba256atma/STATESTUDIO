@@ -247,6 +247,51 @@ export function mapConversationalCommandToRuntimeAction(
         }),
       };
 
+    case "define-scenario":
+    case "modify-scenario":
+    case "evaluate-scenario":
+    case "compare-scenarios":
+    case "explain-scenario":
+    case "open-scenario":
+    case "defer-decision-commitment":
+      return {
+        supported: true,
+        plan: Object.freeze({
+          ...base,
+          runtimeActionKind: "resolve-executive-scenario",
+          collectionCategory: null,
+          notes: Object.freeze([
+            CONVERSATIONAL_RUNTIME_BRIDGE_REASON.RUNTIME_SCENARIO_DISPATCHED,
+            "authority:resolveNexoraExecutiveScenarioConversation",
+            "advisory-only-no-runtime-mutation",
+            "legacy-defer-decision-commitment",
+          ]),
+        }),
+      };
+
+    case "commit-decision":
+    case "approve-decision":
+    case "reject-decision":
+    case "defer-decision":
+    case "reconsider-decision":
+    case "confirm-decision-commitment":
+    case "cancel-decision-commitment":
+    case "prefer-option":
+      return {
+        supported: true,
+        plan: Object.freeze({
+          ...base,
+          runtimeActionKind: "resolve-executive-decision-commitment",
+          collectionCategory: null,
+          notes: Object.freeze([
+            CONVERSATIONAL_RUNTIME_BRIDGE_REASON.RUNTIME_DECISION_COMMITMENT_DISPATCHED,
+            "authority:resolveNexoraExecutiveDecisionCommitment",
+            "decision-authority-only-no-stage-mutation",
+            "stops-before-execution",
+          ]),
+        }),
+      };
+
     case "unsupported":
     default:
       return {

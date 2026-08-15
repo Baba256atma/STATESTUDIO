@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { filterSources } from "../../data/ExecutiveDataConfig";
 import { getExecutiveModeConfig } from "../../mode/ExecutiveModeConfig";
 import { sortScenarios } from "../../scenario/ScenarioConfig";
+import { createExecutiveRuntimeStoreDecisionAdapter } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
 import {
   useExecutiveRuntimeState,
   useExecutiveRuntimeStoreApi,
@@ -159,12 +160,100 @@ export function useRuntimeDecision() {
   const store = useExecutiveRuntimeStoreApi();
   const decision = useExecutiveRuntimeState((s) => s.decision);
   const a = store.actions;
+  const adapter = useMemo(
+    () => createExecutiveRuntimeStoreDecisionAdapter(store),
+    [store],
+  );
   const currentDecision = useMemo(
     () =>
       decision.decisions.find((d) => d.id === decision.currentDecisionId) ??
       null,
     [decision.decisions, decision.currentDecisionId],
   );
+
+  const approve = useCallback(
+    (id: string) => {
+      const target =
+        decision.decisions.find((d) => d.id === id) ?? currentDecision;
+      adapter.transitionDecision({
+        decisionId: id,
+        action: "approve",
+        title: target?.name ?? "Decision",
+      });
+    },
+    [adapter, currentDecision, decision.decisions],
+  );
+
+  const reject = useCallback(
+    (id: string) => {
+      const target =
+        decision.decisions.find((d) => d.id === id) ?? currentDecision;
+      adapter.transitionDecision({
+        decisionId: id,
+        action: "reject",
+        title: target?.name ?? "Decision",
+      });
+    },
+    [adapter, currentDecision, decision.decisions],
+  );
+
+  const returnForAnalysis = useCallback(
+    (id: string) => {
+      const target =
+        decision.decisions.find((d) => d.id === id) ?? currentDecision;
+      adapter.transitionDecision({
+        decisionId: id,
+        action: "reconsider",
+        title: target?.name ?? "Decision",
+      });
+    },
+    [adapter, currentDecision, decision.decisions],
+  );
+
+  const archive = useCallback(
+    (id: string) => {
+      const target =
+        decision.decisions.find((d) => d.id === id) ?? currentDecision;
+      adapter.transitionDecision({
+        decisionId: id,
+        action: "archive",
+        title: target?.name ?? "Decision",
+      });
+    },
+    [adapter, currentDecision, decision.decisions],
+  );
+
+  const setStatus = useCallback(
+    (
+      id: string,
+      status:
+        | "Draft"
+        | "Under Review"
+        | "Approved"
+        | "Rejected"
+        | "Archived",
+    ) => {
+      const target =
+        decision.decisions.find((d) => d.id === id) ?? currentDecision;
+      const action =
+        status === "Approved"
+          ? ("approve" as const)
+          : status === "Rejected"
+            ? ("reject" as const)
+            : status === "Archived"
+              ? ("archive" as const)
+              : status === "Under Review"
+                ? ("reconsider" as const)
+                : ("create" as const);
+      adapter.transitionDecision({
+        decisionId: id,
+        action,
+        title: target?.name ?? "Decision",
+      });
+    },
+    [adapter, currentDecision, decision.decisions],
+  );
+
   return {
     decisions: decision.decisions,
     currentDecisionId: decision.currentDecisionId,
@@ -174,19 +263,20 @@ export function useRuntimeDecision() {
     previewOpen: decision.previewOpen,
     panelCollapsed: decision.panelCollapsed,
     panelWidth: decision.panelWidth,
+    decisionRuntime: adapter,
     setCurrentDecision: a.setCurrentDecision,
     setPreviewOpen: a.setDecisionPreviewOpen,
     setPanelCollapsed: a.setDecisionPanelCollapsed,
     setPanelWidth: a.setDecisionPanelWidth,
-    setStatus: a.setDecisionStatus,
-    approve: a.approveDecision,
-    reject: a.rejectDecision,
-    returnForAnalysis: a.returnDecisionForAnalysis,
+    setStatus,
+    approve,
+    reject,
+    returnForAnalysis,
     duplicate: a.duplicateDecision,
     combineFromScenarios: a.combineDecisionsFromScenarios,
     createFromScenario: a.createDecisionFromScenario,
     createManual: a.createManualDecision,
-    archive: a.archiveDecision,
+    archive,
   };
 }
 

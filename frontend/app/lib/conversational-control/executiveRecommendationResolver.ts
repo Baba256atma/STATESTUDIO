@@ -272,6 +272,11 @@ export function resolveNexoraExecutiveRecommendation(
   const primarySubjectId =
     input.primarySubjectId ??
     input.executiveContext.currentSubject?.subjectId ??
+    input.executiveContext.currentDecision?.subjectId ??
+    input.executiveContext.currentProblem?.subjectId ??
+    input.executiveContext.currentGoal?.subjectId ??
+    input.executiveContext.currentScenario?.subjectId ??
+    input.executiveContext.currentExecution?.subjectId ??
     null;
 
   const evidence =

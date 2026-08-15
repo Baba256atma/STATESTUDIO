@@ -364,6 +364,58 @@ export function applyNexoraMVPConversationalCommand(
       });
     }
 
+    case "resolve-executive-scenario": {
+      const applied = markApplied(planned);
+      return Object.freeze({
+        result: Object.freeze({
+          ...applied,
+          reasons: Object.freeze([
+            ...applied.reasons,
+            CONVERSATIONAL_RUNTIME_BRIDGE_REASON.RUNTIME_SCENARIO_DISPATCHED,
+            "advisory-only-no-runtime-mutation",
+          ]),
+          trace: Object.freeze({
+            ...applied.trace,
+            authorityInvoked: "resolveNexoraExecutiveScenarioConversation",
+            reasons: Object.freeze([
+              ...applied.trace.reasons,
+              CONVERSATIONAL_RUNTIME_BRIDGE_REASON.RUNTIME_SCENARIO_DISPATCHED,
+              "advisory-only-no-runtime-mutation",
+            ]),
+          }),
+        }),
+        nextState: state,
+        controlSource: "conversation",
+      });
+    }
+
+    case "resolve-executive-decision-commitment": {
+      const applied = markApplied(planned);
+      return Object.freeze({
+        result: Object.freeze({
+          ...applied,
+          reasons: Object.freeze([
+            ...applied.reasons,
+            CONVERSATIONAL_RUNTIME_BRIDGE_REASON.RUNTIME_DECISION_COMMITMENT_DISPATCHED,
+            "decision-authority-only-no-stage-mutation",
+            "stops-before-execution",
+          ]),
+          trace: Object.freeze({
+            ...applied.trace,
+            authorityInvoked: "resolveNexoraExecutiveDecisionCommitment",
+            reasons: Object.freeze([
+              ...applied.trace.reasons,
+              CONVERSATIONAL_RUNTIME_BRIDGE_REASON.RUNTIME_DECISION_COMMITMENT_DISPATCHED,
+              "decision-authority-only-no-stage-mutation",
+              "stops-before-execution",
+            ]),
+          }),
+        }),
+        nextState: state,
+        controlSource: "conversation",
+      });
+    }
+
     default:
       return rejectKeepState(
         state,

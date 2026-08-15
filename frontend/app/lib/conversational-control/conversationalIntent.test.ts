@@ -189,9 +189,10 @@ test('cert: compare / analyze / simulate', () => {
   assert.equal(analyze.targetHints[0]?.raw, "revenue");
 
   const doNothing = resolve("What happens if we do nothing?").intent;
-  assert.equal(doNothing.kind, "simulate");
+  assert.equal(doNothing.kind, "explore-scenario");
   assert.equal(doNothing.executionClass, "simulation");
   assert.equal(doNothing.requiresContext, true);
+  assert.equal(doNothing.scenarioPayload?.operation, "do-nothing");
 
   const sim = resolve("Simulate this scenario").intent;
   assert.equal(sim.kind, "simulate");

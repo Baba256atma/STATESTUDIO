@@ -1,8 +1,8 @@
 /**
  * Conversational Control public surface
  * (CC:1 Intent → CC:2 Subject ← CC:7 projection → CC:6 Experience →
- *  CC:3 Command → CC:4 Runtime → CC:8 Recommendation? → CC:7 Context Update →
- *  CC:5 Feedback).
+ *  CC:3 Command → CC:4 Runtime → CC:8 Recommendation? → CC:9 Scenario? →
+ *  CC:10 Decision Commitment? → CC:7 Context Update → CC:5 Feedback).
  *
  * MVP Runtime apply: @/app/lib/nex-mvp/nexoraMVPConversationalRuntimeBridge
  * Experience UI: NexoraConversationalExperience in Advisor.
@@ -341,3 +341,120 @@ export {
   resolveNexoraExecutiveRecommendation,
   type NexoraExecutiveRecommendationInput,
 } from "./executiveRecommendationResolver.ts";
+
+export {
+  executiveScenarioConversationIdentity,
+  executiveScenarioConversationVersion,
+  executiveScenarioConversationNamespace,
+  executiveScenarioConversationPhase,
+  executiveScenarioConversationArchitecturalRole,
+  getExecutiveScenarioConversationIdentity,
+  EXECUTIVE_SCENARIO_CONVERSATION_BOUNDARY,
+  EXECUTIVE_SCENARIO_REASON,
+  type ExecutiveScenarioConversationIdentity,
+  type ExecutiveScenarioReasonCode,
+} from "./executiveScenarioConversation.ts";
+
+export {
+  defineNexoraExecutiveScenario,
+  type NexoraExecutiveScenario,
+  type NexoraScenarioAssumption,
+  type NexoraScenarioIntervention,
+  type NexoraScenarioHorizon,
+  type NexoraDefineExecutiveScenarioInput,
+  type NexoraExecutiveScenarioDefinitionResult,
+} from "./executiveScenarioDefinition.ts";
+
+export {
+  evaluateNexoraExecutiveScenario,
+  createNexoraScenarioBaselineSnapshot,
+  type NexoraExecutiveScenarioEvaluation,
+  type NexoraScenarioImpact,
+  type NexoraScenarioBaselineSnapshot,
+  type NexoraEvaluateExecutiveScenarioInput,
+  type NexoraExecutiveScenarioEvaluationResult,
+} from "./executiveScenarioEvaluation.ts";
+
+export {
+  compareNexoraExecutiveScenarios,
+  type NexoraScenarioComparison,
+  type NexoraCompareExecutiveScenariosInput,
+  type NexoraScenarioComparisonResult,
+} from "./executiveScenarioComparison.ts";
+
+export {
+  NEXORA_SCENARIO_MODELED_SUBJECTS,
+  NEXORA_SCENARIO_EVALUATION_POLICY,
+  isModeledScenarioSubject,
+} from "./executiveScenarioPolicy.ts";
+
+export {
+  resolveNexoraExecutiveScenarioConversation,
+  createEmptyNexoraExecutiveScenarioSession,
+  type NexoraExecutiveScenarioSession,
+  type NexoraExecutiveScenarioConversationResult,
+  type NexoraExecutiveScenarioConversationInput,
+} from "./executiveScenarioResolver.ts";
+
+export {
+  executiveDecisionCommitmentIdentity,
+  executiveDecisionCommitmentVersion,
+  executiveDecisionCommitmentNamespace,
+  executiveDecisionCommitmentPhase,
+  executiveDecisionCommitmentArchitecturalRole,
+  getExecutiveDecisionCommitmentIdentity,
+  EXECUTIVE_DECISION_COMMITMENT_BOUNDARY,
+  EXECUTIVE_DECISION_REASON,
+  NEXORA_DECISION_COMMITMENT_STATUSES,
+  type ExecutiveDecisionCommitmentIdentity,
+  type ExecutiveDecisionReasonCode,
+  type NexoraDecisionCommitmentStatus,
+} from "./executiveDecisionCommitment.ts";
+
+export {
+  resolveNexoraExecutiveDecisionCommitment,
+  type NexoraDecisionCommitmentResult,
+  type NexoraDecisionCommitmentResolverInput,
+} from "./executiveDecisionCommitmentResolver.ts";
+
+export {
+  createEmptyNexoraExecutiveDecisionSession,
+  applyNexoraExecutiveDecisionTransition,
+  type NexoraExecutiveDecisionSession,
+} from "./executiveDecisionAuthority.ts";
+
+export {
+  type NexoraExecutiveDecision,
+  type NexoraDecisionCandidate,
+  type NexoraDecisionRationale,
+} from "./executiveDecisionCandidate.ts";
+
+export {
+  createNexoraCanonicalDecisionRuntime,
+  createExecutiveRuntimeStoreDecisionAdapter,
+  type NexoraDecisionRuntimeAdapter,
+  type NexoraCanonicalDecisionRuntime,
+} from "./executiveDecisionRuntimeAdapter.ts";
+
+export {
+  serializeCanonicalDecisionStatus,
+  deserializeFlowDecisionStatus,
+  bootstrapCanonicalDecisionsFromFlowFixtures,
+  projectCanonicalDecisionToFlowRecord,
+} from "./executiveDecisionStatusProjection.ts";
+
+export {
+  executiveDecisionRuntimeFullDebtClosureIdentity,
+  executiveDecisionRuntimeFullDebtClosureVersion,
+  getExecutiveDecisionRuntimeFullDebtClosureIdentity,
+  resolveDecisionRuntimeCc11Gate,
+  EXECUTIVE_DECISION_RUNTIME_FULL_DEBT_CLOSURE_CERTIFICATION,
+  EXECUTIVE_DECISION_RUNTIME_FULL_DEBT_CLOSURE_BOUNDARY,
+} from "./executiveDecisionRuntimeFullDebtClosure.ts";
+
+export {
+  executiveDecisionRuntimeConvergenceIdentity,
+  executiveDecisionRuntimeConvergenceVersion,
+  getExecutiveDecisionRuntimeConvergenceIdentity,
+  EXECUTIVE_DECISION_RUNTIME_CONVERGENCE_BOUNDARY,
+} from "./executiveDecisionRuntimeConvergence.ts";

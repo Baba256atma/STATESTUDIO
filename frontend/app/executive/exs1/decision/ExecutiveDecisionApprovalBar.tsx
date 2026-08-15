@@ -5,7 +5,9 @@ import { cockpit } from "../shell/executiveCockpitTheme";
 
 /**
  * ExecutiveDecisionApprovalBar — Approve / Reject / Return / Combine / Duplicate.
- * UI state only.
+ * Expresses transition *intent* only; legality belongs to canonical Decision Runtime
+ * via useExecutiveDecision → useRuntimeDecision → NexoraDecisionRuntimeAdapter.
+ * Status/lock displayed here are read projections of Runtime truth.
  */
 export function ExecutiveDecisionApprovalBar() {
   const {
@@ -20,7 +22,9 @@ export function ExecutiveDecisionApprovalBar() {
 
   if (!currentDecision) return null;
 
+  // Presentation of canonical Runtime projection — not a local transition policy.
   const locked = currentDecision.locked;
+  const alreadyApproved = currentDecision.status === "Approved";
 
   return (
     <div
@@ -35,7 +39,7 @@ export function ExecutiveDecisionApprovalBar() {
         testId="decision-approve"
         label="Approve"
         color="#12B76A"
-        disabled={locked || currentDecision.status === "Approved"}
+        disabled={locked || alreadyApproved}
         onClick={() => approve(currentDecision.id)}
       />
       <Action

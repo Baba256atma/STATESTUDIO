@@ -20,6 +20,7 @@ import {
   resolveNexoraMVPTimelinePackSubjectId,
   verifyNexoraMVPExecutiveFlowIntegration,
 } from "./nexoraMVPExecutiveFlow.ts";
+import { createNexoraMVPFlowSeededDecisionRuntime } from "./nexoraMVPExecutiveDecisionCommitment.ts";
 import type { NexoraMVPPresentationAvailableAction } from "./nexoraMVPPresentationState.ts";
 
 describe("NEX-MVP:8 Executive Flow Integration", () => {
@@ -250,19 +251,28 @@ describe("NEX-MVP:8 Executive Flow Integration", () => {
 
   it("17. no duplicate domain-state creation on failed action", () => {
     const state = createInitialNexoraMVPFlowDomainState();
+    const decisionRuntime = createNexoraMVPFlowSeededDecisionRuntime();
     const before = state.timelineEvents.length;
-    const failed = applyNexoraMVPFlowDomainAction(state, {
-      actionId: "act-decision-approve",
-      subjectId: "ctx-decision-reprice",
-      kind: "approve-decision",
-    });
+    const failed = applyNexoraMVPFlowDomainAction(
+      state,
+      {
+        actionId: "act-decision-approve",
+        subjectId: "ctx-decision-reprice",
+        kind: "approve-decision",
+      },
+      { decisionRuntime: decisionRuntime.adapter },
+    );
     assert.equal(failed.ok, true);
     if (!failed.ok) return;
-    const duplicate = applyNexoraMVPFlowDomainAction(failed.state, {
-      actionId: "act-decision-approve",
-      subjectId: "ctx-decision-reprice",
-      kind: "approve-decision",
-    });
+    const duplicate = applyNexoraMVPFlowDomainAction(
+      failed.state,
+      {
+        actionId: "act-decision-approve",
+        subjectId: "ctx-decision-reprice",
+        kind: "approve-decision",
+      },
+      { decisionRuntime: decisionRuntime.adapter },
+    );
     assert.equal(duplicate.ok, false);
     assert.equal(failed.state.timelineEvents.length, before + 1);
     if (!duplicate.ok) {
@@ -292,6 +302,7 @@ describe("NEX-MVP:8 Executive Flow Integration", () => {
       initial,
       "other-action",
     );
+    const decisionRuntime = createNexoraMVPFlowSeededDecisionRuntime();
     const blocked = applyNexoraMVPFlowDomainAction(pending, {
       actionId: "act-decision-approve",
       subjectId: "ctx-decision-reprice",
@@ -300,11 +311,15 @@ describe("NEX-MVP:8 Executive Flow Integration", () => {
     assert.equal(blocked.ok, false);
     if (!blocked.ok) assert.equal(blocked.reason, "pending");
 
-    const approved = applyNexoraMVPFlowDomainAction(initial, {
-      actionId: "act-decision-approve",
-      subjectId: "ctx-decision-reprice",
-      kind: "approve-decision",
-    });
+    const approved = applyNexoraMVPFlowDomainAction(
+      initial,
+      {
+        actionId: "act-decision-approve",
+        subjectId: "ctx-decision-reprice",
+        kind: "approve-decision",
+      },
+      { decisionRuntime: decisionRuntime.adapter },
+    );
     assert.equal(approved.ok, true);
     if (!approved.ok) return;
     assert.equal(

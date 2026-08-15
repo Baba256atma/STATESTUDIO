@@ -4,6 +4,7 @@
 
 import { createInitialMetadataCatalog } from "../metadata/ExecutiveMetadataRegistry";
 import { createExecutiveRuntimeStore } from "../runtime/ExecutiveRuntimeStore";
+import { createExecutiveRuntimeStoreDecisionAdapter } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
 import { processRuntimeEventForIntelligence } from "../intelligence/ExecutiveRuntimeIntelligence";
 import { SAMPLE_INVENTORY_CSV, createConnectorPlatform } from "../connectors";
 import { createSimulationRunner } from "../simulation";
@@ -146,9 +147,14 @@ export function runExecutiveBetaValidator(): BetaValidationReport {
     detail: "Decision Candidate starts as Draft",
   });
 
-  // Decision approve → Execution → Monitoring
+  // Decision approve → Execution → Monitoring (via canonical Decision port)
   if (decision) {
-    store.actions.approveDecision(decision.id);
+    const decisionAdapter = createExecutiveRuntimeStoreDecisionAdapter(store);
+    decisionAdapter.transitionDecision({
+      decisionId: decision.id,
+      action: "approve",
+      title: decision.name,
+    });
     checks.push({
       id: "decision-approved",
       ok: store

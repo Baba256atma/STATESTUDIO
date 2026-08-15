@@ -13,6 +13,8 @@ import {
   type NexoraConversationalIntentKind,
   type NexoraConversationalIntentResolution,
   type NexoraConversationalIntentTrace,
+  type NexoraConversationalScenarioIntentPayload,
+  type NexoraConversationalDecisionCommitmentPayload,
   type NexoraConversationalTargetHint,
 } from "./conversationalIntent.ts";
 import {
@@ -29,6 +31,8 @@ type MatchResult = {
   readonly requiresContext: boolean;
   readonly requiresTarget: boolean;
   readonly candidateKinds: readonly NexoraConversationalIntentKind[];
+  readonly scenarioPayload?: NexoraConversationalScenarioIntentPayload | null;
+  readonly decisionCommitmentPayload?: NexoraConversationalDecisionCommitmentPayload | null;
 };
 
 function clampConfidence(value: number): number {
@@ -455,8 +459,6 @@ function matchAnalyze(normalized: string): MatchResult | null {
 
 function matchSimulate(normalized: string): MatchResult | null {
   if (
-    /^what\s+happens\s+if\s+we\s+do\s+nothing$/.test(normalized) ||
-    /^what\s+if\s+we\s+do\s+nothing$/.test(normalized) ||
     /^simulate(?:\s+(?:this|the))?\s+scenario$/.test(normalized) ||
     /^run(?:\s+(?:this|the))?\s+simulation$/.test(normalized) ||
     /^simulate\s+(.+)$/.test(normalized)
@@ -469,10 +471,6 @@ function matchSimulate(normalized: string): MatchResult | null {
       /^(?:this|the)\s+scenario$/.test(scenarioPhrase) ||
       scenarioPhrase === "scenario";
 
-    const doNothing =
-      /^what\s+happens\s+if\s+we\s+do\s+nothing$/.test(normalized) ||
-      /^what\s+if\s+we\s+do\s+nothing$/.test(normalized);
-
     const targetHints =
       !isDeictic && scenarioPhrase
         ? Object.freeze(
@@ -484,18 +482,18 @@ function matchSimulate(normalized: string): MatchResult | null {
 
     return {
       kind: "simulate",
-      confidence: doNothing || isDeictic ? 0.72 : 0.9,
+      confidence: isDeictic ? 0.72 : 0.9,
       reasons: [
         CONVERSATIONAL_INTENT_REASON.MATCHED_SIMULATE,
         CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
         CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
-        ...(isDeictic || doNothing
+        ...(isDeictic
           ? [CONVERSATIONAL_INTENT_REASON.AMBIGUOUS_REFERENCE]
           : [CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED]),
       ],
       targetHints,
-      requiresContext: isDeictic || doNothing,
-      requiresTarget: !doNothing,
+      requiresContext: isDeictic,
+      requiresTarget: !isDeictic,
       candidateKinds: Object.freeze(["simulate"] as const),
     };
   }
@@ -865,8 +863,8 @@ function matchRecommendExplainPrioritize(
         CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
       ],
       targetHints: Object.freeze([]),
-      requiresContext: true,
-      requiresTarget: true,
+      requiresContext: false,
+      requiresTarget: false,
       candidateKinds: Object.freeze(["prioritize"] as const),
     };
   }
@@ -943,14 +941,715 @@ function matchRecommendExplainPrioritize(
   return null;
 }
 
+function matchDecisionCommitment(normalized: string): MatchResult | null {
+  const compound =
+    /\band\s+(?:start\s+)?(?:execution|implementation|implement(?:ation)?)\b/.test(
+      normalized,
+    );
+
+  // Confirmation / cancellation (generic yes/no only meaningful with pending)
+  if (/^(?:yes|confirm|proceed|do\s+it)$/.test(normalized)) {
+    return {
+      kind: "confirm-decision-commitment",
+      confidence: 0.85,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_CONFIRM_DECISION,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: false,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["confirm-decision-commitment"] as const),
+      decisionCommitmentPayload: Object.freeze({
+        action: "confirm" as const,
+        strength: "explicit" as const,
+      }),
+    };
+  }
+
+  if (
+    /^(?:no|cancel|never\s+mind|don'?t\s+commit(?:\s+it)?|do\s+not\s+commit)$/.test(
+      normalized,
+    ) ||
+    /^no,?\s*cancel$/.test(normalized)
+  ) {
+    return {
+      kind: "cancel-decision-commitment",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_CANCEL_DECISION,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: false,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["cancel-decision-commitment"] as const),
+      decisionCommitmentPayload: Object.freeze({
+        action: "cancel" as const,
+        strength: "explicit" as const,
+      }),
+    };
+  }
+
+  // Preference only — never commitment
+  if (
+    /^(?:i\s+)?(?:prefer|like)\s+/.test(normalized) ||
+    /\b(?:looks?\s+good|seems?\s+better|probably\s+the\s+best|has\s+less\s+risk)\b/.test(
+      normalized,
+    ) ||
+    /^this\s+is\s+probably\s+the\s+best\s+option$/.test(normalized)
+  ) {
+    const named = normalized.match(
+      /(?:prefer|like)\s+(?:scenario\s+)?(.+)$/,
+    );
+    const raw =
+      named?.[1]?.trim() ??
+      normalized.match(/(?:scenario\s+)?([a-c])\b/)?.[1]?.trim() ??
+      "";
+    const primary = raw ? hint(raw, "primary") : null;
+    return {
+      kind: "prefer-option",
+      confidence: 0.92,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_PREFER_OPTION,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: !primary,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["prefer-option"] as const),
+      decisionCommitmentPayload: Object.freeze({
+        action: "preference" as const,
+        strength: "preference" as const,
+      }),
+    };
+  }
+
+  if (/^reject\s+(?:scenario\s+)?(.+)$/.test(normalized)) {
+    const raw =
+      normalized.match(/^reject\s+(?:scenario\s+)?(.+)$/)?.[1]?.trim() ?? "";
+    const primary = raw ? hint(raw, "primary") : null;
+    return {
+      kind: "reject-decision",
+      confidence: 0.93,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_REJECT_DECISION,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: !primary,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["reject-decision"] as const),
+      decisionCommitmentPayload: Object.freeze({
+        action: "reject" as const,
+        strength: "explicit" as const,
+        ...(compound ? { hasCompoundExecutionRequest: true } : {}),
+      }),
+    };
+  }
+
+  if (
+    /^defer\s+(?:this\s+)?decision$/.test(normalized) ||
+    /^defer\s+(?:scenario\s+)?(.+)$/.test(normalized)
+  ) {
+    const raw =
+      normalized.match(/^defer\s+(?:this\s+)?decision$/) != null
+        ? ""
+        : (normalized.match(/^defer\s+(?:scenario\s+)?(.+)$/)?.[1]?.trim() ??
+          "");
+    const primary = raw ? hint(raw, "primary") : null;
+    return {
+      kind: "defer-decision",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_DEFER_DECISION,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: !primary,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["defer-decision"] as const),
+      decisionCommitmentPayload: Object.freeze({
+        action: "defer" as const,
+        strength: "explicit" as const,
+      }),
+    };
+  }
+
+  if (
+    /^reconsider\s+(?:the\s+)?(?:current\s+)?decision$/.test(normalized) ||
+    /^reconsider\s+(?:scenario\s+)?(.+)$/.test(normalized)
+  ) {
+    const raw =
+      normalized.match(/^reconsider\s+(?:the\s+)?(?:current\s+)?decision$/) !=
+      null
+        ? ""
+        : (normalized
+            .match(/^reconsider\s+(?:scenario\s+)?(.+)$/)?.[1]
+            ?.trim() ?? "");
+    const primary = raw ? hint(raw, "primary") : null;
+    return {
+      kind: "reconsider-decision",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_RECONSIDER_DECISION,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: !primary,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["reconsider-decision"] as const),
+      decisionCommitmentPayload: Object.freeze({
+        action: "reconsider" as const,
+        strength: "explicit" as const,
+      }),
+    };
+  }
+
+  // Soft commitment → confirmation-required
+  if (
+    /^(?:i\s+think\s+)?we\s+should\s+probably\s+(?:choose|go\s+with|commit\s+to)\s+(?:scenario\s+)?(.+)$/.test(
+      normalized,
+    ) ||
+    /^maybe\s+(?:choose|go\s+with)\s+(?:scenario\s+)?(.+)$/.test(normalized)
+  ) {
+    const raw =
+      normalized.match(
+        /(?:choose|go\s+with|commit\s+to)\s+(?:scenario\s+)?(.+)$/,
+      )?.[1]?.trim() ?? "";
+    const primary = raw ? hint(raw, "primary") : null;
+    return {
+      kind: "commit-decision",
+      confidence: 0.86,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_COMMIT_DECISION,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: !primary,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["commit-decision"] as const),
+      decisionCommitmentPayload: Object.freeze({
+        action: "approve" as const,
+        strength: "soft" as const,
+        ...(compound ? { hasCompoundExecutionRequest: true } : {}),
+      }),
+    };
+  }
+
+  // Create draft decision
+  if (
+    /^make\s+(?:scenario\s+)?(.+)\s+(?:a\s+|the\s+)?decision$/.test(
+      normalized,
+    ) ||
+    /^make\s+(.+)\s+the\s+decision$/.test(normalized)
+  ) {
+    const raw =
+      normalized.match(
+        /^make\s+(?:scenario\s+)?(.+?)\s+(?:a\s+|the\s+)?decision$/,
+      )?.[1]?.trim() ?? "";
+    const primary = raw ? hint(raw, "primary") : null;
+    return {
+      kind: "commit-decision",
+      confidence: 0.91,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_COMMIT_DECISION,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: !primary,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["commit-decision"] as const),
+      decisionCommitmentPayload: Object.freeze({
+        action: "create" as const,
+        strength: "explicit" as const,
+      }),
+    };
+  }
+
+  // Recommendation / preferred handoff
+  if (
+    /^(?:go\s+with|choose|approve|commit\s+to)\s+(?:your\s+)?recommendation$/.test(
+      normalized,
+    ) ||
+    /^go\s+with\s+your\s+recommendation$/.test(normalized)
+  ) {
+    return {
+      kind: "commit-decision",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_COMMIT_DECISION,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([hint("your recommendation", "primary")!]),
+      requiresContext: false,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["commit-decision"] as const),
+      decisionCommitmentPayload: Object.freeze({
+        action: "approve" as const,
+        strength: "explicit" as const,
+        ...(compound ? { hasCompoundExecutionRequest: true } : {}),
+      }),
+    };
+  }
+
+  if (
+    /^(?:choose|approve|commit\s+to)\s+(?:the\s+)?preferred\s+scenario$/.test(
+      normalized,
+    )
+  ) {
+    return {
+      kind: "commit-decision",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_COMMIT_DECISION,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([hint("preferred scenario", "primary")!]),
+      requiresContext: false,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["commit-decision"] as const),
+      decisionCommitmentPayload: Object.freeze({
+        action: "approve" as const,
+        strength: "explicit" as const,
+      }),
+    };
+  }
+
+  // Explicit commitment / approve / choose / let's go with / we'll proceed
+  // Note: normalization turns apostrophes into spaces ("let's" → "let s").
+  if (
+    /^(?:choose|approve|commit(?:\s+to)?|lets|let\s+s)\s+go\s+with\s+(?:scenario\s+)?(.+)$/.test(
+      normalized,
+    ) ||
+    /^(?:well|we\s+ll)\s+proceed\s+with\s+(?:scenario\s+)?(.+)$/.test(
+      normalized,
+    ) ||
+    /^(?:lets|let\s+s)\s+choose\s+(?:scenario\s+)?(.+)$/.test(normalized) ||
+    /^(?:choose|approve|commit(?:\s+to)?)\s+(?:scenario\s+)?(.+)$/.test(
+      normalized,
+    ) ||
+    /^commit\s+to\s+this$/.test(normalized) ||
+    /^approve\s+this$/.test(normalized) ||
+    /^(?:lets|let\s+s)\s+do\s+it$/.test(normalized) ||
+    /^commit\s+to\s+this\s+option$/.test(normalized)
+  ) {
+    const named =
+      normalized.match(
+        /^(?:choose|approve|commit(?:\s+to)?|lets|let\s+s)\s+go\s+with\s+(?:scenario\s+)?(.+)$/,
+      ) ??
+      normalized.match(
+        /^(?:well|we\s+ll)\s+proceed\s+with\s+(?:scenario\s+)?(.+)$/,
+      ) ??
+      normalized.match(
+        /^(?:lets|let\s+s)\s+choose\s+(?:scenario\s+)?(.+)$/,
+      ) ??
+      normalized.match(
+        /^(?:choose|approve|commit(?:\s+to)?)\s+(?:scenario\s+)?(.+)$/,
+      );
+    let raw = named?.[1]?.trim() ?? "";
+    if (/^(?:lets|let\s+s)\s+do\s+it$/.test(normalized)) raw = "it";
+    if (/^(?:commit\s+to\s+this|approve\s+this|commit\s+to\s+this\s+option)$/.test(
+      normalized,
+    )) {
+      raw = "this";
+    }
+    // Strip trailing "and start execution" from target
+    raw = raw
+      .replace(
+        /\s+and\s+(?:start\s+)?(?:execution|implementation).*$/i,
+        "",
+      )
+      .trim();
+    const isCreate = false;
+    const primary =
+      raw && raw !== "this" && raw !== "it" ? hint(raw, "primary") : null;
+    const thisHint =
+      raw === "this" || raw === "it" ? hint(raw, "primary") : null;
+    return {
+      kind: "commit-decision",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_COMMIT_DECISION,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(
+        primary ? [primary] : thisHint ? [thisHint] : [],
+      ),
+      requiresContext: !primary,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["commit-decision"] as const),
+      decisionCommitmentPayload: Object.freeze({
+        action: isCreate ? ("create" as const) : ("approve" as const),
+        strength: "explicit" as const,
+        ...(compound ? { hasCompoundExecutionRequest: true as const } : {}),
+      }),
+    };
+  }
+
+  return null;
+}
+
+function matchScenarioConversation(normalized: string): MatchResult | null {
+  // Decision commitment handled by matchDecisionCommitment (CC:10).
+  const doNothing = normalized.match(
+    /^(?:what\s+(?:happens\s+)?if\s+we\s+do\s+nothing|do\s+nothing)(?:\s+(?:for|over)\s+(?:the\s+)?(?:next\s+)?(\d+)\s+(day|days|week|weeks|month|months|quarter|quarters|year|years))?$/,
+  );
+  if (doNothing) {
+    const amount = doNothing[1] ? Number(doNothing[1]) : undefined;
+    const unitRaw = doNothing[2];
+    const horizonUnit = unitRaw
+      ? unitRaw.startsWith("day")
+        ? ("day" as const)
+        : unitRaw.startsWith("week")
+          ? ("week" as const)
+          : unitRaw.startsWith("month")
+            ? ("month" as const)
+            : unitRaw.startsWith("quarter")
+              ? ("quarter" as const)
+              : ("year" as const)
+      : undefined;
+    return {
+      kind: "explore-scenario",
+      confidence: 0.94,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLORE_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["explore-scenario"] as const),
+      scenarioPayload: Object.freeze({
+        operation: "do-nothing" as const,
+        ...(amount != null && horizonUnit
+          ? { horizonAmount: amount, horizonUnit }
+          : {}),
+      }),
+    };
+  }
+
+  if (
+    /^(?:compare(?:\s+them|\s+the\s+scenarios)?|compare\s+the\s+first\s+two)$/.test(
+      normalized,
+    )
+  ) {
+    return {
+      kind: "compare-scenarios",
+      confidence: 0.92,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_COMPARE_SCENARIOS,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["compare-scenarios"] as const),
+      scenarioPayload: Object.freeze({ operation: "compare" as const }),
+    };
+  }
+
+  if (
+    /^(?:what(?:'?s|\s+is)\s+the\s+downside(?:\s+of\s+(?:this|that|it|the\s+recommended\s+option)?)?)$/.test(
+      normalized,
+    )
+  ) {
+    return {
+      kind: "explain-scenario",
+      confidence: 0.91,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["explain-scenario"] as const),
+      scenarioPayload: Object.freeze({ operation: "downside" as const }),
+    };
+  }
+
+  if (
+    /^(?:why(?:\s+is)?\s+(?:b|scenario\s+b|that|this)(?:\s+better)?|why\s+b)$/.test(
+      normalized,
+    )
+  ) {
+    return {
+      kind: "explain-scenario",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["explain-scenario"] as const),
+      scenarioPayload: Object.freeze({
+        operation: "explain-preference" as const,
+      }),
+    };
+  }
+
+  const openOrdinal = normalized.match(
+    /^(?:open|show|select)\s+(?:the\s+)?(first|second|third)\s+scenario$/,
+  );
+  if (openOrdinal) {
+    const ord =
+      openOrdinal[1] === "first" ? 0 : openOrdinal[1] === "second" ? 1 : 2;
+    return {
+      kind: "select-scenario-reference",
+      confidence: 0.88,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_SELECT_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.MATCHED_ORDINAL_REFERENCE,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(
+        [hint(openOrdinal[1] ?? "first", "ordinal")].filter(
+          (h): h is NexoraConversationalTargetHint => h != null,
+        ),
+      ),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["select-scenario-reference"] as const),
+      scenarioPayload: Object.freeze({
+        operation: "open-ordinal" as const,
+        ordinal: ord,
+      }),
+    };
+  }
+
+  const makeIt = normalized.match(
+    /^(?:make\s+it|change\s+(?:it\s+to|to)|set\s+it\s+to)\s+(\d+(?:\.\d+)?)\s*%?$/,
+  );
+  if (makeIt) {
+    return {
+      kind: "modify-scenario",
+      confidence: 0.93,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_MODIFY_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["modify-scenario"] as const),
+      scenarioPayload: Object.freeze({
+        operation: "modify" as const,
+        actionKind: "increase-by" as const,
+        value: Number(makeIt[1]),
+        unit: "%",
+      }),
+    };
+  }
+
+  const alsoAssume = normalized.match(
+    /^(?:also\s+)?assume\s+(.+?)\s+(increases?|decreases?|drops?|falls?|rises?)\s+(\d+(?:\.\d+)?)\s*%?$/,
+  );
+  if (alsoAssume) {
+    const subjectRaw = (alsoAssume[1] ?? "").trim();
+    const verb = alsoAssume[2] ?? "";
+    const primary = hint(subjectRaw, "primary");
+    return {
+      kind: "modify-scenario",
+      confidence: 0.92,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_MODIFY_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: true,
+      requiresTarget: Boolean(primary),
+      candidateKinds: Object.freeze(["modify-scenario"] as const),
+      scenarioPayload: Object.freeze({
+        operation: "add-assumption" as const,
+        actionKind: /increase|rise/.test(verb)
+          ? ("increase-by" as const)
+          : ("decrease-by" as const),
+        value: Number(alsoAssume[3]),
+        unit: "%",
+        assumptionSubjectRaw: subjectRaw,
+      }),
+    };
+  }
+
+  const whatIf = normalized.match(
+    /^(?:what\s+if|what\s+happens\s+if)\s+(?:we\s+)?(.+?)\s+(increases?|decreases?|drops?|falls?|rises?)\s+(\d+(?:\.\d+)?)\s*%?$/,
+  );
+  if (whatIf) {
+    const subjectRaw = (whatIf[1] ?? "").replace(/^(?:the\s+)?/, "").trim();
+    const verb = whatIf[2] ?? "";
+    const deictic = isAmbiguousConversationalReference(subjectRaw);
+    const primary = deictic ? null : hint(subjectRaw, "primary");
+    return {
+      kind: "explore-scenario",
+      confidence: 0.95,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLORE_SCENARIO,
+        ...(deictic
+          ? [
+              CONVERSATIONAL_INTENT_REASON.AMBIGUOUS_REFERENCE,
+              CONVERSATIONAL_INTENT_REASON.TARGET_REQUIRED,
+            ]
+          : [CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED]),
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: deictic || !primary,
+      requiresTarget: !deictic,
+      candidateKinds: Object.freeze(["explore-scenario"] as const),
+      scenarioPayload: Object.freeze({
+        operation: "intervention" as const,
+        actionKind: /increase|rise/.test(verb)
+          ? ("increase-by" as const)
+          : ("decrease-by" as const),
+        value: Number(whatIf[3]),
+        unit: "%",
+      }),
+    };
+  }
+
+  // "What if we increase this 10%?"
+  const whatIfIncreaseThis = normalized.match(
+    /^what\s+if\s+we\s+(increase|decrease|expand|reduce)\s+(this|that|it)\s+(\d+(?:\.\d+)?)\s*%?$/,
+  );
+  if (whatIfIncreaseThis) {
+    const verb = whatIfIncreaseThis[1] ?? "";
+    return {
+      kind: "explore-scenario",
+      confidence: 0.93,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLORE_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.AMBIGUOUS_REFERENCE,
+        CONVERSATIONAL_INTENT_REASON.TARGET_REQUIRED,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: true,
+      candidateKinds: Object.freeze(["explore-scenario"] as const),
+      scenarioPayload: Object.freeze({
+        operation: "intervention" as const,
+        actionKind: /increase|expand/.test(verb)
+          ? ("increase-by" as const)
+          : ("decrease-by" as const),
+        value: Number(whatIfIncreaseThis[3]),
+        unit: "%",
+      }),
+    };
+  }
+
+  const plusPct = normalized.match(/^(.+?)\s*\+\s*(\d+(?:\.\d+)?)\s*%?$/);
+  if (plusPct) {
+    const primary = hint(plusPct[1] ?? "", "primary");
+    return {
+      kind: "explore-scenario",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLORE_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: false,
+      requiresTarget: true,
+      candidateKinds: Object.freeze(["explore-scenario"] as const),
+      scenarioPayload: Object.freeze({
+        operation: "intervention" as const,
+        actionKind: "increase-by" as const,
+        value: Number(plusPct[2]),
+        unit: "%",
+      }),
+    };
+  }
+
+  const whatIfWe = normalized.match(/^what\s+if\s+we\s+(.+)$/);
+  if (whatIfWe) {
+    const rest = (whatIfWe[1] ?? "").trim();
+    if (rest && !/^do\s+nothing/.test(rest)) {
+      // Prefer a noun phrase after verbs like double/hire.
+      const noun = rest
+        .replace(/^(?:double|triple|hire|increase|expand)\s+/, "")
+        .trim();
+      const primary = hint(noun || rest, "primary");
+      return {
+        kind: "explore-scenario",
+        confidence: 0.8,
+        reasons: [
+          CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLORE_SCENARIO,
+          CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED,
+          CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+          CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+        ],
+        targetHints: Object.freeze(primary ? [primary] : []),
+        requiresContext: false,
+        requiresTarget: false,
+        candidateKinds: Object.freeze(["explore-scenario"] as const),
+        scenarioPayload: Object.freeze({
+          operation: "intervention" as const,
+          actionKind: "increase-by" as const,
+        }),
+      };
+    }
+  }
+
+  if (
+    /^(?:okay[,.]?\s+)?(?:show\s+me\s+the\s+options|show\s+options)$/.test(
+      normalized,
+    )
+  ) {
+    return {
+      kind: "define-scenario",
+      confidence: 0.86,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLORE_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["define-scenario"] as const),
+      scenarioPayload: Object.freeze({ operation: "do-nothing" as const }),
+    };
+  }
+
+  return null;
+}
+
 function resolveMatch(normalized: string): MatchResult {
-  // Order matters: experience/workspace/ordinal/recommend before generic focus/show.
+  // Order matters: decision commitment before scenario; scenario before recommend.
   return (
     matchAmbiguous(normalized) ??
     matchOverview(normalized) ??
     matchNavigation(normalized) ??
     matchPrepareContext(normalized) ??
     matchSwitchWorkspace(normalized) ??
+    matchDecisionCommitment(normalized) ??
+    matchScenarioConversation(normalized) ??
     matchRecommendExplainPrioritize(normalized) ??
     matchOrdinalReference(normalized) ??
     matchCollectionShows(normalized) ??
@@ -976,6 +1675,12 @@ function freezeIntent(intent: NexoraConversationalIntent): NexoraConversationalI
     targetHints: Object.freeze(
       intent.targetHints.map((h) => Object.freeze({ ...h })),
     ),
+    scenarioPayload: intent.scenarioPayload
+      ? Object.freeze({ ...intent.scenarioPayload })
+      : null,
+    decisionCommitmentPayload: intent.decisionCommitmentPayload
+      ? Object.freeze({ ...intent.decisionCommitmentPayload })
+      : null,
   });
 }
 
@@ -1003,6 +1708,8 @@ export function resolveNexoraConversationalIntent(
       ...match.reasons,
     ]),
     targetHints: match.targetHints,
+    scenarioPayload: match.scenarioPayload ?? null,
+    decisionCommitmentPayload: match.decisionCommitmentPayload ?? null,
   });
 
   const trace: NexoraConversationalIntentTrace = Object.freeze({

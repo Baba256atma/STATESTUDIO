@@ -85,6 +85,19 @@ export const NEXORA_CONVERSATIONAL_INTENT_KINDS = Object.freeze([
   "recommend",
   "explain",
   "prioritize",
+  "explore-scenario",
+  "define-scenario",
+  "compare-scenarios",
+  "explain-scenario",
+  "modify-scenario",
+  "select-scenario-reference",
+  "commit-decision",
+  "prefer-option",
+  "reject-decision",
+  "defer-decision",
+  "reconsider-decision",
+  "confirm-decision-commitment",
+  "cancel-decision-commitment",
   "unknown",
 ] as const);
 
@@ -122,7 +135,46 @@ export type NexoraConversationalTargetHint = {
     | "compare-left"
     | "compare-right"
     | "experience"
-    | "ordinal";
+    | "ordinal"
+    | "scenario-op"
+    | "scenario-value"
+    | "scenario-horizon"
+    | "scenario-assumption";
+};
+
+/** Optional structured scenario payload (CC:9). Lexical only — no object IDs. */
+export type NexoraConversationalScenarioIntentPayload = {
+  readonly operation:
+    | "do-nothing"
+    | "intervention"
+    | "modify"
+    | "add-assumption"
+    | "compare"
+    | "downside"
+    | "explain-preference"
+    | "open-ordinal"
+    | "commitment-attempt";
+  readonly actionKind?: "increase-by" | "decrease-by" | "hold";
+  readonly value?: number;
+  readonly unit?: "%" | string;
+  readonly horizonAmount?: number;
+  readonly horizonUnit?: "day" | "week" | "month" | "quarter" | "year";
+  readonly assumptionSubjectRaw?: string;
+  readonly ordinal?: number;
+};
+
+export type NexoraConversationalDecisionCommitmentPayload = {
+  readonly action:
+    | "approve"
+    | "create"
+    | "reject"
+    | "defer"
+    | "reconsider"
+    | "confirm"
+    | "cancel"
+    | "preference";
+  readonly strength: "preference" | "soft" | "explicit";
+  readonly hasCompoundExecutionRequest?: boolean;
 };
 
 export type NexoraConversationalIntent = {
@@ -137,6 +189,8 @@ export type NexoraConversationalIntent = {
   readonly reasons: readonly string[];
   /** Lexical hints only — never canonical object IDs. */
   readonly targetHints: readonly NexoraConversationalTargetHint[];
+  readonly scenarioPayload?: NexoraConversationalScenarioIntentPayload | null;
+  readonly decisionCommitmentPayload?: NexoraConversationalDecisionCommitmentPayload | null;
 };
 
 export type NexoraConversationalIntentInput = {
@@ -185,6 +239,19 @@ export const EXECUTION_CLASS_BY_INTENT_KIND: Readonly<
   recommend: "analysis",
   explain: "analysis",
   prioritize: "analysis",
+  "explore-scenario": "simulation",
+  "define-scenario": "simulation",
+  "compare-scenarios": "analysis",
+  "explain-scenario": "analysis",
+  "modify-scenario": "simulation",
+  "select-scenario-reference": "navigation",
+  "commit-decision": "analysis",
+  "prefer-option": "analysis",
+  "reject-decision": "analysis",
+  "defer-decision": "analysis",
+  "reconsider-decision": "analysis",
+  "confirm-decision-commitment": "analysis",
+  "cancel-decision-commitment": "analysis",
   unknown: "unknown",
 });
 
@@ -211,6 +278,18 @@ export const CONVERSATIONAL_INTENT_REASON = Object.freeze({
   MATCHED_RECOMMEND: "matched-recommend-pattern",
   MATCHED_EXPLAIN: "matched-explain-pattern",
   MATCHED_PRIORITIZE: "matched-prioritize-pattern",
+  MATCHED_EXPLORE_SCENARIO: "matched-explore-scenario-pattern",
+  MATCHED_MODIFY_SCENARIO: "matched-modify-scenario-pattern",
+  MATCHED_COMPARE_SCENARIOS: "matched-compare-scenarios-pattern",
+  MATCHED_EXPLAIN_SCENARIO: "matched-explain-scenario-pattern",
+  MATCHED_SELECT_SCENARIO: "matched-select-scenario-pattern",
+  MATCHED_COMMIT_DECISION: "matched-commit-decision-pattern",
+  MATCHED_PREFER_OPTION: "matched-prefer-option-pattern",
+  MATCHED_REJECT_DECISION: "matched-reject-decision-pattern",
+  MATCHED_DEFER_DECISION: "matched-defer-decision-pattern",
+  MATCHED_RECONSIDER_DECISION: "matched-reconsider-decision-pattern",
+  MATCHED_CONFIRM_DECISION: "matched-confirm-decision-pattern",
+  MATCHED_CANCEL_DECISION: "matched-cancel-decision-pattern",
   MATCHED_RELATION_SCOPED: "matched-relation-scoped-collection-pattern",
   AMBIGUOUS_REFERENCE: "ambiguous-reference-requires-context",
   TARGET_HINT_EXTRACTED: "target-hint-extracted-lexical-only",

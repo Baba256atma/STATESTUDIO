@@ -89,8 +89,9 @@ function requiresPrimaryTarget(command: NexoraConversationalCommand): boolean {
     case "switch-workspace":
     case "request-recommendation":
     case "request-explanation":
-    case "request-prioritization":
       return true;
+    case "request-prioritization":
+      return false;
     case "reveal-related":
       return true;
     default:

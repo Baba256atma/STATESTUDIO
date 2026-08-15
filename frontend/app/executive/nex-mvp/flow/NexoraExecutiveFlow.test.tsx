@@ -18,6 +18,7 @@ import {
   mapNexoraMVPTimelinePacks,
   resolveNexoraMVPFlowPresentationActions,
 } from "../../../lib/nex-mvp/nexoraMVPExecutiveFlow.ts";
+import { createNexoraMVPFlowSeededDecisionRuntime } from "../../../lib/nex-mvp/nexoraMVPExecutiveDecisionCommitment.ts";
 import {
   createInitialNexoraMVPObjectInteractionState,
   selectNexoraMVPInteractionSubject,
@@ -77,13 +78,18 @@ describe("NEX-MVP:8 Executive Flow components", () => {
     assert.equal(chain.decision?.id, "ctx-decision-reprice");
   });
 
-  it("4–7. Decision action uses authoritative flow domain", () => {
+  it("4–7. Decision action uses canonical Decision Runtime via flow projection", () => {
     const state = createInitialNexoraMVPFlowDomainState();
-    const approved = applyNexoraMVPFlowDomainAction(state, {
-      actionId: "act-decision-approve",
-      subjectId: "ctx-decision-reprice",
-      kind: "approve-decision",
-    });
+    const decisionRuntime = createNexoraMVPFlowSeededDecisionRuntime();
+    const approved = applyNexoraMVPFlowDomainAction(
+      state,
+      {
+        actionId: "act-decision-approve",
+        subjectId: "ctx-decision-reprice",
+        kind: "approve-decision",
+      },
+      { decisionRuntime: decisionRuntime.adapter },
+    );
     assert.equal(approved.ok, true);
     if (!approved.ok) return;
     assert.equal(
@@ -126,11 +132,16 @@ describe("NEX-MVP:8 Executive Flow components", () => {
     const journal = mapNexoraMVPJournalEntries(state);
     assert.ok(packs.length > 0);
     assert.ok(journal.length > 0);
-    const approved = applyNexoraMVPFlowDomainAction(state, {
-      actionId: "act-dec-cap-approve",
-      subjectId: "ctx-decision-capacity",
-      kind: "approve-decision",
-    });
+    const decisionRuntime = createNexoraMVPFlowSeededDecisionRuntime();
+    const approved = applyNexoraMVPFlowDomainAction(
+      state,
+      {
+        actionId: "act-dec-cap-approve",
+        subjectId: "ctx-decision-capacity",
+        kind: "approve-decision",
+      },
+      { decisionRuntime: decisionRuntime.adapter },
+    );
     assert.equal(approved.ok, true);
     if (!approved.ok) return;
     assert.ok(
@@ -157,18 +168,14 @@ describe("NEX-MVP:8 Executive Flow components", () => {
       "ctx-scenario-pricing",
       "ctx-decision-reprice",
     ]);
-    // Stage stack: context → source object → overview (NEX-MVP:4).
-    const backToObject = stepBackNexoraMVPObjectInteraction(deep);
+    // Stage-2D trail: Decision → scenario → problem → object → overview.
+    const backToScenario = stepBackNexoraMVPObjectInteraction(deep);
+    assert.equal(backToScenario.focusedSubject?.id, "ctx-scenario-pricing");
+    const backToProblem = stepBackNexoraMVPObjectInteraction(backToScenario);
+    assert.equal(backToProblem.focusedSubject?.id, "ctx-problem-margin");
+    const backToObject = stepBackNexoraMVPObjectInteraction(backToProblem);
     assert.equal(backToObject.focusedSubject?.id, "obj-revenue");
-    // Non-linear sideways navigation remains available through chain links.
-    const sideways = selectNexoraMVPInteractionSubject(
-      backToObject,
-      "ctx-scenario-pricing",
-    );
-    assert.equal(sideways.focusedSubject?.id, "ctx-scenario-pricing");
-    const backToOverview = stepBackNexoraMVPObjectInteraction(
-      stepBackNexoraMVPObjectInteraction(sideways),
-    );
+    const backToOverview = stepBackNexoraMVPObjectInteraction(backToObject);
     assert.equal(backToOverview.mode, "overview");
   });
 

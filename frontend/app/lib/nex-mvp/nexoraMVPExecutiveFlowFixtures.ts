@@ -6,6 +6,11 @@
  * Runtime/domain results should replace these later.
  */
 
+/**
+ * Serialized Decision status projection (kebab).
+ * Canonical product vocabulary is Draft / Under Review / Approved / Rejected / Archived.
+ * Token "locked" is legacy serialization only — prefer `locked` boolean on records.
+ */
 export type NexoraMVPFlowDecisionStatus =
   | "draft"
   | "under-review"
@@ -71,7 +76,10 @@ export type NexoraMVPFlowJournalPackFixture = {
 
 export type NexoraMVPFlowDecisionRecord = {
   readonly id: string;
+  /** Projection of canonical status — not an independent state machine. */
   readonly status: NexoraMVPFlowDecisionStatus;
+  /** Projection of canonical lock — not independently authoritative. */
+  readonly locked: boolean;
   readonly sourceScenarioId: string | null;
   readonly sourceProblemId: string | null;
   readonly objectId: string | null;
@@ -246,6 +254,7 @@ export function createInitialNexoraMVPFlowDecisionRecords(): readonly NexoraMVPF
     Object.freeze({
       id: "ctx-decision-reprice",
       status: "under-review" as const,
+      locked: false,
       sourceScenarioId: "ctx-scenario-pricing",
       sourceProblemId: "ctx-problem-margin",
       objectId: "obj-revenue",
@@ -254,6 +263,7 @@ export function createInitialNexoraMVPFlowDecisionRecords(): readonly NexoraMVPF
     Object.freeze({
       id: "ctx-decision-capacity",
       status: "under-review" as const,
+      locked: false,
       sourceScenarioId: "ctx-scenario-capacity",
       sourceProblemId: "ctx-problem-capacity",
       objectId: "obj-capacity",

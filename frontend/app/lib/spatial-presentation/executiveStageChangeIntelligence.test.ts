@@ -528,6 +528,7 @@ test("K–N — Change Collection click / member focus / Back / Escape", () => {
           environmentIntent: "neutral",
         }),
         alteredCatalog,
+        { consultExecutiveChangeSessionStore: true },
       ),
     ),
   );

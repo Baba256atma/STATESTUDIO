@@ -16,6 +16,10 @@ import type {
   NexoraExecutiveContextUpdateResult,
 } from "./executiveContextSnapshot.ts";
 import type { NexoraExecutiveRecommendationResult } from "./executiveRecommendation.ts";
+import type { NexoraExecutiveScenarioConversationResult } from "./executiveScenarioResolver.ts";
+import type { NexoraExecutiveScenarioSession } from "./executiveScenarioResolver.ts";
+import type { NexoraDecisionCommitmentResult } from "./executiveDecisionCommitmentResolver.ts";
+import type { NexoraExecutiveDecisionSession } from "./executiveDecisionAuthority.ts";
 
 // ─── Identity ───────────────────────────────────────────────────────────────
 
@@ -66,7 +70,7 @@ export const CONVERSATIONAL_EXPERIENCE_BOUNDARY = Object.freeze({
   alwaysUsesCc1ThroughCc4: true as const,
   /** Certified pipeline includes CC:6 experience resolution before CC:3/4; CC:8 advisory on recommend. */
   pipelineOrder:
-    "CC:1→CC:2→CC:6→CC:3→CC:4→CC:8?→CC:7→CC:5-feedback" as const,
+    "CC:1→CC:2→CC:6→CC:3→CC:4→CC:8?→CC:9?→CC:10?→CC:7→CC:5-feedback" as const,
   /** Production path uses applyNexoraMVPConversationalCommand; event is debug-only. */
   canonicalRuntimeEntry: "applyNexoraMVPConversationalCommand" as const,
   debugRuntimeEntry: "nexora-cc4-dispatch" as const,
@@ -123,6 +127,12 @@ export type NexoraConversationalExperienceResult = {
   readonly runtimeResult: NexoraConversationalRuntimeBridgeResult | null;
   /** CC:8 advisory output when recommendation commands are applied. */
   readonly recommendationResult: NexoraExecutiveRecommendationResult | null;
+  /** CC:9 scenario conversation output (session drafts). */
+  readonly scenarioResult: NexoraExecutiveScenarioConversationResult | null;
+  readonly nextScenarioSession: NexoraExecutiveScenarioSession | null;
+  /** CC:10 Decision commitment output. */
+  readonly decisionCommitmentResult: NexoraDecisionCommitmentResult | null;
+  readonly nextDecisionSession: NexoraExecutiveDecisionSession | null;
   readonly nextConversationContext: NexoraConversationContextSnapshot;
   /** CC:7 structured executive context (session-scoped). */
   readonly nextExecutiveContext: NexoraExecutiveContextSnapshot;

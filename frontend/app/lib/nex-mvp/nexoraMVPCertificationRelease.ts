@@ -70,6 +70,7 @@ import {
   NEXORA_MVP_FLOW_BOUNDARY,
   verifyNexoraMVPExecutiveFlowIntegration,
 } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlow";
+import { createNexoraMVPFlowSeededDecisionRuntime } from "@/app/lib/nex-mvp/nexoraMVPExecutiveDecisionCommitment";
 import {
   NEXORA_MVP_STAGE_OBJECT_FIXTURES,
   NEXORA_MVP_STAGE_RELATIONSHIP_FIXTURES,
@@ -713,11 +714,16 @@ export function certifyNexoraMVP(
     focusedSubjectId: "ctx-execution-capacity",
   });
   const flowState = createInitialNexoraMVPFlowDomainState();
-  const approved = applyNexoraMVPFlowDomainAction(flowState, {
-    actionId: "act-decision-approve",
-    subjectId: "ctx-decision-reprice",
-    kind: "approve-decision",
-  });
+  const flowDecisionRuntime = createNexoraMVPFlowSeededDecisionRuntime();
+  const approved = applyNexoraMVPFlowDomainAction(
+    flowState,
+    {
+      actionId: "act-decision-approve",
+      subjectId: "ctx-decision-reprice",
+      kind: "approve-decision",
+    },
+    { decisionRuntime: flowDecisionRuntime.adapter },
+  );
   const failedStart = applyNexoraMVPFlowDomainAction(flowState, {
     actionId: "act-exec-cap-start-exec",
     subjectId: "ctx-execution-capacity",

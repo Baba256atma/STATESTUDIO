@@ -61,6 +61,27 @@ function intentRequiresSubject(intent: NexoraConversationalIntent): boolean {
     // Experience intents need a subject only when an explicit subject hint is present.
     return intent.requiresTarget === true;
   }
+  if (intent.kind === "prioritize" && intent.requiresTarget !== true) {
+    // Workspace-scoped prioritization may proceed without a focused subject.
+    return false;
+  }
+  if (
+    intent.kind === "explore-scenario" ||
+    intent.kind === "define-scenario" ||
+    intent.kind === "modify-scenario" ||
+    intent.kind === "compare-scenarios" ||
+    intent.kind === "explain-scenario" ||
+    intent.kind === "select-scenario-reference" ||
+    intent.kind === "commit-decision" ||
+    intent.kind === "prefer-option" ||
+    intent.kind === "reject-decision" ||
+    intent.kind === "defer-decision" ||
+    intent.kind === "reconsider-decision" ||
+    intent.kind === "confirm-decision-commitment" ||
+    intent.kind === "cancel-decision-commitment"
+  ) {
+    return intent.requiresTarget === true;
+  }
   if (intent.requiresTarget) return true;
   if (intent.requiresContext) return true;
   switch (intent.kind) {

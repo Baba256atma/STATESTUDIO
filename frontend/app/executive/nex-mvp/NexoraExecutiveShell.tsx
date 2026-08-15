@@ -22,6 +22,8 @@ import {
   mapNexoraMVPJournalEntries,
   mapNexoraMVPTimelinePacks,
   overlayNexoraMVPPresentationStatus,
+  projectNexoraMVPCatalogDecisionStatusesFromFlowDomain,
+  projectNexoraMVPFlowDecisionsFromCanonicalRuntime,
   resolveNexoraMVPFlowPresentationActions,
   resolveNexoraMVPTimelinePackSubjectId,
 } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlow";
@@ -52,6 +54,7 @@ import { applyExecutiveStageObjectLabelTerritoryToStagePresentation } from "@/ap
 import {
   buildNexoraMVPAdvisorContextBridge,
   buildNexoraMVPTimelineContextBridge,
+  buildNexoraMVPExecutiveChangeSnapshot,
   createInitialNexoraMVPObjectInteractionState,
   deriveNexoraMVPStageInteractionPresentation,
   jumpNexoraMVPObjectInteractionNavigationTrail,
@@ -69,6 +72,10 @@ import {
   type NexoraMVPObjectInteractionState,
 } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import {
+  ensureExecutiveChangeBaseline,
+  EXECUTIVE_CHANGE_PRODUCTIVITY_CATEGORY,
+} from "@/app/lib/spatial-presentation/executiveStageChangeIntelligence";
+import {
   applyNexoraMVPConversationalCommand,
 } from "@/app/lib/nex-mvp/nexoraMVPConversationalRuntimeBridge";
 import type { NexoraConversationalCommand } from "@/app/lib/conversational-control/conversationalCommand";
@@ -82,8 +89,15 @@ import type { NexoraExecutiveContextSnapshot } from "@/app/lib/conversational-co
 import { toNexoraConversationContextSnapshot } from "@/app/lib/conversational-control/executiveContextProjection";
 import { syncNexoraExecutiveContextFromRuntimeState } from "@/app/lib/nex-mvp/nexoraMVPExecutiveContextAwareness";
 import { projectNexoraConversationalSubjectsFromCatalog } from "@/app/lib/conversational-control/conversationalSubjectRegistry";
+import { createEmptyNexoraExecutiveScenarioSession } from "@/app/lib/conversational-control/executiveScenarioResolver";
+import type { NexoraExecutiveScenarioSession } from "@/app/lib/conversational-control/executiveScenarioResolver";
+import { createEmptyNexoraExecutiveDecisionSession } from "@/app/lib/conversational-control/executiveDecisionAuthority";
+import type { NexoraExecutiveDecisionSession } from "@/app/lib/conversational-control/executiveDecisionAuthority";
+import { createNexoraCanonicalDecisionRuntime } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
+import type { NexoraCanonicalDecisionRuntime } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
+import { bootstrapCanonicalDecisionsFromFlowFixtures } from "@/app/lib/conversational-control/executiveDecisionStatusProjection";
+import { createInitialNexoraMVPFlowDecisionRecords } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlowFixtures";
 import type { ExecutiveQueueCategory } from "@/app/lib/spatial-presentation/executiveStageProductivityContract";
-import { EXECUTIVE_CHANGE_PRODUCTIVITY_CATEGORY } from "@/app/lib/spatial-presentation/executiveStageChangeIntelligence";
 import {
   applyNexoraMVPPresentationDensity,
   applyNexoraMVPPresentationStateChange,
@@ -323,6 +337,25 @@ export function NexoraExecutiveShell({
         currentWorkspaceId: "overview",
       }),
     );
+  const [scenarioSession, setScenarioSession] =
+    useState<NexoraExecutiveScenarioSession>(() =>
+      createEmptyNexoraExecutiveScenarioSession(),
+    );
+  const [decisionSession, setDecisionSession] =
+    useState<NexoraExecutiveDecisionSession>(() =>
+      createEmptyNexoraExecutiveDecisionSession(),
+    );
+  /** CC:10R / CC:10R.1 — one canonical Decision Runtime; flow fixtures bootstrap only. */
+  const decisionRuntimeRef = useRef<NexoraCanonicalDecisionRuntime | null>(null);
+  if (decisionRuntimeRef.current == null) {
+    decisionRuntimeRef.current = createNexoraCanonicalDecisionRuntime({
+      authorityId: "nexora.executive-shell.decision-runtime",
+      initialDecisions: bootstrapCanonicalDecisionsFromFlowFixtures(
+        createInitialNexoraMVPFlowDecisionRecords(),
+      ),
+    });
+  }
+  const decisionRuntime = decisionRuntimeRef.current;
   const executiveContextRef = useRef(executiveContext);
   executiveContextRef.current = executiveContext;
   const [conversationalProcessing, setConversationalProcessing] =
@@ -338,10 +371,19 @@ export function NexoraExecutiveShell({
     workspaceRegistry.find((entry) => entry.kind === application.workspace)
       ?.label ?? application.workspace;
 
+  const stageCatalog = useMemo(
+    () =>
+      projectNexoraMVPCatalogDecisionStatusesFromFlowDomain(
+        dataRealityExperience.catalog,
+        flowDomain,
+      ),
+    [dataRealityExperience.catalog, flowDomain],
+  );
+
   const stageInteraction = useMemo(() => {
     const base = deriveNexoraMVPStageInteractionPresentation(
       interaction,
-      dataRealityExperience.catalog,
+      stageCatalog,
     );
     const withWorkspace = deriveNexoraMVPWorkspacePresentation(
       base,
@@ -405,10 +447,20 @@ export function NexoraExecutiveShell({
     return applyExecutiveStageFixedCameraToStagePresentation(withLabels);
   }, [
     interaction,
-    dataRealityExperience.catalog,
+    stageCatalog,
     dataRealitySceneChoreography.choreography,
     dataRealityConnectionsContext.connectionsContext,
   ]);
+
+  // NPA-T: establish change baseline only after hydration. Derive must not write
+  // or consult the process-global store during SSR (Queue <li> mismatch).
+  useEffect(() => {
+    const snapshot = buildNexoraMVPExecutiveChangeSnapshot(
+      dataRealityExperience.catalog,
+      { workspace: interaction.workspace },
+    );
+    ensureExecutiveChangeBaseline({ currentSnapshot: snapshot });
+  }, [dataRealityExperience.catalog, interaction.workspace]);
 
   const environmentVisual = useMemo(
     () =>
@@ -661,6 +713,10 @@ export function NexoraExecutiveShell({
           catalog: dataRealityExperience.catalog,
           lastAppliedCommandId: lastConversationalCommandIdRef.current,
           messageIdSeed: seed,
+          scenarioSession,
+          decisionSession,
+          decisionRuntime: decisionRuntime.adapter,
+          decisionCommittedAt: "2026-08-15T00:00:00.000Z",
         });
 
         setConversationalMessages((msgs) =>
@@ -671,6 +727,20 @@ export function NexoraExecutiveShell({
           ]).slice(-20),
         );
         setExecutiveContext(result.nextExecutiveContext);
+        if (result.nextScenarioSession) {
+          setScenarioSession(result.nextScenarioSession);
+        }
+        if (result.nextDecisionSession) {
+          setDecisionSession(result.nextDecisionSession);
+        }
+        // CC:10R.1 — Stage/flowDomain Decision projection from canonical Runtime.
+        // Status changes do not steal Stage focus (interaction only updates when shouldCommitRuntime).
+        setFlowDomain((current) =>
+          projectNexoraMVPFlowDecisionsFromCanonicalRuntime(
+            current,
+            decisionRuntime.adapter,
+          ),
+        );
         setConversationalLastTrace(result.trace);
 
         if (result.shouldCommitRuntime) {
@@ -690,6 +760,9 @@ export function NexoraExecutiveShell({
       executiveContext,
       conversationalProcessing,
       dataRealityExperience.catalog,
+      scenarioSession,
+      decisionSession,
+      decisionRuntime,
     ],
   );
 
@@ -817,7 +890,10 @@ export function NexoraExecutiveShell({
           );
         }
         const pending = beginNexoraMVPFlowPendingAction(current, action.id);
-        const result = applyNexoraMVPFlowDomainAction(pending, request);
+        const result = applyNexoraMVPFlowDomainAction(pending, request, {
+          decisionRuntime: decisionRuntime.adapter,
+          occurredAt: "2026-08-15T12:00:00.000Z",
+        });
         if (!result.ok) {
           return failNexoraMVPFlowPendingAction(result.state, result.message);
         }
@@ -825,7 +901,11 @@ export function NexoraExecutiveShell({
       });
       return true;
     },
-    [interaction.focusedSubject?.id, interaction.selectedSubject?.id],
+    [
+      interaction.focusedSubject?.id,
+      interaction.selectedSubject?.id,
+      decisionRuntime,
+    ],
   );
 
   const onPresentationAction = useCallback(
