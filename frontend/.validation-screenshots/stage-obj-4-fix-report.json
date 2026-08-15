@@ -1,0 +1,130 @@
+{
+  "steps": {
+    "overview": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-containment-status": "valid",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-boundary-violation-count": "0",
+        "data-stage-bottom-boundary-violation-count": "0",
+        "data-stage-reserved-region-collision-count": "0",
+        "data-stage-contained-object-count": "0",
+        "data-stage-related-count": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-presentation-state": "minimum"
+      }
+    },
+    "capacity": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-containment-status": "degraded",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-boundary-violation-count": "0",
+        "data-stage-bottom-boundary-violation-count": "0",
+        "data-stage-reserved-region-collision-count": "0",
+        "data-stage-contained-object-count": "6",
+        "data-stage-related-count": "3",
+        "data-stage-layout-overlap-count": "0",
+        "data-presentation-state": "minimum"
+      }
+    },
+    "capacity-minimum": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-containment-status": "degraded",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-boundary-violation-count": "0",
+        "data-stage-bottom-boundary-violation-count": "0",
+        "data-stage-reserved-region-collision-count": "0",
+        "data-stage-contained-object-count": "6",
+        "data-stage-related-count": "3",
+        "data-stage-layout-overlap-count": "0",
+        "data-presentation-state": "minimum"
+      }
+    },
+    "capacity-report": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-containment-status": "degraded",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-boundary-violation-count": "0",
+        "data-stage-bottom-boundary-violation-count": "0",
+        "data-stage-reserved-region-collision-count": "0",
+        "data-stage-contained-object-count": "6",
+        "data-stage-related-count": "3",
+        "data-stage-layout-overlap-count": "0",
+        "data-presentation-state": "minimum"
+      }
+    },
+    "capacity-operation": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-containment-status": "degraded",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-boundary-violation-count": "0",
+        "data-stage-bottom-boundary-violation-count": "0",
+        "data-stage-reserved-region-collision-count": "0",
+        "data-stage-contained-object-count": "6",
+        "data-stage-related-count": "3",
+        "data-stage-layout-overlap-count": "0",
+        "data-presentation-state": "minimum"
+      }
+    },
+    "obj-revenue": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-containment-status": "degraded",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-boundary-violation-count": "0",
+        "data-stage-bottom-boundary-violation-count": "0",
+        "data-stage-reserved-region-collision-count": "0",
+        "data-stage-contained-object-count": "5",
+        "data-stage-related-count": "2",
+        "data-stage-layout-overlap-count": "0",
+        "data-presentation-state": "minimum"
+      }
+    },
+    "obj-delivery": {
+      "attrs": {
+        "data-focused-object": "obj-delivery",
+        "data-stage-containment-status": "degraded",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-boundary-violation-count": "0",
+        "data-stage-bottom-boundary-violation-count": "0",
+        "data-stage-reserved-region-collision-count": "0",
+        "data-stage-contained-object-count": "1",
+        "data-stage-related-count": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-presentation-state": "minimum"
+      }
+    },
+    "obj-budget": {
+      "attrs": {
+        "data-focused-object": "obj-budget",
+        "data-stage-containment-status": "degraded",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-boundary-violation-count": "0",
+        "data-stage-bottom-boundary-violation-count": "0",
+        "data-stage-reserved-region-collision-count": "0",
+        "data-stage-contained-object-count": "4",
+        "data-stage-related-count": "1",
+        "data-stage-layout-overlap-count": "0",
+        "data-presentation-state": "minimum"
+      }
+    },
+    "obj-risk": {
+      "attrs": {
+        "data-focused-object": "obj-risk",
+        "data-stage-containment-status": "degraded",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-boundary-violation-count": "0",
+        "data-stage-bottom-boundary-violation-count": "0",
+        "data-stage-reserved-region-collision-count": "0",
+        "data-stage-contained-object-count": "4",
+        "data-stage-related-count": "1",
+        "data-stage-layout-overlap-count": "0",
+        "data-presentation-state": "minimum"
+      }
+    }
+  }
+}

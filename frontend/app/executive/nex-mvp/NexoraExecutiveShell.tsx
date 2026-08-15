@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createInitialNexoraExecutiveShellApplicationState,
   getNexoraExecutiveShellIdentity,
@@ -26,17 +26,64 @@ import {
   resolveNexoraMVPTimelinePackSubjectId,
 } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlow";
 import type { NexoraMVPIntelligenceAction } from "@/app/lib/nex-mvp/nexoraMVPExecutiveIntelligence";
+import type { NexoraMVPDataRealityDatasetScenario } from "@/app/lib/nex-mvp/nexoraMVPDataRealityStageBridge";
+import { resolveNexoraMVPDataRealityAwareStageExperience } from "@/app/lib/nex-mvp/nexoraMVPDataRealityAwareStageExperience";
+import { resolveNexoraMVPDataRealityAwareAdvisorExperience } from "@/app/lib/nex-mvp/nexoraMVPDataRealityAwareAdvisorExperience";
+import { resolveNexoraMVPDataRealityAwareFocusAttentionExperience } from "@/app/lib/nex-mvp/nexoraMVPDataRealityAwareFocusAttentionExperience";
+import {
+  applyDataRealityAwareSceneChoreographyToStagePresentation,
+  resolveNexoraMVPDataRealityAwareSceneChoreography,
+} from "@/app/lib/nex-mvp/nexoraMVPDataRealityAwareSceneChoreography";
+import {
+  applyDataRealityAwareConnectionsContextToStagePresentation,
+  resolveNexoraMVPDataRealityAwareConnectionsContext,
+} from "@/app/lib/nex-mvp/nexoraMVPDataRealityAwareConnectionsContext";
+import { applyDataRealityObjectVisualStateToStagePresentationWithRetention } from "@/app/lib/nex-mvp/nexoraMVPDataRealityObjectVisualState";
+import { applyDataRealityFocusSceneChoreographyToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPDataRealityFocusSceneChoreography";
+import { applyDataRealityConnectionsContextVisualStateToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPDataRealityConnectionsContextVisualState";
+import { applyDataRealityExecutiveReadabilityToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPDataRealityExecutiveReadability";
+import { applyExecutiveFocusVisualGrammarToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFocusVisualGrammar";
+import { applyExecutiveNetworkTopologyToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveNetworkTopology";
+import { applyExecutivePresentationPlaneToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutivePresentationPlane";
+import { applyExecutiveStageFixedCameraToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveStage2DFixedCamera";
+import { applyExecutiveStage2DTopologyPlaneToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveStage2DTopologyPlane";
+import { applyExecutiveStage2DTopologyRecompositionToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveStage2DTopologyRecomposition";
+import { applyExecutiveStageObjectLabelTerritoryToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveStageObjectLabelTerritory";
 import {
   buildNexoraMVPAdvisorContextBridge,
   buildNexoraMVPTimelineContextBridge,
   createInitialNexoraMVPObjectInteractionState,
   deriveNexoraMVPStageInteractionPresentation,
+  jumpNexoraMVPObjectInteractionNavigationTrail,
   mapNexoraMVPInteractionStateToApplicationSubjects,
+  openNexoraMVPExecutiveChangeCollection,
+  openNexoraMVPExecutiveQueueCollection,
+  acknowledgeNexoraMVPExecutiveChanges,
+  beginNexoraMVPDailyPreparation,
+  beginNexoraMVPMeetingPreparation,
   resetNexoraMVPObjectInteractionOverview,
   selectNexoraMVPInteractionSubject,
   stepBackNexoraMVPObjectInteraction,
+  stepForwardNexoraMVPObjectInteraction,
+  executeNexoraMVPNextBestAction,
   type NexoraMVPObjectInteractionState,
 } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
+import {
+  applyNexoraMVPConversationalCommand,
+} from "@/app/lib/nex-mvp/nexoraMVPConversationalRuntimeBridge";
+import type { NexoraConversationalCommand } from "@/app/lib/conversational-control/conversationalCommand";
+import { executeNexoraConversationalExperience } from "@/app/lib/conversational-control/conversationalExperienceOrchestrator";
+import type {
+  NexoraConversationalExperienceTrace,
+  NexoraConversationalMessage,
+} from "@/app/lib/conversational-control/conversationalExperience";
+import { createEmptyNexoraExecutiveContextSnapshot } from "@/app/lib/conversational-control/executiveContextSnapshot";
+import type { NexoraExecutiveContextSnapshot } from "@/app/lib/conversational-control/executiveContextSnapshot";
+import { toNexoraConversationContextSnapshot } from "@/app/lib/conversational-control/executiveContextProjection";
+import { syncNexoraExecutiveContextFromRuntimeState } from "@/app/lib/nex-mvp/nexoraMVPExecutiveContextAwareness";
+import { projectNexoraConversationalSubjectsFromCatalog } from "@/app/lib/conversational-control/conversationalSubjectRegistry";
+import type { ExecutiveQueueCategory } from "@/app/lib/spatial-presentation/executiveStageProductivityContract";
+import { EXECUTIVE_CHANGE_PRODUCTIVITY_CATEGORY } from "@/app/lib/spatial-presentation/executiveStageChangeIntelligence";
 import {
   applyNexoraMVPPresentationDensity,
   applyNexoraMVPPresentationStateChange,
@@ -96,8 +143,17 @@ function applyInteractionToApplication(
 /**
  * NEX-MVP:2 shell + NEX-MVP:8 executive flow integration.
  * Visible Executive Decision Environment composition root.
+ *
+ * P2:3 / P2:4 / P2:5 are sibling consumers of one shared P2:2 Runtime Reality
+ * State. P2:6 converts P2:5 into Stage choreography; P2:7 reveals canonical
+ * connections/context around the P2:6 anchor. Interaction remains independent
+ * of business truth.
  */
-export function NexoraExecutiveShell() {
+export function NexoraExecutiveShell({
+  datasetScenario = "baseline",
+}: {
+  readonly datasetScenario?: NexoraMVPDataRealityDatasetScenario;
+}) {
   const shellIdentity = getNexoraExecutiveShellIdentity();
   const [application, setApplication] = useState(
     createInitialNexoraExecutiveShellApplicationState,
@@ -109,6 +165,138 @@ export function NexoraExecutiveShell() {
       environmentIntent: application.environmentIntent,
     }),
   );
+
+  const dataRealityExperience = useMemo(
+    () =>
+      resolveNexoraMVPDataRealityAwareStageExperience({
+        datasetScenario,
+        focusedObjectId: interaction.focusedSubject?.id,
+        selectedObjectId: interaction.selectedSubject?.id,
+        selectedObjectIds: interaction.selectedSubject
+          ? [interaction.selectedSubject.id]
+          : undefined,
+        currentWorkspace: interaction.workspace,
+        presentationState: interaction.presentationState,
+        requestedIntent: "investigate",
+      }),
+    [
+      datasetScenario,
+      interaction.focusedSubject?.id,
+      interaction.selectedSubject?.id,
+      interaction.workspace,
+      interaction.presentationState,
+    ],
+  );
+
+  const dataRealityAdvisorExperience = useMemo(
+    () =>
+      resolveNexoraMVPDataRealityAwareAdvisorExperience({
+        runtimeState: dataRealityExperience.runtimeState,
+        focusedObjectId: interaction.focusedSubject?.id,
+        selectedObjectId: interaction.selectedSubject?.id,
+        presentationState: interaction.presentationState,
+        workspace: interaction.workspace,
+      }),
+    [
+      dataRealityExperience.runtimeState,
+      interaction.focusedSubject?.id,
+      interaction.selectedSubject?.id,
+      interaction.presentationState,
+      interaction.workspace,
+    ],
+  );
+
+  const dataRealityFocusAttentionExperience = useMemo(
+    () =>
+      resolveNexoraMVPDataRealityAwareFocusAttentionExperience({
+        runtimeState: dataRealityExperience.runtimeState,
+        focusedObjectId: interaction.focusedSubject?.id,
+        selectedObjectId: interaction.selectedSubject?.id,
+        presentationState: interaction.presentationState,
+        workspace: interaction.workspace,
+        mode: interaction.mode,
+      }),
+    [
+      dataRealityExperience.runtimeState,
+      interaction.focusedSubject?.id,
+      interaction.selectedSubject?.id,
+      interaction.presentationState,
+      interaction.workspace,
+      interaction.mode,
+    ],
+  );
+
+  const dataRealitySceneChoreography = useMemo(() => {
+    const stageObjects = dataRealityExperience.catalog.objects.map((entry) =>
+      Object.freeze({ objectId: entry.id }),
+    );
+    const relationships = dataRealityExperience.catalog.relationships.map(
+      (entry) =>
+        Object.freeze({
+          id: entry.id,
+          sourceId: entry.sourceId,
+          targetId: entry.targetId,
+        }),
+    );
+    return resolveNexoraMVPDataRealityAwareSceneChoreography({
+      focusAttention: dataRealityFocusAttentionExperience.focusAttention,
+      stageObjects,
+      relationships,
+      presentationState: interaction.presentationState,
+      workspace: interaction.workspace,
+      mode: interaction.mode,
+    });
+  }, [
+    dataRealityExperience.catalog,
+    dataRealityFocusAttentionExperience.focusAttention,
+    interaction.presentationState,
+    interaction.workspace,
+    interaction.mode,
+  ]);
+
+  const dataRealityConnectionsContext = useMemo(() => {
+    const relationships = dataRealityExperience.catalog.relationships.map(
+      (entry) =>
+        Object.freeze({
+          id: entry.id,
+          sourceId: entry.sourceId,
+          targetId: entry.targetId,
+        }),
+    );
+    const contextLinks = dataRealityExperience.catalog.contextLinks.map(
+      (entry) =>
+        Object.freeze({
+          id: entry.id,
+          objectId: entry.objectId,
+          contextId: entry.contextId,
+          relation: entry.relation,
+        }),
+    );
+    const contextSubjects = dataRealityExperience.catalog.contextSubjects.map(
+      (entry) =>
+        Object.freeze({
+          id: entry.id,
+          kind: entry.kind,
+          label: entry.label,
+        }),
+    );
+    return resolveNexoraMVPDataRealityAwareConnectionsContext({
+      choreography: dataRealitySceneChoreography.choreography,
+      relationships,
+      contextLinks,
+      contextSubjects,
+      presentationState: interaction.presentationState,
+      workspace: interaction.workspace,
+      mode: interaction.mode,
+    });
+  }, [
+    dataRealityExperience.catalog,
+    dataRealitySceneChoreography.choreography,
+    interaction.presentationState,
+    interaction.workspace,
+    interaction.mode,
+  ]);
+
   const [flowDomain, setFlowDomain] = useState(
     createInitialNexoraMVPFlowDomainState,
   );
@@ -125,6 +313,25 @@ export function NexoraExecutiveShell() {
   const [floatingKind, setFloatingKind] =
     useState<ExecutiveFloatingPanelKind>(null);
 
+  // CC:5/CC:7 — short-lived conversational session + structured executive context.
+  const [conversationalMessages, setConversationalMessages] = useState<
+    readonly NexoraConversationalMessage[]
+  >(Object.freeze([]));
+  const [executiveContext, setExecutiveContext] =
+    useState<NexoraExecutiveContextSnapshot>(() =>
+      createEmptyNexoraExecutiveContextSnapshot({
+        currentWorkspaceId: "overview",
+      }),
+    );
+  const executiveContextRef = useRef(executiveContext);
+  executiveContextRef.current = executiveContext;
+  const [conversationalProcessing, setConversationalProcessing] =
+    useState(false);
+  const [conversationalLastTrace, setConversationalLastTrace] =
+    useState<NexoraConversationalExperienceTrace | null>(null);
+  const lastConversationalCommandIdRef = useRef<string | null>(null);
+  const conversationalMessageSeqRef = useRef(0);
+
   const explorerKind = navToExplorer(activeNav);
   const workspaceRegistry = getNexoraMVPWorkspaceRegistry();
   const workspaceLabel =
@@ -132,16 +339,76 @@ export function NexoraExecutiveShell() {
       ?.label ?? application.workspace;
 
   const stageInteraction = useMemo(() => {
-    const base = deriveNexoraMVPStageInteractionPresentation(interaction);
+    const base = deriveNexoraMVPStageInteractionPresentation(
+      interaction,
+      dataRealityExperience.catalog,
+    );
     const withWorkspace = deriveNexoraMVPWorkspacePresentation(
       base,
       interaction.workspace,
     );
-    return applyNexoraMVPPresentationDensity(
+    const withDensity = applyNexoraMVPPresentationDensity(
       withWorkspace,
       interaction.presentationState,
     );
-  }, [interaction]);
+    const withChoreography =
+      applyDataRealityAwareSceneChoreographyToStagePresentation(
+        withDensity,
+        dataRealitySceneChoreography.choreography,
+      );
+    const withConnections =
+      applyDataRealityAwareConnectionsContextToStagePresentation(
+        withChoreography,
+        dataRealityConnectionsContext.connectionsContext,
+      );
+    const withObjectVisual =
+      applyDataRealityObjectVisualStateToStagePresentationWithRetention(
+        withConnections,
+        dataRealitySceneChoreography.choreography.attentionRetention
+          .objectIds,
+      );
+    const withFocus =
+      applyDataRealityFocusSceneChoreographyToStagePresentation(
+        withObjectVisual,
+        dataRealitySceneChoreography.choreography,
+      );
+    const withConnectionVisual =
+      applyDataRealityConnectionsContextVisualStateToStagePresentation(
+        withFocus,
+        dataRealityConnectionsContext.connectionsContext,
+      );
+    const withReadability =
+      applyDataRealityExecutiveReadabilityToStagePresentation(
+        withConnectionVisual,
+      );
+    // SP:4.1C grammar → SP:4.3 network (overview) → SP:4.2 plane
+    // → STAGE-2D:2 flatten → STAGE-2D:3 click-to-center (focus) → STAGE-2D:1 camera.
+    const withGrammar = applyExecutiveFocusVisualGrammarToStagePresentation(
+      withReadability,
+      { presentationDepth: interaction.presentationState },
+    );
+    const withNetwork =
+      applyExecutiveNetworkTopologyToStagePresentation(withGrammar);
+    const withPlane =
+      applyExecutivePresentationPlaneToStagePresentation(withNetwork);
+    const withTopologyPlane =
+      applyExecutiveStage2DTopologyPlaneToStagePresentation(withPlane);
+    const withRecomposition =
+      applyExecutiveStage2DTopologyRecompositionToStagePresentation(
+        withTopologyPlane,
+      );
+    const withLabels =
+      applyExecutiveStageObjectLabelTerritoryToStagePresentation(
+        withRecomposition,
+        { presentationLevel: interaction.presentationState },
+      );
+    return applyExecutiveStageFixedCameraToStagePresentation(withLabels);
+  }, [
+    interaction,
+    dataRealityExperience.catalog,
+    dataRealitySceneChoreography.choreography,
+    dataRealityConnectionsContext.connectionsContext,
+  ]);
 
   const environmentVisual = useMemo(
     () =>
@@ -223,47 +490,282 @@ export function NexoraExecutiveShell() {
     [theme, timelineLens, workspaceLabel],
   );
 
-  const onWorkspaceChange = useCallback((workspace: NexoraMVPWorkspaceKind) => {
-    setInteraction((current) => {
-      const next = applyNexoraMVPWorkspaceChangeToInteraction(
-        current,
-        workspace,
-      );
-      const subjects = mapNexoraMVPInteractionStateToApplicationSubjects(next);
-      setApplication((previous) =>
-        Object.freeze({
-          ...previous,
-          workspace: next.workspace,
-          presentationState: next.presentationState,
-          environmentIntent: next.environmentIntent,
-          selectedSubject: subjects.selectedSubject,
-          focusedSubject: subjects.focusedSubject,
-          activeSurface: "stage" as const,
-        }),
-      );
-      return next;
-    });
-  }, []);
+  const syncExecutiveContextFromRuntime = useCallback(
+    (
+      nextState: typeof interaction,
+      syncSource: "runtime" | "navigation" | "workspace-transition",
+    ) => {
+      const subjects = projectNexoraConversationalSubjectsFromCatalog({
+        objects: dataRealityExperience.catalog.objects,
+        contextSubjects: dataRealityExperience.catalog.contextSubjects,
+      });
+      const updated = syncNexoraExecutiveContextFromRuntimeState({
+        previousContext: executiveContextRef.current,
+        nextState,
+        syncSource,
+        executiveSubjects: subjects,
+        catalog: dataRealityExperience.catalog,
+      });
+      setExecutiveContext(updated.nextContext);
+    },
+    [dataRealityExperience.catalog],
+  );
+
+  const onWorkspaceChange = useCallback(
+    (workspace: NexoraMVPWorkspaceKind) => {
+      setInteraction((current) => {
+        const next = applyNexoraMVPWorkspaceChangeToInteraction(
+          current,
+          workspace,
+        );
+        const subjects = mapNexoraMVPInteractionStateToApplicationSubjects(next);
+        setApplication((previous) =>
+          Object.freeze({
+            ...previous,
+            workspace: next.workspace,
+            presentationState: next.presentationState,
+            environmentIntent: next.environmentIntent,
+            selectedSubject: subjects.selectedSubject,
+            focusedSubject: subjects.focusedSubject,
+            activeSurface: "stage" as const,
+          }),
+        );
+        syncExecutiveContextFromRuntime(next, "workspace-transition");
+        return next;
+      });
+    },
+    [syncExecutiveContextFromRuntime],
+  );
 
   const onOverview = useCallback(() => {
     setInteraction((previous) => {
       const next = resetNexoraMVPObjectInteractionOverview(previous);
       setApplication((app) => applyInteractionToApplication(app, next));
+      // Overview is presentation reset — preserve executive structure (CC:7).
+      syncExecutiveContextFromRuntime(next, "runtime");
       return next;
     });
-  }, []);
+  }, [syncExecutiveContextFromRuntime]);
 
   const onStepBack = useCallback(() => {
     setInteraction((previous) => {
       const next = stepBackNexoraMVPObjectInteraction(previous);
       setApplication((app) => applyInteractionToApplication(app, next));
+      syncExecutiveContextFromRuntime(next, "navigation");
+      return next;
+    });
+  }, [syncExecutiveContextFromRuntime]);
+
+  const onStepForward = useCallback(() => {
+    setInteraction((previous) => {
+      const next = stepForwardNexoraMVPObjectInteraction(previous);
+      setApplication((app) => applyInteractionToApplication(app, next));
+      syncExecutiveContextFromRuntime(next, "navigation");
+      return next;
+    });
+  }, [syncExecutiveContextFromRuntime]);
+
+  const onNavigateTrailIndex = useCallback(
+    (index: number) => {
+      setInteraction((previous) => {
+        const next = jumpNexoraMVPObjectInteractionNavigationTrail(
+          previous,
+          index,
+        );
+        setApplication((app) => applyInteractionToApplication(app, next));
+        syncExecutiveContextFromRuntime(next, "navigation");
+        return next;
+      });
+    },
+    [syncExecutiveContextFromRuntime],
+  );
+
+  const onSelectSubject = useCallback(
+    (subjectId: string | null) => {
+      setInteraction((previous) => {
+        const next = selectNexoraMVPInteractionSubject(previous, subjectId);
+        setApplication((app) => applyInteractionToApplication(app, next));
+        syncExecutiveContextFromRuntime(next, "runtime");
+        return next;
+      });
+    },
+    [syncExecutiveContextFromRuntime],
+  );
+
+  /**
+   * CC:4 debug event — not the production experience path.
+   * Production CC:5 uses executeNexoraConversationalExperience → applyNexoraMVPConversationalCommand.
+   */
+  const lastDebugCc4CommandIdRef = useRef<string | null>(null);
+  const onDispatchConversationalCommand = useCallback(
+    (command: NexoraConversationalCommand | null) => {
+      setInteraction((previous) => {
+        const applied = applyNexoraMVPConversationalCommand({
+          command,
+          state: previous,
+          lastAppliedCommandId: lastDebugCc4CommandIdRef.current,
+        });
+        if (applied.result.status !== "applied") {
+          return previous;
+        }
+        lastDebugCc4CommandIdRef.current = command?.commandId ?? null;
+        setApplication((app) =>
+          applyInteractionToApplication(app, applied.nextState),
+        );
+        return applied.nextState;
+      });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ command?: NexoraConversationalCommand | null }>)
+        .detail;
+      onDispatchConversationalCommand(detail?.command ?? null);
+    };
+    window.addEventListener("nexora-cc4-dispatch", handler);
+    return () => window.removeEventListener("nexora-cc4-dispatch", handler);
+  }, [onDispatchConversationalCommand]);
+
+  /** CC:5 — canonical experience submission (CC:1→2→3→4). */
+  const interactionRef = useRef(interaction);
+  interactionRef.current = interaction;
+
+  const onSubmitConversationalUtterance = useCallback(
+    (utterance: string) => {
+      if (conversationalProcessing) return;
+      setConversationalProcessing(true);
+      try {
+        conversationalMessageSeqRef.current += 1;
+        const seed = `cc5-${conversationalMessageSeqRef.current}`;
+        const previous = interactionRef.current;
+        const subjects = projectNexoraConversationalSubjectsFromCatalog({
+          objects: dataRealityExperience.catalog.objects,
+          contextSubjects: dataRealityExperience.catalog.contextSubjects,
+        });
+
+        const result = executeNexoraConversationalExperience({
+          utterance,
+          executiveContext,
+          conversationContext: toNexoraConversationContextSnapshot(
+            executiveContext,
+          ),
+          activeStageContext: Object.freeze({
+            focusedSubjectId: previous.focusedSubject?.id ?? null,
+            selectedSubjectId: previous.selectedSubject?.id ?? null,
+          }),
+          allowActiveStageContext: false,
+          executiveSubjects: subjects,
+          runtimeState: previous,
+          catalog: dataRealityExperience.catalog,
+          lastAppliedCommandId: lastConversationalCommandIdRef.current,
+          messageIdSeed: seed,
+        });
+
+        setConversationalMessages((msgs) =>
+          Object.freeze([
+            ...msgs,
+            result.managerMessage,
+            result.nexoraMessage,
+          ]).slice(-20),
+        );
+        setExecutiveContext(result.nextExecutiveContext);
+        setConversationalLastTrace(result.trace);
+
+        if (result.shouldCommitRuntime) {
+          lastConversationalCommandIdRef.current =
+            result.commandResult?.command?.commandId ??
+            lastConversationalCommandIdRef.current;
+          setInteraction(result.nextRuntimeState);
+          setApplication((app) =>
+            applyInteractionToApplication(app, result.nextRuntimeState),
+          );
+        }
+      } finally {
+        setConversationalProcessing(false);
+      }
+    },
+    [
+      executiveContext,
+      conversationalProcessing,
+      dataRealityExperience.catalog,
+    ],
+  );
+
+  const onSelectQueueCategory = useCallback(
+    (category: ExecutiveQueueCategory | "changes-since-visit") => {
+      setInteraction((previous) => {
+        const next =
+          category === EXECUTIVE_CHANGE_PRODUCTIVITY_CATEGORY
+            ? openNexoraMVPExecutiveChangeCollection(previous)
+            : openNexoraMVPExecutiveQueueCollection(previous, category);
+        setApplication((app) => applyInteractionToApplication(app, next));
+        return next;
+      });
+    },
+    [],
+  );
+
+  const onBeginDailyPreparation = useCallback(() => {
+    setInteraction((previous) => {
+      const next = beginNexoraMVPDailyPreparation(previous);
+      setApplication((app) => applyInteractionToApplication(app, next));
       return next;
     });
   }, []);
 
-  const onSelectSubject = useCallback((subjectId: string | null) => {
+  const onBeginMeetingPreparation = useCallback(() => {
     setInteraction((previous) => {
-      const next = selectNexoraMVPInteractionSubject(previous, subjectId);
+      const next = beginNexoraMVPMeetingPreparation(previous, {
+        kind: "topic",
+        label: "Operations",
+        keywords: Object.freeze(["capacity", "delivery", "operations", "inventory"]),
+        semanticObjectIds: Object.freeze(["obj-capacity", "obj-delivery"]),
+      });
+      setApplication((app) => applyInteractionToApplication(app, next));
+      return next;
+    });
+  }, []);
+
+  const onExecuteNextBestAction = useCallback(
+    (actionId: string) => {
+      setInteraction((previous) => {
+        const presentation = deriveNexoraMVPStageInteractionPresentation(previous);
+        const nba = presentation.nextBestAction;
+        const action =
+          nba?.recommendedAction?.id === actionId
+            ? nba.recommendedAction
+            : nba?.alternativeActions.find((entry) => entry.id === actionId);
+        if (action == null) return previous;
+        const intent = executeNexoraMVPNextBestAction(action);
+        let next = previous;
+        if (intent.type === "select-subject") {
+          next = selectNexoraMVPInteractionSubject(previous, intent.subjectId);
+        } else if (intent.type === "open-collection") {
+          next =
+            intent.category === EXECUTIVE_CHANGE_PRODUCTIVITY_CATEGORY
+              ? openNexoraMVPExecutiveChangeCollection(previous)
+              : openNexoraMVPExecutiveQueueCollection(
+                  previous,
+                  intent.category,
+                );
+        } else if (intent.type === "acknowledge-changes") {
+          next = acknowledgeNexoraMVPExecutiveChanges(previous);
+        } else {
+          // unavailable — recompute by returning previous (NBA refreshes on next derive)
+          return previous;
+        }
+        setApplication((app) => applyInteractionToApplication(app, next));
+        return next;
+      });
+    },
+    [],
+  );
+
+  const onSelectBriefOption = useCallback((objectId: string) => {
+    setInteraction((previous) => {
+      const next = selectNexoraMVPInteractionSubject(previous, objectId);
       setApplication((app) => applyInteractionToApplication(app, next));
       return next;
     });
@@ -433,8 +935,13 @@ export function NexoraExecutiveShell() {
         setFloatingKind(null);
         return;
       }
-      if (interaction.mode !== "overview") {
-        onStepBack();
+      // STAGE-2D:4 / STAGE-PROD:1/6 — Escape clears focus + collection/prep → Overview.
+      if (
+        interaction.mode !== "overview" ||
+        interaction.collectionContext != null ||
+        interaction.preparationContext != null
+      ) {
+        onOverview();
         return;
       }
       if (explorerKind != null) {
@@ -443,7 +950,14 @@ export function NexoraExecutiveShell() {
     };
     globalThis.addEventListener("keydown", onKeyDown);
     return () => globalThis.removeEventListener("keydown", onKeyDown);
-  }, [explorerKind, floatingKind, interaction.mode, onStepBack]);
+  }, [
+    explorerKind,
+    floatingKind,
+    interaction.mode,
+    interaction.collectionContext,
+    interaction.preparationContext,
+    onOverview,
+  ]);
 
   const explorerContent =
     explorerKind === "journal" ? (
@@ -482,6 +996,46 @@ export function NexoraExecutiveShell() {
       data-shell-identity={shellIdentity.id}
       data-shell-version={shellIdentity.version}
       data-flow-identity="NEX-MVP:8/NexoraExecutiveFlowIntegration"
+      data-nexora-dataset={datasetScenario}
+      data-data-reality-stage-binding={
+        dataRealityExperience.stageBinding.identity.identity
+      }
+      data-data-reality-runtime-state={
+        dataRealityExperience.runtimeState.identity.identity
+      }
+      data-data-reality-advisor-binding={
+        dataRealityAdvisorExperience.advisorBinding.identity.identity
+      }
+      data-data-reality-focus-attention={
+        dataRealityFocusAttentionExperience.focusAttention.identity.identity
+      }
+      data-data-reality-scene-choreography={
+        dataRealitySceneChoreography.choreography.identity.identity
+      }
+      data-data-reality-connections-context={
+        dataRealityConnectionsContext.connectionsContext.identity.identity
+      }
+      data-primary-focus={
+        dataRealityFocusAttentionExperience.focusAttention.primaryFocus ??
+        "none"
+      }
+      data-recommended-focus={
+        dataRealityFocusAttentionExperience.focusAttention.recommendedFocus ??
+        "none"
+      }
+      data-choreography-anchor={
+        dataRealitySceneChoreography.choreography.anchorObjectId ?? "none"
+      }
+      data-revealed-connection-count={String(
+        dataRealityConnectionsContext.connectionsContext.relationshipSummary
+          .revealedConnectionCount,
+      )}
+      data-competing-attention={
+        dataRealityFocusAttentionExperience.focusAttention.sceneAttention
+          .hasCompetingAttention
+          ? "true"
+          : "false"
+      }
       data-active-workspace={application.workspace}
       data-presentation-state={application.presentationState}
       data-active-surface={application.activeSurface}
@@ -541,6 +1095,60 @@ export function NexoraExecutiveShell() {
             chain={flowContext.chain}
             onSelectLink={onSelectSubject}
           />
+          <div
+            data-testid="nexora-cc4-runtime-bridge"
+            data-cc4="runtime-control-bridge"
+            data-cc4-entry="nexora-cc4-dispatch"
+            hidden
+            aria-hidden="true"
+          />
+          <div
+            data-testid="nexora-preparation-triggers"
+            data-stage-prod="6"
+            style={{
+              display: "flex",
+              gap: "0.35rem",
+              padding: "0.2rem 0.75rem 0.35rem",
+              alignItems: "center",
+            }}
+          >
+            <button
+              type="button"
+              data-testid="nexora-prepare-daily"
+              onClick={onBeginDailyPreparation}
+              style={{
+                border: `1px solid ${cockpit.border}`,
+                background: "transparent",
+                color: cockpit.muted,
+                fontSize: "0.58rem",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                padding: "0.2rem 0.45rem",
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              Daily Prep
+            </button>
+            <button
+              type="button"
+              data-testid="nexora-prepare-meeting"
+              onClick={onBeginMeetingPreparation}
+              style={{
+                border: `1px solid ${cockpit.border}`,
+                background: "transparent",
+                color: cockpit.muted,
+                fontSize: "0.58rem",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                padding: "0.2rem 0.45rem",
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              Meeting Prep
+            </button>
+          </div>
           <ExecutiveStageFrame
             stageControls={
               <NexoraWorkspaceDialMount
@@ -556,7 +1164,10 @@ export function NexoraExecutiveShell() {
               presentationViewModel={presentationViewModel}
               advisorBridge={advisorBridge}
               onSelectSubject={onSelectSubject}
+              onSelectQueueCategory={onSelectQueueCategory}
               onStepBack={onStepBack}
+              onStepForward={onStepForward}
+              onNavigateTrailIndex={onNavigateTrailIndex}
               onOverview={onOverview}
               onPresentationStateChange={onPresentationStateChange}
               onPresentationAction={onPresentationAction}
@@ -580,6 +1191,18 @@ export function NexoraExecutiveShell() {
           focusedSubject={interaction.focusedSubject}
           selectedSubject={interaction.selectedSubject}
           onIntelligenceAction={onIntelligenceAction}
+          onExecuteNextBestAction={onExecuteNextBestAction}
+          onSelectBriefOption={onSelectBriefOption}
+          advisorRealityBinding={dataRealityAdvisorExperience.advisorBinding}
+          conversationalMessages={conversationalMessages}
+          conversationalProcessing={conversationalProcessing}
+          conversationalContextLabel={
+            interaction.focusedSubject?.label ??
+            interaction.selectedSubject?.label ??
+            null
+          }
+          conversationalLastTrace={conversationalLastTrace}
+          onSubmitConversationalUtterance={onSubmitConversationalUtterance}
         />
       </div>
 

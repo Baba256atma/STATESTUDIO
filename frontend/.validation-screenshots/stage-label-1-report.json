@@ -1,0 +1,116 @@
+{
+  "steps": {
+    "overview": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-label-contract": "stage-label-1",
+        "data-stage-label-visible-count": "8",
+        "data-stage-label-hidden-count": "0",
+        "data-stage-label-collision-count": "0",
+        "data-stage-label-body-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-reserved-collision-count": "0",
+        "data-stage-label-clipped-count": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-thread-gateway-visible": "false"
+      }
+    },
+    "capacity-minimum": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-label-contract": "stage-label-1",
+        "data-stage-label-visible-count": "5",
+        "data-stage-label-hidden-count": "1",
+        "data-stage-label-collision-count": "1",
+        "data-stage-label-body-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-reserved-collision-count": "0",
+        "data-stage-label-clipped-count": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-thread-gateway-visible": "true"
+      }
+    },
+    "capacity-report": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-label-contract": "stage-label-1",
+        "data-stage-label-visible-count": "5",
+        "data-stage-label-hidden-count": "1",
+        "data-stage-label-collision-count": "1",
+        "data-stage-label-body-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-reserved-collision-count": "0",
+        "data-stage-label-clipped-count": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-thread-gateway-visible": "true"
+      }
+    },
+    "capacity-operation": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-label-contract": "stage-label-1",
+        "data-stage-label-visible-count": "5",
+        "data-stage-label-hidden-count": "1",
+        "data-stage-label-collision-count": "1",
+        "data-stage-label-body-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-reserved-collision-count": "0",
+        "data-stage-label-clipped-count": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-thread-gateway-visible": "true"
+      }
+    },
+    "capacityCustomerRisk": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-label-contract": "stage-label-1",
+        "data-stage-label-visible-count": "5",
+        "data-stage-label-hidden-count": "1",
+        "data-stage-label-collision-count": "1",
+        "data-stage-label-body-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-reserved-collision-count": "0",
+        "data-stage-label-clipped-count": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-thread-gateway-visible": "true"
+      }
+    },
+    "capacityExpanded": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-label-contract": "stage-label-1",
+        "data-stage-label-visible-count": "6",
+        "data-stage-label-hidden-count": "0",
+        "data-stage-label-collision-count": "0",
+        "data-stage-label-body-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-reserved-collision-count": "0",
+        "data-stage-label-clipped-count": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-thread-gateway-visible": "false"
+      }
+    },
+    "revenue": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-label-contract": "stage-label-1",
+        "data-stage-label-visible-count": "4",
+        "data-stage-label-hidden-count": "1",
+        "data-stage-label-collision-count": "1",
+        "data-stage-label-body-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-reserved-collision-count": "0",
+        "data-stage-label-clipped-count": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-thread-gateway-visible": "true"
+      }
+    }
+  }
+}

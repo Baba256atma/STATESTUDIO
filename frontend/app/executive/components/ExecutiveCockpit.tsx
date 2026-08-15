@@ -7,12 +7,17 @@
  * /executive/exs1 remains the EXS development sandbox.
  */
 
+import type { NexoraMVPDataRealityDatasetScenario } from "@/app/lib/nex-mvp/nexoraMVPDataRealityStageBridge";
 import { NexoraExecutiveShell } from "../nex-mvp/NexoraExecutiveShell";
 
 /**
  * ExecutiveCockpit — permanent Nexora MVP entry composition.
  */
-export function ExecutiveCockpit() {
+export function ExecutiveCockpit({
+  datasetScenario = "baseline",
+}: {
+  readonly datasetScenario?: NexoraMVPDataRealityDatasetScenario;
+}) {
   return (
     <div
       data-testid="executive-cockpit"
@@ -23,7 +28,7 @@ export function ExecutiveCockpit() {
         overflow: "hidden",
       }}
     >
-      <NexoraExecutiveShell />
+      <NexoraExecutiveShell datasetScenario={datasetScenario} />
     </div>
   );
 }

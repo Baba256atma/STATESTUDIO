@@ -5,12 +5,17 @@
  * Composes NEX-MVP:2 via ExecutiveCockpit → NexoraExecutiveShell.
  */
 
+import type { NexoraMVPDataRealityDatasetScenario } from "@/app/lib/nex-mvp/nexoraMVPDataRealityStageBridge";
 import { ExecutiveCockpit } from "./ExecutiveCockpit";
 
 /**
  * Executive Shell — full-viewport cockpit container.
  */
-export function ExecutiveShell() {
+export function ExecutiveShell({
+  datasetScenario = "baseline",
+}: {
+  readonly datasetScenario?: NexoraMVPDataRealityDatasetScenario;
+}) {
   return (
     <div
       data-testid="executive-shell"
@@ -23,7 +28,7 @@ export function ExecutiveShell() {
         height: "100%",
       }}
     >
-      <ExecutiveCockpit />
+      <ExecutiveCockpit datasetScenario={datasetScenario} />
     </div>
   );
 }

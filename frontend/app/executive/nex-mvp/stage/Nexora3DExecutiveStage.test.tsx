@@ -166,6 +166,41 @@ describe("NEX-MVP:3 3D Executive Stage host", () => {
     assert.match(html, /overflow:\s*hidden/);
   });
 
+  it("7b. STAGE-2D:1 fixed camera contract is Stage-integrated", () => {
+    const { stageProps } = presentationFor(null);
+    const html = renderToStaticMarkup(
+      React.createElement(Nexora3DExecutiveStage, stageProps),
+    );
+    assert.match(html, /data-camera-navigation="stage-2d-1-disabled"/);
+    assert.match(html, /data-stage-camera-mode="fixed-2d"/);
+    assert.match(html, /data-stage-camera-target="0,0,0"/);
+    assert.match(html, /data-stage-depth="0"/);
+    assert.match(html, /data-stage-camera-contract="stage-2d-1"/);
+    assert.match(html, /data-stage-plane="xy"/);
+    assert.match(html, /data-stage-position-mode="true-2d"/);
+    assert.match(html, /data-stage-topology-contract="stage-2d-2"/);
+    assert.match(html, /data-stage-topology-mode="overview"/);
+    assert.match(html, /data-stage-recomposition-contract="stage-2d-3"/);
+    assert.match(html, /data-stage-readability-contract="stage-2d-4"/);
+    assert.match(html, /data-stage-routing-mode="readability"/);
+    assert.match(html, /data-stage-navigation-mode="trail"/);
+    assert.match(html, /data-stage-navigation-contract="stage-2d-6"/);
+    assert.match(html, /data-stage-visual-certification="stage-2d-6v"/);
+    assert.match(html, /data-stage-object-plane="planar"/);
+    assert.doesNotMatch(html, /data-testid="nexora-executive-camera-navigation"/);
+    const host = readFileSync(join(HERE, "Nexora3DExecutiveStage.tsx"), "utf8");
+    assert.match(host, /applyExecutiveStageFixedCameraToStagePresentation/);
+    assert.match(host, /applyExecutiveStage2DTopologyPlaneToStagePresentation/);
+    assert.match(host, /applyExecutiveStage2DTopologyRecompositionToStagePresentation/);
+    assert.match(host, /getNexoraMVPExecutiveStage2DReadabilityObservability/);
+    assert.match(host, /getExecutiveStage2DNavigationContextObservability/);
+    assert.match(host, /getExecutiveStage2DVisualCertificationObservability/);
+    assert.doesNotMatch(host, /resolveNavigatedExecutiveCameraTuple/);
+    assert.doesNotMatch(host, /NexoraExecutiveCameraNavigationControls/);
+    assert.doesNotMatch(host, /OrbitControls/);
+    assert.doesNotMatch(host, /camera\.position\.set/);
+  });
+
   it("8. Stage fallback markup exists for unavailable renderer", () => {
     const host = readFileSync(join(HERE, "Nexora3DExecutiveStage.tsx"), "utf8");
     assert.match(host, /nexora-stage-fallback/);
@@ -181,6 +216,8 @@ describe("NEX-MVP:3 3D Executive Stage host", () => {
       "NexoraStageObject.tsx",
       "NexoraStageConnections.tsx",
       "NexoraStageCameraController.tsx",
+      "NexoraExecutiveCameraController.tsx",
+      "NexoraExecutiveCameraNavigationControls.tsx",
       "NexoraStageContextNodes.tsx",
       "NexoraStageInteractionBreadcrumb.tsx",
     ];
@@ -257,8 +294,13 @@ describe("NEX-MVP:4 Stage object interaction host", () => {
     const html = renderToStaticMarkup(
       React.createElement(Nexora3DExecutiveStage, stageProps),
     );
-    assert.match(html, /data-testid="nexora-stage-context-control-ctx-scenario-pricing"/);
-    assert.match(html, /data-kind="scenario"/);
+    // SP:4.1B — MINIMUM discloses a collapsed Executive Thread, not expanded work nodes.
+    assert.match(
+      html,
+      /data-testid="nexora-stage-context-control-thread-obj-revenue"/,
+    );
+    assert.match(html, /data-kind="executive-thread"/);
+    assert.match(html, /data-context-node-count="1"/);
   });
 
   it("7. context node selection surface is present", () => {

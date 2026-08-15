@@ -1,0 +1,26 @@
+{
+  "delivery": {
+    "label": "delivery",
+    "attrs": {
+      "focused": "obj-delivery",
+      "selected": "obj-delivery",
+      "anchor": "obj-delivery",
+      "mode": "focus",
+      "depth": "minimum"
+    }
+  },
+  "budget": {
+    "label": "budget",
+    "attrs": {
+      "focused": "obj-budget",
+      "selected": "obj-budget",
+      "anchor": "obj-budget",
+      "mode": "focus",
+      "depth": "minimum"
+    }
+  },
+  "logs": [
+    "[NEXORA_FOCUS_LAYOUT_AUTHORITY] {objectId: obj-delivery, clickedObjectId: obj-delivery, selectedObjectId: obj-delivery, focusedObjectId: obj-delivery, focusSource: user-selection}",
+    "[NEXORA_FOCUS_LAYOUT_AUTHORITY] {objectId: obj-budget, clickedObjectId: obj-budget, selectedObjectId: obj-budget, focusedObjectId: obj-budget, focusSource: user-selection}"
+  ]
+}

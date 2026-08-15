@@ -16,7 +16,6 @@ import {
   verifyNexoraExecutiveShell,
 } from "../../lib/nex-mvp/nexoraExecutiveShell.ts";
 import { getNexoraMVPPrimarySurface } from "../../lib/nex-mvp/nexoraMVPApplicationFoundation.ts";
-import ExecutivePage from "../page.tsx";
 import { ExecutiveShell } from "../components/ExecutiveShell.tsx";
 import { NexoraExecutiveShell } from "./NexoraExecutiveShell.tsx";
 
@@ -48,8 +47,17 @@ describe("NEX-MVP:2 Nexora Executive Shell", () => {
   });
 
   it("3. canonical shell renders at /executive", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
-    assert.match(html, /data-testid="executive-page"/);
+    // /executive page is an async server component (searchParams Promise).
+    // Composition is verified via ExecutiveShell; page wiring is source-checked.
+    const pageSource = readFileSync(join(HERE, "../page.tsx"), "utf8");
+    assert.match(pageSource, /data-testid="executive-page"/);
+    assert.match(pageSource, /datasetScenario/);
+    assert.match(pageSource, /searchParams/);
+    assert.match(pageSource, /dataset=baseline|dataset=operational-pressure/);
+
+    const html = renderToStaticMarkup(
+      React.createElement(ExecutiveShell, { datasetScenario: "baseline" }),
+    );
     assert.match(html, /data-testid="executive-shell"/);
     assert.match(html, /data-testid="executive-cockpit"/);
     assert.match(html, /data-testid="nexora-executive-shell"/);

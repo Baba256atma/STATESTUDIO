@@ -1,0 +1,43 @@
+{
+  "steps": {
+    "budgetOn": {
+      "attrs": {
+        "data-focused-object": "obj-budget",
+        "data-stage-anchor-object-id": "obj-budget",
+        "data-stage-advisor-object-id": "obj-budget",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-object-geometry": "3d-slab",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-depth-environment": "deep-z",
+        "data-stage-camera-mode": "fixed-2d"
+      }
+    },
+    "deliveryOn": {
+      "attrs": {
+        "data-focused-object": "obj-delivery",
+        "data-stage-anchor-object-id": "obj-delivery",
+        "data-stage-advisor-object-id": "obj-delivery",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-object-geometry": "3d-slab",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-depth-environment": "deep-z",
+        "data-stage-camera-mode": "fixed-2d"
+      }
+    },
+    "budgetOff": {
+      "attrs": {
+        "data-focused-object": "obj-budget",
+        "data-stage-anchor-object-id": "obj-budget",
+        "data-stage-advisor-object-id": "obj-budget",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-object-geometry": "3d-slab",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-depth-environment": "deep-z",
+        "data-stage-camera-mode": "fixed-2d"
+      }
+    }
+  }
+}

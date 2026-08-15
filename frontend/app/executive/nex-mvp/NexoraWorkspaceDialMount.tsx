@@ -28,14 +28,15 @@ export function NexoraWorkspaceDialMount({
         right: "0.85rem",
         bottom: "0.85rem",
         zIndex: 8,
-        padding: "0.55rem 0.6rem 0.65rem",
+        padding: "0.4rem 0.45rem 0.5rem",
         borderRadius: cockpit.radius.md,
         border: `1px solid ${cockpit.borderStrong}`,
-        background: "rgba(10, 16, 26, 0.78)",
+        background: "rgba(10, 16, 26, 0.72)",
         boxShadow: cockpit.elevation.raised,
         backdropFilter: "blur(8px)",
         pointerEvents: "auto",
-        maxWidth: "min(12rem, calc(100% - 1.5rem))",
+        maxWidth: "min(10.5rem, calc(100% - 1.5rem))",
+        opacity: 0.92,
       }}
     >
       <NexoraWorkspaceDial

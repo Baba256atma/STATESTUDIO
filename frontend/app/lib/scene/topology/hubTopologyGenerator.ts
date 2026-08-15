@@ -33,7 +33,11 @@ function positionSatellite(satelliteIndex: number, satelliteCount: number): Topo
 }
 
 /**
- * First node is the hub at origin; remaining nodes are satellites on a circle (y = 0).
+ * First node is the hub at origin; remaining nodes are satellites on a circle.
+ *
+ * Legacy Type-C convention uses an XZ ring (y = 0, z = sin·R) for 3D scene
+ * consumers. Executive Stage STAGE-2D:2 remaps that ring onto XY via
+ * `remapLegacyHubXzToExecutiveStage2D` — do not use hub Z as Stage depth.
  */
 export function generateHubTopology(nodes: TopologyNode[]): TopologyResult {
   const ordered = nodes.map((node) => ({

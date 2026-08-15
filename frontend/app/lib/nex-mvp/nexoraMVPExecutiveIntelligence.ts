@@ -777,6 +777,8 @@ export function verifyNexoraMVPAdvisorInsightExperience(options?: {
   const bridge: NexoraMVPAdvisorContextBridge = Object.freeze({
     selectedSubject: Object.freeze({ id: "obj-capacity", kind: "object" }),
     focusedSubject: Object.freeze({ id: "obj-capacity", kind: "object" }),
+    primaryStageSubjectId: "obj-capacity",
+    advisorSubjectId: "obj-capacity",
     subjectKind: "object",
     relatedSubjectIds: Object.freeze(["obj-capacity", "obj-delivery"]),
     contextSubjectIds: Object.freeze(["ctx-problem-capacity"]),

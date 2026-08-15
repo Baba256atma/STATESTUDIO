@@ -1,0 +1,194 @@
+{
+  "steps": {
+    "overview": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-anchor-object-id": "none",
+        "data-stage-visual-balance-contract": "stage-obj-4",
+        "data-stage-visual-balance-version": "4.4.0",
+        "data-stage-anchor-count": "0",
+        "data-stage-related-count": "0",
+        "data-stage-peripheral-count": "0",
+        "data-stage-context-count": "0",
+        "data-stage-orphan-label-count": "0",
+        "data-stage-hard-overlap-count": "0",
+        "data-stage-unrelated-visible-edge-count": "8",
+        "data-stage-visual-centroid-x": "0.000",
+        "data-stage-visual-centroid-y": "0.000",
+        "data-stage-sector-compression": "0.000",
+        "data-presentation-state": "minimum"
+      }
+    },
+    "capacity": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-anchor-object-id": "obj-capacity",
+        "data-stage-visual-balance-contract": "stage-obj-4",
+        "data-stage-visual-balance-version": "4.4.0",
+        "data-stage-anchor-count": "1",
+        "data-stage-related-count": "3",
+        "data-stage-peripheral-count": "3",
+        "data-stage-context-count": "0",
+        "data-stage-orphan-label-count": "0",
+        "data-stage-hard-overlap-count": "0",
+        "data-stage-unrelated-visible-edge-count": "0",
+        "data-stage-visual-centroid-x": "-0.042",
+        "data-stage-visual-centroid-y": "0.262",
+        "data-stage-sector-compression": "0.000",
+        "data-presentation-state": "minimum"
+      }
+    },
+    "capacityMinimum": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-anchor-object-id": "obj-capacity",
+        "data-stage-visual-balance-contract": "stage-obj-4",
+        "data-stage-visual-balance-version": "4.4.0",
+        "data-stage-anchor-count": "1",
+        "data-stage-related-count": "3",
+        "data-stage-peripheral-count": "3",
+        "data-stage-context-count": "0",
+        "data-stage-orphan-label-count": "0",
+        "data-stage-hard-overlap-count": "0",
+        "data-stage-unrelated-visible-edge-count": "0",
+        "data-stage-visual-centroid-x": "-0.042",
+        "data-stage-visual-centroid-y": "0.262",
+        "data-stage-sector-compression": "0.000",
+        "data-presentation-state": "minimum"
+      }
+    },
+    "capacityReport": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-anchor-object-id": "obj-capacity",
+        "data-stage-visual-balance-contract": "stage-obj-4",
+        "data-stage-visual-balance-version": "4.4.0",
+        "data-stage-anchor-count": "1",
+        "data-stage-related-count": "3",
+        "data-stage-peripheral-count": "0",
+        "data-stage-context-count": "0",
+        "data-stage-orphan-label-count": "0",
+        "data-stage-hard-overlap-count": "0",
+        "data-stage-unrelated-visible-edge-count": "0",
+        "data-stage-visual-centroid-x": "-0.711",
+        "data-stage-visual-centroid-y": "0.000",
+        "data-stage-sector-compression": "0.000",
+        "data-presentation-state": "report"
+      }
+    },
+    "capacityOperation": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-anchor-object-id": "obj-capacity",
+        "data-stage-visual-balance-contract": "stage-obj-4",
+        "data-stage-visual-balance-version": "4.4.0",
+        "data-stage-anchor-count": "1",
+        "data-stage-related-count": "3",
+        "data-stage-peripheral-count": "0",
+        "data-stage-context-count": "0",
+        "data-stage-orphan-label-count": "0",
+        "data-stage-hard-overlap-count": "0",
+        "data-stage-unrelated-visible-edge-count": "0",
+        "data-stage-visual-centroid-x": "-0.711",
+        "data-stage-visual-centroid-y": "0.000",
+        "data-stage-sector-compression": "0.000",
+        "data-presentation-state": "operation"
+      }
+    },
+    "obj-revenue": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-anchor-object-id": "obj-revenue",
+        "data-stage-visual-balance-contract": "stage-obj-4",
+        "data-stage-visual-balance-version": "4.4.0",
+        "data-stage-anchor-count": "1",
+        "data-stage-related-count": "2",
+        "data-stage-peripheral-count": "0",
+        "data-stage-context-count": "0",
+        "data-stage-orphan-label-count": "0",
+        "data-stage-hard-overlap-count": "0",
+        "data-stage-unrelated-visible-edge-count": "0",
+        "data-stage-visual-centroid-x": "0.000",
+        "data-stage-visual-centroid-y": "0.686",
+        "data-stage-sector-compression": "0.850",
+        "data-presentation-state": "operation"
+      }
+    },
+    "obj-delivery": {
+      "attrs": {
+        "data-focused-object": "obj-delivery",
+        "data-stage-anchor-object-id": "obj-delivery",
+        "data-stage-visual-balance-contract": "stage-obj-4",
+        "data-stage-visual-balance-version": "4.4.0",
+        "data-stage-anchor-count": "1",
+        "data-stage-related-count": "4",
+        "data-stage-peripheral-count": "0",
+        "data-stage-context-count": "0",
+        "data-stage-orphan-label-count": "0",
+        "data-stage-hard-overlap-count": "0",
+        "data-stage-unrelated-visible-edge-count": "0",
+        "data-stage-visual-centroid-x": "0.000",
+        "data-stage-visual-centroid-y": "0.000",
+        "data-stage-sector-compression": "0.850",
+        "data-presentation-state": "operation"
+      }
+    },
+    "obj-budget": {
+      "attrs": {
+        "data-focused-object": "obj-budget",
+        "data-stage-anchor-object-id": "obj-budget",
+        "data-stage-visual-balance-contract": "stage-obj-4",
+        "data-stage-visual-balance-version": "4.4.0",
+        "data-stage-anchor-count": "1",
+        "data-stage-related-count": "1",
+        "data-stage-peripheral-count": "3",
+        "data-stage-context-count": "0",
+        "data-stage-orphan-label-count": "0",
+        "data-stage-hard-overlap-count": "0",
+        "data-stage-unrelated-visible-edge-count": "0",
+        "data-stage-visual-centroid-x": "0.545",
+        "data-stage-visual-centroid-y": "0.405",
+        "data-stage-sector-compression": "0.000",
+        "data-presentation-state": "operation"
+      }
+    },
+    "obj-risk": {
+      "attrs": {
+        "data-focused-object": "obj-risk",
+        "data-stage-anchor-object-id": "obj-risk",
+        "data-stage-visual-balance-contract": "stage-obj-4",
+        "data-stage-visual-balance-version": "4.4.0",
+        "data-stage-anchor-count": "1",
+        "data-stage-related-count": "1",
+        "data-stage-peripheral-count": "3",
+        "data-stage-context-count": "1",
+        "data-stage-orphan-label-count": "0",
+        "data-stage-hard-overlap-count": "0",
+        "data-stage-unrelated-visible-edge-count": "0",
+        "data-stage-visual-centroid-x": "0.433",
+        "data-stage-visual-centroid-y": "0.460",
+        "data-stage-sector-compression": "0.000",
+        "data-presentation-state": "operation"
+      }
+    },
+    "overviewReturn": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-anchor-object-id": "none",
+        "data-stage-visual-balance-contract": "stage-obj-4",
+        "data-stage-visual-balance-version": "4.4.0",
+        "data-stage-anchor-count": "0",
+        "data-stage-related-count": "0",
+        "data-stage-peripheral-count": "0",
+        "data-stage-context-count": "0",
+        "data-stage-orphan-label-count": "0",
+        "data-stage-hard-overlap-count": "0",
+        "data-stage-unrelated-visible-edge-count": "8",
+        "data-stage-visual-centroid-x": "0.000",
+        "data-stage-visual-centroid-y": "0.000",
+        "data-stage-sector-compression": "0.000",
+        "data-presentation-state": "operation"
+      }
+    }
+  }
+}

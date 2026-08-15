@@ -1,0 +1,18 @@
+{
+  "attrs": {
+    "focused": "obj-capacity",
+    "selected": "obj-budget",
+    "mode": "focus",
+    "presentation": "minimum",
+    "a11y": "Focused subject: Budget. Presentation: minimum"
+  },
+  "focusedControls": [
+    "nexora-stage-object-control-obj-capacity"
+  ],
+  "selectedControls": [
+    "nexora-stage-object-control-obj-capacity"
+  ],
+  "logs": [
+    "[NEXORA_FOCUS_LAYOUT_AUTHORITY] {objectId: obj-capacity, selectedObjectId: obj-budget, focusedObjectId: obj-capacity, anchorObjectId: obj-capacity, disclosureState: visible-related}"
+  ]
+}

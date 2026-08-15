@@ -3,6 +3,8 @@
 import { Canvas } from "@react-three/fiber";
 import type { NexoraMVPStageInteractionPresentation } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import type { NexoraMVPSceneEnvironmentVisualState } from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
+import { resolveExecutiveStageFixedCamera } from "@/app/lib/spatial-presentation/executiveStage2DFixedCamera";
+import { shouldResetExecutiveStage2DToOverview } from "@/app/lib/spatial-presentation/executiveStage2DTopologyReadability";
 import { NexoraStageScene } from "./NexoraStageScene";
 
 type Props = {
@@ -21,21 +23,28 @@ export function NexoraStageCanvas({
   onSelectSubject,
   onClearSelection,
 }: Props) {
+  // STAGE-2D:1 — seed Canvas from the fixed camera; ignore presentation variance.
+  const fixed = resolveExecutiveStageFixedCamera();
+  const topologyMode =
+    presentation.scene.mode === "focus" ? "anchored" : "overview";
+
   return (
     <Canvas
       data-testid="nexora-stage-canvas"
+      data-stage-background-boundary="true"
       frameloop="always"
       dpr={[1, 1.75]}
+      shadows
       gl={{
         antialias: true,
         alpha: false,
         powerPreference: "high-performance",
       }}
       camera={{
-        position: [...presentation.scene.camera.position],
-        fov: presentation.scene.camera.fov,
-        near: 0.1,
-        far: 80,
+        position: [fixed.position.x, fixed.position.y, fixed.position.z],
+        fov: fixed.fov,
+        near: fixed.near,
+        far: fixed.far,
       }}
       style={{
         width: "100%",
@@ -43,7 +52,19 @@ export function NexoraStageCanvas({
         display: "block",
         touchAction: "none",
       }}
-      onPointerMissed={onClearSelection}
+      onPointerMissed={() => {
+        // STAGE-2D:4 — empty Stage only; objects/connections/context stopPropagation.
+        if (
+          !shouldResetExecutiveStage2DToOverview({
+            source: "background",
+            topologyMode,
+            hitKind: "none",
+          })
+        ) {
+          return;
+        }
+        onClearSelection();
+      }}
     >
       <NexoraStageScene
         presentation={presentation}

@@ -10,6 +10,7 @@ import type {
   NexoraMVPPresentationViewModel,
 } from "@/app/lib/nex-mvp/nexoraMVPPresentationState";
 import type { NexoraMVPSceneEnvironmentVisualState } from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
+import type { ExecutiveQueueCategory } from "@/app/lib/spatial-presentation/executiveStageProductivityContract";
 import { Nexora3DExecutiveStage } from "./stage/Nexora3DExecutiveStage";
 
 type Props = {
@@ -19,7 +20,12 @@ type Props = {
   readonly presentationViewModel: NexoraMVPPresentationViewModel;
   readonly advisorBridge: NexoraMVPAdvisorContextBridge;
   readonly onSelectSubject: (subjectId: string | null) => void;
+  readonly onSelectQueueCategory?: (
+    category: ExecutiveQueueCategory | "changes-since-visit",
+  ) => void;
   readonly onStepBack: () => void;
+  readonly onStepForward?: () => void;
+  readonly onNavigateTrailIndex?: (index: number) => void;
   readonly onOverview: () => void;
   readonly onPresentationStateChange: (
     state: NexoraMVPPresentationState,
@@ -39,7 +45,10 @@ export function NexoraStageMount({
   presentationViewModel,
   advisorBridge,
   onSelectSubject,
+  onSelectQueueCategory,
   onStepBack,
+  onStepForward,
+  onNavigateTrailIndex,
   onOverview,
   onPresentationStateChange,
   onPresentationAction,
@@ -73,7 +82,10 @@ export function NexoraStageMount({
         presentationViewModel={presentationViewModel}
         advisorBridge={advisorBridge}
         onSelectSubject={onSelectSubject}
+        onSelectQueueCategory={onSelectQueueCategory}
         onStepBack={onStepBack}
+        onStepForward={onStepForward}
+        onNavigateTrailIndex={onNavigateTrailIndex}
         onOverview={onOverview}
         onPresentationStateChange={onPresentationStateChange}
         onPresentationAction={onPresentationAction}

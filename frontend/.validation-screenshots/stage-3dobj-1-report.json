@@ -1,0 +1,194 @@
+{
+  "steps": {
+    "overviewOn": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-3dobj-contract": "stage-3dobj-1",
+        "data-stage-3dobj-enabled": "true",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-depth": "0.18",
+        "data-stage-3dobj-bevel": "0.048",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-3dobj-material-role": "nexora-business",
+        "data-stage-3dobj-front-z": "0.18",
+        "data-stage-3dobj-back-z": "0",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "capacityOn": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-contract": "stage-3dobj-1",
+        "data-stage-3dobj-enabled": "true",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-depth": "0.18",
+        "data-stage-3dobj-bevel": "0.048",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-3dobj-material-role": "nexora-business",
+        "data-stage-3dobj-front-z": "0.18",
+        "data-stage-3dobj-back-z": "0",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "riskOn": {
+      "attrs": {
+        "data-focused-object": "obj-risk",
+        "data-stage-3dobj-contract": "stage-3dobj-1",
+        "data-stage-3dobj-enabled": "true",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-depth": "0.18",
+        "data-stage-3dobj-bevel": "0.048",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-3dobj-material-role": "nexora-business",
+        "data-stage-3dobj-front-z": "0.18",
+        "data-stage-3dobj-back-z": "0",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "threadExpandedOn": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-3dobj-contract": "stage-3dobj-1",
+        "data-stage-3dobj-enabled": "true",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-depth": "0.18",
+        "data-stage-3dobj-bevel": "0.048",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-3dobj-material-role": "nexora-business",
+        "data-stage-3dobj-front-z": "0.18",
+        "data-stage-3dobj-back-z": "0",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "labelsOffCapacity": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-contract": "stage-3dobj-1",
+        "data-stage-3dobj-enabled": "true",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-depth": "0.18",
+        "data-stage-3dobj-bevel": "0.048",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-3dobj-material-role": "nexora-business",
+        "data-stage-3dobj-front-z": "0.18",
+        "data-stage-3dobj-back-z": "0",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "labelsOffRisk": {
+      "attrs": {
+        "data-focused-object": "obj-risk",
+        "data-stage-3dobj-contract": "stage-3dobj-1",
+        "data-stage-3dobj-enabled": "true",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-depth": "0.18",
+        "data-stage-3dobj-bevel": "0.048",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-3dobj-material-role": "nexora-business",
+        "data-stage-3dobj-front-z": "0.18",
+        "data-stage-3dobj-back-z": "0",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "capacity_minimum": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-contract": "stage-3dobj-1",
+        "data-stage-3dobj-enabled": "true",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-depth": "0.18",
+        "data-stage-3dobj-bevel": "0.048",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-3dobj-material-role": "nexora-business",
+        "data-stage-3dobj-front-z": "0.18",
+        "data-stage-3dobj-back-z": "0",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "capacity_report": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-contract": "stage-3dobj-1",
+        "data-stage-3dobj-enabled": "true",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-depth": "0.18",
+        "data-stage-3dobj-bevel": "0.048",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-3dobj-material-role": "nexora-business",
+        "data-stage-3dobj-front-z": "0.18",
+        "data-stage-3dobj-back-z": "0",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "capacity_operation": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-contract": "stage-3dobj-1",
+        "data-stage-3dobj-enabled": "true",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-depth": "0.18",
+        "data-stage-3dobj-bevel": "0.048",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-3dobj-material-role": "nexora-business",
+        "data-stage-3dobj-front-z": "0.18",
+        "data-stage-3dobj-back-z": "0",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "capacityOff": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-contract": "stage-3dobj-1",
+        "data-stage-3dobj-enabled": "false",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-depth": "0",
+        "data-stage-3dobj-bevel": "0",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-3dobj-material-role": "nexora-business",
+        "data-stage-3dobj-front-z": "0",
+        "data-stage-3dobj-back-z": "0",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-depth-environment": "deep-z"
+      }
+    }
+  }
+}

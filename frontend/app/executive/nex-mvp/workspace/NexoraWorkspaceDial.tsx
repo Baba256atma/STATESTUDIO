@@ -191,8 +191,8 @@ export function NexoraWorkspaceDial({
           aria-hidden="true"
           style={{
             position: "relative",
-            width: "5.6rem",
-            height: "5.6rem",
+            width: "4.8rem",
+            height: "4.8rem",
             borderRadius: "999px",
             background:
               "radial-gradient(circle at 35% 30%, rgba(148,163,184,0.22), rgba(8,14,24,0.92) 55%, rgba(2,6,14,0.98))",

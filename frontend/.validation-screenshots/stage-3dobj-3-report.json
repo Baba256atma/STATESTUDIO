@@ -1,0 +1,324 @@
+{
+  "steps": {
+    "capacityOld": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "false",
+        "data-stage-3dobj-form-profile": "legacy-slab",
+        "data-stage-3dobj-aspect-ratio": "1",
+        "data-stage-3dobj-front-scale": "1",
+        "data-stage-3dobj-taper": "0",
+        "data-stage-3dobj-recess-profile": "none",
+        "data-stage-3dobj-edge-profile": "quiet",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "overviewOn": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "capacityOn": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "revenueOn": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "customerOn": {
+      "attrs": {
+        "data-focused-object": "obj-customer",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "deliveryOn": {
+      "attrs": {
+        "data-focused-object": "obj-delivery",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "inventoryOn": {
+      "attrs": {
+        "data-focused-object": "obj-inventory",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "riskOn": {
+      "attrs": {
+        "data-focused-object": "obj-risk",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "faceted-diamond",
+        "data-stage-3dobj-aspect-ratio": "1",
+        "data-stage-3dobj-front-scale": "0.93",
+        "data-stage-3dobj-taper": "0.07",
+        "data-stage-3dobj-recess-profile": "shape-matched-inset",
+        "data-stage-3dobj-edge-profile": "faceted-rim",
+        "data-stage-3dobj-symbol-kind": "facet-notch",
+        "data-stage-3dobj-symbol-scale": "0.209",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "threadExpanded": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "symbolsOff": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "false",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "labelsOff": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "territoryOff": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "false",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "formOnly": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "false",
+        "data-stage-3dobj-territory-visible": "false",
+        "data-stage-3dobj-form-only": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "level_minimum": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "level_report": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    },
+    "level_operation": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-form-contract": "stage-3dobj-3",
+        "data-stage-3dobj-form-enabled": "true",
+        "data-stage-3dobj-form-profile": "precision-executive-plate",
+        "data-stage-3dobj-aspect-ratio": "1.28",
+        "data-stage-3dobj-front-scale": "0.95",
+        "data-stage-3dobj-taper": "0.05",
+        "data-stage-3dobj-recess-profile": "machined-rounded-inset",
+        "data-stage-3dobj-edge-profile": "narrow-highlight",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "0.2052",
+        "data-stage-3dobj-symbol-visible": "true",
+        "data-stage-3dobj-territory-visible": "true",
+        "data-stage-3dobj-form-only": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0"
+      }
+    }
+  }
+}

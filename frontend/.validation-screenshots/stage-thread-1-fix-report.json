@@ -1,0 +1,164 @@
+{
+  "steps": {
+    "capacityCollapsed": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "collapsed",
+        "data-stage-thread-anchor": "none",
+        "data-stage-thread-subject-count": "0",
+        "data-stage-thread-gateway-state": "collapsed",
+        "data-stage-thread-gateway-count": "4",
+        "data-stage-thread-gateway-visible": "true",
+        "data-stage-thread-gateway-x": "-1.95",
+        "data-stage-thread-gateway-y": "0.42",
+        "data-stage-thread-gateway-hit-target": "true",
+        "data-stage-thread-gateway-overlap-count": "0",
+        "data-stage-thread-gateway-clipped": "false",
+        "data-stage-thread-gateway-reserved-collision-count": "0",
+        "data-stage-thread-gateway-contract": "stage-thread-1-fix",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "capacityExpanded": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "expanded",
+        "data-stage-thread-anchor": "obj-capacity",
+        "data-stage-thread-subject-count": "4",
+        "data-stage-thread-gateway-state": "expanded",
+        "data-stage-thread-gateway-count": "4",
+        "data-stage-thread-gateway-visible": "false",
+        "data-stage-thread-gateway-x": "-1.55",
+        "data-stage-thread-gateway-y": "-0.95",
+        "data-stage-thread-gateway-hit-target": "true",
+        "data-stage-thread-gateway-overlap-count": "1",
+        "data-stage-thread-gateway-clipped": "false",
+        "data-stage-thread-gateway-reserved-collision-count": "0",
+        "data-stage-thread-gateway-contract": "stage-thread-1-fix",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "capacityCollapsedAgain": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "collapsed",
+        "data-stage-thread-anchor": "none",
+        "data-stage-thread-subject-count": "0",
+        "data-stage-thread-gateway-state": "collapsed",
+        "data-stage-thread-gateway-count": "4",
+        "data-stage-thread-gateway-visible": "true",
+        "data-stage-thread-gateway-x": "-1.95",
+        "data-stage-thread-gateway-y": "0.42",
+        "data-stage-thread-gateway-hit-target": "true",
+        "data-stage-thread-gateway-overlap-count": "0",
+        "data-stage-thread-gateway-clipped": "false",
+        "data-stage-thread-gateway-reserved-collision-count": "0",
+        "data-stage-thread-gateway-contract": "stage-thread-1-fix",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "revenueCollapsed": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-thread-state": "collapsed",
+        "data-stage-thread-anchor": "none",
+        "data-stage-thread-subject-count": "0",
+        "data-stage-thread-gateway-state": "collapsed",
+        "data-stage-thread-gateway-count": "5",
+        "data-stage-thread-gateway-visible": "true",
+        "data-stage-thread-gateway-x": "-1.95",
+        "data-stage-thread-gateway-y": "0.42",
+        "data-stage-thread-gateway-hit-target": "true",
+        "data-stage-thread-gateway-overlap-count": "0",
+        "data-stage-thread-gateway-clipped": "false",
+        "data-stage-thread-gateway-reserved-collision-count": "0",
+        "data-stage-thread-gateway-contract": "stage-thread-1-fix",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "revenueExpanded": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-thread-state": "expanded",
+        "data-stage-thread-anchor": "obj-revenue",
+        "data-stage-thread-subject-count": "4",
+        "data-stage-thread-gateway-state": "expanded",
+        "data-stage-thread-gateway-count": "5",
+        "data-stage-thread-gateway-visible": "false",
+        "data-stage-thread-gateway-x": "-1.55",
+        "data-stage-thread-gateway-y": "-0.95",
+        "data-stage-thread-gateway-hit-target": "true",
+        "data-stage-thread-gateway-overlap-count": "0",
+        "data-stage-thread-gateway-clipped": "false",
+        "data-stage-thread-gateway-reserved-collision-count": "0",
+        "data-stage-thread-gateway-contract": "stage-thread-1-fix",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "capacity-minimum": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "collapsed",
+        "data-stage-thread-anchor": "none",
+        "data-stage-thread-subject-count": "0",
+        "data-stage-thread-gateway-state": "collapsed",
+        "data-stage-thread-gateway-count": "4",
+        "data-stage-thread-gateway-visible": "true",
+        "data-stage-thread-gateway-x": "-1.95",
+        "data-stage-thread-gateway-y": "0.42",
+        "data-stage-thread-gateway-hit-target": "true",
+        "data-stage-thread-gateway-overlap-count": "0",
+        "data-stage-thread-gateway-clipped": "false",
+        "data-stage-thread-gateway-reserved-collision-count": "0",
+        "data-stage-thread-gateway-contract": "stage-thread-1-fix",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "capacity-report": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "collapsed",
+        "data-stage-thread-anchor": "none",
+        "data-stage-thread-subject-count": "0",
+        "data-stage-thread-gateway-state": "collapsed",
+        "data-stage-thread-gateway-count": "4",
+        "data-stage-thread-gateway-visible": "true",
+        "data-stage-thread-gateway-x": "-1.95",
+        "data-stage-thread-gateway-y": "0.42",
+        "data-stage-thread-gateway-hit-target": "true",
+        "data-stage-thread-gateway-overlap-count": "0",
+        "data-stage-thread-gateway-clipped": "false",
+        "data-stage-thread-gateway-reserved-collision-count": "0",
+        "data-stage-thread-gateway-contract": "stage-thread-1-fix",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "capacity-operation": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "collapsed",
+        "data-stage-thread-anchor": "none",
+        "data-stage-thread-subject-count": "0",
+        "data-stage-thread-gateway-state": "collapsed",
+        "data-stage-thread-gateway-count": "4",
+        "data-stage-thread-gateway-visible": "true",
+        "data-stage-thread-gateway-x": "-1.95",
+        "data-stage-thread-gateway-y": "0.42",
+        "data-stage-thread-gateway-hit-target": "true",
+        "data-stage-thread-gateway-overlap-count": "0",
+        "data-stage-thread-gateway-clipped": "false",
+        "data-stage-thread-gateway-reserved-collision-count": "0",
+        "data-stage-thread-gateway-contract": "stage-thread-1-fix",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    }
+  }
+}

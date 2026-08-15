@@ -1,0 +1,141 @@
+{
+  "steps": {
+    "overviewV2": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-anchor-object-id": "none",
+        "data-stage-anchor-position": "none",
+        "data-stage-object-presence": "v2",
+        "data-stage-object-presence-enabled": "true",
+        "data-stage-object-presence-query": "1",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "0.35",
+        "data-stage-layout-status": "none",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "obj-revenue-v2": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-anchor-object-id": "obj-revenue",
+        "data-stage-anchor-position": "0,0,0",
+        "data-stage-object-presence": "v2",
+        "data-stage-object-presence-enabled": "true",
+        "data-stage-object-presence-query": "1",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "0.85",
+        "data-stage-layout-status": "valid",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "obj-capacity-v2": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-anchor-object-id": "obj-capacity",
+        "data-stage-anchor-position": "0,0,0",
+        "data-stage-object-presence": "v2",
+        "data-stage-object-presence-enabled": "true",
+        "data-stage-object-presence-query": "1",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "0.561955",
+        "data-stage-layout-status": "valid",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "obj-budget-v2": {
+      "attrs": {
+        "data-focused-object": "obj-budget",
+        "data-stage-anchor-object-id": "obj-budget",
+        "data-stage-anchor-position": "0,0,0",
+        "data-stage-object-presence": "v2",
+        "data-stage-object-presence-enabled": "true",
+        "data-stage-object-presence-query": "1",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "0.85",
+        "data-stage-layout-status": "valid",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "obj-delivery-v2": {
+      "attrs": {
+        "data-focused-object": "obj-delivery",
+        "data-stage-anchor-object-id": "obj-delivery",
+        "data-stage-anchor-position": "0,0,0",
+        "data-stage-object-presence": "v2",
+        "data-stage-object-presence-enabled": "true",
+        "data-stage-object-presence-query": "1",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "1.05",
+        "data-stage-layout-status": "valid",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "obj-risk-v2": {
+      "attrs": {
+        "data-focused-object": "obj-risk",
+        "data-stage-anchor-object-id": "obj-risk",
+        "data-stage-anchor-position": "0,0,0",
+        "data-stage-object-presence": "v2",
+        "data-stage-object-presence-enabled": "true",
+        "data-stage-object-presence-query": "1",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "0.85",
+        "data-stage-layout-status": "valid",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "obj-customer-v2": {
+      "attrs": {
+        "data-focused-object": "obj-customer",
+        "data-stage-anchor-object-id": "obj-customer",
+        "data-stage-anchor-position": "0,0,0",
+        "data-stage-object-presence": "v2",
+        "data-stage-object-presence-enabled": "true",
+        "data-stage-object-presence-query": "1",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "0.85",
+        "data-stage-layout-status": "valid",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "revenueV1Location": "http://localhost:3000/executive?objPresence=0",
+    "revenueV1": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-anchor-object-id": "obj-revenue",
+        "data-stage-anchor-position": "0,0,0",
+        "data-stage-object-presence": "v1",
+        "data-stage-object-presence-enabled": "false",
+        "data-stage-object-presence-query": "0",
+        "data-stage-object-3d-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "1.17",
+        "data-stage-layout-status": "valid",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      }
+    }
+  }
+}

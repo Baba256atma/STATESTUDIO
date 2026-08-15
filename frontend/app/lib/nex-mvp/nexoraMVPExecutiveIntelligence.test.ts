@@ -24,6 +24,8 @@ function bridge(overrides?: Partial<NexoraMVPAdvisorContextBridge>): NexoraMVPAd
   return Object.freeze({
     selectedSubject: Object.freeze({ id: "obj-capacity", kind: "object" as const }),
     focusedSubject: Object.freeze({ id: "obj-capacity", kind: "object" as const }),
+    primaryStageSubjectId: "obj-capacity",
+    advisorSubjectId: "obj-capacity",
     subjectKind: "object",
     relatedSubjectIds: Object.freeze(["obj-capacity"]),
     contextSubjectIds: Object.freeze(["ctx-problem-capacity"]),

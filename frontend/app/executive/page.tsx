@@ -4,10 +4,15 @@
  * Permanent production route: /executive
  * Composes NEX-MVP:2 Executive Shell on NEX-MVP:1 foundation.
  * Development sandbox remains at /executive/exs1.
+ *
+ * P0:5 development verification:
+ *   /executive?dataset=baseline
+ *   /executive?dataset=operational-pressure
  */
 
 import type { Metadata } from "next";
 import { ExecutiveShell } from "./components/ExecutiveShell";
+import { parseNexoraMVPDataRealityDatasetScenario } from "@/app/lib/nex-mvp/nexoraMVPDataRealityStageBridge";
 
 export const metadata: Metadata = {
   title: "Nexora · Executive Environment",
@@ -18,10 +23,19 @@ export const metadata: Metadata = {
 /**
  * Executive Experience page — canonical MVP entry at /executive.
  */
-export default function ExecutivePage() {
+export default async function ExecutivePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ dataset?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const raw = Array.isArray(params.dataset) ? params.dataset[0] : params.dataset;
+  const datasetScenario = parseNexoraMVPDataRealityDatasetScenario(raw);
+
   return (
     <main
       data-testid="executive-page"
+      data-nexora-dataset={datasetScenario}
       style={{
         height: "100vh",
         minHeight: "100vh",
@@ -34,7 +48,7 @@ export default function ExecutivePage() {
           '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif',
       }}
     >
-      <ExecutiveShell />
+      <ExecutiveShell datasetScenario={datasetScenario} />
     </main>
   );
 }

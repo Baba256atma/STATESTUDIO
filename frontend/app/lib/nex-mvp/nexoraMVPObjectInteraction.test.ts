@@ -39,7 +39,7 @@ describe("NEX-MVP:4 Nexora Object Interaction", () => {
   it("identity and verify gate", () => {
     const identity = getNexoraMVPObjectInteractionIdentity();
     assert.equal(identity.id, "NEX-MVP:4/NexoraObjectInteraction");
-    assert.equal(identity.version, "1.4.0");
+    assert.equal(identity.version, "2.0.0");
     assert.equal(identity.namespace, "nexora.mvp.object-interaction");
     assert.equal(
       identity.architecturalRole,
@@ -94,28 +94,83 @@ describe("NEX-MVP:4 Nexora Object Interaction", () => {
   });
 
   it("6. context subject derivation for Revenue", () => {
-    const state = selectNexoraMVPInteractionSubject(initial(), "obj-revenue");
-    const presentation = deriveNexoraMVPStageInteractionPresentation(state);
-    const kinds = new Set(presentation.contextNodes.map((n) => n.kind));
+    // SP:4.1B — MINIMUM collapses the Executive Thread; OPERATION expands it.
+    const focused = selectNexoraMVPInteractionSubject(initial(), "obj-revenue");
+    const minimum = deriveNexoraMVPStageInteractionPresentation(focused);
+    assert.ok(
+      minimum.contextNodes.some((node) => node.role === "collapsed-thread"),
+    );
+    assert.equal(
+      minimum.contextNodes.filter((node) =>
+        ["problem", "scenario", "decision", "execution"].includes(node.kind),
+      ).length,
+      0,
+    );
+
+    const operationState = syncNexoraMVPObjectInteractionShellContext(focused, {
+      workspace: focused.workspace,
+      presentationState: "operation",
+      environmentIntent: focused.environmentIntent,
+    });
+    // STAGE-THREAD:1-FIX / STAGE-PROD:0 — Operation keeps gateway until expand.
+    const collapsedPresentation =
+      deriveNexoraMVPStageInteractionPresentation(operationState);
+    assert.ok(
+      collapsedPresentation.contextNodes.some(
+        (node) => node.role === "collapsed-thread",
+      ),
+    );
+    assert.equal(
+      collapsedPresentation.contextNodes.filter((node) =>
+        ["problem", "scenario", "decision", "execution"].includes(node.kind),
+      ).length,
+      0,
+    );
+
+    const expanded = selectNexoraMVPInteractionSubject(
+      operationState,
+      "thread-obj-revenue",
+    );
+    assert.equal(expanded.expandExecutiveThread, true);
+    const presentation = deriveNexoraMVPStageInteractionPresentation(expanded);
+    // STAGE-THREAD:1 — expanded executive-work projects as Stage objects.
+    const kinds = new Set(
+      presentation.scene.objects
+        .filter((object) =>
+          ["problem", "scenario", "decision", "execution"].includes(object.kind),
+        )
+        .map((object) => object.kind),
+    );
     assert.ok(kinds.has("problem"));
     assert.ok(kinds.has("scenario"));
     assert.ok(kinds.has("decision"));
     assert.ok(
-      presentation.contextNodes.some((n) => n.id === "ctx-scenario-pricing"),
+      presentation.scene.objects.some((n) => n.id === "ctx-scenario-pricing"),
     );
   });
 
   it("7. stable context ordering is deterministic", () => {
-    const state = selectNexoraMVPInteractionSubject(initial(), "obj-revenue");
+    const focused = selectNexoraMVPInteractionSubject(initial(), "obj-revenue");
+    const operationState = syncNexoraMVPObjectInteractionShellContext(focused, {
+      workspace: focused.workspace,
+      presentationState: "operation",
+      environmentIntent: focused.environmentIntent,
+    });
+    const state = selectNexoraMVPInteractionSubject(
+      operationState,
+      "thread-obj-revenue",
+    );
     const a = deriveNexoraMVPStageInteractionPresentation(state);
     const b = deriveNexoraMVPStageInteractionPresentation(state);
-    assert.deepEqual(
-      a.contextNodes.map((n) => n.id),
-      b.contextNodes.map((n) => n.id),
-    );
-    const ids = a.contextNodes.map((n) => n.id);
+    const workIds = (presentation: typeof a) =>
+      presentation.scene.objects
+        .filter((object) => object.id.startsWith("ctx-"))
+        .map((object) => object.id);
+    assert.deepEqual(workIds(a), workIds(b));
+    const ids = workIds(a);
     const problems = ids.filter((id) => id.startsWith("ctx-problem"));
     const scenarios = ids.filter((id) => id.startsWith("ctx-scenario"));
+    assert.ok(problems.length > 0 && scenarios.length > 0);
     assert.ok(ids.indexOf(problems[0]!) < ids.indexOf(scenarios[0]!));
   });
 

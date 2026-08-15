@@ -1,0 +1,130 @@
+{
+  "steps": {
+    "budget": {
+      "attrs": {
+        "data-focused-object": "obj-budget",
+        "data-selected-object": "obj-budget",
+        "data-stage-clicked-object-id": "obj-budget",
+        "data-stage-selected-object-id": "obj-budget",
+        "data-stage-focused-object-id": "obj-budget",
+        "data-stage-navigation-current-object-id": "obj-budget",
+        "data-stage-anchor-object-id": "obj-budget",
+        "data-stage-advisor-object-id": "obj-budget",
+        "data-advisor-subject": "obj-budget",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "1.27",
+        "data-stage-layout-status": "valid",
+        "data-stage-volumetric-body-count": "0",
+        "data-stage-object-plane": "planar",
+        "data-stage-camera-mode": "fixed-2d"
+      },
+      "a11y": "Focused subject: Budget. Presentation: minimum",
+      "advisorSnippet": "Focused subject: Budget. Presentation: minimum\nOVERVIEW\n/\nBUDGET\nBACK\nPRESENTATION LEVEL\nMINIMUM\nREPORT\nOPERATION\nMINIMUM · DEPTH\nREVENUE\nCAPACITY\nBUDGET\nCUSTOMER\nDELIVERY\nRISK\nINVENTORY\nDEMAND\nOVERVIEW\nCAPACITY · WATCH\nBUDGET\nUNRESOLVED"
+    },
+    "capacity": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-selected-object": "obj-capacity",
+        "data-stage-clicked-object-id": "obj-capacity",
+        "data-stage-selected-object-id": "obj-capacity",
+        "data-stage-focused-object-id": "obj-capacity",
+        "data-stage-navigation-current-object-id": "obj-capacity",
+        "data-stage-anchor-object-id": "obj-capacity",
+        "data-stage-advisor-object-id": "obj-capacity",
+        "data-advisor-subject": "obj-capacity",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "1.00113",
+        "data-stage-layout-status": "valid",
+        "data-stage-volumetric-body-count": "0",
+        "data-stage-object-plane": "planar",
+        "data-stage-camera-mode": "fixed-2d"
+      },
+      "a11y": "Focused subject: Capacity. Presentation: minimum",
+      "advisorSnippet": "Focused subject: Capacity. Presentation: minimum\nOVERVIEW\n/\nBUDGET\n/\nCAPACITY\nBACK\nPRESENTATION LEVEL\nMINIMUM\nREPORT\nOPERATION\nMINIMUM · DEPTH\nREVENUE\nCAPACITY\n88% +12%\nBUDGET\nCUSTOMER\nDELIVERY\nRISK\nINVENTORY\nDEMAND\nEXECUTIVE-THREAD: EXECUTIVE THREAD · 4\nOVERVIEW\nCAPACITY\nWATCH\nB"
+    },
+    "delivery": {
+      "attrs": {
+        "data-focused-object": "obj-delivery",
+        "data-selected-object": "obj-delivery",
+        "data-stage-clicked-object-id": "obj-delivery",
+        "data-stage-selected-object-id": "obj-delivery",
+        "data-stage-focused-object-id": "obj-delivery",
+        "data-stage-navigation-current-object-id": "obj-delivery",
+        "data-stage-anchor-object-id": "obj-delivery",
+        "data-stage-advisor-object-id": "obj-delivery",
+        "data-advisor-subject": "obj-delivery",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "1.47",
+        "data-stage-layout-status": "valid",
+        "data-stage-volumetric-body-count": "0",
+        "data-stage-object-plane": "planar",
+        "data-stage-camera-mode": "fixed-2d"
+      },
+      "a11y": "Focused subject: Delivery. Presentation: minimum",
+      "advisorSnippet": "Focused subject: Delivery. Presentation: minimum\nOVERVIEW\n/\nBUDGET\n/\nCAPACITY\n/\nDELIVERY\nBACK\nPRESENTATION LEVEL\nMINIMUM\nREPORT\nOPERATION\nMINIMUM · DEPTH\nREVENUE\nCAPACITY\nBUDGET\nCUSTOMER\nDELIVERY\n91% -5%\nRISK\nINVENTORY\nDEMAND\nEXECUTIVE-THREAD: EXECUTIVE THREAD · 2\nOVERVIEW\nCAPACI"
+    },
+    "revenue": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-selected-object": "obj-revenue",
+        "data-stage-clicked-object-id": "obj-revenue",
+        "data-stage-selected-object-id": "obj-revenue",
+        "data-stage-focused-object-id": "obj-revenue",
+        "data-stage-navigation-current-object-id": "obj-revenue",
+        "data-stage-anchor-object-id": "obj-revenue",
+        "data-stage-advisor-object-id": "obj-revenue",
+        "data-advisor-subject": "obj-revenue",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "1.27",
+        "data-stage-layout-status": "valid",
+        "data-stage-volumetric-body-count": "0",
+        "data-stage-object-plane": "planar",
+        "data-stage-camera-mode": "fixed-2d"
+      },
+      "a11y": "Focused subject: Revenue. Presentation: minimum",
+      "advisorSnippet": "Focused subject: Revenue. Presentation: minimum\nOVERVIEW\n/\nBUDGET\n/\nCAPACITY\n/\nDELIVERY\n/\nREVENUE\nBACK\nPRESENTATION LEVEL\nMINIMUM\nREPORT\nOPERATION\nMINIMUM · DEPTH\nREVENUE\n$8.4M -7.7%\nCAPACITY\nBUDGET\nCUSTOMER\nDELIVERY\nRISK\nINVENTORY\nDEMAND\nEXECUTIVE-THREAD: EXECUTIVE THREAD · 5\nOV"
+    },
+    "customer": {
+      "attrs": {
+        "data-focused-object": "obj-customer",
+        "data-selected-object": "obj-customer",
+        "data-stage-clicked-object-id": "obj-customer",
+        "data-stage-selected-object-id": "obj-customer",
+        "data-stage-focused-object-id": "obj-customer",
+        "data-stage-navigation-current-object-id": "obj-customer",
+        "data-stage-anchor-object-id": "obj-customer",
+        "data-stage-advisor-object-id": "obj-customer",
+        "data-advisor-subject": "obj-customer",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "1.27",
+        "data-stage-layout-status": "valid",
+        "data-stage-volumetric-body-count": "0",
+        "data-stage-object-plane": "planar",
+        "data-stage-camera-mode": "fixed-2d"
+      },
+      "a11y": "Focused subject: Customer. Presentation: minimum",
+      "advisorSnippet": "Focused subject: Customer. Presentation: minimum\nOVERVIEW\n…\n/\nCAPACITY\n/\nDELIVERY\n/\nREVENUE\n/\nCUSTOMER\nBACK\nPRESENTATION LEVEL\nMINIMUM\nREPORT\nOPERATION\nMINIMUM · DEPTH\nREVENUE\nCAPACITY\nBUDGET\nCUSTOMER\nDELIVERY\nRISK\nINVENTORY\nDEMAND\nOVERVIEW\nCUSTOMER\nWATCH\nREVENUE\nDELIVERY · WATCH"
+    },
+    "delivery-minimum": {
+      "attrs": {
+        "data-focused-object": "obj-delivery",
+        "data-selected-object": "obj-delivery",
+        "data-stage-clicked-object-id": "obj-delivery",
+        "data-stage-selected-object-id": "obj-delivery",
+        "data-stage-focused-object-id": "obj-delivery",
+        "data-stage-navigation-current-object-id": "obj-delivery",
+        "data-stage-anchor-object-id": "obj-delivery",
+        "data-stage-advisor-object-id": "obj-delivery",
+        "data-advisor-subject": "obj-delivery",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-layout-min-gap": "1.47",
+        "data-stage-layout-status": "valid",
+        "data-stage-volumetric-body-count": "0",
+        "data-stage-object-plane": "planar",
+        "data-stage-camera-mode": "fixed-2d"
+      },
+      "a11y": "Focused subject: Delivery. Presentation: minimum",
+      "advisorSnippet": "Focused subject: Delivery. Presentation: minimum\nOVERVIEW\n…\n/\nDELIVERY\n/\nREVENUE\n/\nCUSTOMER\n/\nDELIVERY\nBACK\nPRESENTATION LEVEL\nMINIMUM\nREPORT\nOPERATION\nMINIMUM · DEPTH\nREVENUE\nCAPACITY\nBUDGET\nCUSTOMER\nDELIVERY\n91% -5%\nRISK\nINVENTORY\nDEMAND\nEXECUTIVE-THREAD: EXECUTIVE THREAD · 2\nO"
+    }
+  }
+}

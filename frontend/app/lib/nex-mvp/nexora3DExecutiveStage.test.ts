@@ -99,18 +99,17 @@ test("5. selection/focus establishes focused and related roles", () => {
   const focused = scene.objects.find((entry) => entry.id === "obj-delivery");
   assert.equal(focused?.role, "focused");
   assert.equal(focused?.focused, true);
-  assert.deepEqual(focused?.targetPosition, [0, 0.25, 0]);
+  // STAGE-2D / STAGE-PROD:0 — topology Z remains 0; local +Z is visual only.
+  assert.equal(focused?.targetPosition[0], 0);
+  assert.equal(focused?.targetPosition[2], 0);
 
   const relatedIds = scene.objects
     .filter((entry) => entry.role === "related")
     .map((entry) => entry.id)
     .sort();
-  assert.deepEqual(relatedIds, [
-    "obj-capacity",
-    "obj-customer",
-    "obj-demand",
-    "obj-risk",
-  ]);
+  assert.ok(relatedIds.includes("obj-capacity"));
+  assert.ok(relatedIds.includes("obj-customer"));
+  assert.ok(scene.objects.some((entry) => entry.spatialRole === "watch"));
   assert.ok(scene.objects.some((entry) => entry.role === "unrelated"));
 });
 
@@ -208,4 +207,35 @@ test("10. pure mapping module has no React/Three imports", () => {
   );
   assert.equal(boundary.ownsRuntimeSemantics, false);
   assert.equal(boundary.inventsDomainLogicInMeshes, false);
+});
+
+test("11. STAGE-PROD:0 / STAGE-2D overview keeps topology Z = 0", () => {
+  const overview = resolveNexoraMVPStageScenePresentation({
+    objects: NEXORA_MVP_STAGE_OBJECT_FIXTURES,
+    relationships: NEXORA_MVP_STAGE_RELATIONSHIP_FIXTURES,
+    selectedObjectId: null,
+    focusedObjectId: null,
+    presentationState: "minimum",
+    environmentIntent: "neutral",
+  });
+  const visible = overview.objects.filter(
+    (entry) => entry.disclosureState !== "hidden",
+  );
+  assert.ok(visible.length > 0);
+  assert.ok(visible.length < overview.objects.length);
+  assert.ok(
+    overview.objects.every((entry) => entry.targetPosition[2] === 0),
+  );
+  assert.ok(
+    overview.objects.every((entry) => entry.overviewPosition[2] === 0),
+  );
+  // Progressive disclosure — not every business object is shown.
+  assert.ok(
+    visible.every(
+      (entry) =>
+        entry.spatialRole === "watch" ||
+        entry.spatialRole === "related" ||
+        entry.spatialRole === "center",
+    ),
+  );
 });

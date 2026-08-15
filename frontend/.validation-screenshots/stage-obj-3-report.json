@@ -1,0 +1,94 @@
+{
+  "steps": {
+    "overview": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-anchor-object-id": "none",
+        "data-stage-anchor-position": "none",
+        "data-stage-label-contract": "stage-obj-3",
+        "data-stage-label-identity": "STAGE-OBJ:3/ExecutiveObjectLabelRelationshipReadabilityGrammar",
+        "data-stage-label-version": "4.3.0",
+        "data-stage-label-visible-count": "8",
+        "data-stage-label-hidden-count": "0",
+        "data-stage-label-collision-count": "0",
+        "data-stage-label-overflow-count": "0",
+        "data-stage-primary-edge-count": "0",
+        "data-stage-secondary-edge-count": "8",
+        "data-stage-sector-compression": "0.000",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-object-presence": "v2",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "revenue": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-anchor-object-id": "obj-revenue",
+        "data-stage-anchor-position": "0,0,0",
+        "data-stage-label-contract": "stage-obj-3",
+        "data-stage-label-identity": "STAGE-OBJ:3/ExecutiveObjectLabelRelationshipReadabilityGrammar",
+        "data-stage-label-version": "4.3.0",
+        "data-stage-label-visible-count": "8",
+        "data-stage-label-hidden-count": "0",
+        "data-stage-label-collision-count": "0",
+        "data-stage-label-overflow-count": "0",
+        "data-stage-primary-edge-count": "0",
+        "data-stage-secondary-edge-count": "8",
+        "data-stage-sector-compression": "0.850",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-object-presence": "v2",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "decisionOrScenario": {
+      "id": "obj-risk",
+      "attrs": {
+        "data-focused-object": "obj-risk",
+        "data-stage-anchor-object-id": "obj-risk",
+        "data-stage-anchor-position": "0,0,0",
+        "data-stage-label-contract": "stage-obj-3",
+        "data-stage-label-identity": "STAGE-OBJ:3/ExecutiveObjectLabelRelationshipReadabilityGrammar",
+        "data-stage-label-version": "4.3.0",
+        "data-stage-label-visible-count": "8",
+        "data-stage-label-hidden-count": "0",
+        "data-stage-label-collision-count": "1",
+        "data-stage-label-overflow-count": "0",
+        "data-stage-primary-edge-count": "2",
+        "data-stage-secondary-edge-count": "0",
+        "data-stage-sector-compression": "0.000",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-object-presence": "v2",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      }
+    },
+    "operation": {
+      "attrs": {
+        "data-focused-object": "obj-risk",
+        "data-stage-anchor-object-id": "obj-risk",
+        "data-stage-anchor-position": "0,0,0",
+        "data-stage-label-contract": "stage-obj-3",
+        "data-stage-label-identity": "STAGE-OBJ:3/ExecutiveObjectLabelRelationshipReadabilityGrammar",
+        "data-stage-label-version": "4.3.0",
+        "data-stage-label-visible-count": "8",
+        "data-stage-label-hidden-count": "0",
+        "data-stage-label-collision-count": "1",
+        "data-stage-label-overflow-count": "0",
+        "data-stage-primary-edge-count": "2",
+        "data-stage-secondary-edge-count": "0",
+        "data-stage-sector-compression": "0.000",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-object-presence": "v2",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0",
+        "data-stage-depth-environment": "deep-z"
+      },
+      "note": "selector-missing"
+    }
+  }
+}

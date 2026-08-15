@@ -302,6 +302,24 @@ export function applyNexoraMVPWorkspaceChangeToInteraction(
     environmentIntent: resolved.environmentIntent,
   });
 
+  // SP:4.1B — entering an executive-work workspace expands the thread explicitly.
+  if (
+    resolved.workspace === "problem" ||
+    resolved.workspace === "scenario" ||
+    resolved.workspace === "decision" ||
+    resolved.workspace === "execution"
+  ) {
+    next = Object.freeze({
+      ...next,
+      expandExecutiveThread: true,
+    });
+  } else if (resolved.workspace === "overview") {
+    next = Object.freeze({
+      ...next,
+      expandExecutiveThread: false,
+    });
+  }
+
   const focused = next.focusedSubject;
   if (focused && focused.kind !== "object") {
     const primary = getNexoraMVPWorkspacePrimaryContextKinds(resolved.workspace);

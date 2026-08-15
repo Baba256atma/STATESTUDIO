@@ -324,6 +324,24 @@ export function applyNexoraMVPPresentationDensity(
 ): NexoraMVPStageInteractionPresentation {
   const objects = Object.freeze(
     presentation.scene.objects.map((object) => {
+      // SP:4.1B — density must not resurrect disclosure-hidden subjects.
+      if (object.disclosureState === "hidden") {
+        return Object.freeze({
+          ...object,
+          opacity: 0,
+          labelProminence: "minimal" as const,
+          labelVisible: false,
+          interactive: false,
+        });
+      }
+      if (object.disclosureState === "background-discoverable") {
+        return Object.freeze({
+          ...object,
+          labelProminence: "minimal" as const,
+          opacity: Math.min(object.opacity, 0.48),
+        });
+      }
+
       if (presentationState === "minimum") {
         if (object.role === "focused") {
           return Object.freeze({
@@ -393,22 +411,32 @@ export function applyNexoraMVPPresentationDensity(
   );
 
   const contextNodes = Object.freeze(
-    presentation.contextNodes.map((node) => {
-      if (presentationState === "minimum") {
-        return Object.freeze({
-          ...node,
-          opacity: Math.min(node.opacity, node.role === "focused" ? 1 : 0.7),
-          scale: node.role === "focused" ? node.scale : node.scale * 0.92,
-        });
-      }
-      if (presentationState === "operation" && node.role === "context") {
-        return Object.freeze({
-          ...node,
-          opacity: Math.min(node.opacity, 0.85),
-        });
-      }
-      return node;
-    }),
+    presentation.contextNodes
+      .filter((node) => node.disclosureState !== "hidden")
+      .map((node) => {
+        if (presentationState === "minimum") {
+          return Object.freeze({
+            ...node,
+            opacity: Math.min(
+              node.opacity,
+              node.role === "focused" || node.role === "collapsed-thread"
+                ? 1
+                : 0.7,
+            ),
+            scale:
+              node.role === "focused" || node.role === "collapsed-thread"
+                ? node.scale
+                : node.scale * 0.92,
+          });
+        }
+        if (presentationState === "operation" && node.role === "context") {
+          return Object.freeze({
+            ...node,
+            opacity: Math.min(node.opacity, 0.85),
+          });
+        }
+        return node;
+      }),
   );
 
   return Object.freeze({

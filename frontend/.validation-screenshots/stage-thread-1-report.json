@@ -1,0 +1,148 @@
+{
+  "steps": {
+    "capacityCollapsed": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "collapsed",
+        "data-stage-thread-anchor": "none",
+        "data-stage-thread-subject-count": "0",
+        "data-stage-thread-problem-count": "0",
+        "data-stage-thread-scenario-count": "0",
+        "data-stage-thread-decision-count": "0",
+        "data-stage-thread-execution-count": "0",
+        "data-stage-thread-selected-subject": "none",
+        "data-stage-thread-orphan-label-count": "0",
+        "data-stage-thread-clipped-object-count": "0",
+        "data-stage-thread-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "capacityExpanded": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "expanded",
+        "data-stage-thread-anchor": "obj-capacity",
+        "data-stage-thread-subject-count": "4",
+        "data-stage-thread-problem-count": "1",
+        "data-stage-thread-scenario-count": "1",
+        "data-stage-thread-decision-count": "1",
+        "data-stage-thread-execution-count": "1",
+        "data-stage-thread-selected-subject": "obj-capacity",
+        "data-stage-thread-orphan-label-count": "0",
+        "data-stage-thread-clipped-object-count": "0",
+        "data-stage-thread-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "ctx-problem-capacity": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "expanded",
+        "data-stage-thread-anchor": "obj-capacity",
+        "data-stage-thread-subject-count": "4",
+        "data-stage-thread-problem-count": "1",
+        "data-stage-thread-scenario-count": "1",
+        "data-stage-thread-decision-count": "1",
+        "data-stage-thread-execution-count": "1",
+        "data-stage-thread-selected-subject": "ctx-problem-capacity",
+        "data-stage-thread-orphan-label-count": "0",
+        "data-stage-thread-clipped-object-count": "0",
+        "data-stage-thread-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "ctx-scenario-capacity": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "expanded",
+        "data-stage-thread-anchor": "obj-capacity",
+        "data-stage-thread-subject-count": "4",
+        "data-stage-thread-problem-count": "1",
+        "data-stage-thread-scenario-count": "1",
+        "data-stage-thread-decision-count": "1",
+        "data-stage-thread-execution-count": "1",
+        "data-stage-thread-selected-subject": "ctx-scenario-capacity",
+        "data-stage-thread-orphan-label-count": "0",
+        "data-stage-thread-clipped-object-count": "0",
+        "data-stage-thread-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "ctx-decision-capacity": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "expanded",
+        "data-stage-thread-anchor": "obj-capacity",
+        "data-stage-thread-subject-count": "4",
+        "data-stage-thread-problem-count": "1",
+        "data-stage-thread-scenario-count": "1",
+        "data-stage-thread-decision-count": "1",
+        "data-stage-thread-execution-count": "1",
+        "data-stage-thread-selected-subject": "ctx-decision-capacity",
+        "data-stage-thread-orphan-label-count": "0",
+        "data-stage-thread-clipped-object-count": "0",
+        "data-stage-thread-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "ctx-execution-capacity": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "expanded",
+        "data-stage-thread-anchor": "obj-capacity",
+        "data-stage-thread-subject-count": "4",
+        "data-stage-thread-problem-count": "1",
+        "data-stage-thread-scenario-count": "1",
+        "data-stage-thread-decision-count": "1",
+        "data-stage-thread-execution-count": "1",
+        "data-stage-thread-selected-subject": "ctx-execution-capacity",
+        "data-stage-thread-orphan-label-count": "0",
+        "data-stage-thread-clipped-object-count": "0",
+        "data-stage-thread-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "capacityCollapsedAgain": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-thread-state": "collapsed",
+        "data-stage-thread-anchor": "none",
+        "data-stage-thread-subject-count": "0",
+        "data-stage-thread-problem-count": "0",
+        "data-stage-thread-scenario-count": "0",
+        "data-stage-thread-decision-count": "0",
+        "data-stage-thread-execution-count": "0",
+        "data-stage-thread-selected-subject": "none",
+        "data-stage-thread-orphan-label-count": "0",
+        "data-stage-thread-clipped-object-count": "0",
+        "data-stage-thread-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    },
+    "revenue": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-thread-state": "collapsed",
+        "data-stage-thread-anchor": "none",
+        "data-stage-thread-subject-count": "0",
+        "data-stage-thread-problem-count": "0",
+        "data-stage-thread-scenario-count": "0",
+        "data-stage-thread-decision-count": "0",
+        "data-stage-thread-execution-count": "0",
+        "data-stage-thread-selected-subject": "none",
+        "data-stage-thread-orphan-label-count": "0",
+        "data-stage-thread-clipped-object-count": "0",
+        "data-stage-thread-overlap-count": "0",
+        "data-stage-clipped-object-count": "0",
+        "data-stage-layout-overlap-count": "0"
+      }
+    }
+  }
+}

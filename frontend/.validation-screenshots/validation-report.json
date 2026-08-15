@@ -1,0 +1,22 @@
+{
+  "deliveryAttrs": {
+    "focusedObject": "obj-delivery",
+    "selectedObject": "obj-delivery",
+    "presentationState": "minimum",
+    "stageMode": "focus",
+    "choreographyAnchor": "obj-delivery"
+  },
+  "budgetAttrs": {
+    "focusedObject": "obj-budget",
+    "selectedObject": "obj-budget",
+    "presentationState": "minimum",
+    "stageMode": "focus",
+    "choreographyAnchor": "obj-budget"
+  },
+  "authorityLogs": [
+    "[NEXORA_FOCUS_LAYOUT_AUTHORITY] {objectId: obj-delivery, clickedObjectId: obj-delivery, selectedObjectId: obj-delivery, focusedObjectId: obj-delivery, focusSource: user-selection}",
+    "[NEXORA_FOCUS_LAYOUT_AUTHORITY] {objectId: obj-budget, clickedObjectId: obj-budget, selectedObjectId: obj-budget, focusedObjectId: obj-budget, focusSource: user-selection}"
+  ],
+  "deliveryShot": "/Users/bahadoors/Documents/StateStudio/frontend/.validation-screenshots/A-Delivery-MINIMUM.png",
+  "budgetShot": "/Users/bahadoors/Documents/StateStudio/frontend/.validation-screenshots/B-Budget-MINIMUM.png"
+}

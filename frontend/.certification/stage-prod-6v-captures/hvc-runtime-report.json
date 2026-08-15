@@ -1,0 +1,748 @@
+{
+  "phase": "STAGE-PROD:6V",
+  "capturedAt": "2026-08-14T22:31:10.226Z",
+  "primary": {
+    "viewport": {
+      "width": 1502,
+      "height": 942,
+      "label": "primary"
+    },
+    "steps": {
+      "01-overview-clean": {
+        "note": "Overview",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "overview",
+        "prepVisible": false,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "02-overview-watch-queue": {
+        "note": "Overview + Queue",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "overview",
+        "prepVisible": false,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "03-focus-capacity": {
+        "note": "Focused Capacity",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "04-focus-related-watch": {
+        "note": "Focus + related field",
+        "attrs": {
+          "data-focused-object": "obj-revenue",
+          "data-selected-object": "obj-revenue",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "degraded"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "05-problems-collection": {
+        "note": "Problems Collection",
+        "attrs": {
+          "data-focused-object": "obj-revenue",
+          "data-selected-object": "obj-revenue",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "degraded"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "06-recent-changes": {
+        "note": "Recent Changes or prior collection",
+        "attrs": {
+          "data-focused-object": "obj-revenue",
+          "data-selected-object": "obj-revenue",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "degraded"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "07-daily-prep": {
+        "note": "Daily Preparation",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": true,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "08-daily-prep-density": {
+        "note": "Daily Preparation density",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": true,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "09-meeting-prep": {
+        "note": "Meeting Preparation",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": true,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "10-meeting-watch": {
+        "note": "Meeting + Watch",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": true,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "11-prep-to-focus": {
+        "note": "Preparation → Focus",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "12-decision-nba": {
+        "note": "Decision focus / NBA",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "13-decision-brief": {
+        "note": "Decision Brief eligibility",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "14-decision-memory": {
+        "note": "Decision Memory if session",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "15-decision-stack": {
+        "note": "Decision Advisor stack",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "16-queue-stage": {
+        "note": "Queue coexistence",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "17-primary-desktop": {
+        "note": "Primary desktop",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "18-long-label-proxy": {
+        "note": "Longer label subject proxy",
+        "attrs": {
+          "data-focused-object": "obj-customer",
+          "data-selected-object": "obj-customer",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "degraded"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "19-back-context": {
+        "note": "Back restored context",
+        "attrs": {
+          "data-focused-object": "obj-customer",
+          "data-selected-object": "obj-customer",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "degraded"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "20-escape-overview": {
+        "note": "Escape → Overview",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "overview",
+        "prepVisible": false,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      }
+    },
+    "captures": [
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-01-overview-clean.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-02-overview-watch-queue.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-03-focus-capacity.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-04-focus-related-watch.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-05-problems-collection.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-06-recent-changes.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-07-daily-prep.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-08-daily-prep-density.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-09-meeting-prep.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-10-meeting-watch.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-11-prep-to-focus.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-12-decision-nba.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-13-decision-brief.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-14-decision-memory.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-15-decision-stack.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-16-queue-stage.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-17-primary-desktop.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-18-long-label-proxy.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-19-back-context.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/primary-20-escape-overview.png"
+    ]
+  },
+  "narrow": {
+    "viewport": {
+      "width": 1280,
+      "height": 800,
+      "label": "narrow"
+    },
+    "steps": {
+      "01-overview-clean": {
+        "note": "Overview",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "overview",
+        "prepVisible": false,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "02-overview-watch-queue": {
+        "note": "Overview + Queue",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "overview",
+        "prepVisible": false,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "03-focus-capacity": {
+        "note": "Focused Capacity",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "04-focus-related-watch": {
+        "note": "Focus + related field",
+        "attrs": {
+          "data-focused-object": "obj-revenue",
+          "data-selected-object": "obj-revenue",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "degraded"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "05-problems-collection": {
+        "note": "Problems Collection",
+        "attrs": {
+          "data-focused-object": "obj-revenue",
+          "data-selected-object": "obj-revenue",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "degraded"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "06-recent-changes": {
+        "note": "Recent Changes or prior collection",
+        "attrs": {
+          "data-focused-object": "obj-revenue",
+          "data-selected-object": "obj-revenue",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "degraded"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "07-daily-prep": {
+        "note": "Daily Preparation",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": true,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "08-daily-prep-density": {
+        "note": "Daily Preparation density",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": true,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "09-meeting-prep": {
+        "note": "Meeting Preparation",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": true,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "10-meeting-watch": {
+        "note": "Meeting + Watch",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": true,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "11-prep-to-focus": {
+        "note": "Preparation → Focus",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "12-decision-nba": {
+        "note": "Decision focus / NBA",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "13-decision-brief": {
+        "note": "Decision Brief eligibility",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "14-decision-memory": {
+        "note": "Decision Memory if session",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "15-decision-stack": {
+        "note": "Decision Advisor stack",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "16-queue-stage": {
+        "note": "Queue coexistence",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "17-narrow-desktop": {
+        "note": "Narrow desktop",
+        "attrs": {
+          "data-focused-object": "obj-capacity",
+          "data-selected-object": "obj-capacity",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "valid"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": true,
+        "briefVisible": true,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "18-long-label-proxy": {
+        "note": "Longer label subject proxy",
+        "attrs": {
+          "data-focused-object": "obj-customer",
+          "data-selected-object": "obj-customer",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "degraded"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "19-back-context": {
+        "note": "Back restored context",
+        "attrs": {
+          "data-focused-object": "obj-customer",
+          "data-selected-object": "obj-customer",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "degraded"
+        },
+        "advisorMode": "object-focused",
+        "prepVisible": false,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      },
+      "20-escape-overview": {
+        "note": "Escape → Overview",
+        "attrs": {
+          "data-focused-object": "none",
+          "data-selected-object": "none",
+          "data-stage-camera-mode": "fixed-2d",
+          "data-stage-object-plane": "planar",
+          "data-stage-layout-overlap-count": "0",
+          "data-stage-layout-status": "none"
+        },
+        "advisorMode": "overview",
+        "prepVisible": false,
+        "nbaVisible": false,
+        "briefVisible": false,
+        "memoryVisible": false,
+        "queueVisible": true
+      }
+    },
+    "captures": [
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-01-overview-clean.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-02-overview-watch-queue.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-03-focus-capacity.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-04-focus-related-watch.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-05-problems-collection.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-06-recent-changes.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-07-daily-prep.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-08-daily-prep-density.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-09-meeting-prep.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-10-meeting-watch.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-11-prep-to-focus.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-12-decision-nba.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-13-decision-brief.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-14-decision-memory.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-15-decision-stack.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-16-queue-stage.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-17-narrow-desktop.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-18-long-label-proxy.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-19-back-context.png",
+      "/Users/bahadoors/Documents/StateStudio/frontend/.certification/stage-prod-6v-captures/narrow-20-escape-overview.png"
+    ]
+  },
+  "captureCount": 40,
+  "note": "Real Playwright WebGL/Stage screenshots. Schematics do not qualify for HVC."
+}

@@ -1,0 +1,212 @@
+{
+  "steps": {
+    "overviewOn": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "readable",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "1.2768",
+        "data-stage-3dobj-symbol-body-ratio": "0.38",
+        "data-stage-3dobj-symbol-contrast": "0.42",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "capacityOn": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "readable",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "1.2768",
+        "data-stage-3dobj-symbol-body-ratio": "0.38",
+        "data-stage-3dobj-symbol-contrast": "0.42",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "revenueOn": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "readable",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "1.2768",
+        "data-stage-3dobj-symbol-body-ratio": "0.38",
+        "data-stage-3dobj-symbol-contrast": "0.42",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "customerOn": {
+      "attrs": {
+        "data-focused-object": "obj-customer",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "readable",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "1.2768",
+        "data-stage-3dobj-symbol-body-ratio": "0.38",
+        "data-stage-3dobj-symbol-contrast": "0.42",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "inventoryOn": {
+      "attrs": {
+        "data-focused-object": "obj-inventory",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "readable",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "1.2768",
+        "data-stage-3dobj-symbol-body-ratio": "0.38",
+        "data-stage-3dobj-symbol-contrast": "0.42",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "riskOn": {
+      "attrs": {
+        "data-focused-object": "obj-risk",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "readable",
+        "data-stage-3dobj-symbol-kind": "facet-notch",
+        "data-stage-3dobj-symbol-scale": "1.2084",
+        "data-stage-3dobj-symbol-body-ratio": "0.340415",
+        "data-stage-3dobj-symbol-contrast": "0.42",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "threadExpanded": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "readable",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "1.2768",
+        "data-stage-3dobj-symbol-body-ratio": "0.38",
+        "data-stage-3dobj-symbol-contrast": "0.42",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "labelsOff": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "readable",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "1.2768",
+        "data-stage-3dobj-symbol-body-ratio": "0.38",
+        "data-stage-3dobj-symbol-contrast": "0.42",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "capacity_minimum": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "readable",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "1.2768",
+        "data-stage-3dobj-symbol-body-ratio": "0.38",
+        "data-stage-3dobj-symbol-contrast": "0.42",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "capacity_report": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "readable",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "1.2768",
+        "data-stage-3dobj-symbol-body-ratio": "0.38",
+        "data-stage-3dobj-symbol-contrast": "0.42",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "capacity_operation": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "readable",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-symbol-scale": "1.2768",
+        "data-stage-3dobj-symbol-body-ratio": "0.38",
+        "data-stage-3dobj-symbol-contrast": "0.42",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "overviewOff": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "off",
+        "data-stage-3dobj-symbol-kind": "none",
+        "data-stage-3dobj-symbol-scale": "0",
+        "data-stage-3dobj-symbol-body-ratio": "0",
+        "data-stage-3dobj-symbol-contrast": "0",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    },
+    "capacityOff": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-face-calibration": "stage-3dobj-2-fix",
+        "data-stage-3dobj-face-readability": "off",
+        "data-stage-3dobj-symbol-kind": "none",
+        "data-stage-3dobj-symbol-scale": "0",
+        "data-stage-3dobj-symbol-body-ratio": "0",
+        "data-stage-3dobj-symbol-contrast": "0",
+        "data-stage-3dobj-territory-dominance": "0",
+        "data-stage-3dobj-surface-enabled": "false",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-label-owner-violation-count": "0",
+        "data-stage-label-body-overlap-count": "0"
+      }
+    }
+  }
+}

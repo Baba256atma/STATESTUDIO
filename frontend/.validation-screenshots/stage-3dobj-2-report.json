@@ -1,0 +1,191 @@
+{
+  "steps": {
+    "overviewOn": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-3dobj-surface-contract": "stage-3dobj-2",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-surface-role": "face-symbol",
+        "data-stage-3dobj-symbol-depth": "0.0045",
+        "data-stage-3dobj-symbol-scale": "0.82",
+        "data-stage-3dobj-face-inset": "0.07",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0"
+      }
+    },
+    "capacityOn": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-surface-contract": "stage-3dobj-2",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-surface-role": "face-symbol",
+        "data-stage-3dobj-symbol-depth": "0.0045",
+        "data-stage-3dobj-symbol-scale": "0.82",
+        "data-stage-3dobj-face-inset": "0.07",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0"
+      }
+    },
+    "riskOn": {
+      "attrs": {
+        "data-focused-object": "obj-risk",
+        "data-stage-3dobj-surface-contract": "stage-3dobj-2",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-3dobj-symbol-kind": "facet-notch",
+        "data-stage-3dobj-surface-role": "face-symbol",
+        "data-stage-3dobj-symbol-depth": "0.0045",
+        "data-stage-3dobj-symbol-scale": "0.82",
+        "data-stage-3dobj-face-inset": "0.07",
+        "data-stage-3dobj-kind": "risk",
+        "data-stage-3dobj-profile": "beveled-diamond",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0"
+      }
+    },
+    "threadExpanded": {
+      "attrs": {
+        "data-focused-object": "none",
+        "data-stage-3dobj-surface-contract": "stage-3dobj-2",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-surface-role": "face-symbol",
+        "data-stage-3dobj-symbol-depth": "0.0045",
+        "data-stage-3dobj-symbol-scale": "0.82",
+        "data-stage-3dobj-face-inset": "0.07",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0"
+      }
+    },
+    "labelsOffCapacity": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-surface-contract": "stage-3dobj-2",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-surface-role": "face-symbol",
+        "data-stage-3dobj-symbol-depth": "0.0045",
+        "data-stage-3dobj-symbol-scale": "0.82",
+        "data-stage-3dobj-face-inset": "0.07",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0"
+      }
+    },
+    "labelsOffRisk": {
+      "attrs": {
+        "data-focused-object": "obj-risk",
+        "data-stage-3dobj-surface-contract": "stage-3dobj-2",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-3dobj-symbol-kind": "facet-notch",
+        "data-stage-3dobj-surface-role": "face-symbol",
+        "data-stage-3dobj-symbol-depth": "0.0045",
+        "data-stage-3dobj-symbol-scale": "0.82",
+        "data-stage-3dobj-face-inset": "0.07",
+        "data-stage-3dobj-kind": "risk",
+        "data-stage-3dobj-profile": "beveled-diamond",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0"
+      }
+    },
+    "capacity_minimum": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-surface-contract": "stage-3dobj-2",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-surface-role": "face-symbol",
+        "data-stage-3dobj-symbol-depth": "0.0045",
+        "data-stage-3dobj-symbol-scale": "0.82",
+        "data-stage-3dobj-face-inset": "0.07",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0"
+      }
+    },
+    "capacity_report": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-surface-contract": "stage-3dobj-2",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-surface-role": "face-symbol",
+        "data-stage-3dobj-symbol-depth": "0.0045",
+        "data-stage-3dobj-symbol-scale": "0.82",
+        "data-stage-3dobj-face-inset": "0.07",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0"
+      }
+    },
+    "capacity_operation": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-surface-contract": "stage-3dobj-2",
+        "data-stage-3dobj-surface-enabled": "true",
+        "data-stage-3dobj-symbol-kind": "executive-mark",
+        "data-stage-3dobj-surface-role": "face-symbol",
+        "data-stage-3dobj-symbol-depth": "0.0045",
+        "data-stage-3dobj-symbol-scale": "0.82",
+        "data-stage-3dobj-face-inset": "0.07",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0"
+      }
+    },
+    "capacityOff": {
+      "attrs": {
+        "data-focused-object": "obj-capacity",
+        "data-stage-3dobj-surface-contract": "stage-3dobj-2",
+        "data-stage-3dobj-surface-enabled": "false",
+        "data-stage-3dobj-symbol-kind": "none",
+        "data-stage-3dobj-surface-role": "face-symbol",
+        "data-stage-3dobj-symbol-depth": "0",
+        "data-stage-3dobj-symbol-scale": "0.82",
+        "data-stage-3dobj-face-inset": "0",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0"
+      }
+    },
+    "revenueOn": {
+      "attrs": {
+        "data-focused-object": "obj-revenue",
+        "data-stage-3dobj-surface-contract": "stage-3dobj-2",
+        "data-stage-3dobj-surface-enabled": "false",
+        "data-stage-3dobj-symbol-kind": "none",
+        "data-stage-3dobj-surface-role": "face-symbol",
+        "data-stage-3dobj-symbol-depth": "0",
+        "data-stage-3dobj-symbol-scale": "0.82",
+        "data-stage-3dobj-face-inset": "0",
+        "data-stage-3dobj-kind": "business-object",
+        "data-stage-3dobj-profile": "rounded-executive-slab",
+        "data-stage-layout-overlap-count": "0",
+        "data-stage-camera-mode": "fixed-2d",
+        "data-stage-semantic-plane-z": "0"
+      }
+    }
+  }
+}

@@ -3,16 +3,14 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Color } from "three";
-import type {
-  AmbientLight,
-  DirectionalLight,
-  Fog,
-  MeshStandardMaterial,
-} from "three";
+import type { Fog, MeshStandardMaterial } from "three";
 import type { NexoraMVPSceneEnvironmentVisualState } from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
+import type { ExecutiveLightingGroundResponse } from "@/app/lib/spatial-presentation/executiveLightingFoundation";
+import { EXECUTIVE_LIGHTING_SHADOW_PARTICIPATION } from "@/app/lib/spatial-presentation/executiveLightingFoundation";
 
 type Props = {
   readonly environment: NexoraMVPSceneEnvironmentVisualState;
+  readonly groundResponse: ExecutiveLightingGroundResponse;
   readonly onClearSelection: () => void;
 };
 
@@ -21,35 +19,33 @@ function lerp(current: number, target: number, alpha: number): number {
 }
 
 /**
- * Interpolates Stage lighting / fog / ground from environment visual tokens.
+ * Interpolates Stage fog / background / ground from environment visual tokens.
+ * SP:3.1 lighting lives in NexoraExecutiveLightingRig — this controller no
+ * longer owns the executive lighting rig.
  * Presentation only — does not infer workspace semantics.
  */
 export function NexoraSceneEnvironmentController({
   environment,
+  groundResponse,
   onClearSelection,
 }: Props) {
   const { scene } = useThree();
-  const ambientRef = useRef<AmbientLight>(null);
-  const keyRef = useRef<DirectionalLight>(null);
-  const fillRef = useRef<DirectionalLight>(null);
   const fogRef = useRef<Fog>(null);
   const groundMatRef = useRef<MeshStandardMaterial>(null);
   const targetBg = useRef(new Color(environment.background));
-  const targetKey = useRef(new Color(environment.keyLightColor));
-  const targetFill = useRef(new Color(environment.fillLightColor));
   const targetGround = useRef(new Color(environment.groundColor));
+  const groundShadow = EXECUTIVE_LIGHTING_SHADOW_PARTICIPATION.stageGround;
 
   useEffect(() => {
     targetBg.current.set(environment.background);
-    targetKey.current.set(environment.keyLightColor);
-    targetFill.current.set(environment.fillLightColor);
     targetGround.current.set(environment.groundColor);
-  }, [
-    environment.background,
-    environment.fillLightColor,
-    environment.groundColor,
-    environment.keyLightColor,
-  ]);
+  }, [environment.background, environment.groundColor]);
+
+  useEffect(() => {
+    if (groundMatRef.current == null) return;
+    groundMatRef.current.metalness = groundResponse.materialMetalness;
+    groundMatRef.current.roughness = groundResponse.materialRoughness;
+  }, [groundResponse.materialMetalness, groundResponse.materialRoughness]);
 
   useFrame((_, delta) => {
     const speed = Math.min(
@@ -63,29 +59,6 @@ export function NexoraSceneEnvironmentController({
       background.lerp(targetBg.current, speed);
     }
 
-    if (ambientRef.current) {
-      ambientRef.current.intensity = lerp(
-        ambientRef.current.intensity,
-        environment.ambientIntensity,
-        speed,
-      );
-    }
-    if (keyRef.current) {
-      keyRef.current.intensity = lerp(
-        keyRef.current.intensity,
-        environment.keyLightIntensity,
-        speed,
-      );
-      keyRef.current.color.lerp(targetKey.current, speed);
-    }
-    if (fillRef.current) {
-      fillRef.current.intensity = lerp(
-        fillRef.current.intensity,
-        environment.fillLightIntensity,
-        speed,
-      );
-      fillRef.current.color.lerp(targetFill.current, speed);
-    }
     if (fogRef.current) {
       fogRef.current.color.lerp(targetBg.current, speed);
       fogRef.current.near = lerp(
@@ -112,22 +85,13 @@ export function NexoraSceneEnvironmentController({
         attach="fog"
         args={[environment.background, environment.fogNear, environment.fogFar]}
       />
-      <ambientLight ref={ambientRef} intensity={environment.ambientIntensity} />
-      <directionalLight
-        ref={keyRef}
-        position={[4.5, 7.5, 3.5]}
-        intensity={environment.keyLightIntensity}
-        color={environment.keyLightColor}
-      />
-      <directionalLight
-        ref={fillRef}
-        position={[-5, 2.5, -3]}
-        intensity={environment.fillLightIntensity}
-        color={environment.fillLightColor}
-      />
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, -1.15, 0]}
+        castShadow={groundShadow.castShadow}
+        receiveShadow={
+          groundShadow.receiveShadow && groundResponse.receiveShadows
+        }
         onClick={(event) => {
           event.stopPropagation();
           onClearSelection();
@@ -139,8 +103,8 @@ export function NexoraSceneEnvironmentController({
           color={environment.groundColor}
           transparent
           opacity={environment.groundOpacity}
-          metalness={0.1}
-          roughness={0.9}
+          metalness={groundResponse.materialMetalness}
+          roughness={groundResponse.materialRoughness}
         />
       </mesh>
     </group>

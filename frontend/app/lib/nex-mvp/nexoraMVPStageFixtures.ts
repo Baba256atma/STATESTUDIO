@@ -10,7 +10,8 @@ export type NexoraMVPStageObjectFixture = {
   readonly label: string;
   readonly kind: "object";
   readonly position: readonly [number, number, number];
-  readonly status: "stable" | "watch" | "risk";
+  /** Includes unresolved so missing runtime truth never falls back to healthy. */
+  readonly status: "stable" | "watch" | "risk" | "unresolved";
   readonly attention: "normal" | "elevated" | "important" | "critical";
 };
 

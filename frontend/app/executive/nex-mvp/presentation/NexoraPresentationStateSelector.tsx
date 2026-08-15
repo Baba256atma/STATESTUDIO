@@ -152,7 +152,7 @@ export function NexoraPresentationStateSelector({
           fontWeight: 550,
         }}
       >
-        Presentation Depth
+        Presentation Level
       </span>
       <div
         style={{
@@ -219,7 +219,7 @@ export function NexoraPresentationStateSelector({
           color: cockpit.muted,
         }}
       >
-        {LABELS[activePresentationState]} · depth
+        {LABELS[activePresentationState]} · level
       </span>
     </div>
   );
