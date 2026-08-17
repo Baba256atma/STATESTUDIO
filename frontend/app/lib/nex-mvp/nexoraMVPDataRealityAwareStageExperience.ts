@@ -23,7 +23,10 @@ import {
   getExecutiveOperationsDemoDataset,
   getExecutiveOperationsPressureDataset,
 } from "@/app/lib/data-reality/demo/executiveOperationsDemoDataset";
+import type { NexoraDataset } from "@/app/lib/data-reality/dataRealityContracts";
 import type { NexoraMVPStageObjectFixture } from "@/app/lib/nex-mvp/nexoraMVPStageFixtures";
+import type { NexoraMVPPresentationKpiFixture } from "@/app/lib/nex-mvp/nexoraMVPPresentationFixtures";
+import type { NexoraMVPPresentationViewModel } from "@/app/lib/nex-mvp/nexoraMVPPresentationState";
 import {
   getDefaultNexoraMVPObjectInteractionCatalog,
   type NexoraMVPObjectInteractionCatalog,
@@ -46,6 +49,8 @@ export const NEXORA_MVP_DATA_REALITY_AWARE_STAGE_EXPERIENCE_BOUNDARY =
 
 export type ResolveNexoraMVPDataRealityAwareStageExperienceInput = {
   readonly datasetScenario?: NexoraMVPDataRealityDatasetScenario;
+  /** Validated dataset supplied by the canonical RDI/Data Reality boundary. */
+  readonly dataset?: NexoraDataset;
   readonly focusedObjectId?: string;
   readonly selectedObjectId?: string;
   readonly selectedObjectIds?: readonly string[];
@@ -60,6 +65,8 @@ export type NexoraMVPDataRealityAwareStageExperienceResult = {
   readonly runtimeState: DataRealityAwareMVPRuntimeState;
   readonly stageBinding: DataRealityAwareStageBindingResult;
   readonly catalog: NexoraMVPObjectInteractionCatalog;
+  /** True only for a validated dataset explicitly supplied by RDI. */
+  readonly usesActiveDataSource: boolean;
 };
 
 function toFixtureStatus(
@@ -81,6 +88,7 @@ function toFixtureAttention(
 export function applyDataRealityAwareStageBindingsToCatalog(
   catalog: NexoraMVPObjectInteractionCatalog,
   stageBinding: DataRealityAwareStageBindingResult,
+  options: Readonly<{ useCanonicalKpis?: boolean }> = {},
 ): NexoraMVPObjectInteractionCatalog {
   const byId = new Map(
     stageBinding.objects.map((entry) => [entry.objectId, entry]),
@@ -101,6 +109,15 @@ export function applyDataRealityAwareStageBindingsToCatalog(
         ...object,
         status: toFixtureStatus(binding.mvpStatus),
         attention: toFixtureAttention(binding.mvpAttention),
+        ...(options.useCanonicalKpis && binding.primaryKPI !== undefined
+          ? {
+              primaryValue: formatCanonicalStageKpiValue(
+                binding.primaryKPI.value,
+                binding.primaryKPI.unit,
+              ),
+              primaryMetricLabel: object.label,
+            }
+          : {}),
       });
     }),
   );
@@ -110,6 +127,47 @@ export function applyDataRealityAwareStageBindingsToCatalog(
     relationships: catalog.relationships,
     contextSubjects: catalog.contextSubjects,
     contextLinks: catalog.contextLinks,
+  });
+}
+
+/** Presentation formatting only; the canonical numeric value is unchanged. */
+export function formatCanonicalStageKpiValue(
+  value: number,
+  unit: string,
+): string {
+  const suffix = unit === "%" ? "%" : unit.length > 0 ? ` ${unit}` : "";
+  return `${value.toFixed(1)}${suffix}`;
+}
+
+/**
+ * Replaces fixture KPI presentation only when a bound Runtime KPI exists.
+ * Target/delta are intentionally omitted because they belong to the fixture
+ * observation and must never accompany a live value.
+ */
+export function alignPresentationViewModelToStageKpiTruth(
+  base: NexoraMVPPresentationViewModel,
+  binding: DataRealityAwareStageObjectBinding | undefined,
+): NexoraMVPPresentationViewModel {
+  if (binding?.primaryKPI === undefined || binding.bindingStatus !== "bound") {
+    return base;
+  }
+
+  const status: NexoraMVPPresentationKpiFixture["status"] =
+    binding.mvpStatus === "unresolved" ? undefined : binding.mvpStatus;
+  const primaryKpi: NexoraMVPPresentationKpiFixture = Object.freeze({
+    id: binding.primaryKPI.kpiId,
+    label: base.primaryKpi?.label ?? base.subjectLabel ?? "Current KPI",
+    value: formatCanonicalStageKpiValue(
+      binding.primaryKPI.value,
+      binding.primaryKPI.unit,
+    ),
+    ...(status !== undefined ? { status } : {}),
+  });
+
+  return Object.freeze({
+    ...base,
+    primaryKpi,
+    showKPIs: true,
   });
 }
 
@@ -132,10 +190,11 @@ export function resolveNexoraMVPDataRealityAwareStageExperience(
   const scenario = input.datasetScenario ?? "baseline";
   const baseCatalog =
     input.baseCatalog ?? getDefaultNexoraMVPObjectInteractionCatalog();
-  const dataset =
+  const dataset = input.dataset ?? (
     scenario === "operational-pressure"
       ? getExecutiveOperationsPressureDataset()
-      : getExecutiveOperationsDemoDataset();
+      : getExecutiveOperationsDemoDataset()
+  );
 
   const selectedObjectIds =
     input.selectedObjectIds ??
@@ -181,6 +240,7 @@ export function resolveNexoraMVPDataRealityAwareStageExperience(
   const catalog = applyDataRealityAwareStageBindingsToCatalog(
     baseCatalog,
     stageBinding,
+    { useCanonicalKpis: input.dataset !== undefined },
   );
 
   return Object.freeze({
@@ -188,5 +248,6 @@ export function resolveNexoraMVPDataRealityAwareStageExperience(
     runtimeState,
     stageBinding,
     catalog,
+    usesActiveDataSource: input.dataset !== undefined,
   });
 }

@@ -22,9 +22,12 @@ export const EXECUTIVE_MEMORY_RECORD_TAGS = Object.freeze([
 
 export const EXECUTIVE_MEMORY_REFERENCE_TYPE_KEYS = Object.freeze([
   "goal",
+  "problem",
   "intent",
   "scenario",
   "decision",
+  "execution",
+  "outcome",
   "object",
   "relationship",
   "kpi",

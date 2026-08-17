@@ -111,6 +111,9 @@ export type NexoraMVPStageObject = {
   readonly attention?: NexoraMVPStageAttention;
   readonly selected?: boolean;
   readonly focused?: boolean;
+  /** Canonical presentation passthrough supplied by an upstream adapter. */
+  readonly primaryValue?: string;
+  readonly primaryMetricLabel?: string;
 };
 
 export type NexoraMVPStageRelationship = {
@@ -598,6 +601,12 @@ export function resolveNexoraMVPStageScenePresentation(
       focused: focused && disclosureState === "visible-primary",
       attention: object.attention ?? "normal",
       status: object.status ?? "stable",
+      ...(object.primaryValue !== undefined
+        ? { primaryValue: object.primaryValue }
+        : {}),
+      ...(object.primaryMetricLabel !== undefined
+        ? { primaryMetricLabel: object.primaryMetricLabel }
+        : {}),
       disclosureState,
       spatialRole,
       interactive,

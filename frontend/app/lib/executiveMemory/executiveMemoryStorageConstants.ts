@@ -10,6 +10,7 @@ export const EXECUTIVE_MEMORY_STORAGE_TAGS = Object.freeze([
   "[EXECUTIVE_MEMORY_STORAGE]",
   "[STORAGE_ENGINE]",
   "[IN_MEMORY_PROVIDER]",
+  "[DURABLE_LOCAL_STORAGE_PROVIDER]",
   "[NO_SEARCH]",
   "[NO_RANKING]",
   "[ARCHITECTURE_SAFE]",
@@ -42,8 +43,8 @@ export const EXECUTIVE_MEMORY_STORAGE_ERROR_CODES = Object.freeze({
 export const EXECUTIVE_MEMORY_STORAGE_FUTURE_PROVIDERS = Object.freeze({
   localStorage: Object.freeze({
     kind: "local_storage" as const,
-    status: "placeholder" as const,
-    implemented: false,
+    status: "implemented" as const,
+    implemented: true,
   }),
   database: Object.freeze({
     kind: "database" as const,

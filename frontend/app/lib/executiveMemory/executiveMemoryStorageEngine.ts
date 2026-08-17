@@ -4,6 +4,7 @@
  */
 
 import { createExecutiveMemoryInMemoryProvider } from "./executiveMemoryInMemoryProvider.ts";
+import { createExecutiveMemoryLocalStorageProvider } from "./executiveMemoryLocalStorageProvider.ts";
 import { createExecutiveMemoryRepository, type ExecutiveMemoryRepository } from "./executiveMemoryRepository.ts";
 import { createExecutiveMemoryStore, type ExecutiveMemoryStore } from "./executiveMemoryStore.ts";
 import { EXECUTIVE_MEMORY_STORAGE_CONTRACT_VERSION } from "./executiveMemoryStorageConstants.ts";
@@ -26,14 +27,23 @@ let store: ExecutiveMemoryStore = createExecutiveMemoryStore(createExecutiveMemo
 let repository: ExecutiveMemoryRepository = createExecutiveMemoryRepository(store);
 
 function rebuildEngine(providerKind: ExecutiveMemoryStorageProviderKind = "in_memory"): void {
-  if (providerKind !== "in_memory") {
+  if (providerKind === "database") {
     throw new Error(`Storage provider not implemented: ${providerKind}.`);
   }
-  const provider = createExecutiveMemoryInMemoryProvider();
+  const provider = providerKind === "local_storage"
+    ? createExecutiveMemoryLocalStorageProvider(resolveBrowserStorage())
+    : createExecutiveMemoryInMemoryProvider();
   provider.initialize();
   store = createExecutiveMemoryStore(provider);
   repository = createExecutiveMemoryRepository(store);
   activeProviderKind = providerKind;
+}
+
+function resolveBrowserStorage(): Storage {
+  if (typeof window === "undefined" || window.localStorage == null) {
+    throw new Error("Durable Executive Memory local storage is available only in a browser environment.");
+  }
+  return window.localStorage;
 }
 
 export function initializeExecutiveMemoryStorageEngine(

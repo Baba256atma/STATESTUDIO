@@ -172,6 +172,8 @@ export type DataRealityAwareStageObjectBinding = {
   readonly isUnresolved: boolean;
   readonly hasData: boolean;
   readonly hasKPI: boolean;
+  /** Canonical Runtime KPI passthrough; Stage must not calculate this value. */
+  readonly primaryKPI?: DataRealityAwareMVPObjectRuntimeState["primaryKPI"];
   readonly resolutionStatus: DataRealityAdvisorMVPObjectResolutionStatus;
   readonly bindingStatus: DataRealityAwareStageBindingStatus;
   /** Primary reality-driven emphasis (interaction markers are separate flags). */
@@ -380,6 +382,9 @@ function projectBoundObject(
     isUnresolved,
     hasData: object.hasData,
     hasKPI: object.hasKPI,
+    ...(object.primaryKPI !== undefined
+      ? { primaryKPI: object.primaryKPI }
+      : {}),
     resolutionStatus: object.resolutionStatus,
     bindingStatus: bindingStatusFromObject(object),
     presentationEmphasis: vocabulary.presentationEmphasis,

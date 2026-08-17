@@ -18,7 +18,11 @@
  *   → Existing NEX-MVP Runtime consumers (later P2 phases)
  */
 
-import type { NexoraDataset, NexoraExecutiveState } from "./dataRealityContracts.ts";
+import type {
+  NexoraDataset,
+  NexoraExecutiveState,
+  NexoraKPIResult,
+} from "./dataRealityContracts.ts";
 import type {
   DataRealityAdvisorAttentionLevel,
   DataRealityAdvisorState,
@@ -139,6 +143,8 @@ export interface DataRealityAdvisorMVPObjectReality {
   readonly recommendedAction?: DataRealityExecutiveGuidance;
   readonly hasData: boolean;
   readonly hasKPI: boolean;
+  /** Canonical Data Reality KPI passthrough; never recomputed by the bridge. */
+  readonly primaryKPI?: NexoraKPIResult;
   readonly resolutionStatus: DataRealityAdvisorMVPObjectResolutionStatus;
 }
 
@@ -325,6 +331,12 @@ function projectObjectReality(
     result.dataRealitySnapshot.kpis.some(
       (entry) => entry.objectKey === objectKey,
     );
+  const primaryKPI =
+    objectKey === undefined
+      ? undefined
+      : result.dataRealitySnapshot.kpis.find(
+          (entry) => entry.objectKey === objectKey,
+        );
   const p0ExecutiveState = p0ExecutiveStateForObjectKey(objectKey, result);
   const recommendedAction = primaryGuidanceForSubject(
     observation.subjectId,
@@ -352,6 +364,7 @@ function projectObjectReality(
     ...(recommendedAction !== undefined ? { recommendedAction } : {}),
     hasData,
     hasKPI,
+    ...(primaryKPI !== undefined ? { primaryKPI } : {}),
     resolutionStatus:
       resolutionStatus === "unresolved" && !hasData && !hasKPI
         ? "unavailable"

@@ -26,9 +26,14 @@ export const EXECUTIVE_MEMORY_TAGS = Object.freeze([
 
 export const EXECUTIVE_MEMORY_CATEGORY_KEYS = Object.freeze([
   "goal",
+  "problem",
   "intent",
   "scenario",
   "decision",
+  "decision_rationale",
+  "execution",
+  "outcome",
+  "learning",
   "evidence",
   "kpi_reference",
   "risk_reference",

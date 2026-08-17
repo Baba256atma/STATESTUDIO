@@ -9,6 +9,7 @@ import { cockpit } from "./executiveCockpitTheme";
 
 type Props = {
   readonly kind: ExecutiveExplorerKind;
+  readonly title?: string;
   readonly width: number;
   readonly onWidthChange: (width: number) => void;
   readonly onClose: () => void;
@@ -21,12 +22,14 @@ type Props = {
  */
 export function ExecutiveExplorerDrawer({
   kind,
+  title,
   width,
   onWidthChange,
   onClose,
   children,
 }: Props) {
   const open = kind != null;
+  const displayTitle = title ?? explorerTitle(kind);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
   const onPointerDown = useCallback(
@@ -61,7 +64,7 @@ export function ExecutiveExplorerDrawer({
       data-open={open ? "true" : "false"}
       data-explorer={kind ?? "none"}
       aria-hidden={!open}
-      aria-label={open ? explorerTitle(kind) : "Explorer closed"}
+      aria-label={open ? displayTitle : "Explorer closed"}
       style={{
         width: open ? width : 0,
         flexShrink: 0,
@@ -118,7 +121,7 @@ export function ExecutiveExplorerDrawer({
                 color: cockpit.text,
               }}
             >
-              {explorerTitle(kind)}
+              {displayTitle}
             </h2>
           </div>
           <button

@@ -1,10 +1,20 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { NexoraMVPAdvisorContextBridge } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import type { NexoraMVPPresentationViewModel } from "@/app/lib/nex-mvp/nexoraMVPPresentationState";
 import type { NexoraMVPInteractionSubject } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import type { DataRealityAwareAdvisorBindingResult } from "@/app/lib/data-reality/dataRealityAwareAdvisorExperienceBinding";
+import type { ExecutiveSourceAdvisorContext } from "@/app/lib/data-reality/executiveSourceIntelligence";
+import {
+  acknowledgeProactiveAdvisorBrief,
+  deliverProactiveAdvisorBrief,
+  dismissProactiveAdvisorBrief,
+  getNextProactiveAdvisorBrief,
+  getProactiveAdvisorDeliveryVersion,
+  subscribeProactiveAdvisorDelivery,
+  type NexoraProactiveAdvisorBrief,
+} from "@/app/lib/data-reality/proactiveAdvisorDelivery";
 import {
   applyNexoraMVPIntelligenceResolution,
   deriveNexoraMVPExecutiveIntelligenceContext,
@@ -43,6 +53,12 @@ type Props = {
   readonly onSelectBriefOption?: (objectId: string) => void;
   /** Optional P2:4 binding from shared P2:2 runtime truth. */
   readonly advisorRealityBinding?: DataRealityAwareAdvisorBindingResult;
+  /** RDI:3 structured canonical source/comparison evidence for Advisor. */
+  readonly sourceIntelligenceContext?: ExecutiveSourceAdvisorContext | null;
+  /** PM:4 — explicit user follow-up through the existing Advisor context. */
+  readonly onProactiveInvestigate?: (brief: NexoraProactiveAdvisorBrief) => void;
+  /** PM:4 — explicit user navigation; proactive delivery never changes focus. */
+  readonly onProactiveViewOnStage?: (subjectId: string) => void;
   /** CC:5 — conversational experience surface. */
   readonly conversationalMessages?: readonly NexoraConversationalMessage[];
   readonly conversationalProcessing?: boolean;
@@ -66,6 +82,9 @@ export function NexoraAdvisorInsightRegion({
   onExecuteNextBestAction,
   onSelectBriefOption,
   advisorRealityBinding,
+  sourceIntelligenceContext = null,
+  onProactiveInvestigate,
+  onProactiveViewOnStage,
   conversationalMessages = Object.freeze([]),
   conversationalProcessing = false,
   conversationalContextLabel = null,
@@ -74,6 +93,26 @@ export function NexoraAdvisorInsightRegion({
 }: Props) {
   const [width, setWidth] = useState(320);
   const [collapsed, setCollapsed] = useState(false);
+  useSyncExternalStore(
+    subscribeProactiveAdvisorDelivery,
+    getProactiveAdvisorDeliveryVersion,
+    () => 0,
+  );
+  const proactiveBrief = getNextProactiveAdvisorBrief(advisorBridge.activeWorkspace);
+
+  useEffect(() => {
+    if (
+      proactiveBrief?.status === "queued" &&
+      !conversationalProcessing &&
+      sourceIntelligenceContext == null
+    ) {
+      deliverProactiveAdvisorBrief(
+        proactiveBrief.workspaceId,
+        proactiveBrief.briefId,
+        new Date().toISOString(),
+      );
+    }
+  }, [conversationalProcessing, proactiveBrief, sourceIntelligenceContext]);
 
   const onToggleCollapse = useCallback(() => {
     setCollapsed((value) => !value);
@@ -254,6 +293,107 @@ export function NexoraAdvisorInsightRegion({
               {intelligence.advisor.subjectLabel ?? "Overview"}
             </p>
           </div>
+
+          {sourceIntelligenceContext ? (
+            <section
+              data-testid="nexora-rdi3-advisor-context"
+              data-rdi3-context-kind={sourceIntelligenceContext.contextKind}
+              data-memory-policy={sourceIntelligenceContext.memoryPolicy}
+              style={{
+                padding: "0.58rem 0.65rem",
+                borderRadius: cockpit.radius.md,
+                border: `1px solid ${cockpit.borderStrong}`,
+                background: cockpit.accentSoft,
+              }}
+            >
+              <p style={{ margin: 0, color: cockpit.accent, fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                Source Intelligence Context
+              </p>
+              <strong style={{ display: "block", marginTop: "0.35rem", color: cockpit.text, fontSize: "0.72rem" }}>
+                {sourceIntelligenceContext.title}
+              </strong>
+              <p style={{ margin: "0.3rem 0 0", color: cockpit.textSoft, fontSize: "0.66rem", lineHeight: 1.45 }}>
+                {sourceIntelligenceContext.summary}
+              </p>
+              <p style={{ margin: "0.32rem 0 0", color: cockpit.lowMuted, fontSize: "0.56rem", overflowWrap: "anywhere" }}>
+                Canonical evidence · {sourceIntelligenceContext.sourceIds.length} source{sourceIntelligenceContext.sourceIds.length === 1 ? "" : "s"} · current facts override history
+              </p>
+            </section>
+          ) : null}
+
+          {proactiveBrief?.status === "queued" ? (
+            <div
+              data-testid="nexora-pm4-proactive-queued"
+              style={{ color: cockpit.textSoft, fontSize: "0.62rem" }}
+            >
+              1 new executive insight
+            </div>
+          ) : proactiveBrief?.status === "delivered" ? (
+            <section
+              data-testid="nexora-pm4-proactive-brief"
+              data-pm4-priority={proactiveBrief.priority}
+              data-pm4-status={proactiveBrief.status}
+              style={{
+                padding: "0.68rem",
+                borderRadius: cockpit.radius.md,
+                border: `1px solid ${proactiveBrief.priority === "urgent" ? "rgba(248,113,113,0.72)" : cockpit.borderStrong}`,
+                background: proactiveBrief.priority === "urgent" ? "rgba(127,29,29,0.2)" : cockpit.accentSoft,
+              }}
+            >
+              <p style={{ margin: 0, color: proactiveBrief.priority === "urgent" ? "#fca5a5" : cockpit.accent, fontSize: "0.58rem", letterSpacing: "0.13em", textTransform: "uppercase" }}>
+                NEXORA DETECTED · {proactiveBrief.priority}
+              </p>
+              <strong style={{ display: "block", marginTop: "0.38rem", color: cockpit.text, fontSize: "0.76rem" }}>
+                {proactiveBrief.headline}
+              </strong>
+              <p style={{ margin: "0.32rem 0 0", color: cockpit.textSoft, fontSize: "0.66rem", lineHeight: 1.45 }}>
+                {proactiveBrief.summary}
+              </p>
+
+              <p style={{ margin: "0.62rem 0 0.24rem", color: cockpit.lowMuted, fontSize: "0.56rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                Current facts
+              </p>
+              <ul style={{ margin: 0, paddingLeft: "1rem", color: cockpit.text, fontSize: "0.62rem", lineHeight: 1.5 }}>
+                {proactiveBrief.currentFacts.map((fact) => <li key={fact}>{fact}</li>)}
+              </ul>
+
+              {proactiveBrief.historicalContext.length > 0 ? (
+                <>
+                  <p style={{ margin: "0.58rem 0 0.24rem", color: cockpit.lowMuted, fontSize: "0.56rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    Relevant history
+                  </p>
+                  {proactiveBrief.historicalContext.map((history) => (
+                    <p key={history.memoryId} style={{ margin: "0.18rem 0 0", color: cockpit.textSoft, fontSize: "0.6rem", lineHeight: 1.4 }}>
+                      {history.summary}
+                    </p>
+                  ))}
+                </>
+              ) : null}
+
+              <details style={{ marginTop: "0.58rem", color: cockpit.textSoft, fontSize: "0.59rem" }}>
+                <summary style={{ cursor: "pointer", color: cockpit.text }}>Evidence</summary>
+                {proactiveBrief.evidence.map((entry) => (
+                  <p key={entry.evidenceId} style={{ margin: "0.3rem 0 0", lineHeight: 1.4 }}>
+                    {entry.statement} · {entry.currentObservationId}
+                  </p>
+                ))}
+              </details>
+
+              <p style={{ margin: "0.58rem 0 0.24rem", color: cockpit.lowMuted, fontSize: "0.56rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                Suggested next question
+              </p>
+              <p style={{ margin: 0, color: cockpit.textSoft, fontSize: "0.61rem", lineHeight: 1.4 }}>
+                {proactiveBrief.suggestedNextQuestions[0]}
+              </p>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.68rem" }}>
+                <button type="button" onClick={() => onProactiveInvestigate?.(proactiveBrief)} style={{ fontSize: "0.59rem" }}>Investigate</button>
+                <button type="button" onClick={() => onProactiveViewOnStage?.(proactiveBrief.subjectIds[0]!)} style={{ fontSize: "0.59rem" }}>View on Stage</button>
+                <button type="button" onClick={() => acknowledgeProactiveAdvisorBrief(proactiveBrief.workspaceId, proactiveBrief.briefId, new Date().toISOString())} style={{ fontSize: "0.59rem" }}>Acknowledge</button>
+                <button type="button" onClick={() => dismissProactiveAdvisorBrief(proactiveBrief.workspaceId, proactiveBrief.briefId, new Date().toISOString())} style={{ fontSize: "0.59rem" }}>Dismiss</button>
+              </div>
+            </section>
+          ) : null}
 
           {advisorPanels.preparation ? (
             <NexoraExecutivePreparationPanel

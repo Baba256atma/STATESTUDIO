@@ -13,6 +13,9 @@ export type NexoraMVPStageObjectFixture = {
   /** Includes unresolved so missing runtime truth never falls back to healthy. */
   readonly status: "stable" | "watch" | "risk" | "unresolved";
   readonly attention: "normal" | "elevated" | "important" | "critical";
+  /** Preformatted canonical value supplied by the Stage adapter when active. */
+  readonly primaryValue?: string;
+  readonly primaryMetricLabel?: string;
 };
 
 export type NexoraMVPStageRelationshipFixture = {

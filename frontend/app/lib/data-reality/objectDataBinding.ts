@@ -17,7 +17,7 @@ import {
   universalNexoraObjectPublicIndex,
   type NexoraObjectIdentity,
   type NexoraObjectType,
-} from "@/app/lib/nol/universalNexoraObjectPublicIndex";
+} from "../nol/universalNexoraObjectPublicIndex.ts";
 
 import type {
   NexoraBoundBusinessFact,

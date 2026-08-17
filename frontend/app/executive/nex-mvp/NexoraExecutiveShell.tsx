@@ -29,7 +29,15 @@ import {
 } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlow";
 import type { NexoraMVPIntelligenceAction } from "@/app/lib/nex-mvp/nexoraMVPExecutiveIntelligence";
 import type { NexoraMVPDataRealityDatasetScenario } from "@/app/lib/nex-mvp/nexoraMVPDataRealityStageBridge";
-import { resolveNexoraMVPDataRealityAwareStageExperience } from "@/app/lib/nex-mvp/nexoraMVPDataRealityAwareStageExperience";
+import type { CsvCommittedImport } from "@/app/lib/data-reality/csvRealDataImportStore";
+import type { ExecutiveSourceAdvisorContext } from "@/app/lib/data-reality/executiveSourceIntelligence";
+import type { NexoraLiveCommittedObservation } from "@/app/lib/data-reality/liveDataConnectorFoundation";
+import type { NexoraProactiveAdvisorBrief } from "@/app/lib/data-reality/proactiveAdvisorDelivery";
+import {
+  alignPresentationViewModelToStageKpiTruth,
+  getDataRealityAwareStageObjectBindingFromExperience,
+  resolveNexoraMVPDataRealityAwareStageExperience,
+} from "@/app/lib/nex-mvp/nexoraMVPDataRealityAwareStageExperience";
 import { resolveNexoraMVPDataRealityAwareAdvisorExperience } from "@/app/lib/nex-mvp/nexoraMVPDataRealityAwareAdvisorExperience";
 import { resolveNexoraMVPDataRealityAwareFocusAttentionExperience } from "@/app/lib/nex-mvp/nexoraMVPDataRealityAwareFocusAttentionExperience";
 import {
@@ -133,6 +141,8 @@ import { NexoraFlowFloatingContent } from "./flow/NexoraFlowFloatingContent";
 import { NexoraFlowJournalExplorer } from "./flow/NexoraFlowJournalExplorer";
 import { NexoraStageMount } from "./NexoraStageMount";
 import { NexoraWorkspaceDialMount } from "./NexoraWorkspaceDialMount";
+import { NexoraExecutiveDataExplorer } from "./data/NexoraExecutiveDataExplorer";
+import { NexoraAutomaticMonitoringCoordinator } from "./data/NexoraAutomaticMonitoringCoordinator";
 
 const DEFAULT_CONTEXT = Object.freeze({
   company: "Nexora",
@@ -179,11 +189,20 @@ export function NexoraExecutiveShell({
       environmentIntent: application.environmentIntent,
     }),
   );
+  const [activeCsvImport, setActiveCsvImport] =
+    useState<CsvCommittedImport | null>(null);
+  const [activeLiveObservation, setActiveLiveObservation] =
+    useState<NexoraLiveCommittedObservation | null>(null);
+  const [sourceAdvisorContext, setSourceAdvisorContext] =
+    useState<ExecutiveSourceAdvisorContext | null>(null);
+  const activeCsvDataset = activeCsvImport?.prepared.handoff?.dataset;
+  const activeSourceDataset = activeLiveObservation?.handoff.dataset ?? activeCsvDataset;
 
   const dataRealityExperience = useMemo(
     () =>
       resolveNexoraMVPDataRealityAwareStageExperience({
         datasetScenario,
+        ...(activeSourceDataset ? { dataset: activeSourceDataset } : {}),
         focusedObjectId: interaction.focusedSubject?.id,
         selectedObjectId: interaction.selectedSubject?.id,
         selectedObjectIds: interaction.selectedSubject
@@ -195,8 +214,9 @@ export function NexoraExecutiveShell({
       }),
     [
       datasetScenario,
+      activeSourceDataset,
       interaction.focusedSubject?.id,
-      interaction.selectedSubject?.id,
+      interaction.selectedSubject,
       interaction.workspace,
       interaction.presentationState,
     ],
@@ -487,7 +507,7 @@ export function NexoraExecutiveShell({
       flowDomain,
       focusedSubject?.id ?? null,
     );
-    return Object.freeze({
+    const resolved = Object.freeze({
       ...base,
       essentialStatus: overlayNexoraMVPPresentationStatus(
         base.essentialStatus,
@@ -496,7 +516,18 @@ export function NexoraExecutiveShell({
       ),
       availableActions,
     });
-  }, [focusedSubject, flowDomain, interaction]);
+    const activeBinding =
+      dataRealityExperience.usesActiveDataSource && focusedSubject != null
+        ? getDataRealityAwareStageObjectBindingFromExperience(
+            dataRealityExperience,
+            focusedSubject.id,
+          )
+        : undefined;
+    return alignPresentationViewModelToStageKpiTruth(
+      resolved,
+      activeBinding,
+    );
+  }, [dataRealityExperience, focusedSubject, flowDomain, interaction]);
 
   const advisorBridge = useMemo(
     () =>
@@ -978,6 +1009,35 @@ export function NexoraExecutiveShell({
     setActiveNav("Home");
   }, []);
 
+  const onCsvImportCommitted = useCallback((committed: CsvCommittedImport) => {
+    setActiveCsvImport(committed);
+    setActiveLiveObservation(null);
+    setSourceAdvisorContext(null);
+    setAdvisorTab("Assist");
+  }, []);
+
+  const onLiveObservationActivated = useCallback((observation: NexoraLiveCommittedObservation) => {
+    setActiveLiveObservation(observation);
+    setActiveCsvImport(null);
+    setSourceAdvisorContext(null);
+    setAdvisorTab("Assist");
+  }, []);
+
+  const onViewSourceOnStage = useCallback((stageObjectId: string) => {
+    onSelectSubject(stageObjectId);
+    setActiveNav("Home");
+  }, [onSelectSubject]);
+
+  const onSourceAdvisorContext = useCallback((context: ExecutiveSourceAdvisorContext) => {
+    setSourceAdvisorContext(context);
+    setAdvisorTab("Assist");
+  }, []);
+
+  const onProactiveInvestigate = useCallback((brief: NexoraProactiveAdvisorBrief) => {
+    setSourceAdvisorContext(brief.advisorContext);
+    setAdvisorTab("Assist");
+  }, []);
+
   const onFloatingClose = useCallback(() => {
     setFloatingKind(null);
   }, []);
@@ -1040,7 +1100,17 @@ export function NexoraExecutiveShell({
   ]);
 
   const explorerContent =
-    explorerKind === "journal" ? (
+    explorerKind === "data" ? (
+      <NexoraExecutiveDataExplorer
+        workspaceId={interaction.workspace}
+        activeImport={activeCsvImport}
+        activeLiveObservation={activeLiveObservation}
+        onImportCommitted={onCsvImportCommitted}
+        onLiveObservationActivated={onLiveObservationActivated}
+        onViewOnStage={onViewSourceOnStage}
+        onAdvisorContext={onSourceAdvisorContext}
+      />
+    ) : explorerKind === "journal" ? (
       <NexoraFlowJournalExplorer
         entries={journalEntries}
         selectedId={selectedJournalId}
@@ -1052,7 +1122,11 @@ export function NexoraExecutiveShell({
         style={{ padding: "0.85rem" }}
       >
         <ExecutiveEmptyState
-          title={explorerKind ? explorerTitle(explorerKind) : "Explorer"}
+          title={
+            explorerKind
+              ? explorerTitle(explorerKind)
+              : "Explorer"
+          }
           body="Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars."
           actionHint="Select a destination from Left Nav"
           testId="nexora-explorer-empty"
@@ -1077,6 +1151,8 @@ export function NexoraExecutiveShell({
       data-shell-version={shellIdentity.version}
       data-flow-identity="NEX-MVP:8/NexoraExecutiveFlowIntegration"
       data-nexora-dataset={datasetScenario}
+      data-rdi2-active-import={activeCsvImport?.importId ?? "none"}
+      data-rdi2-dataset-id={activeCsvDataset?.id ?? "none"}
       data-data-reality-stage-binding={
         dataRealityExperience.stageBinding.identity.identity
       }
@@ -1138,6 +1214,11 @@ export function NexoraExecutiveShell({
         overflow: "hidden",
       }}
     >
+      <NexoraAutomaticMonitoringCoordinator
+        workspaceId={interaction.workspace}
+        activeSourceContextId={activeLiveObservation?.sourceContextId ?? activeCsvImport?.sourceContextId ?? null}
+        onActiveObservation={onLiveObservationActivated}
+      />
       <ExecutiveContextBar context={context} onThemeChange={setTheme} />
 
       <div
@@ -1152,6 +1233,7 @@ export function NexoraExecutiveShell({
 
         <ExecutiveExplorerDrawer
           kind={explorerKind}
+          title={explorerKind === "data" ? "Data Explorer" : undefined}
           width={explorerWidth}
           onWidthChange={setExplorerWidth}
           onClose={onExplorerClose}
@@ -1274,6 +1356,9 @@ export function NexoraExecutiveShell({
           onExecuteNextBestAction={onExecuteNextBestAction}
           onSelectBriefOption={onSelectBriefOption}
           advisorRealityBinding={dataRealityAdvisorExperience.advisorBinding}
+          sourceIntelligenceContext={sourceAdvisorContext}
+          onProactiveInvestigate={onProactiveInvestigate}
+          onProactiveViewOnStage={onViewSourceOnStage}
           conversationalMessages={conversationalMessages}
           conversationalProcessing={conversationalProcessing}
           conversationalContextLabel={

@@ -146,6 +146,8 @@ export interface DataRealityAwareMVPObjectRuntimeState {
   readonly recommendedAction?: DataRealityExecutiveGuidance;
   readonly hasData: boolean;
   readonly hasKPI: boolean;
+  /** Canonical Data Reality KPI passthrough from the same resolved snapshot. */
+  readonly primaryKPI?: DataRealityAdvisorMVPObjectReality["primaryKPI"];
   readonly resolutionStatus: DataRealityAdvisorMVPObjectResolutionStatus;
   readonly isSelected: boolean;
   readonly isFocused: boolean;
@@ -312,6 +314,9 @@ function projectObjectRuntimeState(
       : {}),
     hasData: objectReality.hasData,
     hasKPI: objectReality.hasKPI,
+    ...(objectReality.primaryKPI !== undefined
+      ? { primaryKPI: objectReality.primaryKPI }
+      : {}),
     resolutionStatus: objectReality.resolutionStatus,
     isSelected: selectedIds.has(objectReality.objectId),
     isFocused: focusedObjectId === objectReality.objectId,

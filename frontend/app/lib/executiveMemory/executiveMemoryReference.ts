@@ -7,9 +7,12 @@ import type { ExecutiveMemoryId, ExecutiveMemoryWorkspaceId } from "./executiveM
 
 export type ExecutiveMemoryReferenceType =
   | "goal"
+  | "problem"
   | "intent"
   | "scenario"
   | "decision"
+  | "execution"
+  | "outcome"
   | "object"
   | "relationship"
   | "kpi"

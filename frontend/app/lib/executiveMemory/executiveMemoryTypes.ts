@@ -23,9 +23,14 @@ export type ExecutiveMemoryPlatformIdentity = Readonly<{
 
 export type ExecutiveMemoryCategory =
   | "goal"
+  | "problem"
   | "intent"
   | "scenario"
   | "decision"
+  | "decision_rationale"
+  | "execution"
+  | "outcome"
+  | "learning"
   | "evidence"
   | "kpi_reference"
   | "risk_reference"

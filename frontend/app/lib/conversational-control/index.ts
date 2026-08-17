@@ -10,6 +10,15 @@
  * Debug-only: nexora-cc4-dispatch event
  */
 
+export * from "./executiveExecutionPolicy.ts";
+export * from "./executiveExecutionRuntimeAdapter.ts";
+export * from "./executiveExecutionFollowUp.ts";
+export * from "./executiveFollowUpSnapshot.ts";
+export * from "./executiveFollowUpMemory.ts";
+export * from "./executiveFollowUpChange.ts";
+export * from "./executiveFollowUpAdvisorResponse.ts";
+export * from "./executiveFollowUpMemoryAdvisor.ts";
+
 export {
   conversationalIntentFoundationIdentity,
   conversationalIntentFoundationVersion,

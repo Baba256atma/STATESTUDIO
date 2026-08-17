@@ -40,10 +40,17 @@ export function resolveExecutiveMemoryStorageProviderCapabilities(
       readOnly: true as const,
     });
   }
+  if (kind === "local_storage") {
+    return Object.freeze({
+      kind,
+      supportsTransactions: true,
+      supportsArchive: true,
+      implemented: true,
+      readOnly: true as const,
+    });
+  }
   const placeholder =
-    kind === "local_storage"
-      ? EXECUTIVE_MEMORY_STORAGE_FUTURE_PROVIDERS.localStorage
-      : EXECUTIVE_MEMORY_STORAGE_FUTURE_PROVIDERS.database;
+    EXECUTIVE_MEMORY_STORAGE_FUTURE_PROVIDERS.database;
   return Object.freeze({
     kind,
     supportsTransactions: false,
