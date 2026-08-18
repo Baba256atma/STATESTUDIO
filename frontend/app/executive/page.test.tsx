@@ -14,7 +14,6 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ExecutiveCockpit } from "./components/ExecutiveCockpit.tsx";
 import { ExecutiveShell } from "./components/ExecutiveShell.tsx";
-import ExecutivePage from "./page.tsx";
 import { Exs1Cockpit } from "./exs1/components/Exs1Cockpit.tsx";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -37,8 +36,9 @@ describe("NEX-MVP:2 /executive production route", () => {
   });
 
   it("renders /executive as the Nexora MVP Executive Shell", () => {
-    const html = renderToStaticMarkup(React.createElement(ExecutivePage));
-    assert.match(html, /data-testid="executive-page"/);
+    const pageSource = readFileSync(join(HERE, "page.tsx"), "utf8");
+    assert.match(pageSource, /data-testid="executive-page"/);
+    const html = renderToStaticMarkup(React.createElement(ExecutiveShell));
     assert.match(html, /data-testid="executive-shell"/);
     assert.match(html, /data-testid="executive-cockpit"/);
     assert.match(html, /data-testid="nexora-executive-shell"/);

@@ -60,13 +60,13 @@ function pipeline(objectId: string, presentationState: "minimum" | "report" | "o
   return applyExecutiveStageFixedCameraToStagePresentation(withRecomp);
 }
 
-test("identity STAGE-OBJ:4-FIX / 4.4.2", () => {
+test("identity STAGE-OBJ:4-FIX / 4.4.3", () => {
   const identity = getExecutiveStageReservedRegionContainmentIdentity();
   assert.equal(
     identity.id,
     "STAGE-OBJ:4-FIX/ExecutiveStageReservedRegionContainment",
   );
-  assert.equal(identity.version, "4.4.2");
+  assert.equal(identity.version, "4.4.3");
   assert.equal(verifyExecutiveStageReservedRegionContainment().ok, true);
   assert.equal(
     EXECUTIVE_STAGE_RESERVED_REGION_CONTAINMENT_BOUNDARY.movesCamera,

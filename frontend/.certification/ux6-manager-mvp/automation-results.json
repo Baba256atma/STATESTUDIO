@@ -1,0 +1,65 @@
+{
+  "status": "PASS-WITH-NONLIVE-DEBT",
+  "releaseGate": {
+    "tests": 395,
+    "passed": 395,
+    "failed": 0,
+    "commands": [
+      {
+        "scope": "UX:2 through UX:5-FIX1, including Advisor, chat, continuity, parity, navigation identity, workflow, and collection integrity",
+        "command": "npx tsx --test app/lib/nex-mvp/nexoraExecutiveUx*.test.ts",
+        "tests": 106,
+        "passed": 106,
+        "failed": 0
+      },
+      {
+        "scope": "Conversational Control, Decision Runtime, Execution Runtime, follow-up, and session-memory boundaries",
+        "command": "npx tsx --test app/lib/conversational-control/*.test.ts",
+        "tests": 255,
+        "passed": 255,
+        "failed": 0
+      },
+      {
+        "scope": "CSV route ownership and Data Reality Advisor evidence",
+        "command": "npx tsx --test app/lib/data-reality/csvRealDataExecutiveRouteCertification.test.ts app/lib/data-reality/dataRealityExecutiveAdvisorEndToEndCertification.test.ts",
+        "tests": 14,
+        "passed": 14,
+        "failed": 0
+      },
+      {
+        "scope": "UX:1 Executive Shell composition",
+        "command": "npx tsx --test app/executive/nex-mvp/NexoraExecutiveShell.test.tsx",
+        "tests": 20,
+        "passed": 20,
+        "failed": 0
+      }
+    ]
+  },
+  "nonLiveBoundarySuites": {
+    "tests": 31,
+    "passed": 28,
+    "failed": 3,
+    "failures": [
+      "EI:6 APP-4 learning promotion returns promoted=false when the durable provider has not been registered by the test setup.",
+      "The dependent promoted-learning trace is incomplete.",
+      "The dependent future-learning retrieval has no memory to retrieve."
+    ],
+    "impact": "Post-MVP Outcome/Learning integration debt. Durable APP-4's own 11 boundary/lifecycle/retrieval tests pass, and no live Outcome/Learning surface is claimed."
+  },
+  "excludedStaleCertification": {
+    "suite": "app/lib/data-reality/dataRealityEndToEndStageRealityCertification.test.ts",
+    "tests": 47,
+    "passed": 39,
+    "failed": 8,
+    "reason": "This older structural suite contains assertions incompatible with the certified UX:2 fixed z=0 Stage and current visibility semantics. Current CSV route/evidence tests and the hydrated WebGL certification pass. The stale suite remains explicit test debt rather than being hidden."
+  },
+  "build": {
+    "status": "FAIL-UNRELATED",
+    "compile": "PASS",
+    "typescript": "FAIL",
+    "file": "app/api/monitoring/background/route.ts",
+    "line": 48,
+    "error": "Property 'completed' does not exist on type '{}'.",
+    "classification": "Pre-existing repository-wide P1 release-engineering debt; the hydrated /executive runtime and all manager-facing release-gate tests pass."
+  }
+}

@@ -36,6 +36,9 @@ import {
   resolveExecutiveThreadSectorPosition,
 } from "@/app/lib/spatial-presentation/executiveThreadExpansion";
 import {
+  NEXORA_MVP_CONTEXT_LINK_FIXTURES,
+} from "@/app/lib/nex-mvp/nexoraMVPObjectInteractionFixtures";
+import {
   NEXORA_MVP_STAGE_RELATIONSHIP_FIXTURES,
 } from "@/app/lib/nex-mvp/nexoraMVPStageFixtures";
 import type { NexoraMVPStageObjectRole } from "./nexora3DExecutiveStage";
@@ -50,34 +53,85 @@ export const NEXORA_MVP_EXECUTIVE_STAGE_2D_READABILITY_BOUNDARY = Object.freeze(
   overviewDefersToNetworkTopology: true as const,
 });
 
+function undirectedEdgeKey(sourceId: string, targetId: string): string {
+  return sourceId < targetId
+    ? `${sourceId}::${targetId}`
+    : `${targetId}::${sourceId}`;
+}
+
+function collectCanonicalContextLinks(
+  presentation: NexoraMVPStageInteractionPresentation,
+) {
+  const seen = new Set<string>();
+  const links: Array<{
+    readonly id: string;
+    readonly objectId: string;
+    readonly contextId: string;
+  }> = [];
+  const add = (id: string, objectId: string, contextId: string) => {
+    if (!id || !objectId || !contextId || objectId === contextId) return;
+    const key = undirectedEdgeKey(objectId, contextId);
+    if (seen.has(key)) return;
+    seen.add(key);
+    links.push(
+      Object.freeze({
+        id,
+        objectId,
+        contextId,
+      }),
+    );
+  };
+  for (const connection of presentation.contextConnections ?? []) {
+    add(connection.id, connection.sourceId, connection.targetId);
+  }
+  for (const link of NEXORA_MVP_CONTEXT_LINK_FIXTURES) {
+    add(link.id, link.objectId, link.contextId);
+  }
+  return Object.freeze(links);
+}
+
 function collectRelationships(
   presentation: NexoraMVPStageInteractionPresentation,
 ) {
-  const fromScene = presentation.scene.connections
-    .filter(
-      (connection) =>
-        connection.visualRole !== "hidden" &&
-        // STAGE-THREAD:1 — executive-thread edges are rendered but do not
-        // redefine Business Object 1-hop related neighborhood.
-        connection.visualRole !== "context",
-    )
-    .map((connection) =>
+  const seen = new Set<string>();
+  const edges: Array<{
+    readonly id: string;
+    readonly sourceId: string;
+    readonly targetId: string;
+  }> = [];
+  const add = (id: string, sourceId: string, targetId: string) => {
+    if (!id || !sourceId || !targetId || sourceId === targetId) return;
+    const key = undirectedEdgeKey(sourceId, targetId);
+    if (seen.has(key)) return;
+    seen.add(key);
+    edges.push(
       Object.freeze({
-        id: connection.id,
-        sourceId: connection.sourceId,
-        targetId: connection.targetId,
+        id,
+        sourceId,
+        targetId,
       }),
     );
-  if (fromScene.length > 0) return Object.freeze(fromScene);
-  return Object.freeze(
-    NEXORA_MVP_STAGE_RELATIONSHIP_FIXTURES.map((edge) =>
-      Object.freeze({
-        id: edge.id,
-        sourceId: edge.sourceId,
-        targetId: edge.targetId,
-      }),
-    ),
-  );
+  };
+
+  for (const connection of presentation.scene.connections) {
+    // Neighborhood truth is independent of visualRole. Hidden edges still
+    // encode canonical 1-hop adjacency. Thread visual edges stay excluded.
+    if (connection.visualRole === "context") continue;
+    add(connection.id, connection.sourceId, connection.targetId);
+  }
+
+  for (const edge of NEXORA_MVP_STAGE_RELATIONSHIP_FIXTURES) {
+    add(edge.id, edge.sourceId, edge.targetId);
+  }
+
+  // UX:2 — canonical object↔work links are relationship truth, not inference.
+  // When a Problem / Scenario / Decision / Execution is the Stage anchor,
+  // linked business Objects remain in the 1-hop neighborhood.
+  for (const link of collectCanonicalContextLinks(presentation)) {
+    add(link.id, link.objectId, link.contextId);
+  }
+
+  return Object.freeze(edges);
 }
 
 function collectSecondaryCandidates(
@@ -199,6 +253,7 @@ export function resolveExecutiveStage2DTopologyReadabilityFromPresentation(
       }),
     ),
     relationships: collectRelationships(presentation),
+    contextLinks: collectCanonicalContextLinks(presentation),
     secondaryCandidates: collectSecondaryCandidates(presentation),
   });
 }

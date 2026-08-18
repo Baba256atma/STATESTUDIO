@@ -220,7 +220,8 @@ test("10: unknown intent", () => {
   const result = run("Do something interesting", { seed: "unk" });
   assert.equal(result.status, "unsupported");
   assert.equal(result.shouldCommitRuntime, false);
-  assert.equal(result.response, "I couldn't map that to a Nexora command.");
+  assert.match(result.response, /not sure how that relates/i);
+  assert.doesNotMatch(result.response, /map.*command|unsupported intent/i);
 });
 
 test("11: not-found subject", () => {
@@ -235,7 +236,10 @@ test("12: unsupported compare", () => {
   const result = run("Compare Revenue and Capacity", { seed: "cmp" });
   assert.equal(result.status, "unsupported");
   assert.equal(result.shouldCommitRuntime, false);
-  assert.equal(result.response, "Comparison control isn't available yet.");
+  assert.equal(
+    result.response,
+    "I can’t compare those subjects with the available validated context yet.",
+  );
   assert.equal(result.nextRuntimeState.focusedSubject, null);
 });
 
@@ -296,7 +300,7 @@ test("18: response text matches status", () => {
   assert.equal(run("Open it").response, "Which item do you mean?");
   assert.equal(
     run("Compare Revenue and Capacity").response,
-    "Comparison control isn't available yet.",
+    "I can’t compare those subjects with the available validated context yet.",
   );
 });
 

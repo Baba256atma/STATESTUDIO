@@ -60,7 +60,7 @@ export function NexoraStageInteractionBreadcrumb({
         padding: "0.3rem 0.55rem",
         borderRadius: cockpit.radius.md,
         border: `1px solid ${cockpit.border}`,
-        background: "rgba(8, 14, 24, 0.72)",
+        background: "rgba(8, 14, 24, 0.48)",
         backdropFilter: "blur(8px)",
         pointerEvents: "auto",
       }}
@@ -85,7 +85,14 @@ export function NexoraStageInteractionBreadcrumb({
 
         return (
           <span
-            key={`${entry.id}-${entry.navigationTrailIndex ?? index}`}
+            key={
+              entry.navigationTrailEntryId ??
+              `${entry.id}-legacy-${entry.navigationTrailIndex ?? index}`
+            }
+            data-navigation-trail-entry-id={
+              entry.navigationTrailEntryId ?? "legacy"
+            }
+            data-navigation-subject-id={entry.id}
             style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
           >
             {index === 1 && showOverflowBefore ? (

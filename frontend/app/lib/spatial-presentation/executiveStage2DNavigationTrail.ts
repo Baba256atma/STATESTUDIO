@@ -77,26 +77,86 @@ export const EXECUTIVE_STAGE_2D_NAVIGATION_TRAIL_OBSERVABILITY = Object.freeze({
  */
 export type ExecutiveStage2DNavigationTrail = {
   readonly objectIds: readonly string[];
+  /** UX:4-FIX4 — stable identity for each navigation occurrence. */
+  readonly trailEntryIds: readonly string[];
   readonly activeObjectId: string | null;
   readonly currentIndex: number;
+  /** Monotonic within this bounded session trail; never reused after branching. */
+  readonly nextTrailEntrySequence: number;
 };
 
 export function createEmptyExecutiveStage2DNavigationTrail(): ExecutiveStage2DNavigationTrail {
   return Object.freeze({
     objectIds: Object.freeze([]),
+    trailEntryIds: Object.freeze([]),
     activeObjectId: null,
     currentIndex: -1,
+    nextTrailEntrySequence: 0,
+  });
+}
+
+function createExecutiveStage2DNavigationTrailEntryId(sequence: number): string {
+  return `stage2d-navigation-${sequence}`;
+}
+
+/** Upgrade legacy/session-restored trails without changing subject identity. */
+export function ensureExecutiveStage2DNavigationTrailOccurrenceIdentity(
+  trail: ExecutiveStage2DNavigationTrail,
+): ExecutiveStage2DNavigationTrail {
+  const candidate = trail as ExecutiveStage2DNavigationTrail & {
+    readonly trailEntryIds?: readonly string[];
+    readonly nextTrailEntrySequence?: number;
+  };
+  const existingIds = candidate.trailEntryIds ?? [];
+  const used = new Set<string>();
+  let sequence = Math.max(
+    Number.isFinite(candidate.nextTrailEntrySequence)
+      ? candidate.nextTrailEntrySequence!
+      : 0,
+    trail.objectIds.length,
+  );
+  const trailEntryIds = trail.objectIds.map((_, index) => {
+    const existing = existingIds[index];
+    if (existing && !used.has(existing)) {
+      used.add(existing);
+      return existing;
+    }
+    let generated = createExecutiveStage2DNavigationTrailEntryId(index);
+    while (used.has(generated)) {
+      generated = createExecutiveStage2DNavigationTrailEntryId(sequence);
+      sequence += 1;
+    }
+    used.add(generated);
+    return generated;
+  });
+  const nextTrailEntrySequence = Math.max(sequence, trail.objectIds.length);
+  if (
+    existingIds.length === trail.objectIds.length &&
+    trailEntryIds.every((id, index) => id === existingIds[index]) &&
+    candidate.nextTrailEntrySequence === nextTrailEntrySequence
+  ) {
+    return trail;
+  }
+  return Object.freeze({
+    ...trail,
+    trailEntryIds: Object.freeze(trailEntryIds),
+    nextTrailEntrySequence,
   });
 }
 
 function freezeTrail(
   objectIds: readonly string[],
   currentIndex: number,
+  trailEntryIds: readonly string[],
+  nextTrailEntrySequence: number,
 ): ExecutiveStage2DNavigationTrail {
-  const bounded = objectIds.slice(
-    Math.max(0, objectIds.length - EXECUTIVE_STAGE_2D_NAVIGATION_TRAIL_LIMITS.maxEntries),
+  const boundedStart = Math.max(
+    0,
+    objectIds.length - EXECUTIVE_STAGE_2D_NAVIGATION_TRAIL_LIMITS.maxEntries,
   );
-  const indexOffset = objectIds.length - bounded.length;
+  const bounded = objectIds.slice(boundedStart);
+  const boundedEntryIds = trailEntryIds.slice(boundedStart);
+  const indexOffset = boundedStart;
   const nextIndex =
     currentIndex < 0
       ? -1
@@ -108,8 +168,10 @@ function freezeTrail(
     nextIndex >= 0 && nextIndex < bounded.length ? bounded[nextIndex]! : null;
   return Object.freeze({
     objectIds: Object.freeze([...bounded]),
+    trailEntryIds: Object.freeze([...boundedEntryIds]),
     activeObjectId,
     currentIndex: activeObjectId == null ? -1 : nextIndex,
+    nextTrailEntrySequence,
   });
 }
 
@@ -124,10 +186,9 @@ export function pushExecutiveStage2DNavigationEntry(
   objectId: string,
 ): ExecutiveStage2DNavigationTrail {
   if (!objectId) return trail;
-  if (
-    trail.activeObjectId === objectId &&
-    trail.currentIndex === trail.objectIds.length - 1
-  ) {
+  // Re-selecting the current occurrence is a semantic no-op, even after Back.
+  // It neither appends nor discards the valid Forward branch.
+  if (trail.activeObjectId === objectId) {
     return trail;
   }
   // Truncate forward branch when navigating from a non-tip index.
@@ -135,11 +196,30 @@ export function pushExecutiveStage2DNavigationEntry(
     trail.currentIndex >= 0
       ? trail.objectIds.slice(0, trail.currentIndex + 1)
       : [...trail.objectIds];
+  const baseEntryIds =
+    trail.currentIndex >= 0
+      ? trail.trailEntryIds.slice(0, trail.currentIndex + 1)
+      : [...trail.trailEntryIds];
   // Consecutive duplicate after truncate (active tip) — no-op.
   if (base.length > 0 && base[base.length - 1] === objectId) {
-    return freezeTrail(base, base.length - 1);
+    return freezeTrail(
+      base,
+      base.length - 1,
+      baseEntryIds,
+      trail.nextTrailEntrySequence,
+    );
   }
-  return freezeTrail([...base, objectId], base.length);
+  return freezeTrail(
+    [...base, objectId],
+    base.length,
+    [
+      ...baseEntryIds,
+      createExecutiveStage2DNavigationTrailEntryId(
+        trail.nextTrailEntrySequence,
+      ),
+    ],
+    trail.nextTrailEntrySequence + 1,
+  );
 }
 
 export function stepBackExecutiveStage2DNavigationTrail(
@@ -153,7 +233,12 @@ export function stepBackExecutiveStage2DNavigationTrail(
     // Back from first entry → Overview (empty trail).
     return createEmptyExecutiveStage2DNavigationTrail();
   }
-  return freezeTrail(trail.objectIds, trail.currentIndex - 1);
+  return freezeTrail(
+    trail.objectIds,
+    trail.currentIndex - 1,
+    trail.trailEntryIds,
+    trail.nextTrailEntrySequence,
+  );
 }
 
 export function stepForwardExecutiveStage2DNavigationTrail(
@@ -161,7 +246,12 @@ export function stepForwardExecutiveStage2DNavigationTrail(
 ): ExecutiveStage2DNavigationTrail {
   if (trail.currentIndex < 0) return trail;
   if (trail.currentIndex >= trail.objectIds.length - 1) return trail;
-  return freezeTrail(trail.objectIds, trail.currentIndex + 1);
+  return freezeTrail(
+    trail.objectIds,
+    trail.currentIndex + 1,
+    trail.trailEntryIds,
+    trail.nextTrailEntrySequence,
+  );
 }
 
 /**
@@ -179,7 +269,12 @@ export function jumpExecutiveStage2DNavigationTrail(
     return createEmptyExecutiveStage2DNavigationTrail();
   }
   const nextIndex = Math.min(index, trail.objectIds.length - 1);
-  return freezeTrail(trail.objectIds, nextIndex);
+  return freezeTrail(
+    trail.objectIds,
+    nextIndex,
+    trail.trailEntryIds,
+    trail.nextTrailEntrySequence,
+  );
 }
 
 export function resetExecutiveStage2DNavigationTrail(): ExecutiveStage2DNavigationTrail {
@@ -198,13 +293,20 @@ export function sanitizeExecutiveStage2DNavigationTrail(
   if (trail.objectIds.length === 0) {
     return createEmptyExecutiveStage2DNavigationTrail();
   }
-  const validPairs: { readonly id: string; readonly wasActive: boolean }[] = [];
+  const validPairs: {
+    readonly id: string;
+    readonly trailEntryId: string;
+    readonly wasActive: boolean;
+  }[] = [];
   for (let index = 0; index < trail.objectIds.length; index += 1) {
     const id = trail.objectIds[index]!;
     if (!isValidObjectId(id)) continue;
     validPairs.push(
       Object.freeze({
         id,
+        trailEntryId:
+          trail.trailEntryIds[index] ??
+          createExecutiveStage2DNavigationTrailEntryId(index),
         wasActive: index === trail.currentIndex,
       }),
     );
@@ -213,9 +315,15 @@ export function sanitizeExecutiveStage2DNavigationTrail(
     return createEmptyExecutiveStage2DNavigationTrail();
   }
   const objectIds = validPairs.map((entry) => entry.id);
+  const trailEntryIds = validPairs.map((entry) => entry.trailEntryId);
   // STAGE-PROD:1 — Overview with retained Forward tip (currentIndex < 0, ids kept).
   if (trail.currentIndex < 0) {
-    return freezeTrail(objectIds, -1);
+    return freezeTrail(
+      objectIds,
+      -1,
+      trailEntryIds,
+      trail.nextTrailEntrySequence,
+    );
   }
   let currentIndex = validPairs.findIndex((entry) => entry.wasActive);
   if (currentIndex < 0) {
@@ -227,7 +335,12 @@ export function sanitizeExecutiveStage2DNavigationTrail(
     currentIndex = Math.max(0, priorCount - 1);
     if (priorCount === 0) currentIndex = 0;
   }
-  return freezeTrail(objectIds, currentIndex);
+  return freezeTrail(
+    objectIds,
+    currentIndex,
+    trailEntryIds,
+    trail.nextTrailEntrySequence,
+  );
 }
 
 export function canStepBackExecutiveStage2DNavigationTrail(

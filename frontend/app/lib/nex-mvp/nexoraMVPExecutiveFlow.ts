@@ -93,6 +93,13 @@ export const NEXORA_MVP_FLOW_BOUNDARY = Object.freeze({
   inventsExecutionEngine: false as const,
   inventsTimelineEngine: false as const,
   inventsJournalEngine: false as const,
+  ownsWorkflowProgression: false as const,
+  ownsRecommendationTruth: false as const,
+  ownsOutcomeTruth: false as const,
+  ownsLearningTruth: false as const,
+  nextActionAuthority: "Professional Advisor / NBA" as const,
+  outcomeAuthority: "EI:6 + RDI / Data Reality" as const,
+  learningAuthority: "EI:6 + APP-4" as const,
   importsPrivateUpstreamImplementation: false as const,
   uiSafe: true as const,
   fixturesReplaceable: true as const,
@@ -154,6 +161,54 @@ export type NexoraMVPExecutiveFlowContext = {
   readonly linkedScenarios: readonly NexoraMVPFlowChainLink[];
   readonly linkedDecisions: readonly NexoraMVPFlowChainLink[];
   readonly linkedExecutions: readonly NexoraMVPFlowChainLink[];
+};
+
+export type NexoraMVPExecutiveWorkflowPhase =
+  | "overview"
+  | "attention"
+  | "investigate"
+  | "understand"
+  | "scenario"
+  | "decision"
+  | "execution"
+  | "outcome"
+  | "learning";
+
+export type NexoraMVPExecutiveWorkflowReadiness =
+  | "choose-attention"
+  | "needs-investigation"
+  | "evidence-limited"
+  | "ready-to-evaluate"
+  | "scenario-projection"
+  | "decision-required"
+  | "decision-complete"
+  | "execution-planned"
+  | "in-execution"
+  | "execution-blocked"
+  | "outcome-evidence-required"
+  | "outcome-available"
+  | "learning-available"
+  | "no-current-workflow";
+
+export type NexoraMVPExecutiveWorkflowEvidenceReadiness =
+  | "supported"
+  | "limited"
+  | "unknown";
+
+/** UX:5 read-only manager journey projection; never a workflow state machine. */
+export type NexoraMVPExecutiveWorkflowPresentation = {
+  readonly phase: NexoraMVPExecutiveWorkflowPhase;
+  readonly phaseLabel: string;
+  readonly readiness: NexoraMVPExecutiveWorkflowReadiness;
+  readonly readinessLabel: string;
+  readonly reason: string;
+  readonly currentSubjectId: string | null;
+  readonly attentionSubject: NexoraMVPFlowChainLink | null;
+  readonly nextAvailableSubject: NexoraMVPFlowChainLink | null;
+  readonly outcomeAvailability: "available" | "unavailable";
+  readonly outcomeMessage: string;
+  readonly learningAvailability: "available" | "unavailable";
+  readonly learningMessage: string;
 };
 
 export type NexoraMVPTimelinePackView = {
@@ -437,6 +492,162 @@ export function deriveNexoraMVPExecutiveFlowContext(input: {
           : []),
       ]),
     ),
+  });
+}
+
+export function deriveNexoraMVPExecutiveWorkflowPresentation(input: {
+  readonly context: NexoraMVPExecutiveFlowContext;
+  readonly flowState: NexoraMVPFlowDomainState;
+  readonly evidenceReadiness: NexoraMVPExecutiveWorkflowEvidenceReadiness;
+  readonly attentionSubjectId?: string | null;
+  /** Supplied only by an existing EI:6 evaluation projection. */
+  readonly outcomeAvailable?: boolean;
+  /** Supplied only by an existing EI:6 / APP-4 learning projection. */
+  readonly learningAvailable?: boolean;
+}): NexoraMVPExecutiveWorkflowPresentation {
+  const current = input.context.focusedSubject ?? input.context.selectedSubject;
+  const attentionSubject = asLink(input.attentionSubjectId ?? null);
+  const currentSubjectId = current?.id ?? null;
+  const currentKind = current?.kind ?? null;
+  const decision = input.context.decision
+    ? decisionOf(input.flowState, input.context.decision.id)
+    : null;
+  const execution = input.context.execution
+    ? executionOf(input.flowState, input.context.execution.id)
+    : null;
+  const outcomeAvailable = input.outcomeAvailable === true;
+  const learningAvailable =
+    outcomeAvailable && input.learningAvailable === true;
+
+  let phase: NexoraMVPExecutiveWorkflowPhase;
+  let phaseLabel: string;
+  let readiness: NexoraMVPExecutiveWorkflowReadiness;
+  let readinessLabel: string;
+  let reason: string;
+
+  if (current == null) {
+    if (attentionSubject) {
+      phase = "attention";
+      phaseLabel = "Attention";
+      readiness = "choose-attention";
+      readinessLabel = `${attentionSubject.label} needs attention`;
+      reason = "No explicit subject is selected. Choose what to investigate.";
+    } else {
+      phase = "overview";
+      phaseLabel = "Overview";
+      readiness = "no-current-workflow";
+      readinessLabel = "Executive overview";
+      reason = "No explicit workflow subject is selected.";
+    }
+  } else if (currentKind === "object") {
+    phase = "investigate";
+    phaseLabel = "Investigating";
+    readiness = "needs-investigation";
+    readinessLabel = "Review the situation and evidence";
+    reason = `${current.label} is the current executive subject.`;
+  } else if (currentKind === "problem") {
+    phase = "understand";
+    phaseLabel = "Understanding";
+    if (input.evidenceReadiness === "supported") {
+      readiness = "ready-to-evaluate";
+      readinessLabel =
+        input.context.linkedScenarios.length > 0
+          ? "Ready to evaluate options"
+          : "Evidence available; no scenario linked";
+    } else {
+      readiness = "evidence-limited";
+      readinessLabel = "More investigation recommended";
+    }
+    reason = "Understand the problem, evidence, and uncertainty before deciding.";
+  } else if (currentKind === "scenario") {
+    phase = "scenario";
+    phaseLabel = "Scenario";
+    readiness = "scenario-projection";
+    readinessLabel =
+      input.context.linkedDecisions.length > 0
+        ? "Decision available for review"
+        : "Scenario projection; no decision linked";
+    reason = "Scenario results are projections, not observed reality.";
+  } else if (currentKind === "decision") {
+    phase = "decision";
+    phaseLabel = "Decision";
+    if (decision?.status === "approved") {
+      readiness = "decision-complete";
+      readinessLabel =
+        input.context.linkedExecutions.length > 0
+          ? "Decision approved; execution available"
+          : "Decision approved; no execution linked";
+    } else {
+      readiness = "decision-required";
+      readinessLabel = "Decision required";
+    }
+    reason =
+      "Nexora may recommend an option, but only the manager can commit the Decision.";
+  } else {
+    phase = "execution";
+    phaseLabel = "Execution";
+    if (execution?.status === "blocked") {
+      readiness = "execution-blocked";
+      readinessLabel = "Execution blocked · outcome not yet available";
+    } else if (execution?.status === "planned") {
+      readiness = "execution-planned";
+      readinessLabel = "Execution planned · outcome not yet available";
+    } else if (
+      execution?.status === "in-progress" ||
+      execution?.status === "paused"
+    ) {
+      readiness = "in-execution";
+      readinessLabel =
+        execution.status === "paused"
+          ? "Execution paused · outcome not yet available"
+          : "In execution · outcome not yet available";
+    } else if (execution?.status === "complete" && outcomeAvailable) {
+      readiness = "outcome-available";
+      readinessLabel = "Outcome available";
+    } else if (execution?.status === "complete") {
+      readiness = "outcome-evidence-required";
+      readinessLabel = "Outcome evidence required";
+    } else {
+      readiness = "in-execution";
+      readinessLabel = "Review execution";
+    }
+    reason =
+      execution?.blocker != null
+        ? `Blocker: ${execution.blocker}`
+        : "Review progress, blockers, and the next supported execution action.";
+  }
+
+  const currentChainIndex = currentSubjectId
+    ? input.context.chain.links.findIndex(
+        (link) => link.id === currentSubjectId,
+      )
+    : -1;
+  const nextAvailableSubject =
+    currentChainIndex >= 0
+      ? (input.context.chain.links[currentChainIndex + 1] ?? null)
+      : current == null
+        ? attentionSubject
+        : null;
+
+  return Object.freeze({
+    phase,
+    phaseLabel,
+    readiness,
+    readinessLabel,
+    reason,
+    currentSubjectId,
+    attentionSubject,
+    nextAvailableSubject,
+    outcomeAvailability: outcomeAvailable ? "available" : "unavailable",
+    outcomeMessage: outcomeAvailable
+      ? "Validated expected-versus-actual outcome evidence is available."
+      : execution?.status === "complete"
+        ? "Execution is complete, but no validated actual outcome is available."
+        : "No validated outcome is currently available for this workflow.",
+    learningAvailability: learningAvailable ? "available" : "unavailable",
+    learningMessage: learningAvailable
+      ? "Validated learning is available through the existing memory authority."
+      : "No validated learning is currently available for this workflow.",
   });
 }
 

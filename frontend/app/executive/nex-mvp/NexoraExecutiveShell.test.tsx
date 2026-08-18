@@ -143,7 +143,7 @@ describe("NEX-MVP:2 Nexora Executive Shell", () => {
       React.createElement(NexoraExecutiveShell),
     );
     assert.match(html, /data-testid="executive-status-bar"/);
-    assert.match(html, /NEX-MVP · 1\.2\.0/);
+    assert.match(html, /Nexora · 1\.2\.0/);
   });
 
   it("12. Explorer Drawer host exists", () => {
@@ -245,5 +245,26 @@ describe("NEX-MVP:2 Nexora Executive Shell", () => {
     const sandbox = readFileSync(join(HERE, "../exs1/page.tsx"), "utf8");
     assert.match(sandbox, /Exs1Cockpit/);
     assert.match(sandbox, /data-testid="exs1-page"/);
+  });
+
+  it("20. UX:1 keeps three primary regions and progressive disclosure", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(NexoraExecutiveShell),
+    );
+    assert.match(html, /data-ux1="simplify-executive-page"/);
+    assert.match(html, /data-ux1-region="executive-context"/);
+    assert.match(html, /data-ux1-region="nexora-advisor"/);
+    assert.match(html, /data-testid="executive-stage-frame"/);
+    assert.match(html, /data-testid="nexora-advisor-insight-region"/);
+    assert.match(html, /data-testid="nexora-executive-queue"/);
+    assert.match(html, /data-queue-compact="true"/);
+    assert.match(html, /data-timeline-collapsed="true"/);
+    assert.match(html, /data-manager-visible="false"/);
+    assert.match(html, /data-testid="nexora-conversational-input"/);
+    assert.match(html, /data-testid="nexora-prepare-daily"/);
+    assert.match(html, /data-testid="nexora-workspace-option-overview"/);
+    assert.match(html, /data-testid="nexora-presentation-option-minimum"/);
+    assert.match(html, /data-testid="executive-nav-objects"/);
+    assert.doesNotMatch(html, /Daily Prep/);
   });
 });

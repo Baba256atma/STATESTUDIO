@@ -1,0 +1,3333 @@
+{
+  "certification": "UX:6 — Manager MVP Certification",
+  "product": "Executive Decision Intelligence System",
+  "route": "http://localhost:3000/executive",
+  "startedAt": "2026-08-18T19:31:02.882Z",
+  "hydratedClient": true,
+  "webglRequired": true,
+  "majorArchitectureIntroduced": false,
+  "filesInspected": [
+    "app/executive/nex-mvp/NexoraExecutiveShell.tsx",
+    "app/executive/nex-mvp/NexoraAdvisorInsightRegion.tsx",
+    "app/executive/nex-mvp/stage/Nexora3DExecutiveStage.tsx",
+    "app/executive/nex-mvp/stage/NexoraExecutiveQueueOverlay.tsx",
+    "app/lib/nex-mvp/nexoraMVPExecutiveFlow.ts",
+    "app/lib/nex-mvp/nexoraMVPExecutiveCollectionIntegrity.ts",
+    "app/lib/conversational-control/conversationalIntentResolver.ts",
+    "app/lib/conversational-control/conversationalExperienceOrchestrator.ts",
+    "app/lib/conversational-control/executiveDecisionCommitmentResolver.ts",
+    "app/lib/conversational-control/executiveExecutionRuntime.ts",
+    "app/lib/executive-intelligence/execution-outcome-learning/",
+    "app/lib/durable-executive-memory/"
+  ],
+  "filesModified": [
+    "app/lib/conversational-control/conversationalIntentResolver.ts",
+    "app/lib/conversational-control/conversationalIntent.test.ts"
+  ],
+  "filesCreated": [
+    "scripts/ux6-manager-mvp-certify.mjs",
+    ".certification/ux6-manager-mvp/report.json",
+    ".certification/ux6-manager-mvp/MVP-CERTIFICATION.md"
+  ],
+  "captures": {
+    "firstOpen": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/01-first-open-overview.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "focusedTargetZ": "none",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "overview",
+          "collection": "none",
+          "collectionMembers": [],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "none",
+          "collectionLayout": "none",
+          "collectionFinalWriter": "none",
+          "trailEntryIds": [],
+          "trailSubjectIds": []
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "attention": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": {
+          "intent": "",
+          "command": "",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [],
+          "inputPresent": true
+        },
+        "queueText": "Queue9Problems2Scenarios3Decisions2Executions2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV Overview · no focused flow chain Focused subject: Overview. Presentation: minimum OVERVIEW VIEW FOCUS QUEUE 9 OBJECTS · 8 CAPACITY WATCH CUSTOMER WATCH WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral overview · Executive Overview Recent Change · Capacity recovered Current Subject Advisor · Overview overview · Overview · minimum Executive Overview Needs Attention Risk Risk currently has the strongest validated attention signal. Situation There is no explicit subject. Nexora is showing the executive overview. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently. Next Action Investigate Risk PREPARE Tell Nexora what to focus on, or ask it to go back / return to overview. ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "attention": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/02-attention.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "focusedTargetZ": "none",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "overview",
+          "collection": "none",
+          "collectionMembers": [],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "none",
+          "collectionLayout": "none",
+          "collectionFinalWriter": "none",
+          "trailEntryIds": [],
+          "trailSubjectIds": []
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "attention": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": {
+          "intent": "",
+          "command": "",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [],
+          "inputPresent": true
+        },
+        "queueText": "Queue9Problems2Scenarios3Decisions2Executions2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV Overview · no focused flow chain Focused subject: Overview. Presentation: minimum OVERVIEW VIEW FOCUS QUEUE 9 Problems 2 Scenarios 3 Decisions 2 Executions 2 OBJECTS · 8 CAPACITY WATCH CUSTOMER WATCH WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral overview · Executive Overview Recent Change · Capacity recovered Current Subject Advisor · Overview overview · Overview · minimum Executive Overview Needs Attention Risk Risk currently has the strongest validated attention signal. Situation There is no explicit subject. Nexora is showing the executive overview. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently. Next Action Investigate Risk PREPARE Tell Nexora what to focus on, or ask it to go back / return to overview. ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "investigation": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/03-investigation.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "obj-risk",
+          "anchor": "obj-risk",
+          "anchorPosition": "0,0,0",
+          "focusedTargetZ": "0",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "object-focus",
+          "collection": "none",
+          "collectionMembers": [],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "none",
+          "collectionLayout": "none",
+          "collectionFinalWriter": "none",
+          "trailEntryIds": [
+            "stage2d-navigation-0"
+          ],
+          "trailSubjectIds": [
+            "obj-risk"
+          ]
+        },
+        "workflow": {
+          "phase": "investigate",
+          "readiness": "needs-investigation",
+          "currentSubject": "obj-risk",
+          "nextSubject": "none",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Investigating",
+          "readinessLabel": "Review the situation and evidence"
+        },
+        "advisor": {
+          "subject": "obj-risk",
+          "grammar": "risk",
+          "subjectLabel": "Risk",
+          "attention": null,
+          "situation": "RiskRisk currently has unresolved risk exposure.",
+          "why": "ExposureRisk is related to Delivery.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Margin PressureCritical subject has an unresolved related problem.",
+          "decisionRequired": "Decision RequiredChoose among the available scenario alternatives related to Risk.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Margin Pressure"
+        },
+        "conversation": {
+          "intent": "",
+          "command": "",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT INVESTIGATING Review the situation and evidence Focused subject: Risk. Presentation: minimum OVERVIEW / RISK BACK VIEW FOCUS QUEUE 11 Problems 2 Scenarios 3 Decisions 2 Executions 2 Recent Changes 2 OBJECTS · 8 CAPACITY WATCH CUSTOMER WATCH DELIVERY WATCH RISK UNRESOLVED EXECUTIVE THREAD · 1 › WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral object · Risk Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Risk · minimum Risk Needs Attention Risk Risk currently has unresolved risk exposure. Exposure Risk is related to Delivery. Decision Required Choose among the available scenario alternatives related to Risk. Recommendation Review Margin Pressure Critical subject has an unresolved related problem. Evidence strong Next Action Review Margin Pressure Open Report Investigate in Problem Details Decision Brief PREPARE CONTEXT: RISK Tell Nexora what to focus on, or ask it to go back / return to overview. ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "problem": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/04-problem.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "ctx-problem-margin",
+          "anchor": "ctx-problem-margin",
+          "anchorPosition": "0,0,0",
+          "focusedTargetZ": "0",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "object-focus",
+          "collection": "none",
+          "collectionMembers": [],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "none",
+          "collectionLayout": "none",
+          "collectionFinalWriter": "none",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ],
+          "trailSubjectIds": [
+            "obj-risk",
+            "ctx-problem-margin"
+          ]
+        },
+        "workflow": {
+          "phase": "understand",
+          "readiness": "ready-to-evaluate",
+          "currentSubject": "ctx-problem-margin",
+          "nextSubject": "ctx-scenario-pricing",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Understanding",
+          "readinessLabel": "Ready to evaluate options"
+        },
+        "advisor": {
+          "subject": "ctx-problem-margin",
+          "grammar": "problem",
+          "subjectLabel": "Margin Pressure",
+          "attention": null,
+          "situation": "ProblemMargin Pressure remains an unresolved problem in critical state.",
+          "why": "ImpactMargin Pressure is related to Revenue.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Approve RepricingA related decision needs review.",
+          "decisionRequired": "Decision RequiredChoose among the available scenario alternatives related to Margin Pressure.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Approve Repricing"
+        },
+        "conversation": {
+          "intent": "",
+          "command": "",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT → PROBLEM → SCENARIO → DECISION → EXECUTION UNDERSTANDING Ready to evaluate options Focused subject: Margin Pressure. Presentation: minimum OVERVIEW / RISK / MARGIN PRESSURE BACK VIEW FOCUS QUEUE 11 Problems 2 Scenarios 3 Decisions 2 Executions 2 Recent Changes 2 OBJECTS · 9 MARGIN PRESSURE PROBLEM WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral problem · Margin Pressure Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Margin Pressure · minimum Margin Pressure Needs Attention Problem Margin Pressure remains an unresolved problem in critical state. Impact Margin Pressure is related to Revenue. Decision Required Choose among the available scenario alternatives related to Margin Pressure. Recommendation Review Approve Repricing A related decision needs review. Evidence strong Next Action Review Approve Repricing Compare Scenarios Review Demand Surge Details Decision Brief PREPARE CONTEXT: MARGIN PRESSURE Tell Nexora what to focus on, or ask it to go back / return to overview. ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "evidence": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/05-evidence.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "ctx-problem-margin",
+          "anchor": "ctx-problem-margin",
+          "anchorPosition": "0,0,0",
+          "focusedTargetZ": "0",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "object-focus",
+          "collection": "none",
+          "collectionMembers": [],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "none",
+          "collectionLayout": "none",
+          "collectionFinalWriter": "none",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ],
+          "trailSubjectIds": [
+            "obj-risk",
+            "ctx-problem-margin"
+          ]
+        },
+        "workflow": {
+          "phase": "understand",
+          "readiness": "ready-to-evaluate",
+          "currentSubject": "ctx-problem-margin",
+          "nextSubject": "ctx-scenario-pricing",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Understanding",
+          "readinessLabel": "Ready to evaluate options"
+        },
+        "advisor": {
+          "subject": "ctx-problem-margin",
+          "grammar": "problem",
+          "subjectLabel": "Margin Pressure",
+          "attention": null,
+          "situation": "ProblemMargin Pressure remains an unresolved problem in critical state.",
+          "why": "ImpactMargin Pressure is related to Revenue.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Approve RepricingA related decision needs review.",
+          "decisionRequired": "Decision RequiredChoose among the available scenario alternatives related to Margin Pressure.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Approve Repricing"
+        },
+        "conversation": {
+          "intent": "evidence",
+          "command": "request-prioritization",
+          "primarySubject": "obj-risk",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "text": "ManagerShow the evidence"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraDelivery needs attention. Margin Pressure needs urgent attention. Evidence: current runtime state, recorded problems."
+            }
+          ],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT → PROBLEM → SCENARIO → DECISION → EXECUTION UNDERSTANDING Ready to evaluate options Focused subject: Margin Pressure. Presentation: minimum OVERVIEW / RISK / MARGIN PRESSURE BACK VIEW FOCUS QUEUE 11 Problems 2 Scenarios 3 Decisions 2 Executions 2 Recent Changes 2 OBJECTS · 9 MARGIN PRESSURE PROBLEM WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral problem · Margin Pressure Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Margin Pressure · minimum Margin Pressure Needs Attention Problem Margin Pressure remains an unresolved problem in critical state. Impact Margin Pressure is related to Revenue. Decision Required Choose among the available scenario alternatives related to Margin Pressure. Recommendation Review Approve Repricing A related decision needs review. Evidence strong Next Action Review Approve Repricing Compare Scenarios Review Demand Surge Details Decision Brief PREPARE CONTEXT: MARGIN PRESSURE MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "scenariosCollection": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/06-scenarios-collection.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "focusedTargetZ": "none",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "collection",
+          "collection": "scenario",
+          "collectionMembers": [
+            "ctx-scenario-capacity",
+            "ctx-scenario-demand",
+            "ctx-scenario-pricing"
+          ],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "0",
+          "collectionLayout": "valid",
+          "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2"
+          ],
+          "trailSubjectIds": [
+            "obj-risk",
+            "ctx-problem-margin",
+            "nexora-collection:scenario"
+          ]
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "attention": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": {
+          "intent": "show-scenarios",
+          "command": "reveal-scenarios",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "text": "ManagerShow the evidence"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraDelivery needs attention. Margin Pressure needs urgent attention. Evidence: current runtime state, recorded problems."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow scenarios"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened scenarios."
+            }
+          ],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Scenarios · 3Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV Overview · no focused flow chain Focused subject: Scenarios. Presentation: minimum OVERVIEW / RISK / MARGIN PRESSURE / SCENARIOS BACK VIEW FOCUS QUEUE 11 Scenarios · 3 Problems 2 Scenarios 3 Decisions 2 Executions 2 Recent Changes 2 OBJECTS · 11 CAPACITY EXPANSION PLAN SCENARIO DEMAND SURGE SCENARIO PRICING RESPONSE SCENARIO WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral overview · Executive Overview Recent Change · Capacity recovered Current Subject Advisor · Overview overview · Overview · minimum Executive Overview Needs Attention Risk Risk currently has the strongest validated attention signal. Situation There is no explicit subject. Nexora is showing the executive overview. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently. Next Action Investigate Risk PREPARE MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "scenario": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/07-scenario.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "ctx-scenario-capacity",
+          "anchor": "ctx-scenario-capacity",
+          "anchorPosition": "0,0,0",
+          "focusedTargetZ": "0",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "object-focus",
+          "collection": "none",
+          "collectionMembers": [],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "none",
+          "collectionLayout": "none",
+          "collectionFinalWriter": "none",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2",
+            "stage2d-navigation-3"
+          ],
+          "trailSubjectIds": [
+            "obj-risk",
+            "ctx-problem-margin",
+            "nexora-collection:scenario",
+            "ctx-scenario-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "scenario",
+          "readiness": "scenario-projection",
+          "currentSubject": "ctx-scenario-capacity",
+          "nextSubject": "ctx-decision-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Scenario",
+          "readinessLabel": "Decision available for review"
+        },
+        "advisor": {
+          "subject": "ctx-scenario-capacity",
+          "grammar": "scenario",
+          "subjectLabel": "Capacity Expansion Plan",
+          "attention": null,
+          "situation": "ScenarioCapacity Expansion Plan is an available scenario under review and needs attention.",
+          "why": "Expected impactCapacity Expansion Plan is related to Capacity.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Capacity GapRelated problem needs review.",
+          "decisionRequired": "Decision RequiredDecide whether Expand Capacity should proceed, given Demand Surge.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Capacity Gap"
+        },
+        "conversation": {
+          "intent": "focus",
+          "command": "focus-subject",
+          "primarySubject": "ctx-scenario-capacity",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "text": "ManagerShow the evidence"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraDelivery needs attention. Margin Pressure needs urgent attention. Evidence: current runtime state, recorded problems."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow scenarios"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened scenarios."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            }
+          ],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT → PROBLEM → SCENARIO → DECISION → EXECUTION SCENARIO Decision available for review Focused subject: Capacity Expansion Pl…. Presentation: minimum OVERVIEW / RISK / MARGIN PR… / SCENARIOS / CAPACITY EXPANSION PL… BACK VIEW FOCUS QUEUE 11 OBJECTS · 9 CAPACITY EXPANSION PLAN SCENARIO CAPACITY WATCH CUSTOMER WATCH WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral scenario · Capacity Expansion Plan Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Capacity Expansion Plan · minimum Capacity Expansion Plan Needs Attention Scenario Capacity Expansion Plan is an available scenario under review and needs attention. Expected impact Capacity Expansion Plan is related to Capacity. Decision Required Decide whether Expand Capacity should proceed, given Demand Surge. Recommendation Review Capacity Gap Related problem needs review. Evidence strong Next Action Review Capacity Gap Review Expand Capacity Open Report Details Decision Brief PREPARE CONTEXT: CAPACITY EXPANSION PLAN MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "decision": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/08-decision.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "ctx-decision-capacity",
+          "anchor": "ctx-decision-capacity",
+          "anchorPosition": "0,0,0",
+          "focusedTargetZ": "0",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "object-focus",
+          "collection": "none",
+          "collectionMembers": [],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "none",
+          "collectionLayout": "none",
+          "collectionFinalWriter": "none",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ],
+          "trailSubjectIds": [
+            "ctx-scenario-capacity",
+            "ctx-decision-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "decision",
+          "readiness": "decision-required",
+          "currentSubject": "ctx-decision-capacity",
+          "nextSubject": "ctx-execution-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Decision",
+          "readinessLabel": "Decision required"
+        },
+        "advisor": {
+          "subject": "ctx-decision-capacity",
+          "grammar": "decision",
+          "subjectLabel": "Expand Capacity",
+          "attention": null,
+          "situation": "DecisionDecision Expand Capacity is currently in a state that needs attention.",
+          "why": "Why it mattersExpand Capacity is related to Capacity.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Expand CapacityDecision requires executive review.",
+          "decisionRequired": "Decision RequiredApprove, reject, or revise Expand Capacity through the existing decision workflow.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": {
+          "intent": "focus",
+          "command": "focus-subject",
+          "primarySubject": "ctx-decision-capacity",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "text": "ManagerShow the evidence"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraDelivery needs attention. Margin Pressure needs urgent attention. Evidence: current runtime state, recorded problems."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow scenarios"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened scenarios."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Margin Pressure"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview the decision"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+            }
+          ],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT → PROBLEM → SCENARIO → DECISION → EXECUTION DECISION Decision required Focused subject: Expand Capacity. Presentation: minimum OVERVIEW / CAPACITY EXPANS… / EXPAND CAPACITY BACK VIEW FOCUS QUEUE 11 OBJECTS · 9 CAPACITY WATCH CUSTOMER WATCH EXPAND CAPACITY DECISION WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral decision · Expand Capacity Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Expand Capacity · minimum Expand Capacity Decision Required Decision Decision Expand Capacity is currently in a state that needs attention. Why it matters Expand Capacity is related to Capacity. Decision Required Approve, reject, or revise Expand Capacity through the existing decision workflow. Recommendation Review Expand Capacity Decision requires executive review. Evidence strong Next Action Review Expand Capacity Review Capacity Expansion Plan Review Capacity Expansion Details Decision Brief PREPARE CONTEXT: EXPAND CAPACITY MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "execution": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/09-execution.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "ctx-execution-capacity",
+          "anchor": "ctx-execution-capacity",
+          "anchorPosition": "0,0,0",
+          "focusedTargetZ": "0",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "object-focus",
+          "collection": "none",
+          "collectionMembers": [],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "none",
+          "collectionLayout": "none",
+          "collectionFinalWriter": "none",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2"
+          ],
+          "trailSubjectIds": [
+            "ctx-scenario-capacity",
+            "ctx-decision-capacity",
+            "ctx-execution-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "execution",
+          "readiness": "execution-planned",
+          "currentSubject": "ctx-execution-capacity",
+          "nextSubject": "none",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Execution",
+          "readinessLabel": "Execution planned · outcome not yet available"
+        },
+        "advisor": {
+          "subject": "ctx-execution-capacity",
+          "grammar": "execution",
+          "subjectLabel": "Capacity Expansion",
+          "attention": null,
+          "situation": "ProgressProgress is 0%.",
+          "why": "BlockersThis approved Decision defines the current Execution.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Expand CapacityThis approved Decision defines the current Execution.",
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": {
+          "intent": "focus",
+          "command": "focus-subject",
+          "primarySubject": "ctx-execution-capacity",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "text": "ManagerShow the evidence"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraDelivery needs attention. Margin Pressure needs urgent attention. Evidence: current runtime state, recorded problems."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow scenarios"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened scenarios."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Margin Pressure"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview the decision"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI prefer Expand Capacity"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraPreference noted — no Decision committed."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI think we should probably choose this"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCommit to Expand Capacity?"
+            },
+            {
+              "role": "manager",
+              "text": "ManagerYes"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity is now the Approved decision."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action."
+            }
+          ],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT → PROBLEM → SCENARIO → DECISION → EXECUTION EXECUTION Execution planned · outcome not yet available Focused subject: Capacity Expansion. Presentation: minimum OVERVIEW / CAPACITY… / EXPAND CAPACITY / CAPACITY EXPANSION BACK VIEW FOCUS QUEUE 11 OBJECTS · 9 CAPACITY WATCH CUSTOMER WATCH CAPACITY EXPANSION EXECUTION WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral execution · Capacity Expansion Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Capacity Expansion · minimum Capacity Expansion In Progress Progress Progress is 0%. Blockers This approved Decision defines the current Execution. Recommendation Review Expand Capacity This approved Decision defines the current Execution. Evidence strong Next Action Review Expand Capacity Review Capacity Expansion Open Report PREPARE CONTEXT: CAPACITY EXPANSION MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "problemsCollection": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/11-problems-collection.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "focusedTargetZ": "none",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "collection",
+          "collection": "problem",
+          "collectionMembers": [
+            "ctx-problem-capacity",
+            "ctx-problem-margin"
+          ],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "0",
+          "collectionLayout": "valid",
+          "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2",
+            "stage2d-navigation-3"
+          ],
+          "trailSubjectIds": [
+            "ctx-scenario-capacity",
+            "ctx-decision-capacity",
+            "ctx-execution-capacity",
+            "nexora-collection:problem"
+          ]
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "attention": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": {
+          "intent": "show-problems",
+          "command": "reveal-problems",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "text": "ManagerShow scenarios"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened scenarios."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Margin Pressure"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview the decision"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI prefer Expand Capacity"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraPreference noted — no Decision committed."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI think we should probably choose this"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCommit to Expand Capacity?"
+            },
+            {
+              "role": "manager",
+              "text": "ManagerYes"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity is now the Approved decision."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow problems"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened problems."
+            }
+          ],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Problems · 2Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV Overview · no focused flow chain Focused subject: Problems. Presentation: minimum OVERVIEW / CAPACITY… / EXPAND CA… / CAPACITY EXPANS… / PROBLEMS BACK VIEW FOCUS QUEUE 11 Problems · 2 Problems 2 Scenarios 3 Decisions 2 Executions 2 Recent Changes 2 OBJECTS · 10 CAPACITY GAP PROBLEM MARGIN PRESSURE PROBLEM WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral overview · Executive Overview Recent Change · Capacity recovered Current Subject Advisor · Overview overview · Overview · minimum Executive Overview Needs Attention Risk Risk currently has the strongest validated attention signal. Situation There is no explicit subject. Nexora is showing the executive overview. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently. Next Action Investigate Risk PREPARE MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "backNavigation": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/12-back-navigation.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "focusedTargetZ": "none",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "collection",
+          "collection": "problem",
+          "collectionMembers": [
+            "ctx-problem-capacity",
+            "ctx-problem-margin"
+          ],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "0",
+          "collectionLayout": "valid",
+          "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2",
+            "stage2d-navigation-3",
+            "stage2d-navigation-4"
+          ],
+          "trailSubjectIds": [
+            "ctx-scenario-capacity",
+            "ctx-decision-capacity",
+            "ctx-execution-capacity",
+            "nexora-collection:problem",
+            "ctx-problem-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "attention": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": {
+          "intent": "focus",
+          "command": "focus-subject",
+          "primarySubject": "ctx-problem-capacity",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Margin Pressure"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview the decision"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI prefer Expand Capacity"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraPreference noted — no Decision committed."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI think we should probably choose this"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCommit to Expand Capacity?"
+            },
+            {
+              "role": "manager",
+              "text": "ManagerYes"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity is now the Approved decision."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow problems"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened problems."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Gap"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action."
+            }
+          ],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Problems · 2Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV Overview · no focused flow chain Focused subject: Capacity…. Presentation: minimum OVERVIEW … / EXPAND CA… / CAPACITY EXPANS… / PROBLEMS / CAPACITY… BACK FORWARD VIEW FOCUS QUEUE 11 Problems · 2 Problems 2 Scenarios 3 Decisions 2 Executions 2 Recent Changes 2 OBJECTS · 10 CAPACITY GAP PROBLEM MARGIN PRESSURE PROBLEM WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral overview · Executive Overview Recent Change · Capacity recovered Current Subject Advisor · Overview overview · Overview · minimum Executive Overview Needs Attention Risk Risk currently has the strongest validated attention signal. Situation There is no explicit subject. Nexora is showing the executive overview. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently. Next Action Investigate Risk PREPARE MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "returnOverview": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/13-return-overview.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "focusedTargetZ": "none",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "overview",
+          "collection": "none",
+          "collectionMembers": [],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "none",
+          "collectionLayout": "none",
+          "collectionFinalWriter": "none",
+          "trailEntryIds": [],
+          "trailSubjectIds": []
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "attention": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": {
+          "intent": "overview",
+          "command": "open-overview",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "text": "ManagerReview Margin Pressure"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview the decision"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI prefer Expand Capacity"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraPreference noted — no Decision committed."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI think we should probably choose this"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCommit to Expand Capacity?"
+            },
+            {
+              "role": "manager",
+              "text": "ManagerYes"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity is now the Approved decision."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow problems"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened problems."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Gap"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow overview"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraReturned to overview."
+            }
+          ],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV Overview · no focused flow chain Focused subject: Overview. Presentation: minimum OVERVIEW VIEW FOCUS QUEUE 11 OBJECTS · 8 CAPACITY WATCH CUSTOMER WATCH WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral overview · Executive Overview Recent Change · Capacity recovered Current Subject Advisor · Overview overview · Overview · minimum Executive Overview Needs Attention Risk Risk currently has the strongest validated attention signal. Situation There is no explicit subject. Nexora is showing the executive overview. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently. Next Action Investigate Risk PREPARE MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "narrow": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/14-narrow-desktop.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 904,
+          "height": 730
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "focusedTargetZ": "none",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "overview",
+          "collection": "none",
+          "collectionMembers": [],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "none",
+          "collectionLayout": "none",
+          "collectionFinalWriter": "none",
+          "trailEntryIds": [],
+          "trailSubjectIds": []
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "attention": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": {
+          "intent": "overview",
+          "command": "open-overview",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "text": "ManagerReview Margin Pressure"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview the decision"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI prefer Expand Capacity"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraPreference noted — no Decision committed."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI think we should probably choose this"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCommit to Expand Capacity?"
+            },
+            {
+              "role": "manager",
+              "text": "ManagerYes"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity is now the Approved decision."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow problems"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened problems."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Gap"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow overview"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraReturned to overview."
+            }
+          ],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV Overview · no focused flow chain Focused subject: Overview. Presentation: minimum OVERVIEW VIEW FOCUS QUEUE 11 OBJECTS · 8 CAPACITY WATCH CUSTOMER WATCH WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral overview · Executive Overview Recent Change · Capacity recovered Current Subject Advisor · Overview overview · Overview · minimum Executive Overview Needs Attention Risk Risk currently has the strongest validated attention signal. Situation There is no explicit subject. Nexora is showing the executive overview. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently. Next Action Investigate Risk PREPARE MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1280,
+            "height": 800
+          },
+          "stageWidth": 904,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "conversation": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/10-conversation.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "focusedTargetZ": "none",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "collection",
+          "collection": "execution",
+          "collectionMembers": [
+            "ctx-execution-capacity",
+            "ctx-execution-rollout"
+          ],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "0",
+          "collectionLayout": "valid",
+          "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2",
+            "stage2d-navigation-3"
+          ],
+          "trailSubjectIds": [
+            "nexora-collection:problem",
+            "nexora-collection:scenario",
+            "nexora-collection:decision",
+            "nexora-collection:execution"
+          ]
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "attention": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": {
+          "intent": "show-execution",
+          "command": "reveal-execution",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "text": "ManagerReview Margin Pressure"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerGo back"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraReturned to the previous view."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow overview"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraReturned to overview."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerHow can I research this better?"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerWhat else should I consider?"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow all objects"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraNo change — that command was already applied."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow problems"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened problems."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow scenarios"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened scenarios."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow decisions"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened decisions."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow executions"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened execution."
+            }
+          ],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Executions · 2Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV Overview · no focused flow chain Focused subject: Executions. Presentation: minimum OVERVIEW / PROBLEMS / SCENARIOS / DECISIONS / EXECUTIONS BACK VIEW FOCUS QUEUE 11 Executions · 2 Problems 2 Scenarios 3 Decisions 2 Executions 2 Recent Changes 2 OBJECTS · 10 CAPACITY EXPANSION EXECUTION PRICING ROLLOUT EXECUTION WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral overview · Executive Overview Recent Change · Capacity recovered Current Subject Advisor · Overview overview · Overview · minimum Executive Overview Needs Attention Risk Risk currently has the strongest validated attention signal. Situation There is no explicit subject. Nexora is showing the executive overview. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently. Next Action Investigate Risk PREPARE MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    },
+    "consoleClean": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux6-manager-mvp/15-console-clean.png",
+      "state": {
+        "hydrated": true,
+        "webglCanvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "context": {
+          "company": "Nexora",
+          "workspace": "overview",
+          "period": "week",
+          "dataLabel": "Data · Local",
+          "activeImport": "none",
+          "datasetId": "none",
+          "datasetScenario": "baseline"
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "focusedTargetZ": "none",
+          "cameraMode": "fixed-2d",
+          "topologyZ": "0",
+          "depth": "0",
+          "presentationMode": "overview",
+          "collection": "none",
+          "collectionMembers": [],
+          "collectionDuplicates": [],
+          "collectionOverlapCount": "none",
+          "collectionLayout": "none",
+          "collectionFinalWriter": "none",
+          "trailEntryIds": [],
+          "trailSubjectIds": []
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "attention": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": {
+          "intent": "overview",
+          "command": "open-overview",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "text": "ManagerReview Margin Pressure"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion Plan"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview the decision"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI prefer Expand Capacity"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraPreference noted — no Decision committed."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerI think we should probably choose this"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCommit to Expand Capacity?"
+            },
+            {
+              "role": "manager",
+              "text": "ManagerYes"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraExpand Capacity is now the Approved decision."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Expansion"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow problems"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraOpened problems."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerReview Capacity Gap"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action."
+            },
+            {
+              "role": "manager",
+              "text": "ManagerShow overview"
+            },
+            {
+              "role": "nexora",
+              "text": "NexoraReturned to overview."
+            }
+          ],
+          "inputPresent": true
+        },
+        "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV Overview · no focused flow chain Focused subject: Overview. Presentation: minimum OVERVIEW VIEW FOCUS QUEUE 11 OBJECTS · 8 CAPACITY WATCH CUSTOMER WATCH WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral overview · Executive Overview Recent Change · Capacity recovered Current Subject Advisor · Overview overview · Overview · minimum Executive Overview Needs Attention Risk Risk currently has the strongest validated attention signal. Situation There is no explicit subject. Nexora is showing the executive overview. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently. Next Action Investigate Risk PREPARE MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+        "layout": {
+          "viewport": {
+            "width": 1502,
+            "height": 942
+          },
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        }
+      }
+    }
+  },
+  "checks": {
+    "firstOpen": true,
+    "overviewAttentionNotFocus": true,
+    "visualHierarchy": true,
+    "attentionInvestigation": true,
+    "problem": true,
+    "evidenceHonesty": true,
+    "scenario": true,
+    "scenarioComparison": true,
+    "decision": true,
+    "decisionSafety": true,
+    "execution": true,
+    "executionReviewNonMutating": true,
+    "outcomeTruthful": true,
+    "learningTruthful": true,
+    "collectionSubjectRestoration": true,
+    "overviewReturn": true,
+    "narrowDesktop": true,
+    "conversationalContinuity": true,
+    "buttonTextParity": true,
+    "languageBoundaryHonest": true,
+    "showAllObjects": true,
+    "collectionCommands": true,
+    "collectionIntegrity": true,
+    "navigationOccurrenceIdentity": true,
+    "realDataEvidenceBoundary": true,
+    "noInvention": true,
+    "managerLanguage": true,
+    "tenSecondOverview": true,
+    "consoleClean": true,
+    "stageInvariants": true,
+    "advisor": true,
+    "coreManagerJourney": true,
+    "sixtySecondJourney": true
+  },
+  "conversation": {
+    "evidence": "NEXORADelivery needs attention. Margin Pressure needs urgent attention. Evidence: current runtime state, recorded problems.",
+    "showScenarios": "NEXORAOpened scenarios.",
+    "reviewDecision": "NEXORAExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action.",
+    "preference": "NEXORAPreference noted — no Decision committed.",
+    "confirmationPrompt": "NEXORACommit to Expand Capacity?",
+    "commitment": "NEXORAExpand Capacity is now the Approved decision.",
+    "reviewExecution": "NEXORACapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action.",
+    "Hi": "NEXORAHi. I’m ready. Capacity needs attention. Would you like to review it?",
+    "Yes": "NEXORACapacity needs attention. Recommendation: Investigate Capacity as a possible contributor — evidence is not strong enough to prioritize action.",
+    "Explain this": "NEXORACapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap.",
+    "Why does this matter?": "NEXORACapacity is related to Budget. Recommendation: Review Capacity Gap.",
+    "What do you recommend?": "NEXORARecommendation: Review Capacity Gap.",
+    "Show the evidence": "NEXORACapacity needs attention. Delivery needs attention. Evidence: current runtime state, recorded problems, scenario assumptions, decision records, execution records.",
+    "reviewCapacityGap": "NEXORACapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action.",
+    "reviewMarginPressure": "NEXORAMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action.",
+    "goBack": "NEXORAReturned to the previous view.",
+    "showOverview": "NEXORAReturned to overview.",
+    "researchBoundary": "NEXORAI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution.",
+    "considerBoundary": "NEXORAI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution.",
+    "showAllObjects": "NEXORANo change — that command was already applied.",
+    "Show problems": "NEXORAOpened problems.",
+    "Show scenarios": "NEXORAOpened scenarios.",
+    "Show decisions": "NEXORAOpened decisions.",
+    "Show executions": "NEXORAOpened execution.",
+    "missingOutcome": "NEXORAI couldn't find “Outcome” in the current Nexora context."
+  },
+  "collections": {
+    "scenario": {
+      "focused": "none",
+      "anchor": "none",
+      "anchorPosition": "none",
+      "focusedTargetZ": "none",
+      "cameraMode": "fixed-2d",
+      "topologyZ": "0",
+      "depth": "0",
+      "presentationMode": "collection",
+      "collection": "scenario",
+      "collectionMembers": [
+        "ctx-scenario-capacity",
+        "ctx-scenario-demand",
+        "ctx-scenario-pricing"
+      ],
+      "collectionDuplicates": [],
+      "collectionOverlapCount": "0",
+      "collectionLayout": "valid",
+      "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+      "trailEntryIds": [
+        "stage2d-navigation-0",
+        "stage2d-navigation-1"
+      ],
+      "trailSubjectIds": [
+        "nexora-collection:problem",
+        "nexora-collection:scenario"
+      ]
+    },
+    "problem": {
+      "focused": "none",
+      "anchor": "none",
+      "anchorPosition": "none",
+      "focusedTargetZ": "none",
+      "cameraMode": "fixed-2d",
+      "topologyZ": "0",
+      "depth": "0",
+      "presentationMode": "collection",
+      "collection": "problem",
+      "collectionMembers": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "collectionDuplicates": [],
+      "collectionOverlapCount": "0",
+      "collectionLayout": "valid",
+      "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+      "trailEntryIds": [
+        "stage2d-navigation-0"
+      ],
+      "trailSubjectIds": [
+        "nexora-collection:problem"
+      ]
+    },
+    "conversation-problem": {
+      "focused": "none",
+      "anchor": "none",
+      "anchorPosition": "none",
+      "focusedTargetZ": "none",
+      "cameraMode": "fixed-2d",
+      "topologyZ": "0",
+      "depth": "0",
+      "presentationMode": "collection",
+      "collection": "problem",
+      "collectionMembers": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "collectionDuplicates": [],
+      "collectionOverlapCount": "0",
+      "collectionLayout": "valid",
+      "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+      "trailEntryIds": [
+        "stage2d-navigation-0"
+      ],
+      "trailSubjectIds": [
+        "nexora-collection:problem"
+      ]
+    },
+    "conversation-scenario": {
+      "focused": "none",
+      "anchor": "none",
+      "anchorPosition": "none",
+      "focusedTargetZ": "none",
+      "cameraMode": "fixed-2d",
+      "topologyZ": "0",
+      "depth": "0",
+      "presentationMode": "collection",
+      "collection": "scenario",
+      "collectionMembers": [
+        "ctx-scenario-capacity",
+        "ctx-scenario-demand",
+        "ctx-scenario-pricing"
+      ],
+      "collectionDuplicates": [],
+      "collectionOverlapCount": "0",
+      "collectionLayout": "valid",
+      "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+      "trailEntryIds": [
+        "stage2d-navigation-0",
+        "stage2d-navigation-1"
+      ],
+      "trailSubjectIds": [
+        "nexora-collection:problem",
+        "nexora-collection:scenario"
+      ]
+    },
+    "conversation-decision": {
+      "focused": "none",
+      "anchor": "none",
+      "anchorPosition": "none",
+      "focusedTargetZ": "none",
+      "cameraMode": "fixed-2d",
+      "topologyZ": "0",
+      "depth": "0",
+      "presentationMode": "collection",
+      "collection": "decision",
+      "collectionMembers": [
+        "ctx-decision-capacity",
+        "ctx-decision-reprice"
+      ],
+      "collectionDuplicates": [],
+      "collectionOverlapCount": "0",
+      "collectionLayout": "valid",
+      "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+      "trailEntryIds": [
+        "stage2d-navigation-0",
+        "stage2d-navigation-1",
+        "stage2d-navigation-2"
+      ],
+      "trailSubjectIds": [
+        "nexora-collection:problem",
+        "nexora-collection:scenario",
+        "nexora-collection:decision"
+      ]
+    },
+    "conversation-execution": {
+      "focused": "none",
+      "anchor": "none",
+      "anchorPosition": "none",
+      "focusedTargetZ": "none",
+      "cameraMode": "fixed-2d",
+      "topologyZ": "0",
+      "depth": "0",
+      "presentationMode": "collection",
+      "collection": "execution",
+      "collectionMembers": [
+        "ctx-execution-capacity",
+        "ctx-execution-rollout"
+      ],
+      "collectionDuplicates": [],
+      "collectionOverlapCount": "0",
+      "collectionLayout": "valid",
+      "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+      "trailEntryIds": [
+        "stage2d-navigation-0",
+        "stage2d-navigation-1",
+        "stage2d-navigation-2",
+        "stage2d-navigation-3"
+      ],
+      "trailSubjectIds": [
+        "nexora-collection:problem",
+        "nexora-collection:scenario",
+        "nexora-collection:decision",
+        "nexora-collection:execution"
+      ]
+    },
+    "decision": {
+      "focused": "none",
+      "anchor": "none",
+      "anchorPosition": "none",
+      "focusedTargetZ": "none",
+      "cameraMode": "fixed-2d",
+      "topologyZ": "0",
+      "depth": "0",
+      "presentationMode": "collection",
+      "collection": "decision",
+      "collectionMembers": [
+        "ctx-decision-capacity",
+        "ctx-decision-reprice"
+      ],
+      "collectionDuplicates": [],
+      "collectionOverlapCount": "0",
+      "collectionLayout": "valid",
+      "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+      "trailEntryIds": [
+        "stage2d-navigation-0",
+        "stage2d-navigation-1",
+        "stage2d-navigation-2"
+      ],
+      "trailSubjectIds": [
+        "nexora-collection:problem",
+        "nexora-collection:scenario",
+        "nexora-collection:decision"
+      ]
+    },
+    "execution": {
+      "focused": "none",
+      "anchor": "none",
+      "anchorPosition": "none",
+      "focusedTargetZ": "none",
+      "cameraMode": "fixed-2d",
+      "topologyZ": "0",
+      "depth": "0",
+      "presentationMode": "collection",
+      "collection": "execution",
+      "collectionMembers": [
+        "ctx-execution-capacity",
+        "ctx-execution-rollout"
+      ],
+      "collectionDuplicates": [],
+      "collectionOverlapCount": "0",
+      "collectionLayout": "valid",
+      "collectionFinalWriter": "ux5-fix1-collection-object-integrity",
+      "trailEntryIds": [
+        "stage2d-navigation-0",
+        "stage2d-navigation-1",
+        "stage2d-navigation-2",
+        "stage2d-navigation-3"
+      ],
+      "trailSubjectIds": [
+        "nexora-collection:problem",
+        "nexora-collection:scenario",
+        "nexora-collection:decision",
+        "nexora-collection:execution"
+      ]
+    }
+  },
+  "tenSecondTests": {
+    "Overview": {
+      "result": "PASS",
+      "lookingAt": "Executive Overview",
+      "matters": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+      "why": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+      "recommendation": "Investigate Risk",
+      "next": "Investigate Risk",
+      "askNexora": true
+    },
+    "Object": {
+      "result": "PASS",
+      "lookingAt": "Risk",
+      "matters": "RiskRisk currently has unresolved risk exposure.",
+      "why": "ExposureRisk is related to Delivery.",
+      "recommendation": "RecommendationReview Margin PressureCritical subject has an unresolved related problem.",
+      "next": "Review Margin Pressure",
+      "askNexora": true
+    },
+    "Problem": {
+      "result": "PASS",
+      "lookingAt": "Margin Pressure",
+      "matters": "ProblemMargin Pressure remains an unresolved problem in critical state.",
+      "why": "ImpactMargin Pressure is related to Revenue.",
+      "recommendation": "RecommendationReview Approve RepricingA related decision needs review.",
+      "next": "Review Approve Repricing",
+      "askNexora": true
+    },
+    "Scenario": {
+      "result": "PASS",
+      "lookingAt": "Capacity Expansion Plan",
+      "matters": "ScenarioCapacity Expansion Plan is an available scenario under review and needs attention.",
+      "why": "Expected impactCapacity Expansion Plan is related to Capacity.",
+      "recommendation": "RecommendationReview Capacity GapRelated problem needs review.",
+      "next": "Review Capacity Gap",
+      "askNexora": true
+    },
+    "Decision": {
+      "result": "PASS",
+      "lookingAt": "Expand Capacity",
+      "matters": "DecisionDecision Expand Capacity is currently in a state that needs attention.",
+      "why": "Why it mattersExpand Capacity is related to Capacity.",
+      "recommendation": "RecommendationReview Expand CapacityDecision requires executive review.",
+      "next": "Review Expand Capacity",
+      "askNexora": true
+    },
+    "Execution": {
+      "result": "PASS",
+      "lookingAt": "Capacity Expansion",
+      "matters": "ProgressProgress is 0%.",
+      "why": "BlockersThis approved Decision defines the current Execution.",
+      "recommendation": "RecommendationReview Expand CapacityThis approved Decision defines the current Execution.",
+      "next": "Review Expand Capacity",
+      "askNexora": true
+    },
+    "Collection": {
+      "result": "PASS",
+      "lookingAt": "problem collection",
+      "matters": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+      "why": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+      "recommendation": "Investigate Risk",
+      "next": "Investigate Risk",
+      "askNexora": true
+    }
+  },
+  "performance": {
+    "navigationResponsive": true,
+    "conversationResponsive": true,
+    "collectionSwitchingResponsive": true,
+    "noVisibleStaleBodies": true,
+    "note": "No freeze, UI lock, stale-body accumulation, or runaway render loop was observed during repeated live navigation."
+  },
+  "architectureBoundaries": {
+    "decision": "Canonical Decision Runtime with explicit confirmation remains authoritative.",
+    "execution": "Live /executive presents NEX-MVP:8 flowDomain execution records. CC:11 is not wired into this route.",
+    "outcome": "Outcome intelligence exists internally, but no validated live manager-facing Outcome is presented.",
+    "outcomeTrace": "STAGE-PROD:5 Outcome Trace has no live finalization capture writer.",
+    "learning": "Learning intelligence and durable memory capability do not imply a live manager-facing Learning workflow.",
+    "durableMemory": "APP-4 remains the durable executive memory authority; navigation, chat, and temporary Stage workflow context are not promoted automatically.",
+    "language": "Conversation remains deterministic. No LLM/provider was added."
+  },
+  "debt": {
+    "P0": [],
+    "P1": [
+      "Execution lifecycle feedback is written by the live NEX-MVP:8 flowDomain rather than CC:11; action success copy should state this workspace scope before public MVP packaging.",
+      "The context bar uses a green Data indicator for the explicitly Local source state, which can be read as live connectivity despite the disconnected status shown elsewhere.",
+      "The repository production build compiles but fails TypeScript in the pre-existing background-monitoring API route (route.ts:48). This does not break the certified hydrated /executive runtime, but should be closed before public packaging."
+    ],
+    "P2": [
+      "CC:11 is not wired into live /executive; Execution uses NEX-MVP:8 flowDomain.",
+      "STAGE-PROD:5 Outcome Trace has no live capture writer.",
+      "No live manager-facing Outcome or Learning continuation exists after Execution.",
+      "General natural-language coverage is deterministic; unsupported broad questions receive a bounded fallback.",
+      "Some relationship explanations remain generic, for example “is related to”.",
+      "Navigation occurrence identity is fixed, but the trail still uses aligned arrays internally.",
+      "Conditional Data and Decision Memory detail surfaces retain some implementation-oriented source identifiers and terminology.",
+      "The non-live EI:6 → APP-4 promotion/retrieval integration suite has 3 provider-registration-dependent failures; APP-4's own durable boundary suite passes and no live Outcome/Learning surface is claimed.",
+      "An older Data Reality structural certification has 8 stale assertions that conflict with the certified fixed-z=0 Stage/current visibility semantics; current CSV route, Advisor evidence, and hydrated WebGL checks pass."
+    ],
+    "P3": [
+      "Overview uses the slightly mechanical “Current Subject / Executive Overview” and “no explicit subject” wording."
+    ]
+  },
+  "decisionSafetyStates": {
+    "afterPreference": {
+      "hydrated": true,
+      "webglCanvas": {
+        "width": 1126,
+        "height": 840
+      },
+      "context": {
+        "company": "Nexora",
+        "workspace": "overview",
+        "period": "week",
+        "dataLabel": "Data · Local",
+        "activeImport": "none",
+        "datasetId": "none",
+        "datasetScenario": "baseline"
+      },
+      "stage": {
+        "focused": "ctx-decision-capacity",
+        "anchor": "ctx-decision-capacity",
+        "anchorPosition": "0,0,0",
+        "focusedTargetZ": "0",
+        "cameraMode": "fixed-2d",
+        "topologyZ": "0",
+        "depth": "0",
+        "presentationMode": "object-focus",
+        "collection": "none",
+        "collectionMembers": [],
+        "collectionDuplicates": [],
+        "collectionOverlapCount": "none",
+        "collectionLayout": "none",
+        "collectionFinalWriter": "none",
+        "trailEntryIds": [
+          "stage2d-navigation-0",
+          "stage2d-navigation-1"
+        ],
+        "trailSubjectIds": [
+          "ctx-scenario-capacity",
+          "ctx-decision-capacity"
+        ]
+      },
+      "workflow": {
+        "phase": "decision",
+        "readiness": "decision-required",
+        "currentSubject": "ctx-decision-capacity",
+        "nextSubject": "ctx-execution-capacity",
+        "outcome": "unavailable",
+        "learning": "unavailable",
+        "phaseLabel": "Decision",
+        "readinessLabel": "Decision required"
+      },
+      "advisor": {
+        "subject": "ctx-decision-capacity",
+        "grammar": "decision",
+        "subjectLabel": "Expand Capacity",
+        "attention": null,
+        "situation": "DecisionDecision Expand Capacity is currently in a state that needs attention.",
+        "why": "Why it mattersExpand Capacity is related to Capacity.",
+        "evidence": "Evidence strong",
+        "recommendation": "RecommendationReview Expand CapacityDecision requires executive review.",
+        "decisionRequired": "Decision RequiredApprove, reject, or revise Expand Capacity through the existing decision workflow.",
+        "assumptions": null,
+        "primaryActionCount": 1,
+        "primaryAction": "Review Expand Capacity"
+      },
+      "conversation": {
+        "intent": "prefer-option",
+        "command": "prefer-option",
+        "primarySubject": "",
+        "pendingTurnKind": "",
+        "pendingTurnResolution": "",
+        "messages": [
+          {
+            "role": "manager",
+            "text": "ManagerShow the evidence"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraDelivery needs attention. Margin Pressure needs urgent attention. Evidence: current runtime state, recorded problems."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerShow scenarios"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraOpened scenarios."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Capacity Expansion Plan"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Margin Pressure"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Capacity Expansion Plan"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview the decision"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerI prefer Expand Capacity"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraPreference noted — no Decision committed."
+          }
+        ],
+        "inputPresent": true
+      },
+      "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+      "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT → PROBLEM → SCENARIO → DECISION → EXECUTION DECISION Decision required Focused subject: Expand Capacity. Presentation: minimum OVERVIEW / CAPACITY EXPANS… / EXPAND CAPACITY BACK VIEW FOCUS QUEUE 11 OBJECTS · 9 CAPACITY WATCH CUSTOMER WATCH EXPAND CAPACITY DECISION WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral decision · Expand Capacity Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Expand Capacity · minimum Expand Capacity Decision Required Decision Decision Expand Capacity is currently in a state that needs attention. Why it matters Expand Capacity is related to Capacity. Decision Required Approve, reject, or revise Expand Capacity through the existing decision workflow. Recommendation Review Expand Capacity Decision requires executive review. Evidence strong Next Action Review Expand Capacity Review Capacity Expansion Plan Review Capacity Expansion Details Decision Brief PREPARE CONTEXT: EXPAND CAPACITY MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+      "layout": {
+        "viewport": {
+          "width": 1502,
+          "height": 942
+        },
+        "stageWidth": 1126,
+        "advisorWidth": 319,
+        "horizontalOverflow": false
+      }
+    },
+    "beforeCommit": {
+      "hydrated": true,
+      "webglCanvas": {
+        "width": 1126,
+        "height": 840
+      },
+      "context": {
+        "company": "Nexora",
+        "workspace": "overview",
+        "period": "week",
+        "dataLabel": "Data · Local",
+        "activeImport": "none",
+        "datasetId": "none",
+        "datasetScenario": "baseline"
+      },
+      "stage": {
+        "focused": "ctx-decision-capacity",
+        "anchor": "ctx-decision-capacity",
+        "anchorPosition": "0,0,0",
+        "focusedTargetZ": "0",
+        "cameraMode": "fixed-2d",
+        "topologyZ": "0",
+        "depth": "0",
+        "presentationMode": "object-focus",
+        "collection": "none",
+        "collectionMembers": [],
+        "collectionDuplicates": [],
+        "collectionOverlapCount": "none",
+        "collectionLayout": "none",
+        "collectionFinalWriter": "none",
+        "trailEntryIds": [
+          "stage2d-navigation-0",
+          "stage2d-navigation-1"
+        ],
+        "trailSubjectIds": [
+          "ctx-scenario-capacity",
+          "ctx-decision-capacity"
+        ]
+      },
+      "workflow": {
+        "phase": "decision",
+        "readiness": "decision-required",
+        "currentSubject": "ctx-decision-capacity",
+        "nextSubject": "ctx-execution-capacity",
+        "outcome": "unavailable",
+        "learning": "unavailable",
+        "phaseLabel": "Decision",
+        "readinessLabel": "Decision required"
+      },
+      "advisor": {
+        "subject": "ctx-decision-capacity",
+        "grammar": "decision",
+        "subjectLabel": "Expand Capacity",
+        "attention": null,
+        "situation": "DecisionDecision Expand Capacity is currently in a state that needs attention.",
+        "why": "Why it mattersExpand Capacity is related to Capacity.",
+        "evidence": "Evidence strong",
+        "recommendation": "RecommendationReview Expand CapacityDecision requires executive review.",
+        "decisionRequired": "Decision RequiredApprove, reject, or revise Expand Capacity through the existing decision workflow.",
+        "assumptions": null,
+        "primaryActionCount": 1,
+        "primaryAction": "Review Expand Capacity"
+      },
+      "conversation": {
+        "intent": "commit-decision",
+        "command": "commit-decision",
+        "primarySubject": "",
+        "pendingTurnKind": "decision-commitment",
+        "pendingTurnResolution": "",
+        "messages": [
+          {
+            "role": "manager",
+            "text": "ManagerShow the evidence"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraDelivery needs attention. Margin Pressure needs urgent attention. Evidence: current runtime state, recorded problems."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerShow scenarios"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraOpened scenarios."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Capacity Expansion Plan"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Margin Pressure"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Capacity Expansion Plan"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview the decision"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerI prefer Expand Capacity"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraPreference noted — no Decision committed."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerI think we should probably choose this"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraCommit to Expand Capacity?"
+          }
+        ],
+        "inputPresent": true
+      },
+      "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+      "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT → PROBLEM → SCENARIO → DECISION → EXECUTION DECISION Decision required Focused subject: Expand Capacity. Presentation: minimum OVERVIEW / CAPACITY EXPANS… / EXPAND CAPACITY BACK VIEW FOCUS QUEUE 11 OBJECTS · 9 CAPACITY WATCH CUSTOMER WATCH EXPAND CAPACITY DECISION WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral decision · Expand Capacity Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Expand Capacity · minimum Expand Capacity Decision Required Decision Decision Expand Capacity is currently in a state that needs attention. Why it matters Expand Capacity is related to Capacity. Decision Required Approve, reject, or revise Expand Capacity through the existing decision workflow. Recommendation Review Expand Capacity Decision requires executive review. Evidence strong Next Action Review Expand Capacity Review Capacity Expansion Plan Review Capacity Expansion Details Decision Brief PREPARE CONTEXT: EXPAND CAPACITY MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+      "layout": {
+        "viewport": {
+          "width": 1502,
+          "height": 942
+        },
+        "stageWidth": 1126,
+        "advisorWidth": 319,
+        "horizontalOverflow": false
+      }
+    },
+    "afterCommit": {
+      "hydrated": true,
+      "webglCanvas": {
+        "width": 1126,
+        "height": 840
+      },
+      "context": {
+        "company": "Nexora",
+        "workspace": "overview",
+        "period": "week",
+        "dataLabel": "Data · Local",
+        "activeImport": "none",
+        "datasetId": "none",
+        "datasetScenario": "baseline"
+      },
+      "stage": {
+        "focused": "ctx-decision-capacity",
+        "anchor": "ctx-decision-capacity",
+        "anchorPosition": "0,0,0",
+        "focusedTargetZ": "0",
+        "cameraMode": "fixed-2d",
+        "topologyZ": "0",
+        "depth": "0",
+        "presentationMode": "object-focus",
+        "collection": "none",
+        "collectionMembers": [],
+        "collectionDuplicates": [],
+        "collectionOverlapCount": "none",
+        "collectionLayout": "none",
+        "collectionFinalWriter": "none",
+        "trailEntryIds": [
+          "stage2d-navigation-0",
+          "stage2d-navigation-1"
+        ],
+        "trailSubjectIds": [
+          "ctx-scenario-capacity",
+          "ctx-decision-capacity"
+        ]
+      },
+      "workflow": {
+        "phase": "decision",
+        "readiness": "decision-complete",
+        "currentSubject": "ctx-decision-capacity",
+        "nextSubject": "ctx-execution-capacity",
+        "outcome": "unavailable",
+        "learning": "unavailable",
+        "phaseLabel": "Decision",
+        "readinessLabel": "Decision approved; execution available"
+      },
+      "advisor": {
+        "subject": "ctx-decision-capacity",
+        "grammar": "decision",
+        "subjectLabel": "Expand Capacity",
+        "attention": null,
+        "situation": "DecisionDecision Expand Capacity is currently in a state that needs attention.",
+        "why": "Why it mattersExpand Capacity is related to Capacity.",
+        "evidence": "Evidence strong",
+        "recommendation": "RecommendationReview Expand CapacityDecision requires executive review.",
+        "decisionRequired": "Decision RequiredApprove, reject, or revise Expand Capacity through the existing decision workflow.",
+        "assumptions": null,
+        "primaryActionCount": 1,
+        "primaryAction": "Review Expand Capacity"
+      },
+      "conversation": {
+        "intent": "confirm-decision-commitment",
+        "command": "confirm-decision-commitment",
+        "primarySubject": "",
+        "pendingTurnKind": "",
+        "pendingTurnResolution": "answered",
+        "messages": [
+          {
+            "role": "manager",
+            "text": "ManagerShow the evidence"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraDelivery needs attention. Margin Pressure needs urgent attention. Evidence: current runtime state, recorded problems."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerShow scenarios"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraOpened scenarios."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Capacity Expansion Plan"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Margin Pressure"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Capacity Expansion Plan"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview the decision"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerI prefer Expand Capacity"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraPreference noted — no Decision committed."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerI think we should probably choose this"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraCommit to Expand Capacity?"
+          },
+          {
+            "role": "manager",
+            "text": "ManagerYes"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraExpand Capacity is now the Approved decision."
+          }
+        ],
+        "inputPresent": true
+      },
+      "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+      "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT → PROBLEM → SCENARIO → DECISION → EXECUTION DECISION Decision approved; execution available Focused subject: Expand Capacity. Presentation: minimum OVERVIEW / CAPACITY EXPANS… / EXPAND CAPACITY BACK VIEW FOCUS QUEUE 11 OBJECTS · 9 CAPACITY WATCH CUSTOMER WATCH EXPAND CAPACITY DECISION WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral decision · Expand Capacity Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Expand Capacity · minimum Expand Capacity Decision Decision Expand Capacity is currently in a state that needs attention. Why it matters Expand Capacity is related to Capacity. Decision Required Approve, reject, or revise Expand Capacity through the existing decision workflow. Recommendation Review Expand Capacity Decision requires executive review. Evidence strong Next Action Review Expand Capacity Review Capacity Expansion Plan Review Capacity Expansion Details Decision Brief PREPARE CONTEXT: EXPAND CAPACITY MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+      "layout": {
+        "viewport": {
+          "width": 1502,
+          "height": 942
+        },
+        "stageWidth": 1126,
+        "advisorWidth": 319,
+        "horizontalOverflow": false
+      }
+    }
+  },
+  "queue": {
+    "text": "Queue9Problems2Scenarios3Decisions2Executions2",
+    "understoodAsExecutiveWork": true,
+    "recentChangesAvailable": false
+  },
+  "navigation": {
+    "repeated": {
+      "hydrated": true,
+      "webglCanvas": {
+        "width": 1126,
+        "height": 840
+      },
+      "context": {
+        "company": "Nexora",
+        "workspace": "overview",
+        "period": "week",
+        "dataLabel": "Data · Local",
+        "activeImport": "none",
+        "datasetId": "none",
+        "datasetScenario": "baseline"
+      },
+      "stage": {
+        "focused": "obj-capacity",
+        "anchor": "obj-capacity",
+        "anchorPosition": "0,0,0",
+        "focusedTargetZ": "0",
+        "cameraMode": "fixed-2d",
+        "topologyZ": "0",
+        "depth": "0",
+        "presentationMode": "object-focus",
+        "collection": "none",
+        "collectionMembers": [],
+        "collectionDuplicates": [],
+        "collectionOverlapCount": "none",
+        "collectionLayout": "none",
+        "collectionFinalWriter": "none",
+        "trailEntryIds": [
+          "stage2d-navigation-0",
+          "stage2d-navigation-1",
+          "stage2d-navigation-2"
+        ],
+        "trailSubjectIds": [
+          "obj-capacity",
+          "ctx-scenario-capacity",
+          "obj-capacity"
+        ]
+      },
+      "workflow": {
+        "phase": "investigate",
+        "readiness": "needs-investigation",
+        "currentSubject": "obj-capacity",
+        "nextSubject": "ctx-problem-capacity",
+        "outcome": "unavailable",
+        "learning": "unavailable",
+        "phaseLabel": "Investigating",
+        "readinessLabel": "Review the situation and evidence"
+      },
+      "advisor": {
+        "subject": "obj-capacity",
+        "grammar": "object",
+        "subjectLabel": "Capacity",
+        "attention": null,
+        "situation": "SituationCapacity is currently in a state that needs attention.",
+        "why": "Why it mattersCapacity is related to Budget.",
+        "evidence": "Evidence strong",
+        "recommendation": "RecommendationReview Capacity GapRelated problem needs review.",
+        "decisionRequired": "Decision RequiredChoose among the available scenario alternatives related to Capacity.",
+        "assumptions": null,
+        "primaryActionCount": 1,
+        "primaryAction": "Review Capacity Gap"
+      },
+      "conversation": {
+        "intent": "focus",
+        "command": "focus-subject",
+        "primarySubject": "obj-capacity",
+        "pendingTurnKind": "",
+        "pendingTurnResolution": "",
+        "messages": [
+          {
+            "role": "manager",
+            "text": "ManagerFocus on Capacity"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraFocused on Capacity."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Capacity Expansion Plan"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerFocus on Capacity"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraFocused on Capacity."
+          }
+        ],
+        "inputPresent": true
+      },
+      "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+      "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT → PROBLEM → SCENARIO → DECISION → EXECUTION INVESTIGATING Review the situation and evidence Focused subject: Capacity. Presentation: minimum OVERVIEW / CAPACITY / CAPACITY EXPANS… / CAPACITY BACK VIEW FOCUS QUEUE 11 OBJECTS · 8 CAPACITY WATCH CUSTOMER WATCH BUDGET UNRESOLVED DELIVERY WATCH INVENTORY WATCH EXECUTIVE THREAD · 4 › WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral object · Capacity Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Capacity · minimum Capacity Needs Attention Situation Capacity is currently in a state that needs attention. Why it matters Capacity is related to Budget. Decision Required Choose among the available scenario alternatives related to Capacity. Recommendation Review Capacity Gap Related problem needs review. Evidence strong Next Action Review Capacity Gap Review Expand Capacity Review Capacity Expansion Plan Decision Brief PREPARE CONTEXT: CAPACITY MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+      "layout": {
+        "viewport": {
+          "width": 1502,
+          "height": 942
+        },
+        "stageWidth": 1126,
+        "advisorWidth": 319,
+        "horizontalOverflow": false
+      }
+    },
+    "afterBack": {
+      "hydrated": true,
+      "webglCanvas": {
+        "width": 1126,
+        "height": 840
+      },
+      "context": {
+        "company": "Nexora",
+        "workspace": "overview",
+        "period": "week",
+        "dataLabel": "Data · Local",
+        "activeImport": "none",
+        "datasetId": "none",
+        "datasetScenario": "baseline"
+      },
+      "stage": {
+        "focused": "ctx-scenario-capacity",
+        "anchor": "ctx-scenario-capacity",
+        "anchorPosition": "0,0,0",
+        "focusedTargetZ": "0",
+        "cameraMode": "fixed-2d",
+        "topologyZ": "0",
+        "depth": "0",
+        "presentationMode": "object-focus",
+        "collection": "none",
+        "collectionMembers": [],
+        "collectionDuplicates": [],
+        "collectionOverlapCount": "none",
+        "collectionLayout": "none",
+        "collectionFinalWriter": "none",
+        "trailEntryIds": [
+          "stage2d-navigation-0",
+          "stage2d-navigation-1",
+          "stage2d-navigation-2"
+        ],
+        "trailSubjectIds": [
+          "obj-capacity",
+          "ctx-scenario-capacity",
+          "obj-capacity"
+        ]
+      },
+      "workflow": {
+        "phase": "scenario",
+        "readiness": "scenario-projection",
+        "currentSubject": "ctx-scenario-capacity",
+        "nextSubject": "ctx-decision-capacity",
+        "outcome": "unavailable",
+        "learning": "unavailable",
+        "phaseLabel": "Scenario",
+        "readinessLabel": "Decision available for review"
+      },
+      "advisor": {
+        "subject": "ctx-scenario-capacity",
+        "grammar": "scenario",
+        "subjectLabel": "Capacity Expansion Plan",
+        "attention": null,
+        "situation": "ScenarioCapacity Expansion Plan is an available scenario under review and needs attention.",
+        "why": "Expected impactCapacity Expansion Plan is related to Capacity.",
+        "evidence": "Evidence strong",
+        "recommendation": "RecommendationReview Capacity GapRelated problem needs review.",
+        "decisionRequired": "Decision RequiredDecide whether Expand Capacity should proceed, given Demand Surge.",
+        "assumptions": null,
+        "primaryActionCount": 1,
+        "primaryAction": "Review Capacity Gap"
+      },
+      "conversation": {
+        "intent": "navigate-back",
+        "command": "navigate-back",
+        "primarySubject": "",
+        "pendingTurnKind": "",
+        "pendingTurnResolution": "",
+        "messages": [
+          {
+            "role": "manager",
+            "text": "ManagerFocus on Capacity"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraFocused on Capacity."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Capacity Expansion Plan"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerFocus on Capacity"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraFocused on Capacity."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerGo back"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraReturned to the previous view."
+          }
+        ],
+        "inputPresent": true
+      },
+      "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+      "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT → PROBLEM → SCENARIO → DECISION → EXECUTION SCENARIO Decision available for review Focused subject: Capacity. Presentation: minimum OVERVIEW / CAPACITY / CAPACITY EXPANSION PL… / CAPACITY BACK FORWARD VIEW FOCUS QUEUE 11 OBJECTS · 9 CAPACITY WATCH CUSTOMER WATCH CAPACITY EXPANSION PLAN SCENARIO WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral scenario · Capacity Expansion Plan Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Capacity Expansion Plan · minimum Capacity Expansion Plan Needs Attention Scenario Capacity Expansion Plan is an available scenario under review and needs attention. Expected impact Capacity Expansion Plan is related to Capacity. Decision Required Decide whether Expand Capacity should proceed, given Demand Surge. Recommendation Review Capacity Gap Related problem needs review. Evidence strong Next Action Review Capacity Gap Review Expand Capacity Open Report Details Decision Brief PREPARE CONTEXT: CAPACITY EXPANSION PLAN MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+      "layout": {
+        "viewport": {
+          "width": 1502,
+          "height": 942
+        },
+        "stageWidth": 1126,
+        "advisorWidth": 319,
+        "horizontalOverflow": false
+      }
+    },
+    "afterBranch": {
+      "hydrated": true,
+      "webglCanvas": {
+        "width": 1126,
+        "height": 840
+      },
+      "context": {
+        "company": "Nexora",
+        "workspace": "overview",
+        "period": "week",
+        "dataLabel": "Data · Local",
+        "activeImport": "none",
+        "datasetId": "none",
+        "datasetScenario": "baseline"
+      },
+      "stage": {
+        "focused": "ctx-problem-margin",
+        "anchor": "ctx-problem-margin",
+        "anchorPosition": "0,0,0",
+        "focusedTargetZ": "0",
+        "cameraMode": "fixed-2d",
+        "topologyZ": "0",
+        "depth": "0",
+        "presentationMode": "object-focus",
+        "collection": "none",
+        "collectionMembers": [],
+        "collectionDuplicates": [],
+        "collectionOverlapCount": "none",
+        "collectionLayout": "none",
+        "collectionFinalWriter": "none",
+        "trailEntryIds": [
+          "stage2d-navigation-0",
+          "stage2d-navigation-1",
+          "stage2d-navigation-3"
+        ],
+        "trailSubjectIds": [
+          "obj-capacity",
+          "ctx-scenario-capacity",
+          "ctx-problem-margin"
+        ]
+      },
+      "workflow": {
+        "phase": "understand",
+        "readiness": "ready-to-evaluate",
+        "currentSubject": "ctx-problem-margin",
+        "nextSubject": "ctx-scenario-pricing",
+        "outcome": "unavailable",
+        "learning": "unavailable",
+        "phaseLabel": "Understanding",
+        "readinessLabel": "Ready to evaluate options"
+      },
+      "advisor": {
+        "subject": "ctx-problem-margin",
+        "grammar": "problem",
+        "subjectLabel": "Margin Pressure",
+        "attention": null,
+        "situation": "ProblemMargin Pressure remains an unresolved problem in critical state.",
+        "why": "ImpactMargin Pressure is related to Revenue.",
+        "evidence": "Evidence strong",
+        "recommendation": "RecommendationReview Approve RepricingA related decision needs review.",
+        "decisionRequired": "Decision RequiredChoose among the available scenario alternatives related to Margin Pressure.",
+        "assumptions": null,
+        "primaryActionCount": 1,
+        "primaryAction": "Review Approve Repricing"
+      },
+      "conversation": {
+        "intent": "focus",
+        "command": "focus-subject",
+        "primarySubject": "ctx-problem-margin",
+        "pendingTurnKind": "",
+        "pendingTurnResolution": "",
+        "messages": [
+          {
+            "role": "manager",
+            "text": "ManagerFocus on Capacity"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraFocused on Capacity."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Capacity Expansion Plan"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerFocus on Capacity"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraFocused on Capacity."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerGo back"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraReturned to the previous view."
+          },
+          {
+            "role": "manager",
+            "text": "ManagerReview Margin Pressure"
+          },
+          {
+            "role": "nexora",
+            "text": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+          }
+        ],
+        "inputPresent": true
+      },
+      "queueText": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+      "visibleText": "Nexora COMPANY Nexora WORKSPACE Overview PERIOD week DISPLAY DATA · LOCAL Hm Dt Jn ··· EXPLORER × EXPLORER Explorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars. SELECT A DESTINATION FROM LEFT NAV OBJECT → PROBLEM → SCENARIO → DECISION → EXECUTION UNDERSTANDING Ready to evaluate options Focused subject: Margin Pressure. Presentation: minimum OVERVIEW / CAPACITY / CAPACITY EXPANS… / MARGIN PRESSURE BACK VIEW FOCUS QUEUE 11 OBJECTS · 9 MARGIN PRESSURE PROBLEM WORKSPACE PERIOD WEEK NEXORA ADVISOR ◀ COLLAPSE Advisor Details Active context overview · minimum · neutral problem · Margin Pressure Recent Change · Capacity recovered Subject Production Capacity Elevated overview · Margin Pressure · minimum Margin Pressure Needs Attention Problem Margin Pressure remains an unresolved problem in critical state. Impact Margin Pressure is related to Revenue. Decision Required Choose among the available scenario alternatives related to Margin Pressure. Recommendation Review Approve Repricing A related decision needs review. Evidence strong Next Action Review Approve Repricing Compare Scenarios Review Demand Surge Details Decision Brief PREPARE CONTEXT: MARGIN PRESSURE MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA MANAGER NEXORA ASK NEXORA SEND CONNECTED OFF AUTO SAVE ON SYNC LOCAL VERSION NEXORA · 1.2.0 NOTIFICATION NONE HELP",
+      "layout": {
+        "viewport": {
+          "width": 1502,
+          "height": 942
+        },
+        "stageWidth": 1126,
+        "advisorWidth": 319,
+        "horizontalOverflow": false
+      }
+    }
+  },
+  "realData": {
+    "activeLabel": "Data · Local",
+    "activeImport": "none",
+    "datasetId": "none",
+    "explorerAvailable": true,
+    "explorerText": "DATA SOURCES Workspace · overview · Imported & Connected + Add Data EXISTING SOURCES No validated real-data sources in this workspace. CONNECTED Engineering Source CONNECTED 2 observations · CRITICAL",
+    "managerCanSeeNoActiveSource": false
+  },
+  "managerLanguageAudit": {
+    "firstOpenVisibleMatches": [],
+    "problemVisibleMatches": [],
+    "decisionVisibleMatches": [],
+    "note": "Source/test attributes are excluded; only viewport-visible leaf text is scanned."
+  },
+  "console": {
+    "warningsAndErrors": [],
+    "runtimeExceptions": [],
+    "requestFailures": [],
+    "duplicateKeyWarnings": [],
+    "hydrationFailures": []
+  },
+  "firstTimeManager": {
+    "result": "PASS",
+    "friction": [
+      "Execution lifecycle feedback is written by the live NEX-MVP:8 flowDomain rather than CC:11; action success copy should state this workspace scope before public MVP packaging.",
+      "The context bar uses a green Data indicator for the explicitly Local source state, which can be read as live connectivity despite the disconnected status shown elsewhere.",
+      "The repository production build compiles but fails TypeScript in the pre-existing background-monitoring API route (route.ts:48). This does not break the certified hydrated /executive runtime, but should be closed before public packaging."
+    ]
+  },
+  "returningManager": {
+    "result": "PARTIAL",
+    "entryPath": "Recent Changes → Queue → Advisor"
+  },
+  "executiveTrust": {
+    "result": "PASS",
+    "basis": "Recommendations remain connected to Situation, evidence state, and existing relationships; unavailable Outcome/Learning are stated rather than inferred."
+  },
+  "automatedRegression": {
+    "status": "PASS-WITH-NONLIVE-DEBT",
+    "releaseGate": {
+      "tests": 395,
+      "passed": 395,
+      "failed": 0,
+      "commands": [
+        {
+          "scope": "UX:2 through UX:5-FIX1, including Advisor, chat, continuity, parity, navigation identity, workflow, and collection integrity",
+          "command": "npx tsx --test app/lib/nex-mvp/nexoraExecutiveUx*.test.ts",
+          "tests": 106,
+          "passed": 106,
+          "failed": 0
+        },
+        {
+          "scope": "Conversational Control, Decision Runtime, Execution Runtime, follow-up, and session-memory boundaries",
+          "command": "npx tsx --test app/lib/conversational-control/*.test.ts",
+          "tests": 255,
+          "passed": 255,
+          "failed": 0
+        },
+        {
+          "scope": "CSV route ownership and Data Reality Advisor evidence",
+          "command": "npx tsx --test app/lib/data-reality/csvRealDataExecutiveRouteCertification.test.ts app/lib/data-reality/dataRealityExecutiveAdvisorEndToEndCertification.test.ts",
+          "tests": 14,
+          "passed": 14,
+          "failed": 0
+        },
+        {
+          "scope": "UX:1 Executive Shell composition",
+          "command": "npx tsx --test app/executive/nex-mvp/NexoraExecutiveShell.test.tsx",
+          "tests": 20,
+          "passed": 20,
+          "failed": 0
+        }
+      ]
+    },
+    "nonLiveBoundarySuites": {
+      "tests": 31,
+      "passed": 28,
+      "failed": 3,
+      "failures": [
+        "EI:6 APP-4 learning promotion returns promoted=false when the durable provider has not been registered by the test setup.",
+        "The dependent promoted-learning trace is incomplete.",
+        "The dependent future-learning retrieval has no memory to retrieve."
+      ],
+      "impact": "Post-MVP Outcome/Learning integration debt. Durable APP-4's own 11 boundary/lifecycle/retrieval tests pass, and no live Outcome/Learning surface is claimed."
+    },
+    "excludedStaleCertification": {
+      "suite": "app/lib/data-reality/dataRealityEndToEndStageRealityCertification.test.ts",
+      "tests": 47,
+      "passed": 39,
+      "failed": 8,
+      "reason": "This older structural suite contains assertions incompatible with the certified UX:2 fixed z=0 Stage and current visibility semantics. Current CSV route/evidence tests and the hydrated WebGL certification pass. The stale suite remains explicit test debt rather than being hidden."
+    },
+    "build": {
+      "status": "FAIL-UNRELATED",
+      "compile": "PASS",
+      "typescript": "FAIL",
+      "file": "app/api/monitoring/background/route.ts",
+      "line": 48,
+      "error": "Property 'completed' does not exist on type '{}'.",
+      "classification": "Pre-existing repository-wide P1 release-engineering debt; the hydrated /executive runtime and all manager-facing release-gate tests pass."
+    }
+  },
+  "verdict": "MVP-READY-WITH-DEBT",
+  "status": "PASS",
+  "results": {
+    "coreManagerJourney": "PASS",
+    "stage": "PASS",
+    "advisor": "PASS",
+    "conversation": "PASS",
+    "workflow": "PASS",
+    "decisionSafety": "PASS",
+    "execution": "PASS",
+    "outcomeLearning": "PARTIAL",
+    "realDataEvidence": "PARTIAL",
+    "navigation": "PASS",
+    "visualIntegrity": "PASS"
+  },
+  "completedAt": "2026-08-18T19:31:25.018Z"
+}

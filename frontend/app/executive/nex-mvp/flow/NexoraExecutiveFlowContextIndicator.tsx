@@ -1,11 +1,15 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import type { NexoraMVPExecutiveFlowChain } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlow";
+import type {
+  NexoraMVPExecutiveFlowChain,
+  NexoraMVPExecutiveWorkflowPresentation,
+} from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlow";
 import { cockpit } from "../../exs1/shell/executiveCockpitTheme";
 
 type Props = {
   readonly chain: NexoraMVPExecutiveFlowChain;
+  readonly workflow?: NexoraMVPExecutiveWorkflowPresentation;
   readonly onSelectLink?: (subjectId: string) => void;
 };
 
@@ -14,6 +18,7 @@ type Props = {
  */
 export function NexoraExecutiveFlowContextIndicator({
   chain,
+  workflow,
   onSelectLink,
 }: Props) {
   if (chain.links.length === 0) {
@@ -21,8 +26,24 @@ export function NexoraExecutiveFlowContextIndicator({
       <div
         data-testid="nexora-flow-chain"
         data-nex-mvp="8"
+        data-ux5="executive-workflow"
+        data-flow-empty="true"
+        data-workflow-phase={workflow?.phase ?? "overview"}
+        data-workflow-readiness={
+          workflow?.readiness ?? "no-current-workflow"
+        }
+        data-workflow-current-subject={workflow?.currentSubjectId ?? "none"}
+        data-workflow-next-subject={
+          workflow?.nextAvailableSubject?.id ?? "none"
+        }
+        data-workflow-outcome={
+          workflow?.outcomeAvailability ?? "unavailable"
+        }
+        data-workflow-learning={
+          workflow?.learningAvailability ?? "unavailable"
+        }
         aria-label="Executive flow overview"
-        style={barStyle}
+        style={{ ...barStyle, ...cockpit.visuallyHidden }}
       >
         <span style={{ color: cockpit.lowMuted, fontSize: "0.68rem" }}>
           Overview · no focused flow chain
@@ -35,10 +56,23 @@ export function NexoraExecutiveFlowContextIndicator({
     <nav
       data-testid="nexora-flow-chain"
       data-nex-mvp="8"
+      data-ux5="executive-workflow"
+      data-workflow-phase={workflow?.phase ?? "overview"}
+      data-workflow-readiness={
+        workflow?.readiness ?? "no-current-workflow"
+      }
+      data-workflow-current-subject={workflow?.currentSubjectId ?? "none"}
+      data-workflow-next-subject={
+        workflow?.nextAvailableSubject?.id ?? "none"
+      }
+      data-workflow-outcome={workflow?.outcomeAvailability ?? "unavailable"}
+      data-workflow-learning={workflow?.learningAvailability ?? "unavailable"}
       aria-label="Executive flow chain"
       style={barStyle}
     >
-      {chain.links.map((link, index) => (
+      {chain.links.map((link, index) => {
+        const isCurrent = workflow?.currentSubjectId === link.id;
+        return (
         <span key={link.id} style={{ display: "inline-flex", alignItems: "center" }}>
           {index > 0 ? (
             <span
@@ -56,11 +90,13 @@ export function NexoraExecutiveFlowContextIndicator({
             type="button"
             data-testid={`nexora-flow-link-${link.id}`}
             data-flow-kind={link.kind}
+            data-flow-current={isCurrent ? "true" : "false"}
+            aria-current={isCurrent ? "step" : undefined}
             onClick={() => onSelectLink?.(link.id)}
             style={{
               border: "none",
               background: "transparent",
-              color: cockpit.textSoft,
+              color: isCurrent ? cockpit.accent : cockpit.textSoft,
               fontSize: "0.68rem",
               padding: "0.1rem 0.15rem",
               cursor: onSelectLink ? "pointer" : "default",
@@ -81,7 +117,47 @@ export function NexoraExecutiveFlowContextIndicator({
             {link.label}
           </button>
         </span>
-      ))}
+      )})}
+      {workflow ? (
+        <span
+          data-testid="nexora-workflow-context"
+          title={workflow.reason}
+          style={{
+            marginLeft: "auto",
+            display: "inline-flex",
+            alignItems: "baseline",
+            gap: "0.45rem",
+            minWidth: 0,
+          }}
+        >
+          <span
+            data-testid="nexora-workflow-phase"
+            style={{
+              color: cockpit.accent,
+              fontSize: "0.56rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.09em",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {workflow.phaseLabel}
+          </span>
+          <span
+            data-testid="nexora-workflow-readiness"
+            title={workflow.readinessLabel}
+            style={{
+              color: cockpit.lowMuted,
+              fontSize: "0.62rem",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              maxWidth: "14rem",
+            }}
+          >
+            {workflow.readinessLabel}
+          </span>
+        </span>
+      ) : null}
     </nav>
   );
 }

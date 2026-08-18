@@ -22,27 +22,49 @@ export function NexoraWorkspaceDialMount({
       data-mvp-mount="workspace-dial"
       data-nex-mvp="5"
       data-active-workspace={activeWorkspace}
+      data-ux1-compact="true"
       aria-label="Workspace Dial"
       style={{
         position: "absolute",
         right: "0.85rem",
         bottom: "0.85rem",
         zIndex: 8,
-        padding: "0.4rem 0.45rem 0.5rem",
-        borderRadius: cockpit.radius.md,
-        border: `1px solid ${cockpit.borderStrong}`,
-        background: "rgba(10, 16, 26, 0.72)",
-        boxShadow: cockpit.elevation.raised,
-        backdropFilter: "blur(8px)",
         pointerEvents: "auto",
         maxWidth: "min(10.5rem, calc(100% - 1.5rem))",
-        opacity: 0.92,
       }}
     >
-      <NexoraWorkspaceDial
-        activeWorkspace={activeWorkspace}
-        onWorkspaceChange={onWorkspaceChange}
-      />
+      <details
+        data-testid="nexora-workspace-dial-disclosure"
+        style={{
+          padding: "0.28rem 0.4rem 0.32rem",
+          borderRadius: cockpit.radius.md,
+          border: `1px solid ${cockpit.border}`,
+          background: "rgba(10, 16, 26, 0.62)",
+          boxShadow: cockpit.elevation.raised,
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        <summary
+          style={{
+            listStyle: "none",
+            cursor: "pointer",
+            fontSize: "0.58rem",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: cockpit.accent,
+            fontWeight: 600,
+            fontFamily: "inherit",
+          }}
+        >
+          Workspace
+        </summary>
+        <div style={{ marginTop: "0.35rem" }}>
+          <NexoraWorkspaceDial
+            activeWorkspace={activeWorkspace}
+            onWorkspaceChange={onWorkspaceChange}
+          />
+        </div>
+      </details>
     </div>
   );
 }

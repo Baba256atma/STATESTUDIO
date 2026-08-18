@@ -1,0 +1,475 @@
+{
+  "url": "http://127.0.0.1:3000/executive",
+  "viewport": {
+    "width": 1502,
+    "height": 942
+  },
+  "captures": {
+    "overview": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux3-professional-advisor/01-executive-overview.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 872,
+          "clientWidth": 1126,
+          "clientHeight": 872
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "bridgeSubject": "none",
+          "currentSubject": "none",
+          "attentionSubject": "obj-risk",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "subjectState": null,
+          "attentionLabel": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "recommendation": null,
+          "empty": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk",
+          "secondaryActionCount": 0,
+          "recommendationAuthority": "none",
+          "evidenceState": "limited"
+        },
+        "layout": {
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        },
+        "askNexoraPresent": true
+      }
+    },
+    "02-capacity-object": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux3-professional-advisor/02-capacity-object.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "bridgeSubject": "obj-capacity",
+          "currentSubject": "obj-capacity",
+          "attentionSubject": "none",
+          "grammar": "object",
+          "subjectLabel": "Capacity",
+          "subjectState": "Needs Attention",
+          "attentionLabel": null,
+          "situation": "SituationCapacity is currently in a state that needs attention.",
+          "why": "Why it mattersCapacity is related to Budget.",
+          "recommendation": "RecommendationReview Capacity GapRelated problem needs review.",
+          "empty": null,
+          "evidence": "Evidence strong",
+          "primaryActionCount": 1,
+          "primaryAction": "Review Capacity Gap",
+          "secondaryActionCount": 2,
+          "recommendationAuthority": "decision-brief",
+          "evidenceState": "strong"
+        },
+        "layout": {
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        },
+        "askNexoraPresent": true
+      }
+    },
+    "03-customer-object": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux3-professional-advisor/03-customer-object.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "stage": {
+          "focused": "obj-customer",
+          "anchor": "obj-customer",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "bridgeSubject": "obj-customer",
+          "currentSubject": "obj-customer",
+          "attentionSubject": "none",
+          "grammar": "object",
+          "subjectLabel": "Customer",
+          "subjectState": null,
+          "attentionLabel": null,
+          "situation": "SituationCustomer performance is below the preferred operating range and may require investigation.",
+          "why": "Why it mattersNo validated business consequence is available for this context.",
+          "recommendation": "RecommendationOpen ReportCustomer is in focus for orientation. Keep scanning until Report is needed.",
+          "empty": null,
+          "evidence": "Evidence strong",
+          "primaryActionCount": 1,
+          "primaryAction": "Open Report",
+          "secondaryActionCount": 1,
+          "recommendationAuthority": "advisor-intelligence",
+          "evidenceState": "strong"
+        },
+        "layout": {
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        },
+        "askNexoraPresent": true
+      }
+    },
+    "08-risk": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux3-professional-advisor/08-risk.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "stage": {
+          "focused": "obj-risk",
+          "anchor": "obj-risk",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "bridgeSubject": "obj-risk",
+          "currentSubject": "obj-risk",
+          "attentionSubject": "obj-capacity",
+          "grammar": "risk",
+          "subjectLabel": "Risk",
+          "subjectState": "Needs Attention",
+          "attentionLabel": null,
+          "situation": "RiskRisk currently has unresolved risk exposure.",
+          "why": "ExposureRisk is related to Delivery.",
+          "recommendation": "RecommendationReview Margin PressureCritical subject has an unresolved related problem.",
+          "empty": null,
+          "evidence": "Evidence strong",
+          "primaryActionCount": 1,
+          "primaryAction": "Review Margin Pressure",
+          "secondaryActionCount": 2,
+          "recommendationAuthority": "decision-brief",
+          "evidenceState": "strong"
+        },
+        "layout": {
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        },
+        "askNexoraPresent": true
+      }
+    },
+    "04-problem": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux3-professional-advisor/04-problem.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "bridgeSubject": "ctx-problem-capacity",
+          "currentSubject": "ctx-problem-capacity",
+          "attentionSubject": "obj-capacity",
+          "grammar": "problem",
+          "subjectLabel": "Capacity Gap",
+          "subjectState": "Needs Attention",
+          "attentionLabel": null,
+          "situation": "ProblemCapacity Gap remains an unresolved problem and needs attention.",
+          "why": "ImpactCapacity Gap is related to Capacity.",
+          "recommendation": "RecommendationReview Expand CapacityA related decision needs review.",
+          "empty": null,
+          "evidence": "Evidence strong",
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity",
+          "secondaryActionCount": 2,
+          "recommendationAuthority": "decision-brief",
+          "evidenceState": "strong"
+        },
+        "layout": {
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        },
+        "askNexoraPresent": true
+      }
+    },
+    "05-scenario": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux3-professional-advisor/05-scenario.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "stage": {
+          "focused": "ctx-scenario-capacity",
+          "anchor": "ctx-scenario-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "bridgeSubject": "ctx-scenario-capacity",
+          "currentSubject": "ctx-scenario-capacity",
+          "attentionSubject": "obj-capacity",
+          "grammar": "scenario",
+          "subjectLabel": "Capacity Expansion Plan",
+          "subjectState": "Needs Attention",
+          "attentionLabel": null,
+          "situation": "ScenarioCapacity Expansion Plan is an available scenario under review and needs attention.",
+          "why": "Expected impactCapacity Expansion Plan is related to Capacity.",
+          "recommendation": "RecommendationReview Capacity GapRelated problem needs review.",
+          "empty": null,
+          "evidence": "Evidence strong",
+          "primaryActionCount": 1,
+          "primaryAction": "Review Capacity Gap",
+          "secondaryActionCount": 2,
+          "recommendationAuthority": "decision-brief",
+          "evidenceState": "strong"
+        },
+        "layout": {
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        },
+        "askNexoraPresent": true
+      }
+    },
+    "06-decision": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux3-professional-advisor/06-decision.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "stage": {
+          "focused": "ctx-decision-capacity",
+          "anchor": "ctx-decision-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "bridgeSubject": "ctx-decision-capacity",
+          "currentSubject": "ctx-decision-capacity",
+          "attentionSubject": "obj-capacity",
+          "grammar": "decision",
+          "subjectLabel": "Expand Capacity",
+          "subjectState": "Decision Required",
+          "attentionLabel": null,
+          "situation": "DecisionDecision Expand Capacity is currently in a state that needs attention.",
+          "why": "Why it mattersExpand Capacity is related to Capacity.",
+          "recommendation": "RecommendationReview Expand CapacityDecision requires executive review.",
+          "empty": null,
+          "evidence": "Evidence strong",
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity",
+          "secondaryActionCount": 2,
+          "recommendationAuthority": "decision-brief",
+          "evidenceState": "strong"
+        },
+        "layout": {
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        },
+        "askNexoraPresent": true
+      }
+    },
+    "07-execution": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux3-professional-advisor/07-execution.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "stage": {
+          "focused": "ctx-execution-capacity",
+          "anchor": "ctx-execution-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "bridgeSubject": "ctx-execution-capacity",
+          "currentSubject": "ctx-execution-capacity",
+          "attentionSubject": "obj-capacity",
+          "grammar": "execution",
+          "subjectLabel": "Capacity Expansion",
+          "subjectState": "In Progress",
+          "attentionLabel": null,
+          "situation": "ProgressProgress is 0%.",
+          "why": "BlockersA related decision needs review.",
+          "recommendation": "RecommendationReview Expand CapacityA related decision needs review.",
+          "empty": null,
+          "evidence": "Evidence strong",
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity",
+          "secondaryActionCount": 2,
+          "recommendationAuthority": "nba",
+          "evidenceState": "strong"
+        },
+        "layout": {
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        },
+        "askNexoraPresent": true
+      }
+    },
+    "limitedOverview": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux3-professional-advisor/09-limited-overview.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 872,
+          "clientWidth": 1126,
+          "clientHeight": 872
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "bridgeSubject": "none",
+          "currentSubject": "none",
+          "attentionSubject": "obj-risk",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "subjectState": null,
+          "attentionLabel": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "recommendation": null,
+          "empty": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk",
+          "secondaryActionCount": 0,
+          "recommendationAuthority": "none",
+          "evidenceState": "limited"
+        },
+        "layout": {
+          "stageWidth": 1126,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        },
+        "askNexoraPresent": true
+      }
+    },
+    "narrow": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux3-professional-advisor/10-narrow-desktop-1280x800.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 904,
+          "height": 730,
+          "clientWidth": 904,
+          "clientHeight": 730
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "bridgeSubject": "none",
+          "currentSubject": "none",
+          "attentionSubject": "obj-risk",
+          "grammar": "overview",
+          "subjectLabel": "Executive Overview",
+          "subjectState": null,
+          "attentionLabel": "Risk",
+          "situation": "SituationThere is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "recommendation": null,
+          "empty": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk",
+          "secondaryActionCount": 0,
+          "recommendationAuthority": "none",
+          "evidenceState": "limited"
+        },
+        "layout": {
+          "stageWidth": 904,
+          "advisorWidth": 319,
+          "horizontalOverflow": false
+        },
+        "askNexoraPresent": true
+      }
+    }
+  },
+  "unavailable": [],
+  "limitedOrNoRecommendationCapture": "09-limited-overview",
+  "notes": [
+    "Certification uses the real client/WebGL Stage.",
+    "Ask Nexora presence is checked; no conversational response is submitted."
+  ]
+}

@@ -4,6 +4,8 @@
 
 import type { NexoraConversationalSubjectKind } from "./conversationalContext.ts";
 import { EXECUTIVE_CONTEXT_BOUNDS } from "./executiveContextAwareness.ts";
+import type { NexoraPendingTurnExpectation } from "./conversationalTurnExpectation.ts";
+import type { NexoraConversationalActionDescriptor } from "./conversationalActionDescriptor.ts";
 
 export const NEXORA_EXECUTIVE_CONTEXT_REFERENCE_SOURCES = Object.freeze([
   "explicit",
@@ -71,6 +73,10 @@ export type NexoraExecutiveContextSnapshot = {
   readonly lastRecommendationId: string | null;
   readonly recentReferences: readonly NexoraExecutiveContextReference[];
   readonly presentedSet: NexoraPresentedExecutiveSet | null;
+  /** UX:4-FIX2 — bounded, session-only dialogue expectation. */
+  readonly pendingTurnExpectation: NexoraPendingTurnExpectation | null;
+  /** UX:4-FIX3 — latest safe action explicitly presented by Advisor. */
+  readonly currentRecommendedAction: NexoraConversationalActionDescriptor | null;
   readonly turnIndex: number;
 };
 
@@ -133,6 +139,8 @@ export function createEmptyNexoraExecutiveContextSnapshot(
     lastRecommendationId: null,
     recentReferences: Object.freeze([]),
     presentedSet: null,
+    pendingTurnExpectation: null,
+    currentRecommendedAction: null,
     turnIndex: 0,
     ...partial,
   });
@@ -205,6 +213,17 @@ export function freezeExecutiveContextSnapshot(
             ),
           ),
         })
+      : null,
+    pendingTurnExpectation: snapshot.pendingTurnExpectation
+      ? Object.freeze({
+          ...snapshot.pendingTurnExpectation,
+          optionIds: Object.freeze([
+            ...snapshot.pendingTurnExpectation.optionIds,
+          ]),
+        })
+      : null,
+    currentRecommendedAction: snapshot.currentRecommendedAction
+      ? Object.freeze({ ...snapshot.currentRecommendedAction })
       : null,
     turnIndex: snapshot.turnIndex,
   });

@@ -217,6 +217,8 @@ export type NexoraMVPInteractionSubject = {
   readonly id: string;
   readonly kind: NexoraMVPInteractionSubjectKind;
   readonly label: string;
+  /** UX:4-FIX4 — navigation occurrence identity, distinct from subject id. */
+  readonly navigationTrailEntryId?: string;
   /** STAGE-2D:5 absolute object-trail index when present on breadcrumb entries. */
   readonly navigationTrailIndex?: number;
   /** STAGE-2D:6 — full accessible name when display label is truncated. */
@@ -1062,7 +1064,11 @@ export function applyExecutiveStage2DNavigationTrailFocus(
     focusedSubject: subject,
     trail: resolveStage2DTrailSubjects(sanitized.objectIds, catalog),
     stage2dNavigationTrail: sanitized,
-    expandExecutiveThread: subject.kind !== "object",
+    // A trail restore is semantic focus, not a projected Thread-companion
+    // selection. Keeping Thread expansion here causes the next context action
+    // after Back to preserve an unrelated business anchor instead of focusing
+    // the requested executive-work subject.
+    expandExecutiveThread: false,
     collectionContext: null,
     preparationContext: null,
   });
@@ -1610,14 +1616,18 @@ function retainScopedTrail(
   previous: ExecutiveStage2DScopedNavigationTrail,
   next: {
     readonly objectIds: readonly string[];
+    readonly trailEntryIds: readonly string[];
     readonly activeObjectId: string | null;
     readonly currentIndex: number;
+    readonly nextTrailEntrySequence: number;
   },
 ): ExecutiveStage2DScopedNavigationTrail {
   return Object.freeze({
     objectIds: next.objectIds,
+    trailEntryIds: next.trailEntryIds,
     activeObjectId: next.activeObjectId,
     currentIndex: next.currentIndex,
+    nextTrailEntrySequence: next.nextTrailEntrySequence,
     scope: previous.scope,
     scopeKey: previous.scopeKey,
   });
@@ -2942,6 +2952,29 @@ export function deriveNexoraMVPStageInteractionPresentation(
     }
   }
 
+  // UX:2 — when executive-work is the Stage subject, surface canonical
+  // object↔work edges so related Objects remain in the focused composition.
+  const workFocusConnections: NexoraMVPStageConnectionPresentation[] = [];
+  if (focusedWorkSubject != null) {
+    const visibleObjectIds = new Set(objects.map((object) => object.id));
+    for (const link of catalog.contextLinks) {
+      if (link.contextId !== focusedWorkSubject.id) continue;
+      if (!visibleObjectIds.has(link.objectId)) continue;
+      workFocusConnections.push(
+        Object.freeze({
+          id: link.id,
+          sourceId: link.objectId,
+          targetId: link.contextId,
+          emphasized: true,
+          opacity: 0.7,
+          visualRole: "related" as const,
+          relation: link.relation,
+          impliesCausality: false as const,
+        }),
+      );
+    }
+  }
+
   const emphasizedObjectIds = Object.freeze(
     objects
       .filter((entry) => entry.role === "focused" || entry.role === "related")
@@ -2955,7 +2988,7 @@ export function deriveNexoraMVPStageInteractionPresentation(
   const mergedConnections = Object.freeze(
     presentationContextActive
       ? []
-      : [...scene.connections, ...threadConnections],
+      : [...scene.connections, ...threadConnections, ...workFocusConnections],
   );
   const emphasizedRelationshipIds = Object.freeze(
     mergedConnections
@@ -2999,6 +3032,7 @@ export function deriveNexoraMVPStageInteractionPresentation(
     id: "trail-overview",
     kind: "object",
     label: "Overview",
+    navigationTrailEntryId: "stage2d-navigation-overview",
   });
 
   const navigationTrail = sanitizeStage2DNavigationTrail(
@@ -3029,26 +3063,19 @@ export function deriveNexoraMVPStageInteractionPresentation(
       id: entry.objectId,
       kind: "object" as const,
       label: entry.displayLabel,
+      navigationTrailEntryId: entry.trailEntryId,
       navigationTrailIndex: entry.trailIndex,
       navigationLabelFull: entry.fullLabel,
       navigationLabelMode: entry.mode,
     }),
   );
 
-  // Context-focused: retain context entry at tip for orientation.
-  // STAGE-THREAD:1 — do not append Thread gateway or decision subjects to
-  // business-object Stage-2D navigation breadcrumb.
+  // STAGE-PROD:3 records context focus in the canonical Stage-2D trail.
+  // Do not append a second presentation-only copy of the active context.
   const breadcrumbTail =
-    state.mode === "context-focused" &&
-    state.focusedSubject != null &&
-    state.focusedSubject.kind !== "object"
-      ? Object.freeze([
-          ...visibleBreadcrumbSubjects,
-          state.focusedSubject,
-        ])
-      : visibleBreadcrumbSubjects.length > 0
-        ? visibleBreadcrumbSubjects
-        : state.trail.filter((entry) => entry.kind === "object");
+    visibleBreadcrumbSubjects.length > 0
+      ? visibleBreadcrumbSubjects
+      : state.trail.filter((entry) => entry.kind === "object");
 
   const nextBestAction = resolveNexoraMVPNextBestActions(
     state,

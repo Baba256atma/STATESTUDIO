@@ -20,6 +20,11 @@ import type { NexoraExecutiveScenarioConversationResult } from "./executiveScena
 import type { NexoraExecutiveScenarioSession } from "./executiveScenarioResolver.ts";
 import type { NexoraDecisionCommitmentResult } from "./executiveDecisionCommitmentResolver.ts";
 import type { NexoraExecutiveDecisionSession } from "./executiveDecisionAuthority.ts";
+import type {
+  NexoraPendingTurnExpectation,
+  NexoraPendingTurnResolution,
+} from "./conversationalTurnExpectation.ts";
+import type { NexoraConversationalActionDescriptor } from "./conversationalActionDescriptor.ts";
 
 // ─── Identity ───────────────────────────────────────────────────────────────
 
@@ -102,6 +107,29 @@ export type NexoraConversationalMessage = {
   readonly commandId?: string;
 };
 
+/**
+ * Read-only CC:5 projection of the existing UX:3 Professional Advisor.
+ * Conversation may present this truth; it does not own or recompute it.
+ */
+export type NexoraConversationalAdvisorGrounding = {
+  readonly isOverview: boolean;
+  readonly currentSubjectId: string | null;
+  readonly currentSubjectLabel: string | null;
+  readonly attentionSubjectId: string | null;
+  readonly attentionSubjectLabel: string | null;
+  readonly attentionReason: string | null;
+  readonly situation: string | null;
+  readonly whyItMatters: string | null;
+  readonly recommendation: string | null;
+  readonly noRecommendationReason: string | null;
+  readonly primaryActionLabel: string | null;
+  readonly evidenceState: "strong" | "limited" | "incomplete" | "stale" | "none";
+  readonly evidenceSummary: string | null;
+  readonly recommendationAuthority: string;
+  readonly primaryAction?: NexoraConversationalActionDescriptor | null;
+  readonly availableActions?: readonly NexoraConversationalActionDescriptor[];
+};
+
 export type NexoraConversationalExperienceTrace = {
   readonly utterance: string;
   readonly intentKind: string | null;
@@ -115,6 +143,8 @@ export type NexoraConversationalExperienceTrace = {
   readonly responseText: string;
   readonly executiveContextTurnIndex?: number | null;
   readonly executiveCurrentSubjectId?: string | null;
+  readonly pendingTurnExpectationKind?: string | null;
+  readonly pendingTurnResolutionStatus?: string | null;
 };
 
 export type NexoraConversationalExperienceResult = {
@@ -133,6 +163,9 @@ export type NexoraConversationalExperienceResult = {
   /** CC:10 Decision commitment output. */
   readonly decisionCommitmentResult: NexoraDecisionCommitmentResult | null;
   readonly nextDecisionSession: NexoraExecutiveDecisionSession | null;
+  /** UX:4-FIX2 session-only dialogue expectation; never durable memory. */
+  readonly nextPendingTurnExpectation: NexoraPendingTurnExpectation | null;
+  readonly pendingTurnResolution: NexoraPendingTurnResolution | null;
   readonly nextConversationContext: NexoraConversationContextSnapshot;
   /** CC:7 structured executive context (session-scoped). */
   readonly nextExecutiveContext: NexoraExecutiveContextSnapshot;

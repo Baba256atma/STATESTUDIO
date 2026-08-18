@@ -48,7 +48,7 @@ export function NexoraSubjectReport({ viewModel }: Props) {
           color: cockpit.lowMuted,
         }}
       >
-        Report · {viewModel.subjectKind ?? "subject"}
+        Report
       </p>
       <h2
         data-testid="nexora-subject-report-title"
@@ -140,7 +140,7 @@ export function NexoraSubjectReport({ viewModel }: Props) {
               color: cockpit.lowMuted,
             }}
           >
-            KOI · {viewModel.koi.label}
+            {viewModel.koi.label}
           </p>
           <p
             style={{
@@ -199,13 +199,7 @@ export function NexoraSubjectReport({ viewModel }: Props) {
 
       <p
         data-testid="nexora-subject-report-advisor-slot"
-        style={{
-          margin: "0.7rem 0 0",
-          fontSize: "0.56rem",
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: cockpit.lowMuted,
-        }}
+        style={cockpit.visuallyHidden}
       >
         Advisor / Insight detail binds in the right-side intelligence region
       </p>

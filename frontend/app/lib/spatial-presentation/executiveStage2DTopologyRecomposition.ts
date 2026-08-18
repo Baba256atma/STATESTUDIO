@@ -75,6 +75,32 @@ export const EXECUTIVE_STAGE_2D_ANCHOR_AUTHORITY = Object.freeze({
   cameraMayNotCompensate: true as const,
 });
 
+/**
+ * UX:2 — Stage Interaction law (presentation contract only).
+ * Does not introduce a second Stage authority; click/focus/anchor remain
+ * owned by existing interaction + STAGE-2D recomposition.
+ */
+export const EXECUTIVE_STAGE_UX2_INTERACTION_LAW = Object.freeze({
+  statement: "CLICK OBJECT → CENTER → RECOMPOSE RELATED CONTEXT",
+  camera: "fixed" as const,
+  topologyZ: 0 as const,
+  anchorTarget: Object.freeze({ x: 0, y: 0, z: 0 }),
+  focusPrecedence: Object.freeze([
+    "direct-user-click",
+    "navigation-restore",
+    "automatic-attention",
+    "recommendation",
+    "fallback",
+  ]),
+  spatialGrammar: Object.freeze([
+    "center",
+    "related",
+    "watch",
+    "queue",
+  ]),
+  queueIsTopology: false as const,
+});
+
 export const EXECUTIVE_STAGE_2D_RECOMPOSITION_BOUNDARY = Object.freeze({
   architecturalRole: executiveStage2DTopologyRecompositionArchitecturalRole,
   inventsRelationships: false as const,

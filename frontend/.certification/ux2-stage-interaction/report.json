@@ -1,0 +1,433 @@
+{
+  "url": "http://127.0.0.1:3000/executive",
+  "viewport": {
+    "width": 1502,
+    "height": 942
+  },
+  "captures": {
+    "overview": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/01-overview.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 1126,
+          "height": 872,
+          "clientWidth": 1126,
+          "clientHeight": 872
+        },
+        "clicked": "none",
+        "selected": "none",
+        "focused": "none",
+        "anchor": "none",
+        "anchorPosition": "none",
+        "topologyMode": "overview",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "overview",
+        "advisorStage": "none",
+        "advisorRegion": "none",
+        "advisorKind": "none",
+        "advisorSubjectLabel": "obj-capacity",
+        "breadcrumb": "Overview",
+        "visibleObjectIds": [
+          "obj-revenue",
+          "obj-capacity",
+          "obj-budget",
+          "obj-customer",
+          "obj-delivery",
+          "obj-risk",
+          "obj-inventory",
+          "obj-demand"
+        ],
+        "contextSubjectIds": []
+      }
+    },
+    "02-customer-centered": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/02-customer-centered.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "clicked": "obj-customer",
+        "selected": "obj-customer",
+        "focused": "obj-customer",
+        "anchor": "obj-customer",
+        "anchorPosition": "0,0,0",
+        "topologyMode": "anchored",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "object-focused",
+        "advisorStage": "obj-customer",
+        "advisorRegion": "obj-customer",
+        "advisorKind": "object",
+        "advisorSubjectLabel": "Customer",
+        "breadcrumb": "Overview/CustomerBack",
+        "visibleObjectIds": [
+          "obj-customer"
+        ],
+        "contextSubjectIds": []
+      }
+    },
+    "03-capacity-centered": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/03-capacity-centered.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "clicked": "obj-capacity",
+        "selected": "obj-capacity",
+        "focused": "obj-capacity",
+        "anchor": "obj-capacity",
+        "anchorPosition": "0,0,0",
+        "topologyMode": "anchored",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "object-focused",
+        "advisorStage": "obj-capacity",
+        "advisorRegion": "obj-capacity",
+        "advisorKind": "object",
+        "advisorSubjectLabel": "Capacity",
+        "breadcrumb": "Overview/Customer/CapacityBack",
+        "visibleObjectIds": [
+          "obj-capacity",
+          "obj-budget",
+          "obj-customer",
+          "obj-delivery",
+          "obj-inventory"
+        ],
+        "contextSubjectIds": [
+          "thread-obj-capacity"
+        ]
+      }
+    },
+    "03b-revenue-centered": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/03b-revenue-centered.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "clicked": "obj-revenue",
+        "selected": "obj-revenue",
+        "focused": "obj-revenue",
+        "anchor": "obj-revenue",
+        "anchorPosition": "0,0,0",
+        "topologyMode": "anchored",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "object-focused",
+        "advisorStage": "obj-revenue",
+        "advisorRegion": "obj-revenue",
+        "advisorKind": "object",
+        "advisorSubjectLabel": "Revenue",
+        "breadcrumb": "Overview/Customer/Capacity/RevenueBack",
+        "visibleObjectIds": [
+          "obj-revenue"
+        ],
+        "contextSubjectIds": [
+          "thread-obj-revenue"
+        ]
+      }
+    },
+    "03c-risk-centered": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/03c-risk-centered.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "clicked": "obj-risk",
+        "selected": "obj-risk",
+        "focused": "obj-risk",
+        "anchor": "obj-risk",
+        "anchorPosition": "0,0,0",
+        "topologyMode": "anchored",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "object-focused",
+        "advisorStage": "obj-risk",
+        "advisorRegion": "obj-risk",
+        "advisorKind": "object",
+        "advisorSubjectLabel": "Risk",
+        "breadcrumb": "Overview/Customer/Capacity/Revenue/RiskBack",
+        "visibleObjectIds": [
+          "obj-capacity",
+          "obj-customer",
+          "obj-delivery",
+          "obj-risk"
+        ],
+        "contextSubjectIds": [
+          "thread-obj-risk"
+        ]
+      }
+    },
+    "04-problem-centered": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/04-problem-centered.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "clicked": "ctx-problem-capacity",
+        "selected": "ctx-problem-capacity",
+        "focused": "ctx-problem-capacity",
+        "anchor": "ctx-problem-capacity",
+        "anchorPosition": "0,0,0",
+        "topologyMode": "anchored",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "context-focused",
+        "advisorStage": "ctx-problem-capacity",
+        "advisorRegion": "ctx-problem-capacity",
+        "advisorKind": "problem",
+        "advisorSubjectLabel": "Capacity Gapproblem",
+        "breadcrumb": "Overview/Capacity/Problems/Capacity Gap/Capacity GapBack",
+        "visibleObjectIds": [
+          "ctx-problem-capacity"
+        ],
+        "contextSubjectIds": []
+      }
+    },
+    "05-scenario-centered": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/05-scenario-centered.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "clicked": "ctx-scenario-capacity",
+        "selected": "ctx-scenario-capacity",
+        "focused": "ctx-scenario-capacity",
+        "anchor": "ctx-scenario-capacity",
+        "anchorPosition": "0,0,0",
+        "topologyMode": "anchored",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "context-focused",
+        "advisorStage": "ctx-scenario-capacity",
+        "advisorRegion": "ctx-scenario-capacity",
+        "advisorKind": "scenario",
+        "advisorSubjectLabel": "Capacity Expansion Planscenario",
+        "breadcrumb": "Overview…/Problems/Capacity…/Scenarios/Capacity Expansion Pl…/Capacity Expansion PlanBack",
+        "visibleObjectIds": [
+          "obj-capacity",
+          "obj-customer",
+          "ctx-scenario-capacity"
+        ],
+        "contextSubjectIds": []
+      }
+    },
+    "back": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/08-back-navigation.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 1126,
+          "height": 872,
+          "clientWidth": 1126,
+          "clientHeight": 872
+        },
+        "clicked": "none",
+        "selected": "none",
+        "focused": "none",
+        "anchor": "none",
+        "anchorPosition": "none",
+        "topologyMode": "overview",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "object-focused",
+        "advisorStage": "none",
+        "advisorRegion": "none",
+        "advisorKind": "none",
+        "advisorSubjectLabel": "Capacity…",
+        "breadcrumb": "Overview…/Problems/Capacity Gap/Scenarios/Capacity…BackForward",
+        "visibleObjectIds": [
+          "obj-revenue",
+          "obj-capacity",
+          "obj-budget",
+          "obj-customer",
+          "obj-delivery",
+          "obj-risk",
+          "obj-inventory",
+          "obj-demand",
+          "ctx-scenario-capacity",
+          "ctx-scenario-demand",
+          "ctx-scenario-pricing"
+        ],
+        "contextSubjectIds": []
+      }
+    },
+    "06-decision-centered": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/06-decision-centered.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "clicked": "ctx-decision-capacity",
+        "selected": "ctx-decision-capacity",
+        "focused": "ctx-decision-capacity",
+        "anchor": "ctx-decision-capacity",
+        "anchorPosition": "0,0,0",
+        "topologyMode": "anchored",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "context-focused",
+        "advisorStage": "ctx-decision-capacity",
+        "advisorRegion": "ctx-decision-capacity",
+        "advisorKind": "decision",
+        "advisorSubjectLabel": "Expand Capacitydecision",
+        "breadcrumb": "Overview…/Scenarios/Capacity…/Decisions/Expand Capacity/Expand CapacityBack",
+        "visibleObjectIds": [
+          "obj-capacity",
+          "obj-customer",
+          "ctx-decision-capacity"
+        ],
+        "contextSubjectIds": []
+      }
+    },
+    "07-execution-centered": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/07-execution-centered.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 1126,
+          "height": 840,
+          "clientWidth": 1126,
+          "clientHeight": 841
+        },
+        "clicked": "ctx-execution-capacity",
+        "selected": "ctx-execution-capacity",
+        "focused": "ctx-execution-capacity",
+        "anchor": "ctx-execution-capacity",
+        "anchorPosition": "0,0,0",
+        "topologyMode": "anchored",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "context-focused",
+        "advisorStage": "ctx-execution-capacity",
+        "advisorRegion": "ctx-execution-capacity",
+        "advisorKind": "execution",
+        "advisorSubjectLabel": "Capacity Expansionexecution",
+        "breadcrumb": "Overview…/Decisions/Expand Ca…/Executions/Capacity Expansion/Capacity ExpansionBack",
+        "visibleObjectIds": [
+          "obj-capacity",
+          "obj-customer",
+          "ctx-execution-capacity"
+        ],
+        "contextSubjectIds": []
+      }
+    },
+    "escape": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/09-escape-overview.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 1126,
+          "height": 872,
+          "clientWidth": 1126,
+          "clientHeight": 872
+        },
+        "clicked": "none",
+        "selected": "none",
+        "focused": "none",
+        "anchor": "none",
+        "anchorPosition": "none",
+        "topologyMode": "overview",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "overview",
+        "advisorStage": "none",
+        "advisorRegion": "none",
+        "advisorKind": "none",
+        "advisorSubjectLabel": "obj-capacity",
+        "breadcrumb": "Overview",
+        "visibleObjectIds": [
+          "obj-revenue",
+          "obj-capacity",
+          "obj-budget",
+          "obj-customer",
+          "obj-delivery",
+          "obj-risk",
+          "obj-inventory",
+          "obj-demand"
+        ],
+        "contextSubjectIds": []
+      }
+    },
+    "narrow": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux2-stage-interaction/10-narrow-desktop-1280x800.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "canvas": {
+          "width": 904,
+          "height": 730,
+          "clientWidth": 904,
+          "clientHeight": 730
+        },
+        "clicked": "none",
+        "selected": "none",
+        "focused": "none",
+        "anchor": "none",
+        "anchorPosition": "none",
+        "topologyMode": "overview",
+        "cameraMode": "fixed-2d",
+        "stageDepth": "0",
+        "interactionMode": "overview",
+        "advisorStage": "none",
+        "advisorRegion": "none",
+        "advisorKind": "none",
+        "advisorSubjectLabel": "obj-capacity",
+        "breadcrumb": "Overview",
+        "visibleObjectIds": [
+          "obj-revenue",
+          "obj-capacity",
+          "obj-budget",
+          "obj-customer",
+          "obj-delivery",
+          "obj-risk",
+          "obj-inventory",
+          "obj-demand"
+        ],
+        "contextSubjectIds": []
+      }
+    }
+  },
+  "unavailable": [],
+  "notes": []
+}

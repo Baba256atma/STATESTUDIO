@@ -1,0 +1,830 @@
+{
+  "phase": "UX:5-FIX1",
+  "status": "PASS",
+  "certifiedUrl": "http://localhost:3000/executive",
+  "certifiedAt": "2026-08-18T17:53:13.560Z",
+  "viewports": [
+    "1502x942",
+    "1280x800"
+  ],
+  "originalDefect": {
+    "classification": "D",
+    "secondaryContributorClassification": "C",
+    "exactShape": "The body colliding with Margin Pressure was obj-capacity, a non-member business-object watch context. Its target [-0.267178,-0.564539,0] overlapped ctx-problem-margin at [-0.267178,-0.784135,0]. Margin Pressure's broad critical state territory added a lower red ring that amplified the false stacked-body reading.",
+    "primarySubjects": [
+      {
+        "subjectId": "ctx-problem-margin",
+        "kind": "problem",
+        "collectionMember": true,
+        "preFixTargetPosition": [
+          -0.267178,
+          -0.784135,
+          0
+        ]
+      },
+      {
+        "subjectId": "obj-capacity",
+        "kind": "object",
+        "collectionMember": false,
+        "presentationRole": "watch-context",
+        "preFixTargetPosition": [
+          -0.267178,
+          -0.564539,
+          0
+        ]
+      }
+    ],
+    "preFixCenterDeltaY": 0.219596,
+    "preFixVisiblePrimaryBodyCount": 4,
+    "preFixCollectionMemberCount": 2,
+    "evidence": "01-problems-before-or-reproduction.png plus live React presentation identity trace; obj3dTerritory=0 diagnostic isolated the state ring separately."
+  },
+  "authorities": {
+    "membership": "ExecutiveStageCollectionContext.objectIds",
+    "collectionLayout": "resolveExecutiveCollectionLayout",
+    "hardSeparation": "resolveExecutiveStage2DHardSeparatedLayout",
+    "finalXyWriter": "ux5-fix1-collection-object-integrity",
+    "motion": "STAGE-MOTION:1",
+    "renderer": "NexoraStageScene → NexoraStageObject"
+  },
+  "footprintModel": {
+    "previous": "Collection grid centers only; overview/no-anchor readability bypassed hard separation and retained Data Reality watch bodies.",
+    "final": "Per-member conservative visible half-extents derived from ExecutiveStage2D visual footprints, hard-separated in XY with the existing minimum readability gap.",
+    "stateLayer": "Broad territory is suppressed only for collection peers; shape-aware edge and corner marker preserve critical/watch state."
+  },
+  "collections": {
+    "problem": {
+      "category": "problem",
+      "presentationMode": "collection",
+      "cameraMode": "fixed-2d",
+      "cameraTarget": "0,0,0",
+      "topologyZ": "0",
+      "memberIds": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "hiddenWatchIds": [
+        "obj-capacity",
+        "obj-customer"
+      ],
+      "duplicateObjectIds": [],
+      "overlapCount": 0,
+      "minGap": 1.36148,
+      "requiredGap": 0.4,
+      "layoutStatus": "valid",
+      "finalXyWriter": "ux5-fix1-collection-object-integrity",
+      "primaryBodyCount": 2,
+      "snapshots": [
+        {
+          "subjectId": "ctx-problem-capacity",
+          "kind": "problem",
+          "collection": "problem",
+          "collectionMember": true,
+          "presentationRole": "collection-member",
+          "targetPosition": [
+            -1.2125,
+            0.12,
+            0
+          ],
+          "bodyBounds": {
+            "minX": -1.7192599999999998,
+            "maxX": -0.7057399999999999,
+            "minY": -0.38676,
+            "maxY": 0.62676
+          },
+          "primaryBodyCount": 1,
+          "interactive": true,
+          "decorative": false,
+          "renderPosition": [
+            -1.2125,
+            0.12,
+            0
+          ],
+          "overlapCount": 0
+        },
+        {
+          "subjectId": "ctx-problem-margin",
+          "kind": "problem",
+          "collection": "problem",
+          "collectionMember": true,
+          "presentationRole": "collection-member",
+          "targetPosition": [
+            1.1625,
+            0.12,
+            0
+          ],
+          "bodyBounds": {
+            "minX": 0.6557400000000001,
+            "maxX": 1.66926,
+            "minY": -0.38676,
+            "maxY": 0.62676
+          },
+          "primaryBodyCount": 1,
+          "interactive": true,
+          "decorative": false,
+          "renderPosition": [
+            1.1625,
+            0.12,
+            0
+          ],
+          "overlapCount": 0
+        }
+      ],
+      "labels": [
+        {
+          "subjectId": "ctx-problem-capacity",
+          "ownerId": "ctx-problem-capacity",
+          "side": "top-left",
+          "visibility": "full",
+          "text": "CAPACITY GAPProblem",
+          "bounds": {
+            "x": 377.349365234375,
+            "y": 386.399658203125,
+            "width": 89.7125244140625,
+            "height": 25.488677978515625
+          }
+        },
+        {
+          "subjectId": "ctx-problem-margin",
+          "ownerId": "ctx-problem-margin",
+          "side": "top-right",
+          "visibility": "full",
+          "text": "MARGIN PRESSUREProblem",
+          "bounds": {
+            "x": 673.745361328125,
+            "y": 386.4224853515625,
+            "width": 118.562255859375,
+            "height": 26.036651611328125
+          }
+        }
+      ]
+    },
+    "scenario": {
+      "category": "scenario",
+      "presentationMode": "collection",
+      "cameraMode": "fixed-2d",
+      "cameraTarget": "0,0,0",
+      "topologyZ": "0",
+      "memberIds": [
+        "ctx-scenario-capacity",
+        "ctx-scenario-demand",
+        "ctx-scenario-pricing"
+      ],
+      "hiddenWatchIds": [
+        "obj-capacity"
+      ],
+      "duplicateObjectIds": [],
+      "overlapCount": 0,
+      "minGap": 0.4200000000000001,
+      "requiredGap": 0.4,
+      "layoutStatus": "valid",
+      "finalXyWriter": "ux5-fix1-collection-object-integrity",
+      "primaryBodyCount": 3,
+      "snapshots": [
+        {
+          "subjectId": "ctx-scenario-capacity",
+          "kind": "scenario",
+          "collection": "scenario",
+          "collectionMember": true,
+          "presentationRole": "collection-member",
+          "targetPosition": [
+            -1.2125,
+            0.96852,
+            0
+          ],
+          "bodyBounds": {
+            "minX": -1.7192599999999998,
+            "maxX": -0.7057399999999999,
+            "minY": 0.46176000000000006,
+            "maxY": 1.4752800000000001
+          },
+          "primaryBodyCount": 1,
+          "interactive": true,
+          "decorative": false,
+          "renderPosition": [
+            -1.2125,
+            0.96852,
+            0
+          ],
+          "overlapCount": 0
+        },
+        {
+          "subjectId": "ctx-scenario-demand",
+          "kind": "scenario",
+          "collection": "scenario",
+          "collectionMember": true,
+          "presentationRole": "collection-member",
+          "targetPosition": [
+            1.1625,
+            0.835,
+            0
+          ],
+          "bodyBounds": {
+            "minX": 0.6557400000000001,
+            "maxX": 1.66926,
+            "minY": 0.32824,
+            "maxY": 1.3417599999999998
+          },
+          "primaryBodyCount": 1,
+          "interactive": true,
+          "decorative": false,
+          "renderPosition": [
+            1.1625,
+            0.835,
+            0
+          ],
+          "overlapCount": 0
+        },
+        {
+          "subjectId": "ctx-scenario-pricing",
+          "kind": "scenario",
+          "collection": "scenario",
+          "collectionMember": true,
+          "presentationRole": "collection-member",
+          "targetPosition": [
+            -1.2125,
+            -0.465,
+            0
+          ],
+          "bodyBounds": {
+            "minX": -1.7192599999999998,
+            "maxX": -0.7057399999999999,
+            "minY": -0.97176,
+            "maxY": 0.041759999999999964
+          },
+          "primaryBodyCount": 1,
+          "interactive": true,
+          "decorative": false,
+          "renderPosition": [
+            -1.2125,
+            -0.465,
+            0
+          ],
+          "overlapCount": 0
+        }
+      ],
+      "labels": [
+        {
+          "subjectId": "ctx-scenario-capacity",
+          "ownerId": "ctx-scenario-capacity",
+          "side": "top-right",
+          "visibility": "full",
+          "text": "CAPACITY EXPANSION PLANScenario",
+          "bounds": {
+            "x": 434.1181640625,
+            "y": 294.1775817871094,
+            "width": 171.13482666015625,
+            "height": 25.47637939453125
+          }
+        },
+        {
+          "subjectId": "ctx-scenario-demand",
+          "ownerId": "ctx-scenario-demand",
+          "side": "bottom-right",
+          "visibility": "full",
+          "text": "DEMAND SURGEScenario",
+          "bounds": {
+            "x": 677.9320678710938,
+            "y": 367.6438293457031,
+            "width": 99.6158447265625,
+            "height": 25.994415283203125
+          }
+        },
+        {
+          "subjectId": "ctx-scenario-pricing",
+          "ownerId": "ctx-scenario-pricing",
+          "side": "bottom-right",
+          "visibility": "full",
+          "text": "PRICING RESPONSEScenario",
+          "bounds": {
+            "x": 433.0565185546875,
+            "y": 501.90679931640625,
+            "width": 120.17535400390625,
+            "height": 25.786865234375
+          }
+        }
+      ]
+    },
+    "decision": {
+      "category": "decision",
+      "presentationMode": "collection",
+      "cameraMode": "fixed-2d",
+      "cameraTarget": "0,0,0",
+      "topologyZ": "0",
+      "memberIds": [
+        "ctx-decision-capacity",
+        "ctx-decision-reprice"
+      ],
+      "hiddenWatchIds": [],
+      "duplicateObjectIds": [],
+      "overlapCount": 0,
+      "minGap": 1.36148,
+      "requiredGap": 0.4,
+      "layoutStatus": "valid",
+      "finalXyWriter": "ux5-fix1-collection-object-integrity",
+      "primaryBodyCount": 2,
+      "snapshots": [
+        {
+          "subjectId": "ctx-decision-capacity",
+          "kind": "decision",
+          "collection": "decision",
+          "collectionMember": true,
+          "presentationRole": "collection-member",
+          "targetPosition": [
+            -1.2125,
+            0.12,
+            0
+          ],
+          "bodyBounds": {
+            "minX": -1.7192599999999998,
+            "maxX": -0.7057399999999999,
+            "minY": -0.38676,
+            "maxY": 0.62676
+          },
+          "primaryBodyCount": 1,
+          "interactive": true,
+          "decorative": false,
+          "renderPosition": [
+            -1.2125,
+            0.12,
+            0
+          ],
+          "overlapCount": 0
+        },
+        {
+          "subjectId": "ctx-decision-reprice",
+          "kind": "decision",
+          "collection": "decision",
+          "collectionMember": true,
+          "presentationRole": "collection-member",
+          "targetPosition": [
+            1.1625,
+            0.12,
+            0
+          ],
+          "bodyBounds": {
+            "minX": 0.6557400000000001,
+            "maxX": 1.66926,
+            "minY": -0.38676,
+            "maxY": 0.62676
+          },
+          "primaryBodyCount": 1,
+          "interactive": true,
+          "decorative": false,
+          "renderPosition": [
+            1.1625,
+            0.12,
+            0
+          ],
+          "overlapCount": 0
+        }
+      ],
+      "labels": [
+        {
+          "subjectId": "ctx-decision-capacity",
+          "ownerId": "ctx-decision-capacity",
+          "side": "top-left",
+          "visibility": "full",
+          "text": "EXPAND CAPACITYDecision",
+          "bounds": {
+            "x": 361.45611572265625,
+            "y": 370.00579833984375,
+            "width": 113.528076171875,
+            "height": 25.381744384765625
+          }
+        },
+        {
+          "subjectId": "ctx-decision-reprice",
+          "ownerId": "ctx-decision-reprice",
+          "side": "top-right",
+          "visibility": "full",
+          "text": "APPROVE REPRICINGDecision",
+          "bounds": {
+            "x": 690.3534545898438,
+            "y": 370.0309143066406,
+            "width": 129.0589599609375,
+            "height": 25.98480224609375
+          }
+        }
+      ]
+    },
+    "execution": {
+      "category": "execution",
+      "presentationMode": "collection",
+      "cameraMode": "fixed-2d",
+      "cameraTarget": "0,0,0",
+      "topologyZ": "0",
+      "memberIds": [
+        "ctx-execution-capacity",
+        "ctx-execution-rollout"
+      ],
+      "hiddenWatchIds": [],
+      "duplicateObjectIds": [],
+      "overlapCount": 0,
+      "minGap": 1.36148,
+      "requiredGap": 0.4,
+      "layoutStatus": "valid",
+      "finalXyWriter": "ux5-fix1-collection-object-integrity",
+      "primaryBodyCount": 2,
+      "snapshots": [
+        {
+          "subjectId": "ctx-execution-capacity",
+          "kind": "execution",
+          "collection": "execution",
+          "collectionMember": true,
+          "presentationRole": "collection-member",
+          "targetPosition": [
+            -1.2125,
+            0.12,
+            0
+          ],
+          "bodyBounds": {
+            "minX": -1.7192599999999998,
+            "maxX": -0.7057399999999999,
+            "minY": -0.38676,
+            "maxY": 0.62676
+          },
+          "primaryBodyCount": 1,
+          "interactive": true,
+          "decorative": false,
+          "renderPosition": [
+            -1.2125,
+            0.12,
+            0
+          ],
+          "overlapCount": 0
+        },
+        {
+          "subjectId": "ctx-execution-rollout",
+          "kind": "execution",
+          "collection": "execution",
+          "collectionMember": true,
+          "presentationRole": "collection-member",
+          "targetPosition": [
+            1.1625,
+            0.12,
+            0
+          ],
+          "bodyBounds": {
+            "minX": 0.6557400000000001,
+            "maxX": 1.66926,
+            "minY": -0.38676,
+            "maxY": 0.62676
+          },
+          "primaryBodyCount": 1,
+          "interactive": true,
+          "decorative": false,
+          "renderPosition": [
+            1.1625,
+            0.12,
+            0
+          ],
+          "overlapCount": 0
+        }
+      ],
+      "labels": [
+        {
+          "subjectId": "ctx-execution-capacity",
+          "ownerId": "ctx-execution-capacity",
+          "side": "top-left",
+          "visibility": "full",
+          "text": "CAPACITY EXPANSIONExecution",
+          "bounds": {
+            "x": 361.8976135253906,
+            "y": 370.00579833984375,
+            "width": 134.71975708007812,
+            "height": 25.381744384765625
+          }
+        },
+        {
+          "subjectId": "ctx-execution-rollout",
+          "ownerId": "ctx-execution-rollout",
+          "side": "top-right",
+          "visibility": "full",
+          "text": "PRICING ROLLOUTExecution",
+          "bounds": {
+            "x": 690.025390625,
+            "y": 370.0309143066406,
+            "width": 113.312744140625,
+            "height": 25.98480224609375
+          }
+        }
+      ]
+    }
+  },
+  "narrowProblems": {
+    "category": "problem",
+    "presentationMode": "collection",
+    "cameraMode": "fixed-2d",
+    "cameraTarget": "0,0,0",
+    "topologyZ": "0",
+    "memberIds": [
+      "ctx-problem-capacity",
+      "ctx-problem-margin"
+    ],
+    "hiddenWatchIds": [
+      "obj-capacity",
+      "obj-customer"
+    ],
+    "duplicateObjectIds": [],
+    "overlapCount": 0,
+    "minGap": 1.36148,
+    "requiredGap": 0.4,
+    "layoutStatus": "valid",
+    "finalXyWriter": "ux5-fix1-collection-object-integrity",
+    "primaryBodyCount": 2,
+    "snapshots": [
+      {
+        "subjectId": "ctx-problem-capacity",
+        "kind": "problem",
+        "collection": "problem",
+        "collectionMember": true,
+        "presentationRole": "collection-member",
+        "targetPosition": [
+          -1.2125,
+          0.12,
+          0
+        ],
+        "bodyBounds": {
+          "minX": -1.7192599999999998,
+          "maxX": -0.7057399999999999,
+          "minY": -0.38676,
+          "maxY": 0.62676
+        },
+        "primaryBodyCount": 1,
+        "interactive": true,
+        "decorative": false,
+        "renderPosition": [
+          -1.2125,
+          0.12,
+          0
+        ],
+        "overlapCount": 0
+      },
+      {
+        "subjectId": "ctx-problem-margin",
+        "kind": "problem",
+        "collection": "problem",
+        "collectionMember": true,
+        "presentationRole": "collection-member",
+        "targetPosition": [
+          1.1625,
+          0.12,
+          0
+        ],
+        "bodyBounds": {
+          "minX": 0.6557400000000001,
+          "maxX": 1.66926,
+          "minY": -0.38676,
+          "maxY": 0.62676
+        },
+        "primaryBodyCount": 1,
+        "interactive": true,
+        "decorative": false,
+        "renderPosition": [
+          1.1625,
+          0.12,
+          0
+        ],
+        "overlapCount": 0
+      }
+    ],
+    "labels": [
+      {
+        "subjectId": "ctx-problem-capacity",
+        "ownerId": "ctx-problem-capacity",
+        "side": "top-left",
+        "visibility": "full",
+        "text": "CAPACITY GAPProblem",
+        "bounds": {
+          "x": 305.99371337890625,
+          "y": 330.0473327636719,
+          "width": 89.7125244140625,
+          "height": 25.488677978515625
+        }
+      },
+      {
+        "subjectId": "ctx-problem-margin",
+        "ownerId": "ctx-problem-margin",
+        "side": "top-right",
+        "visibility": "full",
+        "text": "MARGIN PRESSUREProblem",
+        "bounds": {
+          "x": 554.235107421875,
+          "y": 330.0701599121094,
+          "width": 118.562255859375,
+          "height": 26.036651611328125
+        }
+      }
+    ]
+  },
+  "focusResults": [
+    {
+      "subjectId": "ctx-problem-margin",
+      "focusedId": "ctx-problem-margin",
+      "advisorId": "ctx-problem-margin",
+      "centerId": "ctx-problem-margin",
+      "focusedTargetZ": "0",
+      "cameraMode": "fixed-2d",
+      "cameraTarget": "0,0,0",
+      "currentEntryId": "stage2d-navigation-1",
+      "interactionMethod": "webgl-raycast"
+    },
+    {
+      "subjectId": "ctx-problem-capacity",
+      "focusedId": "ctx-problem-capacity",
+      "advisorId": "ctx-problem-capacity",
+      "centerId": "ctx-problem-capacity",
+      "focusedTargetZ": "0",
+      "cameraMode": "fixed-2d",
+      "cameraTarget": "0,0,0",
+      "currentEntryId": "stage2d-navigation-2",
+      "interactionMethod": "canonical-object-control"
+    },
+    {
+      "subjectId": "ctx-scenario-capacity",
+      "focusedId": "ctx-scenario-capacity",
+      "advisorId": "ctx-scenario-capacity",
+      "centerId": "ctx-scenario-capacity",
+      "focusedTargetZ": "0",
+      "cameraMode": "fixed-2d",
+      "cameraTarget": "0,0,0",
+      "currentEntryId": "stage2d-navigation-4",
+      "interactionMethod": "canonical-object-control"
+    },
+    {
+      "subjectId": "ctx-decision-capacity",
+      "focusedId": "ctx-decision-capacity",
+      "advisorId": "ctx-decision-capacity",
+      "centerId": "ctx-decision-capacity",
+      "focusedTargetZ": "0",
+      "cameraMode": "fixed-2d",
+      "cameraTarget": "0,0,0",
+      "currentEntryId": "stage2d-navigation-6",
+      "interactionMethod": "canonical-object-control"
+    }
+  ],
+  "repeatedFinal": {
+    "category": "problem",
+    "presentationMode": "collection",
+    "cameraMode": "fixed-2d",
+    "cameraTarget": "0,0,0",
+    "topologyZ": "0",
+    "memberIds": [
+      "ctx-problem-capacity",
+      "ctx-problem-margin"
+    ],
+    "hiddenWatchIds": [
+      "obj-capacity",
+      "obj-customer"
+    ],
+    "duplicateObjectIds": [],
+    "overlapCount": 0,
+    "minGap": 1.36148,
+    "requiredGap": 0.4,
+    "layoutStatus": "valid",
+    "finalXyWriter": "ux5-fix1-collection-object-integrity",
+    "primaryBodyCount": 2,
+    "snapshots": [
+      {
+        "subjectId": "ctx-problem-capacity",
+        "kind": "problem",
+        "collection": "problem",
+        "collectionMember": true,
+        "presentationRole": "collection-member",
+        "targetPosition": [
+          -1.2125,
+          0.12,
+          0
+        ],
+        "bodyBounds": {
+          "minX": -1.7192599999999998,
+          "maxX": -0.7057399999999999,
+          "minY": -0.38676,
+          "maxY": 0.62676
+        },
+        "primaryBodyCount": 1,
+        "interactive": true,
+        "decorative": false,
+        "renderPosition": [
+          -1.2125,
+          0.12,
+          0
+        ],
+        "overlapCount": 0
+      },
+      {
+        "subjectId": "ctx-problem-margin",
+        "kind": "problem",
+        "collection": "problem",
+        "collectionMember": true,
+        "presentationRole": "collection-member",
+        "targetPosition": [
+          1.1625,
+          0.12,
+          0
+        ],
+        "bodyBounds": {
+          "minX": 0.6557400000000001,
+          "maxX": 1.66926,
+          "minY": -0.38676,
+          "maxY": 0.62676
+        },
+        "primaryBodyCount": 1,
+        "interactive": true,
+        "decorative": false,
+        "renderPosition": [
+          1.1625,
+          0.12,
+          0
+        ],
+        "overlapCount": 0
+      }
+    ],
+    "labels": [
+      {
+        "subjectId": "ctx-problem-capacity",
+        "ownerId": "ctx-problem-capacity",
+        "side": "top-left",
+        "visibility": "full",
+        "text": "CAPACITY GAPProblem",
+        "bounds": {
+          "x": 377.349365234375,
+          "y": 386.399658203125,
+          "width": 89.7125244140625,
+          "height": 25.488677978515625
+        }
+      },
+      {
+        "subjectId": "ctx-problem-margin",
+        "ownerId": "ctx-problem-margin",
+        "side": "top-right",
+        "visibility": "full",
+        "text": "MARGIN PRESSUREProblem",
+        "bounds": {
+          "x": 673.745361328125,
+          "y": 386.4224853515625,
+          "width": 118.562255859375,
+          "height": 26.036651611328125
+        }
+      }
+    ]
+  },
+  "checks": {
+    "problemsExactlyTwo": true,
+    "allCollectionLayoutsValid": true,
+    "oneBodyPerMember": true,
+    "noDuplicateSubjects": true,
+    "labelsReadable": true,
+    "independentRenderedHitTargets": true,
+    "fixedCamera": true,
+    "topologyZ0": true,
+    "backRestoresCollection": true,
+    "narrowValid": true,
+    "consoleClean": true
+  },
+  "consoleEntries": [],
+  "automatedVerification": {
+    "command": "npx tsx --test UX5-FIX1 + UX5 + UX4 parity + hard-separation + queue-foundation suites",
+    "result": "PASS",
+    "tests": 54,
+    "passed": 54,
+    "failed": 0
+  },
+  "buildVerification": {
+    "compilation": "PASS (Next.js compiled successfully in 9.8s)",
+    "typecheck": "BLOCKED_BY_PRE_EXISTING_ERROR",
+    "blocker": "app/api/monitoring/background/route.ts:48 — Property 'completed' does not exist on type '{}'.",
+    "changedFileDiagnostics": 0
+  },
+  "visualLayerAudit": {
+    "primaryBody": "ExecutiveObjectGeometryRenderer bodyCount=1",
+    "subordinateBodyDetail": "Premium face/recess/signature layers; non-interactive and parent-owned",
+    "stateTerritory": "Retained in focus/overview; broad territory suppressed for collection peers",
+    "stateMarker": "Parent-owned corner marker remains visible for collection state",
+    "edgeRim": "Shape-aware parent-owned edge remains visible",
+    "label": "STAGE-LABEL:1 owner id and independent bounds certified",
+    "relationship": "No collection relationship mesh promoted to a peer body",
+    "decorative": "Non-interactive; never counted as a primary body"
+  },
+  "humanVisualIntegrityCertification": "PASS",
+  "remainingDebt": [
+    "Collection footprints are conservative world-space envelopes rather than GPU-readback mesh bounds.",
+    "Certification uses the canonical accessible object control when a label-adjacent raycast is not stable; both collection members remain independently interactive."
+  ],
+  "unavailableCollections": [],
+  "ux6Started": false,
+  "captures": [
+    "01-problems-before-or-reproduction.png",
+    "02-problems-fixed.png",
+    "03-margin-pressure-focused.png",
+    "04-problems-back-restored.png",
+    "05-capacity-gap-focused.png",
+    "06-scenarios-collection.png",
+    "07-decisions-collection.png",
+    "08-executions-collection.png",
+    "09-repeated-transition-final.png",
+    "10-problems-1280x800.png",
+    "11-console-clean.png"
+  ]
+}

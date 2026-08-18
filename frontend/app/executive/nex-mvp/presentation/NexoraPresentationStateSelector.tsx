@@ -27,9 +27,9 @@ type Props = {
 };
 
 const LABELS: Record<NexoraMVPPresentationState, string> = {
-  minimum: "Minimum",
-  report: "Report",
-  operation: "Operation",
+  minimum: "Focus",
+  report: "Details",
+  operation: "Actions",
 };
 
 /**
@@ -118,6 +118,7 @@ export function NexoraPresentationStateSelector({
       data-nex-mvp="6"
       data-active-presentation={activePresentationState}
       data-operation-enabled={capability.operation ? "true" : "false"}
+      data-ux1-compact="true"
       role="radiogroup"
       aria-labelledby={labelId}
       tabIndex={0}
@@ -127,33 +128,49 @@ export function NexoraPresentationStateSelector({
         right: "0.85rem",
         top: "0.75rem",
         zIndex: 8,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "stretch",
-        gap: "0.35rem",
-        minWidth: "10.5rem",
-        padding: "0.5rem 0.55rem",
-        borderRadius: cockpit.radius.md,
-        border: `1px solid ${cockpit.borderStrong}`,
-        background: "rgba(10, 16, 26, 0.78)",
-        boxShadow: cockpit.elevation.raised,
-        backdropFilter: "blur(8px)",
+        minWidth: "7.5rem",
         pointerEvents: "auto",
         outline: "none",
       }}
     >
-      <span
-        id={labelId}
+      <details
+        data-testid="nexora-presentation-disclosure"
         style={{
-          fontSize: "0.56rem",
-          letterSpacing: "0.16em",
-          textTransform: "uppercase",
-          color: cockpit.lowMuted,
-          fontWeight: 550,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "stretch",
+          gap: "0.35rem",
+          padding: "0.35rem 0.45rem",
+          borderRadius: cockpit.radius.md,
+          border: `1px solid ${cockpit.border}`,
+          background: "rgba(10, 16, 26, 0.62)",
+          boxShadow: cockpit.elevation.raised,
+          backdropFilter: "blur(8px)",
         }}
       >
-        Presentation Level
-      </span>
+        <summary
+          style={{
+            listStyle: "none",
+            cursor: "pointer",
+            fontSize: "0.56rem",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: cockpit.muted,
+            fontWeight: 550,
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "0.4rem",
+          }}
+        >
+          <span id={labelId}>View</span>
+          <span
+            data-testid="nexora-presentation-active-label"
+            style={{ color: cockpit.accent }}
+          >
+            {LABELS[activePresentationState]}
+          </span>
+        </summary>
+        <span style={cockpit.visuallyHidden}>Presentation Level</span>
       <div
         style={{
           display: "flex",
@@ -210,17 +227,7 @@ export function NexoraPresentationStateSelector({
           );
         })}
       </div>
-      <span
-        data-testid="nexora-presentation-active-label"
-        style={{
-          fontSize: "0.52rem",
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: cockpit.muted,
-        }}
-      >
-        {LABELS[activePresentationState]} · level
-      </span>
+      </details>
     </div>
   );
 }

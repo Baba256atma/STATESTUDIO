@@ -33,13 +33,12 @@ export function NexoraExecutiveNextBestActionPanel({
         recommended.targetObjectId ?? recommended.targetCollection ?? "none"
       }
       data-nba-is-semantic-object="false"
-      aria-label="Next Best Action"
+      aria-label="Next Action"
       style={{
-        margin: "0.55rem 0.75rem 0.35rem",
-        padding: "0.55rem 0.65rem 0.6rem",
+        margin: 0,
+        padding: "0.45rem 0 0.5rem",
         borderTop: `1px solid ${cockpit.border}`,
-        borderBottom: `1px solid ${cockpit.border}`,
-        background: "rgba(8, 14, 24, 0.35)",
+        background: "transparent",
       }}
     >
       <div
@@ -52,7 +51,7 @@ export function NexoraExecutiveNextBestActionPanel({
           marginBottom: "0.35rem",
         }}
       >
-        Next Best Action
+        Next Action
       </div>
       <button
         type="button"

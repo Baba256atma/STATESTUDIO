@@ -152,6 +152,7 @@ test('cert: collection / related shows', () => {
   assert.equal(resolve("Show scenarios").intent.kind, "show-scenarios");
   assert.equal(resolve("Show decisions").intent.kind, "show-decisions");
   assert.equal(resolve("Show execution").intent.kind, "show-execution");
+  assert.equal(resolve("Show executions").intent.kind, "show-execution");
 
   for (const u of [
     "Show related objects",
@@ -159,6 +160,7 @@ test('cert: collection / related shows', () => {
     "Show scenarios",
     "Show decisions",
     "Show execution",
+    "Show executions",
   ]) {
     const intent = resolve(u).intent;
     assert.equal(intent.requiresTarget, false);
@@ -217,6 +219,10 @@ test('cert: navigation — back / forward / overview', () => {
 
   const overview2 = resolve("Go back to overview").intent;
   assert.equal(overview2.kind, "overview");
+
+  const allObjects = resolve("Show all objects").intent;
+  assert.equal(allObjects.kind, "overview");
+  assert.equal(allObjects.requiresTarget, false);
 });
 
 // ─── Ambiguity / unknown ────────────────────────────────────────────────────

@@ -163,6 +163,7 @@ export function NexoraWorkspaceDial({
           textTransform: "uppercase",
           color: cockpit.lowMuted,
           fontWeight: 550,
+          ...cockpit.visuallyHidden,
         }}
       >
         Workspace Dial
@@ -336,12 +337,7 @@ export function NexoraWorkspaceDial({
       </div>
 
       <span
-        style={{
-          fontSize: "0.52rem",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: cockpit.lowMuted,
-        }}
+        style={cockpit.visuallyHidden}
       >
         {dial.previousWorkspace
           ? NEXORA_MVP_WORKSPACE_LABELS[dial.previousWorkspace]

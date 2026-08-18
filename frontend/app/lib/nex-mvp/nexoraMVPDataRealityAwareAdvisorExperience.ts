@@ -74,52 +74,59 @@ export function applyDataRealityAwareAdvisorBindingToAdvisorViewModel(
   const density = binding.presentationDensity;
   const primary = binding.primarySubject;
 
-  // STAGE-2D:6V-FIX — Direct click subject authority.
-  // Never replace an explicit Stage subject with a DR-recommended substitute.
+  // UX:3 — explicit Stage/Advisor subject wins. Overview must stay subject-less.
+  // Never replace an explicit subject, and never fill Overview with recommended attention.
   const hasExplicitBaseSubject =
     typeof base.subjectId === "string" && base.subjectId.length > 0;
-  const subjectId =
-    hasExplicitBaseSubject &&
-    primary !== undefined &&
-    primary.objectId !== base.subjectId
-      ? base.subjectId
-      : (primary?.objectId ?? base.subjectId);
-  const subjectLabel =
-    subjectId === base.subjectId
-      ? base.subjectLabel
-      : primary !== undefined && primary.objectId === subjectId
-        ? primary.objectId
-        : base.subjectLabel;
+  const subjectId = hasExplicitBaseSubject ? base.subjectId : null;
+  const matchingPrimary =
+    primary !== undefined && primary.objectId === subjectId ? primary : undefined;
+  const subjectLabel = hasExplicitBaseSubject ? base.subjectLabel : null;
+  const subjectKind = hasExplicitBaseSubject ? base.subjectKind : null;
 
-  const title =
-    density.showHeadline && binding.headline.length > 0
+  const title = hasExplicitBaseSubject
+    ? density.showHeadline && binding.headline.length > 0
       ? binding.headline
-      : base.title;
+      : base.title
+    : "Advisor · Overview";
 
-  const observation = density.showAdvisorMeaning
-    ? (primary?.advisorMeaning ?? binding.summary.summary)
-    : density.showDominantAttention
-      ? `Attention: ${binding.attention.dominantAttention}`
-      : null;
+  const observation = hasExplicitBaseSubject
+    ? density.showAdvisorMeaning
+      ? (matchingPrimary?.advisorMeaning ??
+        (primary?.objectId === subjectId ? binding.summary.summary : base.observation) ??
+        base.observation)
+      : (base.observation ?? null)
+    : base.observation;
 
   const recommendation = density.showRecommendedActions
-    ? (binding.recommendations.primaryAction?.title ?? null)
-    : null;
+    ? matchingPrimary != null ||
+      binding.recommendations.primaryAction?.subjectId === subjectId
+      ? (binding.recommendations.primaryAction?.title ?? base.recommendation)
+      : base.recommendation
+    : base.recommendation;
 
   const rationale = density.showRecommendedActions
-    ? (binding.recommendations.primaryAction?.rationale ?? null)
-    : density.showSummary
-      ? binding.summary.summary
-      : null;
+    ? (binding.recommendations.primaryAction?.subjectId === subjectId
+        ? (binding.recommendations.primaryAction?.rationale ?? base.rationale)
+        : base.rationale)
+    : density.showSummary && hasExplicitBaseSubject
+      ? (binding.summary.summary ?? base.rationale)
+      : base.rationale;
 
   const warning =
-    binding.unresolved.hasUnresolvedReality || (primary?.isUnresolved ?? false)
-      ? (binding.unresolved.unavailableInformation[0] ??
-        "Certified executive reality is unresolved for one or more subjects.")
-      : null;
+    hasExplicitBaseSubject &&
+    (matchingPrimary?.isUnresolved === true ||
+      (binding.unresolved.hasUnresolvedReality &&
+        binding.unresolved.objectIds.includes(subjectId ?? "")))
+      ? (binding.unresolved.unavailableInformation[0] ?? base.warning)
+      : hasExplicitBaseSubject
+        ? base.warning
+        : null;
 
-  const priority = density.showDominantAttention
-    ? (primary?.attention ?? binding.attention.dominantAttention)
+  const priority = hasExplicitBaseSubject
+    ? density.showDominantAttention
+      ? (matchingPrimary?.attention ?? base.priority)
+      : base.priority
     : base.priority;
 
   return Object.freeze({
@@ -127,13 +134,8 @@ export function applyDataRealityAwareAdvisorBindingToAdvisorViewModel(
     contextKey: `${base.contextKey}|dr:${binding.bindingId}`,
     subjectId,
     subjectLabel,
-    subjectKind: primary !== undefined ? "object" : base.subjectKind,
+    subjectKind,
     title,
-    contextLine: [
-      binding.datasetIdentity.datasetId,
-      binding.presentationState,
-      binding.overallCondition.dominantState,
-    ].join(" · "),
     recommendation,
     rationale,
     // Preserve existing UI chrome actions — do not convert them into recommendations.
@@ -143,7 +145,8 @@ export function applyDataRealityAwareAdvisorBindingToAdvisorViewModel(
     priority,
     emptyReason:
       recommendation == null && observation == null
-        ? "No certified Advisor recommendation is available for the current reality."
+        ? (base.emptyReason ??
+          "No certified Advisor recommendation is available for the current reality.")
         : null,
   });
 }

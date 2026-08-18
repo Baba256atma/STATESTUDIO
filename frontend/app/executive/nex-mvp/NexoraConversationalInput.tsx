@@ -60,7 +60,7 @@ export function NexoraConversationalInput({
           color: cockpit.muted,
         }}
       >
-        Talk to Nexora
+        Ask Nexora
       </label>
       <div style={{ display: "flex", gap: "0.35rem", alignItems: "flex-end" }}>
         <textarea

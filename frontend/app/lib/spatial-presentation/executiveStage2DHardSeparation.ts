@@ -351,7 +351,11 @@ function evaluatePairs(nodes: readonly WorkingNode[]): {
  * Anchor is immovable. Never uses Z. Never moves the camera.
  */
 export function resolveExecutiveStage2DHardSeparatedLayout(input: {
-  readonly anchorObjectId: string;
+  /**
+   * Semantic focus anchor. Null is valid for peer collections, where no
+   * arbitrary member may acquire CENTER authority.
+   */
+  readonly anchorObjectId: string | null;
   readonly positions: Readonly<
     Record<string, ExecutiveStage2DResolvedPosition>
   >;
@@ -359,6 +363,8 @@ export function resolveExecutiveStage2DHardSeparatedLayout(input: {
     Record<string, ExecutiveStage2DNeighborhoodClass>
   >;
   readonly priority?: Readonly<Record<string, number>>;
+  /** Optional measured/conservative XY half-extents keyed by canonical id. */
+  readonly footprintHalfExtents?: Readonly<Record<string, number>>;
   readonly presentationState?: ExecutiveStage2DPresentationClass;
   readonly orderedIds?: readonly string[];
 }): ExecutiveStage2DHardSeparationResult {
@@ -378,12 +384,16 @@ export function resolveExecutiveStage2DHardSeparatedLayout(input: {
       classification === "hidden" ? "background" : classification,
       presentationState,
     );
+    const measuredHalf = input.footprintHalfExtents?.[id];
     const priorityBoost = input.priority?.[id] ?? 0;
     return {
       id,
       x: id === input.anchorObjectId ? 0 : position.x,
       y: id === input.anchorObjectId ? 0 : position.y,
-      half: footprint.halfExtent,
+      half:
+        measuredHalf != null && Number.isFinite(measuredHalf) && measuredHalf > 0
+          ? measuredHalf
+          : footprint.halfExtent,
       rank: classRank(classification) + priorityBoost * 0.01,
       classification,
       hidden: classification === "hidden",
@@ -545,11 +555,13 @@ export function resolveExecutiveStage2DHardSeparatedLayout(input: {
       z: EXECUTIVE_STAGE_2D_DEPTH,
     }) as ExecutiveStage2DResolvedPosition;
   }
-  positions[input.anchorObjectId] = normalizeExecutiveStage2DPosition({
-    x: 0,
-    y: 0,
-    z: 0,
-  }) as ExecutiveStage2DResolvedPosition;
+  if (input.anchorObjectId != null) {
+    positions[input.anchorObjectId] = normalizeExecutiveStage2DPosition({
+      x: 0,
+      y: 0,
+      z: 0,
+    }) as ExecutiveStage2DResolvedPosition;
+  }
 
   finalEval = evaluatePairs(nodes.filter((node) => !node.hidden));
   const layoutStatus: ExecutiveStage2DLayoutStatus =

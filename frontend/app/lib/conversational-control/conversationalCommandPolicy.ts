@@ -180,6 +180,30 @@ export const CONVERSATIONAL_INTENT_COMMAND_RULES: readonly ConversationalIntentC
       allowedPrimaryKinds: CONVERSATIONAL_FOCUSABLE_SUBJECT_KINDS,
       mappingRuleId: "intent.explain→request-explanation",
     }),
+    ...(
+      [
+        "situation",
+        "evidence",
+        "change",
+        "risk",
+        "execution-status",
+      ] as const
+    ).map((intentKind) =>
+      Object.freeze({
+        intentKind,
+        commandKind: "request-prioritization" as const,
+        targetRequirement: "primary-optional" as const,
+        allowedPrimaryKinds: CONVERSATIONAL_FOCUSABLE_SUBJECT_KINDS,
+        mappingRuleId: `intent.${intentKind}→request-prioritization`,
+      }),
+    ),
+    Object.freeze({
+      intentKind: "decision-status" as const,
+      commandKind: "request-prioritization" as const,
+      targetRequirement: "primary-optional" as const,
+      allowedPrimaryKinds: CONVERSATIONAL_FOCUSABLE_SUBJECT_KINDS,
+      mappingRuleId: "intent.decision-status→request-prioritization",
+    }),
     Object.freeze({
       intentKind: "prioritize" as const,
       commandKind: "request-prioritization" as const,

@@ -15,6 +15,8 @@ import { getNexoraRegisteredExecutiveExperiences } from "./conversationalExperie
 import type { NexoraExecutiveRecommendationResult } from "./executiveRecommendation.ts";
 import type { NexoraExecutiveScenarioConversationResult } from "./executiveScenarioResolver.ts";
 import type { NexoraDecisionCommitmentResult } from "./executiveDecisionCommitmentResolver.ts";
+import type { NexoraConversationalAdvisorGrounding } from "./conversationalExperience.ts";
+import type { NexoraPendingTurnResolution } from "./conversationalTurnExpectation.ts";
 
 export function buildNexoraConversationalExperienceResponse(input: {
   readonly status: NexoraConversationalExperienceStatus;
@@ -27,6 +29,10 @@ export function buildNexoraConversationalExperienceResponse(input: {
   readonly recommendationResult?: NexoraExecutiveRecommendationResult | null;
   readonly scenarioResult?: NexoraExecutiveScenarioConversationResult | null;
   readonly decisionCommitmentResult?: NexoraDecisionCommitmentResult | null;
+  readonly advisorGrounding?: NexoraConversationalAdvisorGrounding | null;
+  readonly pendingTurnResolution?: NexoraPendingTurnResolution | null;
+  readonly bareSubjectReference?: boolean;
+  readonly safeActionNavigation?: boolean;
 }): string {
   const {
     status,
@@ -38,6 +44,10 @@ export function buildNexoraConversationalExperienceResponse(input: {
     recommendationResult,
     scenarioResult,
     decisionCommitmentResult,
+    advisorGrounding,
+    pendingTurnResolution,
+    bareSubjectReference,
+    safeActionNavigation,
   } = input;
   const label =
     context.primarySubject?.canonicalName ??
@@ -48,6 +58,21 @@ export function buildNexoraConversationalExperienceResponse(input: {
   const hintRaw =
     intent.targetHints.find((h) => h.role === "experience")?.raw ??
     intent.targetHints[0]?.raw;
+
+  if (intent.kind === "greet" || intent.kind === "help") {
+    const attention =
+      recommendationResult?.assessment.issues[0]?.summary ??
+      recommendationResult?.assessment.constraints[0]?.summary ??
+      null;
+    if (intent.kind === "help") {
+      return attention
+        ? `${managerSummary(attention)} You can ask what is happening, why it matters, what I recommend, or tell me what to focus on.`
+        : "I can explain the current context, show available evidence, recommend a grounded next step, or focus the Stage on a subject.";
+    }
+    return attention
+      ? `Hi. I’m ready. ${managerSummary(attention)} Would you like to review it?`
+      : "Hi. I’m ready. What would you like to review?";
+  }
 
   if (decisionCommitmentResult) {
     if (
@@ -67,6 +92,60 @@ export function buildNexoraConversationalExperienceResponse(input: {
       return scenarioResult.clarificationPrompt ?? "For what time horizon?";
     }
     return scenarioResult.summary;
+  }
+
+  if (
+    pendingTurnResolution?.status === "answered" &&
+    pendingTurnResolution.expectation.questionKind === "review-subject"
+  ) {
+    if (
+      advisorGrounding &&
+      advisorGroundingMatchesContext(
+        advisorGrounding,
+        context.primarySubject?.subjectId ?? null,
+      )
+    ) {
+      return buildAdvisorGroundedResponse("situation", advisorGrounding);
+    }
+    if (recommendationResult) {
+      return buildReviewConfirmationResponse(label, recommendationResult);
+    }
+    return label
+      ? `Reviewing ${label}. Ask me to explain the situation, evidence, or recommendation.`
+      : "The subject is ready for review.";
+  }
+
+  if (safeActionNavigation) {
+    if (
+      advisorGrounding &&
+      advisorGroundingMatchesContext(
+        advisorGrounding,
+        context.primarySubject?.subjectId ?? null,
+      )
+    ) {
+      return buildAdvisorGroundedResponse("situation", advisorGrounding);
+    }
+    if (recommendationResult) {
+      return buildReviewConfirmationResponse(label, recommendationResult);
+    }
+    return label
+      ? `${label} is now in focus.`
+      : "The requested subject is now in focus.";
+  }
+
+  if (bareSubjectReference && runtime?.status === "no-op" && label) {
+    return `${label} is already the current subject. You can ask me to explain the situation, show the evidence, or review the recommendation.`;
+  }
+
+  if (
+    status === "applied" &&
+    advisorGrounding &&
+    (intent.kind === "situation" ||
+      intent.kind === "explain" ||
+      intent.kind === "recommend") &&
+    advisorGroundingMatchesContext(advisorGrounding, context.primarySubject?.subjectId ?? null)
+  ) {
+    return buildAdvisorGroundedResponse(intent.kind, advisorGrounding);
   }
 
   if (
@@ -119,21 +198,21 @@ export function buildNexoraConversationalExperienceResponse(input: {
 
     case "unsupported":
       if (intent.kind === "unknown" || command == null) {
-        return "I couldn't map that to a Nexora command.";
+        return "I’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution.";
       }
       if (command.kind === "compare-subjects") {
-        return "Comparison control isn't available yet.";
+        return "I can’t compare those subjects with the available validated context yet.";
       }
       if (command.kind === "reveal-goals") {
-        return "Goals collection control isn't available yet.";
+        return "I can’t open that goal view in the current executive context.";
       }
       if (command.kind === "simulate-scenario") {
-        return "Full simulation isn't available yet.";
+        return "I can explain the available scenarios, but a full simulation is not available in this context.";
       }
-      return "That control isn't available yet.";
+      return "That request is not available in the current executive context.";
 
     case "confirmation-required":
-      return "That command needs confirmation before Nexora can proceed.";
+      return "That request needs confirmation before Nexora can proceed.";
 
     case "no-op":
       if (experienceResolution?.decision === "keep-current" && experienceLabel) {
@@ -144,7 +223,7 @@ export function buildNexoraConversationalExperienceResponse(input: {
         : "No change — that command was already applied.";
 
     case "failed":
-      return "Nexora couldn't complete that command.";
+      return "Nexora couldn’t complete that request. Please try again.";
 
     case "applied":
       return buildAppliedResponse(
@@ -157,8 +236,129 @@ export function buildNexoraConversationalExperienceResponse(input: {
       );
 
     default:
-      return "Nexora couldn't complete that command.";
+      return "Nexora couldn’t complete that request. Please try again.";
   }
+}
+
+function buildReviewConfirmationResponse(
+  label: string | null,
+  recommendationResult: NexoraExecutiveRecommendationResult,
+): string {
+  const primarySubjectId = recommendationResult.assessment.primarySubjectId;
+  const situation =
+    recommendationResult.assessment.issues.find(
+      (item) => item.subjectId === primarySubjectId,
+    )?.summary ??
+    recommendationResult.assessment.constraints.find(
+      (item) => item.subjectId === primarySubjectId,
+    )?.summary ??
+    recommendationResult.assessment.opportunities.find(
+      (item) => item.subjectId === primarySubjectId,
+    )?.summary ??
+    null;
+  const recommendation = recommendationResult.primaryRecommendation;
+  return [
+    situation
+      ? managerSummary(situation)
+      : label
+        ? `${label} is ready for review.`
+        : "The subject is ready for review.",
+    recommendation
+      ? `Recommendation: ${managerSummary(recommendation.summary)}`
+      : "Evidence is limited, so Nexora cannot recommend a stronger action yet.",
+  ].join(" ");
+}
+
+function advisorGroundingMatchesContext(
+  grounding: NexoraConversationalAdvisorGrounding,
+  primarySubjectId: string | null,
+): boolean {
+  return grounding.isOverview
+    ? primarySubjectId == null
+    : grounding.currentSubjectId === primarySubjectId;
+}
+
+function buildAdvisorGroundedResponse(
+  intentKind: string,
+  grounding: NexoraConversationalAdvisorGrounding,
+): string {
+  if (intentKind === "recommend") {
+    if (!grounding.recommendation) {
+      return (
+        grounding.noRecommendationReason ??
+        grounding.evidenceSummary ??
+        "No grounded recommendation is available for this context."
+      );
+    }
+    return [
+      `Recommendation: ${withPeriod(grounding.recommendation)}`,
+      grounding.primaryActionLabel &&
+      normalizeStatement(grounding.primaryActionLabel) !==
+        normalizeStatement(grounding.recommendation)
+        ? `Next: ${withPeriod(grounding.primaryActionLabel)}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  if (grounding.isOverview) {
+    return [
+      "Executive Overview. No explicit subject is selected.",
+      grounding.attentionReason
+        ? withPeriod(grounding.attentionReason)
+        : grounding.situation
+          ? withPeriod(grounding.situation)
+          : null,
+      grounding.whyItMatters
+        ? withPeriod(grounding.whyItMatters)
+        : grounding.evidenceSummary
+          ? withPeriod(grounding.evidenceSummary)
+          : null,
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  if (intentKind === "explain") {
+    return [
+      grounding.whyItMatters
+        ? withPeriod(grounding.whyItMatters)
+        : grounding.situation
+          ? withPeriod(grounding.situation)
+          : null,
+      grounding.recommendation
+        ? `Recommendation: ${withPeriod(grounding.recommendation)}`
+        : grounding.evidenceSummary
+          ? withPeriod(grounding.evidenceSummary)
+          : null,
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  return [
+    grounding.situation ? withPeriod(grounding.situation) : null,
+    grounding.whyItMatters ? withPeriod(grounding.whyItMatters) : null,
+    grounding.recommendation
+      ? `Recommendation: ${withPeriod(grounding.recommendation)}`
+      : grounding.noRecommendationReason
+        ? withPeriod(grounding.noRecommendationReason)
+        : grounding.evidenceSummary
+          ? withPeriod(grounding.evidenceSummary)
+          : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function withPeriod(value: string): string {
+  const trimmed = value.trim();
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+function normalizeStatement(value: string): string {
+  return value.toLowerCase().replace(/[.!?]/g, "").replace(/\s+/g, " ").trim();
 }
 
 function buildRecommendationResponse(input: {
@@ -168,6 +368,88 @@ function buildRecommendationResponse(input: {
 }): string {
   const { recommendationResult, intentKind, label } = input;
   const primary = recommendationResult.primaryRecommendation;
+  const assessment = recommendationResult.assessment;
+
+  if (intentKind === "change") {
+    return label
+      ? `I don’t have a validated prior-state comparison for ${label} in this session yet.`
+      : "I don’t have a validated prior-state comparison for the current context yet.";
+  }
+
+  if (intentKind === "evidence") {
+    const summaries = [
+      ...assessment.issues.map((item) => item.summary),
+      ...assessment.constraints.map((item) => item.summary),
+      ...(primary?.rationale.map((item) => item.summary) ?? []),
+    ]
+      .map(managerSummary)
+      .filter((item, index, all) => all.indexOf(item) === index);
+    const sourceKinds = [
+      ...(primary?.evidenceRefs ?? []),
+      ...assessment.issues.flatMap((item) => item.evidenceRefs),
+      ...assessment.constraints.flatMap((item) => item.evidenceRefs),
+    ]
+      .map((reference) => executiveSourceLabel(reference.sourceKind))
+      .filter((item, index, all) => all.indexOf(item) === index);
+    if (summaries.length === 0 || sourceKinds.length === 0) {
+      return "Evidence is currently limited. I don’t have enough validated information to support a stronger answer.";
+    }
+    return `${summaries.slice(0, 2).join(" ")} Evidence: ${sourceKinds.join(", ")}.`;
+  }
+
+  if (intentKind === "situation") {
+    const situation =
+      assessment.issues[0]?.summary ??
+      assessment.constraints[0]?.summary ??
+      assessment.opportunities[0]?.summary ??
+      primary?.rationale[0]?.summary ??
+      null;
+    if (!situation) {
+      return "Evidence is currently limited. I can’t establish a validated situation for this context yet.";
+    }
+    const next = primary?.nextBestActions[0]?.label;
+    return [managerSummary(situation), next ? `Next: ${next}.` : null]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  if (intentKind === "risk") {
+    const risk =
+      assessment.conflicts[0]?.summary ??
+      assessment.issues.find(
+        (item) => item.severity === "critical" || item.severity === "important",
+      )?.summary ??
+      assessment.constraints[0]?.summary ??
+      primary?.uncertainties[0]?.description ??
+      null;
+    return risk
+      ? `${managerSummary(risk)} ${primary?.uncertainties[0] ? `Uncertainty: ${primary.uncertainties[0].description}` : "No causal claim is implied."}`
+      : "I don’t have a validated risk signal for this context.";
+  }
+
+  if (intentKind === "decision-status") {
+    if (!primary || recommendationResult.status === "insufficient-evidence") {
+      return "No current decision requirement is supported by the available evidence.";
+    }
+    return primary.requiresDecisionCommitment
+      ? `${primary.summary} A decision requires explicit review and commitment; a preference alone will not commit it.`
+      : `${primary.summary} No explicit decision commitment is required yet.`;
+  }
+
+  if (intentKind === "execution-status") {
+    const state =
+      assessment.issues[0]?.summary ??
+      assessment.constraints[0]?.summary ??
+      primary?.rationale[0]?.summary ??
+      null;
+    const next = primary?.nextBestActions[0]?.label;
+    if (!state) {
+      return "I don’t have enough validated execution information to answer that yet.";
+    }
+    return [managerSummary(state), next ? `Next: ${next}.` : null]
+      .filter(Boolean)
+      .join(" ");
+  }
 
   if (recommendationResult.status === "insufficient-evidence" || !primary) {
     return "I don't have enough evidence to recommend a course of action yet.";
@@ -190,12 +472,12 @@ function buildRecommendationResponse(input: {
 
   if (intentKind === "explain") {
     const reasons = primary.rationale
-      .slice(0, 3)
-      .map((r) => `- ${r.summary}`)
+      .slice(0, 1)
+      .map((r) => r.summary)
       .join("\n");
     return [
       primary.summary,
-      reasons ? `Why:\n${reasons}` : null,
+      reasons ? `Why: ${reasons}` : null,
       primary.uncertainties[0]
         ? `Uncertainty: ${primary.uncertainties[0].description}`
         : null,
@@ -226,6 +508,38 @@ function buildRecommendationResponse(input: {
       : null,
   ].filter(Boolean);
   return lines.join("\n");
+}
+
+function executiveSourceLabel(sourceKind: string): string {
+  switch (sourceKind) {
+    case "data-reality":
+      return "validated operating data";
+    case "kpi":
+      return "current KPI signals";
+    case "relationship":
+      return "recorded business relationships";
+    case "goal":
+      return "current goals";
+    case "problem":
+      return "recorded problems";
+    case "scenario":
+      return "scenario assumptions";
+    case "decision":
+      return "decision records";
+    case "execution":
+      return "execution records";
+    case "runtime":
+      return "current runtime state";
+    default:
+      return "validated evidence";
+  }
+}
+
+function managerSummary(value: string): string {
+  return value
+    .replace(/\s+shows critical\./i, " needs urgent attention.")
+    .replace(/\s+shows (?:important|elevated)\./i, " needs attention.")
+    .replace(/\s+shows normal\./i, " is stable.");
 }
 
 function resolveExperienceLabel(

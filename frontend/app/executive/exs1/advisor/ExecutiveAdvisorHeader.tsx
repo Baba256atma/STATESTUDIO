@@ -15,7 +15,7 @@ type Props = {
 const TABS: readonly ExecutiveAdvisorTab[] = ["Assist", "Insight"];
 const TAB_LABEL: Record<ExecutiveAdvisorTab, string> = {
   Assist: "Advisor",
-  Insight: "Insight",
+  Insight: "Details",
 };
 const TAB_ICON: Record<ExecutiveAdvisorTab, string> = {
   Assist: "💬",
@@ -122,7 +122,7 @@ export function ExecutiveAdvisorHeader({
             fontWeight: cockpit.type.status.weight,
           }}
         >
-          Executive Advisor
+        Nexora Advisor
         </p>
         <ExecutiveAdvisorCollapseButton
           collapsed={collapsed}
@@ -133,10 +133,11 @@ export function ExecutiveAdvisorHeader({
       <div
         role="tablist"
         aria-label="Advisor tabs"
+        data-ux3-tabs="advisor-dominant"
         style={{
           display: "flex",
-          gap: "0.4rem",
-          marginTop: "0.55rem",
+          gap: "0.55rem",
+          marginTop: "0.4rem",
         }}
       >
         {TABS.map((item) => {
@@ -150,15 +151,17 @@ export function ExecutiveAdvisorHeader({
               data-testid={`executive-advisor-tab-${item.toLowerCase()}`}
               onClick={() => onTabChange(item)}
               style={{
-                flex: 1,
-                padding: "0.4rem 0.45rem",
-                borderRadius: cockpit.radius.sm,
+                padding: "0.15rem 0",
+                borderRadius: 0,
                 border: "none",
-                background: active ? `${accent}18` : "transparent",
-                color: active ? accent : cockpit.muted,
-                fontSize: "0.7rem",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
+                borderBottom: active
+                  ? `1px solid ${accent}`
+                  : "1px solid transparent",
+                background: "transparent",
+                color: active ? cockpit.textSoft : cockpit.lowMuted,
+                fontSize: "0.62rem",
+                letterSpacing: "0.02em",
+                textTransform: "none",
                 fontWeight: active ? 600 : 450,
                 cursor: "pointer",
                 fontFamily: "inherit",

@@ -265,6 +265,27 @@ function buildCandidateFromRecommendation(input: {
   });
 }
 
+function buildCandidateFromExistingDecision(
+  decision: NexoraExecutiveDecision,
+): NexoraDecisionCandidate {
+  return Object.freeze({
+    candidateId: buildDeterministicCandidateId({
+      source: "existing-decision",
+      key: decision.decisionId,
+    }),
+    decisionId: decision.decisionId,
+    subjectId: decision.subjectIds[0],
+    scenarioId: decision.scenarioId,
+    recommendationId: decision.recommendationId,
+    title: decision.title,
+    source: "existing-decision" as const,
+    evidenceRefs: decision.evidenceRefs,
+    uncertaintyRefs: decision.uncertaintyRefs,
+    status: "valid" as const,
+    scenarioRevision: decision.scenarioRevision ?? null,
+  });
+}
+
 function buildRationale(
   candidate: NexoraDecisionCandidate,
   context: NexoraExecutiveContextSnapshot,
@@ -371,22 +392,7 @@ function resolveCandidate(
     if (existing) {
       reasons.push("existing-decision");
       return {
-        candidate: Object.freeze({
-          candidateId: buildDeterministicCandidateId({
-            source: "existing-decision",
-            key: existing.decisionId,
-          }),
-          decisionId: existing.decisionId,
-          subjectId: existing.subjectIds[0],
-          scenarioId: existing.scenarioId,
-          recommendationId: existing.recommendationId,
-          title: existing.title,
-          source: "existing-decision" as const,
-          evidenceRefs: existing.evidenceRefs,
-          uncertaintyRefs: existing.uncertaintyRefs,
-          status: "valid" as const,
-          scenarioRevision: existing.scenarioRevision ?? null,
-        }),
+        candidate: buildCandidateFromExistingDecision(existing),
         ambiguous: false,
         reasons,
       };
@@ -560,12 +566,30 @@ export function resolveNexoraExecutiveDecisionCommitment(
       });
     }
 
+    const pendingExistingDecision = runtime
+      .listDecisions()
+      .find(
+        (decision) =>
+          buildCandidateFromExistingDecision(decision).candidateId ===
+          pending.candidateId,
+      );
+    const confirmationScenarioRevisions = {
+      ...scenarioRevisionMap(input.scenarioSession),
+      ...(pendingExistingDecision?.scenarioId &&
+      pendingExistingDecision.scenarioRevision != null
+        ? {
+            [pendingExistingDecision.scenarioId]:
+              pendingExistingDecision.scenarioRevision,
+          }
+        : {}),
+    };
+
     if (
       isPendingDecisionConfirmationStale({
         pending,
         workspaceId: input.executiveContext.currentWorkspaceId,
         modelId: input.executiveContext.currentModelId,
-        scenarioRevisionById: scenarioRevisionMap(input.scenarioSession),
+        scenarioRevisionById: confirmationScenarioRevisions,
       })
     ) {
       return freezeResult({
@@ -602,7 +626,9 @@ export function resolveNexoraExecutiveDecisionCommitment(
       runtime,
     );
     // Prefer candidate matching pending.candidateId from scenario session
-    let candidate = resolved.candidate;
+    let candidate = pendingExistingDecision
+      ? buildCandidateFromExistingDecision(pendingExistingDecision)
+      : resolved.candidate;
     if (candidate && candidate.candidateId !== pending.candidateId) {
       // Search scenarios for matching candidate id
       const sessionScenarios = input.scenarioSession;

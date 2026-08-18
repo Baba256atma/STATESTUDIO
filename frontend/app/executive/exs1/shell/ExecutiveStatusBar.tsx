@@ -7,6 +7,8 @@ type Props = {
   readonly version?: string;
   readonly notificationCount?: number;
   readonly onHelp?: () => void;
+  /** UX:1 — hide development/debug chrome from the manager experience. */
+  readonly managerHidden?: boolean;
 };
 
 /**
@@ -20,20 +22,24 @@ export function ExecutiveStatusBar({
   version = "EXS-7 · Beta",
   notificationCount = 0,
   onHelp,
+  managerHidden = false,
 }: Props) {
   return (
     <footer
       data-testid="executive-status-bar"
+      data-manager-visible={managerHidden ? "false" : "true"}
       aria-label="Executive Status Bar"
+      aria-hidden={managerHidden}
       style={{
-        height: cockpit.statusHeight,
+        height: managerHidden ? 0 : cockpit.statusHeight,
+        overflow: managerHidden ? "hidden" : "visible",
         flexShrink: 0,
         display: "flex",
         alignItems: "center",
         gap: "1.1rem",
-        padding: "0 0.9rem",
+        padding: managerHidden ? 0 : "0 0.9rem",
+        borderTop: managerHidden ? "none" : `1px solid ${cockpit.border}`,
         background: cockpit.charcoal,
-        borderTop: `1px solid ${cockpit.border}`,
         color: cockpit.muted,
         fontSize: "0.65rem",
         letterSpacing: "0.08em",

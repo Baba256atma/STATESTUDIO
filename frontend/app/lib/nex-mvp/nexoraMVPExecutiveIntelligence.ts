@@ -273,12 +273,9 @@ export function deriveNexoraMVPExecutiveIntelligenceContext(input: {
   readonly selectedSubject: NexoraMVPInteractionSubject | null;
   readonly breadcrumb: readonly NexoraMVPInteractionSubject[];
 }): NexoraMVPExecutiveIntelligenceContext {
-  const focused =
-    input.focusedSubject ??
-    input.selectedSubject ??
-    (input.breadcrumb.length > 1
-      ? input.breadcrumb[input.breadcrumb.length - 1]!
-      : null);
+  // UX:3 — Advisor current subject is explicit Stage focus only.
+  // Do not treat selection leftovers or breadcrumb trail as the current subject.
+  const focused = input.focusedSubject;
   const fixture = subjectFixture(focused?.id ?? null);
   const attention =
     attentionOf(fixture && "attention" in fixture ? fixture.attention : null) ??
@@ -322,7 +319,9 @@ export function deriveNexoraMVPExecutiveIntelligenceContext(input: {
     subjectKind: focused?.kind ?? null,
     subjectLabel: focused?.label ?? null,
     attention,
-    status: input.presentationViewModel.essentialStatus,
+    status:
+      input.presentationViewModel.essentialStatus ??
+      (fixture && "status" in fixture ? fixture.status : null),
     kpis: input.presentationViewModel.secondaryKpis,
     primaryKpi: input.presentationViewModel.primaryKpi,
     koi: input.presentationViewModel.koi,

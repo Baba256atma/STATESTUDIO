@@ -1,0 +1,510 @@
+{
+  "url": "http://127.0.0.1:3000/executive",
+  "viewport": {
+    "width": 1502,
+    "height": 942
+  },
+  "captures": {
+    "overviewExplain": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-conversational-fallback/01-overview-explain.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "situation",
+          "context": "not-required",
+          "command": "request-prioritization",
+          "primarySubject": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraExecutive Overview. No explicit subject is selected. Risk currently has the strongest validated attention signal. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently."
+            }
+          ]
+        },
+        "parserLeakage": false
+      }
+    },
+    "capacityExplain": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-conversational-fallback/02-capacity-explain.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "situation",
+          "context": "resolved",
+          "command": "request-prioritization",
+          "primarySubject": "obj-capacity",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraExecutive Overview. No explicit subject is selected. Risk currently has the strongest validated attention signal. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            }
+          ]
+        },
+        "parserLeakage": false
+      }
+    },
+    "capacityWhy": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-conversational-fallback/03-capacity-why.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "explain",
+          "context": "resolved",
+          "command": "request-explanation",
+          "primarySubject": "obj-capacity",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraExecutive Overview. No explicit subject is selected. Risk currently has the strongest validated attention signal. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is related to Budget. Recommendation: Review Capacity Gap."
+            }
+          ]
+        },
+        "parserLeakage": false
+      }
+    },
+    "capacityRecommendation": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-conversational-fallback/04-capacity-recommendation.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "recommend",
+          "context": "resolved",
+          "command": "request-recommendation",
+          "primarySubject": "obj-capacity",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraExecutive Overview. No explicit subject is selected. Risk currently has the strongest validated attention signal. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Review Capacity Gap."
+            }
+          ]
+        },
+        "parserLeakage": false
+      }
+    },
+    "customerMore": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-conversational-fallback/05-customer-tell-me-more.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "stage": {
+          "focused": "obj-customer",
+          "anchor": "obj-customer",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-customer",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "situation",
+          "context": "resolved",
+          "command": "request-prioritization",
+          "primarySubject": "obj-customer",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraExecutive Overview. No explicit subject is selected. Risk currently has the strongest validated attention signal. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managertell me more"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCustomer performance is below the preferred operating range and may require investigation. No validated business consequence is available for this context. Recommendation: Open Report."
+            }
+          ]
+        },
+        "parserLeakage": false
+      }
+    },
+    "explicitCommand": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-conversational-fallback/06-explicit-command-regression.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "context": "resolved",
+          "command": "focus-subject",
+          "primarySubject": "obj-capacity",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraExecutive Overview. No explicit subject is selected. Risk currently has the strongest validated attention signal. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managertell me more"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCustomer performance is below the preferred operating range and may require investigation. No validated business consequence is available for this context. Recommendation: Open Report."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            }
+          ]
+        },
+        "parserLeakage": false
+      }
+    },
+    "safeUnknown": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-conversational-fallback/07-safe-unknown-fallback.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "unsupported",
+          "intent": "unknown",
+          "context": "not-required",
+          "command": "",
+          "primarySubject": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraExecutive Overview. No explicit subject is selected. Risk currently has the strongest validated attention signal. Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managertell me more"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCustomer performance is below the preferred operating range and may require investigation. No validated business consequence is available for this context. Recommendation: Open Report."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerpurple elephant protocol"
+            },
+            {
+              "role": "nexora",
+              "status": "unsupported",
+              "text": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution."
+            }
+          ]
+        },
+        "parserLeakage": false
+      }
+    }
+  },
+  "checks": {
+    "overviewExplain": true,
+    "capacityClicked": true,
+    "capacityExplain": true,
+    "capacityWhy": true,
+    "capacityRecommendation": true,
+    "customerClicked": true,
+    "customerMore": true,
+    "explicitCommand": true,
+    "safeUnknown": true,
+    "oldParserErrorAbsent": true
+  },
+  "notes": [
+    "Certification uses the real hydrated client and WebGL Stage.",
+    "Contextual explanations consume the existing UX:3 Professional Advisor projection.",
+    "No LLM/provider was added; fallback remains deterministic and grounded."
+  ],
+  "passed": true
+}

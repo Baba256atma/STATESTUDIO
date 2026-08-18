@@ -206,8 +206,10 @@ export const EXECUTIVE_STAGE_PRODUCTIVITY_REGIONS = Object.freeze({
     maxY: 1.85,
   }),
   /**
-   * EXECUTIVE QUEUE — fixed right-side control strip (collections, not Objects).
-   * Hard-reserved from semantic Object placement.
+   * EXECUTIVE QUEUE — compact right-side launcher (UX:1).
+   * Collection controls only; semantic Objects must not enter this chip.
+   * Vertical band matches the collapsed Queue control; keep minX so Objects
+   * cannot sit under the launcher.
    */
   executiveQueue: Object.freeze({
     id: "executive-queue",

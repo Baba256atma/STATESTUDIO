@@ -21,6 +21,8 @@ type Props = {
   readonly onSelectPack: (packId: string) => void;
   readonly futureMarkerLabel?: string;
   readonly packStripExtra?: ReactNode;
+  /** UX:1 — collapse Timeline / Pack Strip until the manager needs them. */
+  readonly defaultCollapsed?: boolean;
 };
 
 const RISK_COLOR = {
@@ -28,6 +30,18 @@ const RISK_COLOR = {
   risk: cockpit.risk,
   success: cockpit.success,
 } as const;
+
+type BodyProps = {
+  readonly lens: ExecutiveTimelineLens;
+  readonly lensHighlighted: boolean;
+  readonly packs: readonly ExecutiveTimelinePack[];
+  readonly selectedPackId: string | null;
+  readonly packHighlighted: boolean;
+  readonly onSelectLens: (lens: ExecutiveTimelineLens) => void;
+  readonly onSelectPack: (packId: string) => void;
+  readonly futureMarkerLabel: string;
+  readonly compactLabels?: boolean;
+};
 
 /**
  * Executive Timeline Dock — below Stage only.
@@ -42,31 +56,122 @@ export function ExecutiveTimelineDock({
   onSelectLens,
   onSelectPack,
   futureMarkerLabel = "Now →",
+  defaultCollapsed = false,
 }: Props) {
+  const selectedPack = packs.find((pack) => pack.id === selectedPackId);
+  const collapsedLabel = selectedPack
+    ? `${lens} · ${selectedPack.title}`
+    : lens;
+
   return (
     <footer
       data-testid="executive-timeline-dock"
       data-exs1-compat="exs1-bottom-strip"
+      data-timeline-collapsed={defaultCollapsed ? "true" : "false"}
       aria-label="Executive Timeline Dock"
       style={{
-        height: cockpit.timelineHeight,
+        height: defaultCollapsed ? "auto" : cockpit.timelineHeight,
+        minHeight: defaultCollapsed
+          ? cockpit.timelineCollapsedHeight
+          : cockpit.timelineHeight,
         flexShrink: 0,
         display: "flex",
         alignItems: "stretch",
         gap: "0.95rem",
-        padding: "0.6rem 1rem",
-        background: `linear-gradient(180deg, ${cockpit.graphite} 0%, ${cockpit.charcoal} 100%)`,
+        padding: defaultCollapsed ? "0.2rem 0.75rem" : "0.6rem 1rem",
+        background: defaultCollapsed
+          ? cockpit.charcoal
+          : `linear-gradient(180deg, ${cockpit.graphite} 0%, ${cockpit.charcoal} 100%)`,
         borderTop: `1px solid ${cockpit.border}`,
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.02)",
+        boxShadow: defaultCollapsed
+          ? "none"
+          : "inset 0 1px 0 rgba(255,255,255,0.02)",
         transition: `opacity ${cockpit.timelineMs} ${cockpit.motion.easing}, border-color ${cockpit.timelineMs} ${cockpit.motion.easing}`,
       }}
     >
+      {defaultCollapsed ? (
+        <details
+          data-testid="executive-timeline-disclosure"
+          style={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <summary
+            style={{
+              listStyle: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.65rem",
+              minHeight: "1.45rem",
+              fontFamily: "inherit",
+              color: cockpit.muted,
+              fontSize: "0.62rem",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+            }}
+          >
+            <span style={{ color: cockpit.lowMuted }}>Period</span>
+            <span style={{ color: cockpit.accent }}>{collapsedLabel}</span>
+          </summary>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "stretch",
+              gap: "0.95rem",
+              padding: "0.45rem 0 0.35rem",
+            }}
+          >
+            <TimelineDockBody
+              lens={lens}
+              lensHighlighted={lensHighlighted}
+              packs={packs}
+              selectedPackId={selectedPackId}
+              packHighlighted={packHighlighted}
+              onSelectLens={onSelectLens}
+              onSelectPack={onSelectPack}
+              futureMarkerLabel={futureMarkerLabel}
+              compactLabels
+            />
+          </div>
+        </details>
+      ) : (
+        <TimelineDockBody
+          lens={lens}
+          lensHighlighted={lensHighlighted}
+          packs={packs}
+          selectedPackId={selectedPackId}
+          packHighlighted={packHighlighted}
+          onSelectLens={onSelectLens}
+          onSelectPack={onSelectPack}
+          futureMarkerLabel={futureMarkerLabel}
+        />
+      )}
+    </footer>
+  );
+}
+
+function TimelineDockBody({
+  lens,
+  lensHighlighted,
+  packs,
+  selectedPackId,
+  packHighlighted,
+  onSelectLens,
+  onSelectPack,
+  futureMarkerLabel,
+  compactLabels = false,
+}: BodyProps) {
+  return (
+    <>
       <section
         data-testid="executive-replay"
         data-exs1-compat="exs1-replay"
         aria-label="Replay unavailable"
         style={{
-          display: "flex",
+          display: compactLabels ? "none" : "flex",
           flexDirection: "column",
           justifyContent: "center",
           gap: "0.2rem",
@@ -107,7 +212,7 @@ export function ExecutiveTimelineDock({
           transition: cockpit.transition,
         }}
       >
-        <p style={labelStyle}>Timeline</p>
+        <p style={labelStyle}>{compactLabels ? "Period" : "Timeline"}</p>
         <div style={{ display: "flex", gap: "0.3rem" }}>
           {EXECUTIVE_TIMELINE_LENSES.map((item) => {
             const active = item === lens;
@@ -159,7 +264,7 @@ export function ExecutiveTimelineDock({
           flex: "1.2 1 10rem",
         }}
       >
-        <p style={labelStyle}>Pack Strip</p>
+        <p style={labelStyle}>{compactLabels ? "Recent" : "Pack Strip"}</p>
         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
           {packs.map((pack) => {
             const selected = selectedPackId === pack.id;
@@ -213,18 +318,20 @@ export function ExecutiveTimelineDock({
                 >
                   {pack.title}
                 </span>
-                <span
-                  style={{
-                    marginLeft: "0.15rem",
-                    fontSize: "0.5rem",
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    color: RISK_COLOR[pack.risk],
-                    opacity: 0.9,
-                  }}
-                >
-                  Case
-                </span>
+                {compactLabels ? null : (
+                  <span
+                    style={{
+                      marginLeft: "0.15rem",
+                      fontSize: "0.5rem",
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      color: RISK_COLOR[pack.risk],
+                      opacity: 0.9,
+                    }}
+                  >
+                    Case
+                  </span>
+                )}
               </button>
             );
           })}
@@ -235,7 +342,7 @@ export function ExecutiveTimelineDock({
         data-testid="executive-future-marker"
         aria-label="Future position marker"
         style={{
-          display: "flex",
+          display: compactLabels ? "none" : "flex",
           flexDirection: "column",
           justifyContent: "center",
           gap: "0.2rem",
@@ -254,7 +361,7 @@ export function ExecutiveTimelineDock({
           {futureMarkerLabel}
         </span>
       </section>
-    </footer>
+    </>
   );
 }
 

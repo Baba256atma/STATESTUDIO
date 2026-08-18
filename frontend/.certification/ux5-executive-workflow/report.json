@@ -1,0 +1,711 @@
+{
+  "ux": "UX:5 — Executive Workflow Integration",
+  "url": "http://127.0.0.1:3000/executive",
+  "viewport": {
+    "width": 1502,
+    "height": 942
+  },
+  "hydratedClient": true,
+  "webgl": true,
+  "captures": {
+    "overview": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/01-overview-attention.png",
+      "state": {
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [],
+          "subjectIds": []
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "attention": "Risk",
+          "situation": "There is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": "Tell Nexora what to focus on, or ask it to go back / return to overview.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue9Problems2Scenarios3Decisions2Executions2",
+        "horizontalOverflow": false
+      }
+    },
+    "investigate": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/02-investigate-subject.png",
+      "state": {
+        "stage": {
+          "focused": "obj-risk",
+          "anchor": "obj-risk",
+          "anchorPosition": "0,0,0",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [
+            "stage2d-navigation-0"
+          ],
+          "subjectIds": [
+            "obj-risk"
+          ]
+        },
+        "workflow": {
+          "phase": "investigate",
+          "readiness": "needs-investigation",
+          "currentSubject": "obj-risk",
+          "nextSubject": "none",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Investigating",
+          "readinessLabel": "Review the situation and evidence"
+        },
+        "advisor": {
+          "subject": "obj-risk",
+          "grammar": "risk",
+          "attention": null,
+          "situation": "Risk currently has unresolved risk exposure.",
+          "why": "ExposureRisk is related to Delivery.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Margin PressureCritical subject has an unresolved related problem.",
+          "decisionRequired": "Decision RequiredChoose among the available scenario alternatives related to Risk.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Margin Pressure"
+        },
+        "conversation": "Tell Nexora what to focus on, or ask it to go back / return to overview.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    },
+    "evidence": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/03-evidence.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ],
+          "subjectIds": [
+            "obj-risk",
+            "ctx-problem-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "understand",
+          "readiness": "ready-to-evaluate",
+          "currentSubject": "ctx-problem-capacity",
+          "nextSubject": "ctx-scenario-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Understanding",
+          "readinessLabel": "Ready to evaluate options"
+        },
+        "advisor": {
+          "subject": "ctx-problem-capacity",
+          "grammar": "problem",
+          "attention": null,
+          "situation": "Capacity Gap remains an unresolved problem and needs attention.",
+          "why": "ImpactCapacity Gap is related to Capacity.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Expand CapacityA related decision needs review.",
+          "decisionRequired": "Decision RequiredChoose among the available scenario alternatives related to Capacity Gap.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": "ManagerReview Capacity GapNexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action.ManagerShow the evidenceNexoraCapacity needs attention. Delivery needs attention. Evidence: recorded problems, current runtime state.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    },
+    "problem": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/04-problem-or-opportunity.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ],
+          "subjectIds": [
+            "obj-risk",
+            "ctx-problem-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "understand",
+          "readiness": "ready-to-evaluate",
+          "currentSubject": "ctx-problem-capacity",
+          "nextSubject": "ctx-scenario-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Understanding",
+          "readinessLabel": "Ready to evaluate options"
+        },
+        "advisor": {
+          "subject": "ctx-problem-capacity",
+          "grammar": "problem",
+          "attention": null,
+          "situation": "Capacity Gap remains an unresolved problem and needs attention.",
+          "why": "ImpactCapacity Gap is related to Capacity.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Expand CapacityA related decision needs review.",
+          "decisionRequired": "Decision RequiredChoose among the available scenario alternatives related to Capacity Gap.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": "ManagerReview Capacity GapNexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action.ManagerShow the evidenceNexoraCapacity needs attention. Delivery needs attention. Evidence: recorded problems, current runtime state.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    },
+    "scenario": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/05-scenario.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-scenario-capacity",
+          "anchor": "ctx-scenario-capacity",
+          "anchorPosition": "0,0,0",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2",
+            "stage2d-navigation-3"
+          ],
+          "subjectIds": [
+            "obj-risk",
+            "ctx-problem-capacity",
+            "nexora-collection:scenario",
+            "ctx-scenario-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "scenario",
+          "readiness": "scenario-projection",
+          "currentSubject": "ctx-scenario-capacity",
+          "nextSubject": "ctx-decision-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Scenario",
+          "readinessLabel": "Decision available for review"
+        },
+        "advisor": {
+          "subject": "ctx-scenario-capacity",
+          "grammar": "scenario",
+          "attention": null,
+          "situation": "Capacity Expansion Plan is an available scenario under review and needs attention.",
+          "why": "Expected impactCapacity Expansion Plan is related to Capacity.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Capacity GapRelated problem needs review.",
+          "decisionRequired": "Decision RequiredDecide whether Expand Capacity should proceed, given Demand Surge.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Capacity Gap"
+        },
+        "conversation": "ManagerReview Capacity GapNexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action.ManagerShow the evidenceNexoraCapacity needs attention. Delivery needs attention. Evidence: recorded problems, current runtime state.ManagerShow the scenariosNexoraOpened scenarios.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    },
+    "scenarioComparison": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/06-scenario-comparison.png",
+      "state": {
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2",
+            "stage2d-navigation-3",
+            "stage2d-navigation-4",
+            "stage2d-navigation-5"
+          ],
+          "subjectIds": [
+            "obj-risk",
+            "ctx-problem-capacity",
+            "nexora-collection:scenario",
+            "ctx-scenario-capacity",
+            "ctx-problem-margin",
+            "nexora-collection:scenario"
+          ]
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "attention": "Risk",
+          "situation": "There is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": "ManagerReview Capacity GapNexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action.ManagerShow the evidenceNexoraCapacity needs attention. Delivery needs attention. Evidence: recorded problems, current runtime state.ManagerShow the scenariosNexoraOpened scenarios.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview Margin PressureNexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": true,
+        "scenarioCollection": "Queue11Scenarios · 3Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    },
+    "decision": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/07-decision.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-decision-capacity",
+          "anchor": "ctx-decision-capacity",
+          "anchorPosition": "0,0,0",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ],
+          "subjectIds": [
+            "ctx-scenario-capacity",
+            "ctx-decision-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "decision",
+          "readiness": "decision-required",
+          "currentSubject": "ctx-decision-capacity",
+          "nextSubject": "ctx-execution-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Decision",
+          "readinessLabel": "Decision required"
+        },
+        "advisor": {
+          "subject": "ctx-decision-capacity",
+          "grammar": "decision",
+          "attention": null,
+          "situation": "Decision Expand Capacity is currently in a state that needs attention.",
+          "why": "Why it mattersExpand Capacity is related to Capacity.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Expand CapacityDecision requires executive review.",
+          "decisionRequired": "Decision RequiredApprove, reject, or revise Expand Capacity through the existing decision workflow.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": "ManagerReview Capacity GapNexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action.ManagerShow the evidenceNexoraCapacity needs attention. Delivery needs attention. Evidence: recorded problems, current runtime state.ManagerShow the scenariosNexoraOpened scenarios.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview Margin PressureNexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview the decisionNexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    },
+    "decisionConfirmation": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/08-decision-confirmation.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-decision-capacity",
+          "anchor": "ctx-decision-capacity",
+          "anchorPosition": "0,0,0",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ],
+          "subjectIds": [
+            "ctx-scenario-capacity",
+            "ctx-decision-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "decision",
+          "readiness": "decision-required",
+          "currentSubject": "ctx-decision-capacity",
+          "nextSubject": "ctx-execution-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Decision",
+          "readinessLabel": "Decision required"
+        },
+        "advisor": {
+          "subject": "ctx-decision-capacity",
+          "grammar": "decision",
+          "attention": null,
+          "situation": "Decision Expand Capacity is currently in a state that needs attention.",
+          "why": "Why it mattersExpand Capacity is related to Capacity.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Expand CapacityDecision requires executive review.",
+          "decisionRequired": "Decision RequiredApprove, reject, or revise Expand Capacity through the existing decision workflow.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": "ManagerReview Capacity GapNexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action.ManagerShow the evidenceNexoraCapacity needs attention. Delivery needs attention. Evidence: recorded problems, current runtime state.ManagerShow the scenariosNexoraOpened scenarios.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview Margin PressureNexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview the decisionNexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action.ManagerI prefer Expand CapacityNexoraPreference noted — no Decision committed.ManagerI think we should probably choose thisNexoraCommit to Expand Capacity?",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    },
+    "execution": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/09-execution.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-execution-capacity",
+          "anchor": "ctx-execution-capacity",
+          "anchorPosition": "0,0,0",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2"
+          ],
+          "subjectIds": [
+            "ctx-scenario-capacity",
+            "ctx-decision-capacity",
+            "ctx-execution-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "execution",
+          "readiness": "execution-planned",
+          "currentSubject": "ctx-execution-capacity",
+          "nextSubject": "none",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Execution",
+          "readinessLabel": "Execution planned · outcome not yet available"
+        },
+        "advisor": {
+          "subject": "ctx-execution-capacity",
+          "grammar": "execution",
+          "attention": null,
+          "situation": "Progress is 0%.",
+          "why": "BlockersThis approved Decision defines the current Execution.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Expand CapacityThis approved Decision defines the current Execution.",
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": "ManagerShow the evidenceNexoraCapacity needs attention. Delivery needs attention. Evidence: recorded problems, current runtime state.ManagerShow the scenariosNexoraOpened scenarios.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview Margin PressureNexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview the decisionNexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action.ManagerI prefer Expand CapacityNexoraPreference noted — no Decision committed.ManagerI think we should probably choose thisNexoraCommit to Expand Capacity?ManagerYesNexoraExpand Capacity is now the Approved decision.ManagerReview Capacity ExpansionNexoraCapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    },
+    "conversationWorkflow": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/12-conversation-workflow.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-execution-capacity",
+          "anchor": "ctx-execution-capacity",
+          "anchorPosition": "0,0,0",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2"
+          ],
+          "subjectIds": [
+            "ctx-scenario-capacity",
+            "ctx-decision-capacity",
+            "ctx-execution-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "execution",
+          "readiness": "execution-planned",
+          "currentSubject": "ctx-execution-capacity",
+          "nextSubject": "none",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Execution",
+          "readinessLabel": "Execution planned · outcome not yet available"
+        },
+        "advisor": {
+          "subject": "ctx-execution-capacity",
+          "grammar": "execution",
+          "attention": null,
+          "situation": "Progress is 0%.",
+          "why": "BlockersThis approved Decision defines the current Execution.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Expand CapacityThis approved Decision defines the current Execution.",
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": "ManagerShow the evidenceNexoraCapacity needs attention. Delivery needs attention. Evidence: recorded problems, current runtime state.ManagerShow the scenariosNexoraOpened scenarios.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview Margin PressureNexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview the decisionNexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action.ManagerI prefer Expand CapacityNexoraPreference noted — no Decision committed.ManagerI think we should probably choose thisNexoraCommit to Expand Capacity?ManagerYesNexoraExpand Capacity is now the Approved decision.ManagerReview Capacity ExpansionNexoraCapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    },
+    "back": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/13-back-navigation.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-decision-capacity",
+          "anchor": "ctx-decision-capacity",
+          "anchorPosition": "0,0,0",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2"
+          ],
+          "subjectIds": [
+            "ctx-scenario-capacity",
+            "ctx-decision-capacity",
+            "ctx-execution-capacity"
+          ]
+        },
+        "workflow": {
+          "phase": "decision",
+          "readiness": "decision-complete",
+          "currentSubject": "ctx-decision-capacity",
+          "nextSubject": "ctx-execution-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": "Decision",
+          "readinessLabel": "Decision approved; execution available"
+        },
+        "advisor": {
+          "subject": "ctx-decision-capacity",
+          "grammar": "decision",
+          "attention": null,
+          "situation": "Decision Expand Capacity is currently in a state that needs attention.",
+          "why": "Why it mattersExpand Capacity is related to Capacity.",
+          "evidence": "Evidence strong",
+          "recommendation": "RecommendationReview Expand CapacityDecision requires executive review.",
+          "decisionRequired": "Decision RequiredApprove, reject, or revise Expand Capacity through the existing decision workflow.",
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": "ManagerShow the evidenceNexoraCapacity needs attention. Delivery needs attention. Evidence: recorded problems, current runtime state.ManagerShow the scenariosNexoraOpened scenarios.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview Margin PressureNexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview the decisionNexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action.ManagerI prefer Expand CapacityNexoraPreference noted — no Decision committed.ManagerI think we should probably choose thisNexoraCommit to Expand Capacity?ManagerYesNexoraExpand Capacity is now the Approved decision.ManagerReview Capacity ExpansionNexoraCapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    },
+    "overviewReturn": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/14-overview-return.png",
+      "state": {
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [],
+          "subjectIds": []
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "attention": "Risk",
+          "situation": "There is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": "ManagerShow the scenariosNexoraOpened scenarios.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview Margin PressureNexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview the decisionNexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action.ManagerI prefer Expand CapacityNexoraPreference noted — no Decision committed.ManagerI think we should probably choose thisNexoraCommit to Expand Capacity?ManagerYesNexoraExpand Capacity is now the Approved decision.ManagerReview Capacity ExpansionNexoraCapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action.ManagerShow overviewNexoraReturned to overview.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    },
+    "narrow": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux5-executive-workflow/15-narrow-desktop.png",
+      "state": {
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "depth": "0",
+          "cameraMode": "fixed-2d",
+          "trailEntryIds": [],
+          "subjectIds": []
+        },
+        "workflow": {
+          "phase": "attention",
+          "readiness": "choose-attention",
+          "currentSubject": "none",
+          "nextSubject": "obj-capacity",
+          "outcome": "unavailable",
+          "learning": "unavailable",
+          "phaseLabel": null,
+          "readinessLabel": null
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview",
+          "attention": "Risk",
+          "situation": "There is no explicit subject. Nexora is showing the executive overview.",
+          "why": null,
+          "evidence": "Evidence limited. Nexora does not yet have enough validated data to assess the executive overview confidently.",
+          "recommendation": null,
+          "decisionRequired": null,
+          "assumptions": null,
+          "primaryActionCount": 1,
+          "primaryAction": "Investigate Risk"
+        },
+        "conversation": "ManagerShow the scenariosNexoraOpened scenarios.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview Margin PressureNexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action.ManagerReview Capacity Expansion PlanNexoraCapacity Expansion Plan needs attention. Recommendation: Investigate Capacity Expansion Plan as a possible contributor — evidence is not strong enough to prioritize action.ManagerReview the decisionNexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action.ManagerI prefer Expand CapacityNexoraPreference noted — no Decision committed.ManagerI think we should probably choose thisNexoraCommit to Expand Capacity?ManagerYesNexoraExpand Capacity is now the Approved decision.ManagerReview Capacity ExpansionNexoraCapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action.ManagerShow overviewNexoraReturned to overview.",
+        "scenarioPanelVisible": false,
+        "scenarioCollectionVisible": false,
+        "scenarioCollection": "Queue11Problems2Scenarios3Decisions2Executions2Recent Changes2",
+        "horizontalOverflow": false
+      }
+    }
+  },
+  "checks": {
+    "attentionIsNotSubject": true,
+    "attentionEntry": true,
+    "investigateUnderstand": true,
+    "evidenceGrounded": true,
+    "scenarioTruth": true,
+    "multipleScenarioComparison": true,
+    "decisionContext": true,
+    "preferenceNotCommitment": true,
+    "canonicalDecisionConfirmation": true,
+    "executionReview": true,
+    "outcomeTruthfulUnavailable": true,
+    "learningTruthfulUnavailable": true,
+    "backNavigation": true,
+    "overviewReturn": true,
+    "narrowDesktop": true,
+    "noDuplicateKeyWarnings": true,
+    "noRuntimeExceptions": true,
+    "navigationOccurrenceIdsUnique": true,
+    "visualCalm": true
+  },
+  "unavailableStages": {
+    "outcome": "No validated EI:6 expected-versus-actual evaluation is wired to the live Capacity execution.",
+    "learning": "Without a validated Outcome evaluation, no EI:6 Learning or APP-4 promotion is presented.",
+    "opportunity": "The active Nexora MVP catalog contains Problems but no canonical Opportunity subject; none was invented.",
+    "canonicalExecutionRuntime": "The live MVP shell reads and mutates NEX-MVP:8 flowDomain execution records; CC:11 is certified separately but is not wired into /executive. UX:5 performs review/navigation only and does not bridge this authority gap.",
+    "decisionOutcomeTrace": "STAGE-PROD:5 has a read-only Decision Memory/Outcome Trace path, but no live finalization capture writer populates it in /executive."
+  },
+  "conversationResults": {
+    "showEvidence": "NEXORACapacity needs attention. Delivery needs attention. Evidence: recorded problems, current runtime state.",
+    "showScenarios": "NEXORAOpened scenarios.",
+    "reviewDecision": "NEXORAExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action.",
+    "preference": "NEXORAPreference noted — no Decision committed.",
+    "confirmationPrompt": "NEXORACommit to Expand Capacity?",
+    "commitment": "NEXORAExpand Capacity is now the Approved decision.",
+    "reviewExecution": "NEXORACapacity Expansion needs attention. Recommendation: Investigate Capacity Expansion as a possible contributor — evidence is not strong enough to prioritize action."
+  },
+  "console": {
+    "warningsAndErrors": [],
+    "runtimeExceptions": [],
+    "duplicateKeyWarnings": []
+  },
+  "authorityBoundary": {
+    "workflowEngineCreated": false,
+    "nextAction": "Professional Advisor / NBA",
+    "decision": "CC:10R Canonical Decision Runtime",
+    "execution": "NEX-MVP:8 flowDomain projection in live /executive; CC:11 canonical Execution Runtime is not wired",
+    "outcome": "EI:6 + RDI / Data Reality",
+    "learning": "EI:6 + APP-4"
+  },
+  "notes": [
+    "The existing NEX-MVP:8 flow projection is reused; UX:5 adds manager orientation only.",
+    "Scenario projection remains explicitly distinct from observed reality.",
+    "Outcome and Learning screenshots are omitted when no validated live evidence exists."
+  ],
+  "passed": true,
+  "requiredChecks": [
+    "attentionIsNotSubject",
+    "attentionEntry",
+    "investigateUnderstand",
+    "evidenceGrounded",
+    "scenarioTruth",
+    "multipleScenarioComparison",
+    "decisionContext",
+    "preferenceNotCommitment",
+    "canonicalDecisionConfirmation",
+    "executionReview",
+    "outcomeTruthfulUnavailable",
+    "learningTruthfulUnavailable",
+    "backNavigation",
+    "overviewReturn",
+    "narrowDesktop",
+    "noDuplicateKeyWarnings",
+    "noRuntimeExceptions",
+    "navigationOccurrenceIdsUnique",
+    "visualCalm"
+  ]
+}

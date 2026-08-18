@@ -50,7 +50,7 @@ export function NexoraSubjectOperation({ viewModel, onAction }: Props) {
           color: cockpit.lowMuted,
         }}
       >
-        Operation
+        Actions
       </p>
       <p
         data-testid="nexora-subject-operation-title"

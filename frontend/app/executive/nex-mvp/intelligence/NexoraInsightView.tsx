@@ -187,7 +187,7 @@ export function NexoraInsightView({ viewModel }: Props) {
               color: cockpit.lowMuted,
             }}
           >
-            KOI · {viewModel.koi.label}
+            {viewModel.koi.label}
           </p>
           <p
             style={{

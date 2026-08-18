@@ -33,7 +33,7 @@ import { EXECUTIVE_STAGE_PRODUCTIVITY_REGIONS } from "./executiveStageProductivi
 export const executiveStageReservedRegionContainmentIdentity =
   "STAGE-OBJ:4-FIX/ExecutiveStageReservedRegionContainment" as const;
 
-export const executiveStageReservedRegionContainmentVersion = "4.4.2" as const;
+export const executiveStageReservedRegionContainmentVersion = "4.4.3" as const;
 
 export const executiveStageReservedRegionContainmentNamespace =
   "nexora.spatial-presentation.executive-stage-reserved-region-containment" as const;
@@ -95,7 +95,8 @@ export type ExecutiveStageWorldRect = Readonly<{
 export const EXECUTIVE_STAGE_SAFE_PRESENTATION_REGION = Object.freeze({
   /**
    * Usable content rect — footprint edges must stay inside.
-   * Bottom raised for Timeline dock + Stage-frame overflow clip.
+   * UX:1 collapsed Timeline is a compact period strip; keep a hard bottom
+   * clip so objects never sit under that strip or the Stage overflow edge.
    */
   usableRect: Object.freeze({
     id: "usable-stage",
@@ -103,7 +104,7 @@ export const EXECUTIVE_STAGE_SAFE_PRESENTATION_REGION = Object.freeze({
     minX: EXECUTIVE_STAGE_2D_RECOMPOSITION_BOUNDS.minX + 0.15,
     maxX: EXECUTIVE_STAGE_2D_RECOMPOSITION_BOUNDS.maxX - 0.15,
     /** Footprint minY must be >= this (not center Y). */
-    minY: -1.42,
+    minY: -1.72,
     maxY: EXECUTIVE_STAGE_2D_RECOMPOSITION_BOUNDS.maxY - 0.2,
   }),
   hardReservedRegions: Object.freeze([
@@ -113,7 +114,7 @@ export const EXECUTIVE_STAGE_SAFE_PRESENTATION_REGION = Object.freeze({
       minX: EXECUTIVE_STAGE_2D_RECOMPOSITION_BOUNDS.minX,
       maxX: EXECUTIVE_STAGE_2D_RECOMPOSITION_BOUNDS.maxX,
       minY: EXECUTIVE_STAGE_2D_RECOMPOSITION_BOUNDS.minY,
-      maxY: -1.42,
+      maxY: -1.72,
     }),
     Object.freeze({
       id: "workspace-dial",
@@ -126,9 +127,10 @@ export const EXECUTIVE_STAGE_SAFE_PRESENTATION_REGION = Object.freeze({
     Object.freeze({
       id: "presentation-level-control",
       hardness: "hard" as const,
-      minX: 1.55,
+      // UX:1 compact View chip — top-right, smaller than the old panel.
+      minX: 1.85,
       maxX: EXECUTIVE_STAGE_2D_RECOMPOSITION_BOUNDS.maxX,
-      minY: 1.55,
+      minY: 1.72,
       maxY: EXECUTIVE_STAGE_2D_RECOMPOSITION_BOUNDS.maxY,
     }),
     Object.freeze({
@@ -156,10 +158,11 @@ export const EXECUTIVE_STAGE_SAFE_PRESENTATION_REGION = Object.freeze({
     Object.freeze({
       id: "left-object-list-soft",
       hardness: "soft" as const,
+      // UX:1 Objects disclosure is a compact top-left chip, not a tall list.
       minX: EXECUTIVE_STAGE_2D_RECOMPOSITION_BOUNDS.minX,
-      maxX: -2.85,
-      minY: -1.0,
-      maxY: 1.8,
+      maxX: -2.15,
+      minY: 1.55,
+      maxY: EXECUTIVE_STAGE_2D_RECOMPOSITION_BOUNDS.maxY,
     }),
   ]),
   /** Soft territory may approach this pad beyond hard body containment. */
@@ -940,7 +943,7 @@ export function verifyExecutiveStageReservedRegionContainment(): Readonly<{
     ok:
       identity.id ===
         "STAGE-OBJ:4-FIX/ExecutiveStageReservedRegionContainment" &&
-      identity.version === "4.4.2" &&
+      identity.version === "4.4.3" &&
       EXECUTIVE_STAGE_RESERVED_REGION_CONTAINMENT_BOUNDARY.movesCamera ===
         false &&
       EXECUTIVE_STAGE_RESERVED_REGION_CONTAINMENT_BOUNDARY.movesAnchor === false,

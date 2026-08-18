@@ -18,6 +18,7 @@ import {
   classifyNexoraMVPFlowDomainAction,
   createInitialNexoraMVPFlowDomainState,
   deriveNexoraMVPExecutiveFlowContext,
+  deriveNexoraMVPExecutiveWorkflowPresentation,
   failNexoraMVPFlowPendingAction,
   mapNexoraMVPJournalEntries,
   mapNexoraMVPTimelinePacks,
@@ -59,6 +60,7 @@ import { applyExecutiveStageFixedCameraToStagePresentation } from "@/app/lib/nex
 import { applyExecutiveStage2DTopologyPlaneToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveStage2DTopologyPlane";
 import { applyExecutiveStage2DTopologyRecompositionToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveStage2DTopologyRecomposition";
 import { applyExecutiveStageObjectLabelTerritoryToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveStageObjectLabelTerritory";
+import { applyNexoraMVPExecutiveCollectionIntegrity } from "@/app/lib/nex-mvp/nexoraMVPExecutiveCollectionIntegrity";
 import {
   buildNexoraMVPAdvisorContextBridge,
   buildNexoraMVPTimelineContextBridge,
@@ -89,6 +91,7 @@ import {
 import type { NexoraConversationalCommand } from "@/app/lib/conversational-control/conversationalCommand";
 import { executeNexoraConversationalExperience } from "@/app/lib/conversational-control/conversationalExperienceOrchestrator";
 import type {
+  NexoraConversationalAdvisorGrounding,
   NexoraConversationalExperienceTrace,
   NexoraConversationalMessage,
 } from "@/app/lib/conversational-control/conversationalExperience";
@@ -380,8 +383,17 @@ export function NexoraExecutiveShell({
   executiveContextRef.current = executiveContext;
   const [conversationalProcessing, setConversationalProcessing] =
     useState(false);
+  const conversationalProcessingRef = useRef(false);
   const [conversationalLastTrace, setConversationalLastTrace] =
     useState<NexoraConversationalExperienceTrace | null>(null);
+  const conversationalAdvisorGroundingRef =
+    useRef<NexoraConversationalAdvisorGrounding | null>(null);
+  const onConversationalAdvisorGroundingChange = useCallback(
+    (grounding: NexoraConversationalAdvisorGrounding) => {
+      conversationalAdvisorGroundingRef.current = grounding;
+    },
+    [],
+  );
   const lastConversationalCommandIdRef = useRef<string | null>(null);
   const conversationalMessageSeqRef = useRef(0);
 
@@ -459,9 +471,13 @@ export function NexoraExecutiveShell({
       applyExecutiveStage2DTopologyRecompositionToStagePresentation(
         withTopologyPlane,
       );
+    // UX:5-FIX1 — collection peers are a distinct no-anchor topology mode.
+    // Reassert membership and hard XY separation after every upstream writer.
+    const withCollectionIntegrity =
+      applyNexoraMVPExecutiveCollectionIntegrity(withRecomposition);
     const withLabels =
       applyExecutiveStageObjectLabelTerritoryToStagePresentation(
-        withRecomposition,
+        withCollectionIntegrity,
         { presentationLevel: interaction.presentationState },
       );
     return applyExecutiveStageFixedCameraToStagePresentation(withLabels);
@@ -550,6 +566,46 @@ export function NexoraExecutiveShell({
       }),
     [interaction],
   );
+  const workflowPresentation = useMemo(() => {
+    const focusedId = interaction.focusedSubject?.id ?? null;
+    const binding = dataRealityAdvisorExperience.advisorBinding;
+    const evidenceSubject =
+      focusedId == null
+        ? undefined
+        : binding.prioritizedSubjects.find(
+            (subject) => subject.objectId === focusedId,
+          );
+    const briefCompleteness =
+      stageInteraction.decisionBrief?.completeness ?? "unavailable";
+    const evidenceReadiness =
+      evidenceSubject != null
+        ? evidenceSubject.isUnresolved ||
+          !evidenceSubject.hasData ||
+          evidenceSubject.evidenceIds.length === 0
+          ? ("limited" as const)
+          : ("supported" as const)
+        : briefCompleteness === "sufficient"
+          ? ("supported" as const)
+          : briefCompleteness === "partial"
+            ? ("limited" as const)
+            : ("unknown" as const);
+    return deriveNexoraMVPExecutiveWorkflowPresentation({
+      context: flowContext,
+      flowState: flowDomain,
+      evidenceReadiness,
+      attentionSubjectId:
+        binding.recommendations.recommendedFocus?.subjectId ?? null,
+      // EI:6 / APP-4 are not wired to a validated live outcome in /executive.
+      outcomeAvailable: false,
+      learningAvailable: false,
+    });
+  }, [
+    dataRealityAdvisorExperience.advisorBinding,
+    flowContext,
+    flowDomain,
+    interaction.focusedSubject?.id,
+    stageInteraction.decisionBrief?.completeness,
+  ]);
 
   const timelinePacks = useMemo(
     () => mapNexoraMVPTimelinePacks(flowDomain),
@@ -716,12 +772,24 @@ export function NexoraExecutiveShell({
   interactionRef.current = interaction;
 
   const onSubmitConversationalUtterance = useCallback(
-    (utterance: string) => {
-      if (conversationalProcessing) return;
+    async (utterance: string) => {
+      const trimmed = utterance.trim();
+      if (!trimmed || conversationalProcessingRef.current) return;
+      conversationalProcessingRef.current = true;
       setConversationalProcessing(true);
+      conversationalMessageSeqRef.current += 1;
+      const seed = `cc5-${conversationalMessageSeqRef.current}`;
+      const managerMessage: NexoraConversationalMessage = Object.freeze({
+        id: `${seed}-manager`,
+        role: "manager",
+        text: trimmed,
+      });
+      setConversationalMessages((messages) =>
+        Object.freeze([...messages, managerMessage]).slice(-20),
+      );
       try {
-        conversationalMessageSeqRef.current += 1;
-        const seed = `cc5-${conversationalMessageSeqRef.current}`;
+        // Let the restrained sending state paint before deterministic CC work.
+        await new Promise<void>((resolve) => setTimeout(resolve, 80));
         const previous = interactionRef.current;
         const subjects = projectNexoraConversationalSubjectsFromCatalog({
           objects: dataRealityExperience.catalog.objects,
@@ -729,10 +797,10 @@ export function NexoraExecutiveShell({
         });
 
         const result = executeNexoraConversationalExperience({
-          utterance,
-          executiveContext,
+          utterance: trimmed,
+          executiveContext: executiveContextRef.current,
           conversationContext: toNexoraConversationContextSnapshot(
-            executiveContext,
+            executiveContextRef.current,
           ),
           activeStageContext: Object.freeze({
             focusedSubjectId: previous.focusedSubject?.id ?? null,
@@ -748,14 +816,13 @@ export function NexoraExecutiveShell({
           decisionSession,
           decisionRuntime: decisionRuntime.adapter,
           decisionCommittedAt: "2026-08-15T00:00:00.000Z",
+          advisorGrounding: conversationalAdvisorGroundingRef.current,
+          pendingTurnExpectation:
+            executiveContextRef.current.pendingTurnExpectation,
         });
 
         setConversationalMessages((msgs) =>
-          Object.freeze([
-            ...msgs,
-            result.managerMessage,
-            result.nexoraMessage,
-          ]).slice(-20),
+          Object.freeze([...msgs, result.nexoraMessage]).slice(-20),
         );
         setExecutiveContext(result.nextExecutiveContext);
         if (result.nextScenarioSession) {
@@ -783,13 +850,22 @@ export function NexoraExecutiveShell({
             applyInteractionToApplication(app, result.nextRuntimeState),
           );
         }
+      } catch {
+        const failedMessage: NexoraConversationalMessage = Object.freeze({
+          id: `${seed}-nexora`,
+          role: "nexora",
+          text: "Nexora couldn’t complete that request. Please try again.",
+          status: "failed",
+        });
+        setConversationalMessages((messages) =>
+          Object.freeze([...messages, failedMessage]).slice(-20),
+        );
       } finally {
+        conversationalProcessingRef.current = false;
         setConversationalProcessing(false);
       }
     },
     [
-      executiveContext,
-      conversationalProcessing,
       dataRealityExperience.catalog,
       scenarioSession,
       decisionSession,
@@ -1201,7 +1277,15 @@ export function NexoraExecutiveShell({
       data-interaction-mode={interaction.mode}
       data-timeline-workspace={timelineBridge.activeWorkspace}
       data-flow-chain={flowContext.chain.summaryLine}
+      data-workflow-phase={workflowPresentation.phase}
+      data-workflow-readiness={workflowPresentation.readiness}
+      data-workflow-next-subject={
+        workflowPresentation.nextAvailableSubject?.id ?? "none"
+      }
+      data-workflow-outcome={workflowPresentation.outcomeAvailability}
+      data-workflow-learning={workflowPresentation.learningAvailability}
       data-theme-mode={theme}
+      data-ux1="simplify-executive-page"
       style={{
         height: "100%",
         width: "100%",
@@ -1219,7 +1303,12 @@ export function NexoraExecutiveShell({
         activeSourceContextId={activeLiveObservation?.sourceContextId ?? activeCsvImport?.sourceContextId ?? null}
         onActiveObservation={onLiveObservationActivated}
       />
-      <ExecutiveContextBar context={context} onThemeChange={setTheme} />
+      <ExecutiveContextBar
+        context={context}
+        onThemeChange={setTheme}
+        compact
+        onHelp={() => setFloatingKind("wizard")}
+      />
 
       <div
         data-testid="nexora-executive-main-region"
@@ -1229,7 +1318,7 @@ export function NexoraExecutiveShell({
           minHeight: 0,
         }}
       >
-        <ExecutiveLeftNav active={activeNav} onSelect={onNavSelect} />
+        <ExecutiveLeftNav active={activeNav} onSelect={onNavSelect} compact />
 
         <ExecutiveExplorerDrawer
           kind={explorerKind}
@@ -1245,7 +1334,7 @@ export function NexoraExecutiveShell({
           data-testid="executive-stage-column"
           data-mvp-stage-column="true"
           style={{
-            flex: "1 1 70%",
+            flex: "1 1 78%",
             display: "flex",
             flexDirection: "column",
             minWidth: 0,
@@ -1255,6 +1344,7 @@ export function NexoraExecutiveShell({
         >
           <NexoraExecutiveFlowContextIndicator
             chain={flowContext.chain}
+            workflow={workflowPresentation}
             onSelectLink={onSelectSubject}
           />
           <div
@@ -1264,53 +1354,6 @@ export function NexoraExecutiveShell({
             hidden
             aria-hidden="true"
           />
-          <div
-            data-testid="nexora-preparation-triggers"
-            data-stage-prod="6"
-            style={{
-              display: "flex",
-              gap: "0.35rem",
-              padding: "0.2rem 0.75rem 0.35rem",
-              alignItems: "center",
-            }}
-          >
-            <button
-              type="button"
-              data-testid="nexora-prepare-daily"
-              onClick={onBeginDailyPreparation}
-              style={{
-                border: `1px solid ${cockpit.border}`,
-                background: "transparent",
-                color: cockpit.muted,
-                fontSize: "0.58rem",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                padding: "0.2rem 0.45rem",
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              Daily Prep
-            </button>
-            <button
-              type="button"
-              data-testid="nexora-prepare-meeting"
-              onClick={onBeginMeetingPreparation}
-              style={{
-                border: `1px solid ${cockpit.border}`,
-                background: "transparent",
-                color: cockpit.muted,
-                fontSize: "0.58rem",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                padding: "0.2rem 0.45rem",
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              Meeting Prep
-            </button>
-          </div>
           <ExecutiveStageFrame
             stageControls={
               <NexoraWorkspaceDialMount
@@ -1342,6 +1385,7 @@ export function NexoraExecutiveShell({
             selectedPackId={selectedPackId}
             onSelectLens={setTimelineLens}
             onSelectPack={onSelectTimelinePack}
+            defaultCollapsed
           />
         </div>
 
@@ -1368,6 +1412,11 @@ export function NexoraExecutiveShell({
           }
           conversationalLastTrace={conversationalLastTrace}
           onSubmitConversationalUtterance={onSubmitConversationalUtterance}
+          onConversationalAdvisorGroundingChange={
+            onConversationalAdvisorGroundingChange
+          }
+          onBeginDailyPreparation={onBeginDailyPreparation}
+          onBeginMeetingPreparation={onBeginMeetingPreparation}
         />
       </div>
 
@@ -1375,9 +1424,10 @@ export function NexoraExecutiveShell({
         connected={false}
         autoSave={true}
         syncLabel="Local"
-        version={`NEX-MVP · ${nexoraExecutiveShellVersion}`}
+        version={`Nexora · ${nexoraExecutiveShellVersion}`}
         notificationCount={0}
         onHelp={() => setFloatingKind("wizard")}
+        managerHidden
       />
 
       <div

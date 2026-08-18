@@ -103,6 +103,125 @@ function matchAmbiguous(normalized: string): MatchResult | null {
   return null;
 }
 
+function advisoryQuery(
+  kind: NexoraConversationalIntentKind,
+  reason: string,
+  requiresContext: boolean,
+): MatchResult {
+  return {
+    kind,
+    confidence: 0.94,
+    reasons: [
+      reason,
+      ...(requiresContext
+        ? [CONVERSATIONAL_INTENT_REASON.AMBIGUOUS_REFERENCE]
+        : []),
+      CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+      CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+    ],
+    targetHints: Object.freeze([]),
+    requiresContext,
+    requiresTarget: requiresContext,
+    candidateKinds: Object.freeze([kind]),
+  };
+}
+
+function matchConversationalEntry(normalized: string): MatchResult | null {
+  if (
+    /^(?:hi|hello|hey|good\s+(?:morning|afternoon|evening)|hi\s+nexora|hello\s+nexora)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "greet",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_GREETING,
+      false,
+    );
+  }
+  if (
+    /^(?:can\s+you\s+help(?:\s+me)?|help(?:\s+me)?|what\s+can\s+you\s+do)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "help",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_HELP,
+      false,
+    );
+  }
+  return null;
+}
+
+function matchExecutiveQuestion(normalized: string): MatchResult | null {
+  if (
+    /^(?:explain(?:\s+(?:this|it))?|tell\s+me\s+more|help\s+me\s+understand(?:\s+(?:this|it))?|what\s+does\s+(?:this|it)\s+mean|what(?:\s+is|\s+s|s)\s+going\s+on|what(?:\s+is|s)\s+happening|what\s+happened|how\s+serious\s+is\s+it|show\s+me\s+more|what\s+do\s+you\s+think|give\s+me\s+(?:a\s+)?summary|summarize(?:\s+(?:this|it))?)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "situation",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_SITUATION,
+      false,
+    );
+  }
+  if (
+    /^(?:what\s+evidence\s+do\s+we\s+have|what(?:\s+is|s)\s+the\s+evidence|show\s+(?:me\s+)?(?:the\s+)?evidence)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "evidence",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EVIDENCE,
+      false,
+    );
+  }
+  if (
+    /^(?:what\s+changed|what(?:\s+has|s)\s+changed|what\s+is\s+different)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "change",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_CHANGE,
+      false,
+    );
+  }
+  if (
+    /^(?:what(?:\s+is|s)\s+the\s+risk|how\s+risky\s+is\s+it|what\s+happens\s+if\s+i\s+do\s+nothing)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "risk",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_RISK,
+      false,
+    );
+  }
+  if (
+    /^(?:do\s+i\s+need\s+to\s+make\s+a\s+decision|what\s+decision\s+do\s+i\s+need\s+to\s+make|is\s+a\s+decision\s+required)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "decision-status",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_DECISION_STATUS,
+      false,
+    );
+  }
+  if (
+    /^(?:what\s+is\s+being\s+executed|what(?:\s+is|s)\s+blocked|what\s+should\s+happen\s+next|how\s+is\s+(?:it|this)\s+going)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "execution-status",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXECUTION_STATUS,
+      false,
+    );
+  }
+  return null;
+}
+
 function matchOverview(normalized: string): MatchResult | null {
   if (
     /^(?:return\s+to|go\s+back\s+to|back\s+to|show|open)?\s*overview$/.test(
@@ -110,7 +229,10 @@ function matchOverview(normalized: string): MatchResult | null {
     ) ||
     /^(?:go\s+to|take\s+me\s+to)\s+overview$/.test(normalized) ||
     /^return\s+to\s+overview$/.test(normalized) ||
-    /^go\s+back\s+to\s+overview$/.test(normalized)
+    /^go\s+back\s+to\s+overview$/.test(normalized) ||
+    /^(?:show|open|list|see)(?:\s+me)?(?:\s+the)?\s+all\s+objects$/.test(
+      normalized,
+    )
   ) {
     return {
       kind: "overview",
@@ -173,7 +295,7 @@ function matchNavigation(normalized: string): MatchResult | null {
 function matchCollectionShows(normalized: string): MatchResult | null {
   // Relation-scoped / possessive forms — lexical anchor only (CC:2 resolves IDs).
   const possessive = normalized.match(
-    /^(?:show|open|list|see)(?:\s+me)?\s+(?:its|their|his|her)\s+(problems?|goals?|scenarios?|decisions?|execution|related(?:\s+objects?)?)$/,
+    /^(?:show|open|list|see)(?:\s+me)?\s+(?:its|their|his|her)\s+(problems?|goals?|scenarios?|decisions?|executions?|related(?:\s+objects?)?)$/,
   );
   if (possessive) {
     const kind = collectionKindFromToken(possessive[1] ?? "");
@@ -197,7 +319,7 @@ function matchCollectionShows(normalized: string): MatchResult | null {
   }
 
   const relatedTo = normalized.match(
-    /^(?:show|open|list|see)(?:\s+me)?(?:\s+the)?\s+(problems?|goals?|scenarios?|decisions?|execution)\s+(?:related\s+to|for|of|about)\s+(.+)$/,
+    /^(?:show|open|list|see)(?:\s+me)?(?:\s+the)?\s+(problems?|goals?|scenarios?|decisions?|executions?)\s+(?:related\s+to|for|of|about)\s+(.+)$/,
   );
   if (relatedTo) {
     const kind = collectionKindFromToken(relatedTo[1] ?? "");
@@ -241,7 +363,7 @@ function matchCollectionShows(normalized: string): MatchResult | null {
 
   // "Show Capacity problems" / "Show Revenue scenarios"
   const anchorThenKind = normalized.match(
-    /^(?:show|open|list|see)(?:\s+me)?\s+(.+?)\s+(problems?|goals?|scenarios?|decisions?|execution)$/,
+    /^(?:show|open|list|see)(?:\s+me)?\s+(.+?)\s+(problems?|goals?|scenarios?|decisions?|executions?)$/,
   );
   if (anchorThenKind) {
     const raw = (anchorThenKind[1] ?? "").trim();
@@ -308,7 +430,7 @@ function matchCollectionShows(normalized: string): MatchResult | null {
     },
     {
       pattern:
-        /^(?:show|open|list|see)(?:\s+me)?(?:\s+the)?\s+execution(?:\s+collection)?$/,
+        /^(?:show|open|list|see)(?:\s+me)?(?:\s+the)?\s+executions?(?:\s+collection)?$/,
       kind: "show-execution",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_EXECUTION,
     },
@@ -337,7 +459,7 @@ function collectionKindFromToken(
   if (t.startsWith("goal")) return "show-goals";
   if (t.startsWith("scenario")) return "show-scenarios";
   if (t.startsWith("decision")) return "show-decisions";
-  if (t === "execution") return "show-execution";
+  if (t.startsWith("execution")) return "show-execution";
   if (t.startsWith("related")) return "show-related";
   return null;
 }
@@ -502,7 +624,7 @@ function matchSimulate(normalized: string): MatchResult | null {
 
 function matchFocusOrOpen(normalized: string): MatchResult | null {
   const focus = normalized.match(
-    /^(?:focus(?:\s+on)?|look\s+at|go\s+to)\s+(.+)$/,
+    /^(?:focus(?:\s+on)?|look\s+at|go\s+to|review|investigate)\s+(.+)$/,
   );
   const showOpen = normalized.match(
     /^(?:show|open)(?:\s+me)?\s+(.+)$/,
@@ -804,7 +926,7 @@ function matchRecommendExplainPrioritize(
 ): MatchResult | null {
   // Explain / why
   if (
-    /^(?:why(?:\s+is\s+this\s+important)?|explain(?:\s+that|\s+this|\s+why)?)$/.test(
+    /^(?:why(?:\s+(?:does\s+this\s+matter|is\s+(?:this|it)\s+(?:important|critical)))?|explain(?:\s+that|\s+this|\s+why)?)$/.test(
       normalized,
     )
   ) {
@@ -947,8 +1069,13 @@ function matchDecisionCommitment(normalized: string): MatchResult | null {
       normalized,
     );
 
-  // Confirmation / cancellation (generic yes/no only meaningful with pending)
-  if (/^(?:yes|confirm|proceed|do\s+it)$/.test(normalized)) {
+  // CC:10 confirmation is explicit here. Generic yes/no is interpreted by
+  // CC:5 against a structured pending-turn expectation before reaching CC:10.
+  if (
+    /^(?:confirm(?:\s+the)?\s+(?:decision|commitment)|confirm\s+decision\s+commitment|commit\s+it)$/.test(
+      normalized,
+    )
+  ) {
     return {
       kind: "confirm-decision-commitment",
       confidence: 0.85,
@@ -969,10 +1096,9 @@ function matchDecisionCommitment(normalized: string): MatchResult | null {
   }
 
   if (
-    /^(?:no|cancel|never\s+mind|don'?t\s+commit(?:\s+it)?|do\s+not\s+commit)$/.test(
+    /^(?:cancel(?:\s+the)?\s+(?:decision|commitment)|cancel\s+decision\s+commitment|never\s+mind|don'?t\s+commit(?:\s+it)?|do\s+not\s+commit)$/.test(
       normalized,
-    ) ||
-    /^no,?\s*cancel$/.test(normalized)
+    )
   ) {
     return {
       kind: "cancel-decision-commitment",
@@ -1643,6 +1769,7 @@ function matchScenarioConversation(normalized: string): MatchResult | null {
 function resolveMatch(normalized: string): MatchResult {
   // Order matters: decision commitment before scenario; scenario before recommend.
   return (
+    matchConversationalEntry(normalized) ??
     matchAmbiguous(normalized) ??
     matchOverview(normalized) ??
     matchNavigation(normalized) ??
@@ -1650,6 +1777,7 @@ function resolveMatch(normalized: string): MatchResult {
     matchSwitchWorkspace(normalized) ??
     matchDecisionCommitment(normalized) ??
     matchScenarioConversation(normalized) ??
+    matchExecutiveQuestion(normalized) ??
     matchRecommendExplainPrioritize(normalized) ??
     matchOrdinalReference(normalized) ??
     matchCollectionShows(normalized) ??

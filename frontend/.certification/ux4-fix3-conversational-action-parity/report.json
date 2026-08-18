@@ -1,0 +1,316 @@
+{
+  "url": "http://127.0.0.1:3000/executive",
+  "viewport": {
+    "width": 1502,
+    "height": 942
+  },
+  "captures": {
+    "riskRecommendation": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix3-conversational-action-parity/01-risk-recommendation.png",
+      "state": {
+        "stage": {
+          "focused": "obj-risk",
+          "anchor": "obj-risk",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "breadcrumb": "Overview/RiskBack"
+        },
+        "advisor": {
+          "subject": "obj-risk",
+          "grammar": "risk",
+          "recommendation": "RecommendationReview Margin PressureCritical subject has an unresolved related problem.",
+          "primaryAction": "Review Margin Pressure"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "focus-subject",
+          "runtime": "applied",
+          "primarySubject": "obj-risk",
+          "pendingResolution": "",
+          "lastResponse": "NexoraFocused on Risk."
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "textReview": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix3-conversational-action-parity/02-text-review-margin-pressure.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-margin",
+          "anchor": "ctx-problem-margin",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "breadcrumb": "Overview/Risk/Margin Pressure/Margin PressureBack"
+        },
+        "advisor": {
+          "subject": "ctx-problem-margin",
+          "grammar": "problem",
+          "recommendation": "RecommendationReview Approve RepricingA related decision needs review.",
+          "primaryAction": "Review Approve Repricing"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "focus-subject",
+          "runtime": "applied",
+          "primarySubject": "ctx-problem-margin",
+          "pendingResolution": "",
+          "lastResponse": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "marginCentered": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix3-conversational-action-parity/03-margin-pressure-centered.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-margin",
+          "anchor": "ctx-problem-margin",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "breadcrumb": "Overview/Risk/Margin Pressure/Margin PressureBack"
+        },
+        "advisor": {
+          "subject": "ctx-problem-margin",
+          "grammar": "problem",
+          "recommendation": "RecommendationReview Approve RepricingA related decision needs review.",
+          "primaryAction": "Review Approve Repricing"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "focus-subject",
+          "runtime": "applied",
+          "primarySubject": "ctx-problem-margin",
+          "pendingResolution": "",
+          "lastResponse": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "buttonReview": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix3-conversational-action-parity/04-button-review-margin-pressure.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-margin",
+          "anchor": "ctx-problem-margin",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "breadcrumb": "Overview/Risk/Margin Pr…/Risk/Margin Pressure/Margin PressureBack"
+        },
+        "advisor": {
+          "subject": "ctx-problem-margin",
+          "grammar": "problem",
+          "recommendation": "RecommendationReview Approve RepricingA related decision needs review.",
+          "primaryAction": "Review Approve Repricing"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "focus-subject",
+          "runtime": "applied",
+          "primarySubject": "obj-risk",
+          "pendingResolution": "",
+          "lastResponse": "NexoraFocused on Risk."
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "parity": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix3-conversational-action-parity/05-button-text-parity.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-margin",
+          "anchor": "ctx-problem-margin",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "breadcrumb": "Overview/Risk/Margin Pr…/Risk/Margin Pressure/Margin PressureBack"
+        },
+        "advisor": {
+          "subject": "ctx-problem-margin",
+          "grammar": "problem",
+          "recommendation": "RecommendationReview Approve RepricingA related decision needs review.",
+          "primaryAction": "Review Approve Repricing"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "focus-subject",
+          "runtime": "applied",
+          "primarySubject": "ctx-problem-margin",
+          "pendingResolution": "",
+          "lastResponse": "NexoraMargin Pressure remains an unresolved problem in critical state. Margin Pressure is related to Revenue. Recommendation: Review Approve Repricing."
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "capacityGap": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix3-conversational-action-parity/06-review-capacity-gap.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "breadcrumb": "Overview…/Risk/Margin Pr…/Capacity/Capacity Gap/Capacity GapBack"
+        },
+        "advisor": {
+          "subject": "ctx-problem-capacity",
+          "grammar": "problem",
+          "recommendation": "RecommendationReview Expand CapacityA related decision needs review.",
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "focus-subject",
+          "runtime": "applied",
+          "primarySubject": "ctx-problem-capacity",
+          "pendingResolution": "",
+          "lastResponse": "NexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action."
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "pronoun": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix3-conversational-action-parity/07-review-it.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-margin",
+          "anchor": "ctx-problem-margin",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "breadcrumb": "Overview…/Capacity/Capacity Gap/Capacity…/Risk/Margin Pressure/Margin PressureBack"
+        },
+        "advisor": {
+          "subject": "ctx-problem-margin",
+          "grammar": "problem",
+          "recommendation": "RecommendationReview Approve RepricingA related decision needs review.",
+          "primaryAction": "Review Approve Repricing"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "focus-subject",
+          "runtime": "applied",
+          "primarySubject": "ctx-problem-margin",
+          "pendingResolution": "",
+          "lastResponse": "NexoraMargin Pressure needs urgent attention. Recommendation: Investigate further before committing to a course of action."
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "explain": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix3-conversational-action-parity/08-explain-vs-review.png",
+      "state": {
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "breadcrumb": "Overview/Capacity Gap…/Capacity…/Risk/Margin Pressure/CapacityBack"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object",
+          "recommendation": "RecommendationReview Capacity GapRelated problem needs review.",
+          "primaryAction": "Review Capacity Gap"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "explain",
+          "command": "request-explanation",
+          "runtime": "applied",
+          "primarySubject": "ctx-problem-margin",
+          "pendingResolution": "",
+          "lastResponse": "NexoraPrioritize Margin Pressure before increasing the current goal. Why: Margin Pressure is critical and relevant to the active goal/problem chain. Uncertainty: Budget has unresolved evidence."
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "decision": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix3-conversational-action-parity/09-decision-review-safety.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-decision-capacity",
+          "anchor": "ctx-decision-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "breadcrumb": "Overview/Capacity Gap…/Risk/Margin Pr…/Capacity/Expand Capacity/Expand CapacityBack"
+        },
+        "advisor": {
+          "subject": "ctx-decision-capacity",
+          "grammar": "decision",
+          "recommendation": "RecommendationReview Expand CapacityDecision requires executive review.",
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "focus-subject",
+          "runtime": "applied",
+          "primarySubject": "ctx-decision-capacity",
+          "pendingResolution": "",
+          "lastResponse": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "narrow": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix3-conversational-action-parity/10-narrow-desktop.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-decision-capacity",
+          "anchor": "ctx-decision-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "breadcrumb": "Overview/Capacity Gap…/Risk/Margin Pr…/Capacity/Expand Capacity/Expand CapacityBack"
+        },
+        "advisor": {
+          "subject": "ctx-decision-capacity",
+          "grammar": "decision",
+          "recommendation": "RecommendationReview Expand CapacityDecision requires executive review.",
+          "primaryAction": "Review Expand Capacity"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "focus-subject",
+          "runtime": "applied",
+          "primarySubject": "ctx-decision-capacity",
+          "pendingResolution": "",
+          "lastResponse": "NexoraExpand Capacity needs attention. Recommendation: Investigate Expand Capacity as a possible contributor — evidence is not strong enough to prioritize action."
+        },
+        "horizontalOverflow": false
+      }
+    }
+  },
+  "checks": {
+    "riskRecommendation": true,
+    "textReview": true,
+    "buttonTextParity": true,
+    "capacityGap": true,
+    "pronoun": true,
+    "explainIsInformational": true,
+    "decisionReviewSafety": true,
+    "narrowNoHorizontalOverflow": true,
+    "stageInvariants": true
+  },
+  "notes": [
+    "Certification uses the real hydrated client and WebGL Stage.",
+    "Advisor button and conversation reuse the same NBA target and canonical subject-selection runtime.",
+    "Only non-consequential navigation/review actions receive direct parity."
+  ],
+  "passed": true
+}

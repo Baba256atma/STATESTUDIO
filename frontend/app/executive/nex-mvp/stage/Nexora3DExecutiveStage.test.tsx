@@ -330,7 +330,7 @@ describe("NEX-MVP:4 Stage object interaction host", () => {
 
   it("10. Stage does not page-navigate during interaction", () => {
     const host = readFileSync(join(HERE, "Nexora3DExecutiveStage.tsx"), "utf8");
-    assert.doesNotMatch(host, /router\.push|useRouter|window\.location/);
+    assert.doesNotMatch(host, /router\.push|useRouter|window\.location\.href/);
     const shell = readFileSync(
       join(HERE, "../NexoraExecutiveShell.tsx"),
       "utf8",

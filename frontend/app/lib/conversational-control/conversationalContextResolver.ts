@@ -97,10 +97,23 @@ function intentRequiresSubject(intent: NexoraConversationalIntent): boolean {
     case "show-execution":
     case "show-related":
       // Collection without anchor → subject not required.
-      return intent.requiresTarget === true || intent.requiresContext === true;
+      return false;
     default:
-      return intent.requiresTarget === true;
+      return false;
   }
+}
+
+function intentUsesOptionalConversationSubject(
+  intent: NexoraConversationalIntent,
+): boolean {
+  return (
+    intent.kind === "situation" ||
+    intent.kind === "evidence" ||
+    intent.kind === "change" ||
+    intent.kind === "risk" ||
+    intent.kind === "decision-status" ||
+    intent.kind === "execution-status"
+  );
 }
 
 type HintResolution =
@@ -485,7 +498,9 @@ export function resolveNexoraExecutiveConversationalContext(
   let contextCandidates: readonly string[] = Object.freeze([]);
 
   // ── not required ──────────────────────────────────────────────────────────
-  if (!intentRequiresSubject(intent)) {
+  const optionalConversationSubject =
+    intentUsesOptionalConversationSubject(intent);
+  if (!intentRequiresSubject(intent) && !optionalConversationSubject) {
     precedenceApplied.push(CONVERSATIONAL_CONTEXT_PRECEDENCE[4]!);
     return buildResult({
       primary: null,
@@ -733,6 +748,26 @@ export function resolveNexoraExecutiveConversationalContext(
     }
 
     precedenceApplied.push(CONVERSATIONAL_CONTEXT_PRECEDENCE[4]!);
+    if (optionalConversationSubject) {
+      return buildResult({
+        primary: null,
+        secondary: Object.freeze([]),
+        status: "not-required",
+        source: "none",
+        confidence: 1,
+        reasons: Object.freeze([
+          ...fromContext.reasons,
+          ...fromStage.reasons,
+          CONVERSATIONAL_CONTEXT_REASON.INTENT_NOT_REQUIRING_SUBJECT,
+          CONVERSATIONAL_CONTEXT_REASON.DETERMINISTIC,
+        ]),
+        intent,
+        hints,
+        contextCandidates,
+        canonicalCandidates,
+        precedenceApplied,
+      });
+    }
     return buildResult({
       primary: null,
       secondary: Object.freeze([]),

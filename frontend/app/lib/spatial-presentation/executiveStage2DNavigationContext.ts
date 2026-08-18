@@ -15,6 +15,7 @@ import {
   canStepBackExecutiveStage2DNavigationTrail,
   canStepForwardExecutiveStage2DNavigationTrail,
   createEmptyExecutiveStage2DNavigationTrail,
+  ensureExecutiveStage2DNavigationTrailOccurrenceIdentity,
   pushExecutiveStage2DNavigationEntry,
   resetExecutiveStage2DNavigationTrail,
   sanitizeExecutiveStage2DNavigationTrail,
@@ -194,9 +195,20 @@ export function ensureExecutiveStage2DScopedNavigationTrail(
     typeof trail.scopeKey === "string" &&
     "scope" in trail
   ) {
-    return trail as ExecutiveStage2DScopedNavigationTrail;
+    const identified = ensureExecutiveStage2DNavigationTrailOccurrenceIdentity(
+      trail as ExecutiveStage2DScopedNavigationTrail,
+    );
+    return withScope(
+      identified,
+      (trail as ExecutiveStage2DScopedNavigationTrail).scope,
+      (trail as ExecutiveStage2DScopedNavigationTrail).scopeKey,
+    );
   }
-  return withScope(trail, resolved.scope, resolved.scopeKey);
+  return withScope(
+    ensureExecutiveStage2DNavigationTrailOccurrenceIdentity(trail),
+    resolved.scope,
+    resolved.scopeKey,
+  );
 }
 
 export function pushExecutiveStage2DScopedNavigationEntry(
@@ -417,6 +429,7 @@ export function resolveExecutiveStage2DBreadcrumbLabelMode(input: {
 
 export type ExecutiveStage2DBreadcrumbLabelResolution = {
   readonly objectId: string;
+  readonly trailEntryId: string;
   readonly fullLabel: string;
   readonly displayLabel: string;
   readonly mode: ExecutiveStage2DBreadcrumbLabelMode;
@@ -460,6 +473,9 @@ export function resolveExecutiveStage2DBreadcrumbLabels(input: {
     resolutions.push(
       Object.freeze({
         objectId,
+        trailEntryId:
+          input.trail.trailEntryIds[trailIndex] ??
+          `stage2d-navigation-${trailIndex}`,
         fullLabel,
         displayLabel,
         mode,

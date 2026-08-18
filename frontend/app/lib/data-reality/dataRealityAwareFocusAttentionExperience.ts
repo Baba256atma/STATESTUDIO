@@ -266,7 +266,12 @@ function resolveRuntimeState(
  * 5. none
  *
  * Explicit user focus beats automatic executive attention.
- * Does not invent severity scoring.
+ * UX:2 precedence (highest first):
+ *   DIRECT USER CLICK → NAVIGATION RESTORE → AUTOMATIC ATTENTION
+ *   → RECOMMENDATION → FALLBACK
+ * Navigation restore writes the same focused/selected ids as a click, so it
+ * wins through the same explicit-parameter path. Automatic attention must not
+ * steal center after an explicit manager click.
  */
 export function resolveDataRealityAwarePrimaryFocusObjectId(
   runtimeState: DataRealityAwareMVPRuntimeState,

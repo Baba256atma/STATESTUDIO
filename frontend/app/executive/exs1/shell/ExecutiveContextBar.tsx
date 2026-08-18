@@ -7,6 +7,9 @@ import { cockpit } from "./executiveCockpitTheme";
 type Props = {
   readonly context: ExecutiveContextSnapshot;
   readonly onThemeChange: (theme: ExecutiveThemeMode) => void;
+  /** UX:1 — manager-first labels and secondary Display disclosure. */
+  readonly compact?: boolean;
+  readonly onHelp?: () => void;
 };
 
 function Chip({
@@ -61,19 +64,27 @@ const THEMES: readonly ExecutiveThemeMode[] = ["night", "day", "auto"];
  * Executive Context Bar — always visible executive context only.
  * No workspace controls.
  */
-export function ExecutiveContextBar({ context, onThemeChange }: Props) {
+export function ExecutiveContextBar({
+  context,
+  onThemeChange,
+  compact = false,
+  onHelp,
+}: Props) {
   return (
     <header
       data-testid="executive-context-bar"
       data-exs1-compat="exs1-context-bar"
+      data-ux1-region={compact ? "executive-context" : undefined}
       aria-label="Executive Context"
       style={{
         display: "flex",
         alignItems: "center",
-        gap: "1.25rem",
-        height: cockpit.contextHeight,
+        gap: compact ? "1rem" : "1.25rem",
+        height: compact ? cockpit.contextCompactHeight : cockpit.contextHeight,
         padding: "0 1rem 0 0.75rem",
-        background: `linear-gradient(180deg, ${cockpit.graphite} 0%, ${cockpit.charcoal} 100%)`,
+        background: compact
+          ? cockpit.charcoal
+          : `linear-gradient(180deg, ${cockpit.graphite} 0%, ${cockpit.charcoal} 100%)`,
         borderBottom: `1px solid ${cockpit.border}`,
         flexShrink: 0,
         zIndex: 20,
@@ -123,61 +134,87 @@ export function ExecutiveContextBar({ context, onThemeChange }: Props) {
         }}
       >
         <Chip label="Company" value={context.company} />
-        <Chip label="Model" value={context.model} />
-        <Chip label="Pack" value={context.pack} accent />
-        <Chip label="Lens" value={context.lens} />
+        <Chip
+          label={compact ? "Workspace" : "Model"}
+          value={compact ? context.pack : context.model}
+        />
+        {compact ? null : <Chip label="Pack" value={context.pack} accent />}
+        <Chip
+          label={compact ? "Period" : "Lens"}
+          value={context.lens}
+          accent={compact}
+        />
       </div>
 
-      <div
-        data-testid="executive-theme-control"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.25rem",
-          flexShrink: 0,
-        }}
-      >
-        <span
+      {compact ? (
+        <details
+          data-testid="executive-context-display"
           style={{
-            fontSize: "0.58rem",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: cockpit.lowMuted,
-            marginRight: "0.25rem",
+            position: "relative",
+            flexShrink: 0,
           }}
         >
-          Theme
-        </span>
-        {THEMES.map((theme) => {
-          const active = context.theme === theme;
-          return (
-            <button
-              key={theme}
-              type="button"
-              data-testid={`executive-theme-${theme}`}
-              aria-pressed={active}
-              onClick={() => onThemeChange(theme)}
-              style={{
-                padding: "0.22rem 0.45rem",
-                borderRadius: "0.3rem",
-                border: active
-                  ? `1px solid ${cockpit.borderStrong}`
-                  : `1px solid ${cockpit.border}`,
-                background: active ? cockpit.accentSoft : "transparent",
-                color: active ? cockpit.accent : cockpit.muted,
-                fontSize: "0.62rem",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                fontFamily: "inherit",
-                transition: cockpit.transition,
-              }}
-            >
-              {theme}
-            </button>
-          );
-        })}
-      </div>
+          <summary
+            style={{
+              listStyle: "none",
+              cursor: "pointer",
+              fontSize: "0.58rem",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: cockpit.lowMuted,
+              padding: "0.22rem 0.4rem",
+              border: `1px solid ${cockpit.border}`,
+              borderRadius: "0.3rem",
+              fontFamily: "inherit",
+            }}
+          >
+            Display
+          </summary>
+          <div
+            style={{
+              position: "absolute",
+              right: 0,
+              top: "calc(100% + 0.35rem)",
+              zIndex: 30,
+              minWidth: "11rem",
+              padding: "0.55rem 0.6rem",
+              borderRadius: cockpit.radius.md,
+              border: `1px solid ${cockpit.border}`,
+              background: cockpit.charcoal,
+              boxShadow: cockpit.elevation.panel,
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.45rem",
+            }}
+          >
+            <Chip label="Model" value={context.model} />
+            <ThemeControls context={context} onThemeChange={onThemeChange} />
+            {onHelp ? (
+              <button
+                type="button"
+                data-testid="executive-context-help"
+                onClick={onHelp}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: cockpit.accent,
+                  fontSize: "0.62rem",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  textAlign: "left",
+                  padding: 0,
+                }}
+              >
+                Help
+              </button>
+            ) : null}
+          </div>
+        </details>
+      ) : (
+        <ThemeControls context={context} onThemeChange={onThemeChange} />
+      )}
 
       <div
         data-testid="executive-live-status"
@@ -207,9 +244,72 @@ export function ExecutiveContextBar({ context, onThemeChange }: Props) {
             color: cockpit.muted,
           }}
         >
+          {compact ? "Data" : null}
+          {compact ? " · " : null}
           {context.liveStatus}
         </span>
       </div>
     </header>
+  );
+}
+
+function ThemeControls({
+  context,
+  onThemeChange,
+}: {
+  readonly context: ExecutiveContextSnapshot;
+  readonly onThemeChange: (theme: ExecutiveThemeMode) => void;
+}) {
+  return (
+    <div
+      data-testid="executive-theme-control"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "0.25rem",
+        flexShrink: 0,
+      }}
+    >
+      <span
+        style={{
+          fontSize: "0.58rem",
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: cockpit.lowMuted,
+          marginRight: "0.25rem",
+        }}
+      >
+        Theme
+      </span>
+      {THEMES.map((theme) => {
+        const active = context.theme === theme;
+        return (
+          <button
+            key={theme}
+            type="button"
+            data-testid={`executive-theme-${theme}`}
+            aria-pressed={active}
+            onClick={() => onThemeChange(theme)}
+            style={{
+              padding: "0.22rem 0.45rem",
+              borderRadius: "0.3rem",
+              border: active
+                ? `1px solid ${cockpit.borderStrong}`
+                : `1px solid ${cockpit.border}`,
+              background: active ? cockpit.accentSoft : "transparent",
+              color: active ? cockpit.accent : cockpit.muted,
+              fontSize: "0.62rem",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              transition: cockpit.transition,
+            }}
+          >
+            {theme}
+          </button>
+        );
+      })}
+    </div>
   );
 }

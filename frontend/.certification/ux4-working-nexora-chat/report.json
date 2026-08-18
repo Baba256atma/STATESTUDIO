@@ -1,0 +1,1030 @@
+{
+  "url": "http://127.0.0.1:3000/executive",
+  "viewport": {
+    "width": 1502,
+    "height": 942
+  },
+  "captures": {
+    "overview": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-working-nexora-chat/01-overview-chat.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview"
+        },
+        "conversation": {
+          "processing": "false",
+          "status": "",
+          "intent": "",
+          "context": "",
+          "command": "",
+          "primarySubject": "",
+          "messages": []
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "greeting": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-working-nexora-chat/02-hi-response.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview"
+        },
+        "conversation": {
+          "processing": "false",
+          "status": "applied",
+          "intent": "greet",
+          "context": "not-required",
+          "command": "",
+          "primarySubject": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerHi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "capacityWhy": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-working-nexora-chat/03-capacity-why.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "processing": "false",
+          "status": "applied",
+          "intent": "explain",
+          "context": "resolved",
+          "command": "request-explanation",
+          "primarySubject": "obj-capacity",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerHi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat is happening?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "capacityRecommendation": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-working-nexora-chat/04-capacity-recommendation.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "processing": "false",
+          "status": "applied",
+          "intent": "recommend",
+          "context": "resolved",
+          "command": "request-recommendation",
+          "primarySubject": "obj-capacity",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerHi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat is happening?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Investigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "capacityEvidence": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-working-nexora-chat/05-capacity-evidence.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "processing": "false",
+          "status": "applied",
+          "intent": "evidence",
+          "context": "resolved",
+          "command": "request-prioritization",
+          "primarySubject": "obj-capacity",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerHi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat is happening?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Investigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat evidence do we have?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention. Delivery needs attention. Evidence: current runtime state, recorded problems, scenario assumptions, decision records, execution records."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "chatFocusCustomer": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-working-nexora-chat/06-chat-focus-customer.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "obj-customer",
+          "anchor": "obj-customer",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-customer",
+          "grammar": "object"
+        },
+        "conversation": {
+          "processing": "false",
+          "status": "applied",
+          "intent": "focus",
+          "context": "resolved",
+          "command": "focus-subject",
+          "primarySubject": "obj-customer",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerHi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat is happening?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Investigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat evidence do we have?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention. Delivery needs attention. Evidence: current runtime state, recorded problems, scenario assumptions, decision records, execution records."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Customer"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Customer."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "customerFollowUp": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-working-nexora-chat/07-customer-follow-up.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "obj-customer",
+          "anchor": "obj-customer",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-customer",
+          "grammar": "object"
+        },
+        "conversation": {
+          "processing": "false",
+          "status": "applied",
+          "intent": "explain",
+          "context": "resolved",
+          "command": "request-explanation",
+          "primarySubject": "obj-customer",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerHi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat is happening?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Investigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat evidence do we have?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention. Delivery needs attention. Evidence: current runtime state, recorded problems, scenario assumptions, decision records, execution records."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Customer"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Customer."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy does this matter?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Customer as a possible contributor — evidence is not strong enough to prioritize action. Why: Customer shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Canonical goal linkage is missing or uncertain."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "chatOverview": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-working-nexora-chat/08-chat-overview.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview"
+        },
+        "conversation": {
+          "processing": "false",
+          "status": "applied",
+          "intent": "overview",
+          "context": "not-required",
+          "command": "open-overview",
+          "primarySubject": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerHi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat is happening?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Investigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat evidence do we have?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention. Delivery needs attention. Evidence: current runtime state, recorded problems, scenario assumptions, decision records, execution records."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Customer"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Customer."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy does this matter?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Customer as a possible contributor — evidence is not strong enough to prioritize action. Why: Customer shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Canonical goal linkage is missing or uncertain."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerShow overview"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraReturned to overview."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "scenario": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-working-nexora-chat/09-scenario-question.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview"
+        },
+        "conversation": {
+          "processing": "false",
+          "status": "applied",
+          "intent": "explore-scenario",
+          "context": "not-required",
+          "command": "evaluate-scenario",
+          "primarySubject": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerHi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat is happening?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Investigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat evidence do we have?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention. Delivery needs attention. Evidence: current runtime state, recorded problems, scenario assumptions, decision records, execution records."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Customer"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Customer."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy does this matter?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Customer as a possible contributor — evidence is not strong enough to prioritize action. Why: Customer shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Canonical goal linkage is missing or uncertain."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerShow overview"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraReturned to overview."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat happens if we do nothing for 3 months?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraScenario evaluated: Do Nothing. Baseline conditions continue without new intervention."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "decision": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-working-nexora-chat/10-decision-question.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 872
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview"
+        },
+        "conversation": {
+          "processing": "false",
+          "status": "applied",
+          "intent": "decision-status",
+          "context": "not-required",
+          "command": "request-prioritization",
+          "primarySubject": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerHi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat is happening?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Investigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat evidence do we have?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention. Delivery needs attention. Evidence: current runtime state, recorded problems, scenario assumptions, decision records, execution records."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Customer"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Customer."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy does this matter?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Customer as a possible contributor — evidence is not strong enough to prioritize action. Why: Customer shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Canonical goal linkage is missing or uncertain."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerShow overview"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraReturned to overview."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat happens if we do nothing for 3 months?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraScenario evaluated: Do Nothing. Baseline conditions continue without new intervention."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerDo I need to make a decision?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraNo current decision requirement is supported by the available evidence."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "narrow": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-working-nexora-chat/12-narrow-desktop.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 904,
+          "height": 730
+        },
+        "stage": {
+          "focused": "none",
+          "anchor": "none",
+          "anchorPosition": "none",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "none",
+          "grammar": "overview"
+        },
+        "conversation": {
+          "processing": "false",
+          "status": "applied",
+          "intent": "execution-status",
+          "context": "not-required",
+          "command": "request-prioritization",
+          "primarySubject": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat is happening?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should I do?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraRecommendation: Investigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Budget has unresolved evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat evidence do we have?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity needs attention. Delivery needs attention. Evidence: current runtime state, recorded problems, scenario assumptions, decision records, execution records."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Customer"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Customer."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhy does this matter?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraInvestigate Customer as a possible contributor — evidence is not strong enough to prioritize action. Why: Customer shows attention, but a goal-linked canonical relationship is not established. Uncertainty: Canonical goal linkage is missing or uncertain."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerShow overview"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraReturned to overview."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat happens if we do nothing for 3 months?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraScenario evaluated: Do Nothing. Baseline conditions continue without new intervention."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerDo I need to make a decision?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraNo current decision requirement is supported by the available evidence."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerWhat should happen next?"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraI don’t have enough validated execution information to answer that yet."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    }
+  },
+  "checks": {
+    "greetingVisible": true,
+    "situationResponse": true,
+    "capacityClicked": true,
+    "customerCentered": true,
+    "customerFollowUpContext": true,
+    "overviewReset": true,
+    "decisionResponseApplied": true,
+    "executionResponse": true,
+    "emptyInputIgnored": true,
+    "narrowNoHorizontalOverflow": true
+  },
+  "notes": [
+    "Certification uses the real hydrated client and WebGL canvas.",
+    "Conversation responses are produced by the existing deterministic CC pipeline; no LLM/provider is configured.",
+    "A live technical-failure screenshot was not fabricated: the deterministic in-process CC path has no safe natural provider/network failure trigger."
+  ],
+  "passed": true
+}

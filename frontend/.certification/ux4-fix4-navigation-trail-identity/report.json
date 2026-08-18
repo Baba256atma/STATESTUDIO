@@ -1,0 +1,622 @@
+{
+  "url": "http://127.0.0.1:3000/executive",
+  "viewport": {
+    "width": 1502,
+    "height": 942
+  },
+  "captures": {
+    "capacity": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/01-capacity.png",
+      "state": {
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 1,
+          "currentIndex": 0,
+          "currentEntryId": "stage2d-navigation-0",
+          "subjectIds": [
+            "obj-capacity"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0"
+          ]
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-0",
+            "subjectId": "obj-capacity",
+            "text": "/Capacity"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    },
+    "capacityGap": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/02-capacity-gap-review.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 2,
+          "currentIndex": 1,
+          "currentEntryId": "stage2d-navigation-1",
+          "subjectIds": [
+            "obj-capacity",
+            "ctx-problem-capacity"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ]
+        },
+        "advisor": {
+          "subject": "ctx-problem-capacity",
+          "grammar": "problem"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-0",
+            "subjectId": "obj-capacity",
+            "text": "/Capacity"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-1",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity Gap"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    },
+    "repeated": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/03-repeat-same-subject.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 2,
+          "currentIndex": 1,
+          "currentEntryId": "stage2d-navigation-1",
+          "subjectIds": [
+            "obj-capacity",
+            "ctx-problem-capacity"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ]
+        },
+        "advisor": {
+          "subject": "ctx-problem-capacity",
+          "grammar": "problem"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-0",
+            "subjectId": "obj-capacity",
+            "text": "/Capacity"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-1",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity Gap"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    },
+    "scenario": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/04-scenario.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-scenario-capacity",
+          "anchor": "ctx-scenario-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 3,
+          "currentIndex": 2,
+          "currentEntryId": "stage2d-navigation-2",
+          "subjectIds": [
+            "obj-capacity",
+            "ctx-problem-capacity",
+            "ctx-scenario-capacity"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2"
+          ]
+        },
+        "advisor": {
+          "subject": "ctx-scenario-capacity",
+          "grammar": "scenario"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-0",
+            "subjectId": "obj-capacity",
+            "text": "/Capacity"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-1",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity Gap"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-2",
+            "subjectId": "ctx-scenario-capacity",
+            "text": "/Capacity Expansion Pl…"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    },
+    "legitimateRepeat": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/05-legitimate-capacity-gap-repeat.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 4,
+          "currentIndex": 3,
+          "currentEntryId": "stage2d-navigation-3",
+          "subjectIds": [
+            "obj-capacity",
+            "ctx-problem-capacity",
+            "ctx-scenario-capacity",
+            "ctx-problem-capacity"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2",
+            "stage2d-navigation-3"
+          ]
+        },
+        "advisor": {
+          "subject": "ctx-problem-capacity",
+          "grammar": "problem"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-0",
+            "subjectId": "obj-capacity",
+            "text": "/Capacity"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-1",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity…"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-2",
+            "subjectId": "ctx-scenario-capacity",
+            "text": "/Capacity Expans…"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-3",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity Gap"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    },
+    "back": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/06-back-restoration.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-scenario-capacity",
+          "anchor": "ctx-scenario-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 4,
+          "currentIndex": 2,
+          "currentEntryId": "stage2d-navigation-2",
+          "subjectIds": [
+            "obj-capacity",
+            "ctx-problem-capacity",
+            "ctx-scenario-capacity",
+            "ctx-problem-capacity"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2",
+            "stage2d-navigation-3"
+          ]
+        },
+        "advisor": {
+          "subject": "ctx-scenario-capacity",
+          "grammar": "scenario"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-0",
+            "subjectId": "obj-capacity",
+            "text": "/Capacity"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-1",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity Gap"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-2",
+            "subjectId": "ctx-scenario-capacity",
+            "text": "/Capacity Expansion Pl…"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-3",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity…"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    },
+    "button": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/07-advisor-button-navigation.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 2,
+          "currentIndex": 1,
+          "currentEntryId": "stage2d-navigation-1",
+          "subjectIds": [
+            "obj-capacity",
+            "ctx-problem-capacity"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ]
+        },
+        "advisor": {
+          "subject": "ctx-problem-capacity",
+          "grammar": "problem"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-0",
+            "subjectId": "obj-capacity",
+            "text": "/Capacity"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-1",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity Gap"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    },
+    "conversation": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/08-conversation-navigation.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 2,
+          "currentIndex": 1,
+          "currentEntryId": "stage2d-navigation-1",
+          "subjectIds": [
+            "obj-capacity",
+            "ctx-problem-capacity"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ]
+        },
+        "advisor": {
+          "subject": "ctx-problem-capacity",
+          "grammar": "problem"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-0",
+            "subjectId": "obj-capacity",
+            "text": "/Capacity"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-1",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity Gap"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    },
+    "originalCollisionPath": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/original-collision-path.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 6,
+          "currentIndex": 5,
+          "currentEntryId": "stage2d-navigation-5",
+          "subjectIds": [
+            "obj-capacity",
+            "ctx-problem-capacity",
+            "ctx-scenario-capacity",
+            "ctx-decision-capacity",
+            "ctx-execution-capacity",
+            "ctx-problem-capacity"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1",
+            "stage2d-navigation-2",
+            "stage2d-navigation-3",
+            "stage2d-navigation-4",
+            "stage2d-navigation-5"
+          ]
+        },
+        "advisor": {
+          "subject": "ctx-problem-capacity",
+          "grammar": "problem"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-2",
+            "subjectId": "ctx-scenario-capacity",
+            "text": "…/Capacity…"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-3",
+            "subjectId": "ctx-decision-capacity",
+            "text": "/Expand Ca…"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-4",
+            "subjectId": "ctx-execution-capacity",
+            "text": "/Capacity Expans…"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-5",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity Gap"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    },
+    "marginPressure": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/review-margin-pressure-regression.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-margin",
+          "anchor": "ctx-problem-margin",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 2,
+          "currentIndex": 1,
+          "currentEntryId": "stage2d-navigation-1",
+          "subjectIds": [
+            "obj-risk",
+            "ctx-problem-margin"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ]
+        },
+        "advisor": {
+          "subject": "ctx-problem-margin",
+          "grammar": "problem"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-0",
+            "subjectId": "obj-risk",
+            "text": "/Risk"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-1",
+            "subjectId": "ctx-problem-margin",
+            "text": "/Margin Pressure"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    },
+    "queue": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/09-queue-collection-navigation.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 2,
+          "currentIndex": 1,
+          "currentEntryId": "stage2d-navigation-1",
+          "subjectIds": [
+            "nexora-collection:problem",
+            "ctx-problem-capacity"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ]
+        },
+        "advisor": {
+          "subject": "ctx-problem-capacity",
+          "grammar": "problem"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-0",
+            "subjectId": "nexora-collection:problem",
+            "text": "/Problems"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-1",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity Gap"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    },
+    "final": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix4-navigation-trail-identity/10-final-console-clean.png",
+      "state": {
+        "stage": {
+          "focused": "ctx-problem-capacity",
+          "anchor": "ctx-problem-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0",
+          "navigationDepth": 2,
+          "currentIndex": 1,
+          "currentEntryId": "stage2d-navigation-1",
+          "subjectIds": [
+            "nexora-collection:problem",
+            "ctx-problem-capacity"
+          ],
+          "trailEntryIds": [
+            "stage2d-navigation-0",
+            "stage2d-navigation-1"
+          ]
+        },
+        "advisor": {
+          "subject": "ctx-problem-capacity",
+          "grammar": "problem"
+        },
+        "breadcrumbEntries": [
+          {
+            "trailEntryId": "stage2d-navigation-overview",
+            "subjectId": "trail-overview",
+            "text": "Overview"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-0",
+            "subjectId": "nexora-collection:problem",
+            "text": "/Problems"
+          },
+          {
+            "trailEntryId": "stage2d-navigation-1",
+            "subjectId": "ctx-problem-capacity",
+            "text": "/Capacity Gap"
+          }
+        ],
+        "horizontalOverflow": false
+      }
+    }
+  },
+  "checks": {
+    "capacityGap": true,
+    "adjacentNoOp": true,
+    "legitimateRepeat": true,
+    "backRestoration": true,
+    "buttonSingleTransition": true,
+    "conversationSingleTransition": true,
+    "buttonTextParity": true,
+    "originalCollisionPath": true,
+    "marginPressureRegression": true,
+    "queueOccurrences": true,
+    "uniqueTrailIdentities": true,
+    "uniqueBreadcrumbIdentities": true,
+    "consoleClean": true,
+    "stageInvariants": true
+  },
+  "console": {
+    "entries": [],
+    "runtimeExceptions": [],
+    "duplicateKeyWarnings": []
+  },
+  "notes": [
+    "Certification uses the real hydrated client and WebGL Stage.",
+    "Trail occurrence IDs are created by the canonical Stage-2D trail writer.",
+    "Console output is captured without filtering or suppressing React errors."
+  ],
+  "passed": true
+}

@@ -318,7 +318,11 @@ test("Q — Executive Thread does not occupy anchor (bridge placement)", () => {
     "utf8",
   );
   assert.match(source, /collapsed-thread/);
-  assert.match(source, /2\.4, 1\.55, 0/);
+  assert.match(source, /resolveExecutiveThreadGatewayPosition/);
+  assert.doesNotMatch(
+    source,
+    /role === "collapsed-thread"[\s\S]{0,200}targetPosition: Object\.freeze\(\[0, 0, 0\]/,
+  );
 });
 
 test("R/S — Dial + Presentation reserved zones", () => {

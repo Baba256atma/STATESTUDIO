@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cockpit } from "../exs1/shell/executiveCockpitTheme";
 import { NexoraConversationalInput } from "./NexoraConversationalInput";
 import type { NexoraConversationalMessage } from "@/app/lib/conversational-control/conversationalExperience";
@@ -26,6 +26,12 @@ export function NexoraConversationalExperience({
   onSubmitUtterance,
 }: Props) {
   const [localGuard, setLocalGuard] = useState(false);
+  const messageLogRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const log = messageLogRef.current;
+    if (log) log.scrollTop = log.scrollHeight;
+  }, [messages, processing]);
 
   const onSubmit = useCallback(
     (utterance: string) => {
@@ -52,6 +58,10 @@ export function NexoraConversationalExperience({
       data-command-kind={lastTrace?.commandKind ?? ""}
       data-runtime-status={lastTrace?.runtimeStatus ?? ""}
       data-primary-subject={lastTrace?.primarySubjectId ?? ""}
+      data-pending-turn-kind={lastTrace?.pendingTurnExpectationKind ?? ""}
+      data-pending-turn-resolution={
+        lastTrace?.pendingTurnResolutionStatus ?? ""
+      }
       aria-label="Nexora conversational control"
       style={{
         display: "flex",
@@ -76,9 +86,11 @@ export function NexoraConversationalExperience({
       ) : null}
 
       <div
+        ref={messageLogRef}
         data-testid="nexora-conversational-messages"
         role="log"
         aria-live="polite"
+        aria-busy={processing}
         style={{
           display: "flex",
           flexDirection: "column",
@@ -127,6 +139,18 @@ export function NexoraConversationalExperience({
             </div>
           ))
         )}
+        {processing ? (
+          <div
+            data-testid="nexora-conversational-thinking"
+            style={{
+              fontSize: "0.7rem",
+              lineHeight: 1.35,
+              color: cockpit.muted,
+            }}
+          >
+            Nexora is thinking…
+          </div>
+        ) : null}
       </div>
 
       <NexoraConversationalInput

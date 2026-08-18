@@ -66,6 +66,14 @@ export const CONVERSATIONAL_INTENT_BOUNDARY = Object.freeze({
 // - navigate-forward ↔ Stage 2D trail forward (no DRI twin; Stage-native)
 
 export const NEXORA_CONVERSATIONAL_INTENT_KINDS = Object.freeze([
+  "greet",
+  "help",
+  "situation",
+  "evidence",
+  "change",
+  "risk",
+  "decision-status",
+  "execution-status",
   "focus",
   "explore",
   "overview",
@@ -220,6 +228,14 @@ export type NexoraConversationalIntentResolution = {
 export const EXECUTION_CLASS_BY_INTENT_KIND: Readonly<
   Record<NexoraConversationalIntentKind, NexoraConversationalExecutionClass>
 > = Object.freeze({
+  greet: "analysis",
+  help: "analysis",
+  situation: "analysis",
+  evidence: "analysis",
+  change: "analysis",
+  risk: "analysis",
+  "decision-status": "analysis",
+  "execution-status": "analysis",
   focus: "navigation",
   explore: "exploration",
   overview: "navigation",
@@ -258,6 +274,14 @@ export const EXECUTION_CLASS_BY_INTENT_KIND: Readonly<
 /** Reason codes used by the resolver (stable, machine-readable). */
 export const CONVERSATIONAL_INTENT_REASON = Object.freeze({
   NORMALIZED: "normalized-utterance",
+  MATCHED_GREETING: "matched-professional-greeting-pattern",
+  MATCHED_HELP: "matched-conversational-help-pattern",
+  MATCHED_SITUATION: "matched-situation-question-pattern",
+  MATCHED_EVIDENCE: "matched-evidence-question-pattern",
+  MATCHED_CHANGE: "matched-change-question-pattern",
+  MATCHED_RISK: "matched-risk-question-pattern",
+  MATCHED_DECISION_STATUS: "matched-decision-status-question-pattern",
+  MATCHED_EXECUTION_STATUS: "matched-execution-status-question-pattern",
   MATCHED_FOCUS: "matched-focus-pattern",
   MATCHED_OPEN_SHOW_TARGET: "matched-open-or-show-target-pattern",
   MATCHED_OVERVIEW: "matched-overview-pattern",

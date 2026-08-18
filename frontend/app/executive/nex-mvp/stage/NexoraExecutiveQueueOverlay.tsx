@@ -40,11 +40,22 @@ export function NexoraExecutiveQueueOverlay({
     return null;
   }
 
+  const attentionCount = entries.reduce((sum, entry) => sum + entry.count, 0);
+  const needsAttention = entries.some(
+    (entry) =>
+      entry.count > 0 &&
+      (entry.category === "problem" ||
+        entry.category === "decision" ||
+        entry.category === "changes-since-visit"),
+  );
+  const collectionActive = collectionHeaderLabel != null;
+
   return (
     <aside
       data-testid="nexora-executive-queue"
       data-stage-prod="2"
       data-queue-is-semantic-object="false"
+      data-queue-compact="true"
       data-collection-header={collectionHeaderLabel ?? undefined}
       aria-label="Executive Queue"
       style={{
@@ -53,33 +64,55 @@ export function NexoraExecutiveQueueOverlay({
         top: "42%",
         transform: "translateY(-50%)",
         zIndex: 8,
-        width: "8.75rem",
+        width: collectionActive ? "8.75rem" : "7.25rem",
         maxWidth: "16%",
-        minWidth: "7.75rem",
+        minWidth: "6.5rem",
         pointerEvents: "auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.22rem",
-        padding: "0.4rem 0.5rem 0.5rem",
-        borderLeft: `1px solid ${cockpit.border}`,
-        background: "rgba(6, 10, 18, 0.55)",
-        backdropFilter: "blur(6px)",
         color: cockpit.textSoft,
         fontFamily: "inherit",
       }}
     >
-      <div
-        data-testid="nexora-executive-queue-title"
+      <details
+        data-testid="nexora-executive-queue-disclosure"
+        open={collectionActive || undefined}
         style={{
-          fontSize: "0.58rem",
-          letterSpacing: "0.18em",
-          textTransform: "uppercase",
-          color: cockpit.muted,
-          fontWeight: 600,
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.22rem",
+          padding: "0.35rem 0.45rem 0.4rem",
+          borderLeft: `1px solid ${cockpit.border}`,
+          background: "rgba(6, 10, 18, 0.42)",
+          backdropFilter: "blur(6px)",
         }}
       >
-        Executive Queue
-      </div>
+        <summary
+          data-testid="nexora-executive-queue-title"
+          style={{
+            listStyle: "none",
+            cursor: "pointer",
+            fontSize: "0.58rem",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: needsAttention ? cockpit.warning : cockpit.muted,
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: "0.35rem",
+          }}
+        >
+          <span>Queue</span>
+          <span
+            data-testid="nexora-executive-queue-summary-count"
+            style={{
+              fontVariantNumeric: "tabular-nums",
+              color: cockpit.textSoft,
+              fontSize: "0.62rem",
+            }}
+          >
+            {attentionCount}
+          </span>
+        </summary>
       <div
         aria-hidden
         style={{
@@ -196,6 +229,7 @@ export function NexoraExecutiveQueueOverlay({
           );
         })}
       </ul>
+      </details>
     </aside>
   );
 }

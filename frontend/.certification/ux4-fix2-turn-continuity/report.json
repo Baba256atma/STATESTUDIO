@@ -1,0 +1,779 @@
+{
+  "url": "http://127.0.0.1:3000/executive",
+  "viewport": {
+    "width": 1502,
+    "height": 942
+  },
+  "captures": {
+    "greeting": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix2-turn-continuity/01-hi-review-question.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "greet",
+          "command": "",
+          "primarySubject": "",
+          "pendingTurnKind": "review-subject",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerhi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "review": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix2-turn-continuity/02-yes-reviews-subject.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "",
+          "primarySubject": "obj-capacity",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "answered",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerhi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Manageryes"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "bareCapacity": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix2-turn-continuity/03-bare-capacity-recognized.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "no-op",
+          "intent": "focus",
+          "command": "",
+          "primarySubject": "obj-capacity",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerhi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Manageryes"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managercapacity"
+            },
+            {
+              "role": "nexora",
+              "status": "no-op",
+              "text": "NexoraCapacity is already the current subject. You can ask me to explain the situation, show the evidence, or review the recommendation."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "customer": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix2-turn-continuity/04-subject-switch-customer.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "obj-customer",
+          "anchor": "obj-customer",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-customer",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "focus-subject",
+          "primarySubject": "obj-customer",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerhi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Manageryes"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managercapacity"
+            },
+            {
+              "role": "nexora",
+              "status": "no-op",
+              "text": "NexoraCapacity is already the current subject. You can ask me to explain the situation, show the evidence, or review the recommendation."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managercustomer"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Customer."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "customerExplanation": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix2-turn-continuity/05-explain-it-customer.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "obj-customer",
+          "anchor": "obj-customer",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-customer",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "situation",
+          "command": "request-prioritization",
+          "primarySubject": "obj-customer",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerhi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Manageryes"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managercapacity"
+            },
+            {
+              "role": "nexora",
+              "status": "no-op",
+              "text": "NexoraCapacity is already the current subject. You can ask me to explain the situation, show the evidence, or review the recommendation."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managercustomer"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Customer."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain it"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCustomer performance is below the preferred operating range and may require investigation. No validated business consequence is available for this context. Recommendation: Open Report."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "interruption": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix2-turn-continuity/06-pending-interrupted-by-explicit-command.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "obj-capacity",
+          "anchor": "obj-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "obj-capacity",
+          "grammar": "object"
+        },
+        "conversation": {
+          "status": "applied",
+          "intent": "focus",
+          "command": "focus-subject",
+          "primarySubject": "obj-capacity",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "interrupted",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerhi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Manageryes"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managercapacity"
+            },
+            {
+              "role": "nexora",
+              "status": "no-op",
+              "text": "NexoraCapacity is already the current subject. You can ask me to explain the situation, show the evidence, or review the recommendation."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managercustomer"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Customer."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain it"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCustomer performance is below the preferred operating range and may require investigation. No validated business consequence is available for this context. Recommendation: Open Report."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerhi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Customer needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerShow Capacity instead"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "decisionSafety": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix2-turn-continuity/07-decision-commitment-safety.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 1126,
+          "height": 840
+        },
+        "stage": {
+          "focused": "ctx-decision-capacity",
+          "anchor": "ctx-decision-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "ctx-decision-capacity",
+          "grammar": "decision"
+        },
+        "conversation": {
+          "status": "unsupported",
+          "intent": "unknown",
+          "command": "",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerhi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Manageryes"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managercapacity"
+            },
+            {
+              "role": "nexora",
+              "status": "no-op",
+              "text": "NexoraCapacity is already the current subject. You can ask me to explain the situation, show the evidence, or review the recommendation."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managercustomer"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Customer."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain it"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCustomer performance is below the preferred operating range and may require investigation. No validated business consequence is available for this context. Recommendation: Open Report."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerhi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Customer needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerShow Capacity instead"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Expand Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Expand Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Manageryes"
+            },
+            {
+              "role": "nexora",
+              "status": "unsupported",
+              "text": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    },
+    "narrow": {
+      "path": "/Users/bahadoors/Documents/StateStudio/frontend/.certification/ux4-fix2-turn-continuity/08-narrow-desktop.png",
+      "state": {
+        "ux1": true,
+        "ux2": "stage-interaction",
+        "ux3": "professional-advisor",
+        "canvas": {
+          "width": 904,
+          "height": 698
+        },
+        "stage": {
+          "focused": "ctx-decision-capacity",
+          "anchor": "ctx-decision-capacity",
+          "anchorPosition": "0,0,0",
+          "cameraMode": "fixed-2d",
+          "depth": "0"
+        },
+        "advisor": {
+          "subject": "ctx-decision-capacity",
+          "grammar": "decision"
+        },
+        "conversation": {
+          "status": "unsupported",
+          "intent": "unknown",
+          "command": "",
+          "primarySubject": "",
+          "pendingTurnKind": "",
+          "pendingTurnResolution": "",
+          "messages": [
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerhi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Manageryes"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCapacity is currently in a state that needs attention. Capacity is related to Budget. Recommendation: Review Capacity Gap."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managercapacity"
+            },
+            {
+              "role": "nexora",
+              "status": "no-op",
+              "text": "NexoraCapacity is already the current subject. You can ask me to explain the situation, show the evidence, or review the recommendation."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managercustomer"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Customer."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerexplain it"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraCustomer performance is below the preferred operating range and may require investigation. No validated business consequence is available for this context. Recommendation: Open Report."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Managerhi"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraHi. I’m ready. Customer needs attention. Would you like to review it?"
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerShow Capacity instead"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "ManagerFocus on Expand Capacity"
+            },
+            {
+              "role": "nexora",
+              "status": "applied",
+              "text": "NexoraFocused on Expand Capacity."
+            },
+            {
+              "role": "manager",
+              "status": "",
+              "text": "Manageryes"
+            },
+            {
+              "role": "nexora",
+              "status": "unsupported",
+              "text": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution."
+            }
+          ]
+        },
+        "horizontalOverflow": false
+      }
+    }
+  },
+  "checks": {
+    "greetingOwnsReviewExpectation": true,
+    "yesReviewsSubject": true,
+    "bareCapacityRecognized": true,
+    "customerSwitch": true,
+    "pronounContinuity": true,
+    "explicitInterruption": true,
+    "decisionSafety": true,
+    "narrowNoHorizontalOverflow": true,
+    "stageInvariants": true,
+    "noCommitmentLeakage": true
+  },
+  "notes": [
+    "Certification uses the real hydrated client and WebGL Stage.",
+    "Pending-turn state is structured CC session state and is not inferred from rendered text.",
+    "No LLM/provider or durable memory path was added."
+  ],
+  "passed": true
+}

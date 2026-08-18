@@ -798,6 +798,23 @@ export function Nexora3DExecutiveStage({
     );
     return focused == null ? "none" : String(focused.targetPosition[2]);
   })();
+  const collectionIntegrity = (
+    fixedCameraInteraction.scene as typeof fixedCameraInteraction.scene & {
+      readonly collectionIntegrity?: {
+        readonly contract: string;
+        readonly finalXyWriter: string;
+        readonly memberIds: readonly string[];
+        readonly watchContextIds: readonly string[];
+        readonly duplicateObjectIds: readonly string[];
+        readonly hiddenWatchIds: readonly string[];
+        readonly overlapCount: number;
+        readonly minObservedGap: number;
+        readonly requiredGap: number;
+        readonly layoutStatus: string;
+        readonly snapshots: readonly unknown[];
+      };
+    }
+  ).collectionIntegrity;
 
   const fallback = (
     <StageFallback
@@ -811,6 +828,8 @@ export function Nexora3DExecutiveStage({
   return (
     <div
       data-testid="nexora-3d-executive-stage"
+      data-ux2="stage-interaction"
+      data-ux2-center-law="click-object-center-recompose"
       data-nex-mvp="3"
       data-nex-mvp-interaction="4"
       data-nex-mvp-workspace="5"
@@ -947,6 +966,13 @@ export function Nexora3DExecutiveStage({
       data-stage-navigation-current-object-id={
         navigationTrailObservability.currentObjectId
       }
+      data-stage-navigation-subject-ids={navigationTrail.objectIds.join("|")}
+      data-stage-navigation-entry-ids={navigationTrail.trailEntryIds.join("|")}
+      data-stage-navigation-current-entry-id={
+        navigationTrail.currentIndex >= 0
+          ? navigationTrail.trailEntryIds[navigationTrail.currentIndex] ?? "none"
+          : "none"
+      }
       data-stage-navigation-can-back={navigationTrailObservability.canBack}
       data-stage-navigation-can-forward={
         navigationTrailObservability.canForward
@@ -967,6 +993,41 @@ export function Nexora3DExecutiveStage({
       }
       data-stage-layout-min-gap={readabilityObservability.layoutMinGap}
       data-stage-layout-status={readabilityObservability.layoutStatus}
+      data-stage-collection-integrity={
+        collectionIntegrity?.contract ?? "inactive"
+      }
+      data-stage-collection-final-xy-writer={
+        collectionIntegrity?.finalXyWriter ?? "none"
+      }
+      data-stage-collection-member-ids={
+        collectionIntegrity?.memberIds.join("|") ?? "none"
+      }
+      data-stage-collection-watch-context-ids={
+        collectionIntegrity?.watchContextIds.join("|") ?? "none"
+      }
+      data-stage-collection-duplicate-object-ids={
+        collectionIntegrity?.duplicateObjectIds.join("|") ?? "none"
+      }
+      data-stage-collection-hidden-watch-ids={
+        collectionIntegrity?.hiddenWatchIds.join("|") ?? "none"
+      }
+      data-stage-collection-overlap-count={
+        collectionIntegrity?.overlapCount ?? "none"
+      }
+      data-stage-collection-min-gap={
+        collectionIntegrity?.minObservedGap ?? "none"
+      }
+      data-stage-collection-required-gap={
+        collectionIntegrity?.requiredGap ?? "none"
+      }
+      data-stage-collection-layout-status={
+        collectionIntegrity?.layoutStatus ?? "none"
+      }
+      data-stage-collection-snapshots={
+        collectionIntegrity == null
+          ? "[]"
+          : JSON.stringify(collectionIntegrity.snapshots)
+      }
       data-stage-planar-body-count={String(
         fixedCameraInteraction.scene.objects.filter(
           (entry) => entry.disclosureState !== "hidden",
@@ -1230,8 +1291,9 @@ export function Nexora3DExecutiveStage({
         }}
       />
 
-      <div
+      <details
         data-testid="nexora-stage-object-list"
+        data-ux1-disclosure="objects"
         style={{
           position: "absolute",
           left: "0.75rem",
@@ -1244,8 +1306,27 @@ export function Nexora3DExecutiveStage({
           maxHeight: "calc(100% - 5rem)",
           overflow: "auto",
           pointerEvents: "auto",
+          padding: "0.28rem 0.4rem 0.4rem",
+          borderRadius: cockpit.radius.md,
+          border: `1px solid ${cockpit.border}`,
+          background: "rgba(8, 14, 24, 0.42)",
+          backdropFilter: "blur(8px)",
         }}
       >
+        <summary
+          style={{
+            listStyle: "none",
+            cursor: "pointer",
+            fontSize: "0.58rem",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: cockpit.muted,
+            fontWeight: 600,
+            fontFamily: "inherit",
+          }}
+        >
+          Objects · {interaction.scene.objects.length}
+        </summary>
         {interaction.scene.objects.map((object) => {
           const showKpi =
             object.focused &&
@@ -1431,7 +1512,7 @@ export function Nexora3DExecutiveStage({
         >
           Overview
         </button>
-      </div>
+      </details>
 
       <NexoraSubjectReport viewModel={presentationViewModel} />
       <NexoraSubjectOperation

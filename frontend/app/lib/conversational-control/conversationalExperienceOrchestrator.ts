@@ -16,6 +16,7 @@ import { buildNexoraConversationalExperienceResponse } from "./conversationalExp
 import {
   type NexoraConversationalExperienceResult,
   type NexoraConversationalExperienceStatus,
+  type NexoraConversationalAdvisorGrounding,
   type NexoraConversationalMessage,
   type NexoraConversationalExperienceTrace,
 } from "./conversationalExperience.ts";
@@ -35,6 +36,7 @@ import type { NexoraRegisteredExecutiveExperience } from "./conversationalExperi
 import {
   createEmptyNexoraExecutiveContextSnapshot,
   freezeExecutiveContextReference,
+  freezeExecutiveContextSnapshot,
   type NexoraExecutiveContextSnapshot,
   type NexoraExecutiveContextUpdateResult,
 } from "./executiveContextSnapshot.ts";
@@ -67,10 +69,21 @@ import {
 } from "./executiveDecisionCommitmentResolver.ts";
 import {
   createEmptyNexoraExecutiveDecisionSession,
+  setPendingDecisionConfirmation,
   type NexoraExecutiveDecisionSession,
 } from "./executiveDecisionAuthority.ts";
 import type { NexoraDecisionRuntimeAdapter } from "./executiveDecisionRuntimeAdapter.ts";
 import { createNexoraCanonicalDecisionRuntime } from "./executiveDecisionRuntimeAdapter.ts";
+import {
+  createNexoraPendingTurnExpectation,
+  resolveBareNexoraSubjectReference,
+  resolveNexoraPendingTurnAnswer,
+  type NexoraPendingTurnExpectation,
+  type NexoraPendingTurnResolution,
+} from "./conversationalTurnExpectation.ts";
+import {
+  resolveNexoraConversationalActionInvocation,
+} from "./conversationalActionDescriptor.ts";
 
 
 export type NexoraConversationalExperienceInput = {
@@ -96,6 +109,10 @@ export type NexoraConversationalExperienceInput = {
   readonly decisionRuntime?: NexoraDecisionRuntimeAdapter | null;
   /** Deterministic clock for Decision committedAt (tests/Runtime). */
   readonly decisionCommittedAt?: string;
+  /** Read-only projection of the existing UX:3 Advisor narrative. */
+  readonly advisorGrounding?: NexoraConversationalAdvisorGrounding | null;
+  /** UX:4-FIX2 short-lived dialogue expectation. */
+  readonly pendingTurnExpectation?: NexoraPendingTurnExpectation | null;
 };
 
 function freezeMessage(
@@ -223,7 +240,13 @@ function resolveRecommendationForTurn(input: {
     primarySubjectId,
   );
   const requestKind =
-    input.intentKind === "explain"
+    input.intentKind === "explain" ||
+    input.intentKind === "situation" ||
+    input.intentKind === "evidence" ||
+    input.intentKind === "change" ||
+    input.intentKind === "risk" ||
+    input.intentKind === "decision-status" ||
+    input.intentKind === "execution-status"
       ? ("explain" as const)
       : input.intentKind === "prioritize"
         ? ("prioritize" as const)
@@ -429,7 +452,8 @@ function bootstrapExecutiveContext(input: {
 }): NexoraExecutiveContextSnapshot {
   if (input.executiveContext) return input.executiveContext;
 
-  const legacy = input.conversationContext ?? Object.freeze({});
+  const legacy: NexoraConversationContextSnapshot =
+    input.conversationContext ?? Object.freeze({});
   const currentId = legacy.currentSubjectId ?? null;
   const record = currentId
     ? input.executiveSubjects.find((s) => s.subjectId === currentId) ?? null
@@ -551,6 +575,60 @@ function mapExperienceStatus(input: {
   return "failed";
 }
 
+function resolveIntentForTurn(
+  managerUtterance: string,
+  semanticUtterance: string,
+): NexoraConversationalExperienceResult["intentResult"] {
+  const resolved = resolveNexoraConversationalIntent({
+    utterance: semanticUtterance,
+  });
+  if (managerUtterance === semanticUtterance) return resolved;
+  return Object.freeze({
+    intent: Object.freeze({
+      ...resolved.intent,
+      utterance: managerUtterance,
+    }),
+    trace: Object.freeze({
+      ...resolved.trace,
+      utterance: managerUtterance,
+    }),
+  });
+}
+
+function withoutInterruptionSuffix(utterance: string): string {
+  return utterance.replace(/\s+instead[.!?]*\s*$/i, "").trim();
+}
+
+function pendingClarification(
+  expectation: NexoraPendingTurnExpectation,
+): string {
+  if (expectation.expectedAnswerKind === "scenario-selection") {
+    return "Which scenario do you mean?";
+  }
+  if (expectation.expectedAnswerKind === "subject-selection") {
+    return "Which subject do you mean?";
+  }
+  if (expectation.questionKind === "decision-commitment") {
+    return "Which option do you want to commit to?";
+  }
+  return "Could you clarify what you want to review?";
+}
+
+function declinedPendingResponse(
+  expectation: NexoraPendingTurnExpectation,
+): string {
+  if (expectation.questionKind === "review-subject") {
+    return "Understood. We can stay with the current executive context.";
+  }
+  if (expectation.questionKind === "show-evidence") {
+    return "Understood. I’ll keep the current evidence details closed.";
+  }
+  if (expectation.questionKind === "compare-scenarios") {
+    return "Understood. I won’t open the scenario comparison.";
+  }
+  return "Understood.";
+}
+
 /**
  * Primary CC:5 API — execute one executive utterance through CC:1–7–4.
  */
@@ -561,19 +639,102 @@ export function executeNexoraConversationalExperience(
 } {
   const utterance = typeof input.utterance === "string" ? input.utterance : "";
   const ids = deriveMessageIds(input.messageIdSeed);
-  const previousExecutiveContext = bootstrapExecutiveContext({
+  const bootstrappedExecutiveContext = bootstrapExecutiveContext({
     executiveContext: input.executiveContext,
     conversationContext: input.conversationContext,
     runtimeState: input.runtimeState,
     executiveSubjects: input.executiveSubjects,
+  });
+  const previousExecutiveContext = freezeExecutiveContextSnapshot({
+    ...bootstrappedExecutiveContext,
+    currentRecommendedAction:
+      input.advisorGrounding?.primaryAction ??
+      bootstrappedExecutiveContext.currentRecommendedAction,
   });
   const previousContext = toNexoraConversationContextSnapshot(
     previousExecutiveContext,
   );
 
   try {
+    // UX:4-FIX2 — explicit intent first, then a structured pending-turn answer,
+    // then a unique registered entity reference. Rendered Nexora copy is never parsed.
+    const subjectNameById = Object.freeze(
+      Object.fromEntries(
+        input.executiveSubjects.map((subject) => [
+          subject.subjectId,
+          subject.canonicalName,
+        ]),
+      ),
+    );
+    const subjectKindById = Object.freeze(
+      Object.fromEntries(
+        input.executiveSubjects.map((subject) => [
+          subject.subjectId,
+          subject.subjectKind,
+        ]),
+      ),
+    );
+    const actionInvocation = resolveNexoraConversationalActionInvocation({
+      utterance,
+      primaryAction:
+        input.advisorGrounding?.primaryAction ??
+        previousExecutiveContext.currentRecommendedAction,
+      availableActions:
+        input.advisorGrounding?.availableActions ??
+        (previousExecutiveContext.currentRecommendedAction
+          ? [previousExecutiveContext.currentRecommendedAction]
+          : []),
+      subjectNameById,
+      subjectKindById,
+    });
+    const explicitUtterance =
+      actionInvocation.semanticUtterance ??
+      withoutInterruptionSuffix(utterance);
+    const initialIntentResult = resolveNexoraConversationalIntent({
+      utterance: explicitUtterance,
+    });
+    const decisionExpectation =
+      input.decisionSession?.pendingConfirmation &&
+      input.decisionSession.pendingConfirmation.status === "pending"
+        ? createNexoraPendingTurnExpectation({
+            expectationId:
+              input.decisionSession.pendingConfirmation.confirmationId,
+            questionKind: "decision-commitment",
+            expectedAnswerKind: "decision-option",
+            subjectId: previousContext.currentSubjectId ?? null,
+            optionIds: [
+              input.decisionSession.pendingConfirmation.candidateId,
+            ],
+            sourceCapability: "CC:10",
+            consequential: true,
+            confirmationLevel: "consequential",
+          })
+        : null;
+    const activeExpectation =
+      input.pendingTurnExpectation ??
+      previousExecutiveContext.pendingTurnExpectation ??
+      decisionExpectation;
+    const pendingTurnResolution = resolveNexoraPendingTurnAnswer({
+      utterance,
+      initialIntentKind: initialIntentResult.intent.kind,
+      expectation: activeExpectation,
+      subjects: input.executiveSubjects,
+    });
+    const bareSubject =
+      pendingTurnResolution?.semanticUtterance == null &&
+      initialIntentResult.intent.kind === "unknown"
+        ? resolveBareNexoraSubjectReference({
+            utterance,
+            subjects: input.executiveSubjects,
+          })
+        : null;
+    const semanticUtterance =
+      pendingTurnResolution?.semanticUtterance ??
+      (bareSubject?.status === "resolved" && bareSubject.subject
+        ? `Focus on ${bareSubject.subject.canonicalName}`
+        : explicitUtterance);
     // CC:1
-    const intentResult = resolveNexoraConversationalIntent({ utterance });
+    const intentResult = resolveIntentForTurn(utterance, semanticUtterance);
     const intent = intentResult.intent;
 
     // CC:2 — subject context from CC:7 projection
@@ -586,6 +747,160 @@ export function executeNexoraConversationalExperience(
       executiveSubjects: input.executiveSubjects,
     });
     const context = contextResult.context;
+
+    if (
+      actionInvocation.matchedUtterance &&
+      actionInvocation.status !== "resolved"
+    ) {
+      const status = "clarification-required" as const;
+      return finalize({
+        status,
+        response:
+          actionInvocation.status === "ambiguous"
+            ? "Which recommended action do you want to review?"
+            : "Which item do you mean?",
+        intentResult,
+        contextResult,
+        experienceResult: null,
+        commandResult: null,
+        runtimeResult: null,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        pendingTurnResolution,
+        nextPendingTurnExpectation: null,
+        ids,
+        utterance,
+        catalog: input.catalog,
+        executiveSubjects: input.executiveSubjects,
+      });
+    }
+
+    if (
+      pendingTurnResolution?.status === "declined" &&
+      pendingTurnResolution.expectation.questionKind !== "decision-commitment"
+    ) {
+      const status = "applied" as const;
+      return finalize({
+        status,
+        response: declinedPendingResponse(pendingTurnResolution.expectation),
+        intentResult,
+        contextResult,
+        experienceResult: null,
+        commandResult: null,
+        runtimeResult: null,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        trustedAdvisorySuccess: true,
+        pendingTurnResolution,
+        nextPendingTurnExpectation: null,
+        nextDecisionSession: input.decisionSession?.pendingConfirmation
+          ? setPendingDecisionConfirmation(input.decisionSession, null)
+          : null,
+        ids,
+        utterance,
+        catalog: input.catalog,
+        executiveSubjects: input.executiveSubjects,
+      });
+    }
+
+    if (pendingTurnResolution?.status === "clarification-required") {
+      const status = "clarification-required" as const;
+      return finalize({
+        status,
+        response: pendingClarification(pendingTurnResolution.expectation),
+        intentResult,
+        contextResult,
+        experienceResult: null,
+        commandResult: null,
+        runtimeResult: null,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        pendingTurnResolution,
+        nextPendingTurnExpectation: pendingTurnResolution.expectation,
+        ids,
+        utterance,
+        catalog: input.catalog,
+        executiveSubjects: input.executiveSubjects,
+      });
+    }
+
+    if (
+      pendingTurnResolution?.status === "answered" &&
+      pendingTurnResolution.expectation.questionKind === "review-subject" &&
+      pendingTurnResolution.subjectId != null &&
+      input.runtimeState.focusedSubject?.id === pendingTurnResolution.subjectId
+    ) {
+      const recommendationResult = resolveRecommendationForTurn({
+        utterance,
+        intentKind: "explain",
+        primarySubjectId: pendingTurnResolution.subjectId,
+        executiveContext: previousExecutiveContext,
+        catalog: input.catalog,
+      });
+      const status = "applied" as const;
+      const response = buildNexoraConversationalExperienceResponse({
+        status,
+        intent,
+        context,
+        command: null,
+        runtime: null,
+        utterance,
+        experienceResolution: null,
+        recommendationResult,
+        advisorGrounding: input.advisorGrounding ?? null,
+        pendingTurnResolution,
+      });
+      return finalize({
+        status,
+        response,
+        intentResult,
+        contextResult,
+        experienceResult: null,
+        commandResult: null,
+        runtimeResult: null,
+        recommendationResult,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        trustedAdvisorySuccess: true,
+        pendingTurnResolution,
+        nextPendingTurnExpectation: null,
+        ids,
+        utterance,
+        catalog: input.catalog,
+        executiveSubjects: input.executiveSubjects,
+      });
+    }
+
+    if (
+      bareSubject?.status === "resolved" &&
+      bareSubject.subject &&
+      input.runtimeState.focusedSubject?.id === bareSubject.subject.subjectId
+    ) {
+      const status = "no-op" as const;
+      return finalize({
+        status,
+        response: `${bareSubject.subject.canonicalName} is already the current subject. You can ask me to explain the situation, show the evidence, or review the recommendation.`,
+        intentResult,
+        contextResult,
+        experienceResult: null,
+        commandResult: null,
+        runtimeResult: null,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        trustedAdvisorySuccess: true,
+        pendingTurnResolution,
+        nextPendingTurnExpectation: null,
+        ids,
+        utterance,
+        catalog: input.catalog,
+        executiveSubjects: input.executiveSubjects,
+      });
+    }
 
     // Early exit when subject context blocks (including compound prepare+focus)
     if (
@@ -619,6 +934,16 @@ export function executeNexoraConversationalExperience(
         previousExecutiveContext,
         nextRuntimeState: input.runtimeState,
         shouldCommitRuntime: false,
+        pendingTurnResolution,
+        ...(pendingTurnResolution?.status === "interrupted" &&
+        input.decisionSession?.pendingConfirmation
+          ? {
+              nextDecisionSession: setPendingDecisionConfirmation(
+                input.decisionSession,
+                null,
+              ),
+            }
+          : {}),
         ids,
         utterance,
         catalog: input.catalog,
@@ -639,6 +964,56 @@ export function executeNexoraConversationalExperience(
       entrySubjectId: context.primarySubject?.subjectId ?? null,
       availableExperiences: input.availableExperiences,
     });
+
+    // UX:4 — ordinary conversational entry stays inside CC:1/CC:5.
+    // It reads CC:8 assessment truth but never maps to or mutates Runtime.
+    if (intent.kind === "greet" || intent.kind === "help") {
+      const recommendationResult = resolveRecommendationForTurn({
+        utterance,
+        intentKind: "prioritize",
+        primarySubjectId: null,
+        executiveContext: previousExecutiveContext,
+        catalog: input.catalog,
+      });
+      const status = "applied" as const;
+      const response = buildNexoraConversationalExperienceResponse({
+        status,
+        intent,
+        context,
+        command: null,
+        runtime: null,
+        utterance,
+        experienceResolution: experienceResult,
+        recommendationResult,
+      });
+      return finalize({
+        status,
+        response,
+        intentResult,
+        contextResult,
+        experienceResult,
+        commandResult: null,
+        runtimeResult: null,
+        recommendationResult,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        pendingTurnResolution,
+        ...(pendingTurnResolution?.status === "interrupted" &&
+        input.decisionSession?.pendingConfirmation
+          ? {
+              nextDecisionSession: setPendingDecisionConfirmation(
+                input.decisionSession,
+                null,
+              ),
+            }
+          : {}),
+        ids,
+        utterance,
+        catalog: input.catalog,
+        executiveSubjects: input.executiveSubjects,
+      });
+    }
 
     const experienceIntent =
       intent.kind === "prepare-context" || intent.kind === "switch-workspace";
@@ -955,15 +1330,29 @@ export function executeNexoraConversationalExperience(
       isDecisionCommitmentCommandKind(commandResult.command.kind) ||
       applied.result.runtimeActionKind ===
         "resolve-executive-decision-commitment";
+    const isReviewConfirmation =
+      pendingTurnResolution?.status === "answered" &&
+      pendingTurnResolution.expectation.questionKind === "review-subject";
+    const isSafeActionNavigation =
+      intent.kind === "focus" &&
+      (actionInvocation.status === "resolved" ||
+        /^(?:review|investigate)\b/i.test(utterance.trim()));
 
     let recommendationResult: NexoraExecutiveRecommendationResult | null = null;
     let scenarioResult: NexoraExecutiveScenarioConversationResult | null = null;
     let decisionCommitmentResult: NexoraDecisionCommitmentResult | null = null;
 
-    if (isRecommendation && applied.result.status === "applied") {
+    if (
+      (isRecommendation || isReviewConfirmation || isSafeActionNavigation) &&
+      (applied.result.status === "applied" ||
+        applied.result.status === "no-op")
+    ) {
       recommendationResult = resolveRecommendationForTurn({
         utterance,
-        intentKind: intent.kind,
+        intentKind:
+          isReviewConfirmation || isSafeActionNavigation
+            ? "explain"
+            : intent.kind,
         primarySubjectId: context.primarySubject?.subjectId ?? null,
         executiveContext: previousExecutiveContext,
         catalog: input.catalog,
@@ -1026,6 +1415,11 @@ export function executeNexoraConversationalExperience(
       recommendationResult,
       scenarioResult,
       decisionCommitmentResult,
+      advisorGrounding: input.advisorGrounding ?? null,
+      pendingTurnResolution,
+      bareSubjectReference:
+        bareSubject?.status === "resolved" && bareSubject.subject != null,
+      safeActionNavigation: isSafeActionNavigation,
     });
 
     const shouldCommitRuntime =
@@ -1058,10 +1452,23 @@ export function executeNexoraConversationalExperience(
         : input.runtimeState,
       shouldCommitRuntime,
       trustedAdvisorySuccess:
-        ((isRecommendation || isScenario) &&
+        ((isRecommendation ||
+          isScenario ||
+          isReviewConfirmation ||
+          isSafeActionNavigation) &&
           applied.result.status === "applied" &&
           status !== "clarification-required") ||
         trustedDecisionSuccess,
+      pendingTurnResolution,
+      ...(pendingTurnResolution?.status === "interrupted" &&
+      input.decisionSession?.pendingConfirmation
+        ? {
+            nextDecisionSession: setPendingDecisionConfirmation(
+              input.decisionSession,
+              null,
+            ),
+          }
+        : {}),
       ids,
       utterance,
       catalog: input.catalog,
@@ -1105,6 +1512,9 @@ function finalize(args: {
   readonly recommendationResult?: NexoraExecutiveRecommendationResult | null;
   readonly scenarioResult?: NexoraExecutiveScenarioConversationResult | null;
   readonly decisionCommitmentResult?: NexoraDecisionCommitmentResult | null;
+  readonly pendingTurnResolution?: NexoraPendingTurnResolution | null;
+  readonly nextPendingTurnExpectation?: NexoraPendingTurnExpectation | null;
+  readonly nextDecisionSession?: NexoraExecutiveDecisionSession | null;
   readonly previousExecutiveContext: NexoraExecutiveContextSnapshot;
   readonly nextRuntimeState: NexoraMVPObjectInteractionState;
   readonly shouldCommitRuntime: boolean;
@@ -1238,6 +1648,81 @@ function finalize(args: {
     nextExecutiveContext = executiveContextUpdate.nextContext;
   }
 
+  const derivedPendingTurnExpectation =
+    args.nextPendingTurnExpectation !== undefined
+      ? args.nextPendingTurnExpectation
+      : args.intentResult.intent.kind === "greet"
+        ? (() => {
+            const attention =
+              recommendationResult?.assessment.issues[0] ??
+              recommendationResult?.assessment.constraints[0] ??
+              null;
+            return attention
+              ? createNexoraPendingTurnExpectation({
+                  expectationId: `${args.ids.nexoraId}-review`,
+                  questionKind: "review-subject",
+                  expectedAnswerKind: "confirmation",
+                  subjectId: attention.subjectId,
+                  sourceCapability: "CC:5",
+                  confirmationLevel: "review",
+                })
+              : createNexoraPendingTurnExpectation({
+                  expectationId: `${args.ids.nexoraId}-subject`,
+                  questionKind: "select-subject",
+                  expectedAnswerKind: "subject-selection",
+                  optionIds: args.executiveSubjects.map(
+                    (subject) => subject.subjectId,
+                  ),
+                  sourceCapability: "CC:5",
+                });
+          })()
+        : decisionCommitmentResult?.status === "confirmation-required" &&
+            decisionCommitmentResult.nextSession.pendingConfirmation
+          ? createNexoraPendingTurnExpectation({
+              expectationId:
+                decisionCommitmentResult.nextSession.pendingConfirmation
+                  .confirmationId,
+              questionKind: "decision-commitment",
+              expectedAnswerKind: "decision-option",
+              subjectId:
+                args.contextResult.context.primarySubject?.subjectId ?? null,
+              optionIds: [
+                decisionCommitmentResult.nextSession.pendingConfirmation
+                  .candidateId,
+              ],
+              sourceCapability: "CC:10",
+              consequential: true,
+              confirmationLevel: "consequential",
+            })
+          : args.status === "clarification-required" &&
+              scenarioResult?.nextSession.candidateScenarioIds.length
+            ? createNexoraPendingTurnExpectation({
+                expectationId: `${args.ids.nexoraId}-scenario`,
+                questionKind: "select-scenario",
+                expectedAnswerKind: "scenario-selection",
+                subjectId:
+                  args.contextResult.context.primarySubject?.subjectId ?? null,
+                optionIds: scenarioResult.nextSession.candidateScenarioIds,
+                sourceCapability: "CC:9",
+              })
+            : args.status === "clarification-required"
+              ? createNexoraPendingTurnExpectation({
+                  expectationId: `${args.ids.nexoraId}-clarification`,
+                  questionKind: "select-subject",
+                  expectedAnswerKind: "subject-selection",
+                  optionIds:
+                    args.contextResult.trace.canonicalCandidates.length > 0
+                      ? args.contextResult.trace.canonicalCandidates
+                      : args.executiveSubjects.map(
+                          (subject) => subject.subjectId,
+                        ),
+                  sourceCapability: "CC:2",
+                })
+          : null;
+  nextExecutiveContext = freezeExecutiveContextSnapshot({
+    ...nextExecutiveContext,
+    pendingTurnExpectation: derivedPendingTurnExpectation,
+  });
   const nextConversationContext =
     toNexoraConversationContextSnapshot(nextExecutiveContext);
 
@@ -1272,6 +1757,9 @@ function finalize(args: {
     executiveContextTurnIndex: nextExecutiveContext.turnIndex,
     executiveCurrentSubjectId:
       nextExecutiveContext.currentSubject?.subjectId ?? null,
+    pendingTurnExpectationKind:
+      derivedPendingTurnExpectation?.questionKind ?? null,
+    pendingTurnResolutionStatus: args.pendingTurnResolution?.status ?? null,
   });
 
   return Object.freeze({
@@ -1286,7 +1774,12 @@ function finalize(args: {
     scenarioResult,
     decisionCommitmentResult,
     nextScenarioSession: scenarioResult?.nextSession ?? null,
-    nextDecisionSession: decisionCommitmentResult?.nextSession ?? null,
+    nextDecisionSession:
+      args.nextDecisionSession !== undefined
+        ? args.nextDecisionSession
+        : (decisionCommitmentResult?.nextSession ?? null),
+    nextPendingTurnExpectation: derivedPendingTurnExpectation,
+    pendingTurnResolution: args.pendingTurnResolution ?? null,
     nextConversationContext,
     nextExecutiveContext,
     executiveContextUpdate,

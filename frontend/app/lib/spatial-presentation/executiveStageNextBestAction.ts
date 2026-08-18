@@ -483,6 +483,7 @@ function pushDecisionActions(
 ): void {
   for (const decision of decisions) {
     const status = normalizeToken(decision.status);
+    const approved = status === "approved" || status === "locked";
     out.push(
       makeAction({
         kind: "review-decision",
@@ -490,11 +491,15 @@ function pushDecisionActions(
         targetObjectId: decision.subjectId,
         label: `Review ${decision.label ?? "Decision"}`,
         reason:
-          status === "watch" || status === "draft"
+          approved
+            ? "This approved Decision defines the current Execution"
+            : status === "watch" || status === "draft"
             ? "A decision is under review"
             : "A related decision needs review",
         reasonCode:
-          status === "watch" || status === "draft"
+          approved
+            ? "approved-decision-has-execution"
+            : status === "watch" || status === "draft"
             ? "decision-under-review"
             : "pending-decision",
         priority: 820,

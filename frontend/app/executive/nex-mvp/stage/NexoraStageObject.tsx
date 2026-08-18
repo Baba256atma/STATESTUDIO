@@ -320,6 +320,7 @@ export function NexoraStageObject({
   const executiveVisualState =
     presentation.executiveVisualState ?? "normal";
   const stateMarker = presentation.stateMarker ?? "none";
+  const isCollectionMember = presentation.spatialRole === "collection";
   const { dimensions, edge, emphasis, geometry } = visual;
 
   const geometryProfile = useMemo(
@@ -539,12 +540,19 @@ export function NexoraStageObject({
       {isExecutive3DObjectTerritoryVisible() &&
       visualIdentity &&
       visualIdentity.territoryStyle !== "none" &&
+      // UX:5-FIX1 — a broad circular territory around a compact collection
+      // peer can read as a second body. Collection state stays visible through
+      // the shape-aware edge and corner marker below.
+      !isCollectionMember &&
       visualIdentity.territoryOpacity > 0.04 ? (
         <mesh
           position={[0, 0, geometryProfile.frontZ + 0.015]}
           rotation={[0, 0, 0]}
           userData={{
             visualAudit: "stage-object-territory",
+            visualLayerRole: "state-territory",
+            decorative: true,
+            interactive: false,
             territoryStyle: visualIdentity.territoryStyle,
             territoryCollision: visualIdentity.territoryCollision,
           }}
@@ -583,6 +591,11 @@ export function NexoraStageObject({
         <mesh
           position={[0, 0, geometryProfile.frontZ + 0.02]}
           rotation={[0, 0, 0]}
+          userData={{
+            visualLayerRole: "selection-indication",
+            decorative: true,
+            interactive: false,
+          }}
         >
           <ringGeometry
             args={[
@@ -612,6 +625,11 @@ export function NexoraStageObject({
             geometryProfile.height * 0.42,
             geometryProfile.frontZ + 0.03,
           ]}
+          userData={{
+            visualLayerRole: "state-marker",
+            decorative: true,
+            interactive: false,
+          }}
         >
           <circleGeometry args={[0.045, 16]} />
           <meshBasicMaterial
