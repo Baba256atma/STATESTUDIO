@@ -1,0 +1,16 @@
+{
+  "identity": "NEX-E2E:1/FullExecutiveExperienceEndToEndCertification",
+  "createsNexExp11": false,
+  "createsMo7": false,
+  "firstTimeRoute": "/executive?entrance=1",
+  "resetRoute": "/executive?entrance=1&reset=1",
+  "defaultRouteProtected": true,
+  "reusedAuthorities": [
+    "NEX-EXP:1/NexoraEntranceManagerIdentityExperience",
+    "NEX-EXP:2/GoalDiscoveryGoalObjectEmergence",
+    "NEX-EXP:7/ManagerDecisionCommitmentExperience",
+    "NEX-EXP:8/ExecutionPlanningCommitmentToAction",
+    "NEX-EXP:9/OutcomeMonitoringGoalImpactExperience",
+    "NEX-EXP:10/LearningReassessmentNextExecutiveCycle"
+  ]
+}

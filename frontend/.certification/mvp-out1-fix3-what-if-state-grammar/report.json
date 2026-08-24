@@ -1,0 +1,24 @@
+{
+  "phase": "MVP-OUT:1-FIX3",
+  "identity": "MVP-OUT:1-FIX3/WhatIfStateChangeGrammar",
+  "verdict": "MVP-OUT:1-FIX3-ZERO-FAILURE-CERTIFIED",
+  "knownFailures": 0,
+  "rootCause": "FIX2 delay matcher required (be|is|gets|becomes) immediately before (late|delayed); intensity 'too' blocked the match.",
+  "live": {
+    "showDelivery": "Focused on Delivery.",
+    "whatIfDeliveryBeTooLate": "I understand you want to test a severe Delivery delay, but I don't currently have a supported impact model for that change.",
+    "whatIfItBeTooLate": "I understand you want to test a severe Delivery delay, but I don't currently have a supported impact model for that change.",
+    "intent": "explore-scenario",
+    "subject": "obj-delivery",
+    "genericFallback": false
+  },
+  "tests": { "total": 1788, "pass": 1788, "fail": 0, "skipped": 0 },
+  "typecheck": { "exitCode": 0, "errors": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0, "warnings": 411 },
+  "httpExecutive": 200,
+  "noDeliveryOnlyBranch": true,
+  "noInventedMagnitude": true,
+  "noLlm": true,
+  "mvpOut1Resume": "gate open — do not auto-start MVP-OUT:1"
+}

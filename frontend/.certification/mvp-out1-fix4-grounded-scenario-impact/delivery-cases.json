@@ -1,0 +1,12 @@
+{
+  "A_recognized": true,
+  "B_reachesImpactLayer": true,
+  "C_directionalOwnKpi": "On-time decrease",
+  "D_omittedDownstream": ["Customer", "Revenue"],
+  "E_noFabricatedMagnitude": true,
+  "F_tooRemainsQualitative": true,
+  "live": {
+    "showDelivery": "Focused on Delivery.",
+    "whatIfDeliveryBeTooLate": "A severe Delivery delay is projected to put pressure on Delivery On-time performance. The direction is supported by the current Scenario model, but Nexora does not have enough evidence to quantify the size of the impact. This is a projection, not an observed Outcome."
+  }
+}

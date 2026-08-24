@@ -1,0 +1,24 @@
+{
+  "phase": "NEX-EXP:7",
+  "experience": "NEX-EXP:7/ManagerDecisionCommitmentExperience",
+  "reused": {
+    "cc10": "CC:10/DecisionCommitment",
+    "cc10r": "CC:10R/CanonicalDecisionRuntime",
+    "ei5": "EI:5/ExecutiveDecisionIntelligence",
+    "prod4": "STAGE-PROD:4/ExecutiveStageDecisionBrief",
+    "mo": "MO:1–6 + MO-INT:1",
+    "ux3": "UX:3 Professional Advisor",
+    "exp16": "NEX-EXP:1–6"
+  },
+  "notCreated": [
+    "Decision Engine",
+    "Decision Advisor",
+    "Approval Advisor",
+    "Commitment Panel",
+    "NEX-EXP:8",
+    "MO:7",
+    "execution start"
+  ],
+  "commitmentWriter": "CC:10R adapter.transitionDecision",
+  "sessionCanonicalRecord": "read snapshot of CC:10R write, not a competing store"
+}

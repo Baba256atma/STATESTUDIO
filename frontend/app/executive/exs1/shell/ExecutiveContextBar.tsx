@@ -60,6 +60,22 @@ function Chip({
 
 const THEMES: readonly ExecutiveThemeMode[] = ["night", "day", "auto"];
 
+function dataStatusColor(
+  kind: ExecutiveContextSnapshot["liveStatusKind"],
+): string {
+  switch (kind) {
+    case "live":
+      return cockpit.success;
+    case "imported":
+      return cockpit.accent;
+    case "limited":
+    case "stale":
+      return cockpit.warning;
+    default:
+      return cockpit.muted;
+  }
+}
+
 /**
  * Executive Context Bar — always visible executive context only.
  * No workspace controls.
@@ -219,6 +235,7 @@ export function ExecutiveContextBar({
       <div
         data-testid="executive-live-status"
         data-exs1-compat="exs1-data-status"
+        data-data-status-kind={context.liveStatusKind ?? "local"}
         style={{
           display: "flex",
           alignItems: "center",
@@ -232,8 +249,11 @@ export function ExecutiveContextBar({
             width: "0.45rem",
             height: "0.45rem",
             borderRadius: "999px",
-            background: cockpit.success,
-            boxShadow: `0 0 8px ${cockpit.success}`,
+            background: dataStatusColor(context.liveStatusKind),
+            boxShadow:
+              context.liveStatusKind === "live"
+                ? `0 0 8px ${cockpit.success}`
+                : "none",
           }}
         />
         <span

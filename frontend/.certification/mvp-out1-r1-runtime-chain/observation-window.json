@@ -1,0 +1,7 @@
+{
+  "authority": "CORE-OUT:1A openOutcomeObservationWindow",
+  "liveStatus": "timing-incomplete",
+  "createdWithoutFabricatedTimestamps": true,
+  "baselineLive": "unavailable",
+  "eligibleWhen": ["committedAt", "executionStartedAt", "expectedStartAt", "expectedEndAt"]
+}

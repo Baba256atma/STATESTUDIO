@@ -103,6 +103,10 @@ test("normalization: casing, whitespace, punctuation, prefixes", () => {
     normalizeNexoraConversationalUtterance("What happens if we do nothing?"),
     "what happens if we do nothing",
   );
+  assert.equal(
+    normalizeNexoraConversationalUtterance("what happend if increase inventory"),
+    "what happened if increase inventory",
+  );
 });
 
 test("normalization does not invent semantic content", () => {
@@ -116,10 +120,27 @@ test("ambiguous reference helper", () => {
   assert.equal(isAmbiguousConversationalReference("this"), true);
   assert.equal(isAmbiguousConversationalReference("that"), true);
   assert.equal(isAmbiguousConversationalReference("it"), true);
+  assert.equal(isAmbiguousConversationalReference("this object"), true);
   assert.equal(isAmbiguousConversationalReference("Capacity"), false);
+  assert.equal(isAmbiguousConversationalReference("risk object"), false);
 });
 
 // ─── Certification utterances ───────────────────────────────────────────────
+
+test('cert: "take me to risk" and "show me the risk object" extract focus hints', () => {
+  const take = resolve("take me to risk").intent;
+  assert.equal(take.kind, "focus");
+  assert.equal(take.targetHints[0]?.raw, "risk");
+
+  const showObject = resolve("show me the risk object").intent;
+  assert.equal(showObject.kind, "focus");
+  assert.equal(showObject.targetHints[0]?.raw, "risk object");
+
+  const explainThisObject = resolve("explain this object").intent;
+  assert.equal(explainThisObject.kind, "explain");
+  assert.equal(explainThisObject.requiresContext, true);
+  assert.equal(explainThisObject.targetHints.length, 0);
+});
 
 test('cert: "Focus on Capacity" → focus + target hint', () => {
   const { intent } = resolve("Focus on Capacity");
@@ -371,4 +392,18 @@ test("LLM / provider boundary: module graph stays local", async () => {
     assert.doesNotMatch(src, /\bfrom\s+["']langchain/i);
     assert.doesNotMatch(src, /\bfetch\s*\(/);
   }
+});
+
+test("MO:1 object-aware why extracts the subject without encoding an object id", () => {
+  const result = resolve("Why is Capacity critical?");
+  assert.equal(result.intent.kind, "explain");
+  assert.equal(result.intent.targetHints[0]?.raw, "capacity");
+  assertNoObjectIdClaim(result.intent);
+});
+
+test("MO:1 connected / next-action / do-nothing remain generic CC intents", () => {
+  assert.equal(resolve("What is connected?").intent.kind, "show-related");
+  assert.equal(resolve("What can I do about this?").intent.kind, "recommend");
+  assert.equal(resolve("What happens if I do nothing?").intent.kind, "explore-scenario");
+  assert.equal(resolve("What decision is required?").intent.kind, "decision-status");
 });

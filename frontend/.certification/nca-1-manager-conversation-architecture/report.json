@@ -1,0 +1,22 @@
+{
+  "phase": "NCA:1",
+  "identity": "NCA:1/ManagerConversationArchitectureAdvisorBehaviorFoundation",
+  "version": "1.0.0",
+  "namespace": "nexora.nca.manager-conversation-architecture",
+  "verdict": "NCA:1 = CERTIFIED",
+  "usesLiveLlm": false,
+  "createsSecondConversationEngine": false,
+  "createsSecondAdvisor": false,
+  "accidentalApprovals": 0,
+  "accidentalExecutionStarts": 0,
+  "unsupportedCausalClaims": 0,
+  "fabricatedCapabilities": 0,
+  "architectureLeaks": 0,
+  "knownUnexplainedFailures": 0,
+  "typecheck": "pass",
+  "build": "pass",
+  "lint": "pass",
+  "liveBrowser": "pass",
+  "knowledgeQuestionIsNotNavigation": true,
+  "explainItPreservesCapacityGap": true
+}

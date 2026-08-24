@@ -1076,26 +1076,26 @@ export interface RuntimeExecutiveWorkspaceSurfaceCompositionVerification {
 
 export function verifyRuntimeExecutiveWorkspaceSurfaceComposition():
   RuntimeExecutiveWorkspaceSurfaceCompositionVerification {
-  const module = runtimeExecutiveWorkspaceSurfaceComposition;
+  const runtimeModule = runtimeExecutiveWorkspaceSurfaceComposition;
   const registry = runtimeExecutiveWorkspaceSurfaceCompositionRegistry;
   const upstream = verifyRuntimeExecutiveWorkspaceContextModeResolution();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-6:4/RuntimeExecutiveWorkspaceSurfaceComposition" &&
-    module.version === "6.4.0" &&
-    module.namespace ===
+    runtimeModule.version === "6.4.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.workspace-experience.surface-composition" &&
-    module.phase === "SurfaceComposition" &&
-    module.architecturalRole ===
+    runtimeModule.phase === "SurfaceComposition" &&
+    runtimeModule.architecturalRole ===
       "RuntimeExecutiveWorkspaceSurfaceComposition" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       "REX-6:3/RuntimeExecutiveWorkspaceContextModeResolution" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeExecutiveWorkspaceContextModeResolutionIdentity &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveWorkspaceContextModeResolution" &&
-    module.resolutionBoundary === "REX-6:3-resolution-only";
+    runtimeModule.resolutionBoundary === "REX-6:3-resolution-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_WORKSPACE_COMPOSITION_SURFACES], [
@@ -1247,11 +1247,11 @@ export function verifyRuntimeExecutiveWorkspaceSurfaceComposition():
     presentationIndependent &&
     countsOk &&
     frozen &&
-    module.stageCenteredPrimary === true &&
-    module.presentationStateIndependent === true &&
-    module.dialIndependent === true &&
-    module.cockpitControlIndependent === true &&
-    module.uiLayoutIndependent === true &&
+    runtimeModule.stageCenteredPrimary === true &&
+    runtimeModule.presentationStateIndependent === true &&
+    runtimeModule.dialIndependent === true &&
+    runtimeModule.cockpitControlIndependent === true &&
+    runtimeModule.uiLayoutIndependent === true &&
     upstream.ok === true;
 
   return Object.freeze({
@@ -1280,7 +1280,7 @@ export function verifyRuntimeExecutiveWorkspaceSurfaceComposition():
       runtimeExecutiveWorkspaceSurfaceCompositionApiNames.length,
     frozen,
     resolutionBoundaryIntact:
-      module.resolutionBoundary === "REX-6:3-resolution-only",
+      runtimeModule.resolutionBoundary === "REX-6:3-resolution-only",
     everyWorkspaceHasExactlyOnePrimary,
     stageIsCanonicalPrimary:
       RUNTIME_EXECUTIVE_WORKSPACE_COMPOSITION_PRIMARY_SURFACE === "stage" &&
@@ -1290,9 +1290,9 @@ export function verifyRuntimeExecutiveWorkspaceSurfaceComposition():
           "primary",
       ),
     presentationStateIndependent: presentationIndependent,
-    dialIndependent: module.dialIndependent === true,
-    cockpitControlIndependent: module.cockpitControlIndependent === true,
-    uiLayoutIndependent: module.uiLayoutIndependent === true,
+    dialIndependent: runtimeModule.dialIndependent === true,
+    cockpitControlIndependent: runtimeModule.cockpitControlIndependent === true,
+    uiLayoutIndependent: runtimeModule.uiLayoutIndependent === true,
     upstreamResolutionOk: upstream.ok === true,
   });
 }

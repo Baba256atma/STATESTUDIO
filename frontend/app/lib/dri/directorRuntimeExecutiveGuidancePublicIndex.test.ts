@@ -386,9 +386,18 @@ test("41. No approved frozen export missing", () => {
 });
 
 test("42. No private helper exposed", () => {
-  assert.ok(!publicApis.includes("evaluateReleaseGate"));
-  assert.ok(!publicApis.includes("collectPublishedExportNames"));
-  assert.ok(!approvedExports.includes("evaluateFreezeChecks"));
+  assert.equal(
+    publicApis.some((name) => String(name) === "evaluateReleaseGate"),
+    false,
+  );
+  assert.equal(
+    publicApis.some((name) => String(name) === "collectPublishedExportNames"),
+    false,
+  );
+  assert.equal(
+    approvedExports.some((name) => String(name) === "evaluateFreezeChecks"),
+    false,
+  );
 });
 
 test("43. No unapproved export exposed", () => {

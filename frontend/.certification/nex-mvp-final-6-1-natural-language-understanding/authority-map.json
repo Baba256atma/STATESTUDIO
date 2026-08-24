@@ -1,0 +1,20 @@
+{
+  "phase": "NEX-MVP-FINAL:6.1",
+  "nlu": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding",
+  "intent": "CC:1/ConversationalIntentFoundation",
+  "subjects": "CC:2 conversational subject registry + MO catalog projection",
+  "command": "CC:3",
+  "runtime": "CC:4 via executeNexoraConversationalExperience",
+  "experience": "CC:5",
+  "explain": "MO:2",
+  "exploration": "MO:3",
+  "attention": "MO:6",
+  "scenario": "CC:9",
+  "decision": "CC:10R",
+  "execution": "CC:11",
+  "didNotCreate": [
+    "second conversation engine",
+    "second object registry",
+    "second Explain Engine"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "phase": "MVP-OUT:1-R3",
+  "identity": "MVP-OUT:1-R3/DecisionOutcomeCommitment",
+  "version": "1.0.0",
+  "authorities": {
+    "decision": "CC:10 Decision Runtime",
+    "execution": "NEX-MVP:8 (CC:11 not live)",
+    "dataReality": "Data Reality / RDI journal",
+    "r2Binding": "MVP-OUT:1-R2",
+    "r2Capture": "MVP-OUT:1-R2 PostDecisionObservationCapture",
+    "r3Commitment": "integration only",
+    "out1a": "CORE-OUT:1A",
+    "out1": "CORE-OUT:1",
+    "out2": "CORE-OUT:2",
+    "coreInt3": "CORE-INT:3",
+    "app4": "APP-4",
+    "exi5": "EXI:5"
+  }
+}

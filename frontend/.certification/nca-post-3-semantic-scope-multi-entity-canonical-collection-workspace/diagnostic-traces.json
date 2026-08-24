@@ -1,0 +1,426 @@
+[
+  {
+    "utterance": "Why is Delivery late?",
+    "semanticScope": "BUSINESS",
+    "speechAct": "BUSINESS",
+    "need": "BUSINESS",
+    "referenceSet": [
+      "Delivery"
+    ],
+    "primaryReference": "Delivery",
+    "secondaryReference": null,
+    "relationshipIntent": false,
+    "collectionKind": null,
+    "collectionScope": null,
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": false,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "BUSINESS",
+    "suppressedAuthorities": []
+  },
+  {
+    "utterance": "What is Nexora?",
+    "semanticScope": "NEXORA_PRODUCT",
+    "speechAct": "PRODUCT_KNOWLEDGE",
+    "need": "PRODUCT_KNOWLEDGE",
+    "referenceSet": [],
+    "primaryReference": null,
+    "secondaryReference": null,
+    "relationshipIntent": false,
+    "collectionKind": null,
+    "collectionScope": null,
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": false,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "PRODUCT_KNOWLEDGE",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  },
+  {
+    "utterance": "What is the Stage?",
+    "semanticScope": "NEXORA_PRODUCT",
+    "speechAct": "PRODUCT_KNOWLEDGE",
+    "need": "PRODUCT_KNOWLEDGE",
+    "referenceSet": [],
+    "primaryReference": null,
+    "secondaryReference": null,
+    "relationshipIntent": false,
+    "collectionKind": null,
+    "collectionScope": null,
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": false,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "PRODUCT_KNOWLEDGE",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  },
+  {
+    "utterance": "What is on Stage now?",
+    "semanticScope": "CURRENT_WORKSPACE",
+    "speechAct": "WORKSPACE_STATE",
+    "need": "WORKSPACE_STATE",
+    "referenceSet": [],
+    "primaryReference": null,
+    "secondaryReference": null,
+    "relationshipIntent": false,
+    "collectionKind": null,
+    "collectionScope": null,
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": true,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "WORKSPACE_STATE",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  },
+  {
+    "utterance": "Can you add an object?",
+    "semanticScope": "PRODUCT_ACTION",
+    "speechAct": "PRODUCT_CAPABILITY",
+    "need": "PRODUCT_CAPABILITY",
+    "referenceSet": [],
+    "primaryReference": null,
+    "secondaryReference": null,
+    "relationshipIntent": false,
+    "collectionKind": null,
+    "collectionScope": null,
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": false,
+    "capabilityQuery": true,
+    "primaryResponseOwner": "PRODUCT_CAPABILITY",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  },
+  {
+    "utterance": "How do I use the Stage?",
+    "semanticScope": "HELP_TEACH",
+    "speechAct": "HELP_TEACH",
+    "need": "HELP_TEACH",
+    "referenceSet": [],
+    "primaryReference": null,
+    "secondaryReference": null,
+    "relationshipIntent": false,
+    "collectionKind": null,
+    "collectionScope": null,
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": false,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "HELP_TEACH",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  },
+  {
+    "utterance": "Explain the Stage. What is on Stage now?",
+    "semanticScope": "MIXED",
+    "speechAct": "WORKSPACE_STATE",
+    "need": "WORKSPACE_STATE",
+    "referenceSet": [],
+    "primaryReference": null,
+    "secondaryReference": null,
+    "relationshipIntent": false,
+    "collectionKind": null,
+    "collectionScope": null,
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": true,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "WORKSPACE_STATE",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  },
+  {
+    "utterance": "explain risk and delivery relation",
+    "semanticScope": "BUSINESS",
+    "speechAct": "RELATIONSHIP_EXPLANATION",
+    "need": "RELATIONSHIP_EXPLANATION",
+    "referenceSet": [
+      "Delivery",
+      "Risk"
+    ],
+    "primaryReference": "Delivery",
+    "secondaryReference": "Risk",
+    "relationshipIntent": true,
+    "collectionKind": null,
+    "collectionScope": null,
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": false,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "RELATIONSHIP_EXPLANATION",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  },
+  {
+    "utterance": "if delivery be late, is it ok?",
+    "semanticScope": "BUSINESS",
+    "speechAct": "CONDITIONAL_EVALUATION",
+    "need": "CONDITIONAL_EVALUATION",
+    "referenceSet": [
+      "Delivery"
+    ],
+    "primaryReference": "Delivery",
+    "secondaryReference": null,
+    "relationshipIntent": false,
+    "collectionKind": null,
+    "collectionScope": null,
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": false,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "CONDITIONAL_EVALUATION",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  },
+  {
+    "utterance": "capacity gap and margin pressure are problems",
+    "semanticScope": "BUSINESS",
+    "speechAct": "MULTI_ENTITY_ASSERTION",
+    "need": "MULTI_ENTITY_ASSERTION",
+    "referenceSet": [
+      "Margin Pressure",
+      "Capacity Gap"
+    ],
+    "primaryReference": "Margin Pressure",
+    "secondaryReference": "Capacity Gap",
+    "relationshipIntent": false,
+    "collectionKind": null,
+    "collectionScope": null,
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": false,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "MULTI_ENTITY_ASSERTION",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  },
+  {
+    "utterance": "show problems",
+    "semanticScope": "BUSINESS",
+    "speechAct": "COLLECTION_QUERY",
+    "need": "COLLECTION_QUERY",
+    "referenceSet": [],
+    "primaryReference": null,
+    "secondaryReference": null,
+    "relationshipIntent": false,
+    "collectionKind": "PROBLEM",
+    "collectionScope": "ALL",
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": false,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "COLLECTION_QUERY",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  },
+  {
+    "utterance": "show me all problems",
+    "semanticScope": "BUSINESS",
+    "speechAct": "COLLECTION_QUERY",
+    "need": "COLLECTION_QUERY",
+    "referenceSet": [],
+    "primaryReference": null,
+    "secondaryReference": null,
+    "relationshipIntent": false,
+    "collectionKind": "PROBLEM",
+    "collectionScope": "ALL",
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": false,
+    "workspaceQuery": false,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "COLLECTION_QUERY",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  },
+  {
+    "utterance": "why did Capacity Gap disappear?",
+    "semanticScope": "BUSINESS",
+    "speechAct": "COLLECTION_CHANGE_EXPLANATION",
+    "need": "COLLECTION_CHANGE_EXPLANATION",
+    "referenceSet": [
+      "Capacity Gap"
+    ],
+    "primaryReference": "Capacity Gap",
+    "secondaryReference": null,
+    "relationshipIntent": false,
+    "collectionKind": null,
+    "collectionScope": null,
+    "collectionFilter": null,
+    "canonicalCollectionAuthority": "executive-queue-category",
+    "collectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "previousCollectionMembership": [],
+    "currentCollectionMembership": [
+      "Capacity Gap",
+      "Margin Pressure"
+    ],
+    "changeIntent": true,
+    "workspaceQuery": false,
+    "capabilityQuery": false,
+    "primaryResponseOwner": "COLLECTION_CHANGE_EXPLANATION",
+    "suppressedAuthorities": [
+      "NCA:3",
+      "NCA:4",
+      "NCA:5"
+    ]
+  }
+]

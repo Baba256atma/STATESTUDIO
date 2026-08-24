@@ -1,0 +1,7 @@
+{
+  "command": "npx eslint .",
+  "exitCode": 0,
+  "errors": 0,
+  "warnings": 411,
+  "newWarnings": 0
+}

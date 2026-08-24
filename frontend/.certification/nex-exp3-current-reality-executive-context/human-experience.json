@@ -1,0 +1,9 @@
+{
+  "A_goalOrientation": "YES",
+  "B_restraint": "YES",
+  "C_trust": "YES",
+  "D_visualClarity": "YES",
+  "E_causalSafety": "YES",
+  "F_continuity": "YES",
+  "G_managerValue": "YES"
+}

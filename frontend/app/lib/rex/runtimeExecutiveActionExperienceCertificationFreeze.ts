@@ -685,6 +685,15 @@ function freezeArray<T>(values: readonly T[]): ReadonlyArray<T> {
   return Object.freeze([...values]);
 }
 
+function collectionsDiffer(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  return (
+    left.length !== right.length || left.some((value, index) => value !== right[index])
+  );
+}
+
 function check(
   id: string,
   domain: RuntimeExecutiveActionExperienceCertificationDomain,
@@ -757,9 +766,10 @@ function buildCertificationChecks(): ReadonlyArray<RuntimeExecutiveActionExperie
   // Action kind and intent remain independently addressable vocabularies
   // (they may share some string labels by design, but are not collapsed).
   const kindsAreSeparateCollections =
-    RUNTIME_EXECUTIVE_ACTION_KINDS !== RUNTIME_EXECUTIVE_ACTION_INTENT_KINDS &&
-    RUNTIME_EXECUTIVE_ACTION_KINDS.length !==
-      RUNTIME_EXECUTIVE_ACTION_INTENT_KINDS.length &&
+    collectionsDiffer(
+      RUNTIME_EXECUTIVE_ACTION_KINDS,
+      RUNTIME_EXECUTIVE_ACTION_INTENT_KINDS,
+    ) &&
     RUNTIME_EXECUTIVE_ACTION_KINDS[0] === "request" &&
     RUNTIME_EXECUTIVE_ACTION_INTENT_KINDS[0] === "inform";
 

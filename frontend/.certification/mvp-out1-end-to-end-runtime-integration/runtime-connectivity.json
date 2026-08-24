@@ -1,0 +1,17 @@
+{
+  "edges": {
+    "decisionToExpected": "PARTIAL",
+    "decisionToExecution": "PARTIAL",
+    "executionToObservation": "PARTIAL",
+    "dataRealityToOut1a": "PARTIAL",
+    "out1aToOut1": "CONNECTED",
+    "out1ToOut2": "CONNECTED",
+    "out2ToApp4": "TEST-ONLY",
+    "out2ToExi5": "CONNECTED",
+    "exi5ToAdvisorConversation": "CONNECTED"
+  },
+  "cc11": "MISSING",
+  "liveActualOutcome": false,
+  "liveLearningCandidates": 0,
+  "liveApp4Promotion": false
+}

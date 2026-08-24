@@ -1,0 +1,7 @@
+{
+  "command": "npm run lint -- --max-warnings=9999",
+  "exitCode": 0,
+  "errors": 0,
+  "warnings": 411,
+  "newWarnings": 0
+}

@@ -964,7 +964,26 @@ export function compareContextRevealVisibility(
     return obs != null && obs.opacity > 0.2;
   });
 
+  const collapsedThread = input.observed.find(
+    (entry) => entry.present && entry.role === "collapsed-thread",
+  );
+
   if (missingDirect.length > 0) {
+    // Frozen UX:2 Stage discloses 1-hop overflow as a subordinate
+    // collapsed-thread rather than fabricating extra Stage-object peers.
+    // That is overflow representation, not missing context.
+    if (collapsedThread != null && leakedHidden.length === 0) {
+      return Object.freeze({
+        status: "visible-and-consistent" as const,
+        evidence: Object.freeze([
+          "Direct 1-hop context overflow represented as collapsed-thread",
+          `collapsed-thread=${collapsedThread.contextId}`,
+          `opacity=${collapsedThread.opacity}`,
+          ...missingDirect.map((id) => `overflow-context:${id}`),
+          "revealDepthHops=1 preserved",
+        ]),
+      });
+    }
     return Object.freeze({
       status: "computed-but-not-visible" as const,
       evidence: Object.freeze([

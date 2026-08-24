@@ -1,0 +1,18 @@
+{
+  "command": "npx tsx --test app/lib/executive-intelligence/*.test.ts app/lib/data-reality/*.test.ts app/lib/nex-mvp/*.test.ts app/lib/conversational-control/*.test.ts app/lib/executiveMemory/durableExecutiveMemory.test.ts app/lib/spatial-presentation/executiveStageQueueFoundation.test.ts app/lib/spatial-presentation/executiveStageQueueHydration.test.ts app/executive/nex-mvp/NexoraExecutiveShell.test.tsx app/executive/nex-mvp/stage/*.test.tsx app/lib/scenario-intelligence/*.test.ts app/lib/intelligence-integration/ExecutiveIntelligenceAdapter.test.ts app/lib/intelligence/ExecutiveIntelligenceAdapter.test.ts",
+  "total": 1723,
+  "pass": 1723,
+  "fail": 0,
+  "skipped": 0,
+  "todo": 0,
+  "cancelled": 0,
+  "durationMs": 12770.432667,
+  "targeted": {
+    "kpiImpactSimulationContract": "PASS",
+    "KpiImpactSimulationEngine": "PASS",
+    "ScenarioBuilderEngine": "PASS",
+    "ExecutiveScenarioSummary": "PASS",
+    "RiskImpactSimulationEngine": "PASS",
+    "ExecutiveIntelligenceAdapter": "PASS"
+  }
+}

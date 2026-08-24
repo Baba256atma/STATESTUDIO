@@ -339,7 +339,7 @@ test("N/O — Business-object switch collapses; Overview clears expansion", () =
 test("P — No relationship inference", () => {
   setExecutiveObjectPresenceV2Enabled(true);
   const { presentation } = pipeline("obj-capacity", true);
-  const catalogIds = new Set(
+  const catalogIds = new Set<string>(
     NEXORA_MVP_CONTEXT_LINK_FIXTURES.map((link) => link.id),
   );
   for (const connection of presentation.scene.connections) {

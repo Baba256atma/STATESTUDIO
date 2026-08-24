@@ -1,0 +1,40 @@
+{
+  "phase": "MO:1",
+  "identity": "MO:1/ManagerObjectInteractionFoundation",
+  "verdict": "MO:1-CERTIFIED",
+  "knownFailures": 0,
+  "nextPhaseStarted": false,
+  "tests": { "total": 40, "pass": 40, "fail": 0, "skipped": 0 },
+  "uxRegression": {
+    "ux2": true,
+    "ux3": true,
+    "ux4WorkingChat": true,
+    "ux4Fallback": true,
+    "ux4ActionParity": true,
+    "ux4TurnContinuity": true,
+    "ux5": true,
+    "ux6Baseline": true
+  },
+  "typecheck": { "exitCode": 0, "errors": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "exitCode": 0, "errors": 0 },
+  "executiveHttp": 200,
+  "hydration": 0,
+  "consoleUncaught": 0,
+  "duplicateKeys": 0,
+  "live": {
+    "capacityActive": true,
+    "deliveryActive": true,
+    "goalActive": true,
+    "problemActive": true,
+    "scenarioActive": true,
+    "decisionActive": true,
+    "executionActive": true,
+    "explainXResolvesNamedObject": true,
+    "explainThisPreservesActive": true,
+    "followUpPreservesObject": true,
+    "switchReplacesActive": true,
+    "stageClickLawPresent": true,
+    "ux1Present": true
+  }
+}

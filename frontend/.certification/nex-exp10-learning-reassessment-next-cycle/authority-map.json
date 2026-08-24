@@ -1,0 +1,18 @@
+{
+  "phase": "NEX-EXP:10",
+  "experience": "NEX-EXP:10/LearningReassessmentNextExecutiveCycle",
+  "version": "1.0.0",
+  "namespace": "nexora.experience.learning.reassessment-next-cycle",
+  "reused": {
+    "exp9Handoff": "NexoraLearningReassessmentHandoff",
+    "ei6": "EI:6/ExecutionOutcomeLearningLoop",
+    "coreOut2": "CORE-OUT:2/GroundedLearningIntelligence",
+    "app4": "APP-4/ExecutiveMemoryStorageEngine",
+    "cc12": "CC:12/ExecutionFollowUp (via EXP:9)",
+    "mo": "MO:1–6 + MO-INT:1",
+    "ux3": "UX:3 Professional Advisor"
+  },
+  "commitsDecision": false,
+  "mutatesExecution": false,
+  "generalizesOneCase": false
+}

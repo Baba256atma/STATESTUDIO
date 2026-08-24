@@ -1,0 +1,8 @@
+{
+  "camera": "fixed-2d",
+  "topologyZ": "0",
+  "goalCenterPreserved": true,
+  "noAutomaticFocusSteal": true,
+  "shouldCommitRuntime": false,
+  "noGantt": true
+}

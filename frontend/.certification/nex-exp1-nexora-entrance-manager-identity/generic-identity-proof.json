@@ -1,0 +1,9 @@
+{
+  "hardcodedBahador": false,
+  "hardcodedAcmeLogistics": false,
+  "hardcodedOperationsDirector": false,
+  "sourceInspected": [
+    "app/lib/nexora-entrance/nexoraEntranceIdentity.ts",
+    "app/lib/nexora-entrance/nexoraEntranceExperience.ts"
+  ]
+}

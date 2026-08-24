@@ -280,6 +280,46 @@ describe("NEX-MVP:8 Executive Flow Integration", () => {
     }
   });
 
+  it("records workspace Execution state without claiming live delivery intelligence", () => {
+    const initial = createInitialNexoraMVPFlowDomainState();
+    const decisionRuntime = createNexoraMVPFlowSeededDecisionRuntime();
+    const approved = applyNexoraMVPFlowDomainAction(
+      initial,
+      {
+        actionId: "act-decision-approve",
+        subjectId: "ctx-decision-capacity",
+        kind: "approve-decision",
+      },
+      { decisionRuntime: decisionRuntime.adapter },
+    );
+    assert.equal(approved.ok, true);
+    if (!approved.ok) return;
+    const started = applyNexoraMVPFlowDomainAction(
+      approved.state,
+      {
+        actionId: "act-exec-cap-start-exec",
+        subjectId: "ctx-execution-capacity",
+        kind: "start-execution",
+      },
+    );
+    assert.equal(started.ok, true);
+    if (!started.ok) return;
+    assert.match(
+      started.message,
+      /Nexora recorded Capacity Expansion as in progress/,
+    );
+    assert.doesNotMatch(started.message, /CC:11|NEX-MVP:8|flowDomain|adapter/i);
+    const completed = applyNexoraMVPFlowDomainAction(started.state, {
+      actionId: "act-exec-complete",
+      subjectId: "ctx-execution-capacity",
+      kind: "complete-execution",
+    });
+    assert.equal(completed.ok, true);
+    if (!completed.ok) return;
+    assert.match(completed.message, /as complete/);
+    assert.match(completed.message, /Outcome evidence is not available yet/);
+  });
+
   it("action: approve / disabled / pending / success", () => {
     const initial = createInitialNexoraMVPFlowDomainState();
     const actions: readonly NexoraMVPPresentationAvailableAction[] =

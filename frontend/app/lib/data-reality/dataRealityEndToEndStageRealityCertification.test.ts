@@ -19,7 +19,7 @@ import {
   dataRealityEndToEndStageRealityCertificationReadiness,
   dataRealityEndToEndStageRealityCertificationVersion,
   getDataRealityEndToEndStageRealityCertificationIdentity,
-} from "./dataRealityEndToEndStageRealityCertification.ts";
+} from "../nex-mvp/dataRealityEndToEndStageRealityCertification.ts";
 import {
   DATA_REALITY_FOCUS_READABILITY_CAMERA,
   DATA_REALITY_OVERVIEW_READABILITY_CAMERA,
@@ -521,7 +521,7 @@ test("TEST 41 — P2:8.2 guarantees preserved", () => {
 test("TEST 42 — P2:8.3 guarantees preserved", () => {
   const revenue = objectOf(pressureFocus("obj-revenue"), "obj-revenue");
   assert.equal(revenue.role, "focused");
-  assert.deepEqual(revenue.targetPosition, [0, 0.42, 0]);
+  assert.deepEqual(revenue.targetPosition, [0, 0.42, 0.14]);
   assert.equal(
     pressureFocus("obj-revenue").presentation.scene.objects.filter(
       (entry) => entry.focused,

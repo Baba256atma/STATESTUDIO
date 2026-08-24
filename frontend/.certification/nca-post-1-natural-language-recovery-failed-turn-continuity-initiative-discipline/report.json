@@ -1,0 +1,7 @@
+{
+  "identity": "NCA-POST:1/NaturalLanguageRecoveryFailedTurnContinuityInitiativeDiscipline",
+  "version": "1.0.0",
+  "namespace": "nexora.nca.post.natural-language-recovery-failed-turn-continuity-initiative-discipline",
+  "verdict": "NCA-POST:1 = CERTIFIED",
+  "ok": true
+}

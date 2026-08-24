@@ -114,7 +114,7 @@ function attentionCatalog(): NexoraMVPObjectInteractionCatalog {
   });
 }
 
-function initialState(workspace: "company" | "personal" = "company") {
+function initialState(workspace: "overview" | "problem" = "overview") {
   return createInitialNexoraMVPObjectInteractionState({
     workspace,
     presentationState: "minimum",
@@ -262,7 +262,7 @@ test("identity + verify + trail encode/decode", () => {
 });
 
 test("A–B — Daily includes critical / pending / delayed; priority order; excludes stable Budget", () => {
-  const scopeKey = buildExecutivePreparationScopeKey({ workspace: "company" });
+  const scopeKey = buildExecutivePreparationScopeKey({ workspace: "overview" });
   const result = resolveExecutiveDailyPreparation({
     scopeKey,
     subjects: prepSubjects(),
@@ -297,7 +297,7 @@ test("A–B — Daily includes critical / pending / delayed; priority order; exc
   writeCapture(
     "01-daily-critical-pending-delayed",
     (() => {
-      let state = beginNexoraMVPDailyPreparation(
+      const state = beginNexoraMVPDailyPreparation(
         initialState(),
         attentionCatalog(),
       );
@@ -323,7 +323,7 @@ test("C — Budget: candidates → visible <= maxVisible, hidden = rest", () => 
       }),
   );
   const result = resolveExecutiveDailyPreparation({
-    scopeKey: buildExecutivePreparationScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutivePreparationScopeKey({ workspace: "overview" }),
     subjects: prepSubjects(extras),
   });
   assert.ok(result.candidateCount >= 12);
@@ -419,11 +419,11 @@ test("H — deterioration raises priority (change comparison)", () => {
       : subject,
   );
   const without = resolveExecutiveDailyPreparation({
-    scopeKey: buildExecutivePreparationScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutivePreparationScopeKey({ workspace: "overview" }),
     subjects,
   });
   const withChange = resolveExecutiveDailyPreparation({
-    scopeKey: buildExecutivePreparationScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutivePreparationScopeKey({ workspace: "overview" }),
     subjects,
     changeComparison: mockDeterioration("obj-delivery"),
   });
@@ -445,7 +445,7 @@ test("H — deterioration raises priority (change comparison)", () => {
 
 test("I — unchanged pending decision still in daily", () => {
   const result = resolveExecutiveDailyPreparation({
-    scopeKey: buildExecutivePreparationScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutivePreparationScopeKey({ workspace: "overview" }),
     subjects: prepSubjects(),
   });
   assert.ok(result.context.includedObjectIds.includes("ctx-decision-reprice"));
@@ -457,7 +457,7 @@ test("I — unchanged pending decision still in daily", () => {
 
 test("J — watch duplicate: prep member not also in watchObjectIds", () => {
   const result = resolveExecutiveDailyPreparation({
-    scopeKey: buildExecutivePreparationScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutivePreparationScopeKey({ workspace: "overview" }),
     subjects: prepSubjects(),
   });
   for (const id of result.context.includedObjectIds) {
@@ -472,7 +472,7 @@ test("J — watch duplicate: prep member not also in watchObjectIds", () => {
 test("K–O — Meeting subject via semanticObjectIds / keywords / relations", () => {
   const catalog = attentionCatalog();
   const result = resolveExecutiveMeetingPreparation({
-    scopeKey: buildExecutivePreparationScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutivePreparationScopeKey({ workspace: "overview" }),
     subject: OPERATIONS_MEETING,
     subjects: prepSubjects(),
     links: NEXORA_MVP_CONTEXT_LINK_FIXTURES,
@@ -499,7 +499,7 @@ test("K–O — Meeting subject via semanticObjectIds / keywords / relations", (
   assert.equal(result.context.mode, "meeting");
   assert.equal(result.context.subject?.label, "Operations");
 
-  let state = beginNexoraMVPMeetingPreparation(
+  const state = beginNexoraMVPMeetingPreparation(
     initialState(),
     OPERATIONS_MEETING,
     catalog,
@@ -518,7 +518,7 @@ test("K–O — Meeting subject via semanticObjectIds / keywords / relations", (
 
 test("P — global critical unrelated NOT in meeting; may be in watchObjectIds", () => {
   const result = resolveExecutiveMeetingPreparation({
-    scopeKey: buildExecutivePreparationScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutivePreparationScopeKey({ workspace: "overview" }),
     subject: OPERATIONS_MEETING,
     subjects: prepSubjects(),
     links: NEXORA_MVP_CONTEXT_LINK_FIXTURES,
@@ -537,7 +537,7 @@ test("P — global critical unrelated NOT in meeting; may be in watchObjectIds",
 
 test("Q — cross-kind members (business + executive work)", () => {
   const result = resolveExecutiveMeetingPreparation({
-    scopeKey: buildExecutivePreparationScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutivePreparationScopeKey({ workspace: "overview" }),
     subject: OPERATIONS_MEETING,
     subjects: prepSubjects(),
     links: NEXORA_MVP_CONTEXT_LINK_FIXTURES,
@@ -655,7 +655,7 @@ test("S–V — meeting member click; Back restores; subject switch; one prep co
 test("W — Queue counts unchanged during meeting", () => {
   const catalog = attentionCatalog();
   const before = resolveNexoraMVPExecutiveQueueSummary(catalog);
-  let state = beginNexoraMVPMeetingPreparation(
+  const state = beginNexoraMVPMeetingPreparation(
     initialState(),
     OPERATIONS_MEETING,
     catalog,
@@ -665,7 +665,7 @@ test("W — Queue counts unchanged during meeting", () => {
     catalog,
   );
   for (const entry of before) {
-    const live = presentation.queueEntries.find(
+    const live = (presentation.queueEntries ?? []).find(
       (q) => q.category === entry.category,
     );
     if (live != null) {
@@ -736,35 +736,35 @@ test("AB — session memory reset: prep still works without fabricating history"
   const catalog = attentionCatalog();
   const state = beginNexoraMVPDailyPreparation(initialState(), catalog);
   assert.ok(state.preparationContext);
-  assert.ok(state.preparationContext!.includedCount >= 1 || state.preparationContext!.includedObjectIds.length >= 1);
+  assert.ok(state.preparationContext!.includedObjectIds.length >= 1);
   const memory = resolveNexoraMVPDecisionMemoryView(state, catalog);
   assert.equal(memory.available, false);
 });
 
 test("AC — scope: different workspace scopeKey on context", () => {
   const company = resolveExecutiveDailyPreparation({
-    scopeKey: buildExecutivePreparationScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutivePreparationScopeKey({ workspace: "overview" }),
     subjects: prepSubjects(),
   });
   const personal = resolveExecutiveDailyPreparation({
-    scopeKey: buildExecutivePreparationScopeKey({ workspace: "personal" }),
+    scopeKey: buildExecutivePreparationScopeKey({ workspace: "problem" }),
     subjects: prepSubjects(),
   });
-  assert.equal(company.context.scopeKey, "workspace:company|model:default");
-  assert.equal(personal.context.scopeKey, "workspace:personal|model:default");
+  assert.equal(company.context.scopeKey, "workspace:overview|model:default");
+  assert.equal(personal.context.scopeKey, "workspace:problem|model:default");
   assert.notEqual(company.context.scopeKey, personal.context.scopeKey);
 
   const catalog = attentionCatalog();
-  const state = beginNexoraMVPDailyPreparation(initialState("personal"), catalog);
+  const state = beginNexoraMVPDailyPreparation(initialState("problem"), catalog);
   assert.equal(
     state.preparationContext?.scopeKey,
-    buildExecutivePreparationScopeKey({ workspace: "personal" }),
+    buildExecutivePreparationScopeKey({ workspace: "problem" }),
   );
 });
 
 test("AD — refresh live-recompute: catalog attention change updates members", () => {
   const base = defaultCatalog();
-  let state = beginNexoraMVPDailyPreparation(initialState(), base);
+  const state = beginNexoraMVPDailyPreparation(initialState(), base);
   const before = deriveNexoraMVPStageInteractionPresentation(state, base);
   const beforeHasCriticalCapacity =
     before.preparationContext?.includedObjectIds.includes("obj-capacity") ??
@@ -810,7 +810,7 @@ test("AE — advisorSubjectId null during prep; after click equals member", () =
 
 test("AF — one primary reason per object", () => {
   const result = resolveExecutiveDailyPreparation({
-    scopeKey: buildExecutivePreparationScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutivePreparationScopeKey({ workspace: "overview" }),
     subjects: prepSubjects(),
     changeComparison: mockDeterioration("obj-capacity"),
   });

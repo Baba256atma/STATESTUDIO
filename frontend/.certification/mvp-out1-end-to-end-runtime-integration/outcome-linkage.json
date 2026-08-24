@@ -1,0 +1,5 @@
+{
+  "authority": "CORE-OUT:1A",
+  "forbiddenBases": ["temporal-proximity", "semantic-guess", "llm-inferred"],
+  "currentKpiEqualsOutcome": false
+}

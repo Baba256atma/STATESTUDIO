@@ -1,0 +1,10 @@
+{
+  "decision": "session NEX-MVP:8 projection of CC:10",
+  "execution": "session NEX-MVP:8 flow domain",
+  "expectedOutcome": "render-local when supplied; unavailable on live Decision without canonical metric",
+  "observationWindow": "session CORE-OUT:1A; live timing-incomplete",
+  "outcomeObservation": "session",
+  "outcomeAssessment": "render-local",
+  "learningCandidate": "session CORE-OUT:2",
+  "promotedLearning": "APP-4 only when authorizeApp4Promotion; live unavailable"
+}

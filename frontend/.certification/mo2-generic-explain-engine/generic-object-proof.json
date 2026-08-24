@@ -1,0 +1,14 @@
+{
+  "engine": "MO:2/GenericExplainEngine",
+  "perObjectBranches": false,
+  "certifiedSubjects": [
+    "obj-capacity",
+    "obj-delivery",
+    "goal-capacity-availability",
+    "obj-risk",
+    "ctx-scenario-capacity",
+    "ctx-decision-capacity",
+    "ctx-execution-capacity",
+    "obj-revenue"
+  ]
+}

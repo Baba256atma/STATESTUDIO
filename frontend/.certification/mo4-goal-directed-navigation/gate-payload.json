@@ -1,0 +1,10 @@
+{
+  "tests": { "fail": 0, "pass": 206, "total": 206 },
+  "typecheck": { "errors": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0 },
+  "runtimeSmoke": { "ok": true },
+  "console": { "uncaught": 0, "hydration": 0, "duplicateKeys": 0 },
+  "phase": "MO:4",
+  "outDir": ".certification/mo4-goal-directed-navigation"
+}

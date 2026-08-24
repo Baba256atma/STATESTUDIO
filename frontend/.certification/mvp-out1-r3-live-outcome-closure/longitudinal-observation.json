@@ -1,0 +1,6 @@
+{
+  "identity": "obs:{sourceId}:{datasetId}:{metricId}:{observedAt}",
+  "renderIsNotObservation": true,
+  "refreshIsNotAutomaticallyNew": true,
+  "liveT2OnDefaultExecutive": false
+}

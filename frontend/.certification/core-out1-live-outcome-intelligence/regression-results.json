@@ -1,0 +1,13 @@
+{
+  "coreOut1": "31/31 pass",
+  "coreInt1": "pass",
+  "coreInt2to5": "pass",
+  "exi1to4": "pass (EXI:1 G and EXI:2 S updated to accept pending-actual language)",
+  "ei6": "pre-existing L/M/N APP-4 promotion failures unchanged",
+  "decision": "pass",
+  "app4DurableMemory": "pass",
+  "mvpBaseline": "pass 1.2.0",
+  "dataRealityStageBridge": "pre-existing A/B scale failure unrelated to CORE-OUT:1",
+  "productionBuild": "pass",
+  "executiveHttp": 200
+}

@@ -1,0 +1,15 @@
+{
+  "contract": "OutcomeObservationWindowRecord",
+  "statuses": [
+    "not-started",
+    "open",
+    "ready-for-observation",
+    "closed",
+    "timing-incomplete"
+  ],
+  "creationRule": "A window may be created only from Decision commitment timestamp, Execution start timestamp, explicit expected measurement period, or explicit follow-up period. Dates are never invented.",
+  "liveFixtureWindows": "timing-incomplete — live /executive has no Decision/Execution commitment timestamps",
+  "membership": "observedAt must fall within expectedStartAt/openedAt and expectedEndAt when those bounds exist",
+  "wrongWindow": "same metric outside window → window-mismatch, not eligible",
+  "coreOut1Effect": "timing-incomplete is reported to CORE-OUT:1 as incomplete comparison timing"
+}

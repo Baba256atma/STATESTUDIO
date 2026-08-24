@@ -1,0 +1,422 @@
+{
+  "phase": "NEX-MVP-FINAL:6.4",
+  "identity": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+  "http": 200,
+  "identityRuntime": {
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "mode": "existing-workspace"
+  },
+  "existingUrl": "http://localhost:3000/executive",
+  "turns": [
+    {
+      "utterance": "Show Delivery.",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraFocused on Delivery.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "true",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Why is it below target?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraDelivery is currently 91% against a 96% target (-5%). Capacity Gap, Capacity, Risk and Demand are plausible explanations worth investigating for Delivery. None of these is a confirmed cause. I can inspect the evidence for each, or we can look at what remains unknown.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "true",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Are you sure Capacity is the cause?",
+      "focused": "obj-delivery",
+      "moActive": "obj-capacity",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraI'm sure Capacity needs attention because it is Watch. I'm not yet sure Capacity Gap is the confirmed cause.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "What evidence do we actually have?",
+      "focused": "obj-delivery",
+      "moActive": "obj-capacity",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraCapacity needs attention. Delivery needs attention. Evidence: current runtime state, recorded problems, scenario assumptions, decision records, execution records.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "true",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "So should we act now?",
+      "focused": "obj-delivery",
+      "moActive": "obj-capacity",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "recommended",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "What would you recommend?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraDelivery needs attention because it is Watch. Delivery is associated with Capacity Gap. That connection does not by itself tell us whether Delivery is affecting Capacity Gap or the reverse. I recommend investigating Capacity Gap next to determine whether it is driving Delivery.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "true",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "recommended",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Why?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraDelivery needs attention because it is Watch. Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "BRIEF",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "I think we should just approve it.",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraI would be careful with that conclusion. Capacity Gap is connected, but the evidence does not confirm causality yet. I’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "true",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "recommended",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Are you challenging me?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "recommended",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Fine. Compare the options.",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraI need at least two evaluated scenarios to compare.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Which one is safer?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraRecorded risk language exists for Demand Surge. Current evidence is insufficient to rank the options by risk.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "How sure are you?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraI'm sure Delivery needs attention because it is Watch. I'm not yet sure Capacity Gap is the confirmed cause.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Let's do that.",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraAre you asking about the KPI or the problem?",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "BRIEF",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "true",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Approve.",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraAre you asking about the KPI or the problem?",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "BRIEF",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "true",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Confirm.",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraI'm not sure which issue you mean. Name the one you want to investigate.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "BRIEF",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "true",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "What happens next?",
+      "focused": "obj-delivery",
+      "moActive": "obj-capacity",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a canonical relationship is not established. Uncertainty: Budget has unresolved evidence.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "true",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Start.",
+      "focused": "obj-delivery",
+      "moActive": "obj-capacity",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "recommended",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Confirm.",
+      "focused": "obj-delivery",
+      "moActive": "obj-capacity",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "recommended",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "Delivery is now 94%.",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraAlready on Delivery.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "So it worked?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraThe latest result improved. That is encouraging, but it is not enough yet to prove the intervention caused the change.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "true",
+        "causal": "false",
+        "decision": "none",
+        "execution": "none"
+      }
+    },
+    {
+      "utterance": "What did we learn?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraNo promoted Learning is available yet. Nexora will not invent one.",
+      "communication": {
+        "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+        "depth": "NORMAL",
+        "challenge": "false",
+        "recommendation": "false",
+        "uncertainty": "false",
+        "causal": "true",
+        "decision": "none",
+        "execution": "none"
+      }
+    }
+  ],
+  "engine": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+  "whyDidNotOverclaim": true,
+  "sureMixed": true,
+  "approveDidNotDecide": true,
+  "workedDidNotAttribute": true,
+  "leaks": false,
+  "filler": false,
+  "overclaim": false,
+  "errors": []
+}

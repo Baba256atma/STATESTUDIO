@@ -1,0 +1,10 @@
+{
+  "tests": { "fail": 0, "pass": 152, "total": 152 },
+  "typecheck": { "errors": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0 },
+  "runtimeSmoke": { "ok": true },
+  "console": { "uncaught": 0, "hydration": 0, "duplicateKeys": 0 },
+  "phase": "MO:3",
+  "outDir": ".certification/mo3-object-guided-exploration"
+}

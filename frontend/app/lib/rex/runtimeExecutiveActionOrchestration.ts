@@ -2724,19 +2724,19 @@ export interface RuntimeExecutiveActionOrchestrationVerification {
 
 export function verifyRuntimeExecutiveActionOrchestration():
   RuntimeExecutiveActionOrchestrationVerification {
-  const module = runtimeExecutiveActionOrchestration;
+  const runtimeModule = runtimeExecutiveActionOrchestration;
   const registry = runtimeExecutiveActionOrchestrationRegistry;
   const upstream = verifyRuntimeExecutiveActionConfirmationSafety();
 
   const identityOk =
-    module.identity === "REX-5:6/RuntimeExecutiveActionOrchestration" &&
-    module.version === "5.6.0" &&
-    module.namespace === "nexora.rex.action-experience.orchestration" &&
-    module.phase === "Orchestration" &&
-    module.architecturalRole === "ExecutiveActionRuntimeOrchestrator" &&
-    module.upstreamDependency ===
+    runtimeModule.identity === "REX-5:6/RuntimeExecutiveActionOrchestration" &&
+    runtimeModule.version === "5.6.0" &&
+    runtimeModule.namespace === "nexora.rex.action-experience.orchestration" &&
+    runtimeModule.phase === "Orchestration" &&
+    runtimeModule.architecturalRole === "ExecutiveActionRuntimeOrchestrator" &&
+    runtimeModule.upstreamDependency ===
       "REX-5:5/RuntimeExecutiveActionConfirmationSafety" &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveActionConfirmationSafety";
 
   const vocabOk =
@@ -2820,11 +2820,11 @@ export function verifyRuntimeExecutiveActionOrchestration():
     confirmOnly &&
     noAdvanceConfirm &&
     frozen &&
-    module.noPhaseSkipping === true &&
-    module.autoConfirmationForbidden === true &&
-    module.confirmationGated === true &&
-    module.providerNeutral === true &&
-    module.externalDispatchFree === true &&
+    runtimeModule.noPhaseSkipping === true &&
+    runtimeModule.autoConfirmationForbidden === true &&
+    runtimeModule.confirmationGated === true &&
+    runtimeModule.providerNeutral === true &&
+    runtimeModule.externalDispatchFree === true &&
     registry.transitionCount ===
       RUNTIME_EXECUTIVE_ACTION_ORCHESTRATION_TRANSITION_RULES.length &&
     upstream.ok === true;
@@ -2854,15 +2854,15 @@ export function verifyRuntimeExecutiveActionOrchestration():
     publicApiCount: runtimeExecutiveActionOrchestrationApiNames.length,
     frozen,
     confirmationSafetyBoundaryIntact:
-      module.confirmationSafetyBoundary ===
+      runtimeModule.confirmationSafetyBoundary ===
       "REX-5:5-confirmation-safety-only",
-    noPhaseSkipping: skipBlocked && module.noPhaseSkipping === true,
-    autoConfirmationForbidden: noAdvanceConfirm && module.autoConfirmationForbidden,
-    confirmationGated: confirmOnly && module.confirmationGated === true,
-    providerNeutral: module.providerNeutral === true,
-    rendererIndependent: module.rendererIndependent === true,
-    aiIndependent: module.aiIndependent === true,
-    externalDispatchFree: module.externalDispatchFree === true,
+    noPhaseSkipping: skipBlocked && runtimeModule.noPhaseSkipping === true,
+    autoConfirmationForbidden: noAdvanceConfirm && runtimeModule.autoConfirmationForbidden,
+    confirmationGated: confirmOnly && runtimeModule.confirmationGated === true,
+    providerNeutral: runtimeModule.providerNeutral === true,
+    rendererIndependent: runtimeModule.rendererIndependent === true,
+    aiIndependent: runtimeModule.aiIndependent === true,
+    externalDispatchFree: runtimeModule.externalDispatchFree === true,
     upstreamConfirmationSafetyOk: upstream.ok === true,
   });
 }

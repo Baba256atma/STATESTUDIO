@@ -1,0 +1,30 @@
+{
+  "questions": {
+    "1_canonicalKpiImpactEngine": "Yes — KpiImpactSimulationEngine (DS:7:5). Separate KpiImpactEngine (DS:5:6) scores KPI importance, not intervention simulation.",
+    "2_inputs": "Scene KPI records, historical snapshots, ScenarioBlueprint KPI changes, forecast foundation. Requires numeric projected values.",
+    "3_supportedSubjects": "Subjects present as scene KPIs / blueprint KPI changes. CC:9 modeled interventions remain obj-capacity and obj-demand only.",
+    "4_reusableProfiles": "Yes inside DS:7:5 registries (KpiImpactProfile). Not qualitative delay profiles.",
+    "5_profileOrigin": "Scene JSON + ScenarioBuilder blueprints + KPI intelligence registries.",
+    "6_fixturesVsEvidence": "Scene/blueprint/runtime KPI intelligence — not conversational What-If grammar.",
+    "7_riskImpactSimulation": "Yes — RiskImpactSimulationEngine (DS:7:6), same blueprint/scene numeric model.",
+    "8_scenarioBuilderDownstream": "Yes for blueprint KPI/risk changes. Not wired to CC:9 qualitative delay.",
+    "9_objectRelationships": "Presentation fixtures include semantic relations (depends-on, influences, constrained-by). Stage topology is presentation-only.",
+    "10_deliveryToKpi": "Yes — primary KPI kpi-delivery / On-time. Depends-on Capacity. Revenue influences Delivery is not inverted.",
+    "11_inventoryToKpi": "Yes as current KPI Turns. Empty relationships. Increase has no canonical impact profile.",
+    "12_impactDirection": "Now yes for delay → own primary KPI decrease via Grounded Scenario Impact.",
+    "13_magnitude": "No for qualitative What-If. Intensity remains metadata. DS:7:5 can quantify only with numeric blueprints.",
+    "14_confidence": "supportState partial/unsupported; numeric % is not presented.",
+    "15_uncertainty": "Yes — assessment.uncertainty and CORE-INT:2 language on follow-up.",
+    "16_predictionVsReality": "Projection copy explicitly not observed Outcome / Reality.",
+    "17_impactVsCausalProof": "Modeled relationship language; CORE-INT:3 remains causal authority.",
+    "18_coreInt3": "Exists but is not converted into supported Scenario impact without its own evidence.",
+    "19_capabilityAbsent": "Numeric engines exist; qualitative own-KPI delay binding was missing and is now connected.",
+    "20_notConnectedToCc9": "Classification A (engines unused on this path) + E (small modeled subject set) + F (generic subject-KPI delay layer was missing). Not a Delivery switch."
+  },
+  "classification": {
+    "kpiRiskEnginesVsCc9": "A",
+    "cc9ModeledSubjectSet": "E",
+    "genericDelayKpiBinding": "F-completed",
+    "parallelEngineCreated": false
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "phase": "NEX-MVP-FINAL:3",
+  "http": 200,
+  "identity": {
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "mode": "existing-workspace"
+  },
+  "showRiskObject": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraFocused on Risk."
+  },
+  "explainIt": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraRisk needs attention because it is unresolved. Risk is associated with Margin Pressure. That connection does not by itself tell us whether Risk is affecting Margin Pressure or the reverse. No outcome has been measured yet. I recommend investigating Margin Pressure next to determine whether it is driving Risk."
+  },
+  "riskResolved": true,
+  "riskNotLiteralObject": true,
+  "explainExecutive": true,
+  "errors": []
+}

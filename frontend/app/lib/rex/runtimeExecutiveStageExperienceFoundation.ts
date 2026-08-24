@@ -1141,24 +1141,24 @@ export interface RuntimeExecutiveStageExperienceFoundationVerification {
 
 export function verifyRuntimeExecutiveStageExperienceFoundation():
   RuntimeExecutiveStageExperienceFoundationVerification {
-  const module = runtimeExecutiveStageExperienceFoundation;
+  const runtimeModule = runtimeExecutiveStageExperienceFoundation;
   const registry = runtimeExecutiveStageExperienceFoundationRegistry;
   const upstream = verifyRuntimeEnabledExecutiveExperienceConsumerEntry();
 
   const identityOk =
-    module.identity === "REX-2:1/RuntimeExecutiveStageExperienceFoundation" &&
-    module.version === "2.1.0" &&
-    module.namespace === "nexora.rex.stage.foundation" &&
-    module.layer === "RuntimeExecutiveExperience" &&
-    module.domain === "ExecutiveStage" &&
-    module.phase === "Foundation" &&
-    module.upstreamDependency ===
+    runtimeModule.identity === "REX-2:1/RuntimeExecutiveStageExperienceFoundation" &&
+    runtimeModule.version === "2.1.0" &&
+    runtimeModule.namespace === "nexora.rex.stage.foundation" &&
+    runtimeModule.layer === "RuntimeExecutiveExperience" &&
+    runtimeModule.domain === "ExecutiveStage" &&
+    runtimeModule.phase === "Foundation" &&
+    runtimeModule.upstreamDependency ===
       "REX-1:9/RuntimeEnabledExecutiveExperiencePublicIndex" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeEnabledExecutiveExperiencePublicIndexIdentity &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeEnabledExecutiveExperiencePublicIndex" &&
-    module.publicIndexBoundary === "REX-1:9-public-index-only";
+    runtimeModule.publicIndexBoundary === "REX-1:9-public-index-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_STAGE_PRESENTATION_STATES], [
@@ -1241,15 +1241,15 @@ export function verifyRuntimeExecutiveStageExperienceFoundation():
     Object.isFrozen(RUNTIME_EXECUTIVE_STAGE_FOUNDATION_BOUNDARY);
 
   const publicIndexBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-1:9/RuntimeEnabledExecutiveExperiencePublicIndex" &&
-    module.boundary.consumesPublicIndexOnly === true &&
-    module.boundary.importsRex1InternalDirectly === false &&
-    module.boundary.importsExDriDirectly === false &&
-    module.boundary.importsDriDirectly === false &&
-    module.boundary.importsNolDirectly === false &&
-    module.boundary.introducesRendering === false &&
-    module.boundary.encodesRendererStyling === false;
+    runtimeModule.boundary.consumesPublicIndexOnly === true &&
+    runtimeModule.boundary.importsRex1InternalDirectly === false &&
+    runtimeModule.boundary.importsExDriDirectly === false &&
+    runtimeModule.boundary.importsDriDirectly === false &&
+    runtimeModule.boundary.importsNolDirectly === false &&
+    runtimeModule.boundary.introducesRendering === false &&
+    runtimeModule.boundary.encodesRendererStyling === false;
 
   const ok =
     identityOk &&
@@ -1259,10 +1259,10 @@ export function verifyRuntimeExecutiveStageExperienceFoundation():
     invariantsOk &&
     frozen &&
     publicIndexBoundaryIntact &&
-    module.frameworkIndependent === true &&
-    module.rendererIndependent === true &&
+    runtimeModule.frameworkIndependent === true &&
+    runtimeModule.rendererIndependent === true &&
     upstream.ok === true &&
-    module.principle === RUNTIME_EXECUTIVE_STAGE_FOUNDATION_PRINCIPLE;
+    runtimeModule.principle === RUNTIME_EXECUTIVE_STAGE_FOUNDATION_PRINCIPLE;
 
   return Object.freeze({
     ok,
@@ -1288,7 +1288,7 @@ export function verifyRuntimeExecutiveStageExperienceFoundation():
     publicApiCount: runtimeExecutiveStageExperienceFoundationApiNames.length,
     frozen,
     publicIndexBoundaryIntact,
-    rendererIndependent: module.rendererIndependent === true,
+    rendererIndependent: runtimeModule.rendererIndependent === true,
     reusesUpstreamPresentationStates,
     reusesUpstreamSubjectKinds,
     upstreamConsumerEntryOk: upstream.ok === true,

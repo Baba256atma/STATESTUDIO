@@ -1,0 +1,7 @@
+{
+  "rule": "Reprocessing the same source snapshot must not create duplicate Outcome observations.",
+  "identity": "obs:{sourceId}:{datasetId}:{metricId}:{observedAt}",
+  "duplicateSnapshot": "second ingest returns duplicateOf",
+  "laterObservation": "different observedAt produces a new identity",
+  "result": "pass"
+}

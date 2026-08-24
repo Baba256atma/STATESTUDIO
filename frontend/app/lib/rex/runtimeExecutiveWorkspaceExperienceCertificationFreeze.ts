@@ -708,6 +708,21 @@ function participationMap(
   return map;
 }
 
+function workspaceSubject(
+  kind: RuntimeExecutiveWorkspaceSubjectContract["kind"],
+  id: string,
+): RuntimeExecutiveWorkspaceSubjectContract {
+  return Object.freeze({ kind, id });
+}
+
+function subjectForWorkspace(
+  workspace: RuntimeExecutiveWorkspaceKind,
+  id: string,
+): RuntimeExecutiveWorkspaceSubjectContract | null {
+  if (workspace === "overview") return null;
+  return workspaceSubject(workspace, id);
+}
+
 function experienceFor(
   kind: RuntimeExecutiveWorkspaceKind,
   subjectId?: string,
@@ -862,7 +877,7 @@ function buildCertificationChecks(): ReadonlyArray<RuntimeExecutiveWorkspaceExpe
     currentExperience: experienceFor("scenario", "scenario-a"),
     request: Object.freeze({
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-b" },
+      requestedSubject: workspaceSubject("scenario", "scenario-b"),
       source: "user",
       reason: "subject-selection",
     }),
@@ -887,10 +902,7 @@ function buildCertificationChecks(): ReadonlyArray<RuntimeExecutiveWorkspaceExpe
       currentExperience: experienceFor("overview", undefined, presentation),
       request: Object.freeze({
         requestedWorkspace: workspace,
-        requestedSubject:
-          workspace === "overview"
-            ? null
-            : { kind: workspace, id: `${workspace}-p` },
+        requestedSubject: subjectForWorkspace(workspace, `${workspace}-p`),
         requestedPresentation: presentation,
         source: "user" as const,
         reason: "user-request" as const,
@@ -907,7 +919,7 @@ function buildCertificationChecks(): ReadonlyArray<RuntimeExecutiveWorkspaceExpe
     currentExperience: experienceFor("scenario", "scenario-a", "report"),
     request: Object.freeze({
       requestedWorkspace: "decision",
-      requestedSubject: { kind: "decision", id: "increase-capacity" },
+      requestedSubject: workspaceSubject("decision", "increase-capacity"),
       source: "user",
       reason: "user-request",
     }),
@@ -944,7 +956,7 @@ function buildCertificationChecks(): ReadonlyArray<RuntimeExecutiveWorkspaceExpe
     currentExperience: experienceFor("problem"),
     request: Object.freeze({
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-b" },
+      requestedSubject: workspaceSubject("scenario", "scenario-b"),
       source: "dial",
       reason: "user-request",
     }),
@@ -953,7 +965,7 @@ function buildCertificationChecks(): ReadonlyArray<RuntimeExecutiveWorkspaceExpe
     currentExperience: experienceFor("scenario", "scenario-b"),
     request: Object.freeze({
       requestedWorkspace: "decision",
-      requestedSubject: { kind: "decision", id: "increase-capacity" },
+      requestedSubject: workspaceSubject("decision", "increase-capacity"),
       source: "user",
       reason: "user-request",
     }),
@@ -962,7 +974,7 @@ function buildCertificationChecks(): ReadonlyArray<RuntimeExecutiveWorkspaceExpe
     currentExperience: experienceFor("decision"),
     request: Object.freeze({
       requestedWorkspace: "execution",
-      requestedSubject: { kind: "execution", id: "capacity-expansion" },
+      requestedSubject: workspaceSubject("execution", "capacity-expansion"),
       source: "action",
       reason: "action-result",
     }),
@@ -996,7 +1008,7 @@ function buildCertificationChecks(): ReadonlyArray<RuntimeExecutiveWorkspaceExpe
       currentExperience: experienceFor("overview"),
       request: Object.freeze({
         requestedWorkspace: "decision",
-        requestedSubject: { kind: "decision", id: "increase-capacity" },
+        requestedSubject: workspaceSubject("decision", "increase-capacity"),
         source,
         reason: "user-request",
       }),

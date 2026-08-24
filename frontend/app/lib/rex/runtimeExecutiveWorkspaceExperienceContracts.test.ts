@@ -454,7 +454,7 @@ test("11. transition request and outcome remain separate", () => {
     requestedWorkspaceKind: "scenario",
     reason: "runtime-guidance",
     source: "advisor",
-    requestedSubject: { kind: "scenario", id: "scenario-b" },
+    requestedSubject: { kind: "scenario" as const, id: "scenario-b" },
     requestedIntent: "explore",
     requestedPresentation: "report",
   });

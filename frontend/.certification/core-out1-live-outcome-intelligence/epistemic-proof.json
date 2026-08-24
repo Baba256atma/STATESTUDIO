@@ -1,0 +1,9 @@
+{
+  "expected": "PREDICTION",
+  "actualValidated": "FACT",
+  "unknownActual": "UNKNOWN",
+  "decisionCommitmentPromotesPrediction": false,
+  "causalAttribution": false,
+  "coreInt2Reused": true,
+  "coreInt3RemainsCausalAuthority": true
+}

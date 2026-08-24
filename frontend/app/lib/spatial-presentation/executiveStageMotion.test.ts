@@ -282,7 +282,7 @@ test("N/O/P/Q — Back/Forward/Breadcrumb/Overview use same motion authority pat
     const targets = targetsFromPresentation(presentation);
     const transition = syncExecutiveStageMotionTargets({
       targets,
-      anchorObjectId: next.focusedSubjectId,
+      anchorObjectId: next.focusedSubject?.id ?? null,
       nowMs: Date.now(),
     });
     assert.equal(transition.hardSeparationComplete, true);

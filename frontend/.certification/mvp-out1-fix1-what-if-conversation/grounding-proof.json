@@ -1,0 +1,12 @@
+{
+  "inventedKpiImpacts": false,
+  "inventedRiskImpacts": false,
+  "inventedNumericMagnitude": false,
+  "inventoryStockoutAdviceHardcoded": false,
+  "capacityImpactsFrom": "executiveScenarioEvaluation / NEXORA_SCENARIO_EVALUATION_POLICY",
+  "unsupportedCopy": "I understand that you want to explore increasing Inventory, but I don't currently have a supported impact model for that change.",
+  "predictionNotReality": true,
+  "predictionNotActualOutcome": true,
+  "predictionNotLearning": true,
+  "noCausalProofUnlessCoreInt3": true
+}

@@ -140,6 +140,7 @@ export function NexoraStageObject({
       densityProfile,
       hovered,
       presentation,
+      semanticKindCue,
       stageOrder,
     ],
   );
@@ -149,7 +150,7 @@ export function NexoraStageObject({
       presentation.labelPrimaryLine?.trim() || presentation.label;
     const preferredPlacementSide =
       presentation.labelSide ??
-      (presentation.focused || presentation.role === "focus"
+      (presentation.focused || presentation.role === "focused"
         ? ("top" as const)
         : resolveExecutiveLabelPlacementSideForSector(
             resolveExecutiveStageAngularSector(
@@ -172,8 +173,7 @@ export function NexoraStageObject({
             ? "related"
             : presentation.role === "peripheral"
               ? "background"
-              : presentation.role === "unrelated" ||
-                  presentation.role === "background"
+              : presentation.role === "unrelated"
                 ? "background"
                 : presentation.focused
                   ? "focus"
@@ -340,8 +340,7 @@ export function NexoraStageObject({
               ? "related"
               : presentation.role === "peripheral"
                 ? "secondary"
-                : presentation.role === "unrelated" ||
-                    presentation.role === "background"
+                : presentation.role === "unrelated"
                   ? "background"
                   : "overview",
         executiveState:

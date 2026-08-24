@@ -1,0 +1,21 @@
+{
+  "phase": "CORE-INT:5",
+  "identity": "CORE-INT:5/LiveTradeoffIntelligence",
+  "completedAt": "2026-08-19T00:06:23.330Z",
+  "http": 200,
+  "coreInt5Present": true,
+  "multiOption": true,
+  "gainsGrounded": true,
+  "sacrificeHonest": true,
+  "riskHonest": true,
+  "constraintHonest": true,
+  "missingCost": true,
+  "missingTime": true,
+  "assumptionsGrounded": true,
+  "recommendationPresent": true,
+  "singleHonest": true,
+  "noOptionHonest": true,
+  "conversationComplete": true,
+  "uncaught": 0,
+  "duplicateOrHydration": []
+}

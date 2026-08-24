@@ -428,7 +428,7 @@ export function resolveExecutiveStageReservedRegionContainment(input: {
   const presentationState = input.presentationState ?? "minimum";
   const maxIterations =
     EXECUTIVE_STAGE_RESERVED_REGION_CONTAINMENT_BOUNDARY.maxIterations;
-  let positions: Record<string, ExecutiveStage2DResolvedPosition> = {
+  const positions: Record<string, ExecutiveStage2DResolvedPosition> = {
     ...input.positions,
   };
   positions[input.anchorObjectId] = normalizeExecutiveStage2DPosition({

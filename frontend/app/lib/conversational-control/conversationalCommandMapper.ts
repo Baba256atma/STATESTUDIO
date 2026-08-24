@@ -511,6 +511,23 @@ export function mapNexoraConversationalCommand(
     });
   }
 
+  // Unfiltered collection (show problems / show all problems) must not inherit
+  // conversational subject as an implicit related-to filter.
+  if (
+    rule.targetRequirement === "primary-optional" &&
+    intent.kind === "show-problems" &&
+    (intent.targetHints?.length ?? 0) === 0
+  ) {
+    return succeed({
+      rule,
+      intentKind: intent.kind,
+      contextStatus: context.resolutionStatus,
+      primaryTargetId: null,
+      secondaryTargetIds: Object.freeze([]),
+      primarySubjectKind: null,
+    });
+  }
+
   // primary-optional (reveal-*)
   if (primarySubjectId && context.primarySubject) {
     if (!isSubjectKindCompatibleWithCommand(primarySubjectKind, rule)) {

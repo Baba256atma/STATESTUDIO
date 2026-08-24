@@ -1,0 +1,269 @@
+{
+  "identity": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+  "url": "http://localhost:3000/executive?entrance=1&reset=1",
+  "opened": true,
+  "pageErrors": [],
+  "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+  "turns": [
+    {
+      "utterance": "Hi.",
+      "last": "NexoraI’m Nexora. Before we work on decisions, I’d like to understand who I’m working with and what you manage.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "What can you do for me?",
+      "last": "NexoraI can help you understand the current situation, define the goal, investigate problems and risks, compare options, support a decision you control, and follow what happens afterward. Start with the outcome you want to improve.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "HELP",
+        "clarify": "proceed",
+        "guidance": "CAPABILITY"
+      }
+    },
+    {
+      "utterance": "How should I use this?",
+      "last": "NexoraTell me what you're trying to improve. We'll establish the current reality, investigate what matters, explore options, make the decision explicit, and then follow the outcome. You can speak naturally — you don't need commands.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "HELP",
+        "clarify": "proceed",
+        "guidance": "HOW_TO_USE"
+      }
+    },
+    {
+      "utterance": "I manage operations.",
+      "last": "NexoraGot it. Who am I working with — you, a company, a team, or a project?",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "Delivery is a problem.",
+      "last": "NexoraUnderstood. Are you currently treating this primarily as a company, a product, a project, or another kind of work?",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "We're at 91%. Target is 96%.",
+      "last": "NexoraUnderstood. Who am I working with — you, a company, a team, or a project?",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "What should I look at first?",
+      "last": "NexoraNeeds your attention: an unresolved issue. Why now: Current reality is known, but the governing issue is not yet identified. Intervention: review. Recommended next: Investigate evidence.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "FOCUS",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "Why?",
+      "last": "Nexoraan unresolved issue is the highest-priority attention candidate . This does not establish a confirmed business cause.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "CAUSE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "Are you sure?",
+      "last": "NexoraI would be careful with that conclusion. that issue is connected, but the evidence does not confirm causality yet. That is not a confirmed cause. The recorded relationships and current conditions are known; treating any of them as the reason is still an assumption until stronger evidence arrives.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "CHALLENGE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "I don't buy that.",
+      "last": "NexoraI would be careful with that conclusion. that issue is connected, but the evidence does not confirm causality yet. No material unresolved critical issue is present in scope. Evidence: current runtime state.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "CHALLENGE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "What's your evidence?",
+      "last": "NexoraNo material unresolved critical issue is present in scope. Evidence: current runtime state.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "EVIDENCE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "What options do we have?",
+      "last": "NexoraI can compare options once we have at least two scenarios. Right now we still need to define the options.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "COMPARE",
+        "clarify": "proceed",
+        "guidance": "OPTIONS"
+      }
+    },
+    {
+      "utterance": "You decide.",
+      "last": "NexoraI can recommend and explain the trade-offs, but I won't commit the decision for you. Investigate evidence",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "HELP",
+        "clarify": "proceed",
+        "guidance": "YOU_DECIDE"
+      }
+    },
+    {
+      "utterance": "Do it.",
+      "last": "NexoraUnderstood.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "Start.",
+      "last": "NexoraNot yet. We need an approved decision before execution can start.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "START"
+      }
+    },
+    {
+      "utterance": "Can you send the supplier an email?",
+      "last": "NexoraI can't do that from this workspace. I can help assess the decision and define what should change.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "PRODUCT_FICTION"
+      }
+    },
+    {
+      "utterance": "Show Quantum Efficiency.",
+      "last": "NexoraDo you mean Nexora?",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "FOCUS",
+        "clarify": "clarify",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "Pull up the capacity thing.",
+      "last": "NexoraDo you mean Nexora?",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "FOCUS",
+        "clarify": "clarify",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "Explain it.",
+      "last": "NexoraI'm not sure which issue you mean. Name the one you want to investigate.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "EXPLAIN",
+        "clarify": "fail",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "By the way, what can Nexora do?",
+      "last": "NexoraI can help you understand the current situation, define the goal, investigate problems and risks, compare options, support a decision you control, and follow what happens afterward. Start with the outcome you want to improve.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "HELP",
+        "clarify": "proceed",
+        "guidance": "CAPABILITY"
+      }
+    },
+    {
+      "utterance": "Okay, back to Capacity.",
+      "last": "NexoraUnderstood.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "wat next",
+      "last": "NexoraUnderstood.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "Delivery is now 94%.",
+      "last": "NexoraUnderstood.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "Did it work?",
+      "last": "NexoraUnderstood.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    },
+    {
+      "utterance": "So the intervention fixed it?",
+      "last": "NexoraUnderstood.",
+      "diag": {
+        "engine": "NEX-MVP-FINAL:6.6/TypeCManagerConversationCertification",
+        "nlu": "NONE",
+        "clarify": "proceed",
+        "guidance": "NONE"
+      }
+    }
+  ],
+  "leak": false,
+  "filler": false,
+  "cause": false,
+  "commit": false,
+  "execute": false,
+  "fiction": false,
+  "resetDoesNotLeakDelivery91": true,
+  "swallowedExecutiveAsks": [],
+  "helpIsThinUnderstood": false,
+  "ok": true
+}

@@ -1,0 +1,54 @@
+{
+  "identity": "CORE-INT:3/CausalCases",
+  "cases": [
+    {
+      "id": "capacity-contributor",
+      "subject": "obj-capacity",
+      "contributor": "Capacity Gap",
+      "relation": "constrained-by",
+      "existence": "FACT",
+      "interpretation": "ASSUMPTION",
+      "primaryContributor": null,
+      "rootCause": null,
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "risk-relationship-not-cause",
+      "subject": "obj-risk",
+      "related": "Margin Pressure",
+      "relation": "associated-with",
+      "semantics": "associated",
+      "interpretation": "UNKNOWN",
+      "wording": "related factors recorded; evidence does not establish a cause",
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "delivery-dependency",
+      "subject": "obj-delivery",
+      "related": "Capacity",
+      "relation": "depends-on",
+      "semantics": "dependency",
+      "isConstraint": false,
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "revenue-multiple-unranked",
+      "subject": "obj-revenue",
+      "contributors": ["Margin Pressure", "Capacity"],
+      "primaryContributor": null,
+      "ranked": false,
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "inventory-unknown",
+      "subject": "obj-inventory",
+      "contributors": [],
+      "wording": "not enough evidence to identify a cause",
+      "status": "CERTIFIED"
+    }
+  ],
+  "opportunity": {
+    "availableOnLiveMvp": false,
+    "note": "No Opportunity kind exists in MVP fixtures. Not fabricated for certification."
+  }
+}

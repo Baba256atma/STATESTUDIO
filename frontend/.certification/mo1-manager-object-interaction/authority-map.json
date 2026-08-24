@@ -1,0 +1,16 @@
+{
+  "interactionContext": "MO:1/ManagerObjectInteractionFoundation",
+  "doesNotOwnTruth": true,
+  "authorities": {
+    "evidence": "RDI / Data Reality / NEX-MVP:6 presentation fixtures",
+    "intelligence": "EI / CORE-INT live projections (reader)",
+    "conversation": "CC:1–CC:7",
+    "recommendation": "CC:8",
+    "decision": "Decision Runtime",
+    "execution": "Execution Runtime",
+    "memory": "APP-4 (not written)",
+    "stage": "NEX-MVP:4 + STAGE-2D click-to-center",
+    "advisor": "UX:3 presentation reader"
+  },
+  "precedence": "Canonical Runtime Truth > Interaction Context > Presentation"
+}

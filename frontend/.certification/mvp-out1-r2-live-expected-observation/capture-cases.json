@@ -1,0 +1,10 @@
+{
+  "K": "Data Reality KPI ingest is the capture writer",
+  "L": "coordinator recomposition does not increment ingest count",
+  "M": "duplicate snapshot is idempotent",
+  "N": "later observedAt gets a distinct observationId",
+  "trigger": "subscribeLiveDataConnections after registerPostDecisionCaptureContext",
+  "writer": "captureOutcomeObservation",
+  "lifetime": "CORE-OUT:1A in-memory session store",
+  "result": "pass"
+}

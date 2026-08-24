@@ -1,0 +1,24 @@
+{
+  "phase": "NEX-MVP-FINAL:6.1",
+  "identity": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding",
+  "version": "1.0.0",
+  "namespace": "nexora.mvp.final61.natural-language-understanding",
+  "verdict": "NEX-MVP-FINAL:6.1 = CERTIFIED — NATURAL LANGUAGE UNDERSTANDING",
+  "zeroFailure": "NEX-MVP-FINAL:6.1-ZERO-FAILURE-CERTIFIED",
+  "corpusUtterances": 118,
+  "typecheck": "pass",
+  "build": "pass",
+  "lint": "pass",
+  "unitTests": "pass",
+  "liveBrowser": "pass",
+  "regressions": {
+    "FINAL:5": "pass",
+    "FINAL:4": "pass",
+    "FINAL:3R": "pass",
+    "FINAL:3": "pass",
+    "FINAL:2": "pass",
+    "CC:1": "pass"
+  },
+  "remainingKnownFailures": [],
+  "environmentLimitation": "No live LLM/semantic-model API in test/runtime. Interpretation uses a constrained feature-frame interpreter behind the Canonical Manager Meaning schema."
+}

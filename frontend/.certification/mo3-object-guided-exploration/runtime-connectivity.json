@@ -1,0 +1,15 @@
+{
+  "identity": "MO:3/ObjectGuidedExecutiveExploration",
+  "edges": {
+    "MO1_context": "CONNECTED",
+    "MO2_explanation": "CONNECTED",
+    "CC1_intent": "CONNECTED",
+    "CC5_experience": "CONNECTED",
+    "STAGE2D_click_to_center": "READER",
+    "UX3_advisor_reader": "CONNECTED",
+    "decision_runtime": "NOT_COMMITTED",
+    "execution_runtime": "NOT_STARTED",
+    "llm": "NOT_REQUIRED",
+    "navigation_trail": "REUSED"
+  }
+}

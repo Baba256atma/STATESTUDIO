@@ -430,6 +430,15 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       }),
     [canonicalRecommendation, props.decisionResult, props.responseData]
   );
+  const memoryEntryIds = memoryEntries.map((entry) => entry.id).join("|");
+  const highlightedObjectIds = (
+    props.objectSelection?.highlighted_objects ?? []
+  ).join("|");
+  const sceneObjectIds = (
+    props.sceneJson?.scene?.objects?.map(
+      (object: { id?: string | null }) => object?.id ?? "",
+    ) ?? []
+  ).join("|");
   const decisionTraceInputSignature = React.useMemo(
     () =>
       buildExecutiveDecisionTraceInputSignature(
@@ -446,14 +455,14 @@ export default function ExecutiveDashboardPanel(props: ExecutiveDashboardPanelPr
       canonicalRecommendation?.id,
       canonicalRecommendation?.primary?.action,
       canonicalRecommendation?.confidence?.score,
-      memoryEntries.map((entry) => entry.id).join("|"),
+      memoryEntryIds,
       props.activeMode,
       props.objectSelection?.selected_object_id,
-      (props.objectSelection?.highlighted_objects ?? []).join("|"),
+      highlightedObjectIds,
       props.responseData?.scenario_id,
       props.responseData?.active_scenario_id,
       props.responseData?.risk_level,
-      props.sceneJson?.scene?.objects?.map((object: { id?: string | null }) => object?.id ?? "").join("|"),
+      sceneObjectIds,
       sceneSurface?.scene?.fragility?.level,
       sceneSurface?.scene?.fragility?.score,
     ]

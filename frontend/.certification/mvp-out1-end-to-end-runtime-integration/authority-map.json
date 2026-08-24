@@ -1,0 +1,8 @@
+{
+  "phase": "MVP-OUT:1",
+  "identity": "MVP-OUT:1/OutcomeLearningRuntimeIntegration",
+  "version": "1.0.0",
+  "cc11Live": false,
+  "executionPath": "NEX-MVP:8",
+  "app4LivePromotion": false
+}

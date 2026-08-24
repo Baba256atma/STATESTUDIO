@@ -72,6 +72,7 @@ export const NEXORA_CONVERSATIONAL_SUBJECT_KINDS = Object.freeze([
   "scenario",
   "decision",
   "execution",
+  "outcome",
   "workspace",
   "business",
   "unknown",

@@ -11,7 +11,8 @@ import type {
   NexoraConversationalSubjectKind,
   NexoraConversationalSubjectRecord,
 } from "./conversationalContext.ts";
-import { normalizeNexoraConversationalUtterance } from "./conversationalIntentNormalization.ts";
+import { normalizeNexoraConversationalUtterance, expandControlledManagerLanguageKeys } from "./conversationalIntentNormalization.ts";
+import { resolveRegisteredReference } from "@/app/lib/manager-object/nexoraRegisteredReferenceRecovery.ts";
 
 export type NexoraConversationalSubjectMatchIndex = {
   readonly subjectsById: ReadonlyMap<string, NexoraConversationalSubjectRecord>;
@@ -59,14 +60,17 @@ export function buildNexoraConversationalSubjectMatchIndex(
   });
 }
 
+export const NEXORA_FINAL3_NATURAL_REFERENCE_IDENTITY =
+  "NEX-MVP-FINAL:3/natural-reference-v1" as const;
+
 export function normalizeConversationalMatchKey(value: string): string {
   return normalizeNexoraConversationalUtterance(value);
 }
 
 /**
  * Deterministic candidate match against registered subjects.
- * Exact normalized equality on: subjectId, canonicalName, aliases, businessKey.
- * Never synthesizes IDs. Never fuzzy-ranks.
+ * Exact / morphology first, then catalog-bounded fuzzy recovery.
+ * Never synthesizes IDs. Never guesses outside the supplied catalog.
  */
 export function findCanonicalSubjectMatchesForHint(
   hintRaw: string,
@@ -75,9 +79,92 @@ export function findCanonicalSubjectMatchesForHint(
   const key = normalizeConversationalMatchKey(hintRaw);
   if (!key) return Object.freeze([]);
 
+  const exact = matchSubjectsByKey(key, index);
+  if (exact.length > 0) return exact;
+
+  const fillerStripped = interfaceFillerStrippedKey(key);
+  if (fillerStripped) {
+    const fillerMatches = matchSubjectsByKey(fillerStripped, index);
+    if (fillerMatches.length > 0) return fillerMatches;
+    const morphFromFiller = matchMorphologicalKeys(fillerStripped, index);
+    if (morphFromFiller.length > 0) return morphFromFiller;
+  }
+
+  const morphFromKey = matchMorphologicalKeys(key, index);
+  if (morphFromKey.length > 0) return morphFromKey;
+
+  for (const alt of kindStrippedHintKeys(key)) {
+    const kindMatches = matchSubjectsByKey(alt, index);
+    if (kindMatches.length > 0) return kindMatches;
+    const morphFromKind = matchMorphologicalKeys(alt, index);
+    if (morphFromKind.length > 0) return morphFromKind;
+  }
+
+  const recovered = recoverRegisteredHint(hintRaw, index);
+  return recovered;
+}
+
+function recoverRegisteredHint(
+  hintRaw: string,
+  index: NexoraConversationalSubjectMatchIndex,
+): readonly NexoraConversationalSubjectRecord[] {
+  const catalog = index.subjects.map((subject) =>
+    Object.freeze({
+      subjectId: subject.subjectId,
+      canonicalName: subject.canonicalName,
+      keys: Object.freeze(
+        [
+          subject.subjectId,
+          subject.canonicalName,
+          subject.businessKey ?? "",
+          ...(subject.aliases ?? []),
+        ].filter(Boolean),
+      ),
+    }),
+  );
+  const resolution = resolveRegisteredReference({
+    raw: hintRaw,
+    catalog,
+  });
+  const ids =
+    resolution.selected != null
+      ? [resolution.selected.subjectId]
+      : resolution.ambiguous
+        ? resolution.matches.map((item) => item.subjectId)
+        : [];
+  const seen = new Set<string>();
+  const matches: NexoraConversationalSubjectRecord[] = [];
+  for (const id of ids) {
+    const subject = index.subjectsById.get(id);
+    if (!subject || seen.has(subject.subjectId)) continue;
+    seen.add(subject.subjectId);
+    matches.push(subject);
+  }
+  return Object.freeze(matches);
+}
+
+function matchMorphologicalKeys(
+  key: string,
+  index: NexoraConversationalSubjectMatchIndex,
+): readonly NexoraConversationalSubjectRecord[] {
   const matches: NexoraConversationalSubjectRecord[] = [];
   const seen = new Set<string>();
+  for (const alt of expandControlledManagerLanguageKeys(key)) {
+    for (const subject of matchSubjectsByKey(alt, index)) {
+      if (seen.has(subject.subjectId)) continue;
+      seen.add(subject.subjectId);
+      matches.push(subject);
+    }
+  }
+  return Object.freeze(matches);
+}
 
+function matchSubjectsByKey(
+  key: string,
+  index: NexoraConversationalSubjectMatchIndex,
+): readonly NexoraConversationalSubjectRecord[] {
+  const matches: NexoraConversationalSubjectRecord[] = [];
+  const seen = new Set<string>();
   for (const subject of index.subjects) {
     const candidates = [
       subject.subjectId,
@@ -87,14 +174,47 @@ export function findCanonicalSubjectMatchesForHint(
     ]
       .filter(Boolean)
       .map((v) => normalizeConversationalMatchKey(String(v)));
-
     if (!candidates.includes(key)) continue;
     if (seen.has(subject.subjectId)) continue;
     seen.add(subject.subjectId);
     matches.push(subject);
   }
-
   return Object.freeze(matches);
+}
+
+/**
+ * Trailing UI vocabulary (object/item/node/card/thing) is reference filler.
+ * Strip even when the leftover is a category word such as "risk".
+ * Do not apply this before an exact canonical/alias match, so a real name
+ * that contains these words is preserved when it exists.
+ */
+function interfaceFillerStrippedKey(key: string): string | null {
+  const stripped = key.replace(
+    /\s+(?:objects?|items?|nodes?|cards?|things?)$/u,
+    "",
+  );
+  if (!stripped || stripped === key) return null;
+  return stripped;
+}
+
+/**
+ * Kind suffixes (problem/scenario/…) are semantic, not filler.
+ * Never collapse "risk problem" onto "risk".
+ */
+function kindStrippedHintKeys(key: string): readonly string[] {
+  const stripped = key.replace(
+    /\s+(scenario|problem|decision|execution|goal)$/u,
+    "",
+  );
+  if (!stripped || stripped === key) return Object.freeze([]);
+  if (
+    /^(?:risks?|problems?|opportunities?|goals?|scenarios?|decisions?|executions?)$/.test(
+      stripped,
+    )
+  ) {
+    return Object.freeze([]);
+  }
+  return Object.freeze([stripped]);
 }
 
 function asSubjectKind(kind: string): NexoraConversationalSubjectKind {
@@ -105,6 +225,7 @@ function asSubjectKind(kind: string): NexoraConversationalSubjectKind {
     case "scenario":
     case "decision":
     case "execution":
+    case "outcome":
     case "workspace":
     case "business":
       return kind;
@@ -167,6 +288,15 @@ function defaultAliasesForObject(
   }
   if (id === "obj-budget") {
     aliases.push("budget object", "the budget");
+  }
+  if (id === "obj-delivery" || /^deliver/i.test(label)) {
+    aliases.push("delivery performance", "on-time delivery", "otd");
+  }
+  if (id === "obj-inventory" || /^inventor/i.test(label)) {
+    aliases.push("inventory levels", "stock");
+  }
+  if (id === "obj-margin" || /^margin/i.test(label)) {
+    aliases.push("profit margin", "margins");
   }
   return Object.freeze(aliases);
 }

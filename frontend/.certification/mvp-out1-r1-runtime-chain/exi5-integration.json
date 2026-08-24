@@ -1,0 +1,15 @@
+{
+  "status": "CONNECTED",
+  "readOnly": true,
+  "receives": [
+    "expected",
+    "actual",
+    "outcome assessment",
+    "Learning",
+    "confidence",
+    "uncertainty",
+    "causal status",
+    "historical Learning"
+  ],
+  "snapshotAttachedToExperience": true
+}

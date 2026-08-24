@@ -1,0 +1,5 @@
+{
+  "rule": "A valid but stale observation cannot be presented as a current post-decision result. It is not discarded.",
+  "preserve": ["observation exists", "freshness insufficient"],
+  "caseH": "stale validation forces freshnessState=stale; CORE-OUT:1 will not declare met"
+}

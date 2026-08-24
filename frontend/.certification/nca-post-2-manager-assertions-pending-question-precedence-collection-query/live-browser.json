@@ -1,0 +1,38 @@
+{
+  "identity": "NCA-POST:2/ManagerAssertionsPendingQuestionPrecedenceCollectionQueryIntelligence",
+  "url": "http://localhost:3000/executive",
+  "opened": true,
+  "pageErrors": [],
+  "turns": [
+    {
+      "utterance": "hi",
+      "last": "NexoraHi. I’m ready.",
+      "focused": "none"
+    },
+    {
+      "utterance": "yes",
+      "last": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
+      "focused": "none"
+    },
+    {
+      "utterance": "delivery is ok",
+      "last": "NexoraUnderstood. I'll treat that as your current observation about Delivery, not as verified external evidence.",
+      "focused": "none"
+    },
+    {
+      "utterance": "explain it",
+      "last": "NexoraDelivery has not been resolved yet, so it still deserves attention. We know on-time is 91%. Delivery is associated with Capacity Gap. That connection does not by itself tell us whether Delivery is affecting Capacity Gap or the reverse.",
+      "focused": "none"
+    },
+    {
+      "utterance": "show me all problems",
+      "last": "NexoraShowing problems for Margin Pressure.",
+      "focused": "ctx-problem-margin"
+    }
+  ],
+  "greetingSilent": true,
+  "noNavigationOnObservation": true,
+  "noAllProblemsLookup": true,
+  "tautologyAbsent": true,
+  "ok": true
+}

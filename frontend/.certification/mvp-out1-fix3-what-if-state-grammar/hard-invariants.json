@@ -1,0 +1,15 @@
+{
+  "generalGrammarNotSentenceWhitelist": true,
+  "conversationNotScenarioAuthority": true,
+  "parsedStateNotPredictedImpact": true,
+  "intensityNotNumericMagnitude": true,
+  "scenarioPredictionNotReality": true,
+  "scenarioPredictionNotOutcome": true,
+  "scenarioPredictionNotLearning": true,
+  "noLlm": true,
+  "noDecisionMutation": true,
+  "noExecutionMutation": true,
+  "noOutcomeLearningMutation": true,
+  "noApp4Write": true,
+  "noStageRedesign": true
+}

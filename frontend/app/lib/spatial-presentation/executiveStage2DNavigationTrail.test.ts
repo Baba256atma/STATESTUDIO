@@ -258,8 +258,10 @@ test("Invariant K — No relationship inference from trail adjacency", () => {
   // Fixture has no Revenue↔Capacity edge.
   const fixtureHas = NEXORA_MVP_STAGE_RELATIONSHIP_FIXTURES.some(
     (edge) =>
-      (edge.sourceId === "obj-revenue" && edge.targetId === "obj-capacity") ||
-      (edge.sourceId === "obj-capacity" && edge.targetId === "obj-revenue"),
+      (String(edge.sourceId) === "obj-revenue" &&
+        String(edge.targetId) === "obj-capacity") ||
+      (String(edge.sourceId) === "obj-capacity" &&
+        String(edge.targetId) === "obj-revenue"),
   );
   assert.equal(fixtureHas, false);
   assert.equal(trailEdge == null || trailEdge.visualRole === "hidden", true);
@@ -331,7 +333,11 @@ test("Invariant O — Invalid historical object does not crash", () => {
   let state = selectNexoraMVPInteractionSubject(initial(), "obj-revenue");
   state = Object.freeze({
     ...state,
-    stage2dNavigationTrail: trail,
+    stage2dNavigationTrail: Object.freeze({
+      ...trail,
+      scopeKey: state.stage2dNavigationTrail.scopeKey,
+      scope: state.stage2dNavigationTrail.scope,
+    }),
     trail: Object.freeze([
       Object.freeze({ id: "obj-revenue", kind: "object" as const, label: "Revenue" }),
       Object.freeze({ id: "obj-missing", kind: "object" as const, label: "Missing" }),

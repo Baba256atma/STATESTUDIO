@@ -1,0 +1,13 @@
+{
+  "command": "npm run lint",
+  "exitCode": 0,
+  "errors": 0,
+  "warnings": 409,
+  "coreOut2NewWarnings": 0,
+  "note": "Full lint initially reported 410 because of an unused OutcomeComparisonResult type import in nexoraGroundedLearningIntelligence.ts. That import was removed. CORE-OUT:2 production/test files now introduce 0 warnings. Remaining 409 are the previously classified non-failure repository warnings.",
+  "classification": {
+    "reactCompilerVsR3F": "Classified as warnings on certified Three.js/R3F/EXS1/dashboard imperative seams. Changing them would redesign frozen Stage. Not runtime failures.",
+    "unusedVars": "Existing unused imports in EXI/REX/spatial/CC files. Not CORE-OUT:2."
+  },
+  "suppressionsAdded": false
+}

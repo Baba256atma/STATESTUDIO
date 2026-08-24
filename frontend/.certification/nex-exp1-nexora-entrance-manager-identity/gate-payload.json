@@ -1,0 +1,10 @@
+{
+  "tests": { "fail": 0, "pass": 222, "total": 222 },
+  "typecheck": { "errors": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0 },
+  "runtimeSmoke": { "ok": true },
+  "console": { "uncaught": 0, "hydration": 0, "duplicateKeys": 0 },
+  "phase": "NEX-EXP:1",
+  "outDir": ".certification/nex-exp1-nexora-entrance-manager-identity"
+}

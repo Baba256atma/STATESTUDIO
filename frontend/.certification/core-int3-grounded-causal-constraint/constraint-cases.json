@@ -1,0 +1,50 @@
+{
+  "identity": "CORE-INT:3/ConstraintCases",
+  "cases": [
+    {
+      "id": "capacity-recorded-limit",
+      "subject": "obj-capacity",
+      "constraint": "Capacity Gap",
+      "qualification": "recorded-limit",
+      "bindingConstraint": null,
+      "unresolved": ["Capacity Gap"],
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "delivery-inbound-blocker",
+      "subject": "obj-delivery",
+      "constraint": "Capacity",
+      "qualification": "recorded-blocker",
+      "source": "Capacity presentation blocks Delivery (inbound from Delivery)",
+      "bindingConstraint": null,
+      "note": "Blocker wording is stronger only because the recorded kind is blocks. No invented severity.",
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "delivery-depends-on-not-constraint",
+      "subject": "obj-delivery",
+      "relation": "depends-on",
+      "isConstraint": false,
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "inventory-no-constraint",
+      "subject": "obj-inventory",
+      "constraints": [],
+      "wording": "No validated constraint is currently recorded.",
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "unknown-binding",
+      "subjects": ["obj-capacity", "obj-revenue"],
+      "bindingConstraint": null,
+      "managerMeaning": "Nexora has identified the recorded constraints, but does not yet have enough evidence to determine which one is binding.",
+      "status": "CERTIFIED"
+    }
+  ],
+  "relief": null,
+  "executionBlockers": {
+    "cc11Wired": false,
+    "inventedFromStaticCopy": false
+  }
+}

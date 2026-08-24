@@ -1,0 +1,17 @@
+{
+  "engine": "one generic EXP:8 resolver",
+  "sourceHardcoding": {
+    "ifCapacity": false,
+    "ifDelivery": false,
+    "ifCash": false,
+    "projectOrion": false,
+    "ifSoftware": false,
+    "ifWeekend": false
+  },
+  "proofs": {
+    "business": "same engine: Intensify Collections → confirm unknowns / assign owner / activate / monitor",
+    "project": "same engine: Reduce Launch Scope pattern",
+    "operations": "live + unit: Weekend Capacity / confirm staffing-like unknowns from handoff / start",
+    "software": "same engine: Reduce Release Scope pattern"
+  }
+}

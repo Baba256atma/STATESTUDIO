@@ -1,0 +1,20 @@
+{
+  "phase": "NEX-EXP:4",
+  "identity": "NEX-EXP:4/ProblemRiskOpportunityDiscovery",
+  "version": "1.0.0",
+  "namespace": "nexora.experience.issue.problem-risk-opportunity-discovery",
+  "verdict": "NEX-EXP:4 = CERTIFIED",
+  "zeroFailure": "NEX-EXP:4-ZERO-FAILURE-CERTIFIED",
+  "knownFailures": [],
+  "didNotStart": "NEX-EXP:5",
+  "tests": { "total": 293, "pass": 293, "fail": 0 },
+  "humanExperience": {
+    "A": "YES",
+    "B": "YES",
+    "C": "YES",
+    "D": "YES",
+    "E": "YES",
+    "F": "YES",
+    "G": "YES"
+  }
+}

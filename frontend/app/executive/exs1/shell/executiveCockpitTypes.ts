@@ -50,6 +50,8 @@ export type ExecutiveContextSnapshot = {
   readonly lens: ExecutiveTimelineLens;
   readonly theme: ExecutiveThemeMode;
   readonly liveStatus: string;
+  /** Context Data presentation tone. Must not overstate live connectivity. */
+  readonly liveStatusKind?: "local" | "imported" | "live" | "limited" | "stale";
 };
 
 export type ExecutiveFloatingPanelKind =

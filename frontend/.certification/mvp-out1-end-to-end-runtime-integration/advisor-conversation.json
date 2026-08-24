@@ -1,0 +1,5 @@
+{
+  "advisorReadsExi5": true,
+  "conversationKeys": ["didItWork", "whatHappened", "whyOutcome", "learning", "historicalLearning"],
+  "parallelInterpreter": false
+}

@@ -1,0 +1,15 @@
+{
+  "phase": "NEX-EXP:8",
+  "experience": "NEX-EXP:8/ExecutionPlanningCommitmentToAction",
+  "reused": {
+    "cc11": "CC:11/CanonicalExecution",
+    "cc11FollowUp": "CC:11/ExecutionFollowUp",
+    "cc10r": "CC:10R/CanonicalDecisionRuntime (read-only upstream)",
+    "ei6": "EI:6/ExecutionOutcomeLearningLoop (cited, not duplicated)",
+    "mo": "MO:1–6 + MO-INT:1",
+    "ux3": "UX:3 Professional Advisor",
+    "exp17": "NEX-EXP:1–7"
+  },
+  "writer": "createNexoraCanonicalExecutionRuntime.transitionExecution",
+  "shellWiring": "nexora.executive-shell.execution-runtime"
+}

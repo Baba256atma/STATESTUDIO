@@ -296,7 +296,23 @@ export function applyNexoraMVPWorkspaceChangeToInteraction(
   });
   if (!resolved.ok) return state;
 
-  let next = syncNexoraMVPObjectInteractionShellContext(state, {
+  const originalFocused = state.focusedSubject;
+  const sourceObject =
+    originalFocused?.kind === "object"
+      ? originalFocused
+      : (state.trail.find((entry) => entry.kind === "object") ?? null);
+  // Scope sync keys off object-kind focus. Context-focus must not be treated
+  // as "no object" or the workspace change resets to Overview and drops trail.
+  const stateForSync =
+    sourceObject != null && originalFocused?.kind !== "object"
+      ? Object.freeze({
+          ...state,
+          focusedSubject: sourceObject,
+          selectedSubject: sourceObject,
+        })
+      : state;
+
+  let next = syncNexoraMVPObjectInteractionShellContext(stateForSync, {
     workspace: resolved.workspace,
     presentationState: resolved.presentationState,
     environmentIntent: resolved.environmentIntent,
@@ -320,20 +336,28 @@ export function applyNexoraMVPWorkspaceChangeToInteraction(
     });
   }
 
-  const focused = next.focusedSubject;
-  if (focused && focused.kind !== "object") {
+  if (originalFocused && originalFocused.kind !== "object") {
     const primary = getNexoraMVPWorkspacePrimaryContextKinds(resolved.workspace);
     const useful =
       resolved.workspace !== "overview" &&
-      (primary as readonly string[]).includes(focused.kind);
-    if (!useful) {
-      const sourceObject = next.trail.find((entry) => entry.kind === "object");
-      if (sourceObject) {
-        next = selectNexoraMVPInteractionSubject(next, sourceObject.id);
-        next = syncNexoraMVPObjectInteractionShellContext(next, {
-          workspace: resolved.workspace,
-          presentationState: resolved.presentationState,
-          environmentIntent: resolved.environmentIntent,
+      (primary as readonly string[]).includes(originalFocused.kind);
+    const restoreId = useful ? originalFocused.id : sourceObject?.id ?? null;
+    if (restoreId) {
+      next = selectNexoraMVPInteractionSubject(next, restoreId);
+      next = syncNexoraMVPObjectInteractionShellContext(next, {
+        workspace: resolved.workspace,
+        presentationState: resolved.presentationState,
+        environmentIntent: resolved.environmentIntent,
+      });
+      if (
+        resolved.workspace === "problem" ||
+        resolved.workspace === "scenario" ||
+        resolved.workspace === "decision" ||
+        resolved.workspace === "execution"
+      ) {
+        next = Object.freeze({
+          ...next,
+          expandExecutiveThread: true,
         });
       }
     }

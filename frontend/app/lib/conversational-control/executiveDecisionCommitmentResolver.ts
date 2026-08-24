@@ -291,7 +291,14 @@ function buildRationale(
   context: NexoraExecutiveContextSnapshot,
 ): NexoraDecisionRationale {
   return Object.freeze({
-    summary: `Manager committed to ${candidate.title}.`,
+    summary: [
+      `Manager committed to ${candidate.title}.`,
+      context.currentSubject
+        ? `Investigation subject in context: ${context.currentSubject.canonicalName ?? context.currentSubject.subjectId}.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" "),
     goalIds: Object.freeze(
       context.currentGoal ? [context.currentGoal.subjectId] : [],
     ),

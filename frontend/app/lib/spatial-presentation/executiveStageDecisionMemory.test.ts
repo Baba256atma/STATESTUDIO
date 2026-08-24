@@ -286,7 +286,7 @@ test("identity + safety boundary + session persistence", () => {
   );
 
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -312,7 +312,7 @@ test("identity + safety boundary + session persistence", () => {
 test("A — Finalized Decision Memory Capture", () => {
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -353,7 +353,7 @@ test("A — Finalized Decision Memory Capture", () => {
 test("B — Duplicate finalization no duplicate", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -383,7 +383,7 @@ test("B — Duplicate finalization no duplicate", () => {
 test("C — Draft skipped", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -413,7 +413,7 @@ test("C — Draft skipped", () => {
 test("D — Historical Capacity critical freeze", () => {
   const critical = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -444,7 +444,7 @@ test("D — Historical Capacity critical freeze", () => {
     presentationMode: "object-focus",
     primaryStageSubjectId: "ctx-decision-capacity",
     primarySubjectKind: "decision",
-    scopeKey: buildExecutiveDecisionMemoryScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutiveDecisionMemoryScopeKey({ workspace: "overview" }),
     subjects: subjectsFromCatalog(laterNormal),
   });
   assert.equal(view.available, true);
@@ -475,7 +475,7 @@ test("E — Evidence freeze", () => {
     "Capacity critical evidence freeze",
   );
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -519,7 +519,7 @@ test("F — Options freeze (later 4th scenario not in memory)", () => {
   const catalog = criticalCapacityCatalog();
   const brief = mockBriefWithOptions(THREE_SCENARIO_OPTIONS);
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -566,7 +566,7 @@ test("F — Options freeze (later 4th scenario not in memory)", () => {
     ),
   );
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -588,7 +588,7 @@ test("G — Selected option", () => {
   const catalog = criticalCapacityCatalog();
   const brief = mockBriefWithOptions(THREE_SCENARIO_OPTIONS);
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -616,7 +616,7 @@ test("H — No selected option null", () => {
     decisionObjectId: "ctx-decision-capacity",
     decisionStatus: "approved",
     decisionVersion: "v-h-1",
-    scopeKey: buildExecutiveDecisionMemoryScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutiveDecisionMemoryScopeKey({ workspace: "overview" }),
     subjects: subjectsFromCatalog(catalog),
     links: catalog.contextLinks,
     decisionBrief: null,
@@ -628,7 +628,7 @@ test("H — No selected option null", () => {
     decisionObjectId: "ctx-decision-capacity",
     decisionStatus: "approved",
     decisionVersion: "v-h-1",
-    scopeKey: buildExecutiveDecisionMemoryScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutiveDecisionMemoryScopeKey({ workspace: "overview" }),
     subjects: subjectsFromCatalog(catalog),
     links: catalog.contextLinks,
     decisionBrief: null,
@@ -640,7 +640,7 @@ test("H — No selected option null", () => {
 test("I — Explicit rationale", () => {
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -683,7 +683,7 @@ test("J — Missing rationale null", () => {
     decisionObjectId: "ctx-decision-capacity",
     decisionStatus: "approved",
     decisionVersion: "v-j-1",
-    scopeKey: buildExecutiveDecisionMemoryScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutiveDecisionMemoryScopeKey({ workspace: "overview" }),
     subjects: subjectsFromCatalog(catalog),
     links: catalog.contextLinks,
     decisionBrief: null,
@@ -696,7 +696,7 @@ test("J — Missing rationale null", () => {
     decisionObjectId: "ctx-decision-capacity",
     decisionStatus: "approved",
     decisionVersion: "v-j-1",
-    scopeKey: buildExecutiveDecisionMemoryScopeKey({ workspace: "company" }),
+    scopeKey: buildExecutiveDecisionMemoryScopeKey({ workspace: "overview" }),
     subjects: subjectsFromCatalog(catalog),
     links: catalog.contextLinks,
     decisionBrief: null,
@@ -705,7 +705,7 @@ test("J — Missing rationale null", () => {
   assert.equal(recorded.memory?.rationale, null);
 
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -726,7 +726,7 @@ test("J — Missing rationale null", () => {
 test("K — Numeric met Capacity < 90 actual 88", () => {
   const catalog = criticalCapacityCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -759,7 +759,7 @@ test("K — Numeric met Capacity < 90 actual 88", () => {
   assert.equal(updated?.outcomeTrace?.comparisons[0]?.variance, -2);
 
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -780,7 +780,7 @@ test("K — Numeric met Capacity < 90 actual 88", () => {
 test("L — Numeric missed actual 94", () => {
   const catalog = criticalCapacityCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -811,7 +811,7 @@ test("L — Numeric missed actual 94", () => {
   assert.equal(updated?.outcomeTrace?.comparisons[0]?.status, "not-met");
 
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -832,7 +832,7 @@ test("L — Numeric missed actual 94", () => {
 test("M — Mixed 2 met 1 not", () => {
   const catalog = criticalCapacityCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const expected: readonly ExecutiveExpectedOutcome[] = Object.freeze([
     capacityExpected("exp-a"),
@@ -903,7 +903,7 @@ test("M — Mixed 2 met 1 not", () => {
   assert.deepEqual(statuses?.sort(), ["met", "met", "not-met"].sort());
 
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -924,7 +924,7 @@ test("M — Mixed 2 met 1 not", () => {
 test("N — Qualitative unknown", () => {
   const catalog = defaultCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -965,7 +965,7 @@ test("N — Qualitative unknown", () => {
 test("O — No expected → insufficient-data", () => {
   const catalog = defaultCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -996,7 +996,7 @@ test("O — No expected → insufficient-data", () => {
 test("P — Execution link", () => {
   const catalog = defaultCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -1026,7 +1026,7 @@ test("P — Execution link", () => {
 test("Q — Multiple executions no dup", () => {
   const catalog = defaultCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const links = Object.freeze([
     Object.freeze({
@@ -1064,7 +1064,7 @@ test("Q — Multiple executions no dup", () => {
   assert.equal(appended?.executionLinks.length, 3);
 
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -1096,7 +1096,7 @@ test("R — Execution completed + outcome not-achieved", () => {
     ),
   });
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -1147,7 +1147,7 @@ test("R — Execution completed + outcome not-achieved", () => {
   assert.equal(view.outcomeTrace?.status, "not-achieved");
 
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -1168,7 +1168,7 @@ test("R — Execution completed + outcome not-achieved", () => {
 test("S — Source unavailable; historical preserved", () => {
   const catalog = criticalCapacityCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -1209,10 +1209,10 @@ test("T–V — Scope isolation / rejected / archived", () => {
   const queueBefore = resolveNexoraMVPExecutiveQueueSummary(catalog);
 
   const scopeA = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const scopeB = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "personal",
+    workspace: "problem",
   });
   const inA = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -1273,7 +1273,7 @@ test("T–V — Scope isolation / rejected / archived", () => {
   assert.deepEqual(queueAfter, queueBefore);
 
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -1301,7 +1301,7 @@ test("T–V — Scope isolation / rejected / archived", () => {
 test("W — Revision separate memoryId", () => {
   const catalog = defaultCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const v1 = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -1334,7 +1334,7 @@ test("W — Revision separate memoryId", () => {
 test("X — Decision focus UI subject sync", () => {
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -1370,7 +1370,7 @@ test("X — Decision focus UI subject sync", () => {
 test("Y — Focus change D1→D2", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -1418,7 +1418,7 @@ test("Y — Focus change D1→D2", () => {
 test("Z — Non-decision focus memory hidden", () => {
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -1456,7 +1456,7 @@ test("Z — Non-decision focus memory hidden", () => {
 test("AA–AC — Back / Forward / Escape", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -1526,7 +1526,7 @@ test("AA–AC — Back / Forward / Escape", () => {
 test("AD — Historical vs current separation in view", () => {
   const critical = criticalCapacityCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -1560,7 +1560,7 @@ test("AD — Historical vs current separation in view", () => {
 test("AE — Rationale unchanged after missed outcome", () => {
   const catalog = defaultCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -1599,7 +1599,7 @@ test("AE — Rationale unchanged after missed outcome", () => {
 test("AF — No causal claim language in memory JSON", () => {
   const catalog = defaultCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -1638,7 +1638,7 @@ test("AF — No causal claim language in memory JSON", () => {
 test("AG — Not-yet-evaluable before boundary; achieved after", () => {
   const catalog = defaultCatalog();
   const scopeKey = buildExecutiveDecisionMemoryScopeKey({
-    workspace: "company",
+    workspace: "overview",
   });
   const recorded = recordExecutiveDecisionMemory({
     decisionObjectId: "ctx-decision-capacity",
@@ -1687,7 +1687,7 @@ test("AG — Not-yet-evaluable before boundary; achieved after", () => {
 test("AH — Topology z=0 / camera unaffected", () => {
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });

@@ -154,74 +154,75 @@ export const EXECUTIVE_STAGE_LABEL_SECTOR_TO_SIDE: Readonly<
 });
 
 /** Screen-space step directions for collision (x right, y down). */
-export const EXECUTIVE_STAGE_LABEL_SIDE_OFFSET_STEPS: Readonly<
-  Record<ExecutiveLabelPlacementSide, readonly [number, number][]>
-> = Object.freeze({
-  top: Object.freeze([
+export const EXECUTIVE_STAGE_LABEL_SIDE_OFFSET_STEPS = {
+  top: [
     [0, -1],
     [1, -1],
     [-1, -1],
     [1, 0],
     [-1, 0],
     [0, 1],
-  ]),
-  "top-right": Object.freeze([
+  ],
+  "top-right": [
     [1, -1],
     [1, 0],
     [0, -1],
     [1, 1],
     [-1, -1],
     [0, 1],
-  ]),
-  right: Object.freeze([
+  ],
+  right: [
     [1, 0],
     [1, -1],
     [1, 1],
     [0, -1],
     [0, 1],
     [-1, 0],
-  ]),
-  "bottom-right": Object.freeze([
+  ],
+  "bottom-right": [
     [1, 1],
     [1, 0],
     [0, 1],
     [1, -1],
     [-1, 1],
     [0, -1],
-  ]),
-  bottom: Object.freeze([
+  ],
+  bottom: [
     [0, 1],
     [1, 1],
     [-1, 1],
     [1, 0],
     [-1, 0],
     [0, -1],
-  ]),
-  "bottom-left": Object.freeze([
+  ],
+  "bottom-left": [
     [-1, 1],
     [-1, 0],
     [0, 1],
     [-1, -1],
     [1, 1],
     [0, -1],
-  ]),
-  left: Object.freeze([
+  ],
+  left: [
     [-1, 0],
     [-1, -1],
     [-1, 1],
     [0, -1],
     [0, 1],
     [1, 0],
-  ]),
-  "top-left": Object.freeze([
+  ],
+  "top-left": [
     [-1, -1],
     [-1, 0],
     [0, -1],
     [-1, 1],
     [1, -1],
     [0, 1],
-  ]),
-});
+  ],
+} as const satisfies Record<
+  ExecutiveLabelPlacementSide,
+  readonly (readonly [number, number])[]
+>;
 
 export const EXECUTIVE_STAGE_RELATIONSHIP_VISUAL_ROLE = Object.freeze({
   primaryOpacityCap: 0.48,

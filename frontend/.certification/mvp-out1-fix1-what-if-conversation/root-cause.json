@@ -1,0 +1,19 @@
+{
+  "phase": "MVP-OUT:1-FIX1",
+  "failure": {
+    "context": "Inventory",
+    "utterance": "what happend if increase inventory",
+    "observedResponse": "I’m not sure how that relates to the current executive context..."
+  },
+  "previousIntent": "unknown",
+  "previousRouter": "generic unsupported fallback (intent.kind=unknown, command=null)",
+  "previousScenarioHandoff": false,
+  "rootCause": "CC:1 matchScenarioConversation required tight phrases (what happens if / what if we + optional numeric magnitude). The live utterance used the typo happend and verb-first increase inventory without we/I/magnitude, so it never became explore-scenario. CC:5 then selected the unknown-intent fallback. Inventory identity was not the failure.",
+  "failingPath": [
+    "normalizeNexoraConversationalUtterance",
+    "resolveNexoraConversationalIntent / matchScenarioConversation → unknown",
+    "mapConversationalCommand → unsupported-intent / no command",
+    "executeNexoraConversationalExperience status=unsupported",
+    "buildNexoraConversationalExperienceResponse fallback"
+  ]
+}

@@ -387,7 +387,7 @@ export function resolveExecutiveStage2DNavigationTrailVisibleEntries(
   // Prefer keeping the current entry and nearest neighbors toward the tip.
   const tip = Math.max(trail.currentIndex, 0);
   let end = Math.min(trail.objectIds.length, Math.max(tip + 1, maxVisible));
-  let start = Math.max(0, end - maxVisible);
+  const start = Math.max(0, end - maxVisible);
   if (end - start < maxVisible) {
     end = Math.min(trail.objectIds.length, start + maxVisible);
   }

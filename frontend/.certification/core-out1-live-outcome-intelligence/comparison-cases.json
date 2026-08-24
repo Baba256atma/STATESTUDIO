@@ -1,0 +1,7 @@
+{
+  "compatibleNumericWithBaseline": "comparison-ready",
+  "missingBaseline": "comparison-incomplete",
+  "dimensionMismatch": "insufficient-comparable-evidence",
+  "stale": "stale / unknown",
+  "conflicting": "conflicting / no success-failure"
+}

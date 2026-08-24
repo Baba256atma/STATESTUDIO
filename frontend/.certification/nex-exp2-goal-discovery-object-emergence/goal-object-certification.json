@@ -1,0 +1,11 @@
+{
+  "selectGoal": true,
+  "explainGoal": true,
+  "askWhy": true,
+  "askWhatIsConnected": true,
+  "askWhereShouldILookNext": true,
+  "askHowDoesThisAffectMyGoal": true,
+  "specialCaseEngine": false,
+  "mo4SeesSessionGoal": true,
+  "persistence": "SESSION_ONLY unless registered catalog Goal is reused"
+}

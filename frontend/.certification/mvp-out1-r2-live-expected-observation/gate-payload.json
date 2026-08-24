@@ -1,0 +1,29 @@
+{
+  "phase": "MVP-OUT:1-R2",
+  "outDir": ".certification/mvp-out1-r2-live-expected-observation",
+  "tests": {
+    "fail": 0,
+    "pass": 1817,
+    "skipped": 0,
+    "total": 1817
+  },
+  "typecheck": {
+    "errors": 0,
+    "exitCode": 0
+  },
+  "build": {
+    "exitCode": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 411
+  },
+  "runtimeSmoke": {
+    "ok": true
+  },
+  "console": {
+    "uncaught": 0,
+    "hydration": 0,
+    "duplicateKeys": 0
+  }
+}

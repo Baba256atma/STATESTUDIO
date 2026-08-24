@@ -27,6 +27,7 @@ import {
   isDirectorRuntimeFocusSelectionTransition,
   orchestrateDirectorRuntimeFocusSelection,
   verifyDirectorRuntimeFocusSelectionOrchestration,
+  type DirectorInteractionTarget,
   type DirectorRuntimeFocusSelectionState,
 } from "./directorRuntimeFocusSelectionOrchestration.ts";
 
@@ -35,10 +36,16 @@ const source = readFileSync(
   "utf8",
 );
 
-const warehouse = Object.freeze({ kind: "object" as const, id: "warehouse-01" });
-const factory = Object.freeze({ kind: "object" as const, id: "factory-01" });
+const warehouse: DirectorInteractionTarget = Object.freeze({
+  kind: "object",
+  id: "warehouse-01",
+});
+const factory: DirectorInteractionTarget = Object.freeze({
+  kind: "object",
+  id: "factory-01",
+});
 
-function acceptedFor(kind: string, target = factory, extra: {
+function acceptedFor(kind: string, target: DirectorInteractionTarget = factory, extra: {
   readonly source?: string;
   readonly targetKind?: string;
 } = {}): AcceptedDirectorRuntimeInteractionContract {
@@ -97,7 +104,7 @@ function acceptedFor(kind: string, target = factory, extra: {
 
 function resolved(
   intentKind: DirectorRuntimeInteractionIntentKind,
-  target = factory,
+  target: DirectorInteractionTarget = factory,
 ): ResolvedDirectorRuntimeInteractionIntent {
   if (intentKind === "clear-focus") {
     const resolution = resolveDirectorRuntimeInteractionIntent(acceptedFor("clear-focus"));
@@ -262,7 +269,7 @@ test("15-16. clear-focus and clear-selection behave correctly", () => {
 
   const clearSelection = orchestrateDirectorRuntimeFocusSelection({
     currentState: state(),
-    resolvedIntent: resolved("select-target", { kind: "none", id: "" }),
+    resolvedIntent: resolved("select-target", { kind: "none", id: "cleared" }),
   });
   assert.equal(clearSelection.transitionKind, "clear-selection");
   assert.equal(clearSelection.nextState.selection.selectedTarget, null);

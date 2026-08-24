@@ -1,0 +1,16 @@
+{
+  "dataRealityOwnsObservedBusinessState": true,
+  "coreOut1ADoesNotOwnDataReality": true,
+  "currentKpiEqualsOutcome": false,
+  "kpiBecomesOutcomeOnlyIf": [
+    "explicit Outcome link",
+    "matching canonical dimension",
+    "compatible unit",
+    "provenance",
+    "valid observation window",
+    "validation permits use"
+  ],
+  "livePathMarksKpiAsOutcome": false,
+  "recentChangeEqualsOutcome": false,
+  "executionProgressEqualsOutcome": false
+}

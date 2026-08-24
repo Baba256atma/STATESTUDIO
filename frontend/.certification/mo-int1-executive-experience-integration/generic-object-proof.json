@@ -1,0 +1,6 @@
+{
+  "engine": "MO-INT:1/ManagerObjectExecutiveExperienceIntegration",
+  "createsMo7": false,
+  "hardcodedObjectRouting": false,
+  "exposesEngineIdsToManager": false
+}

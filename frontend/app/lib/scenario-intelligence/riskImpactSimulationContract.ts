@@ -5,6 +5,7 @@
  * scenario blueprint proposals. No scene mutation or execution authority.
  */
 
+import type { KpiHistoricalSnapshot } from "../kpi-intelligence/kpiTrendContract.ts";
 import type { ExecutiveRiskNodeKind } from "../risk-intelligence/executiveRiskSummaryContract.ts";
 import type { ScenarioBlueprintRegistry } from "./scenarioBuilderContract.ts";
 import type { ScenarioType } from "./scenarioGenerationContract.ts";
@@ -91,7 +92,7 @@ export type RiskImpactSimulationBuildInput = Readonly<{
   sceneObjects?: readonly unknown[];
   dataSourceObjects?: readonly unknown[];
   dataSourceKpis?: readonly unknown[];
-  historicalSnapshots?: readonly import("../kpi-intelligence/kpiTrendContract.ts").KpiHistoricalSnapshot[];
+  historicalSnapshots?: readonly KpiHistoricalSnapshot[];
   blueprintRegistry?: ScenarioBlueprintRegistry;
   scenarioIds?: readonly string[];
 }>;

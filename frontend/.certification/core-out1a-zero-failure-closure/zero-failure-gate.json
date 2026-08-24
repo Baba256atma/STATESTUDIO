@@ -1,0 +1,15 @@
+{
+  "identity": "NEXORA-ZERO-FAILURE-GATE",
+  "certified": true,
+  "status": "CORE-OUT:1A-ZERO-FAILURE-CERTIFIED",
+  "knownFailures": [],
+  "knownFailureCount": 0,
+  "gates": {
+    "typecheck": true,
+    "build": true,
+    "tests": true,
+    "lint": true,
+    "liveSmoke": true,
+    "console": true
+  }
+}

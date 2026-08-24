@@ -1,0 +1,13 @@
+{
+  "owner": "CORE-INT:3/GroundedCausalConstraintIntelligence",
+  "coreOut2EstablishesCausation": false,
+  "rules": {
+    "outcomeSuccessAlone": "cannot produce Decision caused Outcome",
+    "temporalSequence": "Decision T1 / Execution T2 / KPI T3 is association, not cause",
+    "causalLearningRequires": "explicit CoreInt3CausalFinding with supported=true, hypothesisOnly=false, conflicting=false, evidenceRefs, provenanceRefs",
+    "unsupportedHypothesis": "causal-learning status inconclusive; not promotion-eligible",
+    "conflictingCausalEvidence": "status conflicting; not promotion-eligible",
+    "liveStageContributors": "CORE-INT:3 contributor assessments are passed through the experience composer but are not treated as causal findings"
+  },
+  "liveCausalSideChannel": "PARTIAL"
+}

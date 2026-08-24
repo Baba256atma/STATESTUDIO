@@ -1,0 +1,7 @@
+{
+  "identity": "NCA-POST:2/ManagerAssertionsPendingQuestionPrecedenceCollectionQueryIntelligence",
+  "version": "1.0.0",
+  "namespace": "nexora.nca.post.manager-assertions-pending-question-precedence-collection-query",
+  "verdict": "NCA-POST:2 = CERTIFIED",
+  "ok": true
+}

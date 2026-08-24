@@ -1,0 +1,16 @@
+{
+  "authority": "CORE-OUT:1A",
+  "acceptedBases": [
+    "same expectedOutcomeId",
+    "canonical metric binding",
+    "explicit decision-outcome binding",
+    "explicit execution-target binding"
+  ],
+  "rejectedBases": [
+    "text similarity",
+    "temporal proximity",
+    "Stage proximity",
+    "LLM",
+    "Advisor phrasing"
+  ]
+}

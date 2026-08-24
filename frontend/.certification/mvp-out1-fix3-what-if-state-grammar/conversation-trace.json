@@ -1,0 +1,26 @@
+{
+  "t1": {
+    "manager": "show delivery",
+    "intent": "focus",
+    "subject": "obj-delivery",
+    "response": "Focused on Delivery."
+  },
+  "t2": {
+    "manager": "what if delivery be too late",
+    "normalized": "what if delivery be too late",
+    "intent": "explore-scenario",
+    "subject": "obj-delivery",
+    "state": "late",
+    "intensity": "too",
+    "magnitude": null,
+    "command": "evaluate-scenario",
+    "cc9": "unsupported",
+    "response": "I understand you want to test a severe Delivery delay, but I don't currently have a supported impact model for that change."
+  },
+  "t3": {
+    "manager": "what if it be too late",
+    "intent": "explore-scenario",
+    "subject": "obj-delivery",
+    "response": "I understand you want to test a severe Delivery delay, but I don't currently have a supported impact model for that change."
+  }
+}

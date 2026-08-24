@@ -1,0 +1,10 @@
+{
+  "rule": "Baseline must be an existing historical observation or an observation captured at the Decision/Execution boundary, preserving original timestamp and provenance.",
+  "notAllowed": "latest current KPI used retroactively as the old baseline",
+  "unavailableIsAcceptable": true,
+  "cases": {
+    "O": "baseline at 2026-01-01 + linked actual at 2026-04-01 → CORE-OUT:1 comparison-ready",
+    "P": "linked actual without baseline → actual observed, comparison incomplete",
+    "retroactiveKpi": "observation after window.openedAt cannot become baseline"
+  }
+}

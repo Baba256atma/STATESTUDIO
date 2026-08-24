@@ -1,0 +1,7 @@
+{
+  "authority": "CORE-OUT:1",
+  "liveResult": "pending / unknown",
+  "mvpOut1CalculatesMetMissed": false,
+  "lifetime": "render-local",
+  "recomputedWhenLinkedActualsChange": true
+}

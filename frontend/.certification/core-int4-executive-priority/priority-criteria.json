@@ -1,0 +1,38 @@
+{
+  "identity": "CORE-INT:4/PriorityCriteria",
+  "live": [
+    {
+      "criterion": "constraint-pressure",
+      "when": "recorded constraint plus two or more downstream subjects",
+      "example": "Capacity Gap constrains Capacity and affects Delivery"
+    },
+    {
+      "criterion": "impact",
+      "when": "recorded affects/constrained-by/blocks from two or more subjects"
+    },
+    {
+      "criterion": "evidence-strength",
+      "when": "CORE-INT:2 SemanticConfidence; cannot be exceeded"
+    }
+  ],
+  "recordedNeutralInputs": [
+    "risk-exposure from kind/status — documented, does not auto-rank",
+    "single recorded constraint — documented, does not auto-rank",
+    "attention enum — candidate field only, never a raising factor"
+  ],
+  "missing": [
+    "strategic-relevance",
+    "urgency",
+    "time-sensitivity",
+    "opportunity-value"
+  ],
+  "forbiddenAsAuthority": [
+    "attention",
+    "severity",
+    "NBA",
+    "recommendation",
+    "Queue collectionRank",
+    "bindingConstraint",
+    "rootCause"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "tests": { "fail": 0, "pass": 293, "total": 293 },
+  "typecheck": { "errors": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0 },
+  "runtimeSmoke": { "ok": true },
+  "console": { "uncaught": 0, "hydration": 0, "duplicateKeys": 0 },
+  "phase": "NEX-EXP:4",
+  "outDir": ".certification/nex-exp4-problem-risk-opportunity-discovery"
+}

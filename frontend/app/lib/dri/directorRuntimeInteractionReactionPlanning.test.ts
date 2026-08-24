@@ -13,6 +13,7 @@ import {
 import {
   createDirectorRuntimeFocusSelectionState,
   orchestrateDirectorRuntimeFocusSelection,
+  type DirectorInteractionTarget,
   type DirectorRuntimeFocusSelectionTransition,
 } from "./directorRuntimeFocusSelectionOrchestration.ts";
 import {
@@ -37,12 +38,18 @@ const source = readFileSync(
   "utf8",
 );
 
-const warehouse = Object.freeze({ kind: "object" as const, id: "warehouse-01" });
-const factory = Object.freeze({ kind: "object" as const, id: "factory-01" });
+const warehouse: DirectorInteractionTarget = Object.freeze({
+  kind: "object",
+  id: "warehouse-01",
+});
+const factory: DirectorInteractionTarget = Object.freeze({
+  kind: "object",
+  id: "factory-01",
+});
 
 function resolved(
   intentKind: DirectorRuntimeInteractionIntentKind,
-  target = factory,
+  target: DirectorInteractionTarget = factory,
 ): ResolvedDirectorRuntimeInteractionIntent {
   const interactionByIntent = {
     "select-target": { kind: "select", source: "object", target },
@@ -111,9 +118,9 @@ function resolved(
 function transitionFor(
   intentKind: DirectorRuntimeInteractionIntentKind,
   options: {
-    readonly selected?: typeof warehouse;
-    readonly focused?: typeof warehouse;
-    readonly target?: typeof factory;
+    readonly selected?: DirectorInteractionTarget;
+    readonly focused?: DirectorInteractionTarget;
+    readonly target?: DirectorInteractionTarget;
   } = {},
 ): DirectorRuntimeFocusSelectionTransition {
   return orchestrateDirectorRuntimeFocusSelection({

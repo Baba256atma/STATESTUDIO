@@ -169,8 +169,10 @@ test("Invariant E — Canonical relationships only", () => {
     result.relatedObjectIds.every((id) =>
       fixtureRelationships().some(
         (edge) =>
-          (edge.sourceId === "obj-revenue" && edge.targetId === id) ||
-          (edge.targetId === "obj-revenue" && edge.sourceId === id),
+          (String(edge.sourceId) === "obj-revenue" &&
+            String(edge.targetId) === id) ||
+          (String(edge.targetId) === "obj-revenue" &&
+            String(edge.sourceId) === id),
       ),
     ),
   );

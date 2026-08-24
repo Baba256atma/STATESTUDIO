@@ -411,7 +411,7 @@ test("I — Advisor subject stays synchronized with Stage subject", () => {
 
 test("J — Automatic attention cannot steal center from explicit focus", () => {
   const experience = resolveNexoraMVPDataRealityAwareStageExperience({
-    datasetScenario: "pressure",
+    datasetScenario: "operational-pressure",
     focusedObjectId: "obj-customer",
     selectedObjectId: "obj-customer",
     selectedObjectIds: ["obj-customer"],

@@ -1,0 +1,11 @@
+{
+  "A_comparisonClarity": "YES",
+  "B_tradeoffClarity": "YES",
+  "C_recommendationTrust": "YES",
+  "D_uncertaintyHonesty": "YES",
+  "E_decisionSafety": "YES",
+  "F_visualRestraint": "YES",
+  "G_goalAlignment": "YES",
+  "H_continuity": "YES",
+  "I_managerValue": "YES"
+}

@@ -1,0 +1,20 @@
+{
+  "engine": "app/lib/scenario-intelligence/KpiImpactSimulationEngine.ts",
+  "contract": "kpiImpactSimulationContract.ts",
+  "wiredToCc9QualitativeWhatIf": false,
+  "reasonUnused": "Requires scene KPI numeric blueprints / projected values. Qualitative delay has no magnitude to simulate.",
+  "mustNotInventMagnitude": true,
+  "groundedLayerReuse": "canonical-subject-kpi from presentation fixture primaryKpi — not KpiImpactSimulationEngine2",
+  "deliveryOwnKpi": {
+    "id": "kpi-delivery",
+    "label": "On-time",
+    "currentValueIsNotScenarioImpact": true,
+    "delayDirection": "decrease",
+    "magnitude": null
+  },
+  "inventoryOwnKpi": {
+    "id": "kpi-inventory",
+    "label": "Turns",
+    "increaseIntervention": "unsupported — no canonical impact profile"
+  }
+}

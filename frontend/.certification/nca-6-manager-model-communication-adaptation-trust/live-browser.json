@@ -1,0 +1,126 @@
+{
+  "identity": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+  "url": "http://localhost:3000/executive",
+  "opened": true,
+  "pageErrors": [],
+  "engine": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+  "turns": [
+    {
+      "utterance": "What should I do?",
+      "last": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+      "diag": {
+        "engine": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "depth": "STANDARD",
+        "framing": "NEUTRAL",
+        "structure": "ADVISORY",
+        "familiarity": "UNKNOWN",
+        "role": "UNKNOWN",
+        "nca4Option": "temporary capacity",
+        "nca4Confidence": "MODERATE",
+        "nca4Advise": "true"
+      }
+    },
+    {
+      "utterance": "Give me the short version.",
+      "last": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. My recommendation remains temporary capacity.",
+      "diag": {
+        "engine": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "depth": "BRIEF",
+        "framing": "NEUTRAL",
+        "structure": "SUMMARY",
+        "familiarity": "UNKNOWN",
+        "role": "UNKNOWN",
+        "nca4Option": "temporary capacity",
+        "nca4Confidence": "MODERATE",
+        "nca4Advise": "false"
+      }
+    },
+    {
+      "utterance": "Walk me through the reasoning.",
+      "last": "NexoraDecision rationale, not a hidden reasoning trace: - Delivery is below target. - Backlog pressure is elevated. - Demand persistence is not yet confirmed. - temporary capacity improves the goal with a clearer commitment profile than the alternatives.",
+      "diag": {
+        "engine": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "depth": "DETAILED",
+        "framing": "NEUTRAL",
+        "structure": "ADVISORY",
+        "familiarity": "UNKNOWN",
+        "role": "UNKNOWN",
+        "nca4Option": "temporary capacity",
+        "nca4Confidence": "MODERATE",
+        "nca4Advise": "true"
+      }
+    },
+    {
+      "utterance": "I don't understand what Capacity Gap means.",
+      "last": "NexoraBefore we continue, one change is important: The issue and available options are understood enough to proceed, but no decision is committed. Capacity Gap means the difference between the capacity you need and the capacity you currently have. It is a constraint to investigate, not a proven cause by itself. My recommendation remains temporary capacity.",
+      "diag": {
+        "engine": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "depth": "STANDARD",
+        "framing": "NEUTRAL",
+        "structure": "CRITICAL",
+        "familiarity": "UNKNOWN",
+        "role": "UNKNOWN",
+        "nca4Option": "temporary capacity",
+        "nca4Confidence": "MODERATE",
+        "nca4Advise": "false"
+      }
+    },
+    {
+      "utterance": "Explain it more technically.",
+      "last": "NexoraCapacity Gap is the recorded shortfall between required and available capacity for the current window. That object meaning is unchanged; causality remains unconfirmed unless the evidence already says so. Capacity Gap is constraining delivery performance. Capacity Gap needs attention because it is worth monitoring. Capacity Gap is constrained by Capacity. That is a recorded dependency, not a confirmed cause. My recommendation remains temporary capacity.",
+      "diag": {
+        "engine": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "depth": "STANDARD",
+        "framing": "NEUTRAL",
+        "structure": "ADVISORY",
+        "familiarity": "UNKNOWN",
+        "role": "UNKNOWN",
+        "nca4Option": "temporary capacity",
+        "nca4Confidence": "MODERATE",
+        "nca4Advise": "false"
+      }
+    },
+    {
+      "utterance": "I disagree. Permanent expansion is better.",
+      "last": "NexoraUnderstood. Permanent expansion gives you a different commitment profile, but the main risk you would be accepting is demand normalization. If you want that path, we can compare it directly — this remains advice, not a Decision. That's a valid alternative if you're willing to accept the risk of permanent cost under uncertain demand. My recommendation still remains temporary capacity.",
+      "diag": {
+        "engine": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "depth": "STANDARD",
+        "framing": "NEUTRAL",
+        "structure": "INVESTIGATION",
+        "familiarity": "UNKNOWN",
+        "role": "UNKNOWN",
+        "nca4Option": "temporary capacity",
+        "nca4Confidence": "MODERATE",
+        "nca4Advise": "true"
+      }
+    },
+    {
+      "utterance": "We just signed an 18-month customer contract that keeps this demand level.",
+      "last": "NexoraThat changes my recommendation because demand persistence is now supported by a longer commitment. I now recommend permanent expansion. It currently best advances the delivery goal under the active constraints. Confidence is moderate; demand persistence and labor availability still condition this advice.",
+      "diag": {
+        "engine": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "depth": "STANDARD",
+        "framing": "NEUTRAL",
+        "structure": "ADVISORY",
+        "familiarity": "UNKNOWN",
+        "role": "UNKNOWN",
+        "nca4Option": "permanent expansion",
+        "nca4Confidence": "MODERATE",
+        "nca4Advise": "true"
+      }
+    }
+  ],
+  "depthChanges": true,
+  "recStable": true,
+  "confidenceStable": true,
+  "uncertaintyVisible": true,
+  "confusionSimplified": true,
+  "technicalSameObject": true,
+  "disagreementHeld": true,
+  "revisionExplained": true,
+  "cause": false,
+  "fiction": false,
+  "commit": false,
+  "ok": true
+}

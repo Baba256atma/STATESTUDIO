@@ -29,9 +29,6 @@ import { applyDataRealityObjectVisualStateToStagePresentationWithRetention } fro
 import { applyDataRealityFocusSceneChoreographyToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPDataRealityFocusSceneChoreography";
 import { applyDataRealityConnectionsContextVisualStateToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPDataRealityConnectionsContextVisualState";
 import { applyDataRealityExecutiveReadabilityToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPDataRealityExecutiveReadability";
-import { applyExecutiveFocusVisualGrammarToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFocusVisualGrammar";
-import { applyExecutiveNetworkTopologyToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutiveNetworkTopology";
-import { applyExecutivePresentationPlaneToStagePresentation } from "@/app/lib/nex-mvp/nexoraMVPExecutivePresentationPlane";
 import type { NexoraMVPDataRealityDatasetScenario } from "@/app/lib/nex-mvp/nexoraMVPDataRealityStageBridge";
 
 export const nexoraMVPDataRealityVisualStageAuditIdentity =
@@ -64,8 +61,12 @@ export type NexoraMVPDataRealityVisualStageAuditBundle = {
 };
 
 /**
- * Resolve the live P2 chain for a certified fixture scenario and audit Stage
- * structural presentation evidence.
+ * Resolve the live P2:2→P2:8.5 chain for a certified fixture scenario and
+ * audit Stage structural presentation evidence.
+ *
+ * UX:2 focus grammar, network topology, and 2D plane are live Stage
+ * composition layers. They must not overwrite this Data Reality audit
+ * consumer — those layers are certified by UX/Stage tests.
  */
 export function resolveNexoraMVPDataRealityVisualStageAudit(
   input: ResolveNexoraMVPDataRealityVisualStageAuditInput = {},
@@ -178,19 +179,12 @@ export function resolveNexoraMVPDataRealityVisualStageAudit(
       presentationWithFocus,
       connectionsContext,
     );
-  const presentationWithReadability =
+  const presentation =
     applyDataRealityExecutiveReadabilityToStagePresentation(
       presentationWithConnections,
     );
-  const presentation = applyExecutiveFocusVisualGrammarToStagePresentation(
-    presentationWithReadability,
-  );
-  const withNetwork =
-    applyExecutiveNetworkTopologyToStagePresentation(presentation);
-  const withPlane =
-    applyExecutivePresentationPlaneToStagePresentation(withNetwork);
 
-  const observed = extractObservedStageEvidenceFromPresentation(withPlane);
+  const observed = extractObservedStageEvidenceFromPresentation(presentation);
   const audit = auditDataRealityVisualStage({
     scenario,
     interactionMode: presentation.scene.mode,

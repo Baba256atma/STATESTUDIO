@@ -2228,20 +2228,20 @@ export interface RuntimeExecutiveAdvisorExperienceOrchestrationVerification {
 
 export function verifyRuntimeExecutiveAdvisorExperienceOrchestration():
   RuntimeExecutiveAdvisorExperienceOrchestrationVerification {
-  const module = runtimeExecutiveAdvisorExperienceOrchestration;
+  const runtimeModule = runtimeExecutiveAdvisorExperienceOrchestration;
   const registry = runtimeExecutiveAdvisorExperienceOrchestrationRegistry;
   const coordinationOk = verifyRuntimeExecutiveAdvisorStageCoordination();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-3:6/RuntimeExecutiveAdvisorExperienceOrchestration" &&
-    module.version === "3.6.0" &&
-    module.namespace === "nexora.rex.advisor-experience.orchestration" &&
-    module.upstreamDependency ===
+    runtimeModule.version === "3.6.0" &&
+    runtimeModule.namespace === "nexora.rex.advisor-experience.orchestration" &&
+    runtimeModule.upstreamDependency ===
       "REX-3:5/RuntimeExecutiveAdvisorStageCoordination" &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveAdvisorStageCoordination" &&
-    module.coordinationBoundary === "REX-3:5-stage-coordination-only";
+    runtimeModule.coordinationBoundary === "REX-3:5-stage-coordination-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_ADVISOR_ORCHESTRATION_STATES], [
@@ -2308,14 +2308,14 @@ export function verifyRuntimeExecutiveAdvisorExperienceOrchestration():
     );
 
   const coordinationBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-3:5/RuntimeExecutiveAdvisorStageCoordination" &&
-    module.boundary.consumesStageCoordinationOnly === true &&
-    module.boundary.importsRex34Directly === false &&
-    module.boundary.executesActions === false &&
-    module.boundary.mutatesStageState === false &&
-    module.boundary.navigatesApplication === false &&
-    module.boundary.rendersUi === false;
+    runtimeModule.boundary.consumesStageCoordinationOnly === true &&
+    runtimeModule.boundary.importsRex34Directly === false &&
+    runtimeModule.boundary.executesActions === false &&
+    runtimeModule.boundary.mutatesStageState === false &&
+    runtimeModule.boundary.navigatesApplication === false &&
+    runtimeModule.boundary.rendersUi === false;
 
   const ok =
     identityOk &&
@@ -2325,7 +2325,7 @@ export function verifyRuntimeExecutiveAdvisorExperienceOrchestration():
     frozen &&
     coordinationBoundaryIntact &&
     coordinationOk.ok === true &&
-    module.boundary.aiProviderIndependent === true;
+    runtimeModule.boundary.aiProviderIndependent === true;
 
   return Object.freeze({
     ok,
@@ -2361,11 +2361,11 @@ export function verifyRuntimeExecutiveAdvisorExperienceOrchestration():
       runtimeExecutiveAdvisorExperienceOrchestrationApiNames.length,
     frozen,
     coordinationBoundaryIntact,
-    noStageMutation: module.boundary.mutatesStageState === false,
-    noNavigation: module.boundary.navigatesApplication === false,
-    noUi: module.boundary.rendersUi === false,
-    noAutoExecution: module.boundary.executesActions === false,
+    noStageMutation: runtimeModule.boundary.mutatesStageState === false,
+    noNavigation: runtimeModule.boundary.navigatesApplication === false,
+    noUi: runtimeModule.boundary.rendersUi === false,
+    noAutoExecution: runtimeModule.boundary.executesActions === false,
     coordinationOk: coordinationOk.ok === true,
-    noAi: module.boundary.aiProviderIndependent === true,
+    noAi: runtimeModule.boundary.aiProviderIndependent === true,
   });
 }

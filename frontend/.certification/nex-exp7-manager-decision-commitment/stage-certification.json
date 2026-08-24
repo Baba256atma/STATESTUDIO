@@ -1,0 +1,11 @@
+{
+  "camera": "fixed-2d",
+  "topologyZ": "0",
+  "goalCenterPreserved": true,
+  "noAutomaticFocusSteal": true,
+  "shouldCommitRuntime": false,
+  "decisionAppearsAfterApproved": true,
+  "clickUsesExistingSelect": true,
+  "noNewLayoutEngine": true,
+  "noDuplicateDecisionObject": true
+}

@@ -1,0 +1,12 @@
+{
+  "gate": "NCA:2-ZERO-FAILURE-CERTIFIED",
+  "accidentalApprovals": 0,
+  "accidentalExecutionStarts": 0,
+  "clarificationAsConfirmation": 0,
+  "unsupportedCausalClaims": 0,
+  "fabricatedCapabilities": 0,
+  "architectureLeaks": 0,
+  "unexplainedFailures": 0,
+  "secondDurableMemory": 0,
+  "stalePendingResurrection": 0
+}

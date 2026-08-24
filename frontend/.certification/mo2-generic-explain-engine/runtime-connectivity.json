@@ -1,0 +1,18 @@
+{
+  "identity": "MO:2/GenericExplainEngine",
+  "edges": {
+    "MO1_handoff": "CONNECTED",
+    "MO1_active_object": "CONNECTED",
+    "CC1_intent": "CONNECTED",
+    "CC5_experience": "CONNECTED",
+    "CC8_recommendation": "HANDOFF",
+    "NEX_MVP4_object_interaction": "CONNECTED",
+    "STAGE2D_click_to_center": "READER",
+    "UX3_advisor_reader": "CONNECTED",
+    "live_relationship_projection": "CONNECTED",
+    "presentation_fixtures": "CONNECTED",
+    "decision_runtime": "NOT_COMMITTED",
+    "execution_runtime": "NOT_STARTED",
+    "llm": "NOT_REQUIRED"
+  }
+}

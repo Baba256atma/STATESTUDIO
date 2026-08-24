@@ -349,7 +349,12 @@ test("P1:4 recommendation safety and boundary", () => {
       "prioritize",
     ] as const),
   });
-  assert.equal(noRecommendContext.availableIntents.includes("recommend"), false);
+  assert.equal(
+    noRecommendContext.availableIntents.some(
+      (intent) => String(intent) === "recommend",
+    ),
+    false,
+  );
   const noRecommend = resolveDataRealityAdvisoryCandidates({
     context: noRecommendContext,
   });

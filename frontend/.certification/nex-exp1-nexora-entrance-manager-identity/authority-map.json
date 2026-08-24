@@ -1,0 +1,18 @@
+{
+  "stage": "selectNexoraMVPInteractionSubject",
+  "conversation": "executeNexoraConversationalExperience / UX:3 Chat",
+  "advisor": "UX:3 Professional Advisor",
+  "managerObject": "MO:1 catalog projection + MO-INT:1 after activation",
+  "notCreated": [
+    "MO:7",
+    "new Stage runtime",
+    "parallel object catalog",
+    "parallel conversation engine",
+    "parallel Advisor",
+    "parallel identity memory platform",
+    "parallel goal system",
+    "domain vertical",
+    "new Decision Runtime",
+    "new Execution Runtime"
+  ]
+}

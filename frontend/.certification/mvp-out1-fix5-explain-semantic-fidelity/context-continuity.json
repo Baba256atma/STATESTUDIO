@@ -1,0 +1,13 @@
+{
+  "afterExplain": {
+    "currentScenario": "ctx-scenario-demand",
+    "currentSubjectKind": "scenario"
+  },
+  "followUps": {
+    "whatCouldBeAffected": "explain-scenario / affected — modeled relations if unevaluated",
+    "whatRisks": "explain-scenario / downside — no invented risk",
+    "howSure": "evidence + scenario confidence — projection not outcome",
+    "why": "explain-scenario / impact-why — no causal invention",
+    "whatDoYouRecommend": "recommend — CC:8"
+  }
+}

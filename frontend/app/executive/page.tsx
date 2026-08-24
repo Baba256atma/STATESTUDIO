@@ -26,16 +26,28 @@ export const metadata: Metadata = {
 export default async function ExecutivePage({
   searchParams,
 }: {
-  searchParams: Promise<{ dataset?: string | string[] }>;
+  searchParams: Promise<{
+    dataset?: string | string[];
+    entrance?: string | string[];
+    reset?: string | string[];
+  }>;
 }) {
   const params = await searchParams;
   const raw = Array.isArray(params.dataset) ? params.dataset[0] : params.dataset;
   const datasetScenario = parseNexoraMVPDataRealityDatasetScenario(raw);
+  const entranceRaw = Array.isArray(params.entrance)
+    ? params.entrance[0]
+    : params.entrance;
+  const resetRaw = Array.isArray(params.reset) ? params.reset[0] : params.reset;
+  const entranceRequested =
+    entranceRaw === "1" || entranceRaw === "true" || entranceRaw === "first-time";
+  const resetEntrance = resetRaw === "1" || resetRaw === "true";
 
   return (
     <main
       data-testid="executive-page"
       data-nexora-dataset={datasetScenario}
+      data-nex-exp1-requested={entranceRequested ? "true" : "false"}
       style={{
         height: "100vh",
         minHeight: "100vh",
@@ -48,7 +60,11 @@ export default async function ExecutivePage({
           '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif',
       }}
     >
-      <ExecutiveShell datasetScenario={datasetScenario} />
+      <ExecutiveShell
+        datasetScenario={datasetScenario}
+        entranceRequested={entranceRequested}
+        resetEntrance={resetEntrance}
+      />
     </main>
   );
 }

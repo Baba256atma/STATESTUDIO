@@ -1,0 +1,16 @@
+{
+  "phase": "MVP-OUT:1-FIX2",
+  "outDir": ".certification/mvp-out1-fix2-scenario-followup-continuity",
+  "tests": { "fail": 0, "pass": 1778, "total": 1778 },
+  "typecheck": { "errors": 0, "exitCode": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0, "warnings": 411, "exitCode": 0 },
+  "runtimeSmoke": {
+    "ok": true,
+    "httpStatus": 200,
+    "hydrated": true,
+    "cameraMode": "fixed-2d",
+    "topologyZ": "0"
+  },
+  "console": { "uncaught": 0, "hydration": 0, "duplicateKeys": 0 }
+}

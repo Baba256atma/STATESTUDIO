@@ -1,0 +1,23 @@
+{
+  "phase": "NCA:4",
+  "identity": "NCA:4/ExecutiveAdvisoryReasoningRecommendationDialogueIntelligence",
+  "version": "1.0.0",
+  "namespace": "nexora.nca.executive-advisory-reasoning-recommendation-dialogue",
+  "verdict": "NCA:4 = CERTIFIED",
+  "usesLiveLlm": false,
+  "createsSecondRecommendationEngine": false,
+  "commitsDecision": false,
+  "startsExecution": false,
+  "accidentalApprovals": 0,
+  "accidentalExecutionStarts": 0,
+  "unsupportedCausalClaims": 0,
+  "fabricatedCapabilities": 0,
+  "architectureLeaks": 0,
+  "knownUnexplainedFailures": 0,
+  "typecheck": "pass",
+  "build": "pass",
+  "lint": "pass",
+  "regressionTests": 464,
+  "liveBrowser": "pass",
+  "nca5Started": false
+}

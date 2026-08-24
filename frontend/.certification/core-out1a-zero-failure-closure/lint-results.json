@@ -1,0 +1,13 @@
+{
+  "command": "npm run lint",
+  "exitCode": 0,
+  "errors": 0,
+  "warnings": 409,
+  "classification": {
+    "captureScripts": "Ignored .certification/** and .validation-screenshots/** \u2014 Node capture scripts using require(), not product runtime.",
+    "preferConst": "Fixed never-reassigned lets in Data Reality-adjacent spatial/CC tests and runtime files.",
+    "rexModuleVariable": "Renamed local verification binding `module` -> `runtimeModule` to satisfy @next/next/no-assign-module-variable without changing REX semantics.",
+    "reactCompilerVsR3F": "Classified as warnings on certified Three.js/R3F/EXS1/dashboard imperative seams. Changing them would redesign frozen Stage. Not runtime failures."
+  },
+  "suppressionsAdded": false
+}

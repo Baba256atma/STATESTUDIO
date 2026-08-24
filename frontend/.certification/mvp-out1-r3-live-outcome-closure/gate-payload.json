@@ -1,0 +1,29 @@
+{
+  "phase": "MVP-OUT:1-R3",
+  "outDir": ".certification/mvp-out1-r3-live-outcome-closure",
+  "tests": {
+    "fail": 0,
+    "pass": 1827,
+    "skipped": 0,
+    "total": 1827
+  },
+  "typecheck": {
+    "errors": 0,
+    "exitCode": 0
+  },
+  "build": {
+    "exitCode": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 411
+  },
+  "runtimeSmoke": {
+    "ok": true
+  },
+  "console": {
+    "uncaught": 0,
+    "hydration": 0,
+    "duplicateKeys": 0
+  }
+}

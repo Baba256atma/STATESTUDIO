@@ -1,0 +1,60 @@
+{
+  "phase": "EXI:4",
+  "identity": "EXI:4/ExecutiveIntelligencePresentation",
+  "contract": "EXI:1/NexoraExecutiveIntelligenceExperience",
+  "completedAt": "2026-08-19T00:52:42.328Z",
+  "http": 200,
+  "exi4Present": true,
+  "overview": {
+    "needsAttention": true,
+    "topPriority": true,
+    "attentionVsPriority": true,
+    "noCauseDump": true
+  },
+  "problem": {
+    "situation": true,
+    "contributors": true,
+    "constraints": true,
+    "noRootCauseCard": true
+  },
+  "multiOption": true,
+  "missingDimensions": true,
+  "decision": true,
+  "singleOption": true,
+  "unknownHonest": true,
+  "conversationParity": {
+    "priority": true,
+    "why": true,
+    "causing": true,
+    "causingNotProven": true,
+    "constraining": true,
+    "compare": true,
+    "sacrifice": true,
+    "cheaper": true,
+    "sure": true
+  },
+  "noJargon": true,
+  "noWinnerLanguage": true,
+  "narrowDesktop": {
+    "width": 1280,
+    "height": 800,
+    "horizontalOverflow": false
+  },
+  "uncaught": 0,
+  "duplicateOrHydration": [],
+  "humanCertification": {
+    "happening": "PASS",
+    "attention": "PASS",
+    "topPriority": "PASS",
+    "why": "PASS",
+    "contributors": "PASS",
+    "constraints": "PASS",
+    "options": "PASS",
+    "sacrifice": "PASS",
+    "unknown": "PASS",
+    "recommendation": "PASS",
+    "nextAction": true,
+    "decisionMaker": "PASS"
+  },
+  "consoleErrors": []
+}

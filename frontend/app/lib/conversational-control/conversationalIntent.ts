@@ -160,9 +160,24 @@ export type NexoraConversationalScenarioIntentPayload = {
     | "compare"
     | "downside"
     | "explain-preference"
+    | "describe"
+    | "confidence"
+    | "affected"
+    | "kpi-impact"
+    | "impact-why"
     | "open-ordinal"
     | "commitment-attempt";
-  readonly actionKind?: "increase-by" | "decrease-by" | "hold";
+  readonly actionKind?: "increase-by" | "decrease-by" | "hold" | "delay";
+  readonly changeKind?: "directional" | "state";
+  readonly state?: string;
+  readonly direction?:
+    | "increase"
+    | "decrease"
+    | "delay"
+    | "worsen"
+    | "improve"
+    | "hold";
+  readonly intensity?: "too" | "very" | "extremely" | "more" | "less";
   readonly value?: number;
   readonly unit?: "%" | string;
   readonly horizonAmount?: number;

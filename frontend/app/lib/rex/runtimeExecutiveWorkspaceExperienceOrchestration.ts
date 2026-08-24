@@ -1331,7 +1331,7 @@ function exactOrder<T>(actual: readonly T[], expected: readonly T[]): boolean {
 
 export function verifyRuntimeExecutiveWorkspaceExperienceOrchestration():
   RuntimeExecutiveWorkspaceExperienceOrchestrationVerification {
-  const module = runtimeExecutiveWorkspaceExperienceOrchestration;
+  const runtimeModule = runtimeExecutiveWorkspaceExperienceOrchestration;
   const upstream = verifyRuntimeExecutiveWorkspaceTransitionDialOrchestration();
 
   const pipelineOrderExact = exactOrder(
@@ -1388,14 +1388,14 @@ export function verifyRuntimeExecutiveWorkspaceExperienceOrchestration():
   );
 
   const ok =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-6:6/RuntimeExecutiveWorkspaceExperienceOrchestration" &&
-    module.version === "6.6.0" &&
-    module.namespace === "nexora.rex.workspace-experience.orchestration" &&
-    module.phase === "ExperienceOrchestration" &&
-    module.architecturalRole ===
+    runtimeModule.version === "6.6.0" &&
+    runtimeModule.namespace === "nexora.rex.workspace-experience.orchestration" &&
+    runtimeModule.phase === "ExperienceOrchestration" &&
+    runtimeModule.architecturalRole ===
       "RuntimeExecutiveWorkspaceExperienceOrchestration" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       "REX-6:5/RuntimeExecutiveWorkspaceTransitionDialOrchestration" &&
     upstream.ok &&
     pipelineOrderExact &&
@@ -1411,14 +1411,14 @@ export function verifyRuntimeExecutiveWorkspaceExperienceOrchestration():
     invariantIds.size ===
       RUNTIME_EXECUTIVE_WORKSPACE_EXPERIENCE_ORCHESTRATION_INVARIANTS.length &&
     frozen &&
-    module.boundary.duplicatesContextPolicy === false &&
-    module.boundary.duplicatesCompositionPolicy === false &&
-    module.boundary.duplicatesTransitionPolicy === false &&
-    module.boundary.introducesUi === false &&
-    module.boundary.introducesTimers === false &&
-    module.nonLinearTransitionCapable &&
-    module.sameWorkspaceContextCapable &&
-    module.presentationStateIndependent;
+    runtimeModule.boundary.duplicatesContextPolicy === false &&
+    runtimeModule.boundary.duplicatesCompositionPolicy === false &&
+    runtimeModule.boundary.duplicatesTransitionPolicy === false &&
+    runtimeModule.boundary.introducesUi === false &&
+    runtimeModule.boundary.introducesTimers === false &&
+    runtimeModule.nonLinearTransitionCapable &&
+    runtimeModule.sameWorkspaceContextCapable &&
+    runtimeModule.presentationStateIndependent;
 
   return Object.freeze({
     ok,
@@ -1452,12 +1452,12 @@ export function verifyRuntimeExecutiveWorkspaceExperienceOrchestration():
       runtimeExecutiveWorkspaceExperienceOrchestrationApiNames.length,
     frozen,
     transitionBoundaryIntact:
-      module.transitionBoundary === "REX-6:5-transition-orchestration-only",
+      runtimeModule.transitionBoundary === "REX-6:5-transition-orchestration-only",
     pipelineOrderExact,
     bootstrapDefaultsExact,
     upstreamTransitionOk: upstream.ok,
-    nonLinearTransitionCapable: module.nonLinearTransitionCapable,
-    sameWorkspaceContextCapable: module.sameWorkspaceContextCapable,
-    presentationStateIndependent: module.presentationStateIndependent,
+    nonLinearTransitionCapable: runtimeModule.nonLinearTransitionCapable,
+    sameWorkspaceContextCapable: runtimeModule.sameWorkspaceContextCapable,
+    presentationStateIndependent: runtimeModule.presentationStateIndependent,
   });
 }

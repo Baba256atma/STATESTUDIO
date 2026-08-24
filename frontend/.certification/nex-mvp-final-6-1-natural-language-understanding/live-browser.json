@@ -1,0 +1,178 @@
+{
+  "phase": "NEX-MVP-FINAL:6.1",
+  "identity": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding",
+  "http": 200,
+  "identityRuntime": {
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "mode": "existing-workspace"
+  },
+  "existingUrl": "http://localhost:3000/executive",
+  "turns": [
+    {
+      "utterance": "Can we look at Delivery?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraFocused on Delivery.",
+      "nlu": {
+        "operation": "FOCUS",
+        "subject": "Delivery",
+        "intent": "REQUEST_FOCUS",
+        "confidence": "MEDIUM",
+        "engine": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding"
+      }
+    },
+    {
+      "utterance": "What's actually going on with Delivery?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraDelivery is related to Capacity. Recommendation: Review Capacity Gap.",
+      "nlu": {
+        "operation": "EXPLAIN",
+        "subject": "Delivery",
+        "intent": "ASK_EXPLANATION",
+        "confidence": "HIGH",
+        "engine": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding"
+      }
+    },
+    {
+      "utterance": "Is anything putting the delivery goal at risk?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraDelivery is the main priority under current evidence.\nRecommendation: Investigate Delivery as a possible contributor — evidence is not strong enough to prioritize action.\nWhy: Delivery shows attention, but a canonical relationship is not established.",
+      "nlu": {
+        "operation": "ATTENTION",
+        "subject": "Delivery",
+        "intent": "ASK_INFORMATION",
+        "confidence": "MEDIUM",
+        "engine": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding"
+      }
+    },
+    {
+      "utterance": "How confident are we about that?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraCapacity needs attention. Customer needs attention. Evidence: current runtime state, recorded problems, scenario assumptions.",
+      "nlu": {
+        "operation": "EVIDENCE",
+        "subject": "",
+        "intent": "ASK_EVIDENCE",
+        "confidence": "MEDIUM",
+        "engine": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding"
+      }
+    },
+    {
+      "utterance": "What would happen if management did nothing?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraIf Delivery remains without intervention, concerns around Capacity and Customer and Risk may continue or become more significant. We don’t yet have enough evidence to quantify that impact, so this is a scenario rather than a prediction. I can’t yet judge the impact against a specific business goal. I can compare doing nothing with investigating now.",
+      "nlu": {
+        "operation": "CONSEQUENCE",
+        "subject": "",
+        "intent": "ASK_CONSEQUENCE",
+        "confidence": "MEDIUM",
+        "engine": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding"
+      }
+    },
+    {
+      "utterance": "I'd like to understand Capacity.",
+      "focused": "obj-delivery",
+      "moActive": "obj-capacity",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action.\nWhy: Capacity shows attention, but a canonical relationship is not established.\nUncertainty: Budget has unresolved evidence.",
+      "nlu": {
+        "operation": "EXPLAIN",
+        "subject": "Capacity",
+        "intent": "ASK_EXPLANATION",
+        "confidence": "HIGH",
+        "engine": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding"
+      }
+    },
+    {
+      "utterance": "Is Capacity really worth worrying about?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraCapacity is the main priority under current evidence.\nRecommendation: Investigate Capacity as a possible contributor — evidence is not strong enough to prioritize action.\nWhy: Capacity shows attention, but a canonical relationship is not established.",
+      "nlu": {
+        "operation": "ATTENTION",
+        "subject": "Capacity",
+        "intent": "ASK_INFORMATION",
+        "confidence": "HIGH",
+        "engine": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding"
+      }
+    },
+    {
+      "utterance": "What evidence do we have?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraScenario confidence is limited to the evaluated projection. This is not Reality, Actual Outcome, or causal proof.",
+      "nlu": {
+        "operation": "EVIDENCE",
+        "subject": "",
+        "intent": "OBSERVE",
+        "confidence": "MEDIUM",
+        "engine": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding"
+      }
+    },
+    {
+      "utterance": "What other options are there?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraComparison complete. Investigate Capacity aligns better under current evidence, but this is not a Decision commitment.",
+      "nlu": {
+        "operation": "COMPARE",
+        "subject": "",
+        "intent": "ASK_COMPARISON",
+        "confidence": "MEDIUM",
+        "engine": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding"
+      }
+    },
+    {
+      "utterance": "Which scenario looks safer?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraComparison complete. Investigate Capacity aligns better under current evidence, but this is not a Decision commitment.",
+      "nlu": {
+        "operation": "COMPARE",
+        "subject": "",
+        "intent": "ASK_COMPARISON",
+        "confidence": "MEDIUM",
+        "engine": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding"
+      }
+    }
+  ],
+  "focusedDelivery": true,
+  "noFallback": true,
+  "leaks": false,
+  "errors": []
+}

@@ -1563,25 +1563,25 @@ export interface RuntimeExecutiveAdvisorExperienceFoundationVerification {
 
 export function verifyRuntimeExecutiveAdvisorExperienceFoundation():
   RuntimeExecutiveAdvisorExperienceFoundationVerification {
-  const module = runtimeExecutiveAdvisorExperienceFoundation;
+  const runtimeModule = runtimeExecutiveAdvisorExperienceFoundation;
   const registry = runtimeExecutiveAdvisorExperienceFoundationRegistry;
   const upstream = verifyRuntimeExecutiveStageExperienceConsumerEntry();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-3:1/RuntimeExecutiveAdvisorExperienceFoundation" &&
-    module.version === "3.1.0" &&
-    module.namespace === "nexora.rex.advisor-experience.foundation" &&
-    module.layer === "RuntimeExecutiveExperience" &&
-    module.domain === "ExecutiveAdvisor" &&
-    module.phase === "Foundation" &&
-    module.upstreamDependency ===
+    runtimeModule.version === "3.1.0" &&
+    runtimeModule.namespace === "nexora.rex.advisor-experience.foundation" &&
+    runtimeModule.layer === "RuntimeExecutiveExperience" &&
+    runtimeModule.domain === "ExecutiveAdvisor" &&
+    runtimeModule.phase === "Foundation" &&
+    runtimeModule.upstreamDependency ===
       "REX-2:9/RuntimeExecutiveStageExperiencePublicIndex" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeExecutiveStageExperiencePublicIndexIdentity &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveStageExperiencePublicIndex" &&
-    module.publicIndexBoundary === "REX-2:9-public-index-only";
+    runtimeModule.publicIndexBoundary === "REX-2:9-public-index-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_ADVISOR_SUBJECT_KINDS], [
@@ -1763,17 +1763,17 @@ export function verifyRuntimeExecutiveAdvisorExperienceFoundation():
     Object.isFrozen(RUNTIME_EXECUTIVE_ADVISOR_FOUNDATION_BOUNDARY);
 
   const publicIndexBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-2:9/RuntimeExecutiveStageExperiencePublicIndex" &&
-    module.boundary.consumesPublicIndexOnly === true &&
-    module.boundary.importsRex2InternalDirectly === false &&
-    module.boundary.importsRex1Directly === false &&
-    module.boundary.importsExDriDirectly === false &&
-    module.boundary.importsDriDirectly === false &&
-    module.boundary.importsNolDirectly === false &&
-    module.boundary.introducesLlmGeneration === false &&
-    module.boundary.mutatesStageState === false &&
-    module.boundary.ownsStageExperience === false;
+    runtimeModule.boundary.consumesPublicIndexOnly === true &&
+    runtimeModule.boundary.importsRex2InternalDirectly === false &&
+    runtimeModule.boundary.importsRex1Directly === false &&
+    runtimeModule.boundary.importsExDriDirectly === false &&
+    runtimeModule.boundary.importsDriDirectly === false &&
+    runtimeModule.boundary.importsNolDirectly === false &&
+    runtimeModule.boundary.introducesLlmGeneration === false &&
+    runtimeModule.boundary.mutatesStageState === false &&
+    runtimeModule.boundary.ownsStageExperience === false;
 
   const emptyOk =
     RUNTIME_EXECUTIVE_ADVISOR_EMPTY_CONTEXT.subject === null &&
@@ -1798,11 +1798,11 @@ export function verifyRuntimeExecutiveAdvisorExperienceFoundation():
     frozen &&
     publicIndexBoundaryIntact &&
     emptyOk &&
-    module.frameworkIndependent === true &&
-    module.rendererIndependent === true &&
-    module.aiProviderIndependent === true &&
+    runtimeModule.frameworkIndependent === true &&
+    runtimeModule.rendererIndependent === true &&
+    runtimeModule.aiProviderIndependent === true &&
     upstream.ok === true &&
-    module.principle === RUNTIME_EXECUTIVE_ADVISOR_FOUNDATION_PRINCIPLE;
+    runtimeModule.principle === RUNTIME_EXECUTIVE_ADVISOR_FOUNDATION_PRINCIPLE;
 
   return Object.freeze({
     ok,
@@ -1837,8 +1837,8 @@ export function verifyRuntimeExecutiveAdvisorExperienceFoundation():
     invariantCount: RUNTIME_EXECUTIVE_ADVISOR_FOUNDATION_INVARIANTS.length,
     frozen,
     publicIndexBoundaryIntact,
-    rendererIndependent: module.rendererIndependent === true,
-    aiProviderIndependent: module.aiProviderIndependent === true,
+    rendererIndependent: runtimeModule.rendererIndependent === true,
+    aiProviderIndependent: runtimeModule.aiProviderIndependent === true,
     reusesUpstreamPresentationStates,
     upstreamConsumerEntryOk: upstream.ok === true,
     noKor,

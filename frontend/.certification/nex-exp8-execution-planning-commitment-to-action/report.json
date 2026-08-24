@@ -1,0 +1,9 @@
+{
+  "phase": "NEX-EXP:8",
+  "identity": "NEX-EXP:8/ExecutionPlanningCommitmentToAction",
+  "version": "1.0.0",
+  "namespace": "nexora.experience.execution.planning-commitment-to-action",
+  "verdict": "NEX-EXP:8 = CERTIFIED",
+  "startsNexExp9": false,
+  "autoStartsOnDecision": false
+}

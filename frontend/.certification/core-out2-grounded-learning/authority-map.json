@@ -1,0 +1,52 @@
+{
+  "phase": "CORE-OUT:2",
+  "identity": "CORE-OUT:2/GroundedLearningIntelligence",
+  "version": "1.0.0",
+  "frozenMvp": {
+    "id": "MVP:1/NexoraManagerMVPReleaseBaseline",
+    "version": "1.2.0"
+  },
+  "auditQuestions": {
+    "whatCurrentlyCreatesLearningLikeRecords": "EI:6 createLearningCandidate plus APP-4 kind=learning. Older cross-scenario/LAY engines exist but are not live Core authority. CORE-OUT:2 is now the live Learning interpreter.",
+    "whatCurrentlyPromotesToApp4": "EI:6 promoteEligibleLearningToApp4 remains a HISTORICAL certified adapter. Live grounded Learning uses promoteGroundedLearningToApp4 → persistDurableExecutiveMemory.",
+    "doesEi6ContainLearningSemantics": true,
+    "whichEi6SemanticsRemainUseful": "APP-4 persist/retrieve seams; certified L/M/N reconstruction tests; historical expected-versus-actual adapter for EI:6 tests.",
+    "whichEi6SemanticsMustNotRemainParallel": "Live Learning interpretation, eligibility, and promotion-decision contract. EXECUTION_OUTCOME_LEARNING_BOUNDARY.ownsLearningInterpretation=false; learningAuthority=CORE-OUT:2.",
+    "canApp4DistinguishOutcomeFromLearning": "Yes via kind/category outcome vs learning.",
+    "canLearningReferenceDecisionScenarioIssueReality": "Yes via candidate refs and APP-4 subjectReferences.",
+    "canLearningReferenceCoreOut1Assessments": "Yes via outcomeAssessmentRefs.",
+    "canLearningReferenceCoreOut1AObservations": "Yes via observationRefs and optional capture.",
+    "canLearningReferenceCoreInt3CausalFindings": "Yes via causalFindingRefs and CoreInt3CausalFinding. Live Stage contributors are not treated as causal findings.",
+    "whatConfidenceProvenanceAlreadyExists": "CORE-INT:2 SemanticConfidence; CORE-OUT:1 assessment confidence/provenance; CORE-OUT:1A observation provenance; APP-4 provenance metadata.",
+    "whatWasMissingForJustifiedLearning": "A bounded interpreter that refuses KPI/execution/temporal/success-as-cause collapse, requires CORE-OUT:1 assessments, requires CORE-INT:3 for causal claims, and separates candidate creation from APP-4 persist."
+  },
+  "preCoreOut2LearningAuthority": {
+    "ei6": "historical adapter creating LearningCandidate and promoting via APP-4",
+    "coreOut1": "evaluator only; createsLearning=false",
+    "coreOut1A": "observation/linkage only",
+    "app4": "durable memory storage",
+    "liveWriter": false
+  },
+  "finalLearningAuthority": {
+    "coreOut2": "grounded Learning interpretation + promotion eligibility",
+    "ei6": "HISTORICAL adapter; not parallel live authority",
+    "app4": "durable historical memory only",
+    "liveWriter": "session interpreter wired; live /executive has 0 candidates"
+  },
+  "authorities": {
+    "dataReality": "P0:1/NexoraDataRealityFoundation — observed business truth",
+    "rdi": "RDI:1/NexoraRealDataIntegrationFoundation",
+    "observationCapture": "CORE-OUT:1A/LiveOutcomeObservationCapture",
+    "outcomeEvaluation": "CORE-OUT:1/LiveOutcomeIntelligence",
+    "epistemics": "CORE-INT:2/SharedEpistemicUncertaintyFoundation",
+    "causality": "CORE-INT:3/GroundedCausalConstraintIntelligence",
+    "priority": "CORE-INT:4/ExecutivePriorityIntelligence",
+    "tradeoff": "CORE-INT:5/LiveTradeoffIntelligence",
+    "learning": "CORE-OUT:2/GroundedLearningIntelligence",
+    "decision": "Decision Runtime (read-only; not mutated)",
+    "execution": "NEX-MVP:8 live presentation; CC:11 not wired",
+    "memory": "APP-4/ExecutiveMemoryStorageEngine",
+    "presentation": "EXI:1–4 readers only; no EXI:5",
+    "stageProd5": "presentation/trace only; not Learning authority"
+  }
+}

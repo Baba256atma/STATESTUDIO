@@ -27,6 +27,7 @@ function kindFromFocused(
     kind === "scenario" ||
     kind === "decision" ||
     kind === "execution" ||
+    kind === "outcome" ||
     kind === "goal"
   ) {
     return kind;

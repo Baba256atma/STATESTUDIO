@@ -1,0 +1,18 @@
+{
+  "explorationEngine": "MO:3/ObjectGuidedExecutiveExploration",
+  "dependsOn": ["MO:1/ManagerObjectInteractionFoundation", "MO:2/GenericExplainEngine"],
+  "doesNotOwnTruth": true,
+  "authorities": {
+    "context": "MO:1",
+    "explanation": "MO:2",
+    "evidence": "RDI / Data Reality / presentation fixtures",
+    "relationships": "NEX-MVP:4 context-links + stage relationships",
+    "conversation": "CC:1–CC:7",
+    "recommendation": "CC:8 handoff",
+    "decision": "Decision Runtime (explore ≠ commit)",
+    "execution": "Execution Runtime (view ≠ start)",
+    "stage": "NEX-MVP:4 click-to-center (no coordinate writes)",
+    "advisor": "UX:3 presentation"
+  },
+  "precedence": "Canonical Runtime Truth > MO Context > MO:2 Explanation > MO:3 Paths > Presentation"
+}

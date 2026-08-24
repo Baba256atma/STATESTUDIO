@@ -1,0 +1,180 @@
+{
+  "phase": "NEX-MVP-FINAL:5",
+  "http": 200,
+  "identity": {
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "mode": "existing-workspace"
+  },
+  "existingUrl": "http://localhost:3000/executive",
+  "show": {
+    "focused": "obj-delivery",
+    "moActive": "obj-delivery",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraFocused on Delivery."
+  },
+  "why": {
+    "focused": "obj-delivery",
+    "moActive": "obj-delivery",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraDelivery is currently 91% against a 96% target (-5%). Capacity Gap, Capacity, Risk and Demand are plausible explanations worth investigating for Delivery. None of these is a confirmed cause. I can inspect the evidence for each, or we can look at what remains unknown."
+  },
+  "explainers": {
+    "focused": "obj-delivery",
+    "moActive": "obj-delivery",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraThe larger investigation is still Delivery. Plausible explanations remain Capacity Gap, Capacity, Risk and Demand. Related is not the same as caused. Current evidence does not confirm a root cause."
+  },
+  "capacityEvidence": {
+    "focused": "obj-delivery",
+    "moActive": "obj-delivery",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraCapacity is a candidate explanation for Delivery, not a confirmed cause. Supporting evidence: Capacity is recorded in a directional relationship with Delivery. Capacity currently shows Utilization at 88% against 80%. Missing: There is not enough evidence to treat this as a confirmed cause."
+  },
+  "showCapacity": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraFocused on Capacity."
+  },
+  "whatElse": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraThe larger investigation is still Delivery. Plausible explanations remain Capacity Gap, Capacity, Risk and Demand. Related is not the same as caused. Current evidence does not confirm a root cause."
+  },
+  "stronger": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraCapacity Gap currently has stronger supporting evidence than the other candidates, but it is still not a confirmed cause."
+  },
+  "unknown": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraWe know the current condition of Delivery: 91% against a 96% target (-5%). We do not have validated causal proof among Capacity Gap, Capacity, Risk and Demand. To distinguish the leading explanations we would need contemporaneous observations for the same period as the Delivery result — without inventing measurements we do not have."
+  },
+  "observation": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraI am treating that as a manager-reported observation. It is not validated Data Reality evidence, and I will not invent a registered object to hold it."
+  },
+  "options": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraBecause the cause of Delivery is unconfirmed, the useful branches are: do nothing, investigate or act on Capacity Gap, or address Capacity. A scenario built on a candidate explanation remains an assumption, not proof of the cause."
+  },
+  "increase": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraScenario evaluated: Capacity intervention. Capacity pressure improves. Budget, Delivery, Inventory, Capacity Gap, Expand Capacity, Capacity Expansion Plan, Capacity Expansion impact remains unresolved. Uncertainty: Cost impact of capacity change is unresolved."
+  },
+  "other": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraAddressing Capacity Gap is a scenario branch of the Delivery investigation. It assumes Capacity Gap is worth acting on; it does not confirm that Capacity Gap caused the issue."
+  },
+  "nothing": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraIf Capacity remains without intervention, concerns around Budget and Delivery and Inventory may continue or become more significant. We don’t yet have enough evidence to quantify that impact, so this is a scenario rather than a prediction. I can’t yet judge the impact against a specific business goal. I can compare doing nothing with investigating now."
+  },
+  "compare": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraComparison complete. Investigate Capacity aligns better under current evidence, but this is not a Decision commitment."
+  },
+  "recommend": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraI would not treat an expensive response as proven. Capacity Gap is the most useful next investigation for Delivery, but the evidence does not yet establish it as the cause. Reducing that uncertainty first is safer than acting as if the root cause were known."
+  },
+  "prefer": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraPreference noted — no Decision committed."
+  },
+  "chose": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraWe were investigating Why is Delivery below target. Candidate explanations considered: Capacity Gap, Capacity, Risk and Demand. No committed Decision is on record yet. I will not invent a rationale that was not part of this investigation."
+  },
+  "showRisk": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraFocused on Risk."
+  },
+  "whyRisk": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraMargin Pressure and Delivery are plausible explanations worth investigating for Risk. None of these is a confirmed cause. I can inspect the evidence for each, or we can look at what remains unknown."
+  },
+  "explainRisk": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraThe larger investigation is still Risk. Plausible explanations remain Margin Pressure and Delivery. Related is not the same as caused. Current evidence does not confirm a root cause."
+  },
+  "keepsDeliveryInvestigation": true,
+  "secondInvestigationIsRisk": true,
+  "noFallback": true,
+  "noCauseCollapse": true,
+  "noObjectIds": true,
+  "managerReported": true,
+  "preferenceOnly": true,
+  "leaks": false,
+  "errors": []
+}

@@ -1,0 +1,61 @@
+{
+  "phase": "MVP:1-FIX",
+  "identity": "MVP:1/NexoraManagerMVPReleaseBaseline",
+  "namespace": "nexora.mvp.manager-release-baseline",
+  "version": "1.2.0",
+  "completedAt": "2026-08-18T21:20:00.000Z",
+  "verdict": "MVP-BASELINE-FROZEN",
+  "canonicalCommands": {
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck",
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 npm run build",
+    "lint": "npm run lint",
+    "ci": ".github/workflows/ci.yml frontend job"
+  },
+  "productionGate": {
+    "compile": "PASS",
+    "nextTypescript": "PASS",
+    "nextBuild": "PASS",
+    "nextBuildExitCode": 0,
+    "nextBuildDurationSec": 196,
+    "typecheckExitCode": 2,
+    "typecheckDurationSec": 39,
+    "typecheckProductionErrors": 0,
+    "typecheckTestErrors": 170,
+    "documentedUx6Error": {
+      "file": "app/api/monitoring/background/route.ts",
+      "line": 48,
+      "status": "CLOSED_NOT_REPRODUCED"
+    },
+    "freshNextBuildBlocker": {
+      "file": "app/lib/nex-ci/executiveCockpitIntegrationCertificationFreeze.ts",
+      "line": 871,
+      "error": "Property 'status' does not exist on type 'ExecutiveAdvisorContextSnapshot'.",
+      "status": "CLOSED",
+      "fix": "Use advisor.readiness !== 'unavailable' (canonical Advisor snapshot field)."
+    }
+  },
+  "lint": {
+    "status": "PASS",
+    "scope": "files touched by MVP:1-FIX",
+    "fullRepoLint": "NOT the production freeze gate; historically large backlog"
+  },
+  "regression": {
+    "conversationalControl": { "tests": 255, "pass": 255, "fail": 0 },
+    "dataRealityAndStage": { "tests": 51, "pass": 51, "fail": 0 },
+    "additionalStage": { "tests": 11, "pass": 11, "fail": 0 },
+    "nexCiFreeze": { "tests": 12, "pass": 12, "fail": 0 }
+  },
+  "browser": {
+    "url": "http://localhost:3000/executive",
+    "http": 200,
+    "overview": true,
+    "webgl": true,
+    "advisor": true,
+    "problem": true,
+    "scenario": true,
+    "decision": true,
+    "execution": true,
+    "overviewReturn": true,
+    "uncaught": 0
+  }
+}

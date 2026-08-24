@@ -1,0 +1,53 @@
+{
+  "phase": "CORE-OUT:2",
+  "target": "EI:6 must not remain a parallel Learning authority",
+  "classifications": [
+    {
+      "capability": "evaluateOutcome / OutcomeEvaluation",
+      "classification": "HISTORICAL",
+      "note": "Certified EI:6 expected-versus-actual adapter. Live evaluation is CORE-OUT:1."
+    },
+    {
+      "capability": "createLearningCandidate",
+      "classification": "HISTORICAL",
+      "note": "Kept for EI:6 L/M/N tests. Live interpretation is projectGroundedLearningIntelligence."
+    },
+    {
+      "capability": "promoteEligibleLearningToApp4",
+      "classification": "HISTORICAL",
+      "note": "Certified APP-4 promotion adapter. Live grounded promotion is promoteGroundedLearningToApp4."
+    },
+    {
+      "capability": "retrieveRelevantDurableExecutiveMemory",
+      "classification": "REUSE",
+      "note": "APP-4 retrieval reused by CORE-OUT:2 historical Learning projection."
+    },
+    {
+      "capability": "persistDurableExecutiveMemory",
+      "classification": "REUSE",
+      "note": "Canonical APP-4 persist seam. CORE-OUT:2 does not own storage."
+    },
+    {
+      "capability": "EXECUTION_OUTCOME_LEARNING_BOUNDARY.learningAuthority",
+      "classification": "DELEGATE",
+      "note": "Now CORE-OUT:2/GroundedLearningIntelligence. ownsLearningInterpretation=false."
+    },
+    {
+      "capability": "executionOutcomeLearningCapabilityMap learning-interpretation",
+      "classification": "DELEGATE",
+      "note": "CANONICAL row points at CORE-OUT:2. ei6-learning-adapter marked HISTORICAL."
+    },
+    {
+      "capability": "STAGE-PROD:5 decision-memory-view",
+      "classification": "HISTORICAL",
+      "note": "PRESENTATION_ONLY. Not durable Learning."
+    },
+    {
+      "capability": "EI:6 L/M/N APP-4 tests",
+      "classification": "TEST-ONLY",
+      "note": "Remain green. Not live /executive Learning."
+    }
+  ],
+  "certifiedEi6HistoryPreserved": true,
+  "parallelLearningAuthority": false
+}

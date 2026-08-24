@@ -1,0 +1,5 @@
+{
+  "rule": "If two Outcome-linked observations conflict, preserve both. Do not select the more favorable one. Mark evidence conflicting.",
+  "resolutionEngine": false,
+  "caseI": "70% and 90% capacity-utilization both preserved; CORE-OUT:1 status=conflicting; result is neither met nor not-met"
+}

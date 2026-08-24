@@ -1,0 +1,16 @@
+{
+  "identity": "CORE-INT:5/RuntimeConnectivity",
+  "livePath": {
+    "Scenario / Decision Evidence": "CONNECTED",
+    "CORE-INT:2": "CONNECTED",
+    "CORE-INT:3": "CONNECTED",
+    "CORE-INT:4 issue context": "CONNECTED",
+    "CORE-INT:5 Trade-off Assessment": "CONNECTED",
+    "EXI:3 reader": "CONNECTED",
+    "Advisor / Conversation": "CONNECTED"
+  },
+  "fullLive": true,
+  "assessmentExistsOnlyInTests": false,
+  "ei4CertificationTraceLive": false,
+  "exi4Started": false
+}

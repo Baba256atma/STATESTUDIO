@@ -360,13 +360,10 @@ export function Nexora3DExecutiveStage({
       applyExecutiveStage2DTopologyRecompositionToStagePresentation(flattened);
     const withLabels =
       applyExecutiveStageObjectLabelTerritoryToStagePresentation(recomposed, {
-        presentationLevel: interaction.presentationState as
-          | "minimum"
-          | "report"
-          | "operation",
+        presentationLevel: presentationViewModel.state,
       });
     return applyExecutiveStageFixedCameraToStagePresentation(withLabels);
-  }, [interaction]);
+  }, [interaction, presentationViewModel.state]);
 
   const readabilityObservability =
     getNexoraMVPExecutiveStage2DReadabilityObservability(
@@ -449,10 +446,10 @@ export function Nexora3DExecutiveStage({
   ]
     .filter(Boolean)
     .join(" ") || "object";
-  const presentationLevelForVisual = (interaction.presentationState ===
+  const presentationLevelForVisual = (presentationViewModel.state ===
   "report" ||
-  interaction.presentationState === "operation"
-    ? interaction.presentationState
+  presentationViewModel.state === "operation"
+    ? presentationViewModel.state
     : "minimum") as "minimum" | "report" | "operation";
   const object3dVisualObservability = getExecutive3DObjectVisualObservability({
     enabled: object3dVisualEnabled,
@@ -830,6 +827,13 @@ export function Nexora3DExecutiveStage({
       data-testid="nexora-3d-executive-stage"
       data-ux2="stage-interaction"
       data-ux2-center-law="click-object-center-recompose"
+      data-mo1="stage-reader"
+      data-mo2="stage-reader"
+      data-mo3="stage-reader"
+      data-mo4="stage-reader"
+      data-mo5="stage-reader"
+      data-mo6="stage-reader"
+      data-mo-int1="stage-reader"
       data-nex-mvp="3"
       data-nex-mvp-interaction="4"
       data-nex-mvp-workspace="5"
@@ -1201,20 +1205,20 @@ export function Nexora3DExecutiveStage({
       data-stage-thread-gateway-reserved-collision-count={
         threadObservability.gatewayReservedCollisionCount
       }
-      data-stage-label-contract={labelObservability.contract}
-      data-stage-label-identity={labelIdentity.id}
-      data-stage-label-version={labelIdentity.version}
-      data-stage-label-visible-count={labelObservability.visibleCount}
-      data-stage-label-hidden-count={labelObservability.hiddenCount}
-      data-stage-label-collision-count={labelObservability.collisionCount}
-      data-stage-label-body-overlap-count={labelObservability.bodyOverlapCount}
-      data-stage-label-owner-violation-count={
+      data-stage-label-territory-contract={labelObservability.contract}
+      data-stage-label-territory-identity={labelIdentity.id}
+      data-stage-label-territory-version={labelIdentity.version}
+      data-stage-label-territory-visible-count={labelObservability.visibleCount}
+      data-stage-label-territory-hidden-count={labelObservability.hiddenCount}
+      data-stage-label-territory-collision-count={labelObservability.collisionCount}
+      data-stage-label-territory-body-overlap-count={labelObservability.bodyOverlapCount}
+      data-stage-label-territory-owner-violation-count={
         labelObservability.ownerViolationCount
       }
-      data-stage-label-reserved-collision-count={
+      data-stage-label-territory-reserved-collision-count={
         labelObservability.reservedCollisionCount
       }
-      data-stage-label-clipped-count={labelObservability.clippedCount}
+      data-stage-label-territory-clipped-count={labelObservability.clippedCount}
       data-stage-motion-contract="stage-motion-1"
       data-stage-motion-authority="stage-motion-1"
       data-stage-motion-easing="easeOutCubic"

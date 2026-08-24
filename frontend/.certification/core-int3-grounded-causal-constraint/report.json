@@ -1,0 +1,60 @@
+{
+  "identity": "CORE-INT:3/GroundedCausalConstraintIntelligence",
+  "version": "1.0.0",
+  "certifiedAt": "2026-08-18",
+  "status": "CERTIFIED",
+  "productionBehaviorChanged": "EXI:2 now reads Core causal/constraint assessments; no Stage/Decision/memory mutation",
+  "parallelEpistemicEngine": false,
+  "llmAdded": false,
+  "priorityIntelligenceAdded": false,
+  "ei4Wired": false,
+  "exi4Started": false,
+  "tradeoffEngineAdded": false,
+  "newRecommendationAuthority": false,
+  "stageRedesigned": false,
+  "frozenMvp": {
+    "id": "MVP:1/NexoraManagerMVPReleaseBaseline",
+    "version": "1.2.0"
+  },
+  "livePath": "CONNECTED",
+  "managerTrustTest": "PASS",
+  "liveBrowser": {
+    "http": 200,
+    "coreInt3Present": true,
+    "contributorsQualified": true,
+    "evidenceGrounded": true,
+    "notProven": true,
+    "constraintRecorded": true,
+    "bindingUnknown": true,
+    "relationshipNotCause": true,
+    "conversationChainComplete": true,
+    "uncaught": 0,
+    "duplicateOrHydration": []
+  },
+  "screenshots": [
+    "01-causal-contributors.png",
+    "02-causal-evidence.png",
+    "03-not-proven.png",
+    "04-constraint.png",
+    "05-binding-unknown.png",
+    "06-relationship-not-cause.png",
+    "07-conversation-chain.png",
+    "08-console-clean.png"
+  ],
+  "productionBuild": "PASS",
+  "executiveHttp": 200,
+  "tests": {
+    "coreInt1": "PASS",
+    "coreInt2": "PASS",
+    "coreInt3": "PASS",
+    "ei3": "PASS",
+    "exi1": "PASS",
+    "exi2": "PASS",
+    "exi3": "PASS",
+    "ux3": "PASS",
+    "conversation": "PASS",
+    "dataRealityAdvisorBridge": "PASS",
+    "mvpIdentity": "PASS"
+  },
+  "recommendedNext": "CORE-INT:4 single priority authority. Do not start it in this phase. Do not start EXI:4. Do not wire EI:4."
+}

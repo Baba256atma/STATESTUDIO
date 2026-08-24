@@ -1,0 +1,14 @@
+{
+  "previousOrder": [
+    "scenarioResult.summary if present",
+    "advisor grounding",
+    "buildRecommendationResponse for explain/recommend/prioritize"
+  ],
+  "previousFailure": "explain + request-explanation produced recommendationResult and skipped CC:9 describe",
+  "finalOrder": [
+    "CC:9 describe summary when definition inquiry resolves a Scenario",
+    "recommendation only for recommend/prioritize intents or explicit workflow",
+    "epistemic/causal/trade-off follow-ups on their own operations"
+  ],
+  "firstClauseForExplainDemandSurge": "Scenario: Demand Surge."
+}

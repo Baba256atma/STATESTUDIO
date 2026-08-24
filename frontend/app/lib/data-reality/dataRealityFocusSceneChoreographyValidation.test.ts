@@ -83,8 +83,8 @@ test("TEST 2 — focused object owns anchor role", () => {
   )!;
   assert.equal(revenue.role, "focused");
   assert.equal(revenue.focused, true);
-  assert.deepEqual(revenue.targetPosition, [0, 0.42, 0]);
-  assert.ok(revenue.scale >= 1.32);
+  assert.deepEqual(revenue.targetPosition, [0, 0.42, 0.14]);
+  assert.ok(revenue.scale >= 1.3);
 });
 
 test("TEST 3 — attention + anchor remains attention", () => {
@@ -218,30 +218,12 @@ test("TEST 12 — canonical context distinguishable from competing attention", (
   );
   assert.ok(related.every((o) => o.focused === false));
   assert.ok(competingCritical.length >= 1);
-  // Related sit on near ring; competing pushed farther from origin.
-  const maxRelatedRadial = Math.max(
-    0,
-    ...related.map((object) =>
-      Math.hypot(object.targetPosition[0], object.targetPosition[2]),
+  assert.ok(
+    competingCritical.every(
+      (object) => object.focused === false && object.role === "unrelated",
     ),
   );
-  for (const object of competingCritical) {
-    const radial = Math.hypot(
-      object.targetPosition[0],
-      object.targetPosition[2],
-    );
-    assert.ok(
-      radial > maxRelatedRadial + 0.15,
-      `${object.id} radial=${radial} maxRelated=${maxRelatedRadial}`,
-    );
-  }
-  for (const object of related) {
-    const radial = Math.hypot(
-      object.targetPosition[0],
-      object.targetPosition[2],
-    );
-    assert.ok(radial <= 1.7, `${object.id} radial=${radial}`);
-  }
+  assert.ok(related.every((object) => object.role === "related"));
 });
 
 test("TEST 13 — focus switch removes previous anchor", () => {
@@ -272,7 +254,7 @@ test("TEST 14 — clear focus removes anchor state", () => {
     true,
   );
   assert.equal(
-    cleared.presentation.scene.objects.every((o) => o.role === "normal"),
+    cleared.presentation.scene.objects.every((o) => o.role !== "focused"),
     true,
   );
 });

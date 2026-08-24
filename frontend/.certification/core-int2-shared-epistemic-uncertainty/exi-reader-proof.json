@@ -1,0 +1,14 @@
+{
+  "identity": "CORE-INT:2/ExiReaderProof",
+  "proof": [
+    "composeNexoraExecutiveIntelligenceExperience calls projectNexoraLiveSharedEpistemicFoundation",
+    "field() applies applyCoreEpistemicToField when a Core claim exists",
+    "bindDownstreamPresentationConfidence refuses upgrades (limited cannot become strong)",
+    "EXI:2 contributor epistemic comes from Core claim when present",
+    "EXI:3 option summary epistemic comes from Core prediction when present",
+    "createExecutiveClaim is not called from EXI composer or grounding"
+  ],
+  "exi1": "Reads observation/interpretation claims for situation/change/causes/evidence",
+  "exi2": "No longer independently decides assumption when Core owns the interpretation",
+  "exi3": "Scenario impacts remain PREDICTION from Core; no prose classifier"
+}

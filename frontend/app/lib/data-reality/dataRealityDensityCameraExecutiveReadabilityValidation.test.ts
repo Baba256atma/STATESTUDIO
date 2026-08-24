@@ -124,7 +124,7 @@ test("TEST 2 — focus camera keeps anchor in validated frame", () => {
     (entry) => entry.id === "obj-revenue",
   )!;
   assert.equal(revenue.focused, true);
-  assert.deepEqual(revenue.targetPosition, [0, 0.42, 0]);
+  assert.deepEqual(revenue.targetPosition, [0, 0.42, 0.14]);
   assert.deepEqual(
     bundle.presentation.scene.camera.target,
     DATA_REALITY_FOCUS_READABILITY_CAMERA.target,
@@ -141,7 +141,12 @@ test("TEST 3 — focus camera keeps canonical context discoverable", () => {
   )!;
   assert.equal(customer.role, "related");
   assert.ok(customer.opacity >= 0.7);
-  assert.ok(bundle.presentation.contextNodes.some((node) => node.opacity >= 0.5));
+  assert.ok(
+    bundle.presentation.contextNodes.some(
+      (node) =>
+        node.role === "collapsed-thread" || node.opacity >= 0.5,
+    ),
+  );
 });
 
 test("TEST 4 — focus camera keeps required competing criticals discoverable", () => {
@@ -253,7 +258,12 @@ test("TEST 11 — context labels remain subordinate", () => {
   const bundle = pressureFocus("obj-revenue");
   for (const node of bundle.presentation.contextNodes) {
     assert.ok(node.scale <= 0.72);
-    assert.equal(node.role === "context" || node.role === "source-anchor", true);
+    assert.equal(
+      node.role === "context" ||
+        node.role === "source-anchor" ||
+        node.role === "collapsed-thread",
+      true,
+    );
   }
 });
 

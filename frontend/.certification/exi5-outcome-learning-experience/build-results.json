@@ -1,0 +1,8 @@
+{
+  "command": "NODE_OPTIONS=--max-old-space-size=8192 npm run build",
+  "exitCode": 0,
+  "compiled": true,
+  "ignoreBuildErrors": false,
+  "routeExecutive": "ƒ /executive",
+  "durationMs": 241763
+}

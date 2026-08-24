@@ -1,0 +1,16 @@
+{
+  "conversationalContextAuthority": "CC:7",
+  "scenarioConversationAuthority": "CC:9",
+  "noShellConversationMemorySlot": true,
+  "canonicalSlots": [
+    "currentSubject",
+    "currentSubject.kind",
+    "currentScenario",
+    "previousSubjects",
+    "pendingTurnExpectation"
+  ],
+  "demandSurgeAfterNamedExplain": "ctx-scenario-demand",
+  "namedCatalogScenarioPrefix": "ctx-scenario-",
+  "derivedEvaluationIds": "cc9:scenario:* retained in session; CC:7 currentScenario stays ctx-scenario-* when parentScenarioId matches",
+  "stageFocus": "optional; not required for continuity; allowActiveStageContext remains false"
+}

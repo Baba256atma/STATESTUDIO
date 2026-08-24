@@ -1,0 +1,10 @@
+{
+  "tests": { "fail": 0, "pass": 235, "total": 235 },
+  "typecheck": { "errors": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0 },
+  "runtimeSmoke": { "ok": true },
+  "console": { "uncaught": 0, "hydration": 0, "duplicateKeys": 0 },
+  "phase": "MO-INT:1",
+  "outDir": ".certification/mo-int1-executive-experience-integration"
+}

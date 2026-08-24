@@ -1,0 +1,25 @@
+{
+  "identity": "NEXORA-ZERO-FAILURE-GATE/live-executive-smoke",
+  "url": "http://localhost:3000/executive",
+  "httpStatus": 200,
+  "hydrated": true,
+  "webglCanvas": true,
+  "stagePresent": true,
+  "cameraMode": "fixed-2d",
+  "topologyZ": "0",
+  "focusedTargetZ": "none",
+  "queuePresent": true,
+  "advisorPresent": true,
+  "conversationPresent": true,
+  "whatIfLive": {
+    "intentKind": "explore-scenario",
+    "commandKind": "evaluate-scenario",
+    "primarySubject": "obj-inventory",
+    "lastNexoraText": "NexoraI understand that you want to explore increasing Inventory, but I don't currently have a supported impact model for that change.",
+    "genericFallback": false
+  },
+  "clickToCenterAttempted": true,
+  "backForwardEscapeAttempted": true,
+  "smokeError": null,
+  "ok": true
+}

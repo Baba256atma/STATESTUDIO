@@ -1,0 +1,46 @@
+{
+  "identity": "CORE-INT:5/LiveTradeoffIntelligence",
+  "version": "1.0.0",
+  "certifiedAt": "2026-08-18",
+  "status": "CERTIFIED",
+  "llmAdded": false,
+  "exi4Started": false,
+  "outcomeLearningStarted": false,
+  "newRecommendationAuthority": false,
+  "decisionMutated": false,
+  "executionMutated": false,
+  "stageRedesigned": false,
+  "ei4CertificationTraceWired": false,
+  "frozenMvp": {
+    "id": "MVP:1/NexoraManagerMVPReleaseBaseline",
+    "version": "1.2.0"
+  },
+  "livePath": "CONNECTED",
+  "managerTrustTest": "PASS",
+  "productionBuild": "PASS",
+  "executiveHttp": 200,
+  "liveBrowser": {
+    "completedAt": "2026-08-19T00:06:23.330Z",
+    "http": 200,
+    "coreInt5Present": true,
+    "multiOption": true,
+    "gainsGrounded": true,
+    "sacrificeHonest": true,
+    "riskHonest": true,
+    "constraintHonest": true,
+    "missingCost": true,
+    "missingTime": true,
+    "assumptionsGrounded": true,
+    "recommendationPresent": true,
+    "singleHonest": true,
+    "noOptionHonest": true,
+    "conversationComplete": true,
+    "uncaught": 0,
+    "duplicateOrHydration": []
+  },
+  "console": {
+    "uncaught": 0,
+    "hydration": 0,
+    "duplicateKeys": 0
+  }
+}

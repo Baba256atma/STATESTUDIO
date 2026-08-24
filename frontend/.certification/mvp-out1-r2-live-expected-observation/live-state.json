@@ -1,0 +1,14 @@
+{
+  "A": "live Decisions: expectation missing",
+  "B": "if expectation supplied without time: timing-incomplete",
+  "C": "expectation + window + baseline without later observation: pending",
+  "D": "later Reality without metric binding: Reality only",
+  "E": "TEST-ONLY later observation with binding can become Actual evidence",
+  "F": "Actual without baseline: comparison limited",
+  "G": "comparison ready only with compatible evidence",
+  "H": "evaluable Outcome may still yield Learning 0",
+  "liveCtxDecisionCapacity": "MISSING measurable expected",
+  "liveCtxDecisionReprice": "MISSING measurable expected",
+  "liveCommittedAt": null,
+  "liveExecutionStartedAt": null
+}

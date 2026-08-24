@@ -107,15 +107,15 @@ export function normalizeExecutiveStage2DPositionTuple(
     readonly z?: number;
   },
 ): readonly [number, number, 0] {
-  if (Array.isArray(position)) {
-    const normalized = normalizeExecutiveStage2DPosition({
-      x: position[0],
-      y: position[1],
-      z: position[2],
-    });
+  if ("x" in position) {
+    const normalized = normalizeExecutiveStage2DPosition(position);
     return Object.freeze([normalized.x, normalized.y, 0] as const);
   }
-  const normalized = normalizeExecutiveStage2DPosition(position);
+  const normalized = normalizeExecutiveStage2DPosition({
+    x: position[0],
+    y: position[1],
+    z: position[2],
+  });
   return Object.freeze([normalized.x, normalized.y, 0] as const);
 }
 

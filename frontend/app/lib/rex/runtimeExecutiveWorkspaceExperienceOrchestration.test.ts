@@ -238,7 +238,7 @@ test("5. problem → scenario via dial", () => {
     currentExperience: current,
     request: Object.freeze({
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-b" },
+      requestedSubject: { kind: "scenario" as const, id: "scenario-b" },
       source: "dial",
       reason: "user-request",
     }),
@@ -266,7 +266,7 @@ test("6. scenario → decision promotes Action", () => {
     currentExperience: current,
     request: Object.freeze({
       requestedWorkspace: "decision",
-      requestedSubject: { kind: "decision", id: "increase-capacity" },
+      requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
       source: "user",
       reason: "user-request",
     }),
@@ -286,7 +286,7 @@ test("7. decision → execution composition/transition", () => {
     currentExperience: current,
     request: Object.freeze({
       requestedWorkspace: "execution",
-      requestedSubject: { kind: "execution", id: "capacity-expansion" },
+      requestedSubject: { kind: "execution" as const, id: "capacity-expansion" },
       source: "user",
       reason: "user-request",
     }),
@@ -304,7 +304,7 @@ test("8. non-linear decision → scenario and execution → decision", () => {
     currentExperience: experienceFor("decision", "d1"),
     request: Object.freeze({
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-c" },
+      requestedSubject: { kind: "scenario" as const, id: "scenario-c" },
       source: "user",
       reason: "user-request",
     }),
@@ -317,7 +317,7 @@ test("8. non-linear decision → scenario and execution → decision", () => {
     currentExperience: experienceFor("execution"),
     request: Object.freeze({
       requestedWorkspace: "decision",
-      requestedSubject: { kind: "decision", id: "increase-capacity" },
+      requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
       source: "user",
       reason: "user-request",
     }),
@@ -332,7 +332,7 @@ test("9. same-workspace context change scenario:A → scenario:B", () => {
     currentExperience: experienceFor("scenario", "scenario-a"),
     request: Object.freeze({
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-b" },
+      requestedSubject: { kind: "scenario" as const, id: "scenario-b" },
       source: "user",
       reason: "subject-selection",
     }),
@@ -377,7 +377,7 @@ test("11. presentation independence across workspace change", () => {
     currentExperience: current,
     request: Object.freeze({
       requestedWorkspace: "decision",
-      requestedSubject: { kind: "decision", id: "increase-capacity" },
+      requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
       source: "user",
       reason: "user-request",
     }),
@@ -396,7 +396,7 @@ test("12. dial / advisor / action sources through same pipeline", () => {
     currentExperience: experienceFor("problem"),
     dialRequest: {
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-b" },
+      requestedSubject: { kind: "scenario" as const, id: "scenario-b" },
     },
   });
   assert.equal(dial.status, "resolved");
@@ -407,7 +407,7 @@ test("12. dial / advisor / action sources through same pipeline", () => {
     currentExperience: experienceFor("overview"),
     request: Object.freeze({
       requestedWorkspace: "decision",
-      requestedSubject: { kind: "decision", id: "increase-capacity" },
+      requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
       source: "advisor",
       reason: "runtime-guidance",
     }),
@@ -420,7 +420,7 @@ test("12. dial / advisor / action sources through same pipeline", () => {
     currentExperience: current,
     request: Object.freeze({
       requestedWorkspace: "execution",
-      requestedSubject: { kind: "execution", id: "capacity-expansion" },
+      requestedSubject: { kind: "execution" as const, id: "capacity-expansion" },
       source: "action",
       reason: "action-result",
     }),
@@ -436,7 +436,7 @@ test("13. surface completeness and snapshot consistency", () => {
     currentExperience: experienceFor("problem"),
     request: Object.freeze({
       requestedWorkspace: "decision",
-      requestedSubject: { kind: "decision", id: "increase-capacity" },
+      requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
       source: "user",
       reason: "user-request",
     }),

@@ -1,0 +1,53 @@
+{
+  "identity": "CORE-INT:4/ExecutivePriorityIntelligence",
+  "version": "1.0.0",
+  "certifiedAt": "2026-08-18",
+  "status": "CERTIFIED",
+  "parallelEpistemicEngine": false,
+  "llmAdded": false,
+  "tradeoffIntelligenceAdded": false,
+  "ei4TradeoffWired": false,
+  "exi4Started": false,
+  "bindingConstraintWorkAdded": false,
+  "causalRankingAdded": false,
+  "newRecommendationAuthority": false,
+  "stageRedesigned": false,
+  "frozenMvp": {
+    "id": "MVP:1/NexoraManagerMVPReleaseBaseline",
+    "version": "1.2.0"
+  },
+  "livePath": "CONNECTED",
+  "managerTrustTest": "PASS",
+  "productionBuild": "PASS",
+  "executiveHttp": 200,
+  "liveBrowser": {
+    "completedAt": "2026-08-18T23:46:35.411Z",
+    "http": 200,
+    "coreInt4Present": true,
+    "attentionPresent": true,
+    "topPriorityShown": true,
+    "attentionVsPriority": true,
+    "rationaleGrounded": true,
+    "comparisonGrounded": true,
+    "secondHonest": true,
+    "insufficientHonest": true,
+    "conversationComplete": true,
+    "uncaught": 0,
+    "duplicateOrHydration": []
+  },
+  "liveWorkspace": {
+    "attention": "Risk (obj-risk)",
+    "topPriority": "Capacity Gap (ctx-problem-capacity)",
+    "reason": "Recorded constraint pressure across multiple downstream subjects"
+  },
+  "liveNoPriority": {
+    "scope": "decisions",
+    "topPriority": null,
+    "copy": "Nexora can identify items needing attention, but current evidence is not sufficient to prioritize one over the others."
+  },
+  "console": {
+    "uncaught": 0,
+    "hydration": 0,
+    "duplicateKeys": 0
+  }
+}

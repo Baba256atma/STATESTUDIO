@@ -1,0 +1,9 @@
+{
+  "engine": "app/lib/scenario-intelligence/RiskImpactSimulationEngine.ts",
+  "contract": "riskImpactSimulationContract.ts",
+  "wiredToCc9QualitativeWhatIf": false,
+  "deliveryDelayCanonicalRisks": [],
+  "inventoryIncreaseCanonicalRisks": [],
+  "liveBehavior": "Honest: no canonical Risk impact is supported for this Scenario intervention.",
+  "inventedRiskNames": false
+}

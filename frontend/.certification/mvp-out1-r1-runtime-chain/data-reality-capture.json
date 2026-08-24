@@ -1,0 +1,10 @@
+{
+  "liveAutomaticCapture": false,
+  "writer": "captureOutcomeObservation (CORE-OUT:1A)",
+  "currentKpiRoutedToOut1Directly": false,
+  "currentKpiIsReality": true,
+  "lifetime": "session",
+  "identity": "obs:source:dataset:metric:observedAt",
+  "idempotent": true,
+  "classification": "TEST-ONLY for explicit capture; MISSING on live /executive auto-path"
+}

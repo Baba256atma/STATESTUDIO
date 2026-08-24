@@ -1,0 +1,31 @@
+{
+  "liveReport": {
+    "phase": "NEX-EXP:10",
+    "identity": "NEX-EXP:10/LearningReassessmentNextExecutiveCycle",
+    "completedAt": "2026-08-21T07:13:55.003Z",
+    "http": 200,
+    "existingWorkspaceProtected": true,
+    "outcomeReady": true,
+    "learnedScoped": true,
+    "assumptionsReviewed": true,
+    "decisionNotDeclaredCorrect": true,
+    "noConfirmedCause": true,
+    "reassessVisible": true,
+    "goalNotAutoChanged": true,
+    "nextCycleRouted": true,
+    "memoryHonest": true,
+    "notFakeClosure": true,
+    "commitsDecisionFalse": true,
+    "cameraFixed": true,
+    "topologyPresent": true,
+    "goalCenterPreserved": true,
+    "moStillWorks": true,
+    "problemAndScenarioAnswered": true,
+    "decisionExecutionUnchanged": true,
+    "uncaught": 0,
+    "duplicateOrHydration": 0
+  },
+  "missing": [],
+  "errors": [],
+  "warnings": []
+}

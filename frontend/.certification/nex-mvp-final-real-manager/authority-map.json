@@ -1,0 +1,14 @@
+{
+  "route": "/executive?entrance=1",
+  "experience": "NEX-EXP:1–10",
+  "e2e": "NEX-E2E:1",
+  "stage": "UX:1–6 fixed-2d z=0",
+  "advisor": "UX:3",
+  "chat": "CC:1–12",
+  "explain": "MO:2",
+  "decision": "CC:10R",
+  "execution": "CC:11",
+  "outcome": "CORE-OUT / NEX-EXP:9",
+  "learning": "EI:6 / CORE-OUT:2 / APP-4 / NEX-EXP:10",
+  "createsNewEngine": false
+}

@@ -1,0 +1,18 @@
+{
+  "reused": [
+    "EI:4/ScenarioPriorityTradeoffIntelligence",
+    "CC:9/ScenarioConversation",
+    "CC:10R decision safety (not owned)",
+    "MO:1-MO:6",
+    "MO-INT:1",
+    "UX:3 Advisor",
+    "NEX-EXP:1-4 entrance session"
+  ],
+  "notCreated": [
+    "NEX-EXP:6",
+    "MO:7",
+    "parallel scenario intelligence",
+    "parallel trade-off engine",
+    "parallel decision runtime"
+  ]
+}

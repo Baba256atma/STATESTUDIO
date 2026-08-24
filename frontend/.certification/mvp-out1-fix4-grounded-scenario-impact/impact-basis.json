@@ -1,0 +1,21 @@
+{
+  "permitted": [
+    "canonical-subject-kpi",
+    "canonical-kpi-impact-profile",
+    "canonical-risk-impact-profile",
+    "explicit-object-dependency",
+    "scenario-model-binding",
+    "data-supported-relationship",
+    "core-int3-supported-relationship"
+  ],
+  "usedInFix4": ["canonical-subject-kpi"],
+  "forbidden": [
+    "word similarity",
+    "LLM guess",
+    "common-sense guess",
+    "temporal proximity",
+    "UI topology proximity"
+  ],
+  "deliverySevereDelay": "canonical-subject-kpi → kpi-delivery / On-time / decrease",
+  "inventoryIncrease": "none — unsupported"
+}

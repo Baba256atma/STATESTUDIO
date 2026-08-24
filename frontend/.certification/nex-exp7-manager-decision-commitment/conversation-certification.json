@@ -1,0 +1,28 @@
+{
+  "live": "scripts/nex-exp7-manager-decision-certify.mjs",
+  "url": "http://localhost:3000/executive?entrance=1&reset=1",
+  "certifiedUtterances": [
+    "What exactly am I deciding?",
+    "What do you recommend?",
+    "Why?",
+    "What am I accepting if I choose this?",
+    "What are the risks?",
+    "What are we uncertain about?",
+    "I prefer Scenario A.",
+    "Have I decided?",
+    "Let's go with Scenario A.",
+    "Have I decided now?",
+    "Yes, confirm.",
+    "What did I decide?",
+    "Why did I decide it?",
+    "Did execution start?",
+    "What happens next?",
+    "No, don't approve it.",
+    "Not yet.",
+    "I choose Scenario B instead.",
+    "Why are you recommending A over B?",
+    "Approve this.",
+    "Confirm it."
+  ],
+  "liveBrowserOk": true
+}

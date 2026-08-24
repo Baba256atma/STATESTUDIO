@@ -1,0 +1,28 @@
+{
+  "navigationEngine": "MO:4/GoalDirectedExecutiveNavigation",
+  "dependsOn": [
+    "MO:1/ManagerObjectInteractionFoundation",
+    "MO:2/GenericExplainEngine",
+    "MO:3/ObjectGuidedExecutiveExploration"
+  ],
+  "doesNotOwnTruth": true,
+  "authorities": {
+    "objectContext": "MO:1",
+    "explanation": "MO:2",
+    "explorationPaths": "MO:3",
+    "sessionGoalContinuity": "MO session (existing)",
+    "executiveGoalSlot": "CC:7 currentGoal (reader; no parallel writer)",
+    "strategyObjectives": "EI:2 reader over existing authorities",
+    "registeredGoalObject": "MO:1 overlay goal-capacity-availability",
+    "kpiReality": "RDI / presentation KPI fixtures",
+    "relationships": "NEX-MVP:4 context-links + stage relationships",
+    "conversation": "CC:1–CC:7",
+    "tradeoffScenario": "existing scenario / trade-off intelligence",
+    "decision": "Decision Runtime (navigate ≠ commit)",
+    "execution": "Execution Runtime (navigate ≠ start)",
+    "outcome": "EI:6 / APP-4 when present; else UNKNOWN",
+    "stage": "NEX-MVP:4 click-to-center (no coordinate writes)",
+    "advisor": "UX:3 presentation"
+  },
+  "precedence": "Canonical Runtime Truth > MO Context > MO:2 Explanation > MO:3 Paths > MO:4 Goal Direction > Presentation"
+}

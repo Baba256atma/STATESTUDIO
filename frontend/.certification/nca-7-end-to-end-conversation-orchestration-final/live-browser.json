@@ -1,0 +1,94 @@
+{
+  "identity": "NCA:7/EndToEndConversationOrchestrationFinalCertification",
+  "url": "http://localhost:3017/executive",
+  "opened": true,
+  "pageErrors": [],
+  "engine": "NCA:7/EndToEndConversationOrchestrationFinalCertification",
+  "turns": [
+    {
+      "utterance": "Hi.",
+      "last": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?",
+      "diag": {
+        "engine": "NCA:7/EndToEndConversationOrchestrationFinalCertification",
+        "owner": "MANAGER_REQUEST",
+        "ask": "false",
+        "advise": "false",
+        "initiate": "false",
+        "nca6": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "nca4Option": "temporary capacity"
+      }
+    },
+    {
+      "utterance": "Show Capacity Gap.",
+      "last": "NexoraBefore we continue, one change is important: The issue and available options are understood enough to proceed, but no decision is committed. This is a journey process blocker, not a confirmed business cause. I would reassess before committing. My recommendation remains temporary capacity.",
+      "diag": {
+        "engine": "NCA:7/EndToEndConversationOrchestrationFinalCertification",
+        "owner": "MANAGER_REQUEST",
+        "ask": "false",
+        "advise": "false",
+        "initiate": "true",
+        "nca6": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "nca4Option": "temporary capacity"
+      }
+    },
+    {
+      "utterance": "Explain it.",
+      "last": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap needs attention because it is worth monitoring. Capacity Gap is constrained by Capacity. That is a recorded dependency, not a confirmed cause.",
+      "diag": {
+        "engine": "NCA:7/EndToEndConversationOrchestrationFinalCertification",
+        "owner": "MANAGER_REQUEST",
+        "ask": "false",
+        "advise": "false",
+        "initiate": "false",
+        "nca6": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "nca4Option": "temporary capacity"
+      }
+    },
+    {
+      "utterance": "What should I do?",
+      "last": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+      "diag": {
+        "engine": "NCA:7/EndToEndConversationOrchestrationFinalCertification",
+        "owner": "NCA4_ADVISORY",
+        "ask": "false",
+        "advise": "true",
+        "initiate": "false",
+        "nca6": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "nca4Option": "temporary capacity"
+      }
+    },
+    {
+      "utterance": "Give me the short version.",
+      "last": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. I'm moderately confident, and it still depends on whether demand persists. My recommendation remains temporary capacity.",
+      "diag": {
+        "engine": "NCA:7/EndToEndConversationOrchestrationFinalCertification",
+        "owner": "MANAGER_REQUEST",
+        "ask": "false",
+        "advise": "false",
+        "initiate": "false",
+        "nca6": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "nca4Option": "temporary capacity"
+      }
+    },
+    {
+      "utterance": "Thanks.",
+      "last": "NexoraYou're welcome.",
+      "diag": {
+        "engine": "NCA:7/EndToEndConversationOrchestrationFinalCertification",
+        "owner": "MANAGER_REQUEST",
+        "ask": "false",
+        "advise": "false",
+        "initiate": "false",
+        "nca6": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+        "nca4Option": "temporary capacity"
+      }
+    }
+  ],
+  "oneResponse": true,
+  "explainKeeps": true,
+  "noLayerLeak": true,
+  "cause": false,
+  "fiction": false,
+  "commit": false,
+  "ok": true
+}

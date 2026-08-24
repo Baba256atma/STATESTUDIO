@@ -1,0 +1,112 @@
+{
+  "phase": "NEX-MVP-FINAL:4",
+  "http": 200,
+  "identity": {
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "mode": "existing-workspace"
+  },
+  "entranceIdentity": {
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "mode": "first-time"
+  },
+  "existingUrl": "http://localhost:3000/executive",
+  "showRisk": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraFocused on Risk."
+  },
+  "explain": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraRisk needs attention because it is unresolved. Risk is associated with Margin Pressure. That connection does not by itself tell us whether Risk is affecting Margin Pressure or the reverse. No outcome has been measured yet. I recommend investigating Margin Pressure next to determine whether it is driving Risk."
+  },
+  "why": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraRisk needs attention because it is unresolved. Risk is associated with Margin Pressure. That connection does not by itself tell us whether Risk is affecting Margin Pressure or the reverse. There is not enough evidence yet to identify a confirmed root cause for Risk."
+  },
+  "affect": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraRisk is associated with Margin Pressure. That connection does not by itself tell us whether Risk is affecting Margin Pressure or the reverse. Risk is associated with Delivery. That connection does not by itself tell us whether Risk is affecting Delivery or the reverse."
+  },
+  "ignore": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraIf Risk remains without intervention, concerns around Delivery and Margin Pressure may continue or become more significant. We don’t yet have enough evidence to quantify that impact, so this is a scenario rather than a prediction. I can’t yet judge the impact against a specific business goal. I can compare doing nothing with investigating now."
+  },
+  "options": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraComparison complete. Investigate Risk aligns better under current evidence, but this is not a Decision commitment."
+  },
+  "compare": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraComparison complete. Investigate Risk aligns better under current evidence, but this is not a Decision commitment."
+  },
+  "safer": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraInvestigate Risk aligns better on modeled capacity relief versus alternatives. It still carries unresolved uncertainties (preference is not commitment)."
+  },
+  "goal": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraInvestigate Risk aligns better on modeled capacity relief versus alternatives. It still carries unresolved uncertainties (preference is not commitment)."
+  },
+  "recommend": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraRisk needs attention because it is unresolved. Risk is associated with Margin Pressure. That connection does not by itself tell us whether Risk is affecting Margin Pressure or the reverse. I recommend investigating Margin Pressure next to determine whether it is driving Risk. The current evidence supports investigation, but not yet a committed course of action."
+  },
+  "decide": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraPreference noted — no Decision committed."
+  },
+  "ignoreKeepsRisk": true,
+  "noFallback": true,
+  "scenarioNotPrediction": true,
+  "noNumericInvention": true,
+  "decisionSafety": true,
+  "leaks": false,
+  "errors": []
+}

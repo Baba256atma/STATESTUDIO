@@ -196,9 +196,6 @@ test("7. orchestration / bootstrap / determinism / immutability", () => {
   assert.throws(() => {
     (checks as unknown as Array<{ id: string }>).push({
       id: "x",
-      domain: "identity",
-      passed: true,
-      message: "x",
     });
   });
 });

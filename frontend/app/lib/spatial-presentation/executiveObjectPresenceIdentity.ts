@@ -339,7 +339,7 @@ function resolvePresenceClass(
 ): ExecutiveObjectPresenceClass {
   if (interaction === "focused" || interaction === "selected") return "primary";
   if (interaction === "related") return "related";
-  if (interaction === "context") return "context";
+  if (interaction === "overview") return "context";
   return "secondary";
 }
 

@@ -8,11 +8,25 @@
  * Not a new Runtime authority. Production Runtime entry: applyNexoraMVPConversationalCommand.
  */
 
-import { resolveNexoraConversationalIntent } from "./conversationalIntentResolver.ts";
+import {
+  isNexoraCanonicalDefinitionInquiry,
+  resolveNexoraConversationalIntent,
+} from "./conversationalIntentResolver.ts";
+import {
+  CONVERSATIONAL_INTENT_REASON,
+  EXECUTION_CLASS_BY_INTENT_KIND,
+} from "./conversationalIntent.ts";
 import { resolveNexoraExecutiveConversationalContext } from "./conversationalContextResolver.ts";
+import {
+  isInvestigateNowUtterance,
+  isInvestigationOptionsUtterance,
+  classifyExecutiveInvestigationAsk,
+  normalizeNexoraConversationalUtterance,
+} from "./conversationalIntentNormalization.ts";
 import { mapNexoraConversationalCommand } from "./conversationalCommandMapper.ts";
 import { resolveNexoraConversationalExperienceContext } from "./conversationalExperienceContextResolver.ts";
 import { buildNexoraConversationalExperienceResponse } from "./conversationalExperienceResponse.ts";
+import { answerNexoraExiUtterance } from "@/app/lib/nex-mvp/nexoraExecutiveIntelligenceExperience.ts";
 import {
   type NexoraConversationalExperienceResult,
   type NexoraConversationalExperienceStatus,
@@ -31,6 +45,27 @@ import type { NexoraMVPObjectInteractionCatalog } from "@/app/lib/nex-mvp/nexora
 import type { NexoraMVPWorkspaceKind } from "@/app/lib/nex-mvp/nexoraMVPApplicationFoundation.ts";
 import { isNexoraMVPWorkspaceKind } from "@/app/lib/nex-mvp/nexoraMVPApplicationFoundation.ts";
 import { applyNexoraMVPConversationalCommand } from "@/app/lib/nex-mvp/nexoraMVPConversationalRuntimeBridge.ts";
+import {
+  createEmptyManagerObjectSession,
+  freezeManagerObjectSession,
+} from "@/app/lib/manager-object/managerObjectActive.ts";
+import {
+  resolveManagerObjectTurn,
+} from "@/app/lib/manager-object/managerObjectInteraction.ts";
+import { isExecutiveAttentionUtterance } from "@/app/lib/manager-object/managerObjectAttentionEngine.ts";
+import { composeExecutiveManagerExperience } from "@/app/lib/manager-object/managerObjectExperienceComposer.ts";
+import {
+  composeExecutiveInvestigationAnswer,
+  threadFromSession,
+  withInvestigationThread,
+} from "@/app/lib/manager-object/executiveInvestigationComposer.ts";
+import { toMoGoalContext } from "@/app/lib/nexora-entrance/nexoraGoalDiscoveryExperience.ts";
+import { realityGapForMo } from "@/app/lib/nexora-entrance/nexoraRealityDiscoveryExperience.ts";
+import {
+  resolveNexoraEntranceTurn,
+  shouldNexoraEntranceOwnUtterance,
+} from "@/app/lib/nexora-entrance/nexoraEntranceExperience.ts";
+import type { NexoraEntranceSession } from "@/app/lib/nexora-entrance/nexoraEntranceTypes.ts";
 import type { NexoraConversationalExperienceContextResolution } from "./conversationalExperienceContext.ts";
 import type { NexoraRegisteredExecutiveExperience } from "./conversationalExperienceRegistry.ts";
 import {
@@ -73,6 +108,7 @@ import {
   type NexoraExecutiveDecisionSession,
 } from "./executiveDecisionAuthority.ts";
 import type { NexoraDecisionRuntimeAdapter } from "./executiveDecisionRuntimeAdapter.ts";
+import type { NexoraExecutionRuntimeAdapter } from "./executiveExecutionRuntimeAdapter.ts";
 import { createNexoraCanonicalDecisionRuntime } from "./executiveDecisionRuntimeAdapter.ts";
 import {
   createNexoraPendingTurnExpectation,
@@ -84,6 +120,62 @@ import {
 import {
   resolveNexoraConversationalActionInvocation,
 } from "./conversationalActionDescriptor.ts";
+import {
+  interpretManagerTurnMeaning,
+} from "@/app/lib/manager-object/nexoraMvpFinal61NaturalLanguageUnderstanding.ts";
+import {
+  applyContextualMeaningToIntent,
+  interpretContextualManagerTurn,
+  updateConversationContinuity,
+} from "@/app/lib/manager-object/nexoraMvpFinal62ConversationContinuity.ts";
+import {
+  applyClarificationRepair,
+  applyResumedMeaningToIntent,
+  interpretClarificationTurn,
+} from "@/app/lib/manager-object/nexoraMvpFinal63SmartClarification.ts";
+import { composeTrustedExecutiveCommunication } from "@/app/lib/manager-object/nexoraMvpFinal64TrustedCommunication.ts";
+import { resolveGuidanceTurn } from "@/app/lib/manager-object/nexoraMvpFinal65Guidance.ts";
+import {
+  applyNcaStrategyToResponse,
+  interpretNcaTurn,
+  isSocialAckUtterance,
+} from "@/app/lib/manager-object/nexoraNca1ConversationArchitecture.ts";
+import {
+  composeNexoraSemanticTurn,
+  hydrateCanonicalCollectionMembers,
+} from "@/app/lib/manager-object/nexoraNcaPost3SemanticScopeMultiEntityCanonicalCollectionWorkspaceIntelligence.ts";
+import {
+  applyNexoraDialogueEffects,
+  composeNca2ContinuityResponse,
+  interpretNcaDialogueTurn,
+  investigationSeedQuestion,
+  isContextualShortAnswer,
+  overlayNcaTurnWithDialogue,
+} from "@/app/lib/manager-object/nexoraNca2ConversationState.ts";
+import {
+  applyNca3StrategyToResponse,
+  evaluateNca3QuestionStrategy,
+  overlayNcaTurnWithQuestionStrategy,
+} from "@/app/lib/manager-object/nexoraNca3QuestionIntelligence.ts";
+import {
+  applyNca4StrategyToResponse,
+  attachAdvisorySnapshot,
+  evaluateNca4AdvisoryStrategy,
+} from "@/app/lib/manager-object/nexoraNca4AdvisoryIntelligence.ts";
+import {
+  applyNca5StrategyToResponse,
+  attachInitiativeSnapshot,
+  evaluateNca5InitiativeStrategy,
+} from "@/app/lib/manager-object/nexoraNca5InitiativeIntelligence.ts";
+import {
+  applyNca6StrategyToResponse,
+  attachCommunicationSnapshot,
+  evaluateNca6CommunicationStrategy,
+} from "@/app/lib/manager-object/nexoraNca6CommunicationIntelligence.ts";
+import { composeNca7TurnResult } from "@/app/lib/manager-object/nexoraNca7EndToEndOrchestration.ts";
+import type { ProactiveExecutiveSignal } from "@/app/lib/manager-object/nexoraNca5InitiativeIntelligenceTypes.ts";
+import type { ClarificationTurnResult } from "@/app/lib/manager-object/nexoraMvpFinal63ClarificationTypes.ts";
+import type { PendingClarification } from "@/app/lib/manager-object/nexoraMvpFinal63ClarificationTypes.ts";
 
 
 export type NexoraConversationalExperienceInput = {
@@ -107,12 +199,24 @@ export type NexoraConversationalExperienceInput = {
   readonly decisionSession?: NexoraExecutiveDecisionSession | null;
   /** CC:10R canonical Decision Runtime adapter (product truth). */
   readonly decisionRuntime?: NexoraDecisionRuntimeAdapter | null;
+  /** CC:11 canonical Execution Runtime adapter (product truth). */
+  readonly executionRuntime?: NexoraExecutionRuntimeAdapter | null;
   /** Deterministic clock for Decision committedAt (tests/Runtime). */
   readonly decisionCommittedAt?: string;
   /** Read-only projection of the existing UX:3 Advisor narrative. */
   readonly advisorGrounding?: NexoraConversationalAdvisorGrounding | null;
   /** UX:4-FIX2 short-lived dialogue expectation. */
   readonly pendingTurnExpectation?: NexoraPendingTurnExpectation | null;
+  /** Session-only previous manager utterance for epistemic follow-up continuity. */
+  readonly previousUtterance?: string | null;
+  /** MO:1 session. Optional; reconstructed from CC:7 when omitted. */
+  readonly previousManagerObjectSession?: import("@/app/lib/manager-object/managerObjectActive.ts").ManagerObjectSession | null;
+  /** NEX-EXP:1 session. Existing workspace tests omit this. */
+  readonly previousEntranceSession?: NexoraEntranceSession | null;
+  /** NCA:5 caller-provided observations. Optional; evaluation remains deterministic without monitoring. */
+  readonly initiativeSignals?: readonly ProactiveExecutiveSignal[];
+  readonly conversationImportance?: import("@/app/lib/manager-object/nexoraNca5InitiativeIntelligenceTypes.ts").ConversationImportance;
+  readonly managerCommunicationContext?: import("@/app/lib/manager-object/nexoraNca6CommunicationIntelligenceTypes.ts").Nca6ManagerContextInput | null;
 };
 
 function freezeMessage(
@@ -145,6 +249,36 @@ function isRecommendationCommandKind(kind: string | null | undefined): boolean {
     kind === "request-explanation" ||
     kind === "request-prioritization"
   );
+}
+
+function applyScenarioExplanationFidelity(input: {
+  readonly intent: import("./conversationalIntent.ts").NexoraConversationalIntent;
+  readonly primarySubjectKind: NexoraConversationalSubjectKind | null | undefined;
+}): import("./conversationalIntent.ts").NexoraConversationalIntent {
+  const { intent, primarySubjectKind } = input;
+  if (
+    intent.kind === "explain-scenario" &&
+    intent.scenarioPayload?.operation === "describe"
+  ) {
+    return intent;
+  }
+  if (intent.kind !== "explain") return intent;
+  if (primarySubjectKind !== "scenario") return intent;
+  if (!isNexoraCanonicalDefinitionInquiry(intent.normalizedUtterance)) {
+    return intent;
+  }
+  return Object.freeze({
+    ...intent,
+    kind: "explain-scenario" as const,
+    executionClass: EXECUTION_CLASS_BY_INTENT_KIND["explain-scenario"],
+    requiresTarget: true,
+    requiresContext: false,
+    reasons: Object.freeze([
+      ...intent.reasons,
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN_SCENARIO,
+    ]),
+    scenarioPayload: Object.freeze({ operation: "describe" as const }),
+  });
 }
 
 function isScenarioCommandKind(kind: string | null | undefined): boolean {
@@ -262,12 +396,110 @@ function resolveRecommendationForTurn(input: {
   });
 }
 
+function hasActiveScenarioAssessment(
+  executiveContext: NexoraExecutiveContextSnapshot,
+  scenarioSession?: NexoraExecutiveScenarioSession | null,
+): boolean {
+  if (parentScenarioRef(executiveContext)) return true;
+  const activeId = scenarioSession?.activeScenarioId;
+  if (!activeId) return false;
+  return Boolean(scenarioSession?.evaluationsById[activeId]);
+}
+
+function parentScenarioRef(
+  executiveContext: NexoraExecutiveContextSnapshot,
+): {
+  readonly subjectId: string;
+  readonly canonicalName: string | null;
+} | null {
+  const scenario = executiveContext.currentScenario;
+  if (scenario?.subjectId) {
+    return {
+      subjectId: scenario.subjectId,
+      canonicalName: scenario.canonicalName ?? null,
+    };
+  }
+  const current = executiveContext.currentSubject;
+  if (current?.subjectKind === "scenario" && current.subjectId) {
+    return {
+      subjectId: current.subjectId,
+      canonicalName: current.canonicalName ?? null,
+    };
+  }
+  return null;
+}
+
+function subjectLabelFromCatalog(
+  catalog: NexoraMVPObjectInteractionCatalog,
+  subjectId: string | null,
+): string {
+  if (!subjectId) return "this subject";
+  return (
+    catalog.objects.find((item) => item.id === subjectId)?.label ??
+    catalog.contextSubjects.find((item) => item.id === subjectId)?.label ??
+    subjectId.replace(/^obj-/, "").replace(/-/g, " ")
+  );
+}
+
+function seedInvestigationScenarioPair(input: {
+  readonly executiveContext: NexoraExecutiveContextSnapshot;
+  readonly primarySubjectId: string | null;
+  readonly session: NexoraExecutiveScenarioSession;
+  readonly baselineAttentionBySubject: Readonly<
+    Record<string, "normal" | "elevated" | "important" | "critical" | undefined>
+  >;
+  readonly relatedSubjectIds: readonly string[];
+  readonly catalog: NexoraMVPObjectInteractionCatalog;
+}): NexoraExecutiveScenarioSession {
+  let session = input.session;
+  const label = subjectLabelFromCatalog(input.catalog, input.primarySubjectId);
+  const kinds = Object.values(session.scenariosById).map((item) => item.kind);
+  if (!kinds.includes("do-nothing")) {
+    const defined = resolveNexoraExecutiveScenarioConversation({
+      executiveContext: input.executiveContext,
+      operation: "define-do-nothing",
+      primarySubjectId: input.primarySubjectId,
+      requireHorizon: false,
+      nameHint: `No Action on ${label}`,
+      session,
+      baselineAttentionBySubject: input.baselineAttentionBySubject,
+      relatedSubjectIds: input.relatedSubjectIds,
+      recommendationId: input.executiveContext.lastRecommendationId,
+    });
+    session = defined.nextSession;
+  }
+  if (!kinds.includes("intervention") && !Object.values(session.scenariosById).some((item) => item.kind === "intervention")) {
+    const defined = resolveNexoraExecutiveScenarioConversation({
+      executiveContext: input.executiveContext,
+      operation: "define-intervention",
+      primarySubjectId: input.primarySubjectId,
+      requireHorizon: false,
+      nameHint: `Investigate ${label}`,
+      interventions: input.primarySubjectId
+        ? Object.freeze([
+            Object.freeze({
+              subjectId: input.primarySubjectId,
+              actionKind: "investigate",
+            }),
+          ])
+        : undefined,
+      session,
+      baselineAttentionBySubject: input.baselineAttentionBySubject,
+      relatedSubjectIds: input.relatedSubjectIds,
+      recommendationId: input.executiveContext.lastRecommendationId,
+    });
+    session = defined.nextSession;
+  }
+  return session;
+}
+
 function resolveScenarioForTurn(input: {
   readonly intent: import("./conversationalIntent.ts").NexoraConversationalIntent;
   readonly primarySubjectId: string | null;
   readonly executiveContext: NexoraExecutiveContextSnapshot;
   readonly catalog?: NexoraMVPObjectInteractionCatalog;
   readonly scenarioSession?: NexoraExecutiveScenarioSession | null;
+  readonly utterance?: string;
 }): NexoraExecutiveScenarioConversationResult {
   const catalog =
     input.catalog ?? getDefaultNexoraMVPObjectInteractionCatalog();
@@ -278,7 +510,7 @@ function resolveScenarioForTurn(input: {
   const payload = input.intent.scenarioPayload ?? null;
   const hintRaw =
     input.intent.targetHints.find((h) => h.role === "primary")?.raw ?? null;
-  const session =
+  let session =
     input.scenarioSession ??
     createEmptyNexoraExecutiveScenarioSession({
       baselineAttentionBySubject: baseline.attentionBySubject,
@@ -286,6 +518,7 @@ function resolveScenarioForTurn(input: {
   const active = session.activeScenarioId
     ? session.scenariosById[session.activeScenarioId] ?? null
     : null;
+  const parent = parentScenarioRef(input.executiveContext);
   const activeInterventionSubject =
     active?.interventions[0]?.subjectId ??
     active?.subjectIds.find((id) => !id.startsWith("cc9:")) ??
@@ -299,48 +532,106 @@ function resolveScenarioForTurn(input: {
     activeInterventionSubject ??
     (hintRaw ? unmodeledSubjectId(hintRaw) : null);
 
-  const interventionSubjectId = primarySubjectId;
-  let interventions: readonly NexoraScenarioIntervention[] | undefined;
-  let assumptions: readonly NexoraScenarioAssumption[] | undefined;
+  const conditionSubjectId = primarySubjectId;
+  const namedParent =
+    parent != null && parent.subjectId.startsWith("ctx-scenario-");
+  const modifiesParent =
+    namedParent &&
+    conditionSubjectId != null &&
+    conditionSubjectId !== parent.subjectId &&
+    payload?.operation !== "modify" &&
+    payload?.operation !== "do-nothing" &&
+    (payload?.operation === "intervention" ||
+      payload?.operation === "add-assumption" ||
+      payload?.actionKind === "delay");
 
   if (
+    parent &&
+    !session.scenariosById[parent.subjectId] &&
+    (payload?.operation === "describe" || modifiesParent)
+  ) {
+    const opened = resolveNexoraExecutiveScenarioConversation({
+      executiveContext: input.executiveContext,
+      operation: "describe",
+      primarySubjectId: parent.subjectId,
+      session,
+      baselineAttentionBySubject: baseline.attentionBySubject,
+      recommendationId: input.executiveContext.lastRecommendationId,
+    });
+    session = opened.nextSession;
+  }
+
+  let interventions: readonly NexoraScenarioIntervention[] | undefined;
+  let assumptions: readonly NexoraScenarioAssumption[] | undefined;
+  const assumptionOperator =
+    payload?.actionKind === "delay"
+      ? ("delay" as const)
+      : payload?.actionKind === "increase-by" ||
+          payload?.actionKind === "decrease-by" ||
+          payload?.actionKind === "hold"
+        ? payload.actionKind
+        : null;
+
+  if (modifiesParent && conditionSubjectId && assumptionOperator) {
+    assumptions = Object.freeze([
+      Object.freeze({
+        key: `assume:${conditionSubjectId}:${assumptionOperator}:${payload?.value ?? ""}`,
+        subjectId: conditionSubjectId,
+        operator: assumptionOperator,
+        value: payload?.value,
+        unit: payload?.unit,
+        state: payload?.state,
+        intensity: payload?.intensity,
+      }),
+    ]);
+  } else if (
     payload?.operation === "intervention" ||
     payload?.operation === "modify"
   ) {
-    if (interventionSubjectId && payload.actionKind) {
+    if (conditionSubjectId && payload.actionKind) {
+      const investigate =
+        isInvestigateNowUtterance(
+          normalizeNexoraConversationalUtterance(input.utterance ?? ""),
+        ) ||
+        classifyExecutiveInvestigationAsk(
+          normalizeNexoraConversationalUtterance(input.utterance ?? ""),
+        ) === "address-other";
       interventions = Object.freeze([
         Object.freeze({
-          subjectId: interventionSubjectId,
-          actionKind: payload.actionKind,
+          subjectId: conditionSubjectId,
+          actionKind: investigate ? "investigate" : payload.actionKind,
           value: payload.value,
           unit: payload.unit,
+          state: payload.state,
+          intensity: payload.intensity,
         }),
       ]);
-    } else if (interventionSubjectId) {
+    } else if (conditionSubjectId) {
       interventions = Object.freeze([
         Object.freeze({
-          subjectId: interventionSubjectId,
+          subjectId: conditionSubjectId,
           actionKind: "unsupported",
         }),
       ]);
     }
   }
 
-  if (payload?.operation === "add-assumption") {
+  if (!modifiesParent && payload?.operation === "add-assumption") {
     const assumptionSubject =
       input.primarySubjectId ??
       (payload.assumptionSubjectRaw
-        ? // Prefer resolved id when present; else unmodeled.
-          unmodeledSubjectId(payload.assumptionSubjectRaw)
+        ? unmodeledSubjectId(payload.assumptionSubjectRaw)
         : null);
-    if (assumptionSubject && payload.actionKind) {
+    if (assumptionSubject && assumptionOperator) {
       assumptions = Object.freeze([
         Object.freeze({
-          key: `assume:${assumptionSubject}:${payload.actionKind}:${payload.value ?? ""}`,
+          key: `assume:${assumptionSubject}:${assumptionOperator}:${payload.value ?? ""}`,
           subjectId: assumptionSubject,
-          operator: payload.actionKind,
+          operator: assumptionOperator,
           value: payload.value,
           unit: payload.unit,
+          state: payload.state,
+          intensity: payload.intensity,
         }),
       ]);
     }
@@ -353,17 +644,27 @@ function resolveScenarioForTurn(input: {
         ? ("compare" as const)
         : payload?.operation === "downside"
           ? ("downside" as const)
-          : payload?.operation === "explain-preference"
-            ? ("explain" as const)
-            : payload?.operation === "open-ordinal"
-              ? ("open-candidate" as const)
-              : payload?.operation === "modify"
-                ? ("modify" as const)
-                : payload?.operation === "add-assumption"
-                  ? ("add-assumption" as const)
-                  : payload?.operation === "do-nothing"
-                    ? ("define-do-nothing" as const)
-                    : ("define-intervention" as const);
+          : payload?.operation === "confidence"
+            ? ("confidence" as const)
+            : payload?.operation === "affected"
+              ? ("affected" as const)
+              : payload?.operation === "kpi-impact"
+                ? ("kpi-impact" as const)
+                : payload?.operation === "impact-why"
+                  ? ("impact-why" as const)
+                  : payload?.operation === "describe"
+              ? ("describe" as const)
+              : payload?.operation === "explain-preference"
+                ? ("explain" as const)
+                : payload?.operation === "open-ordinal"
+                  ? ("open-candidate" as const)
+                  : payload?.operation === "modify"
+                    ? ("modify" as const)
+                    : modifiesParent || payload?.operation === "add-assumption"
+                      ? ("add-assumption" as const)
+                      : payload?.operation === "do-nothing"
+                        ? ("define-do-nothing" as const)
+                        : ("define-intervention" as const);
 
   const horizon =
     payload?.horizonAmount != null && payload.horizonUnit
@@ -373,21 +674,62 @@ function resolveScenarioForTurn(input: {
         })
       : null;
 
+  const relatedIds = relatedSubjectIdsForPrimary({
+    catalog,
+    primarySubjectId:
+      payload?.operation === "describe"
+        ? (input.primarySubjectId ?? parent?.subjectId ?? null)
+        : conditionSubjectId,
+  });
+
+  if (
+    operation === "compare" &&
+    (isInvestigationOptionsUtterance(
+      normalizeNexoraConversationalUtterance(input.utterance ?? ""),
+    ) ||
+      session.candidateScenarioIds.length === 1)
+  ) {
+    session = seedInvestigationScenarioPair({
+      executiveContext: input.executiveContext,
+      primarySubjectId,
+      session,
+      baselineAttentionBySubject: baseline.attentionBySubject,
+      relatedSubjectIds: relatedIds,
+      catalog,
+    });
+  }
+
   return resolveNexoraExecutiveScenarioConversation({
     executiveContext: input.executiveContext,
     operation,
-    primarySubjectId,
+    primarySubjectId:
+      payload?.operation === "describe"
+        ? (input.primarySubjectId ?? parent?.subjectId ?? null)
+        : modifiesParent
+          ? parent?.subjectId ?? primarySubjectId
+          : primarySubjectId,
     interventions,
     assumptions,
     horizon,
-    requireHorizon: operation === "define-do-nothing",
+  requireHorizon: operation === "define-do-nothing" && Boolean(horizon),
+    nameHint:
+      operation === "define-do-nothing" && primarySubjectId
+        ? `No Action on ${subjectLabelFromCatalog(catalog, primarySubjectId)}`
+        : operation === "define-intervention" &&
+            interventions?.[0]?.actionKind === "investigate" &&
+            primarySubjectId
+          ? `Investigate ${subjectLabelFromCatalog(catalog, primarySubjectId)}`
+          : null,
     candidateOrdinal: payload?.ordinal ?? null,
     session,
     baselineAttentionBySubject: baseline.attentionBySubject,
-    relatedSubjectIds: relatedSubjectIdsForPrimary({
-      catalog,
-      primarySubjectId,
-    }),
+    relatedSubjectIds: relatedIds,
+    subjectIds: primarySubjectId
+      ? Object.freeze([
+          primarySubjectId,
+          ...relatedIds.filter((id) => id !== primarySubjectId),
+        ])
+      : relatedIds,
     recommendationId: input.executiveContext.lastRecommendationId,
   });
 }
@@ -513,6 +855,7 @@ function focusedKind(
     kind === "scenario" ||
     kind === "decision" ||
     kind === "execution" ||
+    kind === "outcome" ||
     kind === "goal"
   ) {
     return kind;
@@ -639,6 +982,20 @@ export function executeNexoraConversationalExperience(
 } {
   const utterance = typeof input.utterance === "string" ? input.utterance : "";
   const ids = deriveMessageIds(input.messageIdSeed);
+  const persistEntranceSession = input.previousEntranceSession ?? null;
+  const finish = (
+    args: Parameters<typeof finalize>[0],
+  ): ReturnType<typeof finalize> =>
+    finalize({
+      ...args,
+      nextEntranceSession:
+        args.nextEntranceSession !== undefined
+          ? args.nextEntranceSession
+          : persistEntranceSession,
+      initiativeSignals: input.initiativeSignals,
+      conversationImportance: input.conversationImportance,
+      managerCommunicationContext: input.managerCommunicationContext,
+    });
   const bootstrappedExecutiveContext = bootstrapExecutiveContext({
     executiveContext: input.executiveContext,
     conversationContext: input.conversationContext,
@@ -656,6 +1013,97 @@ export function executeNexoraConversationalExperience(
   );
 
   try {
+    if (
+      shouldNexoraEntranceOwnUtterance(
+        input.previousEntranceSession,
+        utterance,
+        input.executiveSubjects,
+      ) &&
+      input.previousEntranceSession
+    ) {
+      const entranceTurn = resolveNexoraEntranceTurn({
+        utterance,
+        session: input.previousEntranceSession,
+        runtimeState: input.runtimeState,
+        decisionRuntime: input.decisionRuntime ?? null,
+        executionRuntime: input.executionRuntime ?? null,
+      });
+      if (entranceTurn.ownsResponse) {
+        const intentResult = resolveNexoraConversationalIntent({ utterance });
+        const contextResult = resolveNexoraExecutiveConversationalContext({
+          intent: intentResult.intent,
+          executiveSubjects: input.executiveSubjects,
+          conversationContext: previousContext,
+        });
+        return finish({
+          status: "applied",
+          response: entranceTurn.response,
+          intentResult,
+          contextResult,
+          experienceResult: null,
+          commandResult: null,
+          runtimeResult: null,
+          previousExecutiveContext,
+          nextRuntimeState: entranceTurn.nextRuntimeState,
+          shouldCommitRuntime: entranceTurn.shouldCommitRuntime,
+          trustedAdvisorySuccess: true,
+          ids,
+          utterance,
+          catalog: input.catalog,
+          previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+          executiveSubjects: input.executiveSubjects,
+          preservePresentedResponse: true,
+          lockPresentedResponse: true,
+          nextEntranceSession: entranceTurn.session,
+        });
+      }
+    }
+
+    const exiAnswer = answerNexoraExiUtterance(
+      input.advisorGrounding?.experienceAnswers,
+      utterance,
+      input.previousUtterance,
+    );
+    // Named/current Scenario follow-up stays on CC:9. EXI may present
+    // Scenario intelligence later, but must not intercept How-sure / risk
+    // while conversational Scenario identity is active.
+    if (
+      exiAnswer &&
+      !hasActiveScenarioAssessment(
+        previousExecutiveContext,
+        input.scenarioSession ?? null,
+      )
+    ) {
+      const intentResult = resolveNexoraConversationalIntent({ utterance });
+      const contextResult = resolveNexoraExecutiveConversationalContext({
+        intent: intentResult.intent,
+        executiveSubjects: input.executiveSubjects,
+        conversationContext: previousContext,
+      });
+      const response = /[.!?]$/.test(exiAnswer.trim())
+        ? exiAnswer.trim()
+        : `${exiAnswer.trim()}.`;
+      return finish({
+        status: "applied",
+        response,
+        intentResult,
+        contextResult,
+        experienceResult: null,
+        commandResult: null,
+        runtimeResult: null,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        trustedAdvisorySuccess: true,
+        ids,
+        utterance,
+        catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+        executiveSubjects: input.executiveSubjects,
+        preservePresentedResponse: true,
+      });
+    }
+
     // UX:4-FIX2 — explicit intent first, then a structured pending-turn answer,
     // then a unique registered entity reference. Rendered Nexora copy is never parsed.
     const subjectNameById = Object.freeze(
@@ -733,9 +1181,178 @@ export function executeNexoraConversationalExperience(
       (bareSubject?.status === "resolved" && bareSubject.subject
         ? `Focus on ${bareSubject.subject.canonicalName}`
         : explicitUtterance);
-    // CC:1
-    const intentResult = resolveIntentForTurn(utterance, semanticUtterance);
-    const intent = intentResult.intent;
+    // CC:1, then FINAL:6.1 overlay, then FINAL:6.2 contextual overlay.
+    let intentResult = resolveIntentForTurn(utterance, semanticUtterance);
+    const naturalLanguageUnderstanding = interpretManagerTurnMeaning({
+      utterance,
+      subjects: input.executiveSubjects,
+    });
+    const contextualManagerMeaning = interpretContextualManagerTurn({
+      turnMeaning: naturalLanguageUnderstanding,
+      subjects: input.executiveSubjects,
+      previousContinuity:
+        input.previousManagerObjectSession?.conversationContinuity ?? null,
+      executiveContext: previousExecutiveContext,
+      managerSession: input.previousManagerObjectSession ?? null,
+      stageFocusedId: input.runtimeState.focusedSubject?.id ?? null,
+    });
+    const clarification = interpretClarificationTurn({
+      turnMeaning: naturalLanguageUnderstanding,
+      contextual: contextualManagerMeaning,
+      pending: input.previousManagerObjectSession?.pendingClarification ?? null,
+      continuity:
+        input.previousManagerObjectSession?.conversationContinuity ?? null,
+      subjects: input.executiveSubjects,
+      intentKind: intentResult.intent.kind,
+    });
+    if (
+      clarification.action === "clarify" ||
+      clarification.action === "fail" ||
+      clarification.action === "unpark"
+    ) {
+      return finish({
+        status: "clarification-required",
+        response: clarification.question ?? "Which one do you mean?",
+        intentResult,
+        contextResult: resolveNexoraExecutiveConversationalContext({
+          intent: intentResult.intent,
+          targetHints: intentResult.intent.targetHints,
+          conversationContext: previousContext,
+          executiveSubjects: input.executiveSubjects,
+        }),
+        experienceResult: null,
+        commandResult: null,
+        runtimeResult: null,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        preservePresentedResponse: true,
+        preserveConversationContinuity: true,
+        pendingClarification: clarification.pending,
+        clarificationTurn: clarification,
+        ids,
+        utterance,
+        catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+        executiveSubjects: input.executiveSubjects,
+      });
+    }
+    if (clarification.action === "cancel") {
+      return finish({
+        status: "applied",
+        response: "Okay.",
+        intentResult,
+        contextResult: resolveNexoraExecutiveConversationalContext({
+          intent: intentResult.intent,
+          conversationContext: previousContext,
+          executiveSubjects: input.executiveSubjects,
+        }),
+        experienceResult: null,
+        commandResult: null,
+        runtimeResult: null,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        trustedAdvisorySuccess: true,
+        preservePresentedResponse: true,
+        preserveConversationContinuity: true,
+        pendingClarification: null,
+        clarificationTurn: clarification,
+        ids,
+        utterance,
+        catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+        executiveSubjects: input.executiveSubjects,
+      });
+    }
+    if (clarification.action === "resume") {
+      intentResult = applyResumedMeaningToIntent(
+        intentResult,
+        contextualManagerMeaning,
+        clarification,
+      );
+    } else if (clarification.action !== "park") {
+      intentResult = applyContextualMeaningToIntent(
+        intentResult,
+        contextualManagerMeaning,
+      );
+    }
+    if (
+      isSocialAckUtterance(utterance) &&
+      !isContextualShortAnswer(
+        utterance,
+        input.previousManagerObjectSession?.ncaConversationState?.pendingQuestion ??
+          null,
+        input.previousManagerObjectSession?.ncaConversationState
+          ?.lastOfferedOptions ?? [],
+      )
+    ) {
+      return finish({
+        status: "applied",
+        response: /thanks|thank you/i.test(utterance)
+          ? "You're welcome."
+          : "Understood.",
+        intentResult,
+        contextResult: resolveNexoraExecutiveConversationalContext({
+          intent: intentResult.intent,
+          conversationContext: previousContext,
+          executiveSubjects: input.executiveSubjects,
+        }),
+        experienceResult: null,
+        commandResult: null,
+        runtimeResult: null,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        trustedAdvisorySuccess: true,
+        preservePresentedResponse: true,
+        preserveConversationContinuity: true,
+        clarificationTurn: clarification,
+        ids,
+        utterance,
+        catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+        executiveSubjects: input.executiveSubjects,
+      });
+    }
+    let intent = intentResult.intent;
+    if (
+      isExecutiveAttentionUtterance(utterance) &&
+      (intent.kind === "explain-scenario" || intent.kind === "explore-scenario")
+    ) {
+      intent = Object.freeze({
+        ...intent,
+        kind: "prioritize" as const,
+        executionClass: EXECUTION_CLASS_BY_INTENT_KIND.prioritize,
+        scenarioPayload: null,
+      });
+      intentResult = Object.freeze({
+        ...intentResult,
+        intent,
+      });
+    }
+    if (
+      hasActiveScenarioAssessment(
+        previousExecutiveContext,
+        input.scenarioSession ?? null,
+      ) &&
+      intent.kind === "explain" &&
+      !intent.targetHints.some((hint) => hint.role === "primary") &&
+      input.previousManagerObjectSession?.attentionPrompted !== true &&
+      !isExecutiveAttentionUtterance(utterance)
+    ) {
+      intent = Object.freeze({
+        ...intent,
+        kind: "explain-scenario" as const,
+        requiresTarget: false,
+        requiresContext: true,
+        scenarioPayload: Object.freeze({ operation: "impact-why" as const }),
+      });
+      intentResult = Object.freeze({
+        ...intentResult,
+        intent,
+      });
+    }
 
     // CC:2 — subject context from CC:7 projection
     const contextResult = resolveNexoraExecutiveConversationalContext({
@@ -747,13 +1364,33 @@ export function executeNexoraConversationalExperience(
       executiveSubjects: input.executiveSubjects,
     });
     const context = contextResult.context;
+    const fidelityIntent = applyScenarioExplanationFidelity({
+      intent,
+      primarySubjectKind: context.primarySubject?.subjectKind,
+    });
+    if (fidelityIntent !== intent) {
+      intent = fidelityIntent;
+      intentResult = Object.freeze({
+        ...intentResult,
+        intent,
+        trace: Object.freeze({
+          ...intentResult.trace,
+          finalKind: intent.kind,
+          candidateKinds: Object.freeze([
+            ...intentResult.trace.candidateKinds,
+            "explain-scenario" as const,
+          ]),
+          reasons: intent.reasons,
+        }),
+      });
+    }
 
     if (
       actionInvocation.matchedUtterance &&
       actionInvocation.status !== "resolved"
     ) {
       const status = "clarification-required" as const;
-      return finalize({
+      return finish({
         status,
         response:
           actionInvocation.status === "ambiguous"
@@ -772,6 +1409,7 @@ export function executeNexoraConversationalExperience(
         ids,
         utterance,
         catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
         executiveSubjects: input.executiveSubjects,
       });
     }
@@ -781,7 +1419,7 @@ export function executeNexoraConversationalExperience(
       pendingTurnResolution.expectation.questionKind !== "decision-commitment"
     ) {
       const status = "applied" as const;
-      return finalize({
+      return finish({
         status,
         response: declinedPendingResponse(pendingTurnResolution.expectation),
         intentResult,
@@ -801,13 +1439,14 @@ export function executeNexoraConversationalExperience(
         ids,
         utterance,
         catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
         executiveSubjects: input.executiveSubjects,
       });
     }
 
     if (pendingTurnResolution?.status === "clarification-required") {
       const status = "clarification-required" as const;
-      return finalize({
+      return finish({
         status,
         response: pendingClarification(pendingTurnResolution.expectation),
         intentResult,
@@ -823,6 +1462,7 @@ export function executeNexoraConversationalExperience(
         ids,
         utterance,
         catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
         executiveSubjects: input.executiveSubjects,
       });
     }
@@ -853,7 +1493,7 @@ export function executeNexoraConversationalExperience(
         advisorGrounding: input.advisorGrounding ?? null,
         pendingTurnResolution,
       });
-      return finalize({
+      return finish({
         status,
         response,
         intentResult,
@@ -871,6 +1511,7 @@ export function executeNexoraConversationalExperience(
         ids,
         utterance,
         catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
         executiveSubjects: input.executiveSubjects,
       });
     }
@@ -881,7 +1522,7 @@ export function executeNexoraConversationalExperience(
       input.runtimeState.focusedSubject?.id === bareSubject.subject.subjectId
     ) {
       const status = "no-op" as const;
-      return finalize({
+      return finish({
         status,
         response: `${bareSubject.subject.canonicalName} is already the current subject. You can ask me to explain the situation, show the evidence, or review the recommendation.`,
         intentResult,
@@ -898,6 +1539,7 @@ export function executeNexoraConversationalExperience(
         ids,
         utterance,
         catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
         executiveSubjects: input.executiveSubjects,
       });
     }
@@ -923,7 +1565,7 @@ export function executeNexoraConversationalExperience(
         utterance,
         experienceResolution: null,
       });
-      return finalize({
+      return finish({
         status,
         response,
         intentResult,
@@ -947,6 +1589,7 @@ export function executeNexoraConversationalExperience(
         ids,
         utterance,
         catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
         executiveSubjects: input.executiveSubjects,
       });
     }
@@ -986,7 +1629,7 @@ export function executeNexoraConversationalExperience(
         experienceResolution: experienceResult,
         recommendationResult,
       });
-      return finalize({
+      return finish({
         status,
         response,
         intentResult,
@@ -1011,6 +1654,7 @@ export function executeNexoraConversationalExperience(
         ids,
         utterance,
         catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
         executiveSubjects: input.executiveSubjects,
       });
     }
@@ -1040,7 +1684,7 @@ export function executeNexoraConversationalExperience(
           utterance,
           experienceResolution: experienceResult,
         });
-        return finalize({
+        return finish({
           status,
           response,
           intentResult,
@@ -1054,6 +1698,7 @@ export function executeNexoraConversationalExperience(
           ids,
           utterance,
           catalog: input.catalog,
+          previousManagerObjectSession: input.previousManagerObjectSession ?? null,
           executiveSubjects: input.executiveSubjects,
         });
       }
@@ -1089,7 +1734,7 @@ export function executeNexoraConversationalExperience(
               utterance,
               experienceResolution: experienceResult,
             });
-            return finalize({
+            return finish({
               status,
               response,
               intentResult,
@@ -1103,6 +1748,7 @@ export function executeNexoraConversationalExperience(
               ids,
               utterance,
               catalog: input.catalog,
+              previousManagerObjectSession: input.previousManagerObjectSession ?? null,
               executiveSubjects: input.executiveSubjects,
             });
           }
@@ -1130,7 +1776,7 @@ export function executeNexoraConversationalExperience(
             experienceResolution: experienceResult,
           });
           const shouldCommitRuntime = applied.result.status === "applied";
-          return finalize({
+          return finish({
             status,
             response,
             intentResult,
@@ -1160,7 +1806,7 @@ export function executeNexoraConversationalExperience(
           utterance,
           experienceResolution: experienceResult,
         });
-        return finalize({
+        return finish({
           status,
           response,
           intentResult,
@@ -1174,6 +1820,7 @@ export function executeNexoraConversationalExperience(
           ids,
           utterance,
           catalog: input.catalog,
+          previousManagerObjectSession: input.previousManagerObjectSession ?? null,
           executiveSubjects: input.executiveSubjects,
         });
       }
@@ -1208,7 +1855,7 @@ export function executeNexoraConversationalExperience(
           utterance,
           experienceResolution: experienceResult,
         });
-        return finalize({
+        return finish({
           status,
           response,
           intentResult,
@@ -1222,6 +1869,7 @@ export function executeNexoraConversationalExperience(
           ids,
           utterance,
           catalog: input.catalog,
+          previousManagerObjectSession: input.previousManagerObjectSession ?? null,
           executiveSubjects: input.executiveSubjects,
         });
       }
@@ -1252,7 +1900,7 @@ export function executeNexoraConversationalExperience(
       });
 
       const shouldCommitRuntime = applied.result.status === "applied";
-      return finalize({
+      return finish({
         status,
         response,
         intentResult,
@@ -1268,6 +1916,7 @@ export function executeNexoraConversationalExperience(
         ids,
         utterance,
         catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
         executiveSubjects: input.executiveSubjects,
       });
     }
@@ -1295,7 +1944,7 @@ export function executeNexoraConversationalExperience(
         utterance,
         experienceResolution: experienceResult,
       });
-      return finalize({
+      return finish({
         status,
         response,
         intentResult,
@@ -1309,6 +1958,7 @@ export function executeNexoraConversationalExperience(
         ids,
         utterance,
         catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
         executiveSubjects: input.executiveSubjects,
       });
     }
@@ -1325,7 +1975,11 @@ export function executeNexoraConversationalExperience(
       applied.result.runtimeActionKind === "resolve-executive-recommendation";
     const isScenario =
       isScenarioCommandKind(commandResult.command.kind) ||
-      applied.result.runtimeActionKind === "resolve-executive-scenario";
+      applied.result.runtimeActionKind === "resolve-executive-scenario" ||
+      intent.kind === "explore-scenario" ||
+      intent.kind === "compare-scenarios" ||
+      intent.kind === "explain-scenario" ||
+      intent.kind === "define-scenario";
     const isDecisionCommitment =
       isDecisionCommitmentCommandKind(commandResult.command.kind) ||
       applied.result.runtimeActionKind ===
@@ -1366,6 +2020,39 @@ export function executeNexoraConversationalExperience(
         executiveContext: previousExecutiveContext,
         catalog: input.catalog,
         scenarioSession: input.scenarioSession ?? null,
+        utterance,
+      });
+    } else if (
+      applied.result.status === "applied" &&
+      hasActiveScenarioAssessment(
+        previousExecutiveContext,
+        input.scenarioSession ?? null,
+      ) &&
+      (intent.kind === "evidence" ||
+        intent.kind === "risk" ||
+        (intent.kind === "explain" &&
+          !(intent.targetHints ?? []).some((hint) => hint.role === "primary")))
+    ) {
+      scenarioResult = resolveScenarioForTurn({
+        intent: Object.freeze({
+          ...intent,
+          scenarioPayload: Object.freeze({
+            operation:
+              intent.kind === "risk"
+                ? ("downside" as const)
+                : intent.kind === "explain"
+                  ? ("impact-why" as const)
+                  : ("confidence" as const),
+          }),
+        }),
+        primarySubjectId:
+          previousExecutiveContext.currentScenario?.subjectId ??
+          context.primarySubject?.subjectId ??
+          null,
+        executiveContext: previousExecutiveContext,
+        catalog: input.catalog,
+        scenarioSession: input.scenarioSession ?? null,
+        utterance,
       });
     }
 
@@ -1435,7 +2122,7 @@ export function executeNexoraConversationalExperience(
         decisionCommitmentResult?.status === "confirmation-required" ||
         decisionCommitmentResult?.status === "preference-only");
 
-    return finalize({
+    return finish({
       status,
       response,
       intentResult,
@@ -1460,6 +2147,8 @@ export function executeNexoraConversationalExperience(
           status !== "clarification-required") ||
         trustedDecisionSuccess,
       pendingTurnResolution,
+      preservePresentedResponse: Boolean(scenarioResult),
+      clarificationTurn: clarification,
       ...(pendingTurnResolution?.status === "interrupted" &&
       input.decisionSession?.pendingConfirmation
         ? {
@@ -1472,6 +2161,7 @@ export function executeNexoraConversationalExperience(
       ids,
       utterance,
       catalog: input.catalog,
+      previousManagerObjectSession: input.previousManagerObjectSession ?? null,
       executiveSubjects: input.executiveSubjects,
     });
   } catch {
@@ -1482,7 +2172,7 @@ export function executeNexoraConversationalExperience(
       conversationContext: previousContext,
     });
     const response = "Nexora couldn't complete that command.";
-    return finalize({
+    return finish({
       status: "failed",
       response,
       intentResult,
@@ -1496,6 +2186,7 @@ export function executeNexoraConversationalExperience(
       ids,
       utterance,
       catalog: input.catalog,
+      previousManagerObjectSession: input.previousManagerObjectSession ?? null,
       executiveSubjects: input.executiveSubjects,
     });
   }
@@ -1524,6 +2215,16 @@ function finalize(args: {
   readonly utterance: string;
   readonly catalog?: NexoraMVPObjectInteractionCatalog;
   readonly executiveSubjects: readonly NexoraConversationalSubjectRecord[];
+  readonly previousManagerObjectSession?: import("@/app/lib/manager-object/managerObjectActive.ts").ManagerObjectSession | null;
+  readonly preservePresentedResponse?: boolean;
+  readonly lockPresentedResponse?: boolean;
+  readonly preserveConversationContinuity?: boolean;
+  readonly pendingClarification?: PendingClarification | null;
+  readonly clarificationTurn?: ClarificationTurnResult | null;
+  readonly nextEntranceSession?: NexoraEntranceSession | null;
+  readonly initiativeSignals?: readonly ProactiveExecutiveSignal[];
+  readonly conversationImportance?: import("@/app/lib/manager-object/nexoraNca5InitiativeIntelligenceTypes.ts").ConversationImportance;
+  readonly managerCommunicationContext?: import("@/app/lib/manager-object/nexoraNca6CommunicationIntelligenceTypes.ts").Nca6ManagerContextInput | null;
 }): NexoraConversationalExperienceResult & {
   readonly nextRuntimeState: NexoraMVPObjectInteractionState;
 } {
@@ -1577,7 +2278,7 @@ function finalize(args: {
     nextExecutiveContext = executiveContextUpdate.nextContext;
   } else if (args.trustedAdvisorySuccess === true) {
     // CC:8/CC:9/CC:10 advisory/commitment turn: record command + refs.
-    const scenarioRef = scenarioResult?.scenario
+    const generatedScenarioRef = scenarioResult?.scenario
       ? freezeExecutiveContextReference({
           subjectId: scenarioResult.scenario.scenarioId,
           subjectKind: "scenario",
@@ -1586,6 +2287,18 @@ function finalize(args: {
           turnIndex: args.previousExecutiveContext.turnIndex + 1,
         })
       : null;
+    const previousNamedScenario =
+      args.previousExecutiveContext.currentScenario?.subjectId.startsWith(
+        "ctx-scenario-",
+      )
+        ? args.previousExecutiveContext.currentScenario
+        : null;
+    const scenarioRef =
+      previousNamedScenario &&
+      scenarioResult?.scenario?.parentScenarioId ===
+        previousNamedScenario.subjectId
+        ? previousNamedScenario
+        : generatedScenarioRef;
     const decisionRef =
       decisionCommitmentResult?.decision &&
       (decisionCommitmentResult.status === "applied" ||
@@ -1625,7 +2338,11 @@ function finalize(args: {
             runtimeFocusedSubjectKind: "decision" as const,
             runtimeFocusedCanonicalName: decisionRef.canonicalName ?? null,
           }
-        : scenarioRef
+        : scenarioRef &&
+            args.contextResult.context.primarySubject?.subjectKind !== "object" &&
+            args.previousExecutiveContext.currentSubject?.subjectKind !== "object" &&
+            args.contextResult.context.primarySubject?.subjectKind !== "problem" &&
+            args.previousExecutiveContext.currentSubject?.subjectKind !== "problem"
           ? {
               runtimeFocusedSubjectId: scenarioRef.subjectId,
               runtimeFocusedSubjectKind: "scenario" as const,
@@ -1657,7 +2374,11 @@ function finalize(args: {
               recommendationResult?.assessment.issues[0] ??
               recommendationResult?.assessment.constraints[0] ??
               null;
-            return attention
+            const critical =
+              attention &&
+              ((attention as { severity?: string }).severity === "critical" ||
+                (attention as { attention?: string }).attention === "critical");
+            return critical && attention
               ? createNexoraPendingTurnExpectation({
                   expectationId: `${args.ids.nexoraId}-review`,
                   questionKind: "review-subject",
@@ -1666,15 +2387,7 @@ function finalize(args: {
                   sourceCapability: "CC:5",
                   confirmationLevel: "review",
                 })
-              : createNexoraPendingTurnExpectation({
-                  expectationId: `${args.ids.nexoraId}-subject`,
-                  questionKind: "select-subject",
-                  expectedAnswerKind: "subject-selection",
-                  optionIds: args.executiveSubjects.map(
-                    (subject) => subject.subjectId,
-                  ),
-                  sourceCapability: "CC:5",
-                });
+              : null;
           })()
         : decisionCommitmentResult?.status === "confirmation-required" &&
             decisionCommitmentResult.nextSession.pendingConfirmation
@@ -1733,10 +2446,506 @@ function finalize(args: {
     createdAt: undefined,
   });
 
+  const hasNamedHint = args.intentResult.intent.targetHints.some(
+    (hint) => hint.role === "primary",
+  );
+  const managerObjectTurnRaw = resolveManagerObjectTurn({
+    utterance: args.utterance,
+    conversationalKind: args.intentResult.intent.kind,
+    hasNamedTargetHint: hasNamedHint,
+    namedSubjectId: hasNamedHint
+      ? (args.contextResult.context.primarySubject?.subjectId ?? null)
+      : null,
+    previousSession:
+      args.previousManagerObjectSession ??
+      Object.freeze({
+        ...createEmptyManagerObjectSession(),
+        activeObjectId:
+          args.previousExecutiveContext.currentSubject?.subjectId ??
+          args.nextRuntimeState.focusedSubject?.id ??
+          null,
+        activationSource:
+          args.previousExecutiveContext.currentSubject ||
+          args.nextRuntimeState.focusedSubject
+            ? "preserved"
+            : "none",
+      }),
+    stageFocusedId: args.nextRuntimeState.focusedSubject?.id ?? null,
+    conversationSubjectId:
+      nextExecutiveContext.currentSubject?.subjectId ??
+      args.previousExecutiveContext.currentSubject?.subjectId ??
+      args.previousManagerObjectSession?.ncaConversationState?.activeSubject
+        ?.id ??
+      null,
+    catalog: args.catalog,
+    subjects: args.executiveSubjects,
+    managerGoal:
+      args.previousManagerObjectSession?.goalContext?.title ??
+      nextExecutiveContext.currentGoal?.canonicalName ??
+      args.previousExecutiveContext.currentGoal?.canonicalName ??
+      null,
+    committedDecisionIds: args.nextEntranceSession?.decisionExperience
+      ?.canonicalRecord?.status === "Approved" &&
+      args.nextEntranceSession.decisionExperience.canonicalRecord.decisionId
+      ? [
+          args.nextEntranceSession.decisionExperience.canonicalRecord
+            .decisionId,
+        ]
+      : undefined,
+    journeyFacts: args.nextEntranceSession?.executionPlanning
+      ?.canonicalExecutionId
+      ? {
+          executionStates: Object.freeze({
+            [args.nextEntranceSession.executionPlanning.canonicalExecutionId]:
+              args.nextEntranceSession.executionPlanning.canonicalStatus ===
+              "in-progress"
+                ? ("ACTIVE" as const)
+                : args.nextEntranceSession.executionPlanning.canonicalStatus ===
+                    "blocked"
+                  ? ("BLOCKED" as const)
+                  : args.nextEntranceSession.executionPlanning
+                        .canonicalStatus === "completed"
+                    ? ("COMPLETED" as const)
+                    : ("NOT_STARTED" as const),
+          }),
+          outcomeStates: Object.freeze({
+            [args.nextEntranceSession.executionPlanning.canonicalExecutionId]:
+              mapOutcomeJourneyState(args.nextEntranceSession.outcomeMonitoring),
+          }),
+          learningState:
+            args.nextEntranceSession?.learningReassessment?.context
+              ?.supportedLearnings.length
+              ? args.nextEntranceSession.learningReassessment.context
+                  .memoryStatus === "WRITTEN" ||
+                args.nextEntranceSession.learningReassessment.context
+                  .memoryStatus === "SUPERSEDED"
+                ? ("CAPTURED" as const)
+                : ("AVAILABLE" as const)
+              : ("NOT_AVAILABLE" as const),
+        }
+      : undefined,
+    executiveCurrentGoal: nextExecutiveContext.currentGoal
+      ? {
+          subjectId: nextExecutiveContext.currentGoal.subjectId,
+          canonicalName: nextExecutiveContext.currentGoal.canonicalName ?? null,
+        }
+      : args.previousExecutiveContext.currentGoal
+        ? {
+            subjectId: args.previousExecutiveContext.currentGoal.subjectId,
+            canonicalName:
+              args.previousExecutiveContext.currentGoal.canonicalName ?? null,
+          }
+        : null,
+  });
+
+  const discoveredGoal = args.nextEntranceSession?.goalDiscovery;
+  const realityGap = realityGapForMo(
+    args.nextEntranceSession?.realityDiscovery ?? null,
+  );
+  let managerObjectTurn =
+    discoveredGoal?.object && discoveredGoal.context.managerConfirmed
+      ? Object.freeze({
+          ...managerObjectTurnRaw,
+          session: freezeManagerObjectSession({
+            ...managerObjectTurnRaw.session,
+            goalContext: {
+              ...toMoGoalContext(
+                discoveredGoal.context,
+                discoveredGoal.object,
+              ),
+              ...(realityGap ? { currentGap: realityGap } : {}),
+            },
+            activeObjectId:
+              managerObjectTurnRaw.session.activeObjectId ??
+              discoveredGoal.object.id,
+          }),
+        })
+      : managerObjectTurnRaw;
+
+  const investigationAsk =
+    classifyExecutiveInvestigationAsk(
+      normalizeNexoraConversationalUtterance(args.utterance),
+    ) ??
+    (threadFromSession(
+      args.previousManagerObjectSession ?? managerObjectTurn.session,
+    ) &&
+    /^(?:what do you recommend|what should i do)$/.test(
+      normalizeNexoraConversationalUtterance(args.utterance),
+    )
+      ? ("recommend-under-uncertainty" as const)
+      : null);
+  const investigation = investigationAsk
+    ? composeExecutiveInvestigationAnswer({
+        utterance: args.utterance,
+        ask: investigationAsk,
+        focusId:
+          managerObjectTurn.activeObjectId ??
+          args.contextResult.context.primarySubject?.subjectId ??
+          null,
+        thread: threadFromSession(
+          args.previousManagerObjectSession ?? managerObjectTurn.session,
+        ),
+        catalog: args.catalog,
+        scenarioResult: args.scenarioResult,
+        decisionResult: args.decisionCommitmentResult,
+      })
+    : null;
+  if (investigation?.thread) {
+    managerObjectTurn = Object.freeze({
+      ...managerObjectTurn,
+      session: freezeManagerObjectSession(
+        withInvestigationThread(managerObjectTurn.session, investigation.thread),
+      ),
+    });
+  }
+
+  const managerExperience = composeExecutiveManagerExperience({
+    utterance: args.utterance,
+    originalResponse: args.response,
+    conversationalKind: args.intentResult.intent.kind,
+    turn: managerObjectTurn,
+    previousSession: args.previousManagerObjectSession,
+    recommendationPresent: Boolean(args.recommendationResult),
+    scenarioPresent: Boolean(args.scenarioResult),
+    decisionCommitmentPresent: Boolean(args.decisionCommitmentResult),
+  });
+  const authorityResponse = args.preservePresentedResponse
+    ? args.response
+    : investigation?.answer
+      ? investigation.answer
+      : managerExperience.answer.length > 0
+        ? managerExperience.answer
+        : args.response;
+
+  const naturalLanguageUnderstanding = interpretManagerTurnMeaning({
+    utterance: args.utterance,
+    subjects: args.executiveSubjects,
+  });
+  const contextualManagerMeaning = interpretContextualManagerTurn({
+    turnMeaning: naturalLanguageUnderstanding,
+    subjects: args.executiveSubjects,
+    previousContinuity:
+      args.previousManagerObjectSession?.conversationContinuity ??
+      managerObjectTurn.session.conversationContinuity ??
+      null,
+    executiveContext: args.previousExecutiveContext,
+    managerSession: args.previousManagerObjectSession ?? managerObjectTurn.session,
+    stageFocusedId: args.nextRuntimeState.focusedSubject?.id ?? null,
+  });
+  const conversationContinuity = args.preserveConversationContinuity
+    ? (args.previousManagerObjectSession?.conversationContinuity ??
+      managerObjectTurn.session.conversationContinuity ??
+      updateConversationContinuity({
+        previous: null,
+        contextual: contextualManagerMeaning,
+        resolvedSubjectId: null,
+        resolvedSubjectKind: null,
+        investigationSubjectId: null,
+      }))
+    : updateConversationContinuity({
+    previous: applyClarificationRepair(
+      args.previousManagerObjectSession?.conversationContinuity ??
+        managerObjectTurn.session.conversationContinuity,
+      args.clarificationTurn ??
+        interpretClarificationTurn({
+          turnMeaning: naturalLanguageUnderstanding,
+          contextual: contextualManagerMeaning,
+          pending: args.previousManagerObjectSession?.pendingClarification ?? null,
+          continuity:
+            args.previousManagerObjectSession?.conversationContinuity ?? null,
+          subjects: args.executiveSubjects,
+          intentKind: args.intentResult.intent.kind,
+        }),
+    ) ??
+      args.previousManagerObjectSession?.conversationContinuity ??
+      managerObjectTurn.session.conversationContinuity,
+    contextual: contextualManagerMeaning,
+    resolvedSubjectId:
+      args.clarificationTurn?.resumeReference?.subjectId ??
+      (contextualManagerMeaning.continuityMove === "backtrack" ||
+      contextualManagerMeaning.continuityMove === "resume-parked"
+        ? contextualManagerMeaning.objectReference?.subjectId ??
+          managerObjectTurn.activeObjectId ??
+          args.contextResult.context.primarySubject?.subjectId ??
+          null
+        : managerObjectTurn.activeObjectId ??
+          args.contextResult.context.primarySubject?.subjectId ??
+          contextualManagerMeaning.objectReference?.subjectId ??
+          null),
+    resolvedSubjectKind:
+      args.clarificationTurn?.resumeReference?.subjectKind ??
+      args.contextResult.context.primarySubject?.subjectKind ??
+      managerObjectTurn.context.objectKind.value ??
+      null,
+    investigationSubjectId:
+      managerObjectTurn.session.investigationSubjectId ??
+      managerObjectTurn.exploration.recommendedPaths[0]?.targetObjectId ??
+      null,
+    presentedIds:
+      nextExecutiveContext.presentedSet?.subjectIds ??
+      managerObjectTurn.session.investigationCandidateIds,
+    recommendedTargetId:
+      managerObjectTurn.exploration.recommendedPaths[0]?.targetObjectId ?? null,
+    recommendationId:
+      lastRecommendationId,
+  });
+  const clarificationTurn =
+    args.clarificationTurn ??
+    interpretClarificationTurn({
+      turnMeaning: naturalLanguageUnderstanding,
+      contextual: contextualManagerMeaning,
+      pending: args.previousManagerObjectSession?.pendingClarification ?? null,
+      continuity:
+        args.previousManagerObjectSession?.conversationContinuity ?? null,
+      subjects: args.executiveSubjects,
+      intentKind: args.intentResult.intent.kind,
+    });
+  managerObjectTurn = Object.freeze({
+    ...managerObjectTurn,
+    session: freezeManagerObjectSession({
+      ...managerObjectTurn.session,
+      conversationContinuity,
+      pendingClarification:
+        args.pendingClarification !== undefined
+          ? args.pendingClarification
+          : clarificationTurn.action === "park"
+            ? clarificationTurn.pending
+            : null,
+    }),
+  });
+
+  const guidanceTurn = resolveGuidanceTurn({
+    utterance: args.utterance,
+    meaning: naturalLanguageUnderstanding,
+    intentKind: args.intentResult.intent.kind,
+    status: args.status,
+    turn: managerObjectTurn,
+    clarification: clarificationTurn,
+    authorityResponse,
+    registeredNames: args.executiveSubjects.map((subject) => subject.canonicalName),
+    previousGuidance: args.previousManagerObjectSession?.lastGuidanceText ?? null,
+  });
+  const guidedSource =
+    args.lockPresentedResponse
+      ? authorityResponse
+      : guidanceTurn.action === "replace" && guidanceTurn.answer
+        ? guidanceTurn.answer
+        : guidanceTurn.action === "append" && guidanceTurn.answer
+          ? `${authorityResponse} ${guidanceTurn.answer}`
+          : authorityResponse;
+  managerObjectTurn = Object.freeze({
+    ...managerObjectTurn,
+    session: freezeManagerObjectSession({
+      ...managerObjectTurn.session,
+      lastGuidanceText:
+        guidanceTurn.action === "keep" ? managerObjectTurn.session.lastGuidanceText ?? null : guidanceTurn.selectedGuidance,
+    }),
+  });
+
+  const trustedCommunication = composeTrustedExecutiveCommunication({
+    sourceText: guidedSource,
+    utterance: args.utterance,
+    meaning: naturalLanguageUnderstanding,
+    clarification: clarificationTurn,
+    status: args.status,
+    intentKind: args.intentResult.intent.kind,
+    explanation: managerObjectTurn.explanation,
+    lockPresentedResponse: Boolean(args.lockPresentedResponse),
+  });
+  const previousNcaState =
+    args.previousManagerObjectSession?.ncaConversationState ?? null;
+  const ncaTurnRaw = interpretNcaTurn({
+    utterance: args.utterance,
+    meaning: naturalLanguageUnderstanding,
+    contextual: contextualManagerMeaning,
+    clarification: clarificationTurn,
+    guidance: guidanceTurn,
+    turn: managerObjectTurn,
+    role: args.nextEntranceSession?.identity.role ?? null,
+    domain: args.nextEntranceSession?.identity.domain ?? null,
+    answeredMissing: previousNcaState?.answeredMissing,
+  });
+  const seedQuestion =
+    ncaTurnRaw.strategy.question ?? investigationSeedQuestion(ncaTurnRaw);
+  const ncaForDialogue =
+    seedQuestion && !ncaTurnRaw.strategy.question
+      ? Object.freeze({
+          ...ncaTurnRaw,
+          strategy: Object.freeze({
+            ...ncaTurnRaw.strategy,
+            question: seedQuestion,
+          }),
+        })
+      : ncaTurnRaw;
+  const ncaDialogue = interpretNcaDialogueTurn({
+    previous: previousNcaState,
+    utterance: args.utterance,
+    nca: ncaForDialogue,
+    meaning: naturalLanguageUnderstanding,
+    contextual: contextualManagerMeaning,
+  });
+  const ncaAfterDialogue = overlayNcaTurnWithDialogue(ncaForDialogue, ncaDialogue);
+  const nca3Strategy = evaluateNca3QuestionStrategy({
+    utterance: args.utterance,
+    nca: ncaAfterDialogue,
+    conversation: ncaDialogue.state,
+    dialogueMove: ncaDialogue.move,
+    explanationText: managerObjectTurn.explanation.managerFacingText,
+    goalTitle: managerObjectTurn.navigation.goal?.title ?? null,
+    lastAnswer: ncaDialogue.state.lastAnswer,
+  });
+  const ncaTurn =
+    ncaDialogue.move === "ANSWER_NEXORA"
+      ? ncaAfterDialogue
+      : overlayNcaTurnWithQuestionStrategy(ncaAfterDialogue, nca3Strategy);
+  const strategySource = applyNcaStrategyToResponse({
+    source: trustedCommunication.answer,
+    nca: ncaTurn,
+    locked: Boolean(args.lockPresentedResponse),
+  });
+  const seededSource =
+    !args.lockPresentedResponse &&
+    seedQuestion &&
+    !strategySource.includes("?") &&
+    !(nca3Strategy.shouldAsk && nca3Strategy.question) &&
+    ncaDialogue.move !== "ANSWER_NEXORA" &&
+    ncaDialogue.move !== "ACKNOWLEDGE" &&
+    ncaDialogue.move !== "ACCEPT" &&
+    ncaDialogue.move !== "FOLLOW_UP" &&
+    ncaDialogue.move !== "REJECT" &&
+    ncaDialogue.move !== "CORRECT" &&
+    ncaDialogue.move !== "CLOSE_TOPIC" &&
+    ncaDialogue.move !== "RETURN_TO_TOPIC" &&
+    !/\bwhy that one\b/i.test(args.utterance)
+      ? `${strategySource} ${seedQuestion}`
+      : strategySource;
+  const continuity = composeNca2ContinuityResponse({
+    source: seededSource,
+    interpretation: ncaDialogue,
+    nca: ncaTurn,
+    locked: Boolean(args.lockPresentedResponse),
+  });
+  const nca3Presented = applyNca3StrategyToResponse({
+    source: continuity.text,
+    strategy: nca3Strategy,
+    utterance: args.utterance,
+    locked: Boolean(args.lockPresentedResponse),
+    dialogueMove: ncaDialogue.move,
+  });
+  const nca4Strategy = evaluateNca4AdvisoryStrategy({
+    utterance: args.utterance,
+    nca: ncaTurn,
+    conversation: ncaDialogue.state,
+    nca3: nca3Strategy,
+  });
+  const nca4Presented = applyNca4StrategyToResponse({
+    source: nca3Presented,
+    strategy: nca4Strategy,
+    locked: Boolean(args.lockPresentedResponse),
+  });
+  const nca5Strategy = evaluateNca5InitiativeStrategy({
+    utterance: args.utterance,
+    nca: ncaTurn,
+    conversation: ncaDialogue.state,
+    nca3: nca3Strategy,
+    nca4: nca4Strategy,
+    attention: managerObjectTurn.attention,
+    signals: args.initiativeSignals,
+    conversationImportance: args.conversationImportance,
+    managerTurnPresent: Boolean(args.utterance.trim()),
+  });
+  const nca5Presented = applyNca5StrategyToResponse({
+    source: nca4Presented,
+    strategy: nca5Strategy,
+    locked:
+      Boolean(args.lockPresentedResponse) || clarificationTurn.action === "clarify",
+    managerTurnPresent: Boolean(args.utterance.trim()),
+  });
+  const nca6Strategy = evaluateNca6CommunicationStrategy({
+    utterance: args.utterance,
+    source: nca5Presented,
+    nca: ncaTurn,
+    conversation: ncaDialogue.state,
+    nca3: nca3Strategy,
+    nca4: nca4Strategy,
+    nca5: nca5Strategy,
+    managerContext: args.managerCommunicationContext,
+  });
+  const presentedResponseRaw = applyNca6StrategyToResponse({
+    source: nca5Presented,
+    strategy: nca6Strategy,
+    locked:
+      Boolean(args.lockPresentedResponse) || clarificationTurn.action === "clarify",
+  });
+  const trailLabels = Object.freeze(
+    [
+      ...(args.nextRuntimeState.trail ?? []).map((item) => item.label),
+      args.nextRuntimeState.focusedSubject?.label ?? null,
+    ].filter((item, index, all): item is string => Boolean(item) && all.indexOf(item) === index),
+  );
+  const semanticTurn = composeNexoraSemanticTurn({
+    utterance: args.utterance,
+    catalog: args.catalog,
+    previousCollection: hydrateCanonicalCollectionMembers(
+      previousNcaState?.lastCollection?.items ?? [],
+      args.catalog,
+    ),
+    stageLabels: trailLabels,
+    focusedLabel: args.nextRuntimeState.focusedSubject?.label ?? null,
+    presentationOnlyChange: /\b(?:shown|view|filter|focus)\b/i.test(args.utterance),
+  });
+  const presentedResponse =
+    semanticTurn.reply && semanticTurn.owner !== "BUSINESS"
+      ? semanticTurn.reply
+      : presentedResponseRaw;
+  const nca7Turn = composeNca7TurnResult({
+    utterance: args.utterance,
+    response: presentedResponse,
+    nca: ncaTurn,
+    conversation: ncaDialogue.state,
+    nca3: nca3Strategy,
+    nca4: nca4Strategy,
+    nca5: nca5Strategy,
+    nca6: nca6Strategy,
+    locked: Boolean(args.lockPresentedResponse),
+    entranceOwned: Boolean(args.nextEntranceSession),
+    clarificationOwns: clarificationTurn.action === "clarify",
+    decisionConfirmation: decisionCommitmentResult?.status === "confirmation-required",
+    executionConfirmation: args.status === "confirmation-required",
+    commitsDecision:
+      decisionCommitmentResult?.status === "applied" ||
+      decisionCommitmentResult?.status === "already-committed",
+    startsExecution: false,
+    writesBusinessTruth: Boolean(managerObjectTurn.navigation.goal.persisted),
+  });
+  const nextNcaState = attachCommunicationSnapshot(
+    attachInitiativeSnapshot(
+      attachAdvisorySnapshot(
+        applyNexoraDialogueEffects({
+          state: ncaDialogue.state,
+          nca: ncaTurn,
+          response: presentedResponse,
+          locked: Boolean(args.lockPresentedResponse),
+          followUpQuestion: /\?/.test(presentedResponse) ? continuity.followUp : null,
+        }),
+        nca4Strategy,
+      ),
+      nca5Strategy,
+      args.utterance,
+    ),
+    nca6Strategy,
+  );
+  managerObjectTurn = Object.freeze({
+    ...managerObjectTurn,
+    session: freezeManagerObjectSession({
+      ...managerObjectTurn.session,
+      ncaConversationState: nextNcaState,
+    }),
+  });
   const nexoraMessage = freezeMessage({
     id: args.ids.nexoraId,
     role: "nexora",
-    text: args.response,
+    text: presentedResponse,
     status: args.status,
     commandId: args.commandResult?.command?.commandId,
   });
@@ -1753,18 +2962,156 @@ function finalize(args: {
     commandKind: args.commandResult?.command?.kind ?? null,
     runtimeStatus: args.runtimeResult?.status ?? null,
     experienceStatus: args.status,
-    responseText: args.response,
+    responseText: presentedResponse,
     executiveContextTurnIndex: nextExecutiveContext.turnIndex,
     executiveCurrentSubjectId:
       nextExecutiveContext.currentSubject?.subjectId ?? null,
     pendingTurnExpectationKind:
       derivedPendingTurnExpectation?.questionKind ?? null,
     pendingTurnResolutionStatus: args.pendingTurnResolution?.status ?? null,
+    managerObjectId: managerObjectTurn.activeObjectId,
+    managerObjectIntent: managerObjectTurn.intent,
+    explainEngineId: managerObjectTurn.explanation.engineId,
+    explanationSummary: managerObjectTurn.explanation.summary,
+    explanationEpistemic: managerObjectTurn.explanation.epistemicStatus,
+    explanationDepth: managerObjectTurn.explanation.depth,
+    explanationFocus: managerObjectTurn.explanation.focus,
+    explanationHandoffRecommendation:
+      managerObjectTurn.explanation.handoffRecommendation,
+    explorationEngineId: managerObjectTurn.exploration.engineId,
+    explorationState: managerObjectTurn.exploration.explorationState,
+    recommendedPathId:
+      managerObjectTurn.exploration.recommendedPaths[0]?.pathId ?? null,
+    recommendedPathLabel:
+      managerObjectTurn.exploration.recommendedPaths[0]?.label ?? null,
+    recommendedPathKind:
+      managerObjectTurn.exploration.recommendedPaths[0]?.kind ?? null,
+    recommendedPathTarget:
+      managerObjectTurn.exploration.recommendedPaths[0]?.targetObjectId ?? null,
+    navigationEngineId: managerObjectTurn.navigation.engineId,
+    goalSource: managerObjectTurn.navigation.goal.source,
+    goalTitle: managerObjectTurn.navigation.goal.title,
+    goalEpistemic: managerObjectTurn.navigation.goal.epistemicStatus,
+    goalConfirmed: managerObjectTurn.navigation.goal.managerConfirmed,
+    goalPersisted: managerObjectTurn.navigation.goal.persisted,
+    goalProgress: managerObjectTurn.navigation.progressState,
+    navigationDirection: managerObjectTurn.navigation.recommendedDirection,
+    navigationPathId:
+      managerObjectTurn.navigation.recommendedPath?.path.pathId ?? null,
+    navigationPathTarget:
+      managerObjectTurn.navigation.recommendedPath?.path.targetObjectId ?? null,
+    journeyEngineId: managerObjectTurn.journey.engineId,
+    journeyPhase: managerObjectTurn.journey.currentPhase,
+    journeyState: managerObjectTurn.journey.journeyState,
+    journeyHealth: managerObjectTurn.journey.health,
+    journeyBlocker: managerObjectTurn.journey.blocker?.kind ?? null,
+    journeyMilestone: managerObjectTurn.journey.nextMilestone,
+    attentionEngineId: managerObjectTurn.attention.engineId,
+    attentionState: managerObjectTurn.attention.attentionState,
+    attentionPrimary: managerObjectTurn.attention.primaryAttention?.label ?? null,
+    attentionIntervention: managerObjectTurn.attention.interventionAssessment.need,
+    attentionDoNotDisturb: managerObjectTurn.attention.doNotDisturb,
+    attentionStealsFocus: false,
+    experienceIntegrationId: managerExperience.integrationId,
+    experienceLane: managerExperience.lane,
+    experienceCompactContext: managerExperience.compactContext,
+    experienceNextStep: managerExperience.recommendedNextStep,
+    nluCommunicativeIntent: naturalLanguageUnderstanding.communicativeIntent,
+    nluRequestedOperation: naturalLanguageUnderstanding.requestedOperation,
+    nluSubject:
+      naturalLanguageUnderstanding.objectReference?.canonicalName ?? null,
+    nluQuestionType: naturalLanguageUnderstanding.questionType,
+    nluConfidence: naturalLanguageUnderstanding.confidence,
+    nluAmbiguity: naturalLanguageUnderstanding.ambiguity.unresolved,
+    nluAuthority: naturalLanguageUnderstanding.selectedAuthority,
+    continuityProvenance: contextualManagerMeaning.provenance,
+    continuityMove: contextualManagerMeaning.continuityMove,
+    continuitySubject:
+      contextualManagerMeaning.objectReference?.canonicalName ?? null,
+    continuityConfidence: contextualManagerMeaning.confidence,
+    continuityAmbiguity: contextualManagerMeaning.ambiguity.unresolved,
+    continuityActiveSubject: conversationContinuity.activeSubjectId,
+    continuityInvestigation: conversationContinuity.activeInvestigationId,
+    continuityPreviousSubject: conversationContinuity.activeSubjectId
+      ? conversationContinuity.previousSubjectId
+      : conversationContinuity.previousSubjectId,
+    clarificationRequired:
+      clarificationTurn.action === "clarify" ||
+      clarificationTurn.action === "unpark" ||
+      clarificationTurn.action === "fail",
+    clarificationAction: clarificationTurn.action,
+    clarificationReason: clarificationTurn.reason,
+    clarificationQuestion: clarificationTurn.question,
+    clarificationCandidates: clarificationTurn.pending?.candidates.length ?? 0,
+    clarificationConsequence: clarificationTurn.consequence,
+    correctionDetected: clarificationTurn.correctionDetected,
+    correctionScope: clarificationTurn.correctionScope,
+    correctionBefore: clarificationTurn.correctionBeforeId,
+    correctionAfter: clarificationTurn.correctionAfterId,
+    resumedOperation: clarificationTurn.resumeOperation,
+    communicationDepth: trustedCommunication.depth,
+    communicationClaimCount: trustedCommunication.claims.length,
+    communicationFactCount: trustedCommunication.claims.filter((item) => item.kind === "FACT").length,
+    communicationHypothesisCount: trustedCommunication.claims.filter((item) => item.kind === "HYPOTHESIS").length,
+    communicationUnknownCount: trustedCommunication.claims.filter((item) => item.kind === "UNKNOWN").length,
+    communicationRecommendation: trustedCommunication.recommendationPresent,
+    communicationChallenge: trustedCommunication.challengePresent,
+    communicationUncertaintyPreserved: trustedCommunication.uncertaintyPreserved,
+    communicationCausalValidated: trustedCommunication.causalClaimValidated,
+    communicationDecisionWording: trustedCommunication.decisionStateWording,
+    communicationExecutionWording: trustedCommunication.executionStateWording,
+    guidanceIntent: guidanceTurn.intent,
+    guidanceAction: guidanceTurn.action,
+    guidanceCapability: guidanceTurn.capabilityId,
+    guidanceAvailability: guidanceTurn.availability,
+    guidancePrerequisite: guidanceTurn.prerequisite,
+    guidanceSelected: guidanceTurn.selectedGuidance,
+    guidanceReason: guidanceTurn.guidanceReason,
+    guidanceProactiveEligible: guidanceTurn.proactiveEligible,
+    guidanceProactiveSuppressed: guidanceTurn.proactiveSuppressed,
+    guidanceAuthority: guidanceTurn.authoritySource,
+    ncaNeed: ncaTurn.need.family,
+    ncaBehavior: ncaTurn.advisorBehavior,
+    ncaSufficient: ncaTurn.knowledgeState.sufficient,
+    ncaCapability: ncaTurn.strategy.capability,
+    ncaQuestion: ncaTurn.strategy.question ?? nextNcaState.pendingQuestion?.question ?? null,
+    nca2Move: nextNcaState.dialogueMove,
+    nca2Topic: nextNcaState.activeTopic?.label ?? null,
+    nca2Subject: nextNcaState.activeSubject?.name ?? null,
+    nca2Pending: nextNcaState.pendingQuestion?.question ?? null,
+    nca2ThreadState:
+      nextNcaState.threads.find((thread) => thread.id === nextNcaState.currentThreadId)
+        ?.state ?? null,
+    nca3Mode: nca3Strategy.mode,
+    nca3ShouldAsk: nca3Strategy.shouldAsk,
+    nca3Sufficiency: nca3Strategy.sufficiency,
+    nca3Gap: nca3Strategy.gap?.id ?? null,
+    nca4Move: nca4Strategy.move,
+    nca4Status: nca4Strategy.position.status,
+    nca4Option: nca4Strategy.position.recommendation.optionLabel,
+    nca4Strength: nca4Strategy.position.recommendation.strength,
+    nca4Confidence: nca4Strategy.position.confidence.level,
+    nca4Advise: nca4Strategy.shouldAdvise,
+    nca5Initiate: nca5Strategy.shouldInitiate,
+    nca5Behavior: nca5Strategy.decision.behavior,
+    nca5Priority: nca5Strategy.decision.priority,
+    nca5Interrupt: nca5Strategy.decision.interruption.justified,
+    nca5Subject: nca5Strategy.decision.signal?.subjectLabel ?? null,
+    nca6Depth: nca6Strategy.strategy.depth,
+    nca6Framing: nca6Strategy.strategy.framing,
+    nca6Structure: nca6Strategy.strategy.structure,
+    nca6Familiarity: nca6Strategy.snapshot.familiarity,
+    nca6Role: nca6Strategy.snapshot.role,
+    nca7Owner: nca7Turn.authority.owner,
+    nca7Rank: nca7Turn.authority.rank,
+    nca7Ask: nca7Turn.sufficiency.shouldAsk,
+    nca7Advise: nca7Turn.advisory.shouldAdvise,
+    nca7Initiate: nca7Turn.initiative.shouldInitiate,
   });
 
   return Object.freeze({
     status: args.status,
-    response: args.response,
+    response: presentedResponse,
     intentResult: args.intentResult,
     contextResult: args.contextResult,
     experienceResult: args.experienceResult,
@@ -1788,8 +3135,43 @@ function finalize(args: {
     trace,
     shouldCommitRuntime: args.shouldCommitRuntime,
     nextRuntimeState: args.nextRuntimeState,
+    managerObjectTurn,
+    nextEntranceSession: args.nextEntranceSession ?? null,
+    naturalLanguageUnderstanding,
+    contextualManagerMeaning,
+    clarificationTurn,
+    trustedCommunication,
+    guidanceTurn,
+    ncaTurn,
+    ncaDialogueMove: nextNcaState.dialogueMove,
+    ncaConversationState: nextNcaState,
+    nca3Strategy,
+    nca4Strategy,
+    nca5Strategy,
+    nca6Strategy,
+    nca7Turn,
+    ncaPost3Diagnostics: semanticTurn.diagnostics,
   });
 }
 
-/** Alias matching mission naming. */
+function mapOutcomeJourneyState(
+  session:
+    | {
+        readonly observations: readonly unknown[];
+        readonly context: {
+          readonly goalImpact: { readonly state: string };
+        } | null;
+      }
+    | null
+    | undefined,
+): "NOT_OBSERVED" | "OBSERVED" | "IMPROVED" | "UNCHANGED" | "DEGRADED" | "UNKNOWN" {
+  if (!session || session.observations.length === 0) return "NOT_OBSERVED";
+  const impact = session.context?.goalImpact.state;
+  if (impact === "IMPROVING" || impact === "ACHIEVED") return "IMPROVED";
+  if (impact === "UNCHANGED") return "UNCHANGED";
+  if (impact === "WORSENING") return "DEGRADED";
+  if (impact === "UNKNOWN" || impact === "MIXED") return "UNKNOWN";
+  return "OBSERVED";
+}
+
 export const submitExecutiveUtterance = executeNexoraConversationalExperience;

@@ -1,0 +1,9 @@
+{
+  "outcomes": {
+    "A": "unknown adjective / unparsed clause → genuine fallback",
+    "B": "parsed Delivery delay → honest unsupported-model",
+    "C": "parsed Capacity directional change → CC:9 evaluation when modeled"
+  },
+  "liveTooLate": "I understand you want to test a severe Delivery delay, but I don't currently have a supported impact model for that change.",
+  "inventedMagnitude": false
+}

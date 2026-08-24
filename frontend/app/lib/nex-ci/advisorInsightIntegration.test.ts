@@ -217,7 +217,10 @@ test("5. Advisor / Insight mode and readiness vocabularies remain distinct", () 
   assert.equal(advisorReactions.length, 8);
   assert.equal(insightReactions.length, 7);
   assert.ok(insightReactions.includes("relationship-changed"));
-  assert.equal(insightReactions.includes("transition-started"), false);
+  assert.equal(
+    insightReactions.some((kind) => String(kind) === "transition-started"),
+    false,
+  );
   assert.equal(isExecutiveAdvisorContextMode("transition"), true);
   assert.equal(isExecutiveInsightContextMode("relationship"), true);
 });

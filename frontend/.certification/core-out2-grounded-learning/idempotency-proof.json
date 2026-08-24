@@ -1,0 +1,8 @@
+{
+  "rule": "Reprocessing the same CORE-OUT:1 assessment + evidence context must not create duplicate Learning.",
+  "identity": "learn:{family}:{fingerprint}",
+  "inMemoryIndex": "byId/byFamily is a candidate identity index for the session. It is not durable memory.",
+  "caseS": "second projectGroundedLearningIntelligence call returns the same learningId",
+  "app4": "second promoteGroundedLearningToApp4 with the same id is rejected as duplicate-durable-record",
+  "newEvidence": "different observationId/fingerprint creates a new version with previousLearningId"
+}

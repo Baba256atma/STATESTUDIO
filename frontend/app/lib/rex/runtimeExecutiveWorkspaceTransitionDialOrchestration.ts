@@ -1420,26 +1420,26 @@ export interface RuntimeExecutiveWorkspaceTransitionDialOrchestrationVerificatio
 
 export function verifyRuntimeExecutiveWorkspaceTransitionDialOrchestration():
   RuntimeExecutiveWorkspaceTransitionDialOrchestrationVerification {
-  const module = runtimeExecutiveWorkspaceTransitionDialOrchestration;
+  const runtimeModule = runtimeExecutiveWorkspaceTransitionDialOrchestration;
   const registry = runtimeExecutiveWorkspaceTransitionDialOrchestrationRegistry;
   const upstream = verifyRuntimeExecutiveWorkspaceSurfaceComposition();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-6:5/RuntimeExecutiveWorkspaceTransitionDialOrchestration" &&
-    module.version === "6.5.0" &&
-    module.namespace ===
+    runtimeModule.version === "6.5.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.workspace-experience.transition-dial-orchestration" &&
-    module.phase === "TransitionDialOrchestration" &&
-    module.architecturalRole ===
+    runtimeModule.phase === "TransitionDialOrchestration" &&
+    runtimeModule.architecturalRole ===
       "RuntimeExecutiveWorkspaceTransitionDialOrchestration" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       "REX-6:4/RuntimeExecutiveWorkspaceSurfaceComposition" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeExecutiveWorkspaceSurfaceCompositionIdentity &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveWorkspaceSurfaceComposition" &&
-    module.compositionBoundary === "REX-6:4-composition-only";
+    runtimeModule.compositionBoundary === "REX-6:4-composition-only";
 
   const phaseOrderExact = exactOrder(
     [...RUNTIME_EXECUTIVE_WORKSPACE_TRANSITION_PHASES],
@@ -1574,11 +1574,11 @@ export function verifyRuntimeExecutiveWorkspaceTransitionDialOrchestration():
     nonLinearOk &&
     countsOk &&
     frozen &&
-    module.dialIsControlSource === true &&
-    module.dialIsNotWorkspace === true &&
-    module.dialIsNotSurface === true &&
-    module.animationTimingIndependent === true &&
-    module.presentationStateIndependent === true &&
+    runtimeModule.dialIsControlSource === true &&
+    runtimeModule.dialIsNotWorkspace === true &&
+    runtimeModule.dialIsNotSurface === true &&
+    runtimeModule.animationTimingIndependent === true &&
+    runtimeModule.presentationStateIndependent === true &&
     upstream.ok === true;
 
   return Object.freeze({
@@ -1611,15 +1611,15 @@ export function verifyRuntimeExecutiveWorkspaceTransitionDialOrchestration():
       runtimeExecutiveWorkspaceTransitionDialOrchestrationApiNames.length,
     frozen,
     compositionBoundaryIntact:
-      module.compositionBoundary === "REX-6:4-composition-only",
+      runtimeModule.compositionBoundary === "REX-6:4-composition-only",
     phaseOrderExact,
     allWorkspacePairsRepresentable,
-    dialIsNotSurface: module.dialIsNotSurface === true,
-    dialIsNotWorkspace: module.dialIsNotWorkspace === true,
+    dialIsNotSurface: runtimeModule.dialIsNotSurface === true,
+    dialIsNotWorkspace: runtimeModule.dialIsNotWorkspace === true,
     nonLinearTransitionCapable: nonLinearOk,
-    sameWorkspaceContextCapable: module.sameWorkspaceContextCapable === true,
+    sameWorkspaceContextCapable: runtimeModule.sameWorkspaceContextCapable === true,
     presentationStateIndependent:
-      module.presentationStateIndependent === true,
+      runtimeModule.presentationStateIndependent === true,
     upstreamCompositionOk: upstream.ok === true,
   });
 }

@@ -1,0 +1,52 @@
+{
+  "identity": "CORE-INT:3/AuthorityMap",
+  "flow": [
+    "Relationship source",
+    "CORE-INT:2 epistemic authority",
+    "CORE-INT:3 causal/constraint interpretation",
+    "Core CausalAssessment / ConstraintAssessment",
+    "EXI:2 reader",
+    "Advisor / Conversation"
+  ],
+  "previousAuthority": {
+    "causal": "EXI:2 composeNexoraExiCauseAssessment independently classified contributors and set primaryContributor when inbound count === 1",
+    "constraint": "EXI:2 composeNexoraExiConstraintAssessment treated constrained-by and outgoing blocks as constraints; bindingConstraint always null"
+  },
+  "canonicalAuthority": {
+    "id": "CORE-INT:3/GroundedCausalConstraintIntelligence",
+    "module": "frontend/app/lib/executive-intelligence/nexoraGroundedCausalConstraintIntelligence.ts",
+    "liveCollector": "frontend/app/lib/nex-mvp/nexoraLiveEpistemicProjection.ts",
+    "epistemicReuse": "CORE-INT:2 / EI:3 createExecutiveClaim + SemanticConfidence",
+    "parallelEpistemicEngine": false
+  },
+  "relationshipClassification": {
+    "real-runtime-or-model-fixture-evidence": [
+      "NEXORA_MVP_CONTEXT_LINK_FIXTURES (constrained-by, affected-by, associated-with, explored-by, acts-on, implements)",
+      "NEXORA_MVP_SUBJECT_PRESENTATION_FIXTURES relationships (constrained-by, blocks, depends-on, affects, influences)",
+      "optional validated Data Reality KPI (observation FACT only; does not prove causation)"
+    ],
+    "presentation-only": [
+      "EXI:2 / Advisor wording",
+      "conversation answers derived from Core assessments"
+    ],
+    "test-only": [
+      "EI:3 supported-causal + causeEstablished (not live on /executive fixtures)",
+      "explicitPrimaryContributorId / explicitRootCauseId / explicitBindingConstraintId"
+    ],
+    "ambiguous": [
+      "Stage unlabeled related edges",
+      "context-link viewed from the non-owner side keeps the stored relation kind and is not reverse-inferred"
+    ]
+  },
+  "writers": [
+    "projectGroundedCausalConstraintIntelligence"
+  ],
+  "readers": [
+    "EXI:1",
+    "EXI:2",
+    "EXI:3",
+    "Advisor",
+    "Conversation"
+  ],
+  "forbiddenWriters": ["EXI", "Advisor", "Conversation", "LLM", "Priority", "EI:4"]
+}

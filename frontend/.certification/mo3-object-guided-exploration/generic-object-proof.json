@@ -1,0 +1,15 @@
+{
+  "engine": "MO:3/ObjectGuidedExecutiveExploration",
+  "perObjectBranches": false,
+  "certifiedSubjects": [
+    "goal-capacity-availability",
+    "obj-capacity",
+    "obj-delivery",
+    "obj-revenue",
+    "ctx-problem-capacity",
+    "obj-risk",
+    "ctx-scenario-capacity",
+    "ctx-decision-capacity",
+    "ctx-execution-capacity"
+  ]
+}

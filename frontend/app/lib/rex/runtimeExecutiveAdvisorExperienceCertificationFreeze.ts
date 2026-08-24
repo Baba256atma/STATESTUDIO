@@ -1410,24 +1410,24 @@ export interface RuntimeExecutiveAdvisorExperienceCertificationFreezeVerificatio
 
 export function verifyRuntimeExecutiveAdvisorExperienceCertificationFreeze():
   RuntimeExecutiveAdvisorExperienceCertificationFreezeVerification {
-  const module = runtimeExecutiveAdvisorExperienceCertificationFreeze;
+  const runtimeModule = runtimeExecutiveAdvisorExperienceCertificationFreeze;
   const registry = runtimeExecutiveAdvisorExperienceCertificationFreezeRegistry;
   const platformOk = verifyRuntimeExecutiveAdvisorExperiencePlatform();
   const report = certifyRuntimeExecutiveAdvisorExperiencePlatform();
   const freeze = freezeRuntimeExecutiveAdvisorExperiencePlatform(report);
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-3:8/RuntimeExecutiveAdvisorExperienceCertificationFreeze" &&
-    module.version === "3.8.0" &&
-    module.namespace ===
+    runtimeModule.version === "3.8.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.advisor-experience.certification-freeze" &&
-    module.status === "CertifiedFrozen" &&
-    module.upstreamDependency ===
+    runtimeModule.status === "CertifiedFrozen" &&
+    runtimeModule.upstreamDependency ===
       "REX-3:7/RuntimeExecutiveAdvisorExperiencePlatform" &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveAdvisorExperiencePlatform" &&
-    module.platformBoundary === "REX-3:7-platform-only";
+    runtimeModule.platformBoundary === "REX-3:7-platform-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_ADVISOR_CERTIFICATION_DOMAINS], [
@@ -1488,14 +1488,14 @@ export function verifyRuntimeExecutiveAdvisorExperienceCertificationFreeze():
     Object.isFrozen(freeze);
 
   const boundaryOk =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-3:7/RuntimeExecutiveAdvisorExperiencePlatform" &&
-    module.boundary.consumesPlatformOnly === true &&
-    module.boundary.importsRex36Directly === false &&
-    module.boundary.introducesRuntimeBehavior === false &&
-    module.boundary.executesActions === false &&
-    module.boundary.preparesPublicIndex === true &&
-    module.boundary.isFinalPublicConsumerIndex === false;
+    runtimeModule.boundary.consumesPlatformOnly === true &&
+    runtimeModule.boundary.importsRex36Directly === false &&
+    runtimeModule.boundary.introducesRuntimeBehavior === false &&
+    runtimeModule.boundary.executesActions === false &&
+    runtimeModule.boundary.preparesPublicIndex === true &&
+    runtimeModule.boundary.isFinalPublicConsumerIndex === false;
 
   const ok =
     identityOk &&
@@ -1540,7 +1540,7 @@ export function verifyRuntimeExecutiveAdvisorExperienceCertificationFreeze():
     platformLock: REX_3_RUNTIME_EXECUTIVE_ADVISOR_EXPERIENCE_PLATFORM_LOCKED,
     frozen,
     platformOk: platformOk.ok === true,
-    noNewBehavior: module.boundary.introducesRuntimeBehavior === false,
+    noNewBehavior: runtimeModule.boundary.introducesRuntimeBehavior === false,
     readyForPublicIndex:
       isRuntimeExecutiveAdvisorExperienceReadyForPublicIndex(freeze),
   });

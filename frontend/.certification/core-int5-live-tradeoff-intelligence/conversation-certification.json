@@ -1,0 +1,34 @@
+{
+  "identity": "CORE-INT:5/ConversationCertification",
+  "utterances": [
+    { "text": "Compare the options.", "key": "compare" },
+    { "text": "What do we gain?", "key": "gain" },
+    { "text": "What do we sacrifice?", "key": "sacrifice" },
+    { "text": "Which one has more risk?", "key": "safer" },
+    { "text": "Which option addresses the constraint?", "key": "constraintComparison" },
+    { "text": "Which is cheaper?", "key": "cheaper" },
+    { "text": "Which is faster?", "key": "faster" },
+    { "text": "What assumptions matter?", "key": "assumptions" },
+    { "text": "How sure are you?", "key": "confidence" },
+    { "text": "Which option does Nexora recommend?", "key": "recommendation" },
+    { "text": "Why?", "key": "recommendation-followup" }
+  ],
+  "parserFallback": false,
+  "stageMutation": false,
+  "decisionMutation": false,
+  "humanManagerTest": {
+    "realOptions": "PASS — Pricing Response, Demand Surge",
+    "comparable": "PASS — same Margin Pressure scope",
+    "gains": "PASS — margin recovery / volume upside as PREDICTION",
+    "sacrifices": "PASS — honest missing sacrifice",
+    "risks": "PASS — delivery risk recorded; no safer ranking",
+    "constraints": "PASS — constrained capacity recorded; no better-option invention",
+    "assumptions": "PASS — Pricing Response under constrained capacity",
+    "missingEvidence": "PASS — cost and time missing",
+    "certainty": "PASS — limited / projected",
+    "recommendation": "PASS — existing recommendation authority only",
+    "why": "PASS — existing rationale, not a new winner",
+    "managerDecides": "PASS — no Decision mutation",
+    "result": "PASS"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "status": "TEST-ONLY",
+  "path": "Decision → Execution refs → canonical expected → captureOutcomeObservation → CORE-OUT:1A → CORE-OUT:1 → CORE-OUT:2 → EXI:5",
+  "app4": "only when authorizeApp4Promotion === true",
+  "notLabeledLive": true
+}

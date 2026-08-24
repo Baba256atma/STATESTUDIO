@@ -508,7 +508,7 @@ export function isExecutiveNetworkCollinear(
   tolerance = 0.12,
 ): boolean {
   if (positions.length < 3) return false;
-  let origin = positions[0]!;
+  const origin = positions[0]!;
   let dir: ExecutivePresentationPosition | null = null;
   for (let i = 1; i < positions.length; i += 1) {
     const dx = positions[i]!.x - origin.x;

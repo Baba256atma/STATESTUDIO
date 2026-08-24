@@ -25,6 +25,11 @@ import type {
   NexoraPendingTurnResolution,
 } from "./conversationalTurnExpectation.ts";
 import type { NexoraConversationalActionDescriptor } from "./conversationalActionDescriptor.ts";
+import type { CanonicalManagerMeaning } from "@/app/lib/manager-object/canonicalManagerMeaning.ts";
+import type { ContextualManagerMeaning } from "@/app/lib/manager-object/contextualManagerMeaning.ts";
+import type { ClarificationTurnResult } from "@/app/lib/manager-object/nexoraMvpFinal63ClarificationTypes.ts";
+import type { TrustedExecutiveCommunication } from "@/app/lib/manager-object/nexoraMvpFinal64CommunicationTypes.ts";
+import type { GuidanceTurnResult } from "@/app/lib/manager-object/nexoraMvpFinal65GuidanceTypes.ts";
 
 // ─── Identity ───────────────────────────────────────────────────────────────
 
@@ -128,6 +133,47 @@ export type NexoraConversationalAdvisorGrounding = {
   readonly recommendationAuthority: string;
   readonly primaryAction?: NexoraConversationalActionDescriptor | null;
   readonly availableActions?: readonly NexoraConversationalActionDescriptor[];
+  /** EXI:1/EXI:2 — same composed intelligence as Advisor. Optional for older callers. */
+  readonly experienceAnswers?: Readonly<{
+    readonly change: string;
+    readonly significance: string;
+    readonly causes: string;
+    readonly constraints: string;
+    readonly options: string;
+    readonly tradeoffs: string;
+    readonly recommendation: string;
+    readonly nextAction: string;
+    readonly outcome: string;
+    readonly learning: string;
+    readonly confidence?: string;
+    readonly evidenceFollowup?: string;
+    readonly compare?: string;
+    readonly downside?: string;
+    readonly sacrifice?: string;
+    readonly preventing?: string;
+    readonly gain?: string;
+    readonly safer?: string;
+    readonly cheaper?: string;
+    readonly faster?: string;
+    readonly assumptions?: string;
+    readonly missingDimension?: string;
+    readonly factOrAssumption?: string;
+    readonly whatAssuming?: string;
+    readonly whatPredicted?: string;
+    readonly whatUnknown?: string;
+    readonly proven?: string;
+    readonly binding?: string;
+    readonly priority?: string;
+    readonly whyPriority?: string;
+    readonly comparePriority?: string;
+    readonly secondPriority?: string;
+    readonly attentionVersusPriority?: string;
+    readonly insufficientPriority?: string;
+    readonly priorityConfidence?: string;
+    readonly priorityEvidence?: string;
+    readonly constraintComparison?: string;
+    readonly tradeoffConfidence?: string;
+  }> | null;
 };
 
 export type NexoraConversationalExperienceTrace = {
@@ -145,6 +191,128 @@ export type NexoraConversationalExperienceTrace = {
   readonly executiveCurrentSubjectId?: string | null;
   readonly pendingTurnExpectationKind?: string | null;
   readonly pendingTurnResolutionStatus?: string | null;
+  readonly managerObjectId?: string | null;
+  readonly managerObjectIntent?: string | null;
+  readonly explainEngineId?: string | null;
+  readonly explanationSummary?: string | null;
+  readonly explanationEpistemic?: string | null;
+  readonly explanationDepth?: string | null;
+  readonly explanationFocus?: string | null;
+  readonly explanationHandoffRecommendation?: boolean;
+  readonly explorationEngineId?: string | null;
+  readonly explorationState?: string | null;
+  readonly recommendedPathId?: string | null;
+  readonly recommendedPathLabel?: string | null;
+  readonly recommendedPathKind?: string | null;
+  readonly recommendedPathTarget?: string | null;
+  readonly navigationEngineId?: string | null;
+  readonly goalSource?: string | null;
+  readonly goalTitle?: string | null;
+  readonly goalEpistemic?: string | null;
+  readonly goalConfirmed?: boolean;
+  readonly goalPersisted?: boolean;
+  readonly goalProgress?: string | null;
+  readonly navigationDirection?: string | null;
+  readonly navigationPathId?: string | null;
+  readonly navigationPathTarget?: string | null;
+  readonly journeyEngineId?: string | null;
+  readonly journeyPhase?: string | null;
+  readonly journeyState?: string | null;
+  readonly journeyHealth?: string | null;
+  readonly journeyBlocker?: string | null;
+  readonly journeyMilestone?: string | null;
+  readonly attentionEngineId?: string | null;
+  readonly attentionState?: string | null;
+  readonly attentionPrimary?: string | null;
+  readonly attentionIntervention?: string | null;
+  readonly attentionDoNotDisturb?: boolean;
+  readonly attentionStealsFocus?: false;
+  readonly experienceIntegrationId?: string | null;
+  readonly experienceLane?: string | null;
+  readonly experienceCompactContext?: string | null;
+  readonly experienceNextStep?: string | null;
+  readonly nluCommunicativeIntent?: string | null;
+  readonly nluRequestedOperation?: string | null;
+  readonly nluSubject?: string | null;
+  readonly nluQuestionType?: string | null;
+  readonly nluConfidence?: string | null;
+  readonly nluAmbiguity?: boolean;
+  readonly nluAuthority?: string | null;
+  readonly continuityProvenance?: string | null;
+  readonly continuityMove?: string | null;
+  readonly continuitySubject?: string | null;
+  readonly continuityConfidence?: string | null;
+  readonly continuityAmbiguity?: boolean;
+  readonly continuityActiveSubject?: string | null;
+  readonly continuityInvestigation?: string | null;
+  readonly continuityPreviousSubject?: string | null;
+  readonly clarificationRequired?: boolean;
+  readonly clarificationAction?: string | null;
+  readonly clarificationReason?: string | null;
+  readonly clarificationQuestion?: string | null;
+  readonly clarificationCandidates?: number;
+  readonly clarificationConsequence?: string | null;
+  readonly correctionDetected?: boolean;
+  readonly correctionScope?: string | null;
+  readonly correctionBefore?: string | null;
+  readonly correctionAfter?: string | null;
+  readonly resumedOperation?: string | null;
+  readonly communicationDepth?: string | null;
+  readonly communicationClaimCount?: number;
+  readonly communicationFactCount?: number;
+  readonly communicationHypothesisCount?: number;
+  readonly communicationUnknownCount?: number;
+  readonly communicationRecommendation?: boolean;
+  readonly communicationChallenge?: boolean;
+  readonly communicationUncertaintyPreserved?: boolean;
+  readonly communicationCausalValidated?: boolean;
+  readonly communicationDecisionWording?: string | null;
+  readonly communicationExecutionWording?: string | null;
+  readonly guidanceIntent?: string | null;
+  readonly guidanceAction?: string | null;
+  readonly guidanceCapability?: string | null;
+  readonly guidanceAvailability?: string | null;
+  readonly guidancePrerequisite?: string | null;
+  readonly guidanceSelected?: string | null;
+  readonly guidanceReason?: string | null;
+  readonly guidanceProactiveEligible?: boolean;
+  readonly guidanceProactiveSuppressed?: string | null;
+  readonly guidanceAuthority?: string | null;
+  readonly ncaNeed?: string | null;
+  readonly ncaBehavior?: string | null;
+  readonly ncaSufficient?: boolean;
+  readonly ncaCapability?: string | null;
+  readonly ncaQuestion?: string | null;
+  readonly nca2Move?: string | null;
+  readonly nca2Topic?: string | null;
+  readonly nca2Subject?: string | null;
+  readonly nca2Pending?: string | null;
+  readonly nca2ThreadState?: string | null;
+  readonly nca3Mode?: string | null;
+  readonly nca3ShouldAsk?: boolean;
+  readonly nca3Sufficiency?: string | null;
+  readonly nca3Gap?: string | null;
+  readonly nca4Move?: string | null;
+  readonly nca4Status?: string | null;
+  readonly nca4Option?: string | null;
+  readonly nca4Strength?: string | null;
+  readonly nca4Confidence?: string | null;
+  readonly nca4Advise?: boolean;
+  readonly nca5Initiate?: boolean;
+  readonly nca5Behavior?: string | null;
+  readonly nca5Priority?: string | null;
+  readonly nca5Interrupt?: boolean;
+  readonly nca5Subject?: string | null;
+  readonly nca6Depth?: string | null;
+  readonly nca6Framing?: string | null;
+  readonly nca6Structure?: string | null;
+  readonly nca6Familiarity?: string | null;
+  readonly nca6Role?: string | null;
+  readonly nca7Owner?: string | null;
+  readonly nca7Rank?: string | null;
+  readonly nca7Ask?: boolean;
+  readonly nca7Advise?: boolean;
+  readonly nca7Initiate?: boolean;
 };
 
 export type NexoraConversationalExperienceResult = {
@@ -175,6 +343,26 @@ export type NexoraConversationalExperienceResult = {
   readonly trace: NexoraConversationalExperienceTrace;
   /** True only when CC:4 applied and Runtime state should be committed. */
   readonly shouldCommitRuntime: boolean;
+  /** MO:1 manager–object turn. Reader of CC/Stage; not a parallel truth system. */
+  readonly managerObjectTurn: import("@/app/lib/manager-object/managerObjectInteraction.ts").ManagerObjectTurn;
+  /** FINAL:6.1 canonical interpretation of the current manager turn. */
+  readonly naturalLanguageUnderstanding: CanonicalManagerMeaning;
+  /** FINAL:6.2 contextual interpretation of the current turn. */
+  readonly contextualManagerMeaning: ContextualManagerMeaning;
+  readonly clarificationTurn: ClarificationTurnResult;
+  readonly trustedCommunication: TrustedExecutiveCommunication;
+  readonly guidanceTurn: GuidanceTurnResult;
+  /** NCA:1 advisor interpretation of the current manager turn. */
+  readonly ncaTurn: import("@/app/lib/manager-object/nexoraNca1ConversationTypes.ts").ManagerConversationTurn;
+  readonly ncaDialogueMove?: string | null;
+  readonly ncaConversationState?: import("@/app/lib/manager-object/nexoraNca2ConversationStateTypes.ts").NexoraConversationState | null;
+  readonly nca3Strategy?: import("@/app/lib/manager-object/nexoraNca3QuestionIntelligenceTypes.ts").ExecutiveQuestionStrategy | null;
+  readonly nca4Strategy?: import("@/app/lib/manager-object/nexoraNca4AdvisoryIntelligenceTypes.ts").ExecutiveAdvisoryStrategy | null;
+  readonly nca5Strategy?: import("@/app/lib/manager-object/nexoraNca5InitiativeIntelligenceTypes.ts").ExecutiveInitiativeStrategy | null;
+  readonly nca6Strategy?: import("@/app/lib/manager-object/nexoraNca6CommunicationIntelligenceTypes.ts").ExecutiveCommunicationStrategy | null;
+  readonly nca7Turn?: import("@/app/lib/manager-object/nexoraNca7EndToEndOrchestrationTypes.ts").NexoraConversationTurnResult | null;
+  /** NEX-EXP:1 session. Omitted when entrance is not active. */
+  readonly nextEntranceSession?: import("@/app/lib/nexora-entrance/nexoraEntranceTypes.ts").NexoraEntranceSession | null;
 };
 
 export const CONVERSATIONAL_EXPERIENCE_REASON = Object.freeze({

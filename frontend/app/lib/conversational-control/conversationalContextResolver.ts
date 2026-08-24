@@ -26,6 +26,7 @@ import type {
 import {
   buildNexoraConversationalSubjectMatchIndex,
   findCanonicalSubjectMatchesForHint,
+  normalizeConversationalMatchKey,
   type NexoraConversationalSubjectMatchIndex,
 } from "./conversationalSubjectRegistry.ts";
 
@@ -46,6 +47,22 @@ function toResolved(
     canonicalName: record.canonicalName,
     ...(matchedHint ? { matchedHint } : {}),
   });
+}
+
+function subjectRecordContainsHintToken(
+  record: NexoraConversationalSubjectRecord,
+  hintRaw: string,
+): boolean {
+  const token = normalizeConversationalMatchKey(hintRaw);
+  if (!token || /\s/.test(token)) return false;
+  const haystacks = [record.canonicalName, ...(record.aliases ?? [])];
+  for (const hay of haystacks) {
+    const words = normalizeConversationalMatchKey(hay)
+      .split(" ")
+      .filter(Boolean);
+    if (words.includes(token)) return true;
+  }
+  return false;
 }
 
 function lookupById(
@@ -138,6 +155,22 @@ function resolveHint(
   hint: NexoraConversationalTargetHint,
   index: NexoraConversationalSubjectMatchIndex,
 ): HintResolution {
+  if (isCompoundCategoryHint(hint.raw)) {
+    const categoryMatches = index.subjects.filter(
+      (subject) =>
+        /^(?:risk|problem)$/i.test(subject.subjectKind) ||
+        /^(?:risks?|problems?)$/i.test(subject.canonicalName),
+    );
+    return {
+      status: "ambiguous",
+      candidates: Object.freeze(categoryMatches.map((entry) => entry.subjectId)),
+      reasons: Object.freeze([
+        CONVERSATIONAL_CONTEXT_REASON.MULTIPLE_CANONICAL_MATCHES,
+        CONVERSATIONAL_CONTEXT_REASON.NO_SYNTHESIZED_ID,
+        CONVERSATIONAL_CONTEXT_REASON.DETERMINISTIC,
+      ]),
+    };
+  }
   const matches = findCanonicalSubjectMatchesForHint(hint.raw, index);
   const candidateIds = Object.freeze(matches.map((m) => m.subjectId));
 
@@ -184,6 +217,7 @@ function resolveHint(
 function resolveFromConversationContext(
   conversationContext: NexoraConversationContextSnapshot | null | undefined,
   index: NexoraConversationalSubjectMatchIndex,
+  options?: { readonly refusePreviousGuess?: boolean },
 ): {
   readonly subject: NexoraConversationalResolvedSubject | null;
   readonly reasons: readonly string[];
@@ -226,6 +260,20 @@ function resolveFromConversationContext(
   }
 
   const previousIds = conversationContext?.previousSubjectIds ?? [];
+  const uniquePrevious = Object.freeze(
+    [...new Set(previousIds.filter((id) => Boolean(id)))],
+  );
+  if (options?.refusePreviousGuess && uniquePrevious.length !== 1) {
+    return {
+      subject: null,
+      reasons: Object.freeze([
+        CONVERSATIONAL_CONTEXT_REASON.MISSING_CONVERSATION_CONTEXT,
+        CONVERSATIONAL_CONTEXT_REASON.DETERMINISTIC,
+      ]),
+      contextCandidates: Object.freeze(candidates),
+      status: "missing-context",
+    };
+  }
   for (const id of previousIds) {
     const prev = lookupById(id, index);
     if (prev) {
@@ -530,10 +578,32 @@ export function resolveNexoraExecutiveConversationalContext(
     let notFound = false;
 
     for (const hint of hints) {
-      const result =
+      let result =
         hint.role === "ordinal"
           ? resolveOrdinalHint(hint, input.conversationContext, index)
           : resolveHint(hint, index);
+      if (result.status === "not-found" && hint.role !== "ordinal") {
+        const currentRecord = lookupById(
+          input.conversationContext?.currentSubjectId,
+          index,
+        );
+        if (
+          currentRecord &&
+          subjectRecordContainsHintToken(currentRecord, hint.raw)
+        ) {
+          result = {
+            status: "resolved",
+            subject: toResolved(currentRecord, hint.raw),
+            candidates: Object.freeze([currentRecord.subjectId]),
+            reasons: Object.freeze([
+              CONVERSATIONAL_CONTEXT_REASON.CANONICAL_SUBJECT_MATCH,
+              CONVERSATIONAL_CONTEXT_REASON.RESOLVED_FROM_CURRENT_SUBJECT,
+              CONVERSATIONAL_CONTEXT_REASON.ID_FROM_REGISTRY_ONLY,
+              CONVERSATIONAL_CONTEXT_REASON.DETERMINISTIC,
+            ]),
+          };
+        }
+      }
       for (const id of result.candidates) {
         if (!canonicalCandidates.includes(id)) canonicalCandidates.push(id);
       }
@@ -695,6 +765,13 @@ export function resolveNexoraExecutiveConversationalContext(
     const fromContext = resolveFromConversationContext(
       input.conversationContext,
       index,
+      {
+        refusePreviousGuess:
+          intent.kind === "explore-scenario" ||
+          intent.kind === "explain-scenario" ||
+          intent.kind === "modify-scenario" ||
+          intent.kind === "compare-scenarios",
+      },
     );
     contextCandidates = fromContext.contextCandidates;
 
@@ -805,4 +882,17 @@ export function resolveNexoraExecutiveConversationalContext(
     canonicalCandidates,
     precedenceApplied,
   });
+}
+
+function isCompoundCategoryHint(raw: string): boolean {
+  const tokens = raw
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(
+      (token) =>
+        token.length > 0 && token !== "and" && token !== "or" && token !== "the",
+    );
+  const category =
+    /^(?:risks?|problems?|opportunities?|goals?|scenarios?|decisions?|executions?)$/;
+  return tokens.length >= 2 && tokens.every((token) => category.test(token));
 }

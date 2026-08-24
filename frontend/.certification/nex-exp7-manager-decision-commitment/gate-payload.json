@@ -1,0 +1,10 @@
+{
+  "tests": { "fail": 0, "pass": 261, "total": 261 },
+  "typecheck": { "errors": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0 },
+  "runtimeSmoke": { "ok": true },
+  "console": { "uncaught": 0, "hydration": 0, "duplicateKeys": 0 },
+  "phase": "NEX-EXP:7",
+  "outDir": ".certification/nex-exp7-manager-decision-commitment"
+}

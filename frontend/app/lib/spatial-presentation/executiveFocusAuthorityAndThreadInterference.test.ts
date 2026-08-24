@@ -146,7 +146,7 @@ test("1–3. Budget click → selection → focus → anchor", () => {
   assert.equal(finalPresentation.scene.selectedObjectId, "obj-budget");
   assert.equal(finalPresentation.scene.focusedObjectId, "obj-budget");
   const topology = getExecutiveNetworkTopologyFromPresentation(withNetwork)!;
-  assert.equal(topology.anchorObjectId, "obj-budget");
+  assert.equal(topology.diagnostics.anchorObjectId, "obj-budget");
   assert.deepEqual(topology.positions["obj-budget"], { x: 0, y: 0 });
 });
 
@@ -163,7 +163,7 @@ test("4. Capacity critical cannot steal explicit Budget focus", () => {
   assert.equal(finalPresentation.scene.focusedObjectId, "obj-budget");
   assert.notEqual(finalPresentation.scene.focusedObjectId, "obj-capacity");
   const topology = getExecutiveNetworkTopologyFromPresentation(withNetwork)!;
-  assert.equal(topology.anchorObjectId, "obj-budget");
+  assert.equal(topology.diagnostics.anchorObjectId, "obj-budget");
   const capacity = finalPresentation.scene.objects.find(
     (entry) => entry.id === "obj-capacity",
   );
@@ -189,7 +189,7 @@ test("5–7. Inventory / Delivery / Revenue clicks preserve focus chain", () => 
     assert.equal(finalPresentation.scene.selectedObjectId, id, id);
     assert.equal(finalPresentation.scene.focusedObjectId, id, id);
     const topology = getExecutiveNetworkTopologyFromPresentation(withNetwork)!;
-    assert.equal(topology.anchorObjectId, id, id);
+    assert.equal(topology.diagnostics.anchorObjectId, id, id);
     assert.deepEqual(topology.positions[id], { x: 0, y: 0 }, id);
   }
 });

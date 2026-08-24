@@ -1,0 +1,18 @@
+{
+  "identity": "NEX-EXP:3/CurrentRealityExecutiveContextDiscovery",
+  "dataReality": "P0/P1 observation + stage projection (consumed, not duplicated)",
+  "stage": "catalog overlay + selectNexoraMVPInteractionSubject (no auto-center of Reality)",
+  "goal": "NEX-EXP:2 session + MO:4 goalContext overlay",
+  "explain": "MO:2",
+  "notCreated": [
+    "NEX-EXP:4",
+    "MO:7",
+    "parallel Data Reality",
+    "parallel KPI runtime",
+    "parallel RDI",
+    "parallel Advisor",
+    "parallel Stage runtime",
+    "parallel issue/root-cause engine",
+    "parallel recommendation engine"
+  ]
+}

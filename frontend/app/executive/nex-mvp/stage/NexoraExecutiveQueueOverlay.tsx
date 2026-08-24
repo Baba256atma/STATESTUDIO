@@ -55,6 +55,7 @@ export function NexoraExecutiveQueueOverlay({
       data-testid="nexora-executive-queue"
       data-stage-prod="2"
       data-queue-is-semantic-object="false"
+      data-core-int4="reader"
       data-queue-compact="true"
       data-collection-header={collectionHeaderLabel ?? undefined}
       aria-label="Executive Queue"

@@ -1,0 +1,8 @@
+{
+  "entranceGate": "/executive?entrance=1",
+  "existingWorkspace": "/executive unchanged",
+  "sessionStorageIdentityOnly": "nexora.entrance.identity.session.v1",
+  "goalPersistence": "SESSION_ONLY for discovered Goal",
+  "handoffType": "NexoraExecutiveContextDiscoveryHandoff",
+  "nexExp3Started": false
+}

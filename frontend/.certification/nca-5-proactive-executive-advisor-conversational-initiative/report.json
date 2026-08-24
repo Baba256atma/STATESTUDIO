@@ -1,0 +1,20 @@
+{
+  "phase": "NCA:5",
+  "identity": "NCA:5/ProactiveExecutiveAdvisorConversationalInitiativeIntelligence",
+  "version": "1.0.0",
+  "namespace": "nexora.nca.proactive-executive-advisor-conversational-initiative",
+  "verdict": "NCA:5 = CERTIFIED",
+  "usesLiveLlm": false,
+  "createsSecondAlertQueue": false,
+  "createsSecondMonitoringEngine": false,
+  "duplicatesMo6": false,
+  "commitsDecision": false,
+  "startsExecution": false,
+  "accidentalApprovals": 0,
+  "accidentalExecutionStarts": 0,
+  "typecheck": "pass",
+  "build": "pass",
+  "lint": "pass",
+  "liveBrowser": "pass",
+  "nca6Started": false
+}

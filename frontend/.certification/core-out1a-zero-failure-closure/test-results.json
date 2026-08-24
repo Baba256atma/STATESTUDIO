@@ -1,0 +1,36 @@
+{
+  "identity": "NEXORA-ZERO-FAILURE-GATE/required-regression",
+  "command": "npx tsx --test app/lib/executive-intelligence/*.test.ts app/lib/data-reality/*.test.ts app/lib/nex-mvp/*.test.ts app/lib/conversational-control/*.test.ts app/lib/executiveMemory/durableExecutiveMemory.test.ts app/lib/spatial-presentation/executiveStageQueueFoundation.test.ts app/lib/spatial-presentation/executiveStageQueueHydration.test.ts app/executive/nex-mvp/NexoraExecutiveShell.test.tsx app/executive/nex-mvp/stage/*.test.tsx",
+  "total": 1609,
+  "pass": 1609,
+  "fail": 0,
+  "skipped": 0,
+  "todo": 0,
+  "cancelled": 0,
+  "durationMs": 7465.392375,
+  "originalFiveBlockers": {
+    "A_dataReality_noStageThree": "PASS",
+    "B_dataReality_noNodeFs": "PASS",
+    "L_app4_only_authority": "PASS",
+    "M_learning_reconstruction": "PASS",
+    "N_historical_retrieval": "PASS"
+  },
+  "areas": {
+    "CORE-OUT:1": "PASS",
+    "CORE-OUT:1A": "PASS",
+    "CORE-INT:2": "PASS",
+    "CORE-INT:3": "PASS",
+    "CORE-INT:4": "PASS",
+    "CORE-INT:5": "PASS",
+    "EI:1-EI:6": "PASS",
+    "RDI/DataReality": "PASS",
+    "CC:10/10R/11/12": "PASS",
+    "Decision": "PASS",
+    "Execution/NEX-MVP:8": "PASS",
+    "APP-4": "PASS",
+    "EXI": "PASS",
+    "Queue": "PASS",
+    "Stage": "PASS",
+    "FrozenMVP": "PASS"
+  }
+}

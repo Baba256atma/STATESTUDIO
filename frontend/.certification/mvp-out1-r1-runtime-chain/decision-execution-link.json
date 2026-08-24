@@ -1,0 +1,25 @@
+{
+  "authority": "NEX-MVP:8 flow",
+  "cc11Live": false,
+  "links": [
+    {
+      "decisionId": "ctx-decision-capacity",
+      "executionId": "ctx-execution-capacity",
+      "status": "planned",
+      "progress": "0%"
+    },
+    {
+      "decisionId": "ctx-decision-reprice",
+      "executionId": "ctx-execution-rollout",
+      "status": "in-progress",
+      "progress": "62%"
+    }
+  ],
+  "timestamps": {
+    "committedAt": null,
+    "startedAt": null,
+    "completedAt": null,
+    "invented": false
+  },
+  "executionCompletionImpliesOutcomeSuccess": false
+}

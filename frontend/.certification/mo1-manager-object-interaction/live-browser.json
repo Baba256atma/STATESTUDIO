@@ -1,0 +1,20 @@
+{
+  "phase": "MO:1",
+  "identity": "MO:1/ManagerObjectInteractionFoundation",
+  "completedAt": "2026-08-20T18:20:24.791Z",
+  "http": 200,
+  "shellPresent": true,
+  "capacityActive": true,
+  "explainThisPreserved": true,
+  "explainDeliverySwitched": true,
+  "followUpPreserved": true,
+  "goalActive": true,
+  "problemActive": true,
+  "scenarioActive": true,
+  "decisionActive": true,
+  "executionActive": true,
+  "stageClickLawPresent": true,
+  "ux1Present": true,
+  "uncaught": 0,
+  "duplicateOrHydration": []
+}

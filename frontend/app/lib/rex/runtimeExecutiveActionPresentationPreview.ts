@@ -962,13 +962,13 @@ export function resolveRuntimeExecutiveActionPresentationTitle(input: {
   }
   const matches = RUNTIME_EXECUTIVE_ACTION_TITLE_RULES.filter((rule) => {
     if (rule.actionKind !== input.actionKind) return false;
-    if (rule.intentKind === undefined) return true;
+    if (!("intentKind" in rule) || rule.intentKind === undefined) return true;
     return rule.intentKind === input.intentKind;
   }).slice().sort((a, b) => a.precedence - b.precedence);
 
-  const exact = matches.find((rule) => rule.intentKind !== undefined);
-  if (exact) return exact.title;
-  const fallback = matches.find((rule) => rule.intentKind === undefined);
+  const exact = matches.find((rule) => "intentKind" in rule && rule.intentKind !== undefined);
+  if (exact && "title" in exact) return exact.title;
+  const fallback = matches.find((rule) => !("intentKind" in rule) || rule.intentKind === undefined);
   return fallback?.title ?? titleCaseWords(input.actionKind);
 }
 
@@ -2138,26 +2138,26 @@ export interface RuntimeExecutiveActionPresentationPreviewVerification {
 
 export function verifyRuntimeExecutiveActionPresentationPreview():
   RuntimeExecutiveActionPresentationPreviewVerification {
-  const module = runtimeExecutiveActionPresentationPreview;
+  const runtimeModule = runtimeExecutiveActionPresentationPreview;
   const registry = runtimeExecutiveActionPresentationPreviewRegistry;
   const upstream = verifyRuntimeExecutiveActionIntentContext();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-5:4/RuntimeExecutiveActionPresentationPreview" &&
-    module.version === "5.4.0" &&
-    module.namespace ===
+    runtimeModule.version === "5.4.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.action-experience.presentation-preview" &&
-    module.phase === "PresentationPreview" &&
-    module.architecturalRole ===
+    runtimeModule.phase === "PresentationPreview" &&
+    runtimeModule.architecturalRole ===
       "ExecutiveActionPresentationPreviewRuntime" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       "REX-5:3/RuntimeExecutiveActionIntentContext" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeExecutiveActionIntentContextIdentity &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveActionIntentContext" &&
-    module.intentContextBoundary === "REX-5:3-intent-context-only";
+    runtimeModule.intentContextBoundary === "REX-5:3-intent-context-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_ACTION_PRESENTATION_STATES], [
@@ -2358,16 +2358,16 @@ export function verifyRuntimeExecutiveActionPresentationPreview():
     ambiguityOk &&
     sectionOrderOk &&
     reportPreview.status !== "rejected" &&
-    module.ambiguityPreserving === true &&
-    module.recipientResolutionSafe === true &&
-    module.contextPreserving === true &&
-    module.lifecycleAware === true &&
-    module.rendererIndependent === true &&
-    module.aiIndependent === true &&
-    module.providerIndependent === true &&
-    module.transportIndependent === true &&
-    module.dispatchFree === true &&
-    module.confirmationBehaviorAbsent === true &&
+    runtimeModule.ambiguityPreserving === true &&
+    runtimeModule.recipientResolutionSafe === true &&
+    runtimeModule.contextPreserving === true &&
+    runtimeModule.lifecycleAware === true &&
+    runtimeModule.rendererIndependent === true &&
+    runtimeModule.aiIndependent === true &&
+    runtimeModule.providerIndependent === true &&
+    runtimeModule.transportIndependent === true &&
+    runtimeModule.dispatchFree === true &&
+    runtimeModule.confirmationBehaviorAbsent === true &&
     upstream.ok === true;
 
   return Object.freeze({
@@ -2399,18 +2399,18 @@ export function verifyRuntimeExecutiveActionPresentationPreview():
     publicApiCount: runtimeExecutiveActionPresentationPreviewApiNames.length,
     frozen,
     intentContextBoundaryIntact:
-      module.intentContextBoundary === "REX-5:3-intent-context-only",
+      runtimeModule.intentContextBoundary === "REX-5:3-intent-context-only",
     ambiguityPreserving: ambiguityOk,
     recipientResolutionSafe:
       ambiguousPreview.presentation?.recipient?.unresolved === true,
-    contextPreserving: module.contextPreserving === true,
-    lifecycleAware: module.lifecycleAware === true,
-    rendererIndependent: module.rendererIndependent === true,
-    aiIndependent: module.aiIndependent === true,
-    providerIndependent: module.providerIndependent === true,
-    transportIndependent: module.transportIndependent === true,
-    dispatchFree: module.dispatchFree === true,
-    confirmationBehaviorAbsent: module.confirmationBehaviorAbsent === true,
+    contextPreserving: runtimeModule.contextPreserving === true,
+    lifecycleAware: runtimeModule.lifecycleAware === true,
+    rendererIndependent: runtimeModule.rendererIndependent === true,
+    aiIndependent: runtimeModule.aiIndependent === true,
+    providerIndependent: runtimeModule.providerIndependent === true,
+    transportIndependent: runtimeModule.transportIndependent === true,
+    dispatchFree: runtimeModule.dispatchFree === true,
+    confirmationBehaviorAbsent: runtimeModule.confirmationBehaviorAbsent === true,
     upstreamIntentContextOk: upstream.ok === true,
   });
 }

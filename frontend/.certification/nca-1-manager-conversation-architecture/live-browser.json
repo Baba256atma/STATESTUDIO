@@ -1,0 +1,151 @@
+{
+  "identity": "NCA:1/ManagerConversationArchitectureAdvisorBehaviorFoundation",
+  "url": "http://localhost:3000/executive",
+  "opened": true,
+  "pageErrors": [],
+  "engine": "NCA:1/ManagerConversationArchitectureAdvisorBehaviorFoundation",
+  "turns": [
+    {
+      "utterance": "Hi.",
+      "last": "NexoraHi. I’m ready. Capacity needs attention. Would you like to review it?",
+      "diag": {
+        "engine": "NCA:1/ManagerConversationArchitectureAdvisorBehaviorFoundation",
+        "need": "SOCIAL_CONVERSATION",
+        "behavior": "ACKNOWLEDGE",
+        "sufficient": "true",
+        "capability": "CC:5",
+        "nluOp": "NONE",
+        "nluSubject": "",
+        "continuity": "",
+        "focused": ""
+      }
+    },
+    {
+      "utterance": "What Capacity Gap?",
+      "last": "NexoraInvestigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity Gap shows attention, but a canonical relationship is not established. Uncertainty: Canonical goal linkage is missing or uncertain.",
+      "diag": {
+        "engine": "NCA:1/ManagerConversationArchitectureAdvisorBehaviorFoundation",
+        "need": "UNDERSTAND",
+        "behavior": "EXPLAIN",
+        "sufficient": "true",
+        "capability": "MO:2",
+        "nluOp": "EXPLAIN",
+        "nluSubject": "Capacity Gap",
+        "continuity": "Capacity Gap",
+        "focused": ""
+      }
+    },
+    {
+      "utterance": "Explain it.",
+      "last": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap needs attention because it is worth monitoring. Capacity Gap is constrained by Capacity. That is a recorded dependency, not a confirmed cause.",
+      "diag": {
+        "engine": "NCA:1/ManagerConversationArchitectureAdvisorBehaviorFoundation",
+        "need": "UNDERSTAND",
+        "behavior": "EXPLAIN",
+        "sufficient": "false",
+        "capability": "MO:2",
+        "nluOp": "EXPLAIN",
+        "nluSubject": "",
+        "continuity": "Capacity Gap",
+        "focused": ""
+      }
+    },
+    {
+      "utterance": "How do I use Nexora?",
+      "last": "NexoraTell me what you're trying to improve. We'll establish the current reality, investigate what matters, explore options, make the decision explicit, and then follow the outcome. You can speak naturally — you don't need commands.",
+      "diag": {
+        "engine": "NCA:1/ManagerConversationArchitectureAdvisorBehaviorFoundation",
+        "need": "TEACH",
+        "behavior": "TEACH",
+        "sufficient": "true",
+        "capability": "NEX-EXP/FINAL:6.5",
+        "nluOp": "HELP",
+        "nluSubject": "",
+        "continuity": "",
+        "focused": ""
+      }
+    },
+    {
+      "utterance": "Thanks.",
+      "last": "NexoraYou're welcome.",
+      "diag": {
+        "engine": "NCA:1/ManagerConversationArchitectureAdvisorBehaviorFoundation",
+        "need": "SOCIAL_CONVERSATION",
+        "behavior": "ACKNOWLEDGE",
+        "sufficient": "true",
+        "capability": "CC:5",
+        "nluOp": "NONE",
+        "nluSubject": "",
+        "continuity": "",
+        "focused": ""
+      }
+    },
+    {
+      "utterance": "Should we increase capacity?",
+      "last": "NexoraThere is visible pressure around Capacity, but I don't have enough evidence yet to recommend a lasting change. Is the current demand increase expected to continue?",
+      "diag": {
+        "engine": "NCA:1/ManagerConversationArchitectureAdvisorBehaviorFoundation",
+        "need": "EVALUATE",
+        "behavior": "ASK",
+        "sufficient": "false",
+        "capability": "CC:5",
+        "nluOp": "FOCUS",
+        "nluSubject": "Capacity",
+        "continuity": "Capacity",
+        "focused": ""
+      }
+    }
+  ],
+  "knowledge": {
+    "utterance": "What Capacity Gap?",
+    "last": "NexoraInvestigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity Gap shows attention, but a canonical relationship is not established. Uncertainty: Canonical goal linkage is missing or uncertain.",
+    "focused": "none",
+    "diag": {
+      "engine": "NCA:1/ManagerConversationArchitectureAdvisorBehaviorFoundation",
+      "need": "UNDERSTAND",
+      "behavior": "EXPLAIN",
+      "sufficient": "true",
+      "capability": "MO:2",
+      "nluOp": "EXPLAIN",
+      "nluSubject": "Capacity Gap",
+      "continuity": "Capacity Gap",
+      "focused": ""
+    }
+  },
+  "follow": {
+    "utterance": "Explain it.",
+    "last": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap needs attention because it is worth monitoring. Capacity Gap is constrained by Capacity. That is a recorded dependency, not a confirmed cause.",
+    "focused": "none",
+    "diag": {
+      "engine": "NCA:1/ManagerConversationArchitectureAdvisorBehaviorFoundation",
+      "need": "UNDERSTAND",
+      "behavior": "EXPLAIN",
+      "sufficient": "false",
+      "capability": "MO:2",
+      "nluOp": "EXPLAIN",
+      "nluSubject": "",
+      "continuity": "Capacity Gap",
+      "focused": ""
+    }
+  },
+  "show": {
+    "last": "NexoraFocused on Delivery.",
+    "diag": {
+      "need": "LOCATE",
+      "behavior": "NAVIGATE",
+      "nluOp": "FOCUS"
+    }
+  },
+  "why": "NexoraDelivery needs attention because it is worth monitoring. Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause.",
+  "teach": "NexoraTell me what you're trying to improve. We'll establish the current reality, investigate what matters, explore options, make the decision explicit, and then follow the outcome. You can speak naturally — you don't need commands.",
+  "thanks": "NexoraYou're welcome.",
+  "askCap": "NexoraThere is visible pressure around Capacity, but I don't have enough evidence yet to recommend a lasting change. Is the current demand increase expected to continue?",
+  "knowledgeIsKnowledge": true,
+  "followKeepsCapacity": true,
+  "showIsNavigate": true,
+  "oneQuestion": true,
+  "leak": false,
+  "cause": false,
+  "fiction": false,
+  "ok": true
+}

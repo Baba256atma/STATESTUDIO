@@ -381,7 +381,7 @@ export function resolveExecutiveStage2DNavigationBreadcrumbWindow(
     const futureBudget = maxVisible - 1 - pastBudget;
     let before = Math.min(cur, pastBudget);
     let after = Math.min(n - 1 - cur, futureBudget);
-    let used = 1 + before + after;
+    const used = 1 + before + after;
     if (used < maxVisible) {
       const extra = maxVisible - used;
       const addBefore = Math.min(extra, cur - before);

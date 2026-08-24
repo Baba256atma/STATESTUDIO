@@ -1,0 +1,8 @@
+{
+  "command": "npm run lint",
+  "exitCode": 0,
+  "errors": 0,
+  "warnings": 409,
+  "newErrors": 0,
+  "suppressionsAdded": false
+}

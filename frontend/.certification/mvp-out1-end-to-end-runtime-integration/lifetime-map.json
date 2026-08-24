@@ -1,0 +1,8 @@
+{
+  "decision": "session NEX-MVP:8 projection of CC:10",
+  "execution": "session NEX-MVP:8 flow domain",
+  "outcomeObservation": "session",
+  "outcomeAssessment": "render-local",
+  "learningCandidate": "session CORE-OUT:2 maps",
+  "app4History": "APP-4 engine (in-memory unless durable adapter initialized)"
+}

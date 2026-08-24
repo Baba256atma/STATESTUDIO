@@ -550,8 +550,8 @@ test("10. critical action waits for acknowledgment", () => {
     if (step.orchestration === undefined) break;
     state = step.orchestration;
     if (state.status === "blocked" || state.phaseOutcome !== "passed") {
-      if (state.phase === "confirmation") break;
-      if (state.phaseOutcome !== "passed" && state.phase !== "confirmation") {
+      if (String(state.phase) === "confirmation") break;
+      if (state.phaseOutcome !== "passed") {
         // continue only while gates pass
       }
     }

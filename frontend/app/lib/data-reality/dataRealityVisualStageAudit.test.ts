@@ -495,6 +495,52 @@ test("TEST 11 — hidden overflow remains hidden", () => {
   assert.equal(leaked.status, "visually-misleading");
 });
 
+test("TEST 11b — collapsed-thread overflow is certified context, not missing", () => {
+  const overflow = compareContextRevealVisibility({
+    revealDepthHops: 1,
+    maxDirectContextItems: 8,
+    expectedItems: [
+      {
+        contextId: "ctx-execution-rollout",
+        revealRole: "direct-context",
+        isDirect: true,
+      },
+      {
+        contextId: "ctx-scenario-demand",
+        revealRole: "direct-context",
+        isDirect: true,
+      },
+    ],
+    observed: [
+      {
+        contextId: "thread-obj-revenue",
+        subjectId: "obj-revenue",
+        kind: "thread",
+        role: "collapsed-thread",
+        present: true,
+        opacity: 0.18,
+        scale: 1,
+        focused: false,
+      },
+    ],
+  });
+  assert.equal(overflow.status, "visible-and-consistent");
+
+  const missing = compareContextRevealVisibility({
+    revealDepthHops: 1,
+    maxDirectContextItems: 8,
+    expectedItems: [
+      {
+        contextId: "ctx-execution-rollout",
+        revealRole: "direct-context",
+        isDirect: true,
+      },
+    ],
+    observed: [],
+  });
+  assert.equal(missing.status, "computed-but-not-visible");
+});
+
 test("TEST 12 — audit ordering/output is deterministic", () => {
   const a = resolveNexoraMVPDataRealityVisualStageAudit({
     datasetScenario: "operational-pressure",

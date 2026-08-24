@@ -1,0 +1,6 @@
+{
+  "contract": "CORE-OUT:1 ExecutiveOutcomeExpectation",
+  "liveCollector": "collectNexoraLiveExpectedOutcome",
+  "stableIdPattern": "expected:{scenarioId}",
+  "notDerivedFromAdvisorProse": true
+}

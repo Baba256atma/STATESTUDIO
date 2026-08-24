@@ -1,0 +1,20 @@
+{
+  "identity": "MO:6/ExecutiveAttentionInterventionIntelligence",
+  "edges": {
+    "MO1_context": "CONNECTED",
+    "MO2_explanation": "CONNECTED",
+    "MO3_paths": "CONNECTED",
+    "MO4_goal": "CONNECTED",
+    "MO5_journey": "CONNECTED",
+    "CC1_intent": "CONNECTED",
+    "CC5_experience": "CONNECTED",
+    "STAGE2D_click_to_center": "READER",
+    "UX3_advisor_reader": "CONNECTED",
+    "DRI6_attention": "CITED_NOT_RECALCULATED",
+    "PROD_queue": "NOT_DUPLICATED",
+    "PM_monitoring": "SIGNALS_ONLY",
+    "decision_runtime": "NOT_COMMITTED",
+    "execution_runtime": "NOT_STARTED",
+    "llm": "NOT_REQUIRED"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "integrationEngine": "MO-INT:1/ManagerObjectExecutiveExperienceIntegration",
+  "createsMo7": false,
+  "dependsOn": [
+    "MO:1/ManagerObjectInteractionFoundation",
+    "MO:2/GenericExplainEngine",
+    "MO:3/ObjectGuidedExecutiveExploration",
+    "MO:4/GoalDirectedExecutiveNavigation",
+    "MO:5/ExecutiveJourneyProgressIntelligence",
+    "MO:6/ExecutiveAttentionInterventionIntelligence",
+    "UX:3 Professional Advisor",
+    "CC:1–CC:5 conversation",
+    "NEX-MVP:4 Stage click-to-center"
+  ],
+  "precedence": "DIRECT MANAGER QUESTION > SAFETY / DECISION REQUIREMENT > ACTIVE OBJECT > ACTIVE GOAL > JOURNEY BLOCKER > ATTENTION > NEXT PATH > SECONDARY CONTEXT"
+}

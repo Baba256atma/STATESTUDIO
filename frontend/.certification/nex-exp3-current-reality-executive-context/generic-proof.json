@@ -1,0 +1,9 @@
+{
+  "hardcodedBahador": false,
+  "hardcodedProjectOrion": false,
+  "hardcodedImproveDeliveryReliability": false,
+  "business": true,
+  "project": true,
+  "operational": true,
+  "software": true
+}

@@ -1,0 +1,16 @@
+{
+  "phase": "NEX-MVP-FINAL:2",
+  "http": 200,
+  "shown": {
+    "focused": "obj-inventory",
+    "last": "NexoraFocused on Inventory."
+  },
+  "explained": {
+    "focused": "obj-inventory",
+    "last": "NexoraInventory is Stable. We know turns is 6.1. Inventory is associated with Capacity. That connection does not by itself tell us whether Inventory is affecting Capacity or the reverse. No outcome has been measured yet. I recommend investigating Capacity next to determine whether it is driving Inventory."
+  },
+  "priorStateFallback": false,
+  "explainsInventory": true,
+  "focusedInventory": true,
+  "errors": []
+}

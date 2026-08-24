@@ -16,8 +16,22 @@ export const durableExecutiveMemoryNamespace = "nexora.executive-memory.durable"
 export const DURABLE_EXECUTIVE_MEMORY_BOUNDARY = Object.freeze({ storesConversationTranscript: false, storesSessionContext: false, ownsCurrentExecutionTruth: false, proactiveMonitoring: false, externalIntegrations: false, persistenceAuthority: "APP-4/ExecutiveMemoryStorageEngine", retrievalAuthority: "APP-4/ExecutiveMemoryRetrieval", advisorRole: "historical-context-only" });
 const DURABLE_CATEGORIES: readonly DurableExecutiveMemoryKind[] = Object.freeze(["goal", "problem", "risk_reference", "scenario", "decision", "decision_rationale", "execution", "outcome", "learning", "business_context"]);
 
+function ensureDurableExecutiveMemoryAuthority(timestamp: string): void {
+  if (!isExecutiveMemoryRegistered("durable-executive-memory")) {
+    registerExecutiveMemoryProvider(
+      {
+        providerId: "durable-executive-memory",
+        label: "Durable Executive Memory",
+        version: durableExecutiveMemoryVersion,
+        supportedCategories: DURABLE_CATEGORIES,
+      },
+      timestamp,
+    );
+  }
+}
+
 export function initializeDurableExecutiveMemory(timestamp: string) {
-  if (!isExecutiveMemoryRegistered("durable-executive-memory")) registerExecutiveMemoryProvider({ providerId: "durable-executive-memory", label: "Durable Executive Memory", version: durableExecutiveMemoryVersion, supportedCategories: DURABLE_CATEGORIES }, timestamp);
+  ensureDurableExecutiveMemoryAuthority(timestamp);
   return initializeExecutiveMemoryStorageEngine(timestamp, "local_storage");
 }
 
@@ -49,7 +63,15 @@ export function createCanonicalDurableExecutiveMemory(input: DurableExecutiveMem
     createdAt: input.createdAt, updatedAt: input.updatedAt, version: createExecutiveMemoryVersion({ versionId: `${input.id}:v1`, schemaVersion: "1.0.0", contractVersion: "APP-4/2", semanticVersion: "1.0.0", createdAt: input.createdAt }) });
 }
 
-export const persistDurableExecutiveMemory = (input: DurableExecutiveMemoryWriteInput) => createExecutiveMemory(createCanonicalDurableExecutiveMemory(input), input.createdAt);
+export function persistDurableExecutiveMemory(
+  input: DurableExecutiveMemoryWriteInput,
+) {
+  ensureDurableExecutiveMemoryAuthority(input.createdAt);
+  return createExecutiveMemory(
+    createCanonicalDurableExecutiveMemory(input),
+    input.createdAt,
+  );
+}
 export const updateDurableExecutiveMemory = (id: string, input: { summary?: string; narrative?: string; status?: string }, timestamp: string) => updateExecutiveMemory(id, { header: input.summary ? { summary: input.summary } : undefined, body: input.narrative ? { narrative: input.narrative } : undefined, metadata: input.status ? { customMetadata: { status: input.status } } : undefined }, timestamp);
 export const archiveDurableExecutiveMemory = archiveExecutiveMemory;
 export function supersedeDurableExecutiveMemory(input: { readonly obsoleteId: string; readonly replacement: DurableExecutiveMemoryWriteInput; readonly timestamp: string }) {

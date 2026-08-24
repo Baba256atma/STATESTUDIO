@@ -1,0 +1,33 @@
+{
+  "phase": "EXI:3",
+  "identity": "EXI:3/LiveTradeoffOptionComparison",
+  "contract": "EXI:1/NexoraExecutiveIntelligenceExperience",
+  "ei4LiveOnExecutive": false,
+  "completedAt": "2026-08-18T22:25:49.659Z",
+  "http": 200,
+  "exi3Present": true,
+  "multiOption": true,
+  "gainGrounded": true,
+  "sacrificeHonest": true,
+  "saferHonest": true,
+  "cheaperHonest": true,
+  "singleOptionHonest": true,
+  "recommendPresent": true,
+  "conversationCompareParity": true,
+  "noJargon": true,
+  "uncaught": 0,
+  "duplicateOrHydration": [],
+  "humanCertification": {
+    "options": "PASS",
+    "different": "PASS",
+    "improve": "PASS",
+    "sacrifice": "PARTIAL",
+    "risks": "PASS",
+    "constraints": "PASS",
+    "assumptions": "PASS",
+    "missing": "PASS",
+    "recommend": "PASS",
+    "why": "PASS",
+    "stillDeciding": "PASS"
+  }
+}

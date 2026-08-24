@@ -227,7 +227,7 @@ test("6. precedence: explicit > subject > intent > current > overview", () => {
   const explicit = resolveRuntimeExecutiveWorkspaceContext({
     currentContext: context("overview"),
     requestedWorkspaceKind: "decision",
-    requestedSubject: { kind: "problem", id: "supply-risk" },
+    requestedSubject: { kind: "problem" as const, id: "supply-risk" },
     requestedIntent: "investigate",
   });
   assert.equal(explicit.resolvedWorkspaceKind, "decision");
@@ -237,7 +237,7 @@ test("6. precedence: explicit > subject > intent > current > overview", () => {
   // subject beats intent
   const subject = resolveRuntimeExecutiveWorkspaceContext({
     currentContext: context("overview"),
-    requestedSubject: { kind: "scenario", id: "scenario-b" },
+    requestedSubject: { kind: "scenario" as const, id: "scenario-b" },
     requestedIntent: "investigate",
   });
   assert.equal(subject.resolvedWorkspaceKind, "scenario");
@@ -269,7 +269,7 @@ test("6. precedence: explicit > subject > intent > current > overview", () => {
 test("7. example A: overview + problem subject + investigate", () => {
   const result = resolveRuntimeExecutiveWorkspaceContext({
     currentContext: context("overview"),
-    requestedSubject: { kind: "problem", id: "supply-risk" },
+    requestedSubject: { kind: "problem" as const, id: "supply-risk" },
     requestedIntent: "investigate",
   });
   assert.equal(result.resolvedWorkspaceKind, "problem");
@@ -295,7 +295,7 @@ test("8. example B / non-linear movement", () => {
       currentContext: context(from),
       requestedWorkspaceKind: to,
       ...(to === "scenario"
-        ? { requestedSubject: { kind: "scenario", id: "scenario-b" } }
+        ? { requestedSubject: { kind: "scenario" as const, id: "scenario-b" } }
         : {}),
       requestSource: "user",
       transitionReason: "user-request",
@@ -339,7 +339,7 @@ test("11. workspace vs context change: same mode, new subject", () => {
   });
   const result = resolveRuntimeExecutiveWorkspaceContext({
     currentContext: previous,
-    requestedSubject: { kind: "scenario", id: "scenario-b" },
+    requestedSubject: { kind: "scenario" as const, id: "scenario-b" },
   });
   assert.equal(result.resolvedWorkspaceKind, "scenario");
   assert.equal(result.workspaceChanged, false);
@@ -371,7 +371,7 @@ test("12. focus resolution and no input mutation", () => {
 
   const focused = resolveRuntimeExecutiveWorkspaceFocus({
     currentFocus,
-    requestedSubject: { kind: "decision", id: "increase-capacity" },
+    requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
     resolvedSubject: { kind: "decision", id: "increase-capacity" },
     workspaceChanged: true,
   });
@@ -458,7 +458,7 @@ test("14. subject/intent resolvers and defaults", () => {
 
   assert.deepEqual(
     resolveRuntimeExecutiveWorkspaceSubject({
-      requestedSubject: { kind: "object", id: "warehouse-01" },
+      requestedSubject: { kind: "object" as const, id: "warehouse-01" },
     }),
     { kind: "object", id: "warehouse-01" },
   );

@@ -1,0 +1,11 @@
+{
+  "advisor": "NexoraAdvisorInsightRegion compose → applyNexoraExecutiveIntelligenceExperienceToAdvisor",
+  "conversation": "projectNexoraExiConversationalAnswers + classifyNexoraExiUtterance",
+  "whatDidWeExpect": "whatExpected → EXI:5 expectedOutcome",
+  "whatActuallyHappened": "whatHappened",
+  "didItWork": "didItWork → CORE-OUT:1 via EXI:5",
+  "whatDidWeLearn": "learning → CORE-OUT:2 via EXI:5",
+  "howSureAreWe": "outcomeConfidence",
+  "whyDidItHappen": "whyOutcome → CORE-INT:3 boundary",
+  "fix4WhyRemainsScenarioWhenActive": true
+}

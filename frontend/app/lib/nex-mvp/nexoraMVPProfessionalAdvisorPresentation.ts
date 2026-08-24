@@ -204,7 +204,7 @@ function normalizeKey(value: string | null | undefined): string {
 
 function looksTechnical(text: string | null | undefined): boolean {
   if (text == null || text.length === 0) return false;
-  return /bridge|resolver|runtime|binding|canonical|fixture|namespace|data-reality|obj-|ctx-|certified data is currently insufficient/i.test(
+  return /bridge|resolver|runtime|binding|canonical|fixture|namespace|data-reality|obj-|ctx-|certified data is currently insufficient|nex-mvp|flowdomain|cc:11|adapter/i.test(
     text,
   );
 }
@@ -351,6 +351,7 @@ export function composeNexoraProfessionalAdvisorPresentation(input: {
   readonly decisionBrief?: ExecutiveDecisionBriefResult | null;
   readonly decisionMemory?: ExecutiveDecisionMemoryView | null;
   readonly advisorBinding?: DataRealityAwareAdvisorBindingResult | null;
+  readonly validatedDataSource?: boolean;
 }): NexoraProfessionalAdvisorNarrative {
   const bridge = input.advisorBridge ?? null;
   const currentSubjectId =
@@ -419,16 +420,27 @@ export function composeNexoraProfessionalAdvisorPresentation(input: {
       (isOverview &&
         input.advisorBinding?.unresolved.hasUnresolvedReality === true),
     hasData:
-      bindingSubject?.hasData === true ||
-      (brief?.evidence.length ?? 0) > 0,
+      input.validatedDataSource === false
+        ? false
+        : bindingSubject?.hasData === true ||
+          (brief?.evidence.length ?? 0) > 0,
     hasKpi:
-      bindingSubject?.hasKPI === true ||
-      input.intelligence?.primaryKpi != null,
+      input.validatedDataSource === false
+        ? false
+        : bindingSubject?.hasKPI === true ||
+          input.intelligence?.primaryKpi != null,
     resolutionStatus: bindingSubject?.resolutionStatus,
     executiveState: bindingSubject?.executiveState,
   });
   const evidence =
-    isOverview && resolvedEvidence.state === "limited"
+    input.validatedDataSource === false &&
+    (resolvedEvidence.state === "strong" || resolvedEvidence.state === "none")
+      ? Object.freeze({
+          state: "limited" as const,
+          summary:
+            "Evidence limited. Nexora is using local data and does not yet have enough validated evidence to treat this as confirmed.",
+        })
+      : isOverview && resolvedEvidence.state === "limited"
       ? Object.freeze({
           ...resolvedEvidence,
           summary:
@@ -572,6 +584,17 @@ function resolveSituation(input: {
 }): string | null {
   if (input.isOverview) {
     return "There is no explicit subject. Nexora is showing the executive overview.";
+  }
+
+  if (input.grammarKind === "execution") {
+    const status = input.intelligence?.status ?? "";
+    const summary = input.intelligence?.summary ?? null;
+    if (/planned/i.test(status) || /planned/i.test(summary ?? "")) {
+      if (summary && !looksTechnical(summary)) {
+        return simplifyExecutiveStatement(summary);
+      }
+      return "This Execution is planned. Nexora is not tracking live delivery yet.";
+    }
   }
 
   const kpi = input.intelligence?.primaryKpi ?? input.insight?.primaryKpi ?? null;

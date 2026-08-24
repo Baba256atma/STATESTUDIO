@@ -1,0 +1,37 @@
+{
+  "identity": "EXI:5/RuntimeConnectivity",
+  "livePath": [
+    "Data Reality",
+    "CORE-OUT:1A",
+    "CORE-OUT:1",
+    "CORE-OUT:2",
+    "EXI:5",
+    "Advisor / Conversation / Executive Experience"
+  ],
+  "historicalPath": [
+    "APP-4",
+    "retrieveHistoricalGroundedLearning",
+    "EXI:5"
+  ],
+  "edges": [
+    { "from": "Data Reality", "to": "CORE-OUT:1A", "status": "CONNECTED" },
+    { "from": "CORE-OUT:1A", "to": "CORE-OUT:1", "status": "CONNECTED" },
+    { "from": "CORE-OUT:1", "to": "CORE-OUT:2", "status": "CONNECTED" },
+    { "from": "CORE-OUT:2", "to": "EXI:5", "status": "CONNECTED", "note": "composeNexoraExi5OutcomeLearningExperience in the live experience composer" },
+    { "from": "EXI:5", "to": "Advisor", "status": "CONNECTED", "note": "Outcome and Learning disclosure; live empty states" },
+    { "from": "EXI:5", "to": "Conversation", "status": "CONNECTED", "note": "didItWork / whatHappened / whyOutcome / historicalLearning / outcome / learning" },
+    { "from": "CORE-INT:3", "to": "EXI:5", "status": "PARTIAL", "note": "presentProvenAnswer used; live contributors are not supported causal Learning" },
+    { "from": "APP-4", "to": "EXI:5", "status": "CONNECTED", "note": "historical reader wired; live memories = 0" },
+    { "from": "Populated CORE-OUT:1/2 fixtures", "to": "EXI:5", "status": "TEST-ONLY" },
+    { "from": "Live post-decision Actual Outcome", "to": "EXI:5 populated Outcome", "status": "MISSING" }
+  ],
+  "liveEdges": [
+    "CORE-OUT:1 pending assessment → EXI:5",
+    "CORE-OUT:2 0 candidates → EXI:5 honest Learning empty",
+    "EXI:5 → Advisor disclosure",
+    "EXI:5 → Conversation"
+  ],
+  "partialEdges": ["CORE-INT:3 live contributors without causal Learning"],
+  "testOnlyEdges": ["Ready Outcome + case-specific Learning", "APP-4 populated historical Learning", "supported causal Learning"],
+  "missingEdges": ["Live post-decision longitudinal Actual Outcome on /executive"]
+}

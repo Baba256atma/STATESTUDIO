@@ -1,0 +1,95 @@
+{
+  "identity": "NCA-POST:3/SemanticScopeMultiEntityCanonicalCollectionNexoraWorkspaceIntelligence",
+  "url": "http://localhost:3000/executive",
+  "opened": true,
+  "pageErrors": [],
+  "turns": [
+    {
+      "utterance": "explain risk and delivery relation",
+      "last": "NexoraDelivery and Risk have a registered relationship. That connection is recorded, but it does not by itself establish a causal direction.",
+      "focused": "none"
+    },
+    {
+      "utterance": "if delivery be late, is it ok?",
+      "last": "NexoraThat would work against the current Delivery objective. I can support the direction of the risk, but I should not quantify the impact from this turn alone.",
+      "focused": "none"
+    },
+    {
+      "utterance": "capacity gap and margin pressure are problems",
+      "last": "NexoraUnderstood — you're treating Margin Pressure and Capacity Gap as Problems, which matches the current canonical Problems collection. I am not changing that classification from this conversation.",
+      "focused": "none"
+    },
+    {
+      "utterance": "show problems",
+      "last": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+      "focused": "ctx-problem-margin"
+    },
+    {
+      "utterance": "show Delivery",
+      "last": "NexoraFocused on Delivery.",
+      "focused": "obj-delivery"
+    },
+    {
+      "utterance": "show me all problems",
+      "last": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+      "focused": "ctx-problem-margin"
+    },
+    {
+      "utterance": "show problems related to Margin Pressure",
+      "last": "NexoraProblems related to margin pressure: Margin Pressure.",
+      "focused": "ctx-problem-margin"
+    },
+    {
+      "utterance": "why did Capacity Gap remove?",
+      "last": "NexoraCapacity Gap is still in the current Problem collection. If it disappeared from the view, that is a presentation or filter change, not evidence that it ceased to be a Problem.",
+      "focused": "ctx-problem-margin"
+    },
+    {
+      "utterance": "can you add object?",
+      "last": "NexoraI can help define what an object should represent, but I can't add a new production object from this conversation yet.",
+      "focused": "ctx-problem-margin"
+    },
+    {
+      "utterance": "explain the stage. what is on stage now?",
+      "last": "NexoraThe Stage is Nexora's visual workspace for the executive objects relevant to the work you're reviewing. Right now the Stage contains Margin Pressure, Delivery. Margin Pressure is focused.",
+      "focused": "ctx-problem-margin"
+    },
+    {
+      "utterance": "show Delivery",
+      "last": "NexoraFocused on Delivery.",
+      "focused": "obj-delivery"
+    },
+    {
+      "utterance": "Why is Delivery late?",
+      "last": "NexoraDelivery has not been resolved yet, so it still deserves attention. We know on-time is 91%. Delivery is associated with Capacity Gap. That connection does not by itself tell us whether Delivery is affecting Capacity Gap or the reverse. Has backlog increased over the same period?",
+      "focused": "obj-delivery"
+    },
+    {
+      "utterance": "What is the Stage?",
+      "last": "NexoraThe Stage is Nexora's visual workspace for the executive objects relevant to the work you're reviewing.",
+      "focused": "obj-delivery"
+    },
+    {
+      "utterance": "Go back to Delivery.",
+      "last": "NexoraReturning to Delivery. We were checking: Has backlog increased over the same period.",
+      "focused": "obj-delivery"
+    }
+  ],
+  "menuProblemCount": null,
+  "canonicalProblems": ["Capacity Gap", "Margin Pressure"],
+  "advisorShowProblems": "Current Problems: Capacity Gap, Margin Pressure.",
+  "menuNote": "Queue overlay count selector was not visible in this viewport; Advisor unfiltered membership matches canonical queue (2).",
+  "proofs": {
+    "relationBothSubjects": true,
+    "conditionalNoOutcome": true,
+    "assertionNoNav": true,
+    "problemsParity": true,
+    "allUnfiltered": true,
+    "relatedFilter": true,
+    "changeNoCollision": true,
+    "capabilityHonest": true,
+    "mixedStage": true,
+    "continuity": true
+  },
+  "ok": true
+}

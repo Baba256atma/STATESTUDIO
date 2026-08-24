@@ -1,0 +1,63 @@
+{
+  "identity": "MVP-OUT:1-FIX2/conversation-trace",
+  "turns": [
+    {
+      "manager": "what is DEMAND SURGE SCENARIO ?",
+      "normalizedUtterance": "what is demand surge scenario",
+      "intent": "explain-scenario",
+      "scenarioPayload": { "operation": "describe" },
+      "contextSubject": "ctx-scenario-demand",
+      "stageSubject": null,
+      "cc7CurrentScenario": "ctx-scenario-demand",
+      "pendingTurn": null,
+      "scenarioIdentity": "ctx-scenario-demand",
+      "resolvedTarget": "ctx-scenario-demand",
+      "command": "explain-scenario",
+      "cc9Operation": "describe",
+      "cc9Status": "defined",
+      "responseBuilderBranch": "scenarioResult.summary",
+      "exiAdvisorSubject": "ctx-scenario-demand",
+      "response": "Scenario: Demand Surge. What it represents: Demand Surge explores volume upside with delivery risk. Related: Delivery. This is a scenario projection, not an observed outcome."
+    },
+    {
+      "manager": "what if delivery be late ?",
+      "normalizedUtterance": "what if delivery be late",
+      "intent": "explore-scenario",
+      "scenarioPayload": { "operation": "intervention", "actionKind": "delay" },
+      "contextSubject": "obj-delivery",
+      "stageSubject": null,
+      "cc7CurrentScenario": "ctx-scenario-demand",
+      "pendingTurn": null,
+      "scenarioIdentity": "cc9:scenario:custom:ctx-scenario-demand:v2",
+      "parentScenarioId": "ctx-scenario-demand",
+      "resolvedTarget": "obj-delivery",
+      "command": "evaluate-scenario",
+      "cc9Operation": "add-assumption",
+      "cc9Status": "unsupported",
+      "responseBuilderBranch": "scenarioResult.summary",
+      "exiAdvisorSubject": "ctx-scenario-demand",
+      "response": "I understand that you want to test late Delivery within the Demand Surge scenario, but Nexora does not currently have a supported impact model for that condition."
+    },
+    {
+      "manager": "what risk does that create?",
+      "normalizedUtterance": "what risk does that create",
+      "intent": "explain-scenario",
+      "scenarioPayload": { "operation": "downside" },
+      "cc7CurrentScenario": "ctx-scenario-demand",
+      "command": "explain-scenario",
+      "cc9Operation": "downside",
+      "cc9Status": "evaluated",
+      "response": "That change isn't modeled in the current scenario system."
+    },
+    {
+      "manager": "how sure are you?",
+      "normalizedUtterance": "how sure are you",
+      "intent": "evidence",
+      "cc9Remap": "confidence because parentScenarioRef is set",
+      "cc7CurrentScenario": "ctx-scenario-demand",
+      "command": "request-prioritization",
+      "cc9Operation": "confidence",
+      "response": "That change isn't modeled in the current scenario system. That confidence applies to the scenario projection, not to Reality, Actual Outcome, or causal proof."
+    }
+  ]
+}

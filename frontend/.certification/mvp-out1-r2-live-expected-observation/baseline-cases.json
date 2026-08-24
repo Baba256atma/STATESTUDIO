@@ -1,0 +1,5 @@
+{
+  "I": "baseline is latest valid observation at or before boundary when baselineObservationId is supplied",
+  "J": "current KPI is not used as retroactive baseline",
+  "result": "pass"
+}

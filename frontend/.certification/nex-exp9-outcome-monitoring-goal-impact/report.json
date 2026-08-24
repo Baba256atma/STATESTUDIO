@@ -1,0 +1,12 @@
+{
+  "identity": "NEX-EXP:9/OutcomeMonitoringGoalImpactExperience",
+  "startsOnlyFromReadyForOutcomeMonitoring": true,
+  "executionRuntimeReadOnly": true,
+  "noObservationUnknown": true,
+  "expectedRemainsPredicted": true,
+  "progressNotOutcome": true,
+  "completionNotGoalSuccess": true,
+  "attributionNotConfirmed": true,
+  "startsLearning": false,
+  "startsNexExp10": false
+}

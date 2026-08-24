@@ -1,0 +1,4 @@
+{
+  "rule": "at or before boundary via baselineObservationId",
+  "currentKpiNotBaseline": true
+}

@@ -1,0 +1,8 @@
+{
+  "S": "wrong metric/dimension not linked",
+  "T": "wrong dimension not linked",
+  "U": "wrong unit not comparable",
+  "W": "correct binding + observation can link Actual (TEST-ONLY)",
+  "X": "current KPI without binding remains Reality only",
+  "result": "pass"
+}

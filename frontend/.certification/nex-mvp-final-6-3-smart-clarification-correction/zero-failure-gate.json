@@ -1,0 +1,18 @@
+{
+  "gate": "NEX-MVP-FINAL:6.3-ZERO-FAILURE-CERTIFIED",
+  "status": "pass",
+  "checks": {
+    "unit": "pass",
+    "corpus": "pass",
+    "noUnnecessaryClarification": "pass",
+    "typecheck": "pass",
+    "lint": "pass",
+    "build": "pass",
+    "liveRuntime": "pass",
+    "decisionSafety": "pass",
+    "executionSafety": "pass",
+    "reset": "pass",
+    "final61": "pass",
+    "final62": "pass"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "phase": "EXI:1",
+  "identity": "EXI:1/NexoraExecutiveIntelligenceExperience",
+  "completedAt": "2026-08-18T21:43:54.502Z",
+  "http": 200,
+  "exiPresent": true,
+  "overviewHasAdvisor": true,
+  "whyGrounded": true,
+  "causingHonest": true,
+  "optionsHonest": true,
+  "tradeoffsAnswered": true,
+  "recommendPresent": true,
+  "executionNoCc11": true,
+  "conversationChange": true,
+  "outcomeHonest": true,
+  "learningHonest": true,
+  "uncaught": 0,
+  "duplicateOrHydration": [],
+  "humanCertification": {
+    "whatChanged": "PASS",
+    "whatMatters": "PASS",
+    "why": "PASS",
+    "causing": "PASS",
+    "options": "PASS",
+    "tradeoffs": "PARTIAL",
+    "recommend": "PASS",
+    "recommendWhy": "PASS",
+    "next": "PASS",
+    "uncertain": "PASS"
+  }
+}

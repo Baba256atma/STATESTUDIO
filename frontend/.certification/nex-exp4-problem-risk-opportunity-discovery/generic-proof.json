@@ -1,0 +1,12 @@
+{
+  "genericEngine": true,
+  "noDeliveryBranch": true,
+  "noCapacityBranch": true,
+  "noCashBranch": true,
+  "noProjectOrionBranch": true,
+  "noSoftwareBranch": true,
+  "business": true,
+  "project": true,
+  "operational": true,
+  "software": true
+}

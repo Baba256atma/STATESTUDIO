@@ -1,0 +1,35 @@
+{
+  "identity": "CORE-INT:2/RuntimeConnectivity",
+  "livePath": {
+    "Canonical Evidence": "CONNECTED",
+    "EI:3-compatible Core Epistemic Contract": "CONNECTED",
+    "Live Executive Runtime": "CONNECTED",
+    "EXI": "CONNECTED",
+    "Advisor": "CONNECTED",
+    "Conversation": "CONNECTED"
+  },
+  "edges": [
+    {
+      "from": "Data Reality / fixture KPI / recorded relationship / scenario kind",
+      "to": "projectSharedEpistemicFoundation",
+      "status": "CONNECTED"
+    },
+    {
+      "from": "projectNexoraLiveSharedEpistemicFoundation",
+      "to": "composeNexoraExecutiveIntelligenceExperience",
+      "status": "CONNECTED"
+    },
+    {
+      "from": "experience.epistemicFoundation",
+      "to": "Advisor data-testid=nexora-advisor-epistemic",
+      "status": "CONNECTED"
+    },
+    {
+      "from": "experience.epistemicFoundation",
+      "to": "projectNexoraExiConversationalAnswers",
+      "status": "CONNECTED"
+    }
+  ],
+  "ei4LiveOnExecutive": false,
+  "exi4Started": false
+}

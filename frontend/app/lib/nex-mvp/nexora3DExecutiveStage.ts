@@ -233,10 +233,24 @@ export type NexoraMVPStageObjectPresentation = {
       readonly width: number;
       readonly height: number;
       readonly padding: number;
-      readonly region: string;
-      readonly depthRole: string;
+      readonly region:
+        | "business-network"
+        | "executive-thread"
+        | "background-context";
+      readonly depthRole:
+        | "focus"
+        | "foreground"
+        | "standard"
+        | "background"
+        | "thread";
     }>;
     readonly compositionScale: number;
+    readonly depthRole?:
+      | "focus"
+      | "foreground"
+      | "standard"
+      | "background"
+      | "thread";
   }>;
   /** SP:4.3 network topology layer / slot (presentation only). */
   readonly networkTopologyLayer?: 0 | 1 | 2 | 3;
@@ -246,6 +260,7 @@ export type NexoraMVPStageObjectPresentation = {
 export type NexoraMVPStageConnectionVisualRole =
   | "anchor-incident"
   | "context"
+  | "related"
   | "background"
   | "hidden";
 
@@ -287,7 +302,7 @@ export type NexoraMVPStageScenePresentation = {
   /** SP:4.2 internal Stage composition mode. */
   readonly compositionMode?: "spatial-3d" | "executive-2_5d";
   /** SP:4.3 topology kind when executive-network is active. */
-  readonly topologyKind?: "executive-network" | "flow" | "hub";
+  readonly topologyKind?: "executive-network" | "flow" | "hub" | "stage-2d-recomposition";
 };
 
 export type ResolveNexoraMVPStageSceneInput = {

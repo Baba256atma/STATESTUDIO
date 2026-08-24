@@ -659,7 +659,7 @@ export function resolveExecutiveObjectLabelPresentation(
   const metricLabelText = sanitizePresentationText(input.primaryMetricLabel);
 
   // Progressive disclosure — remove from bottom of priority stack upward.
-  let showName = true;
+  const showName = true;
   let showStateCue = false;
   let showPrimaryValue = false;
   let showMetricLabel = false;

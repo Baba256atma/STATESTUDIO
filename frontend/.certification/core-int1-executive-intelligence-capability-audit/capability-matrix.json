@@ -1,0 +1,126 @@
+{
+  "identity": "CORE-INT:1/ExecutiveIntelligenceCapabilityAudit",
+  "version": "1.0.0",
+  "frozenMvp": {
+    "id": "MVP:1/NexoraManagerMVPReleaseBaseline",
+    "version": "1.2.0",
+    "route": "/executive"
+  },
+  "statusVocabulary": [
+    "FULL-LIVE",
+    "PARTIAL-LIVE",
+    "IMPLEMENTED-NON-LIVE",
+    "FRAGMENTED",
+    "PRESENTATION-ONLY",
+    "ABSENT"
+  ],
+  "capabilities": [
+    {
+      "id": "CI-1",
+      "name": "Assumption & Uncertainty Intelligence",
+      "coreAuthority": "EI:3 createExecutiveClaim + SemanticConfidence (caller-supplied type)",
+      "liveOnExecutive": false,
+      "grounding": "MODEL/FIXTURE GROUNDED on /executive; PARTIALLY GROUNDED in EI:3 tests via Data Reality handoff",
+      "exiDependency": "EXI assigns independent epistemic labels (fact/relationship/assumption/prediction/unknown) and Advisor evidenceState (strong/limited/incomplete/stale/none)",
+      "status": "IMPLEMENTED-NON-LIVE",
+      "liveSurface": "PRESENTATION-ONLY",
+      "notes": "Canonical FACT|ASSUMPTION|PREDICTION|UNKNOWN exists. Core does not classify an arbitrary executive claim; the caller labels type. FACT requires evidence+provenance. /executive never calls createExecutiveClaim."
+    },
+    {
+      "id": "CI-2",
+      "name": "Causal Intelligence",
+      "coreAuthority": "EI:3 EvidenceBoundedRelationship (observed-relationship | possible-contributor | supported-causal | unknown-cause); infersCausality=false",
+      "liveOnExecutive": false,
+      "grounding": "MODEL/FIXTURE GROUNDED on /executive (Stage/context relationship fixtures)",
+      "exiDependency": "EXI:2 maps unlabeled fixture edges to contributor copy; primaryContributor only if exactly one inbound link",
+      "status": "IMPLEMENTED-NON-LIVE",
+      "liveSurface": "PRESENTATION-ONLY",
+      "notes": "Core can record causal-support kinds when a caller supplies them. Core cannot infer cause, rank contributors by evidence, or distinguish RELATED vs CAUSAL on /executive fixture edges (those edges have no supportKind)."
+    },
+    {
+      "id": "CI-3",
+      "name": "Constraint Intelligence",
+      "coreAuthority": "none single; EI:3 ExecutiveConstraintReference (non-live) + Stage constrained-by/blocks + CC:8 assessment constraints",
+      "liveOnExecutive": "listing only",
+      "grounding": "MODEL/FIXTURE GROUNDED",
+      "exiDependency": "EXI:2 lists constrained-by and blocks; bindingConstraint always null",
+      "status": "FRAGMENTED",
+      "liveSurface": "PRESENTATION-ONLY",
+      "notes": "No binding-constraint reasoner. No constraint-relief downstream reasoning. Listing recorded relation kinds is not Constraint Intelligence."
+    },
+    {
+      "id": "CI-4",
+      "name": "Priority Intelligence",
+      "coreAuthority": "EI:4 resolveExplainablePriority (non-live); live attention from Stage fixture ATTENTION_RANK, Queue, NBA, Advisor",
+      "liveOnExecutive": "attention only, not comparative priority",
+      "grounding": "MODEL/FIXTURE GROUNDED",
+      "exiDependency": "EXI presents attention/recommendation copy; does not rank competing problems with grounded criteria",
+      "status": "FRAGMENTED",
+      "liveSurface": "ATTENTION, not PRIORITY",
+      "notes": "EI:4 can explain high/medium/low from supplied PriorityFactors with numericalScore always null. /executive does not consume it. overviewAttentionItems sorts fixtures by attention then id."
+    },
+    {
+      "id": "CI-5",
+      "name": "Trade-off Intelligence",
+      "coreAuthority": "EI:4 createScenarioPriorityTradeoffTrace / ScenarioTradeoff / projectScenarioComparisonForAdvisor",
+      "liveOnExecutive": false,
+      "grounding": "MODEL/FIXTURE GROUNDED on /executive (scenario fixture summaries); EI:4 tests use constructed claims",
+      "exiDependency": "EXI:3 extracts qualitative gain/risk/constraint/assumption phrases from existing scenario summaries; ei4LiveOnExecutive=false",
+      "status": "IMPLEMENTED-NON-LIVE",
+      "liveSurface": "PRESENTATION-ONLY",
+      "notes": "EI:4 output is qualitative gain/sacrifice strings plus evidenceRefs, not a quantitative economics model. Missing runtime binding: EI:4 → (no nex-mvp reader) → /executive."
+    }
+  ],
+  "depth": [
+    {
+      "capability": "Uncertainty",
+      "detect": "PARTIAL",
+      "explain": "PARTIAL",
+      "compare": "NO",
+      "rank": "NO",
+      "predict": "NO",
+      "learn": "NO",
+      "notes": "EI:3 detects claim type only if caller labels it; semantic confidence from evidence overlap. No propagation Data→Problem→Scenario→Recommendation→Decision. No learning of confidence."
+    },
+    {
+      "capability": "Causal",
+      "detect": "PARTIAL",
+      "explain": "PARTIAL",
+      "compare": "NO",
+      "rank": "NO",
+      "predict": "NO",
+      "learn": "NO",
+      "notes": "Detect/explain = recorded relationships. EXI:2 chain is fixture-edge walk. Ranking if count===1 is not causal ranking."
+    },
+    {
+      "capability": "Constraint",
+      "detect": "PARTIAL",
+      "explain": "PARTIAL",
+      "compare": "NO",
+      "rank": "NO",
+      "predict": "NO",
+      "learn": "NO",
+      "notes": "Detect = list constrained-by/blocks. No binding, no relief prediction."
+    },
+    {
+      "capability": "Priority",
+      "detect": "PARTIAL",
+      "explain": "PARTIAL",
+      "compare": "NO",
+      "rank": "PARTIAL",
+      "predict": "NO",
+      "learn": "NO",
+      "notes": "Live rank is fixture attention sort. EI:4 can compare supplied factors in tests only. Cannot explain Address B first because… on /executive."
+    },
+    {
+      "capability": "Trade-off",
+      "detect": "PARTIAL",
+      "explain": "PARTIAL",
+      "compare": "PARTIAL",
+      "rank": "NO",
+      "predict": "NO",
+      "learn": "NO",
+      "notes": "EI:4 compare exists off-path. Live EXI:3 compares explored-by siblings from summary copy. No quantitative predict/rank."
+    }
+  ]
+}

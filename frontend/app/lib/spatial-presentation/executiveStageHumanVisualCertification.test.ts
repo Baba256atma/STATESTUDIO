@@ -102,7 +102,7 @@ test("6V viewports + observability", () => {
 
 test("6V machine invariants: camera/z + no auto-focus in prep", () => {
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -112,8 +112,7 @@ test("6V machine invariants: camera/z + no auto-focus in prep", () => {
   let presentation = deriveNexoraMVPStageInteractionPresentation(state);
   assert.equal(presentation.presentationMode, "preparation");
   for (const object of presentation.scene.objects) {
-    const z =
-      Array.isArray(object.position) ? object.position[2] : object.position?.z;
+    const z = object.targetPosition[2];
     if (z != null) assert.equal(z, 0);
   }
   state = selectNexoraMVPInteractionSubject(state, "obj-capacity");

@@ -1,0 +1,18 @@
+{
+  "communicationOwner": "NEX-MVP-FINAL:6.4/TrustedExecutiveCommunication",
+  "explainOwner": "MO:2/GenericExplainEngine",
+  "investigationOwner": "NEX-MVP-FINAL:5",
+  "epistemicOwner": "CORE-INT:2 / EXI / MO:2 causalClaim",
+  "clarificationOwner": "NEX-MVP-FINAL:6.3",
+  "continuityOwner": "NEX-MVP-FINAL:6.2",
+  "nluOwner": "NEX-MVP-FINAL:6.1",
+  "decisionOwner": "CC:10 / CC:10R",
+  "executionOwner": "CC:11 / CC:12",
+  "createsSecondExplainEngine": false,
+  "createsSecondEvidenceStore": false,
+  "createsSecondAdvisor": false,
+  "inventsBusinessTruth": false,
+  "commitsDecision": false,
+  "startsExecution": false,
+  "usesLlm": false
+}

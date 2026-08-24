@@ -1,0 +1,14 @@
+{
+  "identityRule": "learn:{workspaceId}:{subjectId}:{learningType}:{scope}:{fingerprint}",
+  "fingerprint": "Canonical evidence parts (assessment status, comparison result, expectationId, observationId, findingId, assumptionId, predictionId). Not statement text.",
+  "notIdentity": [
+    "statement text alone",
+    "array index",
+    "current Outcome value",
+    "current KPI"
+  ],
+  "idempotency": "Same evidence context returns the same learningId from the in-memory candidate index. The index is not a durable store.",
+  "revision": "New meaningful evidence creates a new learningId/version with previousLearningId. Historical candidates remain.",
+  "workspaceIsolation": "workspaceId is part of familyKey. Workspace A cannot become Workspace B Learning.",
+  "scopeDowngrade": "Requested generalized scope remains case-specific unless repeatability is repeated-consistent."
+}

@@ -1,0 +1,9 @@
+{
+  "A": "stable bindingId across recomposition",
+  "B": "live Decision remains missing",
+  "C": "Advisor prose cannot invent expectation",
+  "D": "metric/dimension/unit preserved from canonical expectation",
+  "E": "duplicate recomposition stable",
+  "F": "revised expectationId yields new bindingId",
+  "result": "pass"
+}

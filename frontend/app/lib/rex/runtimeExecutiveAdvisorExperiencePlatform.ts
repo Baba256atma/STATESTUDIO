@@ -1126,22 +1126,22 @@ export interface RuntimeExecutiveAdvisorExperiencePlatformVerification {
 
 export function verifyRuntimeExecutiveAdvisorExperiencePlatform():
   RuntimeExecutiveAdvisorExperiencePlatformVerification {
-  const module = runtimeExecutiveAdvisorExperiencePlatform;
+  const runtimeModule = runtimeExecutiveAdvisorExperiencePlatform;
   const registry = runtimeExecutiveAdvisorExperiencePlatformRegistry;
   const orchestrationOk =
     verifyRuntimeExecutiveAdvisorExperienceOrchestration();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-3:7/RuntimeExecutiveAdvisorExperiencePlatform" &&
-    module.version === "3.7.0" &&
-    module.namespace === "nexora.rex.advisor-experience.platform" &&
-    module.status === "PlatformReady" &&
-    module.upstreamDependency ===
+    runtimeModule.version === "3.7.0" &&
+    runtimeModule.namespace === "nexora.rex.advisor-experience.platform" &&
+    runtimeModule.status === "PlatformReady" &&
+    runtimeModule.upstreamDependency ===
       "REX-3:6/RuntimeExecutiveAdvisorExperienceOrchestration" &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveAdvisorExperienceOrchestration" &&
-    module.orchestrationBoundary ===
+    runtimeModule.orchestrationBoundary ===
       "REX-3:6-experience-orchestration-only";
 
   const vocabOk =
@@ -1197,16 +1197,16 @@ export function verifyRuntimeExecutiveAdvisorExperiencePlatform():
     Object.isFrozen(RUNTIME_EXECUTIVE_ADVISOR_PLATFORM_METADATA);
 
   const orchestrationBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-3:6/RuntimeExecutiveAdvisorExperienceOrchestration" &&
-    module.boundary.consumesOrchestrationOnly === true &&
-    module.boundary.importsRex35Directly === false &&
-    module.boundary.importsRex34Directly === false &&
-    module.boundary.executesActions === false &&
-    module.boundary.mutatesStageState === false &&
-    module.boundary.ownsStage === false &&
-    module.boundary.rendersUi === false &&
-    module.boundary.inventsUpstreamBehavior === false;
+    runtimeModule.boundary.consumesOrchestrationOnly === true &&
+    runtimeModule.boundary.importsRex35Directly === false &&
+    runtimeModule.boundary.importsRex34Directly === false &&
+    runtimeModule.boundary.executesActions === false &&
+    runtimeModule.boundary.mutatesStageState === false &&
+    runtimeModule.boundary.ownsStage === false &&
+    runtimeModule.boundary.rendersUi === false &&
+    runtimeModule.boundary.inventsUpstreamBehavior === false;
 
   const countIntegrity =
     registry.platformStateCount ===
@@ -1228,7 +1228,7 @@ export function verifyRuntimeExecutiveAdvisorExperiencePlatform():
     orchestrationBoundaryIntact &&
     countIntegrity &&
     orchestrationOk.ok === true &&
-    module.boundary.aiProviderIndependent === true;
+    runtimeModule.boundary.aiProviderIndependent === true;
 
   return Object.freeze({
     ok,
@@ -1253,12 +1253,12 @@ export function verifyRuntimeExecutiveAdvisorExperiencePlatform():
     publicApiCount: runtimeExecutiveAdvisorExperiencePlatformApiNames.length,
     frozen,
     orchestrationBoundaryIntact,
-    noStageMutation: module.boundary.mutatesStageState === false,
-    noNavigation: module.boundary.navigatesApplication === false,
-    noUi: module.boundary.rendersUi === false,
-    noAutoExecution: module.boundary.executesActions === false,
+    noStageMutation: runtimeModule.boundary.mutatesStageState === false,
+    noNavigation: runtimeModule.boundary.navigatesApplication === false,
+    noUi: runtimeModule.boundary.rendersUi === false,
+    noAutoExecution: runtimeModule.boundary.executesActions === false,
     orchestrationOk: orchestrationOk.ok === true,
-    noAi: module.boundary.aiProviderIndependent === true,
-    noNewBehavior: module.boundary.inventsUpstreamBehavior === false,
+    noAi: runtimeModule.boundary.aiProviderIndependent === true,
+    noNewBehavior: runtimeModule.boundary.inventsUpstreamBehavior === false,
   });
 }

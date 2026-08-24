@@ -1,0 +1,9 @@
+{
+  "session": "CC:7 / CC:9 scenario session — no new conversation memory store",
+  "V_whatCouldBeAffected": "Supported affected dimensions: On-time. Downstream omitted. Projection, not Reality/Outcome. No canonical Risk.",
+  "W_whichKpi": "Supported KPI pressure: On-time (decrease). Magnitude is not quantified.",
+  "X_whatRisks": "No canonical Risk impact is supported for this Scenario intervention.",
+  "Y_howSure": "Impact direction is supported by the subject's canonical KPI binding. Magnitude, downstream Customer/Revenue effects, and causal proof are not in this model. Applies to projection, not Reality/Outcome/causal proof.",
+  "Z_why": "The current Scenario model binds this intervention to On-time via canonical subject kpi. This is a modeled relationship; it is not proof that a future observed change was caused by this intervention.",
+  "whyRemap": "Bare 'why?' is CC:1 explain; remapped to explain-scenario/impact-why when an active Scenario evaluation exists, before command mapping."
+}

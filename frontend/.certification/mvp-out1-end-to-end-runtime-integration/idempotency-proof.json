@@ -1,0 +1,6 @@
+{
+  "observationIdentity": "obs:{sourceId}:{datasetId}:{metricId}:{observedAt}",
+  "duplicateSourceSnapshot": "existing identity reused",
+  "app4Duplicate": "duplicate-durable-record",
+  "secondIdentitySystem": false
+}

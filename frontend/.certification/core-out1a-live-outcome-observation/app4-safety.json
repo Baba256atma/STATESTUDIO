@@ -1,0 +1,11 @@
+{
+  "writesMemory": false,
+  "createsLearning": false,
+  "promotionRulesChanged": false,
+  "ei6PromotionReused": false,
+  "observationRecordEqualsLearning": false,
+  "storageLifetime": "session",
+  "browserDurable": false,
+  "serverDurable": false,
+  "app4Untouched": true
+}

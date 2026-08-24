@@ -1,0 +1,9 @@
+{
+  "decision": "live under-review",
+  "execution": "live planned / in-progress",
+  "expectedCanonicalMetric": "MISSING",
+  "actualOutcome": "pending",
+  "learning": 0,
+  "app4Promotion": "none",
+  "validSuccessfulIntegration": true
+}

@@ -1,0 +1,11 @@
+{
+  "rule": "Preserve all relevant conflicting evidence. Do not average claims into fake certainty.",
+  "outcomeConflict": "status conflicting; not promotion-eligible",
+  "causalConflict": "causal-learning conflicting; not promotion-eligible",
+  "historicalContradiction": "T1 candidate remains; T2 new version with previousLearningId",
+  "cases": {
+    "N": "PASS",
+    "O": "PASS",
+    "AJ": "PASS"
+  }
+}

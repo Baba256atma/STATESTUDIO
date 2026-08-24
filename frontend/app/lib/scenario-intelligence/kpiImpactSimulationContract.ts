@@ -5,7 +5,10 @@
  * blueprint proposals. No scene mutation or prediction authority.
  */
 
-import type { KpiTrendDirection } from "../kpi-intelligence/kpiTrendContract.ts";
+import type {
+  KpiHistoricalSnapshot,
+  KpiTrendDirection,
+} from "../kpi-intelligence/kpiTrendContract.ts";
 import type { ScenarioBlueprintRegistry } from "./scenarioBuilderContract.ts";
 import type { ScenarioType } from "./scenarioGenerationContract.ts";
 
@@ -87,7 +90,7 @@ export type KpiImpactSimulationBuildInput = Readonly<{
   sceneJson?: unknown;
   kpis?: readonly unknown[];
   dataSourceKpis?: readonly unknown[];
-  historicalSnapshots?: readonly import("../kpi-intelligence/kpiTrendContract.ts").KpiHistoricalSnapshot[];
+  historicalSnapshots?: readonly KpiHistoricalSnapshot[];
   blueprintRegistry?: ScenarioBlueprintRegistry;
   scenarioIds?: readonly string[];
 }>;

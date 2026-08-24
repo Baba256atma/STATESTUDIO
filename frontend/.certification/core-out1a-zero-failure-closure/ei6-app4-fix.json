@@ -1,0 +1,50 @@
+{
+  "identity": "CORE-OUT:1A-FIX/ei6-app4",
+  "blockers": [
+    "L",
+    "M",
+    "N"
+  ],
+  "L": {
+    "expected": "APP-4 remains the only durable memory authority",
+    "observed": "promoted === false, assertion false",
+    "rootCause": "persistDurableExecutiveMemory wrote providerId durable-executive-memory but APP-4 requires that provider to be registered. EI:6 tests initialized in-memory storage without registering it, so promotion was rejected.",
+    "not": [
+      "EI:6 shadow store",
+      "authority identity change",
+      "new promotion rule"
+    ],
+    "ownership": "APP-4 durableExecutiveMemory registration seam",
+    "fix": "ensureDurableExecutiveMemoryAuthority() self-registers the APP-4 provider on persist/initialize. Does not switch to local_storage (throws in Node). No fake memoryId."
+  },
+  "M": {
+    "expected": "promoted learning reconstructs Decision, Scenario, Issue, Reality",
+    "firstMissingEdge": "APP-4 create never ran because L promotion was rejected, so retrieval had no durable record to reconstruct references from",
+    "fix": "same registration seam; reconstruction uses the real APP-4 record"
+  },
+  "N": {
+    "crash": "TypeError: Cannot read properties of undefined (reading 'memoryId')",
+    "whyUndefined": "promotion returned promoted:false with no record; test N read retrieval.memories[0].memoryId",
+    "fix": "legitimate APP-4 persist now returns a real canonical record; retrieval projects historical context without becoming current truth"
+  },
+  "authority": {
+    "APP-4": "only durable Executive Memory authority",
+    "EI-6-may": [
+      "prepare eligible Learning/Outcome records",
+      "request promotion",
+      "read historical context"
+    ],
+    "EI-6-may-not": [
+      "own durable store",
+      "create shadow memory",
+      "override APP-4 lifecycle",
+      "treat session as durable history"
+    ]
+  },
+  "newTest": "persistDurableExecutiveMemory registers APP-4 authority without a prior test registration",
+  "results": {
+    "L": "PASS",
+    "M": "PASS",
+    "N": "PASS"
+  }
+}

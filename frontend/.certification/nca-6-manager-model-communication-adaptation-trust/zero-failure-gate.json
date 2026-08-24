@@ -1,0 +1,11 @@
+{
+  "gate": "NCA:6-ZERO-FAILURE-CERTIFIED",
+  "accidentalApprovals": 0,
+  "accidentalExecutionStarts": 0,
+  "personalityProfiler": 0,
+  "truthAdaptedToCommunication": 0,
+  "adviceConvertedToDecision": 0,
+  "adviceConvertedToExecution": 0,
+  "fabricatedCapability": 0,
+  "nca7Started": 0
+}

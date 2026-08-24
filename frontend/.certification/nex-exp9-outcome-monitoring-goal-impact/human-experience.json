@@ -1,0 +1,12 @@
+{
+  "A_outcomeClarity": "YES",
+  "B_expectedVsObservedClarity": "YES",
+  "C_goalImpactClarity": "YES",
+  "D_causalHonesty": "YES",
+  "E_timingHonesty": "YES",
+  "F_uncertaintyHonesty": "YES",
+  "G_outcomeSafety": "YES",
+  "H_stageRestraint": "YES",
+  "I_continuity": "YES",
+  "J_managerValue": "YES"
+}

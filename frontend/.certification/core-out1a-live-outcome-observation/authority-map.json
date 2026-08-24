@@ -1,0 +1,48 @@
+{
+  "phase": "CORE-OUT:1A",
+  "identity": "CORE-OUT:1A/LiveOutcomeObservationCapture",
+  "version": "1.0.0",
+  "frozenMvp": {
+    "id": "MVP:1/NexoraManagerMVPReleaseBaseline",
+    "version": "1.2.0"
+  },
+  "auditQuestions": {
+    "whatCreatesObservations": "Data Reality / RDI create business observations (KPI results, source snapshots, monitoring observedAt). CORE-OUT:1A captures those observations into Outcome-eligible records. EI:6 observeActualOutcome and STAGE-PROD:5 append APIs exist but are not live writers. CORE-OUT:1A is the live capture/linkage writer.",
+    "whatContainsTimestamps": "RDI observedAt/importedAt, KPI calculatedAt, monitoring observedAt. Live CORE-OUT expected capturedAt remains null. Decision/execution commitment timestamps are not present on the live nex-mvp path.",
+    "whatContainsProvenance": "RDI source provenance, Data Reality advisor/stage provenance chains, CORE-OUT:1 actuals provenanceRefs. CORE-OUT:1A requires sourceId, datasetId, and provenanceRefs for validated Actual Outcome.",
+    "whatContainsDatasetSourceIdentity": "RDI sourceId/connectionId/snapshot. KPI kpiId/objectKey/nexoraObjectId. CORE-OUT:1A preserves sourceId and datasetId.",
+    "canLinkToSubjects": "Yes via nexoraObjectId / object keys / fixture subject ids. That is Reality linkage, not Outcome linkage.",
+    "canLinkDecisionToExpected": "Yes. Live expected uses expectationId expected:{scenarioId} from scenario/decision fixture summaries as PREDICTION.",
+    "canLinkExecutionWithoutCc11": "Fixture/contextual subject links only. CC:11 remains unwired. Execution timing is unavailable on the live path.",
+    "observationWindowExists": "CORE-OUT:1 had a thin ExecutiveOutcomeWindow. CORE-OUT:1A now owns OutcomeObservationWindowRecord. Windows are created only from real Decision/Execution timestamps or explicit measurement periods. Live fixtures have no such timestamps, so windows are timing-incomplete and are not fabricated.",
+    "recentChangeTemporalEvidence": "Monitoring/change can supply timestamps. Recent Change is not Outcome unless the observations themselves are canonical and an explicit Outcome link exists.",
+    "missingForOutcomeEvidence": "Explicit Outcome linkage, compatible dimension+unit, valid window membership, provenance, validation, and a writer that does not treat current KPI as Outcome. CORE-OUT:1A supplies capture+linkage. CORE-OUT:1 still evaluates."
+  },
+  "pre1AObservationAuthority": {
+    "dataReality": "observed business truth",
+    "coreOut1": "evaluator; depended on caller-supplied outcomeLinked actuals",
+    "liveWriter": false
+  },
+  "finalObservationAuthority": {
+    "dataReality": "observed business truth (unchanged)",
+    "coreOut1A": "capture + Outcome linkage",
+    "coreOut1": "expected-vs-actual evaluation",
+    "liveWriter": "session capture writer wired; live /executive store empty"
+  },
+  "authorities": {
+    "dataReality": "P0:1/NexoraDataRealityFoundation",
+    "rdi": "RDI:1/NexoraRealDataIntegrationFoundation",
+    "observationCapture": "CORE-OUT:1A/LiveOutcomeObservationCapture",
+    "outcomeEvaluation": "CORE-OUT:1/LiveOutcomeIntelligence",
+    "epistemics": "CORE-INT:2/SharedEpistemicUncertaintyFoundation",
+    "causality": "CORE-INT:3/GroundedCausalConstraintIntelligence",
+    "priority": "CORE-INT:4/ExecutivePriorityIntelligence",
+    "tradeoff": "CORE-INT:5/LiveTradeoffIntelligence",
+    "decision": "Decision Runtime (read-only; not mutated)",
+    "execution": "NEX-MVP:8 live presentation; CC:11 not wired",
+    "memory": "APP-4 not written",
+    "learning": "CORE-OUT:2 not started",
+    "presentation": "EXI:1–4 readers only; no EXI:5",
+    "stageProd5": "presentation/trace only; not Outcome authority"
+  }
+}

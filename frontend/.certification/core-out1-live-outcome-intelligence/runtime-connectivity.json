@@ -1,0 +1,22 @@
+{
+  "phase": "CORE-OUT:1",
+  "livePath": [
+    "Evidence / fixtures",
+    "CORE-INT:2 epistemics",
+    "Decision / Execution context (read)",
+    "CORE-OUT:1 Outcome Assessment",
+    "EXI experience.coreOutcomeAssessment (reader metadata)",
+    "future EXI presentation"
+  ],
+  "wiredOnExecutive": {
+    "coreAssessment": true,
+    "advisorOutcomeSection": false,
+    "exi5": false,
+    "cc11": false,
+    "stageProd5Writer": false,
+    "app4Write": false,
+    "learning": false
+  },
+  "liveActualOutcomeWriter": false,
+  "honestLiveResult": "expected may exist as PREDICTION; actual is unavailable"
+}

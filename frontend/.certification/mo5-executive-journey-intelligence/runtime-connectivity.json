@@ -1,0 +1,18 @@
+{
+  "identity": "MO:5/ExecutiveJourneyProgressIntelligence",
+  "edges": {
+    "MO1_context": "CONNECTED",
+    "MO2_explanation": "CONNECTED",
+    "MO3_paths": "CONNECTED",
+    "MO4_goal": "CONNECTED",
+    "CC1_intent": "CONNECTED",
+    "CC5_experience": "CONNECTED",
+    "STAGE2D_click_to_center": "READER",
+    "UX3_advisor_reader": "CONNECTED",
+    "decision_runtime": "NOT_COMMITTED",
+    "execution_runtime": "NOT_STARTED",
+    "outcome_authority": "UNKNOWN_WHEN_MISSING",
+    "learning_authority": "NOT_AVAILABLE_WHEN_MISSING",
+    "llm": "NOT_REQUIRED"
+  }
+}

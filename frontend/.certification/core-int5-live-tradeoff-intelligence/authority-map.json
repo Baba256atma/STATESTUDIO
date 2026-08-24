@@ -1,0 +1,25 @@
+{
+  "identity": "CORE-INT:5/AuthorityMap",
+  "previousAuthorities": [
+    "EXI:3 extractGroundedDimension prose mining",
+    "EXI:3 collectComparableScenarioIds graph walk",
+    "EXI:3 preferredFromNarrative recommendation-text matching",
+    "Scenario fixture summary copy",
+    "EI:4 ScenarioTradeoff / createScenarioPriorityTradeoffTrace (test-only)"
+  ],
+  "finalAuthority": {
+    "id": "CORE-INT:5/LiveTradeoffIntelligence",
+    "module": "frontend/app/lib/executive-intelligence/nexoraExecutiveTradeoffIntelligence.ts",
+    "liveCollector": "frontend/app/lib/nex-mvp/nexoraLiveEpistemicProjection.ts",
+    "ei4Reuse": "createScenarioTradeoff + ScenarioTradeoff records only",
+    "ei4CertificationTrace": false
+  },
+  "flow": [
+    "Scenario / Decision Evidence",
+    "CORE-INT:2",
+    "CORE-INT:3",
+    "CORE-INT:5 Trade-off Assessment",
+    "EXI:3 reader",
+    "Advisor / Conversation"
+  ]
+}

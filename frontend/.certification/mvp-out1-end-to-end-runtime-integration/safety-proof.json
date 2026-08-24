@@ -1,0 +1,6 @@
+{
+  "decisionThenKpiWithoutLink": "reality-only",
+  "executionCompleteNotOutcome": true,
+  "outcomeNotCausality": true,
+  "noFakeLiveData": true
+}

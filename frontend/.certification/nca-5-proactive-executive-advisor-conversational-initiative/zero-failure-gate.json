@@ -1,0 +1,10 @@
+{
+  "gate": "NCA:5-ZERO-FAILURE-CERTIFIED",
+  "accidentalApprovals": 0,
+  "accidentalExecutionStarts": 0,
+  "secondAlertQueue": 0,
+  "secondMonitoringEngine": 0,
+  "adviceConvertedToDecision": 0,
+  "adviceConvertedToExecution": 0,
+  "nca6Started": 0
+}

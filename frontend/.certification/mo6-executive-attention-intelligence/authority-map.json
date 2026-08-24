@@ -1,0 +1,28 @@
+{
+  "attentionEngine": "MO:6/ExecutiveAttentionInterventionIntelligence",
+  "dependsOn": [
+    "MO:1/ManagerObjectInteractionFoundation",
+    "MO:2/GenericExplainEngine",
+    "MO:3/ObjectGuidedExecutiveExploration",
+    "MO:4/GoalDirectedExecutiveNavigation",
+    "MO:5/ExecutiveJourneyProgressIntelligence"
+  ],
+  "doesNotOwnTruth": true,
+  "authorities": {
+    "objectContext": "MO:1",
+    "explanation": "MO:2",
+    "explorationPaths": "MO:3",
+    "goalDirection": "MO:4",
+    "journey": "MO:5",
+    "changeSignals": "STAGE-PROD:2 / PM (read, not a second detector)",
+    "attentionFocus": "DRI-6 (read, not recalculated)",
+    "executiveQueue": "PROD Executive Queue (not duplicated)",
+    "nba": "STAGE-PROD:3 (not duplicated)",
+    "decision": "Decision Runtime (read-only; commitsDecision=false)",
+    "execution": "Execution Runtime (read-only; startsExecution=false)",
+    "outcome": "EI:6 / APP-4 when present; else UNKNOWN",
+    "stage": "NEX-MVP:4 click-to-center (no coordinate writes, no focus steal)",
+    "advisor": "UX:3 presentation"
+  },
+  "precedence": "Canonical Runtime Truth > MO Context > MO:2 > MO:3 > MO:4 > MO:5 > MO:6 Attention Projection > Presentation"
+}

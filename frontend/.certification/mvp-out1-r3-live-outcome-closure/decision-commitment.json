@@ -1,0 +1,6 @@
+{
+  "event": "CC:10 Approved",
+  "timestampSource": "mutation committedAt from host clock at approve/confirm",
+  "historicalFixtures": "Under Review, committedAt null, not backfilled",
+  "fakeShellClockRemoved": true
+}

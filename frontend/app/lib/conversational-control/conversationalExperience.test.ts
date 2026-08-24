@@ -220,7 +220,10 @@ test("10: unknown intent", () => {
   const result = run("Do something interesting", { seed: "unk" });
   assert.equal(result.status, "unsupported");
   assert.equal(result.shouldCommitRuntime, false);
-  assert.match(result.response, /not sure how that relates/i);
+  assert.match(
+    result.response,
+    /not sure how that relates|which business outcome/i,
+  );
   assert.doesNotMatch(result.response, /map.*command|unsupported intent/i);
 });
 

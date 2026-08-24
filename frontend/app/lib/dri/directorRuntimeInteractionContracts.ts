@@ -246,7 +246,7 @@ function validateObservationShape(
 
   try {
     createDirectorInteractionObservation(
-      value as CreateDirectorInteractionObservationInput,
+      value as unknown as CreateDirectorInteractionObservationInput,
     );
     return null;
   } catch {

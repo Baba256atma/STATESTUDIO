@@ -80,7 +80,7 @@ test("5–7. focused becomes anchor at {0,0} and survives Stage bridge", () => {
       getExecutiveNetworkTopologyFromPresentation(withNetwork) ??
       getExecutiveNetworkTopologyFromPresentation(finalPresentation);
     assert.ok(topology, id);
-    assert.equal(topology!.anchorObjectId, id, id);
+    assert.equal(topology!.diagnostics.anchorObjectId, id, id);
     assert.deepEqual(topology!.positions[id], { x: 0, y: 0 }, id);
     const focus = finalPresentation.scene.objects.find(
       (entry) => entry.id === id,
@@ -182,7 +182,7 @@ test("dev trace captures one settled focus snapshot shape", () => {
     objectId: "obj-delivery",
     selectedObjectId: state.selectedSubject?.id ?? null,
     focusedObjectId: finalPresentation.scene.focusedObjectId,
-    anchorObjectId: topology.anchorObjectId,
+    anchorObjectId: topology.diagnostics.anchorObjectId,
     disclosureState: focus.disclosureState ?? null,
     topologyPosition: topology.positions["obj-delivery"] ?? null,
     presentationPosition: focus.presentationPosition ?? null,

@@ -1,0 +1,10 @@
+{
+  "phase": "NEX-E2E:1",
+  "outDir": ".certification/nex-e2e1-full-executive-experience",
+  "tests": { "fail": 0, "pass": 297 },
+  "typecheck": { "errors": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0 },
+  "runtimeSmoke": { "ok": true },
+  "console": { "uncaught": 0, "hydration": 0, "duplicateKeys": 0 }
+}

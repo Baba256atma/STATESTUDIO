@@ -1,0 +1,16 @@
+{
+  "authority": "CORE-INT:3",
+  "scenarioProjectionIsNotCausalProof": true,
+  "safetyTest": {
+    "model": "Delivery delay → On-time pressure (modeled)",
+    "laterReality": "Customer KPI worsened (hypothetical later observation)",
+    "mustNotBecome": "Delivery delay caused the Customer decline",
+    "requiredBeforeCausalClaim": [
+      "Scenario projection",
+      "later Reality",
+      "CORE-OUT:1A linkage",
+      "CORE-OUT:1 evaluation",
+      "CORE-INT:3 causal evidence"
+    ]
+  }
+}

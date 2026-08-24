@@ -2140,21 +2140,21 @@ export interface RuntimeExecutiveAdvisorStageCoordinationVerification {
 
 export function verifyRuntimeExecutiveAdvisorStageCoordination():
   RuntimeExecutiveAdvisorStageCoordinationVerification {
-  const module = runtimeExecutiveAdvisorStageCoordination;
+  const runtimeModule = runtimeExecutiveAdvisorStageCoordination;
   const registry = runtimeExecutiveAdvisorStageCoordinationRegistry;
   const guidanceOk = verifyRuntimeExecutiveAdvisorGuidanceActions();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-3:5/RuntimeExecutiveAdvisorStageCoordination" &&
-    module.version === "3.5.0" &&
-    module.namespace ===
+    runtimeModule.version === "3.5.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.advisor-experience.stage-coordination" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       "REX-3:4/RuntimeExecutiveAdvisorGuidanceActions" &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveAdvisorGuidanceActions" &&
-    module.guidanceBoundary === "REX-3:4-guidance-actions-only";
+    runtimeModule.guidanceBoundary === "REX-3:4-guidance-actions-only";
 
   const vocabOk =
     exactOrder(
@@ -2195,15 +2195,15 @@ export function verifyRuntimeExecutiveAdvisorStageCoordination():
     Object.isFrozen(RUNTIME_EXECUTIVE_ADVISOR_ACTION_TO_COORDINATION_MAPPINGS);
 
   const guidanceBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-3:4/RuntimeExecutiveAdvisorGuidanceActions" &&
-    module.boundary.consumesGuidanceActionsOnly === true &&
-    module.boundary.importsRex33Directly === false &&
-    module.boundary.executesActions === false &&
-    module.boundary.mutatesStageState === false &&
-    module.boundary.navigatesApplication === false &&
-    module.boundary.forgesManagerConfirmation === false &&
-    module.boundary.inventsPaths === false;
+    runtimeModule.boundary.consumesGuidanceActionsOnly === true &&
+    runtimeModule.boundary.importsRex33Directly === false &&
+    runtimeModule.boundary.executesActions === false &&
+    runtimeModule.boundary.mutatesStageState === false &&
+    runtimeModule.boundary.navigatesApplication === false &&
+    runtimeModule.boundary.forgesManagerConfirmation === false &&
+    runtimeModule.boundary.inventsPaths === false;
 
   // Smoke: inspect maps to observe/focus intents.
   const inspectIntents =
@@ -2219,7 +2219,7 @@ export function verifyRuntimeExecutiveAdvisorStageCoordination():
     guidanceBoundaryIntact &&
     mappingOk &&
     guidanceOk.ok === true &&
-    module.boundary.aiProviderIndependent === true &&
+    runtimeModule.boundary.aiProviderIndependent === true &&
     isRuntimeExecutiveAdvisorExecutiveActionKind("inspect-subject");
 
   return Object.freeze({
@@ -2252,10 +2252,10 @@ export function verifyRuntimeExecutiveAdvisorStageCoordination():
     publicApiCount: runtimeExecutiveAdvisorStageCoordinationApiNames.length,
     frozen,
     guidanceBoundaryIntact,
-    noStageMutation: module.boundary.mutatesStageState === false,
-    noNavigation: module.boundary.navigatesApplication === false,
-    noAutoExecution: module.boundary.executesActions === false,
+    noStageMutation: runtimeModule.boundary.mutatesStageState === false,
+    noNavigation: runtimeModule.boundary.navigatesApplication === false,
+    noAutoExecution: runtimeModule.boundary.executesActions === false,
     guidanceOk: guidanceOk.ok === true,
-    noAi: module.boundary.aiProviderIndependent === true,
+    noAi: runtimeModule.boundary.aiProviderIndependent === true,
   });
 }

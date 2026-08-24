@@ -1,0 +1,10 @@
+{
+  "liveExecutive": {
+    "actualOutcome": null,
+    "reason": "No validated live Outcome writer. Actual remains unknown."
+  },
+  "unitValidatedObservation": {
+    "requires": ["FACT", "outcomeLinked", "evidenceRefs", "provenanceRefs"],
+    "unvalidatedRejected": true
+  }
+}

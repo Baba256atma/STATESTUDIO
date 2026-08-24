@@ -1,0 +1,55 @@
+{
+  "identity": "NCA:3/ClarificationInformationGapExecutiveQuestionIntelligence",
+  "url": "http://localhost:3000/executive",
+  "opened": true,
+  "pageErrors": [],
+  "engine": "NCA:3/ClarificationInformationGapExecutiveQuestionIntelligence",
+  "turns": [
+    {
+      "utterance": "What does Delivery show?",
+      "last": "NexoraFocused on Delivery.",
+      "diag": {
+        "engine": "NCA:3/ClarificationInformationGapExecutiveQuestionIntelligence",
+        "mode": "ANSWER",
+        "ask": "false",
+        "sufficiency": "SUFFICIENT",
+        "gap": "",
+        "pending": "",
+        "need": "LOCATE"
+      }
+    },
+    {
+      "utterance": "Should we permanently increase capacity?",
+      "last": "NexoraBefore recommending a lasting capacity change, I need to know whether this demand increase is expected to continue. Do you expect this higher demand to continue beyond the next few months?",
+      "diag": {
+        "engine": "NCA:3/ClarificationInformationGapExecutiveQuestionIntelligence",
+        "mode": "ASK",
+        "ask": "true",
+        "sufficiency": "INSUFFICIENT",
+        "gap": "demand-persistence",
+        "pending": "Before recommending a lasting capacity change, I need to know whether this demand increase is expected to continue. Do you expect this higher demand to continue beyond the next few months?",
+        "need": "EVALUATE"
+      }
+    },
+    {
+      "utterance": "No, it's seasonal and should normalize in about three months.",
+      "last": "NexoraThen a permanent expansion looks harder to justify. A temporary-capacity option is safer under the current evidence, with moderate confidence because other operating constraints are still unconfirmed.",
+      "diag": {
+        "engine": "NCA:3/ClarificationInformationGapExecutiveQuestionIntelligence",
+        "mode": "ANSWER",
+        "ask": "false",
+        "sufficiency": "SUFFICIENT_WITH_UNCERTAINTY",
+        "gap": "",
+        "pending": "",
+        "need": "PROVIDE_INFORMATION"
+      }
+    }
+  ],
+  "noAsk": true,
+  "askedOne": true,
+  "recomputed": true,
+  "cause": false,
+  "fiction": false,
+  "commit": false,
+  "ok": true
+}

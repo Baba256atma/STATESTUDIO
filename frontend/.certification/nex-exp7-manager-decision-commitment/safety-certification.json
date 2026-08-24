@@ -1,0 +1,20 @@
+{
+  "safety": {
+    "recommendationDoesNotCommit": true,
+    "preferenceDoesNotCommit": true,
+    "confirmationRequired": true,
+    "cc10rIsWriter": true,
+    "startsExecution": false,
+    "nexoraCanCommitDecision": false,
+    "autoApprove": false,
+    "autoExecute": false
+  },
+  "chain": [
+    "RECOMMENDATION",
+    "PREFERENCE",
+    "COMMITMENT_INTENT",
+    "CONFIRMATION",
+    "CC:10R",
+    "DECISION_RUNTIME"
+  ]
+}

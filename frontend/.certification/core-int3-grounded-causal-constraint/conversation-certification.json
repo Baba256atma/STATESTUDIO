@@ -1,0 +1,35 @@
+{
+  "identity": "CORE-INT:3/ConversationCertification",
+  "sameContract": true,
+  "subject": "obj-capacity",
+  "utterances": [
+    { "text": "Explain Capacity.", "key": "change" },
+    { "text": "Why is this happening?", "key": "causes" },
+    { "text": "Why is Capacity under pressure?", "key": "causes" },
+    { "text": "Is that proven?", "key": "proven" },
+    { "text": "How sure are you?", "key": "confidence" },
+    { "text": "What evidence supports it?", "key": "evidenceFollowup" },
+    { "text": "What is constraining us?", "key": "constraints" },
+    { "text": "Which constraint is binding?", "key": "binding" },
+    { "text": "What don't we know?", "key": "whatUnknown" }
+  ],
+  "claimIdentity": "Contributor interpretation claimId core-int3:interpretation:{subject}:{relationshipId} is reused for proven/evidence follow-ups",
+  "continuity": "previousUtterance keeps Why → proven → evidence → constraint → binding on the same subject",
+  "parserFallback": false,
+  "stageMutation": false,
+  "decisionMutation": false,
+  "executionMutation": false,
+  "app4Write": false,
+  "humanManagerTest": {
+    "subject": "Capacity / Capacity Gap",
+    "whatIsHappening": "PASS",
+    "whatMayBeContributing": "PASS",
+    "isItProven": "PASS",
+    "howStrongIsEvidence": "PASS",
+    "whatIsConstraining": "PASS",
+    "whichConstraintIsBinding": "PASS — unknown binding stated honestly",
+    "whatRemainsUnknown": "PASS",
+    "causeVsConstraintDistinguished": "PASS",
+    "result": "PASS"
+  }
+}

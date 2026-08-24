@@ -1,0 +1,11 @@
+{
+  "identityRule": "obs:{sourceId}:{datasetId}:{metricId}:{observedAt}",
+  "notIdentity": ["subjectId", "KPI name", "array index", "current value"],
+  "repeatedSameValueDifferentTime": "distinct identities",
+  "sameSourceSnapshot": "one canonical captured observation",
+  "historyOverwrite": false,
+  "cases": {
+    "K": "T1 and T2 capacity 78% keep separate observationIds",
+    "J": "reprocessing the same snapshot returns duplicateOf and does not add a second record"
+  }
+}

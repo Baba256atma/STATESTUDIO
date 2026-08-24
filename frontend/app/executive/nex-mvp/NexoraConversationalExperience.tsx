@@ -62,6 +62,47 @@ export function NexoraConversationalExperience({
       data-pending-turn-resolution={
         lastTrace?.pendingTurnResolutionStatus ?? ""
       }
+      data-mo1-active-object-id={lastTrace?.managerObjectId ?? ""}
+      data-mo1-intent={lastTrace?.managerObjectIntent ?? ""}
+      data-mo2-engine={lastTrace?.explainEngineId ?? ""}
+      data-mo2-subject={lastTrace?.managerObjectId ?? ""}
+      data-mo2-intent={lastTrace?.managerObjectIntent ?? ""}
+      data-mo2-focus={lastTrace?.explanationFocus ?? ""}
+      data-mo2-depth={lastTrace?.explanationDepth ?? ""}
+      data-mo2-epistemic={lastTrace?.explanationEpistemic ?? ""}
+      data-mo2-summary={lastTrace?.explanationSummary ?? ""}
+      data-mo3-engine={lastTrace?.explorationEngineId ?? ""}
+      data-mo3-state={lastTrace?.explorationState ?? ""}
+      data-mo3-recommended={lastTrace?.recommendedPathLabel ?? ""}
+      data-mo3-recommended-kind={lastTrace?.recommendedPathKind ?? ""}
+      data-mo3-recommended-target={lastTrace?.recommendedPathTarget ?? ""}
+      data-mo4-engine={lastTrace?.navigationEngineId ?? ""}
+      data-mo4-goal={lastTrace?.goalTitle ?? ""}
+      data-mo4-source={lastTrace?.goalSource ?? ""}
+      data-mo4-direction={lastTrace?.navigationDirection ?? ""}
+      data-mo4-target={lastTrace?.navigationPathTarget ?? ""}
+      data-mo5-engine={lastTrace?.journeyEngineId ?? ""}
+      data-mo5-phase={lastTrace?.journeyPhase ?? ""}
+      data-mo5-state={lastTrace?.journeyState ?? ""}
+      data-mo5-blocker={lastTrace?.journeyBlocker ?? ""}
+      data-mo6-engine={lastTrace?.attentionEngineId ?? ""}
+      data-mo6-state={lastTrace?.attentionState ?? ""}
+      data-mo6-primary={lastTrace?.attentionPrimary ?? ""}
+      data-mo6-intervention={lastTrace?.attentionIntervention ?? ""}
+      data-mo6-steals-focus="false"
+      data-mo-int1-engine={lastTrace?.experienceIntegrationId ?? ""}
+      data-mo-int1-lane={lastTrace?.experienceLane ?? ""}
+      data-nlu-communicative-intent={lastTrace?.nluCommunicativeIntent ?? ""}
+      data-nlu-operation={lastTrace?.nluRequestedOperation ?? ""}
+      data-nlu-subject={lastTrace?.nluSubject ?? ""}
+      data-nlu-question-type={lastTrace?.nluQuestionType ?? ""}
+      data-nlu-confidence={lastTrace?.nluConfidence ?? ""}
+      data-nlu-ambiguity={lastTrace?.nluAmbiguity === true ? "true" : "false"}
+      data-nlu-authority={lastTrace?.nluAuthority ?? ""}
+      data-continuity-provenance={lastTrace?.continuityProvenance ?? ""}
+      data-continuity-move={lastTrace?.continuityMove ?? ""}
+      data-continuity-subject={lastTrace?.continuitySubject ?? ""}
+      data-continuity-active={lastTrace?.continuityActiveSubject ?? ""}
       aria-label="Nexora conversational control"
       style={{
         display: "flex",

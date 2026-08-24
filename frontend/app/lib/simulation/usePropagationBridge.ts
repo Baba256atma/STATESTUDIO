@@ -157,7 +157,7 @@ export function usePropagationBridge(params: PropagationBridgeParams) {
       activeTrigger?.kind === "scenario_action"
         ? normalizeScenarioActionResponsePayload(activeTrigger.scenario_action?.payload ?? null)
         : normalizeScenarioActionResponsePayload(propagationPayload),
-    [activeTrigger?.kind, activeTrigger?.scenario_action?.payload, propagationPayload]
+    [activeTrigger, propagationPayload]
   );
 
   const sceneSignature = useMemo(

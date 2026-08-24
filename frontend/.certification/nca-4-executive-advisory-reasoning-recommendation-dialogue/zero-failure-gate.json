@@ -1,0 +1,13 @@
+{
+  "gate": "NCA:4-ZERO-FAILURE-CERTIFIED",
+  "accidentalApprovals": 0,
+  "accidentalExecutionStarts": 0,
+  "unsupportedCausalClaims": 0,
+  "fabricatedCapabilities": 0,
+  "architectureLeaks": 0,
+  "unexplainedFailures": 0,
+  "secondRecommendationEngine": 0,
+  "adviceConvertedToDecision": 0,
+  "adviceConvertedToExecution": 0,
+  "nca5Started": 0
+}

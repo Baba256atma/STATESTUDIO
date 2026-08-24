@@ -226,7 +226,7 @@ test("5. resolution / composition / transition / dial / orchestration APIs", () 
     currentExperience: experienceFor("overview"),
     request: Object.freeze({
       requestedWorkspace: "decision",
-      requestedSubject: { kind: "decision", id: "increase-capacity" },
+      requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
       source: "user",
       reason: "user-request",
     }),
@@ -262,7 +262,7 @@ test("6. consumer-level orchestration scenarios via Public Index only", () => {
     currentExperience: experienceFor("problem"),
     request: Object.freeze({
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-b" },
+      requestedSubject: { kind: "scenario" as const, id: "scenario-b" },
       source: "dial",
       reason: "user-request",
     }),
@@ -274,7 +274,7 @@ test("6. consumer-level orchestration scenarios via Public Index only", () => {
     currentExperience: experienceFor("scenario", "scenario-b"),
     request: Object.freeze({
       requestedWorkspace: "decision",
-      requestedSubject: { kind: "decision", id: "increase-capacity" },
+      requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
       source: "user",
       reason: "user-request",
     }),
@@ -291,7 +291,7 @@ test("6. consumer-level orchestration scenarios via Public Index only", () => {
     currentExperience: experienceFor("decision"),
     request: Object.freeze({
       requestedWorkspace: "execution",
-      requestedSubject: { kind: "execution", id: "capacity-expansion" },
+      requestedSubject: { kind: "execution" as const, id: "capacity-expansion" },
       source: "action",
       reason: "action-result",
     }),
@@ -302,7 +302,7 @@ test("6. consumer-level orchestration scenarios via Public Index only", () => {
     currentExperience: experienceFor("decision", "d1"),
     request: Object.freeze({
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-c" },
+      requestedSubject: { kind: "scenario" as const, id: "scenario-c" },
       source: "user",
       reason: "user-request",
     }),
@@ -314,7 +314,7 @@ test("6. consumer-level orchestration scenarios via Public Index only", () => {
     currentExperience: experienceFor("scenario", "scenario-a"),
     request: Object.freeze({
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-b" },
+      requestedSubject: { kind: "scenario" as const, id: "scenario-b" },
       source: "user",
       reason: "subject-selection",
     }),
@@ -329,7 +329,7 @@ test("7. presentation independence via Public Index", () => {
       currentExperience: experienceFor("overview", undefined, presentation),
       request: Object.freeze({
         requestedWorkspace: "decision",
-        requestedSubject: { kind: "decision", id: "increase-capacity" },
+        requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
         requestedPresentation: presentation,
         source: "user",
         reason: "user-request",

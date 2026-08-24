@@ -1,0 +1,44 @@
+{
+  "identity": "CORE-INT:2/EpistemicCases",
+  "cases": [
+    {
+      "id": "case-1-fact",
+      "kind": "FACT",
+      "subject": "obj-capacity",
+      "source": "Modeled observation KPI Utilization=88% (live MVP). Validated Data Reality observation certified in unit case H (Utilization=21.3%).",
+      "liveOnExecutive": "FACT from presentation KPI with provenance mvp-presentation-fixture:obj-capacity:kpi-capacity",
+      "dataReality": "HIGH-confidence FACT when validated observation is supplied",
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "case-2-assumption",
+      "kind": "ASSUMPTION",
+      "subject": "obj-capacity",
+      "source": "Recorded contributor relations constrained-by / blocks (Capacity Gap, Delivery)",
+      "note": "Not inferred from prose. Relation kind is the semantic.",
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "case-3-prediction",
+      "kind": "PREDICTION",
+      "subject": "ctx-scenario-capacity",
+      "source": "Scenario kind + Capacity Expansion Plan projected effect",
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "case-4-unknown",
+      "kind": "UNKNOWN",
+      "subject": "generic/related relationship or missing observation",
+      "source": "Unlabeled related relationship or missing evidence",
+      "status": "CERTIFIED"
+    }
+  ],
+  "observationVsInterpretation": {
+    "observation": "Capacity Utilization is 88% → FACT",
+    "interpretation": "Capacity constrained-by / blocks Delivery → ASSUMPTION, not FACT"
+  },
+  "relationshipVsCausation": {
+    "existence": "FACT that the relationship is recorded",
+    "causation": "ASSUMPTION or UNKNOWN; never supported-causal from unlabeled edges"
+  }
+}

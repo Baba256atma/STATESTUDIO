@@ -2173,20 +2173,20 @@ export interface RuntimeExecutiveAdvisorGuidanceActionsVerification {
 
 export function verifyRuntimeExecutiveAdvisorGuidanceActions():
   RuntimeExecutiveAdvisorGuidanceActionsVerification {
-  const module = runtimeExecutiveAdvisorGuidanceActions;
+  const runtimeModule = runtimeExecutiveAdvisorGuidanceActions;
   const registry = runtimeExecutiveAdvisorGuidanceActionsRegistry;
   const responseOk = verifyRuntimeExecutiveAdvisorResponseModel();
 
   const identityOk =
-    module.identity === "REX-3:4/RuntimeExecutiveAdvisorGuidanceActions" &&
-    module.version === "3.4.0" &&
-    module.namespace ===
+    runtimeModule.identity === "REX-3:4/RuntimeExecutiveAdvisorGuidanceActions" &&
+    runtimeModule.version === "3.4.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.advisor-experience.guidance-actions" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       "REX-3:3/RuntimeExecutiveAdvisorResponseModel" &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveAdvisorResponseModel" &&
-    module.responseBoundary === "REX-3:3-response-model-only";
+    runtimeModule.responseBoundary === "REX-3:3-response-model-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_ADVISOR_GUIDANCE_STATES], [
@@ -2242,14 +2242,14 @@ export function verifyRuntimeExecutiveAdvisorGuidanceActions():
     Object.isFrozen(RUNTIME_EXECUTIVE_ADVISOR_GUIDANCE_TO_ACTION_MAPPINGS);
 
   const responseBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-3:3/RuntimeExecutiveAdvisorResponseModel" &&
-    module.boundary.consumesResponseModelOnly === true &&
-    module.boundary.importsRex32Directly === false &&
-    module.boundary.importsRex31Directly === false &&
-    module.boundary.executesActions === false &&
-    module.boundary.mutatesStageState === false &&
-    module.boundary.coordinatesStage === false;
+    runtimeModule.boundary.consumesResponseModelOnly === true &&
+    runtimeModule.boundary.importsRex32Directly === false &&
+    runtimeModule.boundary.importsRex31Directly === false &&
+    runtimeModule.boundary.executesActions === false &&
+    runtimeModule.boundary.mutatesStageState === false &&
+    runtimeModule.boundary.coordinatesStage === false;
 
   const ok =
     identityOk &&
@@ -2258,8 +2258,8 @@ export function verifyRuntimeExecutiveAdvisorGuidanceActions():
     frozen &&
     responseBoundaryIntact &&
     responseOk.ok === true &&
-    module.boundary.aiProviderIndependent === true &&
-    module.boundary.generatesProse === false;
+    runtimeModule.boundary.aiProviderIndependent === true &&
+    runtimeModule.boundary.generatesProse === false;
 
   return Object.freeze({
     ok,
@@ -2285,9 +2285,9 @@ export function verifyRuntimeExecutiveAdvisorGuidanceActions():
     publicApiCount: runtimeExecutiveAdvisorGuidanceActionsApiNames.length,
     frozen,
     responseBoundaryIntact,
-    noAutoExecution: module.boundary.executesActions === false,
-    noStageMutation: module.boundary.mutatesStageState === false,
+    noAutoExecution: runtimeModule.boundary.executesActions === false,
+    noStageMutation: runtimeModule.boundary.mutatesStageState === false,
     responseOk: responseOk.ok === true,
-    noAi: module.boundary.generatesProse === false,
+    noAi: runtimeModule.boundary.generatesProse === false,
   });
 }

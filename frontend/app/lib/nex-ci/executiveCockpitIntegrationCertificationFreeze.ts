@@ -868,7 +868,7 @@ function buildCertificationChecks(): ReadonlyArray<ExecutiveCockpitIntegrationCe
     contextualA.timeline.entries.length === 0 &&
     contextualA.explorer.items.length === 0 &&
     contextualA.liveLens.layer === "goal" &&
-    scenarioA.advisorInsight.advisor.status !== "unavailable";
+    scenarioA.advisorInsight.advisor.readiness !== "unavailable";
 
   // Scenario B — selected only
   const scenarioB = makeOrchestration({

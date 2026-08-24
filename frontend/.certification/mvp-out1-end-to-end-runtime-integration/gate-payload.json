@@ -1,0 +1,29 @@
+{
+  "phase": "MVP-OUT:1",
+  "outDir": ".certification/mvp-out1-end-to-end-runtime-integration",
+  "tests": { "fail": 0, "pass": 1745, "total": 1745 },
+  "typecheck": { "errors": 0, "exitCode": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0, "warnings": 409, "exitCode": 0 },
+  "runtimeSmoke": {
+    "identity": "NEXORA-ZERO-FAILURE-GATE/live-executive-smoke",
+    "url": "http://localhost:3000/executive",
+    "httpStatus": 200,
+    "hydrated": true,
+    "webglCanvas": true,
+    "stagePresent": true,
+    "cameraMode": "fixed-2d",
+    "topologyZ": "0",
+    "focusedTargetZ": "none",
+    "queuePresent": true,
+    "advisorPresent": true,
+    "conversationPresent": true,
+    "clickToCenterAttempted": true,
+    "backForwardEscapeAttempted": true,
+    "smokeError": null,
+    "ok": true,
+    "typeCHttpStatus": 200,
+    "typeCOk": true
+  },
+  "console": { "uncaught": 0, "hydration": 0, "duplicateKeys": 0 }
+}

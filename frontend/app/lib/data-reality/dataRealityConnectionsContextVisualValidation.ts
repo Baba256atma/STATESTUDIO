@@ -799,15 +799,37 @@ export function validateConnectionsContextVisual(
           entry.contextId === expected.contextId ||
           entry.subjectId === expected.subjectId,
       );
+      const collapsedThread = input.observed.contextNodes.find(
+        (entry) => entry.present && entry.role === "collapsed-thread",
+      );
       if (!observed || observed.opacity < 0.45) {
-        pushFinding(findings, {
-          subjectId: expected.contextId,
-          anchorObjectId: anchorId,
-          expectedVisualRole: { associated: true },
-          observedVisualRole: observed ?? { present: false },
-          status: "false-context",
-          evidence: ["Direct 1-hop context not visibly associated"],
-        });
+        // Frozen Stage discloses 1-hop overflow as a subordinate
+        // collapsed-thread rather than extra peer context nodes.
+        if (collapsedThread != null && collapsedThread.opacity <= 0.2) {
+          pushFinding(findings, {
+            subjectId: expected.contextId,
+            anchorObjectId: anchorId,
+            expectedVisualRole: { associated: true, overflow: true },
+            observedVisualRole: {
+              collapsedThread: collapsedThread.contextId,
+              opacity: collapsedThread.opacity,
+            },
+            status: "valid",
+            evidence: [
+              "Direct 1-hop context overflow represented as collapsed-thread",
+              `collapsed-thread=${collapsedThread.contextId}`,
+            ],
+          });
+        } else {
+          pushFinding(findings, {
+            subjectId: expected.contextId,
+            anchorObjectId: anchorId,
+            expectedVisualRole: { associated: true },
+            observedVisualRole: observed ?? { present: false },
+            status: "false-context",
+            evidence: ["Direct 1-hop context not visibly associated"],
+          });
+        }
       } else {
         const peerLike =
           observed.kind === "object" || observed.scale >= 0.95;

@@ -47,8 +47,22 @@ export {
 export {
   normalizeNexoraConversationalUtterance,
   isAmbiguousConversationalReference,
+  isConversationalInterfaceFiller,
   stripConversationalArticles,
+  stripConversationalInterfaceFiller,
+  stripConversationalSignificanceQualifier,
+  expandControlledManagerLanguageKeys,
+  isNoActionConsequenceUtterance,
+  isInvestigationOptionsUtterance,
+  isInvestigateNowUtterance,
+  classifyExecutiveInvestigationAsk,
 } from "./conversationalIntentNormalization.ts";
+
+export {
+  parseNexoraWhatIfUtterance,
+  parseNexoraWhatIfStateChange,
+  WHAT_IF_PREFIX,
+} from "./conversationalWhatIfStateGrammar.ts";
 
 export {
   resolveNexoraConversationalIntent,
@@ -92,6 +106,7 @@ export {
   buildNexoraConversationalSubjectMatchIndex,
   normalizeConversationalMatchKey,
   findCanonicalSubjectMatchesForHint,
+  NEXORA_FINAL3_NATURAL_REFERENCE_IDENTITY,
   projectNexoraConversationalSubjectsFromCatalog,
   projectDefaultNexoraMvpConversationalSubjects,
   type NexoraConversationalSubjectMatchIndex,
@@ -396,6 +411,13 @@ export {
   NEXORA_SCENARIO_EVALUATION_POLICY,
   isModeledScenarioSubject,
 } from "./executiveScenarioPolicy.ts";
+
+export {
+  assessGroundedScenarioImpact,
+  presentGroundedScenarioImpact,
+  GROUNDED_SCENARIO_IMPACT_BASES,
+  type GroundedScenarioImpactAssessment,
+} from "./groundedScenarioImpactAssessment.ts";
 
 export {
   resolveNexoraExecutiveScenarioConversation,

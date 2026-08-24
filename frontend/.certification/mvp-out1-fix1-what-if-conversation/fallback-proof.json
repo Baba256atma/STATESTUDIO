@@ -1,0 +1,7 @@
+{
+  "genericFallback": "I’m not sure how that relates to the current executive context.",
+  "usedWhen": "intent.kind=unknown or command==null in unsupported status",
+  "liveMisspellingUsesGenericFallback": false,
+  "recognizedWhatIfPlusCurrentSubjectUsesGenericFallback": false,
+  "unknownUnrelatedUtteranceStillFallsBack": true
+}

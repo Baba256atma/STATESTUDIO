@@ -1,0 +1,34 @@
+{
+  "sequence": [
+    { "manager": "show me delivery", "nexora": "Focused on Delivery." },
+    {
+      "manager": "explain DEMAND SURGE",
+      "intentKind": "explain-scenario",
+      "commandKind": "explain-scenario",
+      "primarySubject": "ctx-scenario-demand",
+      "nexora": "Scenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. That association is not a proven causal finding. This is a scenario projection, not an observed outcome. Unsupported causal claims are withheld; modeled association is not causal proof."
+    },
+    {
+      "manager": "what could be affected?",
+      "nexora": "The current scenario model associates Demand Surge with Delivery. Additional intervention impact is not established yet. This remains a Scenario projection, not Reality or Actual Outcome."
+    },
+    {
+      "manager": "what risks?",
+      "nexora": "No canonical Risk impact is supported for this Scenario. That is not a proven causal finding."
+    },
+    {
+      "manager": "how sure are you?",
+      "nexora": "This Scenario is a projection, not an observed outcome. Without an evaluated intervention, Nexora cannot state a stronger confidence. That is not causal or outcome confidence."
+    },
+    {
+      "manager": "why?",
+      "nexora": "The current scenario model associates Demand Surge with Delivery. That association is not a proven causal finding."
+    },
+    {
+      "manager": "what do you recommend?",
+      "nexora": "Review Capacity Gap Related problem needs review."
+    }
+  ],
+  "investigateFirst": false,
+  "scenarioFirst": true
+}

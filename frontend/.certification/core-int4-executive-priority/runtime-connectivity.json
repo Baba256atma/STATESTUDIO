@@ -1,0 +1,15 @@
+{
+  "identity": "CORE-INT:4/RuntimeConnectivity",
+  "livePath": {
+    "Runtime / Data Evidence": "CONNECTED",
+    "CORE-INT:2": "CONNECTED",
+    "CORE-INT:3": "CONNECTED",
+    "CORE-INT:4 Priority Assessment": "CONNECTED",
+    "EXI": "CONNECTED",
+    "Advisor / Queue / Conversation": "CONNECTED"
+  },
+  "fullLive": true,
+  "assessmentExistsOnlyInTests": false,
+  "ei4TradeoffRuntime": false,
+  "exi4Started": false
+}

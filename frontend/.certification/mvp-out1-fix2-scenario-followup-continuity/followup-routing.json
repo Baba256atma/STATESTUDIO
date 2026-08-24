@@ -1,0 +1,17 @@
+{
+  "fix1IntentReused": "explore-scenario",
+  "newWhatIfIntent": false,
+  "delayPatterns": [
+    "delivery be late",
+    "delivery is late",
+    "delivery gets delayed",
+    "delivery is delayed",
+    "late delivery",
+    "delivery delay"
+  ],
+  "actionKind": "delay",
+  "parentUpgrade": "ctx-scenario-* currentScenario + different condition subject → add-assumption",
+  "conditionSubject": "obj-delivery when Delivery is named",
+  "noDemandSurgeInventionWithoutContext": true,
+  "genericFallbackOnFollowup": false
+}

@@ -1,0 +1,6 @@
+{
+  "authority": "APP-4",
+  "liveAutoPromote": false,
+  "authorizedSeamFlag": "authorizeApp4Promotion",
+  "defaultLive": false
+}

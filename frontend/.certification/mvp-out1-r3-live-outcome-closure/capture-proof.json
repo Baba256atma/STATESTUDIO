@@ -1,0 +1,6 @@
+{
+  "seam": "subscribeLiveDataConnections",
+  "writer": "captureOutcomeObservation",
+  "codeConnected": true,
+  "liveEvidencePresent": false
+}

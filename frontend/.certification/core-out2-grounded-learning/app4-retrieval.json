@@ -1,0 +1,16 @@
+{
+  "function": "retrieveHistoricalGroundedLearning",
+  "filters": {
+    "category": "learning",
+    "workspaceId": "required"
+  },
+  "projection": {
+    "historicalContextOnly": true,
+    "currentTruthAuthority": false,
+    "currentOutcomeAuthority": false,
+    "currentCausalAuthority": false,
+    "currentRecommendationAuthority": false
+  },
+  "preserves": ["source", "time", "confidence", "provenance", "historical status"],
+  "caseV": "PASS"
+}

@@ -19,9 +19,15 @@ import {
 } from "./conversationalIntent.ts";
 import {
   isAmbiguousConversationalReference,
+  isInvestigateNowUtterance,
+  isInvestigationOptionsUtterance,
+  isNoActionConsequenceUtterance,
+  classifyExecutiveInvestigationAsk,
   normalizeNexoraConversationalUtterance,
   stripConversationalArticles,
+  stripConversationalSignificanceQualifier,
 } from "./conversationalIntentNormalization.ts";
+import { parseNexoraWhatIfUtterance } from "./conversationalWhatIfStateGrammar.ts";
 
 type MatchResult = {
   readonly kind: NexoraConversationalIntentKind;
@@ -49,6 +55,144 @@ function hint(
   const cleaned = stripConversationalArticles(raw.trim());
   if (!cleaned) return null;
   return Object.freeze({ raw: cleaned, role });
+}
+
+function exploreScenarioMatch(input: {
+  readonly subjectRaw: string;
+  readonly actionKind: "increase-by" | "decrease-by" | "hold" | "delay";
+  readonly operation?: "intervention" | "add-assumption";
+  readonly value?: number;
+  readonly unit?: string;
+  readonly changeKind?: "directional" | "state";
+  readonly state?: string | null;
+  readonly direction?:
+    | "increase"
+    | "decrease"
+    | "delay"
+    | "worsen"
+    | "improve"
+    | "hold";
+  readonly intensity?: "too" | "very" | "extremely" | "more" | "less" | null;
+  readonly confidence?: number;
+}): MatchResult {
+  const subjectRaw = stripConversationalArticles(input.subjectRaw.trim());
+  const deictic =
+    !subjectRaw || isAmbiguousConversationalReference(subjectRaw);
+  const primary = deictic ? null : hint(subjectRaw, "primary");
+  const operation = input.operation ?? "intervention";
+  return {
+    kind: "explore-scenario",
+    confidence: input.confidence ?? (deictic ? 0.9 : 0.93),
+    reasons: [
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLORE_SCENARIO,
+      ...(deictic
+        ? [
+            CONVERSATIONAL_INTENT_REASON.AMBIGUOUS_REFERENCE,
+            CONVERSATIONAL_INTENT_REASON.TARGET_REQUIRED,
+          ]
+        : [CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED]),
+      CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+      CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+    ],
+    targetHints: Object.freeze(primary ? [primary] : []),
+    requiresContext: deictic || !primary,
+    requiresTarget: true,
+    candidateKinds: Object.freeze(["explore-scenario"] as const),
+    scenarioPayload: Object.freeze({
+      operation,
+      actionKind: input.actionKind,
+      ...(input.changeKind ? { changeKind: input.changeKind } : {}),
+      ...(input.state ? { state: input.state } : {}),
+      ...(input.direction ? { direction: input.direction } : {}),
+      ...(input.intensity ? { intensity: input.intensity } : {}),
+      ...(input.value != null ? { value: input.value } : {}),
+      ...(input.unit ? { unit: input.unit } : {}),
+      ...(operation === "add-assumption" && subjectRaw
+        ? { assumptionSubjectRaw: subjectRaw }
+        : {}),
+    }),
+  };
+}
+
+function matchDirectionalWhatIf(normalized: string): MatchResult | null {
+  if (/cost matters more|what if cost\b|if cost (?:matters|is more)/.test(normalized)) {
+    return null;
+  }
+  const parsed = parseNexoraWhatIfUtterance(normalized);
+  if (!parsed) return null;
+  return exploreScenarioMatch({
+    subjectRaw: parsed.subjectRaw,
+    actionKind: parsed.actionKind,
+    changeKind: parsed.changeKind,
+    state: parsed.state,
+    direction: parsed.direction,
+    intensity: parsed.intensity,
+    value: parsed.magnitude ?? undefined,
+    unit: parsed.unit ?? undefined,
+  });
+}
+
+export function isNexoraCanonicalDefinitionInquiry(
+  normalizedUtterance: string,
+): boolean {
+  const n = normalizedUtterance.trim();
+  if (!n) return false;
+  if (/^(?:why|explain\s+why)\b/.test(n)) return false;
+  return /^(?:explain|describe|what\s+is|what(?:'| i)?s|tell\s+me\s+about)\b/.test(
+    n,
+  );
+}
+
+function matchNamedSubjectInquiry(normalized: string): MatchResult | null {
+  const named = normalized.match(
+    /^(?:what\s+is|what(?:'| i)?s|tell\s+me\s+about|describe)\s+(?:the\s+)?(.+)$/,
+  );
+  if (!named) return null;
+  const raw = (named[1] ?? "").trim();
+  if (!raw || isAmbiguousConversationalReference(raw)) return null;
+  if (
+    /^(?:going\s+on|happening|different|predicted|unknown|the\s+evidence|the\s+risk|the\s+constraint|the\s+priority|the\s+downside|being\s+executed|still\s+uncertain|connected(?:\s+to\s+(?:this|it|that))?|related)$/.test(
+      raw,
+    )
+  ) {
+    return null;
+  }
+  const isScenarioPhrase = /\bscenario\b/.test(raw);
+  const subjectRaw = raw
+    .replace(/\s+(?:scenario|problem|decision|execution)$/u, "")
+    .trim();
+  const primary = hint(subjectRaw || raw, "primary");
+  if (isScenarioPhrase) {
+    return {
+      kind: "explain-scenario",
+      confidence: 0.92,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: !primary,
+      requiresTarget: Boolean(primary),
+      candidateKinds: Object.freeze(["explain-scenario"] as const),
+      scenarioPayload: Object.freeze({ operation: "describe" as const }),
+    };
+  }
+  return {
+    kind: "explain",
+    confidence: 0.9,
+    reasons: [
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN,
+      CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED,
+      CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+      CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+    ],
+    targetHints: Object.freeze(primary ? [primary] : []),
+    requiresContext: !primary,
+    requiresTarget: true,
+    candidateKinds: Object.freeze(["explain"] as const),
+  };
 }
 
 function matchAmbiguous(normalized: string): MatchResult | null {
@@ -149,12 +293,46 @@ function matchConversationalEntry(normalized: string): MatchResult | null {
       false,
     );
   }
+  if (
+    /^(?:what\s+is|what's|what\s+does|explain)\s+(?:nca|mo|ei|exi|cc)(?:\s*[:=-]?\s*\d+)?(?:\s+mean)?$/.test(
+      normalized,
+    ) ||
+    /^(?:what\s+does|what\s+is)\s+canonical(?:\s+mean)?$/.test(normalized)
+  ) {
+    return advisoryQuery(
+      "help",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_HELP,
+      false,
+    );
+  }
   return null;
 }
 
 function matchExecutiveQuestion(normalized: string): MatchResult | null {
   if (
-    /^(?:explain(?:\s+(?:this|it))?|tell\s+me\s+more|help\s+me\s+understand(?:\s+(?:this|it))?|what\s+does\s+(?:this|it)\s+mean|what(?:\s+is|\s+s|s)\s+going\s+on|what(?:\s+is|s)\s+happening|what\s+happened|how\s+serious\s+is\s+it|show\s+me\s+more|what\s+do\s+you\s+think|give\s+me\s+(?:a\s+)?summary|summarize(?:\s+(?:this|it))?)$/.test(
+    /^(?:what\s+needs\s+my\s+attention|what\s+should\s+i\s+pay\s+attention\s+to|what\s+is\s+most\s+important\s+right\s+now|do\s+i\s+need\s+to\s+intervene|should\s+i\s+intervene|what\s+can\s+continue\s+without\s+me|can\s+this\s+continue\s+without\s+me|can\s+i\s+leave\s+this\s+alone\s+for\s+now|is\s+anything\s+getting\s+(?:worse|better)|do\s+we\s+have\s+any\s+urgent\s+opportunities|is\s+the\s+evidence\s+current|should\s+i\s+review\s+this|is\s+execution\s+okay|does\s+this\s+need\s+my\s+decision|why\s+does\s+it\s+matter|what\s+should\s+i\s+do\s+next|how\s+does\s+this\s+affect\s+my\s+goal)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "situation",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_SITUATION,
+      true,
+    );
+  }
+  if (
+    /^(?:what\s+should\s+i\s+look\s+at\s+next|where\s+should\s+i\s+look\s+next|what\s+should\s+i\s+explore\s+next|where\s+should\s+i\s+go\s+next|what\s+should\s+i\s+look\s+at\s+first|which\s+path\s+moves(?:\s+us)?\s+closer(?:\s+to\s+the\s+goal)?)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "situation",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_SITUATION,
+      true,
+    );
+  }
+  if (
+    /^(?:what\s+is\s+my\s+current\s+goal|(?:my|our)\s+goal\s+is\s+.+|the\s+goal\s+is\s+.+|(?:actually[, ]+)?(?:our\s+)?priority\s+is\s+.+|(?:actually[, ]+)?.+\s+is\s+now\s+the\s+priority)$/.test(
       normalized,
     )
   ) {
@@ -165,7 +343,58 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
     );
   }
   if (
-    /^(?:what\s+evidence\s+do\s+we\s+have|what(?:\s+is|s)\s+the\s+evidence|show\s+(?:me\s+)?(?:the\s+)?evidence)$/.test(
+    /^(?:how\s+is\s+this\s+related\s+to\s+my\s+goal|what\s+is\s+blocking\s+the\s+goal|are\s+we\s+moving\s+toward\s+the\s+goal)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "situation",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_SITUATION,
+      true,
+    );
+  }
+  if (
+    /^(?:where\s+are\s+we(?:\s+now)?|what\s+have\s+we\s+done\s+so\s+far|what\s+have\s+we\s+resolved|what\s+is\s+still\s+(?:unresolved|open)|what\s+is\s+blocking\s+us|why\s+is\s+it\s+blocking\s+us|what\s+should\s+happen\s+next|how\s+does\s+this\s+help\s+my\s+goal|where\s+does\s+.+\s+fit(?:\s+in\s+the\s+journey)?|have\s+we\s+made\s+a\s+decision|has\s+execution\s+started|do\s+we\s+have\s+an\s+outcome|did\s+it\s+move\s+us\s+toward\s+the\s+goal|what\s+did\s+we\s+learn|are\s+we\s+finished)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "situation",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_SITUATION,
+      true,
+    );
+  }
+  if (/^what\s+about\s+.+/.test(normalized)) {
+    return advisoryQuery(
+      "situation",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_SITUATION,
+      true,
+    );
+  }
+  if (
+    /^(?:show\s+me\s+(?:that|the|this)(?:\s+problem|\s+scenario|\s+decision|\s+execution)?|show\s+that(?:\s+problem)?)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "focus",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_FOCUS,
+      true,
+    );
+  }
+  if (
+    /^(?:explain|tell\s+me\s+more|help\s+me\s+understand(?:\s+(?:this|it))?|what\s+does\s+(?:this|it)\s+mean|what(?:\s+is|\s+s|s)\s+going\s+on|what(?:\s+is|s)\s+happening|what\s+happened|how\s+serious\s+is\s+it|show\s+me\s+more|what\s+do\s+you\s+think|give\s+me\s+(?:a\s+)?summary|summarize(?:\s+(?:this|it))?)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "situation",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_SITUATION,
+      false,
+    );
+  }
+  if (
+    /^(?:what\s+evidence\s+do\s+we\s+have|what(?:\s+is|s)\s+the\s+evidence|show\s+(?:me\s+)?(?:the\s+)?evidence|what\s+don'?t\s+we\s+know|what\s+do\s+we\s+not\s+know|what\s+is\s+unknown|what\s+remains\s+unknown)$/.test(
       normalized,
     )
   ) {
@@ -176,7 +405,7 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
     );
   }
   if (
-    /^(?:what\s+changed|what(?:\s+has|s)\s+changed|what\s+is\s+different)$/.test(
+    /^(?:what\s+changed|what(?:\s+has|s)\s+changed|what\s+is\s+different|has\s+.+\s+changed|is\s+it\s+getting\s+worse|compare\s+(?:it|this)\s+with\s+before)$/.test(
       normalized,
     )
   ) {
@@ -187,7 +416,7 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
     );
   }
   if (
-    /^(?:what(?:\s+is|s)\s+the\s+risk|how\s+risky\s+is\s+it|what\s+happens\s+if\s+i\s+do\s+nothing)$/.test(
+    /^(?:what(?:\s+is|s)\s+the\s+risk|how\s+risky\s+is\s+it|is\s+there\s+(?:a\s+)?(?:problem|risk)(?:\s+or\s+(?:a\s+)?(?:problem|risk))?)$/.test(
       normalized,
     )
   ) {
@@ -198,7 +427,7 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
     );
   }
   if (
-    /^(?:do\s+i\s+need\s+to\s+make\s+a\s+decision|what\s+decision\s+do\s+i\s+need\s+to\s+make|is\s+a\s+decision\s+required)$/.test(
+    /^(?:do\s+i\s+need\s+to\s+make\s+a\s+decision|what\s+decision\s+do\s+i\s+need\s+to\s+make|what\s+decision\s+is\s+required|is\s+a\s+decision\s+required)$/.test(
       normalized,
     )
   ) {
@@ -216,6 +445,195 @@ function matchExecutiveQuestion(normalized: string): MatchResult | null {
     return advisoryQuery(
       "execution-status",
       CONVERSATIONAL_INTENT_REASON.MATCHED_EXECUTION_STATUS,
+      false,
+    );
+  }
+  if (
+    /^(?:what\s+is\s+connected(?:\s+to\s+(?:this|it|that))?|what(?:\s+is|s)\s+related|what\s+does\s+(?:it|this)\s+affect|what\s+is\s+affected)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "show-related",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_RELATED,
+      true,
+    );
+  }
+  const connectedTo = normalized.match(
+    /^what\s+is\s+connected\s+to\s+(.+)$/,
+  );
+  if (connectedTo) {
+    const raw = (connectedTo[1] ?? "").trim();
+    if (raw && !isAmbiguousConversationalReference(raw)) {
+      const primary = hint(raw, "primary");
+      return {
+        kind: "show-related",
+        confidence: 0.91,
+        reasons: [
+          CONVERSATIONAL_INTENT_REASON.MATCHED_RELATED,
+          CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED,
+          CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+          CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+        ],
+        targetHints: Object.freeze(primary ? [primary] : []),
+        requiresContext: false,
+        requiresTarget: true,
+        candidateKinds: Object.freeze(["show-related"] as const),
+      };
+    }
+  }
+  if (
+    /^(?:what\s+can\s+i\s+do(?:\s+about\s+(?:this|it|that))?)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "recommend",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_RECOMMEND,
+      true,
+    );
+  }
+  if (
+    /^(?:why\s+is\s+this\s+happening|what\s+is\s+causing\s+this|what\s+may\s+be\s+causing\s+this|what\s+may\s+be\s+contributing\s+to\s+this|what\s+is\s+driving\s+this)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "explain",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN,
+      false,
+    );
+  }
+  if (
+    /^(?:what\s+are\s+my\s+options|what\s+options\s+do\s+i\s+have)$/.test(
+      normalized,
+    )
+  ) {
+    return {
+      kind: "compare-scenarios",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_COMPARE_SCENARIOS,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["compare-scenarios"] as const),
+      scenarioPayload: Object.freeze({ operation: "compare" as const }),
+    };
+  }
+  if (/^what\s+are\s+the\s+trade[- ]?offs$/.test(normalized)) {
+    return advisoryQuery(
+      "explain",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN,
+      false,
+    );
+  }
+  const tradeoffsOf = normalized.match(
+    /^what\s+are\s+the\s+trade[- ]?offs\s+(?:of|for)\s+(.+)$/,
+  );
+  if (tradeoffsOf) {
+    const raw = (tradeoffsOf[1] ?? "").trim();
+    const primary = hint(raw, "primary");
+    return {
+      kind: "explain",
+      confidence: 0.92,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN,
+        CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: !primary,
+      requiresTarget: Boolean(primary),
+      candidateKinds: Object.freeze(["explain"] as const),
+    };
+  }
+
+  const happenedWith = normalized.match(
+    /^what\s+happened\s+(?:with|to|for)\s+(.+)$/,
+  );
+  if (happenedWith) {
+    const raw = (happenedWith[1] ?? "").trim();
+    const primary = hint(raw, "primary");
+    return {
+      kind: "execution-status",
+      confidence: 0.91,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXECUTION_STATUS,
+        CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: !primary,
+      requiresTarget: Boolean(primary),
+      candidateKinds: Object.freeze(["execution-status"] as const),
+    };
+  }
+
+  if (
+    /^(?:what\s+was\s+the\s+outcome|what\s+was\s+the\s+result)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "execution-status",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXECUTION_STATUS,
+      false,
+    );
+  }
+  if (
+    /^(?:what\s+did\s+we\s+learn|what\s+have\s+we\s+learned)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "evidence",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EVIDENCE,
+      false,
+    );
+  }
+  if (
+    /^(?:what\s+is\s+blocking\s+(?:us|success|this)|whats\s+blocking\s+us|what\s+is\s+the\s+constraint|what\s+is\s+preventing\s+success|what\s+is\s+limiting\s+\w+)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "execution-status",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXECUTION_STATUS,
+      false,
+    );
+  }
+  if (
+    /^(?:how\s+sure\s+are\s+you|how\s+confident\s+are\s+you|why\s+do\s+you\s+say\s+that|why\s+do\s+you\s+think\s+that|what\s+evidence\s+supports\s+that)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "evidence",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EVIDENCE,
+      false,
+    );
+  }
+  if (
+    /^(?:compare\s+the\s+options|what\s+is\s+the\s+downside|what\s+are\s+we\s+sacrificing|what\s+do\s+we\s+gain\s+and\s+lose|what\s+do\s+i\s+gain(?:\s+with\s+each\s+option)?|what\s+do\s+we\s+gain|what\s+do\s+i\s+lose|what\s+do\s+i\s+sacrifice|what\s+do\s+we\s+sacrifice|which\s+one\s+is\s+safer|which\s+is\s+safer|which\s+one\s+has\s+more\s+risk|which\s+is\s+cheaper|which\s+one\s+is\s+cheaper|which\s+is\s+faster|which\s+one\s+is\s+faster|which\s+option\s+is\s+constrained\s+by\s+budget|what\s+assumptions\s+(?:does\s+this\s+option\s+depend\s+on|are\s+we\s+making)|what\s+is\s+still\s+uncertain|which\s+better\s+supports\s+(?:the\s+|my\s+|our\s+)?goal)$/.test(
+      normalized,
+    )
+  ) {
+    return advisoryQuery(
+      "explain",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN,
+      false,
+    );
+  }
+  if (/^what\s+should\s+i\s+do\s+next$/.test(normalized)) {
+    return advisoryQuery(
+      "recommend",
+      CONVERSATIONAL_INTENT_REASON.MATCHED_RECOMMEND,
       false,
     );
   }
@@ -372,7 +790,11 @@ function matchCollectionShows(normalized: string): MatchResult | null {
       kind &&
       raw &&
       !/^(?:the|all|my|our)$/.test(raw) &&
-      !isAmbiguousConversationalReference(raw)
+      !isAmbiguousConversationalReference(raw) &&
+      !isCompoundCategoryFocus(`${raw} ${anchorThenKind[2] ?? ""}`) &&
+      !/^(?:risks?|problems?|opportunities?|goals?|scenarios?|decisions?|executions?)$/.test(
+        raw,
+      )
     ) {
       const primary = hint(raw, "primary");
       return {
@@ -406,31 +828,37 @@ function matchCollectionShows(normalized: string): MatchResult | null {
     },
     {
       pattern:
-        /^(?:show|open|list|see)(?:\s+me)?(?:\s+the)?\s+problems?(?:\s+collection)?$/,
+        /^(?:show|open|list|see|what)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+problems?(?:\s+(?:do we have|are there|collection))?$/,
       kind: "show-problems",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_PROBLEMS,
     },
     {
       pattern:
-        /^(?:show|open|list|see)(?:\s+me)?(?:\s+the)?\s+goals?(?:\s+collection)?$/,
+        /^(?:show|open|list|see|what)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+risks?(?:\s+(?:do we have|are there|collection))?$/,
+      kind: "show-problems",
+      reason: CONVERSATIONAL_INTENT_REASON.MATCHED_PROBLEMS,
+    },
+    {
+      pattern:
+        /^(?:show|open|list|see)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+goals?(?:\s+collection)?$/,
       kind: "show-goals",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_GOALS,
     },
     {
       pattern:
-        /^(?:show|open|list|see)(?:\s+me)?(?:\s+the)?\s+scenarios?(?:\s+collection)?$/,
+        /^(?:show|open|list|see)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+scenarios?(?:\s+collection)?$/,
       kind: "show-scenarios",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_SCENARIOS,
     },
     {
       pattern:
-        /^(?:show|open|list|see)(?:\s+me)?(?:\s+the)?\s+decisions?(?:\s+collection)?$/,
+        /^(?:show|open|list|see)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+decisions?(?:\s+collection)?$/,
       kind: "show-decisions",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_DECISIONS,
     },
     {
       pattern:
-        /^(?:show|open|list|see)(?:\s+me)?(?:\s+the)?\s+executions?(?:\s+collection)?$/,
+        /^(?:show|open|list|see)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+executions?(?:\s+collection)?$/,
       kind: "show-execution",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_EXECUTION,
     },
@@ -624,7 +1052,7 @@ function matchSimulate(normalized: string): MatchResult | null {
 
 function matchFocusOrOpen(normalized: string): MatchResult | null {
   const focus = normalized.match(
-    /^(?:focus(?:\s+on)?|look\s+at|go\s+to|review|investigate)\s+(.+)$/,
+    /^(?:focus(?:\s+on)?|look\s+at|go\s+to|take\s+me\s+to|review|investigate)\s+(.+)$/,
   );
   const showOpen = normalized.match(
     /^(?:show|open)(?:\s+me)?\s+(.+)$/,
@@ -638,11 +1066,30 @@ function matchFocusOrOpen(normalized: string): MatchResult | null {
 
   // Collection phrases already handled; guard if they slipped through.
   if (
-    /^(?:the\s+)?(?:related(?:\s+objects?)?|problems?|goals?|scenarios?|decisions?|execution)$/.test(
+    /^(?:(?:all|active|open|current)\s+(?:the\s+)?(?:related(?:\s+objects?)?|problems?|risks?|goals?|scenarios?|decisions?|executions?)|(?:the\s+)?(?:related(?:\s+objects?)?|problems|risks|goals|scenarios|decisions|executions))$/.test(
       raw,
     )
   ) {
     return null;
+  }
+
+  if (isCompoundCategoryFocus(raw)) {
+    const categoryHint = hint(raw, "primary");
+    return {
+      kind: "focus",
+      confidence: 0.45,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_OPEN_SHOW_TARGET,
+        CONVERSATIONAL_INTENT_REASON.AMBIGUOUS_REFERENCE,
+        CONVERSATIONAL_INTENT_REASON.TARGET_REQUIRED,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(categoryHint ? [categoryHint] : []),
+      requiresContext: true,
+      requiresTarget: true,
+      candidateKinds: Object.freeze(["focus"] as const),
+    };
   }
 
   if (isAmbiguousConversationalReference(raw)) {
@@ -926,7 +1373,7 @@ function matchRecommendExplainPrioritize(
 ): MatchResult | null {
   // Explain / why
   if (
-    /^(?:why(?:\s+(?:does\s+this\s+matter|is\s+(?:this|it)\s+(?:important|critical)))?|explain(?:\s+that|\s+this|\s+why)?)$/.test(
+    /^(?:why(?:\s+(?:does\s+this\s+matter|is\s+(?:this|it)\s+(?:important|critical)))?|explain(?:\s+(?:that|this|it|why)(?:\s+(?:object|item|node|card|thing))?)?|what\s+is\s+this(?:\s+(?:object|item|node|card|thing))?)$/.test(
       normalized,
     )
   ) {
@@ -950,7 +1397,9 @@ function matchRecommendExplainPrioritize(
     /^(?:why(?:\s+is)?|explain)\s+(.+)$/,
   );
   if (explainAbout) {
-    const raw = (explainAbout[1] ?? "").trim();
+    const raw = stripConversationalArticles(
+      stripConversationalSignificanceQualifier((explainAbout[1] ?? "").trim()),
+    );
     if (raw && !isAmbiguousConversationalReference(raw)) {
       const primary = hint(raw, "primary");
       return {
@@ -968,11 +1417,49 @@ function matchRecommendExplainPrioritize(
         candidateKinds: Object.freeze(["explain"] as const),
       };
     }
+    if (!raw || isAmbiguousConversationalReference(raw)) {
+      return {
+        kind: "explain",
+        confidence: 0.9,
+        reasons: [
+          CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN,
+          CONVERSATIONAL_INTENT_REASON.AMBIGUOUS_REFERENCE,
+          CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+          CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+        ],
+        targetHints: Object.freeze([]),
+        requiresContext: true,
+        requiresTarget: true,
+        candidateKinds: Object.freeze(["explain"] as const),
+      };
+    }
+  }
+
+  const prioritizeAbout = normalized.match(
+    /^(?:should\s+we\s+prioritize|how\s+important\s+is)\s+(.+)$/,
+  );
+  if (prioritizeAbout) {
+    const raw = (prioritizeAbout[1] ?? "").trim();
+    const primary = hint(raw, "primary");
+    return {
+      kind: "prioritize",
+      confidence: 0.93,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_PRIORITIZE,
+        CONVERSATIONAL_INTENT_REASON.TARGET_HINT_EXTRACTED,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze(primary ? [primary] : []),
+      requiresContext: !primary,
+      requiresTarget: Boolean(primary),
+      candidateKinds: Object.freeze(["prioritize"] as const),
+    };
   }
 
   // Prioritize / what matters
   if (
-    /^(?:what\s+matters\s+most|what\s+should\s+i\s+look\s+at\s+first|what\s+needs\s+my\s+attention)$/.test(
+    /^(?:what\s+matters\s+most|what\s+should\s+i\s+look\s+at\s+first|what\s+needs\s+my\s+attention|what\s+should\s+i\s+pay\s+attention\s+to)$/.test(
       normalized,
     )
   ) {
@@ -993,7 +1480,7 @@ function matchRecommendExplainPrioritize(
 
   // Recommend
   if (
-    /^(?:what\s+do\s+you\s+recommend|what\s+should\s+i\s+do|recommend)$/.test(
+    /^(?:what\s+do\s+you\s+recommend|what\s+should\s+i\s+do(?:\s+about\s+(?:this|it|that))?|recommend)$/.test(
       normalized,
     )
   ) {
@@ -1125,7 +1612,8 @@ function matchDecisionCommitment(normalized: string): MatchResult | null {
     /\b(?:looks?\s+good|seems?\s+better|probably\s+the\s+best|has\s+less\s+risk)\b/.test(
       normalized,
     ) ||
-    /^this\s+is\s+probably\s+the\s+best\s+option$/.test(normalized)
+    /^this\s+is\s+probably\s+the\s+best\s+option$/.test(normalized) ||
+    /^(?:lets|let\s+s)\s+do\s+that$/.test(normalized)
   ) {
     const named = normalized.match(
       /(?:prefer|like)\s+(?:scenario\s+)?(.+)$/,
@@ -1429,12 +1917,12 @@ function matchDecisionCommitment(normalized: string): MatchResult | null {
 
 function matchScenarioConversation(normalized: string): MatchResult | null {
   // Decision commitment handled by matchDecisionCommitment (CC:10).
-  const doNothing = normalized.match(
-    /^(?:what\s+(?:happens\s+)?if\s+we\s+do\s+nothing|do\s+nothing)(?:\s+(?:for|over)\s+(?:the\s+)?(?:next\s+)?(\d+)\s+(day|days|week|weeks|month|months|quarter|quarters|year|years))?$/,
+  const horizonMatch = normalized.match(
+    /(?:for|over)\s+(?:the\s+)?(?:next\s+)?(\d+)\s+(day|days|week|weeks|month|months|quarter|quarters|year|years)$/u,
   );
-  if (doNothing) {
-    const amount = doNothing[1] ? Number(doNothing[1]) : undefined;
-    const unitRaw = doNothing[2];
+  if (isNoActionConsequenceUtterance(normalized) || /^do\s+nothing(?:\s|$)/.test(normalized)) {
+    const amount = horizonMatch?.[1] ? Number(horizonMatch[1]) : undefined;
+    const unitRaw = horizonMatch?.[2];
     const horizonUnit = unitRaw
       ? unitRaw.startsWith("day")
         ? ("day" as const)
@@ -1463,6 +1951,66 @@ function matchScenarioConversation(normalized: string): MatchResult | null {
         ...(amount != null && horizonUnit
           ? { horizonAmount: amount, horizonUnit }
           : {}),
+      }),
+    };
+  }
+
+  if (isInvestigateNowUtterance(normalized)) {
+    return {
+      kind: "explore-scenario",
+      confidence: 0.92,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLORE_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["explore-scenario"] as const),
+      scenarioPayload: Object.freeze({
+        operation: "intervention" as const,
+        actionKind: "hold" as const,
+      }),
+    };
+  }
+
+  if (isInvestigationOptionsUtterance(normalized)) {
+    return {
+      kind: "compare-scenarios",
+      confidence: 0.91,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_COMPARE_SCENARIOS,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["compare-scenarios"] as const),
+      scenarioPayload: Object.freeze({ operation: "compare" as const }),
+    };
+  }
+
+  if (
+    /^(?:which\s+(?:one\s+)?is\s+safer|which\s+better\s+supports\s+(?:the\s+|my\s+|our\s+)?goal)$/.test(
+      normalized,
+    )
+  ) {
+    return {
+      kind: "explain-scenario",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["explain-scenario"] as const),
+      scenarioPayload: Object.freeze({
+        operation: "explain-preference" as const,
       }),
     };
   }
@@ -1620,7 +2168,7 @@ function matchScenarioConversation(normalized: string): MatchResult | null {
   }
 
   const whatIf = normalized.match(
-    /^(?:what\s+if|what\s+happens\s+if)\s+(?:we\s+)?(.+?)\s+(increases?|decreases?|drops?|falls?|rises?)\s+(\d+(?:\.\d+)?)\s*%?$/,
+    /^(?:what\s+if|what\s+happens\s+if|what\s+happened\s+if|what\s+would\s+happen\s+if)\s+(?:we\s+|i\s+)?(.+?)\s+(increases?|decreases?|drops?|falls?|rises?|improves?)\s+(\d+(?:\.\d+)?)\s*%?$/,
   );
   if (whatIf) {
     const subjectRaw = (whatIf[1] ?? "").replace(/^(?:the\s+)?/, "").trim();
@@ -1647,7 +2195,7 @@ function matchScenarioConversation(normalized: string): MatchResult | null {
       candidateKinds: Object.freeze(["explore-scenario"] as const),
       scenarioPayload: Object.freeze({
         operation: "intervention" as const,
-        actionKind: /increase|rise/.test(verb)
+        actionKind: /increase|rise|improve/.test(verb)
           ? ("increase-by" as const)
           : ("decrease-by" as const),
         value: Number(whatIf[3]),
@@ -1656,9 +2204,9 @@ function matchScenarioConversation(normalized: string): MatchResult | null {
     };
   }
 
-  // "What if we increase this 10%?"
+  // "What if we increase this 10%?" / "What happens if I increase it 10%?"
   const whatIfIncreaseThis = normalized.match(
-    /^what\s+if\s+we\s+(increase|decrease|expand|reduce)\s+(this|that|it)\s+(\d+(?:\.\d+)?)\s*%?$/,
+    /^(?:what\s+if|what\s+happens\s+if|what\s+happened\s+if)\s+(?:we\s+|i\s+)?(increase|decrease|expand|reduce|improve|raise|lower)\s+(this|that|it)(?:\s+(\d+(?:\.\d+)?)\s*%?)?$/,
   );
   if (whatIfIncreaseThis) {
     const verb = whatIfIncreaseThis[1] ?? "";
@@ -1678,11 +2226,15 @@ function matchScenarioConversation(normalized: string): MatchResult | null {
       candidateKinds: Object.freeze(["explore-scenario"] as const),
       scenarioPayload: Object.freeze({
         operation: "intervention" as const,
-        actionKind: /increase|expand/.test(verb)
+        actionKind: /increase|expand|improve|raise/.test(verb)
           ? ("increase-by" as const)
           : ("decrease-by" as const),
-        value: Number(whatIfIncreaseThis[3]),
-        unit: "%",
+        ...(whatIfIncreaseThis[3]
+          ? {
+              value: Number(whatIfIncreaseThis[3]),
+              unit: "%" as const,
+            }
+          : {}),
       }),
     };
   }
@@ -1711,6 +2263,9 @@ function matchScenarioConversation(normalized: string): MatchResult | null {
       }),
     };
   }
+
+  const directional = matchDirectionalWhatIf(normalized);
+  if (directional) return directional;
 
   const whatIfWe = normalized.match(/^what\s+if\s+we\s+(.+)$/);
   if (whatIfWe) {
@@ -1763,7 +2318,117 @@ function matchScenarioConversation(normalized: string): MatchResult | null {
     };
   }
 
+  if (
+    /^(?:what\s+risk\s+does\s+(?:that|this|it)\s+create|what\s+risk\s+does\s+that\s+add|what\s+risks?)$/.test(
+      normalized,
+    )
+  ) {
+    return {
+      kind: "explain-scenario",
+      confidence: 0.9,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.AMBIGUOUS_REFERENCE,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["explain-scenario"] as const),
+      scenarioPayload: Object.freeze({ operation: "downside" as const }),
+    };
+  }
+
+  if (
+    /^(?:what\s+could\s+be\s+affected|what\s+may\s+be\s+affected|what\s+would\s+be\s+affected|what\s+is\s+affected)$/.test(
+      normalized,
+    )
+  ) {
+    return {
+      kind: "explain-scenario",
+      confidence: 0.91,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["explain-scenario"] as const),
+      scenarioPayload: Object.freeze({ operation: "affected" as const }),
+    };
+  }
+
+  if (
+    /^(?:which\s+kpi|which\s+kpis|which\s+kpi(?:s)?\s+(?:would\s+be\s+|is\s+|are\s+)?affected)$/.test(
+      normalized,
+    )
+  ) {
+    return {
+      kind: "explain-scenario",
+      confidence: 0.91,
+      reasons: [
+        CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN_SCENARIO,
+        CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+        CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+      ],
+      targetHints: Object.freeze([]),
+      requiresContext: true,
+      requiresTarget: false,
+      candidateKinds: Object.freeze(["explain-scenario"] as const),
+      scenarioPayload: Object.freeze({ operation: "kpi-impact" as const }),
+    };
+  }
+
   return null;
+}
+
+function matchInvestigationFollowup(normalized: string): MatchResult | null {
+  const ask = classifyExecutiveInvestigationAsk(normalized);
+  if (!ask) return null;
+  const namedWhy = normalized.match(
+    /^why is (.+?) (?:below target|underperforming|off target|at risk)$/,
+  );
+  const primary = namedWhy?.[1]
+    ? hint(
+        stripConversationalArticles(
+          stripConversationalSignificanceQualifier(namedWhy[1].trim()),
+        ),
+        "primary",
+      )
+    : null;
+  const kind =
+    ask === "manager-observation"
+      ? ("evidence" as const)
+      : ask === "what-can-we-do"
+        ? ("compare-scenarios" as const)
+        : ask === "address-other"
+          ? ("explore-scenario" as const)
+          : ("explain" as const);
+  return {
+    kind,
+    confidence: 0.9,
+    reasons: [
+      CONVERSATIONAL_INTENT_REASON.MATCHED_EXPLAIN,
+      CONVERSATIONAL_INTENT_REASON.NO_CANONICAL_OBJECT_ID,
+      CONVERSATIONAL_INTENT_REASON.DETERMINISTIC,
+    ],
+    targetHints: Object.freeze(primary ? [primary] : []),
+    requiresContext: !primary,
+    requiresTarget: false,
+    candidateKinds: Object.freeze([kind] as const),
+    scenarioPayload:
+      ask === "what-can-we-do"
+        ? Object.freeze({ operation: "compare" as const })
+        : ask === "address-other"
+          ? Object.freeze({
+              operation: "intervention" as const,
+              actionKind: "hold" as const,
+            })
+          : null,
+  };
 }
 
 function resolveMatch(normalized: string): MatchResult {
@@ -1777,6 +2442,8 @@ function resolveMatch(normalized: string): MatchResult {
     matchSwitchWorkspace(normalized) ??
     matchDecisionCommitment(normalized) ??
     matchScenarioConversation(normalized) ??
+    matchInvestigationFollowup(normalized) ??
+    matchNamedSubjectInquiry(normalized) ??
     matchExecutiveQuestion(normalized) ??
     matchRecommendExplainPrioritize(normalized) ??
     matchOrdinalReference(normalized) ??
@@ -1788,6 +2455,16 @@ function resolveMatch(normalized: string): MatchResult {
     matchExplore(normalized) ??
     unknownMatch(normalized)
   );
+}
+
+function isCompoundCategoryFocus(raw: string): boolean {
+  const tokens = raw
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((token) => token.length > 0 && token !== "and" && token !== "or" && token !== "the");
+  const category =
+    /^(?:risks?|problems?|opportunities?|goals?|scenarios?|decisions?|executions?)$/;
+  return tokens.length >= 2 && tokens.every((token) => category.test(token));
 }
 
 function freezeIntent(intent: NexoraConversationalIntent): NexoraConversationalIntent {

@@ -27,6 +27,11 @@ import {
   type NexoraProfessionalAdvisorAction,
 } from "@/app/lib/nex-mvp/nexoraMVPProfessionalAdvisorPresentation";
 import {
+  applyNexoraExecutiveIntelligenceExperienceToAdvisor,
+  composeNexoraExecutiveIntelligenceExperience,
+  projectNexoraExiConversationalAnswers,
+} from "@/app/lib/nex-mvp/nexoraExecutiveIntelligenceExperience";
+import {
   freezeNexoraConversationalActionDescriptor,
   type NexoraConversationalActionDescriptor,
 } from "@/app/lib/conversational-control/conversationalActionDescriptor";
@@ -46,6 +51,11 @@ import type {
   NexoraConversationalExperienceTrace,
   NexoraConversationalMessage,
 } from "@/app/lib/conversational-control/conversationalExperience";
+import type {
+  NexoraMVPFlowDecisionRecord,
+  NexoraMVPFlowExecutionRecord,
+} from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlowFixtures";
+import type { NexoraDecisionRuntimeAdapter } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
 
 type Props = {
   readonly tab: ExecutiveAdvisorTab;
@@ -63,6 +73,8 @@ type Props = {
   readonly advisorRealityBinding?: DataRealityAwareAdvisorBindingResult;
   /** RDI:3 structured canonical source/comparison evidence for Advisor. */
   readonly sourceIntelligenceContext?: ExecutiveSourceAdvisorContext | null;
+  /** True only when an explicit validated RDI dataset is active. */
+  readonly validatedDataSource?: boolean;
   /** PM:4 — explicit user follow-up through the existing Advisor context. */
   readonly onProactiveInvestigate?: (brief: NexoraProactiveAdvisorBrief) => void;
   /** PM:4 — explicit user navigation; proactive delivery never changes focus. */
@@ -78,6 +90,9 @@ type Props = {
   ) => void;
   readonly onBeginDailyPreparation?: () => void;
   readonly onBeginMeetingPreparation?: () => void;
+  readonly flowDecisions?: readonly NexoraMVPFlowDecisionRecord[];
+  readonly flowExecutions?: readonly NexoraMVPFlowExecutionRecord[];
+  readonly decisionRuntime?: NexoraDecisionRuntimeAdapter | null;
 };
 
 function projectConversationalAction(
@@ -135,6 +150,7 @@ export function NexoraAdvisorInsightRegion({
   onExecuteNextBestAction,
   onSelectBriefOption,
   advisorRealityBinding,
+  validatedDataSource = false,
   sourceIntelligenceContext = null,
   onProactiveInvestigate,
   onProactiveViewOnStage,
@@ -146,6 +162,9 @@ export function NexoraAdvisorInsightRegion({
   onConversationalAdvisorGroundingChange,
   onBeginDailyPreparation,
   onBeginMeetingPreparation,
+  flowDecisions,
+  flowExecutions,
+  decisionRuntime,
 }: Props) {
   const [width, setWidth] = useState(320);
   const [collapsed, setCollapsed] = useState(false);
@@ -196,7 +215,7 @@ export function NexoraAdvisorInsightRegion({
         )
       : applied.advisor;
 
-    const narrative = composeNexoraProfessionalAdvisorPresentation({
+    const composed = composeNexoraProfessionalAdvisorPresentation({
       advisor,
       insight: applied.insight,
       intelligence: context,
@@ -205,13 +224,31 @@ export function NexoraAdvisorInsightRegion({
       decisionBrief: advisorBridge.decisionBrief,
       decisionMemory: advisorBridge.decisionMemory,
       advisorBinding: advisorRealityBinding ?? null,
+      validatedDataSource,
     });
+    const experience = composeNexoraExecutiveIntelligenceExperience({
+      narrative: composed,
+      presentationMode: advisorBridge.presentationMode,
+      liveOutcomeAvailable: false,
+      liveLearningAvailable: false,
+      cc11Live: false,
+      validatedDataSource,
+      advisorBinding: advisorRealityBinding ?? null,
+      flowDecisions,
+      flowExecutions,
+      decisionRuntime: decisionRuntime ?? null,
+    });
+    const narrative = applyNexoraExecutiveIntelligenceExperienceToAdvisor(
+      composed,
+      experience,
+    );
 
     return Object.freeze({
       ...applied,
       advisor,
       context,
       narrative,
+      experience,
     });
   }, [
     advisorBridge,
@@ -219,6 +256,10 @@ export function NexoraAdvisorInsightRegion({
     focusedSubject,
     presentationViewModel,
     selectedSubject,
+    validatedDataSource,
+    flowDecisions,
+    flowExecutions,
+    decisionRuntime,
   ]);
 
   useEffect(() => {
@@ -250,11 +291,14 @@ export function NexoraAdvisorInsightRegion({
           intelligence.narrative.recommendationAuthority,
         primaryAction: availableActions[0] ?? null,
         availableActions: Object.freeze(availableActions),
+        experienceAnswers: projectNexoraExiConversationalAnswers(
+          intelligence.experience,
+        ),
       }),
     );
   }, [
     advisorBridge.nextBestAction,
-    intelligence.narrative,
+    intelligence,
     onConversationalAdvisorGroundingChange,
   ]);
 
@@ -304,6 +348,33 @@ export function NexoraAdvisorInsightRegion({
         data-nex-mvp="7"
         data-advisor-tab={tab}
         data-ux3="professional-advisor"
+        data-exi="1"
+        data-exi2="grounded"
+        data-exi3="live-comparison"
+        data-exi4="presentation"
+        data-core-int2="epistemic"
+        data-core-int3="causal-constraint"
+        data-core-int4="priority"
+        data-core-out1="outcome"
+        data-core-int4-ranked={
+          intelligence.experience.corePriorityAssessment.topPriority
+            ? "true"
+            : "false"
+        }
+        data-core-int3-binding={
+          intelligence.experience.coreConstraintAssessment.bindingConstraint
+            ? "known"
+            : "unknown"
+        }
+        data-epistemic-kind={
+          intelligence.experience.epistemicFoundation.observation?.claim.type ??
+          intelligence.experience.epistemicFoundation.focusedClaimId
+        }
+        data-epistemic-claim={
+          intelligence.experience.epistemicFoundation.focusedClaimId
+        }
+        data-exi-workflow={intelligence.experience.workflowPosition}
+        data-exi-collection={intelligence.experience.isCollection ? "true" : "false"}
         data-advisor-subject={advisorBridge.advisorSubjectId ?? "none"}
         data-advisor-current-subject={intelligence.narrative.currentSubjectId ?? "none"}
         data-advisor-attention-subject={
@@ -313,6 +384,18 @@ export function NexoraAdvisorInsightRegion({
         data-advisor-mode={advisorBridge.interactionMode}
         data-advisor-grammar={intelligence.narrative.grammarKind}
         data-advisor-presentation={presentationViewModel.state}
+        data-mo1="advisor-reader"
+        data-mo2="advisor-reader"
+        data-mo3="advisor-reader"
+        data-mo4="advisor-reader"
+        data-mo5="advisor-reader"
+        data-mo6="advisor-reader"
+        data-mo-int1="advisor-reader"
+        data-mo1-active-object-id={
+          advisorBridge.advisorSubjectId ??
+          advisorBridge.focusedSubject?.id ??
+          "none"
+        }
         data-nba-subject={advisorBridge.nbaSubjectId ?? "none"}
         data-nba-recommended={
           advisorBridge.nextBestAction?.recommendedAction?.kind ?? "none"
@@ -499,6 +582,7 @@ export function NexoraAdvisorInsightRegion({
               <NexoraAdvisorView
                 viewModel={intelligence.advisor}
                 narrative={intelligence.narrative}
+                intelligenceExperience={intelligence.experience}
                 onAction={onIntelligenceAction}
                 onExecuteNextBestAction={onExecuteNextBestAction}
               />

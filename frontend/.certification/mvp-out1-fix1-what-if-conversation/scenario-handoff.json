@@ -1,0 +1,10 @@
+{
+  "conversationDoesNotSimulate": true,
+  "command": "evaluate-scenario",
+  "handoff": "resolveScenarioForTurn → resolveNexoraExecutiveScenarioConversation",
+  "modeledSubjects": ["obj-capacity", "obj-demand"],
+  "inventoryModeled": false,
+  "inventoryLiveResult": "unsupported impact model (honest)",
+  "capacityQualitative": "directional evaluation without invented numeric magnitude",
+  "newScenarioEngine": false
+}

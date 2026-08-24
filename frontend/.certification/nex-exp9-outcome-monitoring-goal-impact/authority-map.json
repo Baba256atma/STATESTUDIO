@@ -1,0 +1,20 @@
+{
+  "phase": "NEX-EXP:9",
+  "experience": "NEX-EXP:9/OutcomeMonitoringGoalImpactExperience",
+  "version": "1.0.0",
+  "namespace": "nexora.experience.outcome.monitoring-goal-impact",
+  "reused": {
+    "exp8Handoff": "NexoraOutcomeMonitoringHandoff",
+    "cc11": "CC:11/CanonicalExecution (read-only)",
+    "cc12": "CC:12/ExecutionFollowUp",
+    "coreOut1": "CORE-OUT:1/LiveOutcomeIntelligence",
+    "ei6": "EI:6/ExecutionOutcomeLearningLoop (consume Outcome, no Learning)",
+    "prod5": "STAGE-PROD:5 (presentation-only; no invented writer)",
+    "rdi": "NEX-EXP:3 Reality / Data Reality baseline",
+    "mo": "MO:1–6 + MO-INT:1",
+    "ux3": "UX:3 Professional Advisor"
+  },
+  "startsNexExp10": false,
+  "parallelOutcomeRuntime": false,
+  "infersCausality": false
+}

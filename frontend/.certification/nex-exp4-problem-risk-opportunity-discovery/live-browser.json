@@ -1,0 +1,33 @@
+{
+  "liveReport": {
+    "phase": "NEX-EXP:4",
+    "identity": "NEX-EXP:4/ProblemRiskOpportunityDiscovery",
+    "completedAt": "2026-08-20T22:20:26.296Z",
+    "http": 200,
+    "existingWorkspaceProtected": true,
+    "goalRemainsCenterBeforeIssues": true,
+    "goalRemainsCenterAfterIssues": true,
+    "gapWithoutForcedProblem": true,
+    "problemDiscovered": true,
+    "riskDiscovered": true,
+    "opportunityNotRecommendation": true,
+    "constraintClarified": true,
+    "noRootCause": true,
+    "evidenceCopy": true,
+    "unknownCopy": true,
+    "preventingCopy": true,
+    "vsRiskCopy": true,
+    "showExplainWorked": true,
+    "affectGoal": true,
+    "readyBoundary": true,
+    "noFakeProbability": true,
+    "issueObjectsRestrained": true,
+    "cameraFixed": true,
+    "topologyPresent": true,
+    "uncaught": 0,
+    "duplicateOrHydration": 0
+  },
+  "missing": [],
+  "errors": [],
+  "warnings": []
+}

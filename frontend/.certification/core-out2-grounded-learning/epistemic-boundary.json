@@ -1,0 +1,9 @@
+{
+  "owner": "CORE-INT:2/SharedEpistemicUncertaintyFoundation",
+  "claimKindsPreserved": ["FACT", "observation", "ASSUMPTION", "PREDICTION", "inference", "UNKNOWN"],
+  "flatteningForbidden": "CORE-OUT:2 does not collapse evidence into undifferentiated knowledge",
+  "confidence": "SemanticConfidence reused; CORE-OUT:2 takes the weakest important evidence",
+  "unknownOutcome": "CORE-OUT:1 unknown/insufficient/timing-incomplete/conflicting does not invent a lesson",
+  "predictionVsReality": "prediction-learning never promotes prediction to FACT or causal truth",
+  "outcomeVsLearning": "CORE-OUT:1 comparison-ready is not Learning validity"
+}

@@ -30,7 +30,7 @@ function mapObjectToGrammarSubject(object: NexoraMVPStageObjectPresentation) {
     objectKind: object.kind,
     workKind: isThreadWork ? object.kind : undefined,
     disclosureState: object.disclosureState,
-    roleHint: object.role,
+    roleHint: object.role === "peripheral" ? ("unrelated" as const) : object.role,
     attention: object.attention,
     status: object.status,
     position: object.targetPosition,
@@ -146,7 +146,7 @@ export function applyExecutiveFocusVisualGrammarToStagePresentation(
         return Object.freeze({
           ...node,
           targetPosition: node.targetPosition,
-          scale: Math.max(node.scale, entry.scale, 1),
+          scale: Math.min(entry.scale, node.scale),
           label: node.label,
         });
       }

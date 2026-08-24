@@ -634,6 +634,11 @@ export function getNexoraMVPExecutiveStage2DReadabilityObservability(
   readonly secondaryOverflow: string;
   readonly routingMode: string;
   readonly contract: string;
+  readonly layoutStatus: string;
+  readonly layoutOverlapCount: string;
+  readonly layoutMinGap: string;
+  readonly sectorCompression: string;
+  readonly sectorBreathingAdjustedCount: string;
 }> {
   const identity = getExecutiveStage2DTopologyReadabilityIdentity();
   const readability = (

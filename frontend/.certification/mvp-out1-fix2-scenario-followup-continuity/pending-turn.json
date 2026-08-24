@@ -1,0 +1,10 @@
+{
+  "reuseCc7PendingTurn": true,
+  "parallelPendingStore": false,
+  "deliveryDelay": {
+    "modelSupported": false,
+    "asksForDuration": false,
+    "reason": "CC:9 has no Delivery-delay impact model; honest unsupported is returned without inventing 2 days / 5 days / 20%",
+    "nextTurnTwoDays": "does not fill a pending Scenario parameter because none was asked"
+  }
+}

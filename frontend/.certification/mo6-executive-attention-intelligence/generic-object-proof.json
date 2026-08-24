@@ -1,0 +1,8 @@
+{
+  "engine": "MO:6/ExecutiveAttentionInterventionIntelligence",
+  "hardcodedAttentionBranches": false,
+  "duplicateQueue": false,
+  "stealsDirectFocus": false,
+  "commitsDecisions": false,
+  "startsExecution": false
+}

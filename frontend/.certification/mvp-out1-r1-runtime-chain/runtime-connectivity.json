@@ -1,0 +1,26 @@
+{
+  "decisionToExecution": "CONNECTED",
+  "decisionToExpected": "MISSING",
+  "executionToObservationWindow": "PARTIAL",
+  "expectedToObservationWindow": "MISSING",
+  "dataRealityToOut1a": "MISSING",
+  "out1aToLinkedActual": "TEST-ONLY",
+  "out1aToOut1": "CONNECTED",
+  "out1ToOut2": "CONNECTED",
+  "out2ToLearning": "CONNECTED",
+  "out2ToApp4": "TEST-ONLY",
+  "app4ToExi5": "CONNECTED",
+  "out2ToExi5": "CONNECTED",
+  "exi5ToAdvisorConversation": "CONNECTED",
+  "cc11": "MISSING",
+  "liveActualOutcome": false,
+  "liveLearningCandidates": 0,
+  "liveApp4Promotion": false,
+  "notes": {
+    "decisionToExecution": "NEX-MVP:8 sourceDecisionId ctx-decision-capacity → ctx-execution-capacity",
+    "decisionToExpected": "Live Decision has no canonical expected Outcome with metric/target/comparator; scenario summary is not invented as Decision expected Outcome",
+    "executionToObservationWindow": "Window opens as timing-incomplete; no live committedAt/startedAt",
+    "dataRealityToOut1a": "No automatic capture of current KPI as Outcome observation on live /executive",
+    "out1aToLinkedActual": "Explicit captureOutcomeObservation is caller/test supplied"
+  }
+}

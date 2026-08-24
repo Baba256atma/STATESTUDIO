@@ -1,0 +1,34 @@
+{
+  "phase": "CORE-OUT:1",
+  "identity": "CORE-OUT:1/LiveOutcomeIntelligence",
+  "auditQuestions": {
+    "whoWritesExpected": "Scenario summaries, Decision/EI:5 expected-outcome preparation, STAGE-PROD:5 expectedOutcomes when captured. Live /executive currently reads scenario/decision predictive summaries only.",
+    "whoWritesActual": "EI:6 observeActualOutcome and STAGE-PROD:5 append APIs exist in code. No live /executive writer is wired.",
+    "anyActualsTrulyObserved": false,
+    "stageProd5Live": false,
+    "ei6Live": false,
+    "dataRealityPostDecisionObservations": "Data Reality can supply current KPIs. Those remain Reality unless explicitly outcome-linked. Live path does not mark them as Outcome.",
+    "decisionToExecutionLink": "Fixture/contextual subject links exist (decision ↔ execution). CC:11 is not live on /executive.",
+    "executionToObservationLink": false,
+    "uiPretendingPredictionIsOutcome": "EXI/Advisor do not treat scenario predictions as actual Outcome. CORE-OUT:1 keeps them PREDICTION.",
+    "contractsReused": [
+      "CORE-INT:2 claim kinds FACT/PREDICTION/UNKNOWN",
+      "NexoraExecutiveEvidenceReference",
+      "EI:6 expected/actual conceptual split (without Learning or APP-4)",
+      "STAGE-PROD:5 expected/actual/trace field names as conceptual reference only"
+    ]
+  },
+  "authorities": {
+    "expectedOutcome": "existing predictive sources (scenario / decision / execution-target)",
+    "actualOutcome": "validated observation with provenance only",
+    "baseline": "explicit measured baseline with provenance",
+    "comparison": "CORE-OUT:1",
+    "epistemics": "CORE-INT:2",
+    "causality": "CORE-INT:3",
+    "decision": "Decision Runtime (read-only)",
+    "execution": "NEX-MVP:8 live presentation; CC:11 not wired",
+    "memory": "APP-4 not written",
+    "learning": "not implemented",
+    "presentation": "future EXI reader; no EXI:5"
+  }
+}

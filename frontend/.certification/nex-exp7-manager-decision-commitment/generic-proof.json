@@ -1,0 +1,17 @@
+{
+  "engine": "one generic EXP:7 resolver",
+  "sourceHardcoding": {
+    "ifCapacity": false,
+    "ifDelivery": false,
+    "ifCash": false,
+    "projectOrion": false,
+    "ifSoftware": false,
+    "ifWeekend": false
+  },
+  "proofs": {
+    "business": "same engine: Goal + Scenario titles from session, not domain branches (Protect Cash / Intensify Collections pattern)",
+    "project": "same engine: Launch Q4 / Reduce Scope pattern",
+    "operations": "live + unit path: Improve Delivery Reliability / Weekend Capacity / approve",
+    "software": "same engine: Release 2.0 / Reduce Scope pattern"
+  }
+}

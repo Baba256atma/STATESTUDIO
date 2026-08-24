@@ -1,0 +1,49 @@
+{
+  "identity": "CORE-INT:2/AuthorityMap",
+  "previousAuthority": {
+    "core": "EI:3 createExecutiveClaim (test/certification only)",
+    "liveExecutive": "EXI/Advisor independently assigned fact/assumption/prediction/unknown and evidenceState"
+  },
+  "canonicalAuthority": {
+    "id": "CORE-INT:2/SharedEpistemicUncertaintyFoundation",
+    "reuses": "EI:3/createExecutiveClaim + EI:3/SemanticConfidence",
+    "module": "frontend/app/lib/executive-intelligence/nexoraSharedEpistemicFoundation.ts",
+    "liveCollector": "frontend/app/lib/nex-mvp/nexoraLiveEpistemicProjection.ts",
+    "parallelEngine": false
+  },
+  "writers": [
+    {
+      "writer": "data-reality-projection",
+      "mayCreate": ["FACT", "UNKNOWN"],
+      "condition": "validated Data Reality observation with evidence+provenance"
+    },
+    {
+      "writer": "modeled-observation-projection",
+      "mayCreate": ["FACT", "UNKNOWN"],
+      "condition": "explicit MVP presentation KPI with evidence+provenance; confidence medium unless RDI-verified"
+    },
+    {
+      "writer": "recorded-relationship-projection",
+      "mayCreate": ["FACT", "ASSUMPTION", "UNKNOWN"],
+      "condition": "existence FACT; contributor interpretation ASSUMPTION; generic interpretation UNKNOWN"
+    },
+    {
+      "writer": "scenario-projection",
+      "mayCreate": ["PREDICTION"],
+      "condition": "subject kind scenario or explicit scenario source"
+    },
+    {
+      "writer": "insufficient",
+      "mayCreate": ["UNKNOWN"],
+      "condition": "missing evidence or unlabeled source"
+    }
+  ],
+  "forbiddenWriters": ["EXI", "Advisor", "Conversation", "LLM"],
+  "readers": ["EXI:1", "EXI:2", "EXI:3", "Advisor", "Conversation", "future CORE-INT:3/4/5"],
+  "ei3Reuse": {
+    "createExecutiveClaim": true,
+    "SemanticConfidence": true,
+    "FACT validation": "unchanged: evidence+provenance required",
+    "safeLiveResolve": "projector catches unsupported FACT and emits UNKNOWN"
+  }
+}

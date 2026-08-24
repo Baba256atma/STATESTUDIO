@@ -20,6 +20,8 @@ import {
   isModeledScenarioSubject,
   NEXORA_SCENARIO_EVALUATION_POLICY,
 } from "./executiveScenarioPolicy.ts";
+import { assessGroundedScenarioImpact } from "./groundedScenarioImpactAssessment.ts";
+import type { GroundedScenarioImpactAssessment } from "./groundedScenarioImpactAssessment.ts";
 
 export const NEXORA_SCENARIO_EVALUATION_STATUSES = Object.freeze([
   "evaluated",
@@ -81,6 +83,7 @@ export type NexoraExecutiveScenarioEvaluation = {
   readonly uncertainties: readonly NexoraExecutiveUncertainty[];
   readonly evidenceRefs: readonly NexoraExecutiveEvidenceReference[];
   readonly horizon: NexoraScenarioHorizon | null;
+  readonly groundedImpact?: GroundedScenarioImpactAssessment | null;
 };
 
 export type NexoraExecutiveScenarioEvaluationTrace = {
@@ -214,7 +217,63 @@ export function evaluateNexoraExecutiveScenario(
 
   // Interventions
   for (const intervention of input.scenario.interventions) {
+    if (
+      intervention.actionKind === "investigate" ||
+      intervention.actionKind === "review"
+    ) {
+      modeledSubjects.push(intervention.subjectId);
+      const e = ref(intervention.subjectId, intervention.actionKind);
+      evidenceRefs.push(e);
+      impacts.push(
+        Object.freeze({
+          subjectId: intervention.subjectId,
+          metricKey: "investigation-outlook",
+          direction: "unknown" as const,
+          confidence: clampConfidence(0.4),
+          evidenceRefs: Object.freeze([e]),
+        }),
+      );
+      uncertainties.push(
+        Object.freeze({
+          kind: "magnitude-unmodeled",
+          description:
+            "Investigation may clarify the situation, but the resulting impact is not quantified.",
+          evidenceRefs: Object.freeze([e]),
+        }),
+      );
+      continue;
+    }
     if (!isModeledScenarioSubject(intervention.subjectId)) {
+      const grounded = assessGroundedScenarioImpact({
+        scenarioId: input.scenario.scenarioId,
+        interventions: [intervention],
+      });
+      if (grounded.affectedTargets.length > 0) {
+        modeledSubjects.push(intervention.subjectId);
+        for (const target of grounded.affectedTargets) {
+          const e = target.evidenceRefs[0] ?? ref(intervention.subjectId, intervention.actionKind);
+          evidenceRefs.push(e);
+          impacts.push(
+            Object.freeze({
+              subjectId: intervention.subjectId,
+              metricKey: target.targetId,
+              direction: target.direction,
+              confidence: target.confidence,
+              evidenceRefs: target.evidenceRefs,
+            }),
+          );
+        }
+        if (grounded.uncertainty) {
+          uncertainties.push(
+            Object.freeze({
+              kind: "magnitude-unmodeled",
+              description: grounded.uncertainty,
+              evidenceRefs: grounded.evidenceRefs,
+            }),
+          );
+        }
+        continue;
+      }
       unsupportedSubjects.push(intervention.subjectId);
       continue;
     }
@@ -311,6 +370,27 @@ export function evaluateNexoraExecutiveScenario(
           evidenceRefs: Object.freeze([e]),
         }),
       );
+    } else if (
+      intervention.actionKind === "investigate" ||
+      intervention.actionKind === "review"
+    ) {
+      impacts.push(
+        Object.freeze({
+          subjectId: intervention.subjectId,
+          metricKey: "investigation-outlook",
+          direction: "unknown" as const,
+          confidence: clampConfidence(0.4),
+          evidenceRefs: Object.freeze([e]),
+        }),
+      );
+      uncertainties.push(
+        Object.freeze({
+          kind: "magnitude-unmodeled",
+          description:
+            "Investigation may clarify the situation, but the resulting impact is not quantified.",
+          evidenceRefs: Object.freeze([e]),
+        }),
+      );
     } else {
       unsupportedSubjects.push(intervention.subjectId);
     }
@@ -320,7 +400,38 @@ export function evaluateNexoraExecutiveScenario(
   for (const assumption of input.scenario.assumptions) {
     const subjectId = assumption.subjectId;
     if (!subjectId || !isModeledScenarioSubject(subjectId)) {
-      if (subjectId) unsupportedSubjects.push(subjectId);
+      if (subjectId) {
+        const grounded = assessGroundedScenarioImpact({
+          scenarioId: input.scenario.scenarioId,
+          assumptions: [assumption],
+        });
+        if (grounded.affectedTargets.length > 0) {
+          modeledSubjects.push(subjectId);
+          for (const target of grounded.affectedTargets) {
+            evidenceRefs.push(...target.evidenceRefs);
+            impacts.push(
+              Object.freeze({
+                subjectId,
+                metricKey: target.targetId,
+                direction: target.direction,
+                confidence: target.confidence,
+                evidenceRefs: target.evidenceRefs,
+              }),
+            );
+          }
+          if (grounded.uncertainty) {
+            uncertainties.push(
+              Object.freeze({
+                kind: "magnitude-unmodeled",
+                description: grounded.uncertainty,
+                evidenceRefs: grounded.evidenceRefs,
+              }),
+            );
+          }
+          continue;
+        }
+        unsupportedSubjects.push(subjectId);
+      }
       continue;
     }
     modeledSubjects.push(subjectId);
@@ -342,6 +453,12 @@ export function evaluateNexoraExecutiveScenario(
       }),
     );
   }
+
+  const groundedImpact = assessGroundedScenarioImpact({
+    scenarioId: input.scenario.scenarioId,
+    interventions: input.scenario.interventions,
+    assumptions: input.scenario.assumptions,
+  });
 
   if (
     unsupportedSubjects.length > 0 &&
@@ -368,6 +485,7 @@ export function evaluateNexoraExecutiveScenario(
         ]),
         evidenceRefs: Object.freeze([]),
         horizon: input.scenario.horizon,
+        groundedImpact,
       }),
       status: "unsupported",
       clarificationPrompt: null,
@@ -403,6 +521,7 @@ export function evaluateNexoraExecutiveScenario(
         ]),
         evidenceRefs: Object.freeze([]),
         horizon: input.scenario.horizon,
+        groundedImpact,
       }),
       status: "insufficient-data",
       clarificationPrompt: null,
@@ -457,6 +576,7 @@ export function evaluateNexoraExecutiveScenario(
         ),
       ),
       horizon: input.scenario.horizon,
+      groundedImpact,
     }),
     status,
     clarificationPrompt: null,

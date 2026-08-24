@@ -22,17 +22,20 @@ export const executionOutcomeLearningIntelligenceVersion = "1.0.0" as const;
 export const executionOutcomeLearningIntelligenceNamespace = "nexora.executive-intelligence.execution-outcome-learning" as const;
 
 export const EXECUTION_OUTCOME_LEARNING_BOUNDARY = Object.freeze({
-  role: "outcome-comparison-and-learning-eligibility" as const,
+  role: "historical-outcome-learning-adapter" as const,
   decisionAuthority: "CC:10R/CanonicalDecisionRuntime" as const,
   executionAuthority: "CC:11/CanonicalExecution" as const,
   operationalObservationAuthority: "CC:12/ExecutionFollowUp" as const,
   businessObservationAuthority: "RDI + P0:1/Data Reality" as const,
   comparisonAuthority: "EI:6/OutcomeEvaluation" as const,
+  liveOutcomeEvaluationAuthority: "CORE-OUT:1/LiveOutcomeIntelligence" as const,
+  learningAuthority: "CORE-OUT:2/GroundedLearningIntelligence" as const,
   durableMemoryAuthority: "APP-4/ExecutiveMemoryStorageEngine" as const,
   ownsDecisionTruth: false as const,
   ownsExecutionTruth: false as const,
   ownsRealityTruth: false as const,
   ownsDurableMemory: false as const,
+  ownsLearningInterpretation: false as const,
   infersCausality: false as const,
   rewritesDecisionTimeContext: false as const,
   executionCompletionMeansOutcomeSuccess: false as const,
@@ -44,7 +47,10 @@ export const executionOutcomeLearningCapabilityMap = deepFreeze([
   { concept: "execution", authority: "CC:11", status: "CANONICAL", role: "execution identity and lifecycle" },
   { concept: "execution-observation", authority: "CC:12", status: "CANONICAL", role: "immutable operational follow-up; never business outcome proof" },
   { concept: "actual-business-outcome", authority: "RDI + Data Reality", status: "CANONICAL", role: "validated KPI observation and provenance" },
-  { concept: "outcome-comparison", authority: "EI:6", status: "CANONICAL", role: "versioned expected-versus-actual evaluation" },
+  { concept: "outcome-comparison", authority: "EI:6", status: "HISTORICAL", role: "certified EI:6 expected-versus-actual adapter; live evaluation is CORE-OUT:1" },
+  { concept: "live-outcome-evaluation", authority: "CORE-OUT:1", status: "CANONICAL", role: "expected-versus-actual evaluation" },
+  { concept: "learning-interpretation", authority: "CORE-OUT:2", status: "CANONICAL", role: "grounded Learning interpretation and promotion eligibility" },
+  { concept: "ei6-learning-adapter", authority: "EI:6", status: "HISTORICAL", role: "certified EI:6 loop adapter; not parallel Learning authority" },
   { concept: "decision-memory-view", authority: "STAGE-PROD:5", status: "PRESENTATION_ONLY", role: "session projection; no durable memory authority" },
   { concept: "durable-learning", authority: "APP-4", status: "CANONICAL", role: "record construction, persistence, lifecycle, retrieval" },
 ] as const);

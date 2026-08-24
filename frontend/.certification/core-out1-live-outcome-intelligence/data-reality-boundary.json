@@ -1,0 +1,11 @@
+{
+  "currentKpiEqualsOutcome": false,
+  "kpiBecomesOutcomeOnlyIf": [
+    "linked subject",
+    "measurement meaning",
+    "observation period",
+    "explicit outcomeLinked flag",
+    "baseline when comparison depends on change"
+  ],
+  "livePathMarksKpiAsOutcome": false
+}

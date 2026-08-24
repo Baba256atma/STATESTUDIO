@@ -1,0 +1,13 @@
+{
+  "utterance": "what is DEMAND SURGE SCENARIO ?",
+  "previousIntent": "unknown",
+  "finalIntent": "explain-scenario",
+  "operation": "describe",
+  "authority": "CC:9 describe using existing presentation fixture fields",
+  "canonicalScenarioId": "ctx-scenario-demand",
+  "canonicalName": "Demand Surge",
+  "fieldsUsed": ["summary", "relationships"],
+  "notUsed": ["Investigate", "needs attention", "recommendation-first"],
+  "epistemic": "scenario projection, not an observed outcome",
+  "doesNotLabelReality": true
+}

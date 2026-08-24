@@ -1,0 +1,7 @@
+{
+  "P": "PASS — Did the decision work? live answer is pending Actual; no causal overclaim",
+  "Q": "PASS — Why did this happen? uses CORE-INT:3 presentProvenAnswer + unestablished attribution",
+  "whatHappened": "What happened? → whatHappened",
+  "historical": "Do we have similar historical learning? → historicalLearning",
+  "confidenceAfterOutcome": "How sure are we? after outcome/learning uses CORE-OUT:2 evidence strength"
+}

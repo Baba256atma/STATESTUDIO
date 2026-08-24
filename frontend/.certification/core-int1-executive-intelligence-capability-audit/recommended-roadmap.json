@@ -1,0 +1,92 @@
+{
+  "identity": "CORE-INT:1/RecommendedRoadmap",
+  "doNotImplementNow": true,
+  "actualDependencyGraph": {
+    "description": "Live /executive does not implement the conceptual stack. Observed graph is fan-in to EXI from fixtures and presentation authorities.",
+    "nodes": [
+      "MVP Stage/object/relationship fixtures",
+      "Advisor narrative (UX:3)",
+      "NBA / Decision Brief",
+      "CC:8 recommend path",
+      "Data Reality (optional live KPIs; not EXI cause/constraint/trade-off writer)",
+      "EXI:1 composer",
+      "EXI:2 cause/constraint overlay",
+      "EXI:3 summary comparison overlay"
+    ],
+    "edges": [
+      "fixtures → Stage/Advisor",
+      "Advisor/NBA/Brief/fixtures → EXI:1",
+      "fixtures → EXI:2",
+      "fixtures → EXI:3",
+      "EXI → Advisor UI + Conversation",
+      "EI:1–EI:6 ↛ /executive"
+    ]
+  },
+  "targetDependencyGraph": {
+    "description": "Reuse EI:1–EI:6. Do not spawn five new engines. Shared epistemic contract first.",
+    "stack": [
+      "EI:3 ExecutiveClaim + evidence/provenance (epistemic foundation)",
+      "EI:3 EvidenceBoundedRelationship + ExecutiveConstraintReference on the same evidence graph",
+      "One priority authority (EI:4 ExplainablePriority), distinct from PM/Stage attention",
+      "EI:4 ScenarioTradeoff live, then EXI presents it",
+      "EI:5 recommendation synthesis after trade-off/priority, still not a Decision",
+      "EI:6/APP-4 learning feeds future confidence/priority only after outcome comparison exists"
+    ]
+  },
+  "lifecyclePlacement": {
+    "actual": {
+      "Uncertainty": "Advisor/EXI copy throughout; not a Core object",
+      "Causal": "EXI:2 at Problem/subject focus from relationship fixtures",
+      "Constraint": "EXI:2 at Problem/subject from relation kinds",
+      "Priority": "Stage attention + Queue; not Decision/Problem ranking",
+      "Trade-off": "EXI:3 at Scenario presentation from summaries"
+    },
+    "recommended": {
+      "Uncertainty": "throughout Reality→Issue→Scenario→Recommendation→Decision as one claim/confidence contract",
+      "Causal": "Reality / Problem (EI:3 relationships)",
+      "Constraint": "Problem / Scenario / Execution (EI:3 refs + explicit binding field when evidenced)",
+      "Priority": "Attention stays PM/Stage; Priority is Issue/Decision preparation (EI:4)",
+      "Trade-off": "Scenario / Decision preparation (EI:4 live, EXI presents)"
+    }
+  },
+  "minimumPhasesAfterCoreInt1": 4,
+  "phases": [
+    {
+      "id": "CORE-INT:2",
+      "name": "Live epistemic & evidence contract",
+      "whyFirst": "Every later capability currently invents confidence/epistemic state. EI:3 already has FACT|ASSUMPTION|PREDICTION|UNKNOWN + SemanticConfidence. Formalize as the shared runtime contract and read it on /executive without adding a classifier or LLM.",
+      "reuse": ["EI:3 createExecutiveClaim", "resolveSemanticConfidence", "Data Reality evidence refs"],
+      "notInScope": ["causal ranking", "EI:4 wiring", "EXI:4", "LLM"]
+    },
+    {
+      "id": "CORE-INT:3",
+      "name": "Recorded causal + constraint graph (same evidence)",
+      "why": "CI-2 and CI-3 share edges. Promote EI:3 relationship/constraint refs as the Core graph. Keep infersCausality false. Binding constraint only as an explicit evidenced field, not 'most severe'. No relief engine yet unless already recorded.",
+      "reuse": ["EI:3 EvidenceBoundedRelationship", "ExecutiveConstraintReference", "existing relation kinds"],
+      "notInScope": ["invented ranking", "quantitative economics"]
+    },
+    {
+      "id": "CORE-INT:4",
+      "name": "Single priority authority, attention remaining separate",
+      "why": "Live attention (fixtures/Queue) collides with unused EI:4 priority. Make ExplainablePriority the only comparative 'address B first' authority when factors exist; keep PM attention as notice.",
+      "reuse": ["EI:4 resolveExplainablePriority", "PriorityFactor dimensions already in code"],
+      "notInScope": ["opaque scores (numericalScore must stay null unless a real model is added later)"]
+    },
+    {
+      "id": "CORE-INT:5",
+      "name": "EI:4 trade-off runtime binding",
+      "why": "EI:4 already implements qualitative trade-offs. Wire the missing reader after epistemic/graph/priority exist so EXI:4 can present Core truth instead of summary extraction. Still not EXI:4 in CORE-INT:1.",
+      "reuse": ["createScenarioPriorityTradeoffTrace", "projectScenarioComparisonForAdvisor"],
+      "notInScope": ["quantitative economics unless evidence exists", "starting EXI:4 in the same breath as inventing economics"]
+    }
+  ],
+  "deferred": [
+    "Quantitative trade-off economics (cost/time/risk delta/opportunity cost) — ABSENT; P2/P3",
+    "Causal ranking by evidence — ABSENT; do not fake via count===1",
+    "Constraint relief prediction — ABSENT",
+    "CSF / live Strategy as priority input — CSF ABSENT, Strategy PARTIAL",
+    "APP-4 → future priority/confidence — loop MISSING",
+    "Five separate mega-engines — rejected as over-architecture"
+  ],
+  "coreInt2ExactRecommendation": "Implement CORE-INT:2 as a live shared epistemic/evidence contract reuse of EI:3 (claim type + SemanticConfidence + provenance), consumed by /executive readers and EXI as a reader-only. Do not classify free-text with an LLM. Do not wire EI:4. Do not start EXI:4. Do not change Stage topology. Stop EXI from being the epistemic authority where Core fields exist."
+}

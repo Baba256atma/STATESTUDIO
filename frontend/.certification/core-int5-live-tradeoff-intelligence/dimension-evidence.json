@@ -1,0 +1,34 @@
+{
+  "identity": "CORE-INT:5/DimensionEvidence",
+  "options": {
+    "ctx-scenario-pricing": {
+      "gain": "Expected benefit: margin recovery. PREDICTION",
+      "sacrifice": "missing",
+      "risk": "missing",
+      "constraint": "constrained capacity. ASSUMPTION",
+      "assumption": "evaluated under constrained capacity. ASSUMPTION",
+      "cost": "missing",
+      "time": "missing"
+    },
+    "ctx-scenario-demand": {
+      "gain": "Expected benefit: volume upside. PREDICTION",
+      "sacrifice": "missing",
+      "risk": "Projected risk: delivery risk. PREDICTION",
+      "constraint": "missing",
+      "assumption": "missing",
+      "cost": "missing",
+      "time": "missing"
+    },
+    "ctx-scenario-capacity": {
+      "gain": "Expected benefit: relieve the recorded Capacity Gap. PREDICTION",
+      "sacrifice": "missing",
+      "risk": "missing",
+      "constraint": "Capacity Gap. ASSUMPTION",
+      "assumption": "missing",
+      "cost": "missing",
+      "time": "missing"
+    }
+  },
+  "numericValues": null,
+  "numericalScore": null
+}

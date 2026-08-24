@@ -1,0 +1,10 @@
+{
+  "phase": "NEX-MVP-FINAL:6.1",
+  "status": "NEX-MVP-FINAL:6.1-ZERO-FAILURE-CERTIFIED",
+  "identity": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding",
+  "unit": "pass",
+  "typecheck": "pass",
+  "build": "pass",
+  "lint": "pass",
+  "live": "pass"
+}

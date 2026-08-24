@@ -1,0 +1,24 @@
+{
+  "phase": "MVP-OUT:1-FIX5",
+  "identity": "MVP-OUT:1-FIX5/ExplainIntentSemanticFidelity",
+  "authorities": {
+    "cc1": "intent — explain vs recommend vs prioritize vs explore-scenario vs execution-status",
+    "cc7": "conversational context / currentScenario",
+    "cc9": "Scenario conversation / describe projection",
+    "scenarioIntelligence": "Scenario modeling — unchanged",
+    "coreInt2": "epistemic / uncertainty language",
+    "coreInt3": "causal / constraint — no invented cause",
+    "coreInt4": "priority — should we prioritize",
+    "coreInt5": "trade-off — what are the trade-offs",
+    "coreOut1a": "outcome observation — not written",
+    "coreOut1": "outcome evaluation — not run by explain",
+    "coreOut2": "learning — not generated",
+    "exi": "presentation; does not intercept explain <two-word name>",
+    "app4": "not promoted",
+    "decisionRuntime": "unchanged",
+    "executionRuntime": "unchanged",
+    "recommendation": "CC:8 remains recommendation authority",
+    "stage": "presentation only — Delivery focus not rewritten by describe"
+  },
+  "newAuthority": false
+}

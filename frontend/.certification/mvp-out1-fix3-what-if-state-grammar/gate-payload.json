@@ -1,0 +1,10 @@
+{
+  "phase": "MVP-OUT:1-FIX3",
+  "outDir": ".certification/mvp-out1-fix3-what-if-state-grammar",
+  "tests": { "fail": 0, "pass": 1788, "total": 1788 },
+  "typecheck": { "errors": 0, "exitCode": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0, "warnings": 411, "exitCode": 0 },
+  "runtimeSmoke": { "ok": true, "httpStatus": 200 },
+  "console": { "uncaught": 0, "hydration": 0, "duplicateKeys": 0 }
+}

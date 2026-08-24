@@ -1,0 +1,15 @@
+{
+  "A_entrance": "YES",
+  "B_identity": "YES",
+  "C_goal": "YES",
+  "D_reality": "YES",
+  "E_issue": "YES",
+  "F_scenario": "YES",
+  "G_recommendation": "YES",
+  "H_decision": "YES",
+  "I_execution": "YES",
+  "J_outcome": "YES",
+  "K_learning": "YES",
+  "L_nextCycle": "YES",
+  "M_continuity": "YES"
+}

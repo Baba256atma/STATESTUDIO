@@ -1,0 +1,11 @@
+{
+  "ux3": "professional-advisor",
+  "stage": "nexora-3d-executive-stage",
+  "decisionWriter": "CC:10R/CanonicalDecisionRuntime",
+  "executionWriter": "CC:11",
+  "outcome": "CORE-OUT:1 via NEX-EXP:9",
+  "learning": "EI:6 / CORE-OUT:2 / APP-4 via NEX-EXP:10",
+  "noParallelAdvisor": true,
+  "noParallelStage": true,
+  "noNexExp11": true
+}

@@ -1,0 +1,12 @@
+{
+  "identity": "MO-INT:1/ManagerObjectExecutiveExperienceIntegration",
+  "edges": {
+    "MO1_MO6": "CONNECTED",
+    "CC5_composer": "CONNECTED",
+    "UX3_advisor": "READER",
+    "STAGE2D": "READER",
+    "decision_runtime": "NOT_COMMITTED",
+    "execution_runtime": "NOT_STARTED",
+    "llm": "NOT_REQUIRED"
+  }
+}

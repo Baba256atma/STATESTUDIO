@@ -1,0 +1,9 @@
+{
+  "authority": "CORE-INT:2",
+  "supportStates": ["supported", "partial", "hypothetical-model", "unsupported", "conflicting"],
+  "fix4DeliveryDelay": "partial",
+  "fix4InventoryIncrease": "unsupported",
+  "numericPercentPresented": false,
+  "internalNumericConfidence": 0,
+  "unknownPreserved": true
+}

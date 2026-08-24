@@ -119,7 +119,7 @@ test("identity + safety boundary", () => {
 test("A — Stable Object → no NBA", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -151,7 +151,7 @@ test("B — Critical Capacity + existing Problem", () => {
     ),
   });
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -172,7 +172,7 @@ test("B — Critical Capacity + existing Problem", () => {
 test("C — Problem + existing Scenario outranks create", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -221,7 +221,7 @@ test("D — Problem without Scenario: create not exposed (no workflow)", () => {
     ]),
   });
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -333,7 +333,7 @@ test("E — Scenario comparison routes to collection", () => {
 test("F — Scenario → Review Decision", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -361,7 +361,7 @@ test("G — Create Decision not exposed without workflow", () => {
 test("H — Decision under review does not auto-approve", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -386,7 +386,7 @@ test("H — Decision under review does not auto-approve", () => {
 test("I — Approved Decision + Execution → Review Execution", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -570,7 +570,7 @@ test("M — Deduplication", () => {
 test("N — Action limit 1 + <=3", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -630,7 +630,7 @@ test("P–R — Action click focus + recompute + manual override", () => {
     ),
   });
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -662,7 +662,7 @@ test("P–R — Action click focus + recompute + manual override", () => {
 test("S — Collection mode hides NBA", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -699,7 +699,7 @@ test("T–V — Back / Forward / Escape", () => {
     ),
   });
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -760,7 +760,7 @@ test("W — Unrelated Watch does not become NBA", () => {
 test("X — Visible actions are executable", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -787,7 +787,7 @@ test("Y — Executive safety: no auto approve/start/delete", () => {
   );
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -807,7 +807,7 @@ test("Y — Executive safety: no auto approve/start/delete", () => {
 test("Z — Overview/collection camera/z unaffected; Advisor sync", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });

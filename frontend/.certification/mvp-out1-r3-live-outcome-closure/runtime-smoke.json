@@ -1,0 +1,76 @@
+{
+  "identity": "NEXORA-ZERO-FAILURE-GATE/live-executive-smoke",
+  "url": "http://localhost:3000/executive",
+  "httpStatus": 200,
+  "hydrated": true,
+  "webglCanvas": true,
+  "stagePresent": true,
+  "cameraMode": "fixed-2d",
+  "topologyZ": "0",
+  "focusedTargetZ": "none",
+  "queuePresent": true,
+  "advisorPresent": true,
+  "conversationPresent": true,
+  "whatIfLive": {
+    "intentKind": "explore-scenario",
+    "commandKind": "evaluate-scenario",
+    "primarySubject": "obj-inventory",
+    "lastNexoraText": "NexoraI understand that you want to explore increasing Inventory, but I don't currently have a supported impact model for that change.",
+    "genericFallback": false,
+    "inventoryUnsupportedHonest": true,
+    "inventoryInventedImpact": false
+  },
+  "stateChangeLive": {
+    "intentKind": "explore-scenario",
+    "commandKind": "evaluate-scenario",
+    "primarySubject": "obj-delivery",
+    "lastNexoraText": "NexoraA severe Delivery delay is projected to put pressure on Delivery On-time performance. The direction is supported by the current Scenario model, but Nexora does not have enough evidence to quantify the size of the impact. This is a projection, not an observed Outcome.",
+    "focusedOnDelivery": true,
+    "genericFallback": false,
+    "severeDelay": true,
+    "groundedProjection": true,
+    "inventedMagnitude": false
+  },
+  "deicticLateLive": {
+    "intentKind": "explore-scenario",
+    "primarySubject": "obj-delivery",
+    "lastNexoraText": "NexoraA severe Delivery delay is projected to put pressure on Delivery On-time performance. The direction is supported by the current Scenario model, but Nexora does not have enough evidence to quantify the size of the impact. This is a projection, not an observed Outcome.",
+    "genericFallback": false
+  },
+  "impactFollowupLive": {
+    "texts": [
+      "NexoraSupported affected dimensions: On-time. Downstream effects without a canonical binding are omitted. This remains a Scenario projection, not Reality or Actual Outcome. No canonical Risk impact is attached.",
+      "NexoraSupported KPI pressure: On-time (decrease). Magnitude is not quantified.",
+      "NexoraNo canonical Risk impact is supported for this Scenario intervention. That is not a proven causal finding.",
+      "NexoraImpact direction is supported by the subject's canonical KPI binding. Magnitude, downstream Customer/Revenue effects, and causal proof are not in this model. That confidence applies to the scenario projection, not to Reality, Actual Outcome, or causal proof.",
+      "NexoraThe current Scenario model binds this intervention to On-time via canonical subject kpi. This is a modeled relationship; it is not proof that a future observed change was caused by this intervention."
+    ],
+    "genericFallback": false,
+    "affectedHasKpi": true,
+    "kpiMentionsOnTime": true,
+    "risksHonest": true,
+    "confidenceProjection": true,
+    "whyNotCausal": true
+  },
+  "scenarioFollowupLive": {
+    "intentKind": "evidence",
+    "commandKind": "request-prioritization",
+    "primarySubject": "ctx-scenario-demand",
+    "followupNexoraTexts": [
+      "NexoraScenario: Demand Surge. What it represents: Demand Surge explores volume upside with delivery risk. Related: Delivery. This is a scenario projection, not an observed outcome.",
+      "NexoraA Delivery delay within Demand Surge is projected to put pressure on Delivery On-time performance. The direction is supported by the current Scenario model, but Nexora does not have enough evidence to quantify the size of the impact. This is a projection, not an observed Outcome.",
+      "NexoraNo canonical Risk impact is supported for this Scenario intervention. That is not a proven causal finding.",
+      "NexoraImpact direction is supported by the subject's canonical KPI binding. Magnitude, downstream Customer/Revenue effects, and causal proof are not in this model. That confidence applies to the scenario projection, not to Reality, Actual Outcome, or causal proof."
+    ],
+    "genericFallback": false,
+    "firstTurnExplanation": true,
+    "firstTurnInvestigate": false,
+    "secondTurnGroundedProjection": true,
+    "secondTurnDemandSurge": true,
+    "fourthTurnScenarioConfidence": true
+  },
+  "clickToCenterAttempted": true,
+  "backForwardEscapeAttempted": true,
+  "smokeError": null,
+  "ok": true
+}

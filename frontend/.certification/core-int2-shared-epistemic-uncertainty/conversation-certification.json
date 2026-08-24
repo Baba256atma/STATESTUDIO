@@ -1,0 +1,26 @@
+{
+  "identity": "CORE-INT:2/ConversationCertification",
+  "sameContract": true,
+  "utterances": [
+    { "text": "Explain Capacity.", "key": "change" },
+    { "text": "Is that a fact?", "key": "factOrAssumption" },
+    { "text": "How sure are you?", "key": "confidence" },
+    { "text": "What evidence supports that?", "key": "evidenceFollowup" },
+    { "text": "What are you assuming?", "key": "whatAssuming" },
+    { "text": "What is predicted?", "key": "whatPredicted" },
+    { "text": "What don't we know?", "key": "whatUnknown" }
+  ],
+  "continuity": "previousUtterance is session-only; follow-ups stay on the same subject and claim role",
+  "stageMutation": false,
+  "decisionMutation": false,
+  "app4Write": false,
+  "managerTrustTest": {
+    "subject": "Capacity",
+    "observed": "PASS — Utilization FACT",
+    "assumed": "PASS — recorded contributor ASSUMPTION",
+    "predicted": "PASS — Capacity Expansion Plan PREDICTION",
+    "evidenceStrength": "PASS — SemanticConfidence mapped to Evidence limited / validated",
+    "unknown": "PASS — UNKNOWN explicit when evidence missing",
+    "result": "PASS"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "identity": "NEXORA-ZERO-FAILURE-GATE",
+  "phase": "NEX-EXP:2",
+  "certified": true,
+  "status": "NEX-EXP:2-ZERO-FAILURE-CERTIFIED",
+  "knownFailures": [],
+  "knownFailureCount": 0,
+  "gates": {
+    "typecheck": true,
+    "build": true,
+    "tests": true,
+    "lint": true,
+    "liveSmoke": true,
+    "console": true
+  }
+}

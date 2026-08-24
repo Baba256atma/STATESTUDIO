@@ -1,0 +1,30 @@
+{
+  "phase": "MVP-OUT:1-FIX1",
+  "outDir": ".certification/mvp-out1-fix1-what-if-conversation",
+  "tests": { "fail": 0, "pass": 1762, "total": 1762 },
+  "typecheck": { "errors": 0, "exitCode": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "errors": 0, "warnings": 410, "exitCode": 0 },
+  "runtimeSmoke": {
+    "identity": "NEXORA-ZERO-FAILURE-GATE/live-executive-smoke",
+    "url": "http://localhost:3000/executive",
+    "httpStatus": 200,
+    "hydrated": true,
+    "webglCanvas": true,
+    "stagePresent": true,
+    "cameraMode": "fixed-2d",
+    "topologyZ": "0",
+    "focusedTargetZ": "none",
+    "queuePresent": true,
+    "advisorPresent": true,
+    "conversationPresent": true,
+    "whatIfLive": {
+      "intentKind": "explore-scenario",
+      "commandKind": "evaluate-scenario",
+      "primarySubject": "obj-inventory",
+      "genericFallback": false
+    },
+    "ok": true
+  },
+  "console": { "uncaught": 0, "hydration": 0, "duplicateKeys": 0 }
+}

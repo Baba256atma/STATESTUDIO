@@ -16,7 +16,12 @@ import type { NexoraExecutiveRecommendationResult } from "./executiveRecommendat
 import type { NexoraExecutiveScenarioConversationResult } from "./executiveScenarioResolver.ts";
 import type { NexoraDecisionCommitmentResult } from "./executiveDecisionCommitmentResolver.ts";
 import type { NexoraConversationalAdvisorGrounding } from "./conversationalExperience.ts";
+import { answerNexoraExiUtterance } from "@/app/lib/nex-mvp/nexoraExecutiveIntelligenceExperience.ts";
 import type { NexoraPendingTurnResolution } from "./conversationalTurnExpectation.ts";
+import {
+  collectionEmptyCopy,
+  interpretExecutiveCollectionQuery,
+} from "@/app/lib/manager-object/nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 
 export function buildNexoraConversationalExperienceResponse(input: {
   readonly status: NexoraConversationalExperienceStatus;
@@ -59,19 +64,44 @@ export function buildNexoraConversationalExperienceResponse(input: {
     intent.targetHints.find((h) => h.role === "experience")?.raw ??
     intent.targetHints[0]?.raw;
 
+  const exiAnswer = answerNexoraExiUtterance(
+    advisorGrounding?.experienceAnswers,
+    input.utterance,
+  );
+
+  if (scenarioResult) {
+    if (scenarioResult.status === "clarification-required") {
+      return scenarioResult.clarificationPrompt ?? "For what time horizon?";
+    }
+    return scenarioResult.summary;
+  }
+
+  if (exiAnswer) {
+    return withPeriod(exiAnswer);
+  }
+
   if (intent.kind === "greet" || intent.kind === "help") {
     const attention =
       recommendationResult?.assessment.issues[0]?.summary ??
       recommendationResult?.assessment.constraints[0]?.summary ??
       null;
     if (intent.kind === "help") {
+      if (/\bnca(?::|\s*)?5\b/i.test(input.utterance) || /\bwhat is nca\b/i.test(input.utterance)) {
+        return "NCA is Nexora's conversation architecture. NCA:5 is the initiative layer: it can raise a material executive change without committing a decision or starting execution.";
+      }
+      if (/\b(?:canonical|resolver|runtime|nca|mo:|ei:)\b/i.test(input.utterance)) {
+        return "Those are internal Nexora architecture terms. In executive conversation I keep them in the background unless you ask about the architecture itself.";
+      }
       return attention
         ? `${managerSummary(attention)} You can ask what is happening, why it matters, what I recommend, or tell me what to focus on.`
         : "I can explain the current context, show available evidence, recommend a grounded next step, or focus the Stage on a subject.";
     }
-    return attention
-      ? `Hi. I’m ready. ${managerSummary(attention)} Would you like to review it?`
-      : "Hi. I’m ready. What would you like to review?";
+    const critical =
+      recommendationResult?.assessment.issues[0]?.severity === "critical";
+    if (critical && attention) {
+      return `Hi. I’m ready. ${managerSummary(attention)} Would you like to review it?`;
+    }
+    return "Hi. I’m ready.";
   }
 
   if (decisionCommitmentResult) {
@@ -85,13 +115,6 @@ export function buildNexoraConversationalExperienceResponse(input: {
       );
     }
     return decisionCommitmentResult.summary;
-  }
-
-  if (scenarioResult) {
-    if (scenarioResult.status === "clarification-required") {
-      return scenarioResult.clarificationPrompt ?? "For what time horizon?";
-    }
-    return scenarioResult.summary;
   }
 
   if (
@@ -185,7 +208,30 @@ export function buildNexoraConversationalExperienceResponse(input: {
       }
       return "Which item do you mean?";
 
-    case "not-found":
+    case "not-found": {
+      const collectionQuery = interpretExecutiveCollectionQuery(input.utterance);
+      if (collectionQuery && !collectionQuery.ambiguousIssueNoun) {
+        return collectionEmptyCopy(collectionQuery);
+      }
+      if (
+        intent.kind === "show-problems" ||
+        intent.kind === "show-goals" ||
+        intent.kind === "show-scenarios" ||
+        intent.kind === "show-decisions" ||
+        intent.kind === "show-execution"
+      ) {
+        const noun =
+          intent.kind === "show-problems"
+            ? "Problems"
+            : intent.kind === "show-goals"
+              ? "Goals"
+              : intent.kind === "show-scenarios"
+                ? "Scenarios"
+                : intent.kind === "show-decisions"
+                  ? "Decisions"
+                  : "Executions";
+        return `I don't see any ${noun} in the current context.`;
+      }
       if (
         intent.kind === "prepare-context" ||
         intent.kind === "switch-workspace"
@@ -193,8 +239,9 @@ export function buildNexoraConversationalExperienceResponse(input: {
         return "That executive context isn't available yet.";
       }
       return hintRaw
-        ? `I couldn't find “${titleCase(hintRaw)}” in the current Nexora context.`
-        : "I couldn't find that in the current Nexora context.";
+        ? `I don't have a clear match for “${titleCase(hintRaw)}” in the current executive context.`
+        : "I don't have a clear match in the current executive context.";
+    }
 
     case "unsupported":
       if (intent.kind === "unknown" || command == null) {

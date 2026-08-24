@@ -13,8 +13,12 @@ import { ExecutiveCockpit } from "./ExecutiveCockpit";
  */
 export function ExecutiveShell({
   datasetScenario = "baseline",
+  entranceRequested = false,
+  resetEntrance = false,
 }: {
   readonly datasetScenario?: NexoraMVPDataRealityDatasetScenario;
+  readonly entranceRequested?: boolean;
+  readonly resetEntrance?: boolean;
 }) {
   return (
     <div
@@ -28,7 +32,11 @@ export function ExecutiveShell({
         height: "100%",
       }}
     >
-      <ExecutiveCockpit datasetScenario={datasetScenario} />
+      <ExecutiveCockpit
+        datasetScenario={datasetScenario}
+        entranceRequested={entranceRequested}
+        resetEntrance={resetEntrance}
+      />
     </div>
   );
 }

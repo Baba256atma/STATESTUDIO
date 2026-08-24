@@ -1,0 +1,9 @@
+{
+  "O_sameGenericArchitecture": true,
+  "P_increaseUnsupported": true,
+  "live": {
+    "showInventory": "Focused on Inventory.",
+    "whatIfInventoryIncreases": "I understand that you want to explore increasing Inventory, but I don't currently have a supported impact model for that change."
+  },
+  "notInferred": ["availability", "holding cost", "cash", "revenue"]
+}

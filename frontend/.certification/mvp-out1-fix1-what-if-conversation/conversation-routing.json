@@ -1,0 +1,16 @@
+{
+  "liveUtterance": "what happend if increase inventory",
+  "normalization": "what happened if increase inventory",
+  "detectedIntent": "explore-scenario",
+  "scenarioPayload": {
+    "operation": "intervention",
+    "actionKind": "increase-by",
+    "value": null,
+    "unit": null
+  },
+  "resolvedSubjectId": "obj-inventory",
+  "commandKind": "evaluate-scenario",
+  "scenarioAuthority": "resolveNexoraExecutiveScenarioConversation (CC:9)",
+  "conversationAuthority": "interpretation and presentation only",
+  "exiAuthority": "does not own scenario simulation; exact what happened remains outcome follow-up"
+}

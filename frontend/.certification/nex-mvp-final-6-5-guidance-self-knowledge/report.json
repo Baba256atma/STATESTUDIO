@@ -1,0 +1,25 @@
+{
+  "phase": "NEX-MVP-FINAL:6.5",
+  "identity": "NEX-MVP-FINAL:6.5/GuidanceSelfKnowledge",
+  "version": "1.0.0",
+  "namespace": "nexora.mvp.final65.guidance-self-knowledge",
+  "verdict": "NEX-MVP-FINAL:6.5 = CERTIFIED — GUIDANCE & SELF-KNOWLEDGE",
+  "zeroFailure": "NEX-MVP-FINAL:6.5-ZERO-FAILURE-CERTIFIED",
+  "dialogues": 111,
+  "managerTurns": 264,
+  "typecheck": "pass",
+  "build": "pass",
+  "lint": "pass",
+  "unitTests": "pass",
+  "liveBrowser": "pass",
+  "final66Started": false,
+  "regressions": {
+    "FINAL:6.1": "pass",
+    "FINAL:6.2": "pass",
+    "FINAL:6.3": "pass",
+    "FINAL:6.4": "pass",
+    "FINAL:5": "pass",
+    "CC:5": "pass",
+    "MO:6": "pass"
+  }
+}

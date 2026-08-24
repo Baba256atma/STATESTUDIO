@@ -827,7 +827,7 @@ export function normalizeRuntimeExecutiveActionIntent(
 export function normalizeRuntimeExecutiveActionContext(
   input: RuntimeExecutiveActionContext,
 ): RuntimeExecutiveActionContext {
-  if (!isPlainObject(input)) {
+  if (input === null || typeof input !== "object" || Array.isArray(input)) {
     throw new TypeError("context must be a plain object");
   }
   const workspaceId = normalizeOptionalText(input.workspaceId, "workspaceId");

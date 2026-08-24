@@ -1,0 +1,29 @@
+{
+  "command": "npx tsx --test app/lib/executive-intelligence/*.test.ts app/lib/data-reality/*.test.ts app/lib/nex-mvp/*.test.ts app/lib/conversational-control/*.test.ts app/lib/executiveMemory/durableExecutiveMemory.test.ts app/lib/spatial-presentation/executiveStageQueueFoundation.test.ts app/lib/spatial-presentation/executiveStageQueueHydration.test.ts app/executive/nex-mvp/NexoraExecutiveShell.test.tsx app/executive/nex-mvp/stage/*.test.tsx",
+  "total": 1650,
+  "pass": 1650,
+  "fail": 0,
+  "skipped": 0,
+  "todo": 0,
+  "cancelled": 0,
+  "durationMs": 11345.459042,
+  "areas": {
+    "CORE-OUT:1": "PASS",
+    "CORE-OUT:1A": "PASS",
+    "CORE-OUT:2": "PASS",
+    "CORE-INT:2": "PASS",
+    "CORE-INT:3": "PASS",
+    "CORE-INT:4": "PASS",
+    "CORE-INT:5": "PASS",
+    "EI:1-EI:6": "PASS",
+    "RDI/DataReality": "PASS",
+    "CC:10/10R/11/12": "PASS",
+    "Decision": "PASS",
+    "Execution/NEX-MVP:8": "PASS",
+    "APP-4": "PASS",
+    "EXI": "PASS",
+    "Queue": "PASS",
+    "Stage": "PASS",
+    "FrozenMVP": "PASS"
+  }
+}

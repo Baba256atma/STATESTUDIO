@@ -107,6 +107,20 @@ test("CC:2 identity and architectural boundary", () => {
 
 // ─── Certification cases ────────────────────────────────────────────────────
 
+test('cert: natural "show me risk object" resolves canonical Risk, not Risk Object', () => {
+  const { intent, context } = resolveUtterance("show me risk object");
+  assert.equal(intent.kind, "focus");
+  assert.equal(context.resolutionStatus, "resolved");
+  assert.equal(context.primarySubject?.subjectId, "obj-risk");
+  assert.equal(context.primarySubject?.canonicalName, "Risk");
+});
+
+test('cert: interface filler does not collapse "show risk problem"', () => {
+  const { context } = resolveUtterance("show risk problem");
+  assert.notEqual(context.resolutionStatus, "resolved");
+  assert.notEqual(context.primarySubject?.subjectId, "obj-risk");
+});
+
 test('cert: "Focus on Capacity" → obj-capacity', () => {
   const { intent, context } = resolveUtterance("Focus on Capacity");
   assert.equal(intent.kind, "focus");
@@ -295,11 +309,12 @@ test("alias match: sales revenue → obj-revenue", () => {
 
 test("never synthesizes obj- + hint", () => {
   const { context } = resolveUtterance("Focus on Moon Department");
+  const primarySubjectId = context.primarySubject?.subjectId;
   assert.equal(context.primarySubject, null);
   assert.notEqual(
     // Would be the illegal synthesis pattern:
     "obj-moon department",
-    context.primarySubject?.subjectId,
+    primarySubjectId,
   );
 });
 

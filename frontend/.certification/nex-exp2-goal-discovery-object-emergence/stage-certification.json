@@ -1,0 +1,21 @@
+{
+  "beforeGoal": {
+    "center": "obj-executive-context",
+    "position": [0, 0, 0],
+    "objectCount": 1
+  },
+  "afterGoal": {
+    "center": "goal-executive-discovered",
+    "position": [0, 0, 0],
+    "related": "obj-executive-context",
+    "objectCount": 2
+  },
+  "fixedCamera": true,
+  "topologyZ": "0",
+  "noOverlap": true,
+  "validRelationship": "rel-executive-context-goal",
+  "noRogueCoordinateWriter": true,
+  "noUnrelatedObjects": true,
+  "goalSelectable": true,
+  "backForwardValid": true
+}

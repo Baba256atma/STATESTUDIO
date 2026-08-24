@@ -137,7 +137,7 @@ test("identity + boundary + honest persistence wording", () => {
 });
 
 test("A — First Baseline: establish, zero changes, no Queue entry", () => {
-  const scope = buildExecutiveChangeScopeKey({ workspace: "company" });
+  const scope = buildExecutiveChangeScopeKey({ workspace: "overview" });
   const current = snap(scope, [
     obj({
       objectId: "obj-capacity",
@@ -436,9 +436,9 @@ test("J — Queue count = unique changed objects", () => {
 
 test("K–N — Change Collection click / member focus / Back / Escape", () => {
   const catalog = defaultCatalog();
-  const scope = buildExecutiveChangeScopeKey({ workspace: "company" });
+  const scope = buildExecutiveChangeScopeKey({ workspace: "overview" });
   const baseline = buildNexoraMVPExecutiveChangeSnapshot(catalog, {
-    workspace: "company",
+    workspace: "overview",
   });
   ensureExecutiveChangeBaseline({ currentSnapshot: baseline });
 
@@ -470,7 +470,7 @@ test("K–N — Change Collection click / member focus / Back / Escape", () => {
   assert.ok(inspection!.comparison.changedObjectIds.includes("obj-capacity"));
 
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -490,13 +490,13 @@ test("K–N — Change Collection click / member focus / Back / Escape", () => {
   });
   resetExecutiveChangeBaselineStoreForTests();
   const baseSnap = buildNexoraMVPExecutiveChangeSnapshot(catalog, {
-    workspace: "company",
+    workspace: "overview",
   });
   ensureExecutiveChangeBaseline({ currentSnapshot: baseSnap });
   acknowledgeExecutiveChanges({ currentSnapshot: baseSnap });
 
   state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -523,7 +523,7 @@ test("K–N — Change Collection click / member focus / Back / Escape", () => {
       "Overview with Recent Changes",
       deriveNexoraMVPStageInteractionPresentation(
         createInitialNexoraMVPObjectInteractionState({
-          workspace: "company",
+          workspace: "overview",
           presentationState: "minimum",
           environmentIntent: "neutral",
         }),
@@ -593,7 +593,7 @@ test("K–N — Change Collection click / member focus / Back / Escape", () => {
 test("O — Collection switching Changes ↔ Problems", () => {
   const catalog = defaultCatalog();
   const baseSnap = buildNexoraMVPExecutiveChangeSnapshot(catalog, {
-    workspace: "company",
+    workspace: "overview",
   });
   acknowledgeExecutiveChanges({ currentSnapshot: baseSnap });
   const alteredCatalog: NexoraMVPObjectInteractionCatalog = Object.freeze({
@@ -609,7 +609,7 @@ test("O — Collection switching Changes ↔ Problems", () => {
     ),
   });
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -633,7 +633,7 @@ test("O — Collection switching Changes ↔ Problems", () => {
 test("P — Watch duplicate suppressed in change collection", () => {
   const catalog = defaultCatalog();
   const baseSnap = buildNexoraMVPExecutiveChangeSnapshot(catalog, {
-    workspace: "company",
+    workspace: "overview",
   });
   acknowledgeExecutiveChanges({ currentSnapshot: baseSnap });
   const alteredCatalog: NexoraMVPObjectInteractionCatalog = Object.freeze({
@@ -649,7 +649,7 @@ test("P — Watch duplicate suppressed in change collection", () => {
     ),
   });
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -830,7 +830,7 @@ test("U — Acknowledgement advances baseline", () => {
 test("V — Direct click precedence after change focus", () => {
   const catalog = defaultCatalog();
   const baseSnap = buildNexoraMVPExecutiveChangeSnapshot(catalog, {
-    workspace: "company",
+    workspace: "overview",
   });
   acknowledgeExecutiveChanges({ currentSnapshot: baseSnap });
   const alteredCatalog: NexoraMVPObjectInteractionCatalog = Object.freeze({
@@ -852,7 +852,7 @@ test("V — Direct click precedence after change focus", () => {
     ),
   });
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -870,7 +870,7 @@ test("V — Direct click precedence after change focus", () => {
 test("W — topologyZ = 0 for change collection members", () => {
   const catalog = defaultCatalog();
   const baseSnap = buildNexoraMVPExecutiveChangeSnapshot(catalog, {
-    workspace: "company",
+    workspace: "overview",
   });
   acknowledgeExecutiveChanges({ currentSnapshot: baseSnap });
   const alteredCatalog: NexoraMVPObjectInteractionCatalog = Object.freeze({
@@ -886,7 +886,7 @@ test("W — topologyZ = 0 for change collection members", () => {
     ),
   });
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -904,7 +904,7 @@ test("W — topologyZ = 0 for change collection members", () => {
 test("Advisor collection context + mixed captures", () => {
   const catalog = defaultCatalog();
   const baseSnap = buildNexoraMVPExecutiveChangeSnapshot(catalog, {
-    workspace: "company",
+    workspace: "overview",
   });
   acknowledgeExecutiveChanges({ currentSnapshot: baseSnap });
   const alteredCatalog: NexoraMVPObjectInteractionCatalog = Object.freeze({
@@ -942,13 +942,13 @@ test("Advisor collection context + mixed captures", () => {
   });
   // Seed richer comparison
   const previous = buildNexoraMVPExecutiveChangeSnapshot(catalog, {
-    workspace: "company",
+    workspace: "overview",
   });
   resetExecutiveChangeBaselineStoreForTests();
   acknowledgeExecutiveChanges({ currentSnapshot: previous });
 
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -984,12 +984,12 @@ test("Advisor collection context + mixed captures", () => {
 test("acknowledgeNexoraMVPExecutiveChanges API", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
   const snap0 = buildNexoraMVPExecutiveChangeSnapshot(catalog, {
-    workspace: "company",
+    workspace: "overview",
   });
   acknowledgeExecutiveChanges({ currentSnapshot: snap0 });
   state = acknowledgeNexoraMVPExecutiveChanges(state, catalog);

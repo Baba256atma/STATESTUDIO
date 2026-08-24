@@ -52,6 +52,8 @@ export type NexoraScenarioAssumption = {
   readonly operator: NexoraScenarioAssumptionOperator;
   readonly value?: number | string;
   readonly unit?: string;
+  readonly state?: string;
+  readonly intensity?: string;
   readonly evidenceSource?: string;
 };
 
@@ -60,6 +62,8 @@ export type NexoraScenarioIntervention = {
   readonly actionKind: string;
   readonly value?: number | string;
   readonly unit?: string;
+  readonly state?: string;
+  readonly intensity?: string;
 };
 
 export type NexoraExecutiveScenario = {

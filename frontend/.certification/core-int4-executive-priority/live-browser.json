@@ -1,0 +1,17 @@
+{
+  "phase": "CORE-INT:4",
+  "identity": "CORE-INT:4/ExecutivePriorityIntelligence",
+  "completedAt": "2026-08-18T23:46:35.411Z",
+  "http": 200,
+  "coreInt4Present": true,
+  "attentionPresent": true,
+  "topPriorityShown": true,
+  "attentionVsPriority": true,
+  "rationaleGrounded": true,
+  "comparisonGrounded": true,
+  "secondHonest": true,
+  "insufficientHonest": true,
+  "conversationComplete": true,
+  "uncaught": 0,
+  "duplicateOrHydration": []
+}

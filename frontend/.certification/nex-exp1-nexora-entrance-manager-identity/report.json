@@ -1,0 +1,9 @@
+{
+  "phase": "NEX-EXP:1",
+  "identity": "NEX-EXP:1/NexoraEntranceManagerIdentityExperience",
+  "version": "1.0.0",
+  "verdict": "NEX-EXP:1 = CERTIFIED",
+  "zeroFailure": "NEX-EXP:1-ZERO-FAILURE-CERTIFIED",
+  "knownFailures": [],
+  "didNotStart": "NEX-EXP:2"
+}

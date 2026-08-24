@@ -1,0 +1,7 @@
+{
+  "rule": "Reprocessing the same source snapshot must not create duplicate Outcome observations.",
+  "identity": "obs:{sourceId}:{datasetId}:{metricId}:{observedAt}",
+  "caseJ": "second capture returns duplicateOf and store size remains 1",
+  "history": "a later capture with the same identity cannot overwrite the stored value",
+  "caseK": "different observedAt values produce distinct identities"
+}

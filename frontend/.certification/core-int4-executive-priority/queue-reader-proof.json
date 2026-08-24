@@ -1,0 +1,12 @@
+{
+  "identity": "CORE-INT:4/QueueReaderProof",
+  "proof": [
+    "rankExecutiveCollectionMembers accepts optional priorityOrderedIds",
+    "resolveExecutiveCollectionDisclosure forwards Core priorityOrderedIds",
+    "livePriorityOrderedIdsForCollection supplies ranked IDs to Stage collection disclosure",
+    "Problems collection follows Core (Capacity Gap first) when ranked",
+    "Decisions collection keeps collectionRank because Core returns no top priority",
+    "Queue overlay is data-core-int4=reader and is not a semantic object"
+  ],
+  "queueIsPriorityAuthority": false
+}

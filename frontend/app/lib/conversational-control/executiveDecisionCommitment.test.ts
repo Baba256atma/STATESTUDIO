@@ -179,11 +179,12 @@ function sessionWithScenarios(
       ? Object.freeze({
           comparisonId: `cc9:compare:${ids.join("+")}`,
           scenarioIds: Object.freeze(ids),
+          dimensions: Object.freeze([]),
           preferredScenarioId: preferredId,
           preferenceBasis: "goal-alignment" as const,
+          preferenceReasons: Object.freeze(["B preferred"]),
+          uncertainties: Object.freeze([]),
           requiresDecisionCommitment: false as const,
-          rankings: Object.freeze([]),
-          summary: "B preferred",
         })
       : null,
   });

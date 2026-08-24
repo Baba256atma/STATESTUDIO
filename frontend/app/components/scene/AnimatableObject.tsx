@@ -532,11 +532,12 @@ export const AnimatableObject = React.memo(function AnimatableObject({
   const visualProfile = useMemo(() => buildObjectVisualProfile(obj, tags, visualContext), [obj, tags, visualContext]);
   const hierarchyStyle = useMemo(() => roleToHierarchyStyle(visualRole, visualContext), [visualRole, visualContext]);
 
+  const objectMaterial = (obj as SceneObject & { material?: unknown }).material;
   const material = useMemo<MaterialLike>(() => {
-    const resolved = obj.material;
+    const resolved = objectMaterial;
     if (resolved && typeof resolved === "object") return resolved as MaterialLike;
     return { color: "#cccccc", opacity: 0.9 };
-  }, [(obj as SceneObject & { material?: unknown })?.material]);
+  }, [objectMaterial]);
 
   const isFocusActive =
     hasValidFocusedTarget &&

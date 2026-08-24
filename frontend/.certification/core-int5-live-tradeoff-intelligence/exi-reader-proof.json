@@ -1,0 +1,11 @@
+{
+  "identity": "CORE-INT:5/ExiReaderProof",
+  "proof": [
+    "composeNexoraExiTradeoffAssessment requires core ExecutiveTradeoffAssessment",
+    "EXI follow-ups call CORE-INT:5 presenters",
+    "extractGroundedDimension and preferredFromNarrative removed from EXI",
+    "comparability graph walk moved to the live Core collector",
+    "nex-mvp does not call createScenarioPriorityTradeoffTrace"
+  ],
+  "exiOwnsTradeoffTruth": false
+}

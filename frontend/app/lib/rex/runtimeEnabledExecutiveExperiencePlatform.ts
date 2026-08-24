@@ -1547,29 +1547,29 @@ function unique(values: readonly string[]): boolean {
 
 export function verifyRuntimeEnabledExecutiveExperiencePlatform():
   RuntimeEnabledExecutiveExperiencePlatformVerification {
-  const module = runtimeEnabledExecutiveExperiencePlatform;
+  const runtimeModule = runtimeEnabledExecutiveExperiencePlatform;
   const registry = runtimeEnabledExecutiveExperiencePlatformRegistry;
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-1:7/RuntimeEnabledExecutiveExperiencePlatform" &&
-    module.version === "1.7.0" &&
-    module.namespace ===
+    runtimeModule.version === "1.7.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.runtime-enabled-executive-experience.platform" &&
-    module.layer === "REX" &&
-    module.phase === "REX-1" &&
-    module.stage === "Platform" &&
-    module.architecturalRole ===
+    runtimeModule.layer === "REX" &&
+    runtimeModule.phase === "REX-1" &&
+    runtimeModule.stage === "Platform" &&
+    runtimeModule.architecturalRole ===
       "RuntimeEnabledExecutiveExperiencePlatformBoundary" &&
-    module.upstreamDependency === "REX-1:6/AdaptivePresentationBinding" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency === "REX-1:6/AdaptivePresentationBinding" &&
+    runtimeModule.upstreamDependency ===
       runtimeEnabledExecutiveExperienceAdaptivePresentationBindingIdentity &&
-    module.presentationBindingBoundary ===
+    runtimeModule.presentationBindingBoundary ===
       "REX-1:6-adaptive-presentation-binding-only" &&
-    module.isFinalPublicConsumerIndex === false;
+    runtimeModule.isFinalPublicConsumerIndex === false;
 
   const dependencyOk =
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeEnabledExecutiveExperienceAdaptivePresentationBinding" &&
     RUNTIME_ENABLED_EXECUTIVE_EXPERIENCE_PLATFORM_BOUNDARY
       .consumesPresentationBindingOnly === true &&
@@ -1685,18 +1685,18 @@ export function verifyRuntimeEnabledExecutiveExperiencePlatform():
     ]);
 
   const presentationBindingBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-1:6/AdaptivePresentationBinding" &&
-    module.boundary.consumesPresentationBindingOnly === true &&
-    module.boundary.composesRatherThanReinvents === true &&
-    module.boundary.recalculatesFocus === false &&
-    module.boundary.executesInteraction === false &&
-    module.boundary.isFinalPublicConsumerIndex === false;
+    runtimeModule.boundary.consumesPresentationBindingOnly === true &&
+    runtimeModule.boundary.composesRatherThanReinvents === true &&
+    runtimeModule.boundary.recalculatesFocus === false &&
+    runtimeModule.boundary.executesInteraction === false &&
+    runtimeModule.boundary.isFinalPublicConsumerIndex === false;
 
   const frameworkIndependent =
-    module.frameworkIndependent === true &&
-    module.rendererIndependent === true &&
-    module.boundary.frameworkIndependent === true;
+    runtimeModule.frameworkIndependent === true &&
+    runtimeModule.rendererIndependent === true &&
+    runtimeModule.boundary.frameworkIndependent === true;
 
   const ok =
     identityOk &&
@@ -1709,7 +1709,7 @@ export function verifyRuntimeEnabledExecutiveExperiencePlatform():
     uniquenessOk &&
     presentationBindingBoundaryIntact &&
     frameworkIndependent &&
-    module.principle ===
+    runtimeModule.principle ===
       RUNTIME_ENABLED_EXECUTIVE_EXPERIENCE_PLATFORM_PRINCIPLE;
 
   return Object.freeze({
@@ -1738,6 +1738,6 @@ export function verifyRuntimeEnabledExecutiveExperiencePlatform():
     frameworkIndependent,
     guaranteesPresent,
     compositionRuleValid,
-    notFinalPublicIndex: module.isFinalPublicConsumerIndex === false,
+    notFinalPublicIndex: runtimeModule.isFinalPublicConsumerIndex === false,
   });
 }

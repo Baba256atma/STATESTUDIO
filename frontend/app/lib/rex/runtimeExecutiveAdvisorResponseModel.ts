@@ -1972,19 +1972,19 @@ export interface RuntimeExecutiveAdvisorResponseModelVerification {
 
 export function verifyRuntimeExecutiveAdvisorResponseModel():
   RuntimeExecutiveAdvisorResponseModelVerification {
-  const module = runtimeExecutiveAdvisorResponseModel;
+  const runtimeModule = runtimeExecutiveAdvisorResponseModel;
   const registry = runtimeExecutiveAdvisorResponseModelRegistry;
   const bindingOk = verifyRuntimeExecutiveAdvisorContextSubjectBinding();
 
   const identityOk =
-    module.identity === "REX-3:3/RuntimeExecutiveAdvisorResponseModel" &&
-    module.version === "3.3.0" &&
-    module.namespace === "nexora.rex.advisor-experience.response-model" &&
-    module.upstreamDependency ===
+    runtimeModule.identity === "REX-3:3/RuntimeExecutiveAdvisorResponseModel" &&
+    runtimeModule.version === "3.3.0" &&
+    runtimeModule.namespace === "nexora.rex.advisor-experience.response-model" &&
+    runtimeModule.upstreamDependency ===
       "REX-3:2/RuntimeExecutiveAdvisorContextSubjectBinding" &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveAdvisorContextSubjectBinding" &&
-    module.bindingBoundary === "REX-3:2-binding-only";
+    runtimeModule.bindingBoundary === "REX-3:2-binding-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_ADVISOR_RESPONSE_STATES], [
@@ -2093,11 +2093,11 @@ export function verifyRuntimeExecutiveAdvisorResponseModel():
     Object.isFrozen(RUNTIME_EXECUTIVE_ADVISOR_RESPONSE_BOUNDARY);
 
   const bindingBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-3:2/RuntimeExecutiveAdvisorContextSubjectBinding" &&
-    module.boundary.consumesBindingOnly === true &&
-    module.boundary.importsRex31Directly === false &&
-    module.boundary.importsRex2Directly === false;
+    runtimeModule.boundary.consumesBindingOnly === true &&
+    runtimeModule.boundary.importsRex31Directly === false &&
+    runtimeModule.boundary.importsRex2Directly === false;
 
   const ok =
     identityOk &&
@@ -2108,9 +2108,9 @@ export function verifyRuntimeExecutiveAdvisorResponseModel():
     frozen &&
     bindingBoundaryIntact &&
     bindingOk.ok === true &&
-    module.boundary.generatesProse === false &&
-    module.boundary.mutatesStageState === false &&
-    module.boundary.aiProviderIndependent === true;
+    runtimeModule.boundary.generatesProse === false &&
+    runtimeModule.boundary.mutatesStageState === false &&
+    runtimeModule.boundary.aiProviderIndependent === true;
 
   return Object.freeze({
     ok,
@@ -2142,8 +2142,8 @@ export function verifyRuntimeExecutiveAdvisorResponseModel():
     noRiskFromAttentionAlone,
     noCausalStrengthening,
     bindingOk: bindingOk.ok === true,
-    noAi: module.boundary.generatesProse === false,
-    noStageMutation: module.boundary.mutatesStageState === false,
+    noAi: runtimeModule.boundary.generatesProse === false,
+    noStageMutation: runtimeModule.boundary.mutatesStageState === false,
   });
 }
 

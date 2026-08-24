@@ -1797,23 +1797,23 @@ export interface RuntimeExecutiveActionIntentContextVerification {
 
 export function verifyRuntimeExecutiveActionIntentContext():
   RuntimeExecutiveActionIntentContextVerification {
-  const module = runtimeExecutiveActionIntentContext;
+  const runtimeModule = runtimeExecutiveActionIntentContext;
   const registry = runtimeExecutiveActionIntentContextRegistry;
   const upstream = verifyRuntimeExecutiveActionExperienceContracts();
 
   const identityOk =
-    module.identity === "REX-5:3/RuntimeExecutiveActionIntentContext" &&
-    module.version === "5.3.0" &&
-    module.namespace === "nexora.rex.action-experience.intent-context" &&
-    module.phase === "IntentContext" &&
-    module.architecturalRole === "ExecutiveActionIntentContextRuntime" &&
-    module.upstreamDependency ===
+    runtimeModule.identity === "REX-5:3/RuntimeExecutiveActionIntentContext" &&
+    runtimeModule.version === "5.3.0" &&
+    runtimeModule.namespace === "nexora.rex.action-experience.intent-context" &&
+    runtimeModule.phase === "IntentContext" &&
+    runtimeModule.architecturalRole === "ExecutiveActionIntentContextRuntime" &&
+    runtimeModule.upstreamDependency ===
       "REX-5:2/RuntimeExecutiveActionExperienceContracts" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeExecutiveActionExperienceContractsIdentity &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveActionExperienceContracts" &&
-    module.contractsBoundary === "REX-5:2-contracts-only";
+    runtimeModule.contractsBoundary === "REX-5:2-contracts-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_ACTION_INTENT_RESOLUTION_STATUSES], [
@@ -1977,18 +1977,18 @@ export function verifyRuntimeExecutiveActionIntentContext():
     ambiguousOk &&
     unresolvedOk &&
     compatibilityOk &&
-    module.explicitIntentPrecedence === true &&
-    module.ambiguityPreserving === true &&
-    module.contextPreserving === true &&
-    module.originPreserving === true &&
-    module.subjectTargetRecipientSeparated === true &&
-    module.kindIntentSeparated === true &&
-    module.auditableResolution === true &&
-    module.rendererIndependent === true &&
-    module.aiIndependent === true &&
-    module.providerIndependent === true &&
-    module.transportIndependent === true &&
-    module.dispatchFree === true &&
+    runtimeModule.explicitIntentPrecedence === true &&
+    runtimeModule.ambiguityPreserving === true &&
+    runtimeModule.contextPreserving === true &&
+    runtimeModule.originPreserving === true &&
+    runtimeModule.subjectTargetRecipientSeparated === true &&
+    runtimeModule.kindIntentSeparated === true &&
+    runtimeModule.auditableResolution === true &&
+    runtimeModule.rendererIndependent === true &&
+    runtimeModule.aiIndependent === true &&
+    runtimeModule.providerIndependent === true &&
+    runtimeModule.transportIndependent === true &&
+    runtimeModule.dispatchFree === true &&
     upstream.ok === true;
 
   return Object.freeze({
@@ -2020,20 +2020,20 @@ export function verifyRuntimeExecutiveActionIntentContext():
     publicApiCount: runtimeExecutiveActionIntentContextApiNames.length,
     frozen,
     contractsBoundaryIntact:
-      module.contractsBoundary === "REX-5:2-contracts-only",
+      runtimeModule.contractsBoundary === "REX-5:2-contracts-only",
     explicitIntentPrecedence: explicitWins,
     ambiguityPreserving: ambiguousOk,
-    contextPreserving: module.contextPreserving === true,
-    originPreserving: module.originPreserving === true,
+    contextPreserving: runtimeModule.contextPreserving === true,
+    originPreserving: runtimeModule.originPreserving === true,
     subjectTargetRecipientSeparated:
-      module.subjectTargetRecipientSeparated === true,
-    kindIntentSeparated: module.kindIntentSeparated === true,
-    auditableResolution: module.auditableResolution === true,
-    rendererIndependent: module.rendererIndependent === true,
-    aiIndependent: module.aiIndependent === true,
-    providerIndependent: module.providerIndependent === true,
-    transportIndependent: module.transportIndependent === true,
-    dispatchFree: module.dispatchFree === true,
+      runtimeModule.subjectTargetRecipientSeparated === true,
+    kindIntentSeparated: runtimeModule.kindIntentSeparated === true,
+    auditableResolution: runtimeModule.auditableResolution === true,
+    rendererIndependent: runtimeModule.rendererIndependent === true,
+    aiIndependent: runtimeModule.aiIndependent === true,
+    providerIndependent: runtimeModule.providerIndependent === true,
+    transportIndependent: runtimeModule.transportIndependent === true,
+    dispatchFree: runtimeModule.dispatchFree === true,
     upstreamContractsOk: upstream.ok === true,
   });
 }

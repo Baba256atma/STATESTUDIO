@@ -1,0 +1,12 @@
+{
+  "coreOut1RemainsEvaluator": true,
+  "coreOut1ADoesNotCompare": true,
+  "whenCapturePresent": "CORE-OUT:1 uses capture.linkedActuals and ignores ad-hoc actuals outcomeLinked booleans",
+  "legacyActualsPath": "preserved for existing CORE-OUT:1 unit tests that do not pass capture",
+  "liveProjector": "always passes capture from projectOutcomeObservationCapture",
+  "liveActuals": [],
+  "honestLiveResult": "expected may exist as PREDICTION; actual unavailable",
+  "caseO": "1A capture with baseline + linked actual → CORE-OUT:1 comparison-ready",
+  "caseP": "1A capture with linked actual and no baseline → CORE-OUT:1 comparison-incomplete",
+  "establishesCausation": false
+}

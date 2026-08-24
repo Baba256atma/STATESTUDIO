@@ -1,0 +1,22 @@
+{
+  "phase": "NCA:6",
+  "identity": "NCA:6/ManagerModelCommunicationAdaptationTrustIntelligence",
+  "version": "1.0.0",
+  "namespace": "nexora.nca.manager-model-communication-adaptation-trust",
+  "verdict": "NCA:6 = CERTIFIED",
+  "usesLiveLlm": false,
+  "createsPersonalityProfiler": false,
+  "createsSecondDomainModel": false,
+  "createsSecondAdvisor": false,
+  "implementsDirector": false,
+  "implementsInformationCards": false,
+  "commitsDecision": false,
+  "startsExecution": false,
+  "accidentalApprovals": 0,
+  "accidentalExecutionStarts": 0,
+  "typecheck": "pass",
+  "lint": "pass",
+  "build": "pass",
+  "liveBrowser": "pass",
+  "nca7Started": false
+}

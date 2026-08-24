@@ -1,0 +1,16 @@
+{
+  "identity": "NEXORA-ZERO-FAILURE-GATE",
+  "phase": "KPI-IMPACT-CONTRACT",
+  "certified": true,
+  "status": "KPI-IMPACT-CONTRACT-ZERO-FAILURE-CERTIFIED",
+  "knownFailures": [],
+  "knownFailureCount": 0,
+  "gates": {
+    "typecheck": true,
+    "build": true,
+    "tests": true,
+    "lint": true,
+    "liveSmoke": true,
+    "console": true
+  }
+}

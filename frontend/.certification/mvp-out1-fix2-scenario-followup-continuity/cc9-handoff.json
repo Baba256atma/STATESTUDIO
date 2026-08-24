@@ -1,0 +1,11 @@
+{
+  "command": "evaluate-scenario",
+  "cc9Operations": {
+    "namedExplain": "describe / open-existing ctx-scenario-demand",
+    "followupDelay": "add-assumption operator=delay subject=obj-delivery parent=ctx-scenario-demand",
+    "risk": "downside",
+    "howSure": "confidence (orchestrator remap from evidence when parentScenarioRef is set)"
+  },
+  "reasoningInsideResponseBuilder": false,
+  "conversationDoesNotEvaluateImpact": true
+}

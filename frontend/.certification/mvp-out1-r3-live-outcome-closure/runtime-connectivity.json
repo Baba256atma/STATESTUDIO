@@ -1,0 +1,43 @@
+{
+  "decisionRuntimeToCommitment": {
+    "code": "CONNECTED",
+    "liveEvidence": "ABSENT-on-fixtures",
+    "note": "new approve records mutation time"
+  },
+  "commitmentToBinding": {
+    "code": "CONNECTED",
+    "liveEvidence": "ABSENT",
+    "status": "MISSING on live fixtures"
+  },
+  "bindingToWindow": {
+    "code": "CONNECTED",
+    "liveEvidence": "PARTIAL",
+    "status": "timing-incomplete on fixtures"
+  },
+  "dataRealityToR2Capture": {
+    "code": "CONNECTED",
+    "liveEvidence": "ABSENT"
+  },
+  "r2ToOut1a": {
+    "code": "CONNECTED",
+    "liveEvidence": "ABSENT"
+  },
+  "out1aToOut1": {
+    "code": "CONNECTED",
+    "liveEvidence": "ABSENT"
+  },
+  "out1ToOut2": {
+    "code": "CONNECTED",
+    "liveEvidence": "ABSENT"
+  },
+  "out2ToExi5": {
+    "code": "CONNECTED",
+    "liveEvidence": true
+  },
+  "exi5ToAdvisorConversation": {
+    "code": "CONNECTED",
+    "liveEvidence": true
+  },
+  "cc11": "MISSING",
+  "out2ToApp4": "TEST-ONLY"
+}

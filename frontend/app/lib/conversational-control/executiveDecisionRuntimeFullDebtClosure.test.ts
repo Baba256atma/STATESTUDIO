@@ -319,11 +319,19 @@ describe("CC:10R.1 Decision Runtime Full Debt Closure", () => {
   });
 
   it("EXS1 store adapter is thin port over live store (no mirror)", () => {
-    const decisions = [
+    type StoreDecision = {
+      readonly id: string;
+      readonly name: string;
+      status: "Draft" | "Under Review" | "Approved" | "Rejected" | "Archived";
+      locked: boolean;
+      readonly scenarioSourceIds: readonly ["scenario-a"];
+      readonly createdDate: string;
+    };
+    const decisions: StoreDecision[] = [
       {
         id: "decision-a",
         name: "Decision A",
-        status: "Under Review" as const,
+        status: "Under Review",
         locked: false,
         scenarioSourceIds: ["scenario-a"] as const,
         createdDate: "2026-08-01",

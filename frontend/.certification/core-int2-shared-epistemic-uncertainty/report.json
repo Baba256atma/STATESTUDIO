@@ -1,0 +1,36 @@
+{
+  "identity": "CORE-INT:2/SharedEpistemicUncertaintyFoundation",
+  "version": "1.0.0",
+  "certifiedAt": "2026-08-18",
+  "status": "CERTIFIED",
+  "productionBehaviorChanged": "presentation-only epistemic reading; no Stage/Decision/memory mutation",
+  "parallelEngine": false,
+  "llmAdded": false,
+  "causalRankingAdded": false,
+  "bindingConstraintAdded": false,
+  "priorityIntelligenceAdded": false,
+  "ei4Wired": false,
+  "exi4Started": false,
+  "stageRedesigned": false,
+  "frozenMvp": {
+    "id": "MVP:1/NexoraManagerMVPReleaseBaseline",
+    "version": "1.2.0"
+  },
+  "livePath": "CONNECTED",
+  "managerTrustTest": "PASS",
+  "screenshots": "not required; automated cases prove FACT/ASSUMPTION/PREDICTION/UNKNOWN and conversation continuity",
+  "productionBuild": "PASS",
+  "executiveHttp": 200,
+  "tests": {
+    "coreInt2": "PASS",
+    "ei3": "PASS",
+    "exi1": "PASS",
+    "exi2": "PASS",
+    "exi3": "PASS",
+    "ux3": "PASS",
+    "conversation": "PASS",
+    "dataRealityAdvisorBridge": "PASS",
+    "mvpIdentity": "PASS"
+  },
+  "recommendedNext": "CORE-INT:3 recorded causal+constraint graph over this epistemic substrate. Do not start it in this phase."
+}

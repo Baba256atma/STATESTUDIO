@@ -1,0 +1,22 @@
+{
+  "phase": "BUILD-FIX",
+  "identity": "KPI-IMPACT-CONTRACT/KpiImpactSimulationContractRecovery",
+  "verdict": "KPI-IMPACT-CONTRACT-ZERO-FAILURE-CERTIFIED",
+  "knownFailures": 0,
+  "rootCause": "G: Turbopack DEV treated kpiImpactSimulationContract.ts as an empty module because a type used an inline import() type query; the file was never empty on disk. Production next build already had the exports.",
+  "contractRestoredInPlace": true,
+  "importPathCorrected": false,
+  "placeholderInvented": false,
+  "duplicateAuthority": false,
+  "anyOrTsIgnore": false,
+  "nextPhaseStarted": false,
+  "tests": { "total": 1723, "pass": 1723, "fail": 0, "skipped": 0 },
+  "typecheck": { "exitCode": 0, "errors": 0 },
+  "build": { "exitCode": 0 },
+  "lint": { "exitCode": 0, "errors": 0, "warnings": 409 },
+  "executiveHttp": 200,
+  "typeCHttp": 200,
+  "hydration": 0,
+  "consoleUncaught": 0,
+  "duplicateKeys": 0
+}

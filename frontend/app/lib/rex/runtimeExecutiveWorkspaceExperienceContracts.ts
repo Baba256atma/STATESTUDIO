@@ -1757,25 +1757,25 @@ export interface RuntimeExecutiveWorkspaceExperienceContractsVerification {
 
 export function verifyRuntimeExecutiveWorkspaceExperienceContracts():
   RuntimeExecutiveWorkspaceExperienceContractsVerification {
-  const module = runtimeExecutiveWorkspaceExperienceContracts;
+  const runtimeModule = runtimeExecutiveWorkspaceExperienceContracts;
   const registry = runtimeExecutiveWorkspaceExperienceContractsRegistry;
   const upstream = verifyRuntimeExecutiveWorkspaceExperienceFoundation();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-6:2/RuntimeExecutiveWorkspaceExperienceContracts" &&
-    module.version === "6.2.0" &&
-    module.namespace === "nexora.rex.workspace-experience.contracts" &&
-    module.phase === "Contracts" &&
-    module.architecturalRole ===
+    runtimeModule.version === "6.2.0" &&
+    runtimeModule.namespace === "nexora.rex.workspace-experience.contracts" &&
+    runtimeModule.phase === "Contracts" &&
+    runtimeModule.architecturalRole ===
       "RuntimeExecutiveWorkspaceExperienceContracts" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       "REX-6:1/RuntimeExecutiveWorkspaceExperienceFoundation" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeExecutiveWorkspaceExperienceFoundationIdentity &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveWorkspaceExperienceFoundation" &&
-    module.foundationBoundary === "REX-6:1-foundation-only";
+    runtimeModule.foundationBoundary === "REX-6:1-foundation-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_WORKSPACE_CONTRACT_FAMILIES], [
@@ -1915,13 +1915,13 @@ export function verifyRuntimeExecutiveWorkspaceExperienceContracts():
     countsOk &&
     frozen &&
     nonLinearTransitionCapable &&
-    module.presentationStateIndependent === true &&
-    module.dialIndependent === true &&
-    module.automotiveStylingIndependent === true &&
-    module.rendererIndependent === true &&
-    module.resolutionFree === true &&
-    module.orchestrationFree === true &&
-    module.nonLinearTransitionCapable === true &&
+    runtimeModule.presentationStateIndependent === true &&
+    runtimeModule.dialIndependent === true &&
+    runtimeModule.automotiveStylingIndependent === true &&
+    runtimeModule.rendererIndependent === true &&
+    runtimeModule.resolutionFree === true &&
+    runtimeModule.orchestrationFree === true &&
+    runtimeModule.nonLinearTransitionCapable === true &&
     upstream.ok === true;
 
   return Object.freeze({
@@ -1947,15 +1947,15 @@ export function verifyRuntimeExecutiveWorkspaceExperienceContracts():
       runtimeExecutiveWorkspaceExperienceContractsApiNames.length,
     frozen,
     foundationBoundaryIntact:
-      module.foundationBoundary === "REX-6:1-foundation-only",
-    presentationStateIndependent: module.presentationStateIndependent === true,
+      runtimeModule.foundationBoundary === "REX-6:1-foundation-only",
+    presentationStateIndependent: runtimeModule.presentationStateIndependent === true,
     nonLinearTransitionCapable,
-    dialIndependent: module.dialIndependent === true,
+    dialIndependent: runtimeModule.dialIndependent === true,
     automotiveStylingIndependent:
-      module.automotiveStylingIndependent === true,
-    rendererIndependent: module.rendererIndependent === true,
-    resolutionFree: module.resolutionFree === true,
-    orchestrationFree: module.orchestrationFree === true,
+      runtimeModule.automotiveStylingIndependent === true,
+    rendererIndependent: runtimeModule.rendererIndependent === true,
+    resolutionFree: runtimeModule.resolutionFree === true,
+    orchestrationFree: runtimeModule.orchestrationFree === true,
     upstreamFoundationOk: upstream.ok === true,
   });
 }

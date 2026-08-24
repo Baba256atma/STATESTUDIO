@@ -1816,26 +1816,26 @@ export interface RuntimeExecutiveActionConfirmationSafetyVerification {
 
 export function verifyRuntimeExecutiveActionConfirmationSafety():
   RuntimeExecutiveActionConfirmationSafetyVerification {
-  const module = runtimeExecutiveActionConfirmationSafety;
+  const runtimeModule = runtimeExecutiveActionConfirmationSafety;
   const registry = runtimeExecutiveActionConfirmationSafetyRegistry;
   const upstream = verifyRuntimeExecutiveActionPresentationPreview();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-5:5/RuntimeExecutiveActionConfirmationSafety" &&
-    module.version === "5.5.0" &&
-    module.namespace ===
+    runtimeModule.version === "5.5.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.action-experience.confirmation-safety" &&
-    module.phase === "ConfirmationSafety" &&
-    module.architecturalRole ===
+    runtimeModule.phase === "ConfirmationSafety" &&
+    runtimeModule.architecturalRole ===
       "ExecutiveActionConfirmationSafetyRuntime" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       "REX-5:4/RuntimeExecutiveActionPresentationPreview" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeExecutiveActionPresentationPreviewIdentity &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveActionPresentationPreview" &&
-    module.presentationPreviewBoundary ===
+    runtimeModule.presentationPreviewBoundary ===
       "REX-5:4-presentation-preview-only";
 
   const vocabOk =
@@ -1971,15 +1971,15 @@ export function verifyRuntimeExecutiveActionConfirmationSafety():
     frozen &&
     fingerprintDeterministic &&
     scopeChanged &&
-    module.scopeStable === true &&
-    module.criticalActionSafe === true &&
-    module.ambiguityBlocking === true &&
-    module.acknowledgmentExplicit === true &&
-    module.rendererIndependent === true &&
-    module.aiIndependent === true &&
-    module.providerIndependent === true &&
-    module.transportIndependent === true &&
-    module.dispatchFree === true &&
+    runtimeModule.scopeStable === true &&
+    runtimeModule.criticalActionSafe === true &&
+    runtimeModule.ambiguityBlocking === true &&
+    runtimeModule.acknowledgmentExplicit === true &&
+    runtimeModule.rendererIndependent === true &&
+    runtimeModule.aiIndependent === true &&
+    runtimeModule.providerIndependent === true &&
+    runtimeModule.transportIndependent === true &&
+    runtimeModule.dispatchFree === true &&
     upstream.ok === true;
 
   return Object.freeze({
@@ -2014,19 +2014,19 @@ export function verifyRuntimeExecutiveActionConfirmationSafety():
     publicApiCount: runtimeExecutiveActionConfirmationSafetyApiNames.length,
     frozen,
     presentationPreviewBoundaryIntact:
-      module.presentationPreviewBoundary ===
+      runtimeModule.presentationPreviewBoundary ===
       "REX-5:4-presentation-preview-only",
     scopeStable: scopeChanged,
     fingerprintDeterministic,
-    criticalActionSafe: module.criticalActionSafe === true,
-    ambiguityBlocking: module.ambiguityBlocking === true,
-    acknowledgmentExplicit: module.acknowledgmentExplicit === true,
+    criticalActionSafe: runtimeModule.criticalActionSafe === true,
+    ambiguityBlocking: runtimeModule.ambiguityBlocking === true,
+    acknowledgmentExplicit: runtimeModule.acknowledgmentExplicit === true,
     declineCancelSeparated: true,
-    rendererIndependent: module.rendererIndependent === true,
-    aiIndependent: module.aiIndependent === true,
-    providerIndependent: module.providerIndependent === true,
-    transportIndependent: module.transportIndependent === true,
-    dispatchFree: module.dispatchFree === true,
+    rendererIndependent: runtimeModule.rendererIndependent === true,
+    aiIndependent: runtimeModule.aiIndependent === true,
+    providerIndependent: runtimeModule.providerIndependent === true,
+    transportIndependent: runtimeModule.transportIndependent === true,
+    dispatchFree: runtimeModule.dispatchFree === true,
     upstreamPresentationPreviewOk: upstream.ok === true,
   });
 }

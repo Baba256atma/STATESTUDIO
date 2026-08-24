@@ -1,0 +1,14 @@
+{
+  "command": "npx tsx --test --test-concurrency=1 app/lib/executive-intelligence/*.test.ts app/lib/data-reality/*.test.ts app/lib/nex-mvp/*.test.ts app/lib/conversational-control/*.test.ts app/lib/executiveMemory/durableExecutiveMemory.test.ts app/lib/spatial-presentation/executiveStageQueueFoundation.test.ts app/lib/spatial-presentation/executiveStageQueueHydration.test.ts app/executive/nex-mvp/NexoraExecutiveShell.test.tsx app/executive/nex-mvp/stage/*.test.tsx app/lib/scenario-intelligence/*.test.ts app/lib/intelligence-integration/ExecutiveIntelligenceAdapter.test.ts app/lib/intelligence/ExecutiveIntelligenceAdapter.test.ts",
+  "total": 1762,
+  "pass": 1762,
+  "fail": 0,
+  "skipped": 0,
+  "cc": "pass",
+  "scenarioIntelligence": "pass",
+  "coreIntExi": "pass",
+  "dataReality": "pass",
+  "decisionExecutionApp4CoveredByNexMvpAndExi": "pass",
+  "stage": "pass",
+  "frozenMvp": "pass"
+}

@@ -29,6 +29,8 @@ import {
   resolveNexoraMVPTimelinePackSubjectId,
 } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlow";
 import type { NexoraMVPIntelligenceAction } from "@/app/lib/nex-mvp/nexoraMVPExecutiveIntelligence";
+import { projectNexoraExecutiveDataStatus } from "@/app/lib/nex-mvp/nexoraMVPExecutiveDataStatus";
+import { nexoraManagerMvpReleaseBaselineIdentity } from "@/app/lib/nex-mvp/nexoraManagerMvpReleaseBaseline";
 import type { NexoraMVPDataRealityDatasetScenario } from "@/app/lib/nex-mvp/nexoraMVPDataRealityStageBridge";
 import type { CsvCommittedImport } from "@/app/lib/data-reality/csvRealDataImportStore";
 import type { ExecutiveSourceAdvisorContext } from "@/app/lib/data-reality/executiveSourceIntelligence";
@@ -90,6 +92,34 @@ import {
 } from "@/app/lib/nex-mvp/nexoraMVPConversationalRuntimeBridge";
 import type { NexoraConversationalCommand } from "@/app/lib/conversational-control/conversationalCommand";
 import { executeNexoraConversationalExperience } from "@/app/lib/conversational-control/conversationalExperienceOrchestrator";
+import {
+  NEXORA_FINAL3_NATURAL_REFERENCE_IDENTITY,
+} from "@/app/lib/conversational-control/conversationalSubjectRegistry";
+import { NEXORA_FINAL3_EXECUTIVE_EXPLAIN_IDENTITY } from "@/app/lib/manager-object/managerObjectExplainEngine";
+import { nexoraMvpFinal61NluIdentity } from "@/app/lib/manager-object/nexoraMvpFinal61NaturalLanguageUnderstanding";
+import { nexoraMvpFinal62ContinuityIdentity } from "@/app/lib/manager-object/nexoraMvpFinal62ConversationContinuity";
+import { nexoraMvpFinal63ClarificationIdentity } from "@/app/lib/manager-object/nexoraMvpFinal63SmartClarification";
+import { nexoraMvpFinal64CommunicationIdentity } from "@/app/lib/manager-object/nexoraMvpFinal64TrustedCommunication";
+import { nexoraMvpFinal65GuidanceIdentity } from "@/app/lib/manager-object/nexoraMvpFinal65Guidance";
+import { nexoraMvpFinal66TypeCIdentity } from "@/app/lib/manager-object/nexoraMvpFinal66TypeCCertification";
+import { nexoraNca1Identity } from "@/app/lib/manager-object/nexoraNca1ConversationArchitecture";
+import { nexoraNca2Identity } from "@/app/lib/manager-object/nexoraNca2ConversationState";
+import { nexoraNca3Identity } from "@/app/lib/manager-object/nexoraNca3QuestionIntelligence";
+import { nexoraNca4Identity } from "@/app/lib/manager-object/nexoraNca4AdvisoryIntelligence";
+import { nexoraNca5Identity } from "@/app/lib/manager-object/nexoraNca5InitiativeIntelligence";
+import { nexoraNca6Identity } from "@/app/lib/manager-object/nexoraNca6CommunicationIntelligence";
+import { nexoraNca7Identity } from "@/app/lib/manager-object/nexoraNca7EndToEndOrchestration";
+import {
+  applyEntranceCenterSubject,
+  createNexoraEntranceSession,
+  isNexoraEntranceRestrained,
+  projectNexoraEntranceCatalog,
+  stabilizeEntranceCatalog,
+  writeStoredEntranceIdentity,
+  clearStoredEntranceIdentity,
+  readStoredEntranceIdentity,
+} from "@/app/lib/nexora-entrance/nexoraEntranceExperience";
+import type { NexoraEntranceSession } from "@/app/lib/nexora-entrance/nexoraEntranceTypes";
 import type {
   NexoraConversationalAdvisorGrounding,
   NexoraConversationalExperienceTrace,
@@ -99,13 +129,20 @@ import { createEmptyNexoraExecutiveContextSnapshot } from "@/app/lib/conversatio
 import type { NexoraExecutiveContextSnapshot } from "@/app/lib/conversational-control/executiveContextSnapshot";
 import { toNexoraConversationContextSnapshot } from "@/app/lib/conversational-control/executiveContextProjection";
 import { syncNexoraExecutiveContextFromRuntimeState } from "@/app/lib/nex-mvp/nexoraMVPExecutiveContextAwareness";
-import { projectNexoraConversationalSubjectsFromCatalog } from "@/app/lib/conversational-control/conversationalSubjectRegistry";
+import { projectManagerObjectConversationalSubjects } from "@/app/lib/manager-object/managerObjectCatalog";
+import {
+  activateManagerObjectFromClick,
+  createEmptyManagerObjectSession,
+  type ManagerObjectSession,
+} from "@/app/lib/manager-object/managerObjectActive";
 import { createEmptyNexoraExecutiveScenarioSession } from "@/app/lib/conversational-control/executiveScenarioResolver";
 import type { NexoraExecutiveScenarioSession } from "@/app/lib/conversational-control/executiveScenarioResolver";
 import { createEmptyNexoraExecutiveDecisionSession } from "@/app/lib/conversational-control/executiveDecisionAuthority";
 import type { NexoraExecutiveDecisionSession } from "@/app/lib/conversational-control/executiveDecisionAuthority";
 import { createNexoraCanonicalDecisionRuntime } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
 import type { NexoraCanonicalDecisionRuntime } from "@/app/lib/conversational-control/executiveDecisionRuntimeAdapter";
+import { createNexoraCanonicalExecutionRuntime } from "@/app/lib/conversational-control/executiveExecutionRuntimeAdapter";
+import type { NexoraExecutionRuntimeAdapter } from "@/app/lib/conversational-control/executiveExecutionRuntimeAdapter";
 import { bootstrapCanonicalDecisionsFromFlowFixtures } from "@/app/lib/conversational-control/executiveDecisionStatusProjection";
 import { createInitialNexoraMVPFlowDecisionRecords } from "@/app/lib/nex-mvp/nexoraMVPExecutiveFlowFixtures";
 import type { ExecutiveQueueCategory } from "@/app/lib/spatial-presentation/executiveStageProductivityContract";
@@ -178,20 +215,44 @@ function applyInteractionToApplication(
  */
 export function NexoraExecutiveShell({
   datasetScenario = "baseline",
+  entranceRequested = false,
+  resetEntrance = false,
 }: {
   readonly datasetScenario?: NexoraMVPDataRealityDatasetScenario;
+  readonly entranceRequested?: boolean;
+  readonly resetEntrance?: boolean;
 }) {
   const shellIdentity = getNexoraExecutiveShellIdentity();
   const [application, setApplication] = useState(
     createInitialNexoraExecutiveShellApplicationState,
   );
-  const [interaction, setInteraction] = useState(() =>
-    createInitialNexoraMVPObjectInteractionState({
+  const [entranceSession, setEntranceSession] = useState<NexoraEntranceSession>(
+    () => {
+      if (resetEntrance) clearStoredEntranceIdentity();
+      const stored =
+        entranceRequested && !resetEntrance
+          ? readStoredEntranceIdentity()
+          : null;
+      return createNexoraEntranceSession({
+        workspaceResolution: entranceRequested
+          ? stored
+            ? "returning-sufficient"
+            : "first-time"
+          : "existing-workspace",
+        identity: stored,
+      });
+    },
+  );
+  const [interaction, setInteraction] = useState(() => {
+    const initial = createInitialNexoraMVPObjectInteractionState({
       workspace: application.workspace,
       presentationState: application.presentationState,
       environmentIntent: application.environmentIntent,
-    }),
-  );
+    });
+    return isNexoraEntranceRestrained(entranceSession)
+      ? applyEntranceCenterSubject(initial, entranceSession)
+      : initial;
+  });
   const [activeCsvImport, setActiveCsvImport] =
     useState<CsvCommittedImport | null>(null);
   const [activeLiveObservation, setActiveLiveObservation] =
@@ -201,29 +262,39 @@ export function NexoraExecutiveShell({
   const activeCsvDataset = activeCsvImport?.prepared.handoff?.dataset;
   const activeSourceDataset = activeLiveObservation?.handoff.dataset ?? activeCsvDataset;
 
-  const dataRealityExperience = useMemo(
-    () =>
-      resolveNexoraMVPDataRealityAwareStageExperience({
-        datasetScenario,
-        ...(activeSourceDataset ? { dataset: activeSourceDataset } : {}),
-        focusedObjectId: interaction.focusedSubject?.id,
-        selectedObjectId: interaction.selectedSubject?.id,
-        selectedObjectIds: interaction.selectedSubject
-          ? [interaction.selectedSubject.id]
-          : undefined,
-        currentWorkspace: interaction.workspace,
-        presentationState: interaction.presentationState,
-        requestedIntent: "investigate",
-      }),
-    [
+  const dataRealityExperience = useMemo(() => {
+    const restrained = isNexoraEntranceRestrained(entranceSession);
+    const result = resolveNexoraMVPDataRealityAwareStageExperience({
       datasetScenario,
-      activeSourceDataset,
-      interaction.focusedSubject?.id,
-      interaction.selectedSubject,
-      interaction.workspace,
-      interaction.presentationState,
-    ],
-  );
+      ...(activeSourceDataset ? { dataset: activeSourceDataset } : {}),
+      focusedObjectId: interaction.focusedSubject?.id,
+      selectedObjectId: interaction.selectedSubject?.id,
+      selectedObjectIds: interaction.selectedSubject
+        ? [interaction.selectedSubject.id]
+        : undefined,
+      currentWorkspace: interaction.workspace,
+      presentationState: interaction.presentationState,
+      requestedIntent: "investigate",
+      ...(restrained
+        ? {
+            baseCatalog: projectNexoraEntranceCatalog(entranceSession),
+          }
+        : {}),
+    });
+    if (!restrained) return result;
+    return Object.freeze({
+      ...result,
+      catalog: stabilizeEntranceCatalog(result.catalog),
+    });
+  }, [
+    datasetScenario,
+    activeSourceDataset,
+    interaction.focusedSubject?.id,
+    interaction.selectedSubject,
+    interaction.workspace,
+    interaction.presentationState,
+    entranceSession,
+  ]);
 
   const dataRealityAdvisorExperience = useMemo(
     () =>
@@ -379,6 +450,14 @@ export function NexoraExecutiveShell({
     });
   }
   const decisionRuntime = decisionRuntimeRef.current;
+  const executionRuntimeRef = useRef<NexoraExecutionRuntimeAdapter | null>(null);
+  if (executionRuntimeRef.current == null) {
+    executionRuntimeRef.current = createNexoraCanonicalExecutionRuntime({
+      decisionRuntime: decisionRuntime.adapter,
+      authorityId: "nexora.executive-shell.execution-runtime",
+    });
+  }
+  const executionRuntime = executionRuntimeRef.current;
   const executiveContextRef = useRef(executiveContext);
   executiveContextRef.current = executiveContext;
   const [conversationalProcessing, setConversationalProcessing] =
@@ -395,7 +474,12 @@ export function NexoraExecutiveShell({
     [],
   );
   const lastConversationalCommandIdRef = useRef<string | null>(null);
+  const lastManagerUtteranceRef = useRef<string | null>(null);
   const conversationalMessageSeqRef = useRef(0);
+  const [managerObjectSession, setManagerObjectSession] =
+    useState<ManagerObjectSession>(() => createEmptyManagerObjectSession());
+  const managerObjectSessionRef = useRef(managerObjectSession);
+  managerObjectSessionRef.current = managerObjectSession;
 
   const explorerKind = navToExplorer(activeNav);
   const workspaceRegistry = getNexoraMVPWorkspaceRegistry();
@@ -617,6 +701,25 @@ export function NexoraExecutiveShell({
     [flowDomain],
   );
 
+  const dataStatus = useMemo(
+    () =>
+      projectNexoraExecutiveDataStatus({
+        usesActiveDataSource: dataRealityExperience.usesActiveDataSource,
+        datasetSource: activeSourceDataset?.source ?? null,
+        liveObservationActive: activeLiveObservation != null,
+        csvImportActive: activeCsvImport != null,
+        hasUnresolvedReality:
+          dataRealityExperience.runtimeState.attention.hasUnresolvedReality,
+      }),
+    [
+      activeCsvImport,
+      activeLiveObservation,
+      activeSourceDataset?.source,
+      dataRealityExperience.runtimeState.attention.hasUnresolvedReality,
+      dataRealityExperience.usesActiveDataSource,
+    ],
+  );
+
   const context = useMemo(
     () => ({
       company: DEFAULT_CONTEXT.company,
@@ -624,9 +727,10 @@ export function NexoraExecutiveShell({
       pack: workspaceLabel,
       lens: timelineLens,
       theme,
-      liveStatus: DEFAULT_CONTEXT.liveStatus,
+      liveStatus: dataStatus.label,
+      liveStatusKind: dataStatus.kind,
     }),
-    [theme, timelineLens, workspaceLabel],
+    [dataStatus, theme, timelineLens, workspaceLabel],
   );
 
   const syncExecutiveContextFromRuntime = useCallback(
@@ -634,10 +738,9 @@ export function NexoraExecutiveShell({
       nextState: typeof interaction,
       syncSource: "runtime" | "navigation" | "workspace-transition",
     ) => {
-      const subjects = projectNexoraConversationalSubjectsFromCatalog({
-        objects: dataRealityExperience.catalog.objects,
-        contextSubjects: dataRealityExperience.catalog.contextSubjects,
-      });
+      const subjects = projectManagerObjectConversationalSubjects(
+        dataRealityExperience.catalog,
+      );
       const updated = syncNexoraExecutiveContextFromRuntimeState({
         previousContext: executiveContextRef.current,
         nextState,
@@ -725,6 +828,9 @@ export function NexoraExecutiveShell({
         const next = selectNexoraMVPInteractionSubject(previous, subjectId);
         setApplication((app) => applyInteractionToApplication(app, next));
         syncExecutiveContextFromRuntime(next, "runtime");
+        setManagerObjectSession((previous) =>
+          activateManagerObjectFromClick(previous, next.focusedSubject?.id ?? subjectId),
+        );
         return next;
       });
     },
@@ -791,10 +897,9 @@ export function NexoraExecutiveShell({
         // Let the restrained sending state paint before deterministic CC work.
         await new Promise<void>((resolve) => setTimeout(resolve, 80));
         const previous = interactionRef.current;
-        const subjects = projectNexoraConversationalSubjectsFromCatalog({
-          objects: dataRealityExperience.catalog.objects,
-          contextSubjects: dataRealityExperience.catalog.contextSubjects,
-        });
+        const subjects = projectManagerObjectConversationalSubjects(
+          dataRealityExperience.catalog,
+        );
 
         const result = executeNexoraConversationalExperience({
           utterance: trimmed,
@@ -815,16 +920,25 @@ export function NexoraExecutiveShell({
           scenarioSession,
           decisionSession,
           decisionRuntime: decisionRuntime.adapter,
-          decisionCommittedAt: "2026-08-15T00:00:00.000Z",
+          executionRuntime,
+          decisionCommittedAt: new Date().toISOString(),
           advisorGrounding: conversationalAdvisorGroundingRef.current,
           pendingTurnExpectation:
             executiveContextRef.current.pendingTurnExpectation,
+          previousUtterance: lastManagerUtteranceRef.current,
+          previousManagerObjectSession: managerObjectSessionRef.current,
+          previousEntranceSession: entranceSession,
         });
 
+        lastManagerUtteranceRef.current = trimmed;
         setConversationalMessages((msgs) =>
           Object.freeze([...msgs, result.nexoraMessage]).slice(-20),
         );
         setExecutiveContext(result.nextExecutiveContext);
+        if (result.nextEntranceSession) {
+          setEntranceSession(result.nextEntranceSession);
+          writeStoredEntranceIdentity(result.nextEntranceSession.identity);
+        }
         if (result.nextScenarioSession) {
           setScenarioSession(result.nextScenarioSession);
         }
@@ -840,6 +954,7 @@ export function NexoraExecutiveShell({
           ),
         );
         setConversationalLastTrace(result.trace);
+        setManagerObjectSession(result.managerObjectTurn.session);
 
         if (result.shouldCommitRuntime) {
           lastConversationalCommandIdRef.current =
@@ -870,6 +985,8 @@ export function NexoraExecutiveShell({
       scenarioSession,
       decisionSession,
       decisionRuntime,
+      executionRuntime,
+      entranceSession,
     ],
   );
 
@@ -999,7 +1116,7 @@ export function NexoraExecutiveShell({
         const pending = beginNexoraMVPFlowPendingAction(current, action.id);
         const result = applyNexoraMVPFlowDomainAction(pending, request, {
           decisionRuntime: decisionRuntime.adapter,
-          occurredAt: "2026-08-15T12:00:00.000Z",
+          occurredAt: new Date().toISOString(),
         });
         if (!result.ok) {
           return failNexoraMVPFlowPendingAction(result.state, result.message);
@@ -1222,9 +1339,279 @@ export function NexoraExecutiveShell({
   return (
     <div
       data-testid="nexora-executive-shell"
+      data-nexora-conversation-authority="executeNexoraConversationalExperience"
+      data-nexora-final3-reference={NEXORA_FINAL3_NATURAL_REFERENCE_IDENTITY}
+      data-nexora-final3-explain={NEXORA_FINAL3_EXECUTIVE_EXPLAIN_IDENTITY}
+      data-nex-exp1="entrance-identity"
+      data-nex-exp1-engine="NEX-EXP:1/NexoraEntranceManagerIdentityExperience"
+      data-nex-exp1-mode={entranceSession.workspaceResolution}
+      data-nex-exp1-state={entranceSession.state}
+      data-nex-exp1-sufficiency={entranceSession.identity.sufficiency}
+      data-nex-exp1-center={entranceSession.centerSubjectId ?? "none"}
+      data-nex-exp1-object-count={String(dataRealityExperience.catalog.objects.length)}
+      data-nex-exp2="goal-discovery"
+      data-nex-exp2-engine="NEX-EXP:2/GoalDiscoveryGoalObjectEmergence"
+      data-nex-exp2-state={entranceSession.goalDiscovery?.state ?? "none"}
+      data-nex-exp2-sufficiency={
+        entranceSession.goalDiscovery?.context.sufficiency ?? "none"
+      }
+      data-nex-exp2-goal={
+        entranceSession.goalDiscovery?.object?.displayName ?? "none"
+      }
+      data-nex-exp2-confirmed={
+        entranceSession.goalDiscovery?.context.managerConfirmed
+          ? "true"
+          : "false"
+      }
+      data-nex-exp3="reality-discovery"
+      data-nex-exp3-engine="NEX-EXP:3/CurrentRealityExecutiveContextDiscovery"
+      data-nex-exp3-state={entranceSession.realityDiscovery?.state ?? "none"}
+      data-nex-exp3-sufficiency={
+        entranceSession.realityDiscovery?.context.sufficiency ?? "none"
+      }
+      data-nex-exp3-gap={
+        entranceSession.realityDiscovery?.context.gap?.status ?? "none"
+      }
+      data-nex-exp3-object-count={String(
+        entranceSession.realityDiscovery?.objects.length ?? 0,
+      )}
+      data-nex-exp4="issue-discovery"
+      data-nex-exp4-engine="NEX-EXP:4/ProblemRiskOpportunityDiscovery"
+      data-nex-exp4-state={entranceSession.issueDiscovery?.state ?? "none"}
+      data-nex-exp4-object-count={String(
+        entranceSession.issueDiscovery?.objects.length ?? 0,
+      )}
+      data-nex-exp4-kinds={
+        entranceSession.issueDiscovery?.objects
+          .map((entry) => entry.kind)
+          .join(",") || "none"
+      }
+      data-nex-exp5="scenario-discovery"
+      data-nex-exp5-engine="NEX-EXP:5/ScenarioOptionDiscovery"
+      data-nex-exp5-state={entranceSession.scenarioDiscovery?.state ?? "none"}
+      data-nex-exp5-object-count={String(
+        entranceSession.scenarioDiscovery?.scenarios.length ?? 0,
+      )}
+      data-nex-exp6="scenario-comparison"
+      data-nex-exp6-engine="NEX-EXP:6/ScenarioComparisonTradeoffRecommendation"
+      data-nex-exp6-state={entranceSession.scenarioComparison?.state ?? "none"}
+      data-nex-exp6-recommendation={
+        entranceSession.scenarioComparison?.recommendation?.recommendationStatus ??
+        "none"
+      }
+      data-nex-exp6-recommended-id={
+        entranceSession.scenarioComparison?.recommendation?.recommendedScenarioId ??
+        "none"
+      }
+      data-nex-exp6-commits-decision="false"
+      data-nex-exp7="decision-commitment"
+      data-nex-exp7-engine="NEX-EXP:7/ManagerDecisionCommitmentExperience"
+      data-nex-exp7-state={entranceSession.decisionExperience?.state ?? "none"}
+      data-nex-exp7-committed={
+        entranceSession.decisionExperience?.canonicalRecord?.status === "Approved"
+          ? "true"
+          : "false"
+      }
+      data-nex-exp7-starts-execution="false"
+      data-nex-exp8="execution-planning"
+      data-nex-exp8-engine="NEX-EXP:8/ExecutionPlanningCommitmentToAction"
+      data-nex-exp8-state={entranceSession.executionPlanning?.state ?? "none"}
+      data-nex-exp8-readiness={
+        entranceSession.executionPlanning?.plan?.readiness ?? "none"
+      }
+      data-nex-exp8-runtime={
+        entranceSession.executionPlanning?.canonicalStatus ?? "none"
+      }
+      data-nex-exp8-started={
+        entranceSession.executionPlanning?.canonicalStatus === "in-progress"
+          ? "true"
+          : "false"
+      }
+      data-nex-exp9="outcome-monitoring"
+      data-nex-exp9-engine="NEX-EXP:9/OutcomeMonitoringGoalImpactExperience"
+      data-nex-exp9-state={entranceSession.outcomeMonitoring?.state ?? "none"}
+      data-nex-exp9-impact={
+        entranceSession.outcomeMonitoring?.context?.goalImpact.state ?? "none"
+      }
+      data-nex-exp9-starts-learning="false"
+      data-nex-exp10="learning-reassessment"
+      data-nex-exp10-engine="NEX-EXP:10/LearningReassessmentNextExecutiveCycle"
+      data-nex-exp10-state={
+        entranceSession.learningReassessment?.state ?? "none"
+      }
+      data-nex-exp10-route={
+        entranceSession.learningReassessment?.cycle?.reassessmentRoute ?? "none"
+      }
+      data-nex-exp10-commits-decision="false"
+      data-nex-e2e1="full-executive-experience"
+      data-nex-e2e1-engine="NEX-E2E:1/FullExecutiveExperienceEndToEndCertification"
+      data-nex-e2e1-creates-exp11="false"
+      data-nex-mvp-final="real-manager-mvp"
+      data-nex-mvp-final-engine="NEX-MVP-FINAL:1/RealManagerMvpCertification"
+      data-nex-mvp-final61="natural-language-understanding"
+      data-nex-mvp-final61-engine={nexoraMvpFinal61NluIdentity}
+      data-nex-mvp-final62="conversation-context-continuity"
+      data-nex-mvp-final62-engine={nexoraMvpFinal62ContinuityIdentity}
+      data-nex-mvp-final63="smart-clarification-correction"
+      data-nex-mvp-final63-engine={nexoraMvpFinal63ClarificationIdentity}
+      data-nex-mvp-final64="trusted-executive-communication"
+      data-nex-mvp-final64-engine={nexoraMvpFinal64CommunicationIdentity}
+      data-nex-mvp-final65="guidance-self-knowledge"
+      data-nex-mvp-final65-engine={nexoraMvpFinal65GuidanceIdentity}
+      data-nex-mvp-final66="type-c-manager-conversation"
+      data-nex-mvp-final66-engine={nexoraMvpFinal66TypeCIdentity}
+      data-nca1="manager-conversation-architecture"
+      data-nca1-engine={nexoraNca1Identity}
+      data-nca2="conversational-context-dialogue-state"
+      data-nca2-engine={nexoraNca2Identity}
+      data-nca2-move={conversationalLastTrace?.nca2Move ?? ""}
+      data-nca2-topic={conversationalLastTrace?.nca2Topic ?? ""}
+      data-nca2-subject={conversationalLastTrace?.nca2Subject ?? ""}
+      data-nca2-pending={conversationalLastTrace?.nca2Pending ?? ""}
+      data-nca2-thread={conversationalLastTrace?.nca2ThreadState ?? ""}
+      data-nca3="clarification-information-gap-executive-question"
+      data-nca3-engine={nexoraNca3Identity}
+      data-nca3-mode={conversationalLastTrace?.nca3Mode ?? ""}
+      data-nca3-ask={conversationalLastTrace?.nca3ShouldAsk === true ? "true" : "false"}
+      data-nca3-sufficiency={conversationalLastTrace?.nca3Sufficiency ?? ""}
+      data-nca3-gap={conversationalLastTrace?.nca3Gap ?? ""}
+      data-nca4="executive-advisory-reasoning-recommendation-dialogue"
+      data-nca4-engine={nexoraNca4Identity}
+      data-nca4-move={conversationalLastTrace?.nca4Move ?? ""}
+      data-nca4-status={conversationalLastTrace?.nca4Status ?? ""}
+      data-nca4-option={conversationalLastTrace?.nca4Option ?? ""}
+      data-nca4-strength={conversationalLastTrace?.nca4Strength ?? ""}
+      data-nca4-confidence={conversationalLastTrace?.nca4Confidence ?? ""}
+      data-nca4-advise={conversationalLastTrace?.nca4Advise === true ? "true" : "false"}
+      data-nca5="proactive-executive-advisor-conversational-initiative"
+      data-nca5-engine={nexoraNca5Identity}
+      data-nca5-initiate={conversationalLastTrace?.nca5Initiate === true ? "true" : "false"}
+      data-nca5-behavior={conversationalLastTrace?.nca5Behavior ?? ""}
+      data-nca5-priority={conversationalLastTrace?.nca5Priority ?? ""}
+      data-nca5-interrupt={conversationalLastTrace?.nca5Interrupt === true ? "true" : "false"}
+      data-nca5-subject={conversationalLastTrace?.nca5Subject ?? ""}
+      data-nca6="manager-model-communication-adaptation-trust"
+      data-nca6-engine={nexoraNca6Identity}
+      data-nca6-depth={conversationalLastTrace?.nca6Depth ?? ""}
+      data-nca6-framing={conversationalLastTrace?.nca6Framing ?? ""}
+      data-nca6-structure={conversationalLastTrace?.nca6Structure ?? ""}
+      data-nca6-familiarity={conversationalLastTrace?.nca6Familiarity ?? ""}
+      data-nca6-role={conversationalLastTrace?.nca6Role ?? ""}
+      data-nca7="end-to-end-conversation-orchestration-final"
+      data-nca7-engine={nexoraNca7Identity}
+      data-nca7-owner={conversationalLastTrace?.nca7Owner ?? ""}
+      data-nca7-rank={conversationalLastTrace?.nca7Rank ?? ""}
+      data-nca7-ask={conversationalLastTrace?.nca7Ask === true ? "true" : "false"}
+      data-nca7-advise={conversationalLastTrace?.nca7Advise === true ? "true" : "false"}
+      data-nca7-initiate={conversationalLastTrace?.nca7Initiate === true ? "true" : "false"}
+      data-nca-need={conversationalLastTrace?.ncaNeed ?? ""}
+      data-nca-behavior={conversationalLastTrace?.ncaBehavior ?? ""}
+      data-nca-sufficient={
+        conversationalLastTrace?.ncaSufficient === true ? "true" : "false"
+      }
+      data-nca-capability={conversationalLastTrace?.ncaCapability ?? ""}
+      data-nlu-raw={conversationalLastTrace ? conversationalLastTrace.utterance : ""}
+      data-nlu-communicative-intent={
+        conversationalLastTrace?.nluCommunicativeIntent ?? ""
+      }
+      data-nlu-operation={conversationalLastTrace?.nluRequestedOperation ?? ""}
+      data-nlu-subject={conversationalLastTrace?.nluSubject ?? ""}
+      data-nlu-question-type={conversationalLastTrace?.nluQuestionType ?? ""}
+      data-nlu-confidence={conversationalLastTrace?.nluConfidence ?? ""}
+      data-nlu-ambiguity={
+        conversationalLastTrace?.nluAmbiguity === true ? "true" : "false"
+      }
+      data-nlu-authority={conversationalLastTrace?.nluAuthority ?? ""}
+      data-continuity-provenance={
+        conversationalLastTrace?.continuityProvenance ?? ""
+      }
+      data-continuity-move={conversationalLastTrace?.continuityMove ?? ""}
+      data-continuity-subject={conversationalLastTrace?.continuitySubject ?? ""}
+      data-continuity-confidence={
+        conversationalLastTrace?.continuityConfidence ?? ""
+      }
+      data-continuity-ambiguity={
+        conversationalLastTrace?.continuityAmbiguity === true ? "true" : "false"
+      }
+      data-continuity-active={
+        conversationalLastTrace?.continuityActiveSubject ?? ""
+      }
+      data-continuity-investigation={
+        conversationalLastTrace?.continuityInvestigation ?? ""
+      }
+      data-continuity-previous={
+        conversationalLastTrace?.continuityPreviousSubject ?? ""
+      }
+      data-clarification-required={
+        conversationalLastTrace?.clarificationRequired === true ? "true" : "false"
+      }
+      data-clarification-action={conversationalLastTrace?.clarificationAction ?? ""}
+      data-clarification-reason={conversationalLastTrace?.clarificationReason ?? ""}
+      data-clarification-question={
+        conversationalLastTrace?.clarificationQuestion ?? ""
+      }
+      data-clarification-candidates={
+        String(conversationalLastTrace?.clarificationCandidates ?? 0)
+      }
+      data-clarification-consequence={
+        conversationalLastTrace?.clarificationConsequence ?? ""
+      }
+      data-clarification-pending={
+        managerObjectSession.pendingClarification ? "true" : "false"
+      }
+      data-clarification-resumed={
+        conversationalLastTrace?.resumedOperation ?? ""
+      }
+      data-correction-detected={
+        conversationalLastTrace?.correctionDetected === true ? "true" : "false"
+      }
+      data-correction-scope={conversationalLastTrace?.correctionScope ?? ""}
+      data-correction-before={conversationalLastTrace?.correctionBefore ?? ""}
+      data-correction-after={conversationalLastTrace?.correctionAfter ?? ""}
+      data-communication-depth={conversationalLastTrace?.communicationDepth ?? ""}
+      data-communication-claim-count={
+        String(conversationalLastTrace?.communicationClaimCount ?? 0)
+      }
+      data-communication-challenge={
+        conversationalLastTrace?.communicationChallenge === true ? "true" : "false"
+      }
+      data-communication-recommendation={
+        conversationalLastTrace?.communicationRecommendation === true ? "true" : "false"
+      }
+      data-communication-uncertainty={
+        conversationalLastTrace?.communicationUncertaintyPreserved === true
+          ? "true"
+          : "false"
+      }
+      data-communication-causal-validated={
+        conversationalLastTrace?.communicationCausalValidated === true ? "true" : "false"
+      }
+      data-communication-decision-wording={
+        conversationalLastTrace?.communicationDecisionWording ?? ""
+      }
+      data-communication-execution-wording={
+        conversationalLastTrace?.communicationExecutionWording ?? ""
+      }
+      data-guidance-intent={conversationalLastTrace?.guidanceIntent ?? ""}
+      data-guidance-action={conversationalLastTrace?.guidanceAction ?? ""}
+      data-guidance-capability={conversationalLastTrace?.guidanceCapability ?? ""}
+      data-guidance-availability={conversationalLastTrace?.guidanceAvailability ?? ""}
+      data-guidance-prerequisite={conversationalLastTrace?.guidancePrerequisite ?? ""}
+      data-guidance-selected={conversationalLastTrace?.guidanceSelected ?? ""}
+      data-guidance-reason={conversationalLastTrace?.guidanceReason ?? ""}
+      data-guidance-proactive={
+        conversationalLastTrace?.guidanceProactiveEligible === true ? "true" : "false"
+      }
+      data-guidance-suppressed={
+        conversationalLastTrace?.guidanceProactiveSuppressed ?? ""
+      }
+      data-guidance-authority={conversationalLastTrace?.guidanceAuthority ?? ""}
+      data-nex-mvp-final-new-engine="false"
       data-nex-mvp="8"
       data-shell-identity={shellIdentity.id}
       data-shell-version={shellIdentity.version}
+      data-mvp-baseline={nexoraManagerMvpReleaseBaselineIdentity}
+      data-data-status-kind={dataStatus.kind}
       data-flow-identity="NEX-MVP:8/NexoraExecutiveFlowIntegration"
       data-nexora-dataset={datasetScenario}
       data-rdi2-active-import={activeCsvImport?.importId ?? "none"}
@@ -1286,6 +1673,68 @@ export function NexoraExecutiveShell({
       data-workflow-learning={workflowPresentation.learningAvailability}
       data-theme-mode={theme}
       data-ux1="simplify-executive-page"
+      data-mo1="interaction"
+      data-mo1-active-object-id={managerObjectSession.activeObjectId ?? "none"}
+      data-mo1-activation={managerObjectSession.activationSource}
+      data-mo2="explain-engine"
+      data-mo2-engine="MO:2/GenericExplainEngine"
+      data-nexora-mo2-explain-identity={NEXORA_FINAL3_EXECUTIVE_EXPLAIN_IDENTITY}
+      data-mo2-subject={managerObjectSession.activeObjectId ?? "none"}
+      data-mo2-summary={conversationalLastTrace?.explanationSummary ?? ""}
+      data-mo2-epistemic={conversationalLastTrace?.explanationEpistemic ?? ""}
+      data-mo2-intent={conversationalLastTrace?.managerObjectIntent ?? ""}
+      data-mo2-focus={conversationalLastTrace?.explanationFocus ?? ""}
+      data-mo3="exploration"
+      data-mo3-engine="MO:3/ObjectGuidedExecutiveExploration"
+      data-mo3-state={conversationalLastTrace?.explorationState ?? ""}
+      data-mo3-recommended={conversationalLastTrace?.recommendedPathLabel ?? ""}
+      data-mo3-recommended-kind={conversationalLastTrace?.recommendedPathKind ?? ""}
+      data-mo3-recommended-target={conversationalLastTrace?.recommendedPathTarget ?? ""}
+      data-mo4="goal-navigation"
+      data-mo4-engine="MO:4/GoalDirectedExecutiveNavigation"
+      data-mo4-goal={conversationalLastTrace?.goalTitle ?? ""}
+      data-mo4-source={conversationalLastTrace?.goalSource ?? ""}
+      data-mo4-confirmed={
+        conversationalLastTrace?.goalConfirmed === true ? "true" : "false"
+      }
+      data-mo4-direction={conversationalLastTrace?.navigationDirection ?? ""}
+      data-mo4-target={conversationalLastTrace?.navigationPathTarget ?? ""}
+      data-mo4-progress={conversationalLastTrace?.goalProgress ?? ""}
+      data-mo5="journey"
+      data-mo5-engine="MO:5/ExecutiveJourneyProgressIntelligence"
+      data-mo5-phase={conversationalLastTrace?.journeyPhase ?? ""}
+      data-mo5-state={conversationalLastTrace?.journeyState ?? ""}
+      data-mo5-blocker={conversationalLastTrace?.journeyBlocker ?? ""}
+      data-mo5-health={conversationalLastTrace?.journeyHealth ?? ""}
+      data-mo6="attention"
+      data-mo6-engine="MO:6/ExecutiveAttentionInterventionIntelligence"
+      data-mo6-state={conversationalLastTrace?.attentionState ?? ""}
+      data-mo6-primary={conversationalLastTrace?.attentionPrimary ?? ""}
+      data-mo6-intervention={conversationalLastTrace?.attentionIntervention ?? ""}
+      data-mo6-do-not-disturb={
+        conversationalLastTrace?.attentionDoNotDisturb === true ? "true" : "false"
+      }
+      data-mo6-steals-focus="false"
+      data-mo-int1="experience-integration"
+      data-mo-int1-engine="MO-INT:1/ManagerObjectExecutiveExperienceIntegration"
+      data-mo-int1-lane={conversationalLastTrace?.experienceLane ?? ""}
+      data-mo-int1-context={conversationalLastTrace?.experienceCompactContext ?? ""}
+      data-mo-int1-next={conversationalLastTrace?.experienceNextStep ?? ""}
+      data-mo6-signal={
+        conversationalLastTrace?.attentionIntervention === "DECISION_REQUIRED" ||
+        conversationalLastTrace?.attentionIntervention === "ACTION_REQUIRED"
+          ? "intervention-required"
+          : conversationalLastTrace?.attentionDoNotDisturb === true
+            ? "safe-to-continue"
+            : conversationalLastTrace?.attentionState === "WATCH"
+              ? "watch"
+              : conversationalLastTrace?.attentionPrimary
+                ? "primary-attention"
+                : conversationalLastTrace?.attentionState === "ATTENTION" ||
+                    conversationalLastTrace?.attentionState === "URGENT"
+                  ? "attention"
+                  : ""
+      }
       style={{
         height: "100%",
         width: "100%",
@@ -1400,14 +1849,16 @@ export function NexoraExecutiveShell({
           onExecuteNextBestAction={onExecuteNextBestAction}
           onSelectBriefOption={onSelectBriefOption}
           advisorRealityBinding={dataRealityAdvisorExperience.advisorBinding}
+          validatedDataSource={dataRealityExperience.usesActiveDataSource}
           sourceIntelligenceContext={sourceAdvisorContext}
           onProactiveInvestigate={onProactiveInvestigate}
           onProactiveViewOnStage={onViewSourceOnStage}
           conversationalMessages={conversationalMessages}
           conversationalProcessing={conversationalProcessing}
           conversationalContextLabel={
-            interaction.focusedSubject?.label ??
-            interaction.selectedSubject?.label ??
+            conversationalLastTrace?.experienceCompactContext ||
+            interaction.focusedSubject?.label ||
+            interaction.selectedSubject?.label ||
             null
           }
           conversationalLastTrace={conversationalLastTrace}
@@ -1417,6 +1868,9 @@ export function NexoraExecutiveShell({
           }
           onBeginDailyPreparation={onBeginDailyPreparation}
           onBeginMeetingPreparation={onBeginMeetingPreparation}
+          flowDecisions={flowDomain.decisions}
+          flowExecutions={flowDomain.executions}
+          decisionRuntime={decisionRuntime.adapter}
         />
       </div>
 

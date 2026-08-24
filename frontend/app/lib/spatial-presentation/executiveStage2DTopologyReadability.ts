@@ -738,11 +738,11 @@ export function resolveExecutiveStage2DTopologyReadability(
     EXECUTIVE_STAGE_2D_READABILITY_LAYOUT.maxSecondaryVisible;
 
   // Preserve STAGE-2D:3 related truth — readability may only reorder layout.
-  let relatedObjectIds = [...base.relatedObjectIds.slice(0, maxRelated)];
+  const relatedObjectIds = [...base.relatedObjectIds.slice(0, maxRelated)];
   const relatedSet = new Set(relatedObjectIds);
   const densityBand = resolveExecutiveStage2DDensityBand(relatedObjectIds.length);
 
-  const secondaryInput =
+  const secondaryInput: readonly ExecutiveStage2DSecondaryCandidateInput[] =
     input.secondaryCandidates ??
     (input.secondaryCandidateIds ?? []).map((id) =>
       Object.freeze({ id }),
@@ -755,7 +755,7 @@ export function resolveExecutiveStage2DTopologyReadability(
     filteredSecondary,
     maxSecondary,
   );
-  let secondaryObjectIds = [...prioritized.visibleIds];
+  const secondaryObjectIds = [...prioritized.visibleIds];
   const secondarySet = new Set(secondaryObjectIds);
 
   const classifications: Record<string, ExecutiveStage2DNeighborhoodClass> = {
@@ -805,9 +805,9 @@ export function resolveExecutiveStage2DTopologyReadability(
     }
   });
 
-  let backgroundObjectIds: string[] = [];
-  let peripheralObjectIds: string[] = [];
-  let hiddenObjectIds: string[] = [];
+  const backgroundObjectIds: string[] = [];
+  const peripheralObjectIds: string[] = [];
+  const hiddenObjectIds: string[] = [];
 
   input.objects.forEach((object, index) => {
     if (object.objectId === anchorObjectId) return;

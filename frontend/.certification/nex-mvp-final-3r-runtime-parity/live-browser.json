@@ -1,0 +1,123 @@
+{
+  "phase": "NEX-MVP-FINAL:3R",
+  "http": 200,
+  "identity": {
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "mode": "existing-workspace"
+  },
+  "entranceIdentity": {
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "mode": "first-time"
+  },
+  "existingWorkspace": {
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "mode": "existing-workspace"
+  },
+  "existingRisk": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraFocused on Risk."
+  },
+  "stageClickFocused": "none",
+  "showRiskObject": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraFocused on Risk."
+  },
+  "explainRisk": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraRisk needs attention because it is unresolved. Risk is associated with Margin Pressure. That connection does not by itself tell us whether Risk is affecting Margin Pressure or the reverse. No outcome has been measured yet. I recommend investigating Margin Pressure next to determine whether it is driving Risk."
+  },
+  "why": {
+    "focused": "obj-risk",
+    "moActive": "obj-risk",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraRisk needs attention because it is unresolved. Risk is associated with Margin Pressure. That connection does not by itself tell us whether Risk is affecting Margin Pressure or the reverse. There is not enough evidence yet to identify a confirmed root cause for Risk."
+  },
+  "showDeliveryObject": {
+    "focused": "obj-delivery",
+    "moActive": "obj-delivery",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraFocused on Delivery."
+  },
+  "explainDelivery": {
+    "focused": "obj-delivery",
+    "moActive": "obj-delivery",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraDelivery needs attention because it is Watch. We know on-time is 91%. Delivery is associated with Capacity Gap. That connection does not by itself tell us whether Delivery is affecting Capacity Gap or the reverse. No outcome has been measured yet. I recommend investigating Capacity Gap next to determine whether it is driving Delivery."
+  },
+  "showDeliverObject": {
+    "focused": "obj-delivery",
+    "moActive": "obj-delivery",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraAlready on Delivery."
+  },
+  "capacity": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraFocused on Capacity."
+  },
+  "capacityExplain": {
+    "focused": "obj-capacity",
+    "moActive": "obj-capacity",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraCapacity is 12% above the intended target band and is currently constraining delivery. Capacity needs attention because it is Watch. We know utilization is 88%. Capacity is constrained by Capacity Gap. That is a recorded dependency, not a confirmed cause. No outcome has been measured yet. I recommend investigating Capacity Gap next to determine whether it is driving Capacity."
+  },
+  "inventory": {
+    "focused": "obj-inventory",
+    "moActive": "obj-inventory",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraFocused on Inventory."
+  },
+  "inventoryExplain": {
+    "focused": "obj-inventory",
+    "moActive": "obj-inventory",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraInventory is Stable. We know turns is 6.1. Inventory is associated with Capacity. That connection does not by itself tell us whether Inventory is affecting Capacity or the reverse. No outcome has been measured yet. I recommend investigating Capacity next to determine whether it is driving Inventory."
+  },
+  "riskProblem": {
+    "focused": "obj-inventory",
+    "moActive": "obj-inventory",
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "last": "NexoraI found more than one “Risk Problem”. Which one do you mean?"
+  },
+  "sameComposer": true,
+  "causalHonest": true,
+  "riskProblemAmbiguous": true,
+  "errors": []
+}

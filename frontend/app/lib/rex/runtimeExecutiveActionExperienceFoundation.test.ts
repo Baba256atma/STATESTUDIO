@@ -506,8 +506,8 @@ test("13. normalization preserves context without inference and rejects invalid 
     workspaceId: "workspace.alpha",
     insightId: "insight.schedule-risk",
   });
-  assert.equal(context.advisorId, undefined);
-  assert.equal(context.stageId, undefined);
+  assert.equal("advisorId" in context, false);
+  assert.equal("stageId" in context, false);
 
   assert.throws(
     () =>

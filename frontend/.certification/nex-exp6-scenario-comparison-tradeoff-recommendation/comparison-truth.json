@@ -1,0 +1,16 @@
+{
+  "path": "SCENARIO FACTS → EI:4 helpers → TRADE-OFFS → RECOMMENDATION projection",
+  "recommendationWritesDecisionRuntime": false,
+  "commitsDecision": false,
+  "startsExecution": false,
+  "predictedEqualsObserved": false,
+  "unknownEqualsHighRisk": false,
+  "ei4Helpers": [
+    "createPriorityFactor",
+    "resolveExplainablePriority",
+    "compareExplainablePriorities",
+    "createScenarioTradeoff",
+    "createExpectedEffect"
+  ],
+  "cc9EvaluateNotForced": true
+}

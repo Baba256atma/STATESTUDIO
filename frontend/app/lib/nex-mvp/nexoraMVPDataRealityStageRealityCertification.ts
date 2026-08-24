@@ -8,7 +8,7 @@ import {
   certifyDataRealityEndToEndStageReality,
   type CertifyDataRealityEndToEndStageRealityInput,
   type DataRealityEndToEndStageRealityCertification,
-} from "@/app/lib/data-reality/dataRealityEndToEndStageRealityCertification";
+} from "./dataRealityEndToEndStageRealityCertification.ts";
 
 export const nexoraMVPDataRealityStageRealityCertificationIdentity =
   "NEX-MVP/P2:8.6/DataRealityEndToEndStageRealityCertificationConsumer" as const;

@@ -1,0 +1,6 @@
+{
+  "engine": "MO:5/ExecutiveJourneyProgressIntelligence",
+  "hardcodedJourneyBranches": false,
+  "treatsVisitedAsResolved": false,
+  "workflowEngine": false
+}

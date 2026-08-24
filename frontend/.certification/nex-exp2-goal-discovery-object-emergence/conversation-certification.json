@@ -1,0 +1,21 @@
+{
+  "liveScript": "scripts/nex-exp2-goal-discovery-certify.mjs",
+  "turns": {
+    "whatAreYouTryingToAchieve": true,
+    "improveDeliveryReliability": true,
+    "whatDoesSuccessLookLike": true,
+    "below5Percent": true,
+    "byQ4": true,
+    "costMoreImportant": true,
+    "refineDeliveryCost": true,
+    "whatIsMyGoal": true,
+    "whyPhrasedThatWay": true,
+    "whatDoWeStillNotKnow": true,
+    "showMeTheGoal": true,
+    "explainThis": true,
+    "howConnectsToCompany": true,
+    "earlySignalFromExp1": true
+  },
+  "formAvoided": true,
+  "oneQuestionAtATime": true
+}

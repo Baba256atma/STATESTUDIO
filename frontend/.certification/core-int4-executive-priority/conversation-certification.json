@@ -1,0 +1,27 @@
+{
+  "identity": "CORE-INT:4/ConversationCertification",
+  "utterances": [
+    { "text": "What matters most right now?", "key": "priority" },
+    { "text": "Why?", "key": "whyPriority" },
+    { "text": "Why this instead of the other problem?", "key": "comparePriority" },
+    { "text": "What is second priority?", "key": "secondPriority" },
+    { "text": "How sure are you?", "key": "confidence" },
+    { "text": "What evidence supports that?", "key": "evidenceFollowup" },
+    { "text": "What if the evidence is insufficient?", "key": "insufficientPriority" }
+  ],
+  "parserFallback": false,
+  "stageMutation": false,
+  "humanManagerTest": {
+    "whatDeservesAttention": "PASS — Risk",
+    "highestPriority": "PASS — Capacity Gap",
+    "why": "PASS — multi-downstream constraint pressure",
+    "whyBeforeAlternative": "PASS — compared recorded criteria",
+    "criteria": "PASS",
+    "evidenceStrength": "PASS — ranked: Evidence limited / not causal confidence; unranked: cannot rank",
+    "second": "PASS — honest unknown or ranked second",
+    "tiedUnranked": "PASS — Decisions scope",
+    "priorityEqualsRecommendation": "PASS — no",
+    "priorityEqualsDecision": "PASS — no",
+    "result": "PASS"
+  }
+}

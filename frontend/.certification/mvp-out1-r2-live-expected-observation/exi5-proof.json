@@ -1,0 +1,7 @@
+{
+  "authority": "EXI:5",
+  "AG": "EXI:5 receives canonical snapshot from the coordinator",
+  "AH": "Advisor reflects canonical Outcome/Learning state",
+  "AI": "Did it work uses CORE-OUT:1 assessment",
+  "result": "pass"
+}

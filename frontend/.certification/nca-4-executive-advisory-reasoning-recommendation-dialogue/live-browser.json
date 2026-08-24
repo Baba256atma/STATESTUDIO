@@ -1,0 +1,119 @@
+{
+  "identity": "NCA:4/ExecutiveAdvisoryReasoningRecommendationDialogueIntelligence",
+  "url": "http://localhost:3000/executive",
+  "opened": true,
+  "pageErrors": [],
+  "engine": "NCA:4/ExecutiveAdvisoryReasoningRecommendationDialogueIntelligence",
+  "turns": [
+    {
+      "utterance": "What should I do?",
+      "last": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+      "diag": {
+        "engine": "NCA:4/ExecutiveAdvisoryReasoningRecommendationDialogueIntelligence",
+        "move": "REQUEST",
+        "status": "PROVISIONAL",
+        "option": "temporary capacity",
+        "strength": "LEAN_TOWARD",
+        "confidence": "MODERATE",
+        "advise": "true",
+        "nca3Ask": "false"
+      }
+    },
+    {
+      "utterance": "Why that one?",
+      "last": "NexoraTemporary capacity is the strongest option under the current goal and assumptions. It currently best advances the delivery goal under the active constraints. A reversible option preserves flexibility while demand persistence is still uncertain.",
+      "diag": {
+        "engine": "NCA:4/ExecutiveAdvisoryReasoningRecommendationDialogueIntelligence",
+        "move": "WHY_THIS",
+        "status": "PROVISIONAL",
+        "option": "temporary capacity",
+        "strength": "LEAN_TOWARD",
+        "confidence": "MODERATE",
+        "advise": "true",
+        "nca3Ask": "false"
+      }
+    },
+    {
+      "utterance": "What's the downside?",
+      "last": "NexoraThe main downside of temporary capacity is higher short-term operating cost. You keep reversibility, but you give up the lower long-run unit cost of a lasting change if demand persists.",
+      "diag": {
+        "engine": "NCA:4/ExecutiveAdvisoryReasoningRecommendationDialogueIntelligence",
+        "move": "DOWNSIDE",
+        "status": "PROVISIONAL",
+        "option": "temporary capacity",
+        "strength": "LEAN_TOWARD",
+        "confidence": "MODERATE",
+        "advise": "true",
+        "nca3Ask": "false"
+      }
+    },
+    {
+      "utterance": "How sure are you?",
+      "last": "NexoraModerately confident. The recommendation is supported by current delivery and backlog evidence, but demand persistence is still based on a manager estimate rather than confirmed long-term orders.",
+      "diag": {
+        "engine": "NCA:4/ExecutiveAdvisoryReasoningRecommendationDialogueIntelligence",
+        "move": "CONFIDENCE",
+        "status": "PROVISIONAL",
+        "option": "temporary capacity",
+        "strength": "LEAN_TOWARD",
+        "confidence": "MODERATE",
+        "advise": "true",
+        "nca3Ask": "false"
+      }
+    },
+    {
+      "utterance": "What would change your recommendation?",
+      "last": "NexoraI would change the recommendation if demand remains elevated after the current window, temporary labor becomes unavailable, or permanent capacity becomes significantly cheaper than the current estimate.",
+      "diag": {
+        "engine": "NCA:4/ExecutiveAdvisoryReasoningRecommendationDialogueIntelligence",
+        "move": "SENSITIVITY",
+        "status": "PROVISIONAL",
+        "option": "temporary capacity",
+        "strength": "LEAN_TOWARD",
+        "confidence": "MODERATE",
+        "advise": "true",
+        "nca3Ask": "false"
+      }
+    },
+    {
+      "utterance": "We just signed an 18-month customer contract that keeps this demand level.",
+      "last": "NexoraThat changes my recommendation because demand persistence is now supported by a longer commitment. I now recommend permanent expansion. It currently best advances the delivery goal under the active constraints. Confidence is moderate; demand persistence and labor availability still condition this advice.",
+      "diag": {
+        "engine": "NCA:4/ExecutiveAdvisoryReasoningRecommendationDialogueIntelligence",
+        "move": "NEW_EVIDENCE",
+        "status": "REVISED",
+        "option": "permanent expansion",
+        "strength": "RECOMMEND",
+        "confidence": "MODERATE",
+        "advise": "true",
+        "nca3Ask": "false"
+      }
+    },
+    {
+      "utterance": "I disagree. I still want temporary capacity.",
+      "last": "NexoraUnderstood. Temporary capacity gives you a different commitment profile, but the main risk you would be accepting is demand normalization. If you want that path, we can compare it directly — this remains advice, not a Decision.",
+      "diag": {
+        "engine": "NCA:4/ExecutiveAdvisoryReasoningRecommendationDialogueIntelligence",
+        "move": "DISAGREE",
+        "status": "REVISED",
+        "option": "permanent expansion",
+        "strength": "RECOMMEND",
+        "confidence": "MODERATE",
+        "advise": "true",
+        "nca3Ask": "false"
+      }
+    }
+  ],
+  "recommended": true,
+  "samePosition": true,
+  "explained": true,
+  "tradeoff": true,
+  "calibrated": true,
+  "sensitive": true,
+  "revised": true,
+  "openDisagreement": true,
+  "cause": false,
+  "fiction": false,
+  "commit": false,
+  "ok": true
+}

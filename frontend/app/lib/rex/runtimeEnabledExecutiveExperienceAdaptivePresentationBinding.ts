@@ -1982,27 +1982,27 @@ function unique(values: readonly string[]): boolean {
 
 export function verifyAdaptivePresentationBinding():
   AdaptivePresentationBindingVerification {
-  const module = runtimeEnabledExecutiveExperienceAdaptivePresentationBinding;
+  const runtimeModule = runtimeEnabledExecutiveExperienceAdaptivePresentationBinding;
   const registry =
     runtimeEnabledExecutiveExperienceAdaptivePresentationBindingRegistry;
 
   const identityOk =
-    module.identity === "REX-1:6/AdaptivePresentationBinding" &&
-    module.version === "1.6.0" &&
-    module.namespace ===
+    runtimeModule.identity === "REX-1:6/AdaptivePresentationBinding" &&
+    runtimeModule.version === "1.6.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.runtime-enabled-executive-experience.adaptive-presentation-binding" &&
-    module.layer === "REX" &&
-    module.phase === "REX-1" &&
-    module.stage === "AdaptivePresentationBinding" &&
-    module.architecturalRole ===
+    runtimeModule.layer === "REX" &&
+    runtimeModule.phase === "REX-1" &&
+    runtimeModule.stage === "AdaptivePresentationBinding" &&
+    runtimeModule.architecturalRole ===
       "ExecutiveRuntimeAdaptivePresentationBindingBoundary" &&
-    module.upstreamDependency === "REX-1:5/ExecutiveInteractionBinding" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency === "REX-1:5/ExecutiveInteractionBinding" &&
+    runtimeModule.upstreamDependency ===
       runtimeEnabledExecutiveExperienceInteractionBindingIdentity &&
-    module.interactionBindingBoundary === "REX-1:5-interaction-binding-only";
+    runtimeModule.interactionBindingBoundary === "REX-1:5-interaction-binding-only";
 
   const dependencyOk =
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeEnabledExecutiveExperienceInteractionBinding" &&
     EXECUTIVE_RUNTIME_ADAPTIVE_PRESENTATION_BINDING_BOUNDARY
       .consumesInteractionBindingOnly === true &&
@@ -2128,18 +2128,18 @@ export function verifyAdaptivePresentationBinding():
     );
 
   const interactionBindingBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-1:5/ExecutiveInteractionBinding" &&
-    module.boundary.consumesInteractionBindingOnly === true &&
-    module.boundary.calculatesPresentation === false &&
-    module.boundary.upgradesPresentationState === false &&
-    module.boundary.fabricatesCriticalEmphasis === false &&
-    module.boundary.fabricatesHighPriority === false;
+    runtimeModule.boundary.consumesInteractionBindingOnly === true &&
+    runtimeModule.boundary.calculatesPresentation === false &&
+    runtimeModule.boundary.upgradesPresentationState === false &&
+    runtimeModule.boundary.fabricatesCriticalEmphasis === false &&
+    runtimeModule.boundary.fabricatesHighPriority === false;
 
   const frameworkIndependent =
-    module.frameworkIndependent === true &&
-    module.rendererIndependent === true &&
-    module.boundary.frameworkIndependent === true;
+    runtimeModule.frameworkIndependent === true &&
+    runtimeModule.rendererIndependent === true &&
+    runtimeModule.boundary.frameworkIndependent === true;
 
   const ok =
     identityOk &&
@@ -2152,7 +2152,7 @@ export function verifyAdaptivePresentationBinding():
     uniquenessOk &&
     interactionBindingBoundaryIntact &&
     frameworkIndependent &&
-    module.principle ===
+    runtimeModule.principle ===
       EXECUTIVE_RUNTIME_ADAPTIVE_PRESENTATION_BINDING_PRINCIPLE;
 
   return Object.freeze({

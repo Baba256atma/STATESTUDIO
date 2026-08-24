@@ -1,0 +1,16 @@
+{
+  "experience": "NEX-EXP:6/ScenarioComparisonTradeoffRecommendation",
+  "comparisonAuthority": "EI:4/ScenarioPriorityTradeoffIntelligence",
+  "scenarioConversation": "CC:9/ScenarioConversation",
+  "recommendationFraming": "CC:8/ReasoningAndRecommendation",
+  "decisionAuthority": "CC:10R/CanonicalDecisionRuntime",
+  "goalDirection": "MO:4",
+  "explain": "MO:2",
+  "exploration": "MO:3",
+  "journey": "MO:5",
+  "attention": "MO:6",
+  "objects": "MO:1",
+  "advisor": "UX:3",
+  "parallelComparisonEngine": false,
+  "startsNexExp7": false
+}

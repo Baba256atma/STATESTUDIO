@@ -1,0 +1,22 @@
+{
+  "A": { "utterance": "explain DEMAND SURGE", "pass": true, "note": "Scenario explanation first" },
+  "B": { "utterance": "what is Demand Surge?", "pass": true },
+  "C": { "utterance": "describe Demand Surge", "pass": true },
+  "D": { "utterance": "tell me about Demand Surge", "pass": true },
+  "E": { "utterance": "show me delivery → explain DEMAND SURGE", "pass": true, "note": "explicit Scenario beats Delivery" },
+  "F": { "utterance": "what could be affected?", "pass": true },
+  "G": { "utterance": "what risks?", "pass": true },
+  "H": { "utterance": "how sure are you?", "pass": true },
+  "I": { "utterance": "why?", "pass": true, "note": "no unsupported causal claim" },
+  "J": { "utterance": "what do you recommend?", "pass": true },
+  "K": { "utterance": "what do you recommend about Demand Surge?", "pass": true, "note": "recommendation-first" },
+  "L": { "utterance": "should we prioritize Demand Surge?", "pass": true, "kind": "prioritize" },
+  "M": { "utterance": "what are the trade-offs of Demand Surge?", "pass": true, "kind": "explain", "notDescribe": true },
+  "N": { "utterance": "what happened with Demand Surge?", "pass": true, "kind": "execution-status" },
+  "O": { "utterance": "what happens if demand increases?", "pass": true, "kind": "explore-scenario" },
+  "P": { "utterance": "what if delivery be too late", "pass": true, "note": "FIX4 remains green" },
+  "Q": { "utterance": "explain Purple Dragon", "pass": true, "status": "not-found" },
+  "R": { "pass": true, "note": "uncertainty preserved" },
+  "S": { "pass": true, "note": "no causal statement" },
+  "T": { "pass": true, "note": "no Decision/Execution/Outcome/Learning mutation" }
+}

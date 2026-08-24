@@ -330,3 +330,34 @@ test("UX:3 Advisor view keeps Stage subject copy in the subject header", () => {
   assert.match(html, /Capacity/);
   assert.match(html, /data-ux3="professional-advisor"/);
 });
+
+test("K — local Data status does not claim strong evidence on Execution", () => {
+  const focused = pipeline("ctx-execution-capacity");
+  const local = composeNexoraProfessionalAdvisorPresentation({
+    advisor: focused.resolution.advisor,
+    insight: focused.resolution.insight,
+    intelligence: focused.intelligenceContext,
+    advisorBridge: focused.advisorBridge,
+    nextBestAction: focused.advisorBridge.nextBestAction,
+    decisionBrief: focused.advisorBridge.decisionBrief,
+    decisionMemory: focused.advisorBridge.decisionMemory,
+    validatedDataSource: false,
+  });
+  assert.notEqual(local.evidenceState, "strong");
+  assert.match(
+    local.evidenceSummary ?? "",
+    /validated evidence|Evidence limited|local data/i,
+  );
+  assert.match(local.situation ?? "", /planned|not tracking live delivery/i);
+  assert.doesNotMatch(local.situation ?? "", /CC:11|NEX-MVP:8|flowDomain/i);
+
+  const html = renderToStaticMarkup(
+    React.createElement(NexoraAdvisorView, {
+      viewModel: focused.resolution.advisor,
+      narrative: local,
+      onAction: () => undefined,
+    }),
+  );
+  assert.match(html, />Planned</);
+  assert.doesNotMatch(html, />In Progress</);
+});

@@ -1,0 +1,4 @@
+{
+  "tests": { "total": 293, "pass": 293, "fail": 0 },
+  "pack": "nexora-entrance + manager-object + EI:3 + UX:2–UX:6 baseline"
+}

@@ -1,0 +1,72 @@
+{
+  "identity": "NCA:2/ConversationalContextTopicDialogueStateIntelligence",
+  "url": "http://localhost:3000/executive",
+  "opened": true,
+  "pageErrors": [],
+  "engine": "NCA:2/ConversationalContextTopicDialogueStateIntelligence",
+  "turns": [
+    {
+      "utterance": "Why is delivery below target?",
+      "last": "NexoraNo executive object is currently active, so I cannot explain a subject. No outcome has been measured yet. I'd investigate what's preventing the goal next. Has backlog increased recently?",
+      "diag": {
+        "engine": "NCA:2/ConversationalContextTopicDialogueStateIntelligence",
+        "move": "ASK_MANAGER",
+        "topic": "Delivery Performance",
+        "subject": "Delivery",
+        "pending": "Has backlog increased recently?",
+        "thread": "ACTIVE",
+        "need": "INVESTIGATE",
+        "nluOp": "CAUSE"
+      }
+    },
+    {
+      "utterance": "Yes, about 20%.",
+      "last": "NexoraThat 20% increase makes persistent demand pressure more likely. Was that increase driven mainly by more orders or slower throughput?",
+      "diag": {
+        "engine": "NCA:2/ConversationalContextTopicDialogueStateIntelligence",
+        "move": "ANSWER_NEXORA",
+        "topic": "Delivery Performance",
+        "subject": "Delivery",
+        "pending": "Was that increase driven mainly by more orders or slower throughput?",
+        "thread": "ACTIVE",
+        "need": "PROVIDE_INFORMATION",
+        "nluOp": "NONE"
+      }
+    },
+    {
+      "utterance": "What about inventory?",
+      "last": "NexoraInventory is currently the highest-priority attention candidate relative to Inventory. Inventory is the highest-priority attention candidate . This does not establish a confirmed business cause.",
+      "diag": {
+        "engine": "NCA:2/ConversationalContextTopicDialogueStateIntelligence",
+        "move": "PAUSE_TOPIC",
+        "topic": "Inventory Risk",
+        "subject": "Inventory",
+        "pending": "",
+        "thread": "ACTIVE",
+        "need": "UNDERSTAND",
+        "nluOp": "EXPLAIN"
+      }
+    },
+    {
+      "utterance": "Go back to capacity.",
+      "last": "NexoraReturning to Delivery. We were checking: Was that increase driven mainly by more orders or slower throughput.",
+      "diag": {
+        "engine": "NCA:2/ConversationalContextTopicDialogueStateIntelligence",
+        "move": "RETURN_TO_TOPIC",
+        "topic": "Delivery Performance",
+        "subject": "Delivery",
+        "pending": "Was that increase driven mainly by more orders or slower throughput?",
+        "thread": "ACTIVE",
+        "need": "INVESTIGATE",
+        "nluOp": "FOCUS"
+      }
+    }
+  ],
+  "shortAnswered": true,
+  "shift": true,
+  "restored": true,
+  "cause": false,
+  "fiction": false,
+  "commit": false,
+  "ok": true
+}

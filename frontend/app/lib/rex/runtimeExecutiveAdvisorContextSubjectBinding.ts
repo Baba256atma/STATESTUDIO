@@ -1903,24 +1903,24 @@ export interface RuntimeExecutiveAdvisorContextSubjectBindingVerification {
 
 export function verifyRuntimeExecutiveAdvisorContextSubjectBinding():
   RuntimeExecutiveAdvisorContextSubjectBindingVerification {
-  const module = runtimeExecutiveAdvisorContextSubjectBinding;
+  const runtimeModule = runtimeExecutiveAdvisorContextSubjectBinding;
   const registry = runtimeExecutiveAdvisorContextSubjectBindingRegistry;
   const foundation = verifyRuntimeExecutiveAdvisorExperienceFoundation();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-3:2/RuntimeExecutiveAdvisorContextSubjectBinding" &&
-    module.version === "3.2.0" &&
-    module.namespace ===
+    runtimeModule.version === "3.2.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.advisor-experience.context-subject-binding" &&
-    module.layer === "RuntimeExecutiveExperience" &&
-    module.domain === "ExecutiveAdvisor" &&
-    module.phase === "ContextSubjectBinding" &&
-    module.upstreamDependency ===
+    runtimeModule.layer === "RuntimeExecutiveExperience" &&
+    runtimeModule.domain === "ExecutiveAdvisor" &&
+    runtimeModule.phase === "ContextSubjectBinding" &&
+    runtimeModule.upstreamDependency ===
       "REX-3:1/RuntimeExecutiveAdvisorExperienceFoundation" &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveAdvisorExperienceFoundation" &&
-    module.foundationBoundary === "REX-3:1-foundation-only";
+    runtimeModule.foundationBoundary === "REX-3:1-foundation-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_ADVISOR_BINDING_SOURCE_KINDS], [
@@ -2032,14 +2032,14 @@ export function verifyRuntimeExecutiveAdvisorContextSubjectBinding():
     Object.isFrozen(RUNTIME_EXECUTIVE_ADVISOR_BINDING_BOUNDARY);
 
   const foundationBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-3:1/RuntimeExecutiveAdvisorExperienceFoundation" &&
-    module.boundary.consumesFoundationOnly === true &&
-    module.boundary.importsRex2Directly === false &&
-    module.boundary.importsRex1Directly === false &&
-    module.boundary.importsExDriDirectly === false &&
-    module.boundary.importsDriDirectly === false &&
-    module.boundary.importsNolDirectly === false;
+    runtimeModule.boundary.consumesFoundationOnly === true &&
+    runtimeModule.boundary.importsRex2Directly === false &&
+    runtimeModule.boundary.importsRex1Directly === false &&
+    runtimeModule.boundary.importsExDriDirectly === false &&
+    runtimeModule.boundary.importsDriDirectly === false &&
+    runtimeModule.boundary.importsNolDirectly === false;
 
   const empty = bindRuntimeExecutiveAdvisorContext({ evidence: [] });
   const emptyOk =
@@ -2060,9 +2060,9 @@ export function verifyRuntimeExecutiveAdvisorContextSubjectBinding():
     foundationBoundaryIntact &&
     emptyOk &&
     foundation.ok === true &&
-    module.boundary.mutatesStageState === false &&
-    module.boundary.generatesAdvice === false &&
-    module.boundary.aiProviderIndependent === true;
+    runtimeModule.boundary.mutatesStageState === false &&
+    runtimeModule.boundary.generatesAdvice === false &&
+    runtimeModule.boundary.aiProviderIndependent === true;
 
   return Object.freeze({
     ok,
@@ -2090,8 +2090,8 @@ export function verifyRuntimeExecutiveAdvisorContextSubjectBinding():
     selectionOutranksFocus,
     attentionDoesNotOverrideSelection,
     foundationOk: foundation.ok === true,
-    noStageMutation: module.boundary.mutatesStageState === false,
-    noAi: module.boundary.generatesAdvice === false,
+    noStageMutation: runtimeModule.boundary.mutatesStageState === false,
+    noAi: runtimeModule.boundary.generatesAdvice === false,
   });
 }
 

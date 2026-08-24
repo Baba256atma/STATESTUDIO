@@ -105,7 +105,7 @@ test("6–7 — active Queue category + collection header", () => {
     currentWorkspace: "overview",
     presentationState: "minimum",
   });
-  let state = openNexoraMVPExecutiveQueueCollection(
+  const state = openNexoraMVPExecutiveQueueCollection(
     initialState(),
     "problem",
     experience.catalog,

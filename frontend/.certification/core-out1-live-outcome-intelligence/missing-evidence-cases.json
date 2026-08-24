@@ -1,0 +1,5 @@
+{
+  "noExpectedNoActual": "No live Outcome is available yet. Nexora will not invent one.",
+  "expectedNoActual": "No validated actual outcome is available yet.",
+  "actualNoBaseline": "Observed evidence exists, but the result cannot yet be evaluated against a validated baseline."
+}

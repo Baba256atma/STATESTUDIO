@@ -1,0 +1,14 @@
+{
+  "precedence": [
+    "explicit Decision expectation",
+    "measurable Scenario inheritance",
+    "MISSING"
+  ],
+  "forbidden": [
+    "advisor prose",
+    "recommendation",
+    "scenario summary",
+    "current KPI",
+    "later Actual"
+  ]
+}

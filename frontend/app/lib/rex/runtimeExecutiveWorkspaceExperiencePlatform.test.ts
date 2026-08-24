@@ -263,9 +263,11 @@ test("4. capabilities, exports, sections, guarantees", () => {
     "framework-independence",
     "business-action-independence",
   ]);
-  assert.ok(!approvedExports.includes("AnimatableObject"));
-  assert.ok(!approvedExports.includes("useState"));
-  assert.ok(!approvedExports.includes("Mesh"));
+  assert.ok(
+    !approvedExports.some((name) => String(name) === "AnimatableObject"),
+  );
+  assert.ok(!approvedExports.some((name) => String(name) === "useState"));
+  assert.ok(!approvedExports.some((name) => String(name) === "Mesh"));
 });
 
 test("5. resolution / composition / transition / dial / orchestration exposure", () => {
@@ -324,7 +326,7 @@ test("7. problem → scenario and non-linear decision → scenario", () => {
     currentExperience: experienceFor("problem"),
     request: Object.freeze({
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-b" },
+      requestedSubject: { kind: "scenario" as const, id: "scenario-b" },
       source: "dial",
       reason: "user-request",
     }),
@@ -337,7 +339,7 @@ test("7. problem → scenario and non-linear decision → scenario", () => {
     currentExperience: experienceFor("decision", "d1"),
     request: Object.freeze({
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-c" },
+      requestedSubject: { kind: "scenario" as const, id: "scenario-c" },
       source: "user",
       reason: "user-request",
     }),
@@ -352,7 +354,7 @@ test("8. same-workspace context change and presentation independence", () => {
     currentExperience: experienceFor("scenario", "scenario-a"),
     request: Object.freeze({
       requestedWorkspace: "scenario",
-      requestedSubject: { kind: "scenario", id: "scenario-b" },
+      requestedSubject: { kind: "scenario" as const, id: "scenario-b" },
       source: "user",
       reason: "subject-selection",
     }),
@@ -365,7 +367,7 @@ test("8. same-workspace context change and presentation independence", () => {
     currentExperience: experienceFor("scenario", "scenario-a", "report"),
     request: Object.freeze({
       requestedWorkspace: "decision",
-      requestedSubject: { kind: "decision", id: "increase-capacity" },
+      requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
       source: "user",
       reason: "user-request",
     }),
@@ -421,15 +423,17 @@ test("10. verification API and malformed registry detection", () => {
   assert.equal(first.isFrozen, false);
   assert.equal(first.upstreamOrchestrationOk, true);
 
+  const duplicateIdentitySections = Object.freeze(
+    sections.map((section, index) => (index === 1 ? sections[0] : section)),
+  );
   const broken = verifyRuntimeExecutiveWorkspaceExperiencePlatformRegistry({
     ...registry,
-    sections: Object.freeze(["Identity", "Identity"]) as typeof sections,
-    sectionCount: 2,
+    sections: duplicateIdentitySections as typeof sections,
   });
   assert.equal(broken.valid, false);
   assert.equal(broken.status, "invalid");
   assert.ok(broken.failedChecks.includes("sections-unique"));
-  assert.equal(registry.sections.length, 10);
+  assert.equal(registry.sections.length, sections.length);
 });
 
 test("11. mutation safety and determinism", () => {

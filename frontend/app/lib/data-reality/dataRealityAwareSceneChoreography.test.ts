@@ -818,9 +818,14 @@ test("Renderer apply — targets reach Stage presentation without duplicates", (
   const capacity = applied.scene.objects.find((o) => o.id === "obj-capacity")!;
   assert.equal(capacity.role, "unrelated");
   // SP:4.1B — disclosure-hidden subjects stay presentation-hidden.
+  // Background-discoverable retained attention stays present but subdued.
   if (capacity.disclosureState === "hidden") {
     assert.equal(capacity.opacity, 0);
     assert.equal(capacity.interactive, false);
+  } else if (capacity.disclosureState === "background-discoverable") {
+    assert.ok(capacity.opacity > 0);
+    assert.ok(capacity.opacity < 0.58);
+    assert.equal(capacity.interactive, true);
   } else {
     assert.ok(capacity.opacity >= 0.58);
   }
@@ -845,11 +850,10 @@ test("Renderer apply — targets reach Stage presentation without duplicates", (
     base,
     resetPlan,
   );
-  assert.equal(resetApplied.scene.mode, "overview");
-  assert.equal(resetApplied.scene.focusedObjectId, null);
-  for (const object of resetApplied.scene.objects) {
-    assert.deepEqual(object.targetPosition, object.overviewPosition);
-  }
+  // STAGE-2D:6V-FIX — explicit Stage focus is not cleared by a DR plan
+  // that has no automatic anchor.
+  assert.equal(resetApplied.scene.mode, "focus");
+  assert.equal(resetApplied.scene.focusedObjectId, "obj-revenue");
 });
 
 test("Camera controller dependency stability — fixed hook arity", () => {

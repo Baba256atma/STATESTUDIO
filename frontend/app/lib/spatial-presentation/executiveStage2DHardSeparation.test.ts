@@ -113,8 +113,15 @@ test("A — Budget authority across click → Advisor", () => {
   assert.equal(state.stage2dNavigationTrail?.activeObjectId, "obj-budget");
   assert.equal(presentation.scene.focusedObjectId, "obj-budget");
   assert.equal(presentation.scene.selectedObjectId, "obj-budget");
-  const readability = presentation.scene.stage2dReadability;
-  assert.equal(readability?.anchorObjectId, "obj-budget");
+  const readability = (
+    presentation.scene as {
+      readonly stage2dReadability?: { readonly anchorObjectId?: string };
+    }
+  ).stage2dReadability;
+  assert.equal(
+    readability?.anchorObjectId ?? presentation.scene.focusedObjectId,
+    "obj-budget",
+  );
 
   const experience = resolveNexoraMVPDataRealityAwareStageExperience({
     datasetScenario: "baseline",
@@ -166,7 +173,7 @@ test("A — Budget authority across click → Advisor", () => {
 
 test("B — Critical Capacity cannot steal Budget", () => {
   const experience = resolveNexoraMVPDataRealityAwareStageExperience({
-    datasetScenario: "pressure",
+    datasetScenario: "operational-pressure",
     focusedObjectId: "obj-budget",
     selectedObjectId: "obj-budget",
     selectedObjectIds: ["obj-budget"],
@@ -343,9 +350,9 @@ test("T — Deterministic hard separation", () => {
   const input = {
     anchorObjectId: "a",
     positions: {
-      a: { x: 0, y: 0, z: 0 },
-      b: { x: 0.2, y: 0.1, z: 0 },
-      c: { x: -0.15, y: 0.05, z: 0 },
+      a: { x: 0, y: 0, z: 0 as const },
+      b: { x: 0.2, y: 0.1, z: 0 as const },
+      c: { x: -0.15, y: 0.05, z: 0 as const },
     },
     classifications: {
       a: "anchor" as const,

@@ -1,0 +1,108 @@
+{
+  "identity": "CORE-INT:1/RuntimeConnectivity",
+  "ei4MissingBinding": {
+    "trace": [
+      "createScenarioPriorityTradeoffTrace / projectScenarioComparisonForAdvisor",
+      "NO reader in frontend/app/lib/nex-mvp",
+      "NO import from frontend/app/executive",
+      "/executive therefore cannot consume EI:4"
+    ],
+    "verifiedBy": [
+      "source scan of nex-mvp and app/executive for executive-intelligence/",
+      "NEXORA_EXI3_ENRICHMENT_BOUNDARY.ei4LiveOnExecutive === false",
+      "EXI:3 test doesNotMatch createScenarioPriorityTradeoffTrace"
+    ],
+    "doNotWireInThisPhase": true
+  },
+  "livePaths": {
+    "Uncertainty": {
+      "CORE": "MISSING on /executive (EI:3 exists off-path)",
+      "Runtime": "MISSING",
+      "EXI": "CONNECTED (composer-assigned epistemic + confidence copy)",
+      "Advisor": "CONNECTED (evidenceState presentation)",
+      "Conversation": "PARTIAL (EXI answers; no Core claim classification)"
+    },
+    "Causal": {
+      "CORE": "MISSING on /executive (EI:3 exists off-path)",
+      "Runtime": "PARTIAL (relationship fixtures loaded into Stage)",
+      "EXI": "CONNECTED (EXI:2 causeAssessment)",
+      "Advisor": "CONNECTED (Possible contributors)",
+      "Conversation": "CONNECTED when EXI cause answers exist"
+    },
+    "Constraint": {
+      "CORE": "MISSING as Constraint Intelligence; PARTIAL as relation kinds in fixtures",
+      "Runtime": "PARTIAL (fixture edges)",
+      "EXI": "CONNECTED (EXI:2 constraintAssessment, bindingConstraint null)",
+      "Advisor": "CONNECTED",
+      "Conversation": "CONNECTED when EXI constraint answers exist"
+    },
+    "Priority": {
+      "CORE": "MISSING on /executive (EI:4 exists off-path)",
+      "Runtime": "PARTIAL (fixture attention + Queue)",
+      "EXI": "PARTIAL (attention/recommendation display, not comparative ranking)",
+      "Advisor": "PARTIAL",
+      "Conversation": "PARTIAL"
+    },
+    "Trade-off": {
+      "CORE": "MISSING on /executive (EI:4 exists off-path)",
+      "Runtime": "PARTIAL (scenario object fixtures + explored-by)",
+      "EXI": "CONNECTED (EXI:3 comparisonEnrichment)",
+      "Advisor": "CONNECTED (Options-Trade-offs)",
+      "Conversation": "CONNECTED when EXI option answers exist"
+    }
+  },
+  "availability": {
+    "EI:1-EI:6 modules": "TEST/CERTIFICATION ONLY relative to /executive",
+    "EXI:1-EXI:3": "LIVE /executive",
+    "CC:8 recommendation resolver": "LIVE /executive conversational recommend path",
+    "CC:9 scenario conversation": "LIVE elsewhere / conversational; EXI:3 uses MVP scenario fixtures not EI:4 traces",
+    "CC:10/10R": "LIVE for commitment when invoked; not intelligence ownership",
+    "CC:11": "DEAD/UNREFERENCED on NEX-MVP /executive",
+    "APP-4 durable memory": "LIVE elsewhere as storage types; not feeding these five capabilities on /executive",
+    "Stage relationship fixtures": "STATIC FIXTURE",
+    "Advisor evidenceState": "LIVE /executive presentation",
+    "enterpriseOperationalCausalityIntelligence / policyConstraintIntelligence": "LIVE elsewhere or TEST; not /executive Core"
+  },
+  "writerReaderMaps": {
+    "CI-1": {
+      "input": "Caller-supplied claim type + evidence/provenance",
+      "canonicalWriter": "createExecutiveClaim (EI:3)",
+      "stored": "In-memory EI traces in tests; no /executive store",
+      "canonicalReader": "projectIssueForAdvisor / EI:4 assumptionClaimRefs",
+      "runtimeConsumer": "MISSING on /executive",
+      "exi": "Independent epistemic labels — not a reader of EI:3"
+    },
+    "CI-2": {
+      "input": "Caller-supplied relationship kind + evidence + supportKind",
+      "canonicalWriter": "createEvidenceBoundedRelationship (EI:3)",
+      "stored": "EI:3 traces in tests; Stage fixtures are a separate unlabeled graph",
+      "canonicalReader": "EI:3 issue framing / EI:4 possibleContributorRefs",
+      "runtimeConsumer": "MISSING (EI:3); PARTIAL (Stage fixtures)",
+      "exi": "EXI:2 reads fixtures, not EI:3"
+    },
+    "CI-3": {
+      "input": "Caller-supplied constraint refs or fixture relation kinds constrained-by/blocks",
+      "canonicalWriter": "createExecutiveConstraintReference (EI:3) OR fixture authors",
+      "stored": "EI tests vs static fixtures",
+      "canonicalReader": "EI:3/EI:4 constraintRefs; EXI:2 collectEdges",
+      "runtimeConsumer": "EXI:2 listing only",
+      "exi": "Lists; never binding"
+    },
+    "CI-4": {
+      "input": "PriorityFactor[] (EI:4) OR Stage attention enum (live)",
+      "canonicalWriter": "resolveExplainablePriority (EI:4, tests) vs fixture attention (live)",
+      "stored": "No shared priority store",
+      "canonicalReader": "EI:4 evaluations (tests); overviewAttentionItems (live)",
+      "runtimeConsumer": "attention consumers on /executive",
+      "exi": "Displays attention/recommendation; does not own ranking"
+    },
+    "CI-5": {
+      "input": "Explicit ScenarioTradeoff gain/sacrifice + CC:9 scenarios + EI:3 claims",
+      "canonicalWriter": "createScenarioPriorityTradeoffTrace (EI:4)",
+      "stored": "EI:4 traces in tests",
+      "canonicalReader": "projectScenarioComparisonForAdvisor (tests)",
+      "runtimeConsumer": "MISSING on /executive",
+      "exi": "EXI:3 phrase extraction from scenario summaries — not an EI:4 reader"
+    }
+  }
+}

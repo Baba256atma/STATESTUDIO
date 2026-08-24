@@ -1634,31 +1634,31 @@ export interface RuntimeEnabledExecutiveExperienceCertificationFreezeVerificatio
 
 export function verifyRuntimeEnabledExecutiveExperienceCertificationFreeze():
   RuntimeEnabledExecutiveExperienceCertificationFreezeVerification {
-  const module = runtimeEnabledExecutiveExperienceCertificationFreeze;
+  const runtimeModule = runtimeEnabledExecutiveExperienceCertificationFreeze;
   const registry = runtimeEnabledExecutiveExperienceCertificationFreezeRegistry;
   const certification = verifyRuntimeEnabledExecutiveExperienceCertification();
   const freeze = verifyRuntimeEnabledExecutiveExperienceFreeze();
   const report = certification.report;
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-1:8/RuntimeEnabledExecutiveExperienceCertificationFreeze" &&
-    module.version === "1.8.0" &&
-    module.namespace ===
+    runtimeModule.version === "1.8.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.runtime-enabled-executive-experience.certification-freeze" &&
-    module.layer === "REX" &&
-    module.phase === "REX-1" &&
-    module.stage === "CertificationFreeze" &&
-    module.upstreamDependency ===
+    runtimeModule.layer === "REX" &&
+    runtimeModule.phase === "REX-1" &&
+    runtimeModule.stage === "CertificationFreeze" &&
+    runtimeModule.upstreamDependency ===
       "REX-1:7/RuntimeEnabledExecutiveExperiencePlatform" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeEnabledExecutiveExperiencePlatformIdentity &&
-    module.platformBoundary === "REX-1:7-platform-only" &&
-    module.introducesRuntimeBehavior === false &&
-    module.isFinalPublicConsumerIndex === false;
+    runtimeModule.platformBoundary === "REX-1:7-platform-only" &&
+    runtimeModule.introducesRuntimeBehavior === false &&
+    runtimeModule.isFinalPublicConsumerIndex === false;
 
   const dependencyOk =
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeEnabledExecutiveExperiencePlatform" &&
     RUNTIME_ENABLED_EXECUTIVE_EXPERIENCE_CERTIFICATION_FREEZE_BOUNDARY
       .consumesPlatformOnly === true &&
@@ -1739,11 +1739,11 @@ export function verifyRuntimeEnabledExecutiveExperienceCertificationFreeze():
     );
 
   const platformBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-1:7/RuntimeEnabledExecutiveExperiencePlatform" &&
-    module.boundary.consumesPlatformOnly === true &&
-    module.boundary.introducesRuntimeBehavior === false &&
-    module.boundary.modifiesPlatformBehavior === false;
+    runtimeModule.boundary.consumesPlatformOnly === true &&
+    runtimeModule.boundary.introducesRuntimeBehavior === false &&
+    runtimeModule.boundary.modifiesPlatformBehavior === false;
 
   const certifiedReady =
     certification.ok &&
@@ -1766,7 +1766,7 @@ export function verifyRuntimeEnabledExecutiveExperienceCertificationFreeze():
     uniquenessOk &&
     platformBoundaryIntact &&
     certifiedReady &&
-    module.principle ===
+    runtimeModule.principle ===
       RUNTIME_ENABLED_EXECUTIVE_EXPERIENCE_CERTIFICATION_FREEZE_PRINCIPLE;
 
   return Object.freeze({
@@ -1798,7 +1798,7 @@ export function verifyRuntimeEnabledExecutiveExperienceCertificationFreeze():
     readiness: freeze.readiness,
     frozen: immutabilityOk,
     platformBoundaryIntact,
-    introducesNoBehavior: module.introducesRuntimeBehavior === false,
+    introducesNoBehavior: runtimeModule.introducesRuntimeBehavior === false,
   });
 }
 

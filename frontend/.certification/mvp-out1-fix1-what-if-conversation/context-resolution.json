@@ -1,0 +1,19 @@
+{
+  "inventoryCanonicalId": "obj-inventory",
+  "inventoryLabel": "Inventory",
+  "uniqueCurrentSubject": {
+    "utterance": "What happens if I increase it?",
+    "resolvesTo": "obj-inventory",
+    "rule": "deictic it/this/that uses current conversation subject when unique"
+  },
+  "marginToken": {
+    "current": "ctx-problem-margin (Margin Pressure)",
+    "hint": "margin",
+    "rule": "single-token hint may match a word in the current subject canonical name/aliases only — never catalog-wide substring search"
+  },
+  "ambiguous": {
+    "noCurrentSubject": true,
+    "multiplePrevious": ["obj-inventory", "obj-capacity"],
+    "guessed": false
+  }
+}

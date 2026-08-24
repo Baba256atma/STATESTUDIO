@@ -1,0 +1,27 @@
+{
+  "identity": "CORE-INT:4/PriorityCases",
+  "cases": [
+    {
+      "id": "workspace-capacity-gap",
+      "scope": "workspace",
+      "topPriority": "ctx-problem-capacity",
+      "why": "Recorded constraint pressure across multiple downstream subjects (Capacity, Delivery)",
+      "attentionSubject": "obj-risk",
+      "attentionEqualsPriority": false,
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "decisions-insufficient",
+      "scope": "decisions",
+      "topPriority": null,
+      "why": "Approve Repricing and Expand Capacity cannot be distinguished with current evidence",
+      "status": "CERTIFIED"
+    },
+    {
+      "id": "attention-vs-priority",
+      "attention": "Risk",
+      "priority": "Capacity Gap",
+      "status": "CERTIFIED"
+    }
+  ]
+}

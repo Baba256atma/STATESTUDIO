@@ -1,0 +1,40 @@
+{
+  "identity": "CORE-OUT:1A-FIX/data-reality",
+  "blockers": [
+    "A-structural",
+    "B-client-safety"
+  ],
+  "dependencyGraphBefore": {
+    "dataRealityRuntime": [
+      "pure contracts/validation/provenance"
+    ],
+    "violation": "app/lib/data-reality/dataRealityEndToEndStageRealityCertification.ts imported nexoraMVPStageFixtures and node:fs",
+    "illegalDirection": "Runtime folder -> Certification -> Stage fixtures / node:fs"
+  },
+  "classification": {
+    "A": "certification code lived in the Data Reality runtime folder; Test 7 scans all non-test .ts in that folder",
+    "B": "same certification module used node:fs, violating client-safe foundation",
+    "ownership": "Data Reality certification placement, not canonical observed-data authority",
+    "staleTest": false,
+    "runtimeArchitectureViolation": true,
+    "fixBelongsIn": "module placement / import direction"
+  },
+  "fix": {
+    "movedTo": "app/lib/nex-mvp/dataRealityEndToEndStageRealityCertification.ts",
+    "deletedFrom": "app/lib/data-reality/dataRealityEndToEndStageRealityCertification.ts",
+    "canonicalObservedDataAuthorityUnchanged": true,
+    "rdiSemanticsUnchanged": true
+  },
+  "dependencyGraphAfter": {
+    "direction": "Runtime -> nothing presentation-specific; Certification -> Runtime + Stage/test artifacts",
+    "never": "Runtime -> Certification -> Stage / node:fs"
+  },
+  "verification": {
+    "test7": "PASS \u2014 Data Reality contracts contain no Stage/Three.js dependencies",
+    "hotfix": "PASS \u2014 foundation does not runtime-import Node-only P1:6 certification",
+    "clientSafe": true,
+    "stageFixturesImportedByRuntime": false,
+    "threeJsImportedByRuntime": false,
+    "nodeFsImportedByRuntime": false
+  }
+}

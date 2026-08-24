@@ -243,14 +243,17 @@ test("Invariant I — Direct-neighbor truth preserved", () => {
     objects: fixtureObjects(),
     relationships: fixtureRelationships(),
   });
-  const expected = new Set(
+  const expected = new Set<string>(
     fixtureRelationships()
       .filter(
         (edge) =>
-          edge.sourceId === "obj-revenue" || edge.targetId === "obj-revenue",
+          String(edge.sourceId) === "obj-revenue" ||
+          String(edge.targetId) === "obj-revenue",
       )
       .map((edge) =>
-        edge.sourceId === "obj-revenue" ? edge.targetId : edge.sourceId,
+        String(edge.sourceId) === "obj-revenue"
+          ? edge.targetId
+          : edge.sourceId,
       ),
   );
   for (const relatedId of result.relatedObjectIds) {

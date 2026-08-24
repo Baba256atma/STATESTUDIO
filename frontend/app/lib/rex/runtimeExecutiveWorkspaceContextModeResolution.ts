@@ -1518,26 +1518,26 @@ export interface RuntimeExecutiveWorkspaceContextModeResolutionVerification {
 
 export function verifyRuntimeExecutiveWorkspaceContextModeResolution():
   RuntimeExecutiveWorkspaceContextModeResolutionVerification {
-  const module = runtimeExecutiveWorkspaceContextModeResolution;
+  const runtimeModule = runtimeExecutiveWorkspaceContextModeResolution;
   const registry = runtimeExecutiveWorkspaceContextModeResolutionRegistry;
   const upstream = verifyRuntimeExecutiveWorkspaceExperienceContracts();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-6:3/RuntimeExecutiveWorkspaceContextModeResolution" &&
-    module.version === "6.3.0" &&
-    module.namespace ===
+    runtimeModule.version === "6.3.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.workspace-experience.context-mode-resolution" &&
-    module.phase === "ContextModeResolution" &&
-    module.architecturalRole ===
+    runtimeModule.phase === "ContextModeResolution" &&
+    runtimeModule.architecturalRole ===
       "RuntimeExecutiveWorkspaceContextModeResolution" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       "REX-6:2/RuntimeExecutiveWorkspaceExperienceContracts" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeExecutiveWorkspaceExperienceContractsIdentity &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveWorkspaceExperienceContracts" &&
-    module.contractsBoundary === "REX-6:2-contracts-only";
+    runtimeModule.contractsBoundary === "REX-6:2-contracts-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_WORKSPACE_RESOLUTION_STATUSES], [
@@ -1703,11 +1703,11 @@ export function verifyRuntimeExecutiveWorkspaceContextModeResolution():
     frozen &&
     nonLinearTransitionCapable &&
     examplesOk &&
-    module.presentationStateIndependent === true &&
-    module.compositionFree === true &&
-    module.dialIndependent === true &&
-    module.automotiveStylingIndependent === true &&
-    module.nonLinearTransitionCapable === true &&
+    runtimeModule.presentationStateIndependent === true &&
+    runtimeModule.compositionFree === true &&
+    runtimeModule.dialIndependent === true &&
+    runtimeModule.automotiveStylingIndependent === true &&
+    runtimeModule.nonLinearTransitionCapable === true &&
     upstream.ok === true;
 
   return Object.freeze({
@@ -1736,14 +1736,14 @@ export function verifyRuntimeExecutiveWorkspaceContextModeResolution():
       runtimeExecutiveWorkspaceContextModeResolutionApiNames.length,
     frozen,
     contractsBoundaryIntact:
-      module.contractsBoundary === "REX-6:2-contracts-only",
+      runtimeModule.contractsBoundary === "REX-6:2-contracts-only",
     nonLinearTransitionCapable,
     presentationStateIndependent:
-      module.presentationStateIndependent === true,
-    compositionFree: module.compositionFree === true,
-    dialIndependent: module.dialIndependent === true,
+      runtimeModule.presentationStateIndependent === true,
+    compositionFree: runtimeModule.compositionFree === true,
+    dialIndependent: runtimeModule.dialIndependent === true,
     automotiveStylingIndependent:
-      module.automotiveStylingIndependent === true,
+      runtimeModule.automotiveStylingIndependent === true,
     upstreamContractsOk: upstream.ok === true,
   });
 }

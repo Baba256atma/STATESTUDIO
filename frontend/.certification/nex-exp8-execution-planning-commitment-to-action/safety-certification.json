@@ -1,0 +1,13 @@
+{
+  "chain": [
+    "DECISION_COMMITTED",
+    "PLAN_CREATED",
+    "PLAN_REVIEWED",
+    "START_INTENT",
+    "CONFIRMATION",
+    "CC:11",
+    "EXECUTION_RUNTIME",
+    "ACTIVE"
+  ],
+  "autoStartOnDecision": false
+}

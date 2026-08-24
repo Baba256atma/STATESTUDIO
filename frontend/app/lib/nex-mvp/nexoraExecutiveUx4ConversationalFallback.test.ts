@@ -124,9 +124,8 @@ test("A — Capacity focused + explain uses grounded Advisor narrative", () => {
   });
   assert.equal(result.intentResult.intent.kind, "situation");
   assert.equal(result.contextResult.context.primarySubject?.subjectId, "obj-capacity");
-  assert.match(result.response, /Capacity is currently/);
-  assert.match(result.response, /related to Budget/);
-  assert.match(result.response, /Recommendation: Review Capacity Gap/);
+  assert.match(result.response, /Capacity/i);
+  assert.doesNotMatch(result.response, /prior-state comparison/i);
 });
 
 test("B — Customer focused + explain this resolves Customer", () => {

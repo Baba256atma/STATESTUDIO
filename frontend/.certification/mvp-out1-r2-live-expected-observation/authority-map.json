@@ -1,0 +1,21 @@
+{
+  "phase": "MVP-OUT:1-R2",
+  "identity": "MVP-OUT:1-R2/DecisionExpectedOutcomeBinding",
+  "version": "1.0.0",
+  "captureIdentity": "MVP-OUT:1-R2/PostDecisionObservationCapture",
+  "authorities": {
+    "decision": "CC:10 via NEX-MVP:8",
+    "execution": "NEX-MVP:8 (CC:11 not live)",
+    "dataReality": "Data Reality",
+    "out1a": "CORE-OUT:1A",
+    "out1": "CORE-OUT:1",
+    "out2": "CORE-OUT:2",
+    "coreInt2": "CORE-INT:2",
+    "coreInt3": "CORE-INT:3",
+    "app4": "APP-4",
+    "exi5": "EXI:5",
+    "advisorConversation": "reader/presentation",
+    "mvpOut1R1": "orchestration only",
+    "mvpOut1R2": "expected binding + capture trigger only"
+  }
+}

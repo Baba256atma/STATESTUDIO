@@ -1,0 +1,9 @@
+{
+  "genericEngine": true,
+  "noCapacityBranch": true,
+  "noDeliveryBranch": true,
+  "noCashBranch": true,
+  "noProjectOrionBranch": true,
+  "noSoftwareBranch": true,
+  "noWeekendShiftBranch": true
+}

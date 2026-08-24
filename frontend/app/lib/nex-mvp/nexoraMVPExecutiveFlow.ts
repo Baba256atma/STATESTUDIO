@@ -258,7 +258,8 @@ export type NexoraMVPFlowDomainActionResult =
         | "unavailable"
         | "invalid-subject"
         | "invalid-transition"
-        | "duplicate";
+        | "duplicate"
+        | "canonical-runtime-required";
       readonly message: string;
     };
 
@@ -614,7 +615,7 @@ export function deriveNexoraMVPExecutiveWorkflowPresentation(input: {
     reason =
       execution?.blocker != null
         ? `Blocker: ${execution.blocker}`
-        : "Review progress, blockers, and the next supported execution action.";
+        : "Review the recorded Execution state. Reviewing does not change it.";
   }
 
   const currentChainIndex = currentSubjectId
@@ -1070,6 +1071,7 @@ export function applyNexoraMVPFlowDomainAction(
       action,
       title: decision.label,
       scenarioId: decision.sourceScenarioId ?? undefined,
+      committedAt: options?.occurredAt,
     });
 
     if (
@@ -1236,8 +1238,8 @@ export function applyNexoraMVPFlowDomainAction(
       packKind: "execution" as const,
       title: execution.label,
       subjectId: execution.id,
-      summary: `Execution started from ${
-        decision ? decision.label : "Decision"
+      summary: `Nexora recorded ${execution.label} as in progress from ${
+        decision ? decision.label : "the approved Decision"
       }.`,
       occurredAt: now,
       relatedObjectIds: Object.freeze(
@@ -1260,7 +1262,7 @@ export function applyNexoraMVPFlowDomainAction(
       ),
       timelineEvents: Object.freeze([...state.timelineEvents, timelineEvent]),
       journalPacks: Object.freeze([...state.journalPacks, journalPack]),
-      lastActionMessage: `${execution.label} started.`,
+      lastActionMessage: `Nexora recorded ${execution.label} as in progress.`,
     });
     return Object.freeze({ ok: true, state: next, message: next.lastActionMessage! });
   }
@@ -1297,7 +1299,7 @@ export function applyNexoraMVPFlowDomainAction(
         ),
       ),
       timelineEvents: Object.freeze([...state.timelineEvents, timelineEvent]),
-      lastActionMessage: `${execution.label} paused.`,
+      lastActionMessage: `Nexora recorded ${execution.label} as paused.`,
     });
     return Object.freeze({ ok: true, state: next, message: next.lastActionMessage! });
   }
@@ -1323,7 +1325,7 @@ export function applyNexoraMVPFlowDomainAction(
             : entry,
         ),
       ),
-      lastActionMessage: `${execution.label} resumed.`,
+      lastActionMessage: `Nexora recorded ${execution.label} as in progress.`,
     });
     return Object.freeze({ ok: true, state: next, message: next.lastActionMessage! });
   }
@@ -1360,7 +1362,7 @@ export function applyNexoraMVPFlowDomainAction(
       packKind: "execution" as const,
       title: execution.label,
       subjectId: execution.id,
-      summary: "Execution completed.",
+      summary: `Nexora recorded ${execution.label} as complete. Outcome evidence is not available yet.`,
       occurredAt: now,
       relatedObjectIds: Object.freeze(
         execution.objectId ? [execution.objectId] : [],
@@ -1382,7 +1384,7 @@ export function applyNexoraMVPFlowDomainAction(
       ),
       timelineEvents: Object.freeze([...state.timelineEvents, timelineEvent]),
       journalPacks: Object.freeze([...state.journalPacks, journalPack]),
-      lastActionMessage: `${execution.label} completed.`,
+      lastActionMessage: `Nexora recorded ${execution.label} as complete. Outcome evidence is not available yet.`,
     });
     return Object.freeze({ ok: true, state: next, message: next.lastActionMessage! });
   }

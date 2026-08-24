@@ -1,0 +1,9 @@
+{
+  "identity": "CORE-INT:4/ExiReaderProof",
+  "proof": [
+    "composeNexoraExecutiveIntelligenceExperience calls projectNexoraLiveExecutivePriorityIntelligence",
+    "experience.priority is presentPriorityAssessment(corePriorityAssessment)",
+    "EXI does not set topPriority from attentionSubjectId",
+    "nex-mvp does not call resolveExplainablePriority or createScenarioPriorityTradeoffTrace"
+  ]
+}

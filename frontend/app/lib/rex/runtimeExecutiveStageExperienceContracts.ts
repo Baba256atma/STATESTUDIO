@@ -1557,23 +1557,23 @@ export interface RuntimeExecutiveStageExperienceContractsVerification {
 
 export function verifyRuntimeExecutiveStageExperienceContracts():
   RuntimeExecutiveStageExperienceContractsVerification {
-  const module = runtimeExecutiveStageExperienceContracts;
+  const runtimeModule = runtimeExecutiveStageExperienceContracts;
   const registry = RUNTIME_EXECUTIVE_STAGE_EXPERIENCE_CONTRACTS_REGISTRY;
 
   const identityOk =
-    module.identity === "REX-2:2/RuntimeExecutiveStageExperienceContracts" &&
-    module.version === "2.2.0" &&
-    module.namespace === "nexora.rex.stage.contracts" &&
-    module.layer === "RuntimeExecutiveExperience" &&
-    module.domain === "ExecutiveStage" &&
-    module.phase === "Contracts" &&
-    module.upstreamDependency ===
+    runtimeModule.identity === "REX-2:2/RuntimeExecutiveStageExperienceContracts" &&
+    runtimeModule.version === "2.2.0" &&
+    runtimeModule.namespace === "nexora.rex.stage.contracts" &&
+    runtimeModule.layer === "RuntimeExecutiveExperience" &&
+    runtimeModule.domain === "ExecutiveStage" &&
+    runtimeModule.phase === "Contracts" &&
+    runtimeModule.upstreamDependency ===
       "REX-2:1/RuntimeExecutiveStageExperienceFoundation" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeExecutiveStageExperienceFoundationIdentity &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveStageExperienceFoundation" &&
-    module.foundationBoundary === "REX-2:1-foundation-only";
+    runtimeModule.foundationBoundary === "REX-2:1-foundation-only";
 
   const familiesOk = exactOrder(
     [...RUNTIME_EXECUTIVE_STAGE_CONTRACT_FAMILIES],
@@ -1627,21 +1627,21 @@ export function verifyRuntimeExecutiveStageExperienceContracts():
     Object.isFrozen(RUNTIME_EXECUTIVE_STAGE_CONTRACTS_BOUNDARY);
 
   const foundationBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-2:1/RuntimeExecutiveStageExperienceFoundation" &&
-    module.boundary.consumesFoundationOnly === true &&
-    module.boundary.importsRex1Directly === false &&
-    module.boundary.importsExDriDirectly === false &&
-    module.boundary.importsDriDirectly === false &&
-    module.boundary.importsNolDirectly === false;
+    runtimeModule.boundary.consumesFoundationOnly === true &&
+    runtimeModule.boundary.importsRex1Directly === false &&
+    runtimeModule.boundary.importsExDriDirectly === false &&
+    runtimeModule.boundary.importsDriDirectly === false &&
+    runtimeModule.boundary.importsNolDirectly === false;
 
   const declarativeOnly =
-    module.boundary.mutatesStageState === false &&
-    module.boundary.executesSceneChanges === false &&
-    module.boundary.resolvesFocus === false &&
-    module.boundary.resolvesPresentation === false &&
-    module.boundary.calculatesAttention === false &&
-    module.boundary.introducesOrchestration === false &&
+    runtimeModule.boundary.mutatesStageState === false &&
+    runtimeModule.boundary.executesSceneChanges === false &&
+    runtimeModule.boundary.resolvesFocus === false &&
+    runtimeModule.boundary.resolvesPresentation === false &&
+    runtimeModule.boundary.calculatesAttention === false &&
+    runtimeModule.boundary.introducesOrchestration === false &&
     !runtimeExecutiveStageExperienceContractsApiNames.some((name) =>
       /^(execute|apply|resolve|orchestrate|transition|render|animate)/i.test(
         name,
@@ -1671,8 +1671,8 @@ export function verifyRuntimeExecutiveStageExperienceContracts():
     foundationBoundaryIntact &&
     declarativeOnly &&
     countsOk &&
-    module.rendererIndependent === true &&
-    module.principle === RUNTIME_EXECUTIVE_STAGE_CONTRACTS_PRINCIPLE;
+    runtimeModule.rendererIndependent === true &&
+    runtimeModule.principle === RUNTIME_EXECUTIVE_STAGE_CONTRACTS_PRINCIPLE;
 
   return Object.freeze({
     ok,
@@ -1690,7 +1690,7 @@ export function verifyRuntimeExecutiveStageExperienceContracts():
     frozen,
     foundationBoundaryIntact,
     reusesFoundationVocabularies,
-    rendererIndependent: module.rendererIndependent === true,
+    rendererIndependent: runtimeModule.rendererIndependent === true,
     declarativeOnly,
   });
 }

@@ -1,0 +1,96 @@
+{
+  "identity": "NCA:5/ProactiveExecutiveAdvisorConversationalInitiativeIntelligence",
+  "url": "http://localhost:3000/executive",
+  "opened": true,
+  "pageErrors": [],
+  "engine": "NCA:5/ProactiveExecutiveAdvisorConversationalInitiativeIntelligence",
+  "turns": [
+    {
+      "utterance": "Delivery is 93, below the 96 target.",
+      "last": "NexoraFocused on Delivery.",
+      "diag": {
+        "engine": "NCA:5/ProactiveExecutiveAdvisorConversationalInitiativeIntelligence",
+        "initiate": "false",
+        "behavior": "SILENT",
+        "priority": "LOW",
+        "interrupt": "false",
+        "subject": "",
+        "nca4Advise": "false"
+      }
+    },
+    {
+      "utterance": "Delivery dropped from 93 to 89.",
+      "last": "NexoraBefore we continue, one change is important: The issue and available options are understood enough to proceed, but no decision is committed. This is a journey process blocker, not a confirmed business cause. I would reassess before committing. Already on Delivery.",
+      "diag": {
+        "engine": "NCA:5/ProactiveExecutiveAdvisorConversationalInitiativeIntelligence",
+        "initiate": "true",
+        "behavior": "CHALLENGE",
+        "priority": "CRITICAL",
+        "interrupt": "true",
+        "subject": "DECISION_REQUIRED",
+        "nca4Advise": "false"
+      }
+    },
+    {
+      "utterance": "Delivery moved from 89.1 to 89.0.",
+      "last": "NexoraAlready on Delivery.",
+      "diag": {
+        "engine": "NCA:5/ProactiveExecutiveAdvisorConversationalInitiativeIntelligence",
+        "initiate": "false",
+        "behavior": "SILENT",
+        "priority": "LOW",
+        "interrupt": "false",
+        "subject": "",
+        "nca4Advise": "false"
+      }
+    },
+    {
+      "utterance": "What should I do?",
+      "last": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+      "diag": {
+        "engine": "NCA:5/ProactiveExecutiveAdvisorConversationalInitiativeIntelligence",
+        "initiate": "false",
+        "behavior": "SILENT",
+        "priority": "LOW",
+        "interrupt": "false",
+        "subject": "",
+        "nca4Advise": "true"
+      }
+    },
+    {
+      "utterance": "We just signed an 18-month customer contract that keeps this demand level.",
+      "last": "NexoraThat changes my recommendation because demand persistence is now supported by a longer commitment. I now recommend permanent expansion. It currently best advances the delivery goal under the active constraints. Confidence is moderate; demand persistence and labor availability still condition this advice.",
+      "diag": {
+        "engine": "NCA:5/ProactiveExecutiveAdvisorConversationalInitiativeIntelligence",
+        "initiate": "false",
+        "behavior": "SILENT",
+        "priority": "LOW",
+        "interrupt": "false",
+        "subject": "",
+        "nca4Advise": "true"
+      }
+    },
+    {
+      "utterance": "Confirm the decision. Inventory moved from 40 to 41.",
+      "last": "NexoraThat changes my recommendation. I now recommend a lasting Inventory change. It currently best advances the delivery goal under the active constraints. Confidence is moderate; demand persistence and labor availability still condition this advice.",
+      "diag": {
+        "engine": "NCA:5/ProactiveExecutiveAdvisorConversationalInitiativeIntelligence",
+        "initiate": "false",
+        "behavior": "SILENT",
+        "priority": "LOW",
+        "interrupt": "false",
+        "subject": "",
+        "nca4Advise": "true"
+      }
+    }
+  ],
+  "materialChange": true,
+  "notRepeat": true,
+  "silence": true,
+  "recommendationChange": true,
+  "noInterrupt": true,
+  "cause": false,
+  "fiction": false,
+  "commit": false,
+  "ok": true
+}

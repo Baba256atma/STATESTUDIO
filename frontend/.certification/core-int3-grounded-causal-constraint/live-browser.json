@@ -1,0 +1,16 @@
+{
+  "phase": "CORE-INT:3",
+  "identity": "CORE-INT:3/GroundedCausalConstraintIntelligence",
+  "completedAt": "2026-08-18T23:25:54.573Z",
+  "http": 200,
+  "coreInt3Present": true,
+  "contributorsQualified": true,
+  "evidenceGrounded": true,
+  "notProven": true,
+  "constraintRecorded": true,
+  "bindingUnknown": true,
+  "relationshipNotCause": true,
+  "conversationChainComplete": true,
+  "uncaught": 0,
+  "duplicateOrHydration": []
+}

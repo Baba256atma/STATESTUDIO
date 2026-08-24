@@ -1,0 +1,183 @@
+{
+  "identity": "CORE-INT:1/AuthorityMap",
+  "eiPhases": [
+    {
+      "phase": "EI:1",
+      "id": "EI:1/ExecutiveIntelligenceEndToEndIntegration",
+      "module": "frontend/app/lib/executive-intelligence/executiveIntelligenceIntegration.ts",
+      "role": "reference-only integration spine",
+      "ownsIntelligence": false,
+      "contracts": ["ExecutiveIntelligenceTrace", "EXECUTIVE_INTELLIGENCE_BOUNDARY"],
+      "inputs": "existing RDI, CC:8, CC:9, CC:10R, CC:11, CC:12, APP-4 references",
+      "outputs": "immutable trace + Advisor projection (factsOnly, authority false)",
+      "writers": "createExecutiveIntelligenceTrace (tests/certification)",
+      "readers": "certifyExecutiveIntelligenceTrace, projectExecutiveIntelligenceForAdvisor (tests)",
+      "reachesExecutive": false,
+      "certificationOnly": true,
+      "exiConsumes": false,
+      "result": "INTEGRATES existing authorities; owns none. Outcome→Learning MISSING in EI:1 map. Not imported by nex-mvp or app/executive."
+    },
+    {
+      "phase": "EI:2",
+      "id": "EI:2/StrategyObjectiveIntelligenceIntegration",
+      "module": "frontend/app/lib/executive-intelligence/strategicIntelligenceIntegration.ts",
+      "role": "explicit strategic relationship references only",
+      "ownsIntelligence": false,
+      "contracts": ["StrategicContext", "StrategicRelationshipReference"],
+      "inputs": "BUS metadata, DS-5 OKR bindings, KPI/risk stores when tests supply them",
+      "outputs": "strategic context attached to EI:1 trace",
+      "writers": "createStrategicContext, referenceOkrKpiBinding (tests)",
+      "readers": "EI:2 tests; not /executive",
+      "reachesExecutive": false,
+      "certificationOnly": true,
+      "exiConsumes": false,
+      "result": "CSF MISSING. Strategy PARTIAL (BUS-18 metadata). OKR/KPI/Risk DUPLICATED across stores. computesPriority false. Not live on /executive Stage."
+    },
+    {
+      "phase": "EI:3",
+      "id": "EI:3/ProblemRiskOpportunityIntelligence",
+      "module": "frontend/app/lib/executive-intelligence/problemRiskOpportunityIntelligence.ts",
+      "role": "evidence-bounded assessment integration",
+      "ownsIntelligence": "claim/relationship/constraint REFERENCE model only; infersCausality false, computesPriority false, predicts false",
+      "contracts": [
+        "ExecutiveClaim (FACT|ASSUMPTION|PREDICTION|UNKNOWN)",
+        "SemanticConfidence",
+        "EvidenceBoundedRelationship",
+        "ExecutiveConstraintReference",
+        "ExecutiveIssueFraming"
+      ],
+      "inputs": "caller-supplied claim type, evidence refs, Data Reality handoff, CC:8 assessment framing",
+      "outputs": "frozen claims, relationships, constraint refs, issue framing, Advisor projection",
+      "writers": "createExecutiveClaim, createEvidenceBoundedRelationship, createExecutiveConstraintReference, createProblemRiskOpportunityTrace — used in EI tests, not /executive",
+      "readers": "projectIssueForAdvisor; EI:4/EI:5 tests",
+      "reachesExecutive": false,
+      "certificationOnly": "implementation is real TypeScript; runtime consumers on /executive are absent",
+      "exiConsumes": false,
+      "result": "This is the closest canonical Core for CI-1/CI-2/CI-3 representation. It does not classify claims, infer causes, or compute binding constraints."
+    },
+    {
+      "phase": "EI:4",
+      "id": "EI:4/ScenarioPriorityTradeoffIntelligence",
+      "module": "frontend/app/lib/executive-intelligence/scenarioPriorityTradeoffIntelligence.ts",
+      "role": "decision-preparation analysis over EI:3 issues + CC:9 scenarios",
+      "ownsIntelligence": "explainable priority + explicit qualitative trade-offs when callers supply factors/tradeoff strings",
+      "contracts": [
+        "ExplainablePriority (numericalScore: null)",
+        "ScenarioTradeoff (gain/sacrifice + evidenceRefs)",
+        "ScenarioPriorityTradeoffTrace",
+        "projectScenarioComparisonForAdvisor"
+      ],
+      "inputs": "EI:3 issue framing, CC:9 scenario identity, PriorityFactor[], explicit tradeoff strings, assumptions/uncertainties/constraints",
+      "outputs": "evaluations, comparison, preferredAlternativeCandidateId, Advisor facts-only projection (recommendation: null)",
+      "writers": "createScenarioPriorityTradeoffTrace, resolveExplainablePriority — tests only",
+      "readers": "EI:4/EI:5 tests; EXI:3 explicitly does not import these",
+      "reachesExecutive": false,
+      "certificationOnly": true,
+      "exiConsumes": false,
+      "result": "EXISTS and is NOT live on /executive. Missing binding: EI:4 output → no nex-mvp reader → /executive."
+    },
+    {
+      "phase": "EI:5",
+      "id": "EI:5/ExecutiveDecisionIntelligence",
+      "module": "frontend/app/lib/executive-intelligence/executiveDecisionIntelligence.ts",
+      "role": "recommendation synthesis + CC:10 commitment handoff",
+      "ownsIntelligence": false,
+      "contracts": ["DecisionRationaleHandoff", "EXECUTIVE_DECISION_INTELLIGENCE_BOUNDARY"],
+      "inputs": "EI:4 comparison + EI:3 issue + CC:10 resolver",
+      "outputs": "synthesized recommendation candidate; never a Decision",
+      "writers": "EI:5 tests",
+      "readers": "EI:5 tests",
+      "reachesExecutive": false,
+      "certificationOnly": true,
+      "exiConsumes": false,
+      "result": "recommendationIsDecision false. Live /executive recommendations come from NBA, Decision Brief, CC:8 resolver, Advisor — not EI:5."
+    },
+    {
+      "phase": "EI:6",
+      "id": "EI:6/ExecutionOutcomeLearningLoop",
+      "module": "frontend/app/lib/executive-intelligence/executionOutcomeLearningIntelligence.ts",
+      "role": "outcome comparison eligibility; no causal invention",
+      "ownsIntelligence": false,
+      "contracts": ["EXECUTION_OUTCOME_LEARNING_BOUNDARY"],
+      "inputs": "CC:10R decision, CC:11 execution, CC:12 snapshots, APP-4 memory types",
+      "outputs": "comparison/eligibility; learning candidate only when evidence exists",
+      "writers": "EI:6 tests; persistDurableExecutiveMemory exists in APP-4 but is not fed by /executive NEX-MVP",
+      "readers": "EI:6 tests",
+      "reachesExecutive": false,
+      "certificationOnly": true,
+      "exiConsumes": false,
+      "result": "CC:11 not wired on NEX-MVP /executive. APP-4 does not feed CI-1..CI-5. infersCausality false."
+    }
+  ],
+  "liveExecutiveAuthorities": [
+    {
+      "question": "What changed / current subject",
+      "authority": "Stage focus + Data Reality/Advisor bridge + MVP fixtures",
+      "kind": "EXI COMPOSITION / STAGE SUBJECT"
+    },
+    {
+      "question": "Why it matters",
+      "authority": "Professional Advisor narrative + EXI wording",
+      "kind": "ADVISOR PRESENTATION"
+    },
+    {
+      "question": "What may be causing this",
+      "authority": "EXI:2 over Stage/context relationship fixtures",
+      "kind": "EXI COMPOSITION + RELATIONSHIP GRAPH"
+    },
+    {
+      "question": "What is constraining this",
+      "authority": "EXI:2 constrained-by/blocks fixtures",
+      "kind": "EXI COMPOSITION + RELATIONSHIP GRAPH"
+    },
+    {
+      "question": "What are the options / trade-offs",
+      "authority": "EXI:3 scenario fixture summaries; not EI:4",
+      "kind": "FIXTURE / SUMMARY + EXI COMPOSITION"
+    },
+    {
+      "question": "What should I do / recommend",
+      "authority": "NBA > Decision Brief > Advisor; CC:8 on recommend utterances",
+      "kind": "ACCIDENTAL PRECEDENCE among presentation + CC:8"
+    },
+    {
+      "question": "What deserves attention",
+      "authority": "Stage fixture attention + overviewAttentionItems + Queue overlay",
+      "kind": "ATTENTION, not Core priority"
+    }
+  ],
+  "strategyOkrCsfRisk": {
+    "Strategy": "PARTIALLY MODELED (BUS-18 metadata); not a live /executive Stage/Advisor authority",
+    "OKR": "CANONICAL in DS-5 workspace store (localStorage) elsewhere; DUPLICATED vs BUS; not /executive Core priority input",
+    "CSF": "ABSENT",
+    "Risk": "CANONICAL DS-6 + generic Stage risk objects + CC:8; not unified on /executive",
+    "KPI": "Data Reality + DS-4 duplicated; Data Reality can be live when connected, MVP journey is fixture-led"
+  },
+  "collisions": [
+    {
+      "question": "Priority / what matters most",
+      "authorities": ["Stage fixture attention", "Queue overlay counts", "NBA", "Advisor Why/attention", "EI:4 ExplainablePriority (dead on /executive)"],
+      "precedence": "accidental; live path uses fixture attention, not EI:4"
+    },
+    {
+      "question": "Recommendation",
+      "authorities": ["STAGE-PROD:3 NBA", "STAGE-PROD:4 Decision Brief", "UX:3 Advisor", "CC:8 resolveNexoraExecutiveRecommendation", "EI:5 (dead on /executive)", "EXI recommendation field composition"],
+      "precedence": "EXI documents NBA > Brief > Advisor; CC:8 is separate conversational recommend path"
+    },
+    {
+      "question": "Cause",
+      "authorities": ["Stage relationship fixtures", "EXI:2 composer", "EI:3 EvidenceBoundedRelationship (dead)", "unrelated enterpriseOperationalCausalityIntelligence (not on /executive)"],
+      "precedence": "EXI:2 on fixtures; EI:3 unused"
+    },
+    {
+      "question": "Trade-off",
+      "authorities": ["EXI:3 summary extraction", "scenario fixture copy", "EI:4 ScenarioTradeoff (dead)", "CC:9 comparison (not the /executive EXI path)"],
+      "precedence": "EXI:3; EI:4 unused"
+    },
+    {
+      "question": "Epistemic state",
+      "authorities": ["EI:3 ExecutiveClaim type (dead)", "EXI epistemic field", "Advisor evidenceState"],
+      "precedence": "EXI/Advisor on /executive; EI:3 unused"
+    }
+  ]
+}

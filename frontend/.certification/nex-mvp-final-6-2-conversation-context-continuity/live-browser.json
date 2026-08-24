@@ -1,0 +1,371 @@
+{
+  "phase": "NEX-MVP-FINAL:6.2",
+  "identity": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+  "http": 200,
+  "identityRuntime": {
+    "authority": "executeNexoraConversationalExperience",
+    "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+    "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+    "mode": "existing-workspace"
+  },
+  "existingUrl": "http://localhost:3000/executive",
+  "resetUrl": "http://localhost:3000/executive?entrance=1&reset=1",
+  "resetHttp": 200,
+  "turns": [
+    {
+      "utterance": "Can we look at Delivery?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraFocused on Delivery.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "EXPLICIT_CURRENT_TURN",
+        "move": "none",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "",
+        "nluSubject": "Delivery"
+      }
+    },
+    {
+      "utterance": "What's going on with it?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraDelivery is related to Capacity. Recommendation: Review Capacity Gap.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "pronoun",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "Why?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraDelivery needs attention because it is Watch. Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "pronoun",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "What does that affect?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraDelivery is associated with Capacity Gap. That connection does not by itself tell us whether Delivery is affecting Capacity Gap or the reverse. Delivery is associated with Demand Surge. That connection does not by itself tell us whether Delivery is affecting Demand Surge or the reverse. Delivery is constrained by Capacity. That is a recorded dependency, not a confirmed cause. Delivery is associated with Capacity. That connection does not by itself tell us whether Delivery is affecting Capacity or the reverse. Delivery is associated with Customer. That connection does not by itself tell us whether Delivery is affecting Customer or the reverse. Delivery is associated with Risk. That connection does not by itself tell us whether Delivery is affecting Risk or the reverse. Delivery is associated with Demand. That connection does not by itself tell us whether Delivery is affecting Demand or the reverse.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "pronoun",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "Anything else?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraDelivery is associated with Capacity Gap. That connection does not by itself tell us whether Delivery is affecting Capacity Gap or the reverse. Delivery is associated with Demand Surge. That connection does not by itself tell us whether Delivery is affecting Demand Surge or the reverse. Delivery is constrained by Capacity. That is a recorded dependency, not a confirmed cause. Delivery is associated with Capacity. That connection does not by itself tell us whether Delivery is affecting Capacity or the reverse. Delivery is associated with Customer. That connection does not by itself tell us whether Delivery is affecting Customer or the reverse. Delivery is associated with Risk. That connection does not by itself tell us whether Delivery is affecting Risk or the reverse. Delivery is associated with Demand. That connection does not by itself tell us whether Delivery is affecting Demand or the reverse.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "what-else",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "What happens if we leave this alone?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraIf Delivery remains without intervention, concerns around Capacity and Customer and Risk may continue or become more significant. We don’t yet have enough evidence to quantify that impact, so this is a scenario rather than a prediction. I can’t yet judge the impact against a specific business goal. I can compare doing nothing with investigating now.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "pronoun",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "What could we do?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraDelivery needs attention because it is Watch. Delivery is associated with Capacity Gap. That connection does not by itself tell us whether Delivery is affecting Capacity Gap or the reverse. I recommend investigating Capacity Gap next to determine whether it is driving Delivery. The current evidence supports investigation, but not yet a committed course of action.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "pronoun",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "Compare the options.",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraThere is no supported impact basis to explain.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "pronoun",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "Which one looks safer?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraComparison complete. Investigate Delivery aligns better under current evidence, but this is not a Decision commitment.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "pronoun",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "Why that one?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraDelivery needs attention because it is Watch. We know on-time is 91%. Delivery is associated with Capacity Gap. That connection does not by itself tell us whether Delivery is affecting Capacity Gap or the reverse. No outcome has been measured yet. I recommend investigating Capacity Gap next to determine whether it is driving Delivery.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "pronoun",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "Go back to the problem.",
+      "focused": "ctx-problem-capacity",
+      "moActive": "ctx-problem-capacity",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_TYPED_REFERENCE",
+        "move": "typed-reference",
+        "subject": "Capacity Gap",
+        "confidence": "HIGH",
+        "active": "ctx-problem-capacity",
+        "investigation": "ctx-problem-capacity",
+        "previous": "obj-delivery",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "What evidence do we have?",
+      "focused": "ctx-problem-capacity",
+      "moActive": "ctx-problem-capacity",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraInvestigation may clarify the situation, but the resulting impact is not quantified. That confidence applies to the scenario projection, not to Reality, Actual Outcome, or causal proof.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_INVESTIGATION",
+        "move": "pronoun",
+        "subject": "Capacity Gap",
+        "confidence": "HIGH",
+        "active": "ctx-problem-capacity",
+        "investigation": "ctx-problem-capacity",
+        "previous": "obj-delivery",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "Continue.",
+      "focused": "ctx-problem-capacity",
+      "moActive": "ctx-problem-capacity",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraInvestigation may clarify the situation, but the resulting impact is not quantified. That confidence applies to the scenario projection, not to Reality, Actual Outcome, or causal proof.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "continue",
+        "subject": "Capacity Gap",
+        "confidence": "HIGH",
+        "active": "ctx-problem-capacity",
+        "investigation": "ctx-problem-capacity",
+        "previous": "obj-delivery",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "Now show Risk.",
+      "focused": "obj-risk",
+      "moActive": "obj-risk",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraFocused on Risk.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "EXPLICIT_CURRENT_TURN",
+        "move": "none",
+        "subject": "Risk",
+        "confidence": "HIGH",
+        "active": "obj-risk",
+        "investigation": "ctx-problem-margin",
+        "previous": "ctx-problem-capacity",
+        "nluSubject": "Risk"
+      }
+    },
+    {
+      "utterance": "Explain it.",
+      "focused": "obj-risk",
+      "moActive": "obj-risk",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraThere is no supported impact basis to explain.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "pronoun",
+        "subject": "Risk",
+        "confidence": "MEDIUM",
+        "active": "obj-risk",
+        "investigation": "ctx-problem-margin",
+        "previous": "ctx-problem-capacity",
+        "nluSubject": ""
+      }
+    },
+    {
+      "utterance": "Back to Delivery.",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraFocused on Delivery.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "EXPLICIT_CURRENT_TURN",
+        "move": "none",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "obj-risk",
+        "nluSubject": "Delivery"
+      }
+    },
+    {
+      "utterance": "Where were we?",
+      "focused": "obj-delivery",
+      "moActive": "obj-delivery",
+      "authority": "executeNexoraConversationalExperience",
+      "reference": "NEX-MVP-FINAL:3/natural-reference-v1",
+      "explain": "NEX-MVP-FINAL:3/executive-explain-v1",
+      "last": "NexoraAlready on Delivery.",
+      "continuity": {
+        "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+        "provenance": "CONTEXT_ACTIVE_SUBJECT",
+        "move": "continue",
+        "subject": "Delivery",
+        "confidence": "HIGH",
+        "active": "obj-delivery",
+        "investigation": "ctx-problem-capacity",
+        "previous": "obj-risk",
+        "nluSubject": ""
+      }
+    }
+  ],
+  "focusedDelivery": true,
+  "itResolvedAfterShow": true,
+  "riskAfterSwitch": true,
+  "noFallback": true,
+  "leaks": false,
+  "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+  "continueDidNotApprove": true,
+  "resetDidNotKeepDelivery": true,
+  "resetContinuity": {
+    "subject": "Nexora",
+    "active": "obj-nexora-entrance",
+    "engine": "NEX-MVP-FINAL:6.2/ConversationContextContinuity"
+  },
+  "afterResetLast": "NexoraUnderstood. Who am I working with — you, a company, a team, or a project?",
+  "errors": []
+}

@@ -1,0 +1,6 @@
+{
+  "promotion": "TEST-ONLY",
+  "liveAuthorizeApp4Promotion": false,
+  "retrieval": "CONNECTED when memories exist (EXI:5 retrieveHistoricalGroundedLearning)",
+  "historicalIsNotCurrentReality": true
+}

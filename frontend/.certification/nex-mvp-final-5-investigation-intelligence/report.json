@@ -1,0 +1,20 @@
+{
+  "phase": "NEX-MVP-FINAL:5",
+  "verdict": "NEX-MVP-FINAL:5 = CERTIFIED — EXECUTIVE INVESTIGATION INTELLIGENCE READY",
+  "newIntelligenceAuthorityCreated": false,
+  "objectSpecificHardCodedReasoningFound": false,
+  "primaryInvestigationSubject": "Delivery (obj-delivery)",
+  "secondInvestigationSubject": "Risk (obj-risk)",
+  "typecheck": "pass",
+  "build": "pass",
+  "liveBrowser": "pass",
+  "regressions": {
+    "FINAL:4": "pass",
+    "FINAL:3R": "pass",
+    "FINAL:3": "pass",
+    "FINAL:2": "pass",
+    "FINAL:1": "pass",
+    "NEX-E2E:1": "pass"
+  },
+  "remainingKnownFailures": []
+}

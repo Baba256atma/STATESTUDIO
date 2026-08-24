@@ -1,0 +1,8 @@
+{
+  "authority": "Decision Runtime + canonical ExecutiveOutcomeExpectation",
+  "liveDecisionIds": ["ctx-decision-reprice", "ctx-decision-capacity"],
+  "liveStatus": "under-review (not committed)",
+  "canonicalExpectedOnLiveDecision": "MISSING",
+  "notDerivedFrom": ["Advisor prose", "Recommendation copy", "Stage labels", "Scenario title alone"],
+  "testOnlyCanonicalExpected": "canonicalExpectedOutcomeId with metric/unit/comparator"
+}

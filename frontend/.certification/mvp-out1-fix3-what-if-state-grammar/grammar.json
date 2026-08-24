@@ -1,0 +1,18 @@
+{
+  "module": "conversationalWhatIfStateGrammar.ts",
+  "deliverySpecificBranch": false,
+  "structure": "WHAT_IF + SUBJECT + STATE_CHANGE_OR_DIRECTION + OPTIONAL_INTENSITY + OPTIONAL_MAGNITUDE",
+  "states": ["late", "delayed", "high", "higher", "low", "lower", "slow", "fast", "critical", "stable", "worse", "better"],
+  "intensities": ["too", "very", "extremely", "more", "less"],
+  "copulas": ["be", "is", "are", "was", "were", "get", "gets", "become", "becomes"],
+  "tooLate": {
+    "intent": "explore-scenario",
+    "subjectRaw": "delivery",
+    "changeKind": "state",
+    "state": "late",
+    "direction": "delay",
+    "actionKind": "delay",
+    "intensity": "too",
+    "magnitude": null
+  }
+}

@@ -156,12 +156,12 @@ describe("NEX-MVP:5 Workspace Dial & Scene State", () => {
     );
     const base = deriveNexoraMVPStageInteractionPresentation(scenario);
     const presented = deriveNexoraMVPWorkspacePresentation(base, "scenario");
-    const scenarioNode = presented.contextNodes.find(
-      (node) => node.kind === "scenario",
-    );
-    const problemNode = presented.contextNodes.find(
-      (node) => node.kind === "problem",
-    );
+    const scenarioNode =
+      presented.contextNodes.find((node) => node.kind === "scenario") ??
+      presented.scene.objects.find((object) => object.kind === "scenario");
+    const problemNode =
+      presented.contextNodes.find((node) => node.kind === "problem") ??
+      presented.scene.objects.find((object) => object.kind === "problem");
     assert.ok(scenarioNode && problemNode);
     assert.ok(scenarioNode.opacity >= problemNode.opacity);
   });

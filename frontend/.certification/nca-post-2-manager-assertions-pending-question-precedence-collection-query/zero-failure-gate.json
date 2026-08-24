@@ -1,0 +1,16 @@
+{
+  "identity": "NCA-POST:2/ManagerAssertionsPendingQuestionPrecedenceCollectionQueryIntelligence",
+  "version": "1.0.0",
+  "namespace": "nexora.nca.post.manager-assertions-pending-question-precedence-collection-query",
+  "createsNca8": false,
+  "ncaPost2Tests": { "passed": 13, "failed": 0 },
+  "ncaPost1AndNcaRegression": { "passed": 207, "failed": 0 },
+  "conversationalIntent": { "passed": 24, "failed": 0 },
+  "typecheck": "pass",
+  "lint": "pass",
+  "build": "pass",
+  "runtime": "pass",
+  "liveBrowser": "pass",
+  "pageErrors": 0,
+  "ok": true
+}

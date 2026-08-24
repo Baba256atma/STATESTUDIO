@@ -195,9 +195,9 @@ export function normalizeExecutiveStage2DPosition(position: {
 export function isExecutiveStageFixedCameraTarget(
   target: ExecutiveCameraVector | readonly [number, number, number],
 ): boolean {
-  const x = Array.isArray(target) ? target[0] : target.x;
-  const y = Array.isArray(target) ? target[1] : target.y;
-  const z = Array.isArray(target) ? target[2] : target.z;
+  const x = "x" in target ? target.x : target[0];
+  const y = "y" in target ? target.y : target[1];
+  const z = "z" in target ? target.z : target[2];
   return x === 0 && y === 0 && z === 0;
 }
 
@@ -205,9 +205,9 @@ export function isExecutiveStageFixedCameraPosition(
   position: ExecutiveCameraVector | readonly [number, number, number],
 ): boolean {
   const fixed = EXECUTIVE_STAGE_FIXED_CAMERA.position;
-  const x = Array.isArray(position) ? position[0] : position.x;
-  const y = Array.isArray(position) ? position[1] : position.y;
-  const z = Array.isArray(position) ? position[2] : position.z;
+  const x = "x" in position ? position.x : position[0];
+  const y = "y" in position ? position.y : position[1];
+  const z = "z" in position ? position.z : position[2];
   return x === fixed.x && y === fixed.y && z === fixed.z;
 }
 

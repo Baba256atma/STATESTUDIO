@@ -149,7 +149,7 @@ test("identity + safety boundary", () => {
 test("A — Stable Business Object → brief ineligible", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -170,7 +170,7 @@ test("A — Stable Business Object → brief ineligible", () => {
 test("B — Critical Capacity + Problem → Situation + Evidence", () => {
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -199,7 +199,7 @@ test("B — Critical Capacity + Problem → Situation + Evidence", () => {
 test("C — Problem + Scenarios → options >= 2 with scenario IDs", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -250,7 +250,7 @@ test("D — Orphan Problem without Scenarios → options 0, partial or decisionR
     ]),
   });
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -278,7 +278,7 @@ test("D — Orphan Problem without Scenarios → options 0, partial or decisionR
 test("E — Risk → evidence + scenario options", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -310,7 +310,7 @@ test("E — Risk → evidence + scenario options", () => {
 test("F — Scenario siblings, no best label", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -340,7 +340,7 @@ test("F — Scenario siblings, no best label", () => {
 test("G — Decision reprice → Decision Required without auto-choice", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -370,7 +370,7 @@ test("G — Decision reprice → Decision Required without auto-choice", () => {
 test("H — Recommendation actionId === NBA recommended id", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -406,7 +406,7 @@ test("H — Recommendation actionId === NBA recommended id", () => {
 test("I — Stable execution ineligible; delayed execution eligible", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -503,7 +503,7 @@ test("J — Change comparison deterioration → recent-change evidence or situat
 
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -564,7 +564,7 @@ test("K — Evidence limit <= 6", () => {
 test("L — Unique evidence texts", () => {
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -619,7 +619,7 @@ test("M — Lonely object+problem no relationships → impact null", () => {
 test("N — Capacity critical → impact related to + relationship ids", () => {
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -633,7 +633,7 @@ test("N — Capacity critical → impact related to + relationship ids", () => {
 test("O — No Do Nothing option", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -656,7 +656,7 @@ test("O — No Do Nothing option", () => {
 test("P — Option click → primary = advisor = brief = scenario", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -699,7 +699,7 @@ test("P — Option click → primary = advisor = brief = scenario", () => {
 test("Q — Recommendation uses NBA executor", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -736,7 +736,7 @@ test("Q — Recommendation uses NBA executor", () => {
 test("R — Capacity → Revenue recompute", () => {
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -755,7 +755,7 @@ test("R — Capacity → Revenue recompute", () => {
 test("S — Collection hides brief; member click restores", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -782,7 +782,7 @@ test("S — Collection hides brief; member click restores", () => {
 test("T–V — Back / Forward / Escape", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -820,7 +820,7 @@ test("T–V — Back / Forward / Escape", () => {
 test("W — briefSubjectId sync", () => {
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -843,7 +843,7 @@ test("W — briefSubjectId sync", () => {
 test("X — NBA action id sync when recommendation present", () => {
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -912,7 +912,7 @@ test("Z — Executive safety boundary", () => {
 
   const catalog = defaultCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -931,7 +931,7 @@ test("Z — Executive safety boundary", () => {
 test("AA — Camera z≈0 + observability", () => {
   const catalog = criticalCapacityCatalog();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });

@@ -1,0 +1,20 @@
+{
+  "identity": "CORE-INT:4/CandidateScope",
+  "eligible": ["problem", "risk", "opportunity", "decision"],
+  "excluded": ["object", "scenario", "execution"],
+  "opportunityLive": false,
+  "executionLive": false,
+  "scopes": {
+    "workspace": "Problems + Risk + Decisions on the current MVP model",
+    "problems": "Margin Pressure, Capacity Gap",
+    "decisions": "Approve Repricing, Expand Capacity",
+    "risks": "Risk plus related problems"
+  },
+  "liveWorkspaceCandidates": [
+    "ctx-problem-margin",
+    "ctx-problem-capacity",
+    "obj-risk",
+    "ctx-decision-reprice",
+    "ctx-decision-capacity"
+  ]
+}

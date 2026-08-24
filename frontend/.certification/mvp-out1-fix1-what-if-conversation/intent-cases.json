@@ -1,0 +1,18 @@
+{
+  "A": { "utterance": "What happens if I increase inventory?", "intent": "explore-scenario", "pass": true },
+  "B": { "utterance": "What if inventory increases?", "intent": "explore-scenario", "pass": true },
+  "C": { "utterance": "What happens if I increase it?", "intent": "explore-scenario", "pass": true },
+  "D": { "utterance": "What happens if I decrease capacity?", "intent": "explore-scenario", "pass": true },
+  "E": { "utterance": "What if margin improves?", "intent": "explore-scenario", "pass": true },
+  "F": { "missingMagnitude": true, "inventedNumeric": false, "pass": true },
+  "G": { "utterance": "What happens if Inventory increases 10%?", "value": 10, "unit": "%", "pass": true },
+  "H": { "utterance": "What happens if I increase advertising?", "honestUnsupported": true, "genericFallback": false, "pass": true },
+  "I": { "ambiguous": true, "guessedSubject": false, "pass": true },
+  "J": { "utterance": "Explain Inventory", "intent": "explain", "pass": true },
+  "K": { "utterance": "Do I need to make a decision?", "intent": "decision-status", "pass": true },
+  "L": { "utterance": "What is being executed?", "intent": "execution-status", "pass": true },
+  "M": { "utterance": "What is Inventory?", "notExploreScenario": true, "pass": true },
+  "N": { "causalClaimInvented": false, "pass": true },
+  "O": { "treatedAsActualOutcome": false, "pass": true },
+  "liveMisspelling": { "utterance": "what happend if increase inventory", "intent": "explore-scenario", "pass": true }
+}

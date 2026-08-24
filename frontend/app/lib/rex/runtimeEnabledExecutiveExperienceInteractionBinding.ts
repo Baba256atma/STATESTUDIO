@@ -1858,26 +1858,26 @@ function unique(values: readonly string[]): boolean {
 
 export function verifyExecutiveInteractionBinding():
   ExecutiveInteractionBindingVerification {
-  const module = runtimeEnabledExecutiveExperienceInteractionBinding;
+  const runtimeModule = runtimeEnabledExecutiveExperienceInteractionBinding;
   const registry = runtimeEnabledExecutiveExperienceInteractionBindingRegistry;
 
   const identityOk =
-    module.identity === "REX-1:5/ExecutiveInteractionBinding" &&
-    module.version === "1.5.0" &&
-    module.namespace ===
+    runtimeModule.identity === "REX-1:5/ExecutiveInteractionBinding" &&
+    runtimeModule.version === "1.5.0" &&
+    runtimeModule.namespace ===
       "nexora.rex.runtime-enabled-executive-experience.interaction-binding" &&
-    module.layer === "REX" &&
-    module.phase === "REX-1" &&
-    module.stage === "ExecutiveInteractionBinding" &&
-    module.architecturalRole ===
+    runtimeModule.layer === "REX" &&
+    runtimeModule.phase === "REX-1" &&
+    runtimeModule.stage === "ExecutiveInteractionBinding" &&
+    runtimeModule.architecturalRole ===
       "ExecutiveRuntimeInteractionBindingBoundary" &&
-    module.upstreamDependency === "REX-1:4/ExecutiveSceneBinding" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency === "REX-1:4/ExecutiveSceneBinding" &&
+    runtimeModule.upstreamDependency ===
       runtimeEnabledExecutiveExperienceSceneBindingIdentity &&
-    module.sceneBindingBoundary === "REX-1:4-scene-binding-only";
+    runtimeModule.sceneBindingBoundary === "REX-1:4-scene-binding-only";
 
   const dependencyOk =
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeEnabledExecutiveExperienceSceneBinding" &&
     EXECUTIVE_RUNTIME_INTERACTION_BINDING_BOUNDARY.consumesSceneBindingOnly ===
       true &&
@@ -2001,18 +2001,18 @@ export function verifyExecutiveInteractionBinding():
     );
 
   const sceneBindingBoundaryIntact =
-    module.boundary.soleImmediateDependency ===
+    runtimeModule.boundary.soleImmediateDependency ===
       "REX-1:4/ExecutiveSceneBinding" &&
-    module.boundary.consumesSceneBindingOnly === true &&
-    module.boundary.executesInteractions === false &&
-    module.boundary.fabricatesActiveInteraction === false &&
-    module.boundary.fabricatesEligibility === false &&
-    module.boundary.fabricatesApproval === false;
+    runtimeModule.boundary.consumesSceneBindingOnly === true &&
+    runtimeModule.boundary.executesInteractions === false &&
+    runtimeModule.boundary.fabricatesActiveInteraction === false &&
+    runtimeModule.boundary.fabricatesEligibility === false &&
+    runtimeModule.boundary.fabricatesApproval === false;
 
   const frameworkIndependent =
-    module.frameworkIndependent === true &&
-    module.rendererIndependent === true &&
-    module.boundary.frameworkIndependent === true;
+    runtimeModule.frameworkIndependent === true &&
+    runtimeModule.rendererIndependent === true &&
+    runtimeModule.boundary.frameworkIndependent === true;
 
   const ok =
     identityOk &&
@@ -2024,7 +2024,7 @@ export function verifyExecutiveInteractionBinding():
     uniquenessOk &&
     sceneBindingBoundaryIntact &&
     frameworkIndependent &&
-    module.principle === EXECUTIVE_RUNTIME_INTERACTION_BINDING_PRINCIPLE;
+    runtimeModule.principle === EXECUTIVE_RUNTIME_INTERACTION_BINDING_PRINCIPLE;
 
   return Object.freeze({
     ok,

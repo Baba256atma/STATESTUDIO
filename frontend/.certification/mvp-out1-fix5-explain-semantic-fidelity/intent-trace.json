@@ -1,0 +1,13 @@
+{
+  "utterance": "explain DEMAND SURGE",
+  "normalized": "explain demand surge",
+  "previousIntentKind": "explain",
+  "previousCommandKind": "request-explanation",
+  "finalIntentKind": "explain-scenario",
+  "finalCommandKind": "explain-scenario",
+  "scenarioOperation": "describe",
+  "cc1Matcher": "matchRecommendExplainPrioritize.explainAbout",
+  "fidelityRemap": "applyScenarioExplanationFidelity after CC:2 when definition inquiry and primarySubject.kind === scenario",
+  "exiIntercept": false,
+  "recommendOutrankedDescribe": "previous: yes; final: no"
+}

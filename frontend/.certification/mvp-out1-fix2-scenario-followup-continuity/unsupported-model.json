@@ -1,0 +1,11 @@
+{
+  "condition": "late Delivery / delay",
+  "parent": "Demand Surge (ctx-scenario-demand)",
+  "modeledSubjects": ["obj-capacity", "obj-demand"],
+  "deliveryModeled": false,
+  "copy": "I understand that you want to test late Delivery within the Demand Surge scenario, but Nexora does not currently have a supported impact model for that condition.",
+  "genericFallback": false,
+  "inventedKpiImpact": false,
+  "inventedRiskImpact": false,
+  "inventedNumericDelay": false
+}

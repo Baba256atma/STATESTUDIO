@@ -1,0 +1,10 @@
+{
+  "authority": "CORE-OUT:2/GroundedLearningIntelligence",
+  "AC": "assessment reaches CORE-OUT:2",
+  "AD": "CORE-OUT:2 may return zero Learning",
+  "AE": "no automatic APP-4 write",
+  "AF": "historical APP-4 remains historical",
+  "AJ": "What did we learn remains CORE-OUT:2",
+  "liveLearningCandidates": 0,
+  "result": "pass"
+}

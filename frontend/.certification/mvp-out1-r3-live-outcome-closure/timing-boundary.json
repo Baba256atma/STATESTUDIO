@@ -1,0 +1,6 @@
+{
+  "primary": "Decision committedAt",
+  "secondary": "Execution startedAt if canonical",
+  "postBoundary": "observedAt > boundary",
+  "equalTimestampNotActual": true
+}

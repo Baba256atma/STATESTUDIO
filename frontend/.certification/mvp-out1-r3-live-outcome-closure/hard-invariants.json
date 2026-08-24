@@ -1,0 +1,13 @@
+{
+  "decisionAuthority": true,
+  "executionAuthority": true,
+  "dataRealityAuthority": true,
+  "r3IntegrationOnly": true,
+  "noFakeTarget": true,
+  "noFakeTimestampOnFixtures": true,
+  "noFakeLiveT2": true,
+  "noHindsightExpectation": true,
+  "noCausalOverclaim": true,
+  "noLlm": true,
+  "noStageRedesign": true
+}

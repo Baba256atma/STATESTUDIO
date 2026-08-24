@@ -1,0 +1,43 @@
+{
+  "identity": "CORE-INT:3/RuntimeConnectivity",
+  "livePath": {
+    "Data / Model Evidence": "CONNECTED",
+    "CORE-INT:2 Claim": "CONNECTED",
+    "CORE-INT:3 Assessment": "CONNECTED",
+    "Executive Runtime": "CONNECTED",
+    "EXI": "CONNECTED",
+    "Advisor / Conversation": "CONNECTED"
+  },
+  "edges": [
+    {
+      "from": "collectNexoraLiveRelationshipSources",
+      "to": "projectGroundedCausalConstraintIntelligence",
+      "status": "CONNECTED"
+    },
+    {
+      "from": "projectNexoraLiveCausalConstraintIntelligence",
+      "to": "composeNexoraExecutiveIntelligenceExperience",
+      "status": "CONNECTED"
+    },
+    {
+      "from": "coreCausalAssessment / coreConstraintAssessment",
+      "to": "composeNexoraExiCauseAssessment / composeNexoraExiConstraintAssessment",
+      "status": "CONNECTED"
+    },
+    {
+      "from": "experience.causes / constraints",
+      "to": "Advisor Possible contributors / Constraint",
+      "status": "CONNECTED"
+    },
+    {
+      "from": "projectNexoraExiConversationalAnswers",
+      "to": "answerNexoraExiUtterance (shouldCommitRuntime=false)",
+      "status": "CONNECTED"
+    }
+  ],
+  "fullLive": true,
+  "assessmentExistsOnlyInTests": false,
+  "ei4LiveOnExecutive": false,
+  "exi4Started": false,
+  "priorityIntelligence": false
+}

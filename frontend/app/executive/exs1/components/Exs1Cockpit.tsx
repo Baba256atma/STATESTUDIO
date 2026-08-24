@@ -422,6 +422,8 @@ function Exs1CockpitInner() {
     simulationJournalEntries,
     flags.EnableConnectors,
     flags.EnableSimulation,
+    handleSelectObject,
+    setFloatingKind,
   ]);
 
   function floatingTitle(kind: ExecutiveFloatingPanelKind): string | undefined {

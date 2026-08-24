@@ -1,0 +1,13 @@
+{
+  "liveScenarioCapacity": {
+    "subjectId": "ctx-scenario-capacity",
+    "claimKind": "PREDICTION",
+    "actual": null,
+    "result": "honest pending outcome"
+  },
+  "liveDecisionCapacity": {
+    "subjectId": "ctx-decision-capacity",
+    "expectedSource": "decision/scenario",
+    "actual": null
+  }
+}

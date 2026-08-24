@@ -1,0 +1,24 @@
+{
+  "journeyEngine": "MO:5/ExecutiveJourneyProgressIntelligence",
+  "dependsOn": [
+    "MO:1/ManagerObjectInteractionFoundation",
+    "MO:2/GenericExplainEngine",
+    "MO:3/ObjectGuidedExecutiveExploration",
+    "MO:4/GoalDirectedExecutiveNavigation"
+  ],
+  "doesNotOwnTruth": true,
+  "authorities": {
+    "objectContext": "MO:1",
+    "explanation": "MO:2",
+    "explorationPaths": "MO:3",
+    "goalDirection": "MO:4",
+    "sessionVisits": "MO session (visited ≠ resolved)",
+    "decision": "Decision Runtime (read-only)",
+    "execution": "Execution Runtime (read-only)",
+    "outcome": "EI:6 / APP-4 when present; else UNKNOWN",
+    "learning": "APP-4 when present; else NOT_AVAILABLE",
+    "stage": "NEX-MVP:4 click-to-center (no coordinate writes)",
+    "advisor": "UX:3 presentation"
+  },
+  "precedence": "Canonical Runtime Truth > MO Context > MO:2 Explanation > MO:3 Paths > MO:4 Goal Direction > MO:5 Journey Projection > Presentation"
+}

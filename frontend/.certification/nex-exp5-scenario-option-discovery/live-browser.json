@@ -1,0 +1,31 @@
+{
+  "liveReport": {
+    "phase": "NEX-EXP:5",
+    "identity": "NEX-EXP:5/ScenarioOptionDiscovery",
+    "completedAt": "2026-08-20T22:49:04.211Z",
+    "http": 200,
+    "existingWorkspaceProtected": true,
+    "goalRemainsCenter": true,
+    "optionsWithoutInvention": true,
+    "scenarioFormed": true,
+    "doNothing": true,
+    "notPrediction": true,
+    "assumptionNotFact": true,
+    "unknownsPreserved": true,
+    "notRecommendation": true,
+    "notSelected": true,
+    "expectedNotObserved": true,
+    "showExplainWorked": true,
+    "affectGoal": true,
+    "compareHandoff": true,
+    "approveNotCommitted": true,
+    "noFakeNumeric": true,
+    "cameraFixed": true,
+    "topologyPresent": true,
+    "uncaught": 0,
+    "duplicateOrHydration": 0
+  },
+  "missing": [],
+  "errors": [],
+  "warnings": []
+}

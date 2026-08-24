@@ -1,0 +1,18 @@
+{
+  "identity": "MO:1/ManagerObjectInteractionFoundation",
+  "edges": {
+    "CC1_intent": "CONNECTED",
+    "CC2_subject": "CONNECTED",
+    "CC3_command": "CONNECTED",
+    "CC4_runtime": "CONNECTED",
+    "CC5_experience": "CONNECTED",
+    "CC7_context": "CONNECTED",
+    "CC8_recommendation": "CONNECTED",
+    "NEX_MVP4_object_interaction": "CONNECTED",
+    "STAGE2D_click_to_center": "CONNECTED",
+    "UX3_advisor_reader": "CONNECTED",
+    "live_relationship_projection": "CONNECTED",
+    "presentation_fixtures": "CONNECTED",
+    "explain_engine_handoff": "PREPARED"
+  }
+}

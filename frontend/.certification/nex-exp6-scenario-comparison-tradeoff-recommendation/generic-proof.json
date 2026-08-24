@@ -1,0 +1,15 @@
+{
+  "sameEngine": true,
+  "business": "Protect cash / collections vs incentives vs current process — no domain branch",
+  "project": "Launch by Q4 / add resources vs reduce scope vs move date — no domain branch",
+  "operational": "Delivery reliability / weekend vs external vs current plan — no domain branch",
+  "software": "Release 2.0 / bug-fix capacity vs reduce scope vs delay — no domain branch",
+  "sourceInspect": {
+    "ifCapacity": false,
+    "ifDelivery": false,
+    "ifCash": false,
+    "projectOrion": false,
+    "ifSoftware": false,
+    "ifWeekend": false
+  }
+}

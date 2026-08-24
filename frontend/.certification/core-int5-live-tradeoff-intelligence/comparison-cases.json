@@ -1,0 +1,35 @@
+{
+  "identity": "CORE-INT:5/ComparisonCases",
+  "cases": [
+    {
+      "id": "margin-multi-option",
+      "subject": "ctx-problem-margin / obj-revenue",
+      "status": "multi-option",
+      "options": ["ctx-scenario-pricing", "ctx-scenario-demand"],
+      "comparable": true,
+      "result": "CERTIFIED"
+    },
+    {
+      "id": "capacity-single-option",
+      "subject": "ctx-scenario-capacity",
+      "status": "single-option",
+      "options": ["ctx-scenario-capacity"],
+      "comparable": false,
+      "result": "CERTIFIED"
+    },
+    {
+      "id": "inventory-no-option",
+      "subject": "obj-inventory",
+      "status": "no-options",
+      "options": [],
+      "result": "CERTIFIED"
+    },
+    {
+      "id": "mixed-scope-not-comparable",
+      "status": "not-comparable",
+      "options": ["ctx-scenario-pricing", "ctx-scenario-capacity"],
+      "scopes": ["ctx-problem-margin", "ctx-problem-capacity"],
+      "result": "CERTIFIED"
+    }
+  ]
+}

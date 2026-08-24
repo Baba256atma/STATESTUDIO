@@ -1,0 +1,19 @@
+{
+  "identity": "MO:4/GoalDirectedExecutiveNavigation",
+  "edges": {
+    "MO1_context": "CONNECTED",
+    "MO2_explanation": "CONNECTED",
+    "MO3_paths": "CONNECTED",
+    "CC1_intent": "CONNECTED",
+    "CC5_experience": "CONNECTED",
+    "CC7_goal_slot": "READER",
+    "EI2_strategy": "READER",
+    "STAGE2D_click_to_center": "READER",
+    "UX3_advisor_reader": "CONNECTED",
+    "decision_runtime": "NOT_COMMITTED",
+    "execution_runtime": "NOT_STARTED",
+    "outcome_authority": "UNKNOWN_WHEN_MISSING",
+    "llm": "NOT_REQUIRED",
+    "session_goal": "REUSED"
+  }
+}

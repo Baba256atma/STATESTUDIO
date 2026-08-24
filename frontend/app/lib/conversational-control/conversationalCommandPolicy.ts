@@ -242,7 +242,7 @@ export const CONVERSATIONAL_INTENT_COMMAND_RULES: readonly ConversationalIntentC
     Object.freeze({
       intentKind: "explain-scenario" as const,
       commandKind: "explain-scenario" as const,
-      targetRequirement: "none" as const,
+      targetRequirement: "primary-optional" as const,
       allowedPrimaryKinds: "*" as const,
       mappingRuleId: "intent.explain-scenario→explain-scenario",
     }),

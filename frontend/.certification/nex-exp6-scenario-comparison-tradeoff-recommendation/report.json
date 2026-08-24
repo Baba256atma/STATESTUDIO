@@ -1,0 +1,9 @@
+{
+  "phase": "NEX-EXP:6",
+  "identity": "NEX-EXP:6/ScenarioComparisonTradeoffRecommendation",
+  "version": "1.0.0",
+  "verdict": "NEX-EXP:6 = CERTIFIED",
+  "startsNexExp7": false,
+  "commitsDecision": false,
+  "startsExecution": false
+}

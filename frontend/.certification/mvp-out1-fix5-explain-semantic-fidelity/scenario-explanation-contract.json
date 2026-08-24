@@ -1,0 +1,27 @@
+{
+  "projection": "NexoraScenarioExplanationProjection",
+  "authority": "CC:9 describe + existing presentation fixtures",
+  "fields": [
+    "scenarioId",
+    "scenarioName",
+    "definition",
+    "representedChange",
+    "modeledEffects",
+    "relatedSubjects",
+    "assumptions",
+    "risks",
+    "uncertainty",
+    "evidenceState",
+    "projectionStatus"
+  ],
+  "order": [
+    "identity/definition",
+    "representedChange",
+    "supported modeled implications",
+    "epistemic boundary",
+    "uncertainty/unsupported",
+    "recommendation only if requested"
+  ],
+  "duplicateTruth": false,
+  "inventedEffects": false
+}

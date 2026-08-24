@@ -1,0 +1,26 @@
+{
+  "identity": "CORE-INT:4/AuthorityMap",
+  "previousAuthorities": [
+    "Stage fixture ATTENTION_RANK / overviewAttentionItems",
+    "Queue category order + id-sort + collectionRank visibility heuristic",
+    "Watch rank",
+    "NBA numeric action scores",
+    "Advisor recommendation precedence",
+    "EI:4 resolveExplainablePriority (test-only)"
+  ],
+  "finalAuthority": {
+    "id": "CORE-INT:4/ExecutivePriorityIntelligence",
+    "module": "frontend/app/lib/executive-intelligence/nexoraExecutivePriorityIntelligence.ts",
+    "liveCollector": "frontend/app/lib/nex-mvp/nexoraLiveEpistemicProjection.ts",
+    "ei4Reuse": "priority factors and pairwise comparison only",
+    "ei4TradeoffRuntime": false
+  },
+  "flow": [
+    "Runtime / Data Evidence",
+    "CORE-INT:2",
+    "CORE-INT:3",
+    "CORE-INT:4 Priority Assessment",
+    "EXI",
+    "Advisor / Queue / Conversation"
+  ]
+}

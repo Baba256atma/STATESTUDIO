@@ -1,0 +1,18 @@
+{
+  "vocabulary": "RDI NexoraDataSourceValidationState",
+  "states": ["valid", "partial", "invalid", "unsupported", "stale"],
+  "rules": {
+    "invalid": "cannot become validated Actual Outcome",
+    "unsupported": "cannot become validated Actual Outcome",
+    "stale": "retained as evidence; remains stale",
+    "partial": "eligible with bounded (low) confidence",
+    "valid": "eligible, not automatically linked"
+  },
+  "validationIsNotLinkage": true,
+  "cases": {
+    "F": "invalid rejected",
+    "G": "partial eligible, CORE-OUT:1 confidence remains low",
+    "H": "stale retained, CORE-OUT:1 status stale",
+    "unsupported": "rejected"
+  }
+}

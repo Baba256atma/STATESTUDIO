@@ -1,0 +1,59 @@
+{
+  "identity": "CORE-INT:1/CoreVsExiLeakage",
+  "law": "Core owns intelligence truth. EXI presents/composes truth. Presentation is not Core capability.",
+  "exi1": {
+    "phase": "EXI:1 Executive Intelligence Experience Integration",
+    "correctExiResponsibility": [
+      "Single manager-facing narrative: what changed → why it matters → attention → options → recommend → next",
+      "Wording and progressive disclosure",
+      "Choosing which existing field to display (NBA > Brief > Advisor)",
+      "Conversational parity with Advisor without stealing Stage focus",
+      "Safe unknown when no grounded source exists"
+    ],
+    "potentialCoreLeakage": [
+      "Selecting a recommendation winner among NBA/Brief/Advisor is presentation precedence, not Core recommendation intelligence — but it can be mistaken for Core priority/recommendation authority",
+      "Epistemic-looking confidence on composed fields is Advisor/EXI evidenceState, not EI:3 SemanticConfidence"
+    ]
+  },
+  "exi2": {
+    "phase": "EXI:2 Grounded Causal, Constraint & Trade-off",
+    "correctExiResponsibility": [
+      "Honest unknown when no recorded edges exist",
+      "Never inventing bindingConstraint (always null)",
+      "Never stuffing causes into Advisor Why",
+      "Labeling relationship ≠ causation in copy"
+    ],
+    "potentialCoreLeakage": [
+      "Mapping relation kinds to epistemic assumption vs relationship (Core leakage: assigning epistemic state)",
+      "primaryContributor when inbound count === 1 (not causal ranking; Core leakage: implied cause selection)",
+      "composeRecordedChain A→B→C from fixture links without per-edge Core provenance (Core leakage: assembling causal chain)",
+      "Treating constrained-by/blocks as the constraint set (Core leakage: determining constraints from unlabeled graph rather than a Constraint model)"
+    ]
+  },
+  "exi3": {
+    "phase": "EXI:3 Live Trade-off & Option Comparison",
+    "correctExiResponsibility": [
+      "Refusing to claim EI:4 is live",
+      "Comparable options only via recorded explored-by parent",
+      "Stating missing cost/time evidence honestly",
+      "Not inventing economics or scores"
+    ],
+    "potentialCoreLeakage": [
+      "Comparability graph walk (Core leakage: comparing alternatives)",
+      "Phrase extraction of gains/risks/constraints/assumptions from scenario summary copy (Core leakage: deriving trade-off meaning from prose rather than EI:4 ScenarioTradeoff)",
+      "Preferred option if recommendation copy names exactly one option (Core leakage: ranking/preference from presentation text)"
+    ]
+  },
+  "assumptionTest": {
+    "question": "Can Core, without EXI wording, receive an executive claim and determine fact vs assumption vs prediction vs unknown from canonical evidence?",
+    "answer": false,
+    "reason": "createExecutiveClaim requires the caller to pass type. It validates FACT has evidence+provenance and derives SemanticConfidence. It does not classify unlabeled statements."
+  },
+  "uncertaintyPropagation": {
+    "sharedContractOnExecutive": false,
+    "ei3SemanticConfidence": "exists off-path; not consumed",
+    "advisorEvidenceState": "independent presentation enum",
+    "exiConfidence": "independent strong/limited/incomplete/stale/none",
+    "dataToDecision": "each subsystem assigns independently; no Data→Problem→Scenario→Recommendation→Decision uncertainty object"
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "identity": "CORE-OUT:2/RuntimeConnectivity",
+  "livePath": [
+    "Data Reality",
+    "CORE-OUT:1A",
+    "CORE-OUT:1",
+    "CORE-OUT:2",
+    "Learning Candidate",
+    "Promotion Assessment",
+    "APP-4"
+  ],
+  "edges": [
+    {
+      "from": "Data Reality",
+      "to": "CORE-OUT:1A",
+      "status": "CONNECTED",
+      "note": "Existing live capture projector. Live store empty."
+    },
+    {
+      "from": "CORE-OUT:1A",
+      "to": "CORE-OUT:1",
+      "status": "CONNECTED",
+      "note": "CORE-OUT:1 consumes capture.linkedActuals. Live linkedActuals = []."
+    },
+    {
+      "from": "CORE-OUT:1",
+      "to": "CORE-OUT:2",
+      "status": "CONNECTED",
+      "note": "composeNexoraExecutiveIntelligenceExperience always calls projectGroundedLearningIntelligence with the canonical CORE-OUT:1 assessment."
+    },
+    {
+      "from": "CORE-INT:3",
+      "to": "CORE-OUT:2",
+      "status": "PARTIAL",
+      "note": "Causal and constraint assessments are passed. Causal Learning requires explicit CoreInt3CausalFinding; live Stage contributors are not that type."
+    },
+    {
+      "from": "CORE-OUT:2",
+      "to": "Learning Candidate",
+      "status": "CONNECTED",
+      "note": "Live /executive fixture produces 0 candidates. Honest no-Learning state."
+    },
+    {
+      "from": "Learning Candidate",
+      "to": "Promotion Assessment",
+      "status": "CONNECTED",
+      "note": "Every candidate receives LearningPromotionAssessment. Live has none."
+    },
+    {
+      "from": "Promotion Assessment",
+      "to": "APP-4",
+      "status": "CONNECTED",
+      "note": "Canonical persist seam exists. Live has nothing promotion-eligible, so APP-4 is not written on /executive."
+    },
+    {
+      "from": "Deterministic test fixtures A–AJ",
+      "to": "Learning Candidate / APP-4",
+      "status": "TEST-ONLY",
+      "note": "Not live business Learning."
+    },
+    {
+      "from": "Longitudinal live post-decision Outcome evidence",
+      "to": "Promotable Learning",
+      "status": "MISSING",
+      "note": "No live post-decision Outcome-linked actuals. 0 promotable Learning is a valid live result."
+    }
+  ],
+  "wiredOnExecutive": {
+    "coreOut1ACapture": true,
+    "coreOut1Evaluation": true,
+    "coreOut2Interpreter": true,
+    "liveActualOutcomeWriterPopulated": false,
+    "liveLearningCandidates": 0,
+    "app4LearningWrite": false,
+    "advisorLearningSection": false,
+    "exi5": false,
+    "cc11": false,
+    "llm": false
+  },
+  "liveEdges": [
+    "Data Reality → CORE-OUT:1A capture call",
+    "CORE-OUT:1A → CORE-OUT:1 handoff",
+    "CORE-OUT:1 pending assessment → CORE-OUT:2 projector",
+    "CORE-OUT:2 honest 0 candidates",
+    "EXI reader presentGroundedLearning with authority missing"
+  ],
+  "partialEdges": [
+    "CORE-INT:3 assessments passed into CORE-OUT:2 without live CoreInt3CausalFinding"
+  ],
+  "testOnlyEdges": [
+    "Populated CORE-OUT:1 assessments producing case-specific Learning",
+    "Supported CORE-INT:3 causal findings",
+    "APP-4 promotion of eligible Learning"
+  ],
+  "missingEdges": [
+    "Live post-decision longitudinal Outcome evidence on /executive"
+  ]
+}

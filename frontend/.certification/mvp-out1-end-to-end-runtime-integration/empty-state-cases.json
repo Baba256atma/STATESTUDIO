@@ -1,0 +1,17 @@
+{
+  "supported": [
+    "no-decision",
+    "decision-no-expected",
+    "expected-no-execution",
+    "execution-no-observation",
+    "current-kpi-no-link",
+    "timing-incomplete",
+    "baseline-unavailable",
+    "outcome-pending",
+    "outcome-conflicting",
+    "outcome-ready-no-learning",
+    "non-promotable",
+    "no-historical-learning"
+  ],
+  "emptyIsError": false
+}

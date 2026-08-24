@@ -1,0 +1,24 @@
+{
+  "phase": "MVP-OUT:1-FIX4",
+  "identity": "MVP-OUT:1-FIX4/GroundedScenarioImpactIntelligence",
+  "authorities": {
+    "dataReality": "observed business truth — not mutated by Scenario projection",
+    "cc9": "Scenario authority — evaluation, session, modeled Capacity/Demand",
+    "groundedScenarioImpact": "CC:9 companion — qualitative intervention → canonical subject KPI binding",
+    "kpiImpactSimulation": "DS:7:5 numeric KPI projection from scene blueprints — not this What-If path",
+    "riskImpactSimulation": "DS:7:6 numeric Risk projection from scene blueprints — not this What-If path",
+    "coreInt2": "epistemic / uncertainty meaning",
+    "coreInt3": "grounded causal + constraint interpretation — not Scenario projection",
+    "coreInt4": "priority",
+    "coreInt5": "trade-off",
+    "coreOut1a": "Outcome observation capture/linkage — not written",
+    "coreOut1": "expected-vs-actual Outcome evaluation — not run",
+    "coreOut2": "grounded Learning — not generated",
+    "app4": "durable historical memory — not promoted",
+    "exi": "experience/presentation only",
+    "conversation": "understanding / routing / presentation",
+    "decisionRuntime": "unchanged",
+    "executionRuntime": "unchanged",
+    "recommendation": "CC:8 unchanged — impact is not a recommendation"
+  }
+}

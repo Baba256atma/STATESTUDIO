@@ -1,0 +1,11 @@
+{
+  "identity": "CORE-INT:5/MissingDimensions",
+  "liveMultiOption": ["sacrifice", "cost", "time", "risk-direction"],
+  "managerCopy": {
+    "cost": "Nexora does not currently have enough validated cost evidence to compare these options on cost.",
+    "time": "Nexora does not currently have enough validated time evidence to compare these options on speed.",
+    "risk": "Current evidence is insufficient to rank the options by risk.",
+    "sacrifice": "No validated sacrifice is currently recorded.",
+    "unknownNotZero": true
+  }
+}

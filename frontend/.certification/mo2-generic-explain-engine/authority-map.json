@@ -1,0 +1,20 @@
+{
+  "explainEngine": "MO:2/GenericExplainEngine",
+  "handoff": "MO:1/ExplainEngineHandoff",
+  "doesNotOwnTruth": true,
+  "authorities": {
+    "interactionContext": "MO:1/ManagerObjectInteractionFoundation",
+    "evidence": "RDI / Data Reality / NEX-MVP:6 presentation fixtures",
+    "intelligence": "EI / CORE-INT live projections (reader)",
+    "relationships": "NEX-MVP:4 context-links + stage relationship projection",
+    "conversation": "CC:1–CC:7",
+    "recommendation": "CC:8 (handoff only; explanation does not invent decisions)",
+    "decision": "Decision Runtime (not committed by explanation)",
+    "execution": "Execution Runtime (not started by explanation)",
+    "memory": "APP-4 (not written)",
+    "stage": "NEX-MVP:4 + STAGE-2D click-to-center (no coordinate writes)",
+    "advisor": "UX:3 presentation authority"
+  },
+  "precedence": "Canonical Runtime Truth > MO Context > Explanation > Presentation",
+  "llm": "deterministic composer only; optional future wording layer"
+}

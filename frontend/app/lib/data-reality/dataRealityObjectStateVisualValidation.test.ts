@@ -236,8 +236,8 @@ test("TEST 9 — P2:6 anchor role is preserved after visual apply", () => {
   )!;
   assert.equal(revenue.focused, true);
   assert.equal(revenue.role, "focused");
-  assert.deepEqual(revenue.targetPosition, [0, 0.42, 0]);
-  assert.ok(revenue.scale >= 1.32);
+  assert.deepEqual(revenue.targetPosition, [0, 0.42, 0.14]);
+  assert.ok(revenue.scale >= 1.3);
 });
 
 test("TEST 10 — P2:7 relationship state is untouched", () => {

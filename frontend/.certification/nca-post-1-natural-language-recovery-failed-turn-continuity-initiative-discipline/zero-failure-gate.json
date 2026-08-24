@@ -1,0 +1,8 @@
+{
+  "identity": "NCA-POST:1/NaturalLanguageRecoveryFailedTurnContinuityInitiativeDiscipline",
+  "version": "1.0.0",
+  "ncaPost1Tests": { "passed": 13, "failed": 0 },
+  "nca257Regression": { "passed": 99, "failed": 0 },
+  "createsNca8": false,
+  "ok": true
+}

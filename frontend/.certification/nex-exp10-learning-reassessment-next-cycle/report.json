@@ -1,0 +1,11 @@
+{
+  "identity": "NEX-EXP:10/LearningReassessmentNextExecutiveCycle",
+  "startsOnlyFromReadyForLearning": true,
+  "consumesExp9Handoff": true,
+  "noOutcomeNoLearning": true,
+  "causalStatusUnknown": true,
+  "thisCaseOnly": true,
+  "commitsDecision": false,
+  "mutatesExecution": false,
+  "nextCycleNotForcedGoalRestart": true
+}

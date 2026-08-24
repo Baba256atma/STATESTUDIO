@@ -1,0 +1,15 @@
+{
+  "vocabulary": ["single-case", "repeated-consistent", "repeated-mixed", "insufficient-history"],
+  "statisticalEngine": false,
+  "rules": {
+    "singleCase": "Sufficient for case-specific Learning. Insufficient for generalized Learning.",
+    "repeatedConsistent": "Same family, supported status, no mixed statuses, total >= 2. May strengthen evidenceStrength to strong. Generalized Outcome Learning still requires causal support.",
+    "repeatedMixed": "Conflicting or mixed statuses across history. Not cherry-picked. Not promotion-eligible as generalized.",
+    "insufficientHistory": "Inconclusive with no prior supported history."
+  },
+  "cases": {
+    "F": "single-case cannot generalize",
+    "AD": "repeated-consistent strengthens only by explicit rules",
+    "AE": "repeated-mixed remains mixed"
+  }
+}

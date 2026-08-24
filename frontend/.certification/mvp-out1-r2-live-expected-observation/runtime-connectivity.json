@@ -1,0 +1,27 @@
+{
+  "decisionToExecution": "CONNECTED",
+  "decisionToExpected": "MISSING",
+  "executionToObservationWindow": "PARTIAL",
+  "expectedToObservationWindow": "MISSING",
+  "dataRealityToOut1a": "PARTIAL",
+  "out1aToLinkedActual": "TEST-ONLY",
+  "out1aToOut1": "CONNECTED",
+  "out1ToOut2": "CONNECTED",
+  "out2ToLearning": "CONNECTED",
+  "out2ToApp4": "TEST-ONLY",
+  "app4ToExi5": "CONNECTED",
+  "out2ToExi5": "CONNECTED",
+  "exi5ToAdvisorConversation": "CONNECTED",
+  "cc11": "MISSING",
+  "liveActualOutcome": false,
+  "liveLearningCandidates": 0,
+  "liveApp4Promotion": false,
+  "liveMeasurableExpectedOutcome": false,
+  "livePostDecisionCaptureSeam": true,
+  "notes": {
+    "decisionToExpected": "Live ctx-decision-capacity and ctx-decision-reprice have no canonical measurable expected Outcome; scenario summary and current KPI target are not used as Decision expectation",
+    "executionToObservationWindow": "Window opens as timing-incomplete; no live committedAt/startedAt",
+    "dataRealityToOut1a": "Journal subscribe seam is registered; default /executive has no RDI commits so no live Actual",
+    "out1aToLinkedActual": "Linked Actual requires explicit measurable binding + window + compatible observation (TEST-ONLY)"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "rule": [
+    "explicit named subject",
+    "current conversational subject",
+    "stage context",
+    "fallback"
+  ],
+  "caseE": {
+    "prior": "show me delivery",
+    "utterance": "explain DEMAND SURGE",
+    "resolvedSubjectId": "ctx-scenario-demand",
+    "resolvedKind": "scenario",
+    "deliveryDidNotHijack": true,
+    "stageFocusUnchangedByDescribe": true
+  }
+}

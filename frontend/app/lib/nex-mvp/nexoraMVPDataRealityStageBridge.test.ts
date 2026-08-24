@@ -20,6 +20,7 @@ import {
   getDefaultNexoraMVPObjectInteractionCatalog,
   selectNexoraMVPInteractionSubject,
 } from "./nexoraMVPObjectInteraction.ts";
+import { applyDataRealityObjectVisualStateToStagePresentation } from "./nexoraMVPDataRealityObjectVisualState.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const stageUiRoot = join(here, "../../executive/nex-mvp/stage");
@@ -103,13 +104,17 @@ test("integration — Stage scene presentation differs A/B for Production", () =
     presentationState: "report",
     environmentIntent: "neutral",
   });
-  const a = deriveNexoraMVPStageInteractionPresentation(
-    interaction,
-    resolveNexoraMVPDataRealityStageBridge("baseline").catalog,
+  const a = applyDataRealityObjectVisualStateToStagePresentation(
+    deriveNexoraMVPStageInteractionPresentation(
+      interaction,
+      resolveNexoraMVPDataRealityStageBridge("baseline").catalog,
+    ),
   );
-  const b = deriveNexoraMVPStageInteractionPresentation(
-    interaction,
-    resolveNexoraMVPDataRealityStageBridge("operational-pressure").catalog,
+  const b = applyDataRealityObjectVisualStateToStagePresentation(
+    deriveNexoraMVPStageInteractionPresentation(
+      interaction,
+      resolveNexoraMVPDataRealityStageBridge("operational-pressure").catalog,
+    ),
   );
   const capacityA = a.scene.objects.find((o) => o.id === "obj-capacity")!;
   const capacityB = b.scene.objects.find((o) => o.id === "obj-capacity")!;

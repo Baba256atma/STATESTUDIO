@@ -312,9 +312,18 @@ test("10. foundation / contracts / intent / kinds / lifecycle preserved via Publ
   assert.ok(intentKinds.includes("inform"));
   assert.notEqual(actionKinds, intentKinds);
   assert.ok(lifecycleStates.includes("draft"));
-  assert.ok(!lifecycleStates.includes("sent"));
-  assert.ok(!lifecycleStates.includes("delivered"));
-  assert.ok(!lifecycleStates.includes("executed"));
+  assert.equal(
+    lifecycleStates.some((state) => String(state) === "sent"),
+    false,
+  );
+  assert.equal(
+    lifecycleStates.some((state) => String(state) === "delivered"),
+    false,
+  );
+  assert.equal(
+    lifecycleStates.some((state) => String(state) === "executed"),
+    false,
+  );
 
   const proposal = createRuntimeExecutiveActionProposalContract({
     kind: draft.kind,

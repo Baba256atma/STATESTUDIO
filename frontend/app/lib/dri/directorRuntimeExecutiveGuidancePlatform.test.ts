@@ -174,9 +174,9 @@ function makePlatformInput(
       intent: "explain",
       importance: "important",
       urgency: "soon",
-      target: { targetKind: "metric", targetId: "delivery-kpi" },
+      target: { targetKind: "kpi", targetId: "delivery-kpi" },
       source: {
-        sourceKind: "metric-signal",
+        sourceKind: "runtime-state",
         sourceId: "metric.delivery-kpi",
       },
     }),

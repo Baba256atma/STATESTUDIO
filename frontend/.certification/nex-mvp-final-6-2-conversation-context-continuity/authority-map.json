@@ -1,0 +1,15 @@
+{
+  "continuityOwner": "NEX-MVP-FINAL:6.2/ConversationContextContinuity",
+  "nluOwner": "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding",
+  "intentOwner": "CC:1",
+  "objectCatalogOwner": "CC:2 / MO catalog",
+  "executiveContextOwner": "CC:7",
+  "stageTrailOwner": "Stage navigation",
+  "decisionOwner": "CC:10 / CC:10R",
+  "executionOwner": "CC:11 / CC:12",
+  "durableMemoryOwner": "APP-4 (not used)",
+  "createsSecondConversationEngine": false,
+  "createsSecondObjectRegistry": false,
+  "createsSecondStageHistory": false,
+  "inventsBusinessTruth": false
+}

@@ -1,0 +1,6 @@
+{
+  "G": "window from genuine Decision committedAt is ready-for-observation (TEST-ONLY timestamps)",
+  "H": "live Decision with no committedAt is timing-incomplete",
+  "V": "observation outside expectedEndAt is window-mismatch",
+  "result": "pass"
+}

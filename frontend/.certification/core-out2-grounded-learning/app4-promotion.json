@@ -1,0 +1,13 @@
+{
+  "authority": "APP-4/ExecutiveMemoryStorageEngine",
+  "seam": "promoteGroundedLearningToApp4 → persistDurableExecutiveMemory",
+  "kind": "learning",
+  "shadowStore": false,
+  "ineligibleRejectedBeforePersist": true,
+  "duplicateId": "duplicate-durable-record",
+  "livePromotionsOnExecutive": 0,
+  "testCases": {
+    "U": "PASS — canonical APP-4 record only",
+    "AI": "PASS — no duplicate durable record"
+  }
+}

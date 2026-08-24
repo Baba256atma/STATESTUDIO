@@ -163,7 +163,7 @@ test("A — Queue Counts from catalog (3/5/2/4), not hard-coded UI", () => {
   assert.equal(queue.find((e) => e.category === "execution")?.count, 4);
   const presentation = deriveNexoraMVPStageInteractionPresentation(
     createInitialNexoraMVPObjectInteractionState({
-      workspace: "company",
+      workspace: "overview",
       presentationState: "minimum",
       environmentIntent: "neutral",
     }),
@@ -179,28 +179,29 @@ test("A — Queue Counts from catalog (3/5/2/4), not hard-coded UI", () => {
 test("B — Queue is non-semantic", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
   state = openNexoraMVPExecutiveQueueCollection(state, "problem", catalog);
   assert.equal(state.collectionContext?.category, "problem");
+  const selectedId = state.selectedSubject?.id;
   assert.equal(state.selectedSubject, null);
   assert.equal(state.focusedSubject, null);
   const primary = resolveNexoraMVPPrimaryStageSubject(state);
   assert.equal(primary.primaryStageSubjectId, null);
   assert.equal(primary.advisorSubjectId, null);
   assert.equal(primary.presentationMode, "collection");
-  assert.notEqual(state.selectedSubject?.id, "nexora-collection:problem");
+  assert.notEqual(selectedId, "nexora-collection:problem");
   assert.ok(
-    !catalog.contextSubjects.some((s) => s.id === "obj-problems"),
+    !catalog.contextSubjects.some((s) => String(s.id) === "obj-problems"),
   );
 });
 
 test("C — Problem Collection Disclosure", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -246,7 +247,7 @@ test("D — Collection Layout: z=0, no overlap, no queue intrusion, no fake cent
 test("E — Collection member click → CENTER + closes collection", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -278,7 +279,7 @@ test("E — Collection member click → CENTER + closes collection", () => {
 test("F — Scenario switch from Problems", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -308,7 +309,7 @@ test("F — Scenario switch from Problems", () => {
 test("G — Active row toggle restores prior / Overview", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -330,7 +331,7 @@ test("G — Active row toggle restores prior / Overview", () => {
 test("H — Back navigation Overview → Collection → Focus", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -348,7 +349,7 @@ test("H — Back navigation Overview → Collection → Focus", () => {
 test("I — Forward restores Collection → Focus", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -366,7 +367,7 @@ test("I — Forward restores Collection → Focus", () => {
 test("J — Escape → Overview clears collection", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -384,7 +385,7 @@ test("J — Escape → Overview clears collection", () => {
 test("K — Advisor collection context (no fake semantic subject)", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -470,7 +471,7 @@ test("M — Large collection density budget", () => {
     ),
   );
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -512,7 +513,7 @@ test("O — Reserved region pressure: collection layout outside queue", () => {
 test("P — Attention cannot steal focus after collection member click", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -527,7 +528,7 @@ test("P — Attention cannot steal focus after collection member click", () => {
 test("Q — topologyZ === 0 for collection members", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });
@@ -545,7 +546,7 @@ test("Q — topologyZ === 0 for collection members", () => {
 test("Decision + Execution collections + Watch coexistence capture", () => {
   const catalog = catalogA();
   let state = createInitialNexoraMVPObjectInteractionState({
-    workspace: "company",
+    workspace: "overview",
     presentationState: "minimum",
     environmentIntent: "neutral",
   });

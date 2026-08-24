@@ -1,0 +1,21 @@
+{
+  "reused": [
+    "EI:3/ProblemRiskOpportunityIntelligence",
+    "CC:8/ExecutiveAssessment",
+    "DS-6:1/WorkspaceRisk",
+    "RDI/Data Reality",
+    "MO:1-MO:6",
+    "MO-INT:1",
+    "UX:3 Advisor",
+    "NEX-MVP Stage catalog overlay",
+    "NEX-EXP:1-3 entrance session"
+  ],
+  "notCreated": [
+    "NEX-EXP:5",
+    "MO:7",
+    "parallel problem intelligence",
+    "parallel causal engine",
+    "parallel recommendation engine",
+    "parallel scenario engine"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "identity": "CORE-INT:1/ExecutiveIntelligenceCapabilityAudit",
+  "version": "1.0.0",
+  "certifiedAt": "2026-08-18",
+  "phase": "CORE-INT:1",
+  "status": "CERTIFIED",
+  "productionBehaviorChanged": false,
+  "implementedCapabilities": false,
+  "startedExi4": false,
+  "addedLlm": false,
+  "frozenMvpUnchanged": true,
+  "frozenMvp": {
+    "id": "MVP:1/NexoraManagerMVPReleaseBaseline",
+    "version": "1.2.0",
+    "route": "/executive"
+  },
+  "primaryStatuses": {
+    "assumptionAndUncertainty": "IMPLEMENTED-NON-LIVE",
+    "causal": "IMPLEMENTED-NON-LIVE",
+    "constraint": "FRAGMENTED",
+    "priority": "FRAGMENTED",
+    "tradeoff": "IMPLEMENTED-NON-LIVE"
+  },
+  "ei4LiveOnExecutive": false,
+  "coreHasFiveCapabilitiesAsLiveCore": false,
+  "artifacts": [
+    "CAPABILITY-AUDIT.md",
+    "capability-matrix.json",
+    "authority-map.json",
+    "runtime-connectivity.json",
+    "core-vs-exi-leakage.json",
+    "recommended-roadmap.json",
+    "report.json"
+  ],
+  "tests": {
+    "coreInt1Connectivity": { "result": "PASS", "count": 4 },
+    "ei1": { "result": "PASS" },
+    "ei2": { "result": "PASS" },
+    "ei3": { "result": "PASS" },
+    "ei4": { "result": "PASS" },
+    "ei5": { "result": "PASS" },
+    "ei6": {
+      "result": "PARTIAL",
+      "pass": "A–K, O–T",
+      "fail": ["L", "M", "N"],
+      "note": "Pre-existing: promoteEligibleLearningToApp4 does not persist (promoted !== true). Confirms APP-4 does not complete a live learning loop for these five capabilities. Not fixed in CORE-INT:1."
+    },
+    "exi1": { "result": "PASS" },
+    "exi2": { "result": "PASS" },
+    "exi3": { "result": "PASS" },
+    "mvpBaselineIdentity": { "result": "PASS", "version": "1.2.0" },
+    "cc5Conversation": { "result": "PASS" },
+    "dataRealityAdvisorMvpBridge": { "result": "PASS" },
+    "batch157": { "total": 157, "pass": 154, "fail": 3, "failingFile": "executionOutcomeLearningIntelligence.test.ts" }
+  },
+  "productionBuild": "PASS",
+  "executiveHttp": 200,
+  "recommendedNext": "CORE-INT:2 live epistemic/evidence contract (EI:3 reuse). Do not start EXI:4."
+}

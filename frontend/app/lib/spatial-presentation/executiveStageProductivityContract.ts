@@ -378,7 +378,7 @@ export type ResolveExecutiveStageDisclosureInput = {
   readonly primaryStageSubjectId?: string | null;
   readonly executiveContextObjectId?: string | null;
   /** Collection context — presentation only; not a semantic Object. */
-  readonly collectionCategory?: ExecutiveQueueCategory | null;
+  readonly collectionCategory?: ExecutiveQueueCategory | "changes-since-visit" | null;
   readonly collectionObjectIds?: readonly string[];
   readonly expandExecutiveThread?: boolean;
   readonly watchBudgetMax?: number;

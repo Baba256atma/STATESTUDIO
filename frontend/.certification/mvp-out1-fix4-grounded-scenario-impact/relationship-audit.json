@@ -1,0 +1,29 @@
+{
+  "delivery": {
+    "semantic": [
+      {
+        "id": "rel-del-capacity",
+        "label": "Capacity",
+        "relation": "depends-on",
+        "class": "BUSINESS / SEMANTIC",
+        "usedAsImpactEvidence": false,
+        "note": "Upstream Capacity; not inverted into Delivery→Customer/Revenue."
+      }
+    ],
+    "revenueEdge": {
+      "id": "rel-rev-delivery",
+      "from": "obj-revenue",
+      "relation": "influences",
+      "class": "BUSINESS / SEMANTIC",
+      "invertedForDeliveryImpact": false
+    },
+    "stageTopology": "PRESENTATION-ONLY — ignored"
+  },
+  "inventory": {
+    "semantic": [],
+    "class": "no relationship graph for impact"
+  },
+  "scenarioModel": "CC:9 Capacity/Demand modeled interventions remain SCENARIO-MODEL",
+  "causalSupported": "CORE-INT:3 not used as Scenario impact basis in FIX4",
+  "dataSupported": "not used as delay impact basis"
+}

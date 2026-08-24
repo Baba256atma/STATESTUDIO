@@ -1,0 +1,19 @@
+{
+  "gate": "NCA:7-ZERO-FAILURE-CERTIFIED",
+  "nca1": "pass",
+  "nca2": "pass",
+  "nca3": "pass",
+  "nca4": "pass",
+  "nca5": "pass",
+  "nca6": "pass",
+  "nca7": "pass",
+  "typecheck": "pass",
+  "lint": "pass",
+  "build": "pass",
+  "runtime": "pass",
+  "browserErrors": 0,
+  "accidentalApprovals": 0,
+  "accidentalExecutionStarts": 0,
+  "seventhEngine": 0,
+  "postNcaStarted": 0
+}

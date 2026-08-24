@@ -1,0 +1,5 @@
+{
+  "staleRemainsStale": true,
+  "partialRemainsBounded": true,
+  "invalidCannotBecomeActual": true
+}

@@ -370,14 +370,14 @@ test("11. identical context is unchanged", () => {
 test("12. dial normalization and independence", () => {
   const normalized = normalizeRuntimeExecutiveWorkspaceDialRequest({
     requestedWorkspace: "decision",
-    requestedSubject: { kind: "decision", id: "increase-capacity" },
+    requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
     requestedIntent: "decide",
   });
   assert.deepEqual(normalized, {
     requestedWorkspaceKind: "decision",
     source: "dial",
     reason: "user-request",
-    requestedSubject: { kind: "decision", id: "increase-capacity" },
+    requestedSubject: { kind: "decision" as const, id: "increase-capacity" },
     requestedIntent: "decide",
   });
   assert.equal("angle" in normalized, false);

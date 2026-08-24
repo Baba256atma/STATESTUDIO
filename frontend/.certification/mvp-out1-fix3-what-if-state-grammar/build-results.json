@@ -1,0 +1,5 @@
+{
+  "command": "NODE_OPTIONS=--max-old-space-size=8192 npm run build",
+  "exitCode": 0,
+  "status": "PASS"
+}

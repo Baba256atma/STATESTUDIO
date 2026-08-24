@@ -1,0 +1,15 @@
+{
+  "identity": "CORE-INT:3/ExiReaderProof",
+  "proof": [
+    "composeNexoraExecutiveIntelligenceExperience calls projectNexoraLiveCausalConstraintIntelligence",
+    "composeNexoraExiCauseAssessment maps Core contributors/primary/root/confidence when core is supplied",
+    "composeNexoraExiConstraintAssessment maps Core constraints/binding/unresolved when core is supplied",
+    "EXI no longer sets primaryContributor when inbound count === 1",
+    "EXI no longer treats outgoing blocks as a constraint on the source subject",
+    "createExecutiveClaim is not called from EXI composer, grounding, or live collector"
+  ],
+  "removedSemanticShortcut": "supported.length === 1 ? supported[0] : null",
+  "exi2IdentityUnchanged": "EXI:2/GroundedCauseConstraintTradeoff",
+  "noExi2B": true,
+  "noExiCausalEngine": true
+}

@@ -1,0 +1,16 @@
+{
+  "hardcodedBahador": false,
+  "hardcodedAcme": false,
+  "hardcodedProtectCashFlowBranch": false,
+  "engineIsDeterministic": true,
+  "normalizationSynonymsAllowed": ["late deliveries → Improve delivery reliability"],
+  "worksFor": [
+    "business goals",
+    "project goals",
+    "operational goals",
+    "financial goals",
+    "software/project goals",
+    "service goals"
+  ],
+  "proof": "nexoraGoalDiscoveryExperience.test.ts generic engine source inspection plus Launch Project Orion / Increase revenue cases"
+}

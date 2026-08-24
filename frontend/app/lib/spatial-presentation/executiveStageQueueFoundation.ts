@@ -18,6 +18,11 @@ import {
   type ExecutiveStagePresentationMode,
   type ExecutiveStageProductivitySubjectInput,
 } from "./executiveStageProductivityContract.ts";
+export type {
+  ExecutiveQueueCategory,
+  ExecutiveQueueEntry,
+  ExecutiveStagePresentationMode,
+};
 import type { ExecutiveFocusSceneRelationshipInput } from "./executiveFocusSceneDisclosure.ts";
 import {
   EXECUTIVE_STAGE_2D_DEPTH,
@@ -313,6 +318,7 @@ export function rankExecutiveCollectionMembers(input: {
   readonly subjects: readonly ExecutiveQueueEligibleSubjectInput[];
   readonly objectIds: readonly string[];
   readonly maxVisible?: number;
+  readonly priorityOrderedIds?: readonly string[] | null;
 }): Readonly<{
   readonly visibleIds: readonly string[];
   readonly hiddenIds: readonly string[];
@@ -322,9 +328,19 @@ export function rankExecutiveCollectionMembers(input: {
   const byId = new Map(
     input.subjects.map((subject) => [subject.subjectId, subject]),
   );
+  const priorityOrder = input.priorityOrderedIds ?? [];
   const ranked = [...input.objectIds]
     .filter((id) => byId.has(id))
     .sort((left, right) => {
+      if (priorityOrder.length > 0) {
+        const leftRank = priorityOrder.indexOf(left);
+        const rightRank = priorityOrder.indexOf(right);
+        if (leftRank !== -1 || rightRank !== -1) {
+          if (leftRank === -1) return 1;
+          if (rightRank === -1) return -1;
+          return leftRank - rightRank;
+        }
+      }
       const leftSubject = byId.get(left)!;
       const rightSubject = byId.get(right)!;
       const delta = collectionRank(rightSubject) - collectionRank(leftSubject);
@@ -357,16 +373,18 @@ export function resolveExecutiveCollectionDisclosure(input: {
   readonly presentationDepth?: "minimum" | "report" | "operation";
   readonly watchBudgetMax?: number;
   readonly collectionBudgetMax?: number;
+  readonly priorityOrderedIds?: readonly string[] | null;
 }): ExecutiveStageDisclosureResult & {
   readonly collectionVisibleObjectIds: readonly string[];
   readonly collectionHiddenObjectIds: readonly string[];
   readonly collectionTotalCount: number;
-  readonly activeQueueCategory: ExecutiveQueueCategory;
+  readonly activeQueueCategory: ExecutiveQueueCategory | "changes-since-visit";
 } {
   const ranked = rankExecutiveCollectionMembers({
     subjects: input.subjects,
     objectIds: input.collection.objectIds,
     maxVisible: input.collectionBudgetMax,
+    priorityOrderedIds: input.priorityOrderedIds,
   });
 
   const disclosure = resolveExecutiveStageDisclosure({
@@ -503,7 +521,7 @@ export function buildExecutiveQueueFoundationObservability(input: {
 }): Readonly<{
   readonly contract: typeof executiveStageQueueFoundationIdentity;
   readonly stagePresentationMode: ExecutiveStagePresentationMode;
-  readonly activeQueueCategory: ExecutiveQueueCategory | null;
+  readonly activeQueueCategory: ExecutiveQueueCategory | "changes-since-visit" | null;
   readonly collectionObjectIds: readonly string[];
   readonly collectionVisibleObjectIds: readonly string[];
   readonly collectionHiddenObjectIds: readonly string[];

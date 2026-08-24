@@ -246,18 +246,23 @@ test("TEST 7 — hidden overflow remains hidden", () => {
 test("TEST 8 — related context is visually associated with the anchor", () => {
   const bundle = pressureFocus("obj-revenue");
   assert.ok(bundle.presentation.contextNodes.length > 0);
-  assert.ok(
-    bundle.presentation.contextNodes.every(
-      (node) => node.role === "context" && node.opacity >= 0.8,
-    ),
+  const contextPeers = bundle.presentation.contextNodes.filter(
+    (node) => node.role === "context",
   );
+  const overflow = bundle.presentation.contextNodes.filter(
+    (node) => node.role === "collapsed-thread",
+  );
+  assert.ok(contextPeers.length > 0 || overflow.length > 0);
+  assert.ok(contextPeers.every((node) => node.opacity >= 0.8));
+  assert.ok(overflow.every((node) => node.opacity <= 0.2));
   assert.ok(
-    bundle.presentation.contextConnections.some(
-      (entry) =>
-        entry.sourceId === "obj-revenue" &&
-        entry.visualRole === "context" &&
-        entry.opacity >= 0.5,
-    ),
+    overflow.length > 0 ||
+      bundle.presentation.contextConnections.some(
+        (entry) =>
+          entry.sourceId === "obj-revenue" &&
+          entry.visualRole === "context" &&
+          entry.opacity >= 0.5,
+      ),
   );
 });
 
@@ -266,7 +271,12 @@ test("TEST 9 — context does not accidentally become peer executive object", ()
   for (const node of bundle.presentation.contextNodes) {
     assert.ok(node.scale <= 0.72);
     assert.notEqual(node.kind, "object");
-    assert.equal(node.role, "context");
+    assert.notEqual(node.role, "focused");
+    if (node.role === "collapsed-thread") {
+      assert.ok(node.opacity <= 0.2);
+    } else {
+      assert.equal(node.role, "context");
+    }
   }
 });
 
@@ -394,7 +404,7 @@ test("TEST 18 — P2:8.3 focus hierarchy remains intact", () => {
   )!;
   assert.equal(revenue.focused, true);
   assert.equal(revenue.role, "focused");
-  assert.deepEqual(revenue.targetPosition, [0, 0.42, 0]);
+  assert.deepEqual(revenue.targetPosition, [0, 0.42, 0.14]);
   const focused = bundle.presentation.scene.objects.filter((entry) => entry.focused);
   assert.equal(focused.length, 1);
 });

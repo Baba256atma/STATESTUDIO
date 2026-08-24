@@ -1,0 +1,26 @@
+{
+  "identity": "NEX-EXP:2/GoalDiscoveryGoalObjectEmergence",
+  "stage": "selectNexoraMVPInteractionSubject",
+  "conversation": "executeNexoraConversationalExperience / UX:3 Chat",
+  "advisor": "UX:3 Professional Advisor",
+  "goalContext": "MO:4 makeGoalContext / resolveExecutiveGoalContext overlay",
+  "explain": "MO:2 Generic Explain Engine",
+  "exploration": "MO:3 Object-Guided Exploration",
+  "journey": "MO:5 Executive Journey Intelligence",
+  "attention": "MO:6 Executive Attention Intelligence",
+  "unifiedExperience": "MO-INT:1 after Goal activation",
+  "identityHandoff": "NEX-EXP:1 READY_FOR_GOAL_DISCOVERY",
+  "registeredGoal": "MANAGER_OBJECT_REGISTERED_GOAL when catalog already contains obj-capacity",
+  "notCreated": [
+    "NEX-EXP:3",
+    "MO:7",
+    "parallel Goal system",
+    "parallel Strategy system",
+    "parallel OKR engine",
+    "new Stage runtime",
+    "parallel object graph",
+    "parallel Advisor",
+    "parallel conversation runtime",
+    "parallel goal memory platform"
+  ]
+}

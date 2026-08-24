@@ -1,0 +1,10 @@
+{
+  "phase": "NEX-EXP:7",
+  "identity": "NEX-EXP:7/ManagerDecisionCommitmentExperience",
+  "version": "1.0.0",
+  "namespace": "nexora.experience.manager.decision-commitment",
+  "verdict": "NEX-EXP:7 = CERTIFIED",
+  "startsNexExp8": false,
+  "nexoraCanCommitDecision": false,
+  "startsExecution": false
+}

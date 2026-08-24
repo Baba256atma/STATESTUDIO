@@ -1,0 +1,16 @@
+{
+  "identity": "NCA-POST:3/SemanticScopeMultiEntityCanonicalCollectionNexoraWorkspaceIntelligence",
+  "version": "1.0.0",
+  "namespace": "nexora.nca.post.semantic-scope-multi-entity-canonical-collection-workspace",
+  "createsNca8": false,
+  "ncaPost3Tests": { "passed": 15, "failed": 0 },
+  "ncaAndPostRegression": { "passed": 223, "failed": 0 },
+  "conversationalIntent": { "passed": 24, "failed": 0 },
+  "typecheck": "pass",
+  "lint": "pass",
+  "build": "pass",
+  "runtime": "pass",
+  "liveBrowser": "pass",
+  "pageErrors": 0,
+  "ok": true
+}

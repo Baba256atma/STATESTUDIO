@@ -208,7 +208,7 @@ test("4: unsupported variable", () => {
     baselineAttentionBySubject: baseline().attentionBySubject,
   });
   assert.equal(result.status, "unsupported");
-  assert.match(result.summary, /isn't modeled/i);
+  assert.match(result.summary, /supported impact model/i);
 });
 
 test("5–7: modify scenario revision identity", () => {
@@ -569,13 +569,15 @@ test("Case C integration: unsupported advertising", () => {
   assert.equal(result.scenarioResult?.status, "unsupported");
 });
 
-test("Case I integration: missing horizon", () => {
+test("Case I integration: do nothing without horizon remains qualitative", () => {
   const result = run("What if we do nothing?", {
     executiveContext: ctx({ subjectId: "obj-capacity" }),
     seed: "horizon",
   });
-  assert.equal(result.status, "clarification-required");
-  assert.match(result.response, /time horizon/i);
+  assert.equal(result.status, "applied");
+  assert.equal(result.scenarioResult?.scenario?.kind, "do-nothing");
+  assert.doesNotMatch(result.response, /time horizon/i);
+  assert.match(result.response, /scenario rather than a prediction/i);
 });
 
 test("Case L: Choose Scenario B routes to CC:10 Decision Commitment", () => {

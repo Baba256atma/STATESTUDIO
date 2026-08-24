@@ -59,7 +59,9 @@ import {
   type RuntimeExecutiveActionReason,
   type RuntimeExecutiveActionRecipient,
   type RuntimeExecutiveActionSubject,
+  type RuntimeExecutiveActionSubjectKind,
   type RuntimeExecutiveActionTarget,
+  type RuntimeExecutiveActionTargetKind,
 } from "@/app/lib/rex/runtimeExecutiveActionExperienceFoundation";
 
 // ─── Transitively published Foundation surface (for REX-5:3+) ───────────────
@@ -503,6 +505,51 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function optionalRecordString(
+  record: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  const value = record[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+function runtimeActionReferenceFromRecord<
+  TKind extends string,
+  TRef extends { readonly kind: TKind; readonly id: string; readonly label?: string; readonly referenceId?: string },
+>(
+  record: Record<string, unknown>,
+  isKind: (value: unknown) => value is TKind,
+): TRef | null {
+  const kind = record.kind;
+  const id = record.id;
+  if (!isKind(kind) || !isNonEmptyString(id)) return null;
+  const label = optionalRecordString(record, "label");
+  const referenceId = optionalRecordString(record, "referenceId");
+  return {
+    kind,
+    id,
+    ...(label !== undefined ? { label } : {}),
+    ...(referenceId !== undefined ? { referenceId } : {}),
+  } as TRef;
+}
+
+function runtimeActionRecipientFromRecord(
+  record: Record<string, unknown>,
+): RuntimeExecutiveActionRecipient | null {
+  const kind = record.kind;
+  if (!isRuntimeExecutiveActionRecipientKind(kind)) return null;
+  const id = optionalRecordString(record, "id");
+  if (kind !== "unresolved" && !isNonEmptyString(id)) return null;
+  const label = optionalRecordString(record, "label");
+  const referenceId = optionalRecordString(record, "referenceId");
+  return {
+    kind,
+    ...(id !== undefined ? { id } : {}),
+    ...(label !== undefined ? { label } : {}),
+    ...(referenceId !== undefined ? { referenceId } : {}),
+  };
+}
+
 function exactOrder<T extends string>(
   actual: readonly T[],
   expected: readonly T[],
@@ -845,8 +892,15 @@ export function evaluateRuntimeExecutiveActionSubjectContract(
   }
 
   try {
+    const subject = runtimeActionReferenceFromRecord<
+      RuntimeExecutiveActionSubjectKind,
+      RuntimeExecutiveActionSubject
+    >(subjectValue, isRuntimeExecutiveActionSubjectKind);
+    if (subject == null) {
+      return Object.freeze({ valid: false, issues: freezeIssues(issues) });
+    }
     const contract = createRuntimeExecutiveActionSubjectContract({
-      subject: subjectValue as RuntimeExecutiveActionSubject,
+      subject,
     });
     return Object.freeze({
       valid: true,
@@ -923,11 +977,18 @@ export function evaluateRuntimeExecutiveActionTargetContract(
   }
 
   try {
+    const target = runtimeActionReferenceFromRecord<
+      RuntimeExecutiveActionTargetKind,
+      RuntimeExecutiveActionTarget
+    >(targetValue, isRuntimeExecutiveActionTargetKind);
+    if (target == null) {
+      return Object.freeze({ valid: false, issues: freezeIssues(issues) });
+    }
     return Object.freeze({
       valid: true,
       issues: Object.freeze([]),
       value: createRuntimeExecutiveActionTargetContract({
-        target: targetValue as RuntimeExecutiveActionTarget,
+        target,
       }),
     });
   } catch {
@@ -1021,11 +1082,15 @@ export function evaluateRuntimeExecutiveActionRecipientContract(
   }
 
   try {
+    const recipient = runtimeActionRecipientFromRecord(recipientValue);
+    if (recipient == null) {
+      return Object.freeze({ valid: false, issues: freezeIssues(issues) });
+    }
     return Object.freeze({
       valid: true,
       issues: Object.freeze([]),
       value: createRuntimeExecutiveActionRecipientContract({
-        recipient: recipientValue as RuntimeExecutiveActionRecipient,
+        recipient,
       }),
     });
   } catch {
@@ -2080,24 +2145,24 @@ export interface RuntimeExecutiveActionExperienceContractsVerification {
 
 export function verifyRuntimeExecutiveActionExperienceContracts():
   RuntimeExecutiveActionExperienceContractsVerification {
-  const module = runtimeExecutiveActionExperienceContracts;
+  const runtimeModule = runtimeExecutiveActionExperienceContracts;
   const registry = runtimeExecutiveActionExperienceContractsRegistry;
   const upstream = verifyRuntimeExecutiveActionExperienceFoundation();
 
   const identityOk =
-    module.identity ===
+    runtimeModule.identity ===
       "REX-5:2/RuntimeExecutiveActionExperienceContracts" &&
-    module.version === "5.2.0" &&
-    module.namespace === "nexora.rex.action-experience.contracts" &&
-    module.phase === "Contracts" &&
-    module.architecturalRole === "ExecutiveActionExperienceContractLayer" &&
-    module.upstreamDependency ===
+    runtimeModule.version === "5.2.0" &&
+    runtimeModule.namespace === "nexora.rex.action-experience.contracts" &&
+    runtimeModule.phase === "Contracts" &&
+    runtimeModule.architecturalRole === "ExecutiveActionExperienceContractLayer" &&
+    runtimeModule.upstreamDependency ===
       "REX-5:1/RuntimeExecutiveActionExperienceFoundation" &&
-    module.upstreamDependency ===
+    runtimeModule.upstreamDependency ===
       runtimeExecutiveActionExperienceFoundationIdentity &&
-    module.dependencyPath ===
+    runtimeModule.dependencyPath ===
       "@/app/lib/rex/runtimeExecutiveActionExperienceFoundation" &&
-    module.foundationBoundary === "REX-5:1-foundation-only";
+    runtimeModule.foundationBoundary === "REX-5:1-foundation-only";
 
   const vocabOk =
     exactOrder([...RUNTIME_EXECUTIVE_ACTION_CONTRACT_FAMILIES], [
@@ -2245,14 +2310,14 @@ export function verifyRuntimeExecutiveActionExperienceContracts():
     frozen &&
     lifecycleAligned &&
     incompleteDistinct &&
-    module.incompleteDistinctFromInvalid === true &&
-    module.subjectTargetRecipientSeparated === true &&
-    module.kindIntentSeparated === true &&
-    module.contextPreserving === true &&
-    module.rendererIndependent === true &&
-    module.providerIndependent === true &&
-    module.transportIndependent === true &&
-    module.dispatchFree === true &&
+    runtimeModule.incompleteDistinctFromInvalid === true &&
+    runtimeModule.subjectTargetRecipientSeparated === true &&
+    runtimeModule.kindIntentSeparated === true &&
+    runtimeModule.contextPreserving === true &&
+    runtimeModule.rendererIndependent === true &&
+    runtimeModule.providerIndependent === true &&
+    runtimeModule.transportIndependent === true &&
+    runtimeModule.dispatchFree === true &&
     upstream.ok === true;
 
   return Object.freeze({
@@ -2277,17 +2342,17 @@ export function verifyRuntimeExecutiveActionExperienceContracts():
       runtimeExecutiveActionExperienceContractsApiNames.length,
     frozen,
     foundationBoundaryIntact:
-      module.foundationBoundary === "REX-5:1-foundation-only",
+      runtimeModule.foundationBoundary === "REX-5:1-foundation-only",
     incompleteDistinctFromInvalid: incompleteDistinct,
     subjectTargetRecipientSeparated:
-      module.subjectTargetRecipientSeparated === true,
-    kindIntentSeparated: module.kindIntentSeparated === true,
-    contextPreserving: module.contextPreserving === true,
+      runtimeModule.subjectTargetRecipientSeparated === true,
+    kindIntentSeparated: runtimeModule.kindIntentSeparated === true,
+    contextPreserving: runtimeModule.contextPreserving === true,
     lifecycleAligned,
-    rendererIndependent: module.rendererIndependent === true,
-    providerIndependent: module.providerIndependent === true,
-    transportIndependent: module.transportIndependent === true,
-    dispatchFree: module.dispatchFree === true,
+    rendererIndependent: runtimeModule.rendererIndependent === true,
+    providerIndependent: runtimeModule.providerIndependent === true,
+    transportIndependent: runtimeModule.transportIndependent === true,
+    dispatchFree: runtimeModule.dispatchFree === true,
     upstreamFoundationOk: upstream.ok === true,
   });
 }

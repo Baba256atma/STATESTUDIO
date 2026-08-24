@@ -1,0 +1,18 @@
+{
+  "engine": "MO:4/GoalDirectedExecutiveNavigation",
+  "hardcodedGoalBranches": false,
+  "sourceInspection": {
+    "obj-capacity": false,
+    "obj-delivery": false,
+    "obj-revenue": false,
+    "Improve Delivery": false,
+    "CapacityGap assignment": false
+  },
+  "derivesFrom": [
+    "goal context",
+    "MO:1 object context",
+    "recorded relationships",
+    "MO:3 valid paths",
+    "runtime / KPI evidence when present"
+  ]
+}

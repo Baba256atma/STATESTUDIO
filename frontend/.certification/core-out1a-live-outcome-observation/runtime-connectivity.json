@@ -1,0 +1,75 @@
+{
+  "identity": "CORE-OUT:1A/RuntimeConnectivity",
+  "livePath": [
+    "Source / Dataset",
+    "Data Reality Observation",
+    "CORE-OUT:1A Capture",
+    "Outcome Link Validation",
+    "Canonical Actual Outcome Evidence",
+    "CORE-OUT:1 Outcome Assessment"
+  ],
+  "edges": [
+    {
+      "from": "Source / Dataset",
+      "to": "Data Reality Observation",
+      "status": "CONNECTED",
+      "note": "RDI / Data Reality remain observation authority."
+    },
+    {
+      "from": "Data Reality Observation",
+      "to": "CORE-OUT:1A Capture",
+      "status": "CONNECTED",
+      "note": "Live projector always calls projectOutcomeObservationCapture. Live store is empty; no fabricated observations."
+    },
+    {
+      "from": "CORE-OUT:1A Capture",
+      "to": "Outcome Link Validation",
+      "status": "CONNECTED",
+      "note": "Deterministic linkBasis + dimension/unit/window/provenance checks run. Live path finds no eligible links."
+    },
+    {
+      "from": "Outcome Link Validation",
+      "to": "Canonical Actual Outcome Evidence",
+      "status": "MISSING",
+      "note": "No live post-decision Outcome-linked observation exists in the /executive fixture."
+    },
+    {
+      "from": "Canonical Actual Outcome Evidence",
+      "to": "CORE-OUT:1",
+      "status": "CONNECTED",
+      "note": "CORE-OUT:1 consumes capture.linkedActuals when a 1A assessment is present. Live linkedActuals = []."
+    },
+    {
+      "from": "CORE-OUT:1",
+      "to": "Outcome Assessment",
+      "status": "CONNECTED",
+      "note": "Honest pending actual. Evaluator does not invent success."
+    },
+    {
+      "from": "Deterministic test capture",
+      "to": "Canonical Actual Outcome Evidence",
+      "status": "TEST-ONLY",
+      "note": "Cases A–S use test evidence. Not live business Outcome."
+    }
+  ],
+  "wiredOnExecutive": {
+    "coreOut1ACapture": true,
+    "coreOut1Evaluation": true,
+    "liveActualOutcomeWriterPopulated": false,
+    "advisorOutcomeSection": false,
+    "exi5": false,
+    "cc11": false,
+    "stageProd5Writer": false,
+    "app4Write": false,
+    "learning": false
+  },
+  "liveEdges": [
+    "Source/Dataset → Data Reality",
+    "Data Reality → CORE-OUT:1A capture call",
+    "CORE-OUT:1A → CORE-OUT:1 capture handoff",
+    "CORE-OUT:1 pending assessment"
+  ],
+  "testOnlyEdges": [
+    "Populated session writer producing eligible Actual Outcome evidence"
+  ]
+}

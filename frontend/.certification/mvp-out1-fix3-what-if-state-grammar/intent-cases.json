@@ -1,0 +1,17 @@
+{
+  "what if delivery is late": { "intent": "explore-scenario", "actionKind": "delay", "intensity": null },
+  "what if delivery be late": { "intent": "explore-scenario", "actionKind": "delay", "intensity": null },
+  "what if delivery be too late": { "intent": "explore-scenario", "actionKind": "delay", "intensity": "too" },
+  "what if delivery gets delayed": { "intent": "explore-scenario", "actionKind": "delay", "state": "delayed" },
+  "what if delivery becomes very late": { "intent": "explore-scenario", "actionKind": "delay", "intensity": "very" },
+  "what if it be too late with Delivery current": { "subjectId": "obj-delivery" },
+  "what if capacity gets too low": { "subjectId": "obj-capacity", "actionKind": "decrease-by" },
+  "what if inventory becomes too high": { "subjectId": "obj-inventory", "actionKind": "increase-by" },
+  "what if revenue falls": { "subjectId": "obj-revenue", "actionKind": "decrease-by" },
+  "what if margin gets worse": { "intent": "explore-scenario" },
+  "what if risk gets higher": { "subjectId": "obj-risk", "actionKind": "increase-by" },
+  "unknown adjective sparkly": { "notExploreScenario": true, "genericFallback": true },
+  "deictic without context": { "primarySubject": null, "doesNotInventDelivery": true },
+  "capacity increases 10%": { "value": 10, "unit": "%" },
+  "qualitative too": { "value": null }
+}

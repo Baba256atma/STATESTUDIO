@@ -30,6 +30,14 @@ export function listNexoraLiveConnections(workspaceId: WorkspaceId): readonly Ne
 export function getNexoraLiveConnection(workspaceId: WorkspaceId, connectionId: string): NexoraLiveConnection | null { return connections[workspaceId]?.[connectionId] ?? null; }
 export function listNexoraLiveObservations(workspaceId: WorkspaceId, connectionId: string): readonly NexoraLiveCommittedObservation[] { return observations[workspaceId]?.[connectionId] ?? Object.freeze([]); }
 
+export function listAllNexoraLiveCommittedObservations(): readonly NexoraLiveCommittedObservation[] {
+  return Object.freeze(
+    Object.values(observations).flatMap((workspace) =>
+      Object.values(workspace).flatMap((history) => history),
+    ),
+  );
+}
+
 export function saveNexoraLiveConnection(connection: NexoraLiveConnection): NexoraLiveConnection {
   connections = Object.freeze({ ...connections, [connection.workspaceId]: Object.freeze({ ...(connections[connection.workspaceId] ?? {}), [connection.connectionId]: connection }) }); publish(); return connection;
 }
@@ -50,7 +58,8 @@ export function commitNexoraLiveObservation(input: Readonly<{ connection: Nexora
   observations = Object.freeze({ ...observations, [input.connection.workspaceId]: Object.freeze({ ...(observations[input.connection.workspaceId] ?? {}), [input.connection.connectionId]: Object.freeze([...existing, observation]) }) });
   const currentWorkspace = connections[input.connection.workspaceId] ?? {};
   connections = Object.freeze({ ...connections, [input.connection.workspaceId]: Object.freeze({ ...currentWorkspace, [input.connection.connectionId]: transitionNexoraLiveConnection(input.connection, "connected", input.committedAt, observation.observedAt) }) });
-  publish(); return Object.freeze({ committed: true, reason: "committed", observation });
+  publish();
+  return Object.freeze({ committed: true, reason: "committed", observation });
 }
 
 export function disconnectNexoraLiveConnection(input: Readonly<{ workspaceId: WorkspaceId; connectionId: string; activeSourceContextId: string | null; disconnectedAt: string }>): Readonly<{ disconnected: boolean; reason: "disconnected"|"not_found"|"active_source"; connection: NexoraLiveConnection | null }> {

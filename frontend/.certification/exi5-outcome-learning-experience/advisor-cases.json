@@ -1,0 +1,7 @@
+{
+  "O": "PASS — Advisor Outcome and Learning disclosure projects CORE-OUT:1/2; createsLearning=false",
+  "didItWorkClassifier": "Did the decision work? → didItWork",
+  "whyOutcomeClassifier": "Why did this happen? → whyOutcome",
+  "learningClassifier": "What did we learn? → learning (unchanged)",
+  "outcomeClassifier": "What was the outcome? → outcome (unchanged)"
+}

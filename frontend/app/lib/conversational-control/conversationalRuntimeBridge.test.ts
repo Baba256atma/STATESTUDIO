@@ -153,7 +153,7 @@ test("Case 1 — focus-subject(obj-capacity) → Runtime focus + center", () => 
 
 test("Case 2 — explicit conversation Budget beats Capacity attention", () => {
   // Capacity is critical/important in fixtures; conversation requests Budget.
-  let state = initialState();
+  const state = initialState();
   // Seed automatic attention context by first noting Capacity exists as critical —
   // without selecting it (attention must not become focus).
   const capacity = catalog().objects.find((o) => o.id === "obj-capacity");

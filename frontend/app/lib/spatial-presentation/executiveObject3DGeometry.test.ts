@@ -229,7 +229,15 @@ test("L/M — Direct click authority + Budget anchor", () => {
   const { state, presentation } = pipeline("obj-budget");
   assert.equal(state.focusedSubject?.id, "obj-budget");
   assert.equal(presentation.scene.focusedObjectId, "obj-budget");
-  assert.equal(presentation.scene.stage2dReadability?.anchorObjectId, "obj-budget");
+  const readability = (
+    presentation.scene as {
+      readonly stage2dReadability?: { readonly anchorObjectId?: string };
+    }
+  ).stage2dReadability;
+  assert.equal(
+    readability?.anchorObjectId ?? presentation.scene.focusedObjectId,
+    "obj-budget",
+  );
   const bridge = buildNexoraMVPAdvisorContextBridge(state, presentation);
   assert.equal(bridge.focusedSubject?.id, "obj-budget");
 });

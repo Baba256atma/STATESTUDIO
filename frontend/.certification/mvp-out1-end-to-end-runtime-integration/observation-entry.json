@@ -1,0 +1,6 @@
+{
+  "sourceAuthority": "Data Reality / RDI",
+  "captureApi": "captureOutcomeObservation",
+  "liveAutomaticCapture": false,
+  "sessionStore": true
+}

@@ -55,6 +55,7 @@ import {
   type ExecutiveQueueCategory,
   type ExecutiveStageCollectionContext,
 } from "@/app/lib/spatial-presentation/executiveStageQueueFoundation";
+import { livePriorityOrderedIdsForCollection } from "@/app/lib/nex-mvp/nexoraLiveEpistemicProjection";
 import {
   EXECUTIVE_CHANGE_PRODUCTIVITY_CATEGORY,
   EXECUTIVE_CHANGE_QUEUE_LABEL,
@@ -323,19 +324,35 @@ export type NexoraMVPContextNodePresentation = {
   readonly presentationComposition?: Readonly<{
     readonly objectId: string;
     readonly presentationPosition: Readonly<{ readonly x: number; readonly y: number }>;
-    readonly layoutRole: string;
-    readonly visibility: string;
-    readonly prominence: string;
-    readonly depthRole: string;
-    readonly region: string;
+    readonly layoutRole: "focus" | "related" | "background" | "thread";
+    readonly visibility: "visible" | "hidden";
+    readonly prominence: "primary" | "elevated" | "standard" | "reduced";
+    readonly depthRole:
+      | "focus"
+      | "foreground"
+      | "standard"
+      | "background"
+      | "thread";
+    readonly region:
+      | "business-network"
+      | "executive-thread"
+      | "background-context";
     readonly territory: Readonly<{
       readonly objectId: string;
       readonly center: Readonly<{ readonly x: number; readonly y: number }>;
       readonly width: number;
       readonly height: number;
       readonly padding: number;
-      readonly region: string;
-      readonly depthRole: string;
+      readonly region:
+        | "business-network"
+        | "executive-thread"
+        | "background-context";
+      readonly depthRole:
+        | "focus"
+        | "foreground"
+        | "standard"
+        | "background"
+        | "thread";
     }>;
     readonly footprint: Readonly<{ readonly width: number; readonly height: number }>;
     readonly compositionScale: number;
@@ -360,6 +377,7 @@ export type NexoraMVPStageInteractionPresentation = {
   readonly breadcrumbOverflowAfter?: number;
   readonly focusedSubjectId: string | null;
   readonly selectedSubjectId: string | null;
+  readonly presentationState?: NexoraMVPPresentationState;
   readonly emphasizedObjectIds: readonly string[];
   readonly subordinateObjectIds: readonly string[];
   readonly emphasizedRelationshipIds: readonly string[];
@@ -1961,8 +1979,8 @@ function buildContextNodes(
             gatewayPosition.y,
             0,
           ] as const,
-          scale: 1,
-          opacity: 0.98,
+          scale: 0.38,
+          opacity: 0.18,
           selected: false,
           focused: false,
           attention: "elevated",
@@ -2473,6 +2491,9 @@ export function deriveNexoraMVPStageInteractionPresentation(
         objectIds: collectionObjectIds,
       }),
       presentationDepth: state.presentationState,
+      priorityOrderedIds: isChangeCollection
+        ? null
+        : livePriorityOrderedIdsForCollection(state.collectionContext.category),
     });
     const layout = resolveExecutiveCollectionLayout({
       objectIds: collectionDisclosure.collectionVisibleObjectIds,
@@ -2790,7 +2811,7 @@ export function deriveNexoraMVPStageInteractionPresentation(
             ? object.kind
             : undefined,
           disclosureState: object.disclosureState,
-          roleHint: object.role,
+          roleHint: object.role === "peripheral" ? ("unrelated" as const) : object.role,
           attention: object.attention,
           status: object.status,
           position: object.targetPosition,
@@ -3635,6 +3656,7 @@ export function resolveNexoraMVPExecutiveStageDisclosure(
       ),
       collection,
       presentationDepth: state.presentationState,
+      priorityOrderedIds: livePriorityOrderedIdsForCollection(collection.category),
     });
   }
   return resolveExecutiveStageDisclosure({

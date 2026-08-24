@@ -1,0 +1,23 @@
+{
+  "allowedLinkBasis": [
+    "explicit-target-binding",
+    "metric-binding",
+    "execution-target-binding",
+    "decision-outcome-binding",
+    "manual-validated-binding"
+  ],
+  "forbiddenLinkBasis": [
+    "temporal-proximity",
+    "semantic-guess",
+    "llm-inferred"
+  ],
+  "cases": {
+    "A": "metric-binding + same dimension + provenance + window → eligible",
+    "B": "current KPI, no link → Reality only",
+    "C": "after Decision, no explicit binding → not Outcome",
+    "Q": "different dimension → no link",
+    "manual": "bindOutcomeObservation records explicit manual-validated-binding; no UI"
+  },
+  "temporalSequenceEqualsLinkage": false,
+  "temporalSequenceEqualsCausation": false
+}

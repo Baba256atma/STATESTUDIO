@@ -1,0 +1,9 @@
+{
+  "identity": "NEXORA-ZERO-FAILURE-GATE/live-type-c-smoke",
+  "url": "http://localhost:3000/type-c",
+  "httpStatus": 200,
+  "htmlMissingExport": false,
+  "missingExportConsole": 0,
+  "smokeError": null,
+  "ok": true
+}

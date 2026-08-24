@@ -3,6 +3,7 @@ import { join } from "node:path";
 import {
   getAutomaticMonitoringPolicy,
   runNexoraMonitoringObservation,
+  type NexoraMonitoringRunResult,
 } from "./automaticMonitoringRuntime.ts";
 import {
   NexoraBackgroundMonitoringScheduler,
@@ -38,7 +39,11 @@ function githubConfiguration(reference: string): Readonly<{ owner: string; repos
 }
 
 const executor: NexoraBackgroundPolicyExecutor = Object.freeze({
-  execute: async ({ state, policy, observedAt }) => {
+  execute: async ({
+    state,
+    policy,
+    observedAt,
+  }: Parameters<NexoraBackgroundPolicyExecutor["execute"]>[0]) => {
     hydrateDurableMonitoringSnapshot(state.monitoring, observedAt);
     const connection = state.monitoring.liveData.connections.find((item) => item.workspaceId === policy.workspaceId && item.connectionId === policy.connectionId) ?? null;
     const configuration = connection?.providerId === "github" ? githubConfiguration(connection.configurationReference) : null;
@@ -102,14 +107,21 @@ export async function importNexoraBackgroundMonitoringSnapshot(snapshot: NexoraD
   return transaction.value;
 }
 
+/** Manager-initiated refresh result. Explicit so API routes do not infer `{}`. */
+export type NexoraBackgroundManualObservationResult = Readonly<{
+  completed: boolean;
+  reason: NexoraMonitoringRunResult["reason"] | "policy-unavailable";
+  observationId: string | null;
+}>;
+
 /** Manager-initiated refresh uses the same repository lock as the scheduler. */
 export async function runNexoraBackgroundManualObservation(input: Readonly<{
   workspaceId: string;
   connectionId: string;
   observedAt: string;
-}>) {
+}>): Promise<NexoraBackgroundManualObservationResult | null> {
   const ownerId = `pm6:manual:${input.workspaceId}:${input.connectionId}:${input.observedAt}`;
-  const transaction = await getNexoraBackgroundMonitoringRepository().transact({
+  const transaction = await getNexoraBackgroundMonitoringRepository().transact<NexoraBackgroundManualObservationResult>({
     ownerId,
     acquiredAt: input.observedAt,
     leaseMs: 5 * 60_000,
@@ -135,7 +147,10 @@ export async function runNexoraBackgroundManualObservation(input: Readonly<{
       return { state, value: Object.freeze({ completed: outcome.result.completed, reason: outcome.result.reason, observationId: outcome.result.observationId }) };
     },
   });
-  return transaction.acquired ? transaction.value : Object.freeze({ completed: false, reason: "already-observing" as const, observationId: null });
+  if (!transaction.acquired) {
+    return Object.freeze({ completed: false, reason: "already-observing" as const, observationId: null });
+  }
+  return transaction.value;
 }
 
 export function startNexoraBackgroundMonitoringServer(cadenceMs = 30_000): void {

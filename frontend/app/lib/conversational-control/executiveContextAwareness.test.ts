@@ -198,7 +198,7 @@ test("6: conversation → navigation Back → pronoun", () => {
   state = selectNexoraMVPInteractionSubject(state, "obj-capacity", catalog);
   state = selectNexoraMVPInteractionSubject(state, "obj-budget", catalog);
 
-  let context = createEmptyNexoraExecutiveContextSnapshot({
+  const context = createEmptyNexoraExecutiveContextSnapshot({
     currentSubject: freezeExecutiveContextReference({
       subjectId: "obj-budget",
       subjectKind: "object",
@@ -300,7 +300,7 @@ test("10–14: semantic slot updates by subject kind", () => {
     turnIndex: 1,
   });
 
-  let ctx = createEmptyNexoraExecutiveContextSnapshot();
+  const ctx = createEmptyNexoraExecutiveContextSnapshot();
   let updated = updateNexoraExecutiveContext({
     previousContext: ctx,
     trustedSuccess: true,
