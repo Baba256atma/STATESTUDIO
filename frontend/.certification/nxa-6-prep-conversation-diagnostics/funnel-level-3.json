@@ -1,0 +1,50 @@
+{
+  "identity": "NXA:6-PREP/TestFunnel",
+  "level": 3,
+  "levelName": "Integration",
+  "durationMs": 1631,
+  "passed": true,
+  "failed": 0,
+  "skipped": 0,
+  "exitCode": 0,
+  "blockingFailure": null,
+  "recommendedNextLevel": 4,
+  "commands": [
+    {
+      "id": "l3-cross-layer",
+      "exitCode": 0,
+      "status": "PASSED"
+    }
+  ],
+  "barrier": {
+    "allowed": true,
+    "requiredStarted": 1,
+    "requiredPassed": 1,
+    "requiredFailed": 0,
+    "requiredStillRunning": 0,
+    "requiredUninspected": 0,
+    "requiredNotRun": 0,
+    "requiredCancelledOrBlocked": 0,
+    "nonessentialStillRunning": 0,
+    "blockers": []
+  },
+  "ledger": {
+    "identity": "NXA:6-PREP/CertificationTaskLedger",
+    "tasks": [
+      {
+        "id": "l3-cross-layer",
+        "purpose": "Advisor→DIR→Stage, Queue parity, FIX2, harness certified cases",
+        "command": "./node_modules/.bin/tsx --test app/lib/nexora-certification/*.test.ts app/lib/manager-object/nexoraNxa5Fix2CollectionPresentationParity.test.ts app/lib/director/nexoraSemanticPresentationDirector.test.ts app/lib/conversational-control/conversationalRuntimeBridge.test.ts",
+        "jobIdentity": null,
+        "required": true,
+        "startedAt": "2026-08-27T23:40:25.103Z",
+        "completedAt": "2026-08-27T23:40:26.733Z",
+        "durationMs": 1630,
+        "status": "PASSED",
+        "exitCode": 0,
+        "artifact": ".certification/nxa-6-prep-conversation-diagnostics/l3-cross-layer.log",
+        "inspected": true
+      }
+    ]
+  }
+}

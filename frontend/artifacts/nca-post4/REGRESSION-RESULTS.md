@@ -1,0 +1,3 @@
+# Regression Results
+
+POST:4 unit coverage passed 6/6. The combined NCA:1–7, POST:1–4, DIR:1, CC, Scenario, and Stage suite passed 279/280. The sole failure is the pre-existing CC:10 handoff expectation `Choose Scenario B routes to CC:10 Decision Commitment`: `decisionCommitmentResult` is null. POST:4 comparison, precedence, advisory isolation, ordinal, collection, Director, CC, and Stage tests pass. Typecheck and touched-file lint pass. A production build passed earlier in this work; the final post-guard rerun compiled successfully but stalled during its TypeScript phase and was terminated, so it is not counted as a final passing gate. Because the zero-failure rule is explicit, this package is not certified.

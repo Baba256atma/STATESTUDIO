@@ -78,7 +78,8 @@ describe("NEX-MVP-FINAL:4 Executive Investigation Continuity", () => {
 
   it("Risk investigation continues through ignore, options, compare, recommend", () => {
     let turn = run("show risk");
-    assert.match(turn.response, /Focused on Risk/i);
+    // NCA-POST collection truth may present the one-member Risk collection directly.
+    assert.match(turn.response, /Focused on Risk|Current Risks?: Risk|Showing problems for Risk/i);
     turn = run("explain it.", turn);
     assert.match(turn.response, /Risk/i);
     turn = run("why?", turn);

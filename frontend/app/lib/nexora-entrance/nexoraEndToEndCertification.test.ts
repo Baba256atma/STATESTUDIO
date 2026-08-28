@@ -174,6 +174,8 @@ describe("NEX-E2E:1 Full Executive Experience", () => {
         "in-progress",
       false,
     );
+    assert.match(committed.executiveSituation?.decision.state ?? "", /COMMITTED|READY_FOR_EXECUTION/i);
+    assert.equal(committed.executiveSituation?.decision.confirmationPending, false);
     const whyDecision = runTurn("Why?", committed);
     assert.match(
       whyDecision.response,
@@ -185,6 +187,7 @@ describe("NEX-E2E:1 Full Executive Experience", () => {
       started.nextEntranceSession?.executionPlanning?.canonicalStatus,
       "in-progress",
     );
+    assert.match(started.executiveSituation?.execution.state ?? "", /EXECUTION_ACTIVE|READY_FOR_OUTCOME/i);
     const unknownOutcome = runTurn("What changed?", started);
     assert.match(
       unknownOutcome.response,
@@ -192,6 +195,9 @@ describe("NEX-E2E:1 Full Executive Experience", () => {
     );
 
     const afterLearn = runScript(FULL_LOOP.slice(0, 26));
+    assert.match(afterLearn.executiveSituation?.outcome.state ?? "", /OUTCOME|GOAL_IMPACT|READY_FOR_LEARNING/i);
+    assert.match(afterLearn.executiveSituation?.outcome.observed ?? "", /94/);
+    assert.match(afterLearn.executiveSituation?.outcome.goalImpact ?? "", /IMPROVING|ACHIEVED/);
     assert.match(afterLearn.response, /THIS_CASE_ONLY|Learning|assumption/i);
     const whyLearn = runTurn("Why?", afterLearn);
     assert.match(whyLearn.response, /THIS_CASE_ONLY|Evidence|UNKNOWN/);

@@ -191,6 +191,37 @@ describe("NCA-POST:3 Semantic scope, multi-entity, collections, workspace", () =
     assert.doesNotMatch(turn.response, /which business outcome/i);
   });
 
+  it("answers Stage questions from the current semantic snapshot without implying causality", () => {
+    const snapshot = {
+      workspace: "stage",
+      mode: "collection",
+      focused: { id: "ctx-problem-margin", label: "Margin Pressure", kind: "PROBLEM" },
+      collection: {
+        kind: "DECISION",
+        label: "Decisions",
+        members: [
+          { id: "decision-expand", label: "Expand Capacity", kind: "DECISION" },
+          { id: "decision-price", label: "Approve Repricing", kind: "DECISION" },
+        ],
+      },
+      visibleObjects: [
+        { id: "ctx-problem-margin", label: "Margin Pressure", kind: "PROBLEM" },
+        { id: "decision-expand", label: "Expand Capacity", kind: "DECISION" },
+        { id: "decision-price", label: "Approve Repricing", kind: "DECISION" },
+      ],
+    } as const;
+    const now = composeNexoraSemanticTurn({ utterance: "what is on stage now?", catalog: catalog(), stageSnapshot: snapshot });
+    assert.match(now.reply ?? "", /Margin Pressure/);
+    assert.match(now.reply ?? "", /Expand Capacity/);
+    const center = composeNexoraSemanticTurn({ utterance: "what is in the center?", catalog: catalog(), stageSnapshot: snapshot });
+    assert.match(center.reply ?? "", /Margin Pressure.*current focus/i);
+    const visible = composeNexoraSemanticTurn({ utterance: "which decisions are shown?", catalog: catalog(), stageSnapshot: snapshot });
+    assert.match(visible.reply ?? "", /Expand Capacity/);
+    assert.match(visible.reply ?? "", /Approve Repricing/);
+    const why = composeNexoraSemanticTurn({ utterance: "why are these decisions here?", catalog: catalog(), stageSnapshot: snapshot });
+    assert.match(why.reply ?? "", /does not.*causal/i);
+  });
+
   it("does not invent a missing relationship or claim causality", () => {
     const none = interpretRelationshipQuery({
       utterance: "How are Inventory and Demand related?",
@@ -213,5 +244,25 @@ describe("NCA-POST:3 Semantic scope, multi-entity, collections, workspace", () =
     turn = run("What is the Stage?", turn);
     turn = run("Go back to Delivery.", turn);
     assert.match(turn.response, /Delivery/i);
+  });
+
+  it("keeps ambiguous judgment follow-ups inside the active Problems collection", () => {
+    const shown = run("show all problems");
+    for (const utterance of ["which one is important?", "which one is more urgent?"]) {
+      const judged = run(utterance, shown);
+      assert.doesNotMatch(judged.response, /evaluated scenarios/i, utterance);
+      assert.match(judged.response, /problem|candidate|comparable|urgent|investigat/i, utterance);
+      assert.deepEqual(judged.nextRuntimeState, shown.nextRuntimeState, utterance);
+    }
+  });
+
+  it("lets explicit collection presentation supersede focus and describes its members", () => {
+    const focused = run("Focus on Margin Pressure.");
+    const shown = run("Show decisions.", focused);
+    assert.equal(shown.nextRuntimeState.focusedSubject, null);
+    const described = run("what is on stage now?", shown);
+    assert.match(described.response, /Expand Capacity/i);
+    assert.match(described.response, /Approve Repricing/i);
+    assert.deepEqual(described.nextRuntimeState, shown.nextRuntimeState);
   });
 });

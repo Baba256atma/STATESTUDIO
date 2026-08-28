@@ -56,6 +56,22 @@ test("scene diagnostics are quiet until the scene scope is enabled", () => {
   assert.equal(isDiagnosticEnabled("scene"), false);
 });
 
+test("nxaConversation diagnostics are quiet until the scope is enabled", () => {
+  installDiagnosticConsoleHelper();
+  const helper = (globalThis as unknown as {
+    nexoraDiagnostics: {
+      enableScope: (scope: string) => unknown;
+      disableScope: (scope: string) => unknown;
+    };
+  }).nexoraDiagnostics;
+
+  assert.equal(isDiagnosticEnabled("nxaConversation"), false);
+  helper.enableScope("nxaConversation");
+  assert.equal(isDiagnosticEnabled("nxaConversation"), true);
+  helper.disableScope("nxaConversation");
+  assert.equal(isDiagnosticEnabled("nxaConversation"), false);
+});
+
 test("acceptance gate diagnostics are quiet until the scope is enabled", () => {
   installDiagnosticConsoleHelper();
   const helper = (globalThis as unknown as {

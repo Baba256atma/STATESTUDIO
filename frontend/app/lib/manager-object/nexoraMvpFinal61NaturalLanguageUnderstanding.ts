@@ -97,6 +97,26 @@ function hintFromMeaning(
   return Object.freeze([{ raw: name, role: "primary" as const }]);
 }
 
+function hasNavigationEvidence(meaning: CanonicalManagerMeaning): boolean {
+  if (meaning.requestedOperation !== "FOCUS" || meaning.objectReference == null) {
+    return false;
+  }
+  // FINAL:6.1's feature-frame interpreter owns the cue vocabulary. If it
+  // selected FOCUS from a cue, that is sufficient evidence; this overlay must
+  // not maintain a second navigation-word list.
+  const hasExplicitNavigationCue = meaning.semanticEvidence.operationCues.length > 0;
+  if (hasExplicitNavigationCue) return true;
+
+  const prepared = meaning.preparedUtterance.trim();
+  const referenceNames = [
+    meaning.objectReference.canonicalName,
+    meaning.objectReference.lexicalHint,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.toLowerCase().trim());
+  return meaning.modality === "FRAGMENT" && referenceNames.includes(prepared);
+}
+
 export function overlayConversationalIntentWithCanonicalMeaning(
   resolution: NexoraConversationalIntentResolution,
   meaning: CanonicalManagerMeaning,
@@ -120,6 +140,9 @@ export function overlayConversationalIntentWithCanonicalMeaning(
     meaning.requestedOperation === "FOCUS" &&
     (meaning.objectReference == null || meaning.ambiguity.unresolved)
   ) {
+    return resolution;
+  }
+  if (meaning.requestedOperation === "FOCUS" && !hasNavigationEvidence(meaning)) {
     return resolution;
   }
 

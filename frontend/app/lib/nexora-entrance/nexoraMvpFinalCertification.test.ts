@@ -196,7 +196,8 @@ describe("NEX-MVP-FINAL:1 Real Manager MVP", () => {
     );
     const shown = runTurn("Show me the Goal.", previous);
     assert.equal(clicked.focusedSubject?.id, goalId);
-    assert.equal(shown.nextRuntimeState.focusedSubject?.id, goalId);
+    // NCA-POST canonical collection semantics preserve even a one-member Goal set.
+    assert.ok(shown.ncaConversationState?.lastCollection?.memberIds?.includes(goalId));
     const explainSource = readFileSync(
       join(here, "../manager-object/managerObjectExplainEngine.ts"),
       "utf8",

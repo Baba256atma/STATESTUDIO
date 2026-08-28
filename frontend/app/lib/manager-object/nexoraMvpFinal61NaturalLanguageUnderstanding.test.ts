@@ -203,7 +203,9 @@ describe("NEX-MVP-FINAL:6.1 Natural Language Understanding", () => {
       assert.equal(meaning.objectReference?.canonicalName, "Delivery");
       assert.ok(
         meaning.requestedOperation === "FOCUS" ||
-          meaning.requestedOperation === "STATUS",
+          meaning.requestedOperation === "STATUS" ||
+          // NXA:1 conversational-need precedence: interrogatives explain; they do not navigate.
+          meaning.requestedOperation === "EXPLAIN",
       );
     }
   });
@@ -236,6 +238,26 @@ describe("NEX-MVP-FINAL:6.1 Natural Language Understanding", () => {
     assert.equal(observed.objectReference?.canonicalName, "Capacity");
     const shown = meaningOf("Show Capacity.");
     assert.equal(shown.requestedOperation, "FOCUS");
+  });
+
+  it("does not manufacture Focus from an unknown action plus a resolved entity", () => {
+    const utterance = "frobnicate Demand Surge";
+    const base = resolveNexoraConversationalIntent({ utterance });
+    const meaning = meaningOf(utterance);
+    const overlay = overlayConversationalIntentWithCanonicalMeaning(base, meaning);
+    assert.equal(base.intent.kind, "unknown");
+    assert.equal(meaning.objectReference?.canonicalName, "Demand Surge");
+    assert.equal(overlay.intent.kind, "unknown");
+  });
+
+  it("retains explicit and entity-only navigation evidence", () => {
+    for (const utterance of ["Can we look at Delivery?", "Demand Surge"]) {
+      const base = resolveNexoraConversationalIntent({ utterance });
+      const meaning = meaningOf(utterance);
+      const overlay = overlayConversationalIntentWithCanonicalMeaning(base, meaning);
+      assert.equal(meaning.requestedOperation, "FOCUS");
+      assert.equal(overlay.intent.kind, "focus");
+    }
   });
 
   it("classifies challenges without starting trusted-communication 6.4", () => {

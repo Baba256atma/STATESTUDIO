@@ -289,6 +289,7 @@ export const EXECUTION_CLASS_BY_INTENT_KIND: Readonly<
 /** Reason codes used by the resolver (stable, machine-readable). */
 export const CONVERSATIONAL_INTENT_REASON = Object.freeze({
   NORMALIZED: "normalized-utterance",
+  RECOVERED_ACTION_TYPO: "recovered-action-adjacent-transposition",
   MATCHED_GREETING: "matched-professional-greeting-pattern",
   MATCHED_HELP: "matched-conversational-help-pattern",
   MATCHED_SITUATION: "matched-situation-question-pattern",

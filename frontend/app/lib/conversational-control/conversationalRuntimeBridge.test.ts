@@ -374,6 +374,30 @@ test("reveal-problems without anchor opens queue collection", () => {
   assert.equal(applied.nextState.focusedSubject, null);
 });
 
+test("reveal-problems with a restored anchor still presents the collection", () => {
+  const focused = selectNexoraMVPInteractionSubject(
+    initialState(),
+    "ctx-problem-margin",
+    catalog(),
+  );
+  const command: NexoraConversationalCommand = Object.freeze({
+    ...commandFromUtterance("Show the problems")!,
+    primaryTargetId: "ctx-problem-margin",
+  });
+  const applied = applyNexoraMVPConversationalCommand({
+    command,
+    state: focused,
+    catalog: catalog(),
+  });
+  assert.equal(applied.result.status, "applied");
+  assert.equal(applied.nextState.collectionContext?.category, "problem");
+  assert.deepEqual(applied.nextState.collectionContext?.objectIds, [
+    "ctx-problem-capacity",
+    "ctx-problem-margin",
+  ]);
+  assert.equal(applied.nextState.focusedSubject, null);
+});
+
 test("reveal-goals unsupported", () => {
   const command: NexoraConversationalCommand = Object.freeze({
     commandId: "cc3:reveal-goals:biz-company:-",

@@ -1505,6 +1505,31 @@ export function NexoraExecutiveShell({
       data-nca7-advise={conversationalLastTrace?.nca7Advise === true ? "true" : "false"}
       data-nca7-initiate={conversationalLastTrace?.nca7Initiate === true ? "true" : "false"}
       data-nca-need={conversationalLastTrace?.ncaNeed ?? ""}
+      data-nxa1-role={conversationalLastTrace?.nxaRole ?? ""}
+      data-nxa1-need={conversationalLastTrace?.nxaNeed ?? ""}
+      data-nxa1-referent={conversationalLastTrace?.nxaReferent ?? ""}
+      data-nxa1-navigation={conversationalLastTrace?.nxaNavigationAllowed ? "true" : "false"}
+      data-nxa2-behavior={conversationalLastTrace?.nxa2Behavior ?? ""}
+      data-nxa2-value={conversationalLastTrace?.nxa2Valuable ? "true" : "false"}
+      data-nxa2-gap={conversationalLastTrace?.nxa2QuestionGap ?? ""}
+      data-nxa3-goal={conversationalLastTrace?.nxa3Goal ?? ""}
+      data-nxa3-focus={conversationalLastTrace?.nxa3Focus ?? ""}
+      data-nxa3-causal={conversationalLastTrace?.nxa3CausalStatus ?? ""}
+      data-nxa3-recommendation={conversationalLastTrace?.nxa3RecommendationStatus ?? ""}
+      data-nxa3-decision={conversationalLastTrace?.nxa3DecisionState ?? ""}
+      data-nxa3-execution={conversationalLastTrace?.nxa3ExecutionState ?? ""}
+      data-nxa3-outcome={conversationalLastTrace?.nxa3OutcomeState ?? ""}
+      data-nxa3-change={conversationalLastTrace?.nxa3ChangeKind ?? ""}
+      data-nxa4-disposition={conversationalLastTrace?.nxa4Disposition ?? ""}
+      data-nxa4-intensity={conversationalLastTrace?.nxa4Intensity ?? ""}
+      data-nxa4-materiality={conversationalLastTrace?.nxa4Materiality ?? ""}
+      data-nxa4-evidence={conversationalLastTrace?.nxa4Evidence ?? ""}
+      data-nxa4-novelty={conversationalLastTrace?.nxa4Novelty ?? ""}
+      data-nxa5-judgment={conversationalLastTrace?.nxa5JudgmentType ?? ""}
+      data-nxa5-preferred={conversationalLastTrace?.nxa5Preferred ?? ""}
+      data-nxa5-recommendation={conversationalLastTrace?.nxa5RecommendationType ?? ""}
+      data-nxa5-strength={conversationalLastTrace?.nxa5Strength ?? ""}
+      data-nxa5-readiness={conversationalLastTrace?.nxa5Readiness ?? ""}
       data-nca-behavior={conversationalLastTrace?.ncaBehavior ?? ""}
       data-nca-sufficient={
         conversationalLastTrace?.ncaSufficient === true ? "true" : "false"

@@ -1,0 +1,1 @@
+{"certified":false,"status":"blocked-by-known-regression","post4Tests":"6/6","combinedRegressions":"279/280","typecheck":"passed","lint":"passed","build":"final-rerun-incomplete-after-successful-compile","runtime":"passed","pageErrors":[],"failure":"CC:10 Case L: Choose Scenario B expected decisionCommitmentResult but received null"}

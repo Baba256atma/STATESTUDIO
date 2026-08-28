@@ -128,6 +128,7 @@ export function refineOperationForManagerNeed(
   if (operation !== "FOCUS" && operation !== "NONE") return operation;
   if (
     isNamedKnowledgeQuestion(prepared, hasSubject) ||
+    (operation === "NONE" && hasSubject && modality === "INTERROGATIVE") ||
     (modality === "INTERROGATIVE" &&
       /^(?:what is this|what is that|whats this|whats that)\b/.test(prepared))
   ) {
@@ -310,6 +311,7 @@ function knowledgeState(input: {
 function highestValueQuestion(
   missing: readonly string[],
   subject: string | null,
+  stageHasReferent = false,
 ): string | null {
   if (missing.includes("demand-persistence")) {
     return "Is the current demand increase expected to continue?";
@@ -320,7 +322,7 @@ function highestValueQuestion(
   if (missing[0] === "goal") {
     return "What outcome are you responsible for improving right now?";
   }
-  if (!subject && missing.length > 0) {
+  if (!subject && missing.length > 0 && !stageHasReferent) {
     return "Which business outcome are you referring to?";
   }
   return null;
@@ -364,6 +366,7 @@ export function interpretNcaTurn(input: {
   readonly role?: string | null;
   readonly domain?: string | null;
   readonly answeredMissing?: readonly string[];
+  readonly stageHasReferent?: boolean;
 }): ManagerConversationTurn {
   const prepared = input.meaning.preparedUtterance;
   const need = classifyNeed(input.meaning, input.guidance, prepared);
@@ -389,7 +392,7 @@ export function interpretNcaTurn(input: {
   const question =
     behavior === "ASK" || behavior === "CLARIFY"
       ? input.clarification?.question ??
-        highestValueQuestion(knowledge.missing, subject)
+        highestValueQuestion(knowledge.missing, subject, input.stageHasReferent === true)
       : null;
   const strategy: AdvisorResponseStrategy = Object.freeze({
     behavior,

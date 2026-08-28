@@ -1,0 +1,690 @@
+{
+  "identity": "NXA:5-FIX2/RefreshCollectionPresentationParityAdvisorStageHandoff",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "beforeRefresh": {
+    "focused": "ctx-problem-margin",
+    "mode": "object-focus",
+    "category": "none",
+    "total": 0,
+    "visible": 0,
+    "planarBodies": 1,
+    "rendered": [],
+    "visibleControls": [
+      "ctx-problem-margin"
+    ],
+    "collectionHeader": "none",
+    "problemCount": 2,
+    "breadcrumb": "Overview/Margin PressureBack",
+    "journey": {
+      "phase": "SCENARIO",
+      "state": "AWAITING_DECISION",
+      "decision": "none",
+      "execution": "UNKNOWN"
+    }
+  },
+  "afterRefresh": {
+    "focused": "none",
+    "mode": "overview",
+    "category": "none",
+    "total": 0,
+    "visible": 0,
+    "planarBodies": 2,
+    "rendered": [],
+    "visibleControls": [
+      "obj-revenue",
+      "obj-capacity",
+      "obj-budget",
+      "obj-customer",
+      "obj-delivery",
+      "obj-risk",
+      "obj-inventory",
+      "obj-demand"
+    ],
+    "collectionHeader": "none",
+    "problemCount": 2,
+    "breadcrumb": "Overview",
+    "journey": {
+      "phase": "",
+      "state": "",
+      "decision": "",
+      "execution": ""
+    }
+  },
+  "refreshRestoresFocus": false,
+  "advisorReply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+  "advisor": {
+    "focused": "none",
+    "mode": "collection",
+    "category": "problem",
+    "total": 2,
+    "visible": 2,
+    "planarBodies": 2,
+    "rendered": [
+      "ctx-problem-capacity",
+      "ctx-problem-margin"
+    ],
+    "visibleControls": [
+      "ctx-problem-capacity",
+      "ctx-problem-margin"
+    ],
+    "collectionHeader": "Problems · 2",
+    "problemCount": 2,
+    "breadcrumb": "Overview/Margin Pressure/ProblemsBack",
+    "journey": {
+      "phase": "SCENARIO",
+      "state": "AWAITING_DECISION",
+      "decision": "none",
+      "execution": "UNKNOWN"
+    }
+  },
+  "queue": {
+    "focused": "none",
+    "mode": "collection",
+    "category": "problem",
+    "total": 2,
+    "visible": 2,
+    "planarBodies": 2,
+    "rendered": [
+      "ctx-problem-capacity",
+      "ctx-problem-margin"
+    ],
+    "visibleControls": [
+      "ctx-problem-capacity",
+      "ctx-problem-margin"
+    ],
+    "collectionHeader": "Problems · 2",
+    "problemCount": 2,
+    "breadcrumb": "Overview/Margin Pressure/ProblemsBack",
+    "journey": {
+      "phase": "SCENARIO",
+      "state": "AWAITING_DECISION",
+      "decision": "none",
+      "execution": "UNKNOWN"
+    }
+  },
+  "collectionMatrix": [
+    {
+      "category": "problem",
+      "utterance": "show problems",
+      "advisorFocusedMember": "ctx-problem-capacity",
+      "queueFocusedMember": "ctx-problem-capacity",
+      "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+      "advisor": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "problem",
+        "total": 2,
+        "visible": 2,
+        "planarBodies": 2,
+        "rendered": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "visibleControls": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "collectionHeader": "Problems · 2",
+        "problemCount": 2,
+        "breadcrumb": "Overview/Problems/Capacity Gap/ProblemsBack",
+        "journey": {
+          "phase": "SCENARIO",
+          "state": "AWAITING_DECISION",
+          "decision": "none",
+          "execution": "UNKNOWN"
+        }
+      },
+      "queue": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "problem",
+        "total": 2,
+        "visible": 2,
+        "planarBodies": 2,
+        "rendered": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "visibleControls": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "collectionHeader": "Problems · 2",
+        "problemCount": 2,
+        "breadcrumb": "Overview/Problems/Capacity Gap/ProblemsBack",
+        "journey": {
+          "phase": "",
+          "state": "",
+          "decision": "",
+          "execution": ""
+        }
+      }
+    },
+    {
+      "category": "scenario",
+      "utterance": "show scenarios",
+      "advisorFocusedMember": "ctx-scenario-capacity",
+      "queueFocusedMember": "ctx-scenario-capacity",
+      "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+      "advisor": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "total": 3,
+        "visible": 3,
+        "planarBodies": 3,
+        "rendered": [
+          "ctx-scenario-capacity",
+          "ctx-scenario-demand",
+          "ctx-scenario-pricing"
+        ],
+        "visibleControls": [
+          "ctx-scenario-capacity",
+          "ctx-scenario-demand",
+          "ctx-scenario-pricing"
+        ],
+        "collectionHeader": "Scenarios · 3",
+        "problemCount": 2,
+        "breadcrumb": "Overview/Scenarios/Capacity Expans…/ScenariosBack",
+        "journey": {
+          "phase": "SCENARIO",
+          "state": "AWAITING_DECISION",
+          "decision": "proposed",
+          "execution": "UNKNOWN"
+        }
+      },
+      "queue": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "total": 3,
+        "visible": 3,
+        "planarBodies": 3,
+        "rendered": [
+          "ctx-scenario-capacity",
+          "ctx-scenario-demand",
+          "ctx-scenario-pricing"
+        ],
+        "visibleControls": [
+          "ctx-scenario-capacity",
+          "ctx-scenario-demand",
+          "ctx-scenario-pricing"
+        ],
+        "collectionHeader": "Scenarios · 3",
+        "problemCount": 2,
+        "breadcrumb": "Overview/Scenarios/Capacity Expans…/ScenariosBack",
+        "journey": {
+          "phase": "",
+          "state": "",
+          "decision": "",
+          "execution": ""
+        }
+      }
+    },
+    {
+      "category": "decision",
+      "utterance": "show decisions",
+      "advisorFocusedMember": "ctx-decision-capacity",
+      "queueFocusedMember": "ctx-decision-capacity",
+      "reply": "NexoraCurrent Decisions: Expand Capacity, Approve Repricing.",
+      "advisor": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "decision",
+        "total": 2,
+        "visible": 2,
+        "planarBodies": 2,
+        "rendered": [
+          "ctx-decision-capacity",
+          "ctx-decision-reprice"
+        ],
+        "visibleControls": [
+          "ctx-decision-capacity",
+          "ctx-decision-reprice"
+        ],
+        "collectionHeader": "Decisions · 2",
+        "problemCount": 2,
+        "breadcrumb": "Overview/Decisions/Expand Capacity/DecisionsBack",
+        "journey": {
+          "phase": "REALITY",
+          "state": "INVESTIGATING",
+          "decision": "proposed",
+          "execution": "NOT_STARTED"
+        }
+      },
+      "queue": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "decision",
+        "total": 2,
+        "visible": 2,
+        "planarBodies": 2,
+        "rendered": [
+          "ctx-decision-capacity",
+          "ctx-decision-reprice"
+        ],
+        "visibleControls": [
+          "ctx-decision-capacity",
+          "ctx-decision-reprice"
+        ],
+        "collectionHeader": "Decisions · 2",
+        "problemCount": 2,
+        "breadcrumb": "Overview/Decisions/Expand Capacity/DecisionsBack",
+        "journey": {
+          "phase": "",
+          "state": "",
+          "decision": "",
+          "execution": ""
+        }
+      }
+    },
+    {
+      "category": "execution",
+      "utterance": "show executions",
+      "advisorFocusedMember": "ctx-execution-capacity",
+      "queueFocusedMember": "ctx-execution-capacity",
+      "reply": "NexoraWhich execution do you want to start?",
+      "advisor": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "execution",
+        "total": 2,
+        "visible": 2,
+        "planarBodies": 2,
+        "rendered": [
+          "ctx-execution-capacity",
+          "ctx-execution-rollout"
+        ],
+        "visibleControls": [
+          "ctx-execution-capacity",
+          "ctx-execution-rollout"
+        ],
+        "collectionHeader": "Executions · 2",
+        "problemCount": 2,
+        "breadcrumb": "Overview/Executions/Capacity Expans…/ExecutionsBack",
+        "journey": {
+          "phase": "REALITY",
+          "state": "INVESTIGATING",
+          "decision": "proposed",
+          "execution": "NOT_STARTED"
+        }
+      },
+      "queue": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "execution",
+        "total": 2,
+        "visible": 2,
+        "planarBodies": 2,
+        "rendered": [
+          "ctx-execution-capacity",
+          "ctx-execution-rollout"
+        ],
+        "visibleControls": [
+          "ctx-execution-capacity",
+          "ctx-execution-rollout"
+        ],
+        "collectionHeader": "Executions · 2",
+        "problemCount": 2,
+        "breadcrumb": "Overview/Executions/Capacity Expans…/ExecutionsBack",
+        "journey": {
+          "phase": "",
+          "state": "",
+          "decision": "",
+          "execution": ""
+        }
+      }
+    }
+  ],
+  "transitionStates": [
+    {
+      "utterance": "show problems",
+      "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "problem",
+        "total": 2,
+        "visible": 2,
+        "planarBodies": 2,
+        "rendered": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "visibleControls": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "collectionHeader": "Problems · 2",
+        "problemCount": 2,
+        "breadcrumb": "Overview/ProblemsBack",
+        "journey": {
+          "phase": "SCENARIO",
+          "state": "AWAITING_DECISION",
+          "decision": "none",
+          "execution": "UNKNOWN"
+        }
+      }
+    },
+    {
+      "utterance": "show Margin Pressure",
+      "reply": "NexoraFocused on Margin Pressure.",
+      "stage": {
+        "focused": "ctx-problem-margin",
+        "mode": "object-focus",
+        "category": "none",
+        "total": 0,
+        "visible": 0,
+        "planarBodies": 1,
+        "rendered": [],
+        "visibleControls": [
+          "ctx-problem-margin"
+        ],
+        "collectionHeader": "none",
+        "problemCount": 2,
+        "breadcrumb": "Overview/Problems/Margin PressureBack",
+        "journey": {
+          "phase": "SCENARIO",
+          "state": "AWAITING_DECISION",
+          "decision": "none",
+          "execution": "UNKNOWN"
+        }
+      }
+    },
+    {
+      "utterance": "show problems",
+      "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "problem",
+        "total": 2,
+        "visible": 2,
+        "planarBodies": 2,
+        "rendered": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "visibleControls": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "collectionHeader": "Problems · 2",
+        "problemCount": 2,
+        "breadcrumb": "Overview/Problems/Margin Pressure/ProblemsBack",
+        "journey": {
+          "phase": "SCENARIO",
+          "state": "AWAITING_DECISION",
+          "decision": "none",
+          "execution": "UNKNOWN"
+        }
+      }
+    }
+  ],
+  "readback": {
+    "reply": "NexoraThe Stage is showing the Problems: Capacity Gap and Margin Pressure.",
+    "before": {
+      "focused": "none",
+      "mode": "collection",
+      "category": "problem",
+      "total": 2,
+      "visible": 2,
+      "planarBodies": 2,
+      "rendered": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "visibleControls": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "collectionHeader": "Problems · 2",
+      "problemCount": 2,
+      "breadcrumb": "Overview/Problems/Margin Pressure/ProblemsBack",
+      "journey": {
+        "phase": "SCENARIO",
+        "state": "AWAITING_DECISION",
+        "decision": "none",
+        "execution": "UNKNOWN"
+      }
+    },
+    "after": {
+      "focused": "none",
+      "mode": "collection",
+      "category": "problem",
+      "total": 2,
+      "visible": 2,
+      "planarBodies": 2,
+      "rendered": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "visibleControls": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "collectionHeader": "Problems · 2",
+      "problemCount": 2,
+      "breadcrumb": "Overview/Problems/Margin Pressure/ProblemsBack",
+      "journey": {
+        "phase": "SCENARIO",
+        "state": "AWAITING_DECISION",
+        "decision": "none",
+        "execution": "UNKNOWN"
+      }
+    }
+  },
+  "judgment": {
+    "reply": "NexoraWe don’t have comparable impact evidence to say which is more important overall, and the current evidence does not support choosing a defensible first investigation either.",
+    "after": {
+      "focused": "none",
+      "mode": "collection",
+      "category": "problem",
+      "total": 2,
+      "visible": 2,
+      "planarBodies": 2,
+      "rendered": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "visibleControls": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "collectionHeader": "Problems · 2",
+      "problemCount": 2,
+      "breadcrumb": "Overview/Problems/Margin Pressure/ProblemsBack",
+      "journey": {
+        "phase": "SCENARIO",
+        "state": "AWAITING_DECISION",
+        "decision": "none",
+        "execution": "UNKNOWN"
+      }
+    },
+    "why": "NexoraWe don’t have comparable impact evidence to say which is more important overall, and the current evidence does not support choosing a defensible first investigation either.",
+    "afterWhy": {
+      "focused": "none",
+      "mode": "collection",
+      "category": "problem",
+      "total": 2,
+      "visible": 2,
+      "planarBodies": 2,
+      "rendered": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "visibleControls": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "collectionHeader": "Problems · 2",
+      "problemCount": 2,
+      "breadcrumb": "Overview/Problems/Margin Pressure/ProblemsBack",
+      "journey": {
+        "phase": "SCENARIO",
+        "state": "AWAITING_DECISION",
+        "decision": "none",
+        "execution": "UNKNOWN"
+      }
+    }
+  },
+  "knowledge": {
+    "reply": "NexoraInvestigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity Gap shows attention, but a is not established. Uncertainty: Risk has unresolved evidence. My recommendation remains temporary capacity.",
+    "before": {
+      "focused": "ctx-problem-margin",
+      "mode": "object-focus",
+      "category": "none",
+      "total": 0,
+      "visible": 0,
+      "planarBodies": 1,
+      "rendered": [],
+      "visibleControls": [
+        "ctx-problem-margin"
+      ],
+      "collectionHeader": "none",
+      "problemCount": 2,
+      "breadcrumb": "Overview/Margin PressureBack",
+      "journey": {
+        "phase": "SCENARIO",
+        "state": "AWAITING_DECISION",
+        "decision": "none",
+        "execution": "UNKNOWN"
+      }
+    },
+    "after": {
+      "focused": "ctx-problem-margin",
+      "mode": "object-focus",
+      "category": "none",
+      "total": 0,
+      "visible": 0,
+      "planarBodies": 1,
+      "rendered": [],
+      "visibleControls": [
+        "ctx-problem-margin"
+      ],
+      "collectionHeader": "none",
+      "problemCount": 2,
+      "breadcrumb": "Overview/Margin PressureBack",
+      "journey": {
+        "phase": "SCENARIO",
+        "state": "AWAITING_DECISION",
+        "decision": "none",
+        "execution": "UNKNOWN"
+      }
+    }
+  },
+  "rapid": {
+    "focused": "none",
+    "mode": "collection",
+    "category": "problem",
+    "total": 2,
+    "visible": 2,
+    "planarBodies": 2,
+    "rendered": [
+      "ctx-problem-capacity",
+      "ctx-problem-margin"
+    ],
+    "visibleControls": [
+      "ctx-problem-capacity",
+      "ctx-problem-margin"
+    ],
+    "collectionHeader": "Problems · 2",
+    "problemCount": 2,
+    "breadcrumb": "Overview/Problems/Decisions/Scenarios/ProblemsBack",
+    "journey": {
+      "phase": "SCENARIO",
+      "state": "AWAITING_DECISION",
+      "decision": "none",
+      "execution": "UNKNOWN"
+    }
+  },
+  "navigation": {
+    "beforeBack": {
+      "focused": "ctx-problem-capacity",
+      "mode": "object-focus",
+      "category": "none",
+      "total": 0,
+      "visible": 0,
+      "planarBodies": 1,
+      "rendered": [],
+      "visibleControls": [
+        "ctx-problem-capacity"
+      ],
+      "collectionHeader": "none",
+      "problemCount": 2,
+      "breadcrumb": "Overview/Margin Pr…/Problems/Capacity GapBack",
+      "journey": {
+        "phase": "SCENARIO",
+        "state": "AWAITING_DECISION",
+        "decision": "none",
+        "execution": "UNKNOWN"
+      }
+    },
+    "afterBack": {
+      "focused": "none",
+      "mode": "collection",
+      "category": "problem",
+      "total": 2,
+      "visible": 2,
+      "planarBodies": 2,
+      "rendered": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "visibleControls": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "collectionHeader": "Problems · 2",
+      "problemCount": 2,
+      "breadcrumb": "Overview/Margin Pressure/Problems/Capacity…BackForward",
+      "journey": {
+        "phase": "SCENARIO",
+        "state": "AWAITING_DECISION",
+        "decision": "none",
+        "execution": "UNKNOWN"
+      }
+    },
+    "afterForward": {
+      "focused": "ctx-problem-capacity",
+      "mode": "object-focus",
+      "category": "none",
+      "total": 0,
+      "visible": 0,
+      "planarBodies": 1,
+      "rendered": [],
+      "visibleControls": [
+        "ctx-problem-capacity"
+      ],
+      "collectionHeader": "none",
+      "problemCount": 2,
+      "breadcrumb": "Overview/Margin Pr…/Problems/Capacity GapBack",
+      "journey": {
+        "phase": "SCENARIO",
+        "state": "AWAITING_DECISION",
+        "decision": "none",
+        "execution": "UNKNOWN"
+      }
+    }
+  },
+  "proofs": {
+    "advisorMembership": true,
+    "advisorStageProblems": true,
+    "queueStageProblems": true,
+    "semanticParity": true,
+    "queueCountParity": true,
+    "noFocusedResidue": true,
+    "headerParity": true,
+    "genericCollectionParity": true,
+    "reverseTransitions": true,
+    "stageReadback": true,
+    "judgmentReadOnly": true,
+    "knowledgeReadOnly": true,
+    "rapidLatestWins": true,
+    "backForwardIntegrity": true,
+    "journeySafety": true,
+    "zeroPageErrors": true
+  },
+  "ok": true
+}

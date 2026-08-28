@@ -1096,6 +1096,49 @@ export function applyExecutiveStage2DNavigationTrailFocus(
  * STAGE-PROD:1 — open or toggle a Queue category collection.
  * Queue click writes presentation context, not semantic focus.
  */
+export function presentNexoraMVPExecutiveQueueCollection(
+  state: NexoraMVPObjectInteractionState,
+  input: Readonly<{
+    category: ExecutiveQueueCategory;
+    objectIds: readonly string[];
+  }>,
+  catalog: NexoraMVPObjectInteractionCatalog = getDefaultNexoraMVPObjectInteractionCatalog(),
+): NexoraMVPObjectInteractionState {
+  const catalogIds = new Set([
+    ...catalog.objects.map((item) => item.id),
+    ...catalog.contextSubjects.map((item) => item.id),
+  ]);
+  const objectIds = Object.freeze(
+    [...new Set(input.objectIds)].filter((id) => catalogIds.has(id)),
+  );
+  if (objectIds.length === 0) return state;
+
+  const collectionId = encodeExecutiveQueueCollectionTrailId(input.category);
+  let trail = sanitizeStage2DNavigationTrail(
+    state.stage2dNavigationTrail,
+    catalog,
+    state.workspace,
+  );
+  trail = pushExecutiveStage2DScopedNavigationEntry(trail, collectionId);
+
+  return Object.freeze({
+    ...state,
+    mode: "object-focused" as const,
+    selectedSubject: null,
+    focusedSubject: null,
+    trail: resolveStage2DTrailSubjects(trail.objectIds, catalog),
+    stage2dNavigationTrail: trail,
+    stage2dNavigationScopeStatus: "stable",
+    expandExecutiveThread: false,
+    collectionContext: Object.freeze({
+      collectionKind: "object-kind" as const,
+      category: input.category,
+      objectIds,
+    }),
+    preparationContext: null,
+  });
+}
+
 export function openNexoraMVPExecutiveQueueCollection(
   state: NexoraMVPObjectInteractionState,
   category: ExecutiveQueueCategory,
@@ -1125,30 +1168,11 @@ export function openNexoraMVPExecutiveQueueCollection(
     return closeNexoraMVPExecutiveQueueCollection(state, catalog);
   }
 
-  const collectionId = encodeExecutiveQueueCollectionTrailId(category);
-  let trail = sanitizeStage2DNavigationTrail(
-    state.stage2dNavigationTrail,
+  return presentNexoraMVPExecutiveQueueCollection(
+    state,
+    Object.freeze({ category, objectIds: entry.objectIds }),
     catalog,
-    state.workspace,
   );
-  trail = pushExecutiveStage2DScopedNavigationEntry(trail, collectionId);
-
-  return Object.freeze({
-    ...state,
-    mode: "object-focused" as const,
-    selectedSubject: null,
-    focusedSubject: null,
-    trail: resolveStage2DTrailSubjects(trail.objectIds, catalog),
-    stage2dNavigationTrail: trail,
-    stage2dNavigationScopeStatus: "stable",
-    expandExecutiveThread: false,
-    collectionContext: Object.freeze({
-      collectionKind: "object-kind" as const,
-      category,
-      objectIds: entry.objectIds,
-    }),
-    preparationContext: null,
-  });
 }
 
 /**

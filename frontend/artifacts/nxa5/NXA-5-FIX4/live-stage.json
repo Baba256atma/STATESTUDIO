@@ -1,0 +1,309 @@
+{
+  "identity": "NXA:5-FIX4/Live",
+  "url": "http://localhost:3001/executive",
+  "errors": [],
+  "baseline": {
+    "focused": "none",
+    "mode": "overview",
+    "category": "none",
+    "visible": 0,
+    "preparing": false,
+    "queueHeader": "none"
+  },
+  "turns": [
+    {
+      "utterance": "show me scenarios",
+      "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+      "focused": "none",
+      "before": {
+        "focused": "none",
+        "mode": "overview",
+        "category": "none",
+        "visible": 0,
+        "preparing": false,
+        "queueHeader": "none"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    },
+    {
+      "utterance": "what is on stage?",
+      "reply": "NexoraThe Stage is currently showing 3 Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response. They are here because you asked to review the current collection. None is currently focused as a preferred option. We can compare them using financial impact, risk, urgency, evidence strength, or another criterion.",
+      "focused": "none",
+      "before": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    },
+    {
+      "utterance": "why are they here?",
+      "reply": "NexoraCapacity Expansion Plan, Demand Surge, Pricing Response are presented because you asked to review the current collection. Visibility alone does not establish a causal relationship.",
+      "focused": "none",
+      "before": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    },
+    {
+      "utterance": "which one is more important for business?",
+      "reply": "NexoraImportant in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+      "focused": "none",
+      "before": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    },
+    {
+      "utterance": "I am talking about scenarios",
+      "reply": "NexoraYes — the 3 Scenarios currently on Stage: Capacity Expansion Plan, Demand Surge, Pricing Response. By important, do you mean financial impact, risk, urgency, evidence strength, or overall investigation priority?",
+      "focused": "none",
+      "before": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    },
+    {
+      "utterance": "risk",
+      "reply": "NexoraI don’t have enough comparable risk evidence for Capacity Expansion Plan and Demand Surge and Pricing Response to select one. You can ask me to compare them on another explicit criterion, such as risk exposure or evidence strength.",
+      "focused": "none",
+      "before": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    },
+    {
+      "utterance": "explain Demand Surge",
+      "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+      "focused": "none",
+      "before": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    },
+    {
+      "utterance": "what is on stage now?",
+      "reply": "NexoraThe Stage is currently showing 3 Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response. They are here because you asked to review the current collection. None is currently focused as a preferred option. We can compare them using financial impact, risk, urgency, evidence strength, or another criterion.",
+      "focused": "none",
+      "before": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    },
+    {
+      "utterance": "what is Capacity?",
+      "reply": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a is not established. Uncertainty: Budget has unresolved evidence. I can also bring Capacity onto the Stage if you want.",
+      "focused": "none",
+      "before": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    },
+    {
+      "utterance": "what is on stage now?",
+      "reply": "NexoraThe Stage is currently showing 3 Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response. They are here because you asked to review the current collection. None is currently focused as a preferred option. We can compare them using financial impact, risk, urgency, evidence strength, or another criterion.",
+      "focused": "none",
+      "before": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    },
+    {
+      "utterance": "show Capacity",
+      "reply": "NexoraFocused on Capacity.",
+      "focused": "obj-capacity",
+      "before": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      },
+      "stage": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0,
+        "preparing": false,
+        "queueHeader": "none"
+      }
+    },
+    {
+      "utterance": "what is on stage now?",
+      "reply": "NexoraThe Stage is currently focused on Capacity, an object. It is here because you focused this object. Visibility does not by itself establish a causal conclusion.",
+      "focused": "obj-capacity",
+      "before": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0,
+        "preparing": false,
+        "queueHeader": "none"
+      },
+      "stage": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0,
+        "preparing": false,
+        "queueHeader": "none"
+      }
+    },
+    {
+      "utterance": "go back to scenarios",
+      "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+      "focused": "none",
+      "before": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0,
+        "preparing": false,
+        "queueHeader": "none"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    },
+    {
+      "utterance": "compare them",
+      "reply": "NexoraThe current scenario candidates are Capacity Expansion Plan, Demand Surge, Pricing Response. I don’t have enough comparable evidence to rank them on the requested criterion.",
+      "focused": "none",
+      "before": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      },
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "preparing": false,
+        "queueHeader": "Scenarios · 3"
+      }
+    }
+  ]
+}

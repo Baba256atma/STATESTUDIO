@@ -1,0 +1,50 @@
+{
+  "identity": "NXA:6-PREP/TestFunnel",
+  "level": 2,
+  "levelName": "Layer",
+  "durationMs": 4924,
+  "passed": true,
+  "failed": 0,
+  "skipped": 0,
+  "exitCode": 0,
+  "blockingFailure": null,
+  "recommendedNextLevel": 3,
+  "commands": [
+    {
+      "id": "l2-owning-layers",
+      "exitCode": 0,
+      "status": "PASSED"
+    }
+  ],
+  "barrier": {
+    "allowed": true,
+    "requiredStarted": 1,
+    "requiredPassed": 1,
+    "requiredFailed": 0,
+    "requiredStillRunning": 0,
+    "requiredUninspected": 0,
+    "requiredNotRun": 0,
+    "requiredCancelledOrBlocked": 0,
+    "nonessentialStillRunning": 0,
+    "blockers": []
+  },
+  "ledger": {
+    "identity": "NXA:6-PREP/CertificationTaskLedger",
+    "tasks": [
+      {
+        "id": "l2-owning-layers",
+        "purpose": "CC, DIR semantic, NXA contract, and certification infrastructure",
+        "command": "./node_modules/.bin/tsx --test app/lib/nexora-certification/*.test.ts app/lib/conversational-control/*.test.ts app/lib/director/nexoraSemanticPresentationDirector.test.ts app/lib/manager-object/nexoraNxa1ExecutiveAdvisorContract.test.ts app/lib/manager-object/nexoraNxa2ConversationGuidanceContract.test.ts app/lib/manager-object/nexoraNxa3ExecutiveSituation.test.ts app/lib/manager-object/nexoraNxa4ProactiveAdvisory.test.ts app/lib/manager-object/nexoraNxa5ExecutiveJudgment.test.ts app/lib/manager-object/nexoraNxa5Fix2CollectionPresentationParity.test.ts",
+        "jobIdentity": null,
+        "required": true,
+        "startedAt": "2026-08-27T23:39:41.516Z",
+        "completedAt": "2026-08-27T23:39:46.440Z",
+        "durationMs": 4924,
+        "status": "PASSED",
+        "exitCode": 0,
+        "artifact": ".certification/nxa-6-prep-conversation-diagnostics/l2-owning-layers.log",
+        "inspected": true
+      }
+    ]
+  }
+}

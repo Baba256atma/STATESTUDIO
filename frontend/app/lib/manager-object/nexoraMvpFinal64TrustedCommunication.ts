@@ -40,9 +40,7 @@ const FILLER =
 const CONSULTANT =
   /\b(?:leverage synergies|strategic alignment opportunities|holistic approach|optimize stakeholder value|actionable insights)\b/gi;
 const FAKE_CERTAINTY =
-  /\b(?:definitely|clearly|certainly|proven|guaranteed)\b/gi;
-const CAUSAL_OVERCLAIM =
-  /\b(?:is causing|are causing|caused|is the (?:root )?cause|are the (?:root )?cause|will definitely)\b/gi;
+  /\b(?:definitely|clearly|certainly|guaranteed)\b/gi;
 const THEATER =
   /\bcritical strategic inflection point\b/gi;
 const LOCKED =
@@ -143,7 +141,11 @@ function repairPredictionLanguage(text: string): string {
 
 function stripUnjustifiedCertainty(text: string, confirmed: boolean): string {
   if (confirmed) return text.replace(/\bguaranteed\b/gi, "");
-  return text.replace(FAKE_CERTAINTY, "");
+  return text
+    .replace(FAKE_CERTAINTY, "")
+    // Preserve the safety qualification “not proven”; remove only a positive
+    // unsupported claim that something is proven.
+    .replace(/(?<!\bnot\s)\bproven\b/gi, "");
 }
 
 function capDepth(text: string, depth: TrustedResponseDepth, locked: boolean): string {

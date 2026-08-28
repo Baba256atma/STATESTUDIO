@@ -1,0 +1,91 @@
+{
+  "identity": "NXA:5/ExecutiveJudgmentPrioritizationRecommendationQuality",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "turns": [
+    {
+      "utterance": "Show Delivery.",
+      "response": "NexoraFocused on Delivery.",
+      "focused": "obj-delivery",
+      "diagnostics": {
+        "judgment": "",
+        "preferred": "",
+        "recommendation": "",
+        "strength": "",
+        "readiness": ""
+      }
+    },
+    {
+      "utterance": "Show the problems.",
+      "response": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+      "focused": "none",
+      "diagnostics": {
+        "judgment": "",
+        "preferred": "",
+        "recommendation": "",
+        "strength": "",
+        "readiness": ""
+      }
+    },
+    {
+      "utterance": "Which problem should I investigate first?",
+      "response": "NexoraAmong the current problems, I don’t have enough comparable investigation priority evidence to distinguish one confidently.",
+      "focused": "none",
+      "diagnostics": {
+        "judgment": "INVESTIGATION_PRIORITY",
+        "preferred": "",
+        "recommendation": "COMPARE",
+        "strength": "INSUFFICIENT",
+        "readiness": "NOT_APPLICABLE"
+      }
+    },
+    {
+      "utterance": "Why?",
+      "response": "NexoraAmong the current problems, I don’t have enough comparable investigation priority evidence to distinguish one confidently.",
+      "focused": "none",
+      "diagnostics": {
+        "judgment": "INVESTIGATION_PRIORITY",
+        "preferred": "",
+        "recommendation": "COMPARE",
+        "strength": "INSUFFICIENT",
+        "readiness": "NOT_APPLICABLE"
+      }
+    },
+    {
+      "utterance": "What would change your recommendation?",
+      "response": "NexoraI would change the recommendation if comparable impact evidence for capacity gap becomes sufficient or comparable impact evidence for margin pressure becomes sufficient.",
+      "focused": "none",
+      "diagnostics": {
+        "judgment": "INVESTIGATION_PRIORITY",
+        "preferred": "",
+        "recommendation": "COMPARE",
+        "strength": "INSUFFICIENT",
+        "readiness": "NOT_APPLICABLE"
+      }
+    },
+    {
+      "utterance": "Which problem is bigger?",
+      "response": "NexoraWe don’t have comparable impact evidence to say which is more important overall, and the current evidence does not support choosing a defensible first investigation either.",
+      "focused": "none",
+      "diagnostics": {
+        "judgment": "ATTENTION",
+        "preferred": "",
+        "recommendation": "INVESTIGATE",
+        "strength": "INSUFFICIENT",
+        "readiness": "NOT_APPLICABLE"
+      }
+    }
+  ],
+  "proofs": {
+    "collectionContinuity": false,
+    "specificRelativeRecommendation": false,
+    "explanationContinuity": true,
+    "falsifiableCondition": true,
+    "noFakeMagnitude": true,
+    "noArchitectureLeakage": true,
+    "noStageMutation": true,
+    "ccAuthorityPreserved": true,
+    "zeroPageErrors": true
+  },
+  "ok": false
+}

@@ -1,0 +1,138 @@
+{
+  "identity": "NXA:5-FIX3D-DIAG/NumericInventory",
+  "note": "p12FormatDeterministicNumber is a read-only replica of the private P1:2 helper; not a new formatter.",
+  "items": [
+    {
+      "input": 84.00000000000001,
+      "isFinite": true,
+      "isInteger": false,
+      "stringCoercion": "84.00000000000001",
+      "json": "84.00000000000001",
+      "p12FormatDeterministicNumber": "84",
+      "p15KpiInterpolation": "84.00000000000001%",
+      "stageToFixed1Percent": "84.0%",
+      "stageToFixed1Score": "84.0 score",
+      "userExampleExpectedPercent": "84%"
+    },
+    {
+      "input": 84.05000000000001,
+      "isFinite": true,
+      "isInteger": false,
+      "stringCoercion": "84.05000000000001",
+      "json": "84.05000000000001",
+      "p12FormatDeterministicNumber": "84.05",
+      "p15KpiInterpolation": "84.05000000000001%",
+      "stageToFixed1Percent": "84.1%",
+      "stageToFixed1Score": "84.1 score",
+      "userExampleExpectedPercent": "84.05%"
+    },
+    {
+      "input": 84.50000000000001,
+      "isFinite": true,
+      "isInteger": false,
+      "stringCoercion": "84.50000000000001",
+      "json": "84.50000000000001",
+      "p12FormatDeterministicNumber": "84.5",
+      "p15KpiInterpolation": "84.50000000000001%",
+      "stageToFixed1Percent": "84.5%",
+      "stageToFixed1Score": "84.5 score",
+      "userExampleExpectedPercent": "84.5%"
+    },
+    {
+      "input": 84.56789,
+      "isFinite": true,
+      "isInteger": false,
+      "stringCoercion": "84.56789",
+      "json": "84.56789",
+      "p12FormatDeterministicNumber": "84.5679",
+      "p15KpiInterpolation": "84.56789%",
+      "stageToFixed1Percent": "84.6%",
+      "stageToFixed1Score": "84.6 score",
+      "userExampleExpectedPercent": null
+    },
+    {
+      "input": 0,
+      "isFinite": true,
+      "isInteger": true,
+      "stringCoercion": "0",
+      "json": "0",
+      "p12FormatDeterministicNumber": "0",
+      "p15KpiInterpolation": "0%",
+      "stageToFixed1Percent": "0.0%",
+      "stageToFixed1Score": "0.0 score",
+      "userExampleExpectedPercent": null
+    },
+    {
+      "input": -2.5000000000000004,
+      "isFinite": true,
+      "isInteger": false,
+      "stringCoercion": "-2.5000000000000004",
+      "json": "-2.5000000000000004",
+      "p12FormatDeterministicNumber": "-2.5",
+      "p15KpiInterpolation": "-2.5000000000000004%",
+      "stageToFixed1Percent": "-2.5%",
+      "stageToFixed1Score": "-2.5 score",
+      "userExampleExpectedPercent": null
+    },
+    {
+      "input": 100,
+      "isFinite": true,
+      "isInteger": true,
+      "stringCoercion": "100",
+      "json": "100",
+      "p12FormatDeterministicNumber": "100",
+      "p15KpiInterpolation": "100%",
+      "stageToFixed1Percent": "100.0%",
+      "stageToFixed1Score": "100.0 score",
+      "userExampleExpectedPercent": null
+    },
+    {
+      "input": 0.00001,
+      "isFinite": true,
+      "isInteger": false,
+      "stringCoercion": "0.00001",
+      "json": "0.00001",
+      "p12FormatDeterministicNumber": "0",
+      "p15KpiInterpolation": "0.00001%",
+      "stageToFixed1Percent": "0.0%",
+      "stageToFixed1Score": "0.0 score",
+      "userExampleExpectedPercent": null
+    },
+    {
+      "input": 1234567.89,
+      "isFinite": true,
+      "isInteger": false,
+      "stringCoercion": "1234567.89",
+      "json": "1234567.89",
+      "p12FormatDeterministicNumber": "1234567.89",
+      "p15KpiInterpolation": "1234567.89%",
+      "stageToFixed1Percent": "1234567.9%",
+      "stageToFixed1Score": "1234567.9 score",
+      "userExampleExpectedPercent": null
+    },
+    {
+      "input": null,
+      "isFinite": false,
+      "isInteger": false,
+      "stringCoercion": "NaN",
+      "json": "null",
+      "p12FormatDeterministicNumber": "NON_FINITE_NOT_HANDLED_BY_P12",
+      "p15KpiInterpolation": "String:NaN%",
+      "stageToFixed1Percent": "NON_FINITE",
+      "stageToFixed1Score": "NON_FINITE",
+      "userExampleExpectedPercent": null
+    },
+    {
+      "input": null,
+      "isFinite": false,
+      "isInteger": false,
+      "stringCoercion": "Infinity",
+      "json": "null",
+      "p12FormatDeterministicNumber": "NON_FINITE_NOT_HANDLED_BY_P12",
+      "p15KpiInterpolation": "String:Infinity%",
+      "stageToFixed1Percent": "NON_FINITE",
+      "stageToFixed1Score": "NON_FINITE",
+      "userExampleExpectedPercent": null
+    }
+  ]
+}

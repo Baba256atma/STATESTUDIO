@@ -279,24 +279,15 @@ function defaultAliasesForObject(
   label: string,
 ): readonly string[] {
   const aliases: string[] = [label];
-  // Explicit registered aliases only — not fuzzy invention.
-  if (id === "obj-revenue") {
-    aliases.push("sales revenue", "revenue object");
-  }
-  if (id === "obj-capacity") {
-    aliases.push("production capacity", "capacity object");
-  }
-  if (id === "obj-budget") {
-    aliases.push("budget object", "the budget");
-  }
-  if (id === "obj-delivery" || /^deliver/i.test(label)) {
-    aliases.push("delivery performance", "on-time delivery", "otd");
-  }
-  if (id === "obj-inventory" || /^inventor/i.test(label)) {
-    aliases.push("inventory levels", "stock");
-  }
-  if (id === "obj-margin" || /^margin/i.test(label)) {
-    aliases.push("profit margin", "margins");
-  }
+  // Explicit catalog-bounded aliases are data, not per-object resolver branches.
+  const registeredAliases: Readonly<Record<string, readonly string[]>> = Object.freeze({
+    "obj-revenue": Object.freeze(["sales revenue", "revenue object"]),
+    "obj-capacity": Object.freeze(["production capacity", "capacity object"]),
+    "obj-budget": Object.freeze(["budget object", "the budget"]),
+    "obj-delivery": Object.freeze(["delivery performance", "on-time delivery", "otd"]),
+    "obj-inventory": Object.freeze(["inventory levels", "stock"]),
+    "obj-margin": Object.freeze(["profit margin", "margins"]),
+  });
+  aliases.push(...(registeredAliases[id] ?? []));
   return Object.freeze(aliases);
 }

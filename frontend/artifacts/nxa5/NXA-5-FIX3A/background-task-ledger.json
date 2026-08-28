@@ -1,0 +1,32 @@
+{
+  "identity": "NXA:5-FIX3A/CertificationTaskLedger",
+  "required": {
+    "started": 12,
+    "passed": 12,
+    "failed": 0,
+    "running": 0,
+    "uninspected": 0,
+    "skipped": 0
+  },
+  "tasks": [
+    { "id": "pre-fix-reproduction", "status": "PASSED", "inspected": true },
+    { "id": "focused-regressions", "status": "PASSED", "inspected": true, "tests": 45 },
+    { "id": "funnel-level-1", "status": "PASSED", "inspected": true },
+    { "id": "funnel-level-2", "status": "PASSED", "inspected": true },
+    { "id": "funnel-level-3", "status": "PASSED", "inspected": true },
+    { "id": "broad-regression", "status": "PASSED", "inspected": true, "tests": 1305 },
+    { "id": "typescript", "status": "PASSED", "inspected": true },
+    { "id": "eslint", "status": "PASSED", "inspected": true, "errors": 0 },
+    { "id": "production-build", "status": "PASSED", "inspected": true },
+    { "id": "diff-check", "status": "PASSED", "inspected": true },
+    { "id": "live-stage-advisor", "status": "PASSED", "inspected": true, "pageErrors": 0 },
+    { "id": "final-diff-and-barrier", "status": "PASSED", "inspected": true }
+  ],
+  "environmental_attempts": [
+    "Sandboxed tsx IPC was denied; approved identical commands passed.",
+    "Sandboxed font fetch was denied; approved identical build passed.",
+    "Port 3000 had no reachable server; a task-owned production server on port 3001 supplied live proof.",
+    "A task-owned dev-server attempt exited on an existing .next/dev lock; the lock and external process were not changed."
+  ],
+  "nonessentialProcesses": "Not enumerable in the sandbox; no process not started by this task was terminated. Task-owned production server stopped."
+}

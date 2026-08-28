@@ -14,7 +14,96 @@
  * - drop common command prefixes / politeness fillers
  */
 export function normalizeNexoraConversationalUtterance(utterance: string): string {
+  return normalizeNexoraConversationalUtteranceWithDiagnostics(utterance).normalized;
+}
+
+export type NexoraConversationalNormalizationCorrection = {
+  readonly originalToken: string;
+  readonly recoveredToken: string;
+  readonly reason: "adjacent-transposition-of-registered-action";
+};
+
+export type NexoraConversationalNormalizationResult = {
+  readonly normalized: string;
+  readonly corrections: readonly NexoraConversationalNormalizationCorrection[];
+};
+
+const BOUNDED_RECOVERABLE_ACTION_VERBS = Object.freeze(["explain"] as const);
+const BOUNDED_RECOVERABLE_COLLECTION_NOUNS = Object.freeze([
+  "problems",
+  "problem",
+  "scenarios",
+  "scenario",
+  "executions",
+  "execution",
+  "decisions",
+  "decision",
+  "goals",
+  "goal",
+  "risks",
+  "risk",
+] as const);
+
+const REGISTERED_COLLECTION_NOUNS = new Set<string>(BOUNDED_RECOVERABLE_COLLECTION_NOUNS);
+
+function editDistanceOne(left: string, right: string): boolean {
+  if (left === right) return false;
+  const longer = left.length >= right.length ? left : right;
+  const shorter = left.length >= right.length ? right : left;
+  if (longer.length - shorter.length > 1) return false;
+  if (longer.length === shorter.length) {
+    return isSingleAdjacentTransposition(left, right) ||
+      [...left].filter((char, index) => char !== right[index]).length === 1;
+  }
+  let skip = 0;
+  for (let index = 0; index < longer.length; index += 1) {
+    if (longer[index] !== shorter[index - skip]) {
+      skip += 1;
+      if (skip > 1) return false;
+    }
+  }
+  return skip === 1;
+}
+
+/**
+ * Recover misspelled collection nouns. Do not inflect an already-registered
+ * singular/plural (scenario ≠ scenarios; this scenario stays singular).
+ */
+export function recoverBoundedCollectionNouns(text: string): string {
+  return text
+    .split(" ")
+    .map((token) => {
+      if (token.length < 5) return token;
+      if (REGISTERED_COLLECTION_NOUNS.has(token)) return token;
+      const recovered = BOUNDED_RECOVERABLE_COLLECTION_NOUNS.find(
+        (noun) => editDistanceOne(token, noun),
+      );
+      return recovered ?? token;
+    })
+    .join(" ");
+}
+
+function isSingleAdjacentTransposition(input: string, candidate: string): boolean {
+  if (input.length !== candidate.length || input === candidate) return false;
+  const differences: number[] = [];
+  for (let index = 0; index < input.length; index += 1) {
+    if (input[index] !== candidate[index]) differences.push(index);
+  }
+  if (differences.length !== 2) return false;
+  const [left, right] = differences;
+  return (
+    left != null &&
+    right === left + 1 &&
+    input[left] === candidate[right] &&
+    input[right] === candidate[left]
+  );
+}
+
+export function normalizeNexoraConversationalUtteranceWithDiagnostics(
+  utterance: string,
+): NexoraConversationalNormalizationResult {
   let text = typeof utterance === "string" ? utterance : "";
+  const corrections: NexoraConversationalNormalizationCorrection[] = [];
 
   text = text.normalize("NFKC");
   text = text.toLowerCase();
@@ -23,6 +112,20 @@ export function normalizeNexoraConversationalUtterance(utterance: string): strin
   text = text.replace(/\s+/g, " ").trim();
   // Deterministic typo correction only — not semantic invention.
   text = text.replace(/\bhappend\b/g, "happened");
+  text = recoverBoundedCollectionNouns(text);
+
+  const [firstToken, ...remainingTokens] = text.split(" ");
+  const recoveredAction = BOUNDED_RECOVERABLE_ACTION_VERBS.find((candidate) =>
+    isSingleAdjacentTransposition(firstToken ?? "", candidate),
+  );
+  if (firstToken && recoveredAction) {
+    corrections.push(Object.freeze({
+      originalToken: firstToken,
+      recoveredToken: recoveredAction,
+      reason: "adjacent-transposition-of-registered-action" as const,
+    }));
+    text = [recoveredAction, ...remainingTokens].join(" ");
+  }
 
   // Drop leading executive phrasing / command prefixes (iteratively).
   const prefixPatterns: readonly RegExp[] = [
@@ -48,7 +151,10 @@ export function normalizeNexoraConversationalUtterance(utterance: string): strin
     }
   }
 
-  return text;
+  return Object.freeze({
+    normalized: text,
+    corrections: Object.freeze(corrections),
+  });
 }
 
 /**

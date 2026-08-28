@@ -1,0 +1,64 @@
+{
+  "ledger": {
+    "identity": "NXA:6-PREP/CertificationTaskLedger",
+    "tasks": [
+      {
+        "id": "diag-funnel-l1",
+        "purpose": "Test Funnel Level 1 PREP infrastructure",
+        "command": "npm run nxa:funnel -- --level 1",
+        "jobIdentity": null,
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": "frontend/artifacts/nxa5/NXA-5-FIX3D-DIAG/NXA-5-FIX3D-DIAGNOSIS-REPORT.md"
+      },
+      {
+        "id": "diag-harness-smoke",
+        "purpose": "Certified conversation harness still operational",
+        "command": "node scripts/nxa-conversation-harness.mjs",
+        "jobIdentity": null,
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": "frontend/artifacts/nxa6-prep/harness-report.md"
+      },
+      {
+        "id": "diag-executor-repro",
+        "purpose": "P1:5 + CC:5 Customer report traces",
+        "command": "./node_modules/.bin/tsx artifacts/nxa5/NXA-5-FIX3D-DIAG/reproduce-nxa5-fix3d-diag.ts",
+        "jobIdentity": null,
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": "frontend/artifacts/nxa5/NXA-5-FIX3D-DIAG/reproduction-traces.json"
+      },
+      {
+        "id": "diag-live-stage",
+        "purpose": "Live /executive Report-density Advisor dump",
+        "command": "node artifacts/nxa5/NXA-5-FIX3D-DIAG/live-nxa5-fix3d-diag.mjs",
+        "jobIdentity": null,
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": "frontend/artifacts/nxa5/NXA-5-FIX3D-DIAG/live-stage.json"
+      }
+    ]
+  },
+  "barrier": {
+    "allowed": true,
+    "requiredStarted": 4,
+    "requiredPassed": 4,
+    "requiredFailed": 0,
+    "requiredStillRunning": 0,
+    "requiredUninspected": 0,
+    "requiredNotRun": 0,
+    "requiredCancelledOrBlocked": 0,
+    "nonessentialStillRunning": 1,
+    "blockers": [],
+    "nonessentialNote": "Existing Next.js npm run dev (pid from prior session). Not started by this diagnosis. Not terminated."
+  }
+}

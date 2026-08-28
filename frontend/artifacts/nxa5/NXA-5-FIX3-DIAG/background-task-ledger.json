@@ -1,0 +1,49 @@
+{
+  "ledger": {
+    "identity": "NXA:6-PREP/CertificationTaskLedger",
+    "tasks": [
+      {
+        "id": "diag-harness-smoke",
+        "purpose": "Certified harness still operational",
+        "command": "node scripts/nxa-conversation-harness.mjs",
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": "frontend/artifacts/nxa6-prep/harness-report.md"
+      },
+      {
+        "id": "diag-executor-repro",
+        "purpose": "Isolate CC:5/NLU/DIR traces for A/B/C",
+        "command": "./node_modules/.bin/tsx artifacts/nxa5/NXA-5-FIX3-DIAG/reproduce-nxa5-fix3-diag.ts",
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": "frontend/artifacts/nxa5/NXA-5-FIX3-DIAG/reproduction-traces.json"
+      },
+      {
+        "id": "diag-live-stage",
+        "purpose": "Live /executive Stage confirmation",
+        "command": "node artifacts/nxa5/NXA-5-FIX3-DIAG/live-nxa5-fix3-diag.mjs",
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": "frontend/artifacts/nxa5/NXA-5-FIX3-DIAG/live-stage.json"
+      }
+    ]
+  },
+  "barrier": {
+    "allowed": true,
+    "requiredStarted": 3,
+    "requiredPassed": 3,
+    "requiredFailed": 0,
+    "requiredStillRunning": 0,
+    "requiredUninspected": 0,
+    "requiredNotRun": 0,
+    "requiredCancelledOrBlocked": 0,
+    "nonessentialStillRunning": 1,
+    "blockers": []
+  }
+}

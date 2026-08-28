@@ -1,0 +1,390 @@
+{
+  "identity": "NXA:5-FIX3D-DIAG/Reproduction",
+  "nxaConversationEnabledDuringRun": true,
+  "nxaConversationAfterDisable": false,
+  "diagnosticStatusAfter": {
+    "enabled": true,
+    "scopes": {
+      "nxaConversation": false
+    }
+  },
+  "continueUtterance": "Continue reviewing Customer",
+  "preTurn": {
+    "activeFocusedObject": "obj-customer / Customer",
+    "activeCollection": null,
+    "previousAdvisorTurn": "focus Customer (or equivalent Stage focus)",
+    "dialogueJourney": "CONTINUE_TOPIC/REALITY/INVESTIGATING",
+    "customerEvidence": [
+      {
+        "id": "evidence:obj-customer:business-fact:maximumSatisfactionScore",
+        "sourceKind": "business-fact",
+        "label": "Customer maximumSatisfactionScore",
+        "summary": "Customer maximumSatisfactionScore raw fact = 5 score",
+        "value": 5,
+        "unit": "score"
+      },
+      {
+        "id": "evidence:obj-customer:business-fact:satisfactionScore",
+        "sourceKind": "business-fact",
+        "label": "Customer satisfactionScore",
+        "summary": "Customer satisfactionScore raw fact = 4.2 score",
+        "value": 4.2,
+        "unit": "score"
+      },
+      {
+        "id": "evidence:obj-customer:executive-state",
+        "sourceKind": "executive-state",
+        "label": "Customer executive state",
+        "summary": "Customer executive state = attention",
+        "value": "attention",
+        "unit": null
+      },
+      {
+        "id": "evidence:obj-customer:kpi:satisfaction-index",
+        "sourceKind": "kpi",
+        "label": "Customer Satisfaction Index",
+        "summary": "Customer Satisfaction Index = 84%",
+        "value": 84.00000000000001,
+        "unit": "%"
+      },
+      {
+        "id": "evidence:obj-customer:object-binding",
+        "sourceKind": "object-binding",
+        "label": "Customer object binding",
+        "summary": "Customer → obj-customer",
+        "value": "obj-customer",
+        "unit": null
+      },
+      {
+        "id": "evidence:obj-capacity:business-fact:totalCapacity",
+        "sourceKind": "business-fact",
+        "label": "Production totalCapacity",
+        "summary": "Production totalCapacity raw fact = 10000 units",
+        "value": 10000,
+        "unit": "units"
+      },
+      {
+        "id": "evidence:obj-capacity:business-fact:usedCapacity",
+        "sourceKind": "business-fact",
+        "label": "Production usedCapacity",
+        "summary": "Production usedCapacity raw fact = 8700 units",
+        "value": 8700,
+        "unit": "units"
+      },
+      {
+        "id": "evidence:obj-capacity:executive-state",
+        "sourceKind": "executive-state",
+        "label": "Production executive state",
+        "summary": "Production executive state = attention",
+        "value": "attention",
+        "unit": null
+      },
+      {
+        "id": "evidence:obj-capacity:kpi:capacity-utilization",
+        "sourceKind": "kpi",
+        "label": "Capacity Utilization",
+        "summary": "Capacity Utilization = 87%",
+        "value": 87,
+        "unit": "%"
+      },
+      {
+        "id": "evidence:obj-capacity:object-binding",
+        "sourceKind": "object-binding",
+        "label": "Production object binding",
+        "summary": "Production → obj-capacity",
+        "value": "obj-capacity",
+        "unit": null
+      },
+      {
+        "id": "evidence:obj-delivery:business-fact:onTimeDeliveries",
+        "sourceKind": "business-fact",
+        "label": "Shipping onTimeDeliveries",
+        "summary": "Shipping onTimeDeliveries raw fact = 910 deliveries",
+        "value": 910,
+        "unit": "deliveries"
+      },
+      {
+        "id": "evidence:obj-delivery:business-fact:totalDeliveries",
+        "sourceKind": "business-fact",
+        "label": "Shipping totalDeliveries",
+        "summary": "Shipping totalDeliveries raw fact = 1000 deliveries",
+        "value": 1000,
+        "unit": "deliveries"
+      },
+      {
+        "id": "evidence:obj-delivery:executive-state",
+        "sourceKind": "executive-state",
+        "label": "Shipping executive state",
+        "summary": "Shipping executive state = attention",
+        "value": "attention",
+        "unit": null
+      },
+      {
+        "id": "evidence:obj-delivery:kpi:on-time-rate",
+        "sourceKind": "kpi",
+        "label": "On-Time Delivery Rate",
+        "summary": "On-Time Delivery Rate = 91%",
+        "value": 91,
+        "unit": "%"
+      },
+      {
+        "id": "evidence:obj-delivery:object-binding",
+        "sourceKind": "object-binding",
+        "label": "Shipping object binding",
+        "summary": "Shipping → obj-delivery",
+        "value": "obj-delivery",
+        "unit": null
+      },
+      {
+        "id": "evidence:obj-inventory:business-fact:totalCapacity",
+        "sourceKind": "business-fact",
+        "label": "Warehouse totalCapacity",
+        "summary": "Warehouse totalCapacity raw fact = 8500 units",
+        "value": 8500,
+        "unit": "units"
+      },
+      {
+        "id": "evidence:obj-inventory:business-fact:usedCapacity",
+        "sourceKind": "business-fact",
+        "label": "Warehouse usedCapacity",
+        "summary": "Warehouse usedCapacity raw fact = 7900 units",
+        "value": 7900,
+        "unit": "units"
+      },
+      {
+        "id": "evidence:obj-inventory:executive-state",
+        "sourceKind": "executive-state",
+        "label": "Warehouse executive state",
+        "summary": "Warehouse executive state = attention",
+        "value": "attention",
+        "unit": null
+      },
+      {
+        "id": "evidence:obj-inventory:kpi:capacity-utilization",
+        "sourceKind": "kpi",
+        "label": "Warehouse Capacity Utilization",
+        "summary": "Warehouse Capacity Utilization = 92.9412%",
+        "value": 92.94117647058823,
+        "unit": "%"
+      },
+      {
+        "id": "evidence:obj-inventory:object-binding",
+        "sourceKind": "object-binding",
+        "label": "Warehouse object binding",
+        "summary": "Warehouse → obj-inventory",
+        "value": "obj-inventory",
+        "unit": null
+      },
+      {
+        "id": "evidence:cost:business-fact:operatingCost",
+        "sourceKind": "business-fact",
+        "label": "Cost operatingCost",
+        "summary": "Cost operatingCost raw fact = 6700000 USD",
+        "value": 6700000,
+        "unit": "USD"
+      },
+      {
+        "id": "evidence:obj-revenue:business-fact:currentRevenue",
+        "sourceKind": "business-fact",
+        "label": "Revenue currentRevenue",
+        "summary": "Revenue currentRevenue raw fact = 8400000 USD",
+        "value": 8400000,
+        "unit": "USD"
+      },
+      {
+        "id": "evidence:obj-revenue:business-fact:previousRevenue",
+        "sourceKind": "business-fact",
+        "label": "Revenue previousRevenue",
+        "summary": "Revenue previousRevenue raw fact = 8080000 USD",
+        "value": 8080000,
+        "unit": "USD"
+      },
+      {
+        "id": "evidence:obj-revenue:executive-state",
+        "sourceKind": "executive-state",
+        "label": "Revenue executive state",
+        "summary": "Revenue executive state = normal",
+        "value": "normal",
+        "unit": null
+      },
+      {
+        "id": "evidence:obj-revenue:kpi:growth",
+        "sourceKind": "kpi",
+        "label": "Revenue Growth",
+        "summary": "Revenue Growth = 3.9604%",
+        "value": 3.9603960396039604,
+        "unit": "%"
+      },
+      {
+        "id": "evidence:obj-revenue:object-binding",
+        "sourceKind": "object-binding",
+        "label": "Revenue object binding",
+        "summary": "Revenue → obj-revenue",
+        "value": "obj-revenue",
+        "unit": null
+      }
+    ],
+    "kpiSource": {
+      "kpiId": "kpi.customer.satisfaction-index",
+      "name": "Customer Satisfaction Index",
+      "computationKind": "score-percent",
+      "formula": "(satisfactionScore / maximumSatisfactionScore) * 100",
+      "left": 4.2,
+      "right": 5,
+      "canonicalIeeeValue": 84.00000000000001,
+      "equalsFourPointTwoOverFiveTimes100": true,
+      "unit": "%",
+      "storedRepresentation": "number"
+    },
+    "rawNumericRepresentation": {
+      "satisfactionScore": 4.2,
+      "maximumSatisfactionScore": 5,
+      "computed": 84.00000000000001,
+      "snapshotKpi": 84.00000000000001
+    },
+    "units": {
+      "kpi": "%",
+      "facts": "score"
+    },
+    "dataRealityState": {
+      "datasetId": "nexora.executive-operations.demo.baseline",
+      "scenario": "baseline",
+      "objectKey": "customer",
+      "executiveState": "attention",
+      "advisorState": "watch"
+    },
+    "executiveState": "attention",
+    "advisorResponseMode": "standard",
+    "stageEffect": "FOCUS"
+  },
+  "p15": {
+    "headline": "Customer Performance Requires Attention",
+    "summary": "Customer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.",
+    "tone": "attention",
+    "mode": "standard",
+    "sections": [
+      {
+        "kind": "headline",
+        "text": "Customer Performance Requires Attention"
+      },
+      {
+        "kind": "situation",
+        "text": "Customer requires executive attention."
+      },
+      {
+        "kind": "evidence",
+        "text": "Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score."
+      },
+      {
+        "kind": "meaning",
+        "text": "Customer performance is below the preferred operating range and may require investigation."
+      },
+      {
+        "kind": "guidance",
+        "text": "Investigate Customer watch conditions."
+      }
+    ],
+    "matchesObservedTarget": true,
+    "observedTarget": "Customer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions."
+  },
+  "cc5": {
+    "focus": {
+      "reply": "Focused on Customer.",
+      "focusId": "obj-customer",
+      "path": {
+        "inputTurn": "focus Customer",
+        "normalizedUtterance": "focus customer",
+        "resolvedIntent": "focus",
+        "canonicalReference": "obj-customer",
+        "inheritedSubject": null,
+        "activeCollection": null,
+        "dialogueJourney": "NEW_TOPIC/CONTEXT/UNKNOWN",
+        "authorityRoute": "CC:3/focus-subject",
+        "readWrite": "write",
+        "advisorMode": "NAVIGATE",
+        "plannedPresentation": "FOCUS",
+        "dirInstruction": "FOCUS_OBJECT",
+        "stageMode": "focus",
+        "focusId": "obj-customer",
+        "collectionMemberIds": [],
+        "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+        "noChangeReason": "resolved-object-already-focused"
+      }
+    },
+    "continueReviewing": {
+      "reply": "Focused on Customer.",
+      "focusId": "obj-customer",
+      "nxaNeed": "NAVIGATE",
+      "explanation": "Customer is stable. Customer is associated with Delivery. That connection does not by itself tell us whether Customer is affecting Delivery or the reverse. No outcome has been measured yet. I recommend investigating Delivery next to determine whether it is driving Customer.",
+      "trustedAnswer": "Focused on Customer.",
+      "path": {
+        "inputTurn": "Continue reviewing Customer",
+        "normalizedUtterance": "continue reviewing customer",
+        "resolvedIntent": "focus",
+        "canonicalReference": "obj-customer",
+        "inheritedSubject": "obj-customer",
+        "activeCollection": null,
+        "dialogueJourney": "CONTINUE_TOPIC/REALITY/INVESTIGATING",
+        "authorityRoute": "CC:3/focus-subject",
+        "readWrite": "write",
+        "advisorMode": "NAVIGATE",
+        "plannedPresentation": "FOCUS",
+        "dirInstruction": "FOCUS_OBJECT",
+        "stageMode": "focus",
+        "focusId": "obj-customer",
+        "collectionMemberIds": [],
+        "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+        "noChangeReason": "resolved-object-already-focused"
+      },
+      "containsFloatArtifact": false,
+      "containsRawFact": false
+    },
+    "explainCustomer": {
+      "reply": "Customer is stable. Customer is associated with Delivery. That connection does not by itself tell us whether Customer is affecting Delivery or the reverse. No outcome has been measured yet.",
+      "explanation": "Customer is stable. Customer is associated with Delivery. That connection does not by itself tell us whether Customer is affecting Delivery or the reverse. No outcome has been measured yet. I recommend investigating Delivery next to determine whether it is driving Customer."
+    }
+  },
+  "crossSurface": {
+    "canonicalKpiValue": 84.00000000000001,
+    "p12FormattedSummaryWouldBe": "84%",
+    "p15KpiEvidenceText": "Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score.",
+    "stagePrimaryValue": "84.0%",
+    "stagePrimaryMetricLabel": "Customer",
+    "stageBindingKpi": {
+      "kpiId": "kpi.customer.satisfaction-index",
+      "objectKey": "customer",
+      "nexoraObjectId": "nexora.executive-operations.object.customer",
+      "value": 84.00000000000001,
+      "unit": "%",
+      "calculatedAt": "2026-08-10T00:00:00.000Z"
+    },
+    "advisorBindingHeadline": "Customer Performance Requires Attention",
+    "advisorBindingSummary": "Customer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.",
+    "advisorBindingPrimaryMeaning": "Customer performance is below the preferred operating range and may require investigation.",
+    "advisorBindingPrimaryAction": "Investigate Customer watch conditions",
+    "mo2Explain": "Customer is stable. Customer is associated with Delivery. That connection does not by itself tell us whether Customer is affecting Delivery or the reverse. No outcome has been measured yet. I recommend investigating Delivery next to determine whether it is driving Customer."
+  },
+  "nca6Bypass": {
+    "nca6AppliedUnlocked": "Customer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer worth monitoring conditions.",
+    "nca6AppliedLocked": "Customer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer worth monitoring conditions.",
+    "lockedWouldRewriteWatch": true,
+    "unlockedStillHasWatch": false,
+    "unlockedStillHasRawFact": true
+  },
+  "facts": [
+    {
+      "objectKey": "customer",
+      "metricKey": "maximumSatisfactionScore",
+      "value": 5,
+      "sourceDatasetId": "nexora.executive-operations.demo.baseline",
+      "unit": "score"
+    },
+    {
+      "objectKey": "customer",
+      "metricKey": "satisfactionScore",
+      "value": 4.2,
+      "sourceDatasetId": "nexora.executive-operations.demo.baseline",
+      "unit": "score"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "identity": "NXA:6-PREP/TestFunnel",
+  "level": 1,
+  "levelName": "Focused",
+  "durationMs": 1479,
+  "passed": true,
+  "failed": 0,
+  "skipped": 0,
+  "exitCode": 0,
+  "blockingFailure": null,
+  "recommendedNextLevel": 2,
+  "commands": [
+    {
+      "id": "l1-cert-infra",
+      "exitCode": 0,
+      "status": "PASSED"
+    }
+  ],
+  "barrier": {
+    "allowed": true,
+    "requiredStarted": 1,
+    "requiredPassed": 1,
+    "requiredFailed": 0,
+    "requiredStillRunning": 0,
+    "requiredUninspected": 0,
+    "requiredNotRun": 0,
+    "requiredCancelledOrBlocked": 0,
+    "nonessentialStillRunning": 0,
+    "blockers": []
+  },
+  "ledger": {
+    "identity": "NXA:6-PREP/CertificationTaskLedger",
+    "tasks": [
+      {
+        "id": "l1-cert-infra",
+        "purpose": "NXA:6-PREP infrastructure self-tests",
+        "command": "./node_modules/.bin/tsx --test app/lib/nexora-certification/*.test.ts app/lib/runtime/diagnosticSwitch.test.ts",
+        "jobIdentity": null,
+        "required": true,
+        "startedAt": "2026-08-27T23:39:33.309Z",
+        "completedAt": "2026-08-27T23:39:34.787Z",
+        "durationMs": 1478,
+        "status": "PASSED",
+        "exitCode": 0,
+        "artifact": ".certification/nxa-6-prep-conversation-diagnostics/l1-cert-infra.log",
+        "inspected": true
+      }
+    ]
+  }
+}

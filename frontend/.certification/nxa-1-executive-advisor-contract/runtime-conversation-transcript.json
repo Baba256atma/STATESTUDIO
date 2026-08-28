@@ -1,0 +1,167 @@
+{
+  "identity": "NXA:1/ExecutiveDecisionAdvisorConversationContract",
+  "url": "http://127.0.0.1:3000/executive",
+  "pageErrors": [],
+  "transcripts": [
+    {
+      "name": "01-knowledge",
+      "turns": [
+        {
+          "utterance": "What is Capacity Gap?",
+          "response": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+          "focused": "none",
+          "diagnostic": {
+            "role": "Executive Decision Advisor",
+            "need": "KNOW",
+            "referent": "Capacity Gap",
+            "navigation": "false"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02-navigation",
+      "turns": [
+        {
+          "utterance": "Show Capacity Gap.",
+          "response": "NexoraFocused on Capacity Gap. My recommendation remains temporary capacity.",
+          "focused": "ctx-problem-capacity",
+          "diagnostic": {
+            "role": "Executive Decision Advisor",
+            "need": "NAVIGATE",
+            "referent": "Capacity Gap",
+            "navigation": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03-continuity",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "role": "Executive Decision Advisor",
+            "need": "NAVIGATE",
+            "referent": "Delivery",
+            "navigation": "true"
+          }
+        },
+        {
+          "utterance": "Explain it.",
+          "response": "NexoraDelivery has not been resolved yet, so it still deserves attention. We know on-time is 91%. Delivery is associated with Capacity Gap. That connection does not by itself tell us whether Delivery is affecting Capacity Gap or the reverse.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "role": "Executive Decision Advisor",
+            "need": "UNDERSTAND",
+            "referent": "Delivery",
+            "navigation": "false"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04-investigate-advise",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "role": "Executive Decision Advisor",
+            "need": "NAVIGATE",
+            "referent": "Delivery",
+            "navigation": "true"
+          }
+        },
+        {
+          "utterance": "Why is Delivery below target?",
+          "response": "NexoraDelivery is currently 91% against a 96% target (-5%). Capacity Gap, Capacity, Risk and Demand are plausible explanations worth investigating for Delivery. None of these is a confirmed cause. I can inspect the evidence for each, or we can look at what remains unknown. Has backlog increased over the same period?",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "role": "Executive Decision Advisor",
+            "need": "INVESTIGATE",
+            "referent": "Delivery",
+            "navigation": "false"
+          }
+        },
+        {
+          "utterance": "What should I do about it?",
+          "response": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "role": "Executive Decision Advisor",
+            "need": "ADVISE",
+            "referent": "Delivery",
+            "navigation": "false"
+          }
+        },
+        {
+          "utterance": "Is Capacity definitely causing the Delivery problem?",
+          "response": "NexoraCapacity Gap needs attention. Recommendation: Investigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action. Has backlog increased recently?",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "role": "Executive Decision Advisor",
+            "need": "INVESTIGATE",
+            "referent": "Delivery",
+            "navigation": "false"
+          }
+        },
+        {
+          "utterance": "How can you help me with this?",
+          "response": "NexoraI can compare the options, investigate remaining issues, explain the trade-offs, or show why one fits the goal better. You make the final decision.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "role": "Executive Decision Advisor",
+            "need": "LEARN_NEXORA",
+            "referent": "Capacity Gap",
+            "navigation": "false"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05-collection",
+      "turns": [
+        {
+          "utterance": "Show all problems.",
+          "response": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+          "focused": "none",
+          "diagnostic": {
+            "role": "Executive Decision Advisor",
+            "need": "NAVIGATE",
+            "referent": "Margin Pressure",
+            "navigation": "true"
+          }
+        },
+        {
+          "utterance": "Which one should I investigate first?",
+          "response": "NexoraBoth Capacity Gap and Margin Pressure are current problem items, but I don’t have enough comparable evidence to rank one over the other on investigation priority.",
+          "focused": "ctx-problem-margin",
+          "diagnostic": {
+            "role": "Executive Decision Advisor",
+            "need": "INVESTIGATE",
+            "referent": "PROBLEM",
+            "navigation": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "proofs": {
+    "identity": true,
+    "knowledgeNotNavigation": true,
+    "explicitNavigation": true,
+    "referentialContinuity": true,
+    "investigation": true,
+    "advice": true,
+    "uncertainty": true,
+    "nexoraEducation": true,
+    "collectionContinuity": true,
+    "managerLanguage": true,
+    "causalSafety": true
+  },
+  "ok": true
+}

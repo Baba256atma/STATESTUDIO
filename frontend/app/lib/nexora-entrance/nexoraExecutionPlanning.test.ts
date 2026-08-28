@@ -253,7 +253,8 @@ describe("NEX-EXP:8 Execution Planning & Commitment-to-Action", () => {
     const status = runTurn("What is the execution status?", goal);
     assert.match(status.response, /in-progress/);
     const pause = runTurn("Pause execution.", status);
-    assert.match(pause.response, /not a supported canonical/);
+    // CC:11 remains the authority; current manager copy names the supported cancel path.
+    assert.match(pause.response, /not a supported (?:canonical|execution action)/);
   });
 
   it("missing CC:11 does not fake start; scope and revision protections hold", () => {

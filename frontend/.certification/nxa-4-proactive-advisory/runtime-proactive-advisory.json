@@ -1,0 +1,64 @@
+{
+  "identity": "NXA:4/ExecutiveProactiveAdvisoryInterventionIntelligence",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "turns": [
+    {
+      "utterance": "Delivery fell from 91 to 87.",
+      "response": "NexoraDelivery changed from 91 to 87. This matters to On-time target (96%). I recommend investigate whether the current plan is still sufficient.",
+      "focused": "none",
+      "diagnostics": {
+        "disposition": "SPEAK",
+        "intensity": "ADVISE",
+        "materiality": "MATERIAL",
+        "evidence": "MODERATE",
+        "novelty": "NEW"
+      }
+    },
+    {
+      "utterance": "Delivery fell from 87 to 86.9.",
+      "response": "NexoraThe validated context currently shows On-time is 91%., while you’ve provided Delivery fell from 87 to 86.9.. I’ll preserve that as your current observation, but it is not yet validated by the connected data.",
+      "focused": "none",
+      "diagnostics": {
+        "disposition": "SUPPRESS",
+        "intensity": "WARN",
+        "materiality": "NOISE",
+        "evidence": "MODERATE",
+        "novelty": "NEW"
+      }
+    },
+    {
+      "utterance": "Delivery fell from 87 to 86.9.",
+      "response": "NexoraThe validated context currently shows On-time is 91%., while you’ve provided Delivery fell from 87 to 86.9.. I’ll preserve that as your current observation, but it is not yet validated by the connected data.",
+      "focused": "none",
+      "diagnostics": {
+        "disposition": "SUPPRESS",
+        "intensity": "WARN",
+        "materiality": "NOISE",
+        "evidence": "MODERATE",
+        "novelty": "NEW"
+      }
+    },
+    {
+      "utterance": "Will you keep watching this?",
+      "response": "NexoraI’m not continuously monitoring this. I can reassess when new data or observations enter the system.",
+      "focused": "none",
+      "diagnostics": {
+        "disposition": "SUPPRESS",
+        "intensity": "WARN",
+        "materiality": "NOISE",
+        "evidence": "MODERATE",
+        "novelty": "NEW"
+      }
+    }
+  ],
+  "proofs": {
+    "materialIntervention": true,
+    "noiseSilence": true,
+    "repetitionProtection": true,
+    "noFakeMonitoring": true,
+    "noStageMutation": true,
+    "zeroPageErrors": true
+  },
+  "ok": true
+}

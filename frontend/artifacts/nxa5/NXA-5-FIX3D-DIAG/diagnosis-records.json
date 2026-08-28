@@ -1,0 +1,165 @@
+{
+  "numericPrecision": {
+    "defectId": "NXA-5-FIX3D-NUMERIC",
+    "utteranceSequence": [
+      "focus Customer",
+      "Continue reviewing Customer"
+    ],
+    "setup": "Dataset A baseline; focusedObjectId obj-customer; P1:5 mode standard; presentationState report.",
+    "currentFocus": "obj-customer",
+    "activeCollection": null,
+    "journeyOrDialogue": "CONTINUE_TOPIC/REALITY/INVESTIGATING",
+    "refreshOrRestoration": null,
+    "expected": "Manager-facing percent without IEEE residue; canonical 84.00000000000001 unchanged.",
+    "actual": "P1:5 evidence: Customer Satisfaction Index is 84.00000000000001%. Stage: 84.0%. CC:5 chat: Focused on Customer.",
+    "firstDivergentLayer": "P1:5 formatEvidenceText KPI branch uses String(evidence.value)+unit, bypassing P1:2 formatDeterministicNumber already used in evidence.summary.",
+    "authoritativeOwner": "P1:5 dataRealityExecutiveAdvisorResponseComposition.formatEvidenceText (KPI path). Do not mutate kpiComputation.",
+    "neighboringBehaviors": [
+      "P1:2 formatDeterministicNumber(toFixed(4)+strip zeros) would emit 84 for this IEEE value",
+      "Stage formatCanonicalStageKpiValue uses toFixed(1) → 84.0%",
+      "MO:2 interpolates presentation.primaryKpi.value as already-formatted string"
+    ],
+    "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3D-DIAG/reproduce-nxa5-fix3d-diag.ts",
+    "failureClass": "deterministic",
+    "evidenceRequiredBeforeFix": [],
+    "verdict": "REPRODUCED",
+    "impactClassification": "NUMERIC_PRESENTATION_DEFECT",
+    "identity": "NXA:6-PREP/ConversationDiagnosis",
+    "fixAuthorized": false
+  },
+  "internalFieldName": {
+    "defectId": "NXA-5-FIX3D-FIELD-NAME",
+    "utteranceSequence": [
+      "focus Customer",
+      "Continue reviewing Customer"
+    ],
+    "setup": "Same P1:5 Customer standard report.",
+    "currentFocus": "obj-customer",
+    "activeCollection": null,
+    "journeyOrDialogue": "CONTINUE_TOPIC/REALITY/INVESTIGATING",
+    "refreshOrRestoration": null,
+    "expected": "Manager-facing fact label, not camelCase metricKey.",
+    "actual": "Customer maximumSatisfactionScore raw fact = 5 score",
+    "firstDivergentLayer": "P1:2 buildBusinessFactEvidence interpolates fact.metricKey into label and summary; existing CSV/KPI labels are not consulted.",
+    "authoritativeOwner": "P1:2 dataRealityExecutiveObservationResolution.buildBusinessFactEvidence. Reuse KPI/CSV display labels; do not create a second registry.",
+    "neighboringBehaviors": [
+      "csvRealDataVerticalSlice already labels Maximum Satisfaction Score",
+      "KPI evidence uses kpiName/reasonName, not kpiId"
+    ],
+    "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3D-DIAG/reproduce-nxa5-fix3d-diag.ts",
+    "failureClass": "deterministic",
+    "evidenceRequiredBeforeFix": [],
+    "verdict": "REPRODUCED",
+    "impactClassification": "INTERNAL_LABEL_LEAK",
+    "identity": "NXA:6-PREP/ConversationDiagnosis",
+    "fixAuthorized": false
+  },
+  "internalTerminology": {
+    "defectId": "NXA-5-FIX3D-ARCH-LANGUAGE",
+    "utteranceSequence": [
+      "focus Customer",
+      "Continue reviewing Customer"
+    ],
+    "setup": "Same P1:5 Customer standard report.",
+    "currentFocus": "obj-customer",
+    "activeCollection": null,
+    "journeyOrDialogue": "CONTINUE_TOPIC/REALITY/INVESTIGATING",
+    "refreshOrRestoration": null,
+    "expected": "Natural executive language; evidence provenance preserved without architecture jargon.",
+    "actual": "Customer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.",
+    "firstDivergentLayer": "P1:2 templates ('raw fact', 'executive state = ${state}') and P1:4 guidanceTitle ('${state} conditions') emit internal terms; NCA:6/FINAL:6.4 leak lists do not include these tokens and this report does not pass through NCA:6 before Advisor overlay.",
+    "authoritativeOwner": "P1:2 evidence templates + P1:4 guidanceTitle. NCA:6 is not the owner of this copy and currently bypassed.",
+    "neighboringBehaviors": [
+      "NCA:6 ARCHITECTURE_LEAK would rewrite standalone watch→worth monitoring if this text were locked through applyNca6StrategyToResponse",
+      "FINAL:6.4 NEXORA_MANAGER_ARCHITECTURE_LEAK does not match raw fact / executive state / watch conditions",
+      "MO-INT:1 sanitizeManagerCopy does not cover these terms"
+    ],
+    "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3D-DIAG/reproduce-nxa5-fix3d-diag.ts",
+    "failureClass": "deterministic",
+    "evidenceRequiredBeforeFix": [],
+    "verdict": "REPRODUCED",
+    "impactClassification": "ARCHITECTURE_LANGUAGE_LEAK",
+    "identity": "NXA:6-PREP/ConversationDiagnosis",
+    "fixAuthorized": false
+  },
+  "unitWording": {
+    "defectId": "NXA-5-FIX3D-UNIT",
+    "utteranceSequence": [
+      "focus Customer",
+      "Continue reviewing Customer"
+    ],
+    "setup": "Same P1:5 Customer standard report.",
+    "currentFocus": "obj-customer",
+    "activeCollection": null,
+    "journeyOrDialogue": "CONTINUE_TOPIC/REALITY/INVESTIGATING",
+    "refreshOrRestoration": null,
+    "expected": "Unit presented as manager language if needed; not '5 score'.",
+    "actual": "Customer maximumSatisfactionScore raw fact = 5 score",
+    "firstDivergentLayer": "P1:2 appends raw fact.unit ('score') after the number with a space.",
+    "authoritativeOwner": "P1:2 buildBusinessFactEvidence unitSuffix. Same evidence composer as field-name leak.",
+    "neighboringBehaviors": [
+      "KPI unit '%' is concatenated with no space in P1:5 KPI path"
+    ],
+    "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3D-DIAG/reproduce-nxa5-fix3d-diag.ts",
+    "failureClass": "deterministic",
+    "evidenceRequiredBeforeFix": [],
+    "verdict": "REPRODUCED",
+    "impactClassification": "UNIT_PRESENTATION_DEFECT",
+    "identity": "NXA:6-PREP/ConversationDiagnosis",
+    "fixAuthorized": false
+  },
+  "repetition": {
+    "defectId": "NXA-5-FIX3D-REPETITION",
+    "utteranceSequence": [
+      "focus Customer",
+      "Continue reviewing Customer"
+    ],
+    "setup": "P1:5 standard mode concatenates headline+situation+evidence+meaning+guidance with spaces; no dedupe.",
+    "currentFocus": "obj-customer",
+    "activeCollection": null,
+    "journeyOrDialogue": "CONTINUE_TOPIC/REALITY/INVESTIGATING",
+    "refreshOrRestoration": null,
+    "expected": "Attention stated once unless a later section adds distinct evidence.",
+    "actual": "Customer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.",
+    "firstDivergentLayer": "P1:5 composeDataRealityExecutiveAdvisorResponse summaryParts.join(' ') with no redundancy policy. Headline, situation, executive-state evidence, and meaning independently restate attention.",
+    "authoritativeOwner": "P1:5 section join / Conciseness before Narrative principle (declared, not enforced).",
+    "neighboringBehaviors": [
+      "POST:2 rewriteTautologicalAttentionLanguage does not match this pattern",
+      "NXA:5 does not compose this report",
+      "presentationDensity minimum would hide summary/evidence; report/standard reveals all sections"
+    ],
+    "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3D-DIAG/reproduce-nxa5-fix3d-diag.ts",
+    "failureClass": "deterministic",
+    "evidenceRequiredBeforeFix": [],
+    "verdict": "REPRODUCED",
+    "impactClassification": "RESPONSE_REDUNDANCY",
+    "identity": "NXA:6-PREP/ConversationDiagnosis",
+    "fixAuthorized": false
+  },
+  "vagueRecommendation": {
+    "defectId": "NXA-5-FIX3D-RECOMMENDATION",
+    "utteranceSequence": [
+      "focus Customer",
+      "Continue reviewing Customer"
+    ],
+    "setup": "P1:4 investigate guidance for watch state, non-Production.",
+    "currentFocus": "obj-customer",
+    "activeCollection": null,
+    "journeyOrDialogue": "CONTINUE_TOPIC/REALITY/INVESTIGATING",
+    "refreshOrRestoration": null,
+    "expected": "Actionable investigation target that does not leak advisor-state enum.",
+    "actual": "Investigate Customer watch conditions",
+    "firstDivergentLayer": "P1:4 guidanceTitle investigate default: Investigate ${displayName} ${state} conditions.",
+    "authoritativeOwner": "P1:4 dataRealityExecutiveAdvisoryResolution.guidanceTitle",
+    "neighboringBehaviors": [
+      "Production has a special-case title; Customer uses the generic template"
+    ],
+    "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3D-DIAG/reproduce-nxa5-fix3d-diag.ts",
+    "failureClass": "deterministic",
+    "evidenceRequiredBeforeFix": [],
+    "verdict": "REPRODUCED",
+    "impactClassification": "ADVISORY_QUALITY_GAP",
+    "identity": "NXA:6-PREP/ConversationDiagnosis",
+    "fixAuthorized": false
+  }
+}

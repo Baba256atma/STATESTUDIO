@@ -23,7 +23,7 @@ import {
   isInvestigationOptionsUtterance,
   isNoActionConsequenceUtterance,
   classifyExecutiveInvestigationAsk,
-  normalizeNexoraConversationalUtterance,
+  normalizeNexoraConversationalUtteranceWithDiagnostics,
   stripConversationalArticles,
   stripConversationalSignificanceQualifier,
 } from "./conversationalIntentNormalization.ts";
@@ -828,37 +828,37 @@ function matchCollectionShows(normalized: string): MatchResult | null {
     },
     {
       pattern:
-        /^(?:show|open|list|see|what)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+problems?(?:\s+(?:do we have|are there|collection))?$/,
+        /^(?:(?:show|open|list|see|what|how many)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+problems?(?:\s+(?:do we have|are there|collection))?|how many problems?(?: do we have| are there)?)$/,
       kind: "show-problems",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_PROBLEMS,
     },
     {
       pattern:
-        /^(?:show|open|list|see|what)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+risks?(?:\s+(?:do we have|are there|collection))?$/,
+        /^(?:(?:show|open|list|see|what|how many)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+risks?(?:\s+(?:do we have|are there|collection))?|how many risks?(?: do we have| are there)?)$/,
       kind: "show-problems",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_PROBLEMS,
     },
     {
       pattern:
-        /^(?:show|open|list|see)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+goals?(?:\s+collection)?$/,
+        /^(?:(?:show|open|list|see|what|how many)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+goals?(?:\s+(?:do we have|are there|collection))?|how many goals?(?: do we have| are there)?)$/,
       kind: "show-goals",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_GOALS,
     },
     {
       pattern:
-        /^(?:show|open|list|see)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+scenarios?(?:\s+collection)?$/,
+        /^(?:(?:show|open|list|see|what|how many)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+scenarios?(?:\s+(?:do we have|are there|collection))?|how many scenarios?(?: do we have| are there)?)$/,
       kind: "show-scenarios",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_SCENARIOS,
     },
     {
       pattern:
-        /^(?:show|open|list|see)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+decisions?(?:\s+collection)?$/,
+        /^(?:(?:show|open|list|see|what|how many)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+decisions?(?:\s+(?:do we have|are there|collection))?|how many decisions?(?: do we have| are there)?)$/,
       kind: "show-decisions",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_DECISIONS,
     },
     {
       pattern:
-        /^(?:show|open|list|see)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+executions?(?:\s+collection)?$/,
+        /^(?:(?:show|open|list|see|what|how many)(?:\s+me)?(?:\s+(?:the|all|active|open|current|our))?\s+executions?(?:\s+(?:do we have|are there|collection))?|how many executions?(?: do we have| are there)?)$/,
       kind: "show-execution",
       reason: CONVERSATIONAL_INTENT_REASON.MATCHED_EXECUTION,
     },
@@ -2497,7 +2497,8 @@ export function resolveNexoraConversationalIntent(
   input: NexoraConversationalIntentInput,
 ): NexoraConversationalIntentResolution {
   const utterance = typeof input?.utterance === "string" ? input.utterance : "";
-  const normalizedUtterance = normalizeNexoraConversationalUtterance(utterance);
+  const normalization = normalizeNexoraConversationalUtteranceWithDiagnostics(utterance);
+  const normalizedUtterance = normalization.normalized;
   const match = resolveMatch(normalizedUtterance);
 
   const intent = freezeIntent({
@@ -2510,6 +2511,9 @@ export function resolveNexoraConversationalIntent(
     executionClass: EXECUTION_CLASS_BY_INTENT_KIND[match.kind],
     reasons: Object.freeze([
       CONVERSATIONAL_INTENT_REASON.NORMALIZED,
+      ...(normalization.corrections.length > 0
+        ? [CONVERSATIONAL_INTENT_REASON.RECOVERED_ACTION_TYPO]
+        : []),
       ...match.reasons,
     ]),
     targetHints: match.targetHints,

@@ -1,0 +1,233 @@
+{
+  "identity": "NXA:5-FIX1/CollectionJudgmentPrioritySemanticsStageAwareness",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "conversations": [
+    {
+      "name": "problems",
+      "turns": [
+        {
+          "utterance": "show all problems",
+          "response": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "",
+            "preferred": "",
+            "recommendation": "",
+            "strength": ""
+          }
+        },
+        {
+          "utterance": "which one is important?",
+          "response": "NexoraWe don’t have comparable impact evidence to say which is more important overall, and the current evidence does not support choosing a defensible first investigation either.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "ATTENTION",
+            "preferred": "",
+            "recommendation": "INVESTIGATE",
+            "strength": "INSUFFICIENT"
+          }
+        },
+        {
+          "utterance": "which problem is more important?",
+          "response": "NexoraWe don’t have comparable impact evidence to say which is more important overall, and the current evidence does not support choosing a defensible first investigation either.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "ATTENTION",
+            "preferred": "",
+            "recommendation": "INVESTIGATE",
+            "strength": "INSUFFICIENT"
+          }
+        },
+        {
+          "utterance": "which one should I investigate first?",
+          "response": "NexoraBased on the current evidence, I would investigate Margin Pressure, because Margin Pressure offers the strongest supported combination of current-context relevance, learning value, and reversibility, while Capacity Gap is less decisive on that criterion Comparable impact evidence for Margin Pressure remains incomplete. This puts Capacity Gap second for now, rather than dismissing it.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "INVESTIGATION_PRIORITY",
+            "preferred": "ctx-problem-margin",
+            "recommendation": "INVESTIGATE",
+            "strength": "QUALIFIED"
+          }
+        },
+        {
+          "utterance": "why?",
+          "response": "NexoraBased on the current evidence, I would investigate Margin Pressure, because Margin Pressure offers the strongest supported combination of current-context relevance, learning value, and reversibility, while Capacity Gap is less decisive on that criterion Comparable impact evidence for Margin Pressure remains incomplete. This puts Capacity Gap second for now, rather than dismissing it.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "INVESTIGATION_PRIORITY",
+            "preferred": "ctx-problem-margin",
+            "recommendation": "INVESTIGATE",
+            "strength": "QUALIFIED"
+          }
+        },
+        {
+          "utterance": "which one is more urgent?",
+          "response": "NexoraAmong the current problems, I don’t have enough comparable urgency evidence to distinguish one confidently.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "ATTENTION",
+            "preferred": "",
+            "recommendation": "COMPARE",
+            "strength": "INSUFFICIENT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "scenarios",
+      "turns": [
+        {
+          "utterance": "show all scenarios",
+          "response": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "",
+            "preferred": "",
+            "recommendation": "",
+            "strength": ""
+          }
+        },
+        {
+          "utterance": "which one is safer?",
+          "response": "NexoraThe current scenario candidates are Capacity Expansion Plan, Demand Surge, Pricing Response. I don’t have enough comparable evidence to rank them on risk.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "SCENARIO",
+            "preferred": "",
+            "recommendation": "COMPARE",
+            "strength": "INSUFFICIENT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "risks",
+      "turns": [
+        {
+          "utterance": "show all risks",
+          "response": "NexoraCurrent Risks: Risk.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "",
+            "preferred": "",
+            "recommendation": "",
+            "strength": ""
+          }
+        },
+        {
+          "utterance": "which one is most important?",
+          "response": "NexoraThe current comparison does not contain at least two supported candidates.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "RISK_PRIORITY",
+            "preferred": "",
+            "recommendation": "COMPARE",
+            "strength": "INSUFFICIENT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "stage",
+      "turns": [
+        {
+          "utterance": "Focus on Margin Pressure.",
+          "response": "NexoraFocused on Margin Pressure.",
+          "focused": "ctx-problem-margin",
+          "diagnostics": {
+            "judgment": "",
+            "preferred": "",
+            "recommendation": "",
+            "strength": ""
+          }
+        },
+        {
+          "utterance": "Show decisions.",
+          "response": "NexoraCurrent Decisions: Expand Capacity, Approve Repricing.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "",
+            "preferred": "",
+            "recommendation": "",
+            "strength": ""
+          }
+        },
+        {
+          "utterance": "what is on stage now?",
+          "response": "NexoraThe Stage is showing the Decisions: Expand Capacity and Approve Repricing.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "",
+            "preferred": "",
+            "recommendation": "",
+            "strength": ""
+          }
+        },
+        {
+          "utterance": "what is in the center?",
+          "response": "NexoraThe Stage does not currently have a single focused object.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "",
+            "preferred": "",
+            "recommendation": "",
+            "strength": ""
+          }
+        },
+        {
+          "utterance": "which decisions are shown?",
+          "response": "NexoraThe decisions currently shown are Expand Capacity and Approve Repricing.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "",
+            "preferred": "",
+            "recommendation": "",
+            "strength": ""
+          }
+        },
+        {
+          "utterance": "why are these decisions here?",
+          "response": "NexoraThey are being presented as the current Decisions collection. Their visibility does not by itself establish a causal relationship.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "",
+            "preferred": "",
+            "recommendation": "",
+            "strength": ""
+          }
+        },
+        {
+          "utterance": "explain the stage",
+          "response": "NexoraThe Stage is Nexora's visual workspace for the executive objects relevant to the work you're reviewing.",
+          "focused": "none",
+          "diagnostics": {
+            "judgment": "",
+            "preferred": "",
+            "recommendation": "",
+            "strength": ""
+          }
+        }
+      ]
+    }
+  ],
+  "proofs": {
+    "originalDefectClosed": true,
+    "overallVsInvestigation": true,
+    "investigationSpecific": true,
+    "whyContinuity": true,
+    "urgencyDistinct": true,
+    "problemReasoningNoStageMove": true,
+    "validScenarioPreserved": true,
+    "riskDomainPreserved": true,
+    "currentStage": true,
+    "centerAwareness": true,
+    "visibleMembers": true,
+    "visibilitySafety": true,
+    "stageEducation": true,
+    "stageReadOnly": true,
+    "noArchitectureLeakage": true,
+    "zeroPageErrors": true
+  },
+  "ok": true
+}

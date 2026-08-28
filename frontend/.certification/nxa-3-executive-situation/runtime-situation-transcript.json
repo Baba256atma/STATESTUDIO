@@ -1,0 +1,514 @@
+{
+  "identity": "NXA:3/ExecutiveContextSituationalAwareness",
+  "url": "http://localhost:3000/executive",
+  "pageErrors": [],
+  "transcripts": [
+    {
+      "name": "A-goal",
+      "turns": [
+        {
+          "utterance": "My goal is to improve delivery reliability.",
+          "response": "NexoraGoal: Improve Delivery Reliability. Current position: Delivery is part of the current path toward Improve Delivery Reliability. It is not the goal itself. Gap: On-time is 91% against a target of 96%.",
+          "focused": "none",
+          "situation": {
+            "goal": "Improve Delivery Reliability",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "NONE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "STATE"
+          }
+        },
+        {
+          "utterance": "Show Capacity Gap.",
+          "response": "NexoraFocused on Capacity Gap. My recommendation remains temporary capacity.",
+          "focused": "ctx-problem-capacity",
+          "situation": {
+            "goal": "Improve Delivery Reliability",
+            "focus": "Capacity Gap",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "MANAGER_DIRECTION"
+          }
+        },
+        {
+          "utterance": "Why does Capacity matter?",
+          "response": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause. Has backlog increased recently?",
+          "focused": "ctx-problem-capacity",
+          "situation": {
+            "goal": "Improve Delivery Reliability",
+            "focus": "Capacity Gap",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "NONE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "B-investigation",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "situation": {
+            "goal": "On-time target",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "NONE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "MANAGER_DIRECTION"
+          }
+        },
+        {
+          "utterance": "Show the problems.",
+          "response": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+          "focused": "none",
+          "situation": {
+            "goal": "",
+            "focus": "Margin Pressure",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "MANAGER_DIRECTION"
+          }
+        },
+        {
+          "utterance": "Explain Capacity Gap.",
+          "response": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause. My recommendation remains temporary capacity.",
+          "focused": "none",
+          "situation": {
+            "goal": "",
+            "focus": "Capacity Gap",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "STATE"
+          }
+        },
+        {
+          "utterance": "Is it causing Delivery?",
+          "response": "NexoraMonitor Delivery before changing the operating plan. Why: Delivery is attention-level and goal/problem linked. Uncertainty: Risk has unresolved evidence. Has backlog increased recently?",
+          "focused": "none",
+          "situation": {
+            "goal": "On-time target",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "STATE"
+          }
+        },
+        {
+          "utterance": "What should I check?",
+          "response": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution. Are you asking about the problem or the KPI?",
+          "focused": "none",
+          "situation": {
+            "goal": "On-time target",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "NONE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "C-known",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "situation": {
+            "goal": "On-time target",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "NONE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "MANAGER_DIRECTION"
+          }
+        },
+        {
+          "utterance": "How far are we from the Goal?",
+          "response": "Nexora91% is the current result against a 96% target. On-time is 91% against a 96% target.",
+          "focused": "obj-delivery",
+          "situation": {
+            "goal": "On-time target",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "NONE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "D-invalidation",
+      "turns": [
+        {
+          "utterance": "What should I do about Capacity Gap?",
+          "response": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+          "focused": "none",
+          "situation": {
+            "goal": "",
+            "focus": "",
+            "causal": "UNKNOWN",
+            "recommendation": "NONE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "NONE"
+          }
+        },
+        {
+          "utterance": "Capacity is normal and is not the cause.",
+          "response": "NexoraInvestigate Capacity as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity shows attention, but a is not established. Uncertainty: Budget has unresolved evidence. Has backlog increased recently?",
+          "focused": "none",
+          "situation": {
+            "goal": "Utilization target",
+            "focus": "Capacity",
+            "causal": "UNCONFIRMED",
+            "recommendation": "INVALIDATED",
+            "decision": "proposed",
+            "execution": "NOT_STARTED",
+            "outcome": "NOT_OBSERVED",
+            "change": "STATE"
+          }
+        },
+        {
+          "utterance": "What should I do now?",
+          "response": "NexoraThe new observation weakens the previous recommendation, so I would not repeat it. Reassess the remaining contributors and validate the strongest alternative before choosing an intervention.",
+          "focused": "none",
+          "situation": {
+            "goal": "Utilization target",
+            "focus": "Capacity",
+            "causal": "UNCONFIRMED",
+            "recommendation": "INVALIDATED",
+            "decision": "proposed",
+            "execution": "NOT_STARTED",
+            "outcome": "NOT_OBSERVED",
+            "change": "NONE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "E-override",
+      "turns": [
+        {
+          "utterance": "What should I do about Capacity Gap?",
+          "response": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+          "focused": "none",
+          "situation": {
+            "goal": "",
+            "focus": "",
+            "causal": "UNKNOWN",
+            "recommendation": "NONE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "NONE"
+          }
+        },
+        {
+          "utterance": "No. Focus on Margin Pressure.",
+          "response": "NexoraFocused on Margin Pressure.",
+          "focused": "ctx-problem-margin",
+          "situation": {
+            "goal": "",
+            "focus": "Margin Pressure",
+            "causal": "UNCONFIRMED",
+            "recommendation": "OVERRIDDEN",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "MANAGER_DIRECTION"
+          }
+        },
+        {
+          "utterance": "Where were we?",
+          "response": "NexoraWe’re focused on Margin Pressure. The causal relationship is still unconfirmed. Still unresolved: The issue and available options are understood enough to proceed, but no decision is committed. This is a journey process blocker, not a confirmed business cause.",
+          "focused": "ctx-problem-margin",
+          "situation": {
+            "goal": "",
+            "focus": "Margin Pressure",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "NONE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "I-conflict",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "situation": {
+            "goal": "On-time target",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "NONE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "MANAGER_DIRECTION"
+          }
+        },
+        {
+          "utterance": "Our latest number is 94% for Delivery.",
+          "response": "NexoraThe validated context currently shows On-time is 91%., while you’ve provided Our latest number is 94% for Delivery.. I’ll preserve that as your current observation, but it is not yet validated by the connected data.",
+          "focused": "obj-delivery",
+          "situation": {
+            "goal": "On-time target",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "NONE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "J-topic-shift",
+      "turns": [
+        {
+          "utterance": "Show Capacity Gap.",
+          "response": "NexoraFocused on Capacity Gap. My recommendation remains temporary capacity.",
+          "focused": "ctx-problem-capacity",
+          "situation": {
+            "goal": "",
+            "focus": "Capacity Gap",
+            "causal": "UNCONFIRMED",
+            "recommendation": "NONE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "MANAGER_DIRECTION"
+          }
+        },
+        {
+          "utterance": "Forget Capacity for now. Show Margin Pressure.",
+          "response": "NexoraFocused on Margin Pressure.",
+          "focused": "ctx-problem-margin",
+          "situation": {
+            "goal": "",
+            "focus": "Margin Pressure",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "MANAGER_DIRECTION"
+          }
+        },
+        {
+          "utterance": "What should I investigate?",
+          "response": "NexoraExploring Margin Pressure.",
+          "focused": "ctx-problem-margin",
+          "situation": {
+            "goal": "",
+            "focus": "Margin Pressure",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "NONE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "K-recovery",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "situation": {
+            "goal": "On-time target",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "NONE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "MANAGER_DIRECTION"
+          }
+        },
+        {
+          "utterance": "Why is it below target?",
+          "response": "NexoraDelivery is currently 91% against a 96% target (-5%). Capacity Gap, Capacity, Risk and Demand are plausible explanations worth investigating for Delivery. None of these is a confirmed cause. I can inspect the evidence for each, or we can look at what remains unknown. Has backlog increased over the same period?",
+          "focused": "obj-delivery",
+          "situation": {
+            "goal": "On-time target",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "NONE"
+          }
+        },
+        {
+          "utterance": "Where were we?",
+          "response": "NexoraGoal: On-time target. We’re focused on Delivery. The causal relationship is still unconfirmed. Still unresolved: The issue and available options are understood enough to proceed, but no decision is committed. This is a journey process blocker, not a confirmed business cause.",
+          "focused": "obj-delivery",
+          "situation": {
+            "goal": "On-time target",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "NONE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "L-generic",
+      "turns": [
+        {
+          "utterance": "Explain Delivery.",
+          "response": "NexoraDelivery has not been resolved yet, so it still deserves attention. We know on-time is 91%. Delivery is associated with Capacity Gap. That connection does not by itself tell us whether Delivery is affecting Capacity Gap or the reverse.",
+          "focused": "none",
+          "situation": {
+            "goal": "On-time target",
+            "focus": "Delivery",
+            "causal": "UNCONFIRMED",
+            "recommendation": "NONE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "STATE"
+          }
+        },
+        {
+          "utterance": "Explain Capacity Gap.",
+          "response": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause. My recommendation remains temporary capacity.",
+          "focused": "none",
+          "situation": {
+            "goal": "",
+            "focus": "Capacity Gap",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "STATE"
+          }
+        },
+        {
+          "utterance": "Explain Risk.",
+          "response": "NexoraRisk has not been resolved yet, so it still deserves attention. Risk is associated with Margin Pressure. That connection does not by itself tell us whether Risk is affecting Margin Pressure or the reverse. No outcome has been measured yet.",
+          "focused": "none",
+          "situation": {
+            "goal": "",
+            "focus": "Risk",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "none",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "STATE"
+          }
+        },
+        {
+          "utterance": "Explain Capacity Expansion Plan.",
+          "response": "NexoraScenario: Capacity Expansion Plan. Capacity Expansion Plan is a scenario. What it represents: Capacity Expansion Plan explores relieving the Capacity Gap affecting Delivery. The current scenario model associates it with Capacity. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+          "focused": "none",
+          "situation": {
+            "goal": "",
+            "focus": "Capacity Expansion Plan",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "proposed",
+            "execution": "UNKNOWN",
+            "outcome": "NOT_OBSERVED",
+            "change": "STATE"
+          }
+        },
+        {
+          "utterance": "Explain Expand Capacity.",
+          "response": "NexoraBefore recommending a lasting capacity change, I need to know whether this demand increase is expected to continue. Do you expect this higher demand to continue beyond the next few months?",
+          "focused": "none",
+          "situation": {
+            "goal": "",
+            "focus": "Expand Capacity",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "proposed",
+            "execution": "NOT_STARTED",
+            "outcome": "NOT_OBSERVED",
+            "change": "DECISION"
+          }
+        },
+        {
+          "utterance": "Explain Capacity Expansion.",
+          "response": "NexoraCapacity Expansion is planned pending Decision approval. Capacity Expansion is Planned. We know progress is 0%. Capacity Expansion is associated with Capacity.",
+          "focused": "none",
+          "situation": {
+            "goal": "Progress target",
+            "focus": "Capacity Expansion",
+            "causal": "UNCONFIRMED",
+            "recommendation": "ACTIVE",
+            "decision": "proposed",
+            "execution": "NOT_STARTED",
+            "outcome": "NOT_OBSERVED",
+            "change": "EXECUTION"
+          }
+        }
+      ]
+    }
+  ],
+  "proofs": {
+    "A_goalOrientation": true,
+    "B_continuity": true,
+    "C_knownValues": true,
+    "D_invalidation": true,
+    "E_override": true,
+    "I_conflict": true,
+    "J_topicShift": true,
+    "K_compression": true,
+    "L_generic": true
+  },
+  "ok": true
+}

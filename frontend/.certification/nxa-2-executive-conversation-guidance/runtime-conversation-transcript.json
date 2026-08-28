@@ -1,0 +1,355 @@
+{
+  "identity": "NXA:2/ExecutiveConversationGuidanceProductiveDialogue",
+  "url": "http://127.0.0.1:3000/executive",
+  "pageErrors": [],
+  "transcripts": [
+    {
+      "name": "01-answer-ask",
+      "turns": [
+        {
+          "utterance": "What is Capacity Gap?",
+          "response": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+          "focused": "none",
+          "diagnostic": {
+            "need": "KNOW",
+            "referent": "Capacity Gap",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "02-goal-gap",
+      "turns": [
+        {
+          "utterance": "I want to improve performance.",
+          "response": "NexoraWhich result matters most right now — delivery, margin, quality, or another outcome?",
+          "focused": "none",
+          "diagnostic": {
+            "need": "UNDERSTAND",
+            "referent": "",
+            "behavior": "ASK",
+            "valuable": "true",
+            "gap": "GOAL"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03-known-advice",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "NAVIGATE",
+            "referent": "Delivery",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "Delivery is below target. What should I do?",
+          "response": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "ADVISE",
+            "referent": "Delivery",
+            "behavior": "RECOMMEND",
+            "valuable": "true",
+            "gap": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "04-challenge",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "NAVIGATE",
+            "referent": "Delivery",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "Capacity is definitely causing Delivery. Let's add staff.",
+          "response": "NexoraCapacity is connected to Delivery, but the current evidence does not confirm it as the cause. I would not recommend committing resources to that intervention until the relationship is verified.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "INVESTIGATE",
+            "referent": "Delivery",
+            "behavior": "CHALLENGE",
+            "valuable": "true",
+            "gap": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "05-override",
+      "turns": [
+        {
+          "utterance": "What should I do about Capacity Gap?",
+          "response": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+          "focused": "none",
+          "diagnostic": {
+            "need": "ADVISE",
+            "referent": "Capacity Gap",
+            "behavior": "RECOMMEND",
+            "valuable": "true",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "No. Show Margin Pressure.",
+          "response": "NexoraFocused on Margin Pressure.",
+          "focused": "ctx-problem-margin",
+          "diagnostic": {
+            "need": "NAVIGATE",
+            "referent": "Margin Pressure",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "06-follow-up",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "NAVIGATE",
+            "referent": "Delivery",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "What should I do?",
+          "response": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "ADVISE",
+            "referent": "Delivery",
+            "behavior": "RECOMMEND",
+            "valuable": "true",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "Why?",
+          "response": "NexoraDelivery has not been resolved yet, so it still deserves attention. Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause. Has backlog increased recently?",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "INVESTIGATE",
+            "referent": "Delivery",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "07-guide",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "NAVIGATE",
+            "referent": "Delivery",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "I'm not sure where to start.",
+          "response": "NexoraInvestigate Capacity Gap in the context of Delivery. Check the evidence that would resolve the most important uncertainty before choosing an intervention.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "UNDERSTAND",
+            "referent": "Delivery",
+            "behavior": "GUIDE",
+            "valuable": "true",
+            "gap": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "08-education",
+      "turns": [
+        {
+          "utterance": "Show Risk.",
+          "response": "NexoraCurrent Risks: Risk.",
+          "focused": "none",
+          "diagnostic": {
+            "need": "NAVIGATE",
+            "referent": "Risk",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "How do I use this object?",
+          "response": "NexoraWith Risk, you can ask what it means, why it matters, what it affects, what evidence supports it, or what you should investigate next.",
+          "focused": "none",
+          "diagnostic": {
+            "need": "LEARN_NEXORA",
+            "referent": "RISK",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "09-wait",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "NAVIGATE",
+            "referent": "Delivery",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "Okay, I understand now.",
+          "response": "NexoraUnderstood.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "UNDERSTAND",
+            "referent": "Delivery",
+            "behavior": "WAIT",
+            "valuable": "false",
+            "gap": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "10-decision-boundary",
+      "turns": [
+        {
+          "utterance": "Show Delivery.",
+          "response": "NexoraFocused on Delivery.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "NAVIGATE",
+            "referent": "Delivery",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "What should I do?",
+          "response": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "ADVISE",
+            "referent": "Delivery",
+            "behavior": "RECOMMEND",
+            "valuable": "true",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "Let's do that.",
+          "response": "NexoraPreference noted — no Decision committed.",
+          "focused": "obj-delivery",
+          "diagnostic": {
+            "need": "UNDERSTAND",
+            "referent": "Delivery",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "11-generic",
+      "turns": [
+        {
+          "utterance": "Explain Risk.",
+          "response": "NexoraRisk has not been resolved yet, so it still deserves attention. Risk is associated with Margin Pressure. That connection does not by itself tell us whether Risk is affecting Margin Pressure or the reverse. No outcome has been measured yet.",
+          "focused": "none",
+          "diagnostic": {
+            "need": "UNDERSTAND",
+            "referent": "Risk",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "Explain Capacity Expansion Plan.",
+          "response": "NexoraScenario: Capacity Expansion Plan. Capacity Expansion Plan is a scenario. What it represents: Capacity Expansion Plan explores relieving the Capacity Gap affecting Delivery. The current scenario model associates it with Capacity.",
+          "focused": "none",
+          "diagnostic": {
+            "need": "UNDERSTAND",
+            "referent": "Capacity Expansion Plan",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        },
+        {
+          "utterance": "Explain Close Capacity Gap.",
+          "response": "NexoraCurrent state for Close Capacity Gap is not yet known from available evidence. Close Capacity Gap may affect Capacity. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact. No outcome has been measured yet. My recommendation remains temporary capacity.",
+          "focused": "none",
+          "diagnostic": {
+            "need": "UNDERSTAND",
+            "referent": "Close Capacity Gap",
+            "behavior": "ANSWER",
+            "valuable": "false",
+            "gap": ""
+          }
+        }
+      ]
+    }
+  ],
+  "proofs": {
+    "A_directAnswer": true,
+    "B_usefulClarification": true,
+    "C_knownInformation": true,
+    "D_advice": true,
+    "E_challenge": true,
+    "F_override": true,
+    "G_followUpDepth": true,
+    "H_uncertaintyGuide": true,
+    "I_contextualEducation": true,
+    "J_wait": true,
+    "K_decisionBoundary": true,
+    "L_genericObjects": true,
+    "oneQuestionMaximum": true,
+    "managerLanguage": true
+  },
+  "ok": true
+}

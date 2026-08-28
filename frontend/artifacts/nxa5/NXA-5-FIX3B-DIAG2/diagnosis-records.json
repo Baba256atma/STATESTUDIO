@@ -1,0 +1,110 @@
+{
+  "irrelevantClarification": {
+    "defectId": "NXA-5-FIX3B-DIAG2-A",
+    "utteranceSequence": [
+      "show problems",
+      "show all executive"
+    ],
+    "setup": "Problems collection active, then show all executive.",
+    "currentFocus": null,
+    "activeCollection": "problem",
+    "journeyOrDialogue": "ASK_MANAGER",
+    "refreshOrRestoration": null,
+    "expected": "Relevant clarification among actual candidates (e.g. Executions vs Executive Overview) or high-confidence collection resolve.",
+    "actual": "Do you mean Margin Pressure or Capacity Gap?",
+    "firstDivergentLayer": "CC:1 does not match show-execution (noun executive ≠ executions?). Intent is focus with unresolved NLU referent. FINAL:6.3 then asks MISSING_SUBJECT using current Problems members (Capacity Gap, Margin Pressure), not Executions vs Executive Overview. KIND_LABEL object→KPI is the mixed-kind composer; this catalog used same-kind problem names.",
+    "authoritativeOwner": "FINAL:6.3 clarification gate/question composer + CC:1 collection noun list",
+    "neighboringBehaviors": [
+      "interpretExecutiveCollectionQuery requires executions? not executive",
+      "CC:1 show-execution regex requires executions?",
+      "FIX3B comparison-criterion is not this pending type"
+    ],
+    "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3B-DIAG2/reproduce-nxa5-fix3b-diag2.ts",
+    "failureClass": "deterministic",
+    "evidenceRequiredBeforeFix": [],
+    "verdict": "REPRODUCED",
+    "impactClassification": [
+      "IRRELEVANT_CLARIFICATION",
+      "REFERENCE_RESOLUTION_DEFECT",
+      "UNCOVERED_CAPABILITY_GAP",
+      "PRE_EXISTING_REGRESSION"
+    ],
+    "severity": "P2",
+    "fix3bAttribution": "unrelated-to-FIX3B / pre-existing 6.3+CC:1 gap; Problems context supplies mixed-kind candidates",
+    "identity": "NXA:6-PREP/ConversationDiagnosis",
+    "fixAuthorized": false
+  },
+  "correctionMisclassification": {
+    "defectId": "NXA-5-FIX3B-DIAG2-B",
+    "utteranceSequence": [
+      "show problems",
+      "show all executive",
+      "I am asking of Executions"
+    ],
+    "setup": "After 6.3 Problem/KPI clarification pending.",
+    "currentFocus": null,
+    "activeCollection": "problem",
+    "journeyOrDialogue": "ANSWER_NEXORA",
+    "refreshOrRestoration": null,
+    "expected": "Meta-correction to Executions collection; no hypothesis strengthening.",
+    "actual": "That helps. It strengthens the capacity-pressure hypothesis. It strengthens the case for investigating capacity, without treating capacity as a confirmed cause.",
+    "firstDivergentLayer": "NCA:2 isContextualShortAnswer + extractAnswer(FREE_TEXT) consumes the utterance as ANSWER_NEXORA because inferExpectedInformation(6.3 question) is FREE_TEXT. composeNca2ContinuityResponse then emits capacity-pressure copy. 6.3 isNewCompleteRequest/isCorrection do not treat 'I am asking of' as collection correction. lockPresentedResponse is false on the clarify finish path so NCA:2 overwrites the 6.3 re-ask.",
+    "authoritativeOwner": "NCA:2 interpretNcaDialogueTurn / composeNca2ContinuityResponse; orchestrator clarify path does not lock NCA:2",
+    "neighboringBehaviors": [
+      "isCorrectionUtterance requires 'i was asking about' not 'i am asking of'",
+      "CORRECT NLU cues are i meant / was talking about, not I am asking of",
+      "FIX3B PRIORITY extractAnswer would reject this text; that path is not active here"
+    ],
+    "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3B-DIAG2/reproduce-nxa5-fix3b-diag2.ts",
+    "failureClass": "deterministic",
+    "evidenceRequiredBeforeFix": [],
+    "verdict": "REPRODUCED",
+    "impactClassification": [
+      "MANAGER_CORRECTION_MISCLASSIFICATION",
+      "FALSE_EVIDENCE_CLAIM",
+      "STALE_DIALOGUE_STATE",
+      "PRE_EXISTING_REGRESSION"
+    ],
+    "severity": "P1",
+    "fix3bAttribution": "exposed/interaction: FIX3B did not introduce FREE_TEXT acceptance or capacity-pressure copy; clarify-path unlock predates FIX3B",
+    "identity": "NXA:6-PREP/ConversationDiagnosis",
+    "fixAuthorized": false
+  },
+  "hijack": {
+    "defectId": "NXA-5-FIX3B-DIAG2-C",
+    "utteranceSequence": [
+      "show problems",
+      "show all executive",
+      "I am asking of Executions",
+      "show me execution"
+    ],
+    "setup": "6.3 pendingClarification survives turn B; loopCount increments.",
+    "currentFocus": null,
+    "activeCollection": "execution",
+    "journeyOrDialogue": "CONTINUE_TOPIC",
+    "refreshOrRestoration": null,
+    "expected": "show-execution collection via existing CC:1 regex executions?",
+    "actual": "I'm not sure which issue you mean. Name the one you want to investigate.",
+    "firstDivergentLayer": "FINAL:6.3 pending path: show-execution is not isNewCompleteRequest (needs objectReference plus FOCUS/EXPLAIN/COMPARE/INVESTIGATE; collection intents are omitted). Unmatched pending re-ask reaches loopCount>=2 fail copy. finish() still runs POST:3+DIR; shouldCommitRuntime ORs director.mutationRequired, so Stage commits Executions while Advisor shows the fail sentence.",
+    "authoritativeOwner": "FINAL:6.3 isNewCompleteRequest + orchestrator early clarify/fail return",
+    "neighboringBehaviors": [
+      "CC:1 isolated would classify show me execution as show-execution",
+      "FIX3B B9 covers NCA:2 comparison-criterion vs show decisions, not 6.3 pendingClarification",
+      "isContextualShortAnswer already excludes utterances starting with show"
+    ],
+    "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3B-DIAG2/reproduce-nxa5-fix3b-diag2.ts",
+    "failureClass": "deterministic",
+    "evidenceRequiredBeforeFix": [],
+    "verdict": "REPRODUCED",
+    "impactClassification": [
+      "PENDING_QUESTION_HIJACK",
+      "EXPLICIT_COMMAND_PRECEDENCE_DEFECT",
+      "ADVISOR_STAGE_DIVERGENCE",
+      "UNCOVERED_CAPABILITY_GAP"
+    ],
+    "severity": "P1",
+    "fix3bAttribution": "unrelated-to-FIX3B 6.3 pending vs collection-command; suite lacked this interruption case",
+    "identity": "NXA:6-PREP/ConversationDiagnosis",
+    "fixAuthorized": false
+  }
+}

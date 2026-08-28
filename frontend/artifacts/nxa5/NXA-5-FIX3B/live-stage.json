@@ -1,0 +1,94 @@
+{
+  "identity": "NXA:5-FIX3B/Live",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "diagnosed": {
+    "baseline": {
+      "focused": "none",
+      "mode": "overview",
+      "category": "none",
+      "visible": 0,
+      "preparing": false,
+      "queueHeader": "none"
+    },
+    "turns": [
+      {
+        "utterance": "show me problems",
+        "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      },
+      {
+        "utterance": "which one of prolems is important?",
+        "reply": "NexoraImportant in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      },
+      {
+        "utterance": "urgency",
+        "reply": "NexoraI don’t have enough comparable urgency evidence for Capacity Gap and Margin Pressure to select one. You can ask me to compare them on another explicit criterion, such as risk exposure or evidence strength.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      }
+    ]
+  },
+  "investigation": {
+    "baseline": {
+      "focused": "none",
+      "mode": "overview",
+      "category": "none",
+      "visible": 0,
+      "preparing": false,
+      "queueHeader": "none"
+    },
+    "turns": [
+      {
+        "utterance": "show me problems",
+        "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      },
+      {
+        "utterance": "which should we investigate first?",
+        "reply": "NexoraBased on the current evidence, I would investigate Margin Pressure, because Margin Pressure offers the strongest supported combination of current-context relevance, learning value, and reversibility, while Capacity Gap is less decisive on that criterion Comparable impact evidence for Margin Pressure remains incomplete. This puts Capacity Gap second for now, rather than dismissing it.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+# NCA-POST:4 Root Cause
+
+NCA:2 stored `lastCollection`, but only POST:2 ordinal selection consumed it. The stored value contained labels rather than a typed comparison candidate set, and response hydration recognized Problems only. Generic comparison therefore reached CC:9/NEX-EXP Scenario comparison before collection ownership was resolved. A previously active Demand Surge Scenario and `lastAdvisoryPosition` remained eligible, allowing Scenario output to replace the intended Problem comparison. “Comparison complete” was emitted by the Scenario resolver whenever its old Scenario session remained comparison-ready, even though the current plural reference had not resolved to that Scenario set.
+
+POST:4 resolves candidates before comparison authority selection. Explicit references outrank the current compatible collection, which outranks active comparison continuity and all singular/historical context. Advisory state is preserved but marked ineligible unless its option belongs to the resolved set.

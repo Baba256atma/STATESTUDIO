@@ -1,0 +1,214 @@
+{
+  "identity": "NXA:5-FIX3B-DIAG2/StateAuditTurnB",
+  "utterance": "I am asking of Executions",
+  "before": {
+    "pendingClarification": "Do you mean Margin Pressure or Capacity Gap?",
+    "nca2Pending": "Do you mean Margin Pressure or Capacity Gap?",
+    "nca2Expected": "FREE_TEXT",
+    "lastAnswer": null,
+    "collection": "problem",
+    "members": [
+      "ctx-problem-capacity",
+      "ctx-problem-margin"
+    ],
+    "focus": null,
+    "answeredMissing": [],
+    "claims": [
+      {
+        "kind": "FACT",
+        "text": "Status is Risk.",
+        "confidence": "HIGH"
+      },
+      {
+        "kind": "FACT",
+        "text": "Margin Pressure needs attention because Risk.",
+        "confidence": "HIGH"
+      },
+      {
+        "kind": "HYPOTHESIS",
+        "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+        "confidence": "MEDIUM"
+      },
+      {
+        "kind": "HYPOTHESIS",
+        "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+        "confidence": "MEDIUM"
+      },
+      {
+        "kind": "HYPOTHESIS",
+        "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+        "confidence": "MEDIUM"
+      },
+      {
+        "kind": "HYPOTHESIS",
+        "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+        "confidence": "MEDIUM"
+      },
+      {
+        "kind": "UNKNOWN",
+        "text": "No outcome has been measured yet.",
+        "confidence": "LOW"
+      }
+    ],
+    "investigation": null,
+    "observations": [],
+    "execCtxProblem": {
+      "subjectId": "ctx-problem-margin",
+      "subjectKind": "problem",
+      "canonicalName": "Margin Pressure",
+      "source": "explicit",
+      "turnIndex": 1
+    },
+    "execCtxExecution": null
+  },
+  "after": {
+    "response": "That helps. It strengthens the capacity-pressure hypothesis. It strengthens the case for investigating capacity, without treating capacity as a confirmed cause.",
+    "nca2Pending": null,
+    "lastAnswer": {
+      "kind": "FREE_TEXT",
+      "raw": "I am asking of Executions",
+      "display": "I am asking of Executions",
+      "booleanValue": null,
+      "numericValue": null,
+      "optionIndex": null,
+      "optionLabel": null
+    },
+    "answeredMissing": [
+      "advisory-context"
+    ],
+    "pendingClarification": {
+      "question": "Do you mean Margin Pressure or Capacity Gap?",
+      "reason": "MISSING_SUBJECT",
+      "expectedAnswer": "choice",
+      "loopCount": 1,
+      "candidates": [
+        {
+          "id": "ctx-problem-margin",
+          "name": "Margin Pressure",
+          "kind": "problem"
+        },
+        {
+          "id": "ctx-problem-capacity",
+          "name": "Capacity Gap",
+          "kind": "problem"
+        }
+      ]
+    },
+    "stage": {
+      "mode": "object-focused",
+      "focus": null,
+      "collection": "problem",
+      "members": [
+        "ctx-problem-capacity",
+        "ctx-problem-margin"
+      ],
+      "shouldCommit": false
+    },
+    "director": {
+      "intent": "NO_CHANGE",
+      "mutation": false,
+      "reason": "turn-has-no-presentation-effect",
+      "stageEffect": "NONE"
+    },
+    "investigation": null,
+    "managerObservations": [],
+    "evidenceTrace": {
+      "explanationEvidence": [
+        "Status is Risk."
+      ],
+      "trustedClaims": [
+        {
+          "kind": "FACT",
+          "text": "Status is Risk.",
+          "confidence": "HIGH"
+        },
+        {
+          "kind": "FACT",
+          "text": "Margin Pressure needs attention because Risk.",
+          "confidence": "HIGH"
+        },
+        {
+          "kind": "HYPOTHESIS",
+          "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+          "confidence": "MEDIUM"
+        },
+        {
+          "kind": "HYPOTHESIS",
+          "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+          "confidence": "MEDIUM"
+        },
+        {
+          "kind": "HYPOTHESIS",
+          "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+          "confidence": "MEDIUM"
+        },
+        {
+          "kind": "HYPOTHESIS",
+          "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+          "confidence": "MEDIUM"
+        },
+        {
+          "kind": "UNKNOWN",
+          "text": "No outcome has been measured yet.",
+          "confidence": "LOW"
+        }
+      ]
+    },
+    "executiveContext": {
+      "subject": {
+        "subjectId": "ctx-problem-margin",
+        "subjectKind": "problem",
+        "canonicalName": "Margin Pressure",
+        "source": "explicit",
+        "turnIndex": 1
+      },
+      "problem": {
+        "subjectId": "ctx-problem-margin",
+        "subjectKind": "problem",
+        "canonicalName": "Margin Pressure",
+        "source": "explicit",
+        "turnIndex": 1
+      },
+      "execution": null,
+      "decision": null,
+      "goal": null
+    },
+    "navigationGoal": {
+      "goalId": null,
+      "title": "Unknown goal",
+      "description": null,
+      "source": "resolved",
+      "status": "understood",
+      "epistemicStatus": "KNOWN",
+      "relatedObjects": [],
+      "successSignals": [],
+      "constraints": [
+        "Margin Pressure"
+      ],
+      "currentGap": {
+        "quantification": "unknown",
+        "desiredState": null,
+        "currentState": null,
+        "summary": "The goal is understood, but its measurable success criteria are not yet defined.",
+        "epistemicStatus": "UNKNOWN"
+      },
+      "managerConfirmed": false,
+      "persisted": false,
+      "role": "ACTIVE"
+    }
+  },
+  "mutated": {
+    "nca2Pending": true,
+    "lastAnswer": true,
+    "answeredMissing": true,
+    "collection": false,
+    "members": false,
+    "focus": false,
+    "claimsCount": false,
+    "investigation": false,
+    "observations": false,
+    "execProblem": false,
+    "execExecution": false,
+    "shouldCommit": false
+  }
+}

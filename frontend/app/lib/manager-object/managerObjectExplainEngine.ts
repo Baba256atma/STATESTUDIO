@@ -368,7 +368,7 @@ function relationshipConsequenceText(
     edge.relationKind === "constrained-by" ||
     edge.relationKind === "depends-on"
   ) {
-    return `${subject} is constrained by ${edge.otherLabel}. That is a recorded dependency, not a confirmed cause.`;
+    return `${subject} is connected to ${edge.otherLabel} through a constraint. That recorded dependency is not a confirmed cause.`;
   }
   return `${subject} is associated with ${edge.otherLabel}. That connection does not by itself tell us whether ${subject} is affecting ${edge.otherLabel} or the reverse.`;
 }

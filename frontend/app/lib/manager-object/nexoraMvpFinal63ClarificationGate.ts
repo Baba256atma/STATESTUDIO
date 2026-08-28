@@ -12,6 +12,7 @@ import type {
   ClarificationReason,
   PendingClarification,
 } from "./nexoraMvpFinal63ClarificationTypes.ts";
+import { classifyManagerSpeechAct } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 
 const KIND_LABEL: Record<string, string> = {
   object: "KPI",
@@ -28,7 +29,7 @@ export function clarificationConsequence(
   intentKind: string,
 ): ClarificationConsequence {
   if (
-    /commit|confirm-decision|start-execution|show-execution|cancel-decision/.test(
+    /commit|confirm-decision|start-execution|cancel-decision/.test(
       intentKind,
     )
   ) {
@@ -163,7 +164,15 @@ export function evaluateClarificationGate(input: {
       input.intentKind,
     );
 
-  if (help || correct || explicit || namedNlu || existingAuthorityIntent) {
+  const deicticPrior =
+    /\b(?:that one|this one|that option)\b/.test(contextual.turnMeaning.preparedUtterance) &&
+    (contextual.requestedOperation === "CAUSE" ||
+      contextual.requestedOperation === "EXPLAIN" ||
+      contextual.turnMeaning.communicativeIntent === "REJECT" ||
+      classifyManagerSpeechAct(contextual.turnMeaning.rawUtterance) === "PREFERENCE" ||
+      (input.continuity?.thread.length ?? 0) > 0);
+
+  if (help || correct || explicit || namedNlu || existingAuthorityIntent || deicticPrior) {
     if (consequence !== "COMMITMENT") {
       return {
         required: false,
@@ -178,6 +187,7 @@ export function evaluateClarificationGate(input: {
     /\bthat\b/.test(contextual.turnMeaning.preparedUtterance) &&
     !/\bit\b/.test(contextual.turnMeaning.preparedUtterance) &&
     !/\bthat one\b/.test(contextual.turnMeaning.preparedUtterance) &&
+    !/\bthat option\b/.test(contextual.turnMeaning.preparedUtterance) &&
     !/\b(?:do|go with|lets do|let us do) that\b/.test(
       contextual.turnMeaning.preparedUtterance,
     ) &&
@@ -262,12 +272,17 @@ export function evaluateClarificationGate(input: {
     contextual.requestedOperation === "NONE" &&
     candidates.length >= 2
   ) {
-    return {
-      required: true,
-      reason: "MISSING_OPERATION",
-      consequence,
-      candidates: candidates.slice(0, 2),
-    };
+    const speech = classifyManagerSpeechAct(contextual.turnMeaning.rawUtterance);
+    const shortListing =
+      contextual.turnMeaning.preparedUtterance.split(" ").filter(Boolean).length <= 8;
+    if (speech === "QUESTION" || speech === "COMMAND" || (speech !== "ASSERTION" && speech !== "OBSERVATION" && shortListing)) {
+      return {
+        required: true,
+        reason: "MISSING_OPERATION",
+        consequence,
+        candidates: candidates.slice(0, 2),
+      };
+    }
   }
 
   if (

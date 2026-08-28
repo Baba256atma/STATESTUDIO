@@ -3,6 +3,8 @@
  * Extends NCA:1–7 / NCA-POST:1. Not NCA:8. No phrase tables.
  */
 
+import { recoverBoundedCollectionNouns } from "../conversational-control/conversationalIntentNormalization.ts";
+
 export const nexoraNcaPost2Identity =
   "NCA-POST:2/ManagerAssertionsPendingQuestionPrecedenceCollectionQueryIntelligence" as const;
 export const nexoraNcaPost2Version = "1.0.0" as const;
@@ -133,7 +135,7 @@ const COMMAND_LEAD =
 const PREFERENCE_LEAD =
   /^(?:i(?:'| a)?m (?:ok|okay|fine) with|i can live with|i(?:'| a)?m comfortable with|we can live with)\b/;
 const CORRECTION_LEAD =
-  /^(?:no[, ]|actually |i meant |that'?s not what i meant|not .+,\s+)/;
+  /^(?:no[, ]+|actually |that(?:'?s| is) not what i (?:asked|meant|said)\b|i (?:meant|mean|asked|am asking|was asking|said|am talking about|was talking about)\b|not (?:the )?(?:problem|issue|one)\b)/;
 const QUALITATIVE =
   /\b(?:ok|okay|fine|good|bad|tight|high|low|worse|better|weak|strong|elevated|stable|seasonal)\b/;
 const COPULA = /\b(?:is|are|looks?|feels?|seems?|was|were|'s)\b/;
@@ -159,7 +161,9 @@ export function verifyNexoraNcaPost2(): { readonly ok: true } {
 }
 
 export function preparedManagerUtterance(utterance: string): string {
-  return utterance.trim().toLowerCase().replace(/[.!]+$/g, "");
+  return recoverBoundedCollectionNouns(
+    utterance.trim().toLowerCase().replace(/[.!]+$/g, ""),
+  );
 }
 
 export function isGreetingSocialUtterance(utterance: string): boolean {
@@ -380,24 +384,41 @@ export function interpretExecutiveCollectionQuery(
   utterance: string,
 ): ExecutiveCollectionQuery | null {
   const prepared = preparedManagerUtterance(utterance).replace(/[?]+$/g, "");
+  const countRequested = /\bhow many\b/.test(prepared);
+  const stripped = prepared
+    .replace(/^(?:no[, ]+(?:actually[, ]+)?)?/i, "")
+    .replace(/^(?:that is not what i (?:asked|meant|said)[, ]*)/i, "")
+    .replace(/^(?:i (?:am |was )?(?:just )?ask(?:ing)? (?:you )?(?:about |of |for )?)/i, "")
+    .replace(/^(?:i (?:meant|mean|said) (?:the |about |of )?)/i, "")
+    .replace(/^(?:i (?:am |was )?talking about (?:the )?)/i, "")
+    .replace(/^(?:not (?:the )?(?:problem|issue|one),?\s+(?:the )?)/i, "")
+    .replace(/^(?:how many|what)\s+/i, "show ")
+    .replace(/^go back to\s+/i, "show ")
+    .replace(/\s+on stage(?: that show)?$/i, "")
+    .replace(/\s+(?:do we have|are there|are open)$/i, "")
+    .trim();
   const issue =
     /\bissues?\b/.test(prepared) &&
     /\b(?:show|list|all|what|open)\b/.test(prepared);
-  const match = prepared.match(
-    /^(?:(?:show|open|list|see)(?:\s+me)?|what|which)(?:\s+(?:are|do we have))?(?:\s+(the|all|active|open|current|our|my|top))?\s*(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?|kpis?|objects?)(?:\s+(?:do we have|are there|are open|collection))?(?:\s+(?:related to|for|about)\s+(.+))?$/,
+  const match = stripped.match(
+    /^(?:(?:show|open|list|see)(?:\s+me)?|what|which)(?:\s+(?:are|do we have))?(?:\s+(the|all|active|open|current|our|my|top))?\s*(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?|kpis?|objects?)(?:\s+(?:do we have|are there|are open|collection|on stage))?(?:\s+(?:related to|for|about)\s+(.+))?$/,
   );
-  if (issue && !match) {
+  const nounOnly = stripped.match(
+    /^(?:the |all |our |current )?(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?)$/,
+  );
+  if (issue && !match && !nounOnly) {
     return Object.freeze({
       collectionKind: "OTHER" as const,
       scope: "ALL" as const,
       subjectContext: null,
       ambiguousIssueNoun: true,
+      countRequested,
     });
   }
-  if (!match) return null;
-  const scopeToken = match[1] ?? "";
-  const noun = match[2] ?? "";
-  const subjectContext = match[3]?.trim() ?? null;
+  if (!match && !nounOnly) return null;
+  const scopeToken = match?.[1] ?? "";
+  const noun = (match?.[2] ?? nounOnly?.[1] ?? "") as string;
+  const subjectContext = match?.[3]?.trim() ?? null;
   const scope: ExecutiveCollectionScope =
     scopeToken === "active"
       ? "ACTIVE"
@@ -434,6 +455,7 @@ export function interpretExecutiveCollectionQuery(
     scope,
     subjectContext,
     ambiguousIssueNoun: false,
+    countRequested,
   });
 }
 

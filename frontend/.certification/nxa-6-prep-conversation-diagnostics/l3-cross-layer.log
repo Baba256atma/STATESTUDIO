@@ -1,0 +1,173 @@
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Budget
+[Topology][Hub] Satellites: 3
+[Topology][Hub] Connections: 3
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+✔ CC:4 identity and architectural boundary (1.056333ms)
+✔ Case 1 — focus-subject(obj-capacity) → Runtime focus + center (45.236708ms)
+✔ Case 2 — explicit conversation Budget beats Capacity attention (15.03775ms)
+✔ Case 3–5 — overview + navigation trail Back/Forward (3.126208ms)
+✔ Case 6 — compare-subjects unsupported (no compare engine) (1.784459ms)
+✔ Case 7 — analyze-subject routes to focus (Advisor derive) (1.030791ms)
+✔ Case 8 — simulate-scenario focuses scenario subject only (1.159ms)
+✔ Case 9 — invalid target rejected atomically (0.143166ms)
+✔ Case 10 — confirmation-required does not execute (0.143167ms)
+✔ Click vs conversation converge on same focus authority (11.631958ms)
+✔ reveal-problems without anchor opens queue collection (0.893416ms)
+✔ reveal-problems with a restored anchor still presents the collection (0.664375ms)
+✔ reveal-goals unsupported (0.09625ms)
+✔ invariant A: CC:4 rejects raw language — accepts structured command only (0.221542ms)
+✔ invariant P/Q: failed dispatch does not mutate; confirmation gates (0.176667ms)
+✔ duplicate dispatch → no-op (0.894167ms)
+✔ executeNexoraConversationalControl facade matches applicator (0.627583ms)
+✔ invariant X: no provider imports in CC:4 sources (6.64475ms)
+✔ bridge result is serializable (0.927625ms)
+✔ multi-member Problems remain one canonical collection through Stage (7.393875ms)
+✔ scenario, decision and execution membership is generic and exact (2.159125ms)
+✔ one-member Risk preserves collection semantics and empty collections do not invent objects (1.119291ms)
+✔ already-satisfied collection is stable and a collection supersedes stale focus (1.535708ms)
+✔ explain, workspace, capability, assertion and social turns are NO_CHANGE (6.336334ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ Advisor and Queue converge on the same canonical collection presentation (191.14875ms)
+✔ Advisor still presents supported one-member Risks without inventing Queue parity (6.107291ms)
+✔ latest explicit command wins across focus and collection transitions (22.521583ms)
+✔ knowledge and judgment turns do not mutate the presented collection (41.77175ms)
+✔ Stage readback follows the post-command collection and remains read-only (21.180416ms)
+✔ collection trail preserves Back and Forward semantics (6.255167ms)
+✔ rapid generic collection transitions have one deterministic last writer (30.521291ms)
+✔ restored conversational subject cannot collapse an explicit collection command (13.829334ms)
+✔ unfiltered collection commands do not inherit a restored primary target (0.4695ms)
+✔ knowledge questions do not present a collection after restored focus (7.065875ms)
+✔ duplicate running starts are not recorded (1.743916ms)
+✔ CERTIFIED barrier requires finished inspected passing required tasks (0.450167ms)
+✔ a long-lived nonessential task does not block certification (0.2015ms)
+✔ diagnosis never authorizes a Fix on the record itself (1.099083ms)
+✔ insufficient evidence cannot begin a Fix (0.955042ms)
+✔ certified seed cases pass in deterministic order (428.651667ms)
+✔ invalid synthetic fixture is excluded from the certified set and fails at turn 0 as a Stage-effect error (3.910083ms)
+✔ response failure is distinct from Stage-effect failure (4.063667ms)
+✔ harness uses isolated runtime state per case (7.915625ms)
+✔ funnel catalog has four levels, no skips, and Level 4 is last (0.259833ms)
+✔ conversation path scope is quiet until explicitly enabled (0.939208ms)
+✔ path projection reads existing Stage and DIR results without a second store (108.496041ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 46
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1432.674666
+

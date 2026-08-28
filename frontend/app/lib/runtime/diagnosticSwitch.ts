@@ -80,7 +80,7 @@ export function isDiagnosticEnabled(scope?: string): boolean {
   if (!scope) return true;
   const status = getDiagnosticStatus();
   const scopedValue = status.scopes[scope];
-  if (scope === "panel" || scope === "scene" || scope === "acceptanceGate") return scopedValue ?? false;
+  if (scope === "panel" || scope === "scene" || scope === "acceptanceGate" || scope === "nxaConversation") return scopedValue ?? false;
   return scopedValue ?? true;
 }
 

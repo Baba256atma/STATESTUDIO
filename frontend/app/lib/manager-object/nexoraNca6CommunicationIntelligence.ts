@@ -44,7 +44,7 @@ export type {
 } from "./nexoraNca6CommunicationIntelligenceTypes.ts";
 
 const ARCHITECTURE_LEAK =
-  /\b(?:canonical(?:\s+relationship)?|resolver|runtime|binding|state machine|journey process blocker|process blocker|goal linkage|NCA(?::\d)?|MO(?::\d)?|EI(?::\d)?|WATCH)\b/gi;
+  /\b(?:canonical(?:\s+relationship)?|resolver|runtime|state machine|journey process blocker|process blocker|goal linkage|NCA(?::\d)?|MO(?::\d)?|EI(?::\d)?|WATCH)\b/gi;
 
 type CommunicationSignals = {
   readonly brief: boolean;
@@ -317,6 +317,9 @@ function restoreTruth(adapted: string, source: string, option: string | null): s
   }
   const uncertainty = uncertaintyClause(source);
   if (uncertainty && !uncertaintyClause(next)) next = join([next, uncertainty]);
+  if (/\bnot proven\b/i.test(source) && !/\b(?:not proven|assumption)\b/i.test(next)) {
+    next = join([next, "Causality is not proven."]);
+  }
   if (/moderately confident|moderate confidence/i.test(source) && !/moderat/i.test(next)) {
     next = join([next, "I'm moderately confident."]);
   }
@@ -692,17 +695,21 @@ export function applyNca6StrategyToResponse(input: {
   readonly locked: boolean;
 }): string {
   const technical = Boolean(input.strategy.strategy.vocabulary.explainInternalTerms);
+  const preserveCausalQualification = (adapted: string): string =>
+    /\bnot proven\b/i.test(input.source) && !/\b(?:not proven|assumption)\b/i.test(adapted)
+      ? join([adapted, "Causality is not proven."])
+      : adapted;
   if (input.locked) {
-    return rewriteTautologicalAttentionLanguage(
+    return preserveCausalQualification(rewriteTautologicalAttentionLanguage(
       stripArchitectureLeak(input.source, technical),
-    );
+    ));
   }
   if (/\?/.test(input.source) && input.strategy.strategy.structure === "INVESTIGATION") {
-    return rewriteTautologicalAttentionLanguage(
+    return preserveCausalQualification(rewriteTautologicalAttentionLanguage(
       restoreTruth(stripArchitectureLeak(input.source, technical), input.source, null),
-    );
+    ));
   }
-  return rewriteTautologicalAttentionLanguage(input.strategy.response ?? input.source);
+  return preserveCausalQualification(rewriteTautologicalAttentionLanguage(input.strategy.response ?? input.source));
 }
 
 export function attachCommunicationSnapshot(

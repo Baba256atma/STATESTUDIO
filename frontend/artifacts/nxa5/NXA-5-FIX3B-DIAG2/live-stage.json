@@ -1,0 +1,322 @@
+{
+  "identity": "NXA:5-FIX3B-DIAG2/Live",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "full": {
+    "baseline": {
+      "focused": "none",
+      "mode": "overview",
+      "category": "none",
+      "visible": 0,
+      "preparing": false,
+      "queueHeader": "none"
+    },
+    "turns": [
+      {
+        "utterance": "hi",
+        "reply": "NexoraHi. I’m ready.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "overview",
+          "category": "none",
+          "visible": 0,
+          "preparing": false,
+          "queueHeader": "none"
+        }
+      },
+      {
+        "utterance": "show problems",
+        "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      },
+      {
+        "utterance": "show all executive",
+        "reply": "NexoraDo you mean Margin Pressure or Capacity Gap?",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      },
+      {
+        "utterance": "I am asking of Executions",
+        "reply": "NexoraThat helps. It strengthens the capacity-pressure hypothesis. It strengthens the case for investigating capacity, without treating capacity as a confirmed cause.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      },
+      {
+        "utterance": "show me execution",
+        "reply": "NexoraI'm not sure which issue you mean. Name the one you want to investigate.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "execution",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Executions · 2"
+        }
+      }
+    ]
+  },
+  "D1": {
+    "baseline": {
+      "focused": "none",
+      "mode": "overview",
+      "category": "none",
+      "visible": 0,
+      "preparing": false,
+      "queueHeader": "none"
+    },
+    "turns": [
+      {
+        "utterance": "show executions",
+        "reply": "NexoraWhich decision do you want to approve?",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "execution",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Executions · 2"
+        }
+      }
+    ]
+  },
+  "D2": {
+    "baseline": {
+      "focused": "none",
+      "mode": "overview",
+      "category": "none",
+      "visible": 0,
+      "preparing": false,
+      "queueHeader": "none"
+    },
+    "turns": [
+      {
+        "utterance": "show execution",
+        "reply": "NexoraCurrent Executions: Capacity Expansion, Pricing Rollout.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "execution",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Executions · 2"
+        }
+      }
+    ]
+  },
+  "D3": {
+    "baseline": {
+      "focused": "none",
+      "mode": "overview",
+      "category": "none",
+      "visible": 0,
+      "preparing": false,
+      "queueHeader": "none"
+    },
+    "turns": [
+      {
+        "utterance": "show me all executions",
+        "reply": "NexoraWhich decision do you want to approve?",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "execution",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Executions · 2"
+        }
+      }
+    ]
+  },
+  "D4": {
+    "baseline": {
+      "focused": "none",
+      "mode": "overview",
+      "category": "none",
+      "visible": 0,
+      "preparing": false,
+      "queueHeader": "none"
+    },
+    "turns": [
+      {
+        "utterance": "show all executive",
+        "reply": "NexoraI couldn't find a clear match for “All Executive” in the current executive context.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "overview",
+          "category": "none",
+          "visible": 0,
+          "preparing": false,
+          "queueHeader": "none"
+        }
+      }
+    ]
+  },
+  "D7": {
+    "baseline": {
+      "focused": "none",
+      "mode": "overview",
+      "category": "none",
+      "visible": 0,
+      "preparing": false,
+      "queueHeader": "none"
+    },
+    "turns": [
+      {
+        "utterance": "show problems",
+        "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      },
+      {
+        "utterance": "which one is important?",
+        "reply": "NexoraImportant in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      },
+      {
+        "utterance": "show executions",
+        "reply": "NexoraWhich decision do you mean — Margin Pressure or Capacity Gap?",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "execution",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Executions · 2"
+        }
+      }
+    ]
+  },
+  "D8": {
+    "baseline": {
+      "focused": "none",
+      "mode": "overview",
+      "category": "none",
+      "visible": 0,
+      "preparing": false,
+      "queueHeader": "none"
+    },
+    "turns": [
+      {
+        "utterance": "show problems",
+        "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      },
+      {
+        "utterance": "which one is important?",
+        "reply": "NexoraImportant in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      },
+      {
+        "utterance": "urgency",
+        "reply": "NexoraI don’t have enough comparable urgency evidence for Capacity Gap and Margin Pressure to select one. You can ask me to compare them on another explicit criterion, such as risk exposure or evidence strength.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "problem",
+          "visible": 2,
+          "preparing": false,
+          "queueHeader": "Problems · 2"
+        }
+      }
+    ]
+  },
+  "D10": {
+    "baseline": {
+      "focused": "none",
+      "mode": "overview",
+      "category": "none",
+      "visible": 0,
+      "preparing": false,
+      "queueHeader": "none"
+    },
+    "turns": [
+      {
+        "utterance": "show scenarios",
+        "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "scenario",
+          "visible": 3,
+          "preparing": false,
+          "queueHeader": "Scenarios · 3"
+        }
+      },
+      {
+        "utterance": "exlpain Demand Surge",
+        "reply": "NexoraScenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+        "focused": "none",
+        "stage": {
+          "focused": "none",
+          "mode": "collection",
+          "category": "scenario",
+          "visible": 3,
+          "preparing": false,
+          "queueHeader": "Scenarios · 3"
+        }
+      }
+    ]
+  }
+}

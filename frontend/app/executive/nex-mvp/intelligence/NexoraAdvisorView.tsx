@@ -108,6 +108,16 @@ function optionLinePrefix(kind: NexoraExi4OptionLine["kind"]): string {
   return "–";
 }
 
+function priorityHeading(experience: NexoraExecutiveIntelligenceExperience): string {
+  const topId = experience.corePriorityAssessment.topPriority?.subjectId ?? null;
+  const kind = experience.corePriorityAssessment.candidates.find((candidate) => candidate.subjectId === topId)?.eligibleKind;
+  if (kind === "problem") return "Investigation Priority";
+  if (kind === "risk") return "Risk Priority";
+  if (kind === "opportunity") return "Opportunity Priority";
+  if (kind === "decision") return "Decision Priority";
+  return "Current Evidence Priority";
+}
+
 function renderOptionCards(cards: readonly NexoraExi4OptionCard[]) {
   if (cards.length === 0) return null;
   return (
@@ -269,7 +279,7 @@ export function NexoraAdvisorView({
           }}
         >
           <p style={{ ...sectionLabelStyle(), color: cockpit.textSoft }}>
-            Top Priority
+            {priorityHeading(intelligenceExperience)}
           </p>
           <p
             style={{

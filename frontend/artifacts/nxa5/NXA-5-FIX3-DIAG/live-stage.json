@@ -1,0 +1,95 @@
+{
+  "identity": "NXA:5-FIX3-DIAG/LiveStage",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "A": [
+    {
+      "utterance": "show scenarios",
+      "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+      "focused": "none",
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "scenario",
+        "visible": 3,
+        "breadcrumb": "Overview/ScenariosBack",
+        "queueHeader": "Scenarios · 3",
+        "goalRow": false
+      }
+    },
+    {
+      "utterance": "exlpain Demand Surge",
+      "reply": "NexoraFocused on Demand Surge.",
+      "focused": "ctx-scenario-demand",
+      "stage": {
+        "focused": "ctx-scenario-demand",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0,
+        "breadcrumb": "Overview/Scenarios/Demand SurgeBack",
+        "queueHeader": "none",
+        "goalRow": false
+      }
+    }
+  ],
+  "B": [
+    {
+      "utterance": "show me problems",
+      "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+      "focused": "none",
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "problem",
+        "visible": 2,
+        "breadcrumb": "Overview/ProblemsBack",
+        "queueHeader": "Problems · 2",
+        "goalRow": false
+      }
+    },
+    {
+      "utterance": "which one of prolems is important?",
+      "reply": "NexoraWe don’t have comparable impact evidence to say which is more important overall, and the current evidence does not support choosing a defensible first investigation either.",
+      "focused": "none",
+      "stage": {
+        "focused": "none",
+        "mode": "collection",
+        "category": "problem",
+        "visible": 2,
+        "breadcrumb": "Overview/ProblemsBack",
+        "queueHeader": "Problems · 2",
+        "goalRow": false
+      }
+    }
+  ],
+  "C": [
+    {
+      "utterance": "show Demand Surge",
+      "reply": "NexoraFocused on Demand Surge.",
+      "focused": "ctx-scenario-demand",
+      "stage": {
+        "focused": "ctx-scenario-demand",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0,
+        "breadcrumb": "Overview/Demand SurgeBack",
+        "queueHeader": "none",
+        "goalRow": false
+      }
+    },
+    {
+      "utterance": "show me all goals",
+      "reply": "NexoraI don't see any Goals in the current context.",
+      "focused": "ctx-scenario-demand",
+      "stage": {
+        "focused": "ctx-scenario-demand",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0,
+        "breadcrumb": "Overview/Demand SurgeBack",
+        "queueHeader": "none",
+        "goalRow": false
+      }
+    }
+  ]
+}

@@ -239,8 +239,8 @@ export function buildNexoraConversationalExperienceResponse(input: {
         return "That executive context isn't available yet.";
       }
       return hintRaw
-        ? `I don't have a clear match for “${titleCase(hintRaw)}” in the current executive context.`
-        : "I don't have a clear match in the current executive context.";
+        ? `I couldn't find a clear match for “${titleCase(hintRaw)}” in the current executive context.`
+        : "I couldn't find a clear match in the current executive context.";
     }
 
     case "unsupported":

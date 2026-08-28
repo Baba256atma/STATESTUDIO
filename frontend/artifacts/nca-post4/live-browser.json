@@ -1,0 +1,12 @@
+{
+  "route":"http://localhost:3000/executive",
+  "originalPath":{"finalCandidateIds":["ctx-problem-capacity","ctx-problem-margin"],"candidateKind":"PROBLEM","mode":"PRIORITIZE","criterion":"OVERALL_SIGNIFICANCE","advisoryCompatible":false,"advisor":"Both Capacity Gap and Margin Pressure are current problem items, but I don’t have enough comparable evidence to rank one over the other on overall significance.","stageMembers":["ctx-problem-capacity","ctx-problem-margin"],"focused":null},
+  "compareThem":{"candidateIds":["ctx-problem-capacity","ctx-problem-margin"]},
+  "criterionFollowUp":{"criterion":"DELIVERY_IMPACT","whyPreservedCandidates":true},
+  "scenarioSwitch":{"candidateKind":"SCENARIO","candidateCount":3,"problemContamination":false},
+  "returnToProblems":{"candidateKind":"PROBLEM","criterion":"URGENCY"},
+  "emptyCollection":{"kind":"GOAL","candidateIds":[],"fabricated":false,"borrowedStaleHistory":false},
+  "stage":{"collectionRemainedVisible":true,"arbitraryStaleFocus":false},
+  "pageErrors":[],
+  "screenshots":["live-original-path.png","live-return-problems.png","live-empty-collection.png"]
+}

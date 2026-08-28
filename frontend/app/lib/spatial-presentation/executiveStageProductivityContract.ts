@@ -124,9 +124,12 @@ export type ExecutiveStageDisclosureReason =
 
 export type ExecutiveQueueCategory =
   | "problem"
+  | "risk"
+  | "opportunity"
   | "scenario"
   | "decision"
-  | "execution";
+  | "execution"
+  | "goal";
 
 /**
  * Queue entries are collection/disclosure controls — never topology subjects,
@@ -717,9 +720,12 @@ export function resolveExecutiveQueueSummary(input: {
 }): readonly ExecutiveQueueEntry[] {
   const buckets: Record<ExecutiveQueueCategory, string[]> = {
     problem: [],
+    risk: [],
+    opportunity: [],
     scenario: [],
     decision: [],
     execution: [],
+    goal: [],
   };
 
   for (const subject of input.subjects) {

@@ -87,6 +87,12 @@ const PROTECTED_INTENT_KINDS = new Set([
   "reject-decision",
   "defer-decision",
   "reconsider-decision",
+  "explore-scenario",
+  "define-scenario",
+  "compare-scenarios",
+  "explain-scenario",
+  "modify-scenario",
+  "select-scenario-reference",
   "greet",
   "navigate-back",
   "navigate-forward",
@@ -114,6 +120,14 @@ export function applyContextualMeaningToIntent(
   contextual: ContextualManagerMeaning,
 ): NexoraConversationalIntentResolution {
   if (PROTECTED_INTENT_KINDS.has(resolution.intent.kind)) {
+    return resolution;
+  }
+  // A rejected hypothetical grammar must remain unknown; contextual NLU may
+  // enrich a recognized Scenario intent but cannot manufacture one.
+  if (
+    resolution.intent.kind === "unknown" &&
+    /^(?:what if|what (?:would )?happen(?:s|ed)? if|simulate)\b/i.test(contextual.turnMeaning.rawUtterance)
+  ) {
     return resolution;
   }
   if (contextual.commitsDecision || contextual.startsExecution) {

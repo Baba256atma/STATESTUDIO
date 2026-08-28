@@ -157,7 +157,14 @@ export type NexoraConversationState = {
   readonly lastCollection: {
     readonly kind: string;
     readonly items: readonly string[];
+    readonly memberIds?: readonly string[];
+    readonly establishedAtTurn?: number;
+    readonly scope?: string | null;
+    readonly source?: string;
   } | null;
+  readonly activeComparison?: import("./nexoraNcaPost4CollectionComparison.ts").ActiveComparisonContext | null;
+  readonly lastAuthorizedPresentation?: import("./nexoraNxa5Fix4StageContextIntelligence.ts").LastAuthorizedPresentation | null;
+  readonly pendingPresentationConsent?: import("./nexoraNxa5Fix4StageContextIntelligence.ts").PendingPresentationConsent | null;
 };
 
 export type NcaFailedConversationTurn = {

@@ -1,0 +1,13 @@
+{
+  "route": "http://localhost:3000/executive",
+  "problems": {"advisor": ["Capacity Gap", "Margin Pressure"], "stage": ["ctx-problem-capacity", "ctx-problem-margin"], "focused": null},
+  "scenarios": {"advisor": ["Capacity Expansion Plan", "Demand Surge", "Pricing Response"], "stage": ["ctx-scenario-capacity", "ctx-scenario-demand", "ctx-scenario-pricing"], "focused": null},
+  "executions": {"advisor": ["Capacity Expansion", "Pricing Rollout"], "stageCount": 2, "focused": null, "businessMutation": false},
+  "decisions": {"advisor": ["Expand Capacity", "Approve Repricing"], "stageCount": 2, "focused": null, "businessMutation": false},
+  "collectionToFocus": {"focused": "ctx-problem-capacity"},
+  "returnToCollection": {"stage": ["ctx-problem-capacity", "ctx-problem-margin"], "focused": null},
+  "noChange": {"thanks": true, "workspaceRead": true, "explain": true},
+  "menuParity": {"problemMenuCount": 2, "directorTargetCount": 2, "equal": true},
+  "pageErrors": [],
+  "screenshots": ["live-problems.png", "live-scenarios.png", "live-executions.png", "live-decisions.png", "live-collection-to-focus.png", "live-return-collection.png"]
+}

@@ -135,6 +135,8 @@
     "lint": "eslint",
     "nexora:zero-failure-smoke": "node scripts/nexora-zero-failure-live-smoke.mjs",
     "nexora:zero-failure-gate": "node scripts/nexora-zero-failure-gate.mjs",
+    "nxa:funnel": "node scripts/nxa-test-funnel.mjs",
+    "nxa:harness": "node scripts/nxa-conversation-harness.mjs",
     "gen:api": "../backend/.venv/bin/python ../backend/scripts/export_openapi.py ../backend/openapi.json && node ./scripts/generate-api-types.mjs ../backend/openapi.json ./app/lib/api/generated.ts"
   },
   "dependencies": {

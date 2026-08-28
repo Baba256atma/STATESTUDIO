@@ -1,0 +1,24 @@
+{
+  "identity": "NXA:6-PREP/ConversationDiagnosis",
+  "defectId": "NXA-5-FIX3-DIAG-C",
+  "utteranceSequence": ["show Demand Surge", "show me all goals"],
+  "setup": "Independent of defect A: explicit show Demand Surge then show me all goals. Also reproduced after the typo sequence.",
+  "currentFocus": "ctx-scenario-demand",
+  "activeCollection": "GOAL (empty membership)",
+  "journeyOrDialogue": "TOPIC_SHIFT; Stage remains Demand Surge focus",
+  "refreshOrRestoration": null,
+  "expected": "Do not invent a Goal. Truthful empty collection. Preserve pre-turn Stage. Optional continuation via existing Goal Discovery without Stage mutation.",
+  "actual": "POST:3 GOAL members=[]. Reply I don't see any Goals in the current context. DIR NO_CHANGE canonical-collection-empty. CC:4 reveal-goals unsupported. Focus remains Demand Surge. Queue has no Goals row.",
+  "firstDivergentLayer": "None versus empty-collection safety. Membership authority is POST:3 contextual GOAL collection (empty), not catalog absence of a Goal-labelled subject. Continuation guidance is not currently required by a certified empty-Goals contract.",
+  "authoritativeOwner": "NCA-POST:3 composeCanonicalCollectionReply for empty copy; DIR:1 empty SHOW_COLLECTION → NO_CHANGE; CC:4 reveal-goals unsupported (no Queue Goals presenter).",
+  "neighboringBehaviors": [
+    "NEX-EXP:2 Goal Discovery exists and requires manager participation",
+    "NLU mentions Close Capacity Gap on the Goals utterance but CC:1 show-goals wins so overlay does not focus it"
+  ],
+  "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3-DIAG/reproduce-nxa5-fix3-diag.ts",
+  "failureClass": "deterministic",
+  "evidenceRequiredBeforeFix": [],
+  "verdict": "EXPECTED_BEHAVIOR",
+  "impactClassification": "EXPECTED_BUT_INCOMPLETE",
+  "fixAuthorized": false
+}

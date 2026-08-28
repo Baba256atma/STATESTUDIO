@@ -126,9 +126,12 @@ export function decodeExecutiveQueueCollectionTrailId(
   const category = id.slice(EXECUTIVE_QUEUE_COLLECTION_TRAIL_PREFIX.length);
   if (
     category === "problem" ||
+    category === "risk" ||
+    category === "opportunity" ||
     category === "scenario" ||
     category === "decision" ||
     category === "execution" ||
+    category === "goal" ||
     category === "changes-since-visit"
   ) {
     return category;
@@ -145,9 +148,12 @@ export const EXECUTIVE_QUEUE_CATEGORY_ORDER = Object.freeze([
 
 export const EXECUTIVE_QUEUE_CATEGORY_LABELS = Object.freeze({
   problem: "Problems",
+  risk: "Risks",
+  opportunity: "Opportunities",
   scenario: "Scenarios",
   decision: "Decisions",
   execution: "Executions",
+  goal: "Goals",
   "changes-since-visit": "Recent Changes",
 } as const);
 
@@ -189,9 +195,12 @@ function resolveQueueCategory(
   const kind = normalizeToken(subject.workKind ?? subject.objectKind);
   if (
     kind === "problem" ||
+    kind === "risk" ||
+    kind === "opportunity" ||
     kind === "scenario" ||
     kind === "decision" ||
-    kind === "execution"
+    kind === "execution" ||
+    kind === "goal"
   ) {
     return kind;
   }
@@ -241,9 +250,12 @@ export function resolveExecutiveQueueEntries(input: {
 }): readonly ExecutiveQueueEntry[] {
   const buckets: Record<ExecutiveQueueCategory, string[]> = {
     problem: [],
+    risk: [],
+    opportunity: [],
     scenario: [],
     decision: [],
     execution: [],
+    goal: [],
   };
 
   for (const subject of input.subjects) {
@@ -532,9 +544,12 @@ export function buildExecutiveQueueFoundationObservability(input: {
 }> {
   const queueCounts = Object.freeze({
     problem: input.queue.find((e) => e.category === "problem")?.count ?? 0,
+    risk: input.queue.find((e) => e.category === "risk")?.count ?? 0,
+    opportunity: input.queue.find((e) => e.category === "opportunity")?.count ?? 0,
     scenario: input.queue.find((e) => e.category === "scenario")?.count ?? 0,
     decision: input.queue.find((e) => e.category === "decision")?.count ?? 0,
     execution: input.queue.find((e) => e.category === "execution")?.count ?? 0,
+    goal: input.queue.find((e) => e.category === "goal")?.count ?? 0,
   });
   return Object.freeze({
     contract: executiveStageQueueFoundationIdentity,

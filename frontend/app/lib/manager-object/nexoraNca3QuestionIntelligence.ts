@@ -60,6 +60,35 @@ export function verifyNexoraNca3(): { readonly ok: true } {
   return Object.freeze({ ok: true as const });
 }
 
+export type Nca3ComparisonClarification = Readonly<{
+  question: string;
+  purpose: "comparison-criterion" | "comparison-subjects";
+  expectedInformation: "PRIORITY" | "ENTITY";
+  questionPurpose: "CLARIFY_COMPARISON_CRITERION" | "CLARIFY_COMPARISON_SUBJECTS";
+}>;
+
+/** Bounded comparison clarification composed by the existing NCA:3 question authority. */
+export function buildNca3ComparisonCriterionClarification(input: {
+  readonly hasActiveGoal: boolean;
+}): Nca3ComparisonClarification {
+  const goalCriterion = input.hasActiveGoal ? "impact on the current Goal, " : "";
+  return Object.freeze({
+    question: `Important in which sense—${goalCriterion}urgency, financial impact, risk exposure, evidence strength, or which to investigate first?`,
+    purpose: "comparison-criterion",
+    expectedInformation: "PRIORITY",
+    questionPurpose: "CLARIFY_COMPARISON_CRITERION",
+  });
+}
+
+export function buildNca3ComparisonSubjectClarification(): Nca3ComparisonClarification {
+  return Object.freeze({
+    question: "Which Problems or objects do you want me to compare?",
+    purpose: "comparison-subjects",
+    expectedInformation: "ENTITY",
+    questionPurpose: "CLARIFY_COMPARISON_SUBJECTS",
+  });
+}
+
 function preparedOf(utterance: string): string {
   return utterance.trim().toLowerCase().replace(/[.!]+$/g, "");
 }

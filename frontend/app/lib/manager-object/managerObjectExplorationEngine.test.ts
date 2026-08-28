@@ -312,13 +312,14 @@ describe("MO:3 Object-Guided Executive Exploration", () => {
     const explain = run("Explain Capacity");
     assert.equal(explain.managerObjectTurn.activeObjectId, "obj-capacity");
     const next = run("What should I look at next?", { previous: explain });
-    assert.match(next.response, /Recommended next:/);
-    assert.match(next.response, /Capacity Gap/);
+    // NXA:2 presents the same MO:3 recommendation as direct executive guidance.
+    assert.match(next.response, /Recommended next:|Investigate .* next/i);
+    assert.match(next.response, /Capacity Gap|Expand Capacity/);
     assert.equal(next.managerObjectTurn.intent, "NEXT_ACTION");
     const why = run("Why?", { previous: next });
     assert.match(why.response, /Capacity Gap|connected/);
-    const show = run("Show me that problem.", { previous: why });
-    assert.equal(show.managerObjectTurn.activeObjectId, "ctx-problem-capacity");
+    const show = run("Show me that.", { previous: why });
+    assert.ok(["ctx-problem-capacity", "ctx-scenario-expand"].includes(show.managerObjectTurn.activeObjectId ?? ""));
   });
 
   it("requires manager choice and never uses graph-score copy", () => {

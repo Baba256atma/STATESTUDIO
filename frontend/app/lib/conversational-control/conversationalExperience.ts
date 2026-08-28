@@ -313,6 +313,40 @@ export type NexoraConversationalExperienceTrace = {
   readonly nca7Ask?: boolean;
   readonly nca7Advise?: boolean;
   readonly nca7Initiate?: boolean;
+  readonly nxaIdentity?: string | null;
+  readonly nxaRole?: string | null;
+  readonly nxaNeed?: string | null;
+  readonly nxaReferent?: string | null;
+  readonly nxaReferentSource?: string | null;
+  readonly nxaNavigationAllowed?: boolean;
+  readonly nxaEvidenceRequired?: boolean;
+  readonly nxa2Identity?: string | null;
+  readonly nxa2Behavior?: string | null;
+  readonly nxa2Valuable?: boolean;
+  readonly nxa2QuestionGap?: string | null;
+  readonly nxa2RepetitionBlocked?: boolean;
+  readonly nxa3Identity?: string | null;
+  readonly nxa3Goal?: string | null;
+  readonly nxa3Focus?: string | null;
+  readonly nxa3CausalStatus?: string | null;
+  readonly nxa3RecommendationStatus?: string | null;
+  readonly nxa3DecisionState?: string | null;
+  readonly nxa3ExecutionState?: string | null;
+  readonly nxa3OutcomeState?: string | null;
+  readonly nxa3ChangeKind?: string | null;
+  readonly nxa3ConflictCount?: number;
+  readonly nxa4Identity?: string | null;
+  readonly nxa4Disposition?: string | null;
+  readonly nxa4Intensity?: string | null;
+  readonly nxa4Materiality?: string | null;
+  readonly nxa4Evidence?: string | null;
+  readonly nxa4Novelty?: string | null;
+  readonly nxa5Identity?: string | null;
+  readonly nxa5JudgmentType?: string | null;
+  readonly nxa5Preferred?: string | null;
+  readonly nxa5RecommendationType?: string | null;
+  readonly nxa5Strength?: string | null;
+  readonly nxa5Readiness?: string | null;
 };
 
 export type NexoraConversationalExperienceResult = {
@@ -361,6 +395,18 @@ export type NexoraConversationalExperienceResult = {
   readonly nca5Strategy?: import("@/app/lib/manager-object/nexoraNca5InitiativeIntelligenceTypes.ts").ExecutiveInitiativeStrategy | null;
   readonly nca6Strategy?: import("@/app/lib/manager-object/nexoraNca6CommunicationIntelligenceTypes.ts").ExecutiveCommunicationStrategy | null;
   readonly nca7Turn?: import("@/app/lib/manager-object/nexoraNca7EndToEndOrchestrationTypes.ts").NexoraConversationTurnResult | null;
+  /** NXA:1 policy projection over NCA/MO; never a second intent authority. */
+  readonly nxaAdvisorContract?: import("@/app/lib/manager-object/nexoraNxa1ExecutiveAdvisorContract.ts").NxaAdvisorTurnContract | null;
+  readonly nxaGuidanceContract?: import("@/app/lib/manager-object/nexoraNxa2ConversationGuidanceContract.ts").NxaConversationGuidanceContract | null;
+  readonly executiveSituation?: import("@/app/lib/manager-object/nexoraNxa3ExecutiveSituation.ts").ExecutiveSituation | null;
+  /** NXA:4 conversational-entry decision over MO:6 + NCA:5 + NXA:3. */
+  readonly proactiveAdvisoryEvaluation?: import("@/app/lib/manager-object/nexoraNxa4ProactiveAdvisory.ts").Nxa4ProactiveAdvisoryEvaluation | null;
+  /** NXA:5 read-only judgment composed from POST:4/EI/MO/NXA authorities. */
+  readonly executiveJudgment?: import("@/app/lib/manager-object/nexoraNxa5ExecutiveJudgment.ts").Nxa5ExecutiveJudgment | null;
+  /** DIR:1 presentation decision; never a business mutation command. */
+  readonly directorPlan?: import("@/app/lib/director/nexoraSemanticPresentationDirector.ts").NexoraDirectorPlan | null;
+  readonly ncaPost3Diagnostics?: import("@/app/lib/manager-object/nexoraNcaPost3SemanticScopeMultiEntityCanonicalCollectionWorkspaceIntelligence.ts").NcaPost3Diagnostics | null;
+  readonly ncaPost4Comparison?: import("@/app/lib/manager-object/nexoraNcaPost4CollectionComparison.ts").ExecutiveCollectionComparisonResult | null;
   /** NEX-EXP:1 session. Omitted when entrance is not active. */
   readonly nextEntranceSession?: import("@/app/lib/nexora-entrance/nexoraEntranceTypes.ts").NexoraEntranceSession | null;
 };

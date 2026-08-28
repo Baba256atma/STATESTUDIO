@@ -1,0 +1,81 @@
+{
+  "ledger": {
+    "identity": "NXA:6-PREP/CertificationTaskLedger",
+    "tasks": [
+      {
+        "id": "diag2-preserve-worktree",
+        "purpose": "Confirm FIX3B uncommitted work not stashed/reverted; DIAG2 writes artifacts only",
+        "command": "git status --short",
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": "frontend/artifacts/nxa5/NXA-5-FIX3B-DIAG2/NXA-5-FIX3B-DIAG2-REPORT.md"
+      },
+      {
+        "id": "diag2-executor",
+        "purpose": "Full conversation + D1–D10 isolated traces and turn B state audit",
+        "command": "npx tsx artifacts/nxa5/NXA-5-FIX3B-DIAG2/reproduce-nxa5-fix3b-diag2.ts",
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": "frontend/artifacts/nxa5/NXA-5-FIX3B-DIAG2/full-conversation-traces.json"
+      },
+      {
+        "id": "diag2-live",
+        "purpose": "Live /executive full sequence + D1–D10 Stage/Advisor",
+        "command": "node artifacts/nxa5/NXA-5-FIX3B-DIAG2/live-nxa5-fix3b-diag2.mjs",
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": "frontend/artifacts/nxa5/NXA-5-FIX3B-DIAG2/live-stage.json"
+      },
+      {
+        "id": "diag2-harness-smoke",
+        "purpose": "NXA:6-PREP harness still green",
+        "command": "node scripts/nxa-conversation-harness.mjs",
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": null
+      },
+      {
+        "id": "diag2-funnel-l1",
+        "purpose": "Focused funnel only (no L4 / no FIX3 milestone)",
+        "command": "npm run nxa:funnel -- --level 1",
+        "required": true,
+        "status": "PASSED",
+        "exitCode": 0,
+        "inspected": true,
+        "artifact": null
+      }
+    ]
+  },
+  "barrier": {
+    "allowed": true,
+    "requiredStarted": 5,
+    "requiredPassed": 5,
+    "requiredFailed": 0,
+    "requiredStillRunning": 0,
+    "requiredUninspected": 0,
+    "requiredNotRun": 0,
+    "requiredCancelledOrBlocked": 0,
+    "nonessentialStillRunning": 0,
+    "blockers": []
+  },
+  "nxaConversation": {
+    "duringExecutor": true,
+    "afterDisable": false
+  },
+  "servers": {
+    "port3000": {
+      "pid": 62339,
+      "command": "node",
+      "ownedByThisTask": false,
+      "action": "left running"
+    }
+  }
+}

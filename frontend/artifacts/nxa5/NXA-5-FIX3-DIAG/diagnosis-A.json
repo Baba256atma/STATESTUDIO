@@ -1,0 +1,24 @@
+{
+  "identity": "NXA:6-PREP/ConversationDiagnosis",
+  "defectId": "NXA-5-FIX3-DIAG-A",
+  "utteranceSequence": ["show scenarios", "exlpain Demand Surge"],
+  "setup": "Clean /executive or isolated CC:5 catalog. First turn presents Scenarios collection.",
+  "currentFocus": null,
+  "activeCollection": "scenario",
+  "journeyOrDialogue": "NEW_TOPIC/SCENARIO after collection; then NAVIGATE/focus",
+  "refreshOrRestoration": null,
+  "expected": "Recover exlpain→explain or otherwise treat as knowledge/UNDERSTAND of Demand Surge; Stage remains Scenarios collection; no focus mutation.",
+  "actual": "CC:1 unknown; NLU FOCUS Demand Surge; overlay to focus; reply Focused on Demand Surge; Stage object-focus ctx-scenario-demand.",
+  "firstDivergentLayer": "FINAL:6.1 overlayConversationalIntentWithCanonicalMeaning: unknown CC:1 + named object + no EXPLAIN cue defaults requestedOperation FOCUS, overlaying CC:1 unknown into focus.",
+  "authoritativeOwner": "FINAL:6.1 NLU overlay (consumes POST:1 entity recovery). CC:1 normalization does not recover command-verb typos. NXA:1 then marks NAVIGATE because operation is FOCUS.",
+  "neighboringBehaviors": [
+    "Control explain Demand Surge stays explain-scenario, UNDERSTAND, DIR NO_CHANGE, collection preserved",
+    "POST:1 recovers entity names not verbs; CC:1 only maps happend→happened"
+  ],
+  "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3-DIAG/reproduce-nxa5-fix3-diag.ts",
+  "failureClass": "deterministic",
+  "evidenceRequiredBeforeFix": [],
+  "verdict": "REPRODUCED",
+  "impactClassification": "UNCOVERED_CAPABILITY_GAP",
+  "fixAuthorized": false
+}

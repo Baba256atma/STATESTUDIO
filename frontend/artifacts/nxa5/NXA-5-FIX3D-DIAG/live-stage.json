@@ -1,0 +1,115 @@
+{
+  "identity": "NXA:5-FIX3D-DIAG/LiveStage",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "turns": [
+    {
+      "utterance": "focus Customer",
+      "reply": "NexoraFocused on Customer.",
+      "focused": "obj-customer",
+      "ui": {
+        "focused": "obj-customer",
+        "presentationState": "minimum",
+        "mode": "object-focus",
+        "advisorTitle": "Subject",
+        "advisorSubject": "Customer",
+        "advisorObservation": "Customer performance is below the preferred operating range and may require investigation.",
+        "advisorRationale": "Customer is in focus for orientation. Keep scanning until Report is needed.",
+        "advisorRecommendation": "Nexora RecommendationOpen ReportCustomer is in focus for orientation. Keep scanning until Report is needed.",
+        "advisorContext": "overview · Customer · minimum",
+        "reportText": null,
+        "kpiText": [
+          {
+            "testid": "executive-cockpit",
+            "text": "NexoraCompanyNexoraWorkspaceOverviewPeriodweekDisplayModelExecutive ModelThemenightdayautoHelpData · LocalHmDtJn···MdObKnInSmSrStExplorer×ExplorerExplorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars.Select a destination from Left NavobjectCustomerInvestigatingReview the situation and evidenceFocused subject: Customer. Presentation: minimumOverview/CustomerBackViewFocusPresentation LevelFocusDetailsActionsQueue11Problems2Scenarios3Decisions2Executions2Recent Changes2Objects · 8RevenueCapacityBudgetCustomerDeliveryRiskInventoryDemandOverviewCUSTOMERWATCHWorkspaceWorkspace Dial‹›OverviewOverviewProblemScenarioDecisionExecution— · ProblemPeriodweekReplayFuturePerioddayweekmonthyearRecentMargin Pressure identifiedCapacity Gap identifiedPricing Response reviewedApprove Repricing createdPositionNow →Nexora Advisor◀ CollapseAdvisorDetailsActive contextoverview · minimum · neutralobject · CustomerRecent Change · 2 executive objects changed materiallyNEXORA DETECTED · urgentCustomer moved from NORMAL to CRITICAL. Capacity Capacity Utilization changed from 13.8 to 50.0%.Current factsCustomer current executive state is CRITICAL.Customer Customer Satisfaction Index is 50.0%.Capacity current executive state is NORMAL.Capacity Capacity Utilization is 50.0%.EvidenceCustomer moved from NORMAL to CRITICAL. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Customer Satisfaction Index: 86.2 → 50.0%. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Capacity Utilization: 13.8 → 50.0%. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Suggested next questionWhy did Customer deteriorate?InvestigateView on StageAcknowledgeDismissSubjectCustomer Performance Requires Attentionoverview · Customer · minimumCustomerSituationCustomer performance is below the preferred operating range and may require investigation.Why it mattersNo validated business consequence is available for this context.Possible contributorsNexora can show related factors (Delivery and Revenue), but current evidence does not establish a cause.Nexora RecommendationOpen ReportCustomer is in focus for orientation. Keep scanning until Report is needed.Evidence limited. Nexora is using local data and does not yet have enough validated evidence to treat this as confirmed.UnknownRecent ChangeCustomer currently needs attention. Nexora does not have a validated prior-state comparison in this session.Next ActionOpen ReportInvestigate in ProblemOutcome and LearningExpected: No measurable expected outcome was recorded for this Decision.Observed: No validated actual outcome is available yet.No live Outcome is available yet. Nexora will not invent one.No promoted Learning is available yet. Nexora will not invent one.Confidence is unknown on the current evidence.Causal attribution has not been established.No relevant historical Learning is currently recorded.DetailsRoot cause has not been established.UnknownPrepareDailyMeetingContext: Customer · Needs attention: MISSING_GOALManagerfocus CustomerNexoraFocused on Customer.Ask NexoraSendConnectedOffAuto SaveOnSyncLocalVersionNexora · 1.2.0NotificationNoneHelp"
+          }
+        ],
+        "pageHasIeee": false,
+        "pageHasRawFact": false,
+        "pageHasMaxSat": false,
+        "pageHas84pct": false
+      }
+    },
+    {
+      "utterance": "[UI] select Report presentation",
+      "reply": "",
+      "focused": "obj-customer",
+      "ui": {
+        "focused": "obj-customer",
+        "presentationState": "report",
+        "mode": "object-focus",
+        "advisorTitle": "Subject",
+        "advisorSubject": "Customer",
+        "advisorObservation": "Customer performance is below the preferred operating range and may require investigation.",
+        "advisorRationale": "Customer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.",
+        "advisorRecommendation": "Nexora RecommendationInvestigate in ProblemCustomer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.",
+        "advisorContext": "overview · Customer · report",
+        "reportText": "ReportCustomerAdvisor / Insight detail binds in the right-side intelligence region",
+        "kpiText": [
+          {
+            "testid": "executive-cockpit",
+            "text": "NexoraCompanyNexoraWorkspaceOverviewPeriodweekDisplayModelExecutive ModelThemenightdayautoHelpData · LocalHmDtJn···MdObKnInSmSrStExplorer×ExplorerExplorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars.Select a destination from Left NavobjectCustomerInvestigatingReview the situation and evidenceFocused subject: Customer. Presentation: reportOverview/CustomerBackViewDetailsPresentation LevelFocusDetailsActionsQueue11Problems2Scenarios3Decisions2Executions2Recent Changes2Objects · 8RevenueCapacityBudgetCustomerDeliveryRiskInventoryDemandOverviewReportCustomerAdvisor / Insight detail binds in the right-side intelligence regionCUSTOMERWATCHWorkspaceWorkspace Dial‹›OverviewOverviewProblemScenarioDecisionExecution— · ProblemPeriodweekReplayFuturePerioddayweekmonthyearRecentMargin Pressure identifiedCapacity Gap identifiedPricing Response reviewedApprove Repricing createdPositionNow →Nexora Advisor◀ CollapseAdvisorDetailsActive contextoverview · report · neutralobject · CustomerRecent Change · 2 executive objects changed materiallyNEXORA DETECTED · urgentCustomer moved from NORMAL to CRITICAL. Capacity Capacity Utilization changed from 13.8 to 50.0%.Current factsCustomer current executive state is CRITICAL.Customer Customer Satisfaction Index is 50.0%.Capacity current executive state is NORMAL.Capacity Capacity Utilization is 50.0%.EvidenceCustomer moved from NORMAL to CRITICAL. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Customer Satisfaction Index: 86.2 → 50.0%. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Capacity Utilization: 13.8 → 50.0%. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Suggested next questionWhy did Customer deteriorate?InvestigateView on StageAcknowledgeDismissSubjectCustomer Performance Requires Attentionoverview · Customer · reportCustomerSituationCustomer performance is below the preferred operating range and may require investigation.Why it mattersNo validated business consequence is available for this context.Possible contributorsNexora can show related factors (Delivery and Revenue), but current evidence does not establish a cause.Nexora RecommendationInvestigate in ProblemCustomer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.Evidence limited. Nexora is using local data and does not yet have enough validated evidence to treat this as confirmed.UnknownRecent ChangeCustomer currently needs attention. Nexora does not have a validated prior-state comparison in this session.Next ActionInvestigate in ProblemOutcome and LearningExpected: No measurable expected outcome was recorded for this Decision.Observed: No validated actual outcome is available yet.No live Outcome is available yet. Nexora will not invent one.No promoted Learning is available yet. Nexora will not invent one.Confidence is unknown on the current evidence.Causal attribution has not been established.No relevant historical Learning is currently recorded.DetailsRoot cause has not been established.UnknownPrepareDailyMeetingContext: Customer · Needs attention: MISSING_GOALManagerfocus CustomerNexoraFocused on Customer.Ask NexoraSendConnectedOffAuto SaveOnSyncLocalVersionNexora · 1.2.0NotificationNoneHelp"
+          }
+        ],
+        "pageHasIeee": true,
+        "pageHasRawFact": true,
+        "pageHasMaxSat": true,
+        "pageHas84pct": false
+      }
+    },
+    {
+      "utterance": "Continue reviewing Customer",
+      "reply": "NexoraAlready on Customer.",
+      "focused": "obj-customer",
+      "ui": {
+        "focused": "obj-customer",
+        "presentationState": "report",
+        "mode": "object-focus",
+        "advisorTitle": "Subject",
+        "advisorSubject": "Customer",
+        "advisorObservation": "Customer performance is below the preferred operating range and may require investigation.",
+        "advisorRationale": "Customer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.",
+        "advisorRecommendation": "Nexora RecommendationInvestigate in ProblemCustomer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.",
+        "advisorContext": "overview · Customer · report",
+        "reportText": "ReportCustomerAdvisor / Insight detail binds in the right-side intelligence region",
+        "kpiText": [
+          {
+            "testid": "executive-cockpit",
+            "text": "NexoraCompanyNexoraWorkspaceOverviewPeriodweekDisplayModelExecutive ModelThemenightdayautoHelpData · LocalHmDtJn···MdObKnInSmSrStExplorer×ExplorerExplorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars.Select a destination from Left NavobjectCustomerInvestigatingReview the situation and evidenceFocused subject: Customer. Presentation: reportOverview/CustomerBackViewDetailsPresentation LevelFocusDetailsActionsQueue11Problems2Scenarios3Decisions2Executions2Recent Changes2Objects · 8RevenueCapacityBudgetCustomerDeliveryRiskInventoryDemandOverviewReportCustomerAdvisor / Insight detail binds in the right-side intelligence regionCUSTOMERWATCHWorkspaceWorkspace Dial‹›OverviewOverviewProblemScenarioDecisionExecution— · ProblemPeriodweekReplayFuturePerioddayweekmonthyearRecentMargin Pressure identifiedCapacity Gap identifiedPricing Response reviewedApprove Repricing createdPositionNow →Nexora Advisor◀ CollapseAdvisorDetailsActive contextoverview · report · neutralobject · CustomerRecent Change · 2 executive objects changed materiallyNEXORA DETECTED · urgentCustomer moved from NORMAL to CRITICAL. Capacity Capacity Utilization changed from 13.8 to 50.0%.Current factsCustomer current executive state is CRITICAL.Customer Customer Satisfaction Index is 50.0%.Capacity current executive state is NORMAL.Capacity Capacity Utilization is 50.0%.EvidenceCustomer moved from NORMAL to CRITICAL. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Customer Satisfaction Index: 86.2 → 50.0%. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Capacity Utilization: 13.8 → 50.0%. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Suggested next questionWhy did Customer deteriorate?InvestigateView on StageAcknowledgeDismissSubjectCustomer Performance Requires Attentionoverview · Customer · reportCustomerSituationCustomer performance is below the preferred operating range and may require investigation.Why it mattersNo validated business consequence is available for this context.Possible contributorsNexora can show related factors (Delivery and Revenue), but current evidence does not establish a cause.Nexora RecommendationInvestigate in ProblemCustomer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.Evidence limited. Nexora is using local data and does not yet have enough validated evidence to treat this as confirmed.UnknownRecent ChangeCustomer currently needs attention. Nexora does not have a validated prior-state comparison in this session.Next ActionInvestigate in ProblemOutcome and LearningExpected: No measurable expected outcome was recorded for this Decision.Observed: No validated actual outcome is available yet.No live Outcome is available yet. Nexora will not invent one.No promoted Learning is available yet. Nexora will not invent one.Confidence is unknown on the current evidence.Causal attribution has not been established.No relevant historical Learning is currently recorded.DetailsRoot cause has not been established.UnknownPrepareDailyMeetingContext: Customer · Goal: Unknown goal · Needs attention: CustomerManagerfocus CustomerNexoraFocused on Customer.ManagerContinue reviewing CustomerNexoraAlready on Customer.Ask NexoraSendConnectedOffAuto SaveOnSyncLocalVersionNexora · 1.2.0NotificationNoneHelp"
+          }
+        ],
+        "pageHasIeee": true,
+        "pageHasRawFact": true,
+        "pageHasMaxSat": true,
+        "pageHas84pct": false
+      }
+    },
+    {
+      "utterance": "explain Customer",
+      "reply": "NexoraCustomer has not been resolved yet, so it still deserves attention. Customer is associated with Delivery. That connection does not by itself tell us whether Customer is affecting Delivery or the reverse. No outcome has been measured yet.",
+      "focused": "obj-customer",
+      "ui": {
+        "focused": "obj-customer",
+        "presentationState": "report",
+        "mode": "object-focus",
+        "advisorTitle": "Subject",
+        "advisorSubject": "Customer",
+        "advisorObservation": "Customer performance is below the preferred operating range and may require investigation.",
+        "advisorRationale": "Customer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.",
+        "advisorRecommendation": "Nexora RecommendationInvestigate in ProblemCustomer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.",
+        "advisorContext": "overview · Customer · report",
+        "reportText": "ReportCustomerAdvisor / Insight detail binds in the right-side intelligence region",
+        "kpiText": [
+          {
+            "testid": "executive-cockpit",
+            "text": "NexoraCompanyNexoraWorkspaceOverviewPeriodweekDisplayModelExecutive ModelThemenightdayautoHelpData · LocalHmDtJn···MdObKnInSmSrStExplorer×ExplorerExplorer content mounts in this drawer. Left navigation switches mode without creating separate permanent sidebars.Select a destination from Left NavobjectCustomerInvestigatingReview the situation and evidenceFocused subject: Customer. Presentation: reportOverview/CustomerBackViewDetailsPresentation LevelFocusDetailsActionsQueue11Problems2Scenarios3Decisions2Executions2Recent Changes2Objects · 8RevenueCapacityBudgetCustomerDeliveryRiskInventoryDemandOverviewReportCustomerAdvisor / Insight detail binds in the right-side intelligence regionCUSTOMERWATCHWorkspaceWorkspace Dial‹›OverviewOverviewProblemScenarioDecisionExecution— · ProblemPeriodweekReplayFuturePerioddayweekmonthyearRecentMargin Pressure identifiedCapacity Gap identifiedPricing Response reviewedApprove Repricing createdPositionNow →Nexora Advisor◀ CollapseAdvisorDetailsActive contextoverview · report · neutralobject · CustomerRecent Change · 2 executive objects changed materiallyNEXORA DETECTED · urgentCustomer moved from NORMAL to CRITICAL. Capacity Capacity Utilization changed from 13.8 to 50.0%.Current factsCustomer current executive state is CRITICAL.Customer Customer Satisfaction Index is 50.0%.Capacity current executive state is NORMAL.Capacity Capacity Utilization is 50.0%.EvidenceCustomer moved from NORMAL to CRITICAL. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Customer Satisfaction Index: 86.2 → 50.0%. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Capacity Utilization: 13.8 → 50.0%. · rdi4:snapshot:PM2-github:overview:vercel/next.js-20260820153437420Suggested next questionWhy did Customer deteriorate?InvestigateView on StageAcknowledgeDismissSubjectCustomer Performance Requires Attentionoverview · Customer · reportCustomerSituationCustomer performance is below the preferred operating range and may require investigation.Why it mattersNo validated business consequence is available for this context.Possible contributorsNexora can show related factors (Delivery and Revenue), but current evidence does not establish a cause.Nexora RecommendationInvestigate in ProblemCustomer Performance Requires Attention Customer requires executive attention. Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score. Customer performance is below the preferred operating range and may require investigation. Investigate Customer watch conditions.Evidence limited. Nexora is using local data and does not yet have enough validated evidence to treat this as confirmed.UnknownRecent ChangeCustomer currently needs attention. Nexora does not have a validated prior-state comparison in this session.Next ActionInvestigate in ProblemOutcome and LearningExpected: No measurable expected outcome was recorded for this Decision.Observed: No validated actual outcome is available yet.No live Outcome is available yet. Nexora will not invent one.No promoted Learning is available yet. Nexora will not invent one.Confidence is unknown on the current evidence.Causal attribution has not been established.No relevant historical Learning is currently recorded.DetailsRoot cause has not been established.UnknownPrepareDailyMeetingContext: Customer · Goal: Unknown goal · Needs attention: CustomerManagerfocus CustomerNexoraFocused on Customer.ManagerContinue reviewing CustomerNexoraAlready on Customer.Managerexplain CustomerNexoraCustomer has not been resolved yet, so it still deserves attention. Customer is associated with Delivery. That connection does not by itself tell us whether Customer is affecting Delivery or the reverse. No outcome has been measured yet.Ask NexoraSendConnectedOffAuto SaveOnSyncLocalVersionNexora · 1.2.0NotificationNoneHelp"
+          }
+        ],
+        "pageHasIeee": true,
+        "pageHasRawFact": true,
+        "pageHasMaxSat": true,
+        "pageHas84pct": false
+      }
+    }
+  ]
+}

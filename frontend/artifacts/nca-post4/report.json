@@ -1,0 +1,1 @@
+{"identity":"NCA-POST:4/CollectionAwareComparisonFollowUpPrecedenceAdvisoryIsolation","version":"1.0.0","namespace":"nexora.nca.post.collection-aware-comparison-precedence-advisory-isolation","verdict":"NOT_CERTIFIED","reason":"Mandatory combined regression gate is 279/280; CC:10 Scenario B commitment handoff remains failing."}

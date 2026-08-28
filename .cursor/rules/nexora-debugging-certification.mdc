@@ -1,0 +1,13 @@
+---
+description: Nexora diagnosis, Test Funnel, and certification barrier rules
+alwaysApply: true
+---
+
+# Nexora debugging and certification
+
+- Reuse the existing authority. One owner per concept. No parallel truth or presenter.
+- Advisor/conversation consume Stage, collection, journey, Goal, Decision, Execution, Outcome, Learning, and evidence; they do not own them.
+- Reproduce first. Record expected vs actual and the first divergent layer. Diagnosis is not a Fix.
+- Funnel: focused → owning layer → integration → milestone certification. No Level 4 after every small edit.
+- Zero-Failure: no skips, no known failures carried forward, no CERTIFIED while required tasks run or remain uninspected.
+- Stop at the requested Stop Condition. Do not start the next named Nexora phase automatically.

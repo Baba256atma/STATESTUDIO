@@ -10,12 +10,10 @@ import { isSocialAckUtterance } from "./nexoraNca1ConversationArchitecture.ts";
 import {
   classifyManagerSpeechAct,
   collectionOrdinalIndex,
-  greetingAllowsInitiative,
   inferNexoraQuestionPurpose,
   interpretExecutiveCollectionQuery,
   isGreetingSocialUtterance,
   polarReplyCompatibleWithPurpose,
-  pendingQuestionFieldsFor,
 } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 import {
   isAbandonRepairUtterance,
@@ -97,6 +95,9 @@ export function createEmptyNcaConversationState(): NexoraConversationState {
     answeredMissing: Object.freeze([]),
     lastFailedTurn: null,
     lastCollection: null,
+    activeComparison: null,
+    lastAuthorizedPresentation: null,
+    pendingPresentationConsent: null,
   });
 }
 
@@ -139,6 +140,21 @@ export function freezeNcaConversationState(
       ? Object.freeze({
           ...state.lastFailedTurn,
           candidates: Object.freeze([...(state.lastFailedTurn.candidates ?? [])]),
+        })
+      : null,
+    lastCollection: state.lastCollection
+      ? Object.freeze({
+          ...state.lastCollection,
+          items: Object.freeze([...state.lastCollection.items]),
+          memberIds: state.lastCollection.memberIds
+            ? Object.freeze([...state.lastCollection.memberIds])
+            : undefined,
+        })
+      : null,
+    activeComparison: state.activeComparison
+      ? Object.freeze({
+          ...state.activeComparison,
+          candidateIds: Object.freeze([...state.activeComparison.candidateIds]),
         })
       : null,
   });
@@ -197,6 +213,9 @@ export function inferExpectedInformation(question: string): ExpectedInformationK
   if (/\b(?:how much|percent|%)\b/.test(text)) return "PERCENTAGE";
   if (/\b(?:how long|until|duration)\b/.test(text)) return "DURATION";
   if (/\b(?:which|first|second|orders or|throughput)\b/.test(text)) return "OPTION";
+  if (/\b(?:do you mean|are you asking about the)\b/.test(text) && /\bor\b/.test(text)) {
+    return "OPTION";
+  }
   if (/\b(?:when|friday|deadline)\b/.test(text)) return "DATE";
   if (/\b(?:budget|cost|constraint)\b/.test(text)) return "CONSTRAINT";
   if (/\b(?:whether|has |did |is |expected|continue|persist|temporary)\b/.test(text)) {
@@ -231,6 +250,23 @@ function extractAnswer(
     /\byes\b/.test(prepared);
   const no = /^(?:no|nope|false|not anymore|not really)\b/.test(prepared);
   const maybe = /^(?:maybe|not sure|possibly)\b/.test(prepared);
+
+  if (expected === "PRIORITY") {
+    const supportedCriterion =
+      /^(?:overall importance|importance overall|urgency|urgent|financial impact|risk|risk exposure|evidence|evidence strength|goal impact|impact on (?:the |our |current )?goal|investigation priority|which (?:one )?should (?:we|i) investigate first|capacity(?: impact)?)$/i.test(
+        prepared,
+      );
+    if (!supportedCriterion) return null;
+    return Object.freeze({
+      kind: "PRIORITY",
+      raw,
+      display: raw,
+      booleanValue: null,
+      numericValue: null,
+      optionIndex: null,
+      optionLabel: null,
+    });
+  }
 
   if (percent && (expected === "PERCENTAGE" || expected === "BOOLEAN" || expected === "NUMBER")) {
     return Object.freeze({
@@ -344,6 +380,10 @@ export function isContextualShortAnswer(
   if (!pending?.valid) return false;
   if (pending.status && pending.status !== "ACTIVE") return false;
   const prepared = preparedOf(utterance);
+  if (classifyManagerSpeechAct(utterance) === "CORRECTION") return false;
+  if (interpretExecutiveCollectionQuery(utterance) && pending.expectedInformation !== "PRIORITY") {
+    return false;
+  }
   if (prepared.length > 80) return false;
   if (
     /^(?:show|open|bring|what|how|why|where|who|can you|could you|forget|go back|before that|compare|explain)\b/.test(
@@ -384,7 +424,9 @@ function focusSubjectFromAbandon(prepared: string): string | null {
 }
 
 function isCorrectionUtterance(prepared: string): boolean {
-  return /^(?:no,? i meant|that'?s not what i meant|i was asking about)/.test(prepared);
+  return /^(?:no,? i meant|that(?:'?s| is) not what i (?:meant|asked)|i (?:was |am )?ask(?:ing)? (?:about|of)|i mean |i said |i am talking about|talking about )/.test(
+    prepared,
+  );
 }
 
 function isAcceptUtterance(prepared: string): boolean {
@@ -866,7 +908,12 @@ export function applyNexoraDialogueEffects(input: {
   readonly nca: ManagerConversationTurn;
   readonly response: string;
   readonly locked: boolean;
-  readonly followUpQuestion?: { readonly question: string; readonly purpose: string } | null;
+  readonly followUpQuestion?: {
+    readonly question: string;
+    readonly purpose: string;
+    readonly expectedInformation?: ExpectedInformationKind;
+    readonly questionPurpose?: string;
+  } | null;
 }): NexoraConversationState {
   if (input.locked) return input.state;
   const options = parseOfferedOptions(input.response);
@@ -901,7 +948,7 @@ export function applyNexoraDialogueEffects(input: {
       askedBy: "NEXORA" as const,
       question: questionText.slice(-240),
       purpose: followUp?.purpose ?? inferQuestionPurpose(questionText),
-      expectedInformation: inferExpectedInformation(questionText),
+      expectedInformation: followUp?.expectedInformation ?? inferExpectedInformation(questionText),
       relatedSubjectId: input.state.activeSubject?.id ?? null,
       relatedSubjectName: input.state.activeSubject?.name ?? null,
       relatedGoal: input.nca.conversationContext.activeGoal,
@@ -909,7 +956,7 @@ export function applyNexoraDialogueEffects(input: {
       expiresOn: "answered" as const,
       askedAtTurn: input.state.turnIndex,
       status: "ACTIVE" as const,
-      questionPurpose: inferNexoraQuestionPurpose(questionText),
+      questionPurpose: followUp?.questionPurpose ?? inferNexoraQuestionPurpose(questionText),
     });
     if (current) {
       threads = upsertThread(threads, {

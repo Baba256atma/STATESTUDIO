@@ -1,0 +1,5 @@
+{
+  "identity": "NXA:5-FIX3B-DIAG2R/ExecutorAdversarial",
+  "note": "Current-source conversational executor. Live Playwright against PID 62339 used a stale .next until rebuild-on-3001.",
+  "observationsRemainEmpty": true
+}

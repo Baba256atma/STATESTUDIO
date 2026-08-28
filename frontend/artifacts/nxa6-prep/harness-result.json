@@ -1,0 +1,1483 @@
+{
+  "identity": "NXA:6-PREP/ConversationHarness",
+  "passed": true,
+  "durationMs": 267,
+  "totals": {
+    "cases": 10,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "id": "prep-knowledge-definition",
+      "title": "Knowledge definition does not move Stage",
+      "passed": true,
+      "firstFailingTurn": null,
+      "turns": [
+        {
+          "turnIndex": 0,
+          "utterance": "What is a Problem?",
+          "response": "I couldn't find a clear match for “A” in the current executive context.",
+          "path": {
+            "inputTurn": "What is a Problem?",
+            "normalizedUtterance": "what is a problem",
+            "resolvedIntent": "explain",
+            "canonicalReference": "Margin Pressure",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": null,
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "MO:2/GenericExplainEngine",
+            "readWrite": "read",
+            "advisorMode": "KNOW",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=not-found",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "readWrite": "read",
+            "stageEffect": "none",
+            "focusId": "ctx-problem-margin",
+            "responseExcludes": [
+              "CC:4",
+              "DIR:1",
+              "NCA-POST",
+              "mapRevealCollection",
+              "open-queue-collection"
+            ]
+          },
+          "actual": {
+            "inputTurn": "What is a Problem?",
+            "normalizedUtterance": "what is a problem",
+            "resolvedIntent": "explain",
+            "canonicalReference": "Margin Pressure",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": null,
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "MO:2/GenericExplainEngine",
+            "readWrite": "read",
+            "advisorMode": "KNOW",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=not-found",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "firstDivergence": null
+        }
+      ],
+      "reproduction": "runConversationCase(prep-knowledge-definition)",
+      "diagnostic": "prep-knowledge-definition passed"
+    },
+    {
+      "id": "prep-singular-reveal",
+      "title": "Explicit singular show focuses the named Problem",
+      "passed": true,
+      "firstFailingTurn": null,
+      "turns": [
+        {
+          "turnIndex": 0,
+          "utterance": "show Margin Pressure",
+          "response": "Focused on Margin Pressure.",
+          "path": {
+            "inputTurn": "show Margin Pressure",
+            "normalizedUtterance": "show margin pressure",
+            "resolvedIntent": "focus",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": null,
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "FOCUS",
+            "dirInstruction": "FOCUS_OBJECT",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "resolved-object-already-focused"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "readWrite": "write",
+            "stageEffect": "focus",
+            "focusId": "ctx-problem-margin",
+            "responseIncludes": [
+              "Margin Pressure"
+            ]
+          },
+          "actual": {
+            "inputTurn": "show Margin Pressure",
+            "normalizedUtterance": "show margin pressure",
+            "resolvedIntent": "focus",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": null,
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "FOCUS",
+            "dirInstruction": "FOCUS_OBJECT",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "resolved-object-already-focused"
+          },
+          "firstDivergence": null
+        }
+      ],
+      "reproduction": "runConversationCase(prep-singular-reveal)",
+      "diagnostic": "prep-singular-reveal passed"
+    },
+    {
+      "id": "prep-collection-and-parity",
+      "title": "Show problems presents the canonical collection",
+      "passed": true,
+      "firstFailingTurn": null,
+      "turns": [
+        {
+          "turnIndex": 0,
+          "utterance": "show problems",
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "readWrite": "write",
+            "stageEffect": "collection",
+            "focusId": null,
+            "collectionCategory": "problem",
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "responseIncludes": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "responseExcludes": [
+              "CC:4",
+              "DIR:1",
+              "NCA-POST",
+              "mapRevealCollection",
+              "open-queue-collection"
+            ]
+          },
+          "actual": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "firstDivergence": null
+        }
+      ],
+      "reproduction": "runConversationCase(prep-collection-and-parity)",
+      "diagnostic": "prep-collection-and-parity passed"
+    },
+    {
+      "id": "prep-mode-transitions",
+      "title": "Singular and collection commands replace each other",
+      "passed": true,
+      "firstFailingTurn": null,
+      "turns": [
+        {
+          "turnIndex": 0,
+          "utterance": "show problems",
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "collection",
+            "collectionCategory": "problem"
+          },
+          "actual": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 1,
+          "utterance": "show Margin Pressure",
+          "response": "Focused on Margin Pressure.",
+          "path": {
+            "inputTurn": "show Margin Pressure",
+            "normalizedUtterance": "show margin pressure",
+            "resolvedIntent": "focus",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "PROBLEM",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "FOCUS",
+            "dirInstruction": "FOCUS_OBJECT",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "resolved-object-already-focused"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "focus",
+            "focusId": "ctx-problem-margin"
+          },
+          "actual": {
+            "inputTurn": "show Margin Pressure",
+            "normalizedUtterance": "show margin pressure",
+            "resolvedIntent": "focus",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "PROBLEM",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "FOCUS",
+            "dirInstruction": "FOCUS_OBJECT",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "resolved-object-already-focused"
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 2,
+          "utterance": "show problems",
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "problem",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ]
+          },
+          "actual": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "problem",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "firstDivergence": null
+        }
+      ],
+      "reproduction": "runConversationCase(prep-mode-transitions)",
+      "diagnostic": "prep-mode-transitions passed"
+    },
+    {
+      "id": "prep-readback-judgment",
+      "title": "Stage readback and judgment stay on Problems",
+      "passed": true,
+      "firstFailingTurn": null,
+      "turns": [
+        {
+          "turnIndex": 0,
+          "utterance": "show problems",
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "collection",
+            "collectionCategory": "problem"
+          },
+          "actual": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 1,
+          "utterance": "what is on stage now?",
+          "response": "The Stage is showing the Problems: Capacity Gap and Margin Pressure.",
+          "path": {
+            "inputTurn": "what is on stage now?",
+            "normalizedUtterance": "what is on stage now",
+            "resolvedIntent": "explain",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "MANAGER_REQUEST",
+            "readWrite": "read",
+            "advisorMode": "LEARN_NEXORA",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=not-found",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "readWrite": "read",
+            "stageEffect": "none",
+            "collectionCategory": "problem",
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "responseIncludes": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ]
+          },
+          "actual": {
+            "inputTurn": "what is on stage now?",
+            "normalizedUtterance": "what is on stage now",
+            "resolvedIntent": "explain",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "MANAGER_REQUEST",
+            "readWrite": "read",
+            "advisorMode": "LEARN_NEXORA",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=not-found",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 2,
+          "utterance": "which one is more important?",
+          "response": "Important in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+          "path": {
+            "inputTurn": "which one is more important?",
+            "normalizedUtterance": "which one is more important",
+            "resolvedIntent": "compare-scenarios",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "ASK_MANAGER/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:9/compare-scenarios",
+            "readWrite": "read",
+            "advisorMode": "COMPARE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "readWrite": "read",
+            "stageEffect": "none",
+            "collectionCategory": "problem",
+            "responseExcludes": [
+              "evaluated scenarios"
+            ]
+          },
+          "actual": {
+            "inputTurn": "which one is more important?",
+            "normalizedUtterance": "which one is more important",
+            "resolvedIntent": "compare-scenarios",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "ASK_MANAGER/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:9/compare-scenarios",
+            "readWrite": "read",
+            "advisorMode": "COMPARE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 3,
+          "utterance": "why?",
+          "response": "Neither clearly dominates. Capacity Gap and Margin Pressure have different supported strengths. Capacity Gap is stronger if Goal fit is decisive; Margin Pressure may be stronger if its risk or resource consequence is the priority.",
+          "path": {
+            "inputTurn": "why?",
+            "normalizedUtterance": "why",
+            "resolvedIntent": "explain",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "MO:2/GenericExplainEngine",
+            "readWrite": "read",
+            "advisorMode": "INVESTIGATE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "readWrite": "read",
+            "stageEffect": "none",
+            "collectionCategory": "problem"
+          },
+          "actual": {
+            "inputTurn": "why?",
+            "normalizedUtterance": "why",
+            "resolvedIntent": "explain",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "MO:2/GenericExplainEngine",
+            "readWrite": "read",
+            "advisorMode": "INVESTIGATE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "firstDivergence": null
+        }
+      ],
+      "reproduction": "runConversationCase(prep-readback-judgment)",
+      "diagnostic": "prep-readback-judgment passed"
+    },
+    {
+      "id": "prep-natural-and-goal",
+      "title": "Natural collection phrasing and Goal-aware read",
+      "passed": true,
+      "firstFailingTurn": null,
+      "turns": [
+        {
+          "turnIndex": 0,
+          "utterance": "show all problems",
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "path": {
+            "inputTurn": "show all problems",
+            "normalizedUtterance": "show all problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "collection",
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ]
+          },
+          "actual": {
+            "inputTurn": "show all problems",
+            "normalizedUtterance": "show all problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 1,
+          "utterance": "what happens to the Goal if we do nothing?",
+          "response": "If Margin Pressure remains without intervention, concerns around Revenue and Risk may continue or become more significant. We don’t yet have enough evidence to quantify that impact, so this is a scenario rather than a prediction. I can’t yet judge the impact against a specific business goal. I can compare doing nothing with investigating now.",
+          "path": {
+            "inputTurn": "what happens to the Goal if we do nothing?",
+            "normalizedUtterance": "what happens to the goal if we do nothing",
+            "resolvedIntent": "explore-scenario",
+            "canonicalReference": "Close Capacity Gap",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "TOPIC_SHIFT/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:9/explore-scenario",
+            "readWrite": "read",
+            "advisorMode": "CONSEQUENCE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "readWrite": "read",
+            "stageEffect": "none",
+            "collectionCategory": "problem"
+          },
+          "actual": {
+            "inputTurn": "what happens to the Goal if we do nothing?",
+            "normalizedUtterance": "what happens to the goal if we do nothing",
+            "resolvedIntent": "explore-scenario",
+            "canonicalReference": "Close Capacity Gap",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "TOPIC_SHIFT/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:9/explore-scenario",
+            "readWrite": "read",
+            "advisorMode": "CONSEQUENCE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "firstDivergence": null
+        }
+      ],
+      "reproduction": "runConversationCase(prep-natural-and-goal)",
+      "diagnostic": "prep-natural-and-goal passed"
+    },
+    {
+      "id": "prep-continuity-safety",
+      "title": "Do-nothing, Decision, Execution, Outcome remain non-mutating from knowledge",
+      "passed": true,
+      "firstFailingTurn": null,
+      "turns": [
+        {
+          "turnIndex": 0,
+          "utterance": "Thanks.",
+          "response": "You're welcome.",
+          "path": {
+            "inputTurn": "Thanks.",
+            "normalizedUtterance": "thanks",
+            "resolvedIntent": "unknown",
+            "canonicalReference": null,
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": null,
+            "dialogueJourney": "ACKNOWLEDGE/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "MANAGER_REQUEST",
+            "readWrite": "read",
+            "advisorMode": "UNDERSTAND",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "readWrite": "read",
+            "stageEffect": "none",
+            "focusId": "ctx-problem-margin"
+          },
+          "actual": {
+            "inputTurn": "Thanks.",
+            "normalizedUtterance": "thanks",
+            "resolvedIntent": "unknown",
+            "canonicalReference": null,
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": null,
+            "dialogueJourney": "ACKNOWLEDGE/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "MANAGER_REQUEST",
+            "readWrite": "read",
+            "advisorMode": "UNDERSTAND",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 1,
+          "utterance": "show decisions",
+          "response": "Current Decisions: Expand Capacity, Approve Repricing.",
+          "path": {
+            "inputTurn": "show decisions",
+            "normalizedUtterance": "show decisions",
+            "resolvedIntent": "show-decisions",
+            "canonicalReference": null,
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "decision",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-decision-capacity",
+              "ctx-decision-reprice"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "collection",
+            "collectionCategory": "decision",
+            "collectionMemberIds": [
+              "ctx-decision-capacity",
+              "ctx-decision-reprice"
+            ]
+          },
+          "actual": {
+            "inputTurn": "show decisions",
+            "normalizedUtterance": "show decisions",
+            "resolvedIntent": "show-decisions",
+            "canonicalReference": null,
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "decision",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-decision-capacity",
+              "ctx-decision-reprice"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 2,
+          "utterance": "which one should I commit?",
+          "response": "Neither clearly dominates. Expand Capacity and Approve Repricing have different supported strengths. Expand Capacity is stronger if Goal fit is decisive; Approve Repricing may be stronger if its risk or resource consequence is the priority.",
+          "path": {
+            "inputTurn": "which one should I commit?",
+            "normalizedUtterance": "which one should i commit",
+            "resolvedIntent": "compare-scenarios",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "decision",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:9/compare-scenarios",
+            "readWrite": "read",
+            "advisorMode": "COMPARE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-decision-capacity",
+              "ctx-decision-reprice"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "readWrite": "read",
+            "stageEffect": "none",
+            "collectionCategory": "decision",
+            "confirmationPending": false,
+            "executionActive": false
+          },
+          "actual": {
+            "inputTurn": "which one should I commit?",
+            "normalizedUtterance": "which one should i commit",
+            "resolvedIntent": "compare-scenarios",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "decision",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:9/compare-scenarios",
+            "readWrite": "read",
+            "advisorMode": "COMPARE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-decision-capacity",
+              "ctx-decision-reprice"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 3,
+          "utterance": "what did we learn?",
+          "response": "Learning: not available. Learning is not invented from an outcome.",
+          "path": {
+            "inputTurn": "what did we learn?",
+            "normalizedUtterance": "what did we learn",
+            "resolvedIntent": "situation",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "decision",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "MANAGER_REQUEST",
+            "readWrite": "read",
+            "advisorMode": "UNDERSTAND",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-decision-capacity",
+              "ctx-decision-reprice"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "readWrite": "read",
+            "stageEffect": "none",
+            "collectionCategory": "decision",
+            "executionActive": false
+          },
+          "actual": {
+            "inputTurn": "what did we learn?",
+            "normalizedUtterance": "what did we learn",
+            "resolvedIntent": "situation",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "decision",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "MANAGER_REQUEST",
+            "readWrite": "read",
+            "advisorMode": "UNDERSTAND",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-decision-capacity",
+              "ctx-decision-reprice"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "firstDivergence": null
+        }
+      ],
+      "reproduction": "runConversationCase(prep-continuity-safety)",
+      "diagnostic": "prep-continuity-safety passed"
+    },
+    {
+      "id": "prep-rapid-and-restore",
+      "title": "Rapid commands and restored focus honor the latest explicit collection",
+      "passed": true,
+      "firstFailingTurn": null,
+      "turns": [
+        {
+          "turnIndex": 0,
+          "utterance": "show problems",
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "collection",
+            "collectionCategory": "problem"
+          },
+          "actual": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 1,
+          "utterance": "show decisions",
+          "response": "Current Decisions: Expand Capacity, Approve Repricing.",
+          "path": {
+            "inputTurn": "show decisions",
+            "normalizedUtterance": "show decisions",
+            "resolvedIntent": "show-decisions",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "decision",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-decision-capacity",
+              "ctx-decision-reprice"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "collection",
+            "collectionCategory": "decision"
+          },
+          "actual": {
+            "inputTurn": "show decisions",
+            "normalizedUtterance": "show decisions",
+            "resolvedIntent": "show-decisions",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "decision",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-decision-capacity",
+              "ctx-decision-reprice"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 2,
+          "utterance": "show scenarios",
+          "response": "Current Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+          "path": {
+            "inputTurn": "show scenarios",
+            "normalizedUtterance": "show scenarios",
+            "resolvedIntent": "show-scenarios",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "scenario",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-scenario-capacity",
+              "ctx-scenario-demand",
+              "ctx-scenario-pricing"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "collection",
+            "collectionCategory": "scenario"
+          },
+          "actual": {
+            "inputTurn": "show scenarios",
+            "normalizedUtterance": "show scenarios",
+            "resolvedIntent": "show-scenarios",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "scenario",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-scenario-capacity",
+              "ctx-scenario-demand",
+              "ctx-scenario-pricing"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 3,
+          "utterance": "show problems",
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "collection",
+            "collectionCategory": "problem",
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ]
+          },
+          "actual": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "firstDivergence": null
+        }
+      ],
+      "reproduction": "runConversationCase(prep-rapid-and-restore)",
+      "diagnostic": "prep-rapid-and-restore passed"
+    },
+    {
+      "id": "prep-back-forward",
+      "title": "Back returns to the Problems collection",
+      "passed": true,
+      "firstFailingTurn": null,
+      "turns": [
+        {
+          "turnIndex": 0,
+          "utterance": "Focus on Margin Pressure.",
+          "response": "Focused on Margin Pressure.",
+          "path": {
+            "inputTurn": "Focus on Margin Pressure.",
+            "normalizedUtterance": "focus on margin pressure",
+            "resolvedIntent": "focus",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": null,
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "FOCUS",
+            "dirInstruction": "FOCUS_OBJECT",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "resolved-object-already-focused"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "focus",
+            "focusId": "ctx-problem-margin"
+          },
+          "actual": {
+            "inputTurn": "Focus on Margin Pressure.",
+            "normalizedUtterance": "focus on margin pressure",
+            "resolvedIntent": "focus",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": null,
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "FOCUS",
+            "dirInstruction": "FOCUS_OBJECT",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "resolved-object-already-focused"
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 1,
+          "utterance": "show problems",
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "problem",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "collection",
+            "collectionCategory": "problem"
+          },
+          "actual": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": "problem",
+            "dialogueJourney": "CONTINUE_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          },
+          "firstDivergence": null
+        },
+        {
+          "turnIndex": 2,
+          "utterance": "Focus on Capacity Gap.",
+          "response": "Focused on Capacity Gap. My recommendation remains temporary capacity.",
+          "path": {
+            "inputTurn": "Focus on Capacity Gap.",
+            "normalizedUtterance": "focus on capacity gap",
+            "resolvedIntent": "focus",
+            "canonicalReference": "ctx-problem-capacity",
+            "inheritedSubject": null,
+            "activeCollection": "PROBLEM",
+            "dialogueJourney": "TOPIC_SHIFT/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "FOCUS",
+            "dirInstruction": "FOCUS_OBJECT",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-capacity",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "resolved-object-already-focused"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "stageEffect": "focus",
+            "focusId": "ctx-problem-capacity"
+          },
+          "actual": {
+            "inputTurn": "Focus on Capacity Gap.",
+            "normalizedUtterance": "focus on capacity gap",
+            "resolvedIntent": "focus",
+            "canonicalReference": "ctx-problem-capacity",
+            "inheritedSubject": null,
+            "activeCollection": "PROBLEM",
+            "dialogueJourney": "TOPIC_SHIFT/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "FOCUS",
+            "dirInstruction": "FOCUS_OBJECT",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-capacity",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "resolved-object-already-focused"
+          },
+          "firstDivergence": null
+        }
+      ],
+      "reproduction": "runConversationCase(prep-back-forward)",
+      "diagnostic": "prep-back-forward passed"
+    },
+    {
+      "id": "prep-ambiguity",
+      "title": "Underspecified compare does not invent Stage movement",
+      "passed": true,
+      "firstFailingTurn": null,
+      "turns": [
+        {
+          "turnIndex": 0,
+          "utterance": "compare them",
+          "response": "I need at least two evaluated scenarios to compare.",
+          "path": {
+            "inputTurn": "compare them",
+            "normalizedUtterance": "compare them",
+            "resolvedIntent": "compare-scenarios",
+            "canonicalReference": null,
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": null,
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:9/compare-scenarios",
+            "readWrite": "read",
+            "advisorMode": "COMPARE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "passed": true,
+          "failureKind": "none",
+          "expected": {
+            "readWrite": "read",
+            "stageEffect": "none",
+            "focusId": "ctx-problem-margin"
+          },
+          "actual": {
+            "inputTurn": "compare them",
+            "normalizedUtterance": "compare them",
+            "resolvedIntent": "compare-scenarios",
+            "canonicalReference": null,
+            "inheritedSubject": "ctx-problem-margin",
+            "activeCollection": null,
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:9/compare-scenarios",
+            "readWrite": "read",
+            "advisorMode": "COMPARE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "focus",
+            "focusId": "ctx-problem-margin",
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          },
+          "firstDivergence": null
+        }
+      ],
+      "reproduction": "runConversationCase(prep-ambiguity)",
+      "diagnostic": "prep-ambiguity passed"
+    }
+  ]
+}

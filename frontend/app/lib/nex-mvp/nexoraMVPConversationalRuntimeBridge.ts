@@ -6,9 +6,10 @@
  * Conversation and click converge on selectNexoraMVPInteractionSubject etc.
  */
 
+import { resolveExecutiveQueueEntryForCategory } from "@/app/lib/spatial-presentation/executiveStageQueueFoundation.ts";
 import {
   getDefaultNexoraMVPObjectInteractionCatalog,
-  openNexoraMVPExecutiveQueueCollection,
+  presentNexoraMVPExecutiveQueueCollection,
   resetNexoraMVPObjectInteractionOverview,
   resolveNexoraMVPInteractionSubject,
   selectNexoraMVPInteractionSubject,
@@ -220,9 +221,24 @@ export function applyNexoraMVPConversationalCommand(
         );
       }
 
-      const nextState = openNexoraMVPExecutiveQueueCollection(
-        state,
+      const entry = resolveExecutiveQueueEntryForCategory({
+        subjects: catalog.contextSubjects.map((subject) =>
+          Object.freeze({
+            subjectId: subject.id,
+            workKind: subject.kind,
+            objectKind: subject.kind,
+            attention: subject.attention,
+            status: subject.status,
+          }),
+        ),
         category,
+      });
+      if (entry.count === 0) {
+        return rejectKeepState(state, planned);
+      }
+      const nextState = presentNexoraMVPExecutiveQueueCollection(
+        state,
+        Object.freeze({ category, objectIds: entry.objectIds }),
         catalog,
       );
       return Object.freeze({

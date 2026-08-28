@@ -303,7 +303,7 @@ export function mapConversationalCommandToRuntimeAction(
 }
 
 function mapRevealCollection(
-  command: NexoraConversationalCommand,
+  _command: NexoraConversationalCommand,
   category: "problem" | "scenario" | "decision" | "execution",
   base: {
     readonly primaryTargetId: string | null;
@@ -311,24 +311,9 @@ function mapRevealCollection(
     readonly source: "conversation";
   },
 ): ConversationalCommandSupport {
-  // With anchor: focus subject so linked context nodes disclose (canonical).
-  // Without anchor: open Queue collection for that category.
-  if (command.primaryTargetId) {
-    return {
-      supported: true,
-      plan: Object.freeze({
-        ...base,
-        runtimeActionKind: "select-interaction-subject",
-        collectionCategory: null,
-        notes: Object.freeze([
-          CONVERSATIONAL_RUNTIME_BRIDGE_REASON.RUNTIME_REVEAL_DISPATCHED,
-          `reveal-${category}-with-anchor→focus-for-context-disclosure`,
-          "authority:selectNexoraMVPInteractionSubject",
-        ]),
-      }),
-    };
-  }
-
+  // Collection presentation is canonical regardless of restored/conversational
+  // subject. DIR:1 applies membership; an inherited anchor must not collapse
+  // an explicit show-collection command into single-object focus.
   return {
     supported: true,
     plan: Object.freeze({
@@ -339,7 +324,7 @@ function mapRevealCollection(
       notes: Object.freeze([
         CONVERSATIONAL_RUNTIME_BRIDGE_REASON.RUNTIME_REVEAL_DISPATCHED,
         `reveal-${category}-collection`,
-        "authority:openNexoraMVPExecutiveQueueCollection",
+        "authority:presentNexoraMVPExecutiveQueueCollection",
       ]),
     }),
   };

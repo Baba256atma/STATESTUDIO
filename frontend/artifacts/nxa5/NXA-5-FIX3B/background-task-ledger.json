@@ -1,0 +1,27 @@
+{
+  "identity": "NXA:5-FIX3B/CertificationTaskLedger",
+  "required": {
+    "started": 12,
+    "passed": 12,
+    "failed": 0,
+    "running": 0,
+    "uninspected": 0,
+    "skipped": 0
+  },
+  "tasks": [
+    { "id": "pre-fix-reproduction", "status": "PASSED", "inspected": true },
+    { "id": "focused-regressions", "status": "PASSED", "inspected": true, "tests": 58 },
+    { "id": "funnel-level-1", "status": "PASSED", "inspected": true },
+    { "id": "funnel-level-2", "status": "PASSED", "inspected": true },
+    { "id": "funnel-level-3", "status": "PASSED", "inspected": true },
+    { "id": "broad-regression", "status": "PASSED", "inspected": true, "tests": 1318 },
+    { "id": "typescript", "status": "PASSED", "inspected": true },
+    { "id": "eslint", "status": "PASSED", "inspected": true, "errors": 0 },
+    { "id": "production-build", "status": "PASSED", "inspected": true, "pages": "13/13" },
+    { "id": "diff-check", "status": "PASSED", "inspected": true },
+    { "id": "live-stage-advisor", "status": "PASSED", "inspected": true, "pageErrors": 0 },
+    { "id": "final-diff-and-barrier", "status": "PASSED", "inspected": true }
+  ],
+  "nxaConversation": "default-off (not enabled for this certification)",
+  "nonessentialProcesses": "Existing Next.js listener PID 62339 on :3000 left running. No process started by this task was left running. No unrelated process was terminated."
+}

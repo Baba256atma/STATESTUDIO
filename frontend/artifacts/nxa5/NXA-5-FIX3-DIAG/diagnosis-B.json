@@ -1,0 +1,24 @@
+{
+  "identity": "NXA:6-PREP/ConversationDiagnosis",
+  "defectId": "NXA-5-FIX3-DIAG-B",
+  "utteranceSequence": ["show me problems", "which one of prolems is important?"],
+  "setup": "Problems collection presented first.",
+  "currentFocus": null,
+  "activeCollection": "PROBLEM",
+  "journeyOrDialogue": "CONTINUE_TOPIC; Stage remains collection",
+  "refreshOrRestoration": null,
+  "expected": "Bind to active Problems; do not invent a ranking; distinguish importance criteria; optionally offer a safe next step or criterion clarification without fabricating priority.",
+  "actual": "Problems collection bound (ACTIVE_COLLECTION Capacity Gap + Margin Pressure). Criterion OVERALL_SIGNIFICANCE. NXA:5 INSUFFICIENT, preferred null, terminal insufficiency copy. Stage unchanged.",
+  "firstDivergentLayer": "None versus certified safety: POST:4 maps \\bimportant\\b to OVERALL_SIGNIFICANCE and NXA:5 returns the certified no-comparable-impact terminal when investigation candidates also do not discriminate. Productivity gap is absence of criterion clarification, not a false ranking.",
+  "authoritativeOwner": "POST:4 interpretExecutiveComparisonMeaning (criterion) then NXA:5 evaluateNxa5ExecutiveJudgment (terminal insufficiency copy). Collection binding: NCA lastCollection / POST:4 ACTIVE_COLLECTION.",
+  "neighboringBehaviors": [
+    "prolems is not CC:1-normalized to problems; binding is via which-one + active collection",
+    "CC:1 unknown overlays to compare-scenarios but POST:4/NXA:5 own the Problem reply and DIR is NO_CHANGE"
+  ],
+  "focusedReproductionCommand": "tsx artifacts/nxa5/NXA-5-FIX3-DIAG/reproduce-nxa5-fix3-diag.ts",
+  "failureClass": "deterministic",
+  "evidenceRequiredBeforeFix": [],
+  "verdict": "EXPECTED_BEHAVIOR",
+  "impactClassification": "ADVISORY_QUALITY_GAP",
+  "fixAuthorized": false
+}

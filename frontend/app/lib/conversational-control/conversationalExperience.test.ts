@@ -193,7 +193,11 @@ test("7: multi-turn Revenue → Show its problems", () => {
     "obj-revenue",
   );
   assert.equal(second.intentResult.intent.kind, "show-problems");
-  assert.equal(second.nextRuntimeState.focusedSubject?.id, "obj-revenue");
+  assert.equal(second.nextRuntimeState.focusedSubject, null);
+  assert.deepEqual(second.nextRuntimeState.collectionContext?.objectIds, [
+    "ctx-problem-capacity",
+    "ctx-problem-margin",
+  ]);
 });
 
 test("8: missing-context Open it", () => {
@@ -241,7 +245,7 @@ test("12: unsupported compare", () => {
   assert.equal(result.shouldCommitRuntime, false);
   assert.equal(
     result.response,
-    "I can’t compare those subjects with the available validated context yet.",
+    "Both Capacity and Revenue are current candidates, but I don’t have enough comparable evidence to rank one over the other on financial impact.",
   );
   assert.equal(result.nextRuntimeState.focusedSubject, null);
 });
@@ -303,7 +307,7 @@ test("18: response text matches status", () => {
   assert.equal(run("Open it").response, "Which item do you mean?");
   assert.equal(
     run("Compare Revenue and Capacity").response,
-    "I can’t compare those subjects with the available validated context yet.",
+    "Both Capacity and Revenue are current candidates, but I don’t have enough comparable evidence to rank one over the other on financial impact.",
   );
 });
 

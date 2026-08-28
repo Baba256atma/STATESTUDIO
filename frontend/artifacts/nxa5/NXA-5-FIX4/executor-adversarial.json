@@ -1,0 +1,461 @@
+{
+  "identity": "NXA:5-FIX4/ExecutorAdversarial",
+  "turns": [
+    {
+      "utterance": "show me scenarios",
+      "canonicalIntent": "show-scenarios",
+      "nluIntent": "REQUEST_FOCUS",
+      "stageBefore": {
+        "presentationType": "OVERVIEW",
+        "focus": null,
+        "collection": null,
+        "members": [],
+        "workspace": "overview"
+      },
+      "relationship": "EXPLICIT_PRESENTATION",
+      "pendingBefore": null,
+      "pendingAfter": null,
+      "advisor": "Current Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+      "mutated": true,
+      "commit": true,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "what is on stage?",
+      "canonicalIntent": "explain",
+      "nluIntent": "UNKNOWN",
+      "stageBefore": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "relationship": "STAGE_META",
+      "pendingBefore": null,
+      "pendingAfter": null,
+      "advisor": "The Stage is currently showing 3 Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response. They are here because you asked to review the current collection. None is currently focused as a preferred option. We can compare them using financial impact, risk, urgency, evidence strength, or another criterion.",
+      "mutated": false,
+      "commit": false,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "why are they here?",
+      "canonicalIntent": "explain",
+      "nluIntent": "ASK_WHY",
+      "stageBefore": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "relationship": "STAGE_META",
+      "pendingBefore": null,
+      "pendingAfter": null,
+      "advisor": "Capacity Expansion Plan, Demand Surge, Pricing Response are presented because you asked to review the current collection. Visibility alone does not establish a causal relationship.",
+      "mutated": false,
+      "commit": false,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "which one is more important for business?",
+      "canonicalIntent": "compare-scenarios",
+      "nluIntent": "ASK_COMPARISON",
+      "stageBefore": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "relationship": "STAGE_GROUNDED",
+      "pendingBefore": null,
+      "pendingAfter": "comparison-criterion",
+      "advisor": "Important in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+      "mutated": false,
+      "commit": false,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "I am talking about scenarios",
+      "canonicalIntent": "show-scenarios",
+      "nluIntent": "CORRECT",
+      "stageBefore": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "relationship": "STAGE_GROUNDED",
+      "pendingBefore": "comparison-criterion",
+      "pendingAfter": "comparison-criterion",
+      "advisor": "Yes — the 3 Scenarios currently on Stage: Capacity Expansion Plan, Demand Surge, Pricing Response. By important, do you mean financial impact, risk, urgency, evidence strength, or overall investigation priority?",
+      "mutated": false,
+      "commit": false,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "risk",
+      "canonicalIntent": "focus",
+      "nluIntent": "REQUEST_FOCUS",
+      "stageBefore": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "relationship": "STAGE_GROUNDED",
+      "pendingBefore": "comparison-criterion",
+      "pendingAfter": null,
+      "advisor": "I don’t have enough comparable risk evidence for Capacity Expansion Plan and Demand Surge and Pricing Response to select one. You can ask me to compare them on another explicit criterion, such as risk exposure or evidence strength.",
+      "mutated": false,
+      "commit": false,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "explain Demand Surge",
+      "canonicalIntent": "explain-scenario",
+      "nluIntent": "ASK_EXPLANATION",
+      "stageBefore": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "relationship": "STAGE_COMPATIBLE",
+      "pendingBefore": null,
+      "pendingAfter": null,
+      "advisor": "Scenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+      "mutated": false,
+      "commit": false,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "what is on stage now?",
+      "canonicalIntent": "explain",
+      "nluIntent": "UNKNOWN",
+      "stageBefore": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "relationship": "STAGE_META",
+      "pendingBefore": null,
+      "pendingAfter": null,
+      "advisor": "The Stage is currently showing 3 Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response. They are here because you asked to review the current collection. None is currently focused as a preferred option. We can compare them using financial impact, risk, urgency, evidence strength, or another criterion.",
+      "mutated": false,
+      "commit": false,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "what is Capacity?",
+      "canonicalIntent": "explain",
+      "nluIntent": "ASK_EXPLANATION",
+      "stageBefore": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "relationship": "STAGE_COMPATIBLE",
+      "pendingBefore": null,
+      "pendingAfter": null,
+      "advisor": "Capacity is 12% above the intended target band and is currently constraining delivery. Capacity is connected to Capacity Gap through a constraint. That recorded dependency is not a confirmed cause. I can also bring Capacity onto the Stage if you want.",
+      "mutated": false,
+      "commit": false,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "what is on stage now?",
+      "canonicalIntent": "explain",
+      "nluIntent": "UNKNOWN",
+      "stageBefore": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "relationship": "STAGE_META",
+      "pendingBefore": null,
+      "pendingAfter": null,
+      "advisor": "The Stage is currently showing 3 Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response. They are here because you asked to review the current collection. None is currently focused as a preferred option. We can compare them using financial impact, risk, urgency, evidence strength, or another criterion.",
+      "mutated": false,
+      "commit": false,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "show Capacity",
+      "canonicalIntent": "focus",
+      "nluIntent": "REQUEST_FOCUS",
+      "stageBefore": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "relationship": "EXPLICIT_PRESENTATION",
+      "pendingBefore": null,
+      "pendingAfter": null,
+      "advisor": "Focused on Capacity.",
+      "mutated": true,
+      "commit": true,
+      "stageAfter": {
+        "presentationType": "FOCUS",
+        "focus": "Capacity",
+        "collection": null,
+        "members": [],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "what is on stage now?",
+      "canonicalIntent": "explain",
+      "nluIntent": "UNKNOWN",
+      "stageBefore": {
+        "presentationType": "FOCUS",
+        "focus": "Capacity",
+        "collection": null,
+        "members": [],
+        "workspace": "overview"
+      },
+      "relationship": "STAGE_META",
+      "pendingBefore": null,
+      "pendingAfter": null,
+      "advisor": "The Stage is currently focused on Capacity, a object. resolved-object-already-focused Visibility does not by itself establish a causal conclusion.",
+      "mutated": false,
+      "commit": false,
+      "stageAfter": {
+        "presentationType": "FOCUS",
+        "focus": "Capacity",
+        "collection": null,
+        "members": [],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "go back to scenarios",
+      "canonicalIntent": "show-scenarios",
+      "nluIntent": "UNKNOWN",
+      "stageBefore": {
+        "presentationType": "FOCUS",
+        "focus": "Capacity",
+        "collection": null,
+        "members": [],
+        "workspace": "overview"
+      },
+      "relationship": "EXPLICIT_PRESENTATION",
+      "pendingBefore": null,
+      "pendingAfter": null,
+      "advisor": "Current Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+      "mutated": true,
+      "commit": true,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    },
+    {
+      "utterance": "compare them",
+      "canonicalIntent": "compare-scenarios",
+      "nluIntent": "ASK_COMPARISON",
+      "stageBefore": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "relationship": "STAGE_GROUNDED",
+      "pendingBefore": null,
+      "pendingAfter": null,
+      "advisor": "The current scenario candidates are Capacity Expansion Plan, Demand Surge, Pricing Response. I don’t have enough comparable evidence to rank them on the requested criterion.",
+      "mutated": false,
+      "commit": false,
+      "stageAfter": {
+        "presentationType": "COLLECTION",
+        "focus": null,
+        "collection": "scenario",
+        "members": [
+          "Capacity Expansion Plan",
+          "Demand Surge",
+          "Pricing Response"
+        ],
+        "workspace": "overview"
+      },
+      "observations": 0
+    }
+  ]
+}

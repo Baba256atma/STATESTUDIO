@@ -19,6 +19,7 @@ import {
 import {
   isAmbiguousConversationalReference,
   normalizeNexoraConversationalUtterance,
+  normalizeNexoraConversationalUtteranceWithDiagnostics,
 } from "./conversationalIntentNormalization.ts";
 import {
   resolveNexoraConversationalIntent,
@@ -114,6 +115,30 @@ test("normalization does not invent semantic content", () => {
   const b = normalizeNexoraConversationalUtterance("FOCUS ON CAPACITY");
   assert.equal(a, b);
   assert.equal(a, "focus on capacity");
+});
+
+test("normalization recovers only the bounded explain transposition", () => {
+  const recovered = normalizeNexoraConversationalUtteranceWithDiagnostics(
+    "exlpain Demand Surge",
+  );
+  assert.equal(recovered.normalized, "explain demand surge");
+  assert.deepEqual(recovered.corrections, [{
+    originalToken: "exlpain",
+    recoveredToken: "explain",
+    reason: "adjacent-transposition-of-registered-action",
+  }]);
+  assert.equal(resolve("exlpain Demand Surge").intent.kind, "explain");
+  assert.ok(
+    resolve("exlpain Demand Surge").intent.reasons.includes(
+      CONVERSATIONAL_INTENT_REASON.RECOVERED_ACTION_TYPO,
+    ),
+  );
+
+  for (const unsupported of ["frobnicate Demand Surge", "complain Demand Surge"]) {
+    const result = normalizeNexoraConversationalUtteranceWithDiagnostics(unsupported);
+    assert.equal(result.normalized, unsupported.toLowerCase());
+    assert.deepEqual(result.corrections, []);
+  }
 });
 
 test("ambiguous reference helper", () => {

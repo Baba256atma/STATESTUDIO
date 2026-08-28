@@ -1,0 +1,35 @@
+{
+  "identity": "NXA:5-FIX3D-DIAG/NumericValueFlow",
+  "layers": [
+    {
+      "layer": "dataset-fact",
+      "satisfactionScore": 4.2,
+      "maximumSatisfactionScore": 5,
+      "unit": "score"
+    },
+    {
+      "layer": "kpi-computation-score-percent",
+      "formula": "(left/right)*100",
+      "ieee": 84.00000000000001,
+      "stored": 84.00000000000001
+    },
+    {
+      "layer": "p1-2-kpi-evidence.value",
+      "value": 84.00000000000001,
+      "formattedSummary": "Customer Satisfaction Index = 84%"
+    },
+    {
+      "layer": "p1-5-formatEvidenceText-kpi",
+      "interpolation": "String(value)+unit",
+      "actual": "84.00000000000001%"
+    },
+    {
+      "layer": "p1-5-summary-join",
+      "summaryContains": true
+    },
+    {
+      "layer": "stage-formatCanonicalStageKpiValue",
+      "actual": "84.0%"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "identity": "NXA:5-FIX3D-DIAG/LanguageLabelSource",
+  "terms": {
+    "maximumSatisfactionScore": {
+      "source": "NexoraBusinessFact.metricKey interpolated in P1:2 buildBusinessFactEvidence label/summary",
+      "csvVerticalSliceLabelExists": "Maximum Satisfaction Score in csvRealDataVerticalSlice.ts",
+      "p12UsesLabel": false
+    },
+    "rawFact": {
+      "source": "P1:2 buildBusinessFactEvidence summary template '... raw fact = ...'",
+      "nca6StripsRawFact": false,
+      "final64ArchLeakIncludesRawFact": false
+    },
+    "attentionEnum": {
+      "source": "P0 executive state 'attention' interpolated in P1:2 buildExecutiveStateEvidence; P1:5 replaces ' = ' with ' is '",
+      "advisorState": "watch",
+      "p0State": "attention"
+    },
+    "watchConditions": {
+      "source": "P1:4 guidanceTitle investigate: `Investigate ${displayName} ${state} conditions` with advisor state 'watch'"
+    },
+    "fiveScore": {
+      "source": "unit suffix 'score' from fact.unit appended after formatted integer 5"
+    }
+  },
+  "sections": [
+    {
+      "kind": "headline",
+      "text": "Customer Performance Requires Attention"
+    },
+    {
+      "kind": "situation",
+      "text": "Customer requires executive attention."
+    },
+    {
+      "kind": "evidence",
+      "text": "Customer Satisfaction Index is 84.00000000000001%. Customer executive state is attention. Customer maximumSatisfactionScore raw fact = 5 score."
+    },
+    {
+      "kind": "meaning",
+      "text": "Customer performance is below the preferred operating range and may require investigation."
+    },
+    {
+      "kind": "guidance",
+      "text": "Investigate Customer watch conditions."
+    }
+  ]
+}

@@ -124,6 +124,7 @@ export function evaluateNca5InitiativeStrategy(input: {
       silentDecision(
         scored.length,
         winner?.reason ?? "No initiative candidate deserves manager attention.",
+        winner?.signal ?? null,
       ),
       input.nca3,
       input.nca4,
@@ -142,6 +143,7 @@ export function evaluateNca5InitiativeStrategy(input: {
       silentDecision(
         scored.length,
         "The manager's current request takes precedence over a non-critical initiative.",
+        winner.signal,
       ),
       input.nca3,
       input.nca4,
@@ -624,10 +626,12 @@ function conversationStrategy(
   });
 }
 
-function silentDecision(competing: number, reason: string): ConversationalInitiativeDecision {
+function silentDecision(competing: number, reason: string, consideredSignal: ProactiveExecutiveSignal | null = null): ConversationalInitiativeDecision {
   return Object.freeze({
     shouldInitiate: false,
-    signal: null,
+    // Preserve the considered candidate for downstream explainable policy. This
+    // does not surface it, snapshot it, or turn it into durable alert state.
+    signal: consideredSignal,
     reason,
     priority: "LOW",
     behavior: "SILENT",

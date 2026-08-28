@@ -1,0 +1,5025 @@
+{
+  "identity": "NXA:5-FIX3B-DIAG2/IndependentMatrix",
+  "summary": {
+    "D1": [
+      {
+        "utterance": "show executions",
+        "response": "Which decision do you want to approve?",
+        "intent": "show-execution",
+        "dir": "SHOW_COLLECTION",
+        "collection": "execution",
+        "members": [
+          "ctx-execution-capacity",
+          "ctx-execution-rollout"
+        ],
+        "nca2Move": "ASK_MANAGER",
+        "clarAction": "clarify"
+      }
+    ],
+    "D2": [
+      {
+        "utterance": "show execution",
+        "response": "Which decision do you want to approve?",
+        "intent": "show-execution",
+        "dir": "SHOW_COLLECTION",
+        "collection": "execution",
+        "members": [
+          "ctx-execution-capacity",
+          "ctx-execution-rollout"
+        ],
+        "nca2Move": "ASK_MANAGER",
+        "clarAction": "clarify"
+      }
+    ],
+    "D3": [
+      {
+        "utterance": "show me all executions",
+        "response": "Which decision do you want to approve?",
+        "intent": "show-execution",
+        "dir": "SHOW_COLLECTION",
+        "collection": "execution",
+        "members": [
+          "ctx-execution-capacity",
+          "ctx-execution-rollout"
+        ],
+        "nca2Move": "ASK_MANAGER",
+        "clarAction": "clarify"
+      }
+    ],
+    "D4": [
+      {
+        "utterance": "show all executive",
+        "response": "I couldn't find a clear match for “All Executive” in the current executive context.",
+        "intent": "focus",
+        "dir": "NO_CHANGE",
+        "collection": null,
+        "members": [],
+        "nca2Move": "NEW_TOPIC",
+        "clarAction": "proceed"
+      }
+    ],
+    "D5": [
+      {
+        "utterance": "show problems",
+        "response": "Current Problems: Capacity Gap, Margin Pressure.",
+        "intent": "show-problems",
+        "dir": "SHOW_COLLECTION",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "NEW_TOPIC",
+        "clarAction": "proceed"
+      },
+      {
+        "utterance": "show all executive",
+        "response": "Do you mean Margin Pressure or Capacity Gap?",
+        "intent": "focus",
+        "dir": "NO_CHANGE",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "ASK_MANAGER",
+        "clarAction": "clarify"
+      }
+    ],
+    "D6": [
+      {
+        "utterance": "show problems",
+        "response": "Current Problems: Capacity Gap, Margin Pressure.",
+        "intent": "show-problems",
+        "dir": "SHOW_COLLECTION",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "NEW_TOPIC",
+        "clarAction": "proceed"
+      },
+      {
+        "utterance": "show all executive",
+        "response": "Do you mean Margin Pressure or Capacity Gap?",
+        "intent": "focus",
+        "dir": "NO_CHANGE",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "ASK_MANAGER",
+        "clarAction": "clarify"
+      },
+      {
+        "utterance": "I mean Executions",
+        "response": "That helps. It strengthens the capacity-pressure hypothesis. It strengthens the case for investigating capacity, without treating capacity as a confirmed cause.",
+        "intent": "unknown",
+        "dir": "NO_CHANGE",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "ANSWER_NEXORA",
+        "clarAction": "clarify"
+      }
+    ],
+    "D7": [
+      {
+        "utterance": "show problems",
+        "response": "Current Problems: Capacity Gap, Margin Pressure.",
+        "intent": "show-problems",
+        "dir": "SHOW_COLLECTION",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "NEW_TOPIC",
+        "clarAction": "proceed"
+      },
+      {
+        "utterance": "which one is important?",
+        "response": "Important in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+        "intent": "unknown",
+        "dir": "NO_CHANGE",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "ASK_MANAGER",
+        "clarAction": "proceed"
+      },
+      {
+        "utterance": "show executions",
+        "response": "Which decision do you mean — Margin Pressure or Capacity Gap?",
+        "intent": "show-execution",
+        "dir": "SHOW_COLLECTION",
+        "collection": "execution",
+        "members": [
+          "ctx-execution-capacity",
+          "ctx-execution-rollout"
+        ],
+        "nca2Move": "ASK_MANAGER",
+        "clarAction": "clarify"
+      }
+    ],
+    "D8": [
+      {
+        "utterance": "show problems",
+        "response": "Current Problems: Capacity Gap, Margin Pressure.",
+        "intent": "show-problems",
+        "dir": "SHOW_COLLECTION",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "NEW_TOPIC",
+        "clarAction": "proceed"
+      },
+      {
+        "utterance": "which one is important?",
+        "response": "Important in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+        "intent": "unknown",
+        "dir": "NO_CHANGE",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "ASK_MANAGER",
+        "clarAction": "proceed"
+      },
+      {
+        "utterance": "urgency",
+        "response": "I don’t have enough comparable urgency evidence for Capacity Gap and Margin Pressure to select one. You can ask me to compare them on another explicit criterion, such as risk exposure or evidence strength.",
+        "intent": "unknown",
+        "dir": "NO_CHANGE",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "ANSWER_NEXORA",
+        "clarAction": "proceed"
+      }
+    ],
+    "D9": [
+      {
+        "utterance": "show problems",
+        "response": "Current Problems: Capacity Gap, Margin Pressure.",
+        "intent": "show-problems",
+        "dir": "SHOW_COLLECTION",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "NEW_TOPIC",
+        "clarAction": "proceed"
+      },
+      {
+        "utterance": "why is Capacity Gap happening?",
+        "response": "Capacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause. Has backlog increased recently? My recommendation remains temporary capacity.",
+        "intent": "explain",
+        "dir": "NO_CHANGE",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "ASK_MANAGER",
+        "clarAction": "proceed"
+      },
+      {
+        "utterance": "orders increased 20%",
+        "response": "That 20% increase makes persistent demand pressure more likely. Was that increase driven mainly by more orders or slower throughput?",
+        "intent": "evidence",
+        "dir": "NO_CHANGE",
+        "collection": "problem",
+        "members": [
+          "ctx-problem-capacity",
+          "ctx-problem-margin"
+        ],
+        "nca2Move": "ANSWER_NEXORA",
+        "clarAction": "proceed"
+      }
+    ],
+    "D10": [
+      {
+        "utterance": "show scenarios",
+        "response": "Current Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+        "intent": "show-scenarios",
+        "dir": "SHOW_COLLECTION",
+        "collection": "scenario",
+        "members": [
+          "ctx-scenario-capacity",
+          "ctx-scenario-demand",
+          "ctx-scenario-pricing"
+        ],
+        "nca2Move": "NEW_TOPIC",
+        "clarAction": "proceed"
+      },
+      {
+        "utterance": "exlpain Demand Surge",
+        "response": "Scenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+        "intent": "explain",
+        "dir": "NO_CHANGE",
+        "collection": "scenario",
+        "members": [
+          "ctx-scenario-capacity",
+          "ctx-scenario-demand",
+          "ctx-scenario-pricing"
+        ],
+        "nca2Move": "NEW_TOPIC",
+        "clarAction": "proceed"
+      }
+    ]
+  },
+  "turns": {
+    "D1": [
+      {
+        "utterance": "show executions",
+        "normalized": "show executions",
+        "cc1Kind": "show-execution",
+        "cc1Hints": [],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": true,
+          "reason": "missing-referent",
+          "candidates": []
+        },
+        "collectionQuery": {
+          "collectionKind": "EXECUTION",
+          "scope": "ALL",
+          "subjectContext": null,
+          "ambiguousIssueNoun": false
+        },
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": null,
+        "after": {
+          "response": "Which decision do you want to approve?",
+          "intentKind": "show-execution",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": true,
+            "reason": "missing-referent",
+            "candidates": []
+          },
+          "collectionQuery": {
+            "collectionKind": "EXECUTION",
+            "scope": "ALL",
+            "subjectContext": null,
+            "ambiguousIssueNoun": false
+          },
+          "pendingClarification": {
+            "question": "Which decision do you want to approve?",
+            "reason": "UNSAFE_COMMITMENT_REFERENT",
+            "expectedAnswer": "choice",
+            "loopCount": 0,
+            "candidates": []
+          },
+          "nca2Pending": {
+            "question": "Which decision do you want to approve?",
+            "purpose": "advisory-context",
+            "expectedInformation": "OPTION",
+            "status": "ACTIVE",
+            "valid": true,
+            "inferredExpected": "OPTION"
+          },
+          "nca2Move": "ASK_MANAGER",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "EXECUTION",
+            "items": [
+              "Capacity Expansion",
+              "Pricing Rollout"
+            ],
+            "memberIds": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": null,
+          "clarificationAction": "clarify",
+          "clarificationQuestion": "Which decision do you want to approve?",
+          "post4": null,
+          "director": {
+            "intent": "SHOW_COLLECTION",
+            "mutation": true,
+            "reason": "explicit-canonical-collection-request",
+            "stageEffect": "COLLECTION"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "execution",
+            "members": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "shouldCommit": true
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "unknown",
+            "status": "unknown",
+            "epistemicStatus": "UNKNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "Nexora does not yet know what outcome the manager wants.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "UNKNOWN_PRIORITY"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [],
+            "trustedClaims": [
+              {
+                "kind": "UNKNOWN",
+                "text": "There is not enough evidence to describe the current measured state; no outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": null,
+            "problem": null,
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show executions",
+            "normalizedUtterance": "show executions",
+            "resolvedIntent": "show-execution",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "execution",
+            "dialogueJourney": "ASK_MANAGER/CONTEXT/UNKNOWN",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "CLARIFY",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=clarification-required",
+            "noChangeReason": null
+          }
+        },
+        "mutated": null
+      }
+    ],
+    "D2": [
+      {
+        "utterance": "show execution",
+        "normalized": "show execution",
+        "cc1Kind": "show-execution",
+        "cc1Hints": [],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": true,
+          "reason": "missing-referent",
+          "candidates": []
+        },
+        "collectionQuery": {
+          "collectionKind": "EXECUTION",
+          "scope": "ALL",
+          "subjectContext": null,
+          "ambiguousIssueNoun": false
+        },
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": null,
+        "after": {
+          "response": "Which decision do you want to approve?",
+          "intentKind": "show-execution",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": true,
+            "reason": "missing-referent",
+            "candidates": []
+          },
+          "collectionQuery": {
+            "collectionKind": "EXECUTION",
+            "scope": "ALL",
+            "subjectContext": null,
+            "ambiguousIssueNoun": false
+          },
+          "pendingClarification": {
+            "question": "Which decision do you want to approve?",
+            "reason": "UNSAFE_COMMITMENT_REFERENT",
+            "expectedAnswer": "choice",
+            "loopCount": 0,
+            "candidates": []
+          },
+          "nca2Pending": {
+            "question": "Which decision do you want to approve?",
+            "purpose": "advisory-context",
+            "expectedInformation": "OPTION",
+            "status": "ACTIVE",
+            "valid": true,
+            "inferredExpected": "OPTION"
+          },
+          "nca2Move": "ASK_MANAGER",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "EXECUTION",
+            "items": [
+              "Capacity Expansion",
+              "Pricing Rollout"
+            ],
+            "memberIds": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": null,
+          "clarificationAction": "clarify",
+          "clarificationQuestion": "Which decision do you want to approve?",
+          "post4": null,
+          "director": {
+            "intent": "SHOW_COLLECTION",
+            "mutation": true,
+            "reason": "explicit-canonical-collection-request",
+            "stageEffect": "COLLECTION"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "execution",
+            "members": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "shouldCommit": true
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "unknown",
+            "status": "unknown",
+            "epistemicStatus": "UNKNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "Nexora does not yet know what outcome the manager wants.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "UNKNOWN_PRIORITY"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [],
+            "trustedClaims": [
+              {
+                "kind": "UNKNOWN",
+                "text": "There is not enough evidence to describe the current measured state; no outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": null,
+            "problem": null,
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show execution",
+            "normalizedUtterance": "show execution",
+            "resolvedIntent": "show-execution",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "execution",
+            "dialogueJourney": "ASK_MANAGER/CONTEXT/UNKNOWN",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "CLARIFY",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=clarification-required",
+            "noChangeReason": null
+          }
+        },
+        "mutated": null
+      }
+    ],
+    "D3": [
+      {
+        "utterance": "show me all executions",
+        "normalized": "show me all executions",
+        "cc1Kind": "show-execution",
+        "cc1Hints": [],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": true,
+          "reason": "missing-referent",
+          "candidates": []
+        },
+        "collectionQuery": {
+          "collectionKind": "EXECUTION",
+          "scope": "ALL",
+          "subjectContext": null,
+          "ambiguousIssueNoun": false
+        },
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": null,
+        "after": {
+          "response": "Which decision do you want to approve?",
+          "intentKind": "show-execution",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": true,
+            "reason": "missing-referent",
+            "candidates": []
+          },
+          "collectionQuery": {
+            "collectionKind": "EXECUTION",
+            "scope": "ALL",
+            "subjectContext": null,
+            "ambiguousIssueNoun": false
+          },
+          "pendingClarification": {
+            "question": "Which decision do you want to approve?",
+            "reason": "UNSAFE_COMMITMENT_REFERENT",
+            "expectedAnswer": "choice",
+            "loopCount": 0,
+            "candidates": []
+          },
+          "nca2Pending": {
+            "question": "Which decision do you want to approve?",
+            "purpose": "advisory-context",
+            "expectedInformation": "OPTION",
+            "status": "ACTIVE",
+            "valid": true,
+            "inferredExpected": "OPTION"
+          },
+          "nca2Move": "ASK_MANAGER",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "EXECUTION",
+            "items": [
+              "Capacity Expansion",
+              "Pricing Rollout"
+            ],
+            "memberIds": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": null,
+          "clarificationAction": "clarify",
+          "clarificationQuestion": "Which decision do you want to approve?",
+          "post4": null,
+          "director": {
+            "intent": "SHOW_COLLECTION",
+            "mutation": true,
+            "reason": "explicit-canonical-collection-request",
+            "stageEffect": "COLLECTION"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "execution",
+            "members": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "shouldCommit": true
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "unknown",
+            "status": "unknown",
+            "epistemicStatus": "UNKNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "Nexora does not yet know what outcome the manager wants.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "UNKNOWN_PRIORITY"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [],
+            "trustedClaims": [
+              {
+                "kind": "UNKNOWN",
+                "text": "There is not enough evidence to describe the current measured state; no outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": null,
+            "problem": null,
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show me all executions",
+            "normalizedUtterance": "show me all executions",
+            "resolvedIntent": "show-execution",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "execution",
+            "dialogueJourney": "ASK_MANAGER/CONTEXT/UNKNOWN",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "CLARIFY",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=clarification-required",
+            "noChangeReason": null
+          }
+        },
+        "mutated": null
+      }
+    ],
+    "D4": [
+      {
+        "utterance": "show all executive",
+        "normalized": "show all executive",
+        "cc1Kind": "focus",
+        "cc1Hints": [
+          {
+            "raw": "all executive",
+            "role": "primary"
+          }
+        ],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": true,
+          "reason": "missing-referent",
+          "candidates": []
+        },
+        "collectionQuery": null,
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": null,
+        "after": {
+          "response": "I couldn't find a clear match for “All Executive” in the current executive context.",
+          "intentKind": "focus",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": true,
+            "reason": "missing-referent",
+            "candidates": []
+          },
+          "collectionQuery": null,
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Move": "NEW_TOPIC",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": null,
+          "activeComparison": null,
+          "activeSubject": null,
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": null,
+          "director": {
+            "intent": "NO_CHANGE",
+            "mutation": false,
+            "reason": "turn-has-no-presentation-effect",
+            "stageEffect": "NONE"
+          },
+          "stage": {
+            "mode": "overview",
+            "focus": null,
+            "collection": null,
+            "members": [],
+            "shouldCommit": false
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "unknown",
+            "status": "unknown",
+            "epistemicStatus": "UNKNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "Nexora does not yet know what outcome the manager wants.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "UNKNOWN_PRIORITY"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [],
+            "trustedClaims": [
+              {
+                "kind": "UNKNOWN",
+                "text": "There is not enough evidence to describe the current measured state; no outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": null,
+            "problem": null,
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show all executive",
+            "normalizedUtterance": "show all executive",
+            "resolvedIntent": "focus",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": null,
+            "dialogueJourney": "NEW_TOPIC/CONTEXT/UNKNOWN",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "read",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "overview",
+            "focusId": null,
+            "collectionMemberIds": [],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=not-found",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          }
+        },
+        "mutated": null
+      }
+    ],
+    "D5": [
+      {
+        "utterance": "show problems",
+        "normalized": "show problems",
+        "cc1Kind": "show-problems",
+        "cc1Hints": [],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": "Margin Pressure",
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": {
+          "collectionKind": "PROBLEM",
+          "scope": "ALL",
+          "subjectContext": null,
+          "ambiguousIssueNoun": false
+        },
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": null,
+        "after": {
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "intentKind": "show-problems",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": "Margin Pressure",
+          "nluKind": "problem",
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": {
+            "collectionKind": "PROBLEM",
+            "scope": "ALL",
+            "subjectContext": null,
+            "ambiguousIssueNoun": false
+          },
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Move": "NEW_TOPIC",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": null,
+          "director": {
+            "intent": "SHOW_COLLECTION",
+            "mutation": true,
+            "reason": "explicit-canonical-collection-request",
+            "stageEffect": "COLLECTION"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": true
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "unknown",
+            "status": "unknown",
+            "epistemicStatus": "UNKNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "Nexora does not yet know what outcome the manager wants.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "UNKNOWN_PRIORITY"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          }
+        },
+        "mutated": null
+      },
+      {
+        "utterance": "show all executive",
+        "normalized": "show all executive",
+        "cc1Kind": "focus",
+        "cc1Hints": [
+          {
+            "raw": "all executive",
+            "role": "primary"
+          }
+        ],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": true,
+          "reason": "missing-referent",
+          "candidates": []
+        },
+        "collectionQuery": null,
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": {
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Expected": null,
+          "lastAnswer": null,
+          "collection": "problem",
+          "members": [
+            "ctx-problem-capacity",
+            "ctx-problem-margin"
+          ],
+          "focus": null,
+          "answeredMissing": [],
+          "claims": [
+            {
+              "kind": "FACT",
+              "text": "Status is Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "FACT",
+              "text": "Margin Pressure needs attention because Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "UNKNOWN",
+              "text": "No outcome has been measured yet.",
+              "confidence": "LOW"
+            }
+          ],
+          "investigation": null,
+          "observations": [],
+          "execCtxProblem": {
+            "subjectId": "ctx-problem-margin",
+            "subjectKind": "problem",
+            "canonicalName": "Margin Pressure",
+            "source": "explicit",
+            "turnIndex": 1
+          },
+          "execCtxExecution": null
+        },
+        "after": {
+          "response": "Do you mean Margin Pressure or Capacity Gap?",
+          "intentKind": "focus",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": true,
+            "reason": "missing-referent",
+            "candidates": []
+          },
+          "collectionQuery": null,
+          "pendingClarification": {
+            "question": "Do you mean Margin Pressure or Capacity Gap?",
+            "reason": "MISSING_SUBJECT",
+            "expectedAnswer": "choice",
+            "loopCount": 0,
+            "candidates": [
+              {
+                "id": "ctx-problem-margin",
+                "name": "Margin Pressure",
+                "kind": "problem"
+              },
+              {
+                "id": "ctx-problem-capacity",
+                "name": "Capacity Gap",
+                "kind": "problem"
+              }
+            ]
+          },
+          "nca2Pending": {
+            "question": "Do you mean Margin Pressure or Capacity Gap?",
+            "purpose": "advisory-context",
+            "expectedInformation": "FREE_TEXT",
+            "status": "ACTIVE",
+            "valid": true,
+            "inferredExpected": "FREE_TEXT"
+          },
+          "nca2Move": "ASK_MANAGER",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "clarify",
+          "clarificationQuestion": "Do you mean Margin Pressure or Capacity Gap?",
+          "post4": null,
+          "director": {
+            "intent": "NO_CHANGE",
+            "mutation": false,
+            "reason": "turn-has-no-presentation-effect",
+            "stageEffect": "NONE"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": false
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "resolved",
+            "status": "understood",
+            "epistemicStatus": "KNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "The goal is understood, but its measurable success criteria are not yet defined.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "ACTIVE"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show all executive",
+            "normalizedUtterance": "show all executive",
+            "resolvedIntent": "focus",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "ASK_MANAGER/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "read",
+            "advisorMode": "CLARIFY",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=clarification-required",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          }
+        },
+        "mutated": {
+          "nca2Pending": true,
+          "lastAnswer": false,
+          "answeredMissing": false,
+          "collection": false,
+          "members": false,
+          "focus": false,
+          "claimsCount": false,
+          "investigation": false,
+          "observations": false,
+          "execProblem": false,
+          "execExecution": false,
+          "shouldCommit": false
+        }
+      }
+    ],
+    "D6": [
+      {
+        "utterance": "show problems",
+        "normalized": "show problems",
+        "cc1Kind": "show-problems",
+        "cc1Hints": [],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": "Margin Pressure",
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": {
+          "collectionKind": "PROBLEM",
+          "scope": "ALL",
+          "subjectContext": null,
+          "ambiguousIssueNoun": false
+        },
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": null,
+        "after": {
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "intentKind": "show-problems",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": "Margin Pressure",
+          "nluKind": "problem",
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": {
+            "collectionKind": "PROBLEM",
+            "scope": "ALL",
+            "subjectContext": null,
+            "ambiguousIssueNoun": false
+          },
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Move": "NEW_TOPIC",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": null,
+          "director": {
+            "intent": "SHOW_COLLECTION",
+            "mutation": true,
+            "reason": "explicit-canonical-collection-request",
+            "stageEffect": "COLLECTION"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": true
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "unknown",
+            "status": "unknown",
+            "epistemicStatus": "UNKNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "Nexora does not yet know what outcome the manager wants.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "UNKNOWN_PRIORITY"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          }
+        },
+        "mutated": null
+      },
+      {
+        "utterance": "show all executive",
+        "normalized": "show all executive",
+        "cc1Kind": "focus",
+        "cc1Hints": [
+          {
+            "raw": "all executive",
+            "role": "primary"
+          }
+        ],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": true,
+          "reason": "missing-referent",
+          "candidates": []
+        },
+        "collectionQuery": null,
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": {
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Expected": null,
+          "lastAnswer": null,
+          "collection": "problem",
+          "members": [
+            "ctx-problem-capacity",
+            "ctx-problem-margin"
+          ],
+          "focus": null,
+          "answeredMissing": [],
+          "claims": [
+            {
+              "kind": "FACT",
+              "text": "Status is Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "FACT",
+              "text": "Margin Pressure needs attention because Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "UNKNOWN",
+              "text": "No outcome has been measured yet.",
+              "confidence": "LOW"
+            }
+          ],
+          "investigation": null,
+          "observations": [],
+          "execCtxProblem": {
+            "subjectId": "ctx-problem-margin",
+            "subjectKind": "problem",
+            "canonicalName": "Margin Pressure",
+            "source": "explicit",
+            "turnIndex": 1
+          },
+          "execCtxExecution": null
+        },
+        "after": {
+          "response": "Do you mean Margin Pressure or Capacity Gap?",
+          "intentKind": "focus",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": true,
+            "reason": "missing-referent",
+            "candidates": []
+          },
+          "collectionQuery": null,
+          "pendingClarification": {
+            "question": "Do you mean Margin Pressure or Capacity Gap?",
+            "reason": "MISSING_SUBJECT",
+            "expectedAnswer": "choice",
+            "loopCount": 0,
+            "candidates": [
+              {
+                "id": "ctx-problem-margin",
+                "name": "Margin Pressure",
+                "kind": "problem"
+              },
+              {
+                "id": "ctx-problem-capacity",
+                "name": "Capacity Gap",
+                "kind": "problem"
+              }
+            ]
+          },
+          "nca2Pending": {
+            "question": "Do you mean Margin Pressure or Capacity Gap?",
+            "purpose": "advisory-context",
+            "expectedInformation": "FREE_TEXT",
+            "status": "ACTIVE",
+            "valid": true,
+            "inferredExpected": "FREE_TEXT"
+          },
+          "nca2Move": "ASK_MANAGER",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "clarify",
+          "clarificationQuestion": "Do you mean Margin Pressure or Capacity Gap?",
+          "post4": null,
+          "director": {
+            "intent": "NO_CHANGE",
+            "mutation": false,
+            "reason": "turn-has-no-presentation-effect",
+            "stageEffect": "NONE"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": false
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "resolved",
+            "status": "understood",
+            "epistemicStatus": "KNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "The goal is understood, but its measurable success criteria are not yet defined.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "ACTIVE"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show all executive",
+            "normalizedUtterance": "show all executive",
+            "resolvedIntent": "focus",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "ASK_MANAGER/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "read",
+            "advisorMode": "CLARIFY",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=clarification-required",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          }
+        },
+        "mutated": {
+          "nca2Pending": true,
+          "lastAnswer": false,
+          "answeredMissing": false,
+          "collection": false,
+          "members": false,
+          "focus": false,
+          "claimsCount": false,
+          "investigation": false,
+          "observations": false,
+          "execProblem": false,
+          "execExecution": false,
+          "shouldCommit": false
+        }
+      },
+      {
+        "utterance": "I mean Executions",
+        "normalized": "i mean executions",
+        "cc1Kind": "unknown",
+        "cc1Hints": [],
+        "nluOp": "NONE",
+        "nluIntent": "UNKNOWN",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": null,
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": true,
+        "before": {
+          "pendingClarification": "Do you mean Margin Pressure or Capacity Gap?",
+          "nca2Pending": "Do you mean Margin Pressure or Capacity Gap?",
+          "nca2Expected": "FREE_TEXT",
+          "lastAnswer": null,
+          "collection": "problem",
+          "members": [
+            "ctx-problem-capacity",
+            "ctx-problem-margin"
+          ],
+          "focus": null,
+          "answeredMissing": [],
+          "claims": [
+            {
+              "kind": "FACT",
+              "text": "Status is Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "FACT",
+              "text": "Margin Pressure needs attention because Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "UNKNOWN",
+              "text": "No outcome has been measured yet.",
+              "confidence": "LOW"
+            }
+          ],
+          "investigation": null,
+          "observations": [],
+          "execCtxProblem": {
+            "subjectId": "ctx-problem-margin",
+            "subjectKind": "problem",
+            "canonicalName": "Margin Pressure",
+            "source": "explicit",
+            "turnIndex": 1
+          },
+          "execCtxExecution": null
+        },
+        "after": {
+          "response": "That helps. It strengthens the capacity-pressure hypothesis. It strengthens the case for investigating capacity, without treating capacity as a confirmed cause.",
+          "intentKind": "unknown",
+          "nluOp": "NONE",
+          "nluIntent": "UNKNOWN",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": null,
+          "pendingClarification": {
+            "question": "Do you mean Margin Pressure or Capacity Gap?",
+            "reason": "MISSING_SUBJECT",
+            "expectedAnswer": "choice",
+            "loopCount": 1,
+            "candidates": [
+              {
+                "id": "ctx-problem-margin",
+                "name": "Margin Pressure",
+                "kind": "problem"
+              },
+              {
+                "id": "ctx-problem-capacity",
+                "name": "Capacity Gap",
+                "kind": "problem"
+              }
+            ]
+          },
+          "nca2Pending": null,
+          "nca2Move": "ANSWER_NEXORA",
+          "lastAnswer": {
+            "kind": "FREE_TEXT",
+            "raw": "I mean Executions",
+            "display": "I mean Executions",
+            "booleanValue": null,
+            "numericValue": null,
+            "optionIndex": null,
+            "optionLabel": null
+          },
+          "answeredMissing": [
+            "advisory-context"
+          ],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "clarify",
+          "clarificationQuestion": "Do you mean Margin Pressure or Capacity Gap?",
+          "post4": null,
+          "director": {
+            "intent": "NO_CHANGE",
+            "mutation": false,
+            "reason": "turn-has-no-presentation-effect",
+            "stageEffect": "NONE"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": false
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "resolved",
+            "status": "understood",
+            "epistemicStatus": "KNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "The goal is understood, but its measurable success criteria are not yet defined.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "ACTIVE"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "I mean Executions",
+            "normalizedUtterance": "i mean executions",
+            "resolvedIntent": "unknown",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "ANSWER_NEXORA/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "SAFETY",
+            "readWrite": "read",
+            "advisorMode": "OBSERVE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=clarification-required",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          }
+        },
+        "mutated": {
+          "nca2Pending": true,
+          "lastAnswer": true,
+          "answeredMissing": true,
+          "collection": false,
+          "members": false,
+          "focus": false,
+          "claimsCount": false,
+          "investigation": false,
+          "observations": false,
+          "execProblem": false,
+          "execExecution": false,
+          "shouldCommit": false
+        }
+      }
+    ],
+    "D7": [
+      {
+        "utterance": "show problems",
+        "normalized": "show problems",
+        "cc1Kind": "show-problems",
+        "cc1Hints": [],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": "Margin Pressure",
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": {
+          "collectionKind": "PROBLEM",
+          "scope": "ALL",
+          "subjectContext": null,
+          "ambiguousIssueNoun": false
+        },
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": null,
+        "after": {
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "intentKind": "show-problems",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": "Margin Pressure",
+          "nluKind": "problem",
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": {
+            "collectionKind": "PROBLEM",
+            "scope": "ALL",
+            "subjectContext": null,
+            "ambiguousIssueNoun": false
+          },
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Move": "NEW_TOPIC",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": null,
+          "director": {
+            "intent": "SHOW_COLLECTION",
+            "mutation": true,
+            "reason": "explicit-canonical-collection-request",
+            "stageEffect": "COLLECTION"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": true
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "unknown",
+            "status": "unknown",
+            "epistemicStatus": "UNKNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "Nexora does not yet know what outcome the manager wants.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "UNKNOWN_PRIORITY"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          }
+        },
+        "mutated": null
+      },
+      {
+        "utterance": "which one is important?",
+        "normalized": "which one is important",
+        "cc1Kind": "unknown",
+        "cc1Hints": [],
+        "nluOp": "COMPARE",
+        "nluIntent": "ASK_COMPARISON",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": null,
+        "comparison": {
+          "active": true,
+          "mode": "PRIORITIZE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": true,
+          "ambiguityReason": "MATERIAL_IMPORTANCE_AMBIGUITY"
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": {
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Expected": null,
+          "lastAnswer": null,
+          "collection": "problem",
+          "members": [
+            "ctx-problem-capacity",
+            "ctx-problem-margin"
+          ],
+          "focus": null,
+          "answeredMissing": [],
+          "claims": [
+            {
+              "kind": "FACT",
+              "text": "Status is Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "FACT",
+              "text": "Margin Pressure needs attention because Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "UNKNOWN",
+              "text": "No outcome has been measured yet.",
+              "confidence": "LOW"
+            }
+          ],
+          "investigation": null,
+          "observations": [],
+          "execCtxProblem": {
+            "subjectId": "ctx-problem-margin",
+            "subjectKind": "problem",
+            "canonicalName": "Margin Pressure",
+            "source": "explicit",
+            "turnIndex": 1
+          },
+          "execCtxExecution": null
+        },
+        "after": {
+          "response": "Important in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+          "intentKind": "compare-scenarios",
+          "nluOp": "COMPARE",
+          "nluIntent": "ASK_COMPARISON",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": null,
+          "pendingClarification": null,
+          "nca2Pending": {
+            "question": "Important in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+            "purpose": "comparison-criterion",
+            "expectedInformation": "PRIORITY",
+            "status": "ACTIVE",
+            "valid": true,
+            "inferredExpected": "OPTION"
+          },
+          "nca2Move": "ASK_MANAGER",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": {
+            "candidateIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "candidateKind": "PROBLEM",
+            "mode": "PRIORITIZE",
+            "criterion": "UNSPECIFIED",
+            "establishedAtTurn": 2,
+            "sourceCollectionTurn": 1
+          },
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": {
+            "criterion": "UNSPECIFIED",
+            "mode": "PRIORITIZE",
+            "ids": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ]
+          },
+          "director": {
+            "intent": "NO_CHANGE",
+            "mutation": false,
+            "reason": "turn-has-no-presentation-effect",
+            "stageEffect": "NONE"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": false
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "resolved",
+            "status": "understood",
+            "epistemicStatus": "KNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "The goal is understood, but its measurable success criteria are not yet defined.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "ACTIVE"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "which one is important?",
+            "normalizedUtterance": "which one is important",
+            "resolvedIntent": "compare-scenarios",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "ASK_MANAGER/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:9/compare-scenarios",
+            "readWrite": "read",
+            "advisorMode": "COMPARE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          }
+        },
+        "mutated": {
+          "nca2Pending": true,
+          "lastAnswer": false,
+          "answeredMissing": false,
+          "collection": false,
+          "members": false,
+          "focus": false,
+          "claimsCount": false,
+          "investigation": false,
+          "observations": false,
+          "execProblem": false,
+          "execExecution": false,
+          "shouldCommit": false
+        }
+      },
+      {
+        "utterance": "show executions",
+        "normalized": "show executions",
+        "cc1Kind": "show-execution",
+        "cc1Hints": [],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": true,
+          "reason": "missing-referent",
+          "candidates": []
+        },
+        "collectionQuery": {
+          "collectionKind": "EXECUTION",
+          "scope": "ALL",
+          "subjectContext": null,
+          "ambiguousIssueNoun": false
+        },
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": {
+          "pendingClarification": null,
+          "nca2Pending": "Important in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+          "nca2Expected": "PRIORITY",
+          "lastAnswer": null,
+          "collection": "problem",
+          "members": [
+            "ctx-problem-capacity",
+            "ctx-problem-margin"
+          ],
+          "focus": null,
+          "answeredMissing": [],
+          "claims": [
+            {
+              "kind": "FACT",
+              "text": "Status is Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "FACT",
+              "text": "Margin Pressure needs attention because Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "UNKNOWN",
+              "text": "No outcome has been measured yet.",
+              "confidence": "LOW"
+            }
+          ],
+          "investigation": null,
+          "observations": [],
+          "execCtxProblem": {
+            "subjectId": "ctx-problem-margin",
+            "subjectKind": "problem",
+            "canonicalName": "Margin Pressure",
+            "source": "explicit",
+            "turnIndex": 1
+          },
+          "execCtxExecution": null
+        },
+        "after": {
+          "response": "Which decision do you mean — Margin Pressure or Capacity Gap?",
+          "intentKind": "show-execution",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": true,
+            "reason": "missing-referent",
+            "candidates": []
+          },
+          "collectionQuery": {
+            "collectionKind": "EXECUTION",
+            "scope": "ALL",
+            "subjectContext": null,
+            "ambiguousIssueNoun": false
+          },
+          "pendingClarification": {
+            "question": "Which decision do you mean — Margin Pressure or Capacity Gap?",
+            "reason": "UNSAFE_COMMITMENT_REFERENT",
+            "expectedAnswer": "choice",
+            "loopCount": 0,
+            "candidates": [
+              {
+                "id": "ctx-problem-margin",
+                "name": "Margin Pressure",
+                "kind": "problem"
+              },
+              {
+                "id": "ctx-problem-capacity",
+                "name": "Capacity Gap",
+                "kind": "problem"
+              }
+            ]
+          },
+          "nca2Pending": {
+            "question": "Which decision do you mean — Margin Pressure or Capacity Gap?",
+            "purpose": "advisory-context",
+            "expectedInformation": "OPTION",
+            "status": "ACTIVE",
+            "valid": true,
+            "inferredExpected": "OPTION"
+          },
+          "nca2Move": "ASK_MANAGER",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "EXECUTION",
+            "items": [
+              "Capacity Expansion",
+              "Pricing Rollout"
+            ],
+            "memberIds": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "establishedAtTurn": 3,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": {
+            "candidateIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "candidateKind": "PROBLEM",
+            "mode": "PRIORITIZE",
+            "criterion": "UNSPECIFIED",
+            "establishedAtTurn": 2,
+            "sourceCollectionTurn": 1
+          },
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "clarify",
+          "clarificationQuestion": "Which decision do you mean — Margin Pressure or Capacity Gap?",
+          "post4": null,
+          "director": {
+            "intent": "SHOW_COLLECTION",
+            "mutation": true,
+            "reason": "explicit-canonical-collection-request",
+            "stageEffect": "COLLECTION"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "execution",
+            "members": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "shouldCommit": true
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "resolved",
+            "status": "understood",
+            "epistemicStatus": "KNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "The goal is understood, but its measurable success criteria are not yet defined.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "ACTIVE"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show executions",
+            "normalizedUtterance": "show executions",
+            "resolvedIntent": "show-execution",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "execution",
+            "dialogueJourney": "ASK_MANAGER/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "CLARIFY",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-execution-capacity",
+              "ctx-execution-rollout"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=clarification-required",
+            "noChangeReason": null
+          }
+        },
+        "mutated": {
+          "nca2Pending": true,
+          "lastAnswer": false,
+          "answeredMissing": false,
+          "collection": true,
+          "members": true,
+          "focus": false,
+          "claimsCount": false,
+          "investigation": false,
+          "observations": false,
+          "execProblem": false,
+          "execExecution": false,
+          "shouldCommit": true
+        }
+      }
+    ],
+    "D8": [
+      {
+        "utterance": "show problems",
+        "normalized": "show problems",
+        "cc1Kind": "show-problems",
+        "cc1Hints": [],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": "Margin Pressure",
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": {
+          "collectionKind": "PROBLEM",
+          "scope": "ALL",
+          "subjectContext": null,
+          "ambiguousIssueNoun": false
+        },
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": null,
+        "after": {
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "intentKind": "show-problems",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": "Margin Pressure",
+          "nluKind": "problem",
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": {
+            "collectionKind": "PROBLEM",
+            "scope": "ALL",
+            "subjectContext": null,
+            "ambiguousIssueNoun": false
+          },
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Move": "NEW_TOPIC",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": null,
+          "director": {
+            "intent": "SHOW_COLLECTION",
+            "mutation": true,
+            "reason": "explicit-canonical-collection-request",
+            "stageEffect": "COLLECTION"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": true
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "unknown",
+            "status": "unknown",
+            "epistemicStatus": "UNKNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "Nexora does not yet know what outcome the manager wants.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "UNKNOWN_PRIORITY"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          }
+        },
+        "mutated": null
+      },
+      {
+        "utterance": "which one is important?",
+        "normalized": "which one is important",
+        "cc1Kind": "unknown",
+        "cc1Hints": [],
+        "nluOp": "COMPARE",
+        "nluIntent": "ASK_COMPARISON",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": null,
+        "comparison": {
+          "active": true,
+          "mode": "PRIORITIZE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": true,
+          "ambiguityReason": "MATERIAL_IMPORTANCE_AMBIGUITY"
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": {
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Expected": null,
+          "lastAnswer": null,
+          "collection": "problem",
+          "members": [
+            "ctx-problem-capacity",
+            "ctx-problem-margin"
+          ],
+          "focus": null,
+          "answeredMissing": [],
+          "claims": [
+            {
+              "kind": "FACT",
+              "text": "Status is Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "FACT",
+              "text": "Margin Pressure needs attention because Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "UNKNOWN",
+              "text": "No outcome has been measured yet.",
+              "confidence": "LOW"
+            }
+          ],
+          "investigation": null,
+          "observations": [],
+          "execCtxProblem": {
+            "subjectId": "ctx-problem-margin",
+            "subjectKind": "problem",
+            "canonicalName": "Margin Pressure",
+            "source": "explicit",
+            "turnIndex": 1
+          },
+          "execCtxExecution": null
+        },
+        "after": {
+          "response": "Important in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+          "intentKind": "compare-scenarios",
+          "nluOp": "COMPARE",
+          "nluIntent": "ASK_COMPARISON",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": null,
+          "pendingClarification": null,
+          "nca2Pending": {
+            "question": "Important in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+            "purpose": "comparison-criterion",
+            "expectedInformation": "PRIORITY",
+            "status": "ACTIVE",
+            "valid": true,
+            "inferredExpected": "OPTION"
+          },
+          "nca2Move": "ASK_MANAGER",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": {
+            "candidateIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "candidateKind": "PROBLEM",
+            "mode": "PRIORITIZE",
+            "criterion": "UNSPECIFIED",
+            "establishedAtTurn": 2,
+            "sourceCollectionTurn": 1
+          },
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": {
+            "criterion": "UNSPECIFIED",
+            "mode": "PRIORITIZE",
+            "ids": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ]
+          },
+          "director": {
+            "intent": "NO_CHANGE",
+            "mutation": false,
+            "reason": "turn-has-no-presentation-effect",
+            "stageEffect": "NONE"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": false
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "resolved",
+            "status": "understood",
+            "epistemicStatus": "KNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "The goal is understood, but its measurable success criteria are not yet defined.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "ACTIVE"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "which one is important?",
+            "normalizedUtterance": "which one is important",
+            "resolvedIntent": "compare-scenarios",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "ASK_MANAGER/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:9/compare-scenarios",
+            "readWrite": "read",
+            "advisorMode": "COMPARE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          }
+        },
+        "mutated": {
+          "nca2Pending": true,
+          "lastAnswer": false,
+          "answeredMissing": false,
+          "collection": false,
+          "members": false,
+          "focus": false,
+          "claimsCount": false,
+          "investigation": false,
+          "observations": false,
+          "execProblem": false,
+          "execExecution": false,
+          "shouldCommit": false
+        }
+      },
+      {
+        "utterance": "urgency",
+        "normalized": "urgency",
+        "cc1Kind": "unknown",
+        "cc1Hints": [],
+        "nluOp": "NONE",
+        "nluIntent": "UNKNOWN",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": null,
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "URGENCY",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": true,
+        "before": {
+          "pendingClarification": null,
+          "nca2Pending": "Important in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?",
+          "nca2Expected": "PRIORITY",
+          "lastAnswer": null,
+          "collection": "problem",
+          "members": [
+            "ctx-problem-capacity",
+            "ctx-problem-margin"
+          ],
+          "focus": null,
+          "answeredMissing": [],
+          "claims": [
+            {
+              "kind": "FACT",
+              "text": "Status is Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "FACT",
+              "text": "Margin Pressure needs attention because Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "UNKNOWN",
+              "text": "No outcome has been measured yet.",
+              "confidence": "LOW"
+            }
+          ],
+          "investigation": null,
+          "observations": [],
+          "execCtxProblem": {
+            "subjectId": "ctx-problem-margin",
+            "subjectKind": "problem",
+            "canonicalName": "Margin Pressure",
+            "source": "explicit",
+            "turnIndex": 1
+          },
+          "execCtxExecution": null
+        },
+        "after": {
+          "response": "I don’t have enough comparable urgency evidence for Capacity Gap and Margin Pressure to select one. You can ask me to compare them on another explicit criterion, such as risk exposure or evidence strength.",
+          "intentKind": "unknown",
+          "nluOp": "NONE",
+          "nluIntent": "UNKNOWN",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": null,
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Move": "ANSWER_NEXORA",
+          "lastAnswer": {
+            "kind": "PRIORITY",
+            "raw": "urgency",
+            "display": "urgency",
+            "booleanValue": null,
+            "numericValue": null,
+            "optionIndex": null,
+            "optionLabel": null
+          },
+          "answeredMissing": [
+            "comparison-criterion"
+          ],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": {
+            "candidateIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "candidateKind": "PROBLEM",
+            "mode": "PRIORITIZE",
+            "criterion": "URGENCY",
+            "establishedAtTurn": 3,
+            "sourceCollectionTurn": 1
+          },
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": {
+            "criterion": "URGENCY",
+            "mode": "PRIORITIZE",
+            "ids": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ]
+          },
+          "director": {
+            "intent": "NO_CHANGE",
+            "mutation": false,
+            "reason": "turn-has-no-presentation-effect",
+            "stageEffect": "NONE"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": false
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "resolved",
+            "status": "understood",
+            "epistemicStatus": "KNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "The goal is understood, but its measurable success criteria are not yet defined.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "ACTIVE"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "urgency",
+            "normalizedUtterance": "urgency",
+            "resolvedIntent": "unknown",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "ANSWER_NEXORA/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "NCA2_PENDING_ANSWER",
+            "readWrite": "read",
+            "advisorMode": "OBSERVE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=unsupported",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          }
+        },
+        "mutated": {
+          "nca2Pending": true,
+          "lastAnswer": true,
+          "answeredMissing": true,
+          "collection": false,
+          "members": false,
+          "focus": false,
+          "claimsCount": false,
+          "investigation": false,
+          "observations": false,
+          "execProblem": false,
+          "execExecution": false,
+          "shouldCommit": false
+        }
+      }
+    ],
+    "D9": [
+      {
+        "utterance": "show problems",
+        "normalized": "show problems",
+        "cc1Kind": "show-problems",
+        "cc1Hints": [],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": "Margin Pressure",
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": {
+          "collectionKind": "PROBLEM",
+          "scope": "ALL",
+          "subjectContext": null,
+          "ambiguousIssueNoun": false
+        },
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": null,
+        "after": {
+          "response": "Current Problems: Capacity Gap, Margin Pressure.",
+          "intentKind": "show-problems",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": "Margin Pressure",
+          "nluKind": "problem",
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": {
+            "collectionKind": "PROBLEM",
+            "scope": "ALL",
+            "subjectContext": null,
+            "ambiguousIssueNoun": false
+          },
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Move": "NEW_TOPIC",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": {
+            "id": "ctx-problem-margin",
+            "name": "Margin Pressure",
+            "kind": "problem"
+          },
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": null,
+          "director": {
+            "intent": "SHOW_COLLECTION",
+            "mutation": true,
+            "reason": "explicit-canonical-collection-request",
+            "stageEffect": "COLLECTION"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": true
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "unknown",
+            "status": "unknown",
+            "epistemicStatus": "UNKNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Margin Pressure"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "Nexora does not yet know what outcome the manager wants.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "UNKNOWN_PRIORITY"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Risk."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Margin Pressure needs attention because Risk.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "problem": {
+              "subjectId": "ctx-problem-margin",
+              "subjectKind": "problem",
+              "canonicalName": "Margin Pressure",
+              "source": "explicit",
+              "turnIndex": 1
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show problems",
+            "normalizedUtterance": "show problems",
+            "resolvedIntent": "show-problems",
+            "canonicalReference": "ctx-problem-margin",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          }
+        },
+        "mutated": null
+      },
+      {
+        "utterance": "why is Capacity Gap happening?",
+        "normalized": "why is capacity gap happening",
+        "cc1Kind": "explain",
+        "cc1Hints": [
+          {
+            "raw": "capacity gap",
+            "role": "primary"
+          }
+        ],
+        "nluOp": "CAUSE",
+        "nluIntent": "ASK_WHY",
+        "nluSubject": "Capacity Gap",
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": null,
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": {
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Expected": null,
+          "lastAnswer": null,
+          "collection": "problem",
+          "members": [
+            "ctx-problem-capacity",
+            "ctx-problem-margin"
+          ],
+          "focus": null,
+          "answeredMissing": [],
+          "claims": [
+            {
+              "kind": "FACT",
+              "text": "Status is Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "FACT",
+              "text": "Margin Pressure needs attention because Risk.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Risk. That connection does not by itself tell us whether Margin Pressure is affecting Risk or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure may affect Revenue. That directional relationship is recorded, but there is not enough evidence yet to treat it as a confirmed impact.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Margin Pressure is associated with Pricing Response. That connection does not by itself tell us whether Margin Pressure is affecting Pricing Response or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "UNKNOWN",
+              "text": "No outcome has been measured yet.",
+              "confidence": "LOW"
+            }
+          ],
+          "investigation": null,
+          "observations": [],
+          "execCtxProblem": {
+            "subjectId": "ctx-problem-margin",
+            "subjectKind": "problem",
+            "canonicalName": "Margin Pressure",
+            "source": "explicit",
+            "turnIndex": 1
+          },
+          "execCtxExecution": null
+        },
+        "after": {
+          "response": "Capacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause. Has backlog increased recently? My recommendation remains temporary capacity.",
+          "intentKind": "explain",
+          "nluOp": "CAUSE",
+          "nluIntent": "ASK_WHY",
+          "nluSubject": "Capacity Gap",
+          "nluKind": "problem",
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": null,
+          "pendingClarification": null,
+          "nca2Pending": {
+            "question": "My recommendation remains temporary capacity.?",
+            "purpose": "demand-persistence",
+            "expectedInformation": "BOOLEAN",
+            "status": "ACTIVE",
+            "valid": true,
+            "inferredExpected": "BOOLEAN"
+          },
+          "nca2Move": "ASK_MANAGER",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": {
+            "id": "ctx-problem-capacity",
+            "name": "Capacity Gap",
+            "kind": "problem"
+          },
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": null,
+          "director": {
+            "intent": "NO_CHANGE",
+            "mutation": false,
+            "reason": "turn-has-no-presentation-effect",
+            "stageEffect": "NONE"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": false
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "resolved",
+            "status": "understood",
+            "epistemicStatus": "KNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Capacity Gap"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "The goal is understood, but its measurable success criteria are not yet defined.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "ACTIVE"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Watch."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Watch.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Capacity Gap has not been resolved yet, so it still deserves attention.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity Gap is associated with Delivery. That connection does not by itself tell us whether Capacity Gap is affecting Delivery or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity Gap is associated with Capacity Expansion Plan. That connection does not by itself tell us whether Capacity Gap is affecting Capacity Expansion Plan or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-capacity",
+              "subjectKind": "problem",
+              "canonicalName": "Capacity Gap",
+              "source": "explicit",
+              "turnIndex": 2
+            },
+            "problem": {
+              "subjectId": "ctx-problem-capacity",
+              "subjectKind": "problem",
+              "canonicalName": "Capacity Gap",
+              "source": "explicit",
+              "turnIndex": 2
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "why is Capacity Gap happening?",
+            "normalizedUtterance": "why is capacity gap happening",
+            "resolvedIntent": "explain",
+            "canonicalReference": "ctx-problem-capacity",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "ASK_MANAGER/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "MO:2/GenericExplainEngine",
+            "readWrite": "read",
+            "advisorMode": "INVESTIGATE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          }
+        },
+        "mutated": {
+          "nca2Pending": true,
+          "lastAnswer": false,
+          "answeredMissing": false,
+          "collection": false,
+          "members": false,
+          "focus": false,
+          "claimsCount": true,
+          "investigation": false,
+          "observations": false,
+          "execProblem": true,
+          "execExecution": false,
+          "shouldCommit": false
+        }
+      },
+      {
+        "utterance": "orders increased 20%",
+        "normalized": "orders increased 20",
+        "cc1Kind": "evidence",
+        "cc1Hints": [],
+        "nluOp": "NONE",
+        "nluIntent": "UNKNOWN",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": null,
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": true,
+        "before": {
+          "pendingClarification": null,
+          "nca2Pending": "My recommendation remains temporary capacity.?",
+          "nca2Expected": "BOOLEAN",
+          "lastAnswer": null,
+          "collection": "problem",
+          "members": [
+            "ctx-problem-capacity",
+            "ctx-problem-margin"
+          ],
+          "focus": null,
+          "answeredMissing": [],
+          "claims": [
+            {
+              "kind": "FACT",
+              "text": "Status is Watch.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "FACT",
+              "text": "Capacity Gap has not been resolved yet, so it still deserves attention.",
+              "confidence": "HIGH"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Capacity Gap is associated with Delivery. That connection does not by itself tell us whether Capacity Gap is affecting Delivery or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "HYPOTHESIS",
+              "text": "Capacity Gap is associated with Capacity Expansion Plan. That connection does not by itself tell us whether Capacity Gap is affecting Capacity Expansion Plan or the reverse.",
+              "confidence": "MEDIUM"
+            },
+            {
+              "kind": "UNKNOWN",
+              "text": "No outcome has been measured yet.",
+              "confidence": "LOW"
+            }
+          ],
+          "investigation": null,
+          "observations": [],
+          "execCtxProblem": {
+            "subjectId": "ctx-problem-capacity",
+            "subjectKind": "problem",
+            "canonicalName": "Capacity Gap",
+            "source": "explicit",
+            "turnIndex": 2
+          },
+          "execCtxExecution": null
+        },
+        "after": {
+          "response": "That 20% increase makes persistent demand pressure more likely. Was that increase driven mainly by more orders or slower throughput?",
+          "intentKind": "evidence",
+          "nluOp": "NONE",
+          "nluIntent": "UNKNOWN",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": null,
+          "pendingClarification": null,
+          "nca2Pending": {
+            "question": "Was that increase driven mainly by more orders or slower throughput?",
+            "purpose": "demand-driver",
+            "expectedInformation": "OPTION",
+            "status": "ACTIVE",
+            "valid": true,
+            "inferredExpected": "OPTION"
+          },
+          "nca2Move": "ANSWER_NEXORA",
+          "lastAnswer": {
+            "kind": "PERCENTAGE",
+            "raw": "orders increased 20%",
+            "display": "20%",
+            "booleanValue": true,
+            "numericValue": 20,
+            "optionIndex": null,
+            "optionLabel": null
+          },
+          "answeredMissing": [
+            "demand-persistence"
+          ],
+          "lastCollection": {
+            "kind": "PROBLEM",
+            "items": [
+              "Capacity Gap",
+              "Margin Pressure"
+            ],
+            "memberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": {
+            "id": "ctx-problem-capacity",
+            "name": "Capacity Gap",
+            "kind": "problem"
+          },
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": null,
+          "director": {
+            "intent": "NO_CHANGE",
+            "mutation": false,
+            "reason": "turn-has-no-presentation-effect",
+            "stageEffect": "NONE"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "problem",
+            "members": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "shouldCommit": false
+          },
+          "investigation": null,
+          "managerObservations": [
+            {
+              "text": "orders increased 20%",
+              "provenance": "manager-reported",
+              "matchedLabel": null
+            }
+          ],
+          "observationCount": 1,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "resolved",
+            "status": "understood",
+            "epistemicStatus": "KNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [
+              "Capacity Gap"
+            ],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "The goal is understood, but its measurable success criteria are not yet defined.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "ACTIVE"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Watch."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Watch.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Capacity Gap has not been resolved yet, so it still deserves attention.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity is connected and may be contributing, but the current evidence does not establish it as the confirmed cause.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity Gap is associated with Delivery. That connection does not by itself tell us whether Capacity Gap is affecting Delivery or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Capacity Gap is associated with Capacity Expansion Plan. That connection does not by itself tell us whether Capacity Gap is affecting Capacity Expansion Plan or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-problem-capacity",
+              "subjectKind": "problem",
+              "canonicalName": "Capacity Gap",
+              "source": "explicit",
+              "turnIndex": 3
+            },
+            "problem": {
+              "subjectId": "ctx-problem-capacity",
+              "subjectKind": "problem",
+              "canonicalName": "Capacity Gap",
+              "source": "explicit",
+              "turnIndex": 3
+            },
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "orders increased 20%",
+            "normalizedUtterance": "orders increased 20",
+            "resolvedIntent": "evidence",
+            "canonicalReference": "ctx-problem-capacity",
+            "inheritedSubject": null,
+            "activeCollection": "problem",
+            "dialogueJourney": "ANSWER_NEXORA/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "NCA2_PENDING_ANSWER",
+            "readWrite": "read",
+            "advisorMode": "OBSERVE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-problem-capacity",
+              "ctx-problem-margin"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          }
+        },
+        "mutated": {
+          "nca2Pending": true,
+          "lastAnswer": true,
+          "answeredMissing": true,
+          "collection": false,
+          "members": false,
+          "focus": false,
+          "claimsCount": false,
+          "investigation": false,
+          "observations": true,
+          "execProblem": true,
+          "execExecution": false,
+          "shouldCommit": false
+        }
+      }
+    ],
+    "D10": [
+      {
+        "utterance": "show scenarios",
+        "normalized": "show scenarios",
+        "cc1Kind": "show-scenarios",
+        "cc1Hints": [],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": null,
+        "nluAmbiguity": {
+          "unresolved": true,
+          "reason": "missing-referent",
+          "candidates": []
+        },
+        "collectionQuery": {
+          "collectionKind": "SCENARIO",
+          "scope": "ALL",
+          "subjectContext": null,
+          "ambiguousIssueNoun": false
+        },
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": null,
+        "after": {
+          "response": "Current Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response.",
+          "intentKind": "show-scenarios",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": null,
+          "nluKind": null,
+          "nluAmbiguity": {
+            "unresolved": true,
+            "reason": "missing-referent",
+            "candidates": []
+          },
+          "collectionQuery": {
+            "collectionKind": "SCENARIO",
+            "scope": "ALL",
+            "subjectContext": null,
+            "ambiguousIssueNoun": false
+          },
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Move": "NEW_TOPIC",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "SCENARIO",
+            "items": [
+              "Capacity Expansion Plan",
+              "Demand Surge",
+              "Pricing Response"
+            ],
+            "memberIds": [
+              "ctx-scenario-capacity",
+              "ctx-scenario-demand",
+              "ctx-scenario-pricing"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": null,
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": null,
+          "director": {
+            "intent": "SHOW_COLLECTION",
+            "mutation": true,
+            "reason": "explicit-canonical-collection-request",
+            "stageEffect": "COLLECTION"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "scenario",
+            "members": [
+              "ctx-scenario-capacity",
+              "ctx-scenario-demand",
+              "ctx-scenario-pricing"
+            ],
+            "shouldCommit": true
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "unknown",
+            "status": "unknown",
+            "epistemicStatus": "UNKNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "Nexora does not yet know what outcome the manager wants.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "UNKNOWN_PRIORITY"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [],
+            "trustedClaims": [
+              {
+                "kind": "UNKNOWN",
+                "text": "There is not enough evidence to describe the current measured state; no outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": null,
+            "problem": null,
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "show scenarios",
+            "normalizedUtterance": "show scenarios",
+            "resolvedIntent": "show-scenarios",
+            "canonicalReference": null,
+            "inheritedSubject": null,
+            "activeCollection": "scenario",
+            "dialogueJourney": "NEW_TOPIC/CONTEXT/UNKNOWN",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "write",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "COLLECTION",
+            "dirInstruction": "SHOW_COLLECTION",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-scenario-capacity",
+              "ctx-scenario-demand",
+              "ctx-scenario-pricing"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": null
+          }
+        },
+        "mutated": null
+      },
+      {
+        "utterance": "exlpain Demand Surge",
+        "normalized": "explain demand surge",
+        "cc1Kind": "explain",
+        "cc1Hints": [
+          {
+            "raw": "demand surge",
+            "role": "primary"
+          }
+        ],
+        "nluOp": "FOCUS",
+        "nluIntent": "REQUEST_FOCUS",
+        "nluSubject": "Demand Surge",
+        "nluAmbiguity": {
+          "unresolved": false,
+          "reason": "none",
+          "candidates": []
+        },
+        "collectionQuery": null,
+        "comparison": {
+          "active": false,
+          "mode": "COMPARE",
+          "criterion": "UNSPECIFIED",
+          "criterionAmbiguous": false,
+          "ambiguityReason": null
+        },
+        "wouldNca2ConsumeAsShortAnswer": false,
+        "before": {
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Expected": null,
+          "lastAnswer": null,
+          "collection": "scenario",
+          "members": [
+            "ctx-scenario-capacity",
+            "ctx-scenario-demand",
+            "ctx-scenario-pricing"
+          ],
+          "focus": null,
+          "answeredMissing": [],
+          "claims": [
+            {
+              "kind": "UNKNOWN",
+              "text": "There is not enough evidence to describe the current measured state; no outcome has been measured yet.",
+              "confidence": "LOW"
+            }
+          ],
+          "investigation": null,
+          "observations": [],
+          "execCtxProblem": null,
+          "execCtxExecution": null
+        },
+        "after": {
+          "response": "Scenario: Demand Surge. Demand Surge is a scenario. What it represents: Demand Surge explores volume upside with delivery risk. The current scenario model associates it with Delivery. This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.",
+          "intentKind": "explain-scenario",
+          "nluOp": "FOCUS",
+          "nluIntent": "REQUEST_FOCUS",
+          "nluSubject": "Demand Surge",
+          "nluKind": "scenario",
+          "nluAmbiguity": {
+            "unresolved": false,
+            "reason": "none",
+            "candidates": []
+          },
+          "collectionQuery": null,
+          "pendingClarification": null,
+          "nca2Pending": null,
+          "nca2Move": "NEW_TOPIC",
+          "lastAnswer": null,
+          "answeredMissing": [],
+          "lastCollection": {
+            "kind": "SCENARIO",
+            "items": [
+              "Capacity Expansion Plan",
+              "Demand Surge",
+              "Pricing Response"
+            ],
+            "memberIds": [
+              "ctx-scenario-capacity",
+              "ctx-scenario-demand",
+              "ctx-scenario-pricing"
+            ],
+            "establishedAtTurn": 1,
+            "scope": "ALL",
+            "source": "NCA-POST:3_CANONICAL_COLLECTION"
+          },
+          "activeComparison": null,
+          "activeSubject": {
+            "id": "ctx-scenario-demand",
+            "name": "Demand Surge",
+            "kind": "scenario"
+          },
+          "clarificationAction": "proceed",
+          "clarificationQuestion": null,
+          "post4": null,
+          "director": {
+            "intent": "NO_CHANGE",
+            "mutation": false,
+            "reason": "turn-has-no-presentation-effect",
+            "stageEffect": "NONE"
+          },
+          "stage": {
+            "mode": "object-focused",
+            "focus": null,
+            "collection": "scenario",
+            "members": [
+              "ctx-scenario-capacity",
+              "ctx-scenario-demand",
+              "ctx-scenario-pricing"
+            ],
+            "shouldCommit": false
+          },
+          "investigation": null,
+          "managerObservations": [],
+          "observationCount": 0,
+          "navigationGoal": {
+            "goalId": null,
+            "title": "Unknown goal",
+            "description": null,
+            "source": "resolved",
+            "status": "understood",
+            "epistemicStatus": "KNOWN",
+            "relatedObjects": [],
+            "successSignals": [],
+            "constraints": [],
+            "currentGap": {
+              "quantification": "unknown",
+              "desiredState": null,
+              "currentState": null,
+              "summary": "The goal is understood, but its measurable success criteria are not yet defined.",
+              "epistemicStatus": "UNKNOWN"
+            },
+            "managerConfirmed": false,
+            "persisted": false,
+            "role": "ACTIVE"
+          },
+          "evidenceTrace": {
+            "explanationEvidence": [
+              "Status is Stable."
+            ],
+            "trustedClaims": [
+              {
+                "kind": "FACT",
+                "text": "Status is Stable.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "FACT",
+                "text": "Demand Surge is Stable.",
+                "confidence": "HIGH"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Demand Surge is associated with Revenue. That connection does not by itself tell us whether Demand Surge is affecting Revenue or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Demand Surge is associated with Delivery. That connection does not by itself tell us whether Demand Surge is affecting Delivery or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "HYPOTHESIS",
+                "text": "Demand Surge is associated with Delivery. That connection does not by itself tell us whether Demand Surge is affecting Delivery or the reverse.",
+                "confidence": "MEDIUM"
+              },
+              {
+                "kind": "UNKNOWN",
+                "text": "No outcome has been measured yet.",
+                "confidence": "LOW"
+              }
+            ]
+          },
+          "executiveContext": {
+            "subject": {
+              "subjectId": "ctx-scenario-demand",
+              "subjectKind": "scenario",
+              "canonicalName": "Demand Surge",
+              "source": "explicit",
+              "turnIndex": 2
+            },
+            "problem": null,
+            "execution": null,
+            "decision": null,
+            "goal": null
+          },
+          "nxa4": {
+            "message": null
+          },
+          "path": {
+            "inputTurn": "exlpain Demand Surge",
+            "normalizedUtterance": "explain demand surge",
+            "resolvedIntent": "explain-scenario",
+            "canonicalReference": "ctx-scenario-demand",
+            "inheritedSubject": null,
+            "activeCollection": "scenario",
+            "dialogueJourney": "NEW_TOPIC/SCENARIO/AWAITING_DECISION",
+            "authorityRoute": "CC:3/focus-subject",
+            "readWrite": "read",
+            "advisorMode": "NAVIGATE",
+            "plannedPresentation": "NONE",
+            "dirInstruction": "NO_CHANGE",
+            "stageMode": "collection",
+            "focusId": null,
+            "collectionMemberIds": [
+              "ctx-scenario-capacity",
+              "ctx-scenario-demand",
+              "ctx-scenario-pricing"
+            ],
+            "safetyState": "decision=none;execution=UNKNOWN;confirmation=applied",
+            "noChangeReason": "turn-has-no-presentation-effect"
+          }
+        },
+        "mutated": {
+          "nca2Pending": false,
+          "lastAnswer": false,
+          "answeredMissing": false,
+          "collection": false,
+          "members": false,
+          "focus": false,
+          "claimsCount": true,
+          "investigation": false,
+          "observations": false,
+          "execProblem": false,
+          "execExecution": false,
+          "shouldCommit": false
+        }
+      }
+    ]
+  }
+}

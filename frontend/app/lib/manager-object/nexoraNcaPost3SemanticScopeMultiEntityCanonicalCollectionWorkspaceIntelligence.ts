@@ -137,11 +137,11 @@ function productCue(text: string): boolean {
 }
 
 function helpCue(text: string): boolean {
-  return /\b(?:how do i use|how should i (?:use|ask)|what can i do here|help me use)\b/.test(text);
+  return /\b(?:how do i use|how should i (?:use|ask)|what can i do (?:here|with (?:these|the) objects)|help me use)\b/.test(text);
 }
 
 function workspaceCue(text: string): boolean {
-  return /\b(?:on (?:the )?stage|on stage now|what(?:'s| is) on(?: (?:the )?stage| it)|visible objects|which object is (?:selected|focused)|what am i looking at|what is in the queue)\b/.test(
+  return /\b(?:on (?:the )?stage|on stage now|what(?:'s| is) on(?: (?:the )?stage| it)|visible objects|which object is (?:selected|focused)|what am i looking at|what is (?:in|at) the center|which (?:problems?|risks?|opportunities|scenarios?|decisions?|executions?|goals?) (?:are )?(?:shown|visible|on (?:the )?stage)|why are these here|why are (?:these|the) (?:objects?|problems?|risks?|opportunities|scenarios?|decisions?|executions?|goals?) here|what is in the queue|this scene|the scene|showing me|going on here|going on on stage|explain (?:the )?(?:stage|scene)|what are these|why (?:is|are) (?:this|these|they) here)\b/.test(
     text,
   );
 }
@@ -163,7 +163,7 @@ function relationshipCue(text: string): boolean {
 }
 
 function changeCue(text: string): boolean {
-  return /\b(?:disappear(?:ed)?|removed?|no longer|what changed|which .+ disappeared|why isn'?t|why did .+ (?:remove|go|leave)|no longer (?:a |shown)|was added)\b/.test(
+  return /\b(?:disappear(?:ed)?|removed?|no longer|which .+ disappeared|why isn'?t|why did .+ (?:remove|go|leave)|no longer (?:a |shown)|was added)\b/.test(
     text,
   );
 }
@@ -188,6 +188,9 @@ function conditionalEvaluationCue(text: string): boolean {
 export function classifyNexoraSemanticScope(utterance: string): NexoraSemanticScope {
   const text = prepared(utterance);
   if (!text) return "UNKNOWN";
+  // Explicit navigation remains a business/object operation even when the
+  // manager uses interface filler such as “object”.
+  if (/^(?:show|open|focus)\b/.test(text)) return "BUSINESS";
   const product = productCue(text) && /\b(?:what is|explain|tell me about)\b/.test(text) && !workspaceCue(text);
   const workspace = workspaceCue(text);
   const help = helpCue(text);
@@ -602,13 +605,54 @@ export function composeProductKnowledgeReply(utterance: string): string {
 export function composeWorkspaceReply(input: {
   readonly labels: readonly string[];
   readonly focused?: string | null;
+  readonly snapshot?: StageSemanticSnapshot | null;
+  readonly utterance?: string;
 }): string {
+  const snapshot = input.snapshot ?? null;
+  const text = prepared(input.utterance ?? "");
+  if (snapshot) {
+    if (/\b(?:center|current focus|focused)\b/.test(text)) {
+      return snapshot.focused
+        ? `${snapshot.focused.label} is the current focus on the Stage.`
+        : "The Stage does not currently have a single focused object.";
+    }
+    if (/\bwhich\s+(?:problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?)\b/.test(text)) {
+      const requested = text.match(/\bwhich\s+(problems?|risks?|opportunit(?:y|ies)|scenarios?|decisions?|executions?|goals?)\b/)?.[1] ?? "objects";
+      const singular = requested.replace(/ies$/, "y").replace(/s$/, "");
+      const members = snapshot.visibleObjects.filter((item) => item.kind.toLowerCase().includes(singular));
+      return members.length
+        ? `The ${requested} currently shown are ${members.map((item) => item.label).join(" and ")}.`
+        : `No ${requested} are currently shown on the Stage.`;
+    }
+    if (/\bwhy\b/.test(text) && /\b(?:these|objects?|here|shown)\b/.test(text)) {
+      if (snapshot.collection) {
+        const focus = snapshot.focused ? ` in the current ${snapshot.focused.label} view` : "";
+        return `They are being presented as the current ${snapshot.collection.label} collection${focus}. Their visibility does not by itself establish a causal relationship.`;
+      }
+      return "They are part of the current Stage presentation. Visibility alone does not establish a causal relationship.";
+    }
+    if (snapshot.focused && snapshot.collection?.members.length) {
+      return `You’re focused on ${snapshot.focused.label}. The Stage is showing the ${snapshot.collection.label} in this view: ${snapshot.collection.members.map((item) => item.label).join(" and ")}.`;
+    }
+    if (snapshot.collection?.members.length) {
+      return `The Stage is showing the ${snapshot.collection.label}: ${snapshot.collection.members.map((item) => item.label).join(" and ")}.`;
+    }
+    if (snapshot.focused) return `You’re focused on ${snapshot.focused.label}.`;
+  }
   if (input.labels.length === 0) {
     return "The Stage does not currently show any executive objects.";
   }
   const focus = input.focused ? ` ${input.focused} is focused.` : "";
   return `Right now the Stage contains ${input.labels.join(", ")}.${focus}`;
 }
+
+export type StageSemanticSnapshot = Readonly<{
+  workspace: string;
+  mode: string;
+  focused: Readonly<{ id: string; label: string; kind: string }> | null;
+  collection: Readonly<{ kind: string; label: string; members: readonly Readonly<{ id: string; label: string; kind: string }>[] }> | null;
+  visibleObjects: readonly Readonly<{ id: string; label: string; kind: string }>[];
+}>;
 
 export function composeConditionalEvaluationReply(input: {
   readonly subject: string | null;
@@ -655,6 +699,7 @@ export function composeNexoraSemanticTurn(input: {
   readonly previousCollection?: readonly CanonicalCollectionMember[] | null;
   readonly stageLabels?: readonly string[];
   readonly focusedLabel?: string | null;
+  readonly stageSnapshot?: StageSemanticSnapshot | null;
   readonly presentationOnlyChange?: boolean;
 }): {
   readonly scope: NexoraSemanticScope;
@@ -665,6 +710,8 @@ export function composeNexoraSemanticTurn(input: {
   readonly suppressNca3: boolean;
   readonly suppressNca4: boolean;
   readonly suppressNavigation: boolean;
+  /** Exact authoritative result shared by Advisor and Director. */
+  readonly canonicalCollectionMembers: readonly CanonicalCollectionMember[];
 } {
   const catalog = input.catalog ?? getDefaultNexoraMVPObjectInteractionCatalog();
   const scope = classifyNexoraSemanticScope(input.utterance);
@@ -685,6 +732,7 @@ export function composeNexoraSemanticTurn(input: {
     multiEntityAssertion: multiEntity,
   });
   const problems = resolveCanonicalCollectionMembership("problem", catalog);
+  let canonicalCollectionMembers: readonly CanonicalCollectionMember[] = Object.freeze([]);
   let reply: string | null = null;
   if (owner === "RELATIONSHIP_EXPLANATION") {
     reply = composeRelationshipReply(relationship);
@@ -717,6 +765,7 @@ export function composeNexoraSemanticTurn(input: {
     const visible = filtered
       ? members.filter((item) => prepared(`${item.label} ${item.id}`).includes(prepared(filtered)))
       : members;
+    canonicalCollectionMembers = Object.freeze([...visible]);
     const kindLabel =
       kind === "problem"
         ? "Problems"
@@ -752,6 +801,8 @@ export function composeNexoraSemanticTurn(input: {
       ? ` ${composeWorkspaceReply({
           labels: input.stageLabels ?? [],
           focused: input.focusedLabel ?? null,
+          snapshot: input.stageSnapshot,
+          utterance: input.utterance,
         })}`
       : "";
     reply = `${composeProductKnowledgeReply(input.utterance)}${extra}`.trim();
@@ -764,6 +815,8 @@ export function composeNexoraSemanticTurn(input: {
     reply = `${knowledge}${composeWorkspaceReply({
       labels: input.stageLabels ?? [],
       focused: input.focusedLabel ?? null,
+      snapshot: input.stageSnapshot,
+      utterance: input.utterance,
     })}`.trim();
   } else if (owner === "CONDITIONAL_EVALUATION") {
     reply = composeConditionalEvaluationReply({ subject: references.primary?.name ?? null });
@@ -782,11 +835,11 @@ export function composeNexoraSemanticTurn(input: {
     collectionScope: collectionQuery?.scope ?? null,
     collectionFilter: collectionQuery ? String(collectionQuery["subjectContext"] ?? "") || null : null,
     canonicalCollectionAuthority: "executive-queue-category",
-    collectionMembership: Object.freeze(problems.map((item) => item.label)),
+    collectionMembership: Object.freeze(canonicalCollectionMembers.map((item) => item.label)),
     previousCollectionMembership: Object.freeze(
       (input.previousCollection ?? []).map((item) => item.label),
     ),
-    currentCollectionMembership: Object.freeze(problems.map((item) => item.label)),
+    currentCollectionMembership: Object.freeze(canonicalCollectionMembers.map((item) => item.label)),
     changeIntent,
     workspaceQuery: owner === "WORKSPACE_STATE",
     capabilityQuery: owner === "PRODUCT_CAPABILITY",
@@ -808,5 +861,6 @@ export function composeNexoraSemanticTurn(input: {
     suppressNca3,
     suppressNca4,
     suppressNavigation: owner === "MULTI_ENTITY_ASSERTION" || owner === "COLLECTION_QUERY",
+    canonicalCollectionMembers,
   });
 }

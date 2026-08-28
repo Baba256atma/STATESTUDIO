@@ -95,17 +95,32 @@ function isParkMeta(meaning: CanonicalManagerMeaning): boolean {
   );
 }
 
+function isExplicitCollectionIntent(intentKind: string): boolean {
+  return /^(?:show-problems|show-goals|show-scenarios|show-decisions|show-execution|show-related|overview)$/.test(
+    intentKind,
+  );
+}
+
 function isNewCompleteRequest(
   meaning: CanonicalManagerMeaning,
   prepared: string,
   pending: PendingClarification | null,
+  intentKind: string,
 ): boolean {
-  if (meaning.communicativeIntent === "CORRECT") return false;
   if (meaning.requestedOperation === "HELP") return false;
+  if (isExplicitCollectionIntent(intentKind)) return true;
+  if (meaning.communicativeIntent === "CORRECT" && meaning.objectReference) {
+    const targetId = meaning.objectReference.subjectId;
+    if (pending?.candidates.some((item) => item.subjectId === targetId)) {
+      return false;
+    }
+    return true;
+  }
+  if (meaning.communicativeIntent === "CORRECT") return false;
   if (
     pending &&
     meaning.requestedOperation === "FOCUS" &&
-    !/\b(?:show|look at|open|bring|display|explain|compare)\b/.test(prepared)
+    !/\b(?:show|look at|open|bring|display|explain|compare|list|see)\b/.test(prepared)
   ) {
     return false;
   }
@@ -250,7 +265,7 @@ export function interpretClarificationTurn(input: {
     });
   }
 
-  if (pending && isNewCompleteRequest(input.turnMeaning, prepared, pending) && !isCorrection(input.turnMeaning, prepared)) {
+  if (pending && isNewCompleteRequest(input.turnMeaning, prepared, pending, input.intentKind)) {
     return emptyResult({
       action: "proceed",
       cancelled: true,
