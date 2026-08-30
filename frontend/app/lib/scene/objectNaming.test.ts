@@ -79,22 +79,30 @@ describe("objectNameDensityProfile", () => {
     resetObjectLabelDiagnosticGuardForTests();
   });
 
-  it("maps object counts to density tiers", () => {
-    expect(resolveObjectNameDensityTier(8)).toBe("sparse");
-    expect(resolveObjectNameDensityTier(20)).toBe("normal");
-    expect(resolveObjectNameDensityTier(40)).toBe("dense");
-    expect(resolveObjectNameDensityTier(80)).toBe("critical");
+  it("maps object counts to canonical name-density tiers, not scene composition density", () => {
+    expect(resolveObjectNameDensityTier(8)).toBe("comfortable");
+    expect(resolveObjectNameDensityTier(18)).toBe("balanced");
+    expect(resolveObjectNameDensityTier(19)).toBe("compact");
+    expect(resolveObjectNameDensityTier(40)).toBe("compact");
+    expect(resolveObjectNameDensityTier(8)).not.toBe("sparse");
+    expect(resolveObjectNameDensityTier(80)).not.toBe("critical");
   });
 
-  it("shows all names until critical density", () => {
+  it("shows unselected names in comfortable scenes and only selected names in compact scenes", () => {
+    expect(
+      shouldRenderExecutiveObjectName({ objectCount: 8, selected: false, focused: false, index: 3 })
+    ).toBe(true);
     expect(
       shouldRenderExecutiveObjectName({ objectCount: 25, selected: false, focused: false, index: 3 })
-    ).toBe(true);
+    ).toBe(false);
     expect(
       shouldRenderExecutiveObjectName({ objectCount: 100, selected: false, focused: false, index: 3 })
     ).toBe(false);
     expect(
       shouldRenderExecutiveObjectName({ objectCount: 100, selected: true, focused: false, index: 3 })
+    ).toBe(true);
+    expect(
+      shouldRenderExecutiveObjectName({ objectCount: 100, selected: false, focused: true, index: 3 })
     ).toBe(true);
   });
 
@@ -153,7 +161,7 @@ describe("executiveSceneReadabilityAudit", () => {
       visibleNameCount: 60,
       legacyTooltipCount: 1,
       selectedObjectId: "revenue",
-      densityTier: "dense",
+      densityTier: "compact",
     });
     expect(report.warnings).toContain("legacy_floating_tooltips_detected");
     expect(report.estimatedOverlapRisk).toBe("medium");

@@ -1,0 +1,27 @@
+{
+  "identity": "DTH:11/ZeroFailureGate",
+  "dth11": "CERTIFIED",
+  "dth1to11Combined": { "exit": 0, "pass": 140 },
+  "dth11Focused": { "exit": 0, "pass": 17 },
+  "testScene": { "exit": 0, "vitestFiles": "31/31", "node": "296/296" },
+  "stageDirector": { "exit": 0, "pass": 32 },
+  "managerObject": { "exit": 0, "pass": 563 },
+  "conversation": { "exit": 0, "pass": 336 },
+  "nexExpDecisionExecution": { "exit": 0, "pass": 282 },
+  "assistantOverflow": { "exit": 0, "pass": 22 },
+  "npmTest": { "exit": 0, "pass": 81 },
+  "typecheck": { "exit": 0 },
+  "productionBuild": { "exit": 0 },
+  "eslint": { "errors": 0, "scope": "dth11-surfaces" },
+  "gitDiffCheck": { "exit": 0 },
+  "liveBrowser": {
+    "ok": true,
+    "url": "http://localhost:3024/executive",
+    "afterStartLiveState": "EXECUTION_ACTIVE",
+    "afterObservationState": "OUTCOME_PARTIAL",
+    "outcomeExecutionId": "execution-cc10:decision:ctx-scenario-demand",
+    "sceneIntentAfterObservation": "REVIEW_OUTCOME",
+    "hardReloadLosesInMemoryOutcome": true
+  },
+  "dth12Started": false
+}

@@ -939,7 +939,7 @@ import {
   isObjectClickPanelIntentApplied,
   markObjectClickPanelIntentApplied,
   skipObjectClickPanelIntent,
-} from "../lib/hud/objectClickPanelDedupRuntime";
+} from "../lib/hud/objectClickPanelDedupRuntime.ts";
 import { buildPanelStateSignatureFromState, shouldCommitPanelWrite } from "../lib/panels/panelStateSignature";
 import {
   buildAuthorityStateSignature,

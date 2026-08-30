@@ -1,0 +1,1875 @@
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ atmosphere contract is renderer-neutral and versioned (1.646458ms)
+✔ proofs 1-9: activation from whole-scene authority only (1.00475ms)
+✔ proofs 10-16: non-escalation from objects, focus, collections, recommendation, expected improvement (308.348458ms)
+✔ proofs 17-24: atmosphere does not mutate NexoGraph object or relationship tokens (25.276375ms)
+✔ proofs 25-30: determinism, transition hold, reduced motion, claims (0.339833ms)
+✔ proofs 31-35: refresh, back/forward, read-only, unsupported, support removal (123.518583ms)
+✔ Advisor, diagnostics, DTH:1–3 regression, and atmosphere does not own Scene Intent (13.103875ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ DTH:8 contract, capability, and stable commitment ids (86.362041ms)
+✔ A/B/C: click, investigation, and comparison do not commit (14.483084ms)
+✔ D/E/P: recommendation and review are not a Decision (3.966334ms)
+✔ G/H DTH:7 proceed opens review without executing (10.044291ms)
+✔ I/L: cancel review creates no Decision and keeps comparison members (11.065375ms)
+✔ J: change candidate before commit reviews B (5.402542ms)
+✔ F/H/Q: explicit commit presents one Decision and does not start Execution (13.814458ms)
+✔ M/N/O: investigation return, unknown stays unknown, assumption stays assumption (4.040208ms)
+✔ Goal and Problem context plus Advisor have I decided (201.785042ms)
+✔ K: Why this one after switching proposed candidate stays on B (81.284208ms)
+✔ R: Stage JSON is unchanged by review projection (2.948459ms)
+✔ CC:10 catalog scenario commit is one Decision for Demand Surge (44.759084ms)
+✔ CC:10 explicit commit is one Decision and Theatre presents it (30.86725ms)
+✔ diagnostics expose commitment without manager architecture terms (4.771958ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 9
+[Topology][Flow] Connections: 8
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Margin Recovery Goal
+[Topology][Hub] Satellites: 2
+[Topology][Hub] Connections: 2
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ DTH:7 contract, capability, and stable comparison ids (55.830334ms)
+✔ A: one Scenario cannot become a comparison (14.810042ms)
+✔ B: nearby objects are not comparison candidates (6.447333ms)
+✔ 2 and 3 candidates, order stability (7.211042ms)
+✔ C: no fake 0-100 scoring (13.165041ms)
+✔ D: missing cost and time stay unavailable, not zero (9.288041ms)
+✔ E/F: no invented winner; recommendation is not a Decision (3.228041ms)
+✔ G/H: click investigates; proceed-to-decision does not execute (6.718666ms)
+✔ I/J/R: scene preserved and DTH:6 does not drop candidates (3.474834ms)
+✔ K: later selected candidate is the Advisor investigation anchor (282.14975ms)
+✔ L/M/N/O: association, assumption, evidence, and importance stay distinct (2.790792ms)
+✔ P: Do Nothing remains a candidate when authoritative (1.638042ms)
+✔ Q: unsupported criteria are omitted unless explicitly requested (6.273792ms)
+✔ Goal and Problem context, evidence/cost/time, trade-offs, readiness, Advisor better (34.843583ms)
+✔ conversation Compare them does not approve a Decision (38.863666ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ DTH:9 contract, capability, and stable readiness ids (105.886166ms)
+✔ A: approved Decision does not start Execution (4.99175ms)
+✔ B: click / inspect does not start Execution (7.503917ms)
+✔ C: committed scene leaves active comparison overlay mode (7.218834ms)
+✔ D: related Execution is reused, not duplicated (14.244708ms)
+✔ E: unknown owner is not a blocker (4.759125ms)
+✔ F/G: Advisor has-started and Start it without CC:11 do not fake start (270.356209ms)
+✔ G2: Start it through CC:11 starts exactly once (90.49575ms)
+✔ I: show executions is a collection, not start (34.293708ms)
+✔ J/H: comparison history remains after commitment (6.016375ms)
+✔ R: Stage JSON is unchanged by readiness projection (4.21175ms)
+✔ diagnostics expose readiness without manager architecture terms (4.416916ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Delivery
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+✔ DTH:1 public index identity and export integrity (1.151375ms)
+✔ contract immutability, serialization, and determinism (52.077875ms)
+✔ empty Stage remains stable and invents no objects (5.697958ms)
+✔ single focused Object preserves focus versus selection (33.435167ms)
+✔ clicking an Object still centers it through existing interaction (20.20475ms)
+✔ related one-hop Objects remain disclosed and unrelated stay hidden (14.939666ms)
+✔ Escape / Overview and Back / Forward preserve navigation identity (27.767584ms)
+✔ collection presentation preserves membership without altering authority (30.715666ms)
+✔ refresh produces the same canonical collection projection (20.873ms)
+✔ unsupported Theatre request and read-only questions preserve Stage (299.633375ms)
+✔ Advisor-readable context stays free of architecture codes (7.155208ms)
+✔ diagnostics prove the projection path without unauthorized mutation (6.624459ms)
+✔ conversation path reuses DIR:1 then projects Theatre without a second Stage (44.2145ms)
+✔ Decision and Execution confirmation safety remains outside Theatre writes (46.348959ms)
+✔ visibility, presentation level, attention, and relationship meaning are preserved (6.85525ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 9
+[Topology][Flow] Connections: 8
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Margin Recovery Goal
+[Topology][Hub] Satellites: 2
+[Topology][Hub] Connections: 2
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Risk
+[Topology][Hub] Satellites: 3
+[Topology][Hub] Connections: 3
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ visual families are explicit, immutable, and independent of renderer cues (1.844833ms)
+✔ Goal, Problem, Scenario, Decision, and Execution remain Executive Objects (120.678167ms)
+✔ supported Cost, Time, Evidence, Uncertainty, and Reversibility attach to a Scenario (4.702709ms)
+✔ iconic IDs are stable, prefixed, and do not collide with Executive Object IDs (9.882125ms)
+✔ iconic objects do not enter Queue, collections, navigation, or one-hop topology (8.030291ms)
+✔ canonical Risk remains an Executive Object and is not replaced by an icon (4.966291ms)
+✔ unsupported cost and time are not displayed as zero; missing evidence is not low confidence (3.352417ms)
+✔ manager-reported provenance remains manager-reported (2.535916ms)
+✔ removing the owner removes its Iconic Objects; empty support preserves Stage (21.2605ms)
+✔ iconic semantic registry is complete and prohibits decorative empty roles (0.714375ms)
+✔ Advisor-readable iconic context stays truthful and free of architecture codes (3.248584ms)
+✔ renderer family distinction is semantic and iconic click does not select the owner (12.6035ms)
+✔ unsupported role, missing source, and invalid relationship attachment are rejected (17.988541ms)
+✔ Iconic projection does not mutate domain state, breadcrumbs, or catalog membership (14.469083ms)
+✔ DTH:1 Stage click, Advisor read, and conversation remain unchanged without iconic sources (270.742459ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ DTH:10 contract, capability, and stable live ids (95.824417ms)
+✔ A: DTH:9 start handoff becomes REVIEW_EXECUTION live Theatre with one CC:11 Execution (249.738417ms)
+✔ B: live projection does not create another Execution (102.531458ms)
+✔ C: active Execution is the live primary presentation, not comparison (16.383417ms)
+✔ D: no fabricated progress (101.223333ms)
+✔ E: unknown is not blocked, delayed, or failed (3.291291ms)
+✔ F: click / investigate does not mutate Execution (4.506625ms)
+✔ G: show executions is a collection, not a lifecycle command (52.642209ms)
+✔ H: follow-ups stay on the started Execution (77.118167ms)
+✔ I: decision history remains traceable (44.792125ms)
+✔ J: attention is not invented when no signal exists (33.308458ms)
+✔ K: related Risk is attention, not blocked (3.570791ms)
+✔ L: related Constraint is not automatically causal or blocked (3.578625ms)
+✔ M: Outcome stays outside DTH:10 authority (31.084959ms)
+✔ N: complete question does not mutate; complete command uses CC:11 confirmation (36.71ms)
+✔ O: reconstruction from canonical started Execution does not fall back to comparison (1.611333ms)
+✔ diagnostics expose live Execution without manager architecture terms (2.83625ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ DTH:6 contract, capability, immutability, and stable investigation ids (82.615458ms)
+✔ A: opening investigation does not destroy the Scene (10.274375ms)
+✔ B: objects without evidence do not receive synthetic evidence (14.777959ms)
+✔ C: association remains association (4.559125ms)
+✔ D: a singleton Scenario never becomes a fake comparison (9.800667ms)
+✔ E: Explain this does not mutate Stage (181.968375ms)
+✔ F: Advisor explain-this follows the later selected object (43.323334ms)
+✔ G: investigating Scenario A preserves Scenario A/B comparison members (64.054542ms)
+✔ H: missing cost and history stay unknown rather than zero (9.075542ms)
+✔ I: close/reopen composition stays deterministic and Scene-preserving (13.146459ms)
+✔ J: object-type investigation stays type-correct (14.932042ms)
+✔ progressive disclosure, diagnostics, and DTH:2 evidence honesty (18.758083ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ DTH:11 contract, capability, and reserved length (1.200375ms)
+✔ A: completion is not Outcome (74.426ms)
+✔ B: authoritative Outcome is projected exactly (12.191542ms)
+✔ C: baseline delta uses percentage points (7.220375ms)
+✔ D: below target is not a failed Decision (14.484958ms)
+✔ E: no causality invention (6.73275ms)
+✔ F: unknown financial impact stays unknown (5.895791ms)
+✔ G: click remains inspection (13.005208ms)
+✔ H: show outcomes remains a read-only collection query (306.406583ms)
+✔ I: reference continuity stays on the same Outcome and Execution (199.650667ms)
+✔ J: Decision traceability recovers the committed Decision (48.656958ms)
+✔ K: early observation stays partial (2.635042ms)
+✔ L: What was the result? does not complete Execution (33.066ms)
+✔ M: Outcome observation does not write Learning (2.727458ms)
+✔ N: below-target Outcome does not create a new Decision (48.695708ms)
+✔ O: missing observations are not invented after reconstruction (7.753084ms)
+✔ diagnostics expose Outcome Theatre without manager architecture terms (3.643834ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+✔ Scene Intent and Scene Script contracts, registry, immutability, serialization (37.81825ms)
+✔ proofs 1-6: orientation, preserve, focal, collections, investigation (32.107833ms)
+✔ proofs 7-12: comparison, singleton, important, urgency, consequence, observation (0.616333ms)
+✔ proofs 13-17: commitment, execution, outcome, unsupported, unknown entity (10.671875ms)
+✔ proofs 18-24: named override, deixis, collection completeness, pending correction (0.565917ms)
+✔ proofs 25-32: determinism, continuity, actor identity, iconic owner, relationships, causality (21.830584ms)
+✔ proofs 33-40: equal size, atmosphere separation, domain safety, refresh, back/forward, clarification preserve (27.976ms)
+✔ no duplicate NLU, Advisor-readable scene, diagnostics, conversation regression (142.571083ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+✔ grammar contract is renderer-neutral, versioned, and channel-complete (16.241959ms)
+✔ semantic palette maps existing runtime states without exposing WATCH (0.173917ms)
+✔ proofs 1-9: identity, state, focus, selection, and halo stay independent (0.834125ms)
+✔ proofs 10-13: size comparability and opacity de-emphasis (1.185292ms)
+✔ proofs 14-21: relationship pattern, weight, direction, and non-causal language (0.820417ms)
+✔ proofs 22-26: risk identity, iconic subordination, claims, fallback, determinism (0.916875ms)
+✔ proofs 27-30: reduced motion, accessibility, no domain mutation, empty live grammar (24.230792ms)
+✔ color safety, diagnostics, advisor explanations, and DTH:1/DTH:2 regression (130.97525ms)
+ℹ tests 140
+ℹ suites 0
+ℹ pass 140
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3778.115292
+EXIT:0

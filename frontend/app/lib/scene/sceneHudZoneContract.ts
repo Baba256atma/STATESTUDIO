@@ -31,13 +31,14 @@ import {
   resolveSceneHudTopAlignment,
   traceSceneHudTopAlign,
 } from "../hud/sceneHudTopAlignmentContract.ts";
-import { resolveScenePanelFixedWidth, resolveScenePanelZoneHeight, resolveScenePanelZoneMaxWidth, SCENE_PANEL_MINIMIZED_HEIGHT, SCENE_PANEL_WIDTH, traceScenePanelLayout, toScenePanelHeightMode } from "./scenePanelWidthContract.ts";
+import { resolveScenePanelFixedWidth, resolveScenePanelZoneHeight, resolveScenePanelZoneMaxWidth, SCENE_PANEL_MINIMIZED_HEIGHT, traceScenePanelLayout, toScenePanelHeightMode } from "./scenePanelWidthContract.ts";
 import {
-  OBJECT_PANEL_EXPANDED_WIDTH,
-  OBJECT_PANEL_WIDTH,
   traceHudPanelDesign,
 } from "../hud/hudPanelDesignContract.ts";
 import { HUD_RUNTIME_FREEZE_V1 } from "../hud/hudRuntimeFreezeContract.ts";
+import { SCENE_HUD_ZONE_METRICS } from "./sceneHudZoneMetrics.ts";
+
+export { SCENE_HUD_ZONE_METRICS } from "./sceneHudZoneMetrics.ts";
 
 export type SceneHudZoneId =
   | "scene-topbar-zone"
@@ -106,25 +107,6 @@ export type SceneHudZoneContractContext = {
   /** Scene panel collapse — controls zone height only (header-only vs half-height). */
   scenePanelCollapsed?: boolean;
 };
-
-export const SCENE_HUD_ZONE_METRICS = Object.freeze({
-  topBarHeight: 44,
-  zoneGap: 8,
-  scenePanelWidth: SCENE_PANEL_WIDTH,
-  scenePanelCompactWidth: SCENE_PANEL_WIDTH,
-  scenePanelTopInset: SCENE_PANEL_TOP,
-  objectPanelCompactWidth: OBJECT_PANEL_WIDTH,
-  objectPanelExpandedWidth: OBJECT_PANEL_EXPANDED_WIDTH,
-  objectPanelRailWidth: 56,
-  timelineTransportHeight: 52,
-  timelineBodyHeight: 64,
-  timelineCollapsedBodyHeight: 36,
-  timelineExpandedBodyHeight: 220,
-  chatInputClearance: 88,
-  bottomHudPadding: 16,
-  sidePanelMinViewport: 1024,
-  mrpSafeGap: 16,
-});
 
 function resolveTimelineHeight(mode: SceneHudTimelineHeightMode): number {
   return resolveTimelineDisplayHeight(toTimelineDisplayState(mode));

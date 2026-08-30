@@ -1,0 +1,124 @@
+✔ multi-member Problems remain one canonical collection through Stage (5.406542ms)
+✔ scenario, decision and execution membership is generic and exact (1.341959ms)
+✔ one-member Risk preserves collection semantics and empty collections do not invent objects (0.640333ms)
+✔ already-satisfied collection is stable and a collection supersedes stale focus (0.91475ms)
+✔ explain, workspace, capability, assertion and social turns are NO_CHANGE (3.047583ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Delivery
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Delivery
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Delivery
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Risk
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 3
+[Topology][Flow] Connections: 2
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: A
+[Topology][Hub] Satellites: 1
+[Topology][Hub] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: A
+[Topology][Hub] Satellites: 1
+[Topology][Hub] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Budget
+[Topology][Hub] Satellites: 3
+[Topology][Hub] Connections: 3
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Budget
+[Topology][Hub] Satellites: 3
+[Topology][Hub] Connections: 3
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ 1. exact NEX-MVP:3 identity and version (0.42075ms)
+✔ 2. immediate MVP dependencies declared (0.062041ms)
+✔ 3. fixture object IDs remain stable (0.335541ms)
+✔ 4. overview presentation accepts presentation state and environment (6.207792ms)
+✔ 5. selection/focus establishes focused and related roles (7.955042ms)
+✔ 6. related objects get related presentation; unrelated subordinate (1.758ms)
+✔ 7. focused connections are emphasized (1.461208ms)
+✔ 8. reset to overview clears focus composition (2.333375ms)
+✔ 9. mapping is deterministic and verification passes (2.034416ms)
+✔ 10. pure mapping module has no React/Three imports (0.41375ms)
+✔ 11. STAGE-PROD:0 / STAGE-2D overview keeps topology Z = 0 (0.466667ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+▶ NEX-MVP:5 Workspace Dial & Scene State
+  ✔ 1. canonical workspace order (0.632834ms)
+  ✔ 2. workspace → environment mapping (0.108458ms)
+  ✔ 3. previous workspace resolution (0.055625ms)
+  ✔ 4. next workspace resolution (0.054875ms)
+  ✔ 5. start boundary behavior (0.107ms)
+  ✔ 6. end boundary behavior (0.049542ms)
+  ✔ 7. workspace index derivation (0.039959ms)
+  ✔ 8. Dial state derived from application snapshot (0.043417ms)
+  ✔ 9. focus preservation policy (1.009625ms)
+  ✔ 10. presentation-state preservation (0.240875ms)
+  ✔ 11. workspace presentation relevance (17.843292ms)
+  ✔ 12. deterministic scene environment mapping (0.099458ms)
+  ✔ 13. invalid workspace rejection (0.055041ms)
+  ✔ 14. repeated resolution stability (0.111708ms)
+  ✔ clears unsupported contextual depth on workspace change (0.226ms)
+  ✔ theme is independent of environment tokens (0.041875ms)
+✔ NEX-MVP:5 Workspace Dial & Scene State (21.3495ms)
+ℹ tests 32
+ℹ suites 1
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 276.381416
+EXIT:0

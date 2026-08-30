@@ -1,0 +1,40 @@
+[AssistantPanelOverflow]
+panel=analytics
+overflow=false
+▶ assistantPanelOverflow
+  ✔ Test 1 — long Insight content triggers overflow detection (0.42025ms)
+  ✔ Test 2 — long Scenario content triggers overflow detection (0.159292ms)
+  ✔ Test 3 — Insight scroll container is independently bounded (0.1295ms)
+  ✔ Test 4 — Scenario scroll container is independently bounded (0.078833ms)
+  ✔ Test 5 — collapsed panel hides scrollbar surface (0.07775ms)
+  ✔ Test 6 — governance tier is medium (0.120208ms)
+  ✔ Test 7 — actions tier is small (0.078417ms)
+  ✔ Test 8 — short content does not report overflow (0.059375ms)
+  ✔ Test 9 — overflow trace format (0.430125ms)
+  ✔ Test 10 — scroll containers use overscroll containment (0.094791ms)
+  ✔ tokens consume the canonical mapping without redefining panel tiers (0.041542ms)
+✔ assistantPanelOverflow (2.249875ms)
+▶ assistantPanelOverflowContract exports and mapping
+  ✔ runtime value export ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL exists (0.373917ms)
+  ✔ type AssistantPanelOverflowSizeTier is usable at the type layer (0.050833ms)
+  ✔ maps every supported accordion panel to exactly one valid size tier (0.498375ms)
+  ✔ does not include unsupported panel ids (0.102166ms)
+  ✔ derives the intended max-height for every mapped tier (0.0915ms)
+  ✔ keeps the overflow-size mapping immutable (0.10925ms)
+  ✔ keeps detect and trace as runtime values (0.086084ms)
+✔ assistantPanelOverflowContract exports and mapping (1.787125ms)
+▶ assistantPanelOverflowContract module graph
+  ✔ does not import dock, tokens, components, or client modules (0.260667ms)
+  ✔ does not reach a component through local assistant imports (0.207625ms)
+  ✔ has no overflow-contract → tokens → overflow-contract cycle (0.095292ms)
+  ✔ resolves identical runtime exports via static and dynamic import (3.673291ms)
+✔ assistantPanelOverflowContract module graph (4.38025ms)
+ℹ tests 22
+ℹ suites 3
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 143.839667
+EXIT:0

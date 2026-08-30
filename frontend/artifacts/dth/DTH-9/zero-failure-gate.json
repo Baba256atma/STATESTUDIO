@@ -1,0 +1,26 @@
+{
+  "identity": "DTH:9/ZeroFailureGate",
+  "dth9": "CERTIFIED",
+  "dth1to9Combined": { "exit": 0, "pass": 106 },
+  "dth9Focused": { "exit": 0, "pass": 12 },
+  "testScene": { "exit": 0, "node": "296/296" },
+  "stageDirector": { "exit": 0 },
+  "managerObject": { "exit": 0, "pass": 563 },
+  "conversation": { "exit": 0, "pass": 336 },
+  "nexExpDecisionExecution": { "exit": 0, "pass": 240 },
+  "assistantOverflow": { "exit": 0 },
+  "npmTest": { "exit": 0, "pass": 81 },
+  "typecheck": { "exit": 0 },
+  "productionBuild": { "exit": 0 },
+  "eslint": { "errors": 0, "scope": "dth9-surfaces" },
+  "gitDiffCheck": { "exit": 0 },
+  "liveBrowser": {
+    "ok": true,
+    "url": "http://localhost:3022/executive",
+    "authoritativeDecisionId": "cc10:decision:ctx-scenario-demand",
+    "readinessAfterCommit": "COMMITTED_AWAITING_EXECUTION",
+    "executionIdAfterStart": "execution-cc10:decision:ctx-scenario-demand",
+    "cc11Available": true
+  },
+  "dth10Started": false
+}

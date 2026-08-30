@@ -93,4 +93,10 @@ describe("assistantPanelOverflow", () => {
       assert.equal(style.overflowX, "hidden");
     }
   });
+
+  it("tokens consume the canonical mapping without redefining panel tiers", () => {
+    assert.equal(resolveAssistantPanelMaxHeightPx("actions"), 144);
+    assert.equal(resolveAssistantPanelMaxHeightPx("questions"), 192);
+    assert.equal(ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL.actions, "small");
+  });
 });

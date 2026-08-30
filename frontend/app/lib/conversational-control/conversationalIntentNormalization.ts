@@ -297,7 +297,7 @@ export function classifyExecutiveInvestigationAsk(
     return "stronger";
   }
   if (
-    /^(?:what don(?:\s*)?t we know(?: yet)?|what do we not know(?: yet)?|what remains unknown|what is unknown)$/.test(
+    /^(?:what don(?:\s*)?t we know(?: yet)?|what do we not know(?: yet)?|what do we still not know(?: yet)?|what remains unknown|what is unknown)$/.test(
       text,
     )
   ) {
@@ -312,6 +312,9 @@ export function classifyExecutiveInvestigationAsk(
     )
   ) {
     return "address-other";
+  }
+  if (/^(?:why this one)$/.test(text)) {
+    return "open-why";
   }
   if (
     /^(?:why did we choose this|what evidence led to this decision|why did we choose that)$/.test(

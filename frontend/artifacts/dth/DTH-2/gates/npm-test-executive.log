@@ -1,0 +1,188 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm.
+
+> frontend@0.1.0 test
+> npm run test:executive
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm.
+
+> frontend@0.1.0 test:executive
+> npx tsx --test app/executive/page.test.tsx app/executive/exs1/exs1.test.tsx app/executive/exs1/runtime/runtime.test.tsx app/executive/exs1/advisor/advisor.test.tsx app/executive/exs1/conversation/conversation.test.tsx app/executive/exs1/metadata/metadata.test.tsx app/executive/exs1/data/data.test.tsx app/executive/exs1/intelligence/intelligence.test.tsx app/executive/exs1/connectors/connectors.test.tsx app/executive/exs1/simulation/simulation.test.tsx app/executive/exs1/beta/beta.test.tsx
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm.
+▶ Sprint 5 Executive Advisor
+  ✔ builds immutable context from Runtime state (4.805917ms)
+  ✔ selects conversation mode from Runtime mode (0.248041ms)
+  ✔ generates proposals that stay pending until approval helpers mark them (1.341667ms)
+  ✔ uses deterministic SSR-safe proposal IDs for the same Runtime context (1.190542ms)
+  ✔ does not auto-mutate Runtime when engine generates proposals (0.302583ms)
+  ✔ renders Advisor Action Inbox instead of a permanent proposal dashboard (103.859792ms)
+  ✔ maps pending Runtime proposals into sorted Action Inbox items (2.505ms)
+✔ Sprint 5 Executive Advisor (118.124667ms)
+▶ Phase E Beta Preparation & Hardening
+  ✔ ships ten official Beta Scenarios and five demo datasets (0.976375ms)
+  ✔ marks readiness checklist Beta Ready (0.234833ms)
+  ✔ standardizes executive error recovery actions (0.344083ms)
+  ✔ loads demo datasets in one click (0.3845ms)
+  ✔ records minimum audit trail events (1.408083ms)
+  ✔ passes end-to-end beta validator including CSV publish (46.014125ms)
+  ✔ merges feature flags without component branching (1.075333ms)
+  ✔ renders Beta Settings surfaces (64.373875ms)
+  ✔ exposes Settings nav and Beta version on cockpit (111.943209ms)
+  ✔ ships beta documentation pack (2.239292ms)
+✔ Phase E Beta Preparation & Hardening (230.265208ms)
+▶ Phase C Enterprise Connectors
+  ✔ parses CSV and discovers schema for the reference connector (11.893958ms)
+  ✔ completes CSV → map → approve → Runtime publish → Intelligence signal (56.311875ms)
+  ✔ keeps non-CSV connectors as shells (0.345917ms)
+  ✔ renders Enterprise Connectors explorer (30.958875ms)
+  ✔ exposes connectors in cockpit without breaking Runtime IDs (106.764917ms)
+✔ Phase C Enterprise Connectors (207.820875ms)
+▶ Sprint 6 Executive Conversation Experience
+  ✔ builds a dynamic Runtime-aware welcome summary (8.405625ms)
+  ✔ shares conversation turn grounding for Advisor and Insight perspectives (1.954208ms)
+  ✔ filters conversation messages by search query without mutating session (0.2655ms)
+  ✔ generates Runtime-grounded suggested questions (0.524875ms)
+  ✔ renders shared conversation chrome inside the cockpit Advisor panel (58.952875ms)
+✔ Sprint 6 Executive Conversation Experience (71.214083ms)
+▶ Sprint 3 Executive Data Experience
+  ✔ ships mock sources with required source-card fields (3.418833ms)
+  ✔ creates Data Pack and Journal helpers on add source (1.804292ms)
+  ✔ filters sources without mutating the catalog (0.322834ms)
+  ✔ renders Data Explorer catalog surfaces (74.789459ms)
+✔ Sprint 3 Executive Data Experience (81.5645ms)
+▶ EXS-7 Executive Monitoring Experience
+  ✔ ships mock KPIs, alerts, and object health states (0.863084ms)
+  ✔ maps Create Snapshot helpers to Monitoring Pack and Journal Pack (1.512792ms)
+  ✔ does not show Monitoring Experience outside Monitoring mode (99.970667ms)
+  ✔ activates Monitoring Workspace when Mode = Monitoring (43.539416ms)
+  ✔ preserves cockpit foundation and pack identity (36.086ms)
+✔ EXS-7 Executive Monitoring Experience (183.163625ms)
+▶ Phase B Executive Runtime Intelligence
+  ✔ maps Runtime events to structured Executive Signals with metadata (3.66175ms)
+  ✔ applies configurable attention rules without business math (0.141833ms)
+  ✔ builds recommendation context for Advisor (not raw Runtime) (0.475084ms)
+  ✔ filters inbox views for warnings and decision-required (0.444167ms)
+  ✔ renders Intelligence explorer surfaces (29.269542ms)
+  ✔ exposes Intelligence nav while keeping Runtime object IDs stable (93.810541ms)
+✔ Phase B Executive Runtime Intelligence (128.923875ms)
+▶ Phase A Executive Metadata & Knowledge
+  ✔ ships object, field, domain, KPI, glossary, and relations registries (0.711709ms)
+  ✔ resolves technical fields and object IDs to executive language (0.566375ms)
+  ✔ lets Advisor context prefer metadata display names (1.683375ms)
+  ✔ renders Knowledge explorer surfaces (12.557ms)
+  ✔ keeps cockpit Runtime IDs while exposing Knowledge nav (92.574625ms)
+✔ Phase A Executive Metadata & Knowledge (109.125459ms)
+▶ Sprint 4 Executive Runtime Store
+  ✔ owns mode, pack, timeline, selection, and experience slices (1.037834ms)
+  ✔ publishes Runtime events for mode, pack, and timeline (1.01675ms)
+  ✔ keeps Decision Pack selection from moving timeline lens (0.552459ms)
+  ✔ drives data experience from explorer nav (0.303625ms)
+  ✔ exposes inspector snapshot selectors (0.217625ms)
+  ✔ renders Runtime Inspector toggle in development cockpit (13.271375ms)
+  ✔ keeps /executive cockpit Runtime-driven without UI regression anchors (96.676542ms)
+✔ Sprint 4 Executive Runtime Store (114.110959ms)
+▶ Phase D Executive Scenario Simulation
+  ✔ runs Inventory Shortage → Increase Safety Stock without mutating Runtime (4.94125ms)
+  ✔ emits SimulationCompleted and creates Intelligence signal + Draft decision (4.138291ms)
+  ✔ renders Simulations explorer surfaces (27.574625ms)
+  ✔ exposes Simulations nav while keeping Runtime object IDs stable (33.05975ms)
+✔ Phase D Executive Scenario Simulation (70.805291ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+▶ NEX-MVP:2 /executive production route
+  ✔ composes NexoraExecutiveShell without redirecting to /executive/exs1 (0.81175ms)
+  ✔ renders /executive as the Nexora MVP Executive Shell (100.349125ms)
+  ✔ keeps Stage dominant and omits EXS mode selector on MVP route (24.515416ms)
+  ✔ keeps /executive/exs1 as a sandbox composition of Exs1Cockpit (25.058791ms)
+✔ NEX-MVP:2 /executive production route (151.528291ms)
+▶ Sprint 2 Executive Visual Polish
+  ✔ ships Sprint 2 visual tokens and style guide (1.047125ms)
+  ✔ renders polished mode selector in EXS sandbox cockpit (11.977125ms)
+✔ Sprint 2 Executive Visual Polish (13.199166ms)
+▶ Sprint 3 Executive Data Experience
+  ✔ ships mock data sources and mapping helpers (0.315583ms)
+  ✔ keeps Data inactive until Left Nav opens Data in EXS sandbox (10.502166ms)
+✔ Sprint 3 Executive Data Experience (10.980167ms)
+▶ Sprint 4 Executive Runtime Integration
+  ✔ ships Executive Runtime store and hooks (0.453ms)
+  ✔ renders EXS sandbox as a Runtime consumer without UI regression (8.369834ms)
+✔ Sprint 4 Executive Runtime Integration (8.920542ms)
+▶ Sprint 5 Executive Advisor AI Integration
+  ✔ ships Advisor engine, context builder, and prompt templates (0.356375ms)
+  ✔ renders Runtime-aware Advisor Assist surface in EXS sandbox (7.902334ms)
+✔ Sprint 5 Executive Advisor AI Integration (8.356875ms)
+▶ Phase A Executive Metadata & Knowledge
+  ✔ ships metadata registries and knowledge graph (0.292792ms)
+  ✔ exposes Knowledge nav without breaking EXS cockpit anchors (7.875542ms)
+✔ Phase A Executive Metadata & Knowledge (8.241541ms)
+▶ Phase B Executive Runtime Intelligence
+  ✔ ships Runtime Intelligence engines and signal types (0.252917ms)
+  ✔ exposes Intelligence nav without breaking Runtime anchors (7.986791ms)
+✔ Phase B Executive Runtime Intelligence (8.319834ms)
+▶ Phase C Enterprise Connectors
+  ✔ ships CSV connector platform and publish wizard (0.288542ms)
+  ✔ keeps EXS cockpit Runtime anchors with Beta version (8.359667ms)
+✔ Phase C Enterprise Connectors (8.736791ms)
+▶ Phase D Executive Scenario Simulation
+  ✔ ships simulation engine and Inventory Shortage vertical slice (0.293583ms)
+  ✔ exposes Simulations nav without breaking Runtime anchors (8.661041ms)
+✔ Phase D Executive Scenario Simulation (9.0325ms)
+▶ Phase E Beta Preparation & Hardening
+  ✔ ships beta validator, flags, and documentation (0.492084ms)
+  ✔ exposes Settings and Beta version without breaking Runtime anchors (9.07275ms)
+✔ Phase E Beta Preparation & Hardening (9.68325ms)
+▶ ExecutiveCockpit production wrapper
+  ✔ mounts MVP shell through ExecutiveCockpit (16.985458ms)
+✔ ExecutiveCockpit production wrapper (17.051666ms)
+ℹ tests 81
+ℹ suites 21
+ℹ pass 81
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5358.506625
+EXIT:0

@@ -4,11 +4,9 @@
 
 import type { CSSProperties } from "react";
 
-import type { AssistantPanelDockId } from "./assistantPanelDockContract";
-import {
-  ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL,
-  type AssistantPanelOverflowSizeTier,
-} from "./assistantPanelOverflowContract";
+import type { AssistantPanelDockId } from "./assistantPanelDockContract.ts";
+import { ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL } from "./assistantPanelOverflowContract.ts";
+import type { AssistantPanelOverflowSizeTier } from "./assistantPanelOverflowContract.ts";
 
 /** Derived from design spacing scale (lg=16): compact 8×, small 9×, medium 12×. */
 export const ASSISTANT_PANEL_OVERFLOW_MAX_HEIGHT_PX: Readonly<

@@ -3,7 +3,10 @@
  * Extends NCA:1–7 / NCA-POST:1. Not NCA:8. No phrase tables.
  */
 
-import { recoverBoundedCollectionNouns } from "../conversational-control/conversationalIntentNormalization.ts";
+import {
+  isNoActionConsequenceUtterance,
+  recoverBoundedCollectionNouns,
+} from "../conversational-control/conversationalIntentNormalization.ts";
 
 export const nexoraNcaPost2Identity =
   "NCA-POST:2/ManagerAssertionsPendingQuestionPrecedenceCollectionQueryIntelligence" as const;
@@ -137,7 +140,9 @@ const PREFERENCE_LEAD =
 const CORRECTION_LEAD =
   /^(?:no[, ]+|actually |that(?:'?s| is) not what i (?:asked|meant|said)\b|i (?:meant|mean|asked|am asking|was asking|said|am talking about|was talking about)\b|not (?:the )?(?:problem|issue|one)\b)/;
 const QUALITATIVE =
-  /\b(?:ok|okay|fine|good|bad|tight|high|low|worse|better|weak|strong|elevated|stable|seasonal)\b/;
+  /\b(?:ok|okay|fine|good|bad|tight|high|low|worse|better|weak|strong|elevated|stable|seasonal|late|delayed|behind|overdue|insufficient|constrained|degraded|missing|slipping)\b/;
+const EVALUATIVE_CHANGE =
+  /\b(?:dropped|increased|decreased|worsened|improved|slipped|fell|rose|got worse|getting worse|getting better)\b/;
 const COPULA = /\b(?:is|are|looks?|feels?|seems?|was|were|'s)\b/;
 const NUMERIC =
   /\b\d+(?:\.\d+)?\s*%?|\b(?:two|three|four|five)\s+(?:people|orders|months)\b/;
@@ -185,6 +190,34 @@ export function looksLikeCopularObservation(prepared: string): boolean {
   return QUALITATIVE.test(prepared) || NUMERIC.test(prepared) || /\b(?:okay|ok)\b/.test(prepared);
 }
 
+export function isManagerCausalAssertion(utterance: string): boolean {
+  const prepared = preparedManagerUtterance(utterance);
+  if (/\?/.test(utterance.trim())) return false;
+  if (/^(?:what|why|how|is|are|do|does|can|could|would|should)\b/.test(prepared)) return false;
+  return /\b(?:caus(?:e|es|ing|ed)|because of)\b/.test(prepared);
+}
+
+export function isConsequenceIntentUtterance(utterance: string): boolean {
+  const prepared = preparedManagerUtterance(utterance);
+  if (isNoActionConsequenceUtterance(prepared)) return true;
+  return /^(?:what happens if|what if|if this continues|suppose)\b/.test(prepared);
+}
+
+export function isCompleteManagerBusinessObservation(utterance: string): boolean {
+  const prepared = preparedManagerUtterance(utterance);
+  if (!prepared || /\?/.test(utterance.trim())) return false;
+  if (COMMAND_LEAD.test(prepared) || PREFERENCE_LEAD.test(prepared) || CORRECTION_LEAD.test(prepared)) {
+    return false;
+  }
+  if (/^(?:no|yes)\b/.test(prepared)) return false;
+  if (/^(?:it|this|that)\b/.test(prepared)) return false;
+  if (isConsequenceIntentUtterance(utterance) || isManagerCausalAssertion(utterance)) {
+    return false;
+  }
+  if (looksLikeCopularObservation(prepared)) return true;
+  return EVALUATIVE_CHANGE.test(prepared) && !/^(?:what|why|how|if|show|open|explain)\b/.test(prepared);
+}
+
 export function classifyManagerSpeechAct(utterance: string): ManagerSpeechAct {
   const prepared = preparedManagerUtterance(utterance);
   if (!prepared) return "UNKNOWN";
@@ -211,8 +244,8 @@ export function classifyManagerSpeechAct(utterance: string): ManagerSpeechAct {
     return "QUESTION";
   }
   if (COMMAND_LEAD.test(prepared)) return "COMMAND";
-  if (looksLikeCopularObservation(prepared)) {
-    return NUMERIC.test(prepared) || QUALITATIVE.test(prepared)
+  if (looksLikeCopularObservation(prepared) || isCompleteManagerBusinessObservation(utterance)) {
+    return NUMERIC.test(prepared) || QUALITATIVE.test(prepared) || EVALUATIVE_CHANGE.test(prepared)
       ? "OBSERVATION"
       : "ASSERTION";
   }
@@ -303,7 +336,7 @@ export function composeManagerObservationReply(
     return `Understood. That matches the current Nexora reading for ${subject}.`;
   }
   if (observation.status === "UNVERIFIED") {
-    return `Understood. I'll treat that as your current observation about ${subject}, not as verified external evidence.`;
+    return `Understood. I'll treat that as your current manager-reported observation about ${subject}, not as verified external evidence.`;
   }
   return `Understood. I'll treat that as your current observation about ${subject}.`;
 }

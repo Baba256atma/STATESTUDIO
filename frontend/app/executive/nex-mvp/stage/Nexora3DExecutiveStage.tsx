@@ -8,6 +8,7 @@ import {
   useState,
   type ErrorInfo,
   type ReactNode,
+  type CSSProperties,
 } from "react";
 import dynamic from "next/dynamic";
 import { getNexora3DExecutiveStageIdentity } from "@/app/lib/nex-mvp/nexora3DExecutiveStage";
@@ -22,6 +23,13 @@ import type {
 import type { NexoraMVPPresentationState } from "@/app/lib/nex-mvp/nexoraMVPApplicationFoundation";
 import type { NexoraMVPSceneEnvironmentVisualState } from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
 import type { ExecutiveQueueCategory } from "@/app/lib/spatial-presentation/executiveStageProductivityContract";
+import type { NexoraDecisionTheatreIconicObject } from "@/app/lib/decision-theatre/nexoraDecisionTheatreIconicProjection.ts";
+import type { NexoraDecisionTheatreParticipantVisualPresentation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreVisualProjection.ts";
+import { NexoraDecisionTheatreIconicSatellite } from "./NexoraDecisionTheatreIconicSatellites";
+import type { NexoraDecisionTheatreAtmosphereMode } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
+import { NEXORA_DECISION_THEATRE_ATMOSPHERE_MODES } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
+import type { NexoraDecisionTheatreAtmosphereProjection } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
+import { resolveNexoraDecisionTheatreAtmosphereSwatch } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphereRendererTokens.ts";
 import {
   applyExecutiveStageFixedCameraToStagePresentation,
   getNexoraMVPExecutiveStage2DFixedCameraObservability,
@@ -156,6 +164,12 @@ export type Nexora3DExecutiveStageProps = {
   readonly onPresentationAction: (
     action: NexoraMVPPresentationAvailableAction,
   ) => void;
+  readonly iconicObjects?: readonly NexoraDecisionTheatreIconicObject[];
+  readonly visualPresentations?: Readonly<
+    Record<string, NexoraDecisionTheatreParticipantVisualPresentation>
+  >;
+  readonly atmosphereMode?: string;
+  readonly warRoomAtmosphere?: NexoraDecisionTheatreAtmosphereProjection | null;
 };
 
 type FallbackProps = {
@@ -164,6 +178,30 @@ type FallbackProps = {
   readonly presentationState: string;
   readonly environmentIntent: string;
 };
+
+function stageAtmosphereOverlayStyle(
+  atmosphere: NexoraDecisionTheatreAtmosphereProjection | null,
+  mode: string,
+): CSSProperties {
+  const candidate = atmosphere?.mode ?? mode;
+  const resolvedMode: NexoraDecisionTheatreAtmosphereMode =
+    (NEXORA_DECISION_THEATRE_ATMOSPHERE_MODES as readonly string[]).includes(candidate)
+      ? (candidate as NexoraDecisionTheatreAtmosphereMode)
+      : "none";
+  const swatch = resolveNexoraDecisionTheatreAtmosphereSwatch(resolvedMode);
+  const animate =
+    atmosphere?.transitionToken === "atmosphere-crossfade" && atmosphere.reducedMotion !== true;
+  return {
+    position: "absolute",
+    inset: 0,
+    pointerEvents: "none",
+    zIndex: 1,
+    opacity: Number(swatch.opacity),
+    background: `radial-gradient(ellipse at 50% 42%, ${swatch.radial} 0%, ${swatch.background} 58%, ${swatch.vignette} 100%)`,
+    boxShadow: `inset 0 0 0 1px ${swatch.edge}`,
+    transition: animate ? "opacity 240ms ease, background 240ms ease" : "none",
+  };
+}
 
 function StageLoadingState() {
   return (
@@ -283,6 +321,10 @@ export function Nexora3DExecutiveStage({
   onOverview,
   onPresentationStateChange,
   onPresentationAction,
+  iconicObjects = [],
+  visualPresentations = {},
+  atmosphereMode = "none",
+  warRoomAtmosphere = null,
 }: Nexora3DExecutiveStageProps) {
   const identity = getNexora3DExecutiveStageIdentity();
   const [webglSupported] = useState(() => {
@@ -825,6 +867,7 @@ export function Nexora3DExecutiveStage({
   return (
     <div
       data-testid="nexora-3d-executive-stage"
+      data-nexograph-atmosphere={atmosphereMode}
       data-ux2="stage-interaction"
       data-ux2-center-law="click-object-center-recompose"
       data-mo1="stage-reader"
@@ -1242,6 +1285,13 @@ export function Nexora3DExecutiveStage({
       }}
     >
       <div
+        data-testid="nexora-stage-atmosphere-overlay"
+        aria-hidden="true"
+        data-atmosphere-channel="stage-environment"
+        data-atmosphere-mode={warRoomAtmosphere?.mode ?? atmosphereMode}
+        style={stageAtmosphereOverlayStyle(warRoomAtmosphere, atmosphereMode)}
+      />
+      <div
         data-testid="nexora-stage-a11y"
         aria-live="polite"
         style={{
@@ -1252,9 +1302,15 @@ export function Nexora3DExecutiveStage({
           clip: "rect(0 0 0 0)",
         }}
       >
-        {focusedLabel
-          ? `Focused subject: ${focusedLabel}. Presentation: ${presentationViewModel.state}`
-          : `Overview · ${workspaceLabel}. Presentation: ${presentationViewModel.state}`}
+        {`${
+          focusedLabel
+            ? `Focused subject: ${focusedLabel}. Presentation: ${presentationViewModel.state}`
+            : `Overview · ${workspaceLabel}. Presentation: ${presentationViewModel.state}`
+        }${
+          warRoomAtmosphere?.accessibilityDescription
+            ? ` ${warRoomAtmosphere.accessibilityDescription}`
+            : ""
+        }`}
       </div>
 
       <NexoraStageInteractionBreadcrumb
@@ -1337,17 +1393,27 @@ export function Nexora3DExecutiveStage({
             presentationViewModel.state === "minimum" &&
             presentationViewModel.primaryKpi &&
             presentationViewModel.subjectId === object.id;
+          const visual = visualPresentations[object.id];
           return (
+            <div key={object.id}>
             <button
-              key={object.id}
               type="button"
               data-testid={`nexora-stage-object-control-${object.id}`}
+              data-visual-family="executive-object"
               data-role={object.role}
               data-canonical-id={object.id}
               data-status={object.status}
               data-attention={object.attention}
               data-focused={object.focused ? "true" : "false"}
               data-selected={object.selected ? "true" : "false"}
+              data-nexograph-form-token={visual?.formToken ?? `form-executive-${object.kind}`}
+              data-nexograph-state-token={visual?.stateToken ?? "state-neutral"}
+              data-nexograph-halo={visual?.haloToken ?? "halo-none"}
+              data-nexograph-scale={visual?.scaleToken ?? "size-equal"}
+              data-nexograph-opacity={visual?.opacityToken ?? "opacity-full"}
+              data-nexograph-focus={object.focused ? "true" : "false"}
+              data-nexograph-selection={object.selected ? "true" : "false"}
+              aria-description={visual?.accessibilityDescription}
               data-opacity={String(object.opacity)}
               data-scale={String(object.scale)}
               data-label-prominence={object.labelProminence}
@@ -1400,6 +1466,15 @@ export function Nexora3DExecutiveStage({
                 </span>
               ) : null}
             </button>
+            {iconicObjects
+              .filter((item) => item.ownerExecutiveObjectId === object.id)
+              .map((item) => (
+                <NexoraDecisionTheatreIconicSatellite
+                  key={item.presentationId}
+                  iconic={item}
+                />
+              ))}
+            </div>
           );
         })}
 
@@ -1415,10 +1490,11 @@ export function Nexora3DExecutiveStage({
             const gatewayCount =
               node.gatewayCount ?? node.collapsedMemberIds?.length ?? 0;
             return (
+              <div key={node.id}>
               <button
-                key={node.id}
                 type="button"
                 data-testid={`nexora-stage-context-control-${node.subjectId}`}
+                data-visual-family="executive-object"
                 data-role={node.role}
                 data-kind={node.kind}
                 data-canonical-id={node.id}
@@ -1494,6 +1570,15 @@ export function Nexora3DExecutiveStage({
                   ? node.label
                   : `${node.kind}: ${node.label}`}
               </button>
+              {iconicObjects
+                .filter((item) => item.ownerExecutiveObjectId === node.subjectId || item.ownerExecutiveObjectId === node.id)
+                .map((item) => (
+                  <NexoraDecisionTheatreIconicSatellite
+                    key={item.presentationId}
+                    iconic={item}
+                  />
+                ))}
+              </div>
             );
           })}
 

@@ -405,6 +405,8 @@ export type NexoraConversationalExperienceResult = {
   readonly executiveJudgment?: import("@/app/lib/manager-object/nexoraNxa5ExecutiveJudgment.ts").Nxa5ExecutiveJudgment | null;
   /** DIR:1 presentation decision; never a business mutation command. */
   readonly directorPlan?: import("@/app/lib/director/nexoraSemanticPresentationDirector.ts").NexoraDirectorPlan | null;
+  /** DTH:1 read-only Stage projection; never a second Stage or Runtime. */
+  readonly decisionTheatre?: import("@/app/lib/decision-theatre/nexoraDecisionTheatreContract.ts").NexoraDecisionTheatreFoundation | null;
   readonly ncaPost3Diagnostics?: import("@/app/lib/manager-object/nexoraNcaPost3SemanticScopeMultiEntityCanonicalCollectionWorkspaceIntelligence.ts").NcaPost3Diagnostics | null;
   readonly ncaPost4Comparison?: import("@/app/lib/manager-object/nexoraNcaPost4CollectionComparison.ts").ExecutiveCollectionComparisonResult | null;
   /** NEX-EXP:1 session. Omitted when entrance is not active. */

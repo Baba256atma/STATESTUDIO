@@ -1,0 +1,12 @@
+{
+  "identity": "DTH:1/ZeroFailureGate",
+  "verdict": "CERTIFIED",
+  "focusedTests": { "passed": 15, "failed": 0 },
+  "typecheck": "PASS",
+  "productionBuild": "PASS",
+  "eslint": "PASS",
+  "diffCheck": "PASS",
+  "liveExecutive": "PASS",
+  "managerObjectTests": "PASS",
+  "dth2Started": false
+}

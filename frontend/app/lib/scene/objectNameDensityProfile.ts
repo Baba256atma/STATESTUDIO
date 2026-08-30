@@ -1,3 +1,7 @@
+/**
+ * Object-name label density (which names stay visible).
+ * Not Scene composition density (`SceneDensityTier`: sparse | moderate | dense | critical).
+ */
 export type ObjectNameDensityTier =
   | "comfortable"
   | "balanced"
@@ -88,6 +92,7 @@ export function shouldRenderExecutiveObjectName({
   if (selected || focused) return true;
   const resolvedProfile =
     profile ?? resolveObjectNameDensityProfile(objectCount ?? 0);
+  if (resolvedProfile.showSelectedOnly) return false;
   const normalizedIndex = normalizeNonNegativeInteger(index);
   const normalizedObjectCount =
     objectCount == null
@@ -95,6 +100,7 @@ export function shouldRenderExecutiveObjectName({
       : normalizeNonNegativeInteger(objectCount);
   if (normalizedIndex >= normalizedObjectCount) return false;
   if (normalizedIndex >= resolvedProfile.maxVisibleNames) return false;
+  if (resolvedProfile.showAllNames) return true;
   return normalizedIndex % resolvedProfile.showEveryNthObject === 0;
 }
 export type ResolveObjectNameOpacityInput = {

@@ -1,0 +1,19 @@
+{
+  "identity": "DTH:6/ZeroFailureGate",
+  "dth6": "CERTIFIED",
+  "dth1to6Combined": { "exit": 0, "pass": 65 },
+  "dth6Focused": { "exit": 0, "pass": 12 },
+  "testScene": { "exit": 0, "vitest": "180/180", "node": "296/296" },
+  "stageDirector": { "exit": 0, "pass": 54 },
+  "managerObject": { "exit": 0, "pass": 563 },
+  "conversation": { "exit": 0, "pass": 336 },
+  "nexExpDecisionExecution": { "exit": 0, "pass": 378 },
+  "assistantOverflow": { "exit": 0 },
+  "npmTest": { "exit": 0, "pass": 81 },
+  "typecheck": { "exit": 0 },
+  "productionBuild": { "exit": 0 },
+  "eslint": { "errors": 0, "scope": "dth6-surfaces" },
+  "gitDiffCheck": { "exit": 0 },
+  "liveBrowser": { "ok": true, "url": "http://localhost:3018/executive" },
+  "dth7Started": false
+}

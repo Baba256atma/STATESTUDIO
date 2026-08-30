@@ -1,0 +1,40 @@
+[AssistantPanelOverflow]
+panel=analytics
+overflow=false
+▶ assistantPanelOverflow
+  ✔ Test 1 — long Insight content triggers overflow detection (0.508125ms)
+  ✔ Test 2 — long Scenario content triggers overflow detection (0.066791ms)
+  ✔ Test 3 — Insight scroll container is independently bounded (0.109292ms)
+  ✔ Test 4 — Scenario scroll container is independently bounded (0.075625ms)
+  ✔ Test 5 — collapsed panel hides scrollbar surface (0.075542ms)
+  ✔ Test 6 — governance tier is medium (0.073708ms)
+  ✔ Test 7 — actions tier is small (0.050583ms)
+  ✔ Test 8 — short content does not report overflow (0.051166ms)
+  ✔ Test 9 — overflow trace format (0.602167ms)
+  ✔ Test 10 — scroll containers use overscroll containment (0.104125ms)
+  ✔ tokens consume the canonical mapping without redefining panel tiers (0.042458ms)
+✔ assistantPanelOverflow (2.324791ms)
+▶ assistantPanelOverflowContract exports and mapping
+  ✔ runtime value export ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL exists (0.295958ms)
+  ✔ type AssistantPanelOverflowSizeTier is usable at the type layer (0.041708ms)
+  ✔ maps every supported accordion panel to exactly one valid size tier (0.386042ms)
+  ✔ does not include unsupported panel ids (0.053542ms)
+  ✔ derives the intended max-height for every mapped tier (0.072625ms)
+  ✔ keeps the overflow-size mapping immutable (0.573667ms)
+  ✔ keeps detect and trace as runtime values (0.118042ms)
+✔ assistantPanelOverflowContract exports and mapping (1.994166ms)
+▶ assistantPanelOverflowContract module graph
+  ✔ does not import dock, tokens, components, or client modules (0.259459ms)
+  ✔ does not reach a component through local assistant imports (0.198292ms)
+  ✔ has no overflow-contract → tokens → overflow-contract cycle (0.106584ms)
+  ✔ resolves identical runtime exports via static and dynamic import (4.078041ms)
+✔ assistantPanelOverflowContract module graph (4.778708ms)
+ℹ tests 22
+ℹ suites 3
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 128.61525
+ASSIST_EXIT:0

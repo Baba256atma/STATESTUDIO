@@ -1,0 +1,322 @@
+{
+  "identity": "DTH:2/LiveExecutiveCertification",
+  "url": "http://localhost:3012/executive",
+  "runtimeCommand": "npx next start -p 3012",
+  "liveIconicPolicy": "safe-empty-no-fabricated-values",
+  "pageErrors": [],
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "dthAttributedConsoleErrors": [],
+  "hydrationErrors": [],
+  "load": {
+    "focused": "none",
+    "mode": "overview",
+    "category": "none",
+    "selected": "none",
+    "stageFocused": "none",
+    "visibleCount": 0,
+    "visibleIds": [
+      "obj-revenue",
+      "obj-capacity",
+      "obj-budget",
+      "obj-customer",
+      "obj-delivery",
+      "obj-risk",
+      "obj-inventory",
+      "obj-demand"
+    ],
+    "duplicateTestIds": [],
+    "iconicCountAttr": "0",
+    "executiveFamilyCount": 8,
+    "liveIconicDomCount": 0,
+    "queueSample": [
+      "Problems2",
+      "Scenarios3",
+      "Decisions2",
+      "Executions2"
+    ],
+    "advisorPresent": true,
+    "breadcrumb": [
+      "Overview"
+    ]
+  },
+  "click": {
+    "attempted": true,
+    "afterClick": {
+      "focused": "obj-revenue",
+      "mode": "object-focus",
+      "category": "none",
+      "selected": "obj-revenue",
+      "stageFocused": "obj-revenue",
+      "visibleCount": 0,
+      "visibleIds": [
+        "obj-revenue"
+      ],
+      "duplicateTestIds": [],
+      "iconicCountAttr": "0",
+      "executiveFamilyCount": 8,
+      "liveIconicDomCount": 0,
+      "queueSample": [
+        "Problems2",
+        "Scenarios3",
+        "Decisions2",
+        "Executions2",
+        "Recent Changes2"
+      ],
+      "advisorPresent": true,
+      "breadcrumb": [
+        "Overview/RevenueBack"
+      ]
+    }
+  },
+  "afterBack": {
+    "focused": "none",
+    "mode": "overview",
+    "category": "none",
+    "selected": "none",
+    "stageFocused": "none",
+    "visibleCount": 0,
+    "visibleIds": [
+      "obj-revenue",
+      "obj-capacity",
+      "obj-budget",
+      "obj-customer",
+      "obj-delivery",
+      "obj-risk",
+      "obj-inventory",
+      "obj-demand"
+    ],
+    "duplicateTestIds": [],
+    "iconicCountAttr": "0",
+    "executiveFamilyCount": 8,
+    "liveIconicDomCount": 0,
+    "queueSample": [
+      "Problems2",
+      "Scenarios3",
+      "Decisions2",
+      "Executions2",
+      "Recent Changes2"
+    ],
+    "advisorPresent": true,
+    "breadcrumb": [
+      "OverviewForward"
+    ]
+  },
+  "afterForward": {
+    "focused": "obj-revenue",
+    "mode": "object-focus",
+    "category": "none",
+    "selected": "obj-revenue",
+    "stageFocused": "obj-revenue",
+    "visibleCount": 0,
+    "visibleIds": [
+      "obj-revenue"
+    ],
+    "duplicateTestIds": [],
+    "iconicCountAttr": "0",
+    "executiveFamilyCount": 8,
+    "liveIconicDomCount": 0,
+    "queueSample": [
+      "Problems2",
+      "Scenarios3",
+      "Decisions2",
+      "Executions2",
+      "Recent Changes2"
+    ],
+    "advisorPresent": true,
+    "breadcrumb": [
+      "Overview/RevenueBack"
+    ]
+  },
+  "afterEscape": {
+    "focused": "none",
+    "mode": "overview",
+    "category": "none",
+    "selected": "none",
+    "stageFocused": "none",
+    "visibleCount": 0,
+    "visibleIds": [
+      "obj-revenue",
+      "obj-capacity",
+      "obj-budget",
+      "obj-customer",
+      "obj-delivery",
+      "obj-risk",
+      "obj-inventory",
+      "obj-demand"
+    ],
+    "duplicateTestIds": [],
+    "iconicCountAttr": "0",
+    "executiveFamilyCount": 8,
+    "liveIconicDomCount": 0,
+    "queueSample": [
+      "Problems2",
+      "Scenarios3",
+      "Decisions2",
+      "Executions2",
+      "Recent Changes2"
+    ],
+    "advisorPresent": true,
+    "breadcrumb": [
+      "Overview"
+    ]
+  },
+  "afterOverview": {
+    "focused": "none",
+    "mode": "overview",
+    "category": "none",
+    "selected": "none",
+    "stageFocused": "none",
+    "visibleCount": 0,
+    "visibleIds": [
+      "obj-revenue",
+      "obj-capacity",
+      "obj-budget",
+      "obj-customer",
+      "obj-delivery",
+      "obj-risk",
+      "obj-inventory",
+      "obj-demand"
+    ],
+    "duplicateTestIds": [],
+    "iconicCountAttr": "0",
+    "executiveFamilyCount": 8,
+    "liveIconicDomCount": 0,
+    "queueSample": [
+      "Problems2",
+      "Scenarios3",
+      "Decisions2",
+      "Executions2",
+      "Recent Changes2"
+    ],
+    "advisorPresent": true,
+    "breadcrumb": [
+      "Overview"
+    ]
+  },
+  "risk": {
+    "attempted": true,
+    "afterRisk": {
+      "focused": "obj-risk",
+      "mode": "object-focus",
+      "category": "none",
+      "selected": "obj-risk",
+      "stageFocused": "obj-risk",
+      "visibleCount": 0,
+      "visibleIds": [
+        "obj-capacity",
+        "obj-customer",
+        "obj-delivery",
+        "obj-risk"
+      ],
+      "duplicateTestIds": [],
+      "iconicCountAttr": "0",
+      "executiveFamilyCount": 8,
+      "liveIconicDomCount": 0,
+      "queueSample": [
+        "Problems2",
+        "Scenarios3",
+        "Decisions2",
+        "Executions2",
+        "Recent Changes2"
+      ],
+      "advisorPresent": true,
+      "breadcrumb": [
+        "Overview/RiskBack"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "utterance": "show problems",
+      "focus": "none",
+      "category": "problem",
+      "iconicCountAttr": "0",
+      "liveIconicDomCount": 0,
+      "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure."
+    },
+    {
+      "utterance": "show scenarios",
+      "focus": "none",
+      "category": "scenario",
+      "iconicCountAttr": "0",
+      "liveIconicDomCount": 0,
+      "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response."
+    },
+    {
+      "utterance": "show decisions",
+      "focus": "none",
+      "category": "decision",
+      "iconicCountAttr": "0",
+      "liveIconicDomCount": 0,
+      "reply": "NexoraCurrent Decisions: Expand Capacity, Approve Repricing."
+    },
+    {
+      "utterance": "show executions",
+      "focus": "none",
+      "category": "execution",
+      "iconicCountAttr": "0",
+      "liveIconicDomCount": 0,
+      "reply": "NexoraCurrent Executions: Capacity Expansion, Pricing Rollout."
+    },
+    {
+      "utterance": "Explain it",
+      "focus": "none",
+      "category": "execution",
+      "iconicCountAttr": "0",
+      "liveIconicDomCount": 0,
+      "reply": "NexoraMargin Pressure is the primary problem affecting Revenue and risk exposure. Margin Pressure needs attention because Risk. Margin Pressure is associated with Revenue. That con"
+    },
+    {
+      "utterance": "which one is more important?",
+      "focus": "none",
+      "category": "execution",
+      "iconicCountAttr": "0",
+      "liveIconicDomCount": 0,
+      "reply": "NexoraImportant in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?"
+    },
+    {
+      "utterance": "show the NexoGraph",
+      "focus": "none",
+      "category": "execution",
+      "iconicCountAttr": "0",
+      "liveIconicDomCount": 0,
+      "reply": "NexoraAre you asking about the problem or the KPI?"
+    }
+  ],
+  "refresh": {
+    "focused": "none",
+    "mode": "collection",
+    "category": "problem",
+    "selected": "none",
+    "stageFocused": "none",
+    "visibleCount": 2,
+    "visibleIds": [
+      "ctx-problem-capacity",
+      "ctx-problem-margin"
+    ],
+    "duplicateTestIds": [],
+    "iconicCountAttr": "0",
+    "executiveFamilyCount": 10,
+    "liveIconicDomCount": 0,
+    "queueSample": [
+      "Problems2",
+      "Scenarios3",
+      "Decisions2",
+      "Executions2",
+      "Recent Changes2"
+    ],
+    "advisorPresent": true,
+    "breadcrumb": [
+      "Overview/ProblemsBack"
+    ]
+  },
+  "refreshProblems": "none",
+  "architectureLeak": false,
+  "duplicateKeys": [
+    "nexora-conversational-message-manager",
+    "nexora-conversational-message-nexora"
+  ],
+  "zeroPageErrors": true,
+  "ok": true
+}

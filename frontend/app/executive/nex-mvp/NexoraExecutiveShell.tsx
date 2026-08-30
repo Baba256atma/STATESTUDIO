@@ -180,6 +180,13 @@ import { NexoraExecutiveFlowContextIndicator } from "./flow/NexoraExecutiveFlowC
 import { NexoraFlowFloatingContent } from "./flow/NexoraFlowFloatingContent";
 import { NexoraFlowJournalExplorer } from "./flow/NexoraFlowJournalExplorer";
 import { NexoraStageMount } from "./NexoraStageMount";
+import {
+  presentationByParticipantId,
+  mapCapturedObservationsForTheatre,
+  projectNexoraDecisionTheatreFoundation,
+  type NexoraDecisionTheatreComparisonAuthority,
+} from "@/app/lib/decision-theatre/nexoraDecisionTheatrePublicIndex.ts";
+import { listCapturedObservations } from "@/app/lib/executive-intelligence/nexoraLiveOutcomeObservationCapture.ts";
 import { NexoraWorkspaceDialMount } from "./NexoraWorkspaceDialMount";
 import { NexoraExecutiveDataExplorer } from "./data/NexoraExecutiveDataExplorer";
 import { NexoraAutomaticMonitoringCoordinator } from "./data/NexoraAutomaticMonitoringCoordinator";
@@ -476,6 +483,21 @@ export function NexoraExecutiveShell({
   const lastConversationalCommandIdRef = useRef<string | null>(null);
   const lastManagerUtteranceRef = useRef<string | null>(null);
   const conversationalMessageSeqRef = useRef(0);
+  const [investigationLevel, setInvestigationLevel] = useState<
+    "glance" | "understand" | "investigate"
+  >("glance");
+  const [comparisonLevel, setComparisonLevel] = useState<
+    "choice" | "compare" | "decide"
+  >("choice");
+  const [investigationDismissedId, setInvestigationDismissedId] = useState<string | null>(
+    null,
+  );
+  const [comparisonAuthority, setComparisonAuthority] =
+    useState<NexoraDecisionTheatreComparisonAuthority | null>(null);
+  const [decisionReviewOpen, setDecisionReviewOpen] = useState(false);
+  const [proposedCandidateId, setProposedCandidateId] = useState<string | null>(null);
+  const [decisionRevision, setDecisionRevision] = useState(0);
+  const [executionRevision, setExecutionRevision] = useState(0);
   const [managerObjectSession, setManagerObjectSession] =
     useState<ManagerObjectSession>(() => createEmptyManagerObjectSession());
   const managerObjectSessionRef = useRef(managerObjectSession);
@@ -494,6 +516,91 @@ export function NexoraExecutiveShell({
         flowDomain,
       ),
     [dataRealityExperience.catalog, flowDomain],
+  );
+
+  const theatreProjection = useMemo(
+    () => {
+      void decisionRevision;
+      void executionRevision;
+      const relatedExecutions = executionRuntime.listExecutions();
+      return projectNexoraDecisionTheatreFoundation({
+        stageState: interaction,
+        catalog: stageCatalog,
+        investigationLevel,
+        comparisonLevel,
+        ncaActiveComparison: managerObjectSession.ncaConversationState?.activeComparison
+          ? Object.freeze({
+              candidateIds: managerObjectSession.ncaConversationState.activeComparison.candidateIds,
+              candidateKind: managerObjectSession.ncaConversationState.activeComparison.candidateKind,
+              criterion: managerObjectSession.ncaConversationState.activeComparison.criterion,
+            })
+          : null,
+        comparisonAuthority,
+        decisionReviewOpen,
+        proposedCandidateId,
+        authoritativeDecisions: Object.freeze(
+          decisionRuntime.adapter.listDecisions()
+            .filter((item) => item.status === "Approved")
+            .map((item) =>
+              Object.freeze({
+                decisionId: item.decisionId,
+                title: item.title,
+                status: item.status,
+                scenarioId: item.scenarioId ?? null,
+                committedBy: item.committedBy ?? null,
+              }),
+            ),
+        ),
+        pendingDecisionConfirmation: Boolean(decisionSession.pendingConfirmation),
+        authoritativeExecutions: Object.freeze(
+          relatedExecutions.map((item) =>
+            Object.freeze({
+              executionId: item.executionId,
+              decisionId: item.decisionId,
+              title: item.title,
+              status: item.status,
+              ownerIds: item.ownerIds,
+              blockers: item.blockers,
+              risks: item.risks,
+              milestones: item.milestones,
+              progress: item.progress,
+            }),
+          ),
+        ),
+        executionRuntimeAvailable: true,
+        executionStarted: relatedExecutions.some(
+          (item) =>
+            item.status === "in-progress" ||
+            item.status === "blocked" ||
+            item.status === "at-risk" ||
+            item.status === "completed",
+        ),
+        authoritativeOutcomeObservations: mapCapturedObservationsForTheatre({
+          captured: listCapturedObservations(),
+          executions: relatedExecutions,
+        }),
+      });
+    },
+    [
+      interaction,
+      stageCatalog,
+      investigationLevel,
+      comparisonLevel,
+      managerObjectSession,
+      comparisonAuthority,
+      decisionReviewOpen,
+      proposedCandidateId,
+      decisionRuntime,
+      decisionSession,
+      decisionRevision,
+      executionRuntime,
+      executionRevision,
+    ],
+  );
+  const theatreIconicObjects = theatreProjection.iconicObjects;
+  const visualPresentations = useMemo(
+    () => presentationByParticipantId(theatreProjection.visualGrammar),
+    [theatreProjection],
   );
 
   const stageInteraction = useMemo(() => {
@@ -785,6 +892,8 @@ export function NexoraExecutiveShell({
       setApplication((app) => applyInteractionToApplication(app, next));
       // Overview is presentation reset — preserve executive structure (CC:7).
       syncExecutiveContextFromRuntime(next, "runtime");
+      setInvestigationDismissedId(null);
+      setInvestigationLevel("glance");
       return next;
     });
   }, [syncExecutiveContextFromRuntime]);
@@ -831,6 +940,8 @@ export function NexoraExecutiveShell({
         setManagerObjectSession((previous) =>
           activateManagerObjectFromClick(previous, next.focusedSubject?.id ?? subjectId),
         );
+        setInvestigationDismissedId(null);
+        setInvestigationLevel("glance");
         return next;
       });
     },
@@ -928,6 +1039,8 @@ export function NexoraExecutiveShell({
           previousUtterance: lastManagerUtteranceRef.current,
           previousManagerObjectSession: managerObjectSessionRef.current,
           previousEntranceSession: entranceSession,
+          theatreDecisionReviewOpen: decisionReviewOpen,
+          theatreProposedCandidateId: proposedCandidateId,
         });
 
         lastManagerUtteranceRef.current = trimmed;
@@ -953,8 +1066,26 @@ export function NexoraExecutiveShell({
             decisionRuntime.adapter,
           ),
         );
+        setDecisionRevision((value) => value + 1);
+        setExecutionRevision((value) => value + 1);
         setConversationalLastTrace(result.trace);
         setManagerObjectSession(result.managerObjectTurn.session);
+        if (
+          result.ncaPost4Comparison &&
+          result.ncaPost4Comparison.candidateSet.candidateIds.length >= 2
+        ) {
+          setComparisonAuthority(
+            Object.freeze({
+              preferredCandidateId: result.ncaPost4Comparison.preferredCandidateId,
+              statement: result.ncaPost4Comparison.response,
+              source: "NCA-POST:4",
+              evidenceState: result.ncaPost4Comparison.evidenceState,
+            }),
+          );
+        } else if (!result.managerObjectTurn.session.ncaConversationState?.activeComparison) {
+          setComparisonAuthority(null);
+          setComparisonLevel("choice");
+        }
 
         if (result.shouldCommitRuntime) {
           lastConversationalCommandIdRef.current =
@@ -987,6 +1118,8 @@ export function NexoraExecutiveShell({
       decisionRuntime,
       executionRuntime,
       entranceSession,
+      decisionReviewOpen,
+      proposedCandidateId,
     ],
   );
 
@@ -1850,6 +1983,56 @@ export function NexoraExecutiveShell({
               onOverview={onOverview}
               onPresentationStateChange={onPresentationStateChange}
               onPresentationAction={onPresentationAction}
+              iconicObjects={theatreIconicObjects}
+              visualPresentations={visualPresentations}
+              visualGrammarVersion={theatreProjection.visualGrammar.grammarVersion}
+              visualClaimCount={theatreProjection.visualGrammar.claims.length}
+              warRoomAtmosphere={theatreProjection.warRoomAtmosphere}
+              sceneIntentKind={theatreProjection.sceneIntent.intentKind}
+              sceneScriptId={theatreProjection.sceneScript.scriptId}
+              objectInvestigation={theatreProjection.objectInvestigation}
+              investigationVisible={
+                theatreProjection.objectInvestigation != null &&
+                theatreProjection.objectInvestigation.objectId !== investigationDismissedId
+              }
+              onInvestigationLevelChange={setInvestigationLevel}
+              onCloseInvestigation={() => {
+                setInvestigationDismissedId(
+                  theatreProjection.objectInvestigation?.objectId ?? null,
+                );
+              }}
+              onAskInvestigationQuestion={onSubmitConversationalUtterance}
+              decisionComparison={theatreProjection.decisionComparison}
+              onComparisonLevelChange={setComparisonLevel}
+              onReviewDecision={() => {
+                setProposedCandidateId(
+                  theatreProjection.decisionComparison?.activeCandidateId ??
+                    interaction.focusedSubject?.id ??
+                    null,
+                );
+                setDecisionReviewOpen(true);
+              }}
+              decisionCommitment={theatreProjection.decisionCommitment}
+              onCancelDecisionReview={() => setDecisionReviewOpen(false)}
+              onChangeDecisionCandidate={(candidateId) => {
+                setProposedCandidateId(candidateId);
+                setDecisionReviewOpen(true);
+                onSelectSubject(candidateId);
+              }}
+              onCommitDecision={() => {
+                const label = theatreProjection.decisionCommitment?.candidateLabel;
+                if (label) void onSubmitConversationalUtterance(`Approve ${label}`);
+              }}
+              executionReadiness={theatreProjection.executionReadiness}
+              liveExecution={theatreProjection.liveExecution}
+              outcomeObservation={theatreProjection.outcomeObservation}
+              learningReassessment={theatreProjection.learningReassessment}
+              onRequestStartExecution={() => {
+                void onSubmitConversationalUtterance("Start it.");
+              }}
+              onShowDecisionHistory={() => {
+                void onSubmitConversationalUtterance("compare the alternatives again");
+              }}
             />
           </ExecutiveStageFrame>
 

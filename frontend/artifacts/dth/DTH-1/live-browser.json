@@ -1,0 +1,144 @@
+{
+  "identity": "DTH:1/LiveExecutiveCertification",
+  "url": "http://127.0.0.1:3011/executive",
+  "pageErrors": [],
+  "consoleErrors": [],
+  "dthAttributedConsoleErrors": [],
+  "load": {
+    "focused": "none",
+    "mode": "overview",
+    "category": "none",
+    "selected": "none",
+    "stageFocused": "none",
+    "visibleCount": 0,
+    "visibleIds": [
+      "obj-revenue",
+      "obj-capacity",
+      "obj-budget",
+      "obj-customer",
+      "obj-delivery",
+      "obj-risk",
+      "obj-inventory",
+      "obj-demand"
+    ],
+    "duplicateTestIds": []
+  },
+  "click": {
+    "attempted": true,
+    "afterClick": {
+      "focused": "obj-revenue",
+      "mode": "object-focus",
+      "category": "none",
+      "selected": "obj-revenue",
+      "stageFocused": "obj-revenue",
+      "visibleCount": 0,
+      "visibleIds": [
+        "obj-revenue"
+      ],
+      "duplicateTestIds": []
+    }
+  },
+  "afterBack": {
+    "focused": "none",
+    "mode": "overview",
+    "category": "none",
+    "selected": "none",
+    "stageFocused": "none",
+    "visibleCount": 0,
+    "visibleIds": [
+      "obj-revenue",
+      "obj-capacity",
+      "obj-budget",
+      "obj-customer",
+      "obj-delivery",
+      "obj-risk",
+      "obj-inventory",
+      "obj-demand"
+    ],
+    "duplicateTestIds": []
+  },
+  "afterEscape": {
+    "focused": "none",
+    "mode": "overview",
+    "category": "none",
+    "selected": "none",
+    "stageFocused": "none",
+    "visibleCount": 0,
+    "visibleIds": [
+      "obj-revenue",
+      "obj-capacity",
+      "obj-budget",
+      "obj-customer",
+      "obj-delivery",
+      "obj-risk",
+      "obj-inventory",
+      "obj-demand"
+    ],
+    "duplicateTestIds": []
+  },
+  "turns": [
+    {
+      "utterance": "show problems",
+      "focus": "none",
+      "category": "problem",
+      "reply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure."
+    },
+    {
+      "utterance": "show scenarios",
+      "focus": "none",
+      "category": "scenario",
+      "reply": "NexoraCurrent Scenarios: Capacity Expansion Plan, Demand Surge, Pricing Response."
+    },
+    {
+      "utterance": "show decisions",
+      "focus": "none",
+      "category": "decision",
+      "reply": "NexoraCurrent Decisions: Expand Capacity, Approve Repricing."
+    },
+    {
+      "utterance": "show executions",
+      "focus": "none",
+      "category": "execution",
+      "reply": "NexoraCurrent Executions: Capacity Expansion, Pricing Rollout."
+    },
+    {
+      "utterance": "Explain it",
+      "focus": "none",
+      "category": "execution",
+      "reply": "NexoraMargin Pressure is the primary problem affecting Revenue and risk exposure. Margin Pressure needs attention because Risk. Margin Pressure is associated with Revenue. That con"
+    },
+    {
+      "utterance": "which one is more important?",
+      "focus": "none",
+      "category": "execution",
+      "reply": "NexoraImportant in which sense—urgency, financial impact, risk exposure, evidence strength, or which to investigate first?"
+    },
+    {
+      "utterance": "show the NexoGraph",
+      "focus": "none",
+      "category": "execution",
+      "reply": "NexoraAre you asking about the problem or the KPI?"
+    }
+  ],
+  "refresh": {
+    "focused": "none",
+    "mode": "collection",
+    "category": "problem",
+    "selected": "none",
+    "stageFocused": "none",
+    "visibleCount": 2,
+    "visibleIds": [
+      "ctx-problem-capacity",
+      "ctx-problem-margin"
+    ],
+    "duplicateTestIds": []
+  },
+  "refreshProblems": "none",
+  "architectureLeak": false,
+  "duplicateKeys": [
+    "nexora-conversational-message-manager",
+    "nexora-conversational-message-nexora"
+  ],
+  "zeroPageErrors": true,
+  "ok": true
+}

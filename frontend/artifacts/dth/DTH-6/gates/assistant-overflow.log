@@ -1,0 +1,40 @@
+[AssistantPanelOverflow]
+panel=analytics
+overflow=false
+▶ assistantPanelOverflow
+  ✔ Test 1 — long Insight content triggers overflow detection (0.485167ms)
+  ✔ Test 2 — long Scenario content triggers overflow detection (0.066ms)
+  ✔ Test 3 — Insight scroll container is independently bounded (0.106ms)
+  ✔ Test 4 — Scenario scroll container is independently bounded (0.065625ms)
+  ✔ Test 5 — collapsed panel hides scrollbar surface (0.069708ms)
+  ✔ Test 6 — governance tier is medium (0.074333ms)
+  ✔ Test 7 — actions tier is small (0.047416ms)
+  ✔ Test 8 — short content does not report overflow (0.05025ms)
+  ✔ Test 9 — overflow trace format (0.884792ms)
+  ✔ Test 10 — scroll containers use overscroll containment (0.304125ms)
+  ✔ tokens consume the canonical mapping without redefining panel tiers (0.159083ms)
+✔ assistantPanelOverflow (2.919042ms)
+▶ assistantPanelOverflowContract exports and mapping
+  ✔ runtime value export ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL exists (0.7665ms)
+  ✔ type AssistantPanelOverflowSizeTier is usable at the type layer (0.155208ms)
+  ✔ maps every supported accordion panel to exactly one valid size tier (0.973917ms)
+  ✔ does not include unsupported panel ids (0.159834ms)
+  ✔ derives the intended max-height for every mapped tier (0.184792ms)
+  ✔ keeps the overflow-size mapping immutable (0.269125ms)
+  ✔ keeps detect and trace as runtime values (0.294583ms)
+✔ assistantPanelOverflowContract exports and mapping (3.879208ms)
+▶ assistantPanelOverflowContract module graph
+  ✔ does not import dock, tokens, components, or client modules (0.621959ms)
+  ✔ does not reach a component through local assistant imports (0.296458ms)
+  ✔ has no overflow-contract → tokens → overflow-contract cycle (0.127875ms)
+  ✔ resolves identical runtime exports via static and dynamic import (43.318291ms)
+✔ assistantPanelOverflowContract module graph (44.580042ms)
+ℹ tests 22
+ℹ suites 3
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 801.238291
+ASST_EXIT:0

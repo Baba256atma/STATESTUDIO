@@ -129,6 +129,14 @@ export function overlayConversationalIntentWithCanonicalMeaning(
   }
   if (
     meaning.requestedOperation === "CONSEQUENCE" &&
+    !/\b(?:what happens if|what if|do nothing|did nothing|ignore|leave (?:it|this|that) alone|if this continues)\b/i.test(
+      meaning.rawUtterance,
+    )
+  ) {
+    return resolution;
+  }
+  if (
+    meaning.requestedOperation === "CONSEQUENCE" &&
     /\bmatters more\b/i.test(meaning.rawUtterance)
   ) {
     return resolution;

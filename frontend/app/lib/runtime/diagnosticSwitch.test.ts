@@ -56,6 +56,21 @@ test("scene diagnostics are quiet until the scene scope is enabled", () => {
   assert.equal(isDiagnosticEnabled("scene"), false);
 });
 
+test("dthDecisionTheatre diagnostics are quiet until the scope is enabled", () => {
+  installDiagnosticConsoleHelper();
+  const helper = (globalThis as unknown as {
+    nexoraDiagnostics: {
+      enableScope: (scope: string) => unknown;
+      disableScope: (scope: string) => unknown;
+    };
+  }).nexoraDiagnostics;
+  assert.equal(isDiagnosticEnabled("dthDecisionTheatre"), false);
+  helper.enableScope("dthDecisionTheatre");
+  assert.equal(isDiagnosticEnabled("dthDecisionTheatre"), true);
+  helper.disableScope("dthDecisionTheatre");
+  assert.equal(isDiagnosticEnabled("dthDecisionTheatre"), false);
+});
+
 test("nxaConversation diagnostics are quiet until the scope is enabled", () => {
   installDiagnosticConsoleHelper();
   const helper = (globalThis as unknown as {

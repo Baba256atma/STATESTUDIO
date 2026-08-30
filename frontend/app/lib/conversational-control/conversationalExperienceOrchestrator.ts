@@ -66,6 +66,9 @@ import {
   shouldNexoraEntranceOwnUtterance,
 } from "@/app/lib/nexora-entrance/nexoraEntranceExperience.ts";
 import type { NexoraEntranceSession } from "@/app/lib/nexora-entrance/nexoraEntranceTypes.ts";
+import { shouldNexoraExecutionPlanningOwnUtterance } from "@/app/lib/nexora-entrance/nexoraExecutionPlanning.ts";
+import { shouldNexoraOutcomeMonitoringOwnUtterance } from "@/app/lib/nexora-entrance/nexoraOutcomeMonitoring.ts";
+import { shouldNexoraLearningReassessmentOwnUtterance } from "@/app/lib/nexora-entrance/nexoraLearningReassessment.ts";
 import type { NexoraConversationalExperienceContextResolution } from "./conversationalExperienceContext.ts";
 import type { NexoraRegisteredExecutiveExperience } from "./conversationalExperienceRegistry.ts";
 import {
@@ -109,6 +112,10 @@ import {
 } from "./executiveDecisionAuthority.ts";
 import type { NexoraDecisionRuntimeAdapter } from "./executiveDecisionRuntimeAdapter.ts";
 import type { NexoraExecutionRuntimeAdapter } from "./executiveExecutionRuntimeAdapter.ts";
+import {
+  resolveNexoraExecutionFollowUpRequest,
+  resolveNexoraExecutiveExecutionFollowUp,
+} from "./executiveExecutionFollowUp.ts";
 import { createNexoraCanonicalDecisionRuntime } from "./executiveDecisionRuntimeAdapter.ts";
 import {
   createNexoraPendingTurnExpectation,
@@ -149,6 +156,17 @@ import {
   directNexoraPresentation,
 } from "@/app/lib/director/nexoraSemanticPresentationDirector.ts";
 import {
+  emitNexoraDecisionTheatreDiagnostics,
+  emptyNexoraDecisionTheatreSceneSemanticInput,
+  mapCapturedObservationsForTheatre,
+  parseDeliveryOutcomeUtterance,
+  projectNexoraDecisionTheatreFoundation,
+} from "@/app/lib/decision-theatre/nexoraDecisionTheatrePublicIndex.ts";
+import {
+  captureOutcomeObservation,
+  listCapturedObservations,
+} from "@/app/lib/executive-intelligence/nexoraLiveOutcomeObservationCapture.ts";
+import {
   applyNexoraDialogueEffects,
   composeNca2ContinuityResponse,
   freezeNcaConversationState,
@@ -165,9 +183,21 @@ import {
 } from "@/app/lib/manager-object/nexoraNcaPost4CollectionComparison.ts";
 import {
   classifyManagerSpeechAct,
+  composeManagerObservationReply,
   conversationalIntentKindForCollection,
   interpretExecutiveCollectionQuery,
+  interpretManagerProvidedObservation,
+  isCompleteManagerBusinessObservation,
+  isConsequenceIntentUtterance,
+  isManagerCausalAssertion,
 } from "@/app/lib/manager-object/nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
+import {
+  composeCausalAssertionReply,
+  composeObservationRecallReply,
+  composeStaleContextIsolatedObservationReply,
+  isObservationRecallUtterance,
+  shouldSkipScenarioForManagerObservation,
+} from "@/app/lib/manager-object/nexoraNxa5Fix5ObservationPrecedence.ts";
 import {
   classifyRequestStageRelationship,
   composeCollectionConfirmationReply,
@@ -272,6 +302,9 @@ export type NexoraConversationalExperienceInput = {
   readonly initiativeSignals?: readonly ProactiveExecutiveSignal[];
   readonly conversationImportance?: import("@/app/lib/manager-object/nexoraNca5InitiativeIntelligenceTypes.ts").ConversationImportance;
   readonly managerCommunicationContext?: import("@/app/lib/manager-object/nexoraNca6CommunicationIntelligenceTypes.ts").Nca6ManagerContextInput | null;
+  /** DTH:8 UI review — Advisor consumes Theatre review without owning Decision truth. */
+  readonly theatreDecisionReviewOpen?: boolean | null;
+  readonly theatreProposedCandidateId?: string | null;
 };
 
 function freezeMessage(
@@ -808,6 +841,11 @@ function resolveDecisionCommitmentForTurn(input: {
   readonly commandId?: string;
   readonly utterance: string;
   readonly committedAt?: string;
+  readonly catalogScenarioSubjects?: readonly {
+    readonly id: string;
+    readonly label: string;
+    readonly kind: string;
+  }[] | null;
 }): NexoraDecisionCommitmentResult {
   const payload = input.intent.decisionCommitmentPayload;
   const action =
@@ -847,6 +885,7 @@ function resolveDecisionCommitmentForTurn(input: {
     utterance: input.utterance,
     hasCompoundExecutionRequest: payload?.hasCompoundExecutionRequest === true,
     committedAt: input.committedAt,
+    catalogScenarioSubjects: input.catalogScenarioSubjects ?? null,
   });
 }
 
@@ -1121,6 +1160,10 @@ export function executeNexoraConversationalExperience(
       initiativeSignals: input.initiativeSignals,
       conversationImportance: input.conversationImportance,
       managerCommunicationContext: input.managerCommunicationContext,
+      theatreDecisionReviewOpen: input.theatreDecisionReviewOpen,
+      theatreProposedCandidateId: input.theatreProposedCandidateId,
+      decisionRuntime: args.decisionRuntime ?? input.decisionRuntime ?? null,
+      executionRuntime: args.executionRuntime ?? input.executionRuntime ?? null,
     });
   const bootstrappedExecutiveContext = bootstrapExecutiveContext({
     executiveContext: input.executiveContext,
@@ -1311,7 +1354,9 @@ export function executeNexoraConversationalExperience(
       pendingTurnResolution?.semanticUtterance == null &&
       initialIntentResult.intent.kind === "unknown" &&
       !pendingCriterion &&
-      consentReply == null
+      consentReply == null &&
+      !isCompleteManagerBusinessObservation(utterance) &&
+      !isManagerCausalAssertion(utterance)
         ? resolveBareNexoraSubjectReference({
             utterance,
             subjects: input.executiveSubjects,
@@ -1377,8 +1422,10 @@ export function executeNexoraConversationalExperience(
       clarificationRaw.action === "clarify" &&
       naturalLanguageUnderstanding.ambiguity.reason === "multiple-objects" &&
       /\b(?:relationship|related|connected|between|affect|depends?|constrains?|and|both)\b/i.test(utterance);
+    const clarificationOwnedByResolvedAction = actionInvocation.status === "resolved";
     const clarification: ClarificationTurnResult = situationResolvesClarification ||
       (clarificationRaw.action === "clarify" && clarificationOwnedByCanonicalIntent) ||
+      clarificationOwnedByResolvedAction ||
       clarificationOwnedByMultiEntitySemantics
       ? Object.freeze({
           ...clarificationRaw,
@@ -1890,7 +1937,9 @@ export function executeNexoraConversationalExperience(
       if (experienceResult.decision === "keep-current") {
         if (
           context.primarySubject?.subjectId &&
-          !(pendingCriterion && isExecutiveComparisonCriterionAnswer(utterance))
+          !(pendingCriterion && isExecutiveComparisonCriterionAnswer(utterance)) &&
+          !isCompleteManagerBusinessObservation(utterance) &&
+          !isManagerCausalAssertion(utterance)
         ) {
           const focusIntent = Object.freeze({
             ...intent,
@@ -2098,12 +2147,13 @@ export function executeNexoraConversationalExperience(
         nextRuntimeState: shouldCommitRuntime
           ? applied.nextState
           : input.runtimeState,
-        shouldCommitRuntime,
-        ids,
-        utterance,
-        catalog: input.catalog,
-        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
-        executiveSubjects: input.executiveSubjects,
+      shouldCommitRuntime,
+      ids,
+      utterance,
+      catalog: input.catalog,
+      previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+      decisionRuntime: input.decisionRuntime ?? null,
+      executiveSubjects: input.executiveSubjects,
       });
     }
 
@@ -2181,6 +2231,7 @@ export function executeNexoraConversationalExperience(
     );
     const isScenario =
       !activeNonScenarioCollectionOwnsFollowUp &&
+      !shouldSkipScenarioForManagerObservation(utterance) &&
       !shouldSkipScenarioEngineForStageGroundedComparison({
         relationship: incomingStage.collection ? "STAGE_GROUNDED" : "STAGE_INDEPENDENT",
         stage: incomingStage,
@@ -2284,6 +2335,13 @@ export function executeNexoraConversationalExperience(
         commandId: commandResult.command.commandId,
         utterance,
         committedAt: input.decisionCommittedAt,
+        catalogScenarioSubjects: (input.catalog?.contextSubjects ?? []).map((subject) =>
+          Object.freeze({
+            id: subject.id,
+            label: subject.label,
+            kind: subject.kind,
+          }),
+        ),
       });
     }
 
@@ -2383,6 +2441,7 @@ export function executeNexoraConversationalExperience(
       utterance,
       catalog: input.catalog,
       previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+      decisionRuntime: input.decisionRuntime ?? null,
       executiveSubjects: input.executiveSubjects,
     });
   } catch {
@@ -2408,6 +2467,7 @@ export function executeNexoraConversationalExperience(
       utterance,
       catalog: input.catalog,
       previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+      decisionRuntime: input.decisionRuntime ?? null,
       executiveSubjects: input.executiveSubjects,
     });
   }
@@ -2438,6 +2498,8 @@ function finalize(args: {
   readonly catalog?: NexoraMVPObjectInteractionCatalog;
   readonly executiveSubjects: readonly NexoraConversationalSubjectRecord[];
   readonly previousManagerObjectSession?: import("@/app/lib/manager-object/managerObjectActive.ts").ManagerObjectSession | null;
+  readonly decisionRuntime?: import("./executiveDecisionRuntimeAdapter.ts").NexoraDecisionRuntimeAdapter | null;
+  readonly executionRuntime?: NexoraExecutionRuntimeAdapter | null;
   readonly preservePresentedResponse?: boolean;
   readonly lockPresentedResponse?: boolean;
   readonly preserveConversationContinuity?: boolean;
@@ -2447,6 +2509,8 @@ function finalize(args: {
   readonly initiativeSignals?: readonly ProactiveExecutiveSignal[];
   readonly conversationImportance?: import("@/app/lib/manager-object/nexoraNca5InitiativeIntelligenceTypes.ts").ConversationImportance;
   readonly managerCommunicationContext?: import("@/app/lib/manager-object/nexoraNca6CommunicationIntelligenceTypes.ts").Nca6ManagerContextInput | null;
+  readonly theatreDecisionReviewOpen?: boolean | null;
+  readonly theatreProposedCandidateId?: string | null;
 }): NexoraConversationalExperienceResult & {
   readonly nextRuntimeState: NexoraMVPObjectInteractionState;
 } {
@@ -3379,8 +3443,28 @@ function finalize(args: {
         historicalAdvisorySubject: previousNcaState?.lastAdvisoryPosition?.optionId ?? null,
       })
     : null;
-  if (ncaPost4Comparison?.response && !comparisonClarification) {
-    presentedResponse = ncaPost4Comparison.response;
+  const focusedIdForComparison =
+    args.nextRuntimeState.focusedSubject?.id ?? managerObjectTurn.activeObjectId ?? null;
+  const deicticCandidateInvestigation = Boolean(
+    focusedIdForComparison &&
+      previousNcaState?.activeComparison?.candidateIds.includes(focusedIdForComparison) &&
+      /^(?:why this(?: one)?|explain this)\??$/i.test(
+        normalizeNexoraConversationalUtterance(args.utterance),
+      ),
+  );
+  if (ncaPost4Comparison?.response && !comparisonClarification && !deicticCandidateInvestigation) {
+    const deicticOptionCompare =
+      /^compare them\b/i.test(args.utterance.trim()) &&
+      ncaPost4Comparison.candidateSet.candidateIds.length < 2;
+    if (deicticOptionCompare) {
+      const options = previousNcaState?.lastOfferedOptions ?? [];
+      presentedResponse =
+        options.length >= 2
+          ? `Comparison of the offered options (${options.join(", ")}) is a trade-off against available evidence; it does not rank them without comparable proof and does not approve a Decision.`
+          : "I can compare those options once two comparable scenarios exist. That comparison would be a trade-off against evidence, not a Decision.";
+    } else {
+      presentedResponse = ncaPost4Comparison.response;
+    }
   }
   const rawCollectionKind = semanticTurn.diagnostics.collectionKind?.toLowerCase() ?? null;
   const collectionKind =
@@ -3589,6 +3673,50 @@ function finalize(args: {
     nextPresentationConsent = null;
   } else if (isCollectionConfirmation(args.utterance) && incomingStage.collection) {
     presentedResponse = composeCollectionConfirmationReply(incomingStage) ?? presentedResponse;
+  } else if (isObservationRecallUtterance(args.utterance) && !args.lockPresentedResponse) {
+    presentedResponse = composeObservationRecallReply({
+      observations: managerObjectTurn.session.managerObservations ?? [],
+    });
+    nextPresentationConsent = null;
+  } else if (
+    isManagerCausalAssertion(args.utterance) &&
+    !isConsequenceIntentUtterance(args.utterance) &&
+    !args.lockPresentedResponse &&
+    !trustedCommunication.challengePresent
+  ) {
+    presentedResponse = composeCausalAssertionReply({
+      cause: contextualManagerMeaning.objectReference?.canonicalName ??
+        naturalLanguageUnderstanding.objectReference?.canonicalName ??
+        null,
+      effect: naturalLanguageUnderstanding.ambiguity.candidates[1]?.canonicalName ?? null,
+    });
+    nextPresentationConsent = null;
+  } else if (
+    isCompleteManagerBusinessObservation(args.utterance) &&
+    !args.lockPresentedResponse &&
+    (!nca4Strategy.shouldAdvise ||
+      Boolean(args.scenarioResult) ||
+      /\bwithout intervention\b/i.test(presentedResponse))
+  ) {
+    const observation = interpretManagerProvidedObservation({
+      utterance: args.utterance,
+      subjectName:
+        naturalLanguageUnderstanding.objectReference?.canonicalName ??
+        contextualManagerMeaning.objectReference?.canonicalName ??
+        null,
+    });
+    const baseReply = observation
+      ? composeManagerObservationReply(observation)
+      : presentedResponse;
+    presentedResponse = composeStaleContextIsolatedObservationReply({
+      baseReply,
+      explicitSubject:
+        observation?.subject ??
+        naturalLanguageUnderstanding.objectReference?.canonicalName ??
+        null,
+      stageFocus: incomingStage.focus?.label ?? null,
+    });
+    nextPresentationConsent = null;
   } else if (
     stageRelationship === "STAGE_COMPATIBLE" &&
     incomingStage.presentationType === "COLLECTION" &&
@@ -3913,6 +4041,542 @@ function finalize(args: {
     nxa5Readiness: executiveJudgment?.decisionReadiness ?? null,
   });
 
+  if (
+    /^compare them\b/i.test(args.utterance.trim()) &&
+    /^Done(?: —.*)?\.?$/i.test(presentedResponse.trim())
+  ) {
+    const options = previousNcaState?.lastOfferedOptions ?? [];
+    presentedResponse =
+      options.length >= 2
+        ? `Comparison of the offered options (${options.join(", ")}) is a trade-off against available evidence; it does not rank them without comparable proof and does not approve a Decision.`
+        : "I can compare those options once two comparable scenarios exist. That comparison would be a trade-off against evidence, not a Decision.";
+  }
+
+  const skipTheatreCopy =
+    shouldNexoraExecutionPlanningOwnUtterance(args.nextEntranceSession, args.utterance) ||
+    shouldNexoraOutcomeMonitoringOwnUtterance(args.nextEntranceSession, args.utterance) ||
+    shouldNexoraLearningReassessmentOwnUtterance(args.nextEntranceSession, args.utterance);
+  const outcomeCollectionQuery =
+    /^(?:show(?: me)?(?: all)? outcomes|how many outcomes(?: do we have)?)\??$/i.test(
+      args.utterance.trim(),
+    );
+  const learningCollectionQuery =
+    /^(?:show(?: me)?(?: all)? learnings|what have we learned\??|show previous learnings)\??$/i.test(
+      args.utterance.trim(),
+    );
+  const liveExecutions = args.executionRuntime?.listExecutions() ?? [];
+  const relatedLiveExecution =
+    liveExecutions.find(
+      (item) =>
+        item.status === "in-progress" ||
+        item.status === "blocked" ||
+        item.status === "at-risk" ||
+        item.status === "completed",
+    ) ?? null;
+  const parsedOutcomeUtterance = parseDeliveryOutcomeUtterance(args.utterance);
+  if (
+    !skipTheatreCopy &&
+    !outcomeCollectionQuery &&
+    !learningCollectionQuery &&
+    relatedLiveExecution &&
+    parsedOutcomeUtterance
+  ) {
+    const provenance = [
+      "manager-reported-observation",
+      parsedOutcomeUtterance.baseline != null ? `baseline:${parsedOutcomeUtterance.baseline}` : null,
+      "target:96",
+    ].filter((item): item is string => item != null);
+    captureOutcomeObservation({
+      observation: {
+        subjectId: relatedLiveExecution.decisionId,
+        metricId: `delivery-pct:${parsedOutcomeUtterance.observed}:${parsedOutcomeUtterance.baseline ?? "none"}`,
+        dimension: "Delivery",
+        unit: "%",
+        value: parsedOutcomeUtterance.observed,
+        qualitativeState: `${parsedOutcomeUtterance.observed}%`,
+        observedAt: null,
+        capturedAt: null,
+        sourceId: "manager-reported",
+        datasetId: "conversation",
+        evidenceRefs: Object.freeze([]),
+        provenanceRefs: Object.freeze(provenance),
+        validationState: "partial",
+        freshnessState: "unknown",
+        decisionId: relatedLiveExecution.decisionId,
+        executionId: relatedLiveExecution.executionId,
+      },
+    });
+  }
+
+  const decisionTheatreProjectionInput = Object.freeze({
+    stageState: directorRuntimeState,
+    catalog: args.catalog,
+    directorPlan,
+    investigationLevel: investigationAsk ? ("understand" as const) : ("glance" as const),
+    comparisonLevel: comparisonMeaning.active ? ("compare" as const) : ("choice" as const),
+    ncaActiveComparison: nextNcaState.activeComparison
+      ? Object.freeze({
+          candidateIds: nextNcaState.activeComparison.candidateIds,
+          candidateKind: nextNcaState.activeComparison.candidateKind,
+          criterion: nextNcaState.activeComparison.criterion,
+        })
+      : null,
+    comparisonAuthority: ncaPost4Comparison
+      ? Object.freeze({
+          preferredCandidateId: ncaPost4Comparison.preferredCandidateId,
+          statement: ncaPost4Comparison.response,
+          source: "NCA-POST:4",
+          evidenceState: ncaPost4Comparison.evidenceState,
+        })
+      : null,
+    decisionReviewOpen:
+      args.theatreDecisionReviewOpen === true ||
+      Boolean(args.nextDecisionSession?.pendingConfirmation) ||
+      decisionCommitmentResult?.status === "confirmation-required",
+    proposedCandidateId:
+      args.theatreProposedCandidateId ??
+      args.nextRuntimeState.focusedSubject?.id ??
+      managerObjectTurn.activeObjectId ??
+      null,
+    authoritativeDecisions: Object.freeze(
+      (args.decisionRuntime?.listDecisions() ?? [])
+        .filter((item) => item.status === "Approved")
+        .map((item) =>
+          Object.freeze({
+            decisionId: item.decisionId,
+            title: item.title,
+            status: item.status,
+            scenarioId: item.scenarioId ?? null,
+            committedBy: item.committedBy ?? null,
+          }),
+        ),
+    ),
+    executionStarted: (args.executionRuntime?.listExecutions() ?? []).some(
+      (item) =>
+        item.status === "in-progress" ||
+        item.status === "blocked" ||
+        item.status === "at-risk" ||
+        item.status === "completed",
+    ),
+    authoritativeExecutions: Object.freeze(
+      (args.executionRuntime?.listExecutions() ?? []).map((item) =>
+        Object.freeze({
+          executionId: item.executionId,
+          decisionId: item.decisionId,
+          title: item.title,
+          status: item.status,
+          ownerIds: item.ownerIds,
+          blockers: item.blockers,
+          risks: item.risks,
+          milestones: item.milestones,
+          progress: item.progress,
+        }),
+      ),
+    ),
+    executionRuntimeAvailable: Boolean(args.executionRuntime),
+    authoritativeOutcomeObservations: mapCapturedObservationsForTheatre({
+      captured: listCapturedObservations(),
+      executions: liveExecutions,
+    }),
+    pendingDecisionConfirmation: Boolean(args.nextDecisionSession?.pendingConfirmation) || decisionCommitmentResult?.status === "confirmation-required",
+    executiveContext: nextExecutiveContext,
+    managerQuestion: args.utterance,
+    managerInteractionRef: args.ids.managerId,
+    sceneSemanticInput: emptyNexoraDecisionTheatreSceneSemanticInput({
+      managerQuestionRef: args.ids.managerId,
+      canonicalSemanticResultRef: [
+        naturalLanguageUnderstanding.identity,
+        naturalLanguageUnderstanding.requestedOperation,
+        naturalLanguageUnderstanding.communicativeIntent,
+        semanticTurn.owner,
+        semanticTurn.scope,
+      ].join(":"),
+      activeExecutiveContextRef: nextExecutiveContext.currentSubject?.subjectId ?? directorRuntimeState.focusedSubject?.id ?? null,
+      conversationIntentKind: args.intentResult.intent.kind,
+      canonicalOperation: naturalLanguageUnderstanding.requestedOperation,
+      communicativeIntent: naturalLanguageUnderstanding.communicativeIntent,
+      questionType: naturalLanguageUnderstanding.questionType,
+      semanticScope: semanticTurn.scope,
+      primaryResponseOwner: semanticTurn.owner,
+      journeyState: managerObjectTurn.journey.journeyState,
+      journeyPhase: managerObjectTurn.journey.currentPhase,
+      namedSubject: semanticTurn.references.primary
+        ? Object.freeze({
+            id: semanticTurn.references.primary.id,
+            kind: semanticTurn.references.primary.kind,
+            label: semanticTurn.references.primary.name,
+            authority: "catalog" as const,
+          })
+        : naturalLanguageUnderstanding.objectReference?.subjectId
+          ? Object.freeze({
+              id: naturalLanguageUnderstanding.objectReference.subjectId,
+              kind: naturalLanguageUnderstanding.objectReference.subjectKind,
+              label: naturalLanguageUnderstanding.objectReference.canonicalName,
+              authority: "catalog" as const,
+            })
+          : null,
+      focalExecutiveObject: directorRuntimeState.focusedSubject
+        ? Object.freeze({
+            id: directorRuntimeState.focusedSubject.id,
+            kind: directorRuntimeState.focusedSubject.kind,
+            label: directorRuntimeState.focusedSubject.label,
+            authority: "catalog" as const,
+          })
+        : null,
+      activeCollection: directorRuntimeState.collectionContext
+        ? Object.freeze({
+            kind: String(directorRuntimeState.collectionContext.category),
+            memberIds: Object.freeze(directorRuntimeState.collectionContext.objectIds.slice()),
+          })
+        : semanticTurn.canonicalCollectionMembers.length > 0
+          ? Object.freeze({
+              kind: String(semanticTurn.diagnostics.collectionKind ?? "collection").toLowerCase(),
+              memberIds: Object.freeze(semanticTurn.canonicalCollectionMembers.map((item) => item.id)),
+            })
+          : null,
+      requestedCollection:
+        semanticTurn.owner === "COLLECTION_QUERY" && semanticTurn.canonicalCollectionMembers.length > 0
+          ? Object.freeze({
+              kind: String(semanticTurn.diagnostics.collectionKind ?? "collection").toLowerCase(),
+              memberIds: Object.freeze(semanticTurn.canonicalCollectionMembers.map((item) => item.id)),
+            })
+          : null,
+      comparison: Object.freeze({
+        active: comparisonMeaning.active,
+        memberIds: Object.freeze(comparisonCandidateSet.candidateIds.slice()),
+        criterion: comparisonMeaning.criterion,
+        criterionAmbiguous: comparisonMeaning.criterionAmbiguous,
+        criterionResolution: isExecutiveComparisonCriterionAnswer(args.utterance)
+          ? comparisonMeaning.criterion
+          : null,
+      }),
+      deixis: Object.freeze({
+        pronoun: comparisonMeaning.active && comparisonCandidateSet.candidateIds.length >= 2
+          ? ("them" as const)
+          : naturalLanguageUnderstanding.objectReference?.subjectId && semanticTurn.references.primary == null
+            ? ("it" as const)
+            : ("none" as const),
+        resolvedIds: Object.freeze(
+          comparisonMeaning.active && comparisonCandidateSet.candidateIds.length >= 2
+            ? comparisonCandidateSet.candidateIds.slice()
+            : naturalLanguageUnderstanding.objectReference?.subjectId
+              ? [naturalLanguageUnderstanding.objectReference.subjectId]
+              : directorRuntimeState.focusedSubject
+                ? [directorRuntimeState.focusedSubject.id]
+                : [],
+        ),
+      }),
+      pendingClarification: Object.freeze({
+        present: clarificationTurn.action === "clarify" || Boolean(clarificationTurn.pending),
+        reason: clarificationTurn.reason,
+        awaiting: clarificationTurn.question,
+      }),
+      explicitCorrection: naturalLanguageUnderstanding.communicativeIntent === "CORRECT",
+      explicitNamedEntityAndAction: Boolean(
+        semanticTurn.references.primary?.id &&
+          naturalLanguageUnderstanding.requestedOperation !== "NONE" &&
+          naturalLanguageUnderstanding.requestedOperation !== "OBSERVE",
+      ),
+      explicitCollectionRequest: semanticTurn.owner === "COLLECTION_QUERY",
+      stageOrientationRequest: stageRelationship === "STAGE_META" || isStageMetaUtterance(args.utterance),
+      knowledgeDefinitionRequest:
+        semanticTurn.owner === "PRODUCT_KNOWLEDGE" ||
+        semanticTurn.owner === "HELP_TEACH",
+      observationNotScenario:
+        shouldSkipScenarioForManagerObservation(args.utterance) ||
+        naturalLanguageUnderstanding.communicativeIntent === "OBSERVE",
+      unknownEntityNamed:
+        Boolean(naturalLanguageUnderstanding.objectReference?.lexicalHint) &&
+        naturalLanguageUnderstanding.objectReference?.subjectId == null &&
+        naturalLanguageUnderstanding.ambiguity.unresolved,
+      contextSufficient: clarificationTurn.action !== "clarify",
+      unsupportedRequest: false,
+    }),
+  });
+  const decisionTheatre = projectNexoraDecisionTheatreFoundation(
+    decisionTheatreProjectionInput,
+  );
+  emitNexoraDecisionTheatreDiagnostics(
+    decisionTheatre,
+    decisionTheatreProjectionInput,
+  );
+  const theatreInvestigation = decisionTheatre.objectInvestigation;
+  if (
+    theatreInvestigation?.advisorReadable.comparison &&
+    /compare (?:it|this) with the other/i.test(args.utterance) &&
+    !presentedResponse.includes(theatreInvestigation.advisorReadable.comparison)
+  ) {
+    presentedResponse = `${theatreInvestigation.advisorReadable.comparison} ${presentedResponse}`.trim();
+  }
+  if (deicticCandidateInvestigation && theatreInvestigation) {
+    presentedResponse = [
+      theatreInvestigation.advisorReadable.whyInvestigating,
+      theatreInvestigation.advisorReadable.evidence,
+      theatreInvestigation.advisorReadable.comparison,
+    ]
+      .filter((part): part is string => Boolean(part))
+      .join(" ");
+  }
+  const theatreComparison = decisionTheatre.decisionComparison;
+  if (
+    theatreComparison &&
+    /biggest trade-?off/i.test(args.utterance) &&
+    theatreComparison.advisorReadable.tradeOffs
+  ) {
+    presentedResponse = theatreComparison.advisorReadable.tradeOffs;
+  }
+  if (
+    theatreComparison &&
+    /what do we still not know/i.test(args.utterance) &&
+    theatreComparison.advisorReadable.uncertainty
+  ) {
+    presentedResponse = theatreComparison.advisorReadable.uncertainty;
+  }
+  const theatreCommitment = decisionTheatre.decisionCommitment;
+  if (/have i already made the decision/i.test(args.utterance)) {
+    presentedResponse = theatreCommitment?.advisorReadable.haveIDecided
+      ?? "No. You have not made a Decision yet.";
+  }
+  if (theatreCommitment && /what happens (?:next|after i approve)/i.test(args.utterance)) {
+    presentedResponse = theatreCommitment.advisorReadable.next;
+  }
+  if (theatreCommitment && /why this one|why (?:are we|are you) choosing this/i.test(args.utterance)) {
+    presentedResponse = theatreCommitment.advisorReadable.why;
+  }
+  if (theatreCommitment && /what evidence supports/i.test(args.utterance)) {
+    presentedResponse = theatreCommitment.advisorReadable.evidence;
+  }
+  if (theatreCommitment && /what remains uncertain|what do we still not know/i.test(args.utterance)) {
+    presentedResponse = theatreCommitment.advisorReadable.uncertainty;
+  }
+  const theatreReadiness = decisionTheatre.executionReadiness;
+  const executionCollectionQuery =
+    /^(?:show(?: me)?(?: all)? executions|how many executions(?: do we have)?)\??$/i.test(
+      args.utterance.trim(),
+    );
+  const executionRequest = resolveNexoraExecutionFollowUpRequest(args.utterance);
+  const approvedDecision =
+    (args.decisionRuntime?.listDecisions() ?? []).find((item) => item.status === "Approved") ?? null;
+  if (
+    !skipTheatreCopy &&
+    !executionCollectionQuery &&
+    executionRequest?.action === "start" &&
+    approvedDecision
+  ) {
+    if (args.executionRuntime && args.decisionRuntime) {
+      const followUp = resolveNexoraExecutiveExecutionFollowUp({
+        action: "start",
+        decisionId: approvedDecision.decisionId,
+        executionRuntime: args.executionRuntime,
+        decisionRuntime: args.decisionRuntime,
+      });
+      presentedResponse =
+        followUp.assessment?.status === "in-progress"
+          ? "Execution has started."
+          : "The decision is approved, but execution has not been started yet.";
+    } else {
+      presentedResponse =
+        "The decision is approved, but execution has not been started yet.";
+    }
+  }
+  if (!skipTheatreCopy && theatreReadiness && /has execution started|did we start it|have we started/i.test(args.utterance)) {
+    presentedResponse = theatreReadiness.advisorReadable.hasStarted;
+  }
+  if (!skipTheatreCopy && theatreReadiness && /what happens next|is (?:this decision |it )?ready to execute|what do we need before we start|why hasn'?t execution started|can we start now|who is responsible|when should this start/i.test(args.utterance)) {
+    if (/who is responsible/i.test(args.utterance)) presentedResponse = theatreReadiness.supportedDimensions.owner.summary;
+    else if (/when should this start/i.test(args.utterance)) presentedResponse = theatreReadiness.supportedDimensions.timing.summary;
+    else if (/what do we need before we start|why hasn'?t execution started/i.test(args.utterance)) {
+      presentedResponse = `${theatreReadiness.advisorReadable.readiness} ${theatreReadiness.advisorReadable.missing}`.trim();
+    } else if (/what happens next/i.test(args.utterance)) {
+      presentedResponse = theatreReadiness.advisorReadable.whatHappensNext;
+    } else {
+      presentedResponse = theatreReadiness.advisorReadable.readiness;
+    }
+  }
+  if (!skipTheatreCopy && theatreReadiness && /what is on stage now/i.test(args.utterance)) {
+    presentedResponse = theatreReadiness.advisorReadable.scene;
+  }
+  const theatreLive = skipTheatreCopy ? null : decisionTheatre.liveExecution;
+  if (theatreLive && /what is happening now|what is on stage now/i.test(args.utterance)) {
+    presentedResponse = theatreLive.advisorReadable.happeningNow;
+  }
+  if (
+    theatreLive &&
+    /^(?:how is (?:it|this) going|are we on track|how far along are we|what(?:'s| is) the progress|show progress)\??$/i.test(
+      args.utterance.trim(),
+    )
+  ) {
+    presentedResponse = theatreLive.advisorReadable.progress;
+  }
+  if (
+    theatreLive &&
+    /why are we doing (?:this|it)|why did we choose this|what was the original problem|what alternatives did we consider|show the original comparison/i.test(
+      args.utterance,
+    )
+  ) {
+    if (/why did we choose this|what alternatives|original comparison/i.test(args.utterance) && theatreCommitment) {
+      presentedResponse = theatreCommitment.advisorReadable.why;
+    } else if (/original problem/i.test(args.utterance)) {
+      presentedResponse = `${theatreLive.advisorReadable.why} The originating Problem is not established on the Execution record.`;
+    } else {
+      presentedResponse = theatreLive.advisorReadable.why;
+    }
+  }
+  if (
+    theatreLive &&
+    /does anything need my attention|what needs my attention|what should i watch|any risk/i.test(args.utterance)
+  ) {
+    presentedResponse =
+      /any risk/i.test(args.utterance) && theatreLive.risks.length === 0
+        ? "No related Risk is established on this Execution."
+        : theatreLive.advisorReadable.attention;
+  }
+  if (theatreLive && /is anything stopping this|what(?:'s| is) blocking/i.test(args.utterance)) {
+    presentedResponse = theatreLive.advisorReadable.association;
+  }
+  if (theatreLive && /what was the result\??$/i.test(args.utterance.trim())) {
+    presentedResponse = theatreLive.advisorReadable.outcome;
+  }
+  const theatreOutcome = skipTheatreCopy ? null : decisionTheatre.outcomeObservation;
+  if (theatreOutcome && /what is on stage now/i.test(args.utterance)) {
+    presentedResponse = theatreOutcome.advisorReadable.scene;
+  }
+  if (theatreOutcome && /what was the result\??$/i.test(args.utterance.trim())) {
+    presentedResponse = theatreOutcome.advisorReadable.result;
+  }
+  if (theatreOutcome && /did (?:we|it|this) reach the goal|did we reach the goal/i.test(args.utterance)) {
+    presentedResponse = theatreOutcome.advisorReadable.goal;
+  }
+  if (theatreOutcome && /how much did it improve|how much (?:did|has) (?:it|delivery) improve/i.test(args.utterance)) {
+    presentedResponse = theatreOutcome.advisorReadable.delta;
+  }
+  if (theatreOutcome && /was it successful|was (?:the decision|this) successful/i.test(args.utterance)) {
+    presentedResponse = theatreOutcome.advisorReadable.success;
+  }
+  if (
+    theatreOutcome &&
+    /did this execution cause|did (?:the )?execution cause|caused the improvement/i.test(args.utterance)
+  ) {
+    presentedResponse = theatreOutcome.advisorReadable.causality;
+  }
+  if (theatreOutcome && /what evidence supports/i.test(args.utterance)) {
+    presentedResponse = theatreOutcome.advisorReadable.evidence;
+  }
+  if (theatreOutcome && /what was the original decision|why did we choose this/i.test(args.utterance)) {
+    presentedResponse = `The authorizing Decision is ${theatreOutcome.decisionTitle}.`;
+  }
+  if (theatreOutcome && /show the execution/i.test(args.utterance)) {
+    presentedResponse = `The related Execution is ${theatreOutcome.decisionTitle}. ${theatreOutcome.advisorReadable.result}`;
+  }
+  const theatreLearning = skipTheatreCopy ? null : decisionTheatre.learningReassessment;
+  if (
+    !skipTheatreCopy &&
+    theatreLearning == null &&
+    /what did we learn|what have we learned/i.test(args.utterance)
+  ) {
+    presentedResponse =
+      "There isn't enough evidence yet to establish a reliable learning.";
+  }
+  if (theatreLearning && /what is on stage now/i.test(args.utterance)) {
+    presentedResponse = theatreLearning.advisorReadable.scene;
+  }
+  if (theatreLearning && /what did we learn|what have we learned/i.test(args.utterance)) {
+    presentedResponse = theatreLearning.advisorReadable.learned;
+  }
+  if (theatreLearning && /what changed in our understanding|what changed\??$/i.test(args.utterance.trim())) {
+    presentedResponse = theatreLearning.advisorReadable.changed;
+  }
+  if (theatreLearning && /what should we reconsider/i.test(args.utterance)) {
+    presentedResponse = theatreLearning.advisorReadable.reconsider;
+  }
+  if (theatreLearning && /was our decision wrong|was the decision wrong/i.test(args.utterance)) {
+    presentedResponse = theatreLearning.advisorReadable.decisionJudgment;
+  }
+  if (theatreLearning && /did the decision work/i.test(args.utterance)) {
+    presentedResponse = `${theatreOutcome?.advisorReadable.success ?? theatreLearning.advisorReadable.learned} ${theatreLearning.advisorReadable.hindsight}`.trim();
+  }
+  if (theatreLearning && /which assumption (?:weakened|changed|strengthened)/i.test(args.utterance)) {
+    presentedResponse = theatreLearning.advisorReadable.assumption;
+  }
+  if (theatreLearning && /what remains uncertain/i.test(args.utterance)) {
+    presentedResponse = theatreLearning.advisorReadable.uncertain;
+  }
+  if (theatreLearning && /(?:^why\??$|why do you think that)/i.test(args.utterance.trim())) {
+    presentedResponse = `${theatreLearning.advisorReadable.hindsight} ${theatreLearning.advisorReadable.evidence}`.trim();
+  }
+  if (theatreLearning && /what evidence supports/i.test(args.utterance)) {
+    presentedResponse = theatreLearning.advisorReadable.evidence;
+  }
+  if (theatreLearning && /should we change the goal/i.test(args.utterance)) {
+    presentedResponse = theatreLearning.targetLabel
+      ? `The stated goal remains ${theatreLearning.targetLabel}. Changing it would require the existing Goal authority, not Learning.`
+      : "No Goal change is established from Learning.";
+  }
+  if (theatreLearning && /should we try another (?:option|scenario)/i.test(args.utterance)) {
+    presentedResponse = "It may be useful to explore alternatives through the existing comparison. That is not a new Scenario or Decision.";
+  }
+  if (theatreLearning && /what would you recommend now/i.test(args.utterance)) {
+    presentedResponse = theatreLearning.advisorReadable.recommend;
+  }
+  if (theatreLearning && /show the original decision/i.test(args.utterance)) {
+    presentedResponse = `The authorizing Decision is ${theatreLearning.decisionTitle}. ${theatreLearning.advisorReadable.hindsight}`;
+  }
+  if (theatreLearning && /show the outcome/i.test(args.utterance)) {
+    presentedResponse = theatreOutcome?.advisorReadable.result ?? theatreLearning.advisorReadable.learned;
+  }
+  if (theatreLearning && /show the original scenarios/i.test(args.utterance)) {
+    presentedResponse =
+      theatreLearning.comparisonMemberIds.length >= 2
+        ? "The original compared options remain available as history. Reviewing them is not a new Decision."
+        : "Original compared options are not established on this Learning record.";
+  }
+  if (
+    theatreLearning &&
+    /let'?s reconsider(?: the alternatives)?/i.test(args.utterance)
+  ) {
+    presentedResponse =
+      "The original alternatives remain available for review through the existing comparison. That is not a new Decision.";
+  }
+  if (learningCollectionQuery && !skipTheatreCopy) {
+    presentedResponse = theatreLearning
+      ? theatreLearning.advisorReadable.learned
+      : "No canonical Learning collection is established.";
+  }
+  if (theatreLive && /is (?:it|this|execution) complete\??$/i.test(args.utterance.trim())) {
+    presentedResponse = theatreLive.advisorReadable.completeQuestion;
+  }
+  if (theatreLive && /is execution active\??$/i.test(args.utterance.trim())) {
+    presentedResponse = theatreLive.advisorReadable.happeningNow;
+  }
+  if (
+    !skipTheatreCopy &&
+    !executionCollectionQuery &&
+    executionRequest?.action === "transition" &&
+    executionRequest.transitionAction === "complete" &&
+    approvedDecision &&
+    args.executionRuntime &&
+    args.decisionRuntime
+  ) {
+    const followUp = resolveNexoraExecutiveExecutionFollowUp({
+      action: "transition",
+      transitionAction: "complete",
+      decisionId: approvedDecision.decisionId,
+      executionRuntime: args.executionRuntime,
+      decisionRuntime: args.decisionRuntime,
+    });
+    presentedResponse =
+      followUp.status === "confirmation-required"
+        ? theatreLive?.advisorReadable.completeCommand ??
+          "Completing Execution uses the existing Execution authority and requires an explicit confirmation."
+        : followUp.assessment?.status === "completed"
+          ? "Existing Execution authority records this Execution as complete."
+          : theatreLive?.advisorReadable.completeCommand ?? "Execution was not marked complete.";
+  }
+  const nexoraAdvisorMessage =
+    presentedResponse === nexoraMessage.text
+      ? nexoraMessage
+      : freezeMessage({ ...nexoraMessage, text: presentedResponse });
+
   return Object.freeze({
     status: args.status,
     response: presentedResponse,
@@ -3935,7 +4599,7 @@ function finalize(args: {
     nextExecutiveContext,
     executiveContextUpdate,
     managerMessage,
-    nexoraMessage,
+    nexoraMessage: nexoraAdvisorMessage,
     trace,
     shouldCommitRuntime: comparisonMeaning.active
       ? false
@@ -3947,6 +4611,7 @@ function finalize(args: {
             ? false
             : args.shouldCommitRuntime || directorPlan.mutationRequired,
     nextRuntimeState: directorRuntimeState,
+    decisionTheatre,
     managerObjectTurn,
     nextEntranceSession: args.nextEntranceSession ?? null,
     naturalLanguageUnderstanding,

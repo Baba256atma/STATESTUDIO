@@ -1,0 +1,24 @@
+{
+  "identity": "DTH:8/ZeroFailureGate",
+  "dth8": "CERTIFIED",
+  "dth1to8Combined": { "exit": 0, "pass": 94 },
+  "dth8Focused": { "exit": 0, "pass": 14 },
+  "testScene": { "exit": 0, "node": "296/296" },
+  "stageDirector": { "exit": 0 },
+  "managerObject": { "exit": 0 },
+  "conversation": { "exit": 0, "pass": 336 },
+  "nexExpDecisionExecution": { "exit": 0, "pass": 240 },
+  "assistantOverflow": { "exit": 0, "pass": 22 },
+  "npmTest": { "exit": 0, "pass": 81 },
+  "typecheck": { "exit": 0 },
+  "productionBuild": { "exit": 0 },
+  "eslint": { "errors": 0, "scope": "dth8-surfaces" },
+  "gitDiffCheck": { "exit": 0 },
+  "liveBrowser": {
+    "ok": true,
+    "url": "http://localhost:3021/executive",
+    "authoritativeDecisionId": "cc10:decision:ctx-scenario-demand",
+    "executionStarted": false
+  },
+  "dth9Started": false
+}

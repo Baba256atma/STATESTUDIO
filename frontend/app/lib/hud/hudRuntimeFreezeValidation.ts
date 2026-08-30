@@ -7,7 +7,8 @@ import type { SceneHudZoneContract } from "../scene/sceneHudZoneContract.ts";
 import type { SceneHudZoneContractContext } from "../scene/sceneHudZoneContract.ts";
 import { resolveSceneHudZoneContract, resetSceneHudZoneContractForTests } from "../scene/sceneHudZoneContract.ts";
 import { auditObjectPanelOwnership } from "./objectPanelSafeZoneRuntime.ts";
-import { resolveObjectPanelSafeZoneContract } from "./objectPanelSafeZoneContract.ts";import { auditTimelineOwnership } from "./timelineZoneRuntime.ts";
+import { resolveObjectPanelSafeZoneContract } from "./objectPanelSafeZoneContract.ts";
+import { auditTimelineOwnership } from "./timelineZoneRuntime.ts";
 import { resolveTimelineZoneContract } from "./timelineZoneContract.ts";
 import {
   MIN_TIMELINE_TO_OBJECT_PANEL_GAP,

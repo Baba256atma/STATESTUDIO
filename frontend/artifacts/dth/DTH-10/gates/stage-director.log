@@ -1,0 +1,256 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm.
+✔ multi-member Problems remain one canonical collection through Stage (6.955167ms)
+✔ scenario, decision and execution membership is generic and exact (1.742708ms)
+✔ one-member Risk preserves collection semantics and empty collections do not invent objects (1.141333ms)
+✔ already-satisfied collection is stable and a collection supersedes stale focus (1.270083ms)
+✔ explain, workspace, capability, assertion and social turns are NO_CHANGE (5.4735ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Delivery
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Delivery
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Delivery
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Risk
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 3
+[Topology][Flow] Connections: 2
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: A
+[Topology][Hub] Satellites: 1
+[Topology][Hub] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: A
+[Topology][Hub] Satellites: 1
+[Topology][Hub] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Budget
+[Topology][Hub] Satellites: 3
+[Topology][Hub] Connections: 3
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Budget
+[Topology][Hub] Satellites: 3
+[Topology][Hub] Connections: 3
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+✔ 1. exact NEX-MVP:3 identity and version (0.757083ms)
+✔ 2. immediate MVP dependencies declared (0.107959ms)
+✔ 3. fixture object IDs remain stable (0.582709ms)
+✔ 4. overview presentation accepts presentation state and environment (7.969208ms)
+✔ 5. selection/focus establishes focused and related roles (11.137125ms)
+✔ 6. related objects get related presentation; unrelated subordinate (5.069459ms)
+✔ 7. focused connections are emphasized (2.253ms)
+✔ 8. reset to overview clears focus composition (2.973333ms)
+✔ 9. mapping is deterministic and verification passes (4.11425ms)
+✔ 10. pure mapping module has no React/Three imports (0.44875ms)
+✔ 11. STAGE-PROD:0 / STAGE-2D overview keeps topology Z = 0 (0.674084ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 5
+[Topology][Hub] Connections: 5
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Inventory
+[Topology][Hub] Satellites: 3
+[Topology][Hub] Connections: 3
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Capacity
+[Topology][Hub] Satellites: 6
+[Topology][Hub] Connections: 6
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+▶ NEX-MVP:4 Nexora Object Interaction
+  ✔ identity and verify gate (29.687291ms)
+  ✔ 1. selecting a valid object focuses it (0.345958ms)
+  ✔ 2. invalid subject rejection leaves state unchanged (0.408125ms)
+  ✔ 3. focus derivation drives Stage presentation (3.321208ms)
+  ✔ 4. direct relationship resolution emphasizes related objects (3.250917ms)
+  ✔ 5. unrelated object subordination (2.667542ms)
+  ✔ 6. context subject derivation for Revenue (13.300667ms)
+  ✔ 7. stable context ordering is deterministic (9.565959ms)
+  ✔ 8. sparse object behavior fabricates no context nodes (1.3925ms)
+  ✔ 9. object with many relationships caps context density (2.108792ms)
+  ✔ 10. overview reset clears focus and preserves shell context (0.266542ms)
+  ✔ 11. back transition: context → object → overview (0.607375ms)
+  ✔ 12. workspace preservation across object focus (0.113209ms)
+  ✔ 13. presentation-state preservation across selection (3.782208ms)
+  ✔ 14. deterministic repeated resolution (3.42675ms)
+  ✔ advisor bridge updates with focus (1.745583ms)
+  ✔ shell context sync preserves focus (0.101542ms)
+  ✔ environment intent preserved on object click (0.088333ms)
+✔ NEX-MVP:4 Nexora Object Interaction (77.391958ms)
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+▶ NEX-MVP:5 Workspace Dial & Scene State
+  ✔ 1. canonical workspace order (1.260458ms)
+  ✔ 2. workspace → environment mapping (0.212417ms)
+  ✔ 3. previous workspace resolution (0.110208ms)
+  ✔ 4. next workspace resolution (0.108375ms)
+  ✔ 5. start boundary behavior (0.19375ms)
+  ✔ 6. end boundary behavior (0.085084ms)
+  ✔ 7. workspace index derivation (0.159333ms)
+  ✔ 8. Dial state derived from application snapshot (0.140708ms)
+  ✔ 9. focus preservation policy (1.342ms)
+  ✔ 10. presentation-state preservation (0.207083ms)
+  ✔ 11. workspace presentation relevance (28.00525ms)
+  ✔ 12. deterministic scene environment mapping (0.23475ms)
+  ✔ 13. invalid workspace rejection (0.099584ms)
+  ✔ 14. repeated resolution stability (0.195416ms)
+  ✔ clears unsupported contextual depth on workspace change (0.424958ms)
+  ✔ theme is independent of environment tokens (0.10875ms)
+✔ NEX-MVP:5 Workspace Dial & Scene State (34.192166ms)
+ℹ tests 50
+ℹ suites 2
+ℹ pass 50
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 448.39075

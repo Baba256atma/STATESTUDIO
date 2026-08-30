@@ -1,0 +1,43 @@
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 2
+[Topology][Flow] Connections: 1
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+[Topology][Flow] Generating flow layout
+[Topology][Flow] Nodes: 8
+[Topology][Flow] Connections: 7
+[Topology][Hub] Generating hub layout
+[Topology][Hub] Hub: Revenue
+[Topology][Hub] Satellites: 4
+[Topology][Hub] Connections: 4
+✔ grammar contract is renderer-neutral, versioned, and channel-complete (15.861208ms)
+✔ semantic palette maps existing runtime states without exposing WATCH (0.171ms)
+✔ proofs 1-9: identity, state, focus, selection, and halo stay independent (0.82625ms)
+✔ proofs 10-13: size comparability and opacity de-emphasis (1.016083ms)
+✔ proofs 14-21: relationship pattern, weight, direction, and non-causal language (0.882333ms)
+✔ proofs 22-26: risk identity, iconic subordination, claims, fallback, determinism (0.940625ms)
+✔ proofs 27-30: reduced motion, accessibility, no domain mutation, empty live grammar (17.88325ms)
+✔ color safety, diagnostics, advisor explanations, and DTH:1/DTH:2 regression (128.166625ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1046.32925
+EXIT:0

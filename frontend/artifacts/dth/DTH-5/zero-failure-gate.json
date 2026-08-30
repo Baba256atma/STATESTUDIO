@@ -1,0 +1,19 @@
+{
+  "identity": "DTH:5/ZeroFailureGate",
+  "dth5": "CERTIFIED",
+  "dth5Focused": { "exit": 0, "pass": 8 },
+  "dth1to5Combined": { "exit": 0, "pass": 53 },
+  "testScene": { "exit": 0, "vitest": "180/180", "node": "296/296" },
+  "stageDirector": { "exit": 0, "pass": 50 },
+  "managerObject": { "exit": 0, "pass": 563 },
+  "conversation": { "exit": 0, "pass": 336 },
+  "nexExpDecisionExecution": { "exit": 0, "pass": 180 },
+  "assistantOverflow": { "exit": 0, "includedIn": "dth5-and-assistant.log" },
+  "npmTest": { "exit": 0, "pass": 81 },
+  "typecheck": { "exit": 0 },
+  "productionBuild": { "exit": 0 },
+  "eslint": { "errors": 0, "warnings": 483 },
+  "gitDiffCheck": { "exit": 0 },
+  "liveBrowser": { "ok": true, "url": "http://localhost:3017/executive", "sceneIntent": "ORIENT_TO_STAGE" },
+  "dth6Started": false
+}

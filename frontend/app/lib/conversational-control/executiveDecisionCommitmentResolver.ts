@@ -65,6 +65,16 @@ export type NexoraDecisionCommitmentResolverInput = {
   readonly committedAt?: string;
   /** Last CC:8 recommendation title (optional). */
   readonly lastRecommendationTitle?: string | null;
+  /**
+   * Existing-workspace catalog scenarios (NEX-MVP context subjects).
+   * Used only when no CC:9 scenario session can resolve the named option.
+   * Does not invent evaluations or a second Decision store.
+   */
+  readonly catalogScenarioSubjects?: readonly {
+    readonly id: string;
+    readonly label: string;
+    readonly kind: string;
+  }[] | null;
 };
 
 export type NexoraDecisionCommitmentResult = {
@@ -265,6 +275,71 @@ function buildCandidateFromRecommendation(input: {
   });
 }
 
+function buildCandidateFromCatalogScenario(subject: {
+  readonly id: string;
+  readonly label: string;
+}): NexoraDecisionCandidate {
+  return Object.freeze({
+    candidateId: buildDeterministicCandidateId({
+      source: "conversation",
+      key: subject.id,
+    }),
+    subjectId: subject.id,
+    scenarioId: subject.id,
+    title: subject.label,
+    source: "conversation" as const,
+    evidenceRefs: Object.freeze([]),
+    uncertaintyRefs: Object.freeze([]),
+    status: "valid" as const,
+  });
+}
+
+function resolveCatalogScenarioSubject(
+  subjects:
+    | readonly {
+        readonly id: string;
+        readonly label: string;
+        readonly kind: string;
+      }[]
+    | null
+    | undefined,
+  hint: string,
+  primarySubjectId: string | null | undefined,
+  context: NexoraExecutiveContextSnapshot,
+): { readonly id: string; readonly label: string } | null {
+  const scenarios = (subjects ?? []).filter((item) => item.kind === "scenario");
+  if (scenarios.length === 0) return null;
+  const raw = hint.trim().toLowerCase();
+  const deictic =
+    !raw ||
+    raw === "this" ||
+    raw === "that" ||
+    raw === "it" ||
+    raw === "this option" ||
+    raw === "this decision";
+  if (!deictic) {
+    const exact = scenarios.filter(
+      (item) =>
+        item.label.toLowerCase() === raw || item.id.toLowerCase() === raw,
+    );
+    if (exact.length === 1) return exact[0]!;
+    const partial = scenarios.filter(
+      (item) =>
+        item.label.toLowerCase().includes(raw) ||
+        raw.includes(item.label.toLowerCase()),
+    );
+    if (partial.length === 1) return partial[0]!;
+    return null;
+  }
+  const focused =
+    primarySubjectId ??
+    context.currentScenario?.subjectId ??
+    (context.currentSubject?.subjectKind === "scenario"
+      ? context.currentSubject.subjectId
+      : null);
+  return scenarios.find((item) => item.id === focused) ?? null;
+}
+
 function buildCandidateFromExistingDecision(
   decision: NexoraExecutiveDecision,
 ): NexoraDecisionCandidate {
@@ -384,6 +459,21 @@ function resolveCandidate(
         evaluation: evaluationFor(session, scenario.scenarioId),
         recommendationId: input.executiveContext.lastRecommendationId,
       }),
+      ambiguous: false,
+      reasons,
+    };
+  }
+
+  const catalogSubject = resolveCatalogScenarioSubject(
+    input.catalogScenarioSubjects,
+    input.targetHintRaw ?? "",
+    input.primarySubjectId,
+    input.executiveContext,
+  );
+  if (catalogSubject) {
+    reasons.push("catalog-scenario-candidate");
+    return {
+      candidate: buildCandidateFromCatalogScenario(catalogSubject),
       ambiguous: false,
       reasons,
     };

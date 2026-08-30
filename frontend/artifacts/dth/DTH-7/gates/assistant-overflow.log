@@ -1,0 +1,40 @@
+[AssistantPanelOverflow]
+panel=analytics
+overflow=false
+▶ assistantPanelOverflow
+  ✔ Test 1 — long Insight content triggers overflow detection (1.883208ms)
+  ✔ Test 2 — long Scenario content triggers overflow detection (0.2895ms)
+  ✔ Test 3 — Insight scroll container is independently bounded (0.317791ms)
+  ✔ Test 4 — Scenario scroll container is independently bounded (0.318583ms)
+  ✔ Test 5 — collapsed panel hides scrollbar surface (0.326375ms)
+  ✔ Test 6 — governance tier is medium (0.227542ms)
+  ✔ Test 7 — actions tier is small (0.132292ms)
+  ✔ Test 8 — short content does not report overflow (0.122792ms)
+  ✔ Test 9 — overflow trace format (0.862416ms)
+  ✔ Test 10 — scroll containers use overscroll containment (1.197208ms)
+  ✔ tokens consume the canonical mapping without redefining panel tiers (0.107292ms)
+✔ assistantPanelOverflow (7.632375ms)
+▶ assistantPanelOverflowContract exports and mapping
+  ✔ runtime value export ASSISTANT_PANEL_OVERFLOW_SIZE_BY_PANEL exists (0.641875ms)
+  ✔ type AssistantPanelOverflowSizeTier is usable at the type layer (0.113959ms)
+  ✔ maps every supported accordion panel to exactly one valid size tier (0.762167ms)
+  ✔ does not include unsupported panel ids (0.117125ms)
+  ✔ derives the intended max-height for every mapped tier (0.168208ms)
+  ✔ keeps the overflow-size mapping immutable (0.217542ms)
+  ✔ keeps detect and trace as runtime values (0.28375ms)
+✔ assistantPanelOverflowContract exports and mapping (4.103125ms)
+▶ assistantPanelOverflowContract module graph
+  ✔ does not import dock, tokens, components, or client modules (0.533ms)
+  ✔ does not reach a component through local assistant imports (25.204041ms)
+  ✔ has no overflow-contract → tokens → overflow-contract cycle (0.702041ms)
+  ✔ resolves identical runtime exports via static and dynamic import (5.99675ms)
+✔ assistantPanelOverflowContract module graph (33.179542ms)
+ℹ tests 22
+ℹ suites 3
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 320.061292
+ASSIST_EXIT:0

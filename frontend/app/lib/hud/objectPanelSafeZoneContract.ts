@@ -4,7 +4,7 @@
  */
 
 import type { SceneHudZoneRect } from "../scene/sceneHudZoneContract.ts";
-import { SCENE_HUD_ZONE_METRICS } from "../scene/sceneHudZoneContract.ts";
+import { SCENE_HUD_ZONE_METRICS } from "../scene/sceneHudZoneMetrics.ts";
 
 export const MIN_OBJECT_PANEL_TO_MRP_GAP = 12;
 

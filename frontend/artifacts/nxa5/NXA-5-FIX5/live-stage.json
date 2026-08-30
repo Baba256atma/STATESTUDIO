@@ -1,0 +1,160 @@
+{
+  "identity": "NXA:5-FIX5/Live",
+  "url": "http://localhost:3001/executive",
+  "errors": [],
+  "turns": [
+    {
+      "utterance": "show Capacity",
+      "reply": "NexoraFocused on Capacity.",
+      "focused": "obj-capacity",
+      "before": {
+        "focused": "none",
+        "mode": "overview",
+        "category": "none",
+        "visible": 0
+      },
+      "stage": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      }
+    },
+    {
+      "utterance": "what happens if we ignore it?",
+      "reply": "NexoraIf Capacity remains without intervention, concerns around Budget and Delivery and Inventory may continue or become more significant. We don’t yet have enough evidence to quantify that impact, so this is a scenario rather than a prediction. I can’t yet judge the impact against a specific business goal. I can compare doing nothing with investigating now.",
+      "focused": "obj-capacity",
+      "before": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      },
+      "stage": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      }
+    },
+    {
+      "utterance": "delivery is too late",
+      "reply": "NexoraUnderstood. I'll treat that as your current observation about Delivery, not as verified external evidence. Capacity may be worth investigating because it is related, but we don't yet have enough evidence to treat it as the cause.",
+      "focused": "obj-capacity",
+      "before": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      },
+      "stage": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      }
+    },
+    {
+      "utterance": "what did I just tell you?",
+      "reply": "NexoraYou reported that delivery is too late. I'll keep that as a manager-reported observation about Delivery, not as validated Data Reality or a confirmed cause.",
+      "focused": "obj-capacity",
+      "before": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      },
+      "stage": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      }
+    },
+    {
+      "utterance": "what is on Stage?",
+      "reply": "NexoraThe Stage is currently focused on Capacity, an object. It is here because you focused this object. Visibility does not by itself establish a causal conclusion.",
+      "focused": "obj-capacity",
+      "before": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      },
+      "stage": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      }
+    },
+    {
+      "utterance": "why might Delivery be late?",
+      "reply": "NexoraCapacity is 12% above the intended target band and is currently constraining delivery. Capacity has not been resolved yet, so it still deserves attention. We know utilization is 88%. Capacity is connected to Capacity Gap through a constraint. Has backlog increased recently?",
+      "focused": "obj-capacity",
+      "before": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      },
+      "stage": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      }
+    },
+    {
+      "utterance": "show Delivery",
+      "reply": "NexoraFocused on Delivery.",
+      "focused": "obj-delivery",
+      "before": {
+        "focused": "obj-capacity",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      },
+      "stage": {
+        "focused": "obj-delivery",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      }
+    },
+    {
+      "utterance": "inventory is too high",
+      "reply": "NexoraUnderstood. I'll treat that as your current observation about Inventory, not as verified external evidence. Delivery may be worth investigating because it is related, but we don't yet have enough evidence to treat it as the cause.",
+      "focused": "obj-delivery",
+      "before": {
+        "focused": "obj-delivery",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      },
+      "stage": {
+        "focused": "obj-delivery",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      }
+    },
+    {
+      "utterance": "what did I just report?",
+      "reply": "NexoraYou reported that inventory is too high. I'll keep that as a manager-reported observation about Inventory, not as validated Data Reality or a confirmed cause.",
+      "focused": "obj-delivery",
+      "before": {
+        "focused": "obj-delivery",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      },
+      "stage": {
+        "focused": "obj-delivery",
+        "mode": "object-focus",
+        "category": "none",
+        "visible": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "identity": "ASSISTANT-PANEL-BUILD-FIX/LiveRuntime",
+  "runtimeCommand": "npx next start -p 3016",
+  "origin": "http://localhost:3016",
+  "typeCUrl": "http://localhost:3016/type-c",
+  "executiveUrl": "http://localhost:3016/executive",
+  "typeCHttp": 200,
+  "executiveHttp": 200,
+  "typeCPageErrors": [
+    "Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "typeCConsoleErrors": [],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "hydrationErrors": [],
+  "preexistingAssistantTabErrors": [
+    "Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "Minified React error #185; visit https://react.dev/errors/185 for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  ],
+  "environmentalBackendErrors": [
+    "Access to fetch at 'http://127.0.0.1:8000/config/acme' from origin 'http://localhost:3016' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'http://127.0.0.1:8000/objects' from origin 'http://localhost:3016' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'http://127.0.0.1:8000/health' from origin 'http://localhost:3016' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'http://127.0.0.1:8000/decision/strategic-analysis-text' from origin 'http://localhost:3016' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'http://127.0.0.1:8000/system/memory/recent?limit=12' from origin 'http://localhost:3016' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'http://127.0.0.1:8000/system/evolution/state' from origin 'http://localhost:3016' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'http://127.0.0.1:8000/system/memory/recent?limit=12' from origin 'http://localhost:3016' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'http://127.0.0.1:8000/system/evolution/state' from origin 'http://localhost:3016' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED"
+  ],
+  "environmentalBackendErrorCount": 16,
+  "typeC": {
+    "load": {
+      "httpOk": true,
+      "mrpPresent": true,
+      "mrpTab": "assistant",
+      "assistantSurfacePresent": true,
+      "accordionPresent": true,
+      "iconDockPresent": true,
+      "dockedPanelCount": 6,
+      "expandedPanels": [
+        "analytics"
+      ],
+      "scrollMaxHeights": {
+        "insight": "0px",
+        "scenario": "0px",
+        "analytics": "192px",
+        "governance": "0px",
+        "actions": "0px",
+        "questions": "0px"
+      },
+      "overflowFlags": {
+        "insight": null,
+        "scenario": null,
+        "analytics": "true",
+        "governance": null,
+        "actions": null,
+        "questions": null
+      }
+    },
+    "expanded": {
+      "httpOk": true,
+      "mrpPresent": true,
+      "mrpTab": "assistant",
+      "assistantSurfacePresent": true,
+      "accordionPresent": true,
+      "iconDockPresent": true,
+      "dockedPanelCount": 6,
+      "expandedPanels": [
+        "insight"
+      ],
+      "scrollMaxHeights": {
+        "insight": "192px",
+        "scenario": "0px",
+        "analytics": "0px",
+        "governance": "0px",
+        "actions": "0px",
+        "questions": "0px"
+      },
+      "overflowFlags": {
+        "insight": "false",
+        "scenario": null,
+        "analytics": null,
+        "governance": null,
+        "actions": null,
+        "questions": null
+      }
+    },
+    "collapsed": {
+      "httpOk": true,
+      "mrpPresent": true,
+      "mrpTab": "assistant",
+      "assistantSurfacePresent": true,
+      "accordionPresent": true,
+      "iconDockPresent": true,
+      "dockedPanelCount": 0,
+      "expandedPanels": [],
+      "scrollMaxHeights": {},
+      "overflowFlags": {}
+    },
+    "actionsSize": {
+      "httpOk": true,
+      "mrpPresent": true,
+      "mrpTab": "assistant",
+      "assistantSurfacePresent": true,
+      "accordionPresent": true,
+      "iconDockPresent": true,
+      "dockedPanelCount": 6,
+      "expandedPanels": [
+        "actions"
+      ],
+      "scrollMaxHeights": {
+        "insight": "0px",
+        "scenario": "0px",
+        "analytics": "0px",
+        "governance": "0px",
+        "actions": "144px",
+        "questions": "0px"
+      },
+      "overflowFlags": {
+        "insight": null,
+        "scenario": null,
+        "analytics": null,
+        "governance": null,
+        "actions": "true",
+        "questions": null
+      }
+    }
+  },
+  "executive": {
+    "load": {
+      "focused": "none",
+      "advisorPresent": true,
+      "stagePresent": true,
+      "atmosphere": "none",
+      "overlayMode": "none"
+    },
+    "click": {
+      "focused": "obj-revenue",
+      "stageFocused": "obj-revenue"
+    },
+    "afterBack": {
+      "focused": "none",
+      "stageFocused": "none"
+    },
+    "afterForward": {
+      "focused": "obj-revenue",
+      "stageFocused": "obj-revenue"
+    }
+  },
+  "ok": true
+}

@@ -8,6 +8,7 @@ import { EXECUTIVE_QUEUE_CATEGORY_LABELS } from "@/app/lib/spatial-presentation/
 import type { StageSemanticSnapshot } from "./nexoraNcaPost3SemanticScopeMultiEntityCanonicalCollectionWorkspaceIntelligence.ts";
 import { interpretExecutiveCollectionQuery } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 import { classifyManagerSpeechAct } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
+import { isCompleteManagerBusinessObservation } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 import { isExecutiveComparisonCriterionAnswer } from "./nexoraNcaPost4CollectionComparison.ts";
 
 export const nexoraNxa5Fix4Identity =
@@ -230,6 +231,7 @@ export function classifyRequestStageRelationship(input: {
     return "EXPLICIT_PRESENTATION";
   }
   if (isStageMetaUtterance(input.utterance)) return "STAGE_META";
+  if (isCompleteManagerBusinessObservation(input.utterance)) return "STAGE_COMPATIBLE";
   if (input.pendingCriterion && isExecutiveComparisonCriterionAnswer(input.utterance)) {
     return "STAGE_GROUNDED";
   }
