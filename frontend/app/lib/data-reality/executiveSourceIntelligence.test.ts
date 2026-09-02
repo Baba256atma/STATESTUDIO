@@ -142,10 +142,10 @@ test("C/D/J/K — Executive UI keeps selection separate and routes Stage/Advisor
   const explorer = readFileSync(join(here, "../../executive/nex-mvp/data/NexoraExecutiveDataExplorer.tsx"), "utf8");
   const shell = readFileSync(join(here, "../../executive/nex-mvp/NexoraExecutiveShell.tsx"), "utf8");
   const advisor = readFileSync(join(here, "../../executive/nex-mvp/NexoraAdvisorInsightRegion.tsx"), "utf8");
-  for (const evidence of ["Executive Summary", "Affected", "Top Signals", "View on Stage", "Compare", "Ask Nexora", "Explain Change", "Evidence & provenance"]) {
+  for (const evidence of ["Executive State", "Related Objects", "Signals and dates", "View on Stage", "Compare", "Ask Nexora", "Explain Change", "Evidence & provenance"]) {
     assert.match(explorer, new RegExp(evidence.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
-  assert.match(explorer, /onClick=\{\(\) => setSelectedSourceId\(entry\.sourceContextId\)\}/);
+  assert.match(explorer, /onClick=\{\(\) => selectRow\(row\.id\)\}/);
   assert.match(explorer, /Use as Active Source/);
   assert.match(shell, /onViewSourceOnStage/);
   assert.match(shell, /setActiveNav\("Home"\)/);

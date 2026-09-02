@@ -1,0 +1,25 @@
+{
+  "identity": "DATA-UX:5-FIX1/LiveManagerProof",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "firstQuestion": "NexoraDoes OTD represent on-time delivery?",
+  "awaiting": true,
+  "questionCount": 1,
+  "unrelatedLast": "NexoraInvestigate Capacity Gap as a possible contributor — evidence is not strong enough to prioritize action. Why: Capacity Gap shows attention, but a is not established. Uncertainty: is missing or uncertain. My recommendation remains temporary capacity.",
+  "stillUnresolvedAfterUnrelated": 1,
+  "yesLast": "NexoraConfirmed for this source: OTD means On-Time Delivery.",
+  "unresolvedBefore": "Needs clarification · 1? OTD · likely On-Time DeliveryAsk NexoraThe Advisor asks one useful question at a time. Answer in the conversation.",
+  "unresolvedAfter": 0,
+  "confirmedCopy": "Nexora understands✓ date: Date✓ OTD: On-Time Delivery",
+  "correctionLast": "NexoraConfirmed for this source: OTD means order-to-delivery time.",
+  "correctionCopy": "Nexora understands✓ date: Date✓ OTD: Order-to-delivery time",
+  "beforeFocus": "none",
+  "afterFocus": "none",
+  "shots": {
+    "shotAsk": "/Users/bahadoors/Documents/StateStudio/frontend/artifacts/data-ux/DATA-UX-5-FIX1/proofs/proof-ask-once.png",
+    "shotYes": "/Users/bahadoors/Documents/StateStudio/frontend/artifacts/data-ux/DATA-UX-5-FIX1/proofs/proof-yes-resolved.png",
+    "shotCorrection": "/Users/bahadoors/Documents/StateStudio/frontend/artifacts/data-ux/DATA-UX-5-FIX1/proofs/proof-correction.png"
+  },
+  "zeroPageErrors": true,
+  "ok": true
+}

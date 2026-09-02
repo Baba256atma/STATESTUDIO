@@ -1,0 +1,267 @@
+{
+  "ok": true,
+  "flowABefore": {
+    "files": [
+      "delivery_2026.csv"
+    ],
+    "pending": [],
+    "ready": [
+      "delivery_2026.csv"
+    ],
+    "counts": {
+      "csv": "1",
+      "committed": "1",
+      "pending": "0"
+    },
+    "related": "",
+    "about": "",
+    "understanding": "",
+    "connected": "Engineering SourcedegradedCapacity · Customer",
+    "focused": "none",
+    "durability": "durable"
+  },
+  "flowA": {
+    "files": [
+      "delivery_2026.csv"
+    ],
+    "pending": [],
+    "ready": [
+      "delivery_2026.csv"
+    ],
+    "counts": {
+      "csv": "1",
+      "committed": "1",
+      "pending": "0"
+    },
+    "related": "Related ObjectsCapacityRevenue",
+    "about": "Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue.",
+    "understanding": "",
+    "connected": "Engineering SourcedegradedCapacity · Customer",
+    "focused": "none",
+    "durability": "durable"
+  },
+  "flowB": {
+    "files": [
+      "capacity.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "pending": [],
+    "ready": [
+      "capacity.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "counts": {
+      "csv": "3",
+      "committed": "3",
+      "pending": "0"
+    },
+    "related": "",
+    "about": "",
+    "understanding": "",
+    "connected": "Engineering SourcedegradedCapacity · Customer",
+    "focused": "none",
+    "durability": "durable"
+  },
+  "flowC": {
+    "files": [
+      "data-ux3-ambiguous.csv",
+      "otd-clarification.csv",
+      "capacity.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "pending": [
+      "data-ux3-ambiguous.csv",
+      "otd-clarification.csv"
+    ],
+    "ready": [
+      "capacity.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "counts": {
+      "csv": "5",
+      "committed": "3",
+      "pending": "2"
+    },
+    "related": "",
+    "about": "",
+    "understanding": "",
+    "connected": "Engineering SourcedegradedCapacity · Customer",
+    "focused": "none",
+    "durability": "durable"
+  },
+  "flowCOpen": {
+    "files": [
+      "data-ux3-ambiguous.csv",
+      "otd-clarification.csv",
+      "capacity.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "pending": [
+      "data-ux3-ambiguous.csv",
+      "otd-clarification.csv"
+    ],
+    "ready": [
+      "capacity.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "counts": {
+      "csv": "5",
+      "committed": "3",
+      "pending": "2"
+    },
+    "related": "",
+    "about": "About this dataNexora understands this source as on-time deliveries information.",
+    "understanding": "About this dataNexora understands this source as on-time deliveries information.Nexora understands✓ OTDOn-Time Deliveries · Confirmed by manager",
+    "connected": "Engineering SourcedegradedCapacity · Customer",
+    "focused": "none",
+    "durability": "durable",
+    "intake": "resume"
+  },
+  "flowDBefore": {
+    "files": [
+      "data-ux3-ambiguous.csv",
+      "otd-clarification.csv",
+      "capacity.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "pending": [
+      "data-ux3-ambiguous.csv",
+      "otd-clarification.csv"
+    ],
+    "ready": [
+      "capacity.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "counts": {
+      "csv": "5",
+      "committed": "3",
+      "pending": "2"
+    },
+    "related": "",
+    "about": "",
+    "understanding": "",
+    "connected": "Engineering SourcedegradedCapacity · Customer",
+    "focused": "none",
+    "durability": "durable"
+  },
+  "flowE": {
+    "files": [
+      "data-ux3-ambiguous.csv",
+      "capacity.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "pending": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "ready": [
+      "capacity.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "counts": {
+      "csv": "4",
+      "committed": "3",
+      "pending": "1"
+    },
+    "related": "",
+    "about": "",
+    "understanding": "",
+    "connected": "Engineering SourcedegradedCapacity · Customer",
+    "focused": "none",
+    "durability": "durable"
+  },
+  "flowF": {
+    "files": [
+      "data-ux3-ambiguous.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "pending": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "ready": [
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "counts": {
+      "csv": "3",
+      "committed": "2",
+      "pending": "1"
+    },
+    "related": "",
+    "about": "",
+    "understanding": "",
+    "connected": "Engineering SourcedegradedCapacity · Customer",
+    "focused": "none",
+    "durability": "durable"
+  },
+  "flowG": {
+    "files": [
+      "data-ux3-ambiguous.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "pending": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "ready": [
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "counts": {
+      "csv": "3",
+      "committed": "2",
+      "pending": "1"
+    },
+    "related": "Related ObjectsCapacityRevenue",
+    "about": "Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue.",
+    "understanding": "",
+    "connected": "Engineering SourcedegradedCapacity · Customer",
+    "focused": "none",
+    "durability": "durable"
+  },
+  "flowH": {
+    "workspaces": [
+      "overview"
+    ],
+    "files": [
+      "overview:delivery_2026.csv",
+      "overview:customer.csv"
+    ]
+  },
+  "flowI": {
+    "files": [
+      "data-ux3-ambiguous.csv",
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "pending": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "ready": [
+      "customer.csv",
+      "delivery_2026.csv"
+    ],
+    "counts": {
+      "csv": "3",
+      "committed": "2",
+      "pending": "1"
+    },
+    "related": "",
+    "about": "",
+    "understanding": "",
+    "connected": "Engineering SourcedegradedCapacity · Customer",
+    "focused": "none",
+    "durability": "durable"
+  },
+  "pageErrors": []
+}

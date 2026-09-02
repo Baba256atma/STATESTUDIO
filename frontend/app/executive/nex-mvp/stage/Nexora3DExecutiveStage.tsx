@@ -29,6 +29,10 @@ import { NexoraDecisionTheatreIconicSatellite } from "./NexoraDecisionTheatreIco
 import type { NexoraDecisionTheatreAtmosphereMode } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
 import { NEXORA_DECISION_THEATRE_ATMOSPHERE_MODES } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
 import type { NexoraDecisionTheatreAtmosphereProjection } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
+import {
+  projectNexoraDecisionTheatreDataObjectsToStage,
+  type NexoraDecisionTheatreDataObjectStageProjection,
+} from "@/app/lib/decision-theatre/nexoraDecisionTheatreDataObjectStageProjection.ts";
 import { resolveNexoraDecisionTheatreAtmosphereSwatch } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphereRendererTokens.ts";
 import {
   applyExecutiveStageFixedCameraToStagePresentation,
@@ -170,7 +174,17 @@ export type Nexora3DExecutiveStageProps = {
   >;
   readonly atmosphereMode?: string;
   readonly warRoomAtmosphere?: NexoraDecisionTheatreAtmosphereProjection | null;
+  readonly dataObjectStage?: NexoraDecisionTheatreDataObjectStageProjection;
+  readonly onSelectDataObject?: (dataObjectId: string) => void;
 };
+
+const EMPTY_DATA_OBJECT_STAGE = projectNexoraDecisionTheatreDataObjectsToStage({
+  dataObjects: Object.freeze([]),
+  visibleDataObjectIds: Object.freeze([]),
+  selectedDataObjectId: null,
+  businessFocusId: null,
+  stageObjects: Object.freeze([]),
+});
 
 type FallbackProps = {
   readonly message: string;
@@ -325,6 +339,8 @@ export function Nexora3DExecutiveStage({
   visualPresentations = {},
   atmosphereMode = "none",
   warRoomAtmosphere = null,
+  dataObjectStage = EMPTY_DATA_OBJECT_STAGE,
+  onSelectDataObject = () => undefined,
 }: Nexora3DExecutiveStageProps) {
   const identity = getNexora3DExecutiveStageIdentity();
   const [webglSupported] = useState(() => {
@@ -1622,7 +1638,9 @@ export function Nexora3DExecutiveStage({
             <NexoraStageCanvas
               presentation={fixedCameraInteraction}
               environment={environment}
+              dataObjectStage={dataObjectStage}
               onSelectSubject={(id) => onSelectSubject(id)}
+              onSelectDataObject={onSelectDataObject}
               onClearSelection={onClearSelection}
             />
             <NexoraStageRenderedBoundsTruthOverlay

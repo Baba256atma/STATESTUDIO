@@ -21,6 +21,11 @@ import {
   type CsvVerticalSliceInput,
 } from "./csvRealDataVerticalSlice.ts";
 import {
+  applyCsvSemanticClarification,
+  interpretCsvSemantics,
+  nextCsvSemanticClarification,
+} from "./csvSemanticUnderstanding.ts";
+import {
   commitPreparedCsvRealDataImport,
   getCsvRealDataImport,
   listCsvRealDataImports,
@@ -30,6 +35,10 @@ import {
 const here = dirname(fileURLToPath(import.meta.url));
 const baselineCsv = readFileSync(join(here, "fixtures/rdi2-baseline.csv"), "utf8");
 const pressureCsv = readFileSync(join(here, "fixtures/rdi2-pressure.csv"), "utf8");
+const dataUx3ClearCsv = readFileSync(
+  join(here, "../../../test-fixtures/data-ux3/data-ux3-clear.csv"),
+  "utf8",
+);
 const importedAt = "2026-08-15T12:00:00.000Z";
 
 function input(options: Partial<CsvVerticalSliceInput> = {}): CsvVerticalSliceInput {
@@ -126,6 +135,112 @@ test("E — an unresolved mapping cannot reach a Data Reality handoff", () => {
   assert.match(result.errors[0] ?? "", /Confirm or ignore/);
 });
 
+test("FIX2 — a source with no canonical KPI claim is not blocked by unrelated workspace KPI requirements", () => {
+  const value = input({
+    workspaceId: "overview",
+    fileName: "data-ux3-clear.csv",
+    fileSize: dataUx3ClearCsv.length,
+    csvText: dataUx3ClearCsv,
+    importId: "DATA-UX3-FIX2-clear",
+    sourceContextId: undefined,
+  });
+  const parse = parseCsvDeterministically(value.csvText);
+  const structural = suggestCsvColumnMappings(parse.columns, value.importId);
+  const interpreted = interpretCsvSemantics({ input: value, parse, structural });
+  const clarification = nextCsvSemanticClarification(interpreted);
+  assert.equal(clarification?.sourceColumn, "on_time_delivery_pct");
+  const confirmed = applyCsvSemanticClarification(
+    interpreted,
+    clarification!.fieldId,
+    "Yes, it means on-time delivery percentage.",
+  ).review;
+
+  const prepared = prepareCsvRealDataImport(value, confirmed);
+  assert.equal(prepared.ready, true);
+  assert.deepEqual(prepared.handoff?.dataset.records, []);
+  assert.equal(prepared.dataReality?.status, "partial");
+  assert.deepEqual(prepared.dataReality?.kpis, []);
+  assert.deepEqual(prepared.runtime?.projections, []);
+  assert.doesNotMatch(prepared.errors.join("\n"), /kpi\.revenue\.growth|revenue\.currentRevenue/);
+});
+
+test("FIX2 — a source that claims a KPI still fails when a genuinely required paired metric is missing", () => {
+  const csvText = "Date,Current Revenue\n2026-08-31,1000\n";
+  const result = prepare({
+    fileName: "partial-finance.csv",
+    fileSize: csvText.length,
+    csvText,
+    importId: "DATA-UX3-FIX2-partial-finance",
+    sourceContextId: "csv:workspace-a:partial-finance",
+  });
+  assert.equal(result.ready, false);
+  assert.match(result.errors.join("\n"), /previousRevenue/);
+  assert.doesNotMatch(result.errors.join("\n"), /production\.usedCapacity|shipping\.onTimeDeliveries/);
+});
+
+test("FIX2 — multiple sources validate independently and stale committed source state cannot leak", () => {
+  const finance = prepare({
+    sourceContextId: "csv:workspace-a:finance",
+    importId: "DATA-UX3-FIX2-finance",
+  });
+  assert.equal(finance.ready, true);
+  assert.equal(commitPreparedCsvRealDataImport({ prepared: finance, expectedWorkspaceId: "workspace-a", mode: "new", committedAt: importedAt }).committed, true);
+
+  const deliveryCsv = "Date,On-Time Deliveries,Total Deliveries\n2026-08-31,94,100\n";
+  const delivery = prepare({
+    fileName: "delivery.csv",
+    fileSize: deliveryCsv.length,
+    csvText: deliveryCsv,
+    sourceContextId: "csv:workspace-a:delivery",
+    importId: "DATA-UX3-FIX2-delivery",
+  });
+  assert.equal(delivery.ready, true);
+  assert.deepEqual(delivery.dataReality?.kpis.map((entry) => entry.kpiId), ["kpi.shipping.on-time-rate"]);
+  assert.equal(commitPreparedCsvRealDataImport({ prepared: delivery, expectedWorkspaceId: "workspace-a", mode: "new", committedAt: importedAt }).committed, true);
+  assert.equal(listCsvRealDataImports("workspace-a").length, 2);
+
+  const replacementCsv = "Date,On-Time Deliveries,Total Deliveries\n2026-09-30,96,100\n";
+  const replacement = prepare({
+    fileName: "delivery-update.csv",
+    fileSize: replacementCsv.length,
+    csvText: replacementCsv,
+    sourceContextId: delivery.sourceContextId,
+    importId: "DATA-UX3-FIX2-delivery-update",
+  });
+  assert.equal(replacement.ready, true);
+  assert.equal(commitPreparedCsvRealDataImport({ prepared: replacement, expectedWorkspaceId: "workspace-a", mode: "replace", committedAt: importedAt }).reason, "replaced");
+  assert.equal(getCsvRealDataImport("workspace-a", delivery.sourceContextId)?.prepared.dataReality?.kpis[0]?.value, 96);
+  assert.equal(getCsvRealDataImport("workspace-a", finance.sourceContextId)?.importId, finance.importId);
+});
+
+test("FIX2 — source requirements and committed imports remain workspace isolated", () => {
+  const csvText = "Date,Current Revenue\n2026-08-31,1000\n";
+  const invalidA = prepare({ workspaceId: "workspace-a", fileName: "partial-a.csv", fileSize: csvText.length, csvText, importId: "partial-a", sourceContextId: "csv:workspace-a:partial" });
+  const validB = prepare({ workspaceId: "workspace-b", importId: "baseline-b", sourceContextId: "csv:workspace-b:finance" });
+  assert.equal(invalidA.ready, false);
+  assert.equal(validB.ready, true);
+  assert.equal(commitPreparedCsvRealDataImport({ prepared: validB, expectedWorkspaceId: "workspace-b", mode: "new", committedAt: importedAt }).committed, true);
+  assert.equal(listCsvRealDataImports("workspace-a").length, 0);
+  assert.equal(listCsvRealDataImports("workspace-b").length, 1);
+});
+
+test("FIX2 — manager-confirmed semantic state survives failed validation without duplication", () => {
+  const csvText = "Date,Current Revenue,on_time_delivery_pct\n2026-08-31,1000,94\n";
+  const value = input({ fileName: "mixed-partial.csv", fileSize: csvText.length, csvText, importId: "mixed-partial", sourceContextId: "csv:workspace-a:mixed-partial" });
+  const parse = parseCsvDeterministically(csvText);
+  const structural = suggestCsvColumnMappings(parse.columns, value.importId);
+  const interpreted = interpretCsvSemantics({ input: value, parse, structural });
+  const clarification = nextCsvSemanticClarification(interpreted);
+  assert.equal(clarification?.sourceColumn, "on_time_delivery_pct");
+  const confirmed = applyCsvSemanticClarification(interpreted, clarification!.fieldId, "Yes, it means on-time delivery percentage.").review;
+  const failed = prepareCsvRealDataImport(value, confirmed);
+  assert.equal(failed.ready, false);
+  assert.match(failed.errors.join("\n"), /previousRevenue/);
+  const managerConfirmed = failed.mapping.mappings.filter((entry) => entry.semantic?.confirmationSource === "manager");
+  assert.equal(managerConfirmed.length, 1);
+  assert.equal(managerConfirmed[0]?.semantic?.confirmedMeaning, "On-time delivery percentage");
+});
+
 test("F — provenance traces executive Revenue to CSV source, row, field, and transformation", () => {
   const result = prepare();
   const trace = traceCsvExecutiveValue(result, "revenue", "currentRevenue");
@@ -216,9 +331,9 @@ test("N — canonical /executive Data Explorer exposes Add Data and mounts RDI:2
 
 test("J/K/L — downstream modules receive datasets/snapshots, never CSV text", () => {
   const source = readFileSync(join(here, "csvRealDataVerticalSlice.ts"), "utf8");
-  assert.match(source, /resolveDatasetExecutiveReality\(handoff\.dataset/);
-  assert.match(source, /projectDataRealityToExecutiveRuntime\(dataReality\.snapshot\)/);
-  assert.match(source, /resolveDataRealityExecutiveAdvisorIntegration\(\{/);
+  assert.match(source, /resolveSourceScopedExecutiveReality\(handoff\.dataset, mapping/);
+  assert.match(source, /projectDataRealityToExecutiveRuntime\([\s\S]*dataReality\.snapshot/);
+  assert.match(source, /resolveDataRealityExecutiveAdvisorIntegration\(\{[\s\S]*dataReality,/);
   assert.doesNotMatch(source, /fetch\(|WebSocket|EventSource|setInterval|setTimeout/);
 });
 

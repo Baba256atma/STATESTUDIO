@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   createInitialNexoraExecutiveShellApplicationState,
   getNexoraExecutiveShellIdentity,
@@ -32,7 +32,29 @@ import type { NexoraMVPIntelligenceAction } from "@/app/lib/nex-mvp/nexoraMVPExe
 import { projectNexoraExecutiveDataStatus } from "@/app/lib/nex-mvp/nexoraMVPExecutiveDataStatus";
 import { nexoraManagerMvpReleaseBaselineIdentity } from "@/app/lib/nex-mvp/nexoraManagerMvpReleaseBaseline";
 import type { NexoraMVPDataRealityDatasetScenario } from "@/app/lib/nex-mvp/nexoraMVPDataRealityStageBridge";
-import type { CsvCommittedImport } from "@/app/lib/data-reality/csvRealDataImportStore";
+import {
+  getCsvRealDataImportVersion,
+  listCsvRealDataImports,
+  subscribeCsvRealDataImports,
+  type CsvCommittedImport,
+} from "@/app/lib/data-reality/csvRealDataImportStore";
+import {
+  bindCsvRealDataImportDurabilityPersistence,
+  clearCsvRealDataImportDurabilityBrowser,
+  getCsvDurabilityHealth,
+  recoverCsvRealDataImportDurabilityBrowser,
+  subscribeCsvDurabilityHealth,
+} from "@/app/lib/data-reality/csvRealDataImportDurability";
+import type {
+  CsvSemanticClarification,
+  CsvSemanticClarificationResult,
+} from "@/app/lib/data-reality/csvSemanticUnderstanding";
+import { answerCsvSemanticInquiry } from "@/app/lib/data-reality/csvSemanticUnderstanding";
+import {
+  answerAdvisorDataInquiry,
+  applyAdvisorDataSemanticClarification,
+  emptyAdvisorDataDialogue,
+} from "@/app/lib/manager-object/nexoraAdvisorDataInquiry";
 import type { ExecutiveSourceAdvisorContext } from "@/app/lib/data-reality/executiveSourceIntelligence";
 import type { NexoraLiveCommittedObservation } from "@/app/lib/data-reality/liveDataConnectorFoundation";
 import type { NexoraProactiveAdvisorBrief } from "@/app/lib/data-reality/proactiveAdvisorDelivery";
@@ -110,6 +132,13 @@ import { nexoraNca5Identity } from "@/app/lib/manager-object/nexoraNca5Initiativ
 import { nexoraNca6Identity } from "@/app/lib/manager-object/nexoraNca6CommunicationIntelligence";
 import { nexoraNca7Identity } from "@/app/lib/manager-object/nexoraNca7EndToEndOrchestration";
 import {
+  csvSemanticClarificationTopicId,
+  beginNcaCsvSemanticClarification,
+  endNcaCsvSemanticClarification,
+  NCA_CSV_SEMANTIC_PURPOSE,
+  resolveNcaCsvSemanticReply,
+} from "@/app/lib/manager-object/nexoraNcaCsvSemanticClarification";
+import {
   applyEntranceCenterSubject,
   createNexoraEntranceSession,
   isNexoraEntranceRestrained,
@@ -186,9 +215,20 @@ import {
   projectNexoraDecisionTheatreFoundation,
   type NexoraDecisionTheatreComparisonAuthority,
 } from "@/app/lib/decision-theatre/nexoraDecisionTheatrePublicIndex.ts";
+import {
+  deriveNexoraDecisionTheatreDataObjectId,
+  projectCsvImportAsDecisionTheatreDataObject,
+} from "@/app/lib/decision-theatre/nexoraDecisionTheatreDataObjectProjection.ts";
+import {
+  projectNexoraDecisionTheatreDataObjectsToStage,
+} from "@/app/lib/decision-theatre/nexoraDecisionTheatreDataObjectStageProjection.ts";
+import { answerNexoraDecisionTheatreDataObjectInquiry } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDataObjectAdvisor.ts";
+import { analyzeCsvSourceRemovalImpact } from "@/app/lib/data-reality/csvSourceRemovalImpact.ts";
+import { answerCsvSourceRemovalInquiry } from "@/app/lib/data-reality/csvSourceRemovalAdvisor.ts";
 import { listCapturedObservations } from "@/app/lib/executive-intelligence/nexoraLiveOutcomeObservationCapture.ts";
 import { NexoraWorkspaceDialMount } from "./NexoraWorkspaceDialMount";
 import { NexoraExecutiveDataExplorer } from "./data/NexoraExecutiveDataExplorer";
+import { NexoraStageDataControl } from "./stage/NexoraStageDataControl";
 import { NexoraAutomaticMonitoringCoordinator } from "./data/NexoraAutomaticMonitoringCoordinator";
 
 const DEFAULT_CONTEXT = Object.freeze({
@@ -262,6 +302,43 @@ export function NexoraExecutiveShell({
   });
   const [activeCsvImport, setActiveCsvImport] =
     useState<CsvCommittedImport | null>(null);
+  const csvImportStoreVersion = useSyncExternalStore(
+    subscribeCsvRealDataImports,
+    getCsvRealDataImportVersion,
+    () => 0,
+  );
+  const csvDurability = useSyncExternalStore(
+    subscribeCsvDurabilityHealth,
+    getCsvDurabilityHealth,
+    () => "idle" as const,
+  );
+  const [csvHydrated, setCsvHydrated] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    let unbind: (() => void) | null = null;
+    void (async () => {
+      if (resetEntrance) {
+        await clearCsvRealDataImportDurabilityBrowser();
+      } else {
+        await recoverCsvRealDataImportDurabilityBrowser();
+      }
+      if (cancelled) return;
+      setCsvHydrated(true);
+      unbind = bindCsvRealDataImportDurabilityPersistence();
+    })();
+    return () => {
+      cancelled = true;
+      unbind?.();
+    };
+  }, [resetEntrance]);
+  const committedCsvImports = useMemo(
+    () => listCsvRealDataImports(interaction.workspace),
+    [csvImportStoreVersion, interaction.workspace],
+  );
+  const csvDataObjects = useMemo(
+    () => committedCsvImports.map(projectCsvImportAsDecisionTheatreDataObject),
+    [committedCsvImports],
+  );
   const [activeLiveObservation, setActiveLiveObservation] =
     useState<NexoraLiveCommittedObservation | null>(null);
   const [sourceAdvisorContext, setSourceAdvisorContext] =
@@ -427,6 +504,10 @@ export function NexoraExecutiveShell({
   );
   const [floatingKind, setFloatingKind] =
     useState<ExecutiveFloatingPanelKind>(null);
+  const [selectedDataObjectId, setSelectedDataObjectId] = useState<string | null>(null);
+  const [stagedDataObjectIds, setStagedDataObjectIds] = useState<readonly string[]>(Object.freeze([]));
+  const [csvRemovalReviewSourceId, setCsvRemovalReviewSourceId] = useState<string | null>(null);
+  const [dataRailSelectedSourceId, setDataRailSelectedSourceId] = useState<string | null>(null);
 
   // CC:5/CC:7 — short-lived conversational session + structured executive context.
   const [conversationalMessages, setConversationalMessages] = useState<
@@ -502,6 +583,9 @@ export function NexoraExecutiveShell({
     useState<ManagerObjectSession>(() => createEmptyManagerObjectSession());
   const managerObjectSessionRef = useRef(managerObjectSession);
   managerObjectSessionRef.current = managerObjectSession;
+  const csvSemanticResolverRef = useRef<((utterance: string) => CsvSemanticClarificationResult) | null>(null);
+  const csvSemanticConversationFieldRef = useRef<string | null>(null);
+  const advisorDataDialogueRef = useRef(emptyAdvisorDataDialogue);
 
   const explorerKind = navToExplorer(activeNav);
   const workspaceRegistry = getNexoraMVPWorkspaceRegistry();
@@ -678,6 +762,25 @@ export function NexoraExecutiveShell({
     dataRealitySceneChoreography.choreography,
     dataRealityConnectionsContext.connectionsContext,
   ]);
+
+  const dataObjectStage = useMemo(
+    () => projectNexoraDecisionTheatreDataObjectsToStage({
+      dataObjects: csvDataObjects,
+      visibleDataObjectIds: stagedDataObjectIds,
+      selectedDataObjectId,
+      businessFocusId: interaction.focusedSubject?.id ?? null,
+      stageObjects: stageInteraction.scene.objects,
+      sceneIntentKind: theatreProjection.sceneIntent.intentKind,
+    }),
+    [
+      csvDataObjects,
+      interaction.focusedSubject?.id,
+      selectedDataObjectId,
+      stagedDataObjectIds,
+      stageInteraction.scene.objects,
+      theatreProjection.sceneIntent.intentKind,
+    ],
+  );
 
   // NPA-T: establish change baseline only after hydration. Derive must not write
   // or consult the process-global store during SSR (Queue <li> mismatch).
@@ -933,6 +1036,7 @@ export function NexoraExecutiveShell({
 
   const onSelectSubject = useCallback(
     (subjectId: string | null) => {
+      setSelectedDataObjectId(null);
       setInteraction((previous) => {
         const next = selectNexoraMVPInteractionSubject(previous, subjectId);
         setApplication((app) => applyInteractionToApplication(app, next));
@@ -1005,6 +1109,130 @@ export function NexoraExecutiveShell({
         Object.freeze([...messages, managerMessage]).slice(-20),
       );
       try {
+        const semanticReply = resolveNcaCsvSemanticReply(managerObjectSessionRef.current, trimmed);
+        if (semanticReply && csvSemanticResolverRef.current) {
+          const semanticResult = csvSemanticResolverRef.current(trimmed);
+          csvSemanticResolverRef.current = null;
+          setManagerObjectSession(semanticReply.nextSession);
+          managerObjectSessionRef.current = semanticReply.nextSession;
+          setConversationalMessages((messages) => Object.freeze([...messages, Object.freeze({
+            id: `${seed}-nexora`,
+            role: "nexora" as const,
+            text: semanticResult.acknowledgement,
+            status: semanticResult.resolved ? "applied" as const : "no-op" as const,
+          })]).slice(-20));
+          lastManagerUtteranceRef.current = trimmed;
+          return;
+        }
+        if (semanticReply && !csvSemanticResolverRef.current) {
+          const closed = endNcaCsvSemanticClarification(managerObjectSessionRef.current);
+          setManagerObjectSession(closed);
+          managerObjectSessionRef.current = closed;
+          setConversationalMessages((messages) => Object.freeze([...messages, Object.freeze({
+            id: `${seed}-nexora`,
+            role: "nexora" as const,
+            text: "That clarification is no longer open.",
+            status: "no-op" as const,
+          })]).slice(-20));
+          lastManagerUtteranceRef.current = trimmed;
+          return;
+        }
+        const selectedDataObject = selectedDataObjectId
+          ? csvDataObjects.find((entry) => entry.id === selectedDataObjectId) ?? null
+          : null;
+        const selectedDataSource = selectedDataObject
+          ? committedCsvImports.find((entry) => entry.sourceContextId === selectedDataObject.sourceId) ?? null
+          : null;
+        if (selectedDataObject && selectedDataSource) {
+          const removalAnswer = answerCsvSourceRemovalInquiry({
+            impact: analyzeCsvSourceRemovalImpact({
+              source: selectedDataSource,
+              peers: committedCsvImports,
+              activeSourceContextId: activeCsvImport?.sourceContextId ?? null,
+            }),
+            utterance: trimmed,
+          });
+          if (removalAnswer) {
+            if (removalAnswer.intent === "request-review") {
+              setCsvRemovalReviewSourceId(selectedDataSource.sourceContextId);
+              setActiveNav("Data");
+            }
+            if (removalAnswer.intent === "cancel-review") {
+              setCsvRemovalReviewSourceId(null);
+            }
+            setConversationalMessages((messages) => Object.freeze([...messages, Object.freeze({
+              id: `${seed}-nexora`,
+              role: "nexora" as const,
+              text: removalAnswer.text,
+              status: "no-op" as const,
+            })]).slice(-20));
+            lastManagerUtteranceRef.current = trimmed;
+            return;
+          }
+          const dataObjectAnswer = answerNexoraDecisionTheatreDataObjectInquiry({
+            dataObject: selectedDataObject,
+            review: selectedDataSource.prepared.mapping,
+            utterance: trimmed,
+          });
+          if (dataObjectAnswer) {
+            setConversationalMessages((messages) => Object.freeze([...messages, Object.freeze({
+              id: `${seed}-nexora`,
+              role: "nexora" as const,
+              text: dataObjectAnswer,
+              status: "no-op" as const,
+            })]).slice(-20));
+            lastManagerUtteranceRef.current = trimmed;
+            return;
+          }
+        }
+        const dataLibraryAnswer = answerAdvisorDataInquiry({
+          workspaceId: interactionRef.current.workspace,
+          utterance: trimmed,
+          dialogue: advisorDataDialogueRef.current,
+          focusedObjectLabel: interactionRef.current.focusedSubject?.label ?? null,
+        });
+        if (dataLibraryAnswer) {
+          advisorDataDialogueRef.current = dataLibraryAnswer.dialogue;
+          if (dataLibraryAnswer.clarification) {
+            const need = dataLibraryAnswer.clarification;
+            csvSemanticResolverRef.current = (nextUtterance) => applyAdvisorDataSemanticClarification(
+              interactionRef.current.workspace,
+              need.sourceContextId,
+              need.fieldId,
+              nextUtterance,
+            );
+            const nextSession = beginNcaCsvSemanticClarification(managerObjectSessionRef.current, need);
+            setManagerObjectSession(nextSession);
+            managerObjectSessionRef.current = nextSession;
+          }
+          setConversationalMessages((messages) => Object.freeze([...messages, Object.freeze({
+            id: `${seed}-nexora`,
+            role: "nexora" as const,
+            text: dataLibraryAnswer.text,
+            status: dataLibraryAnswer.clarification ? "confirmation-required" as const : "no-op" as const,
+          })]).slice(-20));
+          lastManagerUtteranceRef.current = trimmed;
+          return;
+        }
+        if (activeCsvImport) {
+          const semanticAnswer = answerCsvSemanticInquiry({
+            review: activeCsvImport.prepared.mapping,
+            fileName: activeCsvImport.prepared.fileName,
+            utterance: trimmed,
+            priorFieldId: csvSemanticConversationFieldRef.current,
+          });
+          if (semanticAnswer) {
+            csvSemanticConversationFieldRef.current = semanticAnswer.fieldId;
+            setConversationalMessages((messages) => Object.freeze([...messages, Object.freeze({
+              id: `${seed}-nexora`,
+              role: "nexora" as const,
+              text: semanticAnswer.text,
+              status: "no-op" as const,
+            })]).slice(-20));
+            lastManagerUtteranceRef.current = trimmed;
+            return;
+          }
+        }
         // Let the restrained sending state paint before deterministic CC work.
         await new Promise<void>((resolve) => setTimeout(resolve, 80));
         const previous = interactionRef.current;
@@ -1120,6 +1348,10 @@ export function NexoraExecutiveShell({
       entranceSession,
       decisionReviewOpen,
       proposedCandidateId,
+      activeCsvImport,
+      committedCsvImports,
+      csvDataObjects,
+      selectedDataObjectId,
     ],
   );
 
@@ -1354,9 +1586,79 @@ export function NexoraExecutiveShell({
     setActiveNav("Home");
   }, [onSelectSubject]);
 
+  const onShowDataObjectOnStage = useCallback((dataObjectId: string) => {
+    setStagedDataObjectIds((current) =>
+      current.includes(dataObjectId)
+        ? current
+        : Object.freeze([...current, dataObjectId]),
+    );
+    setSelectedDataObjectId(dataObjectId);
+    setActiveNav("Home");
+  }, []);
+
+  const onSelectStageDataObject = useCallback((dataObjectId: string) => {
+    setSelectedDataObjectId(dataObjectId);
+  }, []);
+
+  const onRemoveDataObjectFromStage = useCallback((dataObjectId: string) => {
+    setStagedDataObjectIds((current) => Object.freeze(current.filter((id) => id !== dataObjectId)));
+    setSelectedDataObjectId((current) => current === dataObjectId ? null : current);
+  }, []);
+
+  const onCsvSourceRemoved = useCallback((sourceContextId: string) => {
+    const dataObjectId = deriveNexoraDecisionTheatreDataObjectId(interaction.workspace, sourceContextId);
+    setStagedDataObjectIds((current) => Object.freeze(current.filter((id) => id !== dataObjectId)));
+    setSelectedDataObjectId((current) => current === dataObjectId ? null : current);
+    setActiveCsvImport((current) => current?.sourceContextId === sourceContextId ? null : current);
+    setCsvRemovalReviewSourceId((current) => current === sourceContextId ? null : current);
+    setDataRailSelectedSourceId((current) => current === sourceContextId ? null : current);
+    if (managerObjectSessionRef.current.ncaConversationState?.activeTopic?.id === csvSemanticClarificationTopicId(sourceContextId)) {
+      csvSemanticResolverRef.current = null;
+    }
+    const nextSession = endNcaCsvSemanticClarification(managerObjectSessionRef.current, sourceContextId);
+    managerObjectSessionRef.current = nextSession;
+    setManagerObjectSession(nextSession);
+  }, [interaction.workspace]);
+
   const onSourceAdvisorContext = useCallback((context: ExecutiveSourceAdvisorContext) => {
     setSourceAdvisorContext(context);
     setAdvisorTab("Assist");
+    setActiveNav("Home");
+    const focusId = context.affectedStageObjectIds[0];
+    if (focusId) onSelectSubject(focusId);
+  }, [onSelectSubject]);
+
+  const onCsvSemanticClarificationRequest = useCallback((
+    need: CsvSemanticClarification,
+    resolve: (utterance: string) => CsvSemanticClarificationResult,
+  ) => {
+    csvSemanticResolverRef.current = resolve;
+    const nextSession = beginNcaCsvSemanticClarification(managerObjectSessionRef.current, need);
+    managerObjectSessionRef.current = nextSession;
+    setManagerObjectSession(nextSession);
+    setConversationalMessages((messages) => {
+      const last = messages[messages.length - 1];
+      if (last?.role === "nexora" && last.text === need.question && last.status === "confirmation-required") {
+        return messages;
+      }
+      conversationalMessageSeqRef.current += 1;
+      return Object.freeze([...messages, Object.freeze({
+        id: `data-ux3-${conversationalMessageSeqRef.current}-nexora`,
+        role: "nexora" as const,
+        text: need.question,
+        status: "confirmation-required" as const,
+      })]).slice(-20);
+    });
+    setAdvisorTab("Assist");
+  }, []);
+
+  const onCsvSemanticClarificationCancel = useCallback((sourceContextId: string) => {
+    if (managerObjectSessionRef.current.ncaConversationState?.activeTopic?.id === csvSemanticClarificationTopicId(sourceContextId)) {
+      csvSemanticResolverRef.current = null;
+    }
+    const nextSession = endNcaCsvSemanticClarification(managerObjectSessionRef.current, sourceContextId);
+    managerObjectSessionRef.current = nextSession;
+    setManagerObjectSession(nextSession);
   }, []);
 
   const onProactiveInvestigate = useCallback((brief: NexoraProactiveAdvisorBrief) => {
@@ -1402,6 +1704,10 @@ export function NexoraExecutiveShell({
         return;
       }
       // STAGE-2D:4 / STAGE-PROD:1/6 — Escape clears focus + collection/prep → Overview.
+      if (explorerKind != null) {
+        setActiveNav("Home");
+        return;
+      }
       if (
         interaction.mode !== "overview" ||
         interaction.collectionContext != null ||
@@ -1409,9 +1715,6 @@ export function NexoraExecutiveShell({
       ) {
         onOverview();
         return;
-      }
-      if (explorerKind != null) {
-        setActiveNav("Home");
       }
     };
     globalThis.addEventListener("keydown", onKeyDown);
@@ -1434,7 +1737,23 @@ export function NexoraExecutiveShell({
         onImportCommitted={onCsvImportCommitted}
         onLiveObservationActivated={onLiveObservationActivated}
         onViewOnStage={onViewSourceOnStage}
+        onShowDataObjectOnStage={onShowDataObjectOnStage}
         onAdvisorContext={onSourceAdvisorContext}
+        onDataObjectSelection={setSelectedDataObjectId}
+        selectedDataObjectId={selectedDataObjectId}
+        onSemanticClarificationRequest={onCsvSemanticClarificationRequest}
+        onSemanticClarificationCancel={onCsvSemanticClarificationCancel}
+        awaitingClarificationFieldId={
+          managerObjectSession.ncaConversationState?.pendingQuestion?.purpose === NCA_CSV_SEMANTIC_PURPOSE
+            && managerObjectSession.ncaConversationState.pendingQuestion.valid
+            ? managerObjectSession.ncaConversationState.pendingQuestion.relatedSubjectId
+            : null
+        }
+        onSourceRemoved={onCsvSourceRemoved}
+        onDismissRemovalReview={() => setCsvRemovalReviewSourceId(null)}
+        removalReviewSourceId={csvRemovalReviewSourceId}
+        selectedSourceId={dataRailSelectedSourceId}
+        onSelectSource={setDataRailSelectedSourceId}
       />
     ) : explorerKind === "journal" ? (
       <NexoraFlowJournalExplorer
@@ -1472,6 +1791,21 @@ export function NexoraExecutiveShell({
   return (
     <div
       data-testid="nexora-executive-shell"
+      data-csv-hydrated={csvHydrated ? "true" : "false"}
+      data-csv-durability={csvDurability}
+      data-data-rail-open={explorerKind === "data" ? "true" : "false"}
+      data-selected-data-object-id={selectedDataObjectId ?? "none"}
+      data-staged-data-object-ids={dataObjectStage.diagnostics.dataObjectIds.join(",") || "none"}
+      data-staged-data-object-count={String(dataObjectStage.participants.length)}
+      data-data-object-business-focus={interaction.focusedSubject?.id ?? "none"}
+      data-data-object-projection-authority={dataObjectStage.identity}
+      data-csv-removal-review-source={csvRemovalReviewSourceId ?? "none"}
+      data-csv-semantic-awaiting-field={
+        managerObjectSession.ncaConversationState?.pendingQuestion?.purpose === NCA_CSV_SEMANTIC_PURPOSE
+          && managerObjectSession.ncaConversationState.pendingQuestion.valid
+          ? managerObjectSession.ncaConversationState.pendingQuestion.relatedSubjectId ?? "none"
+          : "none"
+      }
       data-nexora-conversation-authority="executeNexoraConversationalExperience"
       data-nexora-final3-reference={NEXORA_FINAL3_NATURAL_REFERENCE_IDENTITY}
       data-nexora-final3-explain={NEXORA_FINAL3_EXECUTIVE_EXPLAIN_IDENTITY}
@@ -1774,6 +2108,17 @@ export function NexoraExecutiveShell({
       data-nexora-dataset={datasetScenario}
       data-rdi2-active-import={activeCsvImport?.importId ?? "none"}
       data-rdi2-dataset-id={activeCsvDataset?.id ?? "none"}
+      data-data-ux3-semantic-authority="RDI:2/NexoraCsvRealDataVerticalSlice"
+      data-data-ux3-pending-field={
+        managerObjectSession.ncaConversationState?.pendingQuestion?.purpose === "csv-semantic-clarification"
+          ? managerObjectSession.ncaConversationState.pendingQuestion.relatedSubjectId ?? "none"
+          : "none"
+      }
+      data-data-ux3-pending-source={
+        managerObjectSession.ncaConversationState?.pendingQuestion?.purpose === "csv-semantic-clarification"
+          ? managerObjectSession.ncaConversationState.activeTopic?.id ?? "none"
+          : "none"
+      }
       data-data-reality-stage-binding={
         dataRealityExperience.stageBinding.identity.identity
       }
@@ -1933,6 +2278,7 @@ export function NexoraExecutiveShell({
           width={explorerWidth}
           onWidthChange={setExplorerWidth}
           onClose={onExplorerClose}
+          presentation={explorerKind === "data" ? "data-rail" : "explorer"}
         >
           {explorerContent}
         </ExecutiveExplorerDrawer>
@@ -1963,10 +2309,10 @@ export function NexoraExecutiveShell({
           />
           <ExecutiveStageFrame
             stageControls={
-              <NexoraWorkspaceDialMount
+              <><NexoraStageDataControl open={explorerKind === "data"} attention={false} onToggle={() => setActiveNav(explorerKind === "data" ? "Home" : "Data")} /><NexoraWorkspaceDialMount
                 activeWorkspace={application.workspace}
                 onWorkspaceChange={onWorkspaceChange}
-              />
+              /></>
             }
           >
             <NexoraStageMount
@@ -1988,6 +2334,11 @@ export function NexoraExecutiveShell({
               visualGrammarVersion={theatreProjection.visualGrammar.grammarVersion}
               visualClaimCount={theatreProjection.visualGrammar.claims.length}
               warRoomAtmosphere={theatreProjection.warRoomAtmosphere}
+              dataObjectStage={dataObjectStage}
+              onSelectDataObject={onSelectStageDataObject}
+              onRemoveDataObjectFromStage={onRemoveDataObjectFromStage}
+              onOpenDataRail={() => setActiveNav("Data")}
+              onAskDataObject={onSubmitConversationalUtterance}
               sceneIntentKind={theatreProjection.sceneIntent.intentKind}
               sceneScriptId={theatreProjection.sceneScript.scriptId}
               objectInvestigation={theatreProjection.objectInvestigation}
@@ -2059,6 +2410,7 @@ export function NexoraExecutiveShell({
           advisorRealityBinding={dataRealityAdvisorExperience.advisorBinding}
           validatedDataSource={dataRealityExperience.usesActiveDataSource}
           sourceIntelligenceContext={sourceAdvisorContext}
+          onReturnToDataSource={() => setActiveNav("Data")}
           onProactiveInvestigate={onProactiveInvestigate}
           onProactiveViewOnStage={onViewSourceOnStage}
           conversationalMessages={conversationalMessages}

@@ -1,0 +1,345 @@
+{
+  "ok": true,
+  "flowAFirst": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "0",
+    "pending": "1",
+    "empty": false,
+    "pendingRows": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "review": true,
+    "intake": "new",
+    "headline": "Pending reviewdata-ux3-ambiguous.csvNexora reviews the source locally. You confirm anything uncertain before it can affect business reality.",
+    "newIntake": false,
+    "existingSource": false,
+    "understanding": "Nexora understandsNo business meanings are confirmed yet.Needs clarification · 1? OTD · likely On-Time DeliveryAsk NexoraThe Advisor asks one useful question at a time. Answer in the conversation.",
+    "previewHeaders": [
+      "DT",
+      "ORD_QTY",
+      "OTD",
+      "CAP_AV",
+      "BKL"
+    ],
+    "filenames": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": ""
+  },
+  "flowAAddData": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "0",
+    "pending": "1",
+    "empty": false,
+    "pendingRows": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "review": false,
+    "intake": null,
+    "headline": "",
+    "newIntake": false,
+    "existingSource": false,
+    "understanding": "",
+    "previewHeaders": [],
+    "filenames": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": ""
+  },
+  "flowANewIntake": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "0",
+    "pending": "1",
+    "empty": false,
+    "pendingRows": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "review": true,
+    "intake": "new",
+    "headline": "New sourceCSVNexora reviews the source locally. You confirm anything uncertain before it can affect business reality.",
+    "newIntake": true,
+    "existingSource": false,
+    "understanding": "",
+    "previewHeaders": [],
+    "filenames": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": ""
+  },
+  "flowABoth": {
+    "open": true,
+    "total": "3",
+    "csv": "2",
+    "committed": "0",
+    "pending": "2",
+    "empty": false,
+    "pendingRows": [
+      "capacity.csv",
+      "data-ux3-ambiguous.csv"
+    ],
+    "review": false,
+    "intake": null,
+    "headline": "",
+    "newIntake": false,
+    "existingSource": false,
+    "understanding": "",
+    "previewHeaders": [],
+    "filenames": [
+      "capacity.csv",
+      "data-ux3-ambiguous.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": ""
+  },
+  "flowBAmbiguous": {
+    "open": true,
+    "total": "3",
+    "csv": "2",
+    "committed": "0",
+    "pending": "2",
+    "empty": false,
+    "pendingRows": [
+      "capacity.csv",
+      "data-ux3-ambiguous.csv"
+    ],
+    "review": true,
+    "intake": "resume",
+    "headline": "Pending reviewdata-ux3-ambiguous.csvNexora reviews the source locally. You confirm anything uncertain before it can affect business reality.",
+    "newIntake": false,
+    "existingSource": false,
+    "understanding": "Nexora understandsNo business meanings are confirmed yet.Needs clarification · 1? OTD · likely On-Time DeliveryAsk NexoraThe Advisor asks one useful question at a time. Answer in the conversation.",
+    "previewHeaders": [
+      "DT",
+      "ORD_QTY",
+      "OTD",
+      "CAP_AV",
+      "BKL"
+    ],
+    "filenames": [
+      "capacity.csv",
+      "data-ux3-ambiguous.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": ""
+  },
+  "flowBCapacity": {
+    "open": true,
+    "total": "3",
+    "csv": "2",
+    "committed": "0",
+    "pending": "2",
+    "empty": false,
+    "pendingRows": [
+      "capacity.csv",
+      "data-ux3-ambiguous.csv"
+    ],
+    "review": true,
+    "intake": "resume",
+    "headline": "Pending reviewcapacity.csvNexora reviews the source locally. You confirm anything uncertain before it can affect business reality.",
+    "newIntake": false,
+    "existingSource": false,
+    "understanding": "Nexora understands✓ currentRevenue: Current Revenue✓ previousRevenue: Previous Revenue✓ usedCapacity: Production Used Capacity✓ totalCapacity: Production Total Capacity",
+    "previewHeaders": [
+      "currentRevenue",
+      "previousRevenue",
+      "usedCapacity",
+      "totalCapacity"
+    ],
+    "filenames": [
+      "capacity.csv",
+      "data-ux3-ambiguous.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": ""
+  },
+  "flowCCapacity": {
+    "use": true,
+    "pending": "2",
+    "committed": "0"
+  },
+  "flowD": {
+    "open": true,
+    "total": "3",
+    "csv": "2",
+    "committed": "1",
+    "pending": "1",
+    "empty": false,
+    "pendingRows": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "review": false,
+    "intake": null,
+    "headline": "",
+    "newIntake": false,
+    "existingSource": false,
+    "understanding": "",
+    "previewHeaders": [],
+    "filenames": [
+      "data-ux3-ambiguous.csv",
+      "capacity.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue."
+  },
+  "flowE": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "1",
+    "pending": "0",
+    "empty": false,
+    "pendingRows": [],
+    "review": false,
+    "intake": null,
+    "headline": "",
+    "newIntake": false,
+    "existingSource": false,
+    "understanding": "",
+    "previewHeaders": [],
+    "filenames": [
+      "capacity.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": ""
+  },
+  "flowF": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "1",
+    "pending": "0",
+    "empty": false,
+    "pendingRows": [],
+    "review": true,
+    "intake": "new",
+    "headline": "New sourceCSVNexora reviews the source locally. You confirm anything uncertain before it can affect business reality.",
+    "newIntake": true,
+    "existingSource": false,
+    "understanding": "",
+    "previewHeaders": [],
+    "filenames": [
+      "capacity.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": ""
+  },
+  "flowG": {
+    "open": true,
+    "total": "3",
+    "csv": "2",
+    "committed": "1",
+    "pending": "1",
+    "empty": false,
+    "pendingRows": [
+      "otd-clarification.csv"
+    ],
+    "review": true,
+    "intake": "new",
+    "headline": "New sourceCSVNexora reviews the source locally. You confirm anything uncertain before it can affect business reality.",
+    "newIntake": true,
+    "existingSource": false,
+    "understanding": "",
+    "previewHeaders": [],
+    "filenames": [
+      "otd-clarification.csv",
+      "capacity.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": ""
+  },
+  "flowH": {
+    "open": true,
+    "total": "4",
+    "csv": "3",
+    "committed": "2",
+    "pending": "1",
+    "empty": false,
+    "pendingRows": [
+      "otd-clarification.csv"
+    ],
+    "review": true,
+    "intake": "new",
+    "headline": "New sourceCSVNexora reviews the source locally. You confirm anything uncertain before it can affect business reality.",
+    "newIntake": true,
+    "existingSource": true,
+    "understanding": "",
+    "previewHeaders": [],
+    "filenames": [
+      "otd-clarification.csv",
+      "capacity.csv",
+      "delivery_2026.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": ""
+  },
+  "flowI": {
+    "asked": true,
+    "ambiguousStillNeeds": true,
+    "capacityUnchanged": true
+  },
+  "flowJ": {
+    "open": true,
+    "total": "4",
+    "csv": "3",
+    "committed": "2",
+    "pending": "1",
+    "empty": false,
+    "pendingRows": [
+      "otd-clarification.csv"
+    ],
+    "review": false,
+    "intake": null,
+    "headline": "",
+    "newIntake": false,
+    "existingSource": false,
+    "understanding": "",
+    "previewHeaders": [],
+    "filenames": [
+      "otd-clarification.csv",
+      "capacity.csv",
+      "delivery_2026.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue."
+  },
+  "connectedOpen": {
+    "kind": "Engineering SourceConnectedCapacity · Customer",
+    "csvPreview": false,
+    "csvColumns": false
+  },
+  "duplicateAlert": "A pending source with this filename already exists.",
+  "pageErrors": []
+}

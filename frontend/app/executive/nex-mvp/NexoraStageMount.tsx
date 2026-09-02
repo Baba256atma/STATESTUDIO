@@ -14,6 +14,7 @@ import type { ExecutiveQueueCategory } from "@/app/lib/spatial-presentation/exec
 import type { NexoraDecisionTheatreIconicObject } from "@/app/lib/decision-theatre/nexoraDecisionTheatreIconicProjection.ts";
 import type { NexoraDecisionTheatreParticipantVisualPresentation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreVisualProjection.ts";
 import type { NexoraDecisionTheatreAtmosphereProjection } from "@/app/lib/decision-theatre/nexoraDecisionTheatreAtmosphere.ts";
+import type { NexoraDecisionTheatreDataObjectStageProjection } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDataObjectStageProjection.ts";
 import type { NexoraDecisionTheatreObjectInvestigation } from "@/app/lib/decision-theatre/nexoraDecisionTheatreObjectInvestigation.ts";
 import type { NexoraDecisionTheatreInvestigationLevel } from "@/app/lib/decision-theatre/nexoraDecisionTheatreObjectInvestigation.ts";
 import type { NexoraDecisionTheatreDecisionComparison } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDecisionComparison.ts";
@@ -32,6 +33,7 @@ import type { NexoraDecisionTheatreOutcomeObservation } from "@/app/lib/decision
 import { NexoraDecisionTheatreOutcomeObservationSurface } from "./stage/NexoraDecisionTheatreOutcomeObservationSurface";
 import type { NexoraDecisionTheatreLearningReassessment } from "@/app/lib/decision-theatre/nexoraDecisionTheatreLearningReassessment.ts";
 import { NexoraDecisionTheatreLearningReassessmentSurface } from "./stage/NexoraDecisionTheatreLearningReassessmentSurface";
+import { NexoraStageDataObjectInspection } from "./stage/NexoraStageDataObjectInspection";
 
 type Props = {
   readonly workspaceLabel: string;
@@ -80,6 +82,11 @@ type Props = {
   readonly learningReassessment?: NexoraDecisionTheatreLearningReassessment | null;
   readonly onRequestStartExecution?: () => void;
   readonly onShowDecisionHistory?: () => void;
+  readonly dataObjectStage: NexoraDecisionTheatreDataObjectStageProjection;
+  readonly onSelectDataObject: (dataObjectId: string) => void;
+  readonly onRemoveDataObjectFromStage: (dataObjectId: string) => void;
+  readonly onOpenDataRail: () => void;
+  readonly onAskDataObject: (question: string) => void;
 };
 
 /**
@@ -124,6 +131,11 @@ export function NexoraStageMount({
   learningReassessment = null,
   onRequestStartExecution,
   onShowDecisionHistory,
+  dataObjectStage,
+  onSelectDataObject,
+  onRemoveDataObjectFromStage,
+  onOpenDataRail,
+  onAskDataObject,
 }: Props) {
   const atmosphereMode = warRoomAtmosphere?.mode ?? "none";
   const atmosphereIntensity = warRoomAtmosphere?.intensity ?? "none";
@@ -151,6 +163,13 @@ export function NexoraStageMount({
       data-nexograph-legend-visible="false"
       data-theatre-scene-intent={sceneIntentKind ?? "none"}
       data-theatre-scene-script-id={sceneScriptId ?? "none"}
+      data-stage-data-object-count={String(dataObjectStage.participants.length)}
+      data-stage-data-object-ids={dataObjectStage.diagnostics.dataObjectIds.join(",") || "none"}
+      data-stage-data-object-selected={dataObjectStage.diagnostics.selectedDataObjectId ?? "none"}
+      data-stage-data-object-director={dataObjectStage.identity}
+      data-stage-data-object-relationship-ids={dataObjectStage.diagnostics.relationshipIds.join(",") || "none"}
+      data-stage-data-object-business-focus={dataObjectStage.diagnostics.businessFocusId ?? "none"}
+      data-stage-data-object-projection-only="true"
       data-theatre-investigation-object-id={objectInvestigation?.objectId ?? "none"}
       data-theatre-investigation-object-type={objectInvestigation?.canonicalObjectType ?? "none"}
       data-theatre-investigation-level={
@@ -215,7 +234,17 @@ export function NexoraStageMount({
         visualPresentations={visualPresentations}
         atmosphereMode={atmosphereMode}
         warRoomAtmosphere={warRoomAtmosphere}
+        dataObjectStage={dataObjectStage}
+        onSelectDataObject={onSelectDataObject}
       />
+      {dataObjectStage.participants.find((entry) => entry.dataObject.id === dataObjectStage.diagnostics.selectedDataObjectId) ? (
+        <NexoraStageDataObjectInspection
+          dataObject={dataObjectStage.participants.find((entry) => entry.dataObject.id === dataObjectStage.diagnostics.selectedDataObjectId)!.dataObject}
+          onRemoveFromStage={onRemoveDataObjectFromStage}
+          onOpenDataRail={onOpenDataRail}
+          onAskNexora={onAskDataObject}
+        />
+      ) : null}
       {decisionComparison != null && decisionCommitment == null ? (
         <NexoraDecisionTheatreComparisonSurface
           comparison={decisionComparison}

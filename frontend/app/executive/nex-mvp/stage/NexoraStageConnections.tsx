@@ -172,6 +172,7 @@ function LiveStageConnection({
         visibilityState: visualRole,
         visualAudit: "stage-connection",
         impliesCausality: false,
+        linePattern: connection.linePattern ?? "solid",
         routeKind: connection.routeKind ?? "straight",
         stageHitKind: "connection",
       }}
@@ -182,6 +183,10 @@ function LiveStageConnection({
         transparent
         opacity={connection.opacity}
         lineWidth={lineWidth}
+        dashed={connection.linePattern === "dashed"}
+        dashSize={0.12}
+        gapSize={0.1}
+        dashScale={1}
         depthWrite={false}
         onClick={(event) => {
           event.stopPropagation();

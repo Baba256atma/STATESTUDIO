@@ -14,6 +14,7 @@ type Props = {
   readonly onWidthChange: (width: number) => void;
   readonly onClose: () => void;
   readonly children?: ReactNode;
+  readonly presentation?: "explorer" | "data-rail";
 };
 
 /**
@@ -27,6 +28,7 @@ export function ExecutiveExplorerDrawer({
   onWidthChange,
   onClose,
   children,
+  presentation = "explorer",
 }: Props) {
   const open = kind != null;
   const displayTitle = title ?? explorerTitle(kind);
@@ -63,6 +65,7 @@ export function ExecutiveExplorerDrawer({
       data-testid="executive-explorer-drawer"
       data-open={open ? "true" : "false"}
       data-explorer={kind ?? "none"}
+      data-presentation={presentation}
       aria-hidden={!open}
       aria-label={open ? displayTitle : "Explorer closed"}
       style={{
@@ -70,7 +73,7 @@ export function ExecutiveExplorerDrawer({
         flexShrink: 0,
         overflow: "hidden",
         position: "relative",
-        background: `linear-gradient(180deg, ${cockpit.panel} 0%, ${cockpit.navy} 100%)`,
+        background: presentation === "data-rail" ? "rgba(8, 13, 22, 0.97)" : `linear-gradient(180deg, ${cockpit.panel} 0%, ${cockpit.navy} 100%)`,
         borderRight: open ? `1px solid ${cockpit.border}` : "none",
         boxShadow: open ? cockpit.elevation.panel : "none",
         transition: `width ${cockpit.drawerMs} ${cockpit.motion.easing}`,
@@ -109,7 +112,7 @@ export function ExecutiveExplorerDrawer({
                 fontWeight: cockpit.type.status.weight,
               }}
             >
-              Explorer
+              {presentation === "data-rail" ? "Theatre control" : "Explorer"}
             </p>
             <h2
               data-testid="executive-explorer-title"
@@ -121,13 +124,13 @@ export function ExecutiveExplorerDrawer({
                 color: cockpit.text,
               }}
             >
-              {displayTitle}
+              {presentation === "data-rail" ? "Data" : displayTitle}
             </h2>
           </div>
           <button
             type="button"
             data-testid="executive-explorer-close"
-            aria-label="Close explorer"
+            aria-label={presentation === "data-rail" ? "Close Data" : "Close explorer"}
             onClick={onClose}
             style={{
               border: `1px solid ${cockpit.border}`,

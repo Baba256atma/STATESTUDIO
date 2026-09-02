@@ -1,0 +1,19 @@
+{
+  "identity": "DATA-ADV:1/LiveManagerProof",
+  "url": "http://localhost:3000/executive",
+  "otdQuestion": "NexoraDoes OTD represent on-time delivery?",
+  "otdTurn": "NexoraConfirmed for this source: OTD means On-Time Delivery.",
+  "ordQty": "NexoraORD_QTY is a field in data-ux3-ambiguous.csv, but its business meaning has not been confirmed yet. This source is still under review and is not accepted evidence yet.",
+  "from": "NexoraORD_QTY is in data-ux3-ambiguous.csv.",
+  "elseIn": "NexoraNexora understands this source as on-time delivery information. Confirmed fields include OTD (On-Time Delivery). Still unresolved: DT, ORD_QTY, CAP_AV, BKL. data-ux3-ambiguous.csv is under review and is not accepted into Data Reality yet. Nexora thinks Shipping may later be relevant, but has not connected them yet.",
+  "files": "NexoraYou currently have 1 CSV source and 1 connected source. data-ux3-ambiguous.csv is still being reviewed.",
+  "capacityAsk": "Nexoracapacity.csv provides accepted capacity data.",
+  "investigate": "NexoraWe have accepted data in capacity.csv (Capacity, Revenue). data-ux3-ambiguous.csv is still under review and should not be treated as accepted evidence. I would start with the accepted evidence, then examine related sources. That is an investigation order, not a claim that one source caused the problem.",
+  "restoredOtd": "NexoraOTD means On-Time Delivery in data-ux3-ambiguous.csv. That meaning is confirmed for this source. This source is still under review and is not accepted evidence yet.",
+  "restoredFiles": "NexoraYou currently have 2 CSV sources and 1 connected source. capacity.csv is ready. data-ux3-ambiguous.csv is still being reviewed.",
+  "dataOpenAfterRefresh": 0,
+  "focusAfterField": "none",
+  "focusAfterGuidance": "none",
+  "pageErrors": [],
+  "ok": true
+}

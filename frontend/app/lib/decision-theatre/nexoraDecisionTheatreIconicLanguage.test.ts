@@ -45,6 +45,7 @@ import {
   classifyNexoraDecisionTheatreVisualFamily,
   deriveNexoraDecisionTheatreIconicPresentationId,
   isNexoraDecisionTheatreIconicPresentationId,
+  NEXORA_DECISION_THEATRE_DATA_ID_PREFIX,
   NEXORA_DECISION_THEATRE_ICONIC_ID_PREFIX,
   NEXORA_DECISION_THEATRE_VISUAL_FAMILIES,
   nexoraDecisionTheatreVisualLanguageIdentity,
@@ -99,7 +100,7 @@ function scene(state: NexoraMVPObjectInteractionState, useCatalog = catalog) {
 }
 
 test("visual families are explicit, immutable, and independent of renderer cues", () => {
-  assert.deepEqual([...NEXORA_DECISION_THEATRE_VISUAL_FAMILIES], ["EXECUTIVE_OBJECT", "ICONIC_OBJECT"]);
+  assert.deepEqual([...NEXORA_DECISION_THEATRE_VISUAL_FAMILIES], ["EXECUTIVE_OBJECT", "ICONIC_OBJECT", "DATA_OBJECT"]);
   assert.equal(classifyNexoraDecisionTheatreVisualFamily({ id: "obj-risk" }), "EXECUTIVE_OBJECT");
   assert.equal(
     classifyNexoraDecisionTheatreVisualFamily({
@@ -110,6 +111,10 @@ test("visual families are explicit, immutable, and independent of renderer cues"
       }),
     }),
     "ICONIC_OBJECT",
+  );
+  assert.equal(
+    classifyNexoraDecisionTheatreVisualFamily({ id: `${NEXORA_DECISION_THEATRE_DATA_ID_PREFIX}overview:csv` }),
+    "DATA_OBJECT",
   );
   assert.equal(NEXORA_DECISION_THEATRE_SUPPORTED_CAPABILITIES.includes("executive-versus-iconic-object-language"), true);
   assert.equal(nexoraDecisionTheatreVisualLanguageIdentity, "DTH:2/ExecutiveAndIconicObjectLanguage");

@@ -1,0 +1,169 @@
+{
+  "ok": true,
+  "flowA": {
+    "about": "About this dataNexora has not confirmed enough business meaning to describe this source yet.",
+    "attention": "",
+    "understanding": "About this dataNexora has not confirmed enough business meaning to describe this source yet.Nexora understandsNo business meanings are confirmed yet.Needs clarification · 1OTDLikely On-Time DeliveryAsk NexoraThe Advisor asks one useful question at a time. Answer in the conversation.",
+    "clarification": "Needs clarification · 1OTDLikely On-Time DeliveryAsk NexoraThe Advisor asks one useful question at a time. Answer in the conversation.",
+    "potential": "",
+    "relatedPending": "Related ObjectsAvailable after validation",
+    "relatedCommitted": "",
+    "columns": true,
+    "preview": true,
+    "askOtd": true,
+    "clarificationOpen": true,
+    "columnsOpen": false,
+    "previewOpen": false,
+    "likelyBkl": false,
+    "intake": "new",
+    "rdi2State": "preview",
+    "filenames": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "connected": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ]
+  },
+  "flowB": {
+    "about": "About this dataNexora understands this source as date, on-time deliveries, and production total capacity information.",
+    "attention": "Needs attentionNexora needs Used Capacity before this data can be used for Production.This does not mean the file is broken. A required business field is not in this source.",
+    "understanding": "About this dataNexora understands this source as date, on-time deliveries, and production total capacity information.Needs attentionNexora needs Used Capacity before this data can be used for Production.This does not mean the file is broken. A required business field is not in this source.Nexora understands✓ DTDate · Confirmed by manager✓ OTDOn-Time Deliveries · Confirmed by manager✓ CAP_AVProduction Total Capacity · Confirmed by manager",
+    "clarification": "",
+    "potential": "Production ? · Shipping ?Nexora has not connected these objects yet.",
+    "relatedPending": "Potentially relatedProduction ? · Shipping ?Nexora has not connected these objects yet.",
+    "relatedCommitted": "",
+    "columns": true,
+    "preview": true,
+    "askOtd": false,
+    "clarificationOpen": false,
+    "columnsOpen": true,
+    "previewOpen": false,
+    "likelyBkl": false,
+    "intake": "new",
+    "rdi2State": "error",
+    "filenames": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "connected": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ]
+  },
+  "flowC": {
+    "before": "error",
+    "after": "error",
+    "collapsed": {
+      "about": "About this dataNexora understands this source as date, on-time deliveries, and production total capacity information.",
+      "attention": "Needs attentionNexora needs Used Capacity before this data can be used for Production.This does not mean the file is broken. A required business field is not in this source.",
+      "understanding": "About this dataNexora understands this source as date, on-time deliveries, and production total capacity information.Needs attentionNexora needs Used Capacity before this data can be used for Production.This does not mean the file is broken. A required business field is not in this source.Nexora understands✓ DTDate · Confirmed by manager✓ OTDOn-Time Deliveries · Confirmed by manager✓ CAP_AVProduction Total Capacity · Confirmed by manager",
+      "clarification": "",
+      "potential": "Production ? · Shipping ?Nexora has not connected these objects yet.",
+      "relatedPending": "Potentially relatedProduction ? · Shipping ?Nexora has not connected these objects yet.",
+      "relatedCommitted": "",
+      "columns": true,
+      "preview": true,
+      "askOtd": false,
+      "clarificationOpen": false,
+      "columnsOpen": false,
+      "previewOpen": false,
+      "likelyBkl": false,
+      "intake": "new",
+      "rdi2State": "error",
+      "filenames": [
+        "data-ux3-ambiguous.csv"
+      ],
+      "connected": [
+        "Engineering SourceConnectedCapacity · Customer"
+      ]
+    }
+  },
+  "flowD": {
+    "opened": true,
+    "kept": true
+  },
+  "flowE": {
+    "potential": true,
+    "potentialCopy": "Production ? · Shipping ?Nexora has not connected these objects yet.",
+    "fallback": true,
+    "notConnectedCopy": true
+  },
+  "flowF": {
+    "about": "Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue.",
+    "attention": "",
+    "understanding": "",
+    "clarification": "",
+    "potential": "",
+    "relatedPending": "",
+    "relatedCommitted": "Related ObjectsCapacityRevenue",
+    "columns": true,
+    "preview": false,
+    "askOtd": false,
+    "clarificationOpen": false,
+    "columnsOpen": false,
+    "previewOpen": false,
+    "likelyBkl": false,
+    "filenames": [
+      "data-ux3-ambiguous.csv",
+      "capacity.csv"
+    ],
+    "connected": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ]
+  },
+  "flowG": {
+    "pending": "2",
+    "files": [
+      "capacity.csv",
+      "data-ux3-ambiguous.csv"
+    ]
+  },
+  "flowGSecond": {
+    "about": "About this dataNexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information.",
+    "attention": "",
+    "understanding": "About this dataNexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information.Nexora understands✓ currentRevenueCurrent Revenue · Authoritative mapping✓ previousRevenuePrevious Revenue · Authoritative mapping✓ usedCapacityProduction Used Capacity · Authoritative mapping✓ totalCapacityProduction Total Capacity · Authoritative mapping",
+    "clarification": "",
+    "potential": "Production ? · Revenue ?Nexora has not connected these objects yet.",
+    "relatedPending": "Potentially relatedProduction ? · Revenue ?Nexora has not connected these objects yet.",
+    "relatedCommitted": "",
+    "columns": true,
+    "preview": true,
+    "askOtd": false,
+    "clarificationOpen": false,
+    "columnsOpen": false,
+    "previewOpen": false,
+    "likelyBkl": false,
+    "intake": "new",
+    "rdi2State": "preview",
+    "filenames": [
+      "capacity.csv",
+      "data-ux3-ambiguous.csv"
+    ],
+    "connected": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ]
+  },
+  "afterMappings": {
+    "about": "About this dataNexora understands this source as date, on-time deliveries, and production total capacity information.",
+    "attention": "",
+    "understanding": "About this dataNexora understands this source as date, on-time deliveries, and production total capacity information.Nexora understands✓ DTDate · Confirmed by manager✓ OTDOn-Time Deliveries · Confirmed by manager✓ CAP_AVProduction Total Capacity · Confirmed by manager",
+    "clarification": "",
+    "potential": "Production ? · Shipping ?Nexora has not connected these objects yet.",
+    "relatedPending": "Potentially relatedProduction ? · Shipping ?Nexora has not connected these objects yet.",
+    "relatedCommitted": "",
+    "columns": true,
+    "preview": true,
+    "askOtd": false,
+    "clarificationOpen": false,
+    "columnsOpen": true,
+    "previewOpen": false,
+    "likelyBkl": false,
+    "intake": "new",
+    "rdi2State": "mapping",
+    "filenames": [
+      "data-ux3-ambiguous.csv"
+    ],
+    "connected": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ]
+  },
+  "pageErrors": []
+}

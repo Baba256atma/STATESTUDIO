@@ -1,0 +1,113 @@
+{
+  "ok": true,
+  "afterImport": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "connected": "1",
+    "empty": false,
+    "filenames": [
+      "delivery_2026.csv"
+    ],
+    "selected": "csv:overview:delivery-2026-csv",
+    "details": true,
+    "live": false,
+    "emptyCopy": ""
+  },
+  "afterCloseDetails": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "connected": "1",
+    "empty": false,
+    "filenames": [
+      "delivery_2026.csv"
+    ],
+    "selected": "none",
+    "details": false,
+    "live": false,
+    "emptyCopy": ""
+  },
+  "dataClosed": false,
+  "afterReopenData": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "connected": "1",
+    "empty": false,
+    "filenames": [
+      "delivery_2026.csv"
+    ],
+    "selected": "none",
+    "details": false,
+    "live": false,
+    "emptyCopy": ""
+  },
+  "reopenedDetails": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "connected": "1",
+    "empty": false,
+    "filenames": [
+      "delivery_2026.csv"
+    ],
+    "selected": "csv:overview:delivery-2026-csv",
+    "details": true,
+    "live": false,
+    "emptyCopy": ""
+  },
+  "detailName": "delivery_2026.csv",
+  "afterSecondCsv": {
+    "open": true,
+    "total": "3",
+    "csv": "2",
+    "connected": "1",
+    "empty": false,
+    "filenames": [
+      "capacity.csv",
+      "delivery_2026.csv"
+    ],
+    "selected": "csv:overview:capacity-csv",
+    "details": true,
+    "live": false,
+    "emptyCopy": ""
+  },
+  "connected": {
+    "attempted": true,
+    "connected": true,
+    "related": "CONNECTED SOURCE\nEngineering Source\nDEGRADEDClose details\nRELATED OBJECTS\nCapacity\nCustomer\nWATCH\nSINCE PREVIOUS OBSERVATION\n2 meaningful\n·\n2 may require attention\n2 meaningful changes detected (deteriorated); 2 may require executive attention.\nView Changes\nMonitoring\nRefresh\nUse as Active Source\nView on Stage\nAsk Nexora\nMore",
+    "viewChangesSource": "View ChangesSource: Engineering SourceCustomer · meaningful · attention-candidateCustomer Satisfaction Index: 84.1 → 75.0%View on StageCapacity · meaningful · attention-candidateCapacity Utilization: 15.9 → 25.0%View on StageAsk Nexora",
+    "askCollapsed": true,
+    "sourceAfterAsk": true,
+    "returned": true,
+    "reason": "ok"
+  },
+  "afterFirstRemove": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "connected": "1",
+    "empty": false,
+    "filenames": [
+      "delivery_2026.csv"
+    ],
+    "selected": "none",
+    "details": false,
+    "live": false,
+    "emptyCopy": ""
+  },
+  "afterAllCsvRemoved": {
+    "open": true,
+    "total": "1",
+    "csv": "0",
+    "connected": "1",
+    "empty": true,
+    "filenames": [],
+    "selected": "none",
+    "details": false,
+    "live": false,
+    "emptyCopy": "No CSV sources yet.Add a CSV to let Nexora work with your business data."
+  },
+  "pageErrors": []
+}

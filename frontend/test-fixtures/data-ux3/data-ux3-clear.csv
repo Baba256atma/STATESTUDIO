@@ -1,0 +1,5 @@
+date,orders,on_time_delivery_pct,backlog_orders,available_capacity_hours
+2026-01-01,1000,94.0,120,850
+2026-02-01,1080,93.2,145,840
+2026-03-01,1160,91.8,190,825
+2026-04-01,1240,90.5,245,810

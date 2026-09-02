@@ -22,11 +22,30 @@ export {
   deriveNexoraDecisionTheatreIconicPresentationId,
   isNexoraDecisionTheatreIconicPresentationId,
   NEXORA_DECISION_THEATRE_ICONIC_ID_PREFIX,
+  NEXORA_DECISION_THEATRE_DATA_ID_PREFIX,
   NEXORA_DECISION_THEATRE_VISUAL_FAMILIES,
   nexoraDecisionTheatreVisualLanguageIdentity,
   nexoraDecisionTheatreVisualLanguageVersion,
   resolveCanonicalExecutiveObjectType,
 } from "./nexoraDecisionTheatreVisualFamily.ts";
+export {
+  deriveNexoraDecisionTheatreDataObjectId,
+  nexoraDecisionTheatreDataObjectProjectionIdentity,
+  projectCsvImportAsDecisionTheatreDataObject,
+} from "./nexoraDecisionTheatreDataObjectProjection.ts";
+export type { NexoraDecisionTheatreDataObject } from "./nexoraDecisionTheatreDataObjectProjection.ts";
+export {
+  nexoraDecisionTheatreDataObjectStageProjectionIdentity,
+  projectNexoraDecisionTheatreDataObjectsToStage,
+} from "./nexoraDecisionTheatreDataObjectStageProjection.ts";
+export type {
+  NexoraDecisionTheatreDataObjectStageParticipant,
+  NexoraDecisionTheatreDataObjectStageProjection,
+} from "./nexoraDecisionTheatreDataObjectStageProjection.ts";
+export {
+  answerNexoraDecisionTheatreDataObjectInquiry,
+  nexoraDecisionTheatreDataObjectAdvisorIdentity,
+} from "./nexoraDecisionTheatreDataObjectAdvisor.ts";
 export {
   formatNexoraDecisionTheatreIconicAccessibilityLabel,
   getNexoraDecisionTheatreIconicRoleDefinition,

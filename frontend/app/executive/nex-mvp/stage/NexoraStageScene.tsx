@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import type { NexoraMVPStageObjectPresentation } from "@/app/lib/nex-mvp/nexora3DExecutiveStage";
 import type { NexoraMVPStageInteractionPresentation } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
+import type { NexoraDecisionTheatreDataObjectStageProjection } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDataObjectStageProjection";
 import type { NexoraMVPSceneEnvironmentVisualState } from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
 import { resolveExecutiveDensityAwareFraming } from "@/app/lib/spatial-presentation/executiveDensityAwareFraming";
 import { resolveExecutiveLightingProfile } from "@/app/lib/spatial-presentation/executiveLightingFoundation";
@@ -36,11 +37,14 @@ import { NexoraStageContextNodes } from "./NexoraStageContextNodes";
 import { NexoraStageDeepZEnvironment } from "./NexoraStageDeepZEnvironment";
 import { NexoraStageMotionController } from "./NexoraStageMotionController";
 import { NexoraStageObject } from "./NexoraStageObject";
+import { NexoraStageDataObject } from "./NexoraStageDataObject";
 
 type Props = {
   readonly presentation: NexoraMVPStageInteractionPresentation;
   readonly environment: NexoraMVPSceneEnvironmentVisualState;
+  readonly dataObjectStage: NexoraDecisionTheatreDataObjectStageProjection;
   readonly onSelectSubject: (subjectId: string) => void;
+  readonly onSelectDataObject: (dataObjectId: string) => void;
   readonly onClearSelection: () => void;
 };
 
@@ -111,7 +115,9 @@ function cameraDistanceFromScene(camera: {
 export function NexoraStageScene({
   presentation,
   environment,
+  dataObjectStage,
   onSelectSubject,
+  onSelectDataObject,
   onClearSelection,
 }: Props) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -122,7 +128,7 @@ export function NexoraStageScene({
 
   const allConnections = useMemo(
     () =>
-      [...scene.connections, ...presentation.contextConnections].map(
+      [...scene.connections, ...presentation.contextConnections, ...dataObjectStage.connections].map(
         (connection) =>
           Object.freeze({
             ...connection,
@@ -135,6 +141,7 @@ export function NexoraStageScene({
     [
       scene.connections,
       presentation.contextConnections,
+      dataObjectStage.connections,
       environment.connectionEmphasis,
     ],
   );
@@ -228,6 +235,13 @@ export function NexoraStageScene({
         mergeOcclusionPresentation(object, occlusion.byId, hoveredId),
       ),
     [hoveredId, occlusion.byId, scene.objects],
+  );
+  const connectionObjects = useMemo(
+    () => [
+      ...occludedObjects,
+      ...dataObjectStage.participants.map((entry) => entry.presentation),
+    ],
+    [dataObjectStage.participants, occludedObjects],
   );
 
   const lighting = useMemo(
@@ -452,7 +466,7 @@ export function NexoraStageScene({
 
           <NexoraStageConnections
             connections={allConnections}
-            objects={occludedObjects}
+            objects={connectionObjects}
             contextNodes={presentation.contextNodes}
           />
 
@@ -473,6 +487,14 @@ export function NexoraStageScene({
                   ? scene.presentationState
                   : "minimum"
               }
+            />
+          ))}
+
+          {dataObjectStage.participants.map((participant) => (
+            <NexoraStageDataObject
+              key={participant.dataObject.id}
+              participant={participant}
+              onSelect={onSelectDataObject}
             />
           ))}
 

@@ -196,6 +196,7 @@ export function NexoraConversationalExperience({
 
       <NexoraConversationalInput
         disabled={processing || localGuard}
+        autoFocusPending={messages[messages.length - 1]?.status === "confirmation-required"}
         onSubmit={onSubmit}
       />
     </section>

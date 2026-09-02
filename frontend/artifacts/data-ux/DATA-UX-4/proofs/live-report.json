@@ -1,0 +1,33 @@
+{
+  "identity": "DATA-UX:4/LiveManagerProof",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "focusBefore": "none",
+  "proofA": {
+    "staged": "1",
+    "focus": "none",
+    "selected": "data-source:overview:csv%3Aoverview%3Azero-object-csv",
+    "inspection": true,
+    "deletes": "false"
+  },
+  "explain": "Nexorazero-object.csv is a CSV Data Object with 1 rows and 1 fields. From zero-object.csv, I understand date: Date. There are no material semantic questions for this source.",
+  "support": "Nexorazero-object.csv has no supported executive-object relationship. Nexora will not invent one.",
+  "explainFocus": "none",
+  "proofC": {
+    "staged": "2",
+    "ids": "data-source:overview:csv%3Aoverview%3Azero-object-csv,data-source:overview:csv%3Aoverview%3Adelivery-ready-csv"
+  },
+  "afterRemove": {
+    "staged": "1",
+    "rail": false,
+    "sourceButtons": 1
+  },
+  "shots": {
+    "shotA": "/Users/bahadoors/Documents/StateStudio/frontend/artifacts/data-ux/DATA-UX-4/proofs/proof-a-zero-object.png",
+    "shotC": "/Users/bahadoors/Documents/StateStudio/frontend/artifacts/data-ux/DATA-UX-4/proofs/proof-c-multiple-sources.png",
+    "shotResponsive": "/Users/bahadoors/Documents/StateStudio/frontend/artifacts/data-ux/DATA-UX-4/proofs/proof-1024x768.png",
+    "shotF": "/Users/bahadoors/Documents/StateStudio/frontend/artifacts/data-ux/DATA-UX-4/proofs/proof-f-remove-from-stage.png"
+  },
+  "zeroPageErrors": true,
+  "ok": true
+}

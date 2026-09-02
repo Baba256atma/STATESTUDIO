@@ -276,6 +276,8 @@ export type NexoraMVPStageConnectionPresentation = {
   readonly directionCue?: "none" | "source-to-target";
   readonly lineWidth?: number;
   readonly impliesCausality?: false;
+  /** DTH:3 pattern token rendered as line style. Dashed = association, not cause. */
+  readonly linePattern?: "solid" | "dashed";
   /** STAGE-2D:4 planar readability routing — endpoints remain truthful. */
   readonly routeKind?: "straight" | "bent";
   readonly routePoints?: readonly (readonly [number, number, number])[];

@@ -372,6 +372,7 @@ function projectObjectState(
 export function projectDataRealityToExecutiveRuntime(
   snapshot: NexoraDataRealitySnapshot,
   identityBindings: readonly NexoraDataRealityStageIdentityBinding[] = NEXORA_DATA_REALITY_STAGE_IDENTITY_BINDINGS,
+  options: Readonly<{ allowEmptyProjection?: boolean }> = Object.freeze({}),
 ): NexoraDataRealityStageProjectionResult {
   const issues: NexoraDataRealityStageProjectionIssue[] = [
     ...validateDataRealityStageIdentityBindings(identityBindings),
@@ -402,7 +403,9 @@ export function projectDataRealityToExecutiveRuntime(
 
   const status =
     projections.length === 0
-      ? "invalid"
+      ? options.allowEmptyProjection && issues.length === 0
+        ? "projected"
+        : "invalid"
       : issues.length === 0
         ? "projected"
         : "partial";

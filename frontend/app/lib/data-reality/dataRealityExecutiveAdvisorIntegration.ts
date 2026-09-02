@@ -22,7 +22,10 @@ import type { DataRealityExecutiveObservationResolutionResult } from "./dataReal
 import type { DataRealityExecutiveAdvisoryResolutionResult } from "./dataRealityExecutiveAdvisoryResolution.ts";
 import type { DataRealityExecutiveAdvisorResponse } from "./dataRealityExecutiveAdvisorResponseComposition.ts";
 
-import { resolveDatasetExecutiveReality } from "./dataRealityFoundation.ts";
+import {
+  resolveDatasetExecutiveReality,
+  type NexoraDatasetExecutiveRealityResult,
+} from "./dataRealityFoundation.ts";
 import { resolveDataRealityExecutiveObservationResolution } from "./dataRealityExecutiveObservationResolution.ts";
 import { buildDataRealityAwareAdvisorContext } from "./dataRealityAwareAdvisorContextResolution.ts";
 import { resolveDataRealityExecutiveAdvisoryResolution } from "./dataRealityExecutiveAdvisoryResolution.ts";
@@ -105,6 +108,8 @@ export interface DataRealityExecutiveAdvisorTraceability {
 
 export interface ResolveDataRealityExecutiveAdvisorIntegrationInput {
   readonly dataset: NexoraDataset;
+  /** Reuse an already resolved source-scoped authority instead of recomputing workspace-wide KPI scope. */
+  readonly dataReality?: NexoraDatasetExecutiveRealityResult;
   readonly focusedObjectId?: string;
   readonly selectedObjectIds?: readonly string[];
   readonly currentWorkspace?: string;
@@ -281,7 +286,7 @@ export function resolveDataRealityExecutiveAdvisorIntegration(
   const responseMode = input.responseMode ?? "standard";
   const requestedIntent = input.requestedIntent ?? "investigate";
 
-  const p0 = resolveDatasetExecutiveReality(input.dataset, {
+  const p0 = input.dataReality ?? resolveDatasetExecutiveReality(input.dataset, {
     bindings: getExecutiveOperationsResolvedObjectBindings(),
     definitions: getExecutiveOperationsKpiDefinitions(),
     rules: getExecutiveOperationsExecutiveStateRules(),

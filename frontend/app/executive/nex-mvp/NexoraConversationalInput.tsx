@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useId, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useId, useState, type KeyboardEvent } from "react";
 import { cockpit } from "../exs1/shell/executiveCockpitTheme";
 
 type Props = {
   readonly disabled?: boolean;
   readonly placeholder?: string;
+  readonly autoFocusPending?: boolean;
   readonly onSubmit: (utterance: string) => void;
 };
 
@@ -16,10 +17,17 @@ type Props = {
 export function NexoraConversationalInput({
   disabled = false,
   placeholder = "Ask Nexora or tell it what to focus on…",
+  autoFocusPending = false,
   onSubmit,
 }: Props) {
   const [value, setValue] = useState("");
   const labelId = useId();
+
+  useEffect(() => {
+    if (!autoFocusPending || disabled) return;
+    const node = document.querySelector<HTMLTextAreaElement>('[data-testid="nexora-conversational-input-field"]');
+    node?.focus();
+  }, [autoFocusPending, disabled]);
 
   const submit = useCallback(() => {
     if (disabled) return;

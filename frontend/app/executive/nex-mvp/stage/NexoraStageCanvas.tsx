@@ -3,6 +3,7 @@
 import { Canvas } from "@react-three/fiber";
 import type { NexoraMVPStageInteractionPresentation } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import type { NexoraMVPSceneEnvironmentVisualState } from "@/app/lib/nex-mvp/nexoraMVPWorkspacePresentation";
+import type { NexoraDecisionTheatreDataObjectStageProjection } from "@/app/lib/decision-theatre/nexoraDecisionTheatreDataObjectStageProjection";
 import { resolveExecutiveStageFixedCamera } from "@/app/lib/spatial-presentation/executiveStage2DFixedCamera";
 import { shouldResetExecutiveStage2DToOverview } from "@/app/lib/spatial-presentation/executiveStage2DTopologyReadability";
 import { NexoraStageScene } from "./NexoraStageScene";
@@ -10,7 +11,9 @@ import { NexoraStageScene } from "./NexoraStageScene";
 type Props = {
   readonly presentation: NexoraMVPStageInteractionPresentation;
   readonly environment: NexoraMVPSceneEnvironmentVisualState;
+  readonly dataObjectStage: NexoraDecisionTheatreDataObjectStageProjection;
   readonly onSelectSubject: (subjectId: string) => void;
+  readonly onSelectDataObject: (dataObjectId: string) => void;
   readonly onClearSelection: () => void;
 };
 
@@ -20,7 +23,9 @@ type Props = {
 export function NexoraStageCanvas({
   presentation,
   environment,
+  dataObjectStage,
   onSelectSubject,
+  onSelectDataObject,
   onClearSelection,
 }: Props) {
   // STAGE-2D:1 — seed Canvas from the fixed camera; ignore presentation variance.
@@ -69,7 +74,9 @@ export function NexoraStageCanvas({
       <NexoraStageScene
         presentation={presentation}
         environment={environment}
+        dataObjectStage={dataObjectStage}
         onSelectSubject={onSelectSubject}
+        onSelectDataObject={onSelectDataObject}
         onClearSelection={onClearSelection}
       />
     </Canvas>

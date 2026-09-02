@@ -73,6 +73,7 @@ type Props = {
   readonly advisorRealityBinding?: DataRealityAwareAdvisorBindingResult;
   /** RDI:3 structured canonical source/comparison evidence for Advisor. */
   readonly sourceIntelligenceContext?: ExecutiveSourceAdvisorContext | null;
+  readonly onReturnToDataSource?: () => void;
   /** True only when an explicit validated RDI dataset is active. */
   readonly validatedDataSource?: boolean;
   /** PM:4 — explicit user follow-up through the existing Advisor context. */
@@ -152,6 +153,7 @@ export function NexoraAdvisorInsightRegion({
   advisorRealityBinding,
   validatedDataSource = false,
   sourceIntelligenceContext = null,
+  onReturnToDataSource,
   onProactiveInvestigate,
   onProactiveViewOnStage,
   conversationalMessages = Object.freeze([]),
@@ -500,8 +502,28 @@ export function NexoraAdvisorInsightRegion({
                   {sourceIntelligenceContext.summary}
                 </p>
                 <p style={{ margin: "0.32rem 0 0", color: cockpit.lowMuted, fontSize: "0.56rem", overflowWrap: "anywhere" }}>
-                  {sourceIntelligenceContext.sourceIds.length} source{sourceIntelligenceContext.sourceIds.length === 1 ? "" : "s"} · current facts override history
+                  {sourceIntelligenceContext.sourceIds.length} source{sourceIntelligenceContext.sourceIds.length === 1 ? "" : "s"}
                 </p>
+                {onReturnToDataSource ? (
+                  <button
+                    type="button"
+                    data-testid="nexora-data-source-return"
+                    onClick={onReturnToDataSource}
+                    style={{
+                      marginTop: "0.4rem",
+                      border: `1px solid ${cockpit.border}`,
+                      borderRadius: cockpit.radius.sm,
+                      background: "transparent",
+                      color: cockpit.accent,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      fontSize: "0.6rem",
+                      padding: "0.28rem 0.4rem",
+                    }}
+                  >
+                    Back to {sourceIntelligenceContext.title}
+                  </button>
+                ) : null}
               </details>
             ) : null}
 

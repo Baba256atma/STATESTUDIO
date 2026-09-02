@@ -27,6 +27,9 @@ import type {
   NexoraDatasetScenario,
 } from "./dataRealityContracts.ts";
 import {
+  buildDataRealitySnapshot,
+  computeDatasetKPIReality,
+  normalizeDatasetToBusinessFacts,
   resolveDatasetExecutiveReality,
   type NexoraDatasetExecutiveRealityResult,
 } from "./dataRealityFoundation.ts";
@@ -124,6 +127,43 @@ export type CsvColumnMapping = Readonly<{
   confirmed: boolean;
   ignored: boolean;
   reason: string;
+  /** DATA-UX:3 enrichment on the authoritative RDI field mapping; never Evidence. */
+  semantic?: CsvFieldSemanticUnderstanding;
+}>;
+
+export const CSV_SEMANTIC_STATES = Object.freeze([
+  "UNDERSTOOD",
+  "LIKELY",
+  "AMBIGUOUS",
+  "UNKNOWN",
+  "CONFLICTING",
+] as const);
+export type CsvSemanticState = (typeof CSV_SEMANTIC_STATES)[number];
+export type CsvSemanticConfirmationSource =
+  | "authoritative-mapping"
+  | "manager"
+  | "none";
+export type CsvStructuralDataType = "number" | "text" | "date" | "mixed" | "empty";
+
+export type CsvFieldSemanticUnderstanding = Readonly<{
+  fieldId: string;
+  workspaceId: WorkspaceId;
+  sourceContextId: string;
+  sourceColumn: string;
+  structuralType: CsvStructuralDataType;
+  representativeValues: readonly string[];
+  state: CsvSemanticState;
+  proposedMeaning: string | null;
+  confirmedMeaning: string | null;
+  confirmedTargetId: string | null;
+  confirmationSource: CsvSemanticConfirmationSource;
+  unit: string | null;
+  material: boolean;
+  unresolvedReason: string | null;
+  interpretationBasis: readonly string[];
+  priorMeaning: string | null;
+  schemaCompatibility: "new" | "compatible" | "renamed" | "datatype-changed" | "unit-changed" | "context-changed";
+  authority: typeof csvRealDataVerticalSliceIdentity;
 }>;
 
 export type CsvMappingReview = Readonly<{
@@ -183,6 +223,14 @@ function freezeIssue(issue: CsvParseIssue): CsvParseIssue {
 function normalizeColumnName(value: string): string {
   return value.trim().toLowerCase().replace(/[%]/g, " percent ")
     .replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+export function csvCanonicalSourceContextId(
+  workspaceId: WorkspaceId,
+  fileName: string,
+  explicitSourceContextId?: string,
+): string {
+  return explicitSourceContextId ?? `csv:${workspaceId}:${normalizeColumnName(fileName).replace(/ /g, "-")}`;
 }
 
 function parseCell(raw: string): CsvCellValue {
@@ -315,10 +363,10 @@ export function suggestCsvColumnMappings(columns: readonly ParsedCsvColumn[], im
     const unsupported = /^(id|name|description|notes?|comment|orders?)$/.test(column.normalizedName);
     return Object.freeze({ columnIndex: column.index, sourceColumn: column.name, status: unsupported ? "unsupported" : "unmapped", targetId: null, targetLabel: null, confirmed: false, ignored: false, reason: unsupported ? "No existing executive fact owns this column." : "No deterministic Data Reality meaning was found." });
   });
-  return buildMappingReview(`rdi2:mapping:${importId}`, mappings);
+  return buildCsvMappingReview(`rdi2:mapping:${importId}`, mappings);
 }
 
-function buildMappingReview(mappingId: string, mappings: readonly CsvColumnMapping[]): CsvMappingReview {
+export function buildCsvMappingReview(mappingId: string, mappings: readonly CsvColumnMapping[]): CsvMappingReview {
   const frozen = Object.freeze(mappings.map((entry) => Object.freeze({ ...entry })));
   const unresolvedCount = frozen.filter((entry) => !entry.ignored && (!entry.targetId || !entry.confirmed)).length;
   return Object.freeze({
@@ -340,15 +388,39 @@ export function updateCsvColumnMapping(
   const target = targetId ? CSV_MAPPING_TARGETS.find((entry) => entry.targetId === targetId) ?? null : null;
   const mappings = review.mappings.map((entry): CsvColumnMapping => {
     if (entry.columnIndex !== columnIndex) return entry;
-    if (!target) return Object.freeze({ ...entry, targetId: null, targetLabel: null, confirmed: true, ignored: true, reason: "Ignored by user." });
-    return Object.freeze({ ...entry, targetId: target.targetId, targetLabel: target.label, confirmed: true, ignored: false, status: entry.targetId === target.targetId ? entry.status : "suggested", reason: "Confirmed by user." });
+    if (!target) return Object.freeze({
+      ...entry,
+      targetId: null,
+      targetLabel: null,
+      confirmed: true,
+      ignored: true,
+      reason: "Ignored by user.",
+      ...(entry.semantic ? { semantic: Object.freeze({ ...entry.semantic, material: false, unresolvedReason: null }) } : {}),
+    });
+    return Object.freeze({
+      ...entry,
+      targetId: target.targetId,
+      targetLabel: target.label,
+      confirmed: true,
+      ignored: false,
+      status: entry.targetId === target.targetId ? entry.status : "suggested",
+      reason: "Confirmed by user.",
+      ...(entry.semantic ? { semantic: Object.freeze({
+        ...entry.semantic,
+        state: "UNDERSTOOD" as const,
+        confirmedMeaning: target.label,
+        confirmedTargetId: target.targetId,
+        confirmationSource: "manager" as const,
+        unresolvedReason: null,
+      }) } : {}),
+    });
   });
-  return buildMappingReview(review.mappingId, mappings);
+  return buildCsvMappingReview(review.mappingId, mappings);
 }
 
 function provenance(input: CsvVerticalSliceInput, recordId: string | null, fieldKey: string | null, transformationRef: string | null): NexoraDataSourceProvenance {
   return Object.freeze({
-    sourceId: input.sourceContextId ?? `csv:${input.workspaceId}:${normalizeColumnName(input.fileName).replace(/ /g, "-")}`,
+    sourceId: csvCanonicalSourceContextId(input.workspaceId, input.fileName, input.sourceContextId),
     sourceType: "csv",
     providerName: "local-csv",
     sourceRecordId: recordId,
@@ -378,7 +450,7 @@ function parsedRecordsToSourceRecords(input: CsvVerticalSliceInput, parsed: CsvP
 }
 
 function buildCsvSource(input: CsvVerticalSliceInput): NexoraDataSource {
-  const sourceId = input.sourceContextId ?? `csv:${input.workspaceId}:${normalizeColumnName(input.fileName).replace(/ /g, "-")}`;
+  const sourceId = csvCanonicalSourceContextId(input.workspaceId, input.fileName, input.sourceContextId);
   return Object.freeze({
     identity: Object.freeze({ sourceId, sourceType: "csv", workspaceId: input.workspaceId, providerName: "local-csv", connectionId: input.importId, observedAt: input.observedAt ?? input.importedAt, schemaVersion: "rdi2.csv.v1" }),
     metadata: Object.freeze({ displayName: input.fileName, description: "Locally imported CSV", configurationRef: input.importId, tags: Object.freeze(["csv", "local", "rdi2"]) }),
@@ -437,7 +509,66 @@ function buildMapper(input: CsvVerticalSliceInput, parsed: CsvParseResult, mappi
 }
 
 function failure(input: CsvVerticalSliceInput, parse: CsvParseResult, mapping: CsvMappingReview, errors: readonly string[], snapshot: NexoraDataSourceSnapshot | null = null): CsvPreparedImport {
-  return Object.freeze({ ready: false, workspaceId: input.workspaceId, sourceContextId: input.sourceContextId ?? `csv:${input.workspaceId}:${normalizeColumnName(input.fileName).replace(/ /g, "-")}`, importId: input.importId, fileName: input.fileName, fileSize: input.fileSize, parse, mapping, snapshot, handoff: null, dataReality: null, runtime: null, advisor: null, summary: null, errors: Object.freeze([...errors]) });
+  return Object.freeze({ ready: false, workspaceId: input.workspaceId, sourceContextId: csvCanonicalSourceContextId(input.workspaceId, input.fileName, input.sourceContextId), importId: input.importId, fileName: input.fileName, fileSize: input.fileSize, parse, mapping, snapshot, handoff: null, dataReality: null, runtime: null, advisor: null, summary: null, errors: Object.freeze([...errors]) });
+}
+
+function resolveSourceScopedExecutiveReality(
+  dataset: NexoraDataset,
+  mapping: CsvMappingReview,
+  createdAt: string,
+): NexoraDatasetExecutiveRealityResult {
+  const objectKeys = new Set(
+    mapping.mappings.flatMap((entry) => {
+      if (!entry.confirmed || entry.ignored || !entry.targetId) return [];
+      const target = CSV_MAPPING_TARGETS.find((candidate) => candidate.targetId === entry.targetId);
+      return target?.objectKey ? [target.objectKey] : [];
+    }),
+  );
+  const definitions = getExecutiveOperationsKpiDefinitions().filter((definition) =>
+    objectKeys.has(definition.objectKey),
+  );
+  const bindings = getExecutiveOperationsResolvedObjectBindings().filter((binding) =>
+    objectKeys.has(binding.objectKey),
+  );
+  const definitionIds = new Set(definitions.map((definition) => definition.id));
+  const rules = getExecutiveOperationsExecutiveStateRules().filter((rule) =>
+    definitionIds.has(rule.kpiId),
+  );
+
+  if (definitions.length > 0) {
+    return resolveDatasetExecutiveReality(dataset, {
+      bindings,
+      definitions,
+      rules,
+      createdAt,
+    });
+  }
+
+  const facts = normalizeDatasetToBusinessFacts(dataset);
+  const binding = computeDatasetKPIReality(dataset, {
+    bindings,
+    definitions,
+    calculatedAt: createdAt,
+  });
+  const snapshot = buildDataRealitySnapshot({
+    datasetId: dataset.id,
+    facts,
+    kpis: Object.freeze([]),
+    objectStates: Object.freeze([]),
+    createdAt,
+  });
+  return Object.freeze({
+    status: "partial" as const,
+    datasetId: dataset.id,
+    facts,
+    boundFacts: binding.boundFacts,
+    kpis: Object.freeze([]),
+    objectStates: Object.freeze([]),
+    bindingIssues: binding.bindingIssues,
+    kpiIssues: Object.freeze([]),
+    stateIssues: Object.freeze([]),
+    snapshot,
+  });
 }
 
 export function prepareCsvRealDataImport(input: CsvVerticalSliceInput, mappingOverride?: CsvMappingReview): CsvPreparedImport {
@@ -460,20 +591,20 @@ export function prepareCsvRealDataImport(input: CsvVerticalSliceInput, mappingOv
   const handoffResult = createNexoraDataRealityHandoff(adapterResult.snapshot, buildMapper(input, parse, mapping), input.workspaceId);
   if (!handoffResult.ready) return failure(input, parse, mapping, handoffResult.validation.issues.map((entry) => entry.message), adapterResult.snapshot);
   const handoff = handoffResult.handoff;
-  const dataReality = resolveDatasetExecutiveReality(handoff.dataset, {
-    bindings: getExecutiveOperationsResolvedObjectBindings(),
-    definitions: getExecutiveOperationsKpiDefinitions(),
-    rules: getExecutiveOperationsExecutiveStateRules(),
-    createdAt: input.importedAt,
-  });
-  if (dataReality.status === "invalid" || dataReality.objectStates.length === 0) {
+  const dataReality = resolveSourceScopedExecutiveReality(handoff.dataset, mapping, input.importedAt);
+  if (dataReality.status === "invalid") {
     const issues = [...dataReality.bindingIssues, ...dataReality.kpiIssues, ...dataReality.stateIssues];
     return failure(input, parse, mapping, issues.length ? issues.map((entry) => entry.message) : ["The mapped columns do not yet produce an executive KPI."], adapterResult.snapshot);
   }
-  const runtime = projectDataRealityToExecutiveRuntime(dataReality.snapshot);
+  const runtime = projectDataRealityToExecutiveRuntime(
+    dataReality.snapshot,
+    undefined,
+    { allowEmptyProjection: true },
+  );
   if (runtime.status === "invalid") return failure(input, parse, mapping, runtime.issues.map((entry) => entry.message), adapterResult.snapshot);
   const advisor = resolveDataRealityExecutiveAdvisorIntegration({
     dataset: handoff.dataset,
+    dataReality,
     currentWorkspace: input.workspaceId,
   });
   const states = dataReality.objectStates;

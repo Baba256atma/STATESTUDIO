@@ -1,0 +1,16 @@
+{
+  "identity": "NXA:6-PREP/LiveExecutiveSmoke",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "knowledgeUnchangedFocus": true,
+  "collectionReply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+  "stage": {
+    "focused": "none",
+    "mode": "collection",
+    "category": "problem",
+    "visible": 2
+  },
+  "zeroPageErrors": true,
+  "ok": true
+}
+

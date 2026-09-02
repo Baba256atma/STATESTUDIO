@@ -10,12 +10,14 @@ export const nexoraDecisionTheatreVisualLanguageVersion = "1.0.0" as const;
 export const NEXORA_DECISION_THEATRE_VISUAL_FAMILIES = Object.freeze([
   "EXECUTIVE_OBJECT",
   "ICONIC_OBJECT",
+  "DATA_OBJECT",
 ] as const);
 
 export type NexoraDecisionTheatreVisualFamily =
   (typeof NEXORA_DECISION_THEATRE_VISUAL_FAMILIES)[number];
 
 export const NEXORA_DECISION_THEATRE_ICONIC_ID_PREFIX = "dth2-iconic:" as const;
+export const NEXORA_DECISION_THEATRE_DATA_ID_PREFIX = "data-source:" as const;
 
 export type NexoraDecisionTheatreCanonicalObjectType =
   | "manager"
@@ -94,6 +96,9 @@ export function classifyNexoraDecisionTheatreVisualFamily(input: {
   readonly id: string;
   readonly kind?: string;
 }): NexoraDecisionTheatreVisualFamily {
+  if (input.id.startsWith(NEXORA_DECISION_THEATRE_DATA_ID_PREFIX)) {
+    return "DATA_OBJECT";
+  }
   if (isNexoraDecisionTheatreIconicPresentationId(input.id)) {
     return "ICONIC_OBJECT";
   }

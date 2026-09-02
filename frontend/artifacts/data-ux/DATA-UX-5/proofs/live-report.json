@@ -1,0 +1,36 @@
+{
+  "identity": "DATA-UX:5/LiveManagerProof",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "stagedBefore": "1",
+  "explain": "Nexorazero-object.csv is not currently supplying any Executive Objects. Historical records of this source are kept. Removing it requires an explicit confirmation in Data. Open Data and confirm Remove data source if you still want to proceed.",
+  "removeAsk": "Nexorazero-object.csv is not currently supplying any Executive Objects. Historical records of this source are kept. Removing it requires an explicit confirmation in Data. Open Data and confirm Remove data source if you still want to proceed.",
+  "afterAsk": {
+    "review": true,
+    "impact": "NO_EXECUTIVE_IMPACT",
+    "staged": "1",
+    "source": true
+  },
+  "afterCancel": {
+    "review": false,
+    "staged": "1"
+  },
+  "afterStageRemove": {
+    "staged": "0",
+    "focus": "none"
+  },
+  "afterConfirm": {
+    "staged": "0",
+    "selected": "none",
+    "empty": true,
+    "focus": "none"
+  },
+  "dependentImpact": "DEPENDENT_DATA_BECOMES_UNAVAILABLE",
+  "shots": {
+    "shotReview": "/Users/bahadoors/Documents/StateStudio/frontend/artifacts/data-ux/DATA-UX-5/proofs/proof-e-review.png",
+    "shotRemoved": "/Users/bahadoors/Documents/StateStudio/frontend/artifacts/data-ux/DATA-UX-5/proofs/proof-a-removed.png",
+    "shotDependent": "/Users/bahadoors/Documents/StateStudio/frontend/artifacts/data-ux/DATA-UX-5/proofs/proof-b-dependent-review.png"
+  },
+  "zeroPageErrors": true,
+  "ok": true
+}

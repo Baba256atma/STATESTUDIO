@@ -1,0 +1,221 @@
+{
+  "ok": true,
+  "flowAOpen": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "0",
+    "pending": "1",
+    "empty": false,
+    "pendingRow": "otd-clarification.csv",
+    "pendingStatus": "Pending",
+    "review": true,
+    "reviewState": "preview",
+    "filenames": [
+      "otd-clarification.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "",
+    "columns": false,
+    "preview": false
+  },
+  "flowAClosed": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "0",
+    "pending": "1",
+    "empty": false,
+    "pendingRow": "otd-clarification.csv",
+    "pendingStatus": "Pending",
+    "review": false,
+    "reviewState": null,
+    "filenames": [
+      "otd-clarification.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "",
+    "columns": false,
+    "preview": false
+  },
+  "flowAResume": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "0",
+    "pending": "1",
+    "empty": false,
+    "pendingRow": "otd-clarification.csv",
+    "pendingStatus": "Pending",
+    "review": true,
+    "reviewState": "preview",
+    "filenames": [
+      "otd-clarification.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "",
+    "columns": false,
+    "preview": false
+  },
+  "dataClosed": false,
+  "flowB": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "0",
+    "pending": "1",
+    "empty": false,
+    "pendingRow": "otd-clarification.csv",
+    "pendingStatus": "Pending",
+    "review": false,
+    "reviewState": null,
+    "filenames": [
+      "otd-clarification.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "",
+    "columns": false,
+    "preview": false
+  },
+  "flowC": {
+    "open": true,
+    "total": "1",
+    "csv": "0",
+    "committed": "0",
+    "pending": "0",
+    "empty": true,
+    "pendingRow": null,
+    "pendingStatus": null,
+    "review": false,
+    "reviewState": null,
+    "filenames": [],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "",
+    "columns": false,
+    "preview": false
+  },
+  "flowD": {
+    "pending": "1",
+    "committed": "0",
+    "alert": "",
+    "use": false
+  },
+  "flowE": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "1",
+    "pending": "0",
+    "empty": false,
+    "pendingRow": null,
+    "pendingStatus": null,
+    "review": false,
+    "reviewState": null,
+    "filenames": [
+      "delivery_2026.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue.",
+    "columns": true,
+    "preview": true
+  },
+  "afterCloseCommitted": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "1",
+    "pending": "0",
+    "empty": false,
+    "pendingRow": null,
+    "pendingStatus": null,
+    "review": false,
+    "reviewState": null,
+    "filenames": [
+      "delivery_2026.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "",
+    "columns": false,
+    "preview": false
+  },
+  "flowF": {
+    "open": true,
+    "total": "2",
+    "csv": "1",
+    "committed": "1",
+    "pending": "0",
+    "empty": false,
+    "pendingRow": null,
+    "pendingStatus": null,
+    "review": false,
+    "reviewState": null,
+    "filenames": [
+      "delivery_2026.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue.",
+    "columns": true,
+    "preview": true
+  },
+  "flowG": {
+    "open": true,
+    "total": "3",
+    "csv": "2",
+    "committed": "2",
+    "pending": "0",
+    "empty": false,
+    "pendingRow": null,
+    "pendingStatus": null,
+    "review": false,
+    "reviewState": null,
+    "filenames": [
+      "capacity.csv",
+      "delivery_2026.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue.",
+    "columns": true,
+    "preview": true
+  },
+  "flowH": {
+    "open": true,
+    "total": "3",
+    "csv": "2",
+    "committed": "2",
+    "pending": "0",
+    "empty": false,
+    "pendingRow": null,
+    "pendingStatus": null,
+    "review": false,
+    "reviewState": null,
+    "filenames": [
+      "capacity.csv",
+      "delivery_2026.csv"
+    ],
+    "connectedKinds": [
+      "Engineering SourceConnectedCapacity · Customer"
+    ],
+    "about": "Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue.",
+    "columns": true,
+    "preview": true
+  },
+  "pageErrors": []
+}
