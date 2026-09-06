@@ -257,11 +257,23 @@ const COLLECTION_ELIGIBLE = new Set([
   "opportunity",
 ]);
 
+function catalogProvenanceOf(
+  catalog: NexoraMVPObjectInteractionCatalog,
+  objectId: string,
+): NexoraDecisionTheatreExecutiveObject["catalogProvenance"] {
+  return (
+    catalog.objects.find((entry) => entry.id === objectId)?.catalogProvenance ??
+    catalog.contextSubjects.find((entry) => entry.id === objectId)?.catalogProvenance ??
+    null
+  );
+}
+
 function mapObject(
   object: NexoraMVPStageObjectPresentation,
   focusedId: string | null,
   selectedId: string | null,
   presentationLevel: string,
+  catalogProvenance: NexoraDecisionTheatreExecutiveObject["catalogProvenance"],
 ): Omit<NexoraDecisionTheatreExecutiveObject, "presenceReason" | "semanticRelationshipIds"> {
   const visibility = visibilityOf(object);
   const canonicalObjectType = resolveCanonicalExecutiveObjectType({
@@ -289,6 +301,7 @@ function mapObject(
     stageNavigationEligible: true,
     collectionEligible: COLLECTION_ELIGIBLE.has(canonicalObjectType) || COLLECTION_ELIGIBLE.has(object.kind),
     rendererPresentationIdentity: object.id,
+    catalogProvenance,
   };
 }
 
@@ -312,7 +325,13 @@ export function projectNexoraDecisionTheatreFoundation(
     .slice()
     .sort((left, right) => left.id.localeCompare(right.id))
     .map((object) => {
-      const base = mapObject(object, focusedId, selectedId, input.stageState.presentationState);
+      const base = mapObject(
+        object,
+        focusedId,
+        selectedId,
+        input.stageState.presentationState,
+        catalogProvenanceOf(catalog, object.id),
+      );
       return {
         ...base,
         presenceReason: presenceReason(

@@ -113,6 +113,7 @@ export type ExecutiveStageDisclosureReason =
   | "direct-related"
   | "overview-goal"
   | "overview-executive-context"
+  | "overview-current-scene"
   | "watch-attention"
   | "watch-critical"
   | "watch-recommended"
@@ -380,6 +381,13 @@ export type ResolveExecutiveStageDisclosureInput = {
   readonly presentationDepth?: ExecutiveFocusPresentationDepth;
   readonly primaryStageSubjectId?: string | null;
   readonly executiveContextObjectId?: string | null;
+  /**
+   * Overview occupancy of the currently presented catalog/scene.
+   * Default remains executive-workspace (context + goals + watch).
+   * `current-catalog` preserves the active scene's objects when Overview
+   * is requested without an executive-context center.
+   */
+  readonly overviewOccupancy?: "executive-workspace" | "current-catalog";
   /** Collection context — presentation only; not a semantic Object. */
   readonly collectionCategory?: ExecutiveQueueCategory | "changes-since-visit" | null;
   readonly collectionObjectIds?: readonly string[];
@@ -943,6 +951,26 @@ export function resolveExecutiveStageDisclosure(
       }
     }
   } else if (input.presentationMode === "overview") {
+    if (input.overviewOccupancy === "current-catalog") {
+      const homeId =
+        (input.executiveContextObjectId != null &&
+        subjectsById.has(input.executiveContextObjectId)
+          ? input.executiveContextObjectId
+          : null) ??
+        (input.primaryStageSubjectId != null &&
+        subjectsById.has(input.primaryStageSubjectId)
+          ? input.primaryStageSubjectId
+          : null) ??
+        (input.subjects[0]?.subjectId ?? null);
+      primaryStageSubjectId = homeId;
+      if (homeId != null) {
+        mark(homeId, "center", "overview-current-scene");
+      }
+      for (const subject of input.subjects) {
+        if (subject.subjectId === homeId) continue;
+        mark(subject.subjectId, "related", "overview-current-scene");
+      }
+    } else {
     const contextId =
       input.executiveContextObjectId != null &&
       subjectsById.has(input.executiveContextObjectId)
@@ -999,6 +1027,7 @@ export function resolveExecutiveStageDisclosure(
         // Executive-work stays in Queue summary — not Stage topology in overview.
         mark(subject.subjectId, "hidden", "hidden-unrelated");
       }
+    }
     }
   } else {
     // object-focus

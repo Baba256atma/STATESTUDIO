@@ -227,3 +227,32 @@ test("DATA-ADV:1 restore, project fixtures, unknown, and correction stay source-
   const otherAsk = answerAdvisorDataInquiry({ workspaceId: "overview", utterance: "What is ORD_QTY?" });
   assert.match(otherAsk?.text ?? "", /Which source|orders\.csv and other\.csv/i);
 });
+
+test("DATA-ADV:2 Advisor presents ambiguity, grounded why, unknown, correction, and source isolation", () => {
+  resetCsvRealDataImportStoreForTests();
+  const review = mappingFor("production.csv", ambiguous);
+  savePending("production.csv", ambiguous, review);
+  const cap = answerAdvisorDataInquiry({ workspaceId: "overview", utterance: "What is CAP_AV?" });
+  assert.match(cap?.text ?? "", /Available Capacity or Capacity Availability/i);
+  assert.match(cap?.text ?? "", /Which meaning is correct/i);
+  assert.ok(cap?.clarification);
+  const why = answerAdvisorDataInquiry({ workspaceId: "overview", utterance: "Why do you think that?", dialogue: cap?.dialogue });
+  assert.match(why?.text ?? "", /term structure/i);
+  assert.match(why?.text ?? "", /evidence, not confirmation/i);
+  const opaque = answerAdvisorDataInquiry({ workspaceId: "overview", utterance: "What is BKL?" });
+  assert.match(opaque?.text ?? "", /don't have enough information/i);
+
+  const fieldId = review.mappings.find((entry) => entry.sourceColumn === "CAP_AV")!.semantic!.fieldId;
+  const corrected = applyAdvisorDataSemanticClarification("overview", csvImportCandidateId("overview", "production.csv"), fieldId, "No, it means Capacity Availability.");
+  assert.equal(corrected.resolved, true);
+  const now = answerAdvisorDataInquiry({ workspaceId: "overview", utterance: "What is CAP_AV?" });
+  assert.match(now?.text ?? "", /means Capacity Availability/i);
+  assert.match(now?.text ?? "", /confirmed for this source/i);
+
+  savePending("finance.csv", "AV,BUDGET\n12,14", mappingFor("finance.csv", "AV,BUDGET\n12,14"));
+  const both = answerAdvisorDataInquiry({ workspaceId: "overview", utterance: "What is CAP_AV?" });
+  assert.match(both?.text ?? "", /Capacity Availability/i);
+  const av = answerAdvisorDataInquiry({ workspaceId: "overview", utterance: "What is AV?" });
+  assert.match(av?.text ?? "", /Actual Value/i);
+  assert.doesNotMatch(av?.text ?? "", /confirmed for this source/i);
+});

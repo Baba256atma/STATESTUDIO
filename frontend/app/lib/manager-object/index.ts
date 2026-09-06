@@ -202,6 +202,8 @@ export {
   verifyNexoraNca1,
   interpretNcaTurn,
   refineOperationForManagerNeed,
+  isManagerPresenceNeed,
+  isManagerRelevanceNeed,
   NEXORA_NCA1_BOUNDARY,
   NCA1_REFERENCE_PRECEDENCE,
 } from "./nexoraNca1ConversationArchitecture.ts";

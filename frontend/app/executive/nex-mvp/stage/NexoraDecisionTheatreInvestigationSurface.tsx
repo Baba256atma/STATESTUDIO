@@ -20,6 +20,15 @@ export function NexoraDecisionTheatreInvestigationSurface({
 }: Props) {
   const showUnderstand = investigation.level === "understand" || investigation.level === "investigate";
   const showInvestigate = investigation.level === "investigate";
+  const canDeepen =
+    investigation.evidenceApplicability === "APPLICABLE" ||
+    investigation.relationshipApplicability === "APPLICABLE";
+  const headerKind =
+    investigation.presentationRole === "EDUCATIONAL_ACTOR"
+      ? "In this experience"
+      : investigation.educationalExample
+        ? "Educational example"
+        : investigation.canonicalObjectType.replace(/-/g, " ");
   return (
     <aside
       data-testid="nexora-theatre-investigation"
@@ -27,6 +36,10 @@ export function NexoraDecisionTheatreInvestigationSurface({
       data-theatre-investigation-object-type={investigation.canonicalObjectType}
       data-theatre-investigation-level={investigation.level}
       data-theatre-investigation-open="true"
+      data-nex-stage-card-role={investigation.presentationRole}
+      data-nex-stage-card-status-source={investigation.statusSource}
+      data-nex-stage-card-evidence={investigation.evidenceApplicability}
+      data-nex-stage-card-relationships={investigation.relationshipApplicability}
       aria-label={`${investigation.managerReadableName} investigation`}
       style={{
         position: "absolute",
@@ -52,7 +65,7 @@ export function NexoraDecisionTheatreInvestigationSurface({
       <header style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "flex-start" }}>
         <div>
           <div style={{ fontSize: typeScale.status.size, fontWeight: typeScale.status.weight, color: cockpit.muted, textTransform: "uppercase", letterSpacing: typeScale.status.tracking }}>
-            {investigation.canonicalObjectType.replace(/-/g, " ")}
+            {headerKind}
           </div>
           <div style={{ fontSize: typeScale.cardTitle.size, fontWeight: typeScale.cardTitle.weight, color: cockpit.text }}>
             {investigation.managerReadableName}
@@ -74,12 +87,20 @@ export function NexoraDecisionTheatreInvestigationSurface({
         </button>
       </header>
       <p style={{ fontSize: typeScale.body.size, color: cockpit.textSoft, margin: 0 }}>{investigation.glance.identity}</p>
-      <p style={{ fontSize: typeScale.body.size, color: cockpit.textSoft, margin: 0 }}>{investigation.glance.state}</p>
-      <p style={{ fontSize: typeScale.body.size, color: cockpit.muted, margin: 0 }}>{investigation.glance.whyRelevant}</p>
+      {investigation.glance.state ? (
+        <p style={{ fontSize: typeScale.body.size, color: cockpit.textSoft, margin: 0 }}>{investigation.glance.state}</p>
+      ) : null}
+      {investigation.glance.whyRelevant ? (
+        <p style={{ fontSize: typeScale.body.size, color: cockpit.muted, margin: 0 }}>{investigation.glance.whyRelevant}</p>
+      ) : null}
       {showUnderstand ? (
         <div style={{ overflow: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-          <p style={{ fontSize: typeScale.body.size, margin: 0 }}>{investigation.advisorReadable.evidence}</p>
-          <p style={{ fontSize: typeScale.body.size, margin: 0, color: cockpit.muted }}>{investigation.advisorReadable.related}</p>
+          {investigation.advisorReadable.evidence ? (
+            <p style={{ fontSize: typeScale.body.size, margin: 0 }}>{investigation.advisorReadable.evidence}</p>
+          ) : null}
+          {investigation.advisorReadable.related ? (
+            <p style={{ fontSize: typeScale.body.size, margin: 0, color: cockpit.muted }}>{investigation.advisorReadable.related}</p>
+          ) : null}
           {investigation.relatedDecision ? (
             <p style={{ ...typeScale.body, margin: 0 }}>Decision relevance: {investigation.relatedDecision.label}.</p>
           ) : null}
@@ -94,11 +115,13 @@ export function NexoraDecisionTheatreInvestigationSurface({
           ))}
           {investigation.cost ? <div style={{ fontSize: typeScale.caption.size }}>Cost: {investigation.cost}</div> : null}
           {investigation.time ? <div style={{ fontSize: typeScale.caption.size }}>Time: {investigation.time}</div> : null}
-          <p style={{ fontSize: typeScale.caption.size, color: cockpit.warning, margin: "0.35rem 0 0" }}>{investigation.uncertainty}</p>
+          {investigation.uncertainty ? (
+            <p style={{ fontSize: typeScale.caption.size, color: cockpit.warning, margin: "0.35rem 0 0" }}>{investigation.uncertainty}</p>
+          ) : null}
         </div>
       ) : null}
       <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
-        {investigation.level === "glance" ? (
+        {investigation.level === "glance" && canDeepen ? (
           <button
             type="button"
             data-testid="nexora-theatre-investigation-understand"
@@ -108,7 +131,7 @@ export function NexoraDecisionTheatreInvestigationSurface({
             Understand
           </button>
         ) : null}
-        {investigation.level === "understand" ? (
+        {investigation.level === "understand" && canDeepen ? (
           <button
             type="button"
             data-testid="nexora-theatre-investigation-deeper"

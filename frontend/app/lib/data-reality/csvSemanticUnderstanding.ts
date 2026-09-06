@@ -19,6 +19,8 @@ import {
   type CsvVerticalSliceInput,
 } from "./csvRealDataVerticalSlice.ts";
 
+export type { CsvMappingReview };
+
 export type CsvSemanticClarification = Readonly<{
   fieldId: string;
   sourceColumn: string;

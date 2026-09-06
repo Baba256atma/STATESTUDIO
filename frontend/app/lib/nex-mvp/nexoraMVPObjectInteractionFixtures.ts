@@ -17,6 +17,8 @@ export type NexoraMVPContextSubjectFixture = {
   readonly kind: NexoraMVPContextSubjectKind;
   readonly status: "stable" | "watch" | "risk";
   readonly attention: "normal" | "elevated" | "important" | "critical";
+  /** Catalog presentation provenance. Not manager/business semantic state. */
+  readonly catalogProvenance?: "entrance-education" | "object-education";
 };
 
 export type NexoraMVPContextLinkFixture = {

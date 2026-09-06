@@ -66,6 +66,12 @@ import {
   shouldNexoraEntranceOwnUtterance,
 } from "@/app/lib/nexora-entrance/nexoraEntranceExperience.ts";
 import type { NexoraEntranceSession } from "@/app/lib/nexora-entrance/nexoraEntranceTypes.ts";
+import { conversationMoveDiagnosticsOf } from "@/app/lib/nexora-conversation/nexoraConversationDiagnostics.ts";
+import { conversationThreadDiagnosticsOf } from "@/app/lib/nexora-conversation/nexoraConversationThreadDiagnostics.ts";
+import {
+  resolveNexoraGuidedEntranceTurn,
+  shouldNexoraGuidedEntranceOwnUtterance,
+} from "@/app/lib/nexora-entrance/nexoraGuidedEntranceExperience.ts";
 import { shouldNexoraExecutionPlanningOwnUtterance } from "@/app/lib/nexora-entrance/nexoraExecutionPlanning.ts";
 import { shouldNexoraOutcomeMonitoringOwnUtterance } from "@/app/lib/nexora-entrance/nexoraOutcomeMonitoring.ts";
 import { shouldNexoraLearningReassessmentOwnUtterance } from "@/app/lib/nexora-entrance/nexoraLearningReassessment.ts";
@@ -213,6 +219,13 @@ import {
   type PendingPresentationConsent,
 } from "@/app/lib/manager-object/nexoraNxa5Fix4StageContextIntelligence.ts";
 import {
+  composeEcaWorkingConversationContext,
+  isEcaMutationCancellation,
+  isEcaMutationConfirmation,
+  type EcaStageContext,
+} from "@/app/lib/nexora-conversation/ecaWorkingConversationContext.ts";
+import { handoffEcaRiskMutation } from "@/app/lib/nexora-conversation/ecaRiskMutationHandoff.ts";
+import {
   applyNca3StrategyToResponse,
   buildNca3ComparisonCriterionClarification,
   buildNca3ComparisonSubjectClarification,
@@ -261,6 +274,25 @@ import {
 } from "@/app/lib/manager-object/nexoraNxa5ExecutiveJudgment.ts";
 import { collectManagerObjectContext } from "@/app/lib/manager-object/managerObjectContext.ts";
 import { EXECUTIVE_QUEUE_CATEGORY_LABELS } from "@/app/lib/spatial-presentation/executiveStageQueueFoundation.ts";
+import { resolveNexoraUiGuidanceIntent } from "@/app/lib/manager-object/nexoraUiGuidanceIntent.ts";
+import { resolveNexoraVisualGuidanceIntent } from "@/app/lib/manager-object/nexoraVisualGuidanceIntent.ts";
+import {
+  applyNexoraGuidedAttentionRuntime,
+  composeNexoraGuidedAttentionCopy,
+  emptyNexoraGuidedAttentionRuntime,
+  requestNexoraGuidedAttention,
+  type NexoraGuidedAttentionPresentation,
+  type NexoraGuidedAttentionRuntime,
+  type NexoraGuidedAttentionTarget,
+} from "@/app/lib/director/nexoraGuidedAttentionPresentation.ts";
+import {
+  applyNexoraVisualViewRuntime,
+  composeNexoraVisualAdvisorCopy,
+  emptyNexoraVisualViewRuntime,
+  resolveNexoraVisualView,
+  type NexoraVisualView,
+  type NexoraVisualViewRuntime,
+} from "@/app/lib/director/nexoraVisualIntelligence.ts";
 
 
 export type NexoraConversationalExperienceInput = {
@@ -298,6 +330,12 @@ export type NexoraConversationalExperienceInput = {
   readonly previousManagerObjectSession?: import("@/app/lib/manager-object/managerObjectActive.ts").ManagerObjectSession | null;
   /** NEX-EXP:1 session. Existing workspace tests omit this. */
   readonly previousEntranceSession?: NexoraEntranceSession | null;
+  readonly previousGuidedAttention?: NexoraGuidedAttentionRuntime | null;
+  readonly previousVisualView?: NexoraVisualViewRuntime | null;
+  readonly visualEvidence?: import("@/app/lib/director/nexoraVisualIntelligence.ts").NexoraVisualEvidenceBundle | null;
+  readonly mountedGuidedAttentionTargets?: readonly NexoraGuidedAttentionTarget[];
+  readonly attentionNowMs?: number;
+  readonly reducedMotion?: boolean;
   /** NCA:5 caller-provided observations. Optional; evaluation remains deterministic without monitoring. */
   readonly initiativeSignals?: readonly ProactiveExecutiveSignal[];
   readonly conversationImportance?: import("@/app/lib/manager-object/nexoraNca5InitiativeIntelligenceTypes.ts").ConversationImportance;
@@ -1147,10 +1185,29 @@ export function executeNexoraConversationalExperience(
   const utterance = typeof input.utterance === "string" ? input.utterance : "";
   const ids = deriveMessageIds(input.messageIdSeed);
   const persistEntranceSession = input.previousEntranceSession ?? null;
+  const previousGuidedAttention =
+    input.previousGuidedAttention ?? emptyNexoraGuidedAttentionRuntime();
+  const previousVisualView =
+    input.previousVisualView ?? emptyNexoraVisualViewRuntime();
+  const mountedGuidedAttentionTargets = input.mountedGuidedAttentionTargets ??
+    Object.freeze(["DATA_ENTRY", "STAGE"] as const);
+  const attentionNowMs = input.attentionNowMs ?? 0;
   const finish = (
     args: Parameters<typeof finalize>[0],
-  ): ReturnType<typeof finalize> =>
-    finalize({
+  ): ReturnType<typeof finalize> => {
+    const guidedAttention = applyNexoraGuidedAttentionRuntime({
+      previous: previousGuidedAttention,
+      request: args.guidedAttentionRequest,
+      pendingOfferTarget: args.pendingOfferTarget,
+      clear: args.clearGuidedAttention === true,
+      nowMs: attentionNowMs,
+    });
+    const visualView = applyNexoraVisualViewRuntime({
+      previous: previousVisualView,
+      request: args.visualViewRequest,
+      dismiss: args.dismissVisualView === true,
+    });
+    return finalize({
       ...args,
       runtimeStateBeforeTurn: input.runtimeState,
       nextEntranceSession:
@@ -1164,7 +1221,10 @@ export function executeNexoraConversationalExperience(
       theatreProposedCandidateId: input.theatreProposedCandidateId,
       decisionRuntime: args.decisionRuntime ?? input.decisionRuntime ?? null,
       executionRuntime: args.executionRuntime ?? input.executionRuntime ?? null,
+      guidedAttention,
+      visualView,
     });
+  };
   const bootstrappedExecutiveContext = bootstrapExecutiveContext({
     executiveContext: input.executiveContext,
     conversationContext: input.conversationContext,
@@ -1182,6 +1242,230 @@ export function executeNexoraConversationalExperience(
   );
 
   try {
+    const guidanceIntent = resolveNexoraUiGuidanceIntent({
+      utterance,
+      pendingOfferTarget: previousGuidedAttention.pendingOfferTarget,
+    });
+    if (guidanceIntent.kind === "LOCATE_UI" && guidanceIntent.target) {
+      const presentation = requestNexoraGuidedAttention({
+        target: guidanceIntent.target,
+        mountedTargets: mountedGuidedAttentionTargets,
+        nowMs: attentionNowMs,
+        reducedMotion: input.reducedMotion === true,
+        previous: previousGuidedAttention.presentation,
+        requestId: `ga-${attentionNowMs}-${guidanceIntent.target}`,
+      });
+      const intentResult = resolveNexoraConversationalIntent({ utterance });
+      const contextResult = resolveNexoraExecutiveConversationalContext({
+        intent: intentResult.intent,
+        executiveSubjects: input.executiveSubjects,
+        conversationContext: previousContext,
+      });
+      return finish({
+        status: "applied",
+        response: composeNexoraGuidedAttentionCopy(presentation),
+        intentResult,
+        contextResult,
+        experienceResult: null,
+        commandResult: null,
+        runtimeResult: null,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        trustedAdvisorySuccess: true,
+        ids,
+        utterance,
+        catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+        executiveSubjects: input.executiveSubjects,
+        preservePresentedResponse: true,
+        lockPresentedResponse: true,
+          nextEntranceSession: persistEntranceSession,
+          guidedAttentionRequest: presentation,
+          pendingOfferTarget: guidanceIntent.usesPendingOffer
+            ? null
+            : previousGuidedAttention.pendingOfferTarget,
+        });
+    }
+
+    const visualIntent = resolveNexoraVisualGuidanceIntent({ utterance });
+    const visualInspectHasView =
+      visualIntent.kind === "INSPECT" && previousVisualView.view != null;
+    if (
+      visualIntent.kind !== "NONE" &&
+      (visualIntent.kind === "RESOLVE" ||
+        visualIntent.kind === "DISMISS" ||
+        visualInspectHasView) &&
+      !shouldNexoraGuidedEntranceOwnUtterance(
+        input.previousEntranceSession,
+        utterance,
+        input.executiveSubjects,
+      )
+    ) {
+      const intentResult = resolveNexoraConversationalIntent({ utterance });
+      const contextResult = resolveNexoraExecutiveConversationalContext({
+        intent: intentResult.intent,
+        executiveSubjects: input.executiveSubjects,
+        conversationContext: previousContext,
+      });
+      if (visualIntent.kind === "DISMISS") {
+        return finish({
+          status: "applied",
+          response: composeNexoraVisualAdvisorCopy(
+            { status: "NONE", view: null, reason: "" },
+            "DISMISS",
+          ),
+          intentResult,
+          contextResult,
+          experienceResult: null,
+          commandResult: null,
+          runtimeResult: null,
+          previousExecutiveContext,
+          nextRuntimeState: input.runtimeState,
+          shouldCommitRuntime: false,
+          trustedAdvisorySuccess: true,
+          ids,
+          utterance,
+          catalog: input.catalog,
+          previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+          executiveSubjects: input.executiveSubjects,
+          preservePresentedResponse: true,
+          lockPresentedResponse: true,
+          nextEntranceSession: persistEntranceSession,
+          dismissVisualView: true,
+        });
+      }
+      if (visualIntent.kind === "INSPECT") {
+        const inspectKind =
+          visualIntent.inspect === "WHY"
+            ? "WHY"
+            : visualIntent.inspect === "PROVENANCE"
+              ? "PROVENANCE"
+              : visualIntent.inspect === "CAUSE"
+                ? "CAUSE"
+                : visualIntent.inspect === "DECISION"
+                  ? "DECISION"
+                  : visualIntent.inspect === "CHANGE"
+                    ? "PRESENT"
+                    : "EXPLAIN";
+        const inspectResponse =
+          visualIntent.inspect === "CHANGE"
+            ? "You can ask me to show the same evidence another way when that representation is meaningful."
+            : previousVisualView.view
+              ? composeNexoraVisualAdvisorCopy(
+                  { status: "SUPPORTED", view: previousVisualView.view, reason: "active-view" },
+                  inspectKind,
+                )
+              : "There isn’t a view on the Stage to talk about yet.";
+        return finish({
+          status: "applied",
+          response: inspectResponse,
+          intentResult,
+          contextResult,
+          experienceResult: null,
+          commandResult: null,
+          runtimeResult: null,
+          previousExecutiveContext,
+          nextRuntimeState: input.runtimeState,
+          shouldCommitRuntime: false,
+          trustedAdvisorySuccess: true,
+          ids,
+          utterance,
+          catalog: input.catalog,
+          previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+          executiveSubjects: input.executiveSubjects,
+          preservePresentedResponse: true,
+          lockPresentedResponse: true,
+          nextEntranceSession: persistEntranceSession,
+        });
+      }
+      const resolution = resolveNexoraVisualView({
+        purpose: visualIntent.purpose,
+        evidence: input.visualEvidence ?? null,
+        subjectId: visualIntent.subjectId,
+        requestedMonths: visualIntent.requestedMonths,
+        requestedRepresentation: visualIntent.requestedRepresentation,
+        comparableIds: visualIntent.comparableIds,
+      });
+      return finish({
+        status: "applied",
+        response: composeNexoraVisualAdvisorCopy(
+          resolution,
+          resolution.status === "SUPPORTED" ? "PRESENT" : "PRESENT",
+        ),
+        intentResult,
+        contextResult,
+        experienceResult: null,
+        commandResult: null,
+        runtimeResult: null,
+        previousExecutiveContext,
+        nextRuntimeState: input.runtimeState,
+        shouldCommitRuntime: false,
+        trustedAdvisorySuccess: true,
+        ids,
+        utterance,
+        catalog: input.catalog,
+        previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+        executiveSubjects: input.executiveSubjects,
+        preservePresentedResponse: true,
+        lockPresentedResponse: true,
+        nextEntranceSession: persistEntranceSession,
+        visualViewRequest:
+          resolution.status === "SUPPORTED" ? resolution.view : previousVisualView.view,
+        dismissVisualView: false,
+      });
+    }
+
+    if (
+      shouldNexoraGuidedEntranceOwnUtterance(
+        input.previousEntranceSession,
+        utterance,
+        input.executiveSubjects,
+      ) &&
+      input.previousEntranceSession
+    ) {
+      const guidedTurn = resolveNexoraGuidedEntranceTurn({
+        utterance,
+        session: input.previousEntranceSession,
+        runtimeState: input.runtimeState,
+        catalog: input.catalog,
+      });
+      if (guidedTurn.ownsResponse) {
+        const intentResult = resolveNexoraConversationalIntent({ utterance });
+        const contextResult = resolveNexoraExecutiveConversationalContext({
+          intent: intentResult.intent,
+          executiveSubjects: input.executiveSubjects,
+          conversationContext: previousContext,
+        });
+        return finish({
+          status: "applied",
+          response: guidedTurn.response,
+          intentResult,
+          contextResult,
+          experienceResult: null,
+          commandResult: null,
+          runtimeResult: null,
+          previousExecutiveContext,
+          nextRuntimeState: guidedTurn.nextRuntimeState,
+          shouldCommitRuntime: guidedTurn.shouldCommitRuntime,
+          trustedAdvisorySuccess: true,
+          ids,
+          utterance,
+          catalog: input.catalog,
+          previousManagerObjectSession: input.previousManagerObjectSession ?? null,
+          executiveSubjects: input.executiveSubjects,
+          preservePresentedResponse: true,
+          lockPresentedResponse: true,
+          nextEntranceSession: guidedTurn.session,
+          suggestedActions: guidedTurn.suggestedActions,
+          pendingOfferTarget: guidedTurn.pendingOfferTarget,
+          clearGuidedAttention: guidedTurn.clearGuidedAttention,
+          visualViewRequest: guidedTurn.visualViewRequest,
+          dismissVisualView: guidedTurn.dismissVisualView,
+        });
+      }
+    }
+
     if (
       shouldNexoraEntranceOwnUtterance(
         input.previousEntranceSession,
@@ -2511,6 +2795,19 @@ function finalize(args: {
   readonly managerCommunicationContext?: import("@/app/lib/manager-object/nexoraNca6CommunicationIntelligenceTypes.ts").Nca6ManagerContextInput | null;
   readonly theatreDecisionReviewOpen?: boolean | null;
   readonly theatreProposedCandidateId?: string | null;
+  readonly suggestedActions?: readonly {
+    readonly id: string;
+    readonly label: string;
+    readonly utterance: string;
+    readonly kind?: "answer" | "question";
+  }[];
+  readonly guidedAttentionRequest?: NexoraGuidedAttentionPresentation | null;
+  readonly pendingOfferTarget?: NexoraGuidedAttentionTarget | null;
+  readonly clearGuidedAttention?: boolean;
+  readonly guidedAttention?: NexoraGuidedAttentionRuntime | null;
+  readonly visualViewRequest?: NexoraVisualView | null;
+  readonly dismissVisualView?: boolean;
+  readonly visualView?: NexoraVisualViewRuntime | null;
 }): NexoraConversationalExperienceResult & {
   readonly nextRuntimeState: NexoraMVPObjectInteractionState;
 } {
@@ -3346,19 +3643,19 @@ function finalize(args: {
       .filter((part): part is string => Boolean(part))
       .join(" ");
   }
-  if (semanticTurn.owner === "BUSINESS" && nxaGuidanceForResponse.behavior === "WAIT") {
+  if (semanticTurn.owner === "BUSINESS" && nxaGuidanceForResponse.behavior === "WAIT" && !args.lockPresentedResponse) {
     presentedResponse = /thank/i.test(args.utterance) ? "You're welcome." : "Understood.";
   }
-  if (semanticTurn.owner === "BUSINESS" && nxaGuidanceForResponse.behavior === "ASK" && nxaGuidanceForResponse.question) {
+  if (semanticTurn.owner === "BUSINESS" && nxaGuidanceForResponse.behavior === "ASK" && nxaGuidanceForResponse.question && !args.lockPresentedResponse) {
     presentedResponse = nxaGuidanceForResponse.question;
   }
-  if (semanticTurn.owner === "BUSINESS" && nxaGuidanceForResponse.behavior === "CHALLENGE") {
+  if (semanticTurn.owner === "BUSINESS" && nxaGuidanceForResponse.behavior === "CHALLENGE" && !args.lockPresentedResponse) {
     presentedResponse = composeNxaEvidenceChallenge({
       references: semanticTurn.references.references.map((item) => item.name),
       activeSubject: nxaResponseContract.referentName,
     });
   }
-  if (nxaGuidanceForResponse.behavior === "GUIDE" && semanticTurn.owner === "BUSINESS") {
+  if (nxaGuidanceForResponse.behavior === "GUIDE" && semanticTurn.owner === "BUSINESS" && !args.lockPresentedResponse) {
     presentedResponse = composeNxaContextualGuide({
       subject: nxaResponseContract.referentName,
       nextTarget: managerObjectTurn.exploration.recommendedPaths[0]?.label ?? null,
@@ -3371,6 +3668,7 @@ function finalize(args: {
     presentedResponse = `${presentedResponse} This is a scenario projection, not an observed outcome; its causal interpretation remains uncertain.`;
   }
   if (
+    !args.lockPresentedResponse &&
     nxaResponseContract.need === "LEARN_NEXORA" &&
     nxaResponseContract.referentName &&
     /\b(?:how (?:do|can|should) i use|what can i do with|how can you help)\b/i.test(args.utterance)
@@ -3491,7 +3789,9 @@ function finalize(args: {
     collectionMembers: semanticTurn.canonicalCollectionMembers,
     currentStage: presentationStage,
   });
-  let directorRuntimeState = (
+  let directorRuntimeState = args.lockPresentedResponse
+    ? args.nextRuntimeState
+    : (
     comparisonMeaning.active ||
     stageRelationship === "STAGE_META" ||
     stageRelationship === "STAGE_COMPATIBLE" ||
@@ -3588,6 +3888,7 @@ function finalize(args: {
     presentedResponse = "The new observation weakens the previous recommendation, so I would not repeat it. Reassess the remaining contributors and validate the strongest alternative before choosing an intervention.";
   }
   if (
+    !args.lockPresentedResponse &&
     args.contextResult.context.resolutionStatus === "not-found" &&
     semanticTurn.owner === "BUSINESS" &&
     (args.intentResult.intent.kind === "explain-scenario" || /^explain\b/i.test(args.utterance))
@@ -3631,7 +3932,7 @@ function finalize(args: {
   const priorConsent = args.previousManagerObjectSession?.ncaConversationState?.pendingPresentationConsent ?? null;
   const consentReply = priorConsent ? isPresentationConsentReply(args.utterance) : null;
   let nextPresentationConsent: PendingPresentationConsent | null = priorConsent;
-  if (consentReply === "yes" && priorConsent) {
+  if (consentReply === "yes" && priorConsent && !args.lockPresentedResponse) {
     const consentPlan = directNexoraPresentation({
       owner: "BUSINESS",
       presentationRequest: "FOCUS",
@@ -3846,6 +4147,9 @@ function finalize(args: {
     text: presentedResponse,
     status: args.status,
     commandId: args.commandResult?.command?.commandId,
+    ...(args.suggestedActions && args.suggestedActions.length > 0
+      ? { suggestedActions: args.suggestedActions }
+      : {}),
   });
 
   const trace: NexoraConversationalExperienceTrace = Object.freeze({
@@ -4572,6 +4876,108 @@ function finalize(args: {
           ? "Existing Execution authority records this Execution as complete."
           : theatreLive?.advisorReadable.completeCommand ?? "Execution was not marked complete.";
   }
+  const ecaStage: EcaStageContext = Object.freeze({
+    available: incomingStage.available,
+    workspace: incomingStage.workspace,
+    focus: incomingStage.focus
+      ? Object.freeze({
+          id: incomingStage.focus.id,
+          label: incomingStage.focus.label,
+          kind: incomingStage.focus.kind,
+        })
+      : null,
+    selected: null,
+    visible: Object.freeze(
+      incomingStage.visibleMembers.map((member) =>
+        Object.freeze({ id: member.id, label: member.label, kind: member.kind }),
+      ),
+    ),
+    collection: incomingStage.collection
+      ? Object.freeze({
+          kind: incomingStage.collection.kind,
+          label: incomingStage.collection.label,
+          members: Object.freeze(
+            incomingStage.collection.members.map((member) =>
+              Object.freeze({ id: member.id, label: member.label, kind: member.kind }),
+            ),
+          ),
+        })
+      : null,
+    theatreSceneId: null,
+  });
+  const ecaWorkingContext = composeEcaWorkingConversationContext({
+    utterance: args.utterance,
+    meaning: naturalLanguageUnderstanding,
+    conversationState: nextNcaState,
+    working:
+      args.nextEntranceSession?.guidedIntroduction?.conversationContinuity?.working ??
+      null,
+    stage: ecaStage,
+    subjects: Object.freeze(
+      args.executiveSubjects.map((subject) =>
+        Object.freeze({
+          id: subject.subjectId,
+          label: subject.canonicalName,
+          kind: subject.subjectKind,
+        }),
+      ),
+    ),
+    recentSubjects: Object.freeze(
+      nextNcaState.recentSubjects
+        .filter(
+          (subject): subject is typeof subject & { id: string; name: string } =>
+            subject.id != null && subject.name != null,
+        )
+        .map((subject) =>
+          Object.freeze({ id: subject.id, label: subject.name, kind: subject.kind }),
+        ),
+    ),
+  });
+    const pendingEcaProposal =
+      args.previousManagerObjectSession?.ecaMutationProposal ?? null;
+    let nextEcaProposal = ecaWorkingContext.mutationProposal;
+    if (pendingEcaProposal && isEcaMutationCancellation(args.utterance)) {
+      presentedResponse = "Okay — I won’t add it.";
+      nextEcaProposal = null;
+    } else if (pendingEcaProposal && isEcaMutationConfirmation(args.utterance)) {
+      const handoff = handoffEcaRiskMutation({
+        workspaceId: args.previousExecutiveContext.currentWorkspaceId ?? "",
+        proposal: pendingEcaProposal,
+        confirmation: {
+          confirmed: true,
+          source: "MANAGER_CONVERSATION",
+          proposalId: pendingEcaProposal.proposalId,
+          turnId: naturalLanguageUnderstanding.rawUtterance,
+        },
+      });
+      if (handoff.status === "CREATED") {
+        presentedResponse = `Supplier Delay has been added as a Risk.`;
+        nextEcaProposal = null;
+      } else if (handoff.status === "ALREADY_EXISTS") {
+        presentedResponse = "Supplier Delay already exists as a Risk.";
+        nextEcaProposal = null;
+      } else {
+        presentedResponse = `I couldn’t add Supplier Delay as a Risk because ${handoff.reason}.`;
+        nextEcaProposal = pendingEcaProposal;
+      }
+    }
+  if (
+    ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" &&
+    ecaWorkingContext.mutationProposal?.status === "PROPOSED"
+  ) {
+    const proposal = ecaWorkingContext.mutationProposal;
+    const label = proposal.proposedName ?? proposal.subject?.label ?? "this item";
+    const type = proposal.targetType ? ` as a ${proposal.targetType}` : "";
+    presentedResponse = `I can add “${label}”${type}. Add it?`;
+    nextEcaProposal = proposal;
+  }
+  managerObjectTurn = Object.freeze({
+    ...managerObjectTurn,
+    session: freezeManagerObjectSession({
+      ...managerObjectTurn.session,
+      ecaMutationProposal: nextEcaProposal,
+    }),
+  });
   const nexoraAdvisorMessage =
     presentedResponse === nexoraMessage.text
       ? nexoraMessage
@@ -4601,7 +5007,9 @@ function finalize(args: {
     managerMessage,
     nexoraMessage: nexoraAdvisorMessage,
     trace,
-    shouldCommitRuntime: comparisonMeaning.active
+    shouldCommitRuntime: args.lockPresentedResponse
+      ? args.shouldCommitRuntime
+      : comparisonMeaning.active
       ? false
       : clarificationTurn.action === "clarify" || clarificationTurn.action === "fail"
         ? false
@@ -4614,6 +5022,8 @@ function finalize(args: {
     decisionTheatre,
     managerObjectTurn,
     nextEntranceSession: args.nextEntranceSession ?? null,
+    guidedAttention: args.guidedAttention ?? emptyNexoraGuidedAttentionRuntime(),
+    visualView: args.visualView ?? emptyNexoraVisualViewRuntime(),
     naturalLanguageUnderstanding,
     contextualManagerMeaning,
     clarificationTurn,
@@ -4635,7 +5045,32 @@ function finalize(args: {
     directorPlan,
     ncaPost3Diagnostics: semanticTurn.diagnostics,
     ncaPost4Comparison,
+    conversationKernel: conversationKernelDiagnosticsOf(
+      args.nextEntranceSession ?? null,
+    ),
+    conversationThread: conversationThreadResultDiagnosticsOf(
+      args.nextEntranceSession ?? null,
+    ),
+    ecaWorkingContext,
   });
+}
+
+function conversationKernelDiagnosticsOf(
+  entranceSession: NexoraEntranceSession | null,
+): import("@/app/lib/nexora-conversation/nexoraConversationDiagnostics.ts").NexoraConversationMoveDiagnostics | null {
+  const decision =
+    entranceSession?.guidedIntroduction?.conversationContinuity?.working?.lastDecision ?? null;
+  if (!decision) return null;
+  return conversationMoveDiagnosticsOf(decision, decision.progression);
+}
+
+function conversationThreadResultDiagnosticsOf(
+  entranceSession: NexoraEntranceSession | null,
+): import("@/app/lib/nexora-conversation/nexoraConversationThreadDiagnostics.ts").NexoraConversationThreadDiagnostics | null {
+  const working =
+    entranceSession?.guidedIntroduction?.conversationContinuity?.working ?? null;
+  if (!working?.lastDecision || !working.lastThreadDecision) return null;
+  return conversationThreadDiagnosticsOf(working.lastDecision, working.lastThreadDecision);
 }
 
 function mapOutcomeJourneyState(

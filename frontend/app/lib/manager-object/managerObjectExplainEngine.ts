@@ -13,6 +13,10 @@ import type { ManagerObjectIntent } from "./managerObjectInteractionFoundation.t
 import type { ManagerObjectKind } from "./managerObjectInteractionFoundation.ts";
 import { composeConcreteAttentionReason } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
 import {
+  isManagerPresenceNeed,
+  isManagerRelevanceNeed,
+} from "./nexoraNca1ConversationArchitecture.ts";
+import {
   GENERIC_EXPLAIN_ENGINE_BOUNDARY,
   genericExplainEngineIdentity,
   type ExecutiveObjectExplanation,
@@ -91,11 +95,10 @@ export function resolveExplanationLens(utterance: string): {
   if (/what is connected|what(?:'s| is) related/.test(normalized)) {
     return Object.freeze({ focus: "relationships", depth });
   }
-  if (
-    /why is this important|why does this matter|why is this critical|why is .+ (?:critical|important)/.test(
-      normalized,
-    )
-  ) {
+  if (isManagerPresenceNeed(normalized)) {
+    return Object.freeze({ focus: "overview", depth });
+  }
+  if (isManagerRelevanceNeed(normalized)) {
     return Object.freeze({ focus: "significance", depth });
   }
   return Object.freeze({ focus: "overview", depth });
@@ -661,9 +664,16 @@ function composeManagerFacingText(input: {
   }
 
   if (input.focus === "significance") {
-    if (input.currentSituation) parts.push(input.currentSituation);
     if (input.significance) parts.push(input.significance);
+    else if (input.summary && !/^Status is /i.test(input.summary)) {
+      parts.push(input.summary);
+    }
     if (includeStandard && input.relationships[0]) parts.push(input.relationships[0].text);
+    if (parts.length === 0) {
+      parts.push(
+        `I cannot assess business importance for ${input.label ?? "this"} from available evidence.`,
+      );
+    }
     return parts.join(" ");
   }
 

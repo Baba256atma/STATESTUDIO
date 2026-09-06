@@ -1,0 +1,20 @@
+{
+  "phase": "NEX-ENT:1",
+  "identity": "NEX-ENT:1/NexoraEntranceAndIntroduction",
+  "completedAt": "2026-09-03T19:58:43.715Z",
+  "http": 200,
+  "existingWorkspaceProtected": true,
+  "entranceActivated": true,
+  "minimalStage": true,
+  "advisorIntroduced": true,
+  "suggestedActionsPresent": true,
+  "naturalInteraction": true,
+  "noBusinessTruth": true,
+  "refreshNoDuplicateActors": true,
+  "skipSafe": true,
+  "reenterDeterministic": true,
+  "noDeveloperJargon": true,
+  "cameraFixed": true,
+  "uncaught": 0,
+  "duplicateOrHydration": []
+}

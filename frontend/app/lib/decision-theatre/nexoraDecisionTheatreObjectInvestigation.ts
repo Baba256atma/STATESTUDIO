@@ -72,6 +72,18 @@ export type NexoraDecisionTheatreObjectInvestigation = Readonly<{
   objectId: string;
   canonicalObjectType: string;
   visualFamily: "EXECUTIVE_OBJECT" | "ICONIC_OBJECT";
+  presentationRole: import("./nexoraStageEntityPresentationRole.ts").NexoraStageEntityPresentationRole;
+  catalogProvenance: "entrance-education" | "object-education" | null;
+  educationalExample: boolean;
+  applicableSections: readonly import("./nexoraStageEntityPresentationRole.ts").NexoraStageCardSection[];
+  suppressedSections: readonly {
+    readonly section: import("./nexoraStageEntityPresentationRole.ts").NexoraStageCardSection;
+    readonly applicability: "NOT_APPLICABLE";
+    readonly reason: string;
+  }[];
+  statusSource: "catalog-metadata" | "business-lifecycle" | "iconic-value" | "not-applicable";
+  evidenceApplicability: "APPLICABLE" | "NOT_APPLICABLE";
+  relationshipApplicability: "APPLICABLE" | "NOT_APPLICABLE";
   managerReadableName: string;
   currentState: string;
   sceneRole: string | null;

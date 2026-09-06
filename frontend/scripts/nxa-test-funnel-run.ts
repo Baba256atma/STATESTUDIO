@@ -44,6 +44,7 @@ for (const item of spec.commands) {
     cwd: frontendRoot,
     encoding: "utf8",
     env: process.env,
+    maxBuffer: 64 * 1024 * 1024,
   });
   const artifact = join(frontendRoot, ".certification/nxa-6-prep-conversation-diagnostics", `${item.id}.log`);
   mkdirSync(dirname(artifact), { recursive: true });

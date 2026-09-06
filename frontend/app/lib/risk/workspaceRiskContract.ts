@@ -45,6 +45,13 @@ export type WorkspaceRisk = Readonly<{
   createdAt: string;
   updatedAt: string;
   source: typeof WORKSPACE_RISK_SOURCE;
+  provenance?: Readonly<{
+    createdBy: "MANAGER";
+    creationSource: "MANAGER_CONVERSATION";
+    proposalId: string;
+    confirmationTurn: string;
+    evidenceRefs: readonly string[];
+  }>;
 }>;
 
 export type WorkspaceRiskMap = Readonly<Record<string, WorkspaceRisk>>;
@@ -57,6 +64,7 @@ export type CreateWorkspaceRiskInput = Readonly<{
   description?: string;
   status?: WorkspaceRiskStatus;
   category?: WorkspaceRiskCategory;
+  provenance?: WorkspaceRisk["provenance"];
 }>;
 
 export type UpdateWorkspaceRiskInput = Readonly<{
@@ -193,6 +201,7 @@ function buildWorkspaceRisk(input: {
   createdAt: string;
   updatedAt: string;
   riskId?: string;
+  provenance?: WorkspaceRisk["provenance"];
 }): WorkspaceRisk {
   return freezeRisk(
     Object.freeze({
@@ -206,6 +215,7 @@ function buildWorkspaceRisk(input: {
       createdAt: input.createdAt,
       updatedAt: input.updatedAt,
       source: WORKSPACE_RISK_SOURCE,
+      ...(input.provenance ? { provenance: Object.freeze({ ...input.provenance, evidenceRefs: Object.freeze([...input.provenance.evidenceRefs]) }) } : {}),
     })
   );
 }
@@ -257,6 +267,7 @@ export function createWorkspaceRisk(input: CreateWorkspaceRiskInput): WorkspaceR
     category: input.category ?? "custom",
     createdAt: timestamp,
     updatedAt: timestamp,
+    provenance: input.provenance,
   });
 
   const existingMap = workspaceRiskStore[trimmedWorkspaceId] ?? {};
@@ -331,6 +342,7 @@ export function updateWorkspaceRisk(input: UpdateWorkspaceRiskInput): WorkspaceR
         createdAt: existing.createdAt,
         updatedAt,
         riskId: existing.riskId,
+        provenance: existing.provenance,
       }),
     })
   );

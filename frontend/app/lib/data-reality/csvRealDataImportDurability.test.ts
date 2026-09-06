@@ -272,7 +272,7 @@ test("DATA-UX:6 corruption, incompatible version, write failure, and authority b
   assert.match(storeSource, /hydrateCsvRealDataImportState/);
   assert.match(shell, /resetEntrance/);
   assert.match(shell, /recoverCsvRealDataImportDurabilityBrowser/);
-  assert.match(shell, /clearCsvRealDataImportDurabilityBrowser/);
+  assert.doesNotMatch(shell, /clearCsvRealDataImportDurabilityBrowser/);
   assert.match(explorer, /nexora-csv-durability-warning/);
   assert.match(explorer, /setCsvIntake\("new"\)/);
   assert.equal(csvRealDataImportDurabilityVersion, "1.0.0");

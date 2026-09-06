@@ -11,6 +11,7 @@ import {
 import { projectExecutiveSourceIntelligence } from "../data-reality/executiveSourceIntelligence.ts";
 import { listNexoraLiveConnections } from "../data-reality/liveDataConnectionStore.ts";
 import { CSV_MAPPING_TARGETS, type CsvColumnMapping, type CsvMappingReview } from "../data-reality/csvRealDataVerticalSlice.ts";
+import { resolveSemanticCandidates, type SemanticCandidateResolution } from "../data-reality/semanticCandidateIntelligence.ts";
 import type { WorkspaceId } from "../workspace/workspaceRegistryContract.ts";
 
 export const nexoraAdvisorDataContextIdentity = "DATA-ADV:1/AdvisorDataContext" as const;
@@ -26,7 +27,7 @@ export const ADVISOR_DATA_CONTEXT_BOUNDARY = Object.freeze({
 });
 
 export type AdvisorDataLifecycle = "committed" | "pending" | "connected";
-export type AdvisorDataFieldConfidence = "confirmed" | "authoritative" | "likely" | "unresolved";
+export type AdvisorDataFieldConfidence = "confirmed" | "authoritative" | "likely" | "ambiguous" | "unresolved";
 
 export type AdvisorDataField = Readonly<{
   sourceContextId: string;
@@ -38,6 +39,7 @@ export type AdvisorDataField = Readonly<{
   confirmationSource: "manager" | "authoritative-mapping" | "none";
   confidence: AdvisorDataFieldConfidence;
   ignored: boolean;
+  semanticResolution: SemanticCandidateResolution;
 }>;
 
 export type AdvisorDataSource = Readonly<{
@@ -108,17 +110,33 @@ function fieldsFromMapping(
   mapping: CsvMappingReview | null,
 ): readonly AdvisorDataField[] {
   if (!mapping) return Object.freeze([]);
-  return Object.freeze(mapping.mappings.map((entry) => Object.freeze({
-    sourceContextId,
-    sourceLabel,
-    column: entry.sourceColumn,
-    fieldId: entry.semantic?.fieldId ?? null,
-    confirmedMeaning: entry.semantic?.confirmedMeaning ?? (entry.confirmed ? entry.targetLabel : null),
-    proposedMeaning: entry.semantic?.proposedMeaning ?? null,
-    confirmationSource: entry.semantic?.confirmationSource ?? "none",
-    confidence: fieldConfidence(entry),
-    ignored: entry.ignored,
-  })));
+  const neighboringConfirmedMeanings = mapping.mappings.flatMap((entry) => entry.semantic?.confirmedMeaning ? [entry.semantic.confirmedMeaning] : []);
+  return Object.freeze(mapping.mappings.map((entry) => {
+    const semanticResolution = resolveSemanticCandidates({
+      term: entry.sourceColumn,
+      sourceLabel,
+      confirmedMeaning: entry.semantic?.confirmedMeaning ?? (entry.confirmed ? entry.targetLabel : null),
+      canonicalProposedMeaning: fieldConfidence(entry) === "likely" ? entry.semantic?.proposedMeaning ?? null : null,
+      confirmationSource: entry.semantic?.confirmationSource ?? "none",
+      neighboringConfirmedMeanings: neighboringConfirmedMeanings.filter((meaning) => meaning !== entry.semantic?.confirmedMeaning),
+    });
+    const confidence: AdvisorDataFieldConfidence = semanticResolution.state === "AUTHORITATIVE" ? "authoritative"
+      : semanticResolution.state === "MANAGER_CONFIRMED" ? "confirmed"
+        : semanticResolution.state === "LIKELY" ? "likely"
+          : semanticResolution.state === "AMBIGUOUS" ? "ambiguous" : fieldConfidence(entry);
+    return Object.freeze({
+      sourceContextId,
+      sourceLabel,
+      column: entry.sourceColumn,
+      fieldId: entry.semantic?.fieldId ?? null,
+      confirmedMeaning: entry.semantic?.confirmedMeaning ?? (entry.confirmed ? entry.targetLabel : null),
+      proposedMeaning: semanticResolution.state === "LIKELY" ? semanticResolution.candidates[0]?.meaning ?? entry.semantic?.proposedMeaning ?? null : null,
+      confirmationSource: entry.semantic?.confirmationSource ?? "none",
+      confidence,
+      ignored: entry.ignored,
+      semanticResolution,
+    });
+  }));
 }
 
 function projectCommitted(entry: CsvCommittedImport): AdvisorDataSource {

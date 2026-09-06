@@ -1,0 +1,109 @@
+{
+  "phase": "NEX-CONV:2-FIX2",
+  "identity": "NEX-CONV:2-FIX2/ActionResultParity",
+  "completedAt": "2026-09-06T07:01:20.595Z",
+  "base": "http://localhost:3015",
+  "relevance": [
+    "NexoraNexora keeps the situation, evidence, options, decisions, and follow-through connected so you can understand what deserves attention before acting.Show meSkip introduction",
+    "NexoraThe value is not just getting an answer. Nexora keeps the reasoning around a decision visible — what is known, what is uncertain, what options exist, and what happens next.Show meSkip introduction"
+  ],
+  "shown": "NexoraThis is your Stage — the active workspace where we bring the things that matter to the current situation into view. Instead of filling it with everything at once, Nexora can focus the workspace around what you’re examining.Show me how focus worksWhat appears here?Is this a dashboard?Skip",
+  "focusDemo": "NexoraI’ve brought Nexora into focus. When something matters, we organize the workspace around what you’re examining. You can select it on the Stage if you want to feel that.Explain what I sawContinueShow again",
+  "explainFirst": "NexoraOf course. Focus means choosing what we’re examining right now. When something becomes the focus, Nexora can organize the Stage around it and bring relevant context into view.ContinueShow again",
+  "goal": {
+    "text": "NexoraNow that you know the Stage, let me show you what appears on it. Most work starts with something you want to improve. These are Objects — the things Nexora uses to represent a situation. A Goal represents something you want to achieve or improve. This example Goal is Improve delivery. It is an educational example, not your business Goal.What is this?Why is it on Stage?What’s the difference?Show me the next oneSkip",
+    "ent3State": "GOAL",
+    "suggested": [
+      "What is this?",
+      "Why is it on Stage?",
+      "What’s the difference?",
+      "Show me the next one",
+      "Skip"
+    ]
+  },
+  "identify": "NexoraThat’s a Goal — something you want to achieve or improve.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+  "why": "NexoraIt’s on Stage because it matters to the example situation we’re examining together. What appears can change with the situation.What’s the difference?Show me the next oneSkip",
+  "compare": "NexoraA KPI helps us see how something important is performing. A Goal is the direction; a KPI is how we observe performance. No chart yet — just the measurement idea.Show me the next oneSkip",
+  "beforeNext": {
+    "ent3State": "GOAL",
+    "threadSubject": "obj-nex-ent3-goal",
+    "last": "NexoraA KPI helps us see how something important is performing. A Goal is the direction; a KPI is how we observe performance. No chart yet — just the measurement idea.Show me the next oneSkip",
+    "suggested": [
+      "Show me the next one",
+      "Skip"
+    ]
+  },
+  "kpiTransition": {
+    "utterance": "Show me the next one (chip)",
+    "preActionSubject": "obj-nex-ent3-goal",
+    "lessonBefore": "GOAL",
+    "lessonAfter": "KPI",
+    "requestedAction": "NEXT",
+    "actionResult": "SUCCEEDED",
+    "resultingSubject": "obj-nex-ent3-kpi",
+    "stageSubject": "obj-nex-ent3-kpi",
+    "conversationSubject": "obj-nex-ent3-kpi",
+    "convSubject": "obj-nex-ent3-kpi",
+    "response": "NexoraThat’s a KPI — how we observe performance. It is not the Goal itself.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+    "suggested": [
+      "Why is it on Stage?",
+      "What’s the difference?",
+      "Show me the next one",
+      "Skip"
+    ],
+    "parity": "PASS",
+    "goalState": "none",
+    "decisionState": "none",
+    "executionState": "none"
+  },
+  "kpiWhat": "NexoraIn practice, a KPI is how we observe performance against that direction. It does not replace the Goal, and it is not a Decision.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+  "kpiWhy": "NexoraIt’s on Stage because it matters to the example situation we’re examining together. What appears can change with the situation.What’s the difference?Show me the next oneSkip",
+  "kpiDiff": "NexoraA KPI helps us see how something important is performing. A Goal is the direction; a KPI is how we observe performance. No chart yet — just the measurement idea.Show me the next oneSkip",
+  "issue": {
+    "text": "NexoraThat’s a Problem — something currently requiring attention.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+    "ent3State": "ISSUE",
+    "threadSubject": "obj-nex-ent3-problem"
+  },
+  "issueWhat": "NexoraIn practice, a Problem is current work that needs attention. It is not a Risk, and noticing it does not by itself decide what to do.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+  "typedNext": {
+    "text": "NexoraThat’s a Scenario — a possible path we can examine before making a Decision.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+    "ent3State": "SCENARIO"
+  },
+  "equivalent": {
+    "text": "NexoraThat’s a Decision — the committed choice. I can advise; you commit.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+    "ent3State": "DECISION"
+  },
+  "appears": "NexoraRelevant things from the current situation can appear here when we need them. We don’t fill the Stage with everything at once.Show me how focus worksWhat appears here?Is this a dashboard?Skip",
+  "appearsContinue": "NexoraI’ve brought Nexora into focus. When something matters, we organize the workspace around what you’re examining. You can select it on the Stage if you want to feel that.Explain what I sawContinueShow again",
+  "afterBackgroundExperience": "GUIDED_ENTRANCE",
+  "skipState": "SKIPPED",
+  "existing": {
+    "next": "NexoraI couldn't find a clear match for “Next One” in the current executive context.",
+    "decision": "NexoraCurrent Decisions: Expand Capacity, Approve Repricing.",
+    "continueAfterDecision": "NexoraDo you mean Expand Capacity or Approve Repricing?",
+    "execution": "NexoraCurrent Executions: Capacity Expansion, Pricing Rollout.",
+    "continueAfterExecution": "NexoraDo you mean Capacity Expansion or Pricing Rollout?",
+    "decisionState": "none",
+    "executionState": "none",
+    "leak": false
+  },
+  "classifiedErrors": [],
+  "runtimeErrors": [],
+  "noCompareReplay": true,
+  "kpiResponse": true,
+  "stageKpi": true,
+  "convKpi": true,
+  "parityPass": true,
+  "chipsAfterKpi": true,
+  "kpiWhatProgressed": true,
+  "issueNotKpi": true,
+  "focusHeld": true,
+  "explainFirstHeld": true,
+  "showHandoff": true,
+  "appearsContinueIsFocus": true,
+  "fix3Held": true,
+  "zeroBusinessWrites": true,
+  "existingContinueSafe": true,
+  "noEducationalLeak": true,
+  "passed": true
+}

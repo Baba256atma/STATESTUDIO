@@ -44,6 +44,8 @@ export type ManagerObjectSession = {
   readonly pendingClarification?: import("./nexoraMvpFinal63ClarificationTypes.ts").PendingClarification | null;
   readonly lastGuidanceText?: string | null;
   readonly ncaConversationState?: import("./nexoraNca2ConversationStateTypes.ts").NexoraConversationState | null;
+  /** ECA:1-FIX2 session-only proposal; never business truth or a writer. */
+  readonly ecaMutationProposal?: import("@/app/lib/nexora-conversation/ecaWorkingConversationContext.ts").EcaMutationProposal | null;
 };
 
 export function createEmptyManagerObjectSession(): ManagerObjectSession {
@@ -71,6 +73,7 @@ export function createEmptyManagerObjectSession(): ManagerObjectSession {
     pendingClarification: null,
     lastGuidanceText: null,
     ncaConversationState: null,
+    ecaMutationProposal: null,
   });
 }
 
@@ -103,6 +106,7 @@ export function freezeManagerObjectSession(
     pendingClarification: session.pendingClarification ?? null,
     lastGuidanceText: session.lastGuidanceText ?? null,
     ncaConversationState: session.ncaConversationState ?? null,
+    ecaMutationProposal: session.ecaMutationProposal ?? null,
   });
 }
 

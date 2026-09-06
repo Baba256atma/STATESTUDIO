@@ -17,6 +17,7 @@ type Props = {
   readonly onOverview: () => void;
   /** STAGE-2D:5/6 — jump to absolute navigation-trail index. */
   readonly onNavigateTrailIndex?: (index: number) => void;
+  readonly guidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
 };
 
 /**
@@ -36,6 +37,7 @@ export function NexoraStageInteractionBreadcrumb({
   onStepForward,
   onOverview,
   onNavigateTrailIndex,
+  guidedAttentionCue = null,
 }: Props) {
   const showOverflowBefore =
     breadcrumbHasOverflowBefore ||
@@ -170,12 +172,15 @@ export function NexoraStageInteractionBreadcrumb({
         <button
           type="button"
           data-testid="nexora-stage-step-back"
+          data-guided-attention-target="BACK_CONTROL"
+          data-guided-attention-cue={guidedAttentionCue ?? "none"}
+          data-guided-attention-active={guidedAttentionCue ? "true" : "false"}
           onClick={onStepBack}
           style={{
             marginLeft: "0.3rem",
-            border: `1px solid ${cockpit.border}`,
+            border: `1px solid ${guidedAttentionCue ? cockpit.accent : cockpit.border}`,
             background: "transparent",
-            color: cockpit.muted,
+            color: guidedAttentionCue ? cockpit.accent : cockpit.muted,
             fontSize: "0.56rem",
             letterSpacing: "0.1em",
             textTransform: "uppercase",
@@ -183,6 +188,10 @@ export function NexoraStageInteractionBreadcrumb({
             padding: "0.16rem 0.35rem",
             cursor: "pointer",
             fontFamily: "inherit",
+            boxShadow: guidedAttentionCue === "SOFT_HALO"
+              ? `0 0 0 1px ${cockpit.accent}`
+              : "none",
+            outline: guidedAttentionCue === "EMPHASIS" ? `2px solid ${cockpit.accent}` : "none",
           }}
         >
           Back

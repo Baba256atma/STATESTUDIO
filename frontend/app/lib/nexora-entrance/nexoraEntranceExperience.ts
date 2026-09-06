@@ -83,6 +83,10 @@ import {
   resolveNexoraRealityDiscoveryTurn,
   shouldNexoraRealityDiscoveryOwnUtterance,
 } from "./nexoraRealityDiscoveryExperience.ts";
+import { isNexoraGuidedEntranceScene } from "./nexoraGuidedEntranceExperience.ts";
+import { overlayObjectEducationOnEntranceCatalog } from "./nexoraObjectEducationExperience.ts";
+import { overlayConversationEducationOnEntranceCatalog } from "./nexoraConversationEducationExperience.ts";
+import { inactiveNexoraGuidedEntranceSession } from "./nexoraGuidedEntranceTypes.ts";
 
 export {
   NEXORA_ENTRANCE_BOUNDARY,
@@ -108,12 +112,14 @@ export function isNexoraEntranceRestrained(
 export function createNexoraEntranceSession(input: {
   readonly workspaceResolution: NexoraWorkspaceResolution;
   readonly identity?: ManagerIdentityContext | null;
+  readonly educationalReentry?: boolean;
 }): NexoraEntranceSession {
   const identity = input.identity ?? emptyManagerIdentityContext();
   const returning =
-    input.workspaceResolution === "returning-sufficient" ||
-    (input.workspaceResolution === "first-time" &&
-      identity.sufficiency === "SUFFICIENT");
+    !input.educationalReentry &&
+    (input.workspaceResolution === "returning-sufficient" ||
+      (input.workspaceResolution === "first-time" &&
+        identity.sufficiency === "SUFFICIENT"));
   const sufficient = identity.sufficiency === "SUFFICIENT";
   const identityObject = sufficient ? toIdentityObject(identity) : null;
   const state: NexoraEntranceState = returning
@@ -152,6 +158,7 @@ export function createNexoraEntranceSession(input: {
     executionPlanning: null,
     outcomeMonitoring: null,
     learningReassessment: null,
+    guidedIntroduction: inactiveNexoraGuidedEntranceSession(),
   });
 }
 
@@ -164,6 +171,9 @@ export function projectNexoraEntranceCatalog(
   const identityReady =
     session.identity.sufficiency === "SUFFICIENT" &&
     session.identityObject != null;
+  const handoffState = session.guidedIntroduction?.personalDemoHandoff?.state;
+  const suppressEducationalOverlay =
+    Boolean(handoffState) && handoffState !== "NOT_STARTED";
   const objects: NexoraMVPStageObjectFixture[] = identityReady
     ? [
         Object.freeze({
@@ -173,19 +183,23 @@ export function projectNexoraEntranceCatalog(
           position: [0, 0, 0] as const,
           status: "stable" as const,
           attention: "normal" as const,
+          catalogProvenance: "entrance-education" as const,
         }),
       ]
     : [
         Object.freeze({
           id: NEXORA_ENTRANCE_OBJECT_ID,
-          label: "Nexora",
+          label: isNexoraGuidedEntranceScene(session) ? "NEXORA" : "Nexora",
           kind: "object" as const,
           position: [0, 0, 0] as const,
           status: "stable" as const,
           attention: "normal" as const,
+          catalogProvenance: "entrance-education" as const,
         }),
       ];
-  return overlayLearningOnEntranceCatalog(
+  return overlayConversationEducationOnEntranceCatalog(
+  overlayObjectEducationOnEntranceCatalog(
+    overlayLearningOnEntranceCatalog(
     overlayOutcomeOnEntranceCatalog(
       overlayExecutionOnEntranceCatalog(
         overlayDecisionOnEntranceCatalog(
@@ -217,6 +231,10 @@ export function projectNexoraEntranceCatalog(
       session.outcomeMonitoring,
     ),
     session.learningReassessment,
+    ),
+    suppressEducationalOverlay ? null : session.guidedIntroduction?.objectEducation,
+  ),
+    suppressEducationalOverlay ? null : session.guidedIntroduction?.conversationEducation,
   );
 }
 
@@ -1122,6 +1140,42 @@ function freezeSession(session: NexoraEntranceSession): NexoraEntranceSession {
     executionPlanning: session.executionPlanning ?? null,
     outcomeMonitoring: session.outcomeMonitoring ?? null,
     learningReassessment: session.learningReassessment ?? null,
+    guidedIntroduction: session.guidedIntroduction
+      ? Object.freeze({
+          ...inactiveNexoraGuidedEntranceSession(),
+          ...session.guidedIntroduction,
+          stageEducation:
+            session.guidedIntroduction.stageEducation ??
+            inactiveNexoraGuidedEntranceSession().stageEducation,
+          objectEducation:
+            session.guidedIntroduction.objectEducation ??
+            inactiveNexoraGuidedEntranceSession().objectEducation,
+          conversationEducation:
+            session.guidedIntroduction.conversationEducation ??
+            inactiveNexoraGuidedEntranceSession().conversationEducation,
+          attentionEducation:
+            session.guidedIntroduction.attentionEducation ??
+            inactiveNexoraGuidedEntranceSession().attentionEducation,
+          dataEducation:
+            session.guidedIntroduction.dataEducation ??
+            inactiveNexoraGuidedEntranceSession().dataEducation,
+          visualEducation:
+            session.guidedIntroduction.visualEducation ??
+            inactiveNexoraGuidedEntranceSession().visualEducation,
+          decisionLoopEducation:
+            session.guidedIntroduction.decisionLoopEducation ??
+            inactiveNexoraGuidedEntranceSession().decisionLoopEducation,
+          trustReview:
+            session.guidedIntroduction.trustReview ??
+            inactiveNexoraGuidedEntranceSession().trustReview,
+          personalDemoHandoff:
+            session.guidedIntroduction.personalDemoHandoff ??
+            inactiveNexoraGuidedEntranceSession().personalDemoHandoff,
+          conversationContinuity:
+            session.guidedIntroduction.conversationContinuity ??
+            inactiveNexoraGuidedEntranceSession().conversationContinuity,
+        })
+      : inactiveNexoraGuidedEntranceSession(),
   });
 }
 

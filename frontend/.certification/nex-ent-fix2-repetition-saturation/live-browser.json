@@ -1,0 +1,92 @@
+{
+  "phase": "NEX-ENT-FIX2",
+  "identity": "NEX-ENT-FIX1/EntranceConversationContinuity",
+  "completedAt": "2026-09-05T21:42:05.248Z",
+  "base": "http://localhost:3008",
+  "http": 200,
+  "transcript": [
+    {
+      "utterance": "Show me",
+      "last": "NexoraThis is your Stage — the active workspace where we bring the things that matter to the current situation into view. Instead of filling it with everything at once, Nexora can focus the workspace around what you’re examining.Show me how focus worksWhat appears here?Is this a dashboard?Skip"
+    },
+    {
+      "utterance": "Is this a dashboard?",
+      "last": "NexoraNo. This isn’t a fixed dashboard of permanent charts. The Stage is a contextual workspace — what you see can change with the situation we’re examining.Show me how focus worksWhat appears here?Is this a dashboard?Skip"
+    },
+    {
+      "utterance": "What appears here?",
+      "last": "NexoraRelevant things from the current situation can appear here when we need them. We don’t fill the Stage with everything at once.Show me how focus worksWhat appears here?Is this a dashboard?Skip"
+    },
+    {
+      "utterance": "What appears here?",
+      "last": "NexoraFor example, a Goal, a KPI, a Problem or Risk, a Scenario, a Decision, or data context can appear when they are relevant. I’m not placing them on Stage just to illustrate that.Show me focusContinue"
+    },
+    {
+      "utterance": "What appears here?",
+      "last": "NexoraThose are the main kinds of things that can appear here. The important point is that the Stage changes with what you’re examining. I can show you how that works with Focus.Show me focusContinue"
+    },
+    {
+      "utterance": "What appears here?",
+      "last": "NexoraI may not be answering the part you mean. Are you asking what kinds of things the Stage can contain, or what is actually on the Stage right now?Show me focusWhat is here now?Continue"
+    },
+    {
+      "utterance": "Show me how focus works",
+      "last": "NexoraI’ve brought Nexora into focus. When something matters, we organize the workspace around what you’re examining. You can select it on the Stage if you want to feel that.Explain what I sawContinueShow again"
+    },
+    {
+      "utterance": "Explain that.",
+      "last": "NexoraOf course. Focus means choosing what we’re examining right now. When something becomes the focus, Nexora can organize the Stage around it and bring relevant context into view.ContinueShow again"
+    },
+    {
+      "utterance": "Why?",
+      "last": "NexoraFocus helps reduce clutter so we can examine one thing at a time instead of everything at once.ContinueShow again"
+    },
+    {
+      "utterance": "Show me again.",
+      "last": "NexoraSure — I’ll show it again. Nexora is already the current focus, so notice how the Stage organizes around it.Explain what I sawContinueShow again"
+    },
+    {
+      "utterance": "What appears here now?",
+      "last": "NexoraRight now, the Stage is organized around Nexora as the educational presence. I’m not filling it with example business Objects. The current focus is NEXORA.Explain what I sawContinueShow again"
+    },
+    {
+      "utterance": "Show me the next one",
+      "last": "NexoraNow that you know the Stage, let me show you what appears on it. Most work starts with something you want to improve. These are Objects — the things Nexora uses to represent a situation. A Goal represents something you want to achieve or improve. This example Goal is Improve delivery. It is an educational example, not your business Goal.What is this?Why is it on Stage?What’s the difference?Show me the next oneSkip"
+    }
+  ],
+  "capability": [
+    {
+      "utterance": "What can Nexora do?",
+      "last": "NexoraI help you understand what matters, examine the situation, explore possible actions, and support decisions and their outcomes. You stay in control.Show meSkip introduction"
+    },
+    {
+      "utterance": "What do you do?",
+      "last": "NexoraIn practice, I can help you work with Goals, data, Problems, Scenarios, Decisions, Execution, and Outcomes. You’ll see those capabilities as we build your workspace.Show meSkip introduction"
+    },
+    {
+      "utterance": "How can you help me?",
+      "last": "NexoraI can show you rather than describe it. The Stage is where those capabilities appear as we work.Show meWhat should we start with?Skip introduction"
+    },
+    {
+      "utterance": "What can Nexora do?",
+      "last": "NexoraI may not be answering the part you mean. Are you asking what Nexora can help you examine, or which part of the workspace you want to see first?Show meWhat should we start with?Skip introduction"
+    }
+  ],
+  "existingWorkspaceProtected": true,
+  "dashboardPreserved": true,
+  "appearsAnswer": true,
+  "appearsDeepen": true,
+  "appearsProgress": true,
+  "appearsClarify": true,
+  "noExamplesLoop": true,
+  "focusAfter": true,
+  "explainThatFocus": true,
+  "whyFocus": true,
+  "repeatShow": true,
+  "appearsNow": true,
+  "nextLessonObject": true,
+  "capabilitySaturated": true,
+  "exactRepeat": true,
+  "runtimeErrors": [],
+  "passed": true
+}

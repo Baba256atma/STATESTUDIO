@@ -13,6 +13,8 @@ export type NexoraMVPStageObjectFixture = {
   /** Includes unresolved so missing runtime truth never falls back to healthy. */
   readonly status: "stable" | "watch" | "risk" | "unresolved";
   readonly attention: "normal" | "elevated" | "important" | "critical";
+  /** Catalog presentation provenance. Not manager/business semantic state. */
+  readonly catalogProvenance?: "entrance-education" | "object-education";
   /** Preformatted canonical value supplied by the Stage adapter when active. */
   readonly primaryValue?: string;
   readonly primaryMetricLabel?: string;

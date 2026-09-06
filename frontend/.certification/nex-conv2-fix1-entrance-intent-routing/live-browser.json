@@ -1,0 +1,136 @@
+{
+  "phase": "NEX-CONV:2-FIX1",
+  "identity": "NEX-CONV:2-FIX1/EntranceIntentRouting",
+  "completedAt": "2026-09-06T05:50:31.380Z",
+  "base": "http://localhost:3014",
+  "welcome": "NexoraWelcome to Nexora.\n\nI work with you to understand what matters, examine the situation, explore possible actions, and support better decisions.\n\nI’ll show you how this workspace works as we build it together.Show meWhat can Nexora do?Skip introduction",
+  "relevanceTurns": [
+    {
+      "text": "NexoraNexora keeps the situation, evidence, options, decisions, and follow-through connected so you can understand what deserves attention before acting.Show meSkip introduction",
+      "purpose": "WHY_RELEVANT",
+      "move": "EXPLAIN_WHY",
+      "coverage": "INTRODUCTORY",
+      "threadObjective": "LEARN_CAPABILITY",
+      "threadMove": "EXPLAIN_WHY",
+      "suggested": [
+        "Show me",
+        "Skip introduction"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    },
+    {
+      "text": "NexoraThe value is not just getting an answer. Nexora keeps the reasoning around a decision visible — what is known, what is uncertain, what options exist, and what happens next.Show meSkip introduction",
+      "purpose": "WHY_RELEVANT",
+      "move": "DEEPEN",
+      "coverage": "DEEPENED",
+      "threadObjective": "LEARN_CAPABILITY",
+      "threadMove": "DEEPEN",
+      "suggested": [
+        "Show me",
+        "Skip introduction"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    },
+    {
+      "text": "NexoraI can show you how the workspace does that, rather than explaining it again.Show meWhat should we start with?Skip introduction",
+      "purpose": "WHY_RELEVANT",
+      "move": "OFFER_NEXT",
+      "coverage": "PRACTICAL",
+      "threadObjective": "LEARN_CAPABILITY",
+      "threadMove": "OFFER_NEXT",
+      "suggested": [
+        "Show me",
+        "What should we start with?",
+        "Skip introduction"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    },
+    {
+      "text": "NexoraDo you mean why Nexora itself is useful, or why the current item on Stage is here?Show meWhat should we start with?Skip introduction",
+      "purpose": "WHY_RELEVANT",
+      "move": "CLARIFY",
+      "coverage": "SATURATED",
+      "threadObjective": "LEARN_CAPABILITY",
+      "threadMove": "CLARIFY",
+      "suggested": [
+        "Show me",
+        "What should we start with?",
+        "Skip introduction"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    }
+  ],
+  "shown": {
+    "utterance": "Show me (chip)",
+    "mode": "first-time",
+    "experience": "GUIDED_ENTRANCE",
+    "ent1State": "COMPLETED",
+    "ent3State": "NOT_STARTED",
+    "convSubject": "obj-nexora-entrance",
+    "convPurpose": "WHY_RELEVANT",
+    "convMove": "CLARIFY",
+    "convCoverage": "SATURATED",
+    "convReason": "SUBJECT_PURPOSE_SATURATED",
+    "threadObjective": "LEARN_CAPABILITY",
+    "threadSubject": "obj-nexora-entrance",
+    "threadStatus": "ACTIVE",
+    "threadCovered": "WHY_RELEVANT",
+    "threadTurn": "CLARIFY",
+    "threadMove": "CLARIFY",
+    "threadReason": "TURN_POLICY_STANDS",
+    "goalState": "none",
+    "decisionState": "none",
+    "last": "NexoraThis is your Stage — the active workspace where we bring the things that matter to the current situation into view. Instead of filling it with everything at once, Nexora can focus the workspace around what you’re examining.Show me how focus worksWhat appears here?Is this a dashboard?Skip",
+    "suggested": [
+      "Show me how focus works",
+      "What appears here?",
+      "Is this a dashboard?",
+      "Skip"
+    ]
+  },
+  "explainThat": "NexoraFocus means choosing what we’re examining right now. When something becomes the focus, Nexora can organize the Stage around it and bring relevant context into view.Show meExplain firstSkip",
+  "whyFollow": "NexoraFocus helps reduce clutter so we can examine one thing at a time instead of everything at once.Show meExplain firstSkip",
+  "whatNext": "NexoraI’ve brought Nexora into focus. When something matters, we organize the workspace around what you’re examining. You can select it on the Stage if you want to feel that.Explain what I sawContinueShow again",
+  "status": "NexoraNEXORA is stable. No outcome has been measured yet.Explain what I sawContinueShow again",
+  "conv1Goal": [
+    "ANSWER",
+    "DEEPEN",
+    "CONNECT"
+  ],
+  "conv2Goal": {
+    "purpose": "WHY_PRESENT",
+    "difference": "COMPARE",
+    "final": "SUMMARIZE"
+  },
+  "afterBackgroundExperience": "GUIDED_ENTRANCE",
+  "skipClearsNextObject": true,
+  "existing": {
+    "whyProblem": "NexoraInvestigate evidence in the context of Margin Pressure. Check the evidence that would resolve the most important uncertainty before choosing an intervention.",
+    "investigate": "NexoraI don't see accepted data that clearly supports investigating it yet.",
+    "causal": "NexoraMargin Pressure is the primary problem affecting Revenue and risk exposure. Margin Pressure needs attention because Risk. Margin Pressure is associated with Revenue. That connection does not by itself tell us whether Margin Pressure is affecting Revenue or the reverse.",
+    "collection": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+    "which": "NexoraNeither clearly dominates. Capacity Gap and Margin Pressure have different supported strengths. Capacity Gap is stronger if Goal fit is decisive; Margin Pressure may be stronger if its risk or resource consequence is the priority.",
+    "why": "NexoraNeither clearly dominates. Capacity Gap and Margin Pressure have different supported strengths. Capacity Gap is stronger if Goal fit is decisive; Margin Pressure may be stronger if its risk or resource consequence is the priority.",
+    "compare": "NexoraBoth Capacity Gap and Margin Pressure are current problem items, but I don’t have enough comparable evidence to rank one over the other on the requested criterion.",
+    "leak": false
+  },
+  "classifiedErrors": [],
+  "runtimeErrors": [],
+  "noStableOnRelevance": true,
+  "firstRelevant": true,
+  "progressed": true,
+  "hasShowAction": true,
+  "showHandoff": true,
+  "statusStillWorks": true,
+  "conv1Progressed": true,
+  "threadParticipated": true,
+  "fix3Held": true,
+  "zeroBusinessWrites": true,
+  "noEducationalLeak": true,
+  "causalDistinct": true,
+  "passed": true
+}

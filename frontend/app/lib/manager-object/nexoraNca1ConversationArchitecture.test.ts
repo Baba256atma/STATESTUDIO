@@ -219,5 +219,17 @@ describe("NCA:1 Manager Conversation Architecture", () => {
       refineOperationForManagerNeed("show delivery", "FOCUS", true, "IMPERATIVE"),
       "FOCUS",
     );
+    assert.equal(
+      refineOperationForManagerNeed("why is this important", "CAUSE", false, "INTERROGATIVE"),
+      "ATTENTION",
+    );
+    assert.equal(
+      refineOperationForManagerNeed("why did this happen", "CAUSE", false, "INTERROGATIVE"),
+      "CAUSE",
+    );
+    assert.equal(
+      refineOperationForManagerNeed("why is it on stage", "CAUSE", false, "INTERROGATIVE"),
+      "CAUSE",
+    );
   });
 });

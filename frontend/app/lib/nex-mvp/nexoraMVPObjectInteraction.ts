@@ -2218,6 +2218,7 @@ function buildContextConnections(
  */
 export type DeriveNexoraMVPStageInteractionPresentationOptions = {
   readonly consultExecutiveChangeSessionStore?: boolean;
+  readonly overviewOccupancy?: "executive-workspace" | "current-catalog";
 };
 
 /**
@@ -2275,6 +2276,9 @@ export function deriveNexoraMVPStageInteractionPresentation(
         : focusedObjectId,
     presentationState: state.presentationState,
     environmentIntent: state.environmentIntent,
+    ...(options?.overviewOccupancy !== undefined
+      ? { overviewOccupancy: options.overviewOccupancy }
+      : {}),
   });
 
   // When context-focused, subordinate all objects except source + linked.

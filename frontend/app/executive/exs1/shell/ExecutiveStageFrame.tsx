@@ -5,6 +5,7 @@ import { cockpit } from "./executiveCockpitTheme";
 type Props = {
   readonly children: ReactNode;
   readonly overlay?: ReactNode;
+  readonly guidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
   /**
    * Stage-associated control mount.
    * Defaults to EXS Mode Selector. Pass MVP Workspace Dial mount (or null)
@@ -21,13 +22,18 @@ export function ExecutiveStageFrame({
   children,
   overlay,
   stageControls,
+  guidedAttentionCue = null,
 }: Props) {
   const controls =
     stageControls === undefined ? <ExecutiveModeSelector /> : stageControls;
+  const guided = guidedAttentionCue != null;
 
   return (
     <section
       data-testid="executive-stage-frame"
+      data-guided-attention-target="STAGE"
+      data-guided-attention-cue={guidedAttentionCue ?? "none"}
+      data-guided-attention-active={guided ? "true" : "false"}
       aria-label="Executive Stage Frame"
       style={{
         flex: "1 1 auto",
@@ -37,9 +43,13 @@ export function ExecutiveStageFrame({
         display: "flex",
         flexDirection: "column",
         background: cockpit.stageBg,
-        boxShadow: "inset 0 0 0 1px rgba(148, 163, 184, 0.05)",
+        boxShadow: guidedAttentionCue === "SOFT_HALO"
+          ? "inset 0 0 0 1px rgba(56, 189, 248, 0.45), 0 0 24px rgba(56, 189, 248, 0.12)"
+          : "inset 0 0 0 1px rgba(148, 163, 184, 0.05)",
+        outline: guidedAttentionCue === "EMPHASIS" ? `2px solid ${cockpit.accent}` : "none",
+        outlineOffset: guidedAttentionCue === "EMPHASIS" ? -2 : 0,
         overflow: "hidden",
-        transition: `flex-basis ${cockpit.drawerMs} ease, background 250ms ease`,
+        transition: `flex-basis ${cockpit.drawerMs} ease, background 250ms ease, box-shadow 250ms ease`,
       }}
     >
       <div

@@ -80,15 +80,20 @@ export function resolveCanonicalExecutiveObjectType(input: {
   if (CONTEXT_KINDS.has(kind) && kind !== "object") {
     return kind as NexoraDecisionTheatreCanonicalObjectType;
   }
-  if (input.id === "obj-risk" || /^risk$/i.test(input.label.trim())) {
+  if (input.id === "obj-risk" || /\brisk\b/i.test(input.label)) {
     return "risk";
   }
   if (/\bgoal\b/i.test(input.label) || input.id === "obj-goal") {
     return "goal";
   }
-  if (KPI_OBJECT_IDS.has(input.id)) {
+  if (/\bkpi\b/i.test(input.label) || KPI_OBJECT_IDS.has(input.id)) {
     return "kpi";
   }
+  if (/\bproblem\b/i.test(input.label)) return "problem";
+  if (/\bscenario\b/i.test(input.label)) return "scenario";
+  if (/\bdecision\b/i.test(input.label)) return "decision";
+  if (/\bexecution\b/i.test(input.label)) return "execution";
+  if (/\boutcome\b/i.test(input.label)) return "outcome";
   return "object";
 }
 

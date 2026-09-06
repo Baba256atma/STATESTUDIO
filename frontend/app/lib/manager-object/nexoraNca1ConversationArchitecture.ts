@@ -119,12 +119,41 @@ export function isNamedKnowledgeQuestion(
   return /^(?:what(?: is)?|whats)\b/.test(prepared);
 }
 
+export function isManagerPresenceNeed(prepared: string): boolean {
+  return /\bon stage\b|\bwhy is it here\b|\bwhy is this here\b|\bwhy here\b/.test(
+    prepared,
+  );
+}
+
+export function isManagerRelevanceNeed(prepared: string): boolean {
+  if (
+    /\b(?:happen(?:ed|ing)?|caused|cause of|root cause|why did)\b/.test(prepared)
+  ) {
+    return false;
+  }
+  if (isManagerPresenceNeed(prepared)) {
+    return false;
+  }
+  if (/\binvestigate\b|\brecommend\b|\bfirst\b/.test(prepared)) {
+    return false;
+  }
+  return /\b(?:important|importance|matter|matters|relevant|relevance|worth)\b/.test(
+    prepared,
+  );
+}
+
 export function refineOperationForManagerNeed(
   prepared: string,
   operation: CanonicalManagerOperation,
   hasSubject: boolean,
   modality: CanonicalManagerMeaning["modality"],
 ): CanonicalManagerOperation {
+  if (
+    (operation === "CAUSE" || operation === "EXPLAIN") &&
+    isManagerRelevanceNeed(prepared)
+  ) {
+    return "ATTENTION";
+  }
   if (operation !== "FOCUS" && operation !== "NONE") return operation;
   if (
     isNamedKnowledgeQuestion(prepared, hasSubject) ||

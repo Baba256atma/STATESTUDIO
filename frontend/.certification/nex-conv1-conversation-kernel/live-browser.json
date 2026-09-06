@@ -1,0 +1,126 @@
+{
+  "phase": "NEX-CONV:1",
+  "identity": "NEX-CONV:1/ConversationKernel",
+  "completedAt": "2026-09-05T23:16:38.948Z",
+  "base": "http://localhost:3012",
+  "http": 200,
+  "existingWorkspace": "existing-workspace",
+  "goalWhat": [
+    {
+      "utterance": "What is this?",
+      "last": "NexoraThat’s a Goal — something you want to achieve or improve.What is this?Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "IDENTIFY",
+      "move": "ANSWER",
+      "coverage": "INTRODUCTORY",
+      "reason": "UNANSWERED_SUBJECT_PURPOSE"
+    },
+    {
+      "utterance": "What is this?",
+      "last": "NexoraIn practice, a Goal gives the work on Stage a direction. Problems, KPIs, and scenarios can be considered in relation to what you are trying to achieve.What is this?Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "IDENTIFY",
+      "move": "DEEPEN",
+      "coverage": "DEEPENED",
+      "reason": "PRIOR_IDENTITY_EXPLANATION_EXISTS"
+    },
+    {
+      "utterance": "What is this?",
+      "last": "NexoraI can show you how this Goal differs from a KPI, or we can move to the next object.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "IDENTIFY",
+      "move": "CONNECT",
+      "coverage": "PRACTICAL",
+      "reason": "CONNECTED_COVERAGE_EXISTS"
+    },
+    {
+      "utterance": "What is this?",
+      "last": "NexoraI may not be answering the part you mean. Are you asking what a Goal is, why this Goal is here, or how it relates to the other objects?Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "IDENTIFY",
+      "move": "CLARIFY",
+      "coverage": "SATURATED",
+      "reason": "SUBJECT_PURPOSE_SATURATED"
+    },
+    {
+      "utterance": "What is this?",
+      "last": "NexoraI may not be answering the part you mean. Are you asking what a Goal is, why this Goal is here, or how it relates to the other objects?Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "IDENTIFY",
+      "move": "CLARIFY",
+      "coverage": "SATURATED",
+      "reason": "SUBJECT_PURPOSE_SATURATED"
+    }
+  ],
+  "goalWhy": [
+    {
+      "utterance": "Why is it on Stage?",
+      "last": "NexoraIt’s on Stage because it matters to the example situation we’re examining together. What appears can change with the situation.What is this?Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "move": "EXPLAIN_WHY",
+      "purpose": "WHY_PRESENT",
+      "coverage": "INTRODUCTORY"
+    },
+    {
+      "utterance": "Why is it on Stage?",
+      "last": "NexoraIt is present in this lesson so we can see how a Goal relates to the rest of the example situation on Stage, without treating it as your live business.What is this?Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "move": "DEEPEN",
+      "purpose": "WHY_PRESENT",
+      "coverage": "DEEPENED"
+    },
+    {
+      "utterance": "Why is it on Stage?",
+      "last": "NexoraThat’s why this Goal is here. I can compare it with a KPI, or we can move to the next object.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "move": "CONNECT",
+      "purpose": "WHY_PRESENT",
+      "coverage": "PRACTICAL"
+    },
+    {
+      "utterance": "Why is it on Stage?",
+      "last": "NexoraI may not be answering the part you mean. Are you asking why this Goal is on Stage, what it is, or what we should look at next?Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "move": "CLARIFY",
+      "purpose": "WHY_PRESENT",
+      "coverage": "SATURATED"
+    }
+  ],
+  "nextObject": [
+    {
+      "utterance": "What is this?",
+      "last": "NexoraThat’s a KPI — how we observe performance. It is not the Goal itself.What is this?Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "move": "ANSWER",
+      "subject": "obj-nex-ent3-kpi"
+    },
+    {
+      "utterance": "What is this?",
+      "last": "NexoraIn practice, a KPI is how we observe performance against that direction. It does not replace the Goal, and it is not a Decision.What is this?Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "move": "DEEPEN",
+      "subject": "obj-nex-ent3-kpi"
+    },
+    {
+      "utterance": "What is this?",
+      "last": "NexoraI can show you how this KPI differs from a Goal, or we can move to the next object.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "move": "CONNECT",
+      "subject": "obj-nex-ent3-kpi"
+    }
+  ],
+  "normalExecutive": [
+    {
+      "utterance": "Explain it.",
+      "last": "NexoraWhich one do you want me to explain?"
+    },
+    {
+      "utterance": "Tell me more.",
+      "last": "NexoraWhich one do you want me to explain?"
+    },
+    {
+      "utterance": "Why?",
+      "last": "NexoraI'm not sure which issue you mean. Name the one you want to investigate."
+    }
+  ],
+  "goalNoInfiniteRepeat": true,
+  "whyNoInfiniteRepeat": true,
+  "nextObjectFresh": true,
+  "nextObjectProgresses": true,
+  "normalAdvisorResponded": true,
+  "runtimeErrors": [],
+  "passed": true
+}

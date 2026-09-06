@@ -54,7 +54,8 @@ function fieldMatches(field: AdvisorDataField, query: string): boolean {
   const compactQuery = compactDataToken(query);
   const compactColumn = compactDataToken(field.column);
   if (compactColumn.length < 2) return false;
-  if (compactQuery.includes(compactColumn) || compactColumn === compactQuery) return true;
+  const queryTerms = query.split(/\s+/).map(compactDataToken).filter(Boolean);
+  if (queryTerms.includes(compactColumn) || compactColumn === compactQuery) return true;
   const spaced = field.column.replace(/[_-]+/g, " ").toLowerCase();
   if (query.includes(spaced) && spaced.length > 2) return true;
   const meaning = compactDataToken(field.confirmedMeaning ?? "");
@@ -85,7 +86,11 @@ function describeField(field: AdvisorDataField, source: AdvisorDataSource): stri
   if (field.confidence === "likely" && field.proposedMeaning) {
     return `${field.column} is a field in ${source.label}. Nexora thinks it may mean ${field.proposedMeaning}, but that meaning has not been confirmed yet.${pendingNote} Does ${field.column} mean ${field.proposedMeaning}?`;
   }
-  return `${field.column} is a field in ${source.label}, but its business meaning has not been confirmed yet.${pendingNote}`;
+  if (field.confidence === "ambiguous") {
+    const meanings = field.semanticResolution.candidates.map((candidate) => candidate.meaning);
+    return `${field.column} is a field in ${source.label}. It could refer to ${meanings.join(" or ")}, but neither meaning is confirmed.${pendingNote} Which meaning is correct for this source?`;
+  }
+  return `${field.column} is a field in ${source.label}, but I don't have enough information to suggest its business meaning.${pendingNote} What does it represent?`;
 }
 
 function clarificationFor(field: AdvisorDataField, source: AdvisorDataSource, workspaceId: WorkspaceId): CsvSemanticClarification | null {
@@ -123,7 +128,7 @@ function listLibrary(context: AdvisorDataContext): string {
 
 function describeSourceContents(source: AdvisorDataSource): string {
   const confirmed = source.fields.filter((field) => field.confidence === "confirmed" || field.confidence === "authoritative");
-  const unresolved = source.fields.filter((field) => field.confidence === "likely" || field.confidence === "unresolved");
+  const unresolved = source.fields.filter((field) => field.confidence === "likely" || field.confidence === "ambiguous" || field.confidence === "unresolved");
   const confirmedText = confirmed.length
     ? `Confirmed fields include ${confirmed.map((field) => `${field.column} (${field.confirmedMeaning})`).join(", ")}.`
     : "No business meanings are confirmed yet.";
@@ -258,7 +263,7 @@ export function answerAdvisorDataInquiry(input: Readonly<{
       return Object.freeze({ text, dialogue: { sourceContextId: uniqueFile.sourceContextId, fieldColumn: dialogue.fieldColumn }, clarification: null, mutatesStage: false, mutatesDataReality: false });
     }
     if (/\bclarif\b/.test(query)) {
-      const unresolved = uniqueFile.fields.filter((field) => field.confidence === "likely" || field.confidence === "unresolved");
+      const unresolved = uniqueFile.fields.filter((field) => field.confidence === "likely" || field.confidence === "ambiguous" || field.confidence === "unresolved");
       const text = unresolved.length
         ? `${uniqueFile.label} still needs clarification for ${unresolved.map((field) => field.column).join(", ")}.`
         : `${uniqueFile.label} has no unresolved field meanings.`;
@@ -355,7 +360,7 @@ export function answerAdvisorDataInquiry(input: Readonly<{
 
   const fields = findFields(context, query, dialogue);
   const asksField = fields.length > 0 && (
-    /\b(?:what is|what's|mean|explain|related to|this field)\b/.test(query)
+    /\b(?:what is|what's|mean|explain|why|related to|this field)\b/.test(query)
     || /^(?:explain it|what is this field|what else is in that file)$/.test(query)
   );
   if (/\bwhat else is in that file\b/.test(query) && dialogue.sourceContextId) {
@@ -389,8 +394,10 @@ export function answerAdvisorDataInquiry(input: Readonly<{
     ) ?? fields[0]!;
     const source = sourceById(context, field.sourceContextId);
     if (!source) return null;
-    const text = describeField(field, source);
-    const clarification = field.confidence === "likely" || field.confidence === "unresolved"
+    const text = /\bwhy\b/.test(query) && field.semanticResolution.requiresConfirmation
+      ? `${field.semanticResolution.explanation}`
+      : describeField(field, source);
+    const clarification = !/\bwhy\b/.test(query) && (field.confidence === "likely" || field.confidence === "ambiguous" || field.confidence === "unresolved")
       ? clarificationFor(field, source, input.workspaceId)
       : null;
     return Object.freeze({

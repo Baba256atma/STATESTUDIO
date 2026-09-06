@@ -1,0 +1,77 @@
+{
+  "phase": "NEX-ENT-FIX1",
+  "identity": "NEX-ENT-FIX1/EntranceConversationContinuity",
+  "completedAt": "2026-09-05T21:09:09.119Z",
+  "base": "http://localhost:3007",
+  "http": 200,
+  "transcript": [
+    {
+      "utterance": "What can Nexora do?",
+      "last": "NexoraI help you understand what matters, examine the situation, explore possible actions, and support decisions and their outcomes. You stay in control.Show meSkip introduction"
+    },
+    {
+      "utterance": "What can Nexora do?",
+      "last": "NexoraIn practice, I can help you work with Goals, data, Problems, Scenarios, Decisions, Execution, and Outcomes. You’ll see those capabilities as we build your workspace.Show meSkip introduction"
+    },
+    {
+      "utterance": "Show me",
+      "last": "NexoraThis is your Stage — the active workspace where we bring the things that matter to the current situation into view. Instead of filling it with everything at once, Nexora can focus the workspace around what you’re examining.Show me how focus worksWhat appears here?Is this a dashboard?Skip"
+    },
+    {
+      "utterance": "What appears here?",
+      "last": "NexoraRelevant things from the current situation can appear here when we need them. We don’t fill the Stage with everything at once.Show me how focus worksWhat appears here?Is this a dashboard?Skip"
+    },
+    {
+      "utterance": "Show me how focus works",
+      "last": "NexoraI’ve brought Nexora into focus. When something matters, we organize the workspace around what you’re examining. You can select it on the Stage if you want to feel that.Explain what I sawContinueShow again"
+    },
+    {
+      "utterance": "Explain first",
+      "last": "NexoraOf course. Focus means choosing what we’re examining right now. When something becomes the focus, Nexora can organize the Stage around it and bring relevant context into view.ContinueShow again"
+    },
+    {
+      "utterance": "Show me how focus works",
+      "last": "NexoraSure — I’ll show it again. Nexora is already the current focus, so notice how the Stage organizes around it.Explain what I sawContinueShow again"
+    },
+    {
+      "utterance": "Explain first",
+      "last": "NexoraWhat you’re seeing is the Stage staying organized around the current subject rather than filling the workspace with everything.ContinueShow again"
+    },
+    {
+      "utterance": "Why?",
+      "last": "NexoraFocus helps reduce clutter so we can examine one thing at a time instead of everything at once.ContinueShow again"
+    },
+    {
+      "utterance": "Explain it",
+      "last": "NexoraOf course. Focus means choosing what we’re examining right now. When something becomes the focus, Nexora can organize the Stage around it and bring relevant context into view.ContinueShow again"
+    },
+    {
+      "utterance": "Do it again",
+      "last": "NexoraSure — I’ll show it again. Nexora is already the current focus, so notice how the Stage organizes around it.Explain what I sawContinueShow again"
+    },
+    {
+      "utterance": "Show me the next one",
+      "last": "NexoraNow that you know the Stage, let me show you what appears on it. Most work starts with something you want to improve. These are Objects — the things Nexora uses to represent a situation. A Goal represents something you want to achieve or improve. This example Goal is Improve delivery. It is an educational example, not your business Goal.What is this?Why is it on Stage?What’s the difference?Show me the next oneSkip"
+    }
+  ],
+  "existingWorkspaceProtected": true,
+  "capabilityDeepened": true,
+  "showAfterCapability": true,
+  "appearsRetained": true,
+  "focusDemonstrated": true,
+  "explainAfterShow": true,
+  "repeatShowAware": true,
+  "explainAfterRepeat": true,
+  "noStaleShowOffer": true,
+  "noBlindLoop": true,
+  "whyKeptFocus": true,
+  "deicticExplain": true,
+  "doItAgain": true,
+  "nextLessonObject": true,
+  "nextLessonNotHijackedByFocus": true,
+  "skipPreserved": true,
+  "refreshDidNotDuplicate": true,
+  "jargonFree": true,
+  "runtimeErrors": [],
+  "passed": true
+}

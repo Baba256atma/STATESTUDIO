@@ -314,6 +314,7 @@ export type ResolveNexoraMVPStageSceneInput = {
   readonly focusedObjectId: string | null;
   readonly presentationState: NexoraMVPPresentationState;
   readonly environmentIntent: NexoraMVPSceneEnvironmentIntent;
+  readonly overviewOccupancy?: "executive-workspace" | "current-catalog";
 };
 
 function attentionScale(attention: NexoraMVPStageAttention): number {
@@ -394,6 +395,9 @@ export function resolveNexoraMVPStageScenePresentation(
     presentationMode: mode === "overview" ? "overview" : "object-focus",
     presentationDepth: input.presentationState,
     primaryStageSubjectId: focusedId,
+    ...(input.overviewOccupancy !== undefined
+      ? { overviewOccupancy: input.overviewOccupancy }
+      : {}),
     // Density: preserve CENTER + RELATED before expanding Watch.
     watchBudgetMax:
       input.presentationState === "operation"

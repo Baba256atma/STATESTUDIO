@@ -176,6 +176,8 @@ export type NexoraEntranceSession = {
   readonly executionPlanning: import("./nexoraExecutionPlanningTypes.ts").NexoraExecutionPlanningSession | null;
   readonly outcomeMonitoring: import("./nexoraOutcomeMonitoringTypes.ts").NexoraOutcomeMonitoringSession | null;
   readonly learningReassessment: import("./nexoraLearningReassessmentTypes.ts").NexoraLearningReassessmentSession | null;
+  /** NEX-ENT:1 presentation overlay. Inactive unless `/executive?entrance=1` activates it. */
+  readonly guidedIntroduction?: import("./nexoraGuidedEntranceTypes.ts").NexoraGuidedEntranceSession;
 };
 
 export function getNexoraEntranceExperienceIdentity(): {

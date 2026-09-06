@@ -44,6 +44,7 @@ export function dth3Executive(input: {
     stageNavigationEligible: true,
     collectionEligible: true,
     rendererPresentationIdentity: input.id,
+    catalogProvenance: null,
   });
 }
 

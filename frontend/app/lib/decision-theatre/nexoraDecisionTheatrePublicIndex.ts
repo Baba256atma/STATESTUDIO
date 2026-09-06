@@ -146,6 +146,13 @@ export {
 } from "./nexoraDecisionTheatreObjectInvestigationRegistry.ts";
 export { projectNexoraDecisionTheatreObjectInvestigation } from "./nexoraDecisionTheatreObjectInvestigationComposer.ts";
 export {
+  NEXORA_STAGE_CARD_SECTIONS,
+  NEXORA_STAGE_ENTITY_PRESENTATION_ROLES,
+  nexoraStageEntityPresentationRoleIdentity,
+  resolveStageEntityPresentationRole,
+  stageCardSectionIsApplicable,
+} from "./nexoraStageEntityPresentationRole.ts";
+export {
   NEXORA_DECISION_THEATRE_COMPARISON_ACTIONS,
   NEXORA_DECISION_THEATRE_COMPARISON_LEVELS,
   nexoraDecisionTheatreDecisionComparisonIdentity,

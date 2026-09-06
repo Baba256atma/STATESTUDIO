@@ -104,6 +104,7 @@ export type NexoraDecisionTheatreExecutiveObject = Readonly<{
   stageNavigationEligible: true;
   collectionEligible: boolean;
   rendererPresentationIdentity: string;
+  catalogProvenance: "entrance-education" | "object-education" | null;
 }>;
 
 export type NexoraDecisionTheatreRelationship = Readonly<{

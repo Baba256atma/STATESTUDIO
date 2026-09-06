@@ -40,7 +40,6 @@ import {
 } from "@/app/lib/data-reality/csvRealDataImportStore";
 import {
   bindCsvRealDataImportDurabilityPersistence,
-  clearCsvRealDataImportDurabilityBrowser,
   getCsvDurabilityHealth,
   recoverCsvRealDataImportDurabilityBrowser,
   subscribeCsvDurabilityHealth,
@@ -98,7 +97,6 @@ import {
   acknowledgeNexoraMVPExecutiveChanges,
   beginNexoraMVPDailyPreparation,
   beginNexoraMVPMeetingPreparation,
-  resetNexoraMVPObjectInteractionOverview,
   selectNexoraMVPInteractionSubject,
   stepBackNexoraMVPObjectInteraction,
   stepForwardNexoraMVPObjectInteraction,
@@ -145,10 +143,44 @@ import {
   projectNexoraEntranceCatalog,
   stabilizeEntranceCatalog,
   writeStoredEntranceIdentity,
-  clearStoredEntranceIdentity,
   readStoredEntranceIdentity,
 } from "@/app/lib/nexora-entrance/nexoraEntranceExperience";
 import type { NexoraEntranceSession } from "@/app/lib/nexora-entrance/nexoraEntranceTypes";
+import {
+  beginNexoraGuidedEntranceIntroduction,
+  composeNexoraGuidedEntranceIntroMessage,
+  guidedEntranceOf,
+  stageEducationOf,
+  acknowledgeNexoraStageEducationInteraction,
+  withActiveNexoraGuidedEntrance,
+} from "@/app/lib/nexora-entrance/nexoraGuidedEntranceExperience";
+import { conversationContinuityOf } from "@/app/lib/nexora-entrance/nexoraEntranceConversationContinuity";
+import {
+  acknowledgeNexoraObjectEducationInteraction,
+  objectEducationOf,
+} from "@/app/lib/nexora-entrance/nexoraObjectEducationExperience";
+import { conversationEducationOf } from "@/app/lib/nexora-entrance/nexoraConversationEducationExperience";
+import {
+  resetNexoraExperienceAwareStageOverview,
+  resolveExecutiveExperienceContext,
+  resolveExperienceAwareAdvisorSubject,
+} from "@/app/lib/nexora-entrance/nexoraExecutiveExperienceContext";
+import { attentionEducationOf } from "@/app/lib/nexora-entrance/nexoraAttentionEducationExperience";
+import { dataEducationOf } from "@/app/lib/nexora-entrance/nexoraDataEducationExperience";
+import { visualEducationOf } from "@/app/lib/nexora-entrance/nexoraVisualEducationExperience";
+import { decisionLoopEducationOf } from "@/app/lib/nexora-entrance/nexoraDecisionLoopEducationExperience";
+import { trustReviewOf } from "@/app/lib/nexora-entrance/nexoraTrustReviewExperience";
+import { personalDemoHandoffOf } from "@/app/lib/nexora-entrance/nexoraPersonalDemoHandoffExperience";
+import {
+  applyNexoraGuidedAttentionRuntime,
+  emptyNexoraGuidedAttentionRuntime,
+  type NexoraGuidedAttentionTarget,
+} from "@/app/lib/director/nexoraGuidedAttentionPresentation";
+import {
+  emptyNexoraVisualViewRuntime,
+  type NexoraVisualViewRuntime,
+} from "@/app/lib/director/nexoraVisualIntelligence";
+import { NexoraEvidenceVisualView } from "@/app/executive/nex-mvp/stage/NexoraEvidenceVisualView";
 import type {
   NexoraConversationalAdvisorGrounding,
   NexoraConversationalExperienceTrace,
@@ -275,19 +307,21 @@ export function NexoraExecutiveShell({
   );
   const [entranceSession, setEntranceSession] = useState<NexoraEntranceSession>(
     () => {
-      if (resetEntrance) clearStoredEntranceIdentity();
-      const stored =
-        entranceRequested && !resetEntrance
-          ? readStoredEntranceIdentity()
-          : null;
-      return createNexoraEntranceSession({
+      const stored = entranceRequested
+        ? readStoredEntranceIdentity()
+        : null;
+      const created = createNexoraEntranceSession({
         workspaceResolution: entranceRequested
-          ? stored
+          ? stored && !resetEntrance
             ? "returning-sufficient"
             : "first-time"
           : "existing-workspace",
         identity: stored,
+        educationalReentry: Boolean(resetEntrance && entranceRequested),
       });
+      return entranceRequested && created.workspaceResolution === "first-time"
+        ? withActiveNexoraGuidedEntrance(created)
+        : created;
     },
   );
   const [interaction, setInteraction] = useState(() => {
@@ -317,11 +351,7 @@ export function NexoraExecutiveShell({
     let cancelled = false;
     let unbind: (() => void) | null = null;
     void (async () => {
-      if (resetEntrance) {
-        await clearCsvRealDataImportDurabilityBrowser();
-      } else {
-        await recoverCsvRealDataImportDurabilityBrowser();
-      }
+      await recoverCsvRealDataImportDurabilityBrowser();
       if (cancelled) return;
       setCsvHydrated(true);
       unbind = bindCsvRealDataImportDurabilityPersistence();
@@ -330,7 +360,7 @@ export function NexoraExecutiveShell({
       cancelled = true;
       unbind?.();
     };
-  }, [resetEntrance]);
+  }, []);
   const committedCsvImports = useMemo(
     () => listCsvRealDataImports(interaction.workspace),
     [csvImportStoreVersion, interaction.workspace],
@@ -345,6 +375,8 @@ export function NexoraExecutiveShell({
     useState<ExecutiveSourceAdvisorContext | null>(null);
   const activeCsvDataset = activeCsvImport?.prepared.handoff?.dataset;
   const activeSourceDataset = activeLiveObservation?.handoff.dataset ?? activeCsvDataset;
+
+  const experienceContext = resolveExecutiveExperienceContext(entranceSession);
 
   const dataRealityExperience = useMemo(() => {
     const restrained = isNexoraEntranceRestrained(entranceSession);
@@ -513,6 +545,23 @@ export function NexoraExecutiveShell({
   const [conversationalMessages, setConversationalMessages] = useState<
     readonly NexoraConversationalMessage[]
   >(Object.freeze([]));
+  const guidedIntroSeededRef = useRef(false);
+  useEffect(() => {
+    if (guidedIntroSeededRef.current) return;
+    const guided = guidedEntranceOf(entranceSession);
+    if (guided.state !== "READY" || guided.introductionSeeded) return;
+    guidedIntroSeededRef.current = true;
+    const begun = beginNexoraGuidedEntranceIntroduction(
+      entranceSession,
+      interaction,
+    );
+    setEntranceSession(begun.session);
+    setConversationalMessages(
+      Object.freeze([
+        composeNexoraGuidedEntranceIntroMessage({ seed: "nex-ent1-intro" }),
+      ]),
+    );
+  }, [entranceSession, interaction]);
   const [executiveContext, setExecutiveContext] =
     useState<NexoraExecutiveContextSnapshot>(() =>
       createEmptyNexoraExecutiveContextSnapshot({
@@ -563,7 +612,40 @@ export function NexoraExecutiveShell({
   );
   const lastConversationalCommandIdRef = useRef<string | null>(null);
   const lastManagerUtteranceRef = useRef<string | null>(null);
+  const entranceSessionRef = useRef(entranceSession);
+  entranceSessionRef.current = entranceSession;
+  const stageEducationAckLockRef = useRef(false);
+  if (stageEducationOf(entranceSession).state === "INACTIVE") {
+    stageEducationAckLockRef.current = false;
+  }
+  const objectEducationAckLockRef = useRef<string | null>(null);
+  if (objectEducationOf(entranceSession).state === "NOT_STARTED") {
+    objectEducationAckLockRef.current = null;
+  }
   const conversationalMessageSeqRef = useRef(0);
+  const [guidedAttention, setGuidedAttention] = useState(emptyNexoraGuidedAttentionRuntime);
+  const guidedAttentionRef = useRef(guidedAttention);
+  guidedAttentionRef.current = guidedAttention;
+  const [visualView, setVisualView] = useState<NexoraVisualViewRuntime>(emptyNexoraVisualViewRuntime);
+  const visualViewRef = useRef(visualView);
+  visualViewRef.current = visualView;
+  const canStepBackRef = useRef(false);
+  useEffect(() => {
+    const presentation = guidedAttention.presentation;
+    if (presentation == null) return;
+    const remaining = Math.max(0, presentation.expiresAtMs - Date.now());
+    const timer = window.setTimeout(() => {
+      setGuidedAttention((current) =>
+        applyNexoraGuidedAttentionRuntime({
+          previous: current,
+          nowMs: Date.now(),
+        }),
+      );
+    }, remaining);
+    return () => window.clearTimeout(timer);
+    // Expiry is keyed by the current cue identity, not the presentation object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guidedAttention.presentation?.requestId, guidedAttention.presentation?.expiresAtMs]);
   const [investigationLevel, setInvestigationLevel] = useState<
     "glance" | "understand" | "investigate"
   >("glance");
@@ -691,6 +773,9 @@ export function NexoraExecutiveShell({
     const base = deriveNexoraMVPStageInteractionPresentation(
       interaction,
       stageCatalog,
+      experienceContext === "GUIDED_ENTRANCE"
+        ? { overviewOccupancy: "current-catalog" }
+        : undefined,
     );
     const withWorkspace = deriveNexoraMVPWorkspacePresentation(
       base,
@@ -759,9 +844,11 @@ export function NexoraExecutiveShell({
   }, [
     interaction,
     stageCatalog,
+    experienceContext,
     dataRealitySceneChoreography.choreography,
     dataRealityConnectionsContext.connectionsContext,
   ]);
+  canStepBackRef.current = stageInteraction.canStepBack === true;
 
   const dataObjectStage = useMemo(
     () => projectNexoraDecisionTheatreDataObjectsToStage({
@@ -802,6 +889,29 @@ export function NexoraExecutiveShell({
 
   const focusedSubject =
     interaction.focusedSubject ?? interaction.selectedSubject;
+  const educationalCenterSubject = useMemo(() => {
+    if (experienceContext !== "GUIDED_ENTRANCE") return null;
+    const id = entranceSession.centerSubjectId;
+    const object =
+      dataRealityExperience.catalog.objects.find((entry) => entry.id === id) ??
+      dataRealityExperience.catalog.objects[0];
+    if (object == null) return null;
+    return Object.freeze({
+      id: object.id,
+      kind: "object" as const,
+      label: object.label,
+    });
+  }, [
+    dataRealityExperience.catalog.objects,
+    entranceSession.centerSubjectId,
+    experienceContext,
+  ]);
+  const advisorFocusedSubject = resolveExperienceAwareAdvisorSubject({
+    experience: experienceContext,
+    focused: interaction.focusedSubject,
+    selected: interaction.selectedSubject,
+    educationalCenter: educationalCenterSubject,
+  });
 
   const presentationViewModel = useMemo(() => {
     const base = deriveNexoraMVPPresentationViewModel({
@@ -990,12 +1100,23 @@ export function NexoraExecutiveShell({
   );
 
   const onOverview = useCallback(() => {
+    const session = entranceSessionRef.current;
+    const experience = resolveExecutiveExperienceContext(session);
     setInteraction((previous) => {
-      const next = resetNexoraMVPObjectInteractionOverview(previous);
+      const next = resetNexoraExperienceAwareStageOverview({
+        state: previous,
+        session,
+      });
       setApplication((app) => applyInteractionToApplication(app, next));
       // Overview is presentation reset — preserve executive structure (CC:7).
       syncExecutiveContextFromRuntime(next, "runtime");
-      setInvestigationDismissedId(null);
+      setInvestigationDismissedId(
+        experience === "GUIDED_ENTRANCE"
+          ? (previous.focusedSubject?.id ??
+              previous.selectedSubject?.id ??
+              session.centerSubjectId)
+          : null,
+      );
       setInvestigationLevel("glance");
       return next;
     });
@@ -1038,18 +1159,69 @@ export function NexoraExecutiveShell({
     (subjectId: string | null) => {
       setSelectedDataObjectId(null);
       setInteraction((previous) => {
-        const next = selectNexoraMVPInteractionSubject(previous, subjectId);
+        const next = selectNexoraMVPInteractionSubject(
+          previous,
+          subjectId,
+          dataRealityExperience.catalog,
+        );
         setApplication((app) => applyInteractionToApplication(app, next));
         syncExecutiveContextFromRuntime(next, "runtime");
-        setManagerObjectSession((previous) =>
-          activateManagerObjectFromClick(previous, next.focusedSubject?.id ?? subjectId),
+        setManagerObjectSession((session) =>
+          activateManagerObjectFromClick(session, next.focusedSubject?.id ?? subjectId),
         );
         setInvestigationDismissedId(null);
         setInvestigationLevel("glance");
+        const ack = acknowledgeNexoraStageEducationInteraction({
+          session: entranceSessionRef.current,
+          runtimeState: next,
+          subjectId,
+        });
+        if (ack && !stageEducationAckLockRef.current) {
+          stageEducationAckLockRef.current = true;
+          setEntranceSession(ack.session);
+          conversationalMessageSeqRef.current += 1;
+          setConversationalMessages((messages) =>
+            Object.freeze([
+              ...messages,
+              Object.freeze({
+                id: `nex-ent2-${conversationalMessageSeqRef.current}-nexora`,
+                role: "nexora" as const,
+                text: ack.response,
+                status: "applied" as const,
+                suggestedActions: ack.suggestedActions,
+              }),
+            ]).slice(-20),
+          );
+        }
+        const objectAck = acknowledgeNexoraObjectEducationInteraction({
+          session: entranceSessionRef.current,
+          runtimeState: next,
+          subjectId,
+        });
+        if (
+          objectAck &&
+          objectEducationAckLockRef.current !== subjectId
+        ) {
+          objectEducationAckLockRef.current = subjectId;
+          setEntranceSession(objectAck.session);
+          conversationalMessageSeqRef.current += 1;
+          setConversationalMessages((messages) =>
+            Object.freeze([
+              ...messages,
+              Object.freeze({
+                id: `nex-ent3-${conversationalMessageSeqRef.current}-nexora`,
+                role: "nexora" as const,
+                text: objectAck.response,
+                status: "applied" as const,
+                suggestedActions: objectAck.suggestedActions,
+              }),
+            ]).slice(-20),
+          );
+        }
         return next;
       });
     },
-    [syncExecutiveContextFromRuntime],
+    [dataRealityExperience.catalog, syncExecutiveContextFromRuntime],
   );
 
   /**
@@ -1267,6 +1439,17 @@ export function NexoraExecutiveShell({
           previousUtterance: lastManagerUtteranceRef.current,
           previousManagerObjectSession: managerObjectSessionRef.current,
           previousEntranceSession: entranceSession,
+          previousGuidedAttention: guidedAttentionRef.current,
+          previousVisualView: visualViewRef.current,
+          mountedGuidedAttentionTargets: Object.freeze([
+            "DATA_ENTRY",
+            "STAGE",
+            ...(canStepBackRef.current ? (["BACK_CONTROL"] as const) : []),
+          ]) as readonly NexoraGuidedAttentionTarget[],
+          attentionNowMs: Date.now(),
+          reducedMotion:
+            typeof window !== "undefined" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches,
           theatreDecisionReviewOpen: decisionReviewOpen,
           theatreProposedCandidateId: proposedCandidateId,
         });
@@ -1279,6 +1462,12 @@ export function NexoraExecutiveShell({
         if (result.nextEntranceSession) {
           setEntranceSession(result.nextEntranceSession);
           writeStoredEntranceIdentity(result.nextEntranceSession.identity);
+        }
+        if (result.guidedAttention) {
+          setGuidedAttention(result.guidedAttention);
+        }
+        if (result.visualView) {
+          setVisualView(result.visualView);
         }
         if (result.nextScenarioSession) {
           setScenarioSession(result.nextScenarioSession);
@@ -1319,10 +1508,35 @@ export function NexoraExecutiveShell({
           lastConversationalCommandIdRef.current =
             result.commandResult?.command?.commandId ??
             lastConversationalCommandIdRef.current;
-          setInteraction(result.nextRuntimeState);
-          setApplication((app) =>
-            applyInteractionToApplication(app, result.nextRuntimeState),
-          );
+          const education = stageEducationOf(result.nextEntranceSession);
+          const reducedMotion =
+            typeof window !== "undefined" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          if (
+            education.focusDemonstrated &&
+            education.state === "AWAITING_FOCUS" &&
+            !reducedMotion
+          ) {
+            const overview = Object.freeze({
+              ...result.nextRuntimeState,
+              mode: "overview" as const,
+              focusedSubject: null,
+              selectedSubject: null,
+            });
+            setInteraction(overview);
+            setApplication((app) => applyInteractionToApplication(app, overview));
+            requestAnimationFrame(() => {
+              setInteraction(result.nextRuntimeState);
+              setApplication((app) =>
+                applyInteractionToApplication(app, result.nextRuntimeState),
+              );
+            });
+          } else {
+            setInteraction(result.nextRuntimeState);
+            setApplication((app) =>
+              applyInteractionToApplication(app, result.nextRuntimeState),
+            );
+          }
         }
       } catch {
         const failedMessage: NexoraConversationalMessage = Object.freeze({
@@ -1816,6 +2030,151 @@ export function NexoraExecutiveShell({
       data-nex-exp1-sufficiency={entranceSession.identity.sufficiency}
       data-nex-exp1-center={entranceSession.centerSubjectId ?? "none"}
       data-nex-exp1-object-count={String(dataRealityExperience.catalog.objects.length)}
+      data-executive-experience-context={experienceContext}
+      data-nex-ent1="entrance-introduction"
+      data-nex-ent1-engine="NEX-ENT:1/NexoraEntranceAndIntroduction"
+      data-nex-ent1-state={guidedEntranceOf(entranceSession).state}
+      data-nex-ent1-introduced={
+        guidedEntranceOf(entranceSession).introduced ? "true" : "false"
+      }
+      data-nex-ent1-seeded={
+        guidedEntranceOf(entranceSession).introductionSeeded ? "true" : "false"
+      }
+      data-nex-ent2="stage-education"
+      data-nex-ent2-engine="NEX-ENT:2/StageWorkspaceEducation"
+      data-nex-ent2-state={stageEducationOf(entranceSession).state}
+      data-nex-ent2-focus={
+        stageEducationOf(entranceSession).focusDemonstrated ? "true" : "false"
+      }
+      data-nex-ent2-interacted={
+        stageEducationOf(entranceSession).managerInteracted ? "true" : "false"
+      }
+      data-nex-ent3="object-education"
+      data-nex-ent3-engine="NEX-ENT:3/ObjectLanguageEducation"
+      data-nex-ent3-state={objectEducationOf(entranceSession).state}
+      data-nex-ent3-object={
+        objectEducationOf(entranceSession).currentObjectId ?? "none"
+      }
+      data-nex-conv="conversation-kernel"
+      data-nex-conv-engine="NEX-CONV:1/ConversationKernel"
+      data-nex-conv-subject={
+        conversationContinuityOf(entranceSession).working.lastDecision?.subjectId ??
+        "none"
+      }
+      data-nex-conv-purpose={
+        conversationContinuityOf(entranceSession).working.lastDecision?.purpose ??
+        "none"
+      }
+      data-nex-conv-move={
+        conversationContinuityOf(entranceSession).working.lastDecision?.move ?? "none"
+      }
+      data-nex-conv-coverage={
+        conversationContinuityOf(entranceSession).working.lastDecision?.progression ??
+        "none"
+      }
+      data-nex-conv-reason={
+        conversationContinuityOf(entranceSession).working.lastDecision?.reason ??
+        "none"
+      }
+      data-nex-conv2="conversation-thread"
+      data-nex-conv2-engine="NEX-CONV:2/ConversationThreadIntelligence"
+      data-nex-conv2-objective={
+        conversationContinuityOf(entranceSession).working.conversationThread
+          ?.objective ?? "none"
+      }
+      data-nex-conv2-subject={
+        conversationContinuityOf(entranceSession).working.conversationThread
+          ?.primarySubject ?? "none"
+      }
+      data-nex-conv2-status={
+        conversationContinuityOf(entranceSession).working.conversationThread
+          ?.status ?? "none"
+      }
+      data-nex-conv2-covered={
+        conversationContinuityOf(entranceSession).working.conversationThread
+          ?.coveredPurposes.map((item) => item.purpose)
+          .join(",") || "none"
+      }
+      data-nex-conv2-turn={
+        conversationContinuityOf(entranceSession).working.lastThreadDecision
+          ?.turnMove ?? "none"
+      }
+      data-nex-conv2-move={
+        conversationContinuityOf(entranceSession).working.lastThreadDecision
+          ?.resolvedMove ?? "none"
+      }
+      data-nex-conv2-reason={
+        conversationContinuityOf(entranceSession).working.lastThreadDecision
+          ?.reason ?? "none"
+      }
+      data-nex-conv-action={
+        conversationContinuityOf(entranceSession).working.lastActionResult
+          ?.requestedCapability ?? "none"
+      }
+      data-nex-conv-action-result={
+        conversationContinuityOf(entranceSession).working.lastActionResult?.status ??
+        "none"
+      }
+      data-nex-conv-action-from={
+        conversationContinuityOf(entranceSession).working.lastActionResult
+          ?.previousSubjectId ?? "none"
+      }
+      data-nex-conv-action-to={
+        conversationContinuityOf(entranceSession).working.lastActionResult
+          ?.resultingSubjectId ?? "none"
+      }
+      data-nex-conv-parity={(() => {
+        const actionResult =
+          conversationContinuityOf(entranceSession).working.lastActionResult;
+        if (actionResult == null) return "none";
+        const conversationSubject =
+          conversationContinuityOf(entranceSession).working.conversationThread
+            ?.primarySubject ?? null;
+        const lessonSubject = objectEducationOf(entranceSession).currentObjectId ?? null;
+        if (
+          actionResult.status === "SUCCEEDED" &&
+          actionResult.resultingSubjectId === conversationSubject &&
+          actionResult.resultingSubjectId === lessonSubject
+        ) {
+          return "PASS";
+        }
+        return actionResult.status === "SUCCEEDED" ? "MISMATCH" : "none";
+      })()}
+      data-nex-ent4="conversation-education"
+      data-nex-ent4-engine="NEX-ENT:4/AdvisorGuidedConversation"
+      data-nex-ent4-state={conversationEducationOf(entranceSession).state}
+      data-nex-ent5="attention-education"
+      data-nex-ent5-engine="NEX-ENT:5/GuidedAttentionEducation"
+      data-nex-ent5-state={attentionEducationOf(entranceSession).state}
+      data-nex-ent6="data-education"
+      data-nex-ent6-engine="NEX-ENT:6/DataEvidenceEducation"
+      data-nex-ent6-state={dataEducationOf(entranceSession).state}
+      data-nex-ent6-example={
+        dataEducationOf(entranceSession).examplePath ? "true" : "false"
+      }
+      data-nex-ent7="visual-education"
+      data-nex-ent7-engine="NEX-ENT:7/VisualIntelligenceEducation"
+      data-nex-ent7-state={visualEducationOf(entranceSession).state}
+      data-nex-ent8="decision-loop-education"
+      data-nex-ent8-engine="NEX-ENT:8/DecisionLoopEducation"
+      data-nex-ent8-state={decisionLoopEducationOf(entranceSession).state}
+      data-nex-ent9="trust-review"
+      data-nex-ent9-engine="NEX-ENT:9/TrustReview"
+      data-nex-ent9-state={trustReviewOf(entranceSession).state}
+      data-nex-ent10="personal-demo-handoff"
+      data-nex-ent10-engine="NEX-ENT:10/PersonalDemoHandoff"
+      data-nex-ent10-state={personalDemoHandoffOf(entranceSession).state}
+      data-visual-view={visualView.view ? "present" : "none"}
+      data-visual-purpose={visualView.view?.purpose ?? "none"}
+      data-visual-representation={visualView.view?.representation ?? "none"}
+      data-guided-attention-target={guidedAttention.presentation?.target ?? "none"}
+      data-guided-attention-availability={
+        guidedAttention.presentation?.availability ?? "none"
+      }
+      data-guided-attention-cue={guidedAttention.presentation?.cue ?? "none"}
+      data-guided-attention-active={
+        guidedAttention.presentation?.cue ? "true" : "false"
+      }
       data-nex-exp2="goal-discovery"
       data-nex-exp2-engine="NEX-EXP:2/GoalDiscoveryGoalObjectEmergence"
       data-nex-exp2-state={entranceSession.goalDiscovery?.state ?? "none"}
@@ -2308,8 +2667,29 @@ export function NexoraExecutiveShell({
             aria-hidden="true"
           />
           <ExecutiveStageFrame
+            guidedAttentionCue={
+              guidedAttention.presentation?.target === "STAGE"
+                ? guidedAttention.presentation.cue
+                : null
+            }
+            overlay={
+              visualView.view ? (
+                <NexoraEvidenceVisualView
+                  view={visualView.view}
+                  reducedMotion={
+                    typeof window !== "undefined" &&
+                    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                  }
+                  onDismiss={() => setVisualView(emptyNexoraVisualViewRuntime())}
+                />
+              ) : null
+            }
             stageControls={
-              <><NexoraStageDataControl open={explorerKind === "data"} attention={false} onToggle={() => setActiveNav(explorerKind === "data" ? "Home" : "Data")} /><NexoraWorkspaceDialMount
+              <><NexoraStageDataControl open={explorerKind === "data"} attention={false} guidedAttentionCue={
+                guidedAttention.presentation?.target === "DATA_ENTRY"
+                  ? guidedAttention.presentation.cue
+                  : null
+              } onToggle={() => setActiveNav(explorerKind === "data" ? "Home" : "Data")} /><NexoraWorkspaceDialMount
                 activeWorkspace={application.workspace}
                 onWorkspaceChange={onWorkspaceChange}
               /></>
@@ -2339,6 +2719,11 @@ export function NexoraExecutiveShell({
               onRemoveDataObjectFromStage={onRemoveDataObjectFromStage}
               onOpenDataRail={() => setActiveNav("Data")}
               onAskDataObject={onSubmitConversationalUtterance}
+              backGuidedAttentionCue={
+                guidedAttention.presentation?.target === "BACK_CONTROL"
+                  ? guidedAttention.presentation.cue
+                  : null
+              }
               sceneIntentKind={theatreProjection.sceneIntent.intentKind}
               sceneScriptId={theatreProjection.sceneScript.scriptId}
               objectInvestigation={theatreProjection.objectInvestigation}
@@ -2402,8 +2787,9 @@ export function NexoraExecutiveShell({
           onTabChange={setAdvisorTab}
           advisorBridge={advisorBridge}
           presentationViewModel={presentationViewModel}
-          focusedSubject={interaction.focusedSubject}
+          focusedSubject={advisorFocusedSubject}
           selectedSubject={interaction.selectedSubject}
+          experienceContext={experienceContext}
           onIntelligenceAction={onIntelligenceAction}
           onExecuteNextBestAction={onExecuteNextBestAction}
           onSelectBriefOption={onSelectBriefOption}

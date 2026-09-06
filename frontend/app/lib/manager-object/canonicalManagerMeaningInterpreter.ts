@@ -22,7 +22,11 @@ import type {
   CanonicalManagerPolarity,
   CanonicalManagerQuestionType,
 } from "./canonicalManagerMeaning.ts";
-import { refineOperationForManagerNeed } from "./nexoraNca1ConversationArchitecture.ts";
+import {
+  isManagerPresenceNeed,
+  isManagerRelevanceNeed,
+  refineOperationForManagerNeed,
+} from "./nexoraNca1ConversationArchitecture.ts";
 
 export type CanonicalManagerMeaningInput = {
   readonly utterance: string;
@@ -114,6 +118,8 @@ const CUES: readonly {
   { cue: "how are we doing", family: "STATUS", weight: 4 },
   { cue: "where are we", family: "STATUS", weight: 4 },
   { cue: "what can you", family: "META", weight: 6 },
+  { cue: "what do you do", family: "META", weight: 6 },
+  { cue: "how can you help", family: "META", weight: 6 },
   { cue: "how nexora", family: "META", weight: 6 },
   { cue: "how does nexora", family: "META", weight: 6 },
   { cue: "kinds of questions", family: "META", weight: 6 },
@@ -172,6 +178,7 @@ const CUES: readonly {
   { cue: "matter", family: "ATTENTION", weight: 2 },
   { cue: "important", family: "ATTENTION", weight: 2 },
   { cue: "status", family: "STATUS", weight: 3 },
+  { cue: "stable", family: "STATUS", weight: 4 },
   { cue: "seems", family: "OBSERVE", weight: 4 },
   { cue: "feels", family: "OBSERVE", weight: 4 },
   { cue: "i think", family: "OBSERVE", weight: 3 },
@@ -772,9 +779,13 @@ export function interpretCanonicalManagerMeaning(
   );
   const polarity = detectPolarity(preparedUtterance, picked.tentative);
   const questionType =
-    operation === "ATTENTION" && /\bgoal\b/.test(preparedUtterance)
-      ? "GOAL_RELEVANCE"
-      : questionTypeFor(operation, modality);
+    isManagerPresenceNeed(preparedUtterance) &&
+    (operation === "CAUSE" || operation === "EXPLAIN")
+      ? "EXPLANATION"
+      : operation === "ATTENTION" &&
+          (/\bgoal\b/.test(preparedUtterance) || isManagerRelevanceNeed(preparedUtterance))
+        ? "GOAL_RELEVANCE"
+        : questionTypeFor(operation, modality);
   const communicativeIntent = vagueAction
     ? "UNKNOWN"
     : communicativeIntentFor({

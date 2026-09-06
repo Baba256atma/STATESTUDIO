@@ -1,0 +1,23 @@
+{
+  "phase": "NEX-ENT:3",
+  "identity": "NEX-ENT:3/ObjectLanguageEducation",
+  "completedAt": "2026-09-04T00:01:34.171Z",
+  "http": 200,
+  "existingWorkspaceProtected": true,
+  "entranceActivated": true,
+  "objectEducationBegan": true,
+  "goalQuestion": true,
+  "kpiDistinction": true,
+  "riskDistinct": true,
+  "scenarioNotDecision": true,
+  "decisionAuthority": true,
+  "noCausality": true,
+  "noBusinessWrites": true,
+  "unrelatedAvailable": true,
+  "refreshNoEducationalLeak": true,
+  "skipSafe": true,
+  "reducedMotionUnderstood": true,
+  "noDeveloperJargon": true,
+  "uncaught": 0,
+  "duplicateOrHydration": []
+}

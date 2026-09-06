@@ -62,7 +62,7 @@ export const NXA_FUNNEL_LEVELS: Readonly<Record<NxaFunnelLevel, Readonly<{
       Object.freeze({
         id: "l4-executive-omnibus",
         purpose: "Executive-domain omnibus including new infrastructure tests",
-        command: "./node_modules/.bin/tsx --test app/lib/manager-object/*.test.ts app/lib/conversational-control/*.test.ts app/lib/executive-intelligence/*.test.ts app/lib/nexora-entrance/*.test.ts app/lib/director/nexoraSemanticPresentationDirector.test.ts app/lib/nexora-certification/*.test.ts",
+        command: "./node_modules/.bin/tsx --test app/lib/manager-object/*.test.ts app/lib/conversational-control/*.test.ts app/lib/executive-intelligence/*.test.ts app/lib/nexora-entrance/*.test.ts app/lib/director/nexoraSemanticPresentationDirector.test.ts app/lib/director/nexoraVisualIntelligence.test.ts app/lib/director/nexoraGuidedAttentionPresentation.test.ts app/lib/nexora-certification/*.test.ts",
         required: true,
       }),
       Object.freeze({
@@ -104,3 +104,4 @@ export const NXA_FUNNEL_LEVELS: Readonly<Record<NxaFunnelLevel, Readonly<{
     ]),
   }),
 });
+  

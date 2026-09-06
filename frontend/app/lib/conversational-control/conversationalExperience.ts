@@ -110,6 +110,13 @@ export type NexoraConversationalMessage = {
   readonly createdAt?: string;
   readonly status?: NexoraConversationalExperienceStatus;
   readonly commandId?: string;
+  /** Explicit manager-selectable replies. Never auto-submitted. */
+  readonly suggestedActions?: readonly {
+    readonly id: string;
+    readonly label: string;
+    readonly utterance: string;
+    readonly kind?: "answer" | "question";
+  }[];
 };
 
 /**
@@ -409,8 +416,16 @@ export type NexoraConversationalExperienceResult = {
   readonly decisionTheatre?: import("@/app/lib/decision-theatre/nexoraDecisionTheatreContract.ts").NexoraDecisionTheatreFoundation | null;
   readonly ncaPost3Diagnostics?: import("@/app/lib/manager-object/nexoraNcaPost3SemanticScopeMultiEntityCanonicalCollectionWorkspaceIntelligence.ts").NcaPost3Diagnostics | null;
   readonly ncaPost4Comparison?: import("@/app/lib/manager-object/nexoraNcaPost4CollectionComparison.ts").ExecutiveCollectionComparisonResult | null;
+  /** NEX-CONV:1 read-only move diagnostics. Never manager-facing copy. */
+  readonly conversationKernel?: import("@/app/lib/nexora-conversation/nexoraConversationDiagnostics.ts").NexoraConversationMoveDiagnostics | null;
+  /** NEX-CONV:2 read-only thread diagnostics. Never manager-facing copy. */
+  readonly conversationThread?: import("@/app/lib/nexora-conversation/nexoraConversationThreadDiagnostics.ts").NexoraConversationThreadDiagnostics | null;
+  /** NPA-T ECA:1 read-only working conversation context; session-scoped projection. */
+  readonly ecaWorkingContext?: import("@/app/lib/nexora-conversation/ecaWorkingConversationContext.ts").EcaWorkingConversationContext | null;
   /** NEX-EXP:1 session. Omitted when entrance is not active. */
   readonly nextEntranceSession?: import("@/app/lib/nexora-entrance/nexoraEntranceTypes.ts").NexoraEntranceSession | null;
+  readonly guidedAttention?: import("@/app/lib/director/nexoraGuidedAttentionPresentation.ts").NexoraGuidedAttentionRuntime | null;
+  readonly visualView?: import("@/app/lib/director/nexoraVisualIntelligence.ts").NexoraVisualViewRuntime | null;
 };
 
 export const CONVERSATIONAL_EXPERIENCE_REASON = Object.freeze({

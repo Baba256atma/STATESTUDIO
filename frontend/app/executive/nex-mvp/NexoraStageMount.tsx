@@ -87,6 +87,7 @@ type Props = {
   readonly onRemoveDataObjectFromStage: (dataObjectId: string) => void;
   readonly onOpenDataRail: () => void;
   readonly onAskDataObject: (question: string) => void;
+  readonly backGuidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
 };
 
 /**
@@ -136,6 +137,7 @@ export function NexoraStageMount({
   onRemoveDataObjectFromStage,
   onOpenDataRail,
   onAskDataObject,
+  backGuidedAttentionCue = null,
 }: Props) {
   const atmosphereMode = warRoomAtmosphere?.mode ?? "none";
   const atmosphereIntensity = warRoomAtmosphere?.intensity ?? "none";
@@ -179,6 +181,11 @@ export function NexoraStageMount({
             ? objectInvestigation.level
             : "closed"
       }
+      data-nex-stage-card-role={objectInvestigation?.presentationRole ?? "none"}
+      data-nex-stage-card-provenance={objectInvestigation?.catalogProvenance ?? "none"}
+      data-nex-stage-card-status-source={objectInvestigation?.statusSource ?? "none"}
+      data-nex-stage-card-evidence={objectInvestigation?.evidenceApplicability ?? "none"}
+      data-nex-stage-card-relationships={objectInvestigation?.relationshipApplicability ?? "none"}
       data-theatre-comparison-id={decisionComparison?.comparisonId ?? "none"}
       data-theatre-comparison-candidate-count={String(decisionComparison?.candidateIds.length ?? 0)}
       data-theatre-comparison-level={decisionComparison?.level ?? "none"}
@@ -236,6 +243,7 @@ export function NexoraStageMount({
         warRoomAtmosphere={warRoomAtmosphere}
         dataObjectStage={dataObjectStage}
         onSelectDataObject={onSelectDataObject}
+        backGuidedAttentionCue={backGuidedAttentionCue}
       />
       {dataObjectStage.participants.find((entry) => entry.dataObject.id === dataObjectStage.diagnostics.selectedDataObjectId) ? (
         <NexoraStageDataObjectInspection

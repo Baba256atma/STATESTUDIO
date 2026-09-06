@@ -16,12 +16,25 @@ import {
   type NexoraDecisionTheatreObjectInvestigation,
 } from "./nexoraDecisionTheatreObjectInvestigation.ts";
 import {
+  nexoraStageEntityPresentationRoleIdentity,
+  resolveStageEntityPresentationRole,
+  stageCardSectionIsApplicable,
+} from "./nexoraStageEntityPresentationRole.ts";
+import { CAPABILITY_INTRODUCTORY_COPY } from "@/app/lib/nexora-entrance/nexoraEntranceConversationContinuity.ts";
+import { NEXORA_GUIDED_ENTRANCE_WHAT_IS_COPY } from "@/app/lib/nexora-entrance/nexoraGuidedEntranceExperience.ts";
+import { NEXORA_EDUCATIONAL_EXAMPLE_PROVENANCE } from "@/app/lib/nexora-entrance/nexoraObjectEducationExperience.ts";
+import { classifyNexoraDecisionTheatreVisualFamily } from "./nexoraDecisionTheatreVisualFamily.ts";
+import {
   investigationTypePriority,
   managerRelationLanguage,
 } from "./nexoraDecisionTheatreObjectInvestigationRegistry.ts";
 
 export const nexoraDecisionTheatreObjectInvestigationComposerIdentity =
   "DTH:6/ObjectInvestigationComposer" as const;
+
+function indefiniteArticle(word: string): string {
+  return /^[aeiou]/i.test(word.trim()) ? "an" : "a";
+}
 
 function freezeTree<T>(value: T): T {
   if (value == null || typeof value !== "object") return value;
@@ -121,6 +134,22 @@ export function projectNexoraDecisionTheatreObjectInvestigation(input: {
   if (owner == null && executive == null) return null;
   const target = executive ?? owner;
   if (target == null) return null;
+  const visualFamily =
+    iconic != null
+      ? ("ICONIC_OBJECT" as const)
+      : classifyNexoraDecisionTheatreVisualFamily({
+          id: target.id,
+          kind: target.kind,
+        });
+  const role = resolveStageEntityPresentationRole({
+    entityId: iconic?.presentationId ?? target.id,
+    catalogProvenance: target.catalogProvenance,
+    visualFamily,
+    kind: target.kind,
+  });
+  const supportsStatus = stageCardSectionIsApplicable(role, "businessStatus");
+  const supportsEvidence = stageCardSectionIsApplicable(role, "businessEvidence");
+  const supportsRelationships = stageCardSectionIsApplicable(role, "businessRelationships");
   const level = input.level ?? "glance";
   const sceneActor = theatre.sceneScript.actors.find((item) => item.canonicalId === target.id);
   const relatedIds = new Set(
@@ -184,23 +213,44 @@ export function projectNexoraDecisionTheatreObjectInvestigation(input: {
   const relatedGoal = asRelated(firstOfType(relatedObjects, "goal"));
   const relatedProblem = asRelated(firstOfType(relatedObjects, "problem"));
   const relatedDecision = asRelated(firstOfType(relatedObjects, "decision"));
-  const suggestedQuestions = suggestionsFor({
-    type: target.canonicalObjectType,
-    hasEvidence,
-    hasRelationships: relationships.length > 0,
-    comparisonCount: comparisonMemberIds.length,
-    hasDecision: relatedDecision != null || target.canonicalObjectType === "decision",
-    hasGoal: relatedGoal != null || target.canonicalObjectType === "goal",
-  });
+  const suggestedQuestions =
+    role.presentationRole === "EDUCATIONAL_ACTOR"
+      ? Object.freeze(["Explain this.", "Show me how focus works", "Continue"])
+      : role.educationalExample
+        ? Object.freeze(["What is this?", "Why is it on Stage?", "Show me the next one"])
+        : suggestionsFor({
+            type: target.canonicalObjectType,
+            hasEvidence,
+            hasRelationships: relationships.length > 0,
+            comparisonCount: comparisonMemberIds.length,
+            hasDecision: relatedDecision != null || target.canonicalObjectType === "decision",
+            hasGoal: relatedGoal != null || target.canonicalObjectType === "goal",
+          });
   const temporal = null;
   const actions = Object.freeze([
     action("EXPLAIN_OBJECT", true, "Explanation uses the existing explain authority."),
-    action("SHOW_EVIDENCE", hasEvidence, hasEvidence ? "Evidence is present from an authoritative source." : "No supporting evidence is available."),
-    action("SHOW_RELATIONSHIPS", relationships.length > 0, relationships.length > 0 ? "Supported relationships are on Stage." : "No supported relationships are in this scene."),
+    action(
+      "SHOW_EVIDENCE",
+      supportsEvidence && hasEvidence,
+      !supportsEvidence
+        ? "Business evidence is not applicable to this entity."
+        : hasEvidence
+          ? "Evidence is present from an authoritative source."
+          : "No supporting evidence is available.",
+    ),
+    action(
+      "SHOW_RELATIONSHIPS",
+      supportsRelationships && relationships.length > 0,
+      !supportsRelationships
+        ? "Business relationships are not applicable to this entity."
+        : relationships.length > 0
+          ? "Supported relationships are on Stage."
+          : "No supported relationships are in this scene.",
+    ),
     action("SHOW_HISTORY", false, "No temporal authority is available for a history view."),
     action(
       "SHOW_DECISION_RELEVANCE",
-      relatedDecision != null || target.canonicalObjectType === "decision",
+      supportsRelationships && (relatedDecision != null || target.canonicalObjectType === "decision"),
       relatedDecision != null || target.canonicalObjectType === "decision"
         ? "Decision context is present."
         : "No Decision is related in this scene.",
@@ -218,22 +268,53 @@ export function projectNexoraDecisionTheatreObjectInvestigation(input: {
     sceneActor?.presenceReason ??
     target.presenceReason ??
     "It is part of the current Stage.";
-  const uncertainty = hasEvidence
-    ? "Available support is limited to what the current sources provide."
-    : "Nexora does not yet have enough evidence to determine this.";
+  const evidenceUnknownCopy = "Nexora does not yet have enough evidence to determine this.";
+  const uncertainty = !supportsEvidence
+    ? ""
+    : hasEvidence
+      ? "Available support is limited to what the current sources provide."
+      : evidenceUnknownCopy;
   const limitations = Object.freeze(
     [
-      hasEvidence ? null : "No synthetic evidence was added.",
+      hasEvidence || !supportsEvidence ? null : "No synthetic evidence was added.",
       temporal == null ? "No timeline was fabricated." : null,
       comparisonMemberIds.length === 1 ? "A singleton cannot produce comparison." : null,
     ].filter((item): item is string => Boolean(item)),
   );
   const investigationId = `dth6-investigation:${theatre.sceneScript.scriptId}:${target.id}:${level}:${iconic?.presentationId ?? "executive"}`;
   const objectKind = iconic != null ? iconic.role : target.canonicalObjectType;
+  const kindPhrase = objectKind.replace(/-/g, " ");
   const displayName = iconic != null ? iconic.managerReadableLabel : target.label;
   const currentState = iconic != null
     ? honestValue(iconic) ?? iconic.epistemicStatus
     : target.lifecycleStatus ?? "active";
+  const glanceIdentity =
+    role.presentationRole === "EDUCATIONAL_ACTOR"
+      ? NEXORA_GUIDED_ENTRANCE_WHAT_IS_COPY
+      : role.educationalExample
+        ? `${displayName} is ${indefiniteArticle(kindPhrase)} ${kindPhrase}.`
+        : `${displayName} is ${indefiniteArticle(kindPhrase)} ${kindPhrase}.`;
+  const glanceState = supportsStatus
+    ? `Current state: ${currentState}.`
+    : role.educationalExample
+      ? NEXORA_EDUCATIONAL_EXAMPLE_PROVENANCE
+      : role.presentationRole === "EDUCATIONAL_ACTOR"
+        ? CAPABILITY_INTRODUCTORY_COPY
+        : "";
+  const glanceWhy =
+    role.presentationRole === "EDUCATIONAL_ACTOR" || role.educationalExample
+      ? `Role in this Stage: ${whyRelevant}`
+      : whyRelevant;
+  const evidenceCopy = !supportsEvidence
+    ? ""
+    : hasEvidence
+      ? "Supporting information is available from existing sources. Association is not a confirmed cause."
+      : evidenceUnknownCopy;
+  const relatedCopy = !supportsRelationships
+    ? ""
+    : relationships.length > 0
+      ? relationships.map((item) => `${item.label} (${item.relation})`).join("; ")
+      : "No supported relationships are shown for this object.";
   return freezeTree({
     identity: nexoraDecisionTheatreObjectInvestigationIdentity,
     version: nexoraDecisionTheatreObjectInvestigationVersion,
@@ -243,8 +324,20 @@ export function projectNexoraDecisionTheatreObjectInvestigation(input: {
     objectId: iconic?.presentationId ?? target.id,
     canonicalObjectType: objectKind,
     visualFamily: iconic != null ? "ICONIC_OBJECT" : "EXECUTIVE_OBJECT",
+    presentationRole: role.presentationRole,
+    catalogProvenance: role.catalogProvenance,
+    educationalExample: role.educationalExample,
+    applicableSections: role.applicableSections,
+    suppressedSections: role.suppressedSections,
+    statusSource: supportsStatus
+      ? iconic != null
+        ? "iconic-value"
+        : "catalog-metadata"
+      : "not-applicable",
+    evidenceApplicability: supportsEvidence ? "APPLICABLE" : "NOT_APPLICABLE",
+    relationshipApplicability: supportsRelationships ? "APPLICABLE" : "NOT_APPLICABLE",
     managerReadableName: displayName,
-    currentState,
+    currentState: supportsStatus ? currentState : "",
     sceneRole: sceneActor?.role ?? null,
     presenceReason: whyRelevant,
     sceneIntentKind: theatre.sceneIntent.intentKind,
@@ -257,36 +350,33 @@ export function projectNexoraDecisionTheatreObjectInvestigation(input: {
     relatedExecution: asRelated(firstOfType(relatedObjects, "execution")),
     relatedOutcome: asRelated(firstOfType(relatedObjects, "outcome")),
     relatedKpi: asRelated(firstOfType(relatedObjects, "kpi")),
-    evidence,
-    cost: honestValue(costIconic),
-    time: honestValue(timeIconic),
+    evidence: supportsEvidence ? evidence : Object.freeze([]),
+    cost: supportsEvidence ? honestValue(costIconic) : null,
+    time: supportsEvidence ? honestValue(timeIconic) : null,
     uncertainty,
-    confidenceOrLimitation: hasEvidence
-      ? "Confidence follows the supporting source."
-      : "Missing values are not treated as zero.",
+    confidenceOrLimitation: !supportsEvidence
+      ? ""
+      : hasEvidence
+        ? "Confidence follows the supporting source."
+        : "Missing values are not treated as zero.",
     temporal,
-    relationships,
+    relationships: supportsRelationships ? relationships : Object.freeze([]),
     comparisonMemberIds,
     comparisonPreserved,
     suggestedQuestions,
     actions,
     glance: Object.freeze({
-      identity: `${displayName} is a ${objectKind.replace(/-/g, " ")}.`,
-      state: `Current state: ${currentState}.`,
-      whyRelevant,
+      identity: glanceIdentity,
+      state: glanceState,
+      whyRelevant: glanceWhy,
     }),
     advisorReadable: Object.freeze({
       objectName: displayName,
-      objectKind: objectKind.replace(/-/g, " "),
-      whyInvestigating: `${displayName} is being investigated because it is part of the current scene.`,
-      currentState: `It is currently ${currentState}.`,
-      evidence: hasEvidence
-        ? "Supporting information is available from existing sources. Association is not a confirmed cause."
-        : "Nexora does not yet have enough evidence to determine this.",
-      related:
-        relationships.length > 0
-          ? relationships.map((item) => `${item.label} (${item.relation})`).join("; ")
-          : "No supported relationships are shown for this object.",
+      objectKind: kindPhrase,
+      whyInvestigating: glanceWhy,
+      currentState: supportsStatus ? `It is currently ${currentState}.` : "",
+      evidence: evidenceCopy,
+      related: relatedCopy,
       uncertainty,
       comparison: comparisonPreserved
         ? "This object is being investigated inside the current comparison. The other candidates remain."
@@ -301,6 +391,7 @@ export function projectNexoraDecisionTheatreObjectInvestigation(input: {
     }),
     provenance: Object.freeze([
       "DTH:6/ObjectInvestigationComposer",
+      nexoraStageEntityPresentationRoleIdentity,
       theatre.sceneScript.scriptId,
       target.id,
     ]),

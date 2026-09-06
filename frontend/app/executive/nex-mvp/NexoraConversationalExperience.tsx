@@ -177,6 +177,52 @@ export function NexoraConversationalExperience({
                 {message.role === "manager" ? "Manager" : "Nexora"}
               </span>
               {message.text}
+              {message.role === "nexora" &&
+              message.suggestedActions &&
+              message.suggestedActions.length > 0 &&
+              messages[messages.length - 1]?.id === message.id ? (
+                <div
+                  data-testid="nexora-guided-entrance-suggested-actions"
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "0.3rem",
+                    marginTop: "0.4rem",
+                  }}
+                >
+                  {message.suggestedActions.map((action) => (
+                    <button
+                      key={action.id}
+                      type="button"
+                      data-testid={`nexora-guided-entrance-action-${action.id}`}
+                      data-suggestion-kind={action.kind ?? "answer"}
+                      disabled={processing || localGuard}
+                      onClick={() => onSubmit(action.utterance)}
+                      style={{
+                        padding: "0.28rem 0.5rem",
+                        borderRadius: 2,
+                        border:
+                          action.kind === "question"
+                            ? `1px dashed ${cockpit.borderStrong}`
+                            : `1px solid ${cockpit.borderStrong}`,
+                        background: "transparent",
+                        color:
+                          action.kind === "question"
+                            ? cockpit.textSoft
+                            : cockpit.accent,
+                        fontSize: "0.62rem",
+                        letterSpacing: "0.04em",
+                        cursor:
+                          processing || localGuard ? "default" : "pointer",
+                        fontFamily: "inherit",
+                        opacity: processing || localGuard ? 0.5 : 1,
+                      }}
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ))
         )}

@@ -176,6 +176,7 @@ export type Nexora3DExecutiveStageProps = {
   readonly warRoomAtmosphere?: NexoraDecisionTheatreAtmosphereProjection | null;
   readonly dataObjectStage?: NexoraDecisionTheatreDataObjectStageProjection;
   readonly onSelectDataObject?: (dataObjectId: string) => void;
+  readonly backGuidedAttentionCue?: "SOFT_HALO" | "EMPHASIS" | null;
 };
 
 const EMPTY_DATA_OBJECT_STAGE = projectNexoraDecisionTheatreDataObjectsToStage({
@@ -341,6 +342,7 @@ export function Nexora3DExecutiveStage({
   warRoomAtmosphere = null,
   dataObjectStage = EMPTY_DATA_OBJECT_STAGE,
   onSelectDataObject = () => undefined,
+  backGuidedAttentionCue = null,
 }: Nexora3DExecutiveStageProps) {
   const identity = getNexora3DExecutiveStageIdentity();
   const [webglSupported] = useState(() => {
@@ -1351,6 +1353,7 @@ export function Nexora3DExecutiveStage({
         onStepForward={onStepForward}
         onNavigateTrailIndex={onNavigateTrailIndex}
         onOverview={onOverview}
+        guidedAttentionCue={backGuidedAttentionCue}
       />
 
       <NexoraPresentationStateSelector

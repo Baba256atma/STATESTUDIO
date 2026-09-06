@@ -48,6 +48,7 @@ export default async function ExecutivePage({
       data-testid="executive-page"
       data-nexora-dataset={datasetScenario}
       data-nex-exp1-requested={entranceRequested ? "true" : "false"}
+      data-nex-ent1-requested={entranceRequested ? "true" : "false"}
       style={{
         height: "100vh",
         minHeight: "100vh",

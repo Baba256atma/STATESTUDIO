@@ -286,7 +286,9 @@ export function composeTrustedExecutiveCommunication(input: {
     });
   }
 
-  let answer = polish(sourceText);
+  let answer = input.lockPresentedResponse
+    ? sourceText.replace(/\s{2,}/g, " ").trim()
+    : polish(sourceText);
 
   if (
     input.clarification?.correctionDetected &&
@@ -396,8 +398,8 @@ export function composeTrustedExecutiveCommunication(input: {
 
   if (!locked) {
     answer = capDepth(answer, depth, false);
+    answer = polish(answer);
   }
-  answer = polish(answer);
   if (!answer) answer = sourceText;
 
   return freezeResult({

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 
 import type { NexoraMVPAdvisorContextBridge } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
 import type { NexoraMVPPresentationViewModel } from "@/app/lib/nex-mvp/nexoraMVPPresentationState";
 import type { NexoraMVPInteractionSubject } from "@/app/lib/nex-mvp/nexoraMVPObjectInteraction";
+import type { ExecutiveExperienceContext } from "@/app/lib/nexora-entrance/nexoraExecutiveExperienceContext";
 import type { DataRealityAwareAdvisorBindingResult } from "@/app/lib/data-reality/dataRealityAwareAdvisorExperienceBinding";
 import type { ExecutiveSourceAdvisorContext } from "@/app/lib/data-reality/executiveSourceIntelligence";
 import {
@@ -64,6 +65,7 @@ type Props = {
   readonly presentationViewModel: NexoraMVPPresentationViewModel;
   readonly focusedSubject: NexoraMVPInteractionSubject | null;
   readonly selectedSubject: NexoraMVPInteractionSubject | null;
+  readonly experienceContext?: ExecutiveExperienceContext;
   readonly onIntelligenceAction: (action: NexoraMVPIntelligenceAction) => void;
   /** STAGE-PROD:3 — execute NBA via existing navigation/collection handlers. */
   readonly onExecuteNextBestAction?: (actionId: string) => void;
@@ -147,6 +149,7 @@ export function NexoraAdvisorInsightRegion({
   presentationViewModel,
   focusedSubject,
   selectedSubject,
+  experienceContext = "EXECUTIVE_WORKSPACE",
   onIntelligenceAction,
   onExecuteNextBestAction,
   onSelectBriefOption,
@@ -196,12 +199,21 @@ export function NexoraAdvisorInsightRegion({
   }, []);
 
   const intelligence = useMemo(() => {
+    const narrativeBridge =
+      experienceContext === "GUIDED_ENTRANCE" && focusedSubject != null
+        ? Object.freeze({
+            ...advisorBridge,
+            advisorSubjectId: focusedSubject.id,
+            focusedSubject,
+            subjectKind: focusedSubject.kind,
+          })
+        : advisorBridge;
     const context = deriveNexoraMVPExecutiveIntelligenceContext({
-      advisorBridge,
+      advisorBridge: narrativeBridge,
       presentationViewModel,
       focusedSubject,
       selectedSubject,
-      breadcrumb: advisorBridge.breadcrumb,
+      breadcrumb: narrativeBridge.breadcrumb,
     });
     const resolution = resolveNexoraMVPExecutiveIntelligence(context);
     const applied =
@@ -221,7 +233,7 @@ export function NexoraAdvisorInsightRegion({
       advisor,
       insight: applied.insight,
       intelligence: context,
-      advisorBridge,
+      advisorBridge: narrativeBridge,
       nextBestAction: advisorBridge.nextBestAction,
       decisionBrief: advisorBridge.decisionBrief,
       decisionMemory: advisorBridge.decisionMemory,
@@ -255,6 +267,7 @@ export function NexoraAdvisorInsightRegion({
   }, [
     advisorBridge,
     advisorRealityBinding,
+    experienceContext,
     focusedSubject,
     presentationViewModel,
     selectedSubject,

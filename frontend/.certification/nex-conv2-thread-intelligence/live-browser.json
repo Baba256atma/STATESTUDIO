@@ -1,0 +1,274 @@
+{
+  "phase": "NEX-CONV:2",
+  "identity": "NEX-CONV:2/ConversationThreadIntelligence",
+  "completedAt": "2026-09-06T00:07:27.823Z",
+  "base": "http://localhost:3013",
+  "http": 200,
+  "existingWorkspace": "existing-workspace",
+  "goalSequence": [
+    {
+      "utterance": "What is this?",
+      "last": "NexoraThat’s a Goal — something you want to achieve or improve.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "IDENTIFY",
+      "conv1Move": "ANSWER",
+      "conv1Coverage": "INTRODUCTORY",
+      "threadObjective": "UNDERSTAND_SUBJECT",
+      "threadCovered": "IDENTIFY",
+      "threadTurn": "ANSWER",
+      "threadMove": "ANSWER",
+      "threadReason": "TURN_POLICY_STANDS",
+      "suggested": [
+        "Why is it on Stage?",
+        "What’s the difference?",
+        "Show me the next one",
+        "Skip"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    },
+    {
+      "utterance": "What is this?",
+      "last": "NexoraIn practice, a Goal gives the work on Stage a direction. Problems, KPIs, and scenarios can be considered in relation to what you are trying to achieve.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "IDENTIFY",
+      "conv1Move": "DEEPEN",
+      "conv1Coverage": "DEEPENED",
+      "threadObjective": "UNDERSTAND_SUBJECT",
+      "threadCovered": "IDENTIFY",
+      "threadTurn": "DEEPEN",
+      "threadMove": "DEEPEN",
+      "threadReason": "TURN_POLICY_STANDS",
+      "suggested": [
+        "Why is it on Stage?",
+        "What’s the difference?",
+        "Show me the next one",
+        "Skip"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    },
+    {
+      "utterance": "What is this?",
+      "last": "NexoraI can show you how this Goal differs from a KPI, or we can move to the next object.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "IDENTIFY",
+      "conv1Move": "CONNECT",
+      "conv1Coverage": "PRACTICAL",
+      "threadObjective": "UNDERSTAND_SUBJECT",
+      "threadCovered": "IDENTIFY",
+      "threadTurn": "CONNECT",
+      "threadMove": "CONNECT",
+      "threadReason": "TURN_POLICY_STANDS",
+      "suggested": [
+        "Why is it on Stage?",
+        "What’s the difference?",
+        "Show me the next one",
+        "Skip"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    },
+    {
+      "utterance": "Why is it on Stage?",
+      "last": "NexoraIt’s on Stage because it matters to the example situation we’re examining together. What appears can change with the situation.What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "WHY_PRESENT",
+      "conv1Move": "EXPLAIN_WHY",
+      "conv1Coverage": "INTRODUCTORY",
+      "threadObjective": "UNDERSTAND_SUBJECT",
+      "threadCovered": "IDENTIFY,WHY_PRESENT",
+      "threadTurn": "EXPLAIN_WHY",
+      "threadMove": "EXPLAIN_WHY",
+      "threadReason": "TURN_POLICY_STANDS",
+      "suggested": [
+        "What’s the difference?",
+        "Show me the next one",
+        "Skip"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    },
+    {
+      "utterance": "What is this?",
+      "last": "NexoraWe’ve covered what this Goal is and why it is on Stage. We can look at a KPI next, or explore how the Goal guides the rest of the situation.What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "IDENTIFY",
+      "conv1Move": "CLARIFY",
+      "conv1Coverage": "SATURATED",
+      "threadObjective": "UNDERSTAND_SUBJECT",
+      "threadCovered": "WHY_PRESENT,IDENTIFY",
+      "threadTurn": "CLARIFY",
+      "threadMove": "OFFER_NEXT",
+      "threadReason": "THREAD_SUFFICIENTLY_COVERED",
+      "suggested": [
+        "What’s the difference?",
+        "Show me the next one",
+        "Skip"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    },
+    {
+      "utterance": "Why is it on Stage?",
+      "last": "NexoraIt is present in this lesson so we can see how a Goal relates to the rest of the example situation on Stage, without treating it as your live business.What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "WHY_PRESENT",
+      "conv1Move": "DEEPEN",
+      "conv1Coverage": "DEEPENED",
+      "threadObjective": "UNDERSTAND_SUBJECT",
+      "threadCovered": "IDENTIFY,WHY_PRESENT",
+      "threadTurn": "DEEPEN",
+      "threadMove": "DEEPEN",
+      "threadReason": "TURN_POLICY_STANDS",
+      "suggested": [
+        "What’s the difference?",
+        "Show me the next one",
+        "Skip"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    },
+    {
+      "utterance": "What is this?",
+      "last": "NexoraWe’ve covered what this Goal is and why it is on Stage. We can look at a KPI next, or explore how the Goal guides the rest of the situation.What’s the difference?Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "IDENTIFY",
+      "conv1Move": "CLARIFY",
+      "conv1Coverage": "SATURATED",
+      "threadObjective": "UNDERSTAND_SUBJECT",
+      "threadCovered": "WHY_PRESENT,IDENTIFY",
+      "threadTurn": "CLARIFY",
+      "threadMove": "OFFER_NEXT",
+      "threadReason": "THREAD_SUFFICIENTLY_COVERED",
+      "suggested": [
+        "What’s the difference?",
+        "Show me the next one",
+        "Skip"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    },
+    {
+      "utterance": "What's the difference?",
+      "last": "NexoraA KPI helps us see how something important is performing. A Goal is the direction; a KPI is how we observe performance. No chart yet — just the measurement idea.Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "COMPARE",
+      "conv1Move": "COMPARE",
+      "conv1Coverage": "INTRODUCTORY",
+      "threadObjective": "UNDERSTAND_SUBJECT",
+      "threadCovered": "WHY_PRESENT,IDENTIFY,COMPARE",
+      "threadTurn": "COMPARE",
+      "threadMove": "COMPARE",
+      "threadReason": "TURN_POLICY_STANDS",
+      "suggested": [
+        "Show me the next one",
+        "Skip"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    },
+    {
+      "utterance": "What is this?",
+      "last": "NexoraWe’ve covered what this Goal is, why it is on Stage, and how it differs from a KPI. We can look at a KPI next, or explore how the Goal guides the rest of the situation.Show me the next oneSkip",
+      "subject": "obj-nex-ent3-goal",
+      "purpose": "IDENTIFY",
+      "conv1Move": "CLARIFY",
+      "conv1Coverage": "SATURATED",
+      "threadObjective": "UNDERSTAND_SUBJECT",
+      "threadCovered": "WHY_PRESENT,COMPARE,IDENTIFY",
+      "threadTurn": "CLARIFY",
+      "threadMove": "SUMMARIZE",
+      "threadReason": "MULTIPLE_RELEVANT_PURPOSES_ALREADY_COVERED",
+      "suggested": [
+        "Show me the next one",
+        "Skip"
+      ],
+      "goalState": "none",
+      "decisionState": "none"
+    }
+  ],
+  "suggestedAfterIdentify": [
+    "Why is it on Stage?",
+    "What’s the difference?",
+    "Show me the next one",
+    "Skip"
+  ],
+  "suggestedAfterWhy": [
+    "What’s the difference?",
+    "Show me the next one",
+    "Skip"
+  ],
+  "suggestedAfterCompare": [
+    "Show me the next one",
+    "Skip"
+  ],
+  "kpiTransition": {
+    "present": "NexoraA KPI helps us see how something important is performing. A Goal is the direction; a KPI is how we observe performance. No chart yet — just the measurement idea.What is this?Why is it on Stage?What’s the difference?Show me the next oneSkip",
+    "first": "NexoraThat’s a KPI — how we observe performance. It is not the Goal itself.Why is it on Stage?What’s the difference?Show me the next oneSkip",
+    "subject": "obj-nex-ent3-kpi",
+    "covered": "IDENTIFY"
+  },
+  "skip": {
+    "last": "NexoraUnderstood. You can use the workspace as it is. Ask whenever you want help.",
+    "suggested": [],
+    "ent3": "SKIPPED"
+  },
+  "normalExecutive": [
+    {
+      "utterance": "Explain Capacity Gap.",
+      "last": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause. My recommendation remains temporary capacity.",
+      "suggested": [],
+      "mode": "existing-workspace"
+    },
+    {
+      "utterance": "Why does it matter?",
+      "last": "NexoraCapacity Gap matters because it is connected to Capacity. Has backlog increased recently?",
+      "suggested": [],
+      "mode": "existing-workspace"
+    },
+    {
+      "utterance": "What evidence supports it?",
+      "last": "NexoraNexora does not currently have validated evidence for that claim. Has backlog increased recently?",
+      "suggested": [],
+      "mode": "existing-workspace"
+    },
+    {
+      "utterance": "What should I look at next?",
+      "last": "NexoraInvestigate evidence — it is the strongest unresolved issue in the current context.",
+      "suggested": [],
+      "mode": "existing-workspace"
+    },
+    {
+      "utterance": "Explain Capacity Gap.",
+      "last": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause. My recommendation remains temporary capacity.",
+      "suggested": [],
+      "mode": "existing-workspace"
+    }
+  ],
+  "writes": {
+    "goal": [
+      "none",
+      "none",
+      "none",
+      "none"
+    ],
+    "decision": [
+      "none",
+      "none",
+      "none",
+      "none"
+    ]
+  },
+  "finalWhatIsNotGenericClarify": true,
+  "finalWhatIsThreadAware": true,
+  "noLessonAdvance": true,
+  "kpiFresh": true,
+  "actionsEvolved": true,
+  "skipClearsNextObject": true,
+  "normalAdvisorResponded": true,
+  "noEducationalLeakAfterSkip": true,
+  "zeroBusinessWrites": true,
+  "runtimeErrors": [],
+  "passed": true
+}
