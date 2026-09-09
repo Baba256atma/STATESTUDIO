@@ -42,6 +42,7 @@ for (const [utterance, disposition] of [
     ["Yes.", "answer"],
     ["No, it means available machine hours.", "answer"],
     ["CAP_AV is the number of machine hours still available.", "answer"],
+    ["Is it Capacity Availability?", "answer"],
     ["I don't know.", "unknown"],
     ["Ask me later.", "defer"],
   ] as const) {
@@ -61,5 +62,14 @@ test("DATA-UX:3 does not intercept ordinary Advisor conversation", () => {
 test("DATA-UX:5-FIX1 pending CSV clarification ignores unrelated questions", () => {
   const session = beginNcaCsvSemanticClarification(emptySession(), need);
   assert.equal(resolveNcaCsvSemanticReply(session, "What is Capacity Gap?"), null);
+  assert.equal(session.ncaConversationState?.pendingQuestion?.relatedSubjectId, need.fieldId);
+});
+
+test("POST-ECA:3-FIX2 pending clarification does not consume a new field or CSV question", () => {
+  const session = beginNcaCsvSemanticClarification(emptySession(), need);
+  assert.equal(resolveNcaCsvSemanticReply(session, "What does BKL mean? If you are not sure, tell me what information you need from me."), null);
+  assert.equal(resolveNcaCsvSemanticReply(session, "Does this CSV provide evidence related to Capacity Gap?"), null);
+  assert.equal(resolveNcaCsvSemanticReply(session, "What useful KPIs can you calculate from this CSV with the fields you currently understand?"), null);
+  assert.equal(resolveNcaCsvSemanticReply(session, "What can you conclude from this CSV, and what can you NOT conclude yet?"), null);
   assert.equal(session.ncaConversationState?.pendingQuestion?.relatedSubjectId, need.fieldId);
 });

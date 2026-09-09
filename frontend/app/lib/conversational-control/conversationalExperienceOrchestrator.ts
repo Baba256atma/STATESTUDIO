@@ -75,6 +75,7 @@ import {
 import { shouldNexoraExecutionPlanningOwnUtterance } from "@/app/lib/nexora-entrance/nexoraExecutionPlanning.ts";
 import { shouldNexoraOutcomeMonitoringOwnUtterance } from "@/app/lib/nexora-entrance/nexoraOutcomeMonitoring.ts";
 import { shouldNexoraLearningReassessmentOwnUtterance } from "@/app/lib/nexora-entrance/nexoraLearningReassessment.ts";
+import { resolveExecutiveExperienceContext } from "@/app/lib/nexora-entrance/nexoraExecutiveExperienceContext.ts";
 import type { NexoraConversationalExperienceContextResolution } from "./conversationalExperienceContext.ts";
 import type { NexoraRegisteredExecutiveExperience } from "./conversationalExperienceRegistry.ts";
 import {
@@ -155,8 +156,14 @@ import {
 } from "@/app/lib/manager-object/nexoraNca1ConversationArchitecture.ts";
 import {
   composeNexoraSemanticTurn,
+  composeProductKnowledgeReply,
+  composeWorkspaceReply,
   hydrateCanonicalCollectionMembers,
 } from "@/app/lib/manager-object/nexoraNcaPost3SemanticScopeMultiEntityCanonicalCollectionWorkspaceIntelligence.ts";
+import {
+  answerAdvisorDataInquiry,
+  emptyAdvisorDataDialogue,
+} from "../manager-object/nexoraAdvisorDataInquiry.ts";
 import {
   applyDirectorPlanToStage,
   directNexoraPresentation,
@@ -210,11 +217,19 @@ import {
   composeKnowledgeConsentOffer,
   composePresentationReasonReply,
   composeStageSceneExplanation,
+  composeStageVisibilityCorrectionReply,
   isCollectionConfirmation,
   isExplicitPresentationRequest,
+  isLayoutProximityRelationshipQuestion,
   isPresentationConsentReply,
+  isStageFocusQuestion,
+  isStageMembershipQuestion,
   isStageMetaUtterance,
+  isStageVisibilityCorrection,
+  isVisibilityCausalityQuestion,
+  isVisibilityImportanceQuestion,
   projectAuthoritativeStageContext,
+  resolveStageOrdinalActor,
   shouldSkipScenarioEngineForStageGroundedComparison,
   type PendingPresentationConsent,
 } from "@/app/lib/manager-object/nexoraNxa5Fix4StageContextIntelligence.ts";
@@ -225,6 +240,59 @@ import {
   type EcaStageContext,
 } from "@/app/lib/nexora-conversation/ecaWorkingConversationContext.ts";
 import { handoffEcaRiskMutation } from "@/app/lib/nexora-conversation/ecaRiskMutationHandoff.ts";
+import { planEcaExecutiveConversationAction } from "@/app/lib/nexora-conversation/ecaExecutiveIntentActionPlan.ts";
+import {
+  judgeEcaExecutiveInitiative,
+  nextEcaInitiativeSession,
+} from "@/app/lib/nexora-conversation/ecaExecutiveInitiativeJudgment.ts";
+import {
+  applyEcaInformationNeedToPresentedResponse,
+  composeEcaRuntimeKnownInformation,
+  isEcaInformationRequirementRequest,
+  judgeEcaExecutiveInformationNeed,
+  nextEcaInformationNeedSession,
+} from "@/app/lib/nexora-conversation/ecaExecutiveInformationNeed.ts";
+import {
+  applyEcaAnswerIntakeToPresentedResponse,
+  judgeEcaExecutiveAnswerIntake,
+  nextEcaAnswerIntakeSession,
+} from "@/app/lib/nexora-conversation/ecaExecutiveAnswerIntake.ts";
+import {
+  applyEcaDialogueStrategyToPresentedResponse,
+  judgeEcaExecutiveDialogueStrategy,
+  nextEcaDialogueStrategySession,
+} from "@/app/lib/nexora-conversation/ecaExecutiveDialogueStrategy.ts";
+import {
+  applyEcaRecommendationToPresentedResponse,
+  judgeEcaExecutiveRecommendation,
+  nextEcaRecommendationSession,
+} from "@/app/lib/nexora-conversation/ecaExecutiveRecommendation.ts";
+import {
+  applyEcaCommitmentToPresentedResponse,
+  judgeEcaExecutiveCommitment,
+  nextEcaCommitmentSession,
+} from "@/app/lib/nexora-conversation/ecaExecutiveCommitment.ts";
+import {
+  applyEcaExecutionReadinessToPresentedResponse,
+  judgeEcaExecutiveExecutionReadiness,
+  nextEcaExecutionReadinessSession,
+} from "@/app/lib/nexora-conversation/ecaExecutiveExecutionReadiness.ts";
+import {
+  applyEcaLiveExecutionToPresentedResponse,
+  judgeEcaLiveExecution,
+  nextEcaLiveExecutionSession,
+} from "@/app/lib/nexora-conversation/ecaLiveExecution.ts";
+import {
+  applyEcaOutcomeToPresentedResponse,
+  judgeEcaExecutiveOutcome,
+  nextEcaOutcomeSession,
+  projectEcaOutcomeEvidence,
+} from "@/app/lib/nexora-conversation/ecaExecutiveOutcome.ts";
+import {
+  applyEcaLearningClosureToPresentedResponse,
+  judgeEcaExecutiveLearningClosure,
+  nextEcaLearningClosureSession,
+} from "@/app/lib/nexora-conversation/ecaExecutiveLearningClosure.ts";
 import {
   applyNca3StrategyToResponse,
   buildNca3ComparisonCriterionClarification,
@@ -235,6 +303,7 @@ import {
 import {
   applyNca4StrategyToResponse,
   attachAdvisorySnapshot,
+  classifyAdvisoryDialogueMove,
   evaluateNca4AdvisoryStrategy,
 } from "@/app/lib/manager-object/nexoraNca4AdvisoryIntelligence.ts";
 import {
@@ -1183,6 +1252,12 @@ export function executeNexoraConversationalExperience(
   readonly nextRuntimeState: NexoraMVPObjectInteractionState;
 } {
   const utterance = typeof input.utterance === "string" ? input.utterance : "";
+  const dataLibraryAnswer = answerAdvisorDataInquiry({
+    workspaceId: input.runtimeState.workspace,
+    utterance,
+    dialogue: input.previousManagerObjectSession?.advisorDataDialogue ?? emptyAdvisorDataDialogue,
+    focusedObjectLabel: input.runtimeState.focusedSubject?.label ?? null,
+  });
   const ids = deriveMessageIds(input.messageIdSeed);
   const persistEntranceSession = input.previousEntranceSession ?? null;
   const previousGuidedAttention =
@@ -1617,6 +1692,10 @@ export function executeNexoraConversationalExperience(
       lastAuthorizedPresentation:
         input.previousManagerObjectSession?.ncaConversationState?.lastAuthorizedPresentation ?? null,
       goalLabel: previousExecutiveContext.currentGoal?.canonicalName ?? null,
+      presentationOptions:
+        resolveExecutiveExperienceContext(input.previousEntranceSession) === "GUIDED_ENTRANCE"
+          ? { overviewOccupancy: "current-catalog" }
+          : undefined,
     });
     const pendingCriterion =
       input.previousManagerObjectSession?.ncaConversationState?.pendingQuestion?.expectedInformation ===
@@ -1707,10 +1786,16 @@ export function executeNexoraConversationalExperience(
       naturalLanguageUnderstanding.ambiguity.reason === "multiple-objects" &&
       /\b(?:relationship|related|connected|between|affect|depends?|constrains?|and|both)\b/i.test(utterance);
     const clarificationOwnedByResolvedAction = actionInvocation.status === "resolved";
+    const clarificationOwnedByAdvisoryDialogue =
+      clarificationRaw.action === "clarify" &&
+      classifyAdvisoryDialogueMove(utterance) === "CHALLENGE" &&
+      Boolean(input.previousManagerObjectSession?.ncaConversationState?.lastAdvisoryPosition);
     const clarification: ClarificationTurnResult = situationResolvesClarification ||
       (clarificationRaw.action === "clarify" && clarificationOwnedByCanonicalIntent) ||
       clarificationOwnedByResolvedAction ||
-      clarificationOwnedByMultiEntitySemantics
+      clarificationOwnedByMultiEntitySemantics ||
+      clarificationOwnedByAdvisoryDialogue ||
+      Boolean(dataLibraryAnswer)
       ? Object.freeze({
           ...clarificationRaw,
           action: "proceed" as const,
@@ -2710,7 +2795,10 @@ export function executeNexoraConversationalExperience(
           status !== "clarification-required") ||
         trustedDecisionSuccess,
       pendingTurnResolution,
-      preservePresentedResponse: Boolean(scenarioResult),
+      preservePresentedResponse: Boolean(scenarioResult) || Boolean(dataLibraryAnswer),
+      lockPresentedResponse: Boolean(dataLibraryAnswer),
+      dataLibraryResponse: dataLibraryAnswer?.text ?? null,
+      dataLibraryDialogue: dataLibraryAnswer?.dialogue ?? null,
       clarificationTurn: clarification,
       ...(pendingTurnResolution?.status === "interrupted" &&
       input.decisionSession?.pendingConfirmation
@@ -2786,6 +2874,8 @@ function finalize(args: {
   readonly executionRuntime?: NexoraExecutionRuntimeAdapter | null;
   readonly preservePresentedResponse?: boolean;
   readonly lockPresentedResponse?: boolean;
+  readonly dataLibraryResponse?: string | null;
+  readonly dataLibraryDialogue?: import("@/app/lib/manager-object/nexoraAdvisorDataInquiry.ts").AdvisorDataDialogue | null;
   readonly preserveConversationContinuity?: boolean;
   readonly pendingClarification?: PendingClarification | null;
   readonly clarificationTurn?: ClarificationTurnResult | null;
@@ -3488,7 +3578,9 @@ function finalize(args: {
   const nca4Presented = applyNca4StrategyToResponse({
     source: nca3Presented,
     strategy: nca4Strategy,
-    locked: Boolean(args.lockPresentedResponse),
+    locked:
+      Boolean(args.lockPresentedResponse) ||
+      (clarificationTurn.action === "clarify" && !nca4Strategy.shouldAdvise),
   });
   const nca5Strategy = evaluateNca5InitiativeStrategy({
     utterance: args.utterance,
@@ -3531,6 +3623,10 @@ function finalize(args: {
     lastAuthorizedPresentation:
       args.previousManagerObjectSession?.ncaConversationState?.lastAuthorizedPresentation ?? null,
     goalLabel: args.previousExecutiveContext.currentGoal?.canonicalName ?? null,
+    presentationOptions:
+      resolveExecutiveExperienceContext(args.nextEntranceSession) === "GUIDED_ENTRANCE"
+        ? { overviewOccupancy: "current-catalog" }
+        : undefined,
   });
   const stageRelationship = classifyRequestStageRelationship({
     utterance: args.utterance,
@@ -3569,10 +3665,7 @@ function finalize(args: {
     visibleObjects: stageVisible,
   });
   const trailLabels = Object.freeze(
-    [
-      ...(args.nextRuntimeState.trail ?? []).map((item) => item.label),
-      args.nextRuntimeState.focusedSubject?.label ?? null,
-    ].filter((item, index, all): item is string => Boolean(item) && all.indexOf(item) === index),
+    incomingStage.visibleMembers.map((item) => item.label),
   );
   const semanticTurn = composeNexoraSemanticTurn({
     utterance: args.utterance,
@@ -3582,7 +3675,7 @@ function finalize(args: {
       args.catalog,
     ),
     stageLabels: trailLabels,
-    focusedLabel: args.nextRuntimeState.focusedSubject?.label ?? null,
+    focusedLabel: incomingStage.focus?.label ?? args.nextRuntimeState.focusedSubject?.label ?? null,
     stageSnapshot: incomingStage.snapshot ?? stageSnapshot,
     presentationOnlyChange: /\b(?:shown|view|filter|focus)\b/i.test(args.utterance),
   });
@@ -3618,8 +3711,17 @@ function finalize(args: {
     args.nextEntranceSession?.workspaceResolution === "first-time" ||
     args.nextEntranceSession?.issueDiscovery,
   );
+  const dataLibraryTurn = answerAdvisorDataInquiry({
+    workspaceId: args.nextRuntimeState.workspace,
+    utterance: args.utterance,
+    dialogue: args.previousManagerObjectSession?.advisorDataDialogue ?? args.dataLibraryDialogue ?? emptyAdvisorDataDialogue,
+    focusedObjectLabel: (args.runtimeStateBeforeTurn ?? args.nextRuntimeState).focusedSubject?.label ?? null,
+  });
+  const dataLibraryOwnsResponse = Boolean(dataLibraryTurn?.text);
+  const informationRequirementRequest = isEcaInformationRequirementRequest(args.utterance);
   let presentedResponse =
     semanticTurn.reply && semanticTurn.owner !== "BUSINESS" &&
+    !informationRequirementRequest &&
     (!earlierCapabilityOwnsResponse ||
       (semanticTurn.owner === "COLLECTION_QUERY" &&
         !suppressCanonicalCollectionReply &&
@@ -3659,6 +3761,7 @@ function finalize(args: {
     presentedResponse = composeNxaContextualGuide({
       subject: nxaResponseContract.referentName,
       nextTarget: managerObjectTurn.exploration.recommendedPaths[0]?.label ?? null,
+      goal: managerObjectTurn.navigation.goal?.title ?? null,
     });
   }
   if (
@@ -3889,6 +3992,7 @@ function finalize(args: {
   }
   if (
     !args.lockPresentedResponse &&
+    !dataLibraryOwnsResponse &&
     args.contextResult.context.resolutionStatus === "not-found" &&
     semanticTurn.owner === "BUSINESS" &&
     (args.intentResult.intent.kind === "explain-scenario" || /^explain\b/i.test(args.utterance))
@@ -3926,7 +4030,7 @@ function finalize(args: {
       ? `I would change the recommendation if ${executiveJudgment.changeConditions.map((condition) => condition.replace(/[.]$/, "").toLowerCase()).join(" or ")}.`
       : executiveJudgment.managerMessage;
   }
-  if (comparisonClarification && !args.lockPresentedResponse) {
+  if (comparisonClarification && nca4Strategy.move !== "CHALLENGE" && !args.lockPresentedResponse) {
     presentedResponse = comparisonClarification.question;
   }
   const priorConsent = args.previousManagerObjectSession?.ncaConversationState?.pendingPresentationConsent ?? null;
@@ -3964,13 +4068,60 @@ function finalize(args: {
     presentedResponse = "I'll keep the current Stage.";
     nextPresentationConsent = null;
   } else if (
-    stageRelationship === "STAGE_META" &&
-    !args.lockPresentedResponse &&
-    (incomingStage.collection || incomingStage.focus)
+    isStageVisibilityCorrection(args.utterance, incomingStage.visibleMembers) &&
+    !args.lockPresentedResponse
   ) {
-    presentedResponse = /\bwhy\b/.test(args.utterance.toLowerCase())
-      ? composePresentationReasonReply(incomingStage)
-      : composeStageSceneExplanation(incomingStage);
+    presentedResponse = composeStageVisibilityCorrectionReply({
+      utterance: args.utterance,
+      stage: incomingStage,
+      previousResponse: presentedResponse,
+    });
+    nextPresentationConsent = null;
+  } else if (
+    (stageRelationship === "STAGE_META" ||
+      isStageFocusQuestion(args.utterance) ||
+      isStageMembershipQuestion(args.utterance) ||
+      isVisibilityImportanceQuestion(args.utterance) ||
+      isVisibilityCausalityQuestion(args.utterance) ||
+      isLayoutProximityRelationshipQuestion(args.utterance)) &&
+    !args.lockPresentedResponse &&
+    incomingStage.available
+  ) {
+    if (isVisibilityImportanceQuestion(args.utterance)) {
+      presentedResponse =
+        "Not by itself. Being visible tells us it is part of the current Stage presentation; importance depends on the underlying evidence and executive context.";
+    } else if (isVisibilityCausalityQuestion(args.utterance)) {
+      presentedResponse =
+        "Visibility on Stage does not by itself establish causality. That requires evidence from the existing business authorities.";
+    } else if (isLayoutProximityRelationshipQuestion(args.utterance)) {
+      presentedResponse =
+        "No. Appearing next to each other on Stage does not by itself mean they are related.";
+    } else {
+      const membership = /\bwhy\b/.test(args.utterance.toLowerCase())
+        ? composePresentationReasonReply(incomingStage)
+        : incomingStage.collection && !isStageMembershipQuestion(args.utterance) && !isStageFocusQuestion(args.utterance)
+          ? composeStageSceneExplanation(incomingStage)
+          : composeWorkspaceReply({
+              labels: incomingStage.visibleMembers.map((item) => item.label),
+              focused: incomingStage.focus?.label ?? null,
+              snapshot: incomingStage.snapshot,
+              utterance: args.utterance,
+            });
+      presentedResponse =
+        /\bexplain the (?:stage|scene)\b/i.test(args.utterance)
+          ? `${composeProductKnowledgeReply(args.utterance)} ${membership}`.trim()
+          : membership;
+    }
+    nextPresentationConsent = null;
+  } else if (
+    resolveStageOrdinalActor(args.utterance, incomingStage.visibleMembers) &&
+    /\bexplain\b/i.test(args.utterance) &&
+    !args.lockPresentedResponse
+  ) {
+    const actor = resolveStageOrdinalActor(args.utterance, incomingStage.visibleMembers);
+    presentedResponse = actor
+      ? `${actor.label} is currently visible on Stage.`
+      : presentedResponse;
     nextPresentationConsent = null;
   } else if (isCollectionConfirmation(args.utterance) && incomingStage.collection) {
     presentedResponse = composeCollectionConfirmationReply(incomingStage) ?? presentedResponse;
@@ -4614,7 +4765,7 @@ function finalize(args: {
   }
   if (deicticCandidateInvestigation && theatreInvestigation) {
     presentedResponse = [
-      theatreInvestigation.advisorReadable.whyInvestigating,
+      `${theatreInvestigation.managerReadableName}: ${theatreInvestigation.advisorReadable.whyInvestigating}`,
       theatreInvestigation.advisorReadable.evidence,
       theatreInvestigation.advisorReadable.comparison,
     ]
@@ -4886,7 +5037,13 @@ function finalize(args: {
           kind: incomingStage.focus.kind,
         })
       : null,
-    selected: null,
+    selected: incomingStage.selected
+      ? Object.freeze({
+          id: incomingStage.selected.id,
+          label: incomingStage.selected.label,
+          kind: incomingStage.selected.kind,
+        })
+      : null,
     visible: Object.freeze(
       incomingStage.visibleMembers.map((member) =>
         Object.freeze({ id: member.id, label: member.label, kind: member.kind }),
@@ -4933,34 +5090,277 @@ function finalize(args: {
         ),
     ),
   });
-    const pendingEcaProposal =
-      args.previousManagerObjectSession?.ecaMutationProposal ?? null;
-    let nextEcaProposal = ecaWorkingContext.mutationProposal;
-    if (pendingEcaProposal && isEcaMutationCancellation(args.utterance)) {
-      presentedResponse = "Okay — I won’t add it.";
-      nextEcaProposal = null;
-    } else if (pendingEcaProposal && isEcaMutationConfirmation(args.utterance)) {
-      const handoff = handoffEcaRiskMutation({
-        workspaceId: args.previousExecutiveContext.currentWorkspaceId ?? "",
-        proposal: pendingEcaProposal,
-        confirmation: {
-          confirmed: true,
-          source: "MANAGER_CONVERSATION",
-          proposalId: pendingEcaProposal.proposalId,
-          turnId: naturalLanguageUnderstanding.rawUtterance,
-        },
-      });
-      if (handoff.status === "CREATED") {
-        presentedResponse = `Supplier Delay has been added as a Risk.`;
-        nextEcaProposal = null;
-      } else if (handoff.status === "ALREADY_EXISTS") {
-        presentedResponse = "Supplier Delay already exists as a Risk.";
-        nextEcaProposal = null;
-      } else {
-        presentedResponse = `I couldn’t add Supplier Delay as a Risk because ${handoff.reason}.`;
-        nextEcaProposal = pendingEcaProposal;
+  const pendingEcaProposal =
+    args.previousManagerObjectSession?.ecaMutationProposal ?? null;
+  const ecaActionPlan = planEcaExecutiveConversationAction({
+    utterance: args.utterance,
+    workingContext: ecaWorkingContext,
+    activeProposal: ecaWorkingContext.mutationProposal ?? pendingEcaProposal,
+    lifecycle: {
+      committedDecisionId: approvedDecision?.decisionId ?? null,
+      executionId: liveExecutions[0]?.executionId ?? null,
+    },
+  });
+  const ecaInitiativeJudgment = judgeEcaExecutiveInitiative({
+    utterance: args.utterance,
+    workingContext: ecaWorkingContext,
+    actionPlan: ecaActionPlan,
+    session: args.previousManagerObjectSession?.ecaInitiativeSession ?? null,
+    nca5: nca5Strategy,
+    nxa4: proactiveAdvisoryEvaluation,
+    situation: executiveSituation,
+  });
+  const nextEcaInitiative = nextEcaInitiativeSession(
+    args.previousManagerObjectSession?.ecaInitiativeSession ?? null,
+    args.utterance,
+    ecaInitiativeJudgment,
+  );
+  const associatedOthers = /^(?:explain|why)\b/i.test(args.utterance.trim())
+    ? freezeAssociatedOthers(managerObjectTurn.explanation.relationships)
+    : Object.freeze([]);
+  const focalSubject = freezeFocalSubject(managerObjectTurn.explanation.subject, managerObjectTurn.activeObjectId);
+  const ecaInformationNeedJudgment = judgeEcaExecutiveInformationNeed({
+    utterance: args.utterance,
+    workingContext: ecaWorkingContext,
+    actionPlan: ecaActionPlan,
+    initiative: ecaInitiativeJudgment,
+    session: args.previousManagerObjectSession?.ecaInformationNeedSession ?? null,
+    known: composeEcaRuntimeKnownInformation({
+      utterance: args.utterance,
+      goalTarget:
+        args.previousManagerObjectSession?.goalContext?.successSignals.find((item) => item.target)?.target ??
+        null,
+      nca3ShouldAsk: nca3Strategy.shouldAsk,
+      nca3Question: nca3Strategy.question,
+      associatedOthers,
+      focalSubject,
+    }),
+  });
+  const nextEcaInformationNeed = nextEcaInformationNeedSession(
+    args.previousManagerObjectSession?.ecaInformationNeedSession ?? null,
+    args.utterance,
+    ecaInformationNeedJudgment,
+    associatedOthers,
+    focalSubject,
+  );
+  const ecaAnswerIntakeJudgment = judgeEcaExecutiveAnswerIntake({
+    utterance: args.utterance,
+    workingContext: ecaWorkingContext,
+    actionPlan: ecaActionPlan,
+    informationNeed: ecaInformationNeedJudgment,
+    informationNeedSession: args.previousManagerObjectSession?.ecaInformationNeedSession ?? null,
+    intakeSession: args.previousManagerObjectSession?.ecaAnswerIntakeSession ?? null,
+    meaning: naturalLanguageUnderstanding,
+    activeProposal: Boolean(pendingEcaProposal),
+    semanticConfirmationPending:
+      nextNcaState.pendingQuestion?.purpose === "csv-semantic-clarification" ||
+      args.previousManagerObjectSession?.ecaInformationNeedSession?.lastFingerprint === "semantic:CAP_AV",
+  });
+  const nextEcaAnswerIntake = nextEcaAnswerIntakeSession(
+    args.previousManagerObjectSession?.ecaAnswerIntakeSession ?? null,
+    args.utterance,
+    ecaAnswerIntakeJudgment,
+  );
+  const convWorking =
+    args.nextEntranceSession?.guidedIntroduction?.conversationContinuity?.working ?? null;
+  const ecaDialogueStrategy = judgeEcaExecutiveDialogueStrategy({
+    utterance: args.utterance,
+    workingContext: ecaWorkingContext,
+    actionPlan: ecaActionPlan,
+    initiative: ecaInitiativeJudgment,
+    informationNeed: ecaInformationNeedJudgment,
+    answerIntake: ecaAnswerIntakeJudgment,
+    session: args.previousManagerObjectSession?.ecaDialogueStrategySession ?? null,
+    conversationThread: convWorking?.conversationThread
+      ? {
+          threadId: convWorking.conversationThread.threadId,
+          objective: convWorking.conversationThread.objective,
+          status: convWorking.conversationThread.status,
+        }
+      : null,
+    committedDecisionId: approvedDecision?.decisionId ?? null,
+  });
+  const nextEcaDialogueStrategy = nextEcaDialogueStrategySession(
+    args.previousManagerObjectSession?.ecaDialogueStrategySession ?? null,
+    args.utterance,
+    ecaDialogueStrategy,
+  );
+  const ecaRecommendationJudgment = judgeEcaExecutiveRecommendation({
+    utterance: args.utterance,
+    workingContext: ecaWorkingContext,
+    actionPlan: ecaActionPlan,
+    initiative: ecaInitiativeJudgment,
+    informationNeed: ecaInformationNeedJudgment,
+    answerIntake: ecaAnswerIntakeJudgment,
+    dialogueStrategy: ecaDialogueStrategy,
+    session: args.previousManagerObjectSession?.ecaRecommendationSession ?? null,
+    nca4: nca4Strategy,
+    nxa5: executiveJudgment,
+    committedDecisionId: approvedDecision?.decisionId ?? null,
+    capAvUnconfirmed:
+      nextNcaState.pendingQuestion?.purpose === "csv-semantic-clarification" ||
+      args.previousManagerObjectSession?.ecaInformationNeedSession?.lastFingerprint === "semantic:CAP_AV",
+  });
+  const nextEcaRecommendation = nextEcaRecommendationSession(
+    args.previousManagerObjectSession?.ecaRecommendationSession ?? null,
+    args.utterance,
+    ecaRecommendationJudgment,
+  );
+  const ecaCommitmentJudgment = judgeEcaExecutiveCommitment({
+    utterance: args.utterance,
+    workingContext: ecaWorkingContext,
+    actionPlan: ecaActionPlan,
+    informationNeed: ecaInformationNeedJudgment,
+    answerIntake: ecaAnswerIntakeJudgment,
+    dialogueStrategy: ecaDialogueStrategy,
+    recommendation: ecaRecommendationJudgment,
+    session: args.previousManagerObjectSession?.ecaCommitmentSession ?? null,
+    committedDecisionId: approvedDecision?.decisionId ?? null,
+    decisionCommitmentStatus: decisionCommitmentResult?.status ?? null,
+  });
+  const nextEcaCommitment = nextEcaCommitmentSession(
+    args.previousManagerObjectSession?.ecaCommitmentSession ?? null,
+    args.utterance,
+    ecaCommitmentJudgment,
+    ecaRecommendationJudgment.criterion,
+  );
+  const relatedExecution = approvedDecision
+    ? args.executionRuntime?.findExecutionByDecisionId(approvedDecision.decisionId) ?? null
+    : null;
+  const ecaExecutionReadinessJudgment = judgeEcaExecutiveExecutionReadiness({
+    utterance: args.utterance,
+    workingContext: ecaWorkingContext,
+    actionPlan: ecaActionPlan,
+    informationNeed: ecaInformationNeedJudgment,
+    answerIntake: ecaAnswerIntakeJudgment,
+    dialogueStrategy: ecaDialogueStrategy,
+    recommendation: ecaRecommendationJudgment,
+    commitment: ecaCommitmentJudgment,
+    session: args.previousManagerObjectSession?.ecaExecutionReadinessSession ?? null,
+    committedDecisionId: approvedDecision?.decisionId ?? null,
+    committedDecisionTitle: approvedDecision?.title ?? null,
+    execution: relatedExecution
+      ? {
+          executionId: relatedExecution.executionId,
+          decisionId: relatedExecution.decisionId,
+          title: relatedExecution.title,
+          status: relatedExecution.status,
+          ownerIds: relatedExecution.ownerIds,
+          blockers: relatedExecution.blockers,
+          risks: relatedExecution.risks,
+        }
+      : null,
+    capAvUnconfirmed:
+      nextNcaState.pendingQuestion?.purpose === "csv-semantic-clarification" ||
+      args.previousManagerObjectSession?.ecaInformationNeedSession?.lastFingerprint === "semantic:CAP_AV",
+  });
+  const nextEcaExecutionReadiness = nextEcaExecutionReadinessSession(
+    args.previousManagerObjectSession?.ecaExecutionReadinessSession ?? null,
+    args.utterance,
+    ecaExecutionReadinessJudgment,
+  );
+  const liveExecutionSnapshot = relatedExecution
+    ? {
+        executionId: relatedExecution.executionId,
+        decisionId: relatedExecution.decisionId,
+        title: relatedExecution.title,
+        status: relatedExecution.status,
+        progress: relatedExecution.progress ?? null,
+        ownerIds: relatedExecution.ownerIds,
+        blockers: relatedExecution.blockers,
+        risks: relatedExecution.risks,
       }
+    : null;
+  const ecaLiveExecutionJudgment = judgeEcaLiveExecution({
+    utterance: args.utterance,
+    workingContext: ecaWorkingContext,
+    actionPlan: ecaActionPlan,
+    answerIntake: ecaAnswerIntakeJudgment,
+    readiness: ecaExecutionReadinessJudgment,
+    session: args.previousManagerObjectSession?.ecaLiveExecutionSession ?? null,
+    execution: liveExecutionSnapshot,
+    capAvUnconfirmed:
+      nextNcaState.pendingQuestion?.purpose === "csv-semantic-clarification" ||
+      args.previousManagerObjectSession?.ecaInformationNeedSession?.lastFingerprint === "semantic:CAP_AV",
+  });
+  const nextEcaLiveExecution = nextEcaLiveExecutionSession(
+    args.previousManagerObjectSession?.ecaLiveExecutionSession ?? null,
+    args.utterance,
+    ecaLiveExecutionJudgment,
+    liveExecutionSnapshot,
+  );
+  const ecaOutcomeEvidence = projectEcaOutcomeEvidence({
+    execution: relatedExecution,
+    observations: mapCapturedObservationsForTheatre({
+      captured: listCapturedObservations(),
+      executions: args.executionRuntime?.listExecutions() ?? [],
+    }),
+  });
+  const ecaOutcomeJudgment = judgeEcaExecutiveOutcome({
+    utterance: args.utterance,
+    workingContext: ecaWorkingContext,
+    actionPlan: ecaActionPlan,
+    answerIntake: ecaAnswerIntakeJudgment,
+    liveExecution: ecaLiveExecutionJudgment,
+    session: args.previousManagerObjectSession?.ecaOutcomeSession ?? null,
+    evidence: ecaOutcomeEvidence,
+    capAvUnconfirmed:
+      nextNcaState.pendingQuestion?.purpose === "csv-semantic-clarification" ||
+      args.previousManagerObjectSession?.ecaInformationNeedSession?.lastFingerprint === "semantic:CAP_AV",
+  });
+  const nextEcaOutcome = nextEcaOutcomeSession(
+    args.previousManagerObjectSession?.ecaOutcomeSession ?? null,
+    args.utterance,
+    ecaOutcomeJudgment,
+    ecaOutcomeEvidence,
+  );
+  const ecaLearningClosureJudgment = judgeEcaExecutiveLearningClosure({
+    utterance: args.utterance,
+    workingContext: ecaWorkingContext,
+    actionPlan: ecaActionPlan,
+    outcome: ecaOutcomeJudgment,
+    dialogue: ecaDialogueStrategy,
+    answerIntake: ecaAnswerIntakeJudgment,
+    session: args.previousManagerObjectSession?.ecaLearningClosureSession ?? null,
+    capAvUnconfirmed:
+      nextNcaState.pendingQuestion?.purpose === "csv-semantic-clarification" ||
+      args.previousManagerObjectSession?.ecaInformationNeedSession?.lastFingerprint === "semantic:CAP_AV",
+    pendingConfirmation: Boolean(pendingEcaProposal) || ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  const nextEcaLearningClosure = nextEcaLearningClosureSession(
+    args.previousManagerObjectSession?.ecaLearningClosureSession ?? null,
+    args.utterance,
+    ecaLearningClosureJudgment,
+  );
+  let nextEcaProposal = ecaWorkingContext.mutationProposal ?? pendingEcaProposal;
+  if (dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))) {
+    presentedResponse = dataLibraryTurn.text;
+  }
+  if (pendingEcaProposal && isEcaMutationCancellation(args.utterance)) {
+    presentedResponse = "Okay — I won’t add it.";
+    nextEcaProposal = null;
+  } else if (pendingEcaProposal && isEcaMutationConfirmation(args.utterance)) {
+    const handoff = handoffEcaRiskMutation({
+      workspaceId: args.previousExecutiveContext.currentWorkspaceId ?? "",
+      proposal: pendingEcaProposal,
+      confirmation: {
+        confirmed: true,
+        source: "MANAGER_CONVERSATION",
+        proposalId: pendingEcaProposal.proposalId,
+        turnId: naturalLanguageUnderstanding.rawUtterance,
+      },
+    });
+    if (handoff.status === "CREATED") {
+      presentedResponse = `Supplier Delay has been added as a Risk.`;
+      nextEcaProposal = null;
+    } else if (handoff.status === "ALREADY_EXISTS") {
+      presentedResponse = "Supplier Delay already exists as a Risk.";
+      nextEcaProposal = null;
+    } else {
+      presentedResponse = `I couldn’t add Supplier Delay as a Risk because ${handoff.reason}.`;
+      nextEcaProposal = pendingEcaProposal;
     }
+  }
   if (
     ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" &&
     ecaWorkingContext.mutationProposal?.status === "PROPOSED"
@@ -4971,11 +5371,84 @@ function finalize(args: {
     presentedResponse = `I can add “${label}”${type}. Add it?`;
     nextEcaProposal = proposal;
   }
+  presentedResponse = applyEcaInformationNeedToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    judgment: ecaInformationNeedJudgment,
+    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
+    nca3ShouldAsk: nca3Strategy.shouldAsk,
+  });
+  presentedResponse = applyEcaAnswerIntakeToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    judgment: ecaAnswerIntakeJudgment,
+    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
+  });
+  presentedResponse = applyEcaDialogueStrategyToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    judgment: ecaDialogueStrategy,
+    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
+  });
+  presentedResponse = applyEcaRecommendationToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    judgment: ecaRecommendationJudgment,
+    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  presentedResponse = applyEcaCommitmentToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    judgment: ecaCommitmentJudgment,
+    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  presentedResponse = applyEcaExecutionReadinessToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    judgment: ecaExecutionReadinessJudgment,
+    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  presentedResponse = applyEcaLiveExecutionToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    judgment: ecaLiveExecutionJudgment,
+    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || ecaOutcomeJudgment.speak,
+  });
+  presentedResponse = applyEcaOutcomeToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    judgment: ecaOutcomeJudgment,
+    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || ecaLearningClosureJudgment.speak,
+  });
+  presentedResponse = applyEcaLearningClosureToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    judgment: ecaLearningClosureJudgment,
+    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION",
+  });
+  presentedResponse = applyEcaInformationNeedToPresentedResponse({
+    source: presentedResponse,
+    utterance: args.utterance,
+    judgment: ecaInformationNeedJudgment,
+    locked: ecaWorkingContext.interactionMode === "PROPOSE_MUTATION" || Boolean(dataLibraryTurn?.text && (!args.lockPresentedResponse || Boolean(args.dataLibraryResponse))),
+    nca3ShouldAsk: nca3Strategy.shouldAsk,
+  });
   managerObjectTurn = Object.freeze({
     ...managerObjectTurn,
     session: freezeManagerObjectSession({
       ...managerObjectTurn.session,
       ecaMutationProposal: nextEcaProposal,
+      ecaInitiativeSession: nextEcaInitiative,
+      ecaInformationNeedSession: nextEcaInformationNeed,
+      ecaAnswerIntakeSession: nextEcaAnswerIntake,
+      ecaDialogueStrategySession: nextEcaDialogueStrategy,
+      ecaRecommendationSession: nextEcaRecommendation,
+      ecaCommitmentSession: nextEcaCommitment,
+      ecaExecutionReadinessSession: nextEcaExecutionReadiness,
+      ecaLiveExecutionSession: nextEcaLiveExecution,
+      ecaOutcomeSession: nextEcaOutcome,
+      ecaLearningClosureSession: nextEcaLearningClosure,
+      advisorDataDialogue: dataLibraryTurn?.dialogue ?? args.dataLibraryDialogue ?? args.previousManagerObjectSession?.advisorDataDialogue ?? emptyAdvisorDataDialogue,
     }),
   });
   const nexoraAdvisorMessage =
@@ -5052,6 +5525,17 @@ function finalize(args: {
       args.nextEntranceSession ?? null,
     ),
     ecaWorkingContext,
+    ecaActionPlan,
+    ecaInitiativeJudgment,
+    ecaInformationNeedJudgment,
+    ecaAnswerIntakeJudgment,
+    ecaDialogueStrategy,
+    ecaRecommendationJudgment,
+    ecaCommitmentJudgment,
+    ecaExecutionReadinessJudgment,
+    ecaLiveExecutionJudgment,
+    ecaOutcomeJudgment,
+    ecaLearningClosureJudgment,
   });
 }
 
@@ -5071,6 +5555,42 @@ function conversationThreadResultDiagnosticsOf(
     entranceSession?.guidedIntroduction?.conversationContinuity?.working ?? null;
   if (!working?.lastDecision || !working.lastThreadDecision) return null;
   return conversationThreadDiagnosticsOf(working.lastDecision, working.lastThreadDecision);
+}
+
+function freezeFocalSubject(
+  subject: { readonly id: string | null; readonly label: string | null; readonly kind?: string | null } | null | undefined,
+  activeObjectId: string | null | undefined,
+) {
+  if (subject?.label) {
+    return Object.freeze({
+      id: subject.id ?? activeObjectId ?? subject.label,
+      label: subject.label,
+      kind: subject.kind ?? "object",
+    });
+  }
+  return null;
+}
+
+function freezeAssociatedOthers(
+  relationships: readonly {
+    readonly otherId: string | null;
+    readonly otherLabel: string;
+    readonly relationKind?: string;
+  }[] | null | undefined,
+) {
+  const primary = (relationships ?? []).find(
+    (item) =>
+      Boolean(item.otherLabel) &&
+      /associat|related|affected|constrained/i.test(item.relationKind ?? "associated"),
+  );
+  if (!primary) return Object.freeze([]);
+  return Object.freeze([
+    Object.freeze({
+      id: primary.otherId ?? primary.otherLabel,
+      label: primary.otherLabel,
+      kind: "problem",
+    }),
+  ]);
 }
 
 function mapOutcomeJourneyState(

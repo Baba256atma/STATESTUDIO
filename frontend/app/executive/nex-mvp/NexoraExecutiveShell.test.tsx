@@ -67,6 +67,28 @@ describe("NEX-MVP:2 Nexora Executive Shell", () => {
       html,
       /data-shell-identity="NEX-MVP:2\/NexoraExecutiveShell"/,
     );
+    assert.match(html, /data-eca-2="executive-intent-action-plan"/);
+    assert.match(html, /data-eca-2-intent="none"/);
+    assert.match(html, /data-eca-3="executive-initiative-judgment"/);
+    assert.match(html, /data-eca-3-intervene="false"/);
+    assert.match(html, /data-eca-4="executive-information-need"/);
+    assert.match(html, /data-eca-4-ask="false"/);
+    assert.match(html, /data-eca-5="executive-answer-intake"/);
+    assert.match(html, /data-eca-5-bound="false"/);
+    assert.match(html, /data-eca-6="executive-dialogue-strategy"/);
+    assert.match(html, /data-eca-6-objective="none"/);
+    assert.match(html, /data-eca-7="executive-recommendation-readiness"/);
+    assert.match(html, /data-eca-7-readiness="none"/);
+    assert.match(html, /data-eca-8="executive-commitment-dialogue"/);
+    assert.match(html, /data-eca-8-state="none"/);
+    assert.match(html, /data-eca-9="executive-execution-readiness"/);
+    assert.match(html, /data-eca-9-readiness="none"/);
+    assert.match(html, /data-eca-10="live-execution-dialogue"/);
+    assert.match(html, /data-eca-10-live="none"/);
+    assert.match(html, /data-eca-11="outcome-dialogue"/);
+    assert.match(html, /data-eca-11-state="none"/);
+    assert.match(html, /data-eca-12="learning-reassessment-closure"/);
+    assert.match(html, /data-eca-12-learning="none"/);
   });
 
   it("4. Context Bar exists", () => {

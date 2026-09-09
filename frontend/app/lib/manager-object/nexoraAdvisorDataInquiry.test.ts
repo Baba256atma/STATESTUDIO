@@ -248,6 +248,11 @@ test("DATA-ADV:2 Advisor presents ambiguity, grounded why, unknown, correction, 
   const now = answerAdvisorDataInquiry({ workspaceId: "overview", utterance: "What is CAP_AV?" });
   assert.match(now?.text ?? "", /means Capacity Availability/i);
   assert.match(now?.text ?? "", /confirmed for this source/i);
+  const status = answerAdvisorDataInquiry({ workspaceId: "overview", utterance: "Is that confirmed?", dialogue: now?.dialogue });
+  assert.match(status?.text ?? "", /Capacity Availability/i);
+  assert.match(status?.text ?? "", /confirmed for this source/i);
+  const provenance = answerAdvisorDataInquiry({ workspaceId: "overview", utterance: "Show me the source.", dialogue: status?.dialogue });
+  assert.match(provenance?.text ?? "", /CAP_AV is in production\.csv/i);
 
   savePending("finance.csv", "AV,BUDGET\n12,14", mappingFor("finance.csv", "AV,BUDGET\n12,14"));
   const both = answerAdvisorDataInquiry({ workspaceId: "overview", utterance: "What is CAP_AV?" });

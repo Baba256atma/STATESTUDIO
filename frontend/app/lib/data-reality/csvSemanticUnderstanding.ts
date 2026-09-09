@@ -291,6 +291,10 @@ const TENTATIVE_REPLY =
 
 function definitionFrom(answer: string, field: CsvColumnMapping): string | null {
   const trimmed = answer.trim().replace(/[.!]+$/, "");
+  const questionForm = trimmed.match(
+    /^(?:is\s+(?:it|this|that)|does\s+(?:it|this|that)\s+(?:mean|represent))\s+(.+?)\??$/i,
+  );
+  if (questionForm?.[1]) return questionForm[1].trim();
   if (BARE_AFFIRMATION.test(trimmed) || (/^yes\b/i.test(trimmed) && !/\bmeans\b/i.test(trimmed) && trimmed.split(/\s+/).length <= 5)) {
     const explicit = trimmed
       .replace(/^yes(?:,)?(?:\s+(?:it|that) (?:does|is|means))?\s*/i, "")

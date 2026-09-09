@@ -46,10 +46,15 @@ export function classifyCsvSemanticClarificationUtterance(utterance: string): Cs
   if (/\b(?:ignore(?: it| this(?: column| field)?)?|don'?t use this (?:column|field)|(?:this field|this column) isn'?t relevant)\b/i.test(lower)) {
     return "ignore";
   }
-  if (/\b(?:ask me later|later|not now)\b/i.test(lower)) return "defer";
-  if (/\b(?:i don'?t know|not sure|no idea)\b/i.test(lower)) return "unknown";
+  if (/^(?:ask me later|later|not now)\.?$/i.test(lower)) return "defer";
+  if (/^(?:i don'?t know|i do not know|not sure|no idea)\b/i.test(lower)) return "unknown";
   if (/^(?:maybe|i think so|perhaps|possibly|probably)$/i.test(lower)) return "tentative";
   const speech = classifyManagerSpeechAct(utterance);
+  const answersPendingFieldInQuestionForm = (
+    /^(?:is|does)\s+(?:it|this|that)\b/i.test(lower) &&
+    !/\b(?:csv|file|source|evidence|kpi|kpis|column|columns|conclude|library|problem|risk|scenario|stage)\b/i.test(lower)
+  );
+  if (answersPendingFieldInQuestionForm) return "correct";
   if (speech === "QUESTION") return "unrelated";
   if (speech === "COMMAND") return "unrelated";
   if (speech === "SOCIAL") return "unrelated";

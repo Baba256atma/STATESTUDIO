@@ -307,7 +307,7 @@ export function CsvRealDataImportFlow(props: CsvRealDataImportFlowProps): React.
       previousMapping: props.replacementSource?.prepared.mapping ?? activeReplacement?.prepared.mapping ?? (currentId === candidateId ? flowRef.current.mapping : null),
     });
     dispatch({ type: "parsed", parse, mapping });
-  }, [props.workspaceId, replacement]);
+  }, [props.workspaceId, props.replacementSource, replacement]);
 
   const handleFile = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;

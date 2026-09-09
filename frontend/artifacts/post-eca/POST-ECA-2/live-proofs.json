@@ -1,0 +1,220 @@
+{
+  "identity": "NPA-T POST-ECA:2/LiveStageAwareness",
+  "url": "http://127.0.0.1:61411/executive?reset=1",
+  "isolatedPort": 61411,
+  "errors": [],
+  "runtimes": {
+    "runtime1": {
+      "name": "Overview visible composition",
+      "pass": true,
+      "actual": {
+        "managerTurn": "what is on stage?",
+        "reply": "NexoraCapacity Watch and Customer Watch are currently visible on Stage.",
+        "sceneId": "overview:overview",
+        "sceneMode": "overview",
+        "visibleCount": "2",
+        "visibleIds": "obj-capacity|obj-customer",
+        "visibleNames": "Capacity|Customer",
+        "focused": "none",
+        "selected": "none",
+        "eca1Consumed": "true",
+        "queryDetected": "true",
+        "eca2Intent": "UNKNOWN",
+        "eca5Type": "UNRELATED_RESPONSE",
+        "eca5Subject": "false",
+        "eca6Objective": "none",
+        "queueCategory": "none"
+      }
+    },
+    "runtime2": {
+      "name": "Focus Risk composition",
+      "pass": true,
+      "actual": {
+        "managerTurn": "what is on stage?",
+        "reply": "NexoraRisk is currently focused. Capacity Watch, Customer Watch, and Delivery are also visible.",
+        "sceneId": "overview:object-focus",
+        "sceneMode": "object-focus",
+        "visibleCount": "4",
+        "visibleIds": "obj-capacity|obj-customer|obj-delivery|obj-risk",
+        "visibleNames": "Capacity|Customer|Delivery|Risk",
+        "focused": "obj-risk",
+        "selected": "obj-risk",
+        "eca1Consumed": "true",
+        "queryDetected": "true",
+        "eca2Intent": "UNKNOWN",
+        "eca5Type": "UNRELATED_RESPONSE",
+        "eca5Subject": "false",
+        "eca6Objective": "none",
+        "queueCategory": "none"
+      }
+    },
+    "runtime3": {
+      "name": "manager correction",
+      "pass": true,
+      "actual": {
+        "managerTurn": "No, you're wrong. There is Capacity and Customer on it. Do you understand?",
+        "reply": "NexoraYou're right. I was reading the wrong context. Capacity Watch and Customer Watch are currently visible on Stage.",
+        "sceneId": "overview:overview",
+        "sceneMode": "overview",
+        "visibleCount": "2",
+        "visibleIds": "obj-capacity|obj-customer",
+        "visibleNames": "Capacity|Customer",
+        "focused": "none",
+        "selected": "none",
+        "eca1Consumed": "true",
+        "queryDetected": "false",
+        "eca2Intent": "UNKNOWN",
+        "eca5Type": "CORRECTION",
+        "eca5Subject": "true",
+        "eca6Objective": "none",
+        "queueCategory": "none"
+      }
+    },
+    "runtime4": {
+      "name": "collection/Queue isolation",
+      "pass": true,
+      "actual": {
+        "managerTurn": "what objects are on stage?",
+        "reply": "NexoraCapacity Watch and Customer Watch are currently visible on Stage.",
+        "sceneId": "overview:overview",
+        "sceneMode": "overview",
+        "visibleCount": "2",
+        "visibleIds": "obj-capacity|obj-customer",
+        "visibleNames": "Capacity|Customer",
+        "focused": "none",
+        "selected": "none",
+        "eca1Consumed": "true",
+        "queryDetected": "true",
+        "eca2Intent": "UNKNOWN",
+        "eca5Type": "UNRELATED_RESPONSE",
+        "eca5Subject": "false",
+        "eca6Objective": "none",
+        "queueCategory": "none"
+      }
+    },
+    "runtime5": {
+      "name": "Back/Forward presentation",
+      "pass": true,
+      "actual": {
+        "afterFocus": {
+          "managerTurn": "what is on stage?",
+          "reply": "NexoraRisk is currently focused. Capacity Watch, Customer Watch, and Delivery are also visible.",
+          "sceneId": "overview:object-focus",
+          "sceneMode": "object-focus",
+          "visibleCount": "4",
+          "visibleIds": "obj-capacity|obj-customer|obj-delivery|obj-risk",
+          "visibleNames": "Capacity|Customer|Delivery|Risk",
+          "focused": "obj-risk",
+          "selected": "obj-risk",
+          "eca1Consumed": "true",
+          "queryDetected": "true",
+          "eca2Intent": "UNKNOWN",
+          "eca5Type": "UNRELATED_RESPONSE",
+          "eca5Subject": "false",
+          "eca6Objective": "none",
+          "queueCategory": "none"
+        },
+        "afterBack": {
+          "managerTurn": "What's on Stage now?",
+          "reply": "NexoraCapacity Watch and Customer Watch are currently visible on Stage.",
+          "sceneId": "overview:overview",
+          "sceneMode": "overview",
+          "visibleCount": "2",
+          "visibleIds": "obj-capacity|obj-customer",
+          "visibleNames": "Capacity|Customer",
+          "focused": "none",
+          "selected": "none",
+          "eca1Consumed": "true",
+          "queryDetected": "true",
+          "eca2Intent": "UNKNOWN",
+          "eca5Type": "UNRELATED_RESPONSE",
+          "eca5Subject": "false",
+          "eca6Objective": "none",
+          "queueCategory": "none"
+        },
+        "afterForward": {
+          "managerTurn": "What's on Stage now?",
+          "reply": "NexoraRisk is currently focused. Capacity Watch, Customer Watch, and Delivery are also visible.",
+          "sceneId": "overview:object-focus",
+          "sceneMode": "object-focus",
+          "visibleCount": "4",
+          "visibleIds": "obj-capacity|obj-customer|obj-delivery|obj-risk",
+          "visibleNames": "Capacity|Customer|Delivery|Risk",
+          "focused": "obj-risk",
+          "selected": "obj-risk",
+          "eca1Consumed": "true",
+          "queryDetected": "true",
+          "eca2Intent": "UNKNOWN",
+          "eca5Type": "UNRELATED_RESPONSE",
+          "eca5Subject": "false",
+          "eca6Objective": "none",
+          "queueCategory": "none"
+        }
+      }
+    },
+    "runtime6": {
+      "name": "visible actor follow-up",
+      "pass": true,
+      "actual": {
+        "listed": {
+          "managerTurn": "what is on stage?",
+          "reply": "NexoraCapacity Watch and Customer Watch are currently visible on Stage.",
+          "sceneId": "overview:overview",
+          "sceneMode": "overview",
+          "visibleCount": "2",
+          "visibleIds": "obj-capacity|obj-customer",
+          "visibleNames": "Capacity|Customer",
+          "focused": "none",
+          "selected": "none",
+          "eca1Consumed": "true",
+          "queryDetected": "true",
+          "eca2Intent": "UNKNOWN",
+          "eca5Type": "UNRELATED_RESPONSE",
+          "eca5Subject": "false",
+          "eca6Objective": "none",
+          "queueCategory": "none"
+        },
+        "follow": {
+          "managerTurn": "Explain the second one.",
+          "reply": "NexoraCustomer Watch is currently visible on Stage.",
+          "sceneId": "overview:overview",
+          "sceneMode": "overview",
+          "visibleCount": "2",
+          "visibleIds": "obj-capacity|obj-customer",
+          "visibleNames": "Capacity|Customer",
+          "focused": "none",
+          "selected": "none",
+          "eca1Consumed": "true",
+          "queryDetected": "false",
+          "eca2Intent": "EXPLAIN",
+          "eca5Type": "INSTRUCTION",
+          "eca5Subject": "true",
+          "eca6Objective": "none",
+          "queueCategory": "none"
+        }
+      }
+    },
+    "runtime7": {
+      "name": "visibility ≠ business truth",
+      "pass": true,
+      "actual": {
+        "managerTurn": "Capacity is on Stage, so is it important?",
+        "reply": "NexoraNot by itself. Being visible tells us it is part of the current Stage presentation; importance depends on the underlying evidence and executive context.",
+        "sceneId": "overview:overview",
+        "sceneMode": "overview",
+        "visibleCount": "2",
+        "visibleIds": "obj-capacity|obj-customer",
+        "visibleNames": "Capacity|Customer",
+        "focused": "none",
+        "selected": "none",
+        "eca1Consumed": "true",
+        "queryDetected": "true",
+        "eca2Intent": "UNDERSTAND",
+        "eca5Type": "UNRELATED_RESPONSE",
+        "eca5Subject": "false",
+        "eca6Objective": "none",
+        "queueCategory": "none"
+      }
+    }
+  }
+}

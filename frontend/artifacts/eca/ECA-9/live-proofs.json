@@ -1,0 +1,206 @@
+{
+  "identity": "NPA-T ECA:9/live-proofs",
+  "url": "http://localhost:3024/executive?reset=1",
+  "errors": [],
+  "1-canonical-decision-gate": {
+    "pass": true,
+    "actual": {
+      "rec": {
+        "utterance": "What do you recommend?",
+        "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive. I recommend temporary capacity. The trade-off is faster delivery relief and reversibility; trade-off higher short-term operating cost. Labor availability is not confirmed. This is advice, not a Decision.",
+        "intent": "SEEK_RECOMMENDATION",
+        "action": "RECOMMEND_INVESTIGATION",
+        "state8": "NONE",
+        "writes8": "false",
+        "state9": "NOT_APPLICABLE",
+        "readiness": "NOT_APPLICABLE",
+        "eca9Intent": "NONE",
+        "create": "false",
+        "start": "false",
+        "writes9": "false",
+        "secondWriter": "false",
+        "startsExecution": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
+      },
+      "nextBefore": {
+        "utterance": "What’s next?",
+        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. No Decision has been committed yet, so execution is not in play.",
+        "intent": "UNKNOWN",
+        "action": "ASK_CLARIFICATION",
+        "state8": "NONE",
+        "writes8": "false",
+        "state9": "NOT_APPLICABLE",
+        "readiness": "NOT_APPLICABLE",
+        "eca9Intent": "WHATS_NEXT",
+        "create": "false",
+        "start": "false",
+        "writes9": "false",
+        "secondWriter": "false",
+        "startsExecution": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
+      }
+    }
+  },
+  "2-readiness": {
+    "pass": true,
+    "actual": {
+      "utterance": "Are we ready to execute?",
+      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. There is no committed Decision yet. Do you want to review a Decision before starting execution? No Decision has been committed yet, so execution is not in play.",
+      "intent": "REQUEST_EXECUTION_ACTION",
+      "action": "ASK_FOR_MISSING_INFORMATION",
+      "state8": "AWAITING_CONFIRMATION",
+      "writes8": "false",
+      "state9": "NOT_APPLICABLE",
+      "readiness": "NOT_APPLICABLE",
+      "eca9Intent": "READINESS",
+      "create": "false",
+      "start": "false",
+      "writes9": "false",
+      "secondWriter": "false",
+      "startsExecution": "false",
+      "decisionCount": "0",
+      "executionCount": "0"
+    }
+  },
+  "3-material-gap": {
+    "pass": true,
+    "actual": {
+      "utterance": "Are we ready to execute?",
+      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. There is no committed Decision yet. Do you want to review a Decision before starting execution? No Decision has been committed yet, so execution is not in play.",
+      "intent": "REQUEST_EXECUTION_ACTION",
+      "action": "ASK_FOR_MISSING_INFORMATION",
+      "state8": "NONE",
+      "writes8": "false",
+      "state9": "NOT_APPLICABLE",
+      "readiness": "NOT_APPLICABLE",
+      "eca9Intent": "READINESS",
+      "create": "false",
+      "start": "false",
+      "writes9": "false",
+      "secondWriter": "false",
+      "startsExecution": "false",
+      "decisionCount": "0",
+      "executionCount": "0"
+    }
+  },
+  "4-create-boundary": {
+    "pass": true,
+    "actual": {
+      "utterance": "Create the execution.",
+      "reply": "NexoraWhich one do you want me to explain? No Decision has been committed yet, so execution is not in play.",
+      "intent": "REVIEW_EXECUTION",
+      "action": "SHOW",
+      "state8": "AWAITING_CONFIRMATION",
+      "writes8": "false",
+      "state9": "NOT_APPLICABLE",
+      "readiness": "NOT_APPLICABLE",
+      "eca9Intent": "CREATE",
+      "create": "false",
+      "start": "false",
+      "writes9": "false",
+      "secondWriter": "false",
+      "startsExecution": "false",
+      "decisionCount": "0",
+      "executionCount": "0"
+    }
+  },
+  "5-start-boundary": {
+    "pass": true,
+    "actual": {
+      "beforeStart": {
+        "intent": "none",
+        "action": "none",
+        "state8": "none",
+        "writes8": "false",
+        "state9": "none",
+        "readiness": "none",
+        "eca9Intent": "none",
+        "create": "false",
+        "start": "false",
+        "writes9": "false",
+        "secondWriter": "false",
+        "startsExecution": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
+      },
+      "started": {
+        "utterance": "Start it.",
+        "reply": "NexoraNot yet. We need an approved decision before execution can start. There is no committed Decision yet. Do you want to review a Decision before starting execution? No Decision has been committed yet, so execution is not in play.",
+        "intent": "REQUEST_EXECUTION_ACTION",
+        "action": "ASK_FOR_MISSING_INFORMATION",
+        "state8": "AWAITING_CONFIRMATION",
+        "writes8": "false",
+        "state9": "NOT_APPLICABLE",
+        "readiness": "NOT_APPLICABLE",
+        "eca9Intent": "START",
+        "create": "false",
+        "start": "false",
+        "writes9": "false",
+        "secondWriter": "false",
+        "startsExecution": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
+      },
+      "afterStart": {
+        "intent": "REQUEST_EXECUTION_ACTION",
+        "action": "ASK_FOR_MISSING_INFORMATION",
+        "state8": "AWAITING_CONFIRMATION",
+        "writes8": "false",
+        "state9": "NOT_APPLICABLE",
+        "readiness": "NOT_APPLICABLE",
+        "eca9Intent": "START",
+        "create": "false",
+        "start": "false",
+        "writes9": "false",
+        "secondWriter": "false",
+        "startsExecution": "false",
+        "decisionCount": "0",
+        "executionCount": "0"
+      }
+    }
+  },
+  "6-cap-av": {
+    "pass": true,
+    "actual": {
+      "utterance": "Are we ready to execute?",
+      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. There is no committed Decision yet. Do you want to review a Decision before starting execution? No Decision has been committed yet, so execution is not in play.",
+      "intent": "REQUEST_EXECUTION_ACTION",
+      "action": "ASK_FOR_MISSING_INFORMATION",
+      "state8": "NONE",
+      "writes8": "false",
+      "state9": "NOT_APPLICABLE",
+      "readiness": "NOT_APPLICABLE",
+      "eca9Intent": "READINESS",
+      "create": "false",
+      "start": "false",
+      "writes9": "false",
+      "secondWriter": "false",
+      "startsExecution": "false",
+      "decisionCount": "0",
+      "executionCount": "0"
+    }
+  },
+  "7-active-execution-handoff": {
+    "pass": true,
+    "actual": {
+      "utterance": "What’s happening now?",
+      "reply": "NexoraWhich item do you mean?",
+      "intent": "EXPLAIN",
+      "action": "ASK_FOR_MISSING_INFORMATION",
+      "state8": "AWAITING_CONFIRMATION",
+      "writes8": "false",
+      "state9": "NOT_APPLICABLE",
+      "readiness": "NOT_APPLICABLE",
+      "eca9Intent": "LIVE",
+      "create": "false",
+      "start": "false",
+      "writes9": "false",
+      "secondWriter": "false",
+      "startsExecution": "false",
+      "decisionCount": "0",
+      "executionCount": "0"
+    }
+  }
+}

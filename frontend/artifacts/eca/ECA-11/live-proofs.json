@@ -1,0 +1,152 @@
+{
+  "identity": "NPA-T ECA:11/live-proofs",
+  "url": "http://localhost:3026/executive?reset=1",
+  "errors": [],
+  "1-completion-without-outcome": {
+    "pass": true,
+    "actual": {
+      "utterance": "Did it work?",
+      "reply": "NexoraNo validated actual outcome is available yet. What is the latest observed delivery rate? Execution is progressing, but it is too early to judge the Decision’s Outcome.",
+      "intent": "REVIEW_OUTCOME",
+      "live10": "ACTIVE",
+      "writes10": "false",
+      "state11": "NOT_YET_OBSERVED",
+      "intent11": "RESULT",
+      "baseline": "UNKNOWN",
+      "target": "UNKNOWN",
+      "overall": "UNKNOWN",
+      "attribution": "NOT_ESTABLISHED",
+      "writes11": "false",
+      "learning": "false",
+      "secondWriter": "false",
+      "theatreLive": "EXECUTION_ACTIVE",
+      "theatreOutcome": "none"
+    }
+  },
+  "2-baseline-comparison": {
+    "pass": true,
+    "actual": {
+      "utterance": "What happened?",
+      "reply": "NexoraNo validated actual outcome is available yet. You reported Delivery at around 94%. Delivery moved from 91% to 94%, +3 percentage points. The 96% Goal has not been reached yet; the current result is 2 points below it. The available evidence does not yet establish how much of that change was caused by this Decision. Execution remains active; this is a current observation, not proof that work is finished.",
+      "intent": "UNKNOWN",
+      "live10": "ACTIVE",
+      "writes10": "false",
+      "state11": "PARTIALLY_OBSERVED",
+      "intent11": "RESULT",
+      "baseline": "IMPROVED",
+      "target": "NOT_MET",
+      "overall": "INCONCLUSIVE",
+      "attribution": "NOT_ESTABLISHED",
+      "writes11": "false",
+      "learning": "false",
+      "secondWriter": "false",
+      "theatreLive": "EXECUTION_ACTIVE",
+      "theatreOutcome": "OUTCOME_PARTIAL"
+    }
+  },
+  "3-goal-comparison": {
+    "pass": true,
+    "actual": {
+      "utterance": "Did we achieve the Goal?",
+      "reply": "NexoraNo. The observed value is 94%, which is 2 percentage points below the 96% Goal. It did move from the 91% baseline.",
+      "intent": "EXPLAIN",
+      "live10": "ACTIVE",
+      "writes10": "false",
+      "state11": "PARTIALLY_OBSERVED",
+      "intent11": "GOAL",
+      "baseline": "IMPROVED",
+      "target": "NOT_MET",
+      "overall": "INCONCLUSIVE",
+      "attribution": "NOT_ESTABLISHED",
+      "writes11": "false",
+      "learning": "false",
+      "secondWriter": "false",
+      "theatreLive": "EXECUTION_ACTIVE",
+      "theatreOutcome": "OUTCOME_PARTIAL"
+    }
+  },
+  "4-causality": {
+    "pass": true,
+    "actual": {
+      "utterance": "Did this Decision cause the improvement?",
+      "reply": "NexoraAre you asking about the KPI or the problem? Do you have evidence showing that delivery delays increase when capacity falls? The improvement followed the Decision’s Execution, but that alone doesn’t establish that the Decision caused it. The Decision may have contributed, but the current evidence doesn’t rule out other factors.",
+      "intent": "EXPLAIN",
+      "live10": "ACTIVE",
+      "writes10": "false",
+      "state11": "PARTIALLY_OBSERVED",
+      "intent11": "CAUSE",
+      "baseline": "IMPROVED",
+      "target": "NOT_MET",
+      "overall": "INCONCLUSIVE",
+      "attribution": "NOT_ESTABLISHED",
+      "writes11": "false",
+      "learning": "false",
+      "secondWriter": "false",
+      "theatreLive": "EXECUTION_ACTIVE",
+      "theatreOutcome": "OUTCOME_PARTIAL"
+    }
+  },
+  "5-conflict": {
+    "pass": true,
+    "actual": {
+      "utterance": "What’s the result?",
+      "reply": "NexoraThe validated context currently shows On-time is 91%., while you’ve provided Delivery is 96%.. I’ll preserve that as your current observation, but it is not yet validated by the connected data. You reported a different value than the current accepted data source. We should resolve which observation is current before judging Goal achievement.",
+      "intent": "UNKNOWN",
+      "live10": "ACTIVE",
+      "writes10": "false",
+      "state11": "CONFLICTED",
+      "intent11": "RESULT",
+      "baseline": "UNKNOWN",
+      "target": "UNKNOWN",
+      "overall": "INCONCLUSIVE",
+      "attribution": "NOT_ESTABLISHED",
+      "writes11": "false",
+      "learning": "false",
+      "secondWriter": "false",
+      "theatreLive": "EXECUTION_ACTIVE",
+      "theatreOutcome": "OUTCOME_PARTIAL"
+    }
+  },
+  "6-cap-av": {
+    "pass": true,
+    "actual": {
+      "utterance": "Did capacity cause the improvement?",
+      "reply": "NexoraThe validated context currently shows Utilization is 88%., while you’ve provided Delivery improved from 91% to 94%.. I’ll preserve that as your current observation, but it is not yet validated by the connected data. Do you have evidence showing that delivery delays increase when capacity falls? The improvement followed the Decision’s Execution, but that alone doesn’t establish that the Decision caused it. The Decision may have contributed, but the current evidence doesn’t rule out other factors.",
+      "intent": "EXPLAIN",
+      "live10": "ACTIVE",
+      "writes10": "false",
+      "state11": "PARTIALLY_OBSERVED",
+      "intent11": "CAUSE",
+      "baseline": "IMPROVED",
+      "target": "NOT_MET",
+      "overall": "INCONCLUSIVE",
+      "attribution": "NOT_ESTABLISHED",
+      "writes11": "false",
+      "learning": "false",
+      "secondWriter": "false",
+      "theatreLive": "EXECUTION_ACTIVE",
+      "theatreOutcome": "OUTCOME_PARTIAL"
+    }
+  },
+  "7-reassessment-boundary": {
+    "pass": true,
+    "actual": {
+      "utterance": "What should we do now?",
+      "reply": "NexoraA Decision is already committed through the canonical Decision path. I can explain that choice, but I will not treat the recommendation as still open. The result remains below the Goal. The next useful step is to review what the Outcome tells us and whether any assumptions or the approach should be reassessed.",
+      "intent": "SEEK_RECOMMENDATION",
+      "live10": "ACTIVE",
+      "writes10": "false",
+      "state11": "PARTIALLY_OBSERVED",
+      "intent11": "NEXT",
+      "baseline": "IMPROVED",
+      "target": "NOT_MET",
+      "overall": "INCONCLUSIVE",
+      "attribution": "NOT_ESTABLISHED",
+      "writes11": "false",
+      "learning": "false",
+      "secondWriter": "false",
+      "theatreLive": "EXECUTION_ACTIVE",
+      "theatreOutcome": "OUTCOME_PARTIAL"
+    }
+  }
+}

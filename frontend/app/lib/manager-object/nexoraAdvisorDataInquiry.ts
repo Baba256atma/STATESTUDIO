@@ -19,12 +19,62 @@ export const nexoraAdvisorDataInquiryIdentity = "DATA-ADV:1/AdvisorDataInquiry" 
 export type AdvisorDataDialogue = Readonly<{
   sourceContextId: string | null;
   fieldColumn: string | null;
+  listedSourceContextIds?: readonly string[];
 }>;
 
 export const emptyAdvisorDataDialogue: AdvisorDataDialogue = Object.freeze({
   sourceContextId: null,
   fieldColumn: null,
+  listedSourceContextIds: Object.freeze([] as string[]),
 });
+
+export type AdvisorDataConversationKind =
+  | "inventory"
+  | "csv-availability"
+  | "source-inventory"
+  | "concept-data"
+  | "concept-data-source"
+  | "explain-all-csv"
+  | "specific-source"
+  | "source-status"
+  | "source-contents"
+  | "source-semantics"
+  | "source-relationships"
+  | "object-provenance"
+  | "investigation-availability"
+  | "capability-csv"
+  | "pending-inventory"
+  | "historical-status"
+  | "existing-data-bridge"
+  | "field-coverage"
+  | "field-values"
+  | "analytical-capability"
+  | "evidence-relevance"
+  | "bounded-interpretation";
+
+export type AdvisorDataInquiryDiagnostics = Readonly<{
+  dataConversationIntent: AdvisorDataConversationKind | null;
+  dataLibraryQueryDetected: boolean;
+  dataConceptQueryDetected: boolean;
+  dataSourceQueryDetected: boolean;
+  specificSourceReference: string | null;
+  dataLibrarySourceCount: number;
+  activeSourceCount: number;
+  pendingSourceCount: number;
+  historicalSourceCount: number;
+  resolvedSourceIds: readonly string[];
+  resolvedSourceNames: readonly string[];
+  sourceStatus: readonly string[];
+  semanticTrustSummary: string;
+  dataAdvProjectionConsumed: true;
+  dataRealityConsumed: boolean;
+  provenanceConsumed: boolean;
+  advisorDataRoute: "DATA-ADV:1/AdvisorDataInquiry";
+  genericEntityFallbackUsed: false;
+  outcomeClarificationUsed: false;
+  stageFallbackUsed: false;
+  productFallbackUsed: false;
+}>;
 
 export type AdvisorDataInquiryAnswer = Readonly<{
   text: string;
@@ -32,19 +82,192 @@ export type AdvisorDataInquiryAnswer = Readonly<{
   clarification: CsvSemanticClarification | null;
   mutatesStage: false;
   mutatesDataReality: false;
+  diagnostics?: AdvisorDataInquiryDiagnostics;
 }>;
 
+function recoverExplainVerb(text: string): string {
+  const [first, ...rest] = text.split(" ");
+  if (!first || first === "explain") return text;
+  if (first.length !== "explain".length) return text;
+  const differences: number[] = [];
+  for (let index = 0; index < first.length; index += 1) {
+    if (first[index] !== "explain"[index]) differences.push(index);
+  }
+  if (
+    differences.length === 2 &&
+    differences[1] === differences[0]! + 1 &&
+    first[differences[0]!] === "explain"[differences[1]!] &&
+    first[differences[1]!] === "explain"[differences[0]!]
+  ) {
+    return ["explain", ...rest].join(" ");
+  }
+  return text;
+}
+
 function prepared(utterance: string): string {
-  return utterance.trim().toLowerCase().replace(/[.?!]+$/g, "").replace(/\s+/g, " ");
+  return recoverExplainVerb(
+    utterance
+      .trim()
+      .toLowerCase()
+      .replace(/^[,\s]*nexora[,\s]+/i, "")
+      .replace(/[.?!]+$/g, "")
+      .replace(/\s+/g, " "),
+  );
+}
+
+function hasCsvOrLibraryTarget(query: string): boolean {
+  const withoutFilenames = query.replace(/[a-z0-9._-]+\.csv\b/g, " ");
+  return /\b(?:data library|csv(?:s|\s+files?|\s+file names?|\s+sources?)?|data sources?|uploaded files?|imported files?|data files?)\b/.test(withoutFilenames);
+}
+
+function isBusinessCollectionAsk(query: string): boolean {
+  return (
+    /\b(?:problems?|scenarios?|risks?|decisions?|executions?|outcomes?|goals?)\b/.test(query) &&
+    !hasCsvOrLibraryTarget(query)
+  );
+}
+
+function isObjectDataAskNotLibrary(query: string): boolean {
+  if (/\b(?:need to investigate|investigate this)\b/.test(query)) return true;
+  if (/\bhow many files\b/.test(query) && /\binvestigate\b/.test(query)) return true;
+  return (
+    /\b(?:supports?|using|used by)\b/.test(query) &&
+    /\b(?:csv|data)\b/.test(query) &&
+    !/\b(?:data library|how many|list|file names|status of each)\b/.test(query)
+  );
+}
+
+function isCsvContentAsk(query: string): boolean {
+  return (
+    /\b(?:columns?|fields?|kpi|kpis|calculate|conclude|cannot conclude|evidence|values?|range|rows?|average|inside this|unclear|understood|understand|still learn|still tell)\b/.test(query) ||
+    /\bwhat does [a-z0-9_]+\b/.test(query) ||
+    /\bwhat is [a-z0-9_]+\b/.test(query) && !/\bwhat is (?:on|the status|data)\b/.test(query)
+  );
+}
+
+function isDataLibraryInventoryRequest(query: string): boolean {
+  if (isBusinessCollectionAsk(query) || isObjectDataAskNotLibrary(query)) return false;
+  if (isCsvContentAsk(query) && !/\bdata library\b/.test(query)) return false;
+  if (!hasCsvOrLibraryTarget(query)) return false;
+  return /\b(?:how many|count|list(?: all)?|names?|status(?:es)?|available|check|which|what|have|any|show|tell me|give me|every|uploaded)\b/.test(query);
+}
+
+function sourceLifecyclePhrase(source: AdvisorDataSource): string {
+  if (source.lifecycle === "pending") return "pending review";
+  if (source.lifecycle === "committed") return "in use";
+  if (source.lifecycle === "connected") return "connected";
+  if (source.lifecycle === "historical") return "removed";
+  return source.statusLabel.toLowerCase();
+}
+
+function inventoryCensus(context: AdvisorDataContext, query: string): string {
+  const csv = csvSources(context);
+  if (csv.length === 0) {
+    return "There are currently no CSV files in the Data Library.";
+  }
+  const items = csv.map((source) => `${source.label} — ${sourceLifecyclePhrase(source)}`);
+  const countLine = `There are ${csv.length} CSV file${csv.length === 1 ? "" : "s"} in the current Data Library`;
+  const libraryScope = /\bdata library\b/.test(query);
+  const wantsCount = /\b(?:how many|count|file count)\b/.test(query) || (libraryScope && /\bcheck\b/.test(query));
+  const wantsNames = /\b(?:list|names?|every|which)\b/.test(query) || /\bfile names\b/.test(query);
+  const wantsStatus = /\bstatus(?:es)?\b/.test(query) || /\bin use\b/.test(query);
+  if (libraryScope || (wantsCount && wantsNames) || (wantsNames && wantsStatus) || (wantsCount && wantsStatus)) {
+    return `${countLine}: ${items.join("; ")}.`;
+  }
+  if (wantsCount && !wantsNames && !wantsStatus) {
+    return `${countLine}.`;
+  }
+  if (wantsNames && !wantsStatus) {
+    return `The current Data Library contains ${joinNames(csv.map((entry) => entry.label))}.`;
+  }
+  if (wantsStatus) {
+    return csv.map((source) => `${source.label} is ${sourceLifecyclePhrase(source)}.`).join(" ");
+  }
+  return `${countLine}: ${items.join("; ")}.`;
 }
 
 function csvSources(context: AdvisorDataContext): readonly AdvisorDataSource[] {
-  return context.sources.filter((entry) => entry.sourceType === "csv");
+  return context.sources.filter((entry) => entry.sourceType === "csv" && entry.lifecycle !== "historical");
+}
+
+function historicalSources(context: AdvisorDataContext): readonly AdvisorDataSource[] {
+  return context.sources.filter((entry) => entry.lifecycle === "historical");
+}
+
+function joinNames(names: readonly string[]): string {
+  if (names.length === 0) return "";
+  if (names.length === 1) return names[0] ?? "";
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+}
+
+export function classifyAdvisorDataConversation(utterance: string): AdvisorDataConversationKind | null {
+  const query = prepared(utterance);
+  if (!query) return null;
+  if (/\bwhat data (?:is|are) this using\b/.test(query) || /\bwhat data (?:is|are) you using\b/.test(query) || /\bwhat data supports\b/.test(query) || /\bwhere did .+(come from|from)\b/.test(query)) {
+    return "object-provenance";
+  }
+  if (
+    /\b(?:what|which) csv\b/.test(query) &&
+    /\b(?:using|used by|supports?)\b/.test(query) &&
+    !/\b(?:how many|list|data library|file names)\b/.test(query)
+  ) {
+    return "object-provenance";
+  }
+  if (/\bdo we already have (?:that |this |the )?data\b/.test(query)) return "existing-data-bridge";
+  if (/^(?:can you|could you|are you able to)\b/.test(query) && /\bcsv\b/.test(query) && /\b(?:read|use|import|open)\b/.test(query)) {
+    return "capability-csv";
+  }
+  if (/\bwhich files?\b/.test(query) && /\b(?:waiting|pending|under review|review)\b/.test(query)) return "pending-inventory";
+  if (/\bdo you still (?:have|use)\b/.test(query) && /\.csv\b/.test(query)) return "historical-status";
+  if (/\bexplain all csv\b/.test(query) || /\bexplain (?:the )?(?:csv files|files you have)\b/.test(query) || /\btell me about (?:all )?(?:the )?csv\b/.test(query)) {
+    return "explain-all-csv";
+  }
+  if (/\b(?:do you have|have you got) any (?:file like )?csv\b/.test(query) || /\bany (?:file like )?csv\b/.test(query) || /\bfile like csv\b/.test(query) || /\bdo you have (?:any )?csv files?\b/.test(query) || /\bwhat csv files\b/.test(query)) {
+    return "csv-availability";
+  }
+  if (/^(?:explain|what is|what's|whats) (?:a )?data source\b/.test(query) && !/\b(?:sources|my|our)\b/.test(query)) {
+    return "concept-data-source";
+  }
+  if (/^(?:explain|what is|what's|whats) data\b/.test(query) && !/\b(?:source|sources|csv|files?|library|using|for)\b/.test(query)) {
+    return "concept-data";
+  }
+  if (/\bwhat data does nexora have\b/.test(query) || /\bwhat data (?:do (?:you|we) have|have (?:you|we) got)\b/.test(query) && !/\bfor\b/.test(query) && !/\busing\b/.test(query)) {
+    return "inventory";
+  }
+  if (/\b(?:what (?:data |files |sources )?(?:do (?:you|we) have|have (?:you|we) got)|which files|what sources|my data sources|our data sources|explain (?:my |our |the )?data sources)\b/.test(query) && !/\bfor\b/.test(query) && !/\busing\b/.test(query)) {
+    return /\bdata sources?\b/.test(query) && !/\bcsv\b/.test(query) ? "source-inventory" : "inventory";
+  }
+  if (/\bwhat data can help\b/.test(query) || /\bdo we have data to investigate\b/.test(query) || (/\binvestigate\b/.test(query) && /\b(?:csv|data source|data library|accepted data|what data)\b/.test(query))) {
+    return "investigation-availability";
+  }
+  if (/\b(?:which columns|which fields|columns you understand|fields you understand|unclear business meaning|unclear meaning)\b/.test(query)) {
+    return "field-coverage";
+  }
+  if (/\b(?:kpi|kpis|calculate)\b/.test(query) && !/\bhow many\b/.test(query)) return "analytical-capability";
+  if (/\b(?:provide evidence|evidence related|evidence for|help (?:us )?understand|tell (?:us |me )?about)\b/.test(query) && !/\bwhat csv is\b/.test(query)) {
+    return "evidence-relevance";
+  }
+  if (/\b(?:conclude|cannot conclude|can you not conclude|still (?:learn|tell) (?:me )?(?:from|about)|still missing|information is still missing)\b/.test(query)) {
+    return "bounded-interpretation";
+  }
+  if (/\b(?:values?|range|rows?|average|minimum|maximum|how many rows)\b/.test(query) && !/\bhow many csv\b/.test(query)) {
+    return "field-values";
+  }
+  if (/[a-z0-9._-]+\.csv/.test(query) && !isDataLibraryInventoryRequest(query)) return "specific-source";
+  if (isDataLibraryInventoryRequest(query)) return "inventory";
+  return null;
+}
+
+export function isAdvisorDataConversationUtterance(utterance: string): boolean {
+  return classifyAdvisorDataConversation(utterance) != null
+    || /\b(?:csv|data library|data source|uploaded file|imported file)\b/.test(prepared(utterance));
 }
 
 function findSourcesByLabel(context: AdvisorDataContext, query: string): readonly AdvisorDataSource[] {
   const compact = compactDataToken(query);
-  return csvSources(context).filter((source) => {
+  return context.sources.filter((source) => {
+    if (source.sourceType !== "csv") return false;
     const label = compactDataToken(source.label);
     return label === compact || compact.includes(label) || label.includes(compact) || query.includes(source.label.toLowerCase());
   });
@@ -108,22 +331,246 @@ function clarificationFor(field: AdvisorDataField, source: AdvisorDataSource, wo
   });
 }
 
-function listLibrary(context: AdvisorDataContext): string {
+function listLibrary(context: AdvisorDataContext, csvOnly = false): string {
   const csv = csvSources(context);
   const connected = context.sources.filter((entry) => entry.lifecycle === "connected");
   const ready = csv.filter((entry) => entry.lifecycle === "committed");
   const pending = csv.filter((entry) => entry.lifecycle === "pending");
-  if (csv.length === 0 && connected.length === 0) {
-    return "I don't see any data sources in this workspace yet.";
+  if (csv.length === 0 && (csvOnly || connected.length === 0)) {
+    return csvOnly
+      ? "No CSV files are currently available in the Data Library."
+      : "I don't see any data sources in this workspace yet.";
   }
   const csvPart = csv.length
-    ? `You currently have ${csv.length} CSV source${csv.length === 1 ? "" : "s"}${connected.length ? ` and ${connected.length} connected source${connected.length === 1 ? "" : "s"}` : ""}.`
+    ? `You currently have ${csv.length} CSV source${csv.length === 1 ? "" : "s"}${connected.length && !csvOnly ? ` and ${connected.length} connected source${connected.length === 1 ? "" : "s"}` : ""}: ${joinNames(csv.map((entry) => entry.label))}.`
     : `You have ${connected.length} connected source${connected.length === 1 ? "" : "s"}.`;
-  const readyNames = ready.map((entry) => entry.label).join(", ");
-  const pendingNames = pending.map((entry) => entry.label).join(", ");
-  const readyLine = ready.length ? ` ${readyNames} ${ready.length === 1 ? "is" : "are"} ready.` : "";
-  const pendingLine = pending.length ? ` ${pendingNames} ${pending.length === 1 ? "is" : "are"} still being reviewed.` : "";
+  const readyNames = ready.map((entry) => entry.label);
+  const pendingNames = pending.map((entry) => entry.label);
+  const readyLine = ready.length ? ` ${joinNames(readyNames)} ${ready.length === 1 ? "is" : "are"} currently in use.` : "";
+  const pendingLine = pending.length ? ` ${joinNames(pendingNames)} ${pending.length === 1 ? "is" : "are"} still being reviewed.` : "";
   return `${csvPart}${readyLine}${pendingLine}`;
+}
+
+function csvAvailability(context: AdvisorDataContext): string {
+  const csv = csvSources(context);
+  if (csv.length === 0) return "No CSV sources are currently available.";
+  return `Yes. I currently have ${csv.length} CSV source${csv.length === 1 ? "" : "s"}: ${joinNames(csv.map((entry) => entry.label))}.`;
+}
+
+function explainAllCsv(context: AdvisorDataContext): string {
+  const csv = csvSources(context);
+  if (csv.length === 0) return "No CSV files are currently available in the Data Library.";
+  return `You have ${csv.length} CSV source${csv.length === 1 ? "" : "s"}. ${csv.map((source) => describeSourceContents(source)).join(" ")}`;
+}
+
+function dataConcept(context: AdvisorDataContext): string {
+  const csv = csvSources(context);
+  const base = "Data is where Nexora keeps the sources it can use as evidence, such as CSV imports and their confirmed meanings.";
+  if (csv.length === 0) return base;
+  return `${base} You currently have ${csv.length} source${csv.length === 1 ? "" : "s"} available.`;
+}
+
+function dataSourceConcept(): string {
+  return "A Data Source is where Nexora receives business information, such as an imported CSV. Nexora keeps the source separate from the business objects and tracks what its fields mean before using them as evidence.";
+}
+
+function csvCapability(): string {
+  return "Nexora can import CSV files into the Data Library and use confirmed field meanings as evidence. That is a product capability; it does not mean a CSV file is currently present.";
+}
+
+function pendingInventory(context: AdvisorDataContext): string {
+  const pending = csvSources(context).filter((entry) => entry.lifecycle === "pending");
+  if (pending.length === 0) return "No CSV sources are currently waiting for review.";
+  return `${joinNames(pending.map((entry) => entry.label))} ${pending.length === 1 ? "is" : "are"} waiting for review and ${pending.length === 1 ? "is" : "are"} not accepted evidence yet.`;
+}
+
+function ordinalIndex(query: string): number | null {
+  if (/\b(?:the )?first (?:one|file|source)\b/.test(query)) return 0;
+  if (/\b(?:the )?second (?:one|file|source)\b/.test(query)) return 1;
+  if (/\b(?:the )?third (?:one|file|source)\b/.test(query)) return 2;
+  if (/\b(?:the )?last (?:one|file|source)\b/.test(query)) return -1;
+  return null;
+}
+
+function diagnosticsFor(
+  kind: AdvisorDataConversationKind | null,
+  context: AdvisorDataContext,
+  sources: readonly AdvisorDataSource[],
+): AdvisorDataInquiryDiagnostics {
+  const csv = csvSources(context);
+  const historical = historicalSources(context);
+  return Object.freeze({
+    dataConversationIntent: kind,
+    dataLibraryQueryDetected: kind === "inventory" || kind === "csv-availability" || kind === "explain-all-csv" || kind === "source-inventory" || kind === "pending-inventory",
+    dataConceptQueryDetected: kind === "concept-data",
+    dataSourceQueryDetected: kind === "concept-data-source" || kind === "source-inventory",
+    specificSourceReference: sources[0]?.label ?? null,
+    dataLibrarySourceCount: csv.length,
+    activeSourceCount: csv.filter((entry) => entry.lifecycle === "committed").length,
+    pendingSourceCount: csv.filter((entry) => entry.lifecycle === "pending").length,
+    historicalSourceCount: historical.length,
+    resolvedSourceIds: Object.freeze(sources.map((entry) => entry.sourceContextId)),
+    resolvedSourceNames: Object.freeze(sources.map((entry) => entry.label)),
+    sourceStatus: Object.freeze(sources.map((entry) => entry.lifecycle)),
+    semanticTrustSummary: sources.flatMap((entry) => entry.fields.map((field) => `${field.column}:${field.confidence}`)).slice(0, 12).join(",") || "none",
+    dataAdvProjectionConsumed: true as const,
+    dataRealityConsumed: sources.some((entry) => entry.acceptedEvidence),
+    provenanceConsumed: kind === "object-provenance" || kind === "source-relationships" || kind === "investigation-availability" || kind === "existing-data-bridge",
+    advisorDataRoute: "DATA-ADV:1/AdvisorDataInquiry" as const,
+    genericEntityFallbackUsed: false as const,
+    outcomeClarificationUsed: false as const,
+    stageFallbackUsed: false as const,
+    productFallbackUsed: false as const,
+  });
+}
+
+function answer(
+  text: string,
+  dialogue: AdvisorDataDialogue,
+  kind: AdvisorDataConversationKind | null,
+  context: AdvisorDataContext,
+  sources: readonly AdvisorDataSource[] = [],
+  clarification: CsvSemanticClarification | null = null,
+): AdvisorDataInquiryAnswer {
+  return Object.freeze({
+    text,
+    dialogue,
+    clarification,
+    mutatesStage: false as const,
+    mutatesDataReality: false as const,
+    diagnostics: diagnosticsFor(kind, context, sources),
+  });
+}
+
+function managerFaceConfidence(field: AdvisorDataField): string {
+  if (field.confidence === "confirmed" || field.confidence === "authoritative") return "confirmed";
+  if (field.confidence === "likely") return "understood but unconfirmed";
+  if (field.confidence === "ambiguous") return "ambiguous";
+  return "unknown";
+}
+
+function pendingSourceClause(source: AdvisorDataSource): string {
+  return source.lifecycle === "pending"
+    ? ` ${source.label} is pending review, so I can inspect it but I cannot treat it as accepted business evidence.`
+    : "";
+}
+
+function fieldCoverageAnswer(source: AdvisorDataSource): string {
+  const usable = source.fields.filter((field) => field.confidence === "confirmed" || field.confidence === "authoritative");
+  const unclear = source.fields.filter((field) => field.confidence === "likely" || field.confidence === "ambiguous" || field.confidence === "unresolved");
+  const usableText = usable.length
+    ? `Confirmed or usable: ${usable.map((field) => `${field.column} (${field.confirmedMeaning})`).join("; ")}.`
+    : "No columns currently have a confirmed business meaning.";
+  const unclearText = unclear.length
+    ? ` Unclear: ${unclear.map((field) => {
+      if (field.confidence === "ambiguous") {
+        const meanings = field.semanticResolution.candidates.map((candidate) => candidate.meaning).join(" or ");
+        return `${field.column} — candidate meanings exist (${meanings}) but are not confirmed`;
+      }
+      if (field.confidence === "likely") return `${field.column} — understood but unconfirmed (${field.proposedMeaning})`;
+      return `${field.column} — unknown meaning`;
+    }).join("; ")}.`
+    : "";
+  return `In ${source.label}: ${usableText}${unclearText}${pendingSourceClause(source)}`;
+}
+
+function valuesAnswer(source: AdvisorDataSource, field: AdvisorDataField | null, wantsRows: boolean): string {
+  if (wantsRows && !field) {
+    return `${source.label} currently has ${source.recordCount} data row${source.recordCount === 1 ? "" : "s"}.${pendingSourceClause(source)}`;
+  }
+  if (!field) {
+    return `I can inspect ${source.label}, but I need a field name to report values.`;
+  }
+  const observed = field.observation;
+  const numeric = observed.numeric && observed.minimum != null && observed.maximum != null
+    ? ` Numeric values range from ${observed.minimum} to ${observed.maximum}.`
+    : observed.nonNullCount
+      ? ` It has ${observed.nonNullCount} non-empty values (${observed.uniqueCount} unique).`
+      : " I don't see stored values for that column.";
+  const meaning = field.confidence === "confirmed" || field.confidence === "authoritative"
+    ? ` ${field.column} means ${field.confirmedMeaning}.`
+    : ` That is a structural observation only; ${field.column} does not have a confirmed business meaning, so I will not interpret the numbers as a KPI.`;
+  return `${field.column} in ${source.label}:${numeric}${meaning}${pendingSourceClause(source)}`;
+}
+
+function kpiAnswer(source: AdvisorDataSource): string {
+  const confirmed = source.fields.filter((field) => field.confidence === "confirmed" || field.confidence === "authoritative");
+  const possible = source.fields.filter((field) => field.confidence === "ambiguous" || field.confidence === "likely");
+  const unknown = source.fields.filter((field) => field.confidence === "unresolved");
+  const supported = confirmed.filter((field) => field.observation.numeric);
+  const supportedLine = supported.length
+    ? `From confirmed fields I can calculate deterministic numeric summaries such as ${supported.map((field) => `${field.column} (${field.confirmedMeaning}) min/max/average`).join("; ")}. Those summaries are mathematical, and they are business-valid only for the confirmed meanings.`
+    : "I cannot calculate a business-valid KPI from confirmed field meanings yet.";
+  const possibleLine = possible.length
+    ? ` ${possible.map((field) => {
+      const meanings = field.semanticResolution.candidates.map((candidate) => candidate.meaning).join(" or ") || field.proposedMeaning || "an unconfirmed meaning";
+      return `${field.column} could support a related metric if ${meanings} is confirmed`;
+    }).join("; ")}.`
+    : "";
+  const unknownLine = unknown.length
+    ? ` I cannot use ${unknown.map((field) => field.column).join(", ")} as a business KPI because ${unknown.length === 1 ? "its" : "their"} meaning is unknown. A numeric average of an unknown field would be mathematically possible but not a valid KPI.`
+    : "";
+  return `${supportedLine}${possibleLine}${unknownLine}${pendingSourceClause(source)}`;
+}
+
+function evidenceObjectLabel(query: string, focused: string | null): string {
+  const named = query.match(/\b(?:related to|evidence for|evidence related to|about|understand)\s+(.+?)$/)?.[1]
+    ?.replace(/[?]+$/g, "")
+    .replace(/\b(?:this risk|this problem)\b/g, "")
+    .trim();
+  if (named) return named;
+  return focused ?? "this object";
+}
+
+function evidenceAnswer(source: AdvisorDataSource, objectLabel: string): string {
+  const compactObject = compactDataToken(objectLabel);
+  const related = source.relatedObjectLabels.some((label) => compactDataToken(label).includes(compactObject) || compactObject.includes(compactDataToken(label)));
+  const semanticHits = source.fields.filter((field) => {
+    const blob = compactDataToken(`${field.confirmedMeaning ?? ""} ${field.proposedMeaning ?? ""} ${field.semanticResolution.candidates.map((candidate) => candidate.meaning).join(" ")}`);
+    return compactObject.length > 3 && blob.includes(compactObject.slice(0, Math.min(8, compactObject.length)));
+  });
+  if (source.acceptedEvidence && related) {
+    return `${source.label} currently supports ${source.relatedObjectLabels.join(", ")} as accepted evidence. That is a data relationship, not a claim that the file caused ${objectLabel}.`;
+  }
+  if (semanticHits.length && !source.acceptedEvidence) {
+    const details = semanticHits.map((field) => {
+      if (field.confidence === "ambiguous") {
+        return `${field.column} has possible ${field.semanticResolution.candidates.map((candidate) => candidate.meaning).join(" or ")} meanings that are not confirmed`;
+      }
+      return `${field.column} is ${managerFaceConfidence(field)}`;
+    }).join("; ");
+    return `${source.label} may be relevant to ${objectLabel} because ${details}. The source is still pending review, so I cannot treat it as evidence for ${objectLabel} yet. Field-name similarity is not a confirmed relationship, and association is not causality.`;
+  }
+  if (related && source.lifecycle === "pending") {
+    return `${source.label} may later relate to ${source.relatedObjectLabels.join(", ")}, but that is not confirmed. The source is still pending, so I cannot treat it as evidence for ${objectLabel} yet.`;
+  }
+  return `I do not have a confirmed evidence relationship from ${source.label} to ${objectLabel}. I will not infer one from the filename.${pendingSourceClause(source)}`;
+}
+
+function conclusionAnswer(source: AdvisorDataSource): string {
+  const coverage = fieldCoverageAnswer(source);
+  const can = `I can inspect ${source.label}, report its ${source.recordCount} row${source.recordCount === 1 ? "" : "s"}, and distinguish fields whose meanings are known from those still unresolved.`;
+  const cannot = `I cannot yet treat unresolved fields as business meaning, treat this pending source as accepted evidence, invent KPIs, assert an object relationship from filename similarity, or draw a causal conclusion.`;
+  return `${can} ${coverage} ${cannot}`;
+}
+
+function resolveActiveCsv(
+  context: AdvisorDataContext,
+  query: string,
+  dialogue: AdvisorDataDialogue,
+): AdvisorDataSource | null {
+  const named = query.match(/([a-z0-9._-]+\.csv)/i)?.[1];
+  if (named) {
+    const found = findSourcesByLabel(context, named);
+    if (found.length === 1) return found[0] ?? null;
+  }
+  const csv = csvSources(context);
+  if (dialogue.sourceContextId) {
+    const current = sourceById(context, dialogue.sourceContextId);
+    if (current && current.lifecycle !== "historical") return current;
+  }
+  if (csv.length === 1) return csv[0] ?? null;
+  return null;
 }
 
 function describeSourceContents(source: AdvisorDataSource): string {
@@ -220,20 +667,126 @@ export function answerAdvisorDataInquiry(input: Readonly<{
   context?: AdvisorDataContext;
 }>): AdvisorDataInquiryAnswer | null {
   const context = input.context ?? projectAdvisorDataContext(input.workspaceId);
-  const dialogue = input.dialogue ?? emptyAdvisorDataDialogue;
+  const listed = input.dialogue?.listedSourceContextIds ?? emptyAdvisorDataDialogue.listedSourceContextIds;
+  const dialogue: AdvisorDataDialogue = Object.freeze({
+    sourceContextId: input.dialogue?.sourceContextId ?? null,
+    fieldColumn: input.dialogue?.fieldColumn ?? null,
+    listedSourceContextIds: listed,
+  });
   const query = prepared(input.utterance);
   if (!query) return null;
+  const kind = classifyAdvisorDataConversation(input.utterance);
+  const listedCsv = csvSources(context);
+  const activeCsv = resolveActiveCsv(context, query, dialogue);
+  const bind = (source: AdvisorDataSource, fieldColumn: string | null = dialogue.fieldColumn): AdvisorDataDialogue => Object.freeze({
+    sourceContextId: source.sourceContextId,
+    fieldColumn,
+    listedSourceContextIds: dialogue.listedSourceContextIds,
+  });
 
-  const listAsk = /\b(?:what (?:data |files |sources )?(?:do we have|have we got)|which files|what sources)\b/.test(query)
+  if (kind === "object-provenance") {
+    const named = query.match(/\b(?:what|which) csv is (.+?) using\b/)?.[1]?.trim();
+    const objectLabel = named || input.focusedObjectLabel || "this";
+    return answer(objectDataAnswer(context, objectLabel), dialogue, kind, context, csvSources(context).filter((source) =>
+      source.relatedObjectLabels.some((label) => compactDataToken(label) === compactDataToken(objectLabel)),
+    ));
+  }
+  if (kind === "existing-data-bridge") {
+    const topic = input.focusedObjectLabel ?? "this";
+    return answer(investigateAnswer(context, topic), dialogue, kind, context, sourcesForTopic(context, topic));
+  }
+  if (kind === "capability-csv") {
+    return answer(csvCapability(), dialogue, kind, context);
+  }
+  if (kind === "concept-data-source") {
+    return answer(dataSourceConcept(), dialogue, kind, context);
+  }
+  if (kind === "concept-data") {
+    return answer(dataConcept(context), dialogue, kind, context, listedCsv);
+  }
+  if (kind === "csv-availability") {
+    return answer(csvAvailability(context), Object.freeze({
+      ...dialogue,
+      listedSourceContextIds: Object.freeze(listedCsv.map((entry) => entry.sourceContextId)),
+    }), kind, context, listedCsv);
+  }
+  if (kind === "explain-all-csv") {
+    return answer(explainAllCsv(context), Object.freeze({
+      ...dialogue,
+      listedSourceContextIds: Object.freeze(listedCsv.map((entry) => entry.sourceContextId)),
+    }), kind, context, listedCsv);
+  }
+  if (kind === "pending-inventory") {
+    const pending = listedCsv.filter((entry) => entry.lifecycle === "pending");
+    return answer(pendingInventory(context), Object.freeze({
+      ...dialogue,
+      listedSourceContextIds: Object.freeze(pending.map((entry) => entry.sourceContextId)),
+    }), kind, context, pending);
+  }
+  if (kind === "field-coverage" || kind === "analytical-capability" || kind === "evidence-relevance" || kind === "bounded-interpretation" || kind === "field-values") {
+    if (!activeCsv) {
+      return listedCsv.length > 1
+        ? answer("Which CSV source should I inspect?", dialogue, kind, context, listedCsv)
+        : null;
+    }
+    if (kind === "field-coverage") {
+      return answer(fieldCoverageAnswer(activeCsv), bind(activeCsv), kind, context, [activeCsv]);
+    }
+    if (kind === "analytical-capability") {
+      return answer(kpiAnswer(activeCsv), bind(activeCsv), kind, context, [activeCsv]);
+    }
+    if (kind === "evidence-relevance") {
+      return answer(evidenceAnswer(activeCsv, evidenceObjectLabel(query, input.focusedObjectLabel ?? null)), bind(activeCsv), kind, context, [activeCsv]);
+    }
+    if (kind === "bounded-interpretation") {
+      return answer(conclusionAnswer(activeCsv), bind(activeCsv), kind, context, [activeCsv]);
+    }
+    const namedField = findFields(context, query, bind(activeCsv))[0] ?? null;
+    const wantsRows = /\brows?\b/.test(query) && !namedField;
+    return answer(valuesAnswer(activeCsv, namedField, wantsRows), bind(activeCsv, namedField?.column ?? null), kind, context, [activeCsv]);
+  }
+  if (kind === "inventory" || kind === "source-inventory") {
+    const text = kind === "inventory" && isDataLibraryInventoryRequest(query)
+      ? inventoryCensus(context, query)
+      : listLibrary(context, kind === "inventory");
+    return answer(text, Object.freeze({
+      ...dialogue,
+      listedSourceContextIds: Object.freeze(listedCsv.map((entry) => entry.sourceContextId)),
+    }), kind, context, listedCsv);
+  }
+
+  if (/\bexplain\b/.test(query) && /\bpending (?:one|file|source)\b/.test(query)) {
+    const pending = listedCsv.filter((entry) => entry.lifecycle === "pending");
+    if (pending.length === 1 && pending[0]) {
+      return answer(describeSourceContents(pending[0]), Object.freeze({
+        sourceContextId: pending[0].sourceContextId,
+        fieldColumn: dialogue.fieldColumn,
+        listedSourceContextIds: dialogue.listedSourceContextIds,
+      }), "specific-source", context, pending);
+    }
+  }
+
+  const ordinal = ordinalIndex(query);
+  const listedIds = dialogue.listedSourceContextIds ?? [];
+  if (ordinal != null && /\bexplain\b/.test(query) && listedIds.length > 0) {
+    const id = ordinal < 0 ? listedIds[listedIds.length - 1] : listedIds[ordinal];
+    const source = id ? sourceById(context, id) : null;
+    if (source) {
+      return answer(describeSourceContents(source), Object.freeze({
+        sourceContextId: source.sourceContextId,
+        fieldColumn: dialogue.fieldColumn,
+        listedSourceContextIds: dialogue.listedSourceContextIds,
+      }), "specific-source", context, [source]);
+    }
+  }
+
+  const listAsk = /\b(?:what (?:data |files |sources )?(?:do (?:you|we) have|have (?:you|we) got)|which files|what sources)\b/.test(query)
     || /^what data do we have$/.test(query);
-  if (listAsk && !/\bfor\b/.test(query)) {
-    return Object.freeze({
-      text: listLibrary(context),
-      dialogue,
-      clarification: null,
-      mutatesStage: false,
-      mutatesDataReality: false,
-    });
+  if (listAsk && !/\bfor\b/.test(query) && !/\busing\b/.test(query)) {
+    return answer(listLibrary(context), Object.freeze({
+      ...dialogue,
+      listedSourceContextIds: Object.freeze(listedCsv.map((entry) => entry.sourceContextId)),
+    }), "inventory", context, listedCsv);
   }
 
   if (/\b(?:what (?:data )?are we missing|what(?:'s| is) missing|do we have (\w+) data)\b/.test(query) || /\bdo we have\b/.test(query) && /\bdata\b/.test(query)) {
@@ -249,13 +802,46 @@ export function answerAdvisorDataInquiry(input: Readonly<{
   }
 
   const namedFile = query.match(/([a-z0-9._-]+\.csv)/i)?.[1]
-    ?? (/\b(?:that file|this (?:file|source)|the file we were discussing|this source)\b/.test(query) ? sourceById(context, dialogue.sourceContextId)?.label : null);
+    ?? (/\b(?:that file|this (?:csv|file|source)|the file we were discussing|this source)\b/.test(query) ? sourceById(context, dialogue.sourceContextId)?.label ?? activeCsv?.label ?? null : null);
   const fileSources = namedFile ? findSourcesByLabel(context, namedFile.replace(/ file$/, "")) : [];
-  const uniqueFile = fileSources.length === 1 ? fileSources[0] : dialogue.sourceContextId && /\b(?:that file|this (?:file|source)|the file)\b/.test(query)
+  const uniqueFile = fileSources.length === 1 ? fileSources[0] : dialogue.sourceContextId && /\b(?:that file|this (?:csv|file|source)|the file)\b/.test(query)
     ? sourceById(context, dialogue.sourceContextId)
-    : null;
+    : activeCsv && /\bi mean\b/.test(query)
+      ? activeCsv
+      : null;
 
-  if (uniqueFile && /\b(?:contain|what's in|what is in|what else|describe|what is |ready|clarif|objects? (?:use|related)|remove)\b/.test(query)) {
+  if (namedFile && fileSources.length === 0) {
+    return answer(`I don't currently have a source named ${namedFile}.`, dialogue, "specific-source", context);
+  }
+  if (namedFile && fileSources.length > 1) {
+    return answer(`${namedFile} matches more than one source. Which source do you mean?`, dialogue, "specific-source", context, fileSources);
+  }
+  if (uniqueFile && (kind === "specific-source" || /\bi mean\b/.test(query)) && !/\b(?:what does|which columns|kpi|evidence|conclude|contain|explain|values?|range|rows?|objects?|related|use)\b/.test(query)) {
+    return answer(`I'll use ${uniqueFile.label}.${pendingSourceClause(uniqueFile)}`, bind(uniqueFile), "specific-source", context, [uniqueFile]);
+  }
+  if (uniqueFile && (kind === "historical-status" || /\bdo you still (?:have|use)\b/.test(query) || /\bdo you have\b/.test(query) && /\.csv\b/.test(query))) {
+    if (uniqueFile.lifecycle === "historical") {
+      return answer(`${uniqueFile.label} is no longer active. It was removed and is not currently used as accepted evidence.`, {
+        sourceContextId: uniqueFile.sourceContextId,
+        fieldColumn: dialogue.fieldColumn,
+        listedSourceContextIds: dialogue.listedSourceContextIds,
+      }, "historical-status", context, [uniqueFile]);
+    }
+    if (uniqueFile.lifecycle === "pending") {
+      return answer(`Yes. ${uniqueFile.label} is in the Data Library, but it is still pending review and is not being used as accepted evidence yet.`, {
+        sourceContextId: uniqueFile.sourceContextId,
+        fieldColumn: dialogue.fieldColumn,
+        listedSourceContextIds: dialogue.listedSourceContextIds,
+      }, "source-status", context, [uniqueFile]);
+    }
+    return answer(`Yes. ${uniqueFile.label} is currently in use.`, {
+      sourceContextId: uniqueFile.sourceContextId,
+      fieldColumn: dialogue.fieldColumn,
+      listedSourceContextIds: dialogue.listedSourceContextIds,
+    }, "source-status", context, [uniqueFile]);
+  }
+
+  if (uniqueFile && /\b(?:contain|what's in|what is in|what else|describe|explain|what is |ready|clarif|objects? (?:use|related)|remove)\b/.test(query)) {
     if (/\bready\b/.test(query)) {
       const text = uniqueFile.lifecycle === "committed"
         ? `${uniqueFile.label} is ready.`
@@ -307,7 +893,7 @@ export function answerAdvisorDataInquiry(input: Readonly<{
     });
   }
 
-  if (/\b(?:investigate|which (?:source|data) should|what data can help|which object should i (?:look at|inspect))\b/.test(query)) {
+  if (/\bwhat data can help\b/.test(query) || /\bwhich (?:source|data) should\b/.test(query) || (/\binvestigate\b/.test(query) && /\b(?:csv|data source|data library|what data)\b/.test(query))) {
     const topic = query.match(/for ([a-z0-9][a-z0-9 _-]*)/)?.[1]?.replace(/\b(?:our|the|a|an)\b/g, "").trim()
       ?? query.match(/investigate(?: our| the)? ([a-z0-9]+)/)?.[1]
       ?? query.match(/understand (?:the )?([a-z0-9][a-z0-9 _-]*)/)?.[1]?.trim()
@@ -322,7 +908,7 @@ export function answerAdvisorDataInquiry(input: Readonly<{
     });
   }
 
-  if (/\bwhich (?:file|source|csv) contains\b/.test(query) || /\bwhich file is it from\b/.test(query) || /\bwhich file is it from\b/.test(query)) {
+  if (/\bwhich (?:file|source|csv) contains\b/.test(query) || /\bwhich file is it from\b/.test(query) || /\bshow me (?:the )?(?:source|file)\b/.test(query)) {
     const fields = findFields(context, query, dialogue);
     if (fields.length === 0 && dialogue.fieldColumn) {
       const source = sourceById(context, dialogue.sourceContextId);
@@ -360,7 +946,7 @@ export function answerAdvisorDataInquiry(input: Readonly<{
 
   const fields = findFields(context, query, dialogue);
   const asksField = fields.length > 0 && (
-    /\b(?:what is|what's|mean|explain|why|related to|this field)\b/.test(query)
+    /\b(?:what is|what's|mean|explain|why|confirmed|confirmation|related to|this field)\b/.test(query)
     || /^(?:explain it|what is this field|what else is in that file)$/.test(query)
   );
   if (/\bwhat else is in that file\b/.test(query) && dialogue.sourceContextId) {

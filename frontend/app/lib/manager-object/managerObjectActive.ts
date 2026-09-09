@@ -46,6 +46,28 @@ export type ManagerObjectSession = {
   readonly ncaConversationState?: import("./nexoraNca2ConversationStateTypes.ts").NexoraConversationState | null;
   /** ECA:1-FIX2 session-only proposal; never business truth or a writer. */
   readonly ecaMutationProposal?: import("@/app/lib/nexora-conversation/ecaWorkingConversationContext.ts").EcaMutationProposal | null;
+  /** ECA:3 session-only initiative fingerprints; never durable preference or a writer. */
+  readonly ecaInitiativeSession?: import("@/app/lib/nexora-conversation/ecaExecutiveInitiativeJudgment.ts").EcaInitiativeSession | null;
+  /** ECA:4 session-only information-need fingerprints; never a writer or durable memory. */
+  readonly ecaInformationNeedSession?: import("@/app/lib/nexora-conversation/ecaExecutiveInformationNeed.ts").EcaInformationNeedSession | null;
+  /** ECA:5 session-only intake fingerprints; never durable memory or a writer. */
+  readonly ecaAnswerIntakeSession?: import("@/app/lib/nexora-conversation/ecaExecutiveAnswerIntake.ts").EcaAnswerIntakeSession | null;
+  /** ECA:6 session-only dialogue-strategy overlay; never a second CONV:2 store. */
+  readonly ecaDialogueStrategySession?: import("@/app/lib/nexora-conversation/ecaExecutiveDialogueStrategy.ts").EcaDialogueStrategySession | null;
+  /** ECA:7 session-only recommendation-frame fingerprint; never a Decision or recommendation store. */
+  readonly ecaRecommendationSession?: import("@/app/lib/nexora-conversation/ecaExecutiveRecommendation.ts").EcaRecommendationSession | null;
+  /** ECA:8 session-only pending-commitment overlay; never a Decision writer or second confirmation engine. */
+  readonly ecaCommitmentSession?: import("@/app/lib/nexora-conversation/ecaExecutiveCommitment.ts").EcaCommitmentSession | null;
+  /** ECA:9 session-only post-Decision readiness overlay; never an Execution writer or store. */
+  readonly ecaExecutionReadinessSession?: import("@/app/lib/nexora-conversation/ecaExecutiveExecutionReadiness.ts").EcaExecutionReadinessSession | null;
+  /** ECA:10 session-only live-execution overlay; never a second Execution store or monitoring engine. */
+  readonly ecaLiveExecutionSession?: import("@/app/lib/nexora-conversation/ecaLiveExecution.ts").EcaLiveExecutionSession | null;
+  /** ECA:11 session-only Outcome-dialogue overlay; never a second Outcome store. */
+  readonly ecaOutcomeSession?: import("@/app/lib/nexora-conversation/ecaExecutiveOutcome.ts").EcaOutcomeSession | null;
+  /** ECA:12 session-only Learning/closure overlay; never a Learning store or second CONV:2. */
+  readonly ecaLearningClosureSession?: import("@/app/lib/nexora-conversation/ecaExecutiveLearningClosure.ts").EcaLearningClosureSession | null;
+  /** DATA-ADV:1 dialogue continuity; not a Data Library store. */
+  readonly advisorDataDialogue?: import("./nexoraAdvisorDataInquiry.ts").AdvisorDataDialogue | null;
 };
 
 export function createEmptyManagerObjectSession(): ManagerObjectSession {
@@ -74,6 +96,17 @@ export function createEmptyManagerObjectSession(): ManagerObjectSession {
     lastGuidanceText: null,
     ncaConversationState: null,
     ecaMutationProposal: null,
+    ecaInitiativeSession: null,
+    ecaInformationNeedSession: null,
+    ecaAnswerIntakeSession: null,
+    ecaDialogueStrategySession: null,
+    ecaRecommendationSession: null,
+    ecaCommitmentSession: null,
+    ecaExecutionReadinessSession: null,
+    ecaLiveExecutionSession: null,
+    ecaOutcomeSession: null,
+    ecaLearningClosureSession: null,
+    advisorDataDialogue: null,
   });
 }
 
@@ -107,6 +140,17 @@ export function freezeManagerObjectSession(
     lastGuidanceText: session.lastGuidanceText ?? null,
     ncaConversationState: session.ncaConversationState ?? null,
     ecaMutationProposal: session.ecaMutationProposal ?? null,
+    ecaInitiativeSession: session.ecaInitiativeSession ?? null,
+    ecaInformationNeedSession: session.ecaInformationNeedSession ?? null,
+    ecaAnswerIntakeSession: session.ecaAnswerIntakeSession ?? null,
+    ecaDialogueStrategySession: session.ecaDialogueStrategySession ?? null,
+    ecaRecommendationSession: session.ecaRecommendationSession ?? null,
+    ecaCommitmentSession: session.ecaCommitmentSession ?? null,
+    ecaExecutionReadinessSession: session.ecaExecutionReadinessSession ?? null,
+    ecaLiveExecutionSession: session.ecaLiveExecutionSession ?? null,
+    ecaOutcomeSession: session.ecaOutcomeSession ?? null,
+    ecaLearningClosureSession: session.ecaLearningClosureSession ?? null,
+    advisorDataDialogue: session.advisorDataDialogue ?? null,
   });
 }
 
@@ -139,6 +183,18 @@ function replaceActive(
       conversationContinuity: previous.conversationContinuity ?? null,
       lastGuidanceText: previous.lastGuidanceText ?? null,
       ncaConversationState: previous.ncaConversationState ?? null,
+      ecaMutationProposal: previous.ecaMutationProposal ?? null,
+      ecaInitiativeSession: previous.ecaInitiativeSession ?? null,
+      ecaInformationNeedSession: previous.ecaInformationNeedSession ?? null,
+      ecaAnswerIntakeSession: previous.ecaAnswerIntakeSession ?? null,
+      ecaDialogueStrategySession: previous.ecaDialogueStrategySession ?? null,
+      ecaRecommendationSession: previous.ecaRecommendationSession ?? null,
+      ecaCommitmentSession: previous.ecaCommitmentSession ?? null,
+      ecaExecutionReadinessSession: previous.ecaExecutionReadinessSession ?? null,
+      ecaLiveExecutionSession: previous.ecaLiveExecutionSession ?? null,
+      ecaOutcomeSession: previous.ecaOutcomeSession ?? null,
+      ecaLearningClosureSession: previous.ecaLearningClosureSession ?? null,
+      advisorDataDialogue: previous.advisorDataDialogue ?? null,
     });
   }
   return freezeManagerObjectSession({
@@ -173,6 +229,18 @@ function replaceActive(
     conversationContinuity: previous.conversationContinuity ?? null,
     lastGuidanceText: previous.lastGuidanceText ?? null,
     ncaConversationState: previous.ncaConversationState ?? null,
+    ecaMutationProposal: previous.ecaMutationProposal ?? null,
+    ecaInitiativeSession: previous.ecaInitiativeSession ?? null,
+    ecaInformationNeedSession: previous.ecaInformationNeedSession ?? null,
+    ecaAnswerIntakeSession: previous.ecaAnswerIntakeSession ?? null,
+    ecaDialogueStrategySession: previous.ecaDialogueStrategySession ?? null,
+    ecaRecommendationSession: previous.ecaRecommendationSession ?? null,
+    ecaCommitmentSession: previous.ecaCommitmentSession ?? null,
+    ecaExecutionReadinessSession: previous.ecaExecutionReadinessSession ?? null,
+    ecaLiveExecutionSession: previous.ecaLiveExecutionSession ?? null,
+    ecaOutcomeSession: previous.ecaOutcomeSession ?? null,
+    ecaLearningClosureSession: previous.ecaLearningClosureSession ?? null,
+    advisorDataDialogue: previous.advisorDataDialogue ?? null,
   });
 }
 

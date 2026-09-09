@@ -175,13 +175,15 @@ export function composeNxaEvidenceChallenge(input: {
 export function composeNxaContextualGuide(input: {
   readonly subject: string | null;
   readonly nextTarget: string | null;
+  readonly goal?: string | null;
 }): string {
   const subject = input.subject ?? "the current issue";
   const target = input.nextTarget ?? subject;
   const move = /^investigate\s+/i.test(target)
     ? `${target} in the context of ${subject}`
     : `Investigate ${target} in the context of ${subject}`;
-  return `${move}. Check the evidence that would resolve the most important uncertainty before choosing an intervention.`;
+  const goalContext = input.goal ? ` toward the ${input.goal} goal` : "";
+  return `${move}${goalContext}. Check the evidence that would resolve the most important uncertainty before choosing an intervention.`;
 }
 
 export function composeNxaContextualEducation(subject: string | null): string {

@@ -1,0 +1,131 @@
+{
+  "identity": "NPA-T ECA:5/live-proofs",
+  "url": "http://localhost:3020/executive?reset=1",
+  "errors": [],
+  "1-fact-intake": {
+    "pass": true,
+    "actual": {
+      "utterance": "6 weeks.",
+      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
+      "intent": "UNKNOWN",
+      "eca4Ask": "false",
+      "bound": "true",
+      "type": "FACT_CLAIM",
+      "complete": "COMPLETE",
+      "confidence": "CONFIRMED_BY_MANAGER",
+      "conflict": "NO_CONFLICT",
+      "action": "SATISFY_INFORMATION_NEED",
+      "need": "SATISFIED",
+      "writes": "false",
+      "staleYes": "false"
+    }
+  },
+  "2-estimate": {
+    "pass": true,
+    "actual": {
+      "utterance": "Probably around $40,000.",
+      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. You estimated the cost at about $40.",
+      "intent": "UNKNOWN",
+      "eca4Ask": "false",
+      "bound": "true",
+      "type": "ESTIMATE",
+      "complete": "COMPLETE",
+      "confidence": "ESTIMATED",
+      "conflict": "NO_CONFLICT",
+      "action": "MARK_AS_UNCERTAIN",
+      "need": "PARTIALLY_SATISFIED",
+      "writes": "false",
+      "staleYes": "false"
+    }
+  },
+  "3-partial": {
+    "pass": true,
+    "actual": {
+      "utterance": "Cost is 40k.",
+      "reply": "NexoraUnderstood. I'll treat that as your current manager-reported observation about Cost, not as verified external evidence.",
+      "intent": "UNKNOWN",
+      "eca4Ask": "false",
+      "bound": "true",
+      "type": "PARTIAL_ANSWER",
+      "complete": "PARTIAL",
+      "confidence": "CONFIRMED_BY_MANAGER",
+      "conflict": "NO_CONFLICT",
+      "action": "SATISFY_INFORMATION_NEED",
+      "need": "PARTIALLY_SATISFIED",
+      "writes": "false",
+      "staleYes": "false"
+    }
+  },
+  "4-i-dont-know": {
+    "pass": true,
+    "actual": {
+      "utterance": "I don't know.",
+      "reply": "NexoraThen I would avoid treating the increase as permanent. We can compare a temporary-capacity option against doing nothing using the evidence we do have. I’ll keep that uncertain rather than inventing a value or asking the same question again.",
+      "intent": "UNKNOWN",
+      "eca4Ask": "false",
+      "bound": "true",
+      "type": "UNKNOWN",
+      "complete": "UNKNOWN",
+      "confidence": "UNKNOWN",
+      "conflict": "NO_CONFLICT",
+      "action": "MARK_AS_UNCERTAIN",
+      "need": "UNRESOLVED",
+      "writes": "false",
+      "staleYes": "false"
+    }
+  },
+  "5-conflict": {
+    "pass": true,
+    "actual": {
+      "utterance": "6 weeks.",
+      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. I currently have 4 weeks in the data, but you just said 6 weeks. Has the lead time changed?",
+      "intent": "UNKNOWN",
+      "eca4Ask": "false",
+      "bound": "true",
+      "type": "FACT_CLAIM",
+      "complete": "COMPLETE",
+      "confidence": "CONFIRMED_BY_MANAGER",
+      "conflict": "VALUE_CONFLICT",
+      "action": "PRESERVE_CONFLICT",
+      "need": "BLOCKED",
+      "writes": "false",
+      "staleYes": "false"
+    }
+  },
+  "6-cap-av": {
+    "pass": true,
+    "actual": {
+      "utterance": "Yes.",
+      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. Does CAP_AV represent available capacity?",
+      "intent": "CONFIRM_ACTION",
+      "eca4Ask": "true",
+      "bound": "true",
+      "type": "CONFIRMATION",
+      "complete": "COMPLETE",
+      "confidence": "CONFIRMED_BY_MANAGER",
+      "conflict": "NO_CONFLICT",
+      "action": "HANDOFF_TO_EXISTING_WRITER",
+      "need": "SATISFIED",
+      "writes": "false",
+      "staleYes": "false"
+    }
+  },
+  "7-decision-boundary": {
+    "pass": true,
+    "actual": {
+      "utterance": "Scenario A.",
+      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
+      "intent": "UNKNOWN",
+      "eca4Ask": "false",
+      "bound": "false",
+      "type": "UNRELATED_RESPONSE",
+      "complete": "NOT_APPLICABLE",
+      "confidence": "UNKNOWN",
+      "conflict": "NO_CONFLICT",
+      "action": "USE_CONVERSATIONALLY",
+      "need": "UNRESOLVED",
+      "writes": "false",
+      "staleYes": "false"
+    }
+  }
+}

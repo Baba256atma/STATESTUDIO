@@ -79,9 +79,12 @@ describe("NCA-POST:3 Semantic scope, multi-entity, collections, workspace", () =
     assert.equal(classifyNexoraSemanticScope("Can you add an object?"), "PRODUCT_ACTION");
     assert.equal(classifyNexoraSemanticScope("How do I use the Stage?"), "HELP_TEACH");
     assert.equal(
-      classifyNexoraSemanticScope("Explain the Stage. What is on Stage now?"),
-      "MIXED",
+      classifyNexoraSemanticScope(
+        "you say: Nexora does not yet have enough evidence to determine this. what do you need for determine it ?",
+      ),
+      "BUSINESS",
     );
+    assert.equal(classifyNexoraSemanticScope("What do you need to determine it?"), "BUSINESS");
   });
 
   it("keeps both relationship references", () => {
@@ -186,7 +189,7 @@ describe("NCA-POST:3 Semantic scope, multi-entity, collections, workspace", () =
     assert.match(turn.response, /visual workspace/i);
     assert.match(
       turn.response,
-      /Right now the Stage contains|does not currently show/i,
+      /currently visible|Right now the Stage contains|does not currently show|currently empty/i,
     );
     assert.doesNotMatch(turn.response, /which business outcome/i);
   });

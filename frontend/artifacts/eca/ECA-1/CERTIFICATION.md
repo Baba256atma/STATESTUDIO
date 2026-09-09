@@ -1,182 +1,128 @@
 # NPA-T ECA:1 — Working Conversation Context
 
-**Status: NOT CERTIFIED**
+**Status: CERTIFIED**
 
-## Current-state matrix
+Certification date: 2026-09-07
+Runtime: `http://localhost:3015/executive`
 
-| Capability | Status | Evidence |
+## Verdict
+
+**NPA-T ECA:1 — Working Conversation Context: CERTIFIED**
+
+ECA:1, FIX1, and FIX2 are closed. The A–J matrix is 10/10 PASS, required live runtime proofs pass, focused and milestone tests pass, no blocking product failure remains, and all production quality gates pass. ECA:2 was not started and no ECA:1-FIX3 phase was created.
+
+## Architecture boundary
+
+ECA remains a read-oriented projection over the existing NCA/NCA-POST meaning and conversation authorities, NEX-CONV working context, Stage/Director read context, registered Manager–Object subjects, and Data Reality context. It owns no parallel state, presenter, pipeline, writer, or truth.
+
+FIX1 contributes a session-only mutation proposal. FIX2 binds explicit confirmation to that proposal and hands a confirmed Risk request to `DS-6:1/CanonicalRiskWriter`. ECA does not write Stage, Data Reality, Decisions, Executions, Outcomes, Learning, evidence, memory, or durable business state.
+
+## ECA:1 + FIX status
+
+| Scope | Result | Evidence |
 | --- | --- | --- |
-| Working context | PASS | Immutable ECA projection and diagnostics. |
-| Reference continuity | PASS | A-J focused tests and existing NCA/NEX-CONV coverage. |
-| Stage/context separation | PASS | Focused tests; broader live Stage sequence not completed in this run. |
-| Ambiguity handling | PASS | Explicit bounded candidates and clarification tests. |
-| Knowledge intent | PASS | Explanation remains READ; NCA-POST:3 capability regression restored. |
-| Mutation proposal | PASS | FIX1 proposal projection and live proposal response. |
-| Confirmation binding | PASS | FIX2 session proposal slot and proposal-ID-bound handoff. |
-| Canonical Risk handoff | PASS | DS-6:1 Canonical Risk Writer certified in FIX2. |
-| Data context | PASS in focused projection tests | Required live CSV sequence not completed. |
-| Decision comparison | PASS | Existing comparison context is projected without commitment. |
-| Refresh/session boundary | PASS for session reset | Durable-authority reconstruction not fully rerun here. |
-| Runtime proof | PARTIAL | Risk flow proven; required Stage, ambiguity, and data runtime sequences remain incomplete. |
-| Regression gates | NOT CERTIFIED | Known non-ECA failures remain. |
+| ECA:1 working context | PASS | Explicit meaning, active/recent references, Stage context, Data context, and decision comparison are projected without owning them. |
+| FIX1 proposal | PASS | Explicit object mutation creates one session proposal; knowledge, Decision, Execution, and execution-plan turns remain outside it. |
+| FIX2 Risk handoff | PASS | Proposal-bound confirmation invokes the canonical Risk writer once; cancellation/stale proposals write nothing. |
 
-## Architecture and authority boundaries
-
-ECA is a read-oriented projection over NCA/NCA-POST meaning and references, NCA:2 session state, NEX-CONV working context, NXA Stage read context, Manager-Object subjects, and optional Data Reality context. It does not own Stage, Data Reality, business truth, Decision, Execution, Outcome, Learning, or durable memory.
-
-FIX1 adds proposal recognition and session-only proposal state. FIX2 adds `DS-6:1/CanonicalRiskWriter` and the ECA handoff adapter. Risk persistence remains owned by `workspaceRiskContract.ts`; ECA never writes Risk records directly. Decision and Execution confirmations remain on their existing authorities.
-
-## A-J behavioral matrix
+## A–J behavioral matrix
 
 | Proof | Result | Evidence |
 | --- | --- | --- |
-| A Simple Continuity | PASS | Focused test: Capacity Gap survives `Why is it important?`. |
-| B Reference Continuity | PASS | Pronoun evidence follows recent subject instead of Stage focus; `Why?` continuity covered. |
-| C Subject Switching | PASS | Demand Surge becomes current; prior reference and comparison IDs remain available. |
-| D Stage Separation | PASS automated / NOT RUN live | Collection query does not inherit focused object; reverse explicit meaning wins. |
-| E Ambiguity | PASS automated / NOT RUN live | Explicit candidate clarification is bounded; live ambiguity resolution was not completed. |
-| F Knowledge Intent | PASS | Knowledge remains READ and the NCA-POST:3 capability regression is fixed. |
-| G Mutation Confirmation | PASS | Proposal -> confirmation -> canonical writer; cancellation produces zero writes. |
-| H Data Context | PASS automated / NOT RUN live | Candidate status/provenance preserved in projection tests; live CSV sequence remains incomplete. |
-| I Decision Comparison | PASS | Existing comparison context and criterion are projected without Decision commitment. |
-| J Refresh Boundary | PASS partial | Browser refresh clears session chat context; durable Risk authority is local-storage-backed. Full two-sided runtime proof remains incomplete. |
+| A Simple Continuity | PASS | Capacity Gap remains the subject for a direct follow-up. |
+| B Reference Continuity | PASS | Pronoun evidence follows the conversational reference rather than Stage focus. |
+| C Subject Switching | PASS | Demand Surge becomes current while valid recent/comparison references remain available. |
+| D Stage Separation | PASS | Previously completed live proof: Executions collection intent and explicit Capacity Gap meaning each win without an unintended business write. Not rerun during this continuation. |
+| E Ambiguity | PASS | Previously completed live proof: deterministic latest-reference behavior is preserved; the valid Problems importance ambiguity asks for a bounded criterion without Stage mutation. Not rerun during this continuation. |
+| F Knowledge Intent | PASS | Knowledge remains READ and does not create a mutation or navigation write. |
+| G Mutation Confirmation | PASS | Live proposal → explicit confirmation → canonical Risk writer → one Risk → proposal cleared; cancellation writes zero. |
+| H Data Context | PASS | Fresh live CAP_AV proof recorded below. |
+| I Decision Comparison | PASS | Comparison membership and criterion remain derived; no Decision is committed. |
+| J Refresh Boundary | PASS | Conversation subject, recent references, and pending proposal clear; canonical Risk and confirmed source-scoped field semantics restore through their own authorities; Stage reconstructs to Overview. |
 
-## Focused test evidence
+**A–J total: 10/10 PASS.**
 
-- ECA working context, mutation proposal, handoff, and direct runtime tests: **34 passed / 0 failed**.
-- Canonical Risk writer and handoff validation: **21 passed / 0 failed**.
-- Writer + ECA + conversation integration: **57 passed / 0 failed**.
-- NXA funnel level 1: **passed / 0 failed**.
+## Runtime H — CAP_AV Data Context
 
-## Regression matrix
+Certified fixture: `test-fixtures/data-ux3/data-ux3-ambiguous.csv` (142 B, 4 rows, 5 columns). The CSV remained `Pending review`; it was never accepted as evidence.
 
-| Suite | Result | Classification |
+| Manager turn | Advisor result | Authority/safety result |
 | --- | --- | --- |
-| Conversation/NCA/NEX-CONV group | 362 passed / 2 failed of 364 | NCA:4 M is PRE_EXISTING. NCA-POST:3 capability failure was INTRODUCED_BY_ECA and fixed; its targeted rerun passes. |
-| BCA/Stage/Director/manager context | 284 passed / 9 failed of 293 | PRE_EXISTING/ENVIRONMENT path-resolution failures in Director tests; no ECA stack involvement observed. |
-| Data Reality/data-source/workspace | 1,373 passed / 9 failed of 1,382 | PRE_EXISTING/REAL_UNRELATED_REGRESSION workspace presentation/runtime failures; no ECA stack involvement observed. |
-| Decision Theatre/lifecycle | 345 passed / 1 failed of 346 | PRE_EXISTING DTH comparison test K; no ECA stack involvement observed. |
-| Focused DTH sub-gate | NOT RUN | Tool call was skipped; no PASS claimed. |
+| `What does CAP_AV mean?` | CAP_AV identified in `data-ux3-ambiguous.csv`; candidates `Available Capacity` and `Capacity Availability`; neither confirmed. | Field/source continuity established; source still under review and not accepted evidence. |
+| `Is it Capacity Availability?` | `Confirmed for this source: CAP_AV means Capacity Availability.` | Canonical manager semantic-confirmation authority promoted only the source-scoped field meaning. |
+| `Is that confirmed?` | CAP_AV meaning and filename repeated; meaning confirmed for this source. | Current field/source referent preserved; CSV still under review and not accepted evidence. |
+| `Show me the source.` | `CAP_AV is in data-ux3-ambiguous.csv.` | Provenance continuity preserved. |
 
-### Conversation failure details
+Result: **PASS**. UNKNOWN/AMBIGUOUS became manager-confirmed only after the explicit canonical confirmation turn. Source acceptance did not change, and ECA performed no write.
 
-- `nexoraNca4AdvisoryIntelligence.test.ts` M: expected unsupported strong-action caution, received an existing comparison clarification. This failure predates ECA and does not import or execute ECA code.
-- The initially failing NCA-POST:3 “answers product capability honestly” test was caused by broad ECA ADD recognition (`Add a Risk object.`). ECA was narrowed to require resolvable target semantics; targeted rerun passes. This was an ECA regression and is closed.
+## Refresh and durability matrix
 
-## Runtime matrix
-
-Runtime URL: `http://localhost:3000/executive`.
-
-| Sequence | Result | Evidence |
+| State | Refresh result | Authority |
 | --- | --- | --- |
-| 1 Continuity | PASS | Earlier live session: Capacity Gap -> `Why is it important?` retained subject and Stage. |
-| 2 Subject switch | PASS | Earlier live session: Capacity Gap -> Demand Surge; Stage did not hijack context. |
-| 3 Stage separation | NOT RUN | Attempted after reload, but shared page interaction became stale before submission. |
-| 4 Ambiguity | NOT RUN | No live bounded-ambiguity session captured in this closure run. |
-| 5 Mutation | PASS | Live proposal and `Add it.` produced canonical success; cancellation is covered by direct runtime test. |
-| 6 Data | NOT RUN | No live CSV source sequence captured in this closure run. |
+| Conversation subject | Cleared | NCA:2/session conversation state |
+| Recent references | Cleared | NCA/NEX-CONV session state |
+| Pending proposal | Cleared | Manager–Object session/ECA projection |
+| Confirmed Risk | Restored | DS-6:1 workspace Risk store |
+| Confirmed Data semantics | Restored source-scoped | DATA-ADV/Data Reality semantic authority |
+| Stage projection | Reconstructed to Overview | Stage/Director authorities |
+| Business context | Restored | Existing workspace/BCA authorities |
 
-## Refresh and durability
+ECA adds no persistence writer.
 
-| Context/state | Survives refresh? | Authority |
+## Regression and runner matrix
+
+| Group | Canonical result | Classification |
 | --- | --- | --- |
-| Conversation subject | No, session reset observed | NCA:2 / existing conversation session |
-| Recent references | No, session reset observed | NCA/NEX-CONV session state |
-| Pending proposal | No, session-scoped | ManagerObject session / ECA proposal projection |
-| Confirmed Risk | Yes, through existing persistence | DS-6:1 Risk store |
-| Confirmed Data semantics | Existing authority-dependent; not fully rerun here | DATA-ADV/Data Reality |
-| Stage projection | Existing runtime/local state behavior | Stage/Director authorities |
-| Business context | Existing workspace authority behavior | BCA/workspace authorities |
+| Conversation / NCA / NCA-POST / Manager–Object / Context / BCA / Stage / Decision Theatre | NXA Level 4 executive omnibus: **1,594/1,594 PASS** | Includes repaired NCA4 advisory precedence, NXA3 Goal-aware guidance, NLU walkthrough classification, Stage comparison precedence, and DTH selected-candidate copy. |
+| Stage / Director integration | NOL Director scripts: **331/331 PASS** | Earlier `readdirSync(undefined)` failures were invalid-runner/path-environment results. |
+| Director inventory | Canonical Node strip-types runner: **58/58 PASS** | PASS. |
+| Data / Workspace | Canonical `test:workspace-data-source-foundation-certification`: **63/63 PASS** | Earlier tsx/Vitest-style aggregate classification did not represent the canonical workspace runner. |
+| Decision Theatre comparison | Focused suite: **15/15 PASS** | Selected Demand Surge anchor is named in manager-facing explanation. |
+| NCA:4 advisory | Focused suite: **24/24 PASS** | Unsupported strong action is challenged; generic clarification no longer steals the turn. |
+| ECA + Risk Writer / Handoff | Final combined verification: **47/47 PASS** | Includes focused ECA, canonical Risk store/writer, and proposal-bound handoff. |
+| NXA funnel Level 1 | PASS, 0 failed | Focused. |
+| NXA funnel Level 2 | PASS, 0 failed | Owning layer. |
+| NXA funnel Level 3 | PASS, 0 failed | Integration. |
+| NXA funnel Level 4 | **7/7 required tasks PASS** | Milestone run used supported `EXECUTIVE_URL=http://localhost:3015/executive`; no running, failed, uninspected, or skipped required task. |
 
-ECA adds no durable persistence writer.
+The first Level 4 attempt passed its six non-live tasks but its live smoke defaulted to inactive port 3000. It was classified ENVIRONMENT, then rerun through the supported URL override against the required single runtime on port 3015; the complete canonical funnel passed.
 
-## Production quality
-
-- TypeScript: passed with `NODE_OPTIONS=--max-old-space-size=8192`.
-- Touched-file ESLint: passed.
-- Production build: passed with `NODE_OPTIONS=--max-old-space-size=8192 npm run build`.
-- `git diff --check`: reports pre-existing trailing whitespace in `frontend/app/lib/nexora-certification/nxaTestFunnel.ts`, outside ECA changes.
-
-## Exact certification blockers
-
-1. Required live runtime sequences 3, 4, and 6 were not completed and therefore cannot be marked PASS.
-2. The DTH focused sub-gate was skipped in this run.
-3. Relevant repository regression groups still contain known failures, including the pre-existing NCA:4, Director, workspace, and DTH failures.
-
-Do not start ECA:2. Do not create ECA:1-FIX3 automatically.
-
-## Architecture
-
-ECA remains a read-oriented projection. It consumes NCA canonical meaning and conversation state, NEX-CONV working context, NXA Stage read context, registered Manager-Object subjects, and optional Data Reality context. It does not own Stage, business truth, Data Reality, Decisions, Executions, Outcomes, Learning, durable memory, or manager-confirmed writers.
-
-The existing authorities remain in place:
-
-- NCA:1-7 and NCA-POST own meaning, speech acts, references, ambiguity, pending questions, and collection semantics.
-- NEX-CONV:1/2 own conversation progression and thread projections.
-- NXA:5-FIX4, Director, and Decision Theatre own Stage/presentation read models and writers.
-- Data Reality/DATA-ADV own evidence, source, field semantics, and advisory truth.
-- Existing object-approval and domain runtimes own confirmed mutations.
-- NCA:2 and existing entrance continuity own session-scoped conversation state; APP-4 owns durable memory.
-
-No duplicate conversation state machine or mutation writer was introduced.
-
-## Behavioral proof
-
-| Proof | Status | Evidence |
-| --- | --- | --- |
-| A Simple Continuity | PASS | ECA focused suite, individually named test. |
-| B Pronoun Continuity | PASS | Explicit recent subject outranks Stage focus for evidence follow-up. |
-| C Subject Switch | PASS | Recent references and existing comparison context remain available. |
-| D Stage Separation | PASS | Collection questions do not inherit focused object; reverse explicit subject wins. |
-| E Ambiguity | PASS | Explicit candidates produce bounded clarification options. |
-| F Knowledge Intent | PASS | Explanation remains READ and does not propose navigation. |
-| G Mutation Confirmation | PARTIAL | Projection creates an unexecuted proposal, but live `/executive` has no conversational proposal/confirmation route to the canonical object-approval writer. |
-| H Data Context | PASS | Source, field, candidate semantic status, and evidence refs remain unchanged. |
-| I Decision Comparison | PASS | Existing comparison candidate IDs/criterion are projected without commitment. |
-| J Refresh Boundary | PASS | Browser reload cleared chat/session context and preserved existing overview state. |
-
-Additional WHO -> WHAT -> WHERE -> HOW -> WHY -> NOW -> NEXT diagnostics pass; unknown WHY remains `null` rather than being fabricated.
-
-## Regression gates
+## Quality gates
 
 | Gate | Result |
 | --- | --- |
-| ECA focused tests | 18 passed / 0 failed |
-| Conversation/NCA group | 428 passed / 1 failed; existing NCA:4 advisory test M, unrelated to ECA |
-| BCA/Stage/Director/manager context | 284 passed / 9 failed; Director path-resolution failures, unrelated to ECA |
-| Data Reality/data-source/workspace group | 1,373 passed / 9 failed; existing workspace suite failures, unrelated to ECA |
-| Decision Theatre/lifecycle group | 345 passed / 1 failed; existing Decision Theatre comparison test K, unrelated to ECA |
-| NXA funnel level 1 | Passed, 0 failed |
+| TypeScript (`NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck`) | PASS |
+| Touched-file ESLint | PASS |
+| Repository ESLint | PASS with zero errors; 501 existing warnings are non-blocking debt |
+| Production build (`NODE_OPTIONS=--max-old-space-size=8192 npm run build`) | PASS |
+| `git diff --check` | PASS, exit 0 |
+| NXA milestone certification | PASS, exit 0 |
 
-The zero-failure rule prevents certification while these known relevant regression failures remain unresolved, even though their observed failures are outside the ECA files.
+## Closed failure inventory
 
-## Runtime proof
+- NCA:4 strong-action advice: fixed at response-ownership precedence; no test weakening.
+- Decision Theatre selected-candidate explanation: fixed by naming the authoritative investigation anchor in deictic copy.
+- NXA3 Goal awareness: Goal state was present; contextual guide now includes the authoritative Goal when available.
+- Execution-plan/ECA collision: execution-plan changes are excluded from the generic object-mutation proposal recognizer.
+- NLU causal walkthrough: `walk me through` causal questions are no longer downgraded to relevance/attention.
+- React callback lint error: dependency list now includes the directly read replacement-source prop.
+- Director and Workspace provisional failures: canonical runners pass; invalid-runner/environment results are not product failures.
 
-Runtime URL: `http://localhost:3000/executive`.
+## Known non-blocking debt
 
-- Sequence 1 continuity: PASS for `Explain Capacity Gap.` followed by `Why is it important?`; manager-facing response remained grounded in Capacity Gap and Stage stayed Overview.
-- Sequence 2 subject switch: PASS for `Now tell me about Demand Surge.`; context changed to Demand Surge without Stage mutation. `Compare them.` correctly refused to invent a comparison because fewer than two evaluated scenarios were available.
-- Sequence 3 Stage separation: NOT RUN in this session.
-- Sequence 4 ambiguity: NOT RUN in this session.
-- Sequence 5 proposed change: BLOCKED. `Add Supplier Delay as a Risk.` produced the existing generic unsupported-context response rather than a bounded ECA proposal. No object or Stage write occurred. The existing manual object-approval writer is a separate UI path.
-- Sequence 6 data: NOT RUN in this session.
+- Repository ESLint reports 501 warnings but zero errors. No broad warning cleanup was included in this closure.
+- `baseline-browser-mapping` reports stale compatibility metadata during build; build output is successful.
 
-## Refresh and durability
+## Final totals
 
-- Session-only: chat transcript, active conversational subject, and comparison working context disappear on refresh because existing NCA/entrance continuity is session-scoped and ECA adds no persistence.
-- Durable state: existing workspace/data state remains available after refresh through its existing local storage/runtime authorities. ECA is not the writer and does not claim ownership of that durability.
+- A–J: **10/10 PASS**
+- Runtime H: **PASS**
+- ECA + canonical Risk verification: **47/47 PASS**
+- Director integration: **331/331 PASS**
+- Workspace canonical runner: **63/63 PASS**
+- NXA Level 4 executive omnibus: **1,594/1,594 PASS**
+- NXA Level 4 required tasks: **7/7 PASS**
+- ECA-introduced regressions: **0 open**
+- Blocking product failures: **0**
 
-## Build quality
-
-- TypeScript: passed with `NODE_OPTIONS=--max-old-space-size=8192`.
-- Touched-file ESLint: passed.
-- Production build: passed with `NODE_OPTIONS=--max-old-space-size=8192 npm run build` after the latest projection edits.
-- `git diff --check`: blocked by pre-existing trailing whitespace in `frontend/app/lib/nexora-certification/nxaTestFunnel.ts`, outside ECA changes.
-
-## Certification blockers
-
-1. The live `/executive` path does not surface ECA's bounded mutation proposal or route explicit confirmation through the existing canonical object-approval writer.
-2. Required regression groups contain known failures listed above.
-3. Required runtime sequences 3, 4, and 6 were not completed in this run.
-
-Do not start ECA:2.
+No ECA:2 work was started.

@@ -1,0 +1,172 @@
+{
+  "identity": "NPA-T ECA:4/live-proofs",
+  "url": "http://localhost:3019/executive?reset=1",
+  "errors": [],
+  "1-known-information": {
+    "pass": true,
+    "actual": {
+      "utterance": "The on-time delivery target is 96%. Compare Scenario A and Scenario B using the on-time delivery target.",
+      "reply": "NexoraUnderstood. I'll treat that as your current manager-reported observation about Delivery, not as verified external evidence.",
+      "intent": "COMPARE",
+      "nextAction": "ASK_FOR_MISSING_INFORMATION",
+      "authority": "none",
+      "intervene": "true",
+      "action": "NO_ACQUISITION_NEEDED",
+      "ask": "false",
+      "type": "TARGET",
+      "status": "KNOWN_CONFIRMED",
+      "necessity": "REQUIRED",
+      "source": "BUSINESS_OBJECT",
+      "writes": "false",
+      "secondClarify": "false",
+      "focused": "none",
+      "stageMode": "overview"
+    }
+  },
+  "2-comparison-missing": {
+    "pass": true,
+    "actual": {
+      "utterance": "Which scenario is cheaper?",
+      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. Scenario B’s cost is still unknown. What is its expected cost, or should we compare them without cost for now?",
+      "intent": "UNKNOWN",
+      "nextAction": "ASK_CLARIFICATION",
+      "authority": "none",
+      "intervene": "true",
+      "action": "ASK_MANAGER",
+      "ask": "true",
+      "type": "COST",
+      "status": "MISSING",
+      "necessity": "BLOCKING",
+      "source": "EXISTING_DATA",
+      "writes": "false",
+      "secondClarify": "false",
+      "focused": "none",
+      "stageMode": "overview"
+    }
+  },
+  "3-i-dont-know": {
+    "pass": true,
+    "actual": {
+      "utterance": "I don't know.",
+      "reply": "NexoraThen I would avoid treating the increase as permanent. We can compare a temporary-capacity option against doing nothing using the evidence we do have. I’ll keep that uncertain rather than inventing a value or asking the same question again.",
+      "intent": "UNKNOWN",
+      "nextAction": "ASK_CLARIFICATION",
+      "authority": "none",
+      "intervene": "true",
+      "action": "PROCEED_WITH_UNCERTAINTY",
+      "ask": "false",
+      "type": "none",
+      "status": "none",
+      "necessity": "none",
+      "source": "none",
+      "writes": "false",
+      "secondClarify": "false",
+      "focused": "none",
+      "stageMode": "overview"
+    }
+  },
+  "4-why": {
+    "pass": true,
+    "actual": {
+      "utterance": "Why do you need that?",
+      "reply": "NexoraNo executive object is currently active, so I cannot explain a subject. No outcome has been measured yet. You’re comparing the scenarios, and cost is currently missing for Scenario B.",
+      "intent": "EXPLAIN",
+      "nextAction": "ASK_FOR_MISSING_INFORMATION",
+      "authority": "NEX-CONV Conversation Kernel",
+      "intervene": "false",
+      "action": "NO_ACQUISITION_NEEDED",
+      "ask": "false",
+      "type": "none",
+      "status": "none",
+      "necessity": "none",
+      "source": "none",
+      "writes": "false",
+      "secondClarify": "false",
+      "focused": "none",
+      "stageMode": "overview"
+    }
+  },
+  "5-skip-proceed": {
+    "pass": true,
+    "actual": {
+      "skipped": {
+        "utterance": "Not now.",
+        "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. Okay. I can continue with the available evidence, but that information will remain uncertain.",
+        "intent": "UNKNOWN",
+        "nextAction": "ASK_CLARIFICATION",
+        "authority": "none",
+        "intervene": "false",
+        "action": "DEFER",
+        "ask": "false",
+        "type": "none",
+        "status": "none",
+        "necessity": "none",
+        "source": "none",
+        "writes": "false",
+        "secondClarify": "false",
+        "focused": "none",
+        "stageMode": "overview"
+      },
+      "proceed": {
+        "utterance": "Compare the scenarios anyway.",
+        "reply": "NexoraI need at least two evaluated scenarios to compare.",
+        "intent": "COMPARE",
+        "nextAction": "ASK_FOR_MISSING_INFORMATION",
+        "authority": "none",
+        "intervene": "true",
+        "action": "NO_ACQUISITION_NEEDED",
+        "ask": "false",
+        "type": "none",
+        "status": "none",
+        "necessity": "none",
+        "source": "none",
+        "writes": "false",
+        "secondClarify": "false",
+        "focused": "none",
+        "stageMode": "overview"
+      }
+    }
+  },
+  "6-cap-av": {
+    "pass": true,
+    "actual": {
+      "utterance": "Should I worry about CAP_AV?",
+      "reply": "NexoraInvestigate evidence in the context of the current issue toward the Unknown goal goal. Check the evidence that would resolve the most important uncertainty before choosing an intervention. Does CAP_AV represent available capacity?",
+      "intent": "EVALUATE",
+      "nextAction": "ASK_FOR_MISSING_INFORMATION",
+      "authority": "none",
+      "intervene": "true",
+      "action": "REQUEST_SEMANTIC_CONFIRMATION",
+      "ask": "true",
+      "type": "SEMANTIC_MEANING",
+      "status": "KNOWN_UNCONFIRMED",
+      "necessity": "REQUIRED",
+      "source": "EXISTING_DATA",
+      "writes": "false",
+      "secondClarify": "false",
+      "focused": "none",
+      "stageMode": "overview"
+    }
+  },
+  "7-decision-execution-boundary": {
+    "pass": true,
+    "actual": {
+      "utterance": "Start the plan.",
+      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. There is no committed Decision yet. Do you want to review a Decision before starting execution?",
+      "intent": "REQUEST_EXECUTION_ACTION",
+      "nextAction": "ASK_FOR_MISSING_INFORMATION",
+      "authority": "CC:10 Decision Commitment",
+      "intervene": "true",
+      "action": "ASK_MANAGER",
+      "ask": "true",
+      "type": "PREREQUISITE",
+      "status": "MISSING",
+      "necessity": "BLOCKING",
+      "source": "BUSINESS_OBJECT",
+      "writes": "false",
+      "secondClarify": "false",
+      "focused": "none",
+      "stageMode": "overview"
+    }
+  }
+}

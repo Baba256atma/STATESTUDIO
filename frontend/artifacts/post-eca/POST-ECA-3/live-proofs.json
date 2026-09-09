@@ -1,0 +1,273 @@
+{
+  "identity": "NPA-T POST-ECA:3/LiveDataLibraryConversation",
+  "url": "http://127.0.0.1:62612/executive?reset=1",
+  "isolatedPort": 62612,
+  "errors": [],
+  "runtimes": {
+    "runtime1": {
+      "name": "explain all CSV files",
+      "pass": true,
+      "actual": {
+        "managerTurn": "explain all CSV files you have",
+        "reply": "NexoraYou have 2 CSV sources. Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue. Confirmed fields include currentRevenue (Current Revenue), previousRevenue (Previous Revenue), usedCapacity (Production Used Capacity), totalCapacity (Production Total Capacity). capacity.csv is ready. It currently supports Capacity, Revenue. Nexora has not confirmed enough business meaning to describe this source yet. No business meanings are confirmed yet. Still unresolved: DT, ORD_QTY, OTD, CAP_AV, BKL. data-ux3-ambiguous.csv is under review and is not accepted into Data Reality yet.",
+        "focused": "none",
+        "eca2Intent": "none",
+        "eca6Objective": "none",
+        "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+        "dataIntent": "explain-all-csv",
+        "sourceCount": "2",
+        "pendingCount": "1",
+        "activeCount": "1",
+        "resolvedNames": "capacity.csv|data-ux3-ambiguous.csv",
+        "genericFallback": "false",
+        "outcomeFallback": "false"
+      }
+    },
+    "runtime2": {
+      "name": "explain Data / Data Source",
+      "pass": true,
+      "actual": {
+        "dataConcept": {
+          "managerTurn": "explian Data ?",
+          "reply": "NexoraData is where Nexora keeps the sources it can use as evidence, such as CSV imports and their confirmed meanings. You currently have 2 sources available.",
+          "focused": "none",
+          "eca2Intent": "none",
+          "eca6Objective": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "concept-data",
+          "sourceCount": "2",
+          "pendingCount": "1",
+          "activeCount": "1",
+          "resolvedNames": "capacity.csv|data-ux3-ambiguous.csv",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        },
+        "dataSource": {
+          "managerTurn": "explain Data source ?",
+          "reply": "NexoraA Data Source is where Nexora receives business information, such as an imported CSV. Nexora keeps the source separate from the business objects and tracks what its fields mean before using them as evidence.",
+          "focused": "none",
+          "eca2Intent": "none",
+          "eca6Objective": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "concept-data-source",
+          "sourceCount": "2",
+          "pendingCount": "1",
+          "activeCount": "1",
+          "resolvedNames": "none",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        }
+      }
+    },
+    "runtime3": {
+      "name": "do you have any CSV",
+      "pass": true,
+      "actual": {
+        "empty": {
+          "managerTurn": "do you have any file like CSV ?",
+          "reply": "NexoraNo CSV sources are currently available.",
+          "focused": "none",
+          "eca2Intent": "none",
+          "eca6Objective": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "csv-availability",
+          "sourceCount": "0",
+          "pendingCount": "0",
+          "activeCount": "0",
+          "resolvedNames": "none",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        },
+        "availability": {
+          "managerTurn": "do you have any file like CSV ?",
+          "reply": "NexoraYes. I currently have 2 CSV sources: capacity.csv and data-ux3-ambiguous.csv.",
+          "focused": "none",
+          "eca2Intent": "none",
+          "eca6Objective": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "csv-availability",
+          "sourceCount": "2",
+          "pendingCount": "1",
+          "activeCount": "1",
+          "resolvedNames": "capacity.csv|data-ux3-ambiguous.csv",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        }
+      }
+    },
+    "runtime4": {
+      "name": "pending vs active source",
+      "pass": true,
+      "actual": {
+        "pendingExplain": {
+          "managerTurn": "explain all CSV files you have",
+          "reply": "NexoraYou have 1 CSV source. Nexora has not confirmed enough business meaning to describe this source yet. No business meanings are confirmed yet. Still unresolved: DT, ORD_QTY, OTD, CAP_AV, BKL. data-ux3-ambiguous.csv is under review and is not accepted into Data Reality yet.",
+          "focused": "none",
+          "eca2Intent": "none",
+          "eca6Objective": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "explain-all-csv",
+          "sourceCount": "1",
+          "pendingCount": "1",
+          "activeCount": "0",
+          "resolvedNames": "data-ux3-ambiguous.csv",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        },
+        "pendingNamed": {
+          "managerTurn": "Explain data-ux3-ambiguous.csv.",
+          "reply": "NexoraNexora has not confirmed enough business meaning to describe this source yet. No business meanings are confirmed yet. Still unresolved: DT, ORD_QTY, OTD, CAP_AV, BKL. data-ux3-ambiguous.csv is under review and is not accepted into Data Reality yet.",
+          "focused": "none",
+          "eca2Intent": "none",
+          "eca6Objective": "none",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "sourceCount": "0",
+          "pendingCount": "0",
+          "activeCount": "0",
+          "resolvedNames": "none",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        },
+        "explainAll": {
+          "managerTurn": "explain all CSV files you have",
+          "reply": "NexoraYou have 2 CSV sources. Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue. Confirmed fields include currentRevenue (Current Revenue), previousRevenue (Previous Revenue), usedCapacity (Production Used Capacity), totalCapacity (Production Total Capacity). capacity.csv is ready. It currently supports Capacity, Revenue. Nexora has not confirmed enough business meaning to describe this source yet. No business meanings are confirmed yet. Still unresolved: DT, ORD_QTY, OTD, CAP_AV, BKL. data-ux3-ambiguous.csv is under review and is not accepted into Data Reality yet.",
+          "focused": "none",
+          "eca2Intent": "none",
+          "eca6Objective": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "explain-all-csv",
+          "sourceCount": "2",
+          "pendingCount": "1",
+          "activeCount": "1",
+          "resolvedNames": "capacity.csv|data-ux3-ambiguous.csv",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        }
+      }
+    },
+    "runtime5": {
+      "name": "specific source follow-up",
+      "pass": true,
+      "actual": {
+        "listed": {
+          "managerTurn": "What CSV files do you have?",
+          "reply": "NexoraYes. I currently have 2 CSV sources: capacity.csv and data-ux3-ambiguous.csv.",
+          "focused": "none",
+          "eca2Intent": "none",
+          "eca6Objective": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "csv-availability",
+          "sourceCount": "2",
+          "pendingCount": "1",
+          "activeCount": "1",
+          "resolvedNames": "capacity.csv|data-ux3-ambiguous.csv",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        },
+        "follow": {
+          "managerTurn": "Explain the second one.",
+          "reply": "NexoraNexora has not confirmed enough business meaning to describe this source yet. No business meanings are confirmed yet. Still unresolved: DT, ORD_QTY, OTD, CAP_AV, BKL. data-ux3-ambiguous.csv is under review and is not accepted into Data Reality yet.",
+          "focused": "none",
+          "eca2Intent": "none",
+          "eca6Objective": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "specific-source",
+          "sourceCount": "2",
+          "pendingCount": "1",
+          "activeCount": "1",
+          "resolvedNames": "data-ux3-ambiguous.csv",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        }
+      }
+    },
+    "runtime6": {
+      "name": "ECA:4 existing-data bridge",
+      "pass": true,
+      "actual": {
+        "need": {
+          "managerTurn": "What do you need to investigate Margin Pressure?",
+          "reply": "NexoraI have the current goal context. What is missing is enough evidence to confirm what is driving the gap.",
+          "focused": "obj-risk",
+          "eca2Intent": "INVESTIGATE",
+          "eca6Objective": "INVESTIGATE_ISSUE",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "sourceCount": "0",
+          "pendingCount": "0",
+          "activeCount": "0",
+          "resolvedNames": "none",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        },
+        "have": {
+          "managerTurn": "Do we already have that data?",
+          "reply": "NexoraWe have accepted data in capacity.csv (Capacity, Revenue). I would start with the accepted evidence, then examine related sources. That is an investigation order, not a claim that one source caused the problem.",
+          "focused": "obj-risk",
+          "eca2Intent": "UNKNOWN",
+          "eca6Objective": "INVESTIGATE_ISSUE",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "existing-data-bridge",
+          "sourceCount": "2",
+          "pendingCount": "1",
+          "activeCount": "1",
+          "resolvedNames": "none",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        }
+      }
+    },
+    "runtime7": {
+      "name": "Stage/Data context switching",
+      "pass": true,
+      "actual": {
+        "stage": {
+          "managerTurn": "what is on the stage?",
+          "reply": "NexoraBudget Watch and Customer Watch are currently visible on Stage.",
+          "focused": "none",
+          "eca2Intent": "UNKNOWN",
+          "eca6Objective": "none",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "sourceCount": "0",
+          "pendingCount": "0",
+          "activeCount": "0",
+          "resolvedNames": "none",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        },
+        "csvAfterStage": {
+          "managerTurn": "explain all CSV files you have.",
+          "reply": "NexoraYou have 2 CSV sources. Nexora understands this source as current revenue, previous revenue, production used capacity, and production total capacity information. Related objects: Capacity, Revenue. Confirmed fields include currentRevenue (Current Revenue), previousRevenue (Previous Revenue), usedCapacity (Production Used Capacity), totalCapacity (Production Total Capacity). capacity.csv is ready. It currently supports Capacity, Revenue. Nexora has not confirmed enough business meaning to describe this source yet. No business meanings are confirmed yet. Still unresolved: DT, ORD_QTY, OTD, CAP_AV, BKL. data-ux3-ambiguous.csv is under review and is not accepted into Data Reality yet.",
+          "focused": "none",
+          "eca2Intent": "SHOW",
+          "eca6Objective": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "explain-all-csv",
+          "sourceCount": "2",
+          "pendingCount": "1",
+          "activeCount": "1",
+          "resolvedNames": "capacity.csv|data-ux3-ambiguous.csv",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        },
+        "nexoraHave": {
+          "managerTurn": "What Data does Nexora have?",
+          "reply": "NexoraYou currently have 2 CSV sources: capacity.csv and data-ux3-ambiguous.csv. capacity.csv is currently in use. data-ux3-ambiguous.csv is still being reviewed.",
+          "focused": "obj-risk",
+          "eca2Intent": "UNKNOWN",
+          "eca6Objective": "INVESTIGATE_ISSUE",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "inventory",
+          "sourceCount": "2",
+          "pendingCount": "1",
+          "activeCount": "1",
+          "resolvedNames": "capacity.csv|data-ux3-ambiguous.csv",
+          "genericFallback": "false",
+          "outcomeFallback": "false"
+        }
+      }
+    }
+  }
+}

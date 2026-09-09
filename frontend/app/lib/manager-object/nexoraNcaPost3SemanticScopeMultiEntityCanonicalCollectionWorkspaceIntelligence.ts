@@ -11,6 +11,7 @@ import {
   observationShouldNotNavigate,
   preparedManagerUtterance,
 } from "./nexoraNcaPost2ManagerAssertionsPendingQuestionPrecedenceCollectionQuery.ts";
+import { isEcaInformationRequirementRequest } from "../nexora-conversation/ecaExecutiveInformationNeed.ts";
 
 export const nexoraNcaPost3Identity =
   "NCA-POST:3/SemanticScopeMultiEntityCanonicalCollectionNexoraWorkspaceIntelligence" as const;
@@ -188,6 +189,10 @@ function conditionalEvaluationCue(text: string): boolean {
 export function classifyNexoraSemanticScope(utterance: string): NexoraSemanticScope {
   const text = prepared(utterance);
   if (!text) return "UNKNOWN";
+  if (isEcaInformationRequirementRequest(utterance)) return "BUSINESS";
+  if (/\b(?:csv|data library|data source)\b/.test(text) && !/\bwhat data (?:is|are) this using\b/.test(text)) {
+    return "BUSINESS";
+  }
   // Explicit navigation remains a business/object operation even when the
   // manager uses interface filler such as “object”.
   if (/^(?:show|open|focus)\b/.test(text)) return "BUSINESS";
@@ -202,6 +207,7 @@ export function classifyNexoraSemanticScope(utterance: string): NexoraSemanticSc
   if (workspace) return "CURRENT_WORKSPACE";
   if (product) return "NEXORA_PRODUCT";
   if (productCue(text) && !/\b(?:late|demand|margin|capacity gap)\b/.test(text)) {
+    if (/\b(?:data|csv|file|source)\b/.test(text) && !/\bwhat is nexora\b/.test(text)) return "BUSINESS";
     return "NEXORA_PRODUCT";
   }
   return "BUSINESS";
@@ -610,8 +616,16 @@ export function composeWorkspaceReply(input: {
 }): string {
   const snapshot = input.snapshot ?? null;
   const text = prepared(input.utterance ?? "");
+  const visible = snapshot?.visibleObjects ?? [];
+  const visibleLabels = visible.map((item) => item.label);
+  const join = (names: readonly string[]) => {
+    if (names.length === 0) return "";
+    if (names.length === 1) return names[0] ?? "";
+    if (names.length === 2) return `${names[0]} and ${names[1]}`;
+    return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+  };
   if (snapshot) {
-    if (/\b(?:center|current focus|focused)\b/.test(text)) {
+    if (/\b(?:center|current focus|what am i focused|focused on)\b/.test(text)) {
       return snapshot.focused
         ? `${snapshot.focused.label} is the current focus on the Stage.`
         : "The Stage does not currently have a single focused object.";
@@ -631,19 +645,26 @@ export function composeWorkspaceReply(input: {
       }
       return "They are part of the current Stage presentation. Visibility alone does not establish a causal relationship.";
     }
-    if (snapshot.focused && snapshot.collection?.members.length) {
-      return `You’re focused on ${snapshot.focused.label}. The Stage is showing the ${snapshot.collection.label} in this view: ${snapshot.collection.members.map((item) => item.label).join(" and ")}.`;
+    if (visibleLabels.length > 0) {
+      if (snapshot.focused && visibleLabels.some((label) => label !== snapshot.focused?.label)) {
+        const others = visible.filter((item) => item.id !== snapshot.focused?.id).map((item) => item.label);
+        return `${snapshot.focused.label} is currently focused. ${join(others)} ${others.length === 1 ? "is" : "are"} also visible.`;
+      }
+      return `${join(visibleLabels)} ${visibleLabels.length === 1 ? "is" : "are"} currently visible on Stage.`;
     }
     if (snapshot.collection?.members.length) {
       return `The Stage is showing the ${snapshot.collection.label}: ${snapshot.collection.members.map((item) => item.label).join(" and ")}.`;
     }
-    if (snapshot.focused) return `You’re focused on ${snapshot.focused.label}.`;
+    if (snapshot.focused) {
+      return `${snapshot.focused.label} is currently focused. I can’t reliably determine the rest of the visible Stage contents.`;
+    }
+    return "The Stage is currently empty.";
   }
   if (input.labels.length === 0) {
-    return "The Stage does not currently show any executive objects.";
+    return "The Stage is currently empty.";
   }
   const focus = input.focused ? ` ${input.focused} is focused.` : "";
-  return `Right now the Stage contains ${input.labels.join(", ")}.${focus}`;
+  return `${join(input.labels)} ${input.labels.length === 1 ? "is" : "are"} currently visible on Stage.${focus}`;
 }
 
 export type StageSemanticSnapshot = Readonly<{

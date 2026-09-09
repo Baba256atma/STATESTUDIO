@@ -633,7 +633,7 @@ export function evaluateNca4AdvisoryStrategy(input: {
   const canRank = rankingSupported(subjectOf(input.nca), previous);
   const semantic = composeNexoraSemanticTurn({ utterance: input.utterance });
   const shouldAdvise =
-    !semantic.suppressNca4 &&
+    (!semantic.suppressNca4 || (move === "CHALLENGE" && Boolean(previous))) &&
     !investigationHold &&
     !explanationHold &&
     !isSupplierRequest(input.utterance) &&

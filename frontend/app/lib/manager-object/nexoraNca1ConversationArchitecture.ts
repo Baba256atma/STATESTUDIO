@@ -126,6 +126,9 @@ export function isManagerPresenceNeed(prepared: string): boolean {
 }
 
 export function isManagerRelevanceNeed(prepared: string): boolean {
+  if (/\bwalk me through\b/.test(prepared)) {
+    return false;
+  }
   if (
     /\b(?:happen(?:ed|ing)?|caused|cause of|root cause|why did)\b/.test(prepared)
   ) {
@@ -515,6 +518,7 @@ export function applyNcaStrategyToResponse(input: {
   if (
     input.nca.need.family === "UNKNOWN" &&
     nca3EligibleForSemanticScope(classifyNexoraSemanticScope(input.nca.message)) &&
+    !/\b(?:csv|data library|data source|uploaded file|imported file)\b/i.test(input.nca.message) &&
     /don'?t understand|unknown intent|couldn'?t complete|not sure how that relates/i.test(
       source,
     )

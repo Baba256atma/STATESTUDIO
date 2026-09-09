@@ -102,6 +102,11 @@ test("DATA-UX:3 handles confirmation, correction, unknown, and natural definitio
 
     const natural = applyCsvSemanticClarification(initial, fieldId, "CAP_AV is the number of machine hours we still have available.");
     assert.match(natural.review.mappings.find((field) => field.semantic?.fieldId === fieldId)?.semantic?.confirmedMeaning ?? "", /number of machine hours/i);
+
+    const questionForm = applyCsvSemanticClarification(initial, fieldId, "Is it Capacity Availability?");
+    assert.equal(questionForm.resolved, true);
+    assert.equal(questionForm.review.mappings.find((field) => field.semantic?.fieldId === fieldId)?.semantic?.confirmedMeaning, "Capacity Availability");
+    assert.equal(questionForm.review.mappings.find((field) => field.semantic?.fieldId === fieldId)?.semantic?.confirmationSource, "manager");
   });
 
 test("DATA-UX:3 summarizes only supported meanings and names unresolved material fields", () => {

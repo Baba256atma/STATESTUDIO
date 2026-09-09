@@ -168,6 +168,7 @@ function stateSubject(state: NexoraConversationState | null | undefined): EcaSub
 
 function requestedMutation(utterance: string): EcaMutationProposal["operation"] | null {
   const text = utterance.trim().toLowerCase();
+  if (/\b(?:execution\s+)?plan\b/.test(text)) return null;
   if (
     /^(?:add|create)\s+.+\s+as\s+(?:a|an)\s+[a-z]+\.?$/i.test(text) ||
     /^create\s+(?:a|an)\s+[a-z]+\s+called\s+.+\.?$/i.test(text) ||
@@ -241,16 +242,32 @@ export function composeEcaWorkingConversationContext(
   input: EcaWorkingContextInput,
 ): EcaWorkingConversationContext {
   const meaning = input.meaning;
-  const explicit = subjectFromRecord(
+  const rawExplicit = subjectFromRecord(
     meaning?.objectReference ?? meaning?.subject ?? null,
     input.subjects,
   );
+  const explicit =
+    rawExplicit && /^(you|yourself)$/i.test(rawExplicit.label.trim()) ? null : rawExplicit;
   const confirmed = stateSubject(input.conversationState);
   const threadSubjectId = input.working?.conversationThread?.primarySubject ?? null;
   const threadSubject = threadSubjectId
     ? input.subjects.find((subject) => subject.id === threadSubjectId) ?? null
     : null;
-  const active = explicit ?? confirmed ?? threadSubject ?? input.recentSubjects?.[0] ?? null;
+  const ordinal = input.utterance.match(/\b(?:the )?(first|second|third|last) one\b/i)?.[1]?.toLowerCase() ?? null;
+  const ordinalSubject = ordinal && input.stage.visible.length > 0
+    ? input.stage.visible[
+        ordinal === "first" ? 0 : ordinal === "second" ? 1 : ordinal === "third" ? 2 : input.stage.visible.length - 1
+      ] ?? null
+    : null;
+  const namedVisible = input.stage.visible.filter((subject) => {
+    const needle = input.utterance.toLowerCase();
+    const label = subject.label.toLowerCase();
+    const base = label.replace(/\s+watch$/i, "");
+    return needle.includes(label) || needle.includes(base);
+  });
+  const uniqueVisible = namedVisible.length === 1 ? namedVisible[0]! : null;
+  const stageNamed = ordinalSubject ?? uniqueVisible;
+  const active = explicit ?? stageNamed ?? confirmed ?? threadSubject ?? input.recentSubjects?.[0] ?? null;
   const ambiguous = input.explicitAmbiguity === true || meaning?.ambiguity.unresolved === true;
   const explicitCandidates = (meaning?.ambiguity.candidates ?? [])
     .map((candidate) => subjectFromRecord(candidate, input.subjects))
@@ -260,11 +277,16 @@ export function composeEcaWorkingConversationContext(
     : input.stage.visible.filter((subject) => subject.id !== active?.id);
   const references: EcaReference[] = [];
   if (explicit) references.push(freeze({ subject: explicit, role: "EXPLICIT", confidence: "HIGH", source: "NCA canonical meaning" }));
+  else if (stageNamed) references.push(freeze({ subject: stageNamed, role: ordinalSubject ? "EXPLICIT" : "STAGE_CANDIDATE", confidence: "HIGH", source: "NXA:5-FIX4 Stage presentation read model" }));
   else if (confirmed) references.push(freeze({ subject: confirmed, role: "CONFIRMED", confidence: "HIGH", source: "NCA conversation state" }));
   else if (threadSubject) references.push(freeze({ subject: threadSubject, role: "ACTIVE_SUBJECT", confidence: "MEDIUM", source: "NEX-CONV thread" }));
   else if (input.recentSubjects?.[0]) references.push(freeze({ subject: input.recentSubjects[0], role: "RECENT_SUBJECT", confidence: "LOW", source: "ECA input recent subjects" }));
   if (input.stage.focus && input.stage.focus.id !== active?.id) {
     references.push(freeze({ subject: input.stage.focus, role: "STAGE_CANDIDATE", confidence: "LOW", source: "NXA:5-FIX4 Stage read model" }));
+  }
+  for (const visible of input.stage.visible) {
+    if (visible.id === active?.id || references.some((reference) => reference.subject.id === visible.id)) continue;
+    references.push(freeze({ subject: visible, role: "STAGE_CANDIDATE", confidence: "LOW", source: "NXA:5-FIX4 Stage presentation read model" }));
   }
   for (const recent of input.recentSubjects ?? []) {
     if (recent.id !== active?.id && !references.some((reference) => reference.subject.id === recent.id)) {

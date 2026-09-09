@@ -5,8 +5,10 @@
 import {
   listCsvImportCandidates,
   listCsvRealDataImports,
+  listCsvRemovedSourceReferences,
   type CsvImportCandidate,
   type CsvCommittedImport,
+  type CsvRemovedSourceReference,
 } from "../data-reality/csvRealDataImportStore.ts";
 import { projectExecutiveSourceIntelligence } from "../data-reality/executiveSourceIntelligence.ts";
 import { listNexoraLiveConnections } from "../data-reality/liveDataConnectionStore.ts";
@@ -26,7 +28,7 @@ export const ADVISOR_DATA_CONTEXT_BOUNDARY = Object.freeze({
   restoreAnnounces: false as const,
 });
 
-export type AdvisorDataLifecycle = "committed" | "pending" | "connected";
+export type AdvisorDataLifecycle = "committed" | "pending" | "connected" | "historical";
 export type AdvisorDataFieldConfidence = "confirmed" | "authoritative" | "likely" | "ambiguous" | "unresolved";
 
 export type AdvisorDataField = Readonly<{
@@ -40,6 +42,17 @@ export type AdvisorDataField = Readonly<{
   confidence: AdvisorDataFieldConfidence;
   ignored: boolean;
   semanticResolution: SemanticCandidateResolution;
+  observation: AdvisorFieldObservation;
+}>;
+
+export type AdvisorFieldObservation = Readonly<{
+  rowCount: number;
+  nonNullCount: number;
+  uniqueCount: number;
+  numeric: boolean;
+  minimum: number | null;
+  maximum: number | null;
+  average: number | null;
 }>;
 
 export type AdvisorDataSource = Readonly<{
@@ -104,10 +117,37 @@ function potentialRelated(mapping: CsvMappingReview): readonly string[] {
   return Object.freeze([...labels].sort());
 }
 
+function observeColumn(records: readonly { readonly values: readonly unknown[] }[], columnIndex: number): AdvisorFieldObservation {
+  const texts: string[] = [];
+  for (const record of records) {
+    const raw = record.values[columnIndex];
+    if (raw == null || raw === "") continue;
+    if (typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean") {
+      const text = String(raw).trim();
+      if (text) texts.push(text);
+    }
+  }
+  const numbers = texts
+    .map((text) => Number(text.replace(/[$,%\s]/g, "")))
+    .filter((value) => Number.isFinite(value));
+  const numeric = texts.length > 0 && numbers.length === texts.length;
+  const sum = numbers.reduce((total, value) => total + value, 0);
+  return Object.freeze({
+    rowCount: records.length,
+    nonNullCount: texts.length,
+    uniqueCount: new Set(texts).size,
+    numeric,
+    minimum: numeric && numbers.length ? Math.min(...numbers) : null,
+    maximum: numeric && numbers.length ? Math.max(...numbers) : null,
+    average: numeric && numbers.length ? sum / numbers.length : null,
+  });
+}
+
 function fieldsFromMapping(
   sourceContextId: string,
   sourceLabel: string,
   mapping: CsvMappingReview | null,
+  records: readonly { readonly values: readonly unknown[] }[] = [],
 ): readonly AdvisorDataField[] {
   if (!mapping) return Object.freeze([]);
   const neighboringConfirmedMeanings = mapping.mappings.flatMap((entry) => entry.semantic?.confirmedMeaning ? [entry.semantic.confirmedMeaning] : []);
@@ -135,6 +175,7 @@ function fieldsFromMapping(
       confidence,
       ignored: entry.ignored,
       semanticResolution,
+      observation: observeColumn(records, entry.columnIndex),
     });
   }));
 }
@@ -150,10 +191,26 @@ function projectCommitted(entry: CsvCommittedImport): AdvisorDataSource {
     statusLabel: "Ready",
     description: describeSource(entry.prepared.fileName, entry.prepared.mapping, related),
     acceptedEvidence: true,
-    fields: fieldsFromMapping(entry.sourceContextId, entry.prepared.fileName, entry.prepared.mapping),
+    fields: fieldsFromMapping(entry.sourceContextId, entry.prepared.fileName, entry.prepared.mapping, entry.prepared.parse.records),
     relatedObjectLabels: related,
     relatedUncertainty: false,
     recordCount: entry.prepared.parse.records.length,
+  });
+}
+
+function projectHistorical(entry: CsvRemovedSourceReference): AdvisorDataSource {
+  return Object.freeze({
+    sourceContextId: entry.sourceId,
+    sourceType: "csv" as const,
+    lifecycle: "historical" as const,
+    label: entry.label,
+    statusLabel: "Removed",
+    description: `${entry.label} was removed and is not currently used as accepted evidence.`,
+    acceptedEvidence: false,
+    fields: Object.freeze([] as AdvisorDataField[]),
+    relatedObjectLabels: Object.freeze([] as string[]),
+    relatedUncertainty: false,
+    recordCount: 0,
   });
 }
 
@@ -167,7 +224,7 @@ function projectPending(entry: CsvImportCandidate): AdvisorDataSource {
     statusLabel: "Pending",
     description: describeSource(entry.fileName, entry.mapping, []),
     acceptedEvidence: false,
-    fields: fieldsFromMapping(entry.candidateId, entry.fileName, entry.mapping),
+    fields: fieldsFromMapping(entry.candidateId, entry.fileName, entry.mapping, entry.parse?.records ?? []),
     relatedObjectLabels: potential,
     relatedUncertainty: potential.length > 0,
     recordCount: entry.parse?.records.length ?? 0,
@@ -177,6 +234,7 @@ function projectPending(entry: CsvImportCandidate): AdvisorDataSource {
 export function projectAdvisorDataContext(workspaceId: WorkspaceId): AdvisorDataContext {
   const committed = listCsvRealDataImports(workspaceId).map(projectCommitted);
   const pending = listCsvImportCandidates(workspaceId).map(projectPending);
+  const historical = listCsvRemovedSourceReferences(workspaceId).map(projectHistorical);
   const connected = listNexoraLiveConnections(workspaceId).map((connection) => Object.freeze({
     sourceContextId: `live:${connection.connectionId}`,
     sourceType: "connected" as const,
@@ -193,6 +251,6 @@ export function projectAdvisorDataContext(workspaceId: WorkspaceId): AdvisorData
   return Object.freeze({
     identity: nexoraAdvisorDataContextIdentity,
     workspaceId,
-    sources: Object.freeze([...committed, ...pending, ...connected]),
+    sources: Object.freeze([...committed, ...pending, ...connected, ...historical]),
   });
 }

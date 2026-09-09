@@ -1,0 +1,124 @@
+{
+  "identity": "NPA-T ECA:12/live-proofs",
+  "url": "http://localhost:3027/executive?reset=1",
+  "errors": [],
+  "1-bounded-learning": {
+    "pass": true,
+    "actual": {
+      "utterance": "What did we learn?",
+      "reply": "NexoraDelivery was observed at 94% after the execution. +3 percentage points Delivery is below the stated 96% goal. That weakens the expectation that this intervention alone would fully close the gap. The evidence still does not establish that the intervention alone caused the improvement. The result improved relative to baseline. That is bounded, case-specific evidence. It does not establish what caused the change.",
+      "state11": "PARTIALLY_OBSERVED",
+      "attribution": "NOT_ESTABLISHED",
+      "learning": "TENTATIVE",
+      "closure": "READY_TO_REASSESS",
+      "reassess": "true",
+      "writes12": "false",
+      "app4": "false",
+      "secondEngine": "false",
+      "objectiveStore": "false",
+      "theatreOutcome": "OUTCOME_PARTIAL"
+    }
+  },
+  "2-missing-outcome": {
+    "pass": true,
+    "actual": {
+      "utterance": "What did we learn?",
+      "reply": "NexoraThere isn't enough evidence yet to establish a reliable learning. We don’t have enough evidence to draw a useful lesson yet.",
+      "state11": "UNKNOWN",
+      "attribution": "NOT_ESTABLISHED",
+      "learning": "NONE",
+      "closure": "WAIT_FOR_EVIDENCE",
+      "reassess": "false",
+      "writes12": "false",
+      "app4": "false",
+      "secondEngine": "false",
+      "objectiveStore": "false",
+      "theatreOutcome": "none"
+    }
+  },
+  "3-reassessment": {
+    "pass": true,
+    "actual": {
+      "utterance": "Should we reconsider the approach?",
+      "reply": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution. Execution is already active. We should review progress rather than prepare a new start. The result is material enough to reassess the approach before repeating or extending it. That does not create a new Decision or change the Goal.",
+      "state11": "PARTIALLY_OBSERVED",
+      "attribution": "NOT_ESTABLISHED",
+      "learning": "TENTATIVE",
+      "closure": "READY_TO_REASSESS",
+      "reassess": "true",
+      "writes12": "false",
+      "app4": "false",
+      "secondEngine": "false",
+      "objectiveStore": "false",
+      "theatreOutcome": "OUTCOME_PARTIAL"
+    }
+  },
+  "4-accepted-unknown-closure": {
+    "pass": true,
+    "actual": {
+      "utterance": "I don’t need to investigate the cause. Are we done?",
+      "reply": "NexoraI don't see accepted data that clearly supports investigating cause yet.",
+      "state11": "UNKNOWN",
+      "attribution": "NOT_ESTABLISHED",
+      "learning": "NONE",
+      "closure": "READY_TO_CLOSE",
+      "reassess": "false",
+      "writes12": "false",
+      "app4": "false",
+      "secondEngine": "false",
+      "objectiveStore": "false",
+      "theatreOutcome": "OUTCOME_PARTIAL"
+    }
+  },
+  "5-blocking-unknown": {
+    "pass": true,
+    "actual": {
+      "utterance": "Are we done?",
+      "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to. Yes. The comparison is complete. You can now review the recommendation or make a Decision. Execution is already active. We should review progress rather than prepare a new start. Not yet. We don’t have an observed Outcome to learn from, so this review should wait for the result.",
+      "state11": "UNKNOWN",
+      "attribution": "NOT_ESTABLISHED",
+      "learning": "NONE",
+      "closure": "WAIT_FOR_EVIDENCE",
+      "reassess": "false",
+      "writes12": "false",
+      "app4": "false",
+      "secondEngine": "false",
+      "objectiveStore": "false",
+      "theatreOutcome": "none"
+    }
+  },
+  "6-cap-av": {
+    "pass": true,
+    "actual": {
+      "utterance": "So we proved capacity was the cause.",
+      "reply": "NexoraYou're asserting a causal link from Capacity to the named outcome. I'll treat that as a manager causal hypothesis, not as established cause, unless authoritative evidence already supports it. Do you have evidence showing that delivery delays increase when capacity falls? That’s your current interpretation. The result may strengthen a hypothesis, but the evidence still doesn’t establish it as the sole cause.",
+      "state11": "PARTIALLY_OBSERVED",
+      "attribution": "NOT_ESTABLISHED",
+      "learning": "TENTATIVE",
+      "closure": "CONTINUE",
+      "reassess": "true",
+      "writes12": "false",
+      "app4": "false",
+      "secondEngine": "false",
+      "objectiveStore": "false",
+      "theatreOutcome": "OUTCOME_PARTIAL"
+    }
+  },
+  "7-new-objective": {
+    "pass": true,
+    "actual": {
+      "utterance": "Now let’s look at supplier cost.",
+      "reply": "NexoraThe current scenario candidates are Capacity Expansion Plan, Demand Surge, Pricing Response. I don’t have enough comparable evidence to rank them on cost.",
+      "state11": "PARTIALLY_OBSERVED",
+      "attribution": "NOT_ESTABLISHED",
+      "learning": "TENTATIVE",
+      "closure": "READY_TO_CLOSE",
+      "reassess": "true",
+      "writes12": "false",
+      "app4": "false",
+      "secondEngine": "false",
+      "objectiveStore": "false",
+      "theatreOutcome": "OUTCOME_PARTIAL"
+    }
+  }
+}

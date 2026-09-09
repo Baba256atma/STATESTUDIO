@@ -1,0 +1,295 @@
+{
+  "identity": "NPA-T POST-ECA:3-FIX2/LiveCsvContentReasoning",
+  "url": "http://127.0.0.1:65340/executive?reset=1",
+  "isolatedPort": 65340,
+  "errors": [],
+  "diagnosticExactConversation": {
+    "t1": {
+      "managerTurn": "I mean data-ux3-ambiguous.csv.",
+      "reply": "NexoraI'll use data-ux3-ambiguous.csv. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence.",
+      "focused": "none",
+      "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+      "dataIntent": "specific-source",
+      "resolvedNames": "data-ux3-ambiguous.csv",
+      "sourceCount": "1"
+    },
+    "t2": {
+      "managerTurn": "Which columns of data-ux3-ambiguous.csv do you understand, and which columns have an unclear business meaning?",
+      "reply": "NexoraIn data-ux3-ambiguous.csv: No columns currently have a confirmed business meaning. Unclear: DT — understood but unconfirmed (Date); ORD_QTY — understood but unconfirmed (Order Quantity); OTD — unknown meaning; CAP_AV — candidate meanings exist (Available Capacity or Capacity Availability) but are not confirmed; BKL — unknown meaning. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence.",
+      "focused": "none",
+      "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+      "dataIntent": "field-coverage",
+      "resolvedNames": "data-ux3-ambiguous.csv",
+      "sourceCount": "1"
+    },
+    "t3": {
+      "managerTurn": "What does CAP_AV mean in this file?",
+      "reply": "NexoraCAP_AV is a field in data-ux3-ambiguous.csv. It could refer to Available Capacity or Capacity Availability, but neither meaning is confirmed. This source is still under review and is not accepted evidence yet. Which meaning is correct for this source?",
+      "focused": "none",
+      "dataRoute": "none",
+      "dataIntent": "none",
+      "resolvedNames": "none",
+      "sourceCount": "0"
+    },
+    "t4": {
+      "managerTurn": "What does BKL mean? If you are not sure, tell me what information you need from me.",
+      "reply": "NexoraBKL is a field in data-ux3-ambiguous.csv, but I don't have enough information to suggest its business meaning. This source is still under review and is not accepted evidence yet. What does it represent?",
+      "focused": "none",
+      "dataRoute": "none",
+      "dataIntent": "none",
+      "resolvedNames": "none",
+      "sourceCount": "0"
+    },
+    "t6": {
+      "managerTurn": "What useful KPIs can you calculate from this CSV with the fields you currently understand?",
+      "reply": "NexoraI cannot calculate a business-valid KPI from confirmed field meanings yet. DT could support a related metric if Date is confirmed; ORD_QTY could support a related metric if Order Quantity is confirmed; CAP_AV could support a related metric if Available Capacity or Capacity Availability is confirmed. I cannot use OTD, BKL as a business KPI because their meaning is unknown. A numeric average of an unknown field would be mathematically possible but not a valid KPI. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence.",
+      "focused": "none",
+      "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+      "dataIntent": "analytical-capability",
+      "resolvedNames": "data-ux3-ambiguous.csv",
+      "sourceCount": "1"
+    },
+    "t7": {
+      "managerTurn": "Does this CSV provide evidence related to Capacity Gap?",
+      "reply": "Nexoradata-ux3-ambiguous.csv may be relevant to capacity gap because CAP_AV has possible Available Capacity or Capacity Availability meanings that are not confirmed. The source is still pending review, so I cannot treat it as evidence for capacity gap yet. Field-name similarity is not a confirmed relationship, and association is not causality.",
+      "focused": "none",
+      "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+      "dataIntent": "evidence-relevance",
+      "resolvedNames": "data-ux3-ambiguous.csv",
+      "sourceCount": "1"
+    },
+    "t9": {
+      "managerTurn": "What can you conclude from this CSV, and what can you NOT conclude yet?",
+      "reply": "NexoraI can inspect data-ux3-ambiguous.csv, report its 4 rows, and distinguish fields whose meanings are known from those still unresolved. In data-ux3-ambiguous.csv: No columns currently have a confirmed business meaning. Unclear: DT — understood but unconfirmed (Date); ORD_QTY — understood but unconfirmed (Order Quantity); OTD — unknown meaning; CAP_AV — candidate meanings exist (Available Capacity or Capacity Availability) but are not confirmed; BKL — unknown meaning. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence. I cannot yet treat unresolved fields as business meaning, treat this pending source as accepted evidence, invent KPIs, assert an object relationship from filename similarity, or draw a causal conclusion.",
+      "focused": "none",
+      "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+      "dataIntent": "bounded-interpretation",
+      "resolvedNames": "data-ux3-ambiguous.csv",
+      "sourceCount": "1"
+    }
+  },
+  "runtimes": {
+    "runtime1": {
+      "name": "exact full reported conversation",
+      "pass": true,
+      "actual": {
+        "t1": {
+          "managerTurn": "I mean data-ux3-ambiguous.csv.",
+          "reply": "NexoraI'll use data-ux3-ambiguous.csv. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence.",
+          "focused": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "specific-source",
+          "resolvedNames": "data-ux3-ambiguous.csv",
+          "sourceCount": "1"
+        },
+        "t2": {
+          "managerTurn": "Which columns of data-ux3-ambiguous.csv do you understand, and which columns have an unclear business meaning?",
+          "reply": "NexoraIn data-ux3-ambiguous.csv: No columns currently have a confirmed business meaning. Unclear: DT — understood but unconfirmed (Date); ORD_QTY — understood but unconfirmed (Order Quantity); OTD — unknown meaning; CAP_AV — candidate meanings exist (Available Capacity or Capacity Availability) but are not confirmed; BKL — unknown meaning. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence.",
+          "focused": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "field-coverage",
+          "resolvedNames": "data-ux3-ambiguous.csv",
+          "sourceCount": "1"
+        },
+        "t3": {
+          "managerTurn": "What does CAP_AV mean in this file?",
+          "reply": "NexoraCAP_AV is a field in data-ux3-ambiguous.csv. It could refer to Available Capacity or Capacity Availability, but neither meaning is confirmed. This source is still under review and is not accepted evidence yet. Which meaning is correct for this source?",
+          "focused": "none",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "resolvedNames": "none",
+          "sourceCount": "0"
+        },
+        "t4": {
+          "managerTurn": "What does BKL mean? If you are not sure, tell me what information you need from me.",
+          "reply": "NexoraBKL is a field in data-ux3-ambiguous.csv, but I don't have enough information to suggest its business meaning. This source is still under review and is not accepted evidence yet. What does it represent?",
+          "focused": "none",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "resolvedNames": "none",
+          "sourceCount": "0"
+        },
+        "t6": {
+          "managerTurn": "What useful KPIs can you calculate from this CSV with the fields you currently understand?",
+          "reply": "NexoraI cannot calculate a business-valid KPI from confirmed field meanings yet. DT could support a related metric if Date is confirmed; ORD_QTY could support a related metric if Order Quantity is confirmed; CAP_AV could support a related metric if Available Capacity or Capacity Availability is confirmed. I cannot use OTD, BKL as a business KPI because their meaning is unknown. A numeric average of an unknown field would be mathematically possible but not a valid KPI. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence.",
+          "focused": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "analytical-capability",
+          "resolvedNames": "data-ux3-ambiguous.csv",
+          "sourceCount": "1"
+        },
+        "t7": {
+          "managerTurn": "Does this CSV provide evidence related to Capacity Gap?",
+          "reply": "Nexoradata-ux3-ambiguous.csv may be relevant to capacity gap because CAP_AV has possible Available Capacity or Capacity Availability meanings that are not confirmed. The source is still pending review, so I cannot treat it as evidence for capacity gap yet. Field-name similarity is not a confirmed relationship, and association is not causality.",
+          "focused": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "evidence-relevance",
+          "resolvedNames": "data-ux3-ambiguous.csv",
+          "sourceCount": "1"
+        },
+        "t9": {
+          "managerTurn": "What can you conclude from this CSV, and what can you NOT conclude yet?",
+          "reply": "NexoraI can inspect data-ux3-ambiguous.csv, report its 4 rows, and distinguish fields whose meanings are known from those still unresolved. In data-ux3-ambiguous.csv: No columns currently have a confirmed business meaning. Unclear: DT — understood but unconfirmed (Date); ORD_QTY — understood but unconfirmed (Order Quantity); OTD — unknown meaning; CAP_AV — candidate meanings exist (Available Capacity or Capacity Availability) but are not confirmed; BKL — unknown meaning. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence. I cannot yet treat unresolved fields as business meaning, treat this pending source as accepted evidence, invent KPIs, assert an object relationship from filename similarity, or draw a causal conclusion.",
+          "focused": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "bounded-interpretation",
+          "resolvedNames": "data-ux3-ambiguous.csv",
+          "sourceCount": "1"
+        }
+      }
+    },
+    "runtime2": {
+      "name": "CAP_AV to BKL clarification escape",
+      "pass": true,
+      "actual": {
+        "cap": {
+          "managerTurn": "What does CAP_AV mean in this file?",
+          "reply": "NexoraCAP_AV is a field in data-ux3-ambiguous.csv. It could refer to Available Capacity or Capacity Availability, but neither meaning is confirmed. This source is still under review and is not accepted evidence yet. Which meaning is correct for this source?",
+          "focused": "none",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "resolvedNames": "none",
+          "sourceCount": "0"
+        },
+        "bkl": {
+          "managerTurn": "What does BKL mean?",
+          "reply": "NexoraBKL is a field in data-ux3-ambiguous.csv, but I don't have enough information to suggest its business meaning. This source is still under review and is not accepted evidence yet. What does it represent?",
+          "focused": "none",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "resolvedNames": "none",
+          "sourceCount": "0"
+        }
+      }
+    },
+    "runtime3": {
+      "name": "KPI capability from actual CSV",
+      "pass": true,
+      "actual": {
+        "managerTurn": "What useful KPIs can you calculate from this CSV with the fields you currently understand?",
+        "reply": "NexoraI cannot calculate a business-valid KPI from confirmed field meanings yet. DT could support a related metric if Date is confirmed; ORD_QTY could support a related metric if Order Quantity is confirmed; CAP_AV could support a related metric if Available Capacity or Capacity Availability is confirmed. I cannot use OTD, BKL as a business KPI because their meaning is unknown. A numeric average of an unknown field would be mathematically possible but not a valid KPI. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence.",
+        "focused": "none",
+        "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+        "dataIntent": "analytical-capability",
+        "resolvedNames": "data-ux3-ambiguous.csv",
+        "sourceCount": "1"
+      }
+    },
+    "runtime4": {
+      "name": "CSV to Capacity Gap evidence relevance",
+      "pass": true,
+      "actual": {
+        "managerTurn": "Does this CSV provide evidence related to Capacity Gap?",
+        "reply": "Nexoradata-ux3-ambiguous.csv may be relevant to capacity gap because CAP_AV has possible Available Capacity or Capacity Availability meanings that are not confirmed. The source is still pending review, so I cannot treat it as evidence for capacity gap yet. Field-name similarity is not a confirmed relationship, and association is not causality.",
+        "focused": "none",
+        "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+        "dataIntent": "evidence-relevance",
+        "resolvedNames": "data-ux3-ambiguous.csv",
+        "sourceCount": "1"
+      }
+    },
+    "runtime5": {
+      "name": "bounded can/cannot conclude",
+      "pass": true,
+      "actual": {
+        "managerTurn": "What can you conclude from this CSV, and what can you NOT conclude yet?",
+        "reply": "NexoraI can inspect data-ux3-ambiguous.csv, report its 4 rows, and distinguish fields whose meanings are known from those still unresolved. In data-ux3-ambiguous.csv: No columns currently have a confirmed business meaning. Unclear: DT — understood but unconfirmed (Date); ORD_QTY — understood but unconfirmed (Order Quantity); OTD — unknown meaning; CAP_AV — candidate meanings exist (Available Capacity or Capacity Availability) but are not confirmed; BKL — unknown meaning. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence. I cannot yet treat unresolved fields as business meaning, treat this pending source as accepted evidence, invent KPIs, assert an object relationship from filename similarity, or draw a causal conclusion.",
+        "focused": "none",
+        "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+        "dataIntent": "bounded-interpretation",
+        "resolvedNames": "data-ux3-ambiguous.csv",
+        "sourceCount": "1"
+      }
+    },
+    "runtime6": {
+      "name": "I don't know then continue",
+      "pass": true,
+      "actual": {
+        "unknown": {
+          "managerTurn": "I don't know.",
+          "reply": "NexoraUnderstood. BKL remains unresolved and unrelated usable fields can continue.",
+          "focused": "none",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "resolvedNames": "none",
+          "sourceCount": "0"
+        },
+        "continueSafe": {
+          "managerTurn": "What can you still tell me from the CSV?",
+          "reply": "NexoraI can inspect data-ux3-ambiguous.csv, report its 4 rows, and distinguish fields whose meanings are known from those still unresolved. In data-ux3-ambiguous.csv: No columns currently have a confirmed business meaning. Unclear: DT — understood but unconfirmed (Date); ORD_QTY — understood but unconfirmed (Order Quantity); OTD — unknown meaning; CAP_AV — candidate meanings exist (Available Capacity or Capacity Availability) but are not confirmed; BKL — unknown meaning. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence. I cannot yet treat unresolved fields as business meaning, treat this pending source as accepted evidence, invent KPIs, assert an object relationship from filename similarity, or draw a causal conclusion.",
+          "focused": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "bounded-interpretation",
+          "resolvedNames": "data-ux3-ambiguous.csv",
+          "sourceCount": "1"
+        }
+      }
+    },
+    "runtime7": {
+      "name": "semantic confirmation then re-evaluate",
+      "pass": true,
+      "actual": {
+        "confirmCap": {
+          "managerTurn": "What does CAP_AV mean in this file?",
+          "reply": "NexoraCAP_AV is a field in data-ux3-ambiguous.csv. It could refer to Available Capacity or Capacity Availability, but neither meaning is confirmed. This source is still under review and is not accepted evidence yet. Which meaning is correct for this source?",
+          "focused": "none",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "resolvedNames": "none",
+          "sourceCount": "0"
+        },
+        "confirmed": {
+          "managerTurn": "CAP_AV means Available Capacity.",
+          "reply": "NexoraConfirmed for this source: CAP_AV means Available Capacity.",
+          "focused": "none",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "resolvedNames": "none",
+          "sourceCount": "0"
+        },
+        "reeval": {
+          "managerTurn": "Does that change what you can calculate?",
+          "reply": "NexoraFrom confirmed fields I can calculate deterministic numeric summaries such as CAP_AV (Available Capacity) min/max/average. Those summaries are mathematical, and they are business-valid only for the confirmed meanings. DT could support a related metric if Date is confirmed; ORD_QTY could support a related metric if Order Quantity is confirmed. I cannot use OTD, BKL as a business KPI because their meaning is unknown. A numeric average of an unknown field would be mathematically possible but not a valid KPI. data-ux3-ambiguous.csv is pending review, so I can inspect it but I cannot treat it as accepted business evidence.",
+          "focused": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "analytical-capability",
+          "resolvedNames": "data-ux3-ambiguous.csv",
+          "sourceCount": "1"
+        }
+      }
+    },
+    "runtime8": {
+      "name": "business objective Data side question resume",
+      "pass": true,
+      "actual": {
+        "business": {
+          "managerTurn": "Explain Capacity Gap.",
+          "reply": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause. My recommendation remains temporary capacity.",
+          "focused": "none",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "resolvedNames": "none",
+          "sourceCount": "0"
+        },
+        "side": {
+          "managerTurn": "What CSV files do we have?",
+          "reply": "NexoraYes. I currently have 1 CSV source: data-ux3-ambiguous.csv.",
+          "focused": "none",
+          "dataRoute": "DATA-ADV:1/AdvisorDataInquiry",
+          "dataIntent": "csv-availability",
+          "resolvedNames": "data-ux3-ambiguous.csv",
+          "sourceCount": "1"
+        },
+        "resume": {
+          "managerTurn": "Okay, continue with Capacity Gap.",
+          "reply": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution. My recommendation remains temporary capacity.",
+          "focused": "none",
+          "dataRoute": "none",
+          "dataIntent": "none",
+          "resolvedNames": "none",
+          "sourceCount": "0"
+        }
+      }
+    }
+  }
+}

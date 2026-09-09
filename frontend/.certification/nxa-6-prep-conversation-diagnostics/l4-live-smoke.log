@@ -1,12 +1,16 @@
-
-node:internal/modules/run_main:107
-    triggerUncaughtException(
-    ^
-
-page.waitForFunction: Timeout 45000ms exceeded.
-    at askExecutiveChat (/Users/bahadoors/Documents/StateStudio/frontend/scripts/nex-mvp-final3-executive-chat-harness.mjs:70:14)
-    at /Users/bahadoors/Documents/StateStudio/frontend/async file:/Users/bahadoors/Documents/StateStudio/frontend/scripts/nxa-6-prep-live-smoke.mjs:17:19 {
-  name: 'TimeoutError'
+{
+  "identity": "NXA:6-PREP/LiveExecutiveSmoke",
+  "url": "http://localhost:3000/executive",
+  "errors": [],
+  "knowledgeUnchangedFocus": true,
+  "collectionReply": "NexoraCurrent Problems: Capacity Gap, Margin Pressure.",
+  "stage": {
+    "focused": "none",
+    "mode": "collection",
+    "category": "problem",
+    "visible": 2
+  },
+  "zeroPageErrors": true,
+  "ok": true
 }
 
-Node.js v24.10.0

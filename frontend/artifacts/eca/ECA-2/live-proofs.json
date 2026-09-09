@@ -1,0 +1,167 @@
+{
+  "identity": "NPA-T ECA:2/LiveExecutiveProofs",
+  "url": "http://localhost:3017/executive?reset=1",
+  "errors": [],
+  "proofs": {
+    "1-understand-investigate": {
+      "pass": true,
+      "actual": {
+        "explain": {
+          "utterance": "Explain Capacity Gap.",
+          "reply": "NexoraCapacity Gap is constraining delivery performance. Capacity Gap has not been resolved yet, so it still deserves attention. Capacity Gap is connected to Capacity through a constraint. That recorded dependency is not a confirmed cause. My recommendation remains temporary capacity.",
+          "intent": "EXPLAIN",
+          "nextAction": "EXPLAIN",
+          "authority": "NEX-CONV Conversation Kernel",
+          "focused": "none",
+          "stageMode": "overview"
+        },
+        "whyImportant": {
+          "utterance": "Why is it important?",
+          "reply": "NexoraInvestigate evidence in the context of Capacity Gap toward the Unknown goal goal. Check the evidence that would resolve the most important uncertainty before choosing an intervention.",
+          "intent": "EXPLAIN",
+          "nextAction": "EXPLAIN",
+          "authority": "NEX-CONV Conversation Kernel",
+          "focused": "none",
+          "stageMode": "overview"
+        },
+        "evidence": {
+          "utterance": "Show me the evidence.",
+          "reply": "NexoraCapacity needs attention. Delivery needs attention. Evidence: recorded problems, current state. Has backlog increased recently?",
+          "intent": "INSPECT_EVIDENCE",
+          "nextAction": "SHOW_EVIDENCE",
+          "authority": "NEX-CONV Conversation Kernel",
+          "focused": "none",
+          "stageMode": "overview"
+        }
+      }
+    },
+    "2-compare": {
+      "pass": true,
+      "actual": {
+        "compare": {
+          "utterance": "Compare Scenario A and Scenario B.",
+          "reply": "NexoraI couldn't find a clear match for “Scenario A” in the current executive context.",
+          "intent": "COMPARE",
+          "nextAction": "ASK_FOR_MISSING_INFORMATION",
+          "authority": "none",
+          "focused": "none",
+          "stageMode": "overview"
+        },
+        "lowerRisk": {
+          "utterance": "Which has lower risk?",
+          "reply": "NexoraInvestigate further before committing to a course of action. Why: Evidence is material but incomplete for a stronger recommendation. Uncertainty: Risk has unresolved evidence.",
+          "intent": "EVALUATE",
+          "nextAction": "ASK_FOR_MISSING_INFORMATION",
+          "authority": "none",
+          "focused": "none",
+          "stageMode": "overview"
+        },
+        "deliverySpeed": {
+          "utterance": "What if delivery speed matters more?",
+          "reply": "NexoraI’m not sure how that relates to the current executive context. Try asking me to explain the situation, evidence, recommendation, scenario, decision, or execution.",
+          "intent": "ASK_WHAT_IF",
+          "nextAction": "ASK_FOR_MISSING_INFORMATION",
+          "authority": "none",
+          "focused": "none",
+          "stageMode": "overview"
+        }
+      }
+    },
+    "3-recommendation": {
+      "pass": true,
+      "actual": {
+        "utterance": "What should I do about Capacity Gap?",
+        "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+        "intent": "SEEK_RECOMMENDATION",
+        "nextAction": "RECOMMEND_INVESTIGATION",
+        "authority": "NEX-CONV Conversation Kernel",
+        "focused": "none",
+        "stageMode": "overview"
+      }
+    },
+    "4-ambiguity": {
+      "pass": true,
+      "actual": {
+        "demand": {
+          "utterance": "Now tell me about Demand Surge.",
+          "reply": "NexoraInvestigate Demand Surge as a possible contributor — evidence is not strong enough to prioritize action. Why: Demand Surge shows attention, but a is not established. Uncertainty: is missing or uncertain.",
+          "intent": "EXPLAIN",
+          "nextAction": "EXPLAIN",
+          "authority": "NEX-CONV Conversation Kernel",
+          "focused": "none",
+          "stageMode": "overview"
+        },
+        "investigateIt": {
+          "utterance": "Investigate it.",
+          "reply": "NexoraI don't see accepted data that clearly supports investigating it yet.",
+          "intent": "INVESTIGATE",
+          "nextAction": "RECOMMEND_INVESTIGATION",
+          "authority": "NEX-CONV Conversation Kernel",
+          "focused": "none",
+          "stageMode": "overview"
+        }
+      }
+    },
+    "5-mutation": {
+      "pass": true,
+      "actual": {
+        "propose": {
+          "utterance": "Add Supplier Delay as a Risk.",
+          "reply": "NexoraI can add “Supplier Delay” as a RISK. Add it?",
+          "intent": "PROPOSE_CHANGE",
+          "nextAction": "PREPARE_PROPOSAL",
+          "authority": "Canonical Risk Writer",
+          "focused": "none",
+          "stageMode": "overview"
+        },
+        "confirm": {
+          "utterance": "Add it.",
+          "reply": "NexoraSupplier Delay has been added as a Risk.",
+          "intent": "CONFIRM_ACTION",
+          "nextAction": "HANDOFF_TO_CANONICAL_AUTHORITY",
+          "authority": "Canonical Risk Writer",
+          "focused": "none",
+          "stageMode": "overview"
+        }
+      }
+    },
+    "6-data": {
+      "pass": true,
+      "actual": {
+        "capAvMeaning": {
+          "utterance": "What does CAP_AV mean?",
+          "reply": "NexoraI can help investigate that, but I need to know which business outcome you're referring to.",
+          "intent": "UNKNOWN",
+          "nextAction": "ASK_CLARIFICATION",
+          "authority": "none",
+          "focused": "none",
+          "stageMode": "overview"
+        },
+        "capAvWorry": {
+          "utterance": "Should I worry about it?",
+          "reply": "NexoraInvestigate evidence in the context of the current issue toward the Unknown goal goal. Check the evidence that would resolve the most important uncertainty before choosing an intervention.",
+          "intent": "EVALUATE",
+          "nextAction": "ASK_FOR_MISSING_INFORMATION",
+          "authority": "none",
+          "focused": "none",
+          "stageMode": "overview"
+        }
+      }
+    },
+    "7-decision-boundary": {
+      "pass": true,
+      "actual": {
+        "utterance": "What should I do?",
+        "reply": "NexoraI lean toward temporary capacity. It currently best advances the delivery goal under the active constraints. The trade-off is higher short-term operating cost in exchange for faster delivery relief and reversibility. Confidence is moderate; demand persistence and labor availability still condition this advice. If demand remains elevated beyond the current planning window, permanent expansion becomes more attractive.",
+        "intent": "SEEK_RECOMMENDATION",
+        "nextAction": "RECOMMEND_INVESTIGATION",
+        "authority": "NEX-CONV Conversation Kernel",
+        "focused": "none",
+        "stageMode": "overview"
+      }
+    }
+  },
+  "failed": [],
+  "zeroPageErrors": true,
+  "ok": true
+}

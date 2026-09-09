@@ -1,0 +1,663 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import type { CanonicalManagerMeaning } from "../manager-object/canonicalManagerMeaning.ts";
+import {
+  composeEcaWorkingConversationContext,
+  type EcaDataContext,
+  type EcaSubject,
+} from "./ecaWorkingConversationContext.ts";
+import { planEcaExecutiveConversationAction } from "./ecaExecutiveIntentActionPlan.ts";
+import {
+  applyEcaInitiativeToPresentedResponse,
+  emptyEcaInitiativeSession,
+  judgeEcaExecutiveInitiative,
+  nextEcaInitiativeSession,
+  type EcaInitiativeCandidate,
+  type EcaInitiativeSession,
+} from "./ecaExecutiveInitiativeJudgment.ts";
+
+const CAPACITY = Object.freeze({ id: "capacity-gap", label: "Capacity Gap", kind: "problem" });
+const DEMAND = Object.freeze({ id: "demand-surge", label: "Demand Surge", kind: "problem" });
+const SUPPLIER = Object.freeze({ id: "supplier-delay", label: "Supplier Delay", kind: "risk" });
+const A = Object.freeze({ id: "scenario-a", label: "Scenario A", kind: "scenario" });
+const B = Object.freeze({ id: "scenario-b", label: "Scenario B", kind: "scenario" });
+const C = Object.freeze({ id: "scenario-c", label: "Scenario C", kind: "scenario" });
+const SUBJECTS: readonly EcaSubject[] = Object.freeze([CAPACITY, DEMAND, SUPPLIER, A, B, C]);
+
+function meaning(
+  utterance: string,
+  overrides: Partial<CanonicalManagerMeaning> = {},
+): CanonicalManagerMeaning {
+  return Object.freeze({
+    identity: "NEX-MVP-FINAL:6.1/NaturalLanguageUnderstanding",
+    rawUtterance: utterance,
+    preparedUtterance: utterance.toLowerCase(),
+    communicativeIntent: "ASK_INFORMATION",
+    requestedOperation: "NONE",
+    subject: {
+      subjectId: CAPACITY.id,
+      canonicalName: CAPACITY.label,
+      lexicalHint: CAPACITY.label,
+      subjectKind: CAPACITY.kind,
+    },
+    objectReference: {
+      subjectId: CAPACITY.id,
+      canonicalName: CAPACITY.label,
+      lexicalHint: CAPACITY.label,
+      subjectKind: CAPACITY.kind,
+    },
+    questionType: "NONE",
+    requestedDepth: "STANDARD",
+    modality: "INTERROGATIVE",
+    polarity: "AFFIRMATIVE",
+    confidence: "HIGH",
+    ambiguity: { unresolved: false, reason: "none", candidates: [] },
+    semanticEvidence: {
+      operationCues: [],
+      objectCues: [],
+      speechActCues: [],
+      reasoningPath: "feature-frame-interpreter",
+      usesLlm: false,
+    },
+    selectedAuthority: null,
+    commitsDecision: false,
+    startsExecution: false,
+    inventsBusinessTruth: false,
+    ...overrides,
+  } as CanonicalManagerMeaning);
+}
+
+function working(
+  utterance: string,
+  extras: {
+    subject?: EcaSubject;
+    visible?: readonly EcaSubject[];
+    data?: EcaDataContext;
+    meaningOverrides?: Partial<CanonicalManagerMeaning>;
+  } = {},
+) {
+  const subject = extras.subject ?? CAPACITY;
+  return composeEcaWorkingConversationContext({
+    utterance,
+    meaning: meaning(utterance, {
+      subject: {
+        subjectId: subject.id,
+        canonicalName: subject.label,
+        lexicalHint: subject.label,
+        subjectKind: subject.kind,
+      },
+      objectReference: {
+        subjectId: subject.id,
+        canonicalName: subject.label,
+        lexicalHint: subject.label,
+        subjectKind: subject.kind,
+      },
+      ...extras.meaningOverrides,
+    }),
+    stage: Object.freeze({
+      available: true,
+      workspace: "Executive workspace",
+      focus: subject,
+      selected: null,
+      visible: extras.visible ?? SUBJECTS,
+      collection: null,
+      theatreSceneId: null,
+    }),
+    subjects: SUBJECTS,
+    dataContext: extras.data ?? null,
+  });
+}
+
+function candidate(partial: Partial<EcaInitiativeCandidate> & Pick<EcaInitiativeCandidate, "id" | "reason">): EcaInitiativeCandidate {
+  const subject = partial.subject ?? SUPPLIER;
+  const fingerprint =
+    partial.fingerprint ??
+    `${partial.reason}:${subject?.id ?? "none"}:${partial.evidence?.[0] ?? "base"}`;
+  return Object.freeze({
+    id: partial.id,
+    reason: partial.reason,
+    subject,
+    significance: partial.significance ?? "HIGH",
+    urgency: partial.urgency ?? "MODERATE",
+    confidence: partial.confidence ?? "CONFIRMED",
+    evidence: partial.evidence ?? Object.freeze(["canonical-evidence"]),
+    relatedToCurrentContext: partial.relatedToCurrentContext ?? false,
+    alreadyOnStage: partial.alreadyOnStage ?? false,
+    materialChange: partial.materialChange ?? true,
+    fingerprint,
+    observation: partial.observation ?? `${subject?.label ?? "This issue"} may need review.`,
+    nextStep: partial.nextStep ?? "Review its evidence.",
+    source: partial.source ?? "test-candidate",
+  });
+}
+
+function judge(
+  utterance: string,
+  candidates: readonly EcaInitiativeCandidate[] = [],
+  extras: {
+    session?: EcaInitiativeSession | null;
+    subject?: EcaSubject;
+    visible?: readonly EcaSubject[];
+    data?: EcaDataContext;
+    meaningOverrides?: Partial<CanonicalManagerMeaning>;
+  } = {},
+) {
+  const workingContext = working(utterance, extras);
+  const actionPlan = planEcaExecutiveConversationAction({ utterance, workingContext });
+  return {
+    workingContext,
+    actionPlan,
+    judgment: judgeEcaExecutiveInitiative({
+      utterance,
+      workingContext,
+      actionPlan,
+      candidates,
+      session: extras.session ?? emptyEcaInitiativeSession(),
+    }),
+  };
+}
+
+function boundaries(judgment: ReturnType<typeof judge>["judgment"]) {
+  assert.equal(judgment.boundaries.mutatesBusinessState, false);
+  assert.equal(judgment.boundaries.writesStage, false);
+  assert.equal(judgment.boundaries.commitsDecision, false);
+  assert.equal(judgment.boundaries.startsExecution, false);
+  assert.equal(judgment.boundaries.writesOutcome, false);
+  assert.equal(judgment.boundaries.writesLearning, false);
+  assert.equal(judgment.boundaries.writesRisk, false);
+  assert.equal(judgment.boundaries.createsSecondInitiativeEngine, false);
+}
+
+test("ECA:3 A — Silence on low significance", () => {
+  const { judgment } = judge("Explain Capacity Gap.", [
+    candidate({
+      id: "minor-margin",
+      reason: "MATERIAL_CHANGE",
+      subject: { id: "margin", label: "Margin", kind: "kpi" },
+      significance: "LOW",
+      urgency: "LOW",
+      relatedToCurrentContext: false,
+      materialChange: false,
+      observation: "Margin ticked from 12.1% to 12.0%.",
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, false);
+  assert.equal(judgment.suppressionReason, "LOW_SIGNIFICANCE");
+  boundaries(judgment);
+});
+
+test("ECA:3 B — Goal at risk", () => {
+  const { judgment } = judge("How are we doing?", [
+    candidate({
+      id: "goal-risk",
+      reason: "GOAL_AT_RISK",
+      subject: { id: "goal:delivery", label: "On-time delivery", kind: "goal" },
+      significance: "HIGH",
+      relatedToCurrentContext: true,
+      observation: "Delivery is moving away from the 96% goal.",
+      nextStep: "Review Capacity Gap and Demand Surge.",
+      evidence: ["current:91%", "target:96%", "trend:deteriorating"],
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, true);
+  assert.equal(judgment.reason, "GOAL_AT_RISK");
+  assert.ok(judgment.guidance);
+  assert.notEqual(judgment.strength, null);
+  assert.equal(judgment.boundaries.commitsDecision, false);
+});
+
+test("ECA:3 C — Risk escalation", () => {
+  const { judgment } = judge("How are we doing?", [
+    candidate({
+      id: "risk-up",
+      reason: "RISK_ESCALATION",
+      relatedToCurrentContext: true,
+      observation: "Supplier Delay has become more relevant to the delivery goal.",
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, true);
+  assert.equal(judgment.reason, "RISK_ESCALATION");
+  assert.equal(judgment.boundaries.writesRisk, false);
+});
+
+test("ECA:3 D — New evidence", () => {
+  const { judgment } = judge("We are still investigating Capacity Gap.", [
+    candidate({
+      id: "new-ev",
+      reason: "NEW_EVIDENCE",
+      subject: CAPACITY,
+      relatedToCurrentContext: true,
+      observation: "New confirmed evidence is relevant to Capacity Gap.",
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, true);
+  assert.equal(judgment.reason, "NEW_EVIDENCE");
+});
+
+test("ECA:3 E — Contradictory evidence", () => {
+  const { judgment } = judge("How does this change Capacity Gap?", [
+    candidate({
+      id: "contra",
+      reason: "CONTRADICTORY_EVIDENCE",
+      subject: CAPACITY,
+      relatedToCurrentContext: true,
+      observation: "The latest evidence does not support the capacity explanation as strongly as before.",
+      nextStep: null,
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, true);
+  assert.equal(judgment.reason, "CONTRADICTORY_EVIDENCE");
+  assert.match(judgment.guidance ?? "", /reassess/i);
+  assert.doesNotMatch(judgment.guidance ?? "", /is not the cause/i);
+});
+
+test("ECA:3 F — Missing critical information", () => {
+  const { judgment } = judge("Approve Scenario A.", [
+    candidate({
+      id: "missing-cost",
+      reason: "MISSING_CRITICAL_INFORMATION",
+      subject: A,
+      relatedToCurrentContext: true,
+      observation: "Cost information is missing for one supplier.",
+      nextStep: "Add it before comparing them.",
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, true);
+  assert.equal(judgment.reason, "MISSING_CRITICAL_INFORMATION");
+});
+
+test("ECA:3 G — Decision assumption weakening", () => {
+  const { judgment } = judge("How is the Decision holding up?", [
+    candidate({
+      id: "assumption",
+      reason: "DECISION_ASSUMPTION_WEAKENED",
+      relatedToCurrentContext: true,
+      observation: "The supplier recovery assumption behind this Decision is weaker now.",
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, true);
+  assert.equal(judgment.reason, "DECISION_ASSUMPTION_WEAKENED");
+  assert.equal(judgment.boundaries.commitsDecision, false);
+  assert.match(judgment.guidance ?? "", /review/i);
+});
+
+test("ECA:3 H — Execution blocked", () => {
+  const { judgment } = judge("How is execution going?", [
+    candidate({
+      id: "blocked",
+      reason: "EXECUTION_BLOCKED",
+      subject: { id: "exec-1", label: "Execution", kind: "execution" },
+      relatedToCurrentContext: true,
+      observation: "The execution is blocked by supplier confirmation.",
+      nextStep: "Review the blocker.",
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, true);
+  assert.equal(judgment.reason, "EXECUTION_BLOCKED");
+  assert.equal(judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:3 I — Outcome available", () => {
+  const { judgment } = judge("What else should I look at?", [
+    candidate({
+      id: "outcome",
+      reason: "OUTCOME_DEVIATION",
+      subject: { id: "outcome", label: "Outcome", kind: "outcome" },
+      relatedToCurrentContext: true,
+      observation: "The latest delivery result is now available: 94% versus the 96% goal.",
+      nextStep: "Review the outcome.",
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, true);
+  assert.equal(judgment.reason, "OUTCOME_DEVIATION");
+  assert.doesNotMatch(judgment.guidance ?? "", /because of the Decision/i);
+  assert.equal(judgment.boundaries.writesOutcome, false);
+});
+
+test("ECA:3 J — High-value next step", () => {
+  const { judgment } = judge("What next?", [
+    candidate({
+      id: "compare-ready",
+      reason: "HIGH_VALUE_NEXT_STEP",
+      subject: A,
+      relatedToCurrentContext: true,
+      alreadyOnStage: true,
+      materialChange: false,
+      observation: "You now have enough information to compare the three scenarios.",
+      nextStep: "Compare the scenarios.",
+      evidence: [A.id, B.id, C.id],
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, true);
+  assert.equal(judgment.reason, "HIGH_VALUE_NEXT_STEP");
+  assert.match(judgment.guidance ?? "", /compare/i);
+});
+
+test("ECA:3 K — Duplicate suppression", () => {
+  const same = candidate({
+    id: "dup",
+    reason: "RISK_ESCALATION",
+    relatedToCurrentContext: true,
+    materialChange: false,
+    fingerprint: "RISK_ESCALATION:supplier-delay:base",
+  });
+  const first = judge("How are we doing?", [same]);
+  const session = nextEcaInitiativeSession(emptyEcaInitiativeSession(), "How are we doing?", first.judgment);
+  const second = judge("And now?", [same], { session });
+  assert.equal(first.judgment.shouldIntervene, true);
+  assert.equal(second.judgment.shouldIntervene, false);
+  assert.equal(second.judgment.suppressionReason, "DUPLICATE_GUIDANCE");
+});
+
+test("ECA:3 L — Manager acknowledged", () => {
+  const same = candidate({
+    id: "ack",
+    reason: "GOAL_AT_RISK",
+    relatedToCurrentContext: true,
+    materialChange: false,
+    fingerprint: "GOAL_AT_RISK:goal:delivery:91",
+  });
+  const first = judge("How are we doing?", [same]);
+  let session = nextEcaInitiativeSession(emptyEcaInitiativeSession(), "How are we doing?", first.judgment);
+  const ack = judge("I know.", [same], { session });
+  session = nextEcaInitiativeSession(session, "I know.", ack.judgment);
+  const later = judge("Show me Executions.", [same], {
+    session,
+    subject: { id: "executions", label: "Executions", kind: "execution" },
+  });
+  assert.equal(later.judgment.shouldIntervene, false);
+  assert.ok(
+    later.judgment.suppressionReason === "ALREADY_ACKNOWLEDGED" ||
+      later.judgment.suppressionReason === "ACTIVE_MANAGER_TASK_MORE_IMPORTANT",
+  );
+});
+
+test("ECA:3 M — Manager dismissed", () => {
+  const same = candidate({
+    id: "dismiss",
+    reason: "RISK_ESCALATION",
+    relatedToCurrentContext: true,
+    materialChange: false,
+    fingerprint: "RISK_ESCALATION:supplier-delay:v1",
+  });
+  const first = judge("How are we doing?", [same]);
+  let session = nextEcaInitiativeSession(emptyEcaInitiativeSession(), "How are we doing?", first.judgment);
+  const dismissed = judge("Not now.", [same], { session });
+  session = nextEcaInitiativeSession(session, "Not now.", dismissed.judgment);
+  const later = judge("Continue.", [same], { session });
+  assert.equal(later.judgment.shouldIntervene, false);
+  assert.equal(later.judgment.suppressionReason, "RECENTLY_DISMISSED");
+  assert.equal(later.judgment.boundaries.mutatesBusinessState, false);
+});
+
+test("ECA:3 N — Material change after dismissal", () => {
+  const v1 = candidate({
+    id: "v1",
+    reason: "RISK_ESCALATION",
+    relatedToCurrentContext: true,
+    materialChange: false,
+    fingerprint: "RISK_ESCALATION:supplier-delay:v1",
+    evidence: ["severity:moderate"],
+  });
+  const v2 = candidate({
+    id: "v2",
+    reason: "RISK_ESCALATION",
+    relatedToCurrentContext: true,
+    materialChange: true,
+    fingerprint: "RISK_ESCALATION:supplier-delay:v2",
+    evidence: ["severity:high", "new-confirmation"],
+    observation: "Supplier Delay now has new material evidence.",
+  });
+  const first = judge("How are we doing?", [v1]);
+  let session = nextEcaInitiativeSession(emptyEcaInitiativeSession(), "How are we doing?", first.judgment);
+  session = nextEcaInitiativeSession(session, "Not now.", judge("Not now.", [v1], { session }).judgment);
+  const again = judge("How are we doing?", [v2], { session });
+  assert.equal(again.judgment.shouldIntervene, true);
+  assert.equal(again.judgment.reason, "RISK_ESCALATION");
+});
+
+test("ECA:3 O — Unconfirmed data semantics", () => {
+  const { judgment } = judge("Should I worry about CAP_AV?", [
+    candidate({
+      id: "cap-av",
+      reason: "GOAL_AT_RISK",
+      subject: { id: "CAP_AV", label: "CAP_AV", kind: "data-field" },
+      significance: "HIGH",
+      confidence: "TENTATIVE",
+      relatedToCurrentContext: true,
+      observation: "Available capacity has fallen dangerously.",
+    }),
+  ], {
+    data: {
+      sourceId: "src-1",
+      sourceLabel: "ops.csv",
+      fieldId: "CAP_AV",
+      fieldLabel: "CAP_AV",
+      semanticStatus: "PROPOSED",
+      evidenceRefs: ["likely"],
+    },
+  });
+  assert.notEqual(judgment.strength, "WARN");
+  if (judgment.shouldIntervene) {
+    assert.ok(judgment.strength === "SUGGEST" || judgment.reason === "MISSING_CRITICAL_INFORMATION");
+    assert.doesNotMatch(judgment.guidance ?? "", /fallen dangerously/i);
+  } else {
+    assert.equal(judgment.suppressionReason, "UNCONFIRMED_SEMANTICS");
+  }
+});
+
+test("ECA:3 P — Explicit intent wins", () => {
+  const { judgment, actionPlan } = judge(
+    "Show me current Executions.",
+    [
+      candidate({
+        id: "unrelated-risk",
+        reason: "RISK_ESCALATION",
+        significance: "MODERATE",
+        relatedToCurrentContext: false,
+        materialChange: true,
+      }),
+    ],
+    { subject: { id: "executions", label: "Executions", kind: "execution" } },
+  );
+  assert.equal(judgment.shouldIntervene, false);
+  assert.equal(judgment.suppressionReason, "ACTIVE_MANAGER_TASK_MORE_IMPORTANT");
+  assert.ok(
+    actionPlan.intent === "REVIEW_EXECUTION" || actionPlan.intent === "SHOW",
+    actionPlan.intent,
+  );
+});
+
+test("ECA:3 Q — Stage awareness", () => {
+  const { judgment } = judge("Explain Capacity Gap.", [
+    candidate({
+      id: "visible",
+      reason: "MATERIAL_CHANGE",
+      subject: SUPPLIER,
+      relatedToCurrentContext: false,
+      alreadyOnStage: true,
+      materialChange: false,
+      significance: "MODERATE",
+      observation: "Supplier Delay exists.",
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, false);
+});
+
+test("ECA:3 R — Multiple candidates pick one", () => {
+  const { judgment } = judge("How are we doing?", [
+    candidate({
+      id: "low",
+      reason: "MATERIAL_CHANGE",
+      significance: "LOW",
+      relatedToCurrentContext: true,
+      fingerprint: "MATERIAL_CHANGE:margin:1",
+      subject: { id: "margin", label: "Margin", kind: "kpi" },
+    }),
+    candidate({
+      id: "goal",
+      reason: "GOAL_AT_RISK",
+      significance: "HIGH",
+      relatedToCurrentContext: true,
+      fingerprint: "GOAL_AT_RISK:goal:91",
+      observation: "Delivery is moving away from the 96% goal.",
+    }),
+    candidate({
+      id: "risk",
+      reason: "RISK_ESCALATION",
+      significance: "MODERATE",
+      relatedToCurrentContext: true,
+      fingerprint: "RISK_ESCALATION:supplier:1",
+    }),
+  ]);
+  assert.equal(judgment.shouldIntervene, true);
+  assert.equal(judgment.reason, "GOAL_AT_RISK");
+  assert.equal(judgment.competingCount, 3);
+});
+
+test("ECA:3 S — Why follow-up", () => {
+  const rec = candidate({
+    id: "why",
+    reason: "RISK_ESCALATION",
+    relatedToCurrentContext: true,
+    observation: "I recommend reviewing Supplier Delay.",
+    evidence: ["Supplier Delay relevance increased", "delivery goal"],
+  });
+  const first = judge("How are we doing?", [rec]);
+  const session = nextEcaInitiativeSession(emptyEcaInitiativeSession(), "How are we doing?", first.judgment);
+  const why = judge("Why?", [rec], { session });
+  assert.equal(why.judgment.shouldIntervene, false);
+  assert.match(why.judgment.whyExplanation ?? "", /Supplier Delay|evidence/i);
+  assert.doesNotMatch(why.judgment.whyExplanation ?? "", /initiative score/i);
+  const spoken = applyEcaInitiativeToPresentedResponse({
+    source: "Because the current context changed.",
+    utterance: "Why?",
+    judgment: why.judgment,
+    nca5AlreadySpoke: false,
+    locked: false,
+  });
+  assert.match(spoken, /Evidence:/i);
+});
+
+test("ECA:3 T — No authority leakage", () => {
+  const cases = [
+    judge("How are we doing?", [
+      candidate({ id: "g", reason: "GOAL_AT_RISK", relatedToCurrentContext: true }),
+    ]),
+    judge("How is execution going?", [
+      candidate({ id: "e", reason: "EXECUTION_BLOCKED", relatedToCurrentContext: true }),
+    ]),
+    judge("How is the Decision holding up?", [
+      candidate({ id: "d", reason: "DECISION_REVIEW_NEEDED", relatedToCurrentContext: true }),
+    ]),
+  ];
+  for (const item of cases) boundaries(item.judgment);
+});
+
+test("ECA:3 sequence 1 — Surface then acknowledge then explicit request", () => {
+  const issue = candidate({
+    id: "seq1",
+    reason: "GOAL_AT_RISK",
+    relatedToCurrentContext: true,
+    materialChange: false,
+    fingerprint: "GOAL_AT_RISK:delivery:91",
+    observation: "Delivery is moving away from the goal.",
+    nextStep: "Review Capacity Gap.",
+  });
+  const first = judge("How are we doing?", [issue]);
+  let session = nextEcaInitiativeSession(emptyEcaInitiativeSession(), "How are we doing?", first.judgment);
+  session = nextEcaInitiativeSession(session, "I know.", judge("I know.", [issue], { session }).judgment);
+  const executions = judge("Show me Executions.", [issue], {
+    session,
+    subject: { id: "executions", label: "Executions", kind: "execution" },
+  });
+  assert.equal(first.judgment.shouldIntervene, true);
+  assert.equal(executions.judgment.shouldIntervene, false);
+  assert.ok(
+    executions.actionPlan.intent === "REVIEW_EXECUTION" || executions.actionPlan.intent === "SHOW",
+  );
+});
+
+test("ECA:3 sequence 2 — Dismiss then material change", () => {
+  const v1 = candidate({
+    id: "s2a",
+    reason: "RISK_ESCALATION",
+    relatedToCurrentContext: true,
+    materialChange: false,
+    fingerprint: "RISK_ESCALATION:supplier:old",
+  });
+  const v2 = candidate({
+    id: "s2b",
+    reason: "RISK_ESCALATION",
+    relatedToCurrentContext: true,
+    materialChange: true,
+    fingerprint: "RISK_ESCALATION:supplier:new",
+    observation: "Supplier Delay now has new material evidence.",
+  });
+  let session = emptyEcaInitiativeSession();
+  const first = judge("How are we doing?", [v1], { session });
+  session = nextEcaInitiativeSession(session, "How are we doing?", first.judgment);
+  session = nextEcaInitiativeSession(session, "Not now.", judge("Not now.", [v1], { session }).judgment);
+  const later = judge("How are we doing?", [v2], { session });
+  assert.equal(later.judgment.shouldIntervene, true);
+});
+
+test("ECA:3 sequence 3 — Decision assumption then Why", () => {
+  const assumption = candidate({
+    id: "s3",
+    reason: "DECISION_ASSUMPTION_WEAKENED",
+    relatedToCurrentContext: true,
+    observation: "The supplier recovery assumption behind this Decision is weaker now.",
+    evidence: ["supplier recovery no longer supported"],
+  });
+  const first = judge("How is the Decision holding up?", [assumption]);
+  const session = nextEcaInitiativeSession(emptyEcaInitiativeSession(), "How is the Decision holding up?", first.judgment);
+  const why = judge("Why?", [assumption], { session });
+  assert.equal(first.judgment.shouldIntervene, true);
+  assert.equal(first.judgment.boundaries.commitsDecision, false);
+  assert.match(why.judgment.whyExplanation ?? "", /supplier recovery/i);
+});
+
+test("ECA:3 sequence 4 — Execution blocker then show blocker", () => {
+  const blocked = candidate({
+    id: "s4",
+    reason: "EXECUTION_BLOCKED",
+    relatedToCurrentContext: true,
+    observation: "The execution is blocked by supplier confirmation.",
+    nextStep: "Review the blocker.",
+  });
+  const first = judge("How is execution going?", [blocked]);
+  const session = nextEcaInitiativeSession(emptyEcaInitiativeSession(), "How is execution going?", first.judgment);
+  const show = judge("Show me the blocker.", [blocked], { session });
+  assert.equal(first.judgment.shouldIntervene, true);
+  assert.ok(show.actionPlan.intent === "SHOW" || show.actionPlan.intent === "REVIEW_EXECUTION" || show.actionPlan.intent === "INSPECT_EVIDENCE" || show.actionPlan.intent === "EXPLAIN");
+  assert.equal(show.judgment.boundaries.startsExecution, false);
+});
+
+test("ECA:3 sequence 5 — Productive next step then yes uses ECA:2", () => {
+  const ready = candidate({
+    id: "s5",
+    reason: "HIGH_VALUE_NEXT_STEP",
+    relatedToCurrentContext: true,
+    observation: "You now have enough information to compare the three scenarios.",
+  });
+  const first = judge("What next?", [ready]);
+  assert.equal(first.judgment.shouldIntervene, true);
+  const yes = judge("Yes.", []);
+  assert.equal(yes.actionPlan.boundaries.commitsDecision, false);
+  assert.notEqual(yes.actionPlan.authorityTarget, "CC:10 Decision Commitment");
+});
+
+test("ECA:3 urgency stays separate from significance", () => {
+  const { judgment } = judge("How are we doing?", [
+    candidate({
+      id: "sep",
+      reason: "GOAL_AT_RISK",
+      significance: "HIGH",
+      urgency: "LOW",
+      relatedToCurrentContext: true,
+    }),
+  ]);
+  assert.equal(judgment.significance, "HIGH");
+  assert.equal(judgment.urgency, "LOW");
+});

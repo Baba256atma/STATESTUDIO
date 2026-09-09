@@ -422,6 +422,28 @@ export type NexoraConversationalExperienceResult = {
   readonly conversationThread?: import("@/app/lib/nexora-conversation/nexoraConversationThreadDiagnostics.ts").NexoraConversationThreadDiagnostics | null;
   /** NPA-T ECA:1 read-only working conversation context; session-scoped projection. */
   readonly ecaWorkingContext?: import("@/app/lib/nexora-conversation/ecaWorkingConversationContext.ts").EcaWorkingConversationContext | null;
+  /** NPA-T ECA:2 read-only executive intent and bounded next-conversation-action projection. */
+  readonly ecaActionPlan?: import("@/app/lib/nexora-conversation/ecaExecutiveIntentActionPlan.ts").EcaConversationActionPlan | null;
+  /** NPA-T ECA:3 read-only initiative judgment; never a second planner or writer. */
+  readonly ecaInitiativeJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveInitiativeJudgment.ts").EcaExecutiveInitiativeJudgment | null;
+  /** NPA-T ECA:4 read-only information-need judgment; never a writer or second clarification engine. */
+  readonly ecaInformationNeedJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveInformationNeed.ts").EcaExecutiveInformationNeedJudgment | null;
+  /** NPA-T ECA:5 read-only answer intake; never a writer or second NLU. */
+  readonly ecaAnswerIntakeJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveAnswerIntake.ts").EcaExecutiveAnswerIntakeJudgment | null;
+  /** NPA-T ECA:6 read-only dialogue strategy; never a second CONV:2 store or writer. */
+  readonly ecaDialogueStrategy?: import("@/app/lib/nexora-conversation/ecaExecutiveDialogueStrategy.ts").EcaExecutiveDialogueStrategy | null;
+  /** NPA-T ECA:7 read-only recommendation framing; never a Decision or second NCA:4. */
+  readonly ecaRecommendationJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveRecommendation.ts").EcaExecutiveRecommendationJudgment | null;
+  /** NPA-T ECA:8 read-only commitment dialogue; never a Decision writer or DTH:8 replacement. */
+  readonly ecaCommitmentJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveCommitment.ts").EcaExecutiveCommitmentJudgment | null;
+  /** NPA-T ECA:9 read-only post-Decision execution readiness; never an Execution writer or DTH:9 replacement. */
+  readonly ecaExecutionReadinessJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveExecutionReadiness.ts").EcaExecutiveExecutionReadinessJudgment | null;
+  /** NPA-T ECA:10 read-only live Execution interpretation; never an Execution writer, DTH:10, or monitoring daemon. */
+  readonly ecaLiveExecutionJudgment?: import("@/app/lib/nexora-conversation/ecaLiveExecution.ts").EcaLiveExecutionJudgment | null;
+  /** NPA-T ECA:11 read-only Outcome dialogue; never an Outcome writer, DTH:11, or Learning engine. */
+  readonly ecaOutcomeJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveOutcome.ts").EcaExecutiveOutcomeJudgment | null;
+  /** NPA-T ECA:12 read-only Learning/reassessment/closure; never CORE-OUT:2, DTH:12, APP-4, or ECA:6. */
+  readonly ecaLearningClosureJudgment?: import("@/app/lib/nexora-conversation/ecaExecutiveLearningClosure.ts").EcaExecutiveLearningClosureJudgment | null;
   /** NEX-EXP:1 session. Omitted when entrance is not active. */
   readonly nextEntranceSession?: import("@/app/lib/nexora-entrance/nexoraEntranceTypes.ts").NexoraEntranceSession | null;
   readonly guidedAttention?: import("@/app/lib/director/nexoraGuidedAttentionPresentation.ts").NexoraGuidedAttentionRuntime | null;

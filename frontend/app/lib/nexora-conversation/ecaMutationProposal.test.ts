@@ -131,5 +131,6 @@ describe("NPA-T ECA:1-FIX1 mutation proposal", () => {
   it("J. Decision and Execution imperatives are not ECA object mutations", () => {
     assert.equal(compose("Approve Scenario A.").mutationProposal, null);
     assert.equal(compose("Start Execution A.").mutationProposal, null);
+    assert.equal(compose("Change the plan to Scenario B instead.").mutationProposal, null);
   });
 });
